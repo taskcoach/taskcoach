@@ -261,7 +261,7 @@ class Column(object):
 
     def __filterArgs(self, func, kwargs):
         actualKwargs = dict()
-        argNames = inspect.getargspec(func).args
+        argNames = inspect.getfullargspec(func).args
         return dict(
             [
                 (name, value)
