@@ -134,7 +134,7 @@ class wxTestCase(TestCase):
         self.frame.DestroyChildren()  # Clean up GDI objects on Windows
 
 
-class TestResultWithTimings(unittest._TextTestResult):  # pylint: disable=W0212
+class TestResultWithTimings(unittest.TextTestResult):  # pylint: disable=W0212
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._timings = {}
