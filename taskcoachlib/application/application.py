@@ -182,7 +182,7 @@ class Application(object, metaclass=patterns.Singleton):
         # Monkey-patching older versions because of https://twistedmatrix.com/trac/ticket/3948
         import twisted
 
-        if tuple(map(int, twisted.__version__.split("."))) < (11,):
+        if tuple(int(part) for part in twisted.__version__.split(".") if part.isdigit()) < (11,):
             from twisted.internet import reactor
 
             if wxreactor.WxReactor.callFromThread is not None:
