@@ -180,27 +180,16 @@ else
 fi
 echo
 
-# Create launch script
-echo -e "${BLUE}[7/7] Creating launch script...${NC}"
-cat > "$SCRIPT_DIR/taskcoach-run.sh" << 'EOFLAUNCH'
-#!/bin/bash
-# TaskCoach launcher with virtual environment
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VENV_PATH="$SCRIPT_DIR/.venv"
-
-if [ ! -d "$VENV_PATH" ]; then
-    echo "Error: Virtual environment not found at $VENV_PATH"
-    echo "Please run setup_bookworm.sh first"
+# Check launch script
+echo -e "${BLUE}[7/7] Checking launch script...${NC}"
+if [ -f "$SCRIPT_DIR/taskcoach-run.sh" ]; then
+    chmod +x "$SCRIPT_DIR/taskcoach-run.sh"
+    echo -e "${GREEN}✓ Launch script is ready: taskcoach-run.sh${NC}"
+else
+    echo -e "${RED}✗ Launch script not found${NC}"
+    echo "taskcoach-run.sh should be included in the repository"
     exit 1
 fi
-
-source "$VENV_PATH/bin/activate"
-cd "$SCRIPT_DIR"
-python3 taskcoach.py "$@"
-EOFLAUNCH
-
-chmod +x "$SCRIPT_DIR/taskcoach-run.sh"
-echo -e "${GREEN}✓ Launch script created: taskcoach-run.sh${NC}"
 echo
 
 # Test installation

@@ -57,7 +57,10 @@ sudo apt-get install -y \
 For packages not available in Debian repos (desktop3, lockfile, gntp, distro, pypubsub):
 
 ```bash
-cd /path/to/taskcoach
+# Set your TaskCoach directory (change this to your actual path)
+TASKCOACH_HOME=~/Downloads/taskcoach-master
+
+cd "$TASKCOACH_HOME"
 
 # Create virtual environment in the project directory
 python3 -m venv .venv
@@ -77,36 +80,22 @@ deactivate
 TaskCoach needs to generate icons and templates before first run:
 
 ```bash
+# Set your TaskCoach directory (change this to your actual path)
+TASKCOACH_HOME=~/Downloads/taskcoach-master
+
 # Generate icons (must run from icons.in directory)
-cd /path/to/taskcoach/icons.in
+cd "$TASKCOACH_HOME/icons.in"
 python3 make.py
 
 # Generate templates (must run from templates.in directory)
-cd /path/to/taskcoach/templates.in
+cd "$TASKCOACH_HOME/templates.in"
 python3 make.py
 
 # Return to project root
-cd /path/to/taskcoach
+cd "$TASKCOACH_HOME"
 ```
 
-#### Step 4: Create Launch Script
-
-Create a script to run TaskCoach with the virtual environment:
-
-```bash
-cat > taskcoach-run.sh << 'EOF'
-#!/bin/bash
-# Activate virtual environment and run TaskCoach
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/.venv/bin/activate"
-cd "$SCRIPT_DIR"
-python3 taskcoach.py "$@"
-EOF
-
-chmod +x taskcoach-run.sh
-```
-
-#### Step 5: Run TaskCoach
+#### Step 4: Run TaskCoach
 
 ```bash
 # Using the launch script:
@@ -180,16 +169,19 @@ sudo apt-get install -y xvfb
 ### Generate resources headless
 
 ```bash
+# Set your TaskCoach directory (change this to your actual path)
+TASKCOACH_HOME=~/Downloads/taskcoach-master
+
 # Generate icons
-cd /path/to/taskcoach/icons.in
+cd "$TASKCOACH_HOME/icons.in"
 xvfb-run -a python3 make.py
 
 # Generate templates
-cd /path/to/taskcoach/templates.in
+cd "$TASKCOACH_HOME/templates.in"
 xvfb-run -a python3 make.py
 
 # Return to project root
-cd /path/to/taskcoach
+cd "$TASKCOACH_HOME"
 ```
 
 ### Run TaskCoach headless
@@ -218,16 +210,18 @@ sudo apt-get install python3-wxgtk4.0
 
 **Solution**: Generate the icons file:
 ```bash
-cd /path/to/taskcoach/icons.in
+TASKCOACH_HOME=~/Downloads/taskcoach-master  # Change to your path
+cd "$TASKCOACH_HOME/icons.in"
 python3 make.py
-cd ..
+cd "$TASKCOACH_HOME"
 ```
 
 If running headless/over SSH without a display:
 ```bash
-cd /path/to/taskcoach/icons.in
+TASKCOACH_HOME=~/Downloads/taskcoach-master  # Change to your path
+cd "$TASKCOACH_HOME/icons.in"
 xvfb-run -a python3 make.py
-cd ..
+cd "$TASKCOACH_HOME"
 ```
 
 ### Issue 4: Missing Templates
@@ -235,16 +229,18 @@ cd ..
 
 **Solution**: Generate the templates file:
 ```bash
-cd /path/to/taskcoach/templates.in
+TASKCOACH_HOME=~/Downloads/taskcoach-master  # Change to your path
+cd "$TASKCOACH_HOME/templates.in"
 python3 make.py
-cd ..
+cd "$TASKCOACH_HOME"
 ```
 
 If running headless/over SSH without a display:
 ```bash
-cd /path/to/taskcoach/templates.in
+TASKCOACH_HOME=~/Downloads/taskcoach-master  # Change to your path
+cd "$TASKCOACH_HOME/templates.in"
 xvfb-run -a python3 make.py
-cd ..
+cd "$TASKCOACH_HOME"
 ```
 
 ## Package Sources in Bookworm
@@ -288,7 +284,8 @@ python3 --version  # Should be 3.11.x
 
 ### Check Virtual Environment
 ```bash
-cd /path/to/taskcoach
+TASKCOACH_HOME=~/Downloads/taskcoach-master  # Change to your path
+cd "$TASKCOACH_HOME"
 source .venv/bin/activate
 pip list | grep -E "(desktop3|lockfile|gntp|distro|pypubsub)"
 deactivate
@@ -310,8 +307,11 @@ apt list --installed | grep python3-twisted
 To remove TaskCoach:
 
 ```bash
+# Set your TaskCoach directory
+TASKCOACH_HOME=~/Downloads/taskcoach-master
+
 # Remove TaskCoach directory (includes the venv)
-rm -rf /path/to/taskcoach
+rm -rf "$TASKCOACH_HOME"
 
 # Remove system packages (optional)
 sudo apt-get remove python3-wxgtk4.0
