@@ -91,25 +91,27 @@ run_test "Templates generated" \
 run_test "Application help command" \
     "python3 taskcoach.py --help"
 
-# Test 9: Domain objects
+# Test 9: Domain objects (requires wx.App)
 run_test "Domain objects import" \
-    "python3 -c 'from taskcoachlib.domain import task, category, note, effort'"
+    "python3 -c 'import wx; app=wx.App(False); from taskcoachlib.domain import task, category, note, effort'"
 
 # Test 10: GUI modules (basic import)
 run_test "GUI modules import" \
     "timeout 5 python3 -c 'from taskcoachlib import gui' || true"
 
-# Test 11: Persistence modules
+# Test 11: Persistence modules (requires wx.App)
 run_test "Persistence modules" \
-    "python3 -c 'from taskcoachlib import persistence'"
+    "python3 -c 'import wx; app=wx.App(False); from taskcoachlib import persistence'"
 
 # Test 12: Config modules
 run_test "Config modules" \
     "python3 -c 'from taskcoachlib import config'"
 
-# Test 13: Try to create a task (no GUI)
+# Test 13: Try to create a task (requires wx.App)
 echo -n "Testing task creation... "
 if python3 << 'EOF' &>/dev/null
+import wx
+app = wx.App(False)
 import sys
 sys.path.insert(0, '.')
 from taskcoachlib.domain.task import Task
