@@ -45,10 +45,10 @@ OPTION 2: Manual Setup
 2. Create virtual environment (in the taskcoach directory):
 
    # Set your path (change this!)
-   TASKCOACH_HOME=~/Downloads/taskcoach-master
+   TASKCOACH_HOME=/path/to/taskcoach
 
    cd "$TASKCOACH_HOME"
-   python3 -m venv .venv
+   python3 -m venv --system-site-packages .venv
    source .venv/bin/activate
    pip install desktop3 lockfile gntp distro pypubsub
    deactivate
@@ -116,7 +116,7 @@ This is ONLY for:
    sudo apt-get install -y xvfb
 
 2. Generate resources with xvfb:
-   TASKCOACH_HOME=~/Downloads/taskcoach-master  # Change to your path
+   TASKCOACH_HOME=/path/to/taskcoach  # Change to your path
 
    cd "$TASKCOACH_HOME/icons.in"
    xvfb-run -a python3 make.py
@@ -157,6 +157,7 @@ FROM PYPI (in virtual environment):
 This approach:
   • Uses stable Debian packages where possible
   • Isolates PyPI packages in a safe venv
+  • The --system-site-packages flag allows venv to access system packages
   • Prevents breaking system Python
   • Is the recommended best practice
 
@@ -168,7 +169,8 @@ Error: "error: externally-managed-environment"
 → This is PEP 668 protection. Use the setup script or create a venv.
 
 Error: "No module named 'wx'"
-→ Install: sudo apt-get install python3-wxgtk4.0
+→ Install system package: sudo apt-get install python3-wxgtk4.0
+→ If already installed, recreate venv with: python3 -m venv --system-site-packages .venv
 
 Error: "couldn't import icons.py"
 → Run from taskcoach directory:

@@ -85,13 +85,13 @@ if [ -d "$VENV_PATH" ]; then
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         rm -rf "$VENV_PATH"
-        python3 -m venv "$VENV_PATH"
+        python3 -m venv --system-site-packages "$VENV_PATH"
         echo -e "${GREEN}✓ Virtual environment recreated${NC}"
     else
         echo -e "${GREEN}✓ Using existing virtual environment${NC}"
     fi
 else
-    python3 -m venv "$VENV_PATH"
+    python3 -m venv --system-site-packages "$VENV_PATH"
     echo -e "${GREEN}✓ Virtual environment created in project directory${NC}"
 fi
 echo

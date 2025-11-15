@@ -58,12 +58,12 @@ For packages not available in Debian repos (desktop3, lockfile, gntp, distro, py
 
 ```bash
 # Set your TaskCoach directory (change this to your actual path)
-TASKCOACH_HOME=~/Downloads/taskcoach-master
+TASKCOACH_HOME=/path/to/taskcoach
 
 cd "$TASKCOACH_HOME"
 
-# Create virtual environment in the project directory
-python3 -m venv .venv
+# Create virtual environment with access to system packages
+python3 -m venv --system-site-packages .venv
 
 # Activate it
 source .venv/bin/activate
@@ -75,13 +75,15 @@ pip install desktop3 lockfile gntp distro pypubsub
 deactivate
 ```
 
+**Note**: The `--system-site-packages` flag allows the virtual environment to access system-installed packages (like wxPython, twisted, lxml) while keeping pip-installed packages isolated. This is the recommended approach for TaskCoach.
+
 #### Step 3: Generate Required Files
 
 TaskCoach needs to generate icons and templates before first run:
 
 ```bash
 # Set your TaskCoach directory (change this to your actual path)
-TASKCOACH_HOME=~/Downloads/taskcoach-master
+TASKCOACH_HOME=/path/to/taskcoach
 
 # Generate icons (must run from icons.in directory)
 cd "$TASKCOACH_HOME/icons.in"
@@ -105,21 +107,6 @@ cd "$TASKCOACH_HOME"
 source .venv/bin/activate
 python3 taskcoach.py
 ```
-
-## Alternative: Using --break-system-packages (Not Recommended)
-
-If you really want to use `pip install --user` without a venv:
-
-```bash
-# NOT RECOMMENDED - can break system Python
-pip3 install --user --break-system-packages \
-    desktop3 lockfile gntp distro pypubsub
-
-# Then run normally:
-python3 taskcoach.py
-```
-
-**Warning**: This can conflict with system packages and break system tools that depend on Python.
 
 ## Testing the Installation
 
@@ -170,7 +157,7 @@ sudo apt-get install -y xvfb
 
 ```bash
 # Set your TaskCoach directory (change this to your actual path)
-TASKCOACH_HOME=~/Downloads/taskcoach-master
+TASKCOACH_HOME=/path/to/taskcoach
 
 # Generate icons
 cd "$TASKCOACH_HOME/icons.in"
@@ -210,7 +197,7 @@ sudo apt-get install python3-wxgtk4.0
 
 **Solution**: Generate the icons file:
 ```bash
-TASKCOACH_HOME=~/Downloads/taskcoach-master  # Change to your path
+TASKCOACH_HOME=/path/to/taskcoach  # Change to your path
 cd "$TASKCOACH_HOME/icons.in"
 python3 make.py
 cd "$TASKCOACH_HOME"
@@ -218,7 +205,7 @@ cd "$TASKCOACH_HOME"
 
 If running headless/over SSH without a display:
 ```bash
-TASKCOACH_HOME=~/Downloads/taskcoach-master  # Change to your path
+TASKCOACH_HOME=/path/to/taskcoach  # Change to your path
 cd "$TASKCOACH_HOME/icons.in"
 xvfb-run -a python3 make.py
 cd "$TASKCOACH_HOME"
@@ -308,7 +295,7 @@ To remove TaskCoach:
 
 ```bash
 # Set your TaskCoach directory
-TASKCOACH_HOME=~/Downloads/taskcoach-master
+TASKCOACH_HOME=/path/to/taskcoach
 
 # Remove TaskCoach directory (includes the venv)
 rm -rf "$TASKCOACH_HOME"
