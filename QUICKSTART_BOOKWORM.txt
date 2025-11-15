@@ -1,0 +1,162 @@
+TaskCoach on Debian Bookworm - Quick Start
+===========================================
+
+This is a simplified guide to get TaskCoach running on Debian 12 Bookworm.
+
+OPTION 1: Automated Setup (Recommended)
+----------------------------------------
+
+1. Run the setup script:
+
+   ./setup_bookworm.sh
+
+2. That's it! The script will:
+   - Check your Python version
+   - Install system dependencies (wxPython, etc.)
+   - Install Python packages
+   - Generate required resources (icons, templates)
+   - Test the installation
+
+3. Start TaskCoach:
+
+   python3 taskcoach.py
+
+
+OPTION 2: Manual Setup
+-----------------------
+
+1. Install system packages:
+
+   sudo apt-get update
+   sudo apt-get install python3-wxgtk4.0 python3-pip xvfb
+
+2. Install Python dependencies:
+
+   pip3 install --user six desktop3 pypubsub twisted chardet lxml \
+       pyxdg keyring numpy lockfile gntp distro python-dateutil
+
+3. Generate resources:
+
+   xvfb-run -a python3 icons.in/make.py
+   xvfb-run -a python3 templates.in/make.py
+
+4. Run TaskCoach:
+
+   python3 taskcoach.py
+
+
+Testing Your Installation
+--------------------------
+
+Run the test suite:
+
+   ./test_taskcoach.sh
+
+This will verify:
+- Python version compatibility
+- All dependencies are installed
+- Resources are generated correctly
+- Application can start
+
+
+Common Usage
+------------
+
+# Start with GUI:
+python3 taskcoach.py
+
+# Open a specific file:
+python3 taskcoach.py mytasks.tsk
+
+# Use custom settings file:
+python3 taskcoach.py --ini=/path/to/settings.ini
+
+# Use different language (e.g., French):
+python3 taskcoach.py --language=fr
+
+# Show all options:
+python3 taskcoach.py --help
+
+
+Running Headless (SSH/No Display)
+----------------------------------
+
+If you're connected via SSH or have no display:
+
+   xvfb-run -a python3 taskcoach.py
+
+Xvfb (X Virtual Framebuffer) provides a virtual display.
+
+
+Troubleshooting
+---------------
+
+Error: "No module named 'wx'"
+→ Install: sudo apt-get install python3-wxgtk4.0
+
+Error: "couldn't import icons.py"
+→ Run: xvfb-run -a python3 icons.in/make.py
+
+Error: "No module named 'taskcoachlib.persistence.xml.templates'"
+→ Run: xvfb-run -a python3 templates.in/make.py
+
+Error: "Unable to access the X Display"
+→ Use: xvfb-run -a python3 taskcoach.py
+
+
+System Requirements
+-------------------
+
+- Debian 12 (Bookworm)
+- Python 3.11+ (included in Bookworm)
+- ~50 MB disk space
+- 256 MB RAM minimum
+
+
+What's Tested and Working
+--------------------------
+
+✓ Python 3.11 compatibility
+✓ wxPython 4.2.0 integration
+✓ All core dependencies
+✓ GUI startup and rendering
+✓ Task creation and management
+✓ File loading and saving
+✓ Import/Export functionality
+
+
+Getting Help
+------------
+
+- Full setup guide: DEBIAN_BOOKWORM_SETUP.md
+- README: README.md
+- GitHub: https://github.com/taskcoach/taskcoach
+- Website: http://www.taskcoach.org
+
+
+Quick Example
+-------------
+
+After setup, try this:
+
+   # Start TaskCoach
+   python3 taskcoach.py
+
+   # In the GUI:
+   1. File → New to create a new task file
+   2. Task → New Task to add your first task
+   3. Enter a task description
+   4. File → Save As to save your tasks
+
+   # Or from command line with existing file:
+   python3 taskcoach.py example.tsk
+
+
+Version Info
+------------
+
+TaskCoach: 1.5.0
+Tested on: Debian 12 (Bookworm)
+Python: 3.11.2+
+wxPython: 4.2.0+
+Last Updated: 2025-11-15
