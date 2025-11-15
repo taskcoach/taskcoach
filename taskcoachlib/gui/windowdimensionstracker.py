@@ -107,23 +107,23 @@ class WindowSizeAndPositionTracker(_Tracker):
         # Set minimum size constraint on the window to prevent user from resizing too small
         self._window.SetMinSize((min_width, min_height))
 
-        # If position is (-1, -1), it's the default/unset position
-        # Center on parent for dialogs, use safe default for main windows
-        if x == -1 and y == -1:
-            if isinstance(self._window, wx.Dialog):
-                # For dialogs with no saved position, center on parent
-                parent = self._window.GetParent()
-                if parent:
-                    parent_rect = parent.GetScreenRect()
-                    x = parent_rect.x + (parent_rect.width - width) // 2
-                    y = parent_rect.y + (parent_rect.height - height) // 2
-                else:
-                    # No parent, use a safe default
-                    x, y = 50, 50
-            else:
-                # For main window with no saved position, use safe default
-                # Not (0, 0) because on some systems this might hide title bar
+        # For dialogs, always center on parent to ensure they open on the same
+        # screen as the parent window (important for multi-monitor setups)
+        if isinstance(self._window, wx.Dialog):
+            parent = self._window.GetParent()
+            if parent and parent.IsShown():
+                # Center on parent window
+                parent_rect = parent.GetScreenRect()
+                x = parent_rect.x + (parent_rect.width - width) // 2
+                y = parent_rect.y + (parent_rect.height - height) // 2
+            elif x == -1 and y == -1:
+                # No parent or parent not shown yet, use safe default
                 x, y = 50, 50
+            # else: use saved position (x, y)
+        elif x == -1 and y == -1:
+            # For main window with no saved position, use safe default
+            # Not (0, 0) because on some systems this might hide title bar
+            x, y = 50, 50
 
         if operating_system.isMac():
             # Under MacOS 10.5 and 10.4, when setting the size, the actual
