@@ -85,18 +85,11 @@ class DateTimeCtrl(wx.Panel):
 
         self.__adjust = adjustEndOfDay
         self.__callback = callback
-        # Force 24-hour time format for consistency across all widgets
-        # Use strftime directly instead of render.time() to ensure we always get 24h format
-        if showSeconds:
-            timeFormat = lambda x: x.strftime("%H:%M:%S") if x else ""
-        else:
-            timeFormat = lambda x: x.strftime("%H:%M") if x else ""
-
         self.__ctrl = _SmartDateTimeCtrl(
             self,
             enableNone=noneAllowed,
             dateFormat=render.date,
-            timeFormat=timeFormat,
+            timeFormat=lambda x: render.time(x, seconds=showSeconds),
             startHour=starthour,
             endHour=endhour,
             minuteDelta=interval,
