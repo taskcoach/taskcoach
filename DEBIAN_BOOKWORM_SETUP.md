@@ -8,179 +8,268 @@ This guide explains how to test TaskCoach on Debian 12 (Bookworm).
 - **Python**: 3.11 (default in Bookworm)
 - **wxPython**: 4.2.0 (available in Bookworm repos)
 
-## Quick Setup
+## Important Note About PEP 668
 
-### 1. Install System Dependencies
+Debian Bookworm implements PEP 668, which prevents `pip install --user` from modifying the system Python environment. This is a **good security feature**. We'll use system packages where possible and a virtual environment for the rest.
+
+## Quick Setup (Recommended)
+
+### Option 1: Automated Setup Script
+
+```bash
+# Run the automated setup script
+./setup_bookworm.sh
+
+# This will:
+# - Install system packages
+# - Create a virtual environment
+# - Install remaining dependencies
+# - Generate icons and templates
+```
+
+### Option 2: Manual Setup
+
+Follow these steps if you prefer manual installation:
+
+#### Step 1: Install System Dependencies
 
 ```bash
 # Update package list
 sudo apt-get update
 
-# Install wxPython and required system packages
-sudo apt-get install -y python3-wxgtk4.0 python3-pip python3-dev
-
-# Optional: Install xvfb if you want to test without a display
-sudo apt-get install -y xvfb
+# Install wxPython and available Python packages from Debian repos
+sudo apt-get install -y \
+    python3-wxgtk4.0 \
+    python3-six \
+    python3-twisted \
+    python3-lxml \
+    python3-numpy \
+    python3-dateutil \
+    python3-chardet \
+    python3-keyring \
+    python3-pyparsing \
+    python3-pyxdg \
+    python3-venv \
+    xvfb
 ```
 
-### 2. Install Python Dependencies
+#### Step 2: Create Virtual Environment
+
+For packages not available in Debian repos (desktop3, lockfile, gntp, distro, pypubsub):
 
 ```bash
-# Install required Python packages
-pip3 install --user six desktop3 pypubsub twisted chardet lxml \
-    pyxdg keyring numpy lockfile gntp distro python-dateutil
+# Create virtual environment
+python3 -m venv ~/.taskcoach-venv
 
-# Or use the requirements.txt
-pip3 install --user -r requirements.txt
+# Activate it
+source ~/.taskcoach-venv/bin/activate
+
+# Install remaining dependencies
+pip install desktop3 lockfile gntp distro pypubsub
+
+# Deactivate when done
+deactivate
 ```
 
-### 3. Generate Required Files
+#### Step 3: Generate Required Files
 
 TaskCoach needs to generate icons and templates before first run:
 
 ```bash
-# If you have a display:
 cd /path/to/taskcoach
-python3 icons.in/make.py
-python3 templates.in/make.py
 
-# OR if running headless/SSH (using Xvfb):
-cd /path/to/taskcoach
+# Generate icons
 xvfb-run -a python3 icons.in/make.py
+
+# Generate templates
 xvfb-run -a python3 templates.in/make.py
 ```
 
-### 4. Run TaskCoach
+#### Step 4: Create Launch Script
+
+Create a script to run TaskCoach with the virtual environment:
 
 ```bash
-# With a display:
+cat > taskcoach-run.sh << 'EOF'
+#!/bin/bash
+# Activate virtual environment and run TaskCoach
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source ~/.taskcoach-venv/bin/activate
+cd "$SCRIPT_DIR"
+python3 taskcoach.py "$@"
+EOF
+
+chmod +x taskcoach-run.sh
+```
+
+#### Step 5: Run TaskCoach
+
+```bash
+# Using the launch script:
+./taskcoach-run.sh
+
+# Or manually:
+source ~/.taskcoach-venv/bin/activate
 python3 taskcoach.py
-
-# OR headless/SSH (using Xvfb):
-xvfb-run -a python3 taskcoach.py
-
-# Show help:
-python3 taskcoach.py --help
-
-# Open a specific task file:
-python3 taskcoach.py mytasks.tsk
 ```
 
-## Alternative: Using the Automated Setup Script
+## Alternative: Using --break-system-packages (Not Recommended)
 
-Use the included `setup_bookworm.sh` script:
+If you really want to use `pip install --user` without a venv:
 
 ```bash
-chmod +x setup_bookworm.sh
-./setup_bookworm.sh
+# NOT RECOMMENDED - can break system Python
+pip3 install --user --break-system-packages \
+    desktop3 lockfile gntp distro pypubsub
+
+# Then run normally:
+python3 taskcoach.py
 ```
+
+**Warning**: This can conflict with system packages and break system tools that depend on Python.
 
 ## Testing the Installation
 
-### 1. Test Basic Import
+### Quick Test
 ```bash
 python3 -c "import taskcoachlib; print('TaskCoach version:', taskcoachlib.meta.version)"
 ```
 
 Expected output: `TaskCoach version: 1.5.0`
 
-### 2. Test wxPython
+### Comprehensive Test
 ```bash
-python3 -c "import wx; print('wxPython version:', wx.__version__)"
+./test_taskcoach.sh
 ```
 
-Expected output: `wxPython version: 4.2.0` (or similar)
+This runs 14+ tests to verify everything works.
 
-### 3. Test Application Launch
+## Usage Examples
+
 ```bash
-# Show help (doesn't require display)
-python3 taskcoach.py --help
+# Show help
+./taskcoach-run.sh --help
 
-# Test GUI (requires display or xvfb)
-timeout 5 xvfb-run -a python3 taskcoach.py &
-sleep 2
-ps aux | grep taskcoach
-killall python3
+# Start with GUI
+./taskcoach-run.sh
+
+# Open specific file
+./taskcoach-run.sh mytasks.tsk
+
+# Use custom settings
+./taskcoach-run.sh --ini=/path/to/settings.ini
+
+# Use different language
+./taskcoach-run.sh --language=fr
+```
+
+## Running Headless (SSH/No Display)
+
+```bash
+xvfb-run -a ./taskcoach-run.sh
 ```
 
 ## Known Issues on Bookworm
 
-### Issue 1: wxPython Version Mismatch
-**Symptom**: `ModuleNotFoundError: No module named 'wx._core'`
+### Issue 1: PEP 668 Error
+**Symptom**: `error: externally-managed-environment`
 
-**Solution**: Ensure you're using Python 3.11 (Bookworm default), as the system wxPython package is built for 3.11:
+**Solution**: Use a virtual environment (as shown above) or system packages.
+
+### Issue 2: wxPython Import Error
+**Symptom**: `ModuleNotFoundError: No module named 'wx'`
+
+**Solution**: Install system package:
 ```bash
-python3 --version  # Should show 3.11.x
-which python3      # Should be /usr/bin/python3
+sudo apt-get install python3-wxgtk4.0
 ```
 
-### Issue 2: Missing Icons
+### Issue 3: Missing Icons
 **Symptom**: Error message "couldn't import icons.py"
 
 **Solution**: Generate the icons file:
 ```bash
-cd /path/to/taskcoach
 xvfb-run -a python3 icons.in/make.py
 ```
 
-### Issue 3: Missing Templates
+### Issue 4: Missing Templates
 **Symptom**: `ModuleNotFoundError: No module named 'taskcoachlib.persistence.xml.templates'`
 
 **Solution**: Generate the templates file:
 ```bash
-cd /path/to/taskcoach
 xvfb-run -a python3 templates.in/make.py
 ```
 
-### Issue 4: No Display Available
-**Symptom**: "Unable to access the X Display, is $DISPLAY set properly?"
+## Package Sources in Bookworm
 
-**Solution**: Either:
-- Run on a system with a graphical display
-- Use SSH with X11 forwarding: `ssh -X user@host`
-- Use Xvfb: `xvfb-run -a python3 taskcoach.py`
-- Use VNC or similar remote desktop
+### From Debian Repositories (apt):
+- ✅ python3-wxgtk4.0 (4.2.0)
+- ✅ python3-six (1.16.0)
+- ✅ python3-twisted (22.4.0)
+- ✅ python3-lxml (4.9.2)
+- ✅ python3-numpy (1.24.2)
+- ✅ python3-dateutil (2.8.2)
+- ✅ python3-chardet (5.1.0)
+- ✅ python3-keyring (23.13.1)
+- ✅ python3-pyparsing (3.0.9)
+- ✅ python3-pyxdg (0.28)
 
-## Package Versions in Bookworm
+### From PyPI (pip in venv):
+- 📦 desktop3
+- 📦 lockfile
+- 📦 gntp
+- 📦 distro
+- 📦 pypubsub
 
-For reference, these are the expected versions:
+## Why Virtual Environment?
 
-- Python: 3.11.2+
-- python3-wxgtk4.0: 4.2.0+dfsg-3
-- python3-twisted: 22.4.0+
-- python3-lxml: 4.9.2+
-- python3-numpy: 1.24.2+
+Debian Bookworm uses PEP 668 to prevent accidental breaking of system Python. Benefits:
+
+- ✅ **Safe**: Won't break system tools
+- ✅ **Clean**: Isolated from system packages
+- ✅ **Reproducible**: Easy to recreate
+- ✅ **Standard**: Recommended Python practice
+
+The small overhead of activating the venv is worth the safety.
 
 ## Troubleshooting
 
-### Check Python Path
+### Check Python Version
 ```bash
-python3 -c "import sys; print('\n'.join(sys.path))"
+python3 --version  # Should be 3.11.x
 ```
 
-### Check Installed Packages
+### Check Virtual Environment
 ```bash
-pip3 list | grep -E "(wx|twisted|lxml|numpy|pypubsub)"
+source ~/.taskcoach-venv/bin/activate
+pip list | grep -E "(desktop3|lockfile|gntp|distro|pypubsub)"
+deactivate
+```
+
+### Check System Packages
+```bash
 dpkg -l | grep python3-wx
+apt list --installed | grep python3-twisted
 ```
 
 ### Verbose Logging
 ```bash
-python3 taskcoach.py --verbose
+./taskcoach-run.sh --verbose
 ```
 
-## Building from Source (Advanced)
+## Uninstall
 
-If you prefer to build wxPython from source (not recommended):
+To remove TaskCoach:
 
 ```bash
-# Install build dependencies
-sudo apt-get install -y build-essential python3-dev libgtk-3-dev \
-    libwebkit2gtk-4.0-dev libjpeg-dev libtiff-dev libsdl2-dev \
-    libnotify-dev freeglut3-dev libsm-dev
+# Remove virtual environment
+rm -rf ~/.taskcoach-venv
 
-# This will take 30+ minutes
-pip3 install --user wxPython
+# Remove system packages (optional)
+sudo apt-get remove python3-wxgtk4.0
+
+# Remove TaskCoach directory
+rm -rf /path/to/taskcoach
 ```
 
 ## Support
@@ -194,6 +283,7 @@ pip3 install --user wxPython
 ✅ **Working**: Application starts, GUI loads, basic functionality tested
 ✅ **Python 3.11**: Fully compatible
 ✅ **wxPython 4.2.0**: Fully compatible
+✅ **PEP 668**: Properly handled with venv approach
 ⚠️  **Test Suite**: One minor issue with unittest._TextTestResult (doesn't affect app)
 
-Last tested: 2025-11-15
+Last tested: 2025-11-15 (Updated for PEP 668)
