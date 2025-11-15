@@ -143,17 +143,41 @@ else
     exit 1
 fi
 
-# Test 3: Test venv packages
-echo -n "Testing virtual environment packages... "
+# Test 3: Test venv packages individually
+echo "Testing virtual environment packages..."
 source "$VENV_PATH/bin/activate"
-if python3 -c "import desktop3, lockfile, gntp, distro; from pubsub import pub" 2>/dev/null; then
+
+VENV_FAILED=0
+for pkg in "desktop3" "lockfile" "gntp" "distro"; do
+    echo -n "  - $pkg... "
+    if python3 -c "import $pkg" 2>/dev/null; then
+        echo -e "${GREEN}✓${NC}"
+    else
+        echo -e "${RED}✗ Failed${NC}"
+        VENV_FAILED=1
+    fi
+done
+
+# pypubsub is imported differently
+echo -n "  - pypubsub... "
+if python3 -c "from pubsub import pub" 2>/dev/null; then
     echo -e "${GREEN}✓${NC}"
 else
     echo -e "${RED}✗ Failed${NC}"
-    deactivate
+    VENV_FAILED=1
+fi
+
+deactivate
+
+if [ $VENV_FAILED -eq 1 ]; then
+    echo -e "${RED}✗ Some packages failed to import${NC}"
+    echo "Try recreating the virtual environment:"
+    echo "  rm -rf $VENV_PATH"
+    echo "  python3 -m venv --system-site-packages $VENV_PATH"
+    echo "  source $VENV_PATH/bin/activate"
+    echo "  pip install desktop3 lockfile gntp distro pypubsub"
     exit 1
 fi
-deactivate
 
 # Test 4: Run help
 echo -n "Testing application help... "
