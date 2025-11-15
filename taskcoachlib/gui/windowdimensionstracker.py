@@ -107,6 +107,19 @@ class WindowSizeAndPositionTracker(_Tracker):
         # Set minimum size constraint on the window to prevent user from resizing too small
         self._window.SetMinSize((min_width, min_height))
 
+        # If position is at (0,0) or negative, it's likely a default/unset position
+        # Center on parent for dialogs instead
+        if isinstance(self._window, wx.Dialog) and x <= 0 and y <= 0:
+            # For dialogs with no saved position, center on parent
+            parent = self._window.GetParent()
+            if parent:
+                parent_rect = parent.GetScreenRect()
+                x = parent_rect.x + (parent_rect.width - width) // 2
+                y = parent_rect.y + (parent_rect.height - height) // 2
+            else:
+                # No parent, use a safe default
+                x, y = 50, 50
+
         if operating_system.isMac():
             # Under MacOS 10.5 and 10.4, when setting the size, the actual
             # window height is increased by 40 pixels. Dunno why, but it's

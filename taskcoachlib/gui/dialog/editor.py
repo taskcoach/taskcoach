@@ -1895,17 +1895,9 @@ class Editor(BalloonTipManager, widgets.Dialog):
         else:
             self.__timer = None
 
-        # On Mac OS X, the frame opens by default in the top-left
-        # corner of the first display. This gets annoying on a
-        # 2560x1440 27" + 1920x1200 24" dual screen...
-
-        # On Windows, for some reason, the Python 2.5 and 2.6 versions
-        # of wxPython 2.8.11.0 behave differently; on Python 2.5 the
-        # frame opens centered on its parent but on 2.6 it opens on
-        # the first display!
-
-        # On Linux this is not needed but doesn't do any harm.
-        self.CentreOnParent()
+        # Position and size handling is done by WindowSizeAndPositionTracker
+        # which will center on parent if no saved position exists, or
+        # restore the last saved position
         self.__create_ui_commands()
         self.__dimensions_tracker = (
             windowdimensionstracker.WindowSizeAndPositionTracker(
