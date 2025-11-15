@@ -92,6 +92,21 @@ class WindowSizeAndPositionTracker(_Tracker):
         """Set the window position and size based on the settings."""
         x, y = self.get_setting("position")  # pylint: disable=C0103
         width, height = self.get_setting("size")
+
+        # Enforce minimum window size to prevent GTK warnings and usability issues
+        # Different minimums for dialogs vs main windows
+        if isinstance(self._window, wx.Dialog):
+            min_width, min_height = 400, 300
+        else:
+            min_width, min_height = 600, 400
+
+        # Ensure window size meets minimum requirements
+        width = max(width, min_width)
+        height = max(height, min_height)
+
+        # Set minimum size constraint on the window to prevent user from resizing too small
+        self._window.SetMinSize((min_width, min_height))
+
         if operating_system.isMac():
             # Under MacOS 10.5 and 10.4, when setting the size, the actual
             # window height is increased by 40 pixels. Dunno why, but it's
