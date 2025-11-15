@@ -31,3 +31,6 @@ __pycache__
 *.old
 .vscode
 .idea
+.venv
+venv
+taskcoach-run.sh
