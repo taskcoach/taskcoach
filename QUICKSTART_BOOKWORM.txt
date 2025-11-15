@@ -52,8 +52,13 @@ OPTION 2: Manual Setup
 
 3. Generate resources:
 
-   python3 icons.in/make.py
-   python3 templates.in/make.py
+   cd /path/to/taskcoach/icons.in
+   python3 make.py
+
+   cd /path/to/taskcoach/templates.in
+   python3 make.py
+
+   cd /path/to/taskcoach
 
 4. Create launch script:
 
@@ -119,8 +124,13 @@ This is ONLY for:
    sudo apt-get install -y xvfb
 
 2. Generate resources with xvfb:
-   xvfb-run -a python3 icons.in/make.py
-   xvfb-run -a python3 templates.in/make.py
+   cd /path/to/taskcoach/icons.in
+   xvfb-run -a python3 make.py
+
+   cd /path/to/taskcoach/templates.in
+   xvfb-run -a python3 make.py
+
+   cd /path/to/taskcoach
 
 3. Run TaskCoach headless:
    xvfb-run -a ./taskcoach-run.sh
@@ -167,12 +177,12 @@ Error: "No module named 'wx'"
 → Install: sudo apt-get install python3-wxgtk4.0
 
 Error: "couldn't import icons.py"
-→ Run: python3 icons.in/make.py
-→ If headless: xvfb-run -a python3 icons.in/make.py
+→ Run: cd icons.in && python3 make.py && cd ..
+→ If headless: cd icons.in && xvfb-run -a python3 make.py && cd ..
 
 Error: "No module named 'taskcoachlib.persistence.xml.templates'"
-→ Run: python3 templates.in/make.py
-→ If headless: xvfb-run -a python3 templates.in/make.py
+→ Run: cd templates.in && python3 make.py && cd ..
+→ If headless: cd templates.in && xvfb-run -a python3 make.py && cd ..
 
 Error: "Unable to access the X Display"
 → You're either running over SSH or headless

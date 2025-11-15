@@ -77,13 +77,16 @@ deactivate
 TaskCoach needs to generate icons and templates before first run:
 
 ```bash
+# Generate icons (must run from icons.in directory)
+cd /path/to/taskcoach/icons.in
+python3 make.py
+
+# Generate templates (must run from templates.in directory)
+cd /path/to/taskcoach/templates.in
+python3 make.py
+
+# Return to project root
 cd /path/to/taskcoach
-
-# Generate icons
-python3 icons.in/make.py
-
-# Generate templates
-python3 templates.in/make.py
 ```
 
 #### Step 4: Create Launch Script
@@ -178,10 +181,15 @@ sudo apt-get install -y xvfb
 
 ```bash
 # Generate icons
-xvfb-run -a python3 icons.in/make.py
+cd /path/to/taskcoach/icons.in
+xvfb-run -a python3 make.py
 
 # Generate templates
-xvfb-run -a python3 templates.in/make.py
+cd /path/to/taskcoach/templates.in
+xvfb-run -a python3 make.py
+
+# Return to project root
+cd /path/to/taskcoach
 ```
 
 ### Run TaskCoach headless
@@ -210,12 +218,16 @@ sudo apt-get install python3-wxgtk4.0
 
 **Solution**: Generate the icons file:
 ```bash
-python3 icons.in/make.py
+cd /path/to/taskcoach/icons.in
+python3 make.py
+cd ..
 ```
 
-If running headless/over SSH without a display, add `xvfb-run -a`:
+If running headless/over SSH without a display:
 ```bash
-xvfb-run -a python3 icons.in/make.py
+cd /path/to/taskcoach/icons.in
+xvfb-run -a python3 make.py
+cd ..
 ```
 
 ### Issue 4: Missing Templates
@@ -223,12 +235,16 @@ xvfb-run -a python3 icons.in/make.py
 
 **Solution**: Generate the templates file:
 ```bash
-python3 templates.in/make.py
+cd /path/to/taskcoach/templates.in
+python3 make.py
+cd ..
 ```
 
-If running headless/over SSH without a display, add `xvfb-run -a`:
+If running headless/over SSH without a display:
 ```bash
-xvfb-run -a python3 templates.in/make.py
+cd /path/to/taskcoach/templates.in
+xvfb-run -a python3 make.py
+cd ..
 ```
 
 ## Package Sources in Bookworm

@@ -113,9 +113,11 @@ cd "$SCRIPT_DIR"
 if [ ! -f "taskcoachlib/gui/icons.py" ]; then
     if [ -d "icons.in" ]; then
         echo "Generating icons (this may take a minute)..."
+        cd icons.in
 
         # Try without xvfb first (normal desktop)
-        if python3 icons.in/make.py 2>&1 | tail -5; then
+        if python3 make.py 2>&1 | tail -5; then
+            cd "$SCRIPT_DIR"
             echo -e "${GREEN}✓ Icons generated${NC}"
         else
             # If that fails, check if we need xvfb (headless)
@@ -125,9 +127,11 @@ if [ ! -f "taskcoachlib/gui/icons.py" ]; then
                     echo -e "${YELLOW}Installing xvfb for headless operation...${NC}"
                     sudo apt-get install -y xvfb
                 fi
-                xvfb-run -a python3 icons.in/make.py 2>&1 | tail -5
+                xvfb-run -a python3 make.py 2>&1 | tail -5
+                cd "$SCRIPT_DIR"
                 echo -e "${GREEN}✓ Icons generated (headless)${NC}"
             else
+                cd "$SCRIPT_DIR"
                 echo -e "${RED}✗ Failed to generate icons${NC}"
                 exit 1
             fi
@@ -145,9 +149,11 @@ echo -e "${BLUE}[6/7] Generating template resources...${NC}"
 if [ ! -f "taskcoachlib/persistence/xml/templates.py" ]; then
     if [ -d "templates.in" ]; then
         echo "Generating templates..."
+        cd templates.in
 
         # Try without xvfb first (normal desktop)
-        if python3 templates.in/make.py 2>&1 | tail -5; then
+        if python3 make.py 2>&1 | tail -5; then
+            cd "$SCRIPT_DIR"
             echo -e "${GREEN}✓ Templates generated${NC}"
         else
             # If that fails, check if we need xvfb (headless)
@@ -157,9 +163,11 @@ if [ ! -f "taskcoachlib/persistence/xml/templates.py" ]; then
                     echo -e "${YELLOW}Installing xvfb for headless operation...${NC}"
                     sudo apt-get install -y xvfb
                 fi
-                xvfb-run -a python3 templates.in/make.py 2>&1 | tail -5
+                xvfb-run -a python3 make.py 2>&1 | tail -5
+                cd "$SCRIPT_DIR"
                 echo -e "${GREEN}✓ Templates generated (headless)${NC}"
             else
+                cd "$SCRIPT_DIR"
                 echo -e "${RED}✗ Failed to generate templates${NC}"
                 exit 1
             fi
