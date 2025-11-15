@@ -122,7 +122,7 @@ Expected output: `TaskCoach version: 1.5.0`
 ./test_taskcoach.sh
 ```
 
-This runs 14+ tests to verify everything works.
+This runs 12 tests to verify all dependencies and prerequisites.
 
 ## Usage Examples
 
