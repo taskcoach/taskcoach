@@ -77,7 +77,7 @@ echo
 
 # Create virtual environment for packages not in Debian repos
 echo -e "${BLUE}[3/7] Creating virtual environment...${NC}"
-VENV_PATH="$HOME/.taskcoach-venv"
+VENV_PATH="$SCRIPT_DIR/.venv"
 
 if [ -d "$VENV_PATH" ]; then
     echo -e "${YELLOW}Virtual environment already exists at $VENV_PATH${NC}"
@@ -92,7 +92,7 @@ if [ -d "$VENV_PATH" ]; then
     fi
 else
     python3 -m venv "$VENV_PATH"
-    echo -e "${GREEN}✓ Virtual environment created at $VENV_PATH${NC}"
+    echo -e "${GREEN}✓ Virtual environment created in project directory${NC}"
 fi
 echo
 
@@ -178,7 +178,7 @@ cat > "$SCRIPT_DIR/taskcoach-run.sh" << 'EOFLAUNCH'
 #!/bin/bash
 # TaskCoach launcher with virtual environment
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VENV_PATH="$HOME/.taskcoach-venv"
+VENV_PATH="$SCRIPT_DIR/.venv"
 
 if [ ! -d "$VENV_PATH" ]; then
     echo "Error: Virtual environment not found at $VENV_PATH"
@@ -259,7 +259,7 @@ echo -e "${GREEN}========================================${NC}"
 echo
 echo "TaskCoach has been set up with:"
 echo "  • System packages from Debian repos (wxPython, numpy, lxml, etc.)"
-echo "  • Virtual environment at: $VENV_PATH"
+echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
 echo "  • Additional packages in venv (desktop3, lockfile, gntp, distro, pypubsub)"
 echo
 echo "You can now run TaskCoach with:"

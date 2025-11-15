@@ -57,11 +57,13 @@ sudo apt-get install -y \
 For packages not available in Debian repos (desktop3, lockfile, gntp, distro, pypubsub):
 
 ```bash
-# Create virtual environment
-python3 -m venv ~/.taskcoach-venv
+cd /path/to/taskcoach
+
+# Create virtual environment in the project directory
+python3 -m venv .venv
 
 # Activate it
-source ~/.taskcoach-venv/bin/activate
+source .venv/bin/activate
 
 # Install remaining dependencies
 pip install desktop3 lockfile gntp distro pypubsub
@@ -93,7 +95,7 @@ cat > taskcoach-run.sh << 'EOF'
 #!/bin/bash
 # Activate virtual environment and run TaskCoach
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source ~/.taskcoach-venv/bin/activate
+source "$SCRIPT_DIR/.venv/bin/activate"
 cd "$SCRIPT_DIR"
 python3 taskcoach.py "$@"
 EOF
@@ -108,7 +110,7 @@ chmod +x taskcoach-run.sh
 ./taskcoach-run.sh
 
 # Or manually:
-source ~/.taskcoach-venv/bin/activate
+source .venv/bin/activate
 python3 taskcoach.py
 ```
 
@@ -270,7 +272,8 @@ python3 --version  # Should be 3.11.x
 
 ### Check Virtual Environment
 ```bash
-source ~/.taskcoach-venv/bin/activate
+cd /path/to/taskcoach
+source .venv/bin/activate
 pip list | grep -E "(desktop3|lockfile|gntp|distro|pypubsub)"
 deactivate
 ```
@@ -291,14 +294,11 @@ apt list --installed | grep python3-twisted
 To remove TaskCoach:
 
 ```bash
-# Remove virtual environment
-rm -rf ~/.taskcoach-venv
+# Remove TaskCoach directory (includes the venv)
+rm -rf /path/to/taskcoach
 
 # Remove system packages (optional)
 sudo apt-get remove python3-wxgtk4.0
-
-# Remove TaskCoach directory
-rm -rf /path/to/taskcoach
 ```
 
 ## Support

@@ -21,7 +21,7 @@ OPTION 1: Automated Setup (Recommended)
 
 2. That's it! The script will:
    - Install system packages (wxPython, numpy, lxml, twisted, etc.)
-   - Create a virtual environment at ~/.taskcoach-venv
+   - Create a virtual environment at .venv (in the project directory)
    - Install remaining packages (desktop3, lockfile, gntp, distro, pypubsub)
    - Generate required resources (icons, templates)
    - Create a launch script (taskcoach-run.sh)
@@ -42,10 +42,11 @@ OPTION 2: Manual Setup
        python3-lxml python3-numpy python3-dateutil python3-chardet \
        python3-keyring python3-pyparsing python3-pyxdg python3-venv
 
-2. Create virtual environment:
+2. Create virtual environment (in the taskcoach directory):
 
-   python3 -m venv ~/.taskcoach-venv
-   source ~/.taskcoach-venv/bin/activate
+   cd /path/to/taskcoach
+   python3 -m venv .venv
+   source .venv/bin/activate
    pip install desktop3 lockfile gntp distro pypubsub
    deactivate
 
@@ -58,8 +59,9 @@ OPTION 2: Manual Setup
 
    cat > taskcoach-run.sh << 'EOF'
    #!/bin/bash
-   source ~/.taskcoach-venv/bin/activate
-   cd "$(dirname "$0")"
+   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+   source "$SCRIPT_DIR/.venv/bin/activate"
+   cd "$SCRIPT_DIR"
    python3 taskcoach.py "$@"
    EOF
    chmod +x taskcoach-run.sh
@@ -240,9 +242,10 @@ Debian Bookworm implements PEP 668 to prevent:
 
 Using a venv is:
   ✓ Safe and isolated
-  ✓ Easy to remove (just delete ~/.taskcoach-venv)
+  ✓ Easy to remove (just delete the taskcoach directory)
   ✓ Standard Python best practice
   ✓ What Debian recommends
+  ✓ Keeps everything in one place
 
 The taskcoach-run.sh script automatically activates the venv,
 so you don't have to think about it!
