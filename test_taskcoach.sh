@@ -63,6 +63,12 @@ run_test "Version metadata" \
 run_test "wxPython import" \
     "python3 -c 'import wx; assert wx.__version__'"
 
+# Test 4b: wxPython patch verification
+PYTHON_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+PATCH_FILE="$SCRIPT_DIR/.venv/lib/python${PYTHON_VERSION}/site-packages/wx/lib/agw/hypertreelist.py"
+run_test "wxPython patch (background fix)" \
+    "[ -f '$PATCH_FILE' ] && grep -q 'itemrect = wx.Rect(0, item.GetY() + off_h, total_w-1, total_h - off_h)' '$PATCH_FILE'"
+
 # Test 5: Dependencies
 run_test "pypubsub dependency" \
     "python3 -c 'import pubsub'"
