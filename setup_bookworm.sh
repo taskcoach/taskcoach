@@ -3,7 +3,7 @@
 # This script automates the setup and testing of TaskCoach on Debian 12
 # Updated to handle PEP 668 properly
 #
-# Version: 1.1.1
+# Version: 1.1.1.001 (d6f720a)
 # Branch: claude/add-module-loading-logs-01SvgNHroJJfg6fZCGp2mqd5
 # Last Updated: 2025-11-16
 
@@ -21,7 +21,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}TaskCoach Setup for Debian Bookworm${NC}"
-echo -e "${BLUE}Version 1.1.1${NC}"
+echo -e "${BLUE}Version 1.1.1.001 (d6f720a)${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo
 

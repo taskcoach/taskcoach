@@ -3,14 +3,15 @@
 # Script to copy patched wxPython file to venv
 # This applies the fix from wxPython PR #2088 for full-row background coloring
 #
-# Version: 1.1.0
+# Version: 1.1.1.001 (d6f720a)
 # Branch: claude/add-module-loading-logs-01SvgNHroJJfg6fZCGp2mqd5
 # Last Updated: 2025-11-16
 
 set -e
 
 echo "=========================================="
-echo "Applying wxPython Patch to venv (v1.1.0)"
+echo "Applying wxPython Patch to venv"
+echo "Version 1.1.1.001 (d6f720a)"
 echo "=========================================="
 echo ""
 

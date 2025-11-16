@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Test which hypertreelist file is being imported.
 
-Version: 1.1.0
+Version: 1.1.1.001 (d6f720a)
 Branch: claude/add-module-loading-logs-01SvgNHroJJfg6fZCGp2mqd5
 Last Updated: 2025-11-16
 """
@@ -9,7 +9,8 @@ Last Updated: 2025-11-16
 import sys
 
 print("="*70)
-print("wxPython Patch Verification Script v1.1.0")
+print("wxPython Patch Verification Script")
+print("Version 1.1.1.001 (d6f720a)")
 print("Branch: claude/add-module-loading-logs-01SvgNHroJJfg6fZCGp2mqd5")
 print("="*70)
 print()
