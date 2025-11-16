@@ -110,9 +110,10 @@ def convertToAbsTime(toks):
                     hh, mm = toks.timeOfDay.miltime
                     ss = 0
                 else:
-                    hh = toks.timeOfDay.HH % 12 if hasattr(toks.timeOfDay, 'HH') else 0
-                    mm = toks.timeOfDay.MM if hasattr(toks.timeOfDay, 'MM') and toks.timeOfDay.MM else 0
-                    ss = toks.timeOfDay.SS if hasattr(toks.timeOfDay, 'SS') and toks.timeOfDay.SS else 0
+                    # Pyparsing returns parsed integers as strings; convert them
+                    hh = int(toks.timeOfDay.HH) % 12 if hasattr(toks.timeOfDay, 'HH') else 0
+                    mm = int(toks.timeOfDay.MM) if hasattr(toks.timeOfDay, 'MM') and toks.timeOfDay.MM else 0
+                    ss = int(toks.timeOfDay.SS) if hasattr(toks.timeOfDay, 'SS') and toks.timeOfDay.SS else 0
                     if hasattr(toks.timeOfDay, 'ampm') and toks.timeOfDay.ampm == "pm":
                         hh += 12
             timeOfDay = timedelta(0, (hh * 60 + mm) * 60 + ss, 0)
