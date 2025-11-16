@@ -478,8 +478,16 @@ class _CtrlWithSortableColumnsMixin(_BaseCtrlWithColumnsMixin):
             self.SetColumn(columnIndex, columnInfo)
 
 
-class _CtrlWithAutoResizedColumnsMixin(autowidth.AutoColumnWidthMixin):
+class _CtrlWithAutoResizedColumnsMixin(object):
+    """Mixin that saves column widths when user resizes them.
+
+    This replaces the old AutoColumnWidthMixin to provide standard wxWidgets
+    column resize behavior without any auto-fill or auto-adjust logic.
+    """
     def __init__(self, *args, **kwargs):
+        # Remove resizeableColumn parameters if present (no longer used)
+        kwargs.pop("resizeableColumn", None)
+        kwargs.pop("resizeableColumnMinWidth", None)
         super().__init__(*args, **kwargs)
         self.Bind(wx.EVT_LIST_COL_END_DRAG, self.onEndColumnResize)
 
@@ -488,6 +496,15 @@ class _CtrlWithAutoResizedColumnsMixin(autowidth.AutoColumnWidthMixin):
         for index, column in enumerate(self._visibleColumns()):
             column.setWidth(self.GetColumnWidth(index))
         event.Skip()
+
+    # Provide no-op methods for compatibility with old auto-resize code
+    def ToggleAutoResizing(self, on):
+        """No-op for compatibility. Auto-resizing is permanently disabled."""
+        pass
+
+    def IsAutoResizing(self):
+        """Always returns False. Auto-resizing is permanently disabled."""
+        return False
 
 
 class CtrlWithColumnsMixin(

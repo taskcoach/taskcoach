@@ -24,12 +24,17 @@ from wx.lib.agw import hypertreelist as htl
 import wx
 
 
-class _AutoWidthTree(
-    widgets.autowidth.AutoColumnWidthMixin, htl.HyperTreeList
-):
+class _AutoWidthTree(htl.HyperTreeList):
+    """Simple tree for toolbar editor.
+
+    Note: Despite the name, this no longer uses AutoColumnWidthMixin.
+    Uses standard wxWidgets column behavior instead.
+    """
     def __init__(self, *args, **kwargs):
+        # Remove auto-resize parameters if present
+        kwargs.pop("resizeableColumn", None)
+        kwargs.pop("resizeableColumnMinWidth", None)
         super().__init__(*args, **kwargs)
-        self.ToggleAutoResizing(True)
 
     def _get_MainWindow(self):
         return self.GetMainWindow()
