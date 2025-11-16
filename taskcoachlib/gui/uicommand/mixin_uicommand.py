@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib.domain import task, note, category, effort, attachment
+from taskcoachlib.i18n import _
 import wx
 
 
@@ -202,6 +203,17 @@ class PopupButtonMixin(object):
         except AttributeError:
             self.__menu = self.createPopupMenu()  # pylint: disable=W0201
             args = [self.__menu]
+
+        # Check if menu has any items
+        if self.__menu.GetMenuItemCount() == 0:
+            wx.MessageBox(
+                _("No templates available. Create a template first by saving a task as a template."),
+                _("No Templates"),
+                wx.OK | wx.ICON_INFORMATION,
+                self.mainWindow()
+            )
+            return
+
         if self.toolbar:
             args.append(self.menuXY())
         self.mainWindow().PopupMenu(*args)  # pylint: disable=W0142
@@ -211,9 +223,18 @@ class PopupButtonMixin(object):
         return self.mainWindow().ScreenToClient((self.menuX(), self.menuY()))
 
     def menuX(self):
-        buttonWidth = self.toolbar.GetToolSize()[0]
-        mouseX = wx.GetMousePosition()[0]
-        return mouseX - 0.5 * buttonWidth
+        # Get the tool's position in the toolbar
+        toolRect = self.toolbar.GetToolRect(self.id)
+        if toolRect is not None:
+            # Convert toolbar-local position to screen coordinates
+            toolbarScreenPos = self.toolbar.GetScreenPosition()
+            # Align to the left edge of the button
+            return toolbarScreenPos[0] + toolRect[0]
+        else:
+            # Fallback to mouse position if tool rect not available
+            buttonWidth = self.toolbar.GetToolSize()[0]
+            mouseX = wx.GetMousePosition()[0]
+            return mouseX - 0.5 * buttonWidth
 
     def menuY(self):
         toolbarY = self.toolbar.GetScreenPosition()[1]
