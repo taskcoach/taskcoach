@@ -86,10 +86,16 @@ def convertToAbsTime(toks):
             }[toks.timeOfDay]
         else:
             hhmmss = toks.timeparts
-            if hhmmss.miltime:
+            # In newer pyparsing, Group results might be lists, not objects with attributes
+            # Access the first element if it's a list
+            if isinstance(hhmmss, (list, tuple)) and len(hhmmss) > 0:
+                hhmmss = hhmmss[0]
+
+            # Check if hhmmss has the expected attributes (hasattr is safe for both objects and strings)
+            if hasattr(hhmmss, 'miltime') and hhmmss.miltime:
                 hh, mm = hhmmss.miltime
                 ss = 0
-            else:
+            elif hasattr(hhmmss, 'HH'):
                 hh, mm, ss = (hhmmss.HH % 12), hhmmss.MM, hhmmss.SS
                 if not mm:
                     mm = 0
@@ -97,6 +103,18 @@ def convertToAbsTime(toks):
                     ss = 0
                 if toks.timeOfDay.ampm == "pm":
                     hh += 12
+            else:
+                # Fallback: hhmmss might be the parsed result object itself
+                # Try to access named results from toks.timeOfDay instead
+                if hasattr(toks.timeOfDay, 'miltime') and toks.timeOfDay.miltime:
+                    hh, mm = toks.timeOfDay.miltime
+                    ss = 0
+                else:
+                    hh = toks.timeOfDay.HH % 12 if hasattr(toks.timeOfDay, 'HH') else 0
+                    mm = toks.timeOfDay.MM if hasattr(toks.timeOfDay, 'MM') and toks.timeOfDay.MM else 0
+                    ss = toks.timeOfDay.SS if hasattr(toks.timeOfDay, 'SS') and toks.timeOfDay.SS else 0
+                    if hasattr(toks.timeOfDay, 'ampm') and toks.timeOfDay.ampm == "pm":
+                        hh += 12
             timeOfDay = timedelta(0, (hh * 60 + mm) * 60 + ss, 0)
     else:
         timeOfDay = timedelta(
