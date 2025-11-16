@@ -71,24 +71,11 @@ from importlib.abc import MetaPathFinder
 from importlib.util import spec_from_file_location
 
 
-def _log_patch(message):
-    """Log patch-related messages to stdout for tracing."""
-    print(f"[WXPYTHON_PATCH] {message}", file=sys.stdout, flush=True)
-
-
-_log_patch("="*70)
-_log_patch("usercustomize.py is being loaded")
-_log_patch("Initializing wxPython hypertreelist patch import hook")
-_log_patch("="*70)
-
-
 class WxPatchFinder(MetaPathFinder):
     """Import hook to replace wx.lib.agw.hypertreelist with patched version."""
 
     def find_spec(self, fullname, path, target=None):
         if fullname == 'wx.lib.agw.hypertreelist':
-            _log_patch(f"Import hook triggered for: {fullname}")
-
             # Path to our patched file
             venv_path = sys.prefix
             patched_file = os.path.join(
@@ -96,15 +83,9 @@ class WxPatchFinder(MetaPathFinder):
                 'site-packages', 'wx', 'lib', 'agw', 'hypertreelist.py'
             )
 
-            _log_patch(f"Looking for patched file at: {patched_file}")
-
             if os.path.exists(patched_file):
-                _log_patch("✓ Patched file found! Loading patched version...")
                 spec = spec_from_file_location(fullname, patched_file)
-                _log_patch(f"✓ Module spec created: {spec}")
                 return spec
-            else:
-                _log_patch("✗ Patched file NOT found! Will use system version.")
 
         return None
 
@@ -113,14 +94,6 @@ class WxPatchFinder(MetaPathFinder):
 # This ensures it's checked before the standard import machinery
 if not any(isinstance(finder, WxPatchFinder) for finder in sys.meta_path):
     sys.meta_path.insert(0, WxPatchFinder())
-    _log_patch("✓ WxPatchFinder installed at position 0 in sys.meta_path")
-    _log_patch(f"sys.meta_path now has {len(sys.meta_path)} finders")
-else:
-    _log_patch("WxPatchFinder already installed")
-
-_log_patch("")
-_log_patch("Import hook installation complete")
-_log_patch("="*70)
 EOF
 
 echo "✓ Import hook installed!"

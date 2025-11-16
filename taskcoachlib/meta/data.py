@@ -29,6 +29,27 @@ release_month = "November"  # Month of the release in plain English
 release_year = "2025"  # Year of the release as string
 release_status = "stable"  # One of 'alpha', 'beta', 'stable'
 
+# Get git commit info for patch level
+def get_git_info():
+    """Get git commit count and hash for version identification."""
+    import subprocess, os
+    try:
+        commit_count = subprocess.check_output(['git', 'rev-list', '--count', 'HEAD'],
+                                               stderr=subprocess.DEVNULL,
+                                               cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))).decode().strip()
+        commit_hash = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'],
+                                              stderr=subprocess.DEVNULL,
+                                              cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))).decode().strip()
+        return commit_count, commit_hash
+    except Exception:
+        return None, None
+
+git_commit_count, git_commit_hash = get_git_info()
+if git_commit_count:
+    version_with_patch = f"{version}.{git_commit_count}"
+else:
+    version_with_patch = version
+
 # No editing needed below this line for doing a release.
 
 import re, datetime

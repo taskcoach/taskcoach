@@ -309,18 +309,6 @@ from wx.lib.agw.customtreectrl import EVT_TREE_ITEM_CHECKING, EVT_TREE_ITEM_CHEC
 # Python 2/3 compatibility helper
 import six
 
-# PATCH LOGGING: Trace when this patched module is loaded
-import sys
-def _log_patch(message):
-    """Log patch-related messages to stdout for tracing."""
-    print(f"[WXPYTHON_PATCH] {message}", file=sys.stdout, flush=True)
-
-_log_patch("="*70)
-_log_patch("PATCHED wx.lib.agw.hypertreelist module is being loaded")
-_log_patch("This version includes fixes for TR_FULL_ROW_HIGHLIGHT and")
-_log_patch("TR_FILL_WHOLE_COLUMN_BACKGROUND background coloring issues")
-_log_patch("="*70)
-
 # Version Info
 __version__ = "1.4"
 
