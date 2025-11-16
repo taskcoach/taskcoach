@@ -479,6 +479,12 @@ class _CtrlWithSortableColumnsMixin(_BaseCtrlWithColumnsMixin):
 
 
 class _CtrlWithAutoResizedColumnsMixin(autowidth.AutoColumnWidthMixin):
+    """Mixin that provides auto-column-resizing and saves column widths.
+
+    When auto-resize is enabled, one column (typically subject/tree column)
+    automatically fills remaining window space. When disabled, columns use
+    standard wxWidgets resize behavior.
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.Bind(wx.EVT_LIST_COL_END_DRAG, self.onEndColumnResize)
