@@ -212,6 +212,10 @@ class Application(object, metaclass=patterns.Singleton):
         # pylint: disable=W0201
         from taskcoachlib import meta
 
+        # Log version info at startup
+        print(f"Task Coach {meta.version_with_patch} (commit {meta.git_commit_hash})" if meta.git_commit_hash
+              else f"Task Coach {meta.version}")
+
         if self.settings.getboolean("version", "notify"):
             self.__version_checker = meta.VersionChecker(self.settings)
             self.__version_checker.start()
