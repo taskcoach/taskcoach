@@ -1,6 +1,18 @@
 # Welcome to Task Coach - Your friendly task manager
 
-Below you find information about running, testing, installing, and 
+---
+
+## ⚠️ CRITICAL: Debian Bookworm Users
+
+**If you're on Debian 12 (Bookworm), you MUST read [CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md) first!**
+
+Debian Bookworm ships wxPython 4.2.0 which has critical bugs affecting category row background coloring. A patch is automatically applied during setup, but understanding why it's needed is important for future maintenance.
+
+**TL;DR**: Run `./setup_bookworm.sh` and the patch is applied automatically at step [6/7].
+
+---
+
+Below you find information about running, testing, installing, and
 developing Task Coach.
 
 ## License
