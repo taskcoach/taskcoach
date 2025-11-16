@@ -2,6 +2,10 @@
 # TaskCoach Setup Script for Debian Bookworm
 # This script automates the setup and testing of TaskCoach on Debian 12
 # Updated to handle PEP 668 properly
+#
+# Version: 1.1.1.003 (f20c4dc)
+# Branch: claude/add-module-loading-logs-01SvgNHroJJfg6fZCGp2mqd5
+# Last Updated: 2025-11-16
 
 set -e  # Exit on error
 
@@ -17,6 +21,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}TaskCoach Setup for Debian Bookworm${NC}"
+echo -e "${BLUE}Version 1.1.1.003 (f20c4dc)${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo
 
@@ -108,7 +113,7 @@ echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
 echo
 
 # Check launch script
-echo -e "${BLUE}[5/5] Checking launch script...${NC}"
+echo -e "${BLUE}[5/7] Checking launch script...${NC}"
 if [ -f "$SCRIPT_DIR/taskcoach-run.sh" ]; then
     chmod +x "$SCRIPT_DIR/taskcoach-run.sh"
     echo -e "${GREEN}✓ Launch script is ready: taskcoach-run.sh${NC}"
@@ -212,6 +217,20 @@ else
 fi
 
 echo
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}[6/7] Applying wxPython patch...${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo
+
+# Apply the wxPython background color patch automatically
+if [ -f "$SCRIPT_DIR/apply-wxpython-patch.sh" ]; then
+    "$SCRIPT_DIR/apply-wxpython-patch.sh"
+else
+    echo -e "${YELLOW}⚠ Warning: apply-wxpython-patch.sh not found${NC}"
+    echo "  Category row background coloring may not work correctly"
+fi
+
+echo
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}Setup completed successfully!${NC}"
 echo -e "${GREEN}========================================${NC}"
@@ -220,6 +239,7 @@ echo "TaskCoach has been set up with:"
 echo "  • System packages from Debian repos (wxPython, numpy, lxml, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
 echo "  • Additional packages in venv (desktop3, lockfile, gntp, distro, pypubsub)"
+echo "  • wxPython background color patch (for category row coloring)"
 echo
 echo "You can now run TaskCoach with:"
 echo -e "  ${BLUE}./taskcoach-run.sh${NC}"

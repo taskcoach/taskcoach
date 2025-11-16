@@ -1,13 +1,27 @@
 # -*- coding: utf-8 -*-
 
+import sys
 import wx
 import inspect
 from collections import namedtuple
 from wx.core import Window
 
+# Logging configuration for tracing module loading and patch execution
+def _log_patch(message):
+    """Log patch-related messages to stdout for tracing."""
+    print(f"[MONKEYPATCH] {message}", file=sys.stdout, flush=True)
+
+_log_patch("="*70)
+_log_patch("Module taskcoachlib.workarounds.monkeypatches is being loaded")
+_log_patch("="*70)
+
 try:
     inspect.getargspec
+    _log_patch("inspect.getargspec exists - no patch needed")
 except AttributeError:
+    _log_patch("inspect.getargspec is missing (Python 3.11+)")
+    _log_patch("Applying inspect.getargspec workaround patch...")
+
     ArgSpec = namedtuple("ArgSpec", "args varargs keywords defaults")
 
     # Workaround for getargspec() missing inspect.getargspec() for python3.11 or later
@@ -31,6 +45,7 @@ except AttributeError:
 
         Deprecated since Python 3.5, use `inspect.getfullargspec()`.
         """
+        _log_patch(f"inspect.getargspec called for function: {func.__name__ if hasattr(func, '__name__') else func}")
         from inspect import getfullargspec
 
         args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = (
@@ -44,6 +59,11 @@ except AttributeError:
         return ArgSpec(args, varargs, varkw, defaults)
 
     inspect.getargspec = getargspec
+    _log_patch("✓ inspect.getargspec patch applied successfully")
+
+_log_patch("")
+_log_patch("Applying Window.SetSize patch for GTK assertion fix...")
+_log_patch("Original method: wx.core.Window.SetSize")
 
 Window_SetSizeOld = Window.SetSize
 
@@ -60,6 +80,7 @@ def Window_SetSizeNew(self, *args, **kw):
     This monkey patch fixed the Gtk-CRITICAL **: 21:21:53.043:
     gtk_widget_set_size_request: assertion 'height >= -1' failed
     """
+    _log_patch(f"Window.SetSize called with args={args}, kw={kw}")
     if len(args) <= 1:
         arg = args[0]
         if arg is wx.Size:
@@ -89,3 +110,10 @@ def Window_SetSizeNew(self, *args, **kw):
 
 
 Window.SetSize = Window_SetSizeNew
+_log_patch("✓ Window.SetSize patch applied successfully")
+
+_log_patch("")
+_log_patch("="*70)
+_log_patch("All monkeypatches have been applied successfully")
+_log_patch("Module loading complete")
+_log_patch("="*70)

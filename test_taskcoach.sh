@@ -1,6 +1,10 @@
 #!/bin/bash
 # Quick test script for TaskCoach
 # Tests various functionality to ensure proper operation
+#
+# Version: 1.1.1.003 (f20c4dc)
+# Branch: claude/add-module-loading-logs-01SvgNHroJJfg6fZCGp2mqd5
+# Last Updated: 2025-11-16
 
 # Colors
 GREEN='\033[0;32m'
@@ -23,6 +27,7 @@ fi
 
 echo
 echo -e "${BLUE}TaskCoach Test Suite${NC}"
+echo -e "${BLUE}Version 1.1.1.003 (f20c4dc)${NC}"
 echo "===================="
 echo
 
@@ -62,6 +67,12 @@ run_test "Version metadata" \
 # Test 4: wxPython import
 run_test "wxPython import" \
     "python3 -c 'import wx; assert wx.__version__'"
+
+# Test 4b: wxPython patch verification
+PYTHON_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+PATCH_FILE="$SCRIPT_DIR/.venv/lib/python${PYTHON_VERSION}/site-packages/wx/lib/agw/hypertreelist.py"
+run_test "wxPython patch (background fix)" \
+    "[ -f '$PATCH_FILE' ] && grep -q 'itemrect = wx.Rect(0, item.GetY() + off_h, total_w-1, total_h - off_h)' '$PATCH_FILE'"
 
 # Test 5: Dependencies
 run_test "pypubsub dependency" \
