@@ -3,7 +3,7 @@
 Test script to verify monkeypatch logging functionality.
 This simulates the module loading process and shows expected log output.
 
-Version: 1.1.1.001 (d6f720a)
+Version: 1.1.1.004 (e47b976)
 Branch: claude/add-module-loading-logs-01SvgNHroJJfg6fZCGp2mqd5
 Last Updated: 2025-11-16
 """
@@ -12,7 +12,7 @@ import sys
 
 print("="*70)
 print("SIMULATED MONKEYPATCH LOGGING TEST")
-print("Version 1.1.1.001 (d6f720a)")
+print("Version 1.1.1.004 (e47b976)")
 print("="*70)
 print()
 print("When taskcoach.py runs, it imports taskcoachlib.workarounds.monkeypatches")
