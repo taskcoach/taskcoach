@@ -160,7 +160,7 @@ class TemplatesDialog(sized_controls.SizedDialog):
 
     def appendTemplate(self, parentItem, task):
         item = self._templateList.AppendItem(parentItem, task.subject())
-        self._templateList.SetItemData(item, wx.TreeItemData(task))
+        self._templateList.SetItemData(item, task)
         for child in task.children():
             self.appendTemplate(item, child)
         return item
@@ -168,9 +168,7 @@ class TemplatesDialog(sized_controls.SizedDialog):
     def onValueChanged(self, event):
         event.Skip()
         if self._GetSelection().IsOk() and not self._changing:
-            task = self._templateList.GetItemData(
-                self._GetSelection()
-            ).GetData()
+            task = self._templateList.GetItemData(self._GetSelection())
             task.setSubject(self._subjectCtrl.GetValue())
             for ctrl, name in [
                 (self._plannedStartDateTimeCtrl, "plannedstartdatetmpl"),
@@ -205,7 +203,7 @@ class TemplatesDialog(sized_controls.SizedDialog):
             )
             self.enableEditPanel(selectionOK)
             if selectionOK:
-                task = self._templateList.GetItemData(selection).GetData()
+                task = self._templateList.GetItemData(selection)
                 if task is None:
                     for ctrl in self._taskControls:
                         ctrl.SetValue("")
@@ -228,7 +226,7 @@ class TemplatesDialog(sized_controls.SizedDialog):
             self._changing = False
 
     def OnDelete(self, event):  # pylint: disable=W0613
-        task = self._templateList.GetItemData(self._GetSelection()).GetData()
+        task = self._templateList.GetItemData(self._GetSelection())
         index = self._templates.tasks().index(task)
         self._templates.deleteTemplate(index)
         self._templateList.Delete(self._GetSelection())
@@ -237,18 +235,18 @@ class TemplatesDialog(sized_controls.SizedDialog):
         selection = self._GetSelection()
         prev = self._templateList.GetPrevSibling(selection)
         prev = self._templateList.GetPrevSibling(prev)
-        task = self._templateList.GetItemData(selection).GetData()
+        task = self._templateList.GetItemData(selection)
         self._templateList.Delete(selection)
         if prev.IsOk():
             item = self._templateList.InsertItem(
                 self._root, prev, task.subject()
             )
-            self._templateList.SetItemData(item, wx.TreeItemData(task))
+            self._templateList.SetItemData(item, task)
         else:
             item = self._templateList.PrependItem(
                 self._root, task.subject()
             )
-            self._templateList.SetItemData(item, wx.TreeItemData(task))
+            self._templateList.SetItemData(item, task)
         for child in task.children():
             self.appendTemplate(item, child)
         index = self._templates.tasks().index(task)
@@ -258,12 +256,12 @@ class TemplatesDialog(sized_controls.SizedDialog):
     def OnDown(self, event):  # pylint: disable=W0613
         selection = self._GetSelection()
         next = self._templateList.GetNextSibling(selection)
-        task = self._templateList.GetItemData(selection).GetData()
+        task = self._templateList.GetItemData(selection)
         self._templateList.Delete(selection)
         item = self._templateList.InsertItem(
             self._root, next, task.subject()
         )
-        self._templateList.SetItemData(item, wx.TreeItemData(task))
+        self._templateList.SetItemData(item, task)
         for child in task.children():
             self.appendTemplate(item, child)
         index = self._templates.tasks().index(task)
