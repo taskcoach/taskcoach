@@ -27,6 +27,7 @@ import wx
 class _AutoWidthTree(
     widgets.autowidth.AutoColumnWidthMixin, htl.HyperTreeList
 ):
+    """Simple tree for toolbar editor with auto-column-resizing enabled."""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.ToggleAutoResizing(True)

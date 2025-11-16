@@ -76,10 +76,15 @@ class AutoColumnWidthMixin(object):
 
     def OnEndColumnDrag(self, event):
         if event.Column == self.ResizeColumn and self.GetColumnCount() > 1:
+            # User manually resized the ResizeColumn
             extra_width = self.__oldResizeColumnWidth - self.GetColumnWidth(
                 self.ResizeColumn
             )
             self.DistributeWidthAcrossColumns(extra_width)
+            # Don't call DoResize - respect the user's manual sizing
+        else:
+            # User resized a different column - recalculate ResizeColumn to fill space
+            wx.CallAfter(self.DoResize)
         self.Bind(wx.EVT_SIZE, self.OnResize)
         # Only auto-resize if the user dragged a different column
         # If they dragged the ResizeColumn itself, respect their manual sizing

@@ -472,7 +472,8 @@ class TreeListCtrl(
 
     @staticmethod
     def __get_style():
-        return wx.WANTS_CHARS
+        # Enable horizontal scrollbar for natural column resizing
+        return wx.WANTS_CHARS | wx.HSCROLL
 
     @staticmethod
     def __get_agw_style():
