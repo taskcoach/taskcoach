@@ -2,6 +2,16 @@
 
 This guide explains how to test TaskCoach on Debian 12 (Bookworm).
 
+---
+
+## ⚠️ IMPORTANT: wxPython Patch Required
+
+Debian Bookworm ships wxPython 4.2.0, which has critical bugs affecting category row background coloring. This setup automatically applies a patch at step [6/7].
+
+**For complete details, see [CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md)**
+
+---
+
 ## System Requirements
 
 - **OS**: Debian 12 (Bookworm)
