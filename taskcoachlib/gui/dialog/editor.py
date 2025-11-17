@@ -1265,8 +1265,9 @@ class EditBook(widgets.Notebook):
         for page_name in page_names:
             page = self.createPage(page_name, task_file, items_are_new)
             self.AddPage(page, page.pageTitle, page.pageIcon)
-        width, height = self.__get_minimum_page_size()
-        self.SetMinSize((width, self.GetHeightForPageHeight(height)))
+        # DISABLED: SetMinSize was locking entire notebook to max page size
+        # width, height = self.__get_minimum_page_size()
+        # self.SetMinSize((width, self.GetHeightForPageHeight(height)))
 
     def onPageChanged(self, event):
         self.GetPage(event.Selection).selected()
@@ -1405,7 +1406,9 @@ class EditBook(widgets.Notebook):
         perspective = self.perspective()
         if perspective:
             try:
-                self.LoadPerspective(perspective)
+                # DISABLED: LoadPerspective was restoring stale AuiNotebook perspective with broken sizing
+                # self.LoadPerspective(perspective)
+                pass
             except:  # pylint: disable=W0702
                 pass
         if items_are_new:

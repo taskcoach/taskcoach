@@ -49,6 +49,8 @@ class VirtualListCtrl(
             *args,
             **kwargs
         )
+        # Override GetEffectiveMinSize() which returns BestSize - allows sizer to shrink widget
+        self.SetMinSize((100, 50))
         self.__parent = parent
         self.bindEventHandlers(selectCommand, editCommand)
 
