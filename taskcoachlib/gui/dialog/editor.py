@@ -2022,12 +2022,12 @@ class Editor(BalloonTipManager, widgets.Dialog):
         if self.__timer is not None:
             IdProvider.put(self.__timer.GetId())
         IdProvider.put(self.__new_effort_id)
-        _debug_log("  calling event.Skip() to let wx handle destruction")
-        # Let wxWidgets handle destruction timing. Calling Destroy() directly
-        # causes crashes because GTK may still have pending async layout work.
-        # event.Skip() tells wx to continue processing the close event and
-        # destroy the window when it's safe to do so.
-        event.Skip()
+        _debug_log("  processing pending events and destroying")
+        # Process all pending events to let GTK complete any async layout work
+        # before destroying the window. This is the proper wx pattern for
+        # ensuring clean destruction on GTK.
+        wx.SafeYield()
+        self.Destroy()
         _debug_log("on_close_editor END")
 
     def on_activate(self, event):
