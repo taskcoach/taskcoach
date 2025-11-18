@@ -2008,7 +2008,8 @@ class Editor(BalloonTipManager, widgets.Dialog):
             return
         self.__closing = True
 
-        event.Skip()
+        # Note: Do NOT call event.Skip() here since we're handling destruction
+        # ourselves with self.Destroy(). Calling both causes double-destroy crash.
         _debug_log("  closing edit book")
         self._interior.close_edit_book()
         _debug_log("  removing observers")
