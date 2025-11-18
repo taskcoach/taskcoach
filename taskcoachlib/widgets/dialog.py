@@ -24,14 +24,21 @@ import wx
 import wx.html
 from wx.lib import sized_controls
 import os
+import sys
 from ..tools import wxhelper
+
+def _debug_log(msg):
+    """Debug logging for dialog initialization tracking."""
+    print(f"[DIALOG DEBUG] {msg}", file=sys.stderr, flush=True)
 
 
 class Dialog(sized_controls.SizedDialog):
     def __init__(
         self, parent, title, bitmap="edit", direction=None, *args, **kwargs
     ):
+        _debug_log(f"Dialog.__init__ START: {title}")
         self._buttonTypes = kwargs.get("buttonTypes", wx.OK | wx.CANCEL)
+        _debug_log("  calling super().__init__")
         super().__init__(
             parent,
             -1,
@@ -41,6 +48,7 @@ class Dialog(sized_controls.SizedDialog):
             | wx.MAXIMIZE_BOX
             | wx.MINIMIZE_BOX,
         )
+        _debug_log("  super().__init__ done")
         self.SetIcon(
             wx.ArtProvider.GetIcon(bitmap, wx.ART_FRAME_ICON, (16, 16))
         )
@@ -60,20 +68,30 @@ class Dialog(sized_controls.SizedDialog):
                 exStyle | win32con.WS_EX_APPWINDOW,
             )
 
+        _debug_log("  getting contents pane")
         self._panel = self.GetContentsPane()
         self._panel.SetSizerType("vertical")
         self._panel.SetSizerProps(expand=True, proportion=1)
         self._direction = direction
+        _debug_log("  calling createInterior()")
         self._interior = self.createInterior()
+        _debug_log("  createInterior() done")
         self._interior.SetSizerProps(expand=True, proportion=1)
+        _debug_log("  calling fillInterior()")
         self.fillInterior()
+        _debug_log("  fillInterior() done")
+        _debug_log("  calling createButtons()")
         self._buttons = self.createButtons()
+        _debug_log("  createButtons() done")
+        _debug_log("  calling Fit()")
         self._panel.Fit()
         self.Fit()
+        _debug_log("  Fit() done")
         self.CentreOnParent()
         if not operating_system.isGTK():
             wx.CallAfter(self.Raise)
         wx.CallAfter(self._panel.SetFocus)
+        _debug_log(f"Dialog.__init__ END: {title}")
 
     def SetExtraStyle(self, exstyle):
         # SizedDialog's constructor calls this to set WS_EX_VALIDATE_RECURSIVELY. We don't need

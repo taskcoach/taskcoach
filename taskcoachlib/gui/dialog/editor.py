@@ -31,7 +31,12 @@ from pubsub import pub
 from taskcoachlib.thirdparty import smartdatetimectrl as sdtc
 from taskcoachlib.help.balloontips import BalloonTipManager
 import os.path
+import sys
 import wx
+
+def _debug_log(msg):
+    """Debug logging for editor initialization tracking."""
+    print(f"[EDITOR DEBUG] {msg}", file=sys.stderr, flush=True)
 
 
 class Page(patterns.Observer, widgets.BookPage):
@@ -1248,11 +1253,18 @@ class EditBook(widgets.Notebook):
     domainObject = "subclass responsibility"
 
     def __init__(self, parent, items, taskFile, settings, items_are_new):
+        _debug_log(f"EditBook.__init__ START: {self.__class__.__name__}")
         self.items = items
         self.settings = settings
+        _debug_log("  calling Notebook super().__init__")
         super().__init__(parent)
+        _debug_log("  Notebook super().__init__ done")
+        _debug_log("  calling addPages()")
         self.addPages(taskFile, items_are_new)
+        _debug_log("  addPages() done")
+        _debug_log("  calling __load_perspective()")
         self.__load_perspective(items_are_new)
+        _debug_log(f"EditBook.__init__ END: {self.__class__.__name__}")
 
     def NavigateBook(self, forward):
         curSel = self.GetSelection()
@@ -1262,9 +1274,13 @@ class EditBook(widgets.Notebook):
 
     def addPages(self, task_file, items_are_new):
         page_names = self.settings.getlist(self.settings_section(), "pages")
+        _debug_log(f"    addPages: pages to create: {page_names}")
         for page_name in page_names:
+            _debug_log(f"    creating page: {page_name}")
             page = self.createPage(page_name, task_file, items_are_new)
+            _debug_log(f"    page created, calling AddPage: {page_name}")
             self.AddPage(page, page.pageTitle, page.pageIcon)
+            _debug_log(f"    AddPage done: {page_name}")
         # DISABLED: SetMinSize was locking entire notebook to max page size
         # width, height = self.__get_minimum_page_size()
         # self.SetMinSize((width, self.GetHeightForPageHeight(height)))
@@ -1852,15 +1868,18 @@ class Editor(BalloonTipManager, widgets.Dialog):
     def __init__(
         self, parent, items, settings, container, task_file, *args, **kwargs
     ):
+        _debug_log(f"Editor.__init__ START: {self.__class__.__name__}")
         self._items = items
         self._settings = settings
         self._taskFile = task_file
         self.__items_are_new = kwargs.pop("items_are_new", False)
         column_name = kwargs.pop("columnName", "")
         self.__call_after = kwargs.get("call_after", wx.CallAfter)
+        _debug_log("  calling Dialog super().__init__")
         super().__init__(
             parent, self.__title(), buttonTypes=wx.ID_CLOSE, *args, **kwargs
         )
+        _debug_log("  Dialog super().__init__ done")
         if not column_name:
             if self._interior.perspective() and hasattr(
                 self._interior, "GetSelection"
@@ -1871,8 +1890,10 @@ class Editor(BalloonTipManager, widgets.Dialog):
             else:
                 column_name = "subject"
         if column_name:
+            _debug_log(f"  setting focus on column: {column_name}")
             self._interior.setFocus(column_name)
 
+        _debug_log("  registering observers")
         patterns.Publisher().registerObserver(
             self.on_item_removed,
             eventType=container.removeItemEventType(),
@@ -1901,12 +1922,15 @@ class Editor(BalloonTipManager, widgets.Dialog):
         # Position and size handling is done by WindowSizeAndPositionTracker
         # which will center on parent if no saved position exists, or
         # restore the last saved position
+        _debug_log("  creating UI commands")
         self.__create_ui_commands()
+        _debug_log("  creating dimensions tracker")
         self.__dimensions_tracker = (
             windowdimensionstracker.WindowSizeAndPositionTracker(
                 self, settings, self._interior.settings_section()
             )
         )
+        _debug_log(f"Editor.__init__ END: {self.__class__.__name__}")
 
     def __on_timer(self, event):
         if not self.IsShown():
@@ -1951,8 +1975,11 @@ class Editor(BalloonTipManager, widgets.Dialog):
         )
 
     def on_close_editor(self, event):
+        _debug_log("on_close_editor START")
         event.Skip()
+        _debug_log("  closing edit book")
         self._interior.close_edit_book()
+        _debug_log("  removing observers")
         patterns.Publisher().removeObserver(self.on_item_removed)
         patterns.Publisher().removeObserver(self.on_subject_changed)
         # On Mac OS X, the text control does not lose focus when
@@ -1962,10 +1989,12 @@ class Editor(BalloonTipManager, widgets.Dialog):
         if self.__timer is not None:
             IdProvider.put(self.__timer.GetId())
         IdProvider.put(self.__new_effort_id)
+        _debug_log("  calling wx.CallAfter(self.Destroy)")
         # Use CallAfter to defer destruction until pending events (including
         # layout calculations) complete. This prevents crashes when the dialog
         # is closed very quickly (e.g., ESC pressed before initialization finishes).
         wx.CallAfter(self.Destroy)
+        _debug_log("on_close_editor END")
 
     def on_activate(self, event):
         event.Skip()
