@@ -2010,8 +2010,6 @@ class Editor(BalloonTipManager, widgets.Dialog):
             return
         self.__closing = True
 
-        # Note: Do NOT call event.Skip() here since we're handling destruction
-        # ourselves with self.Destroy(). Calling both causes double-destroy crash.
         _debug_log("  closing edit book")
         self._interior.close_edit_book()
         _debug_log("  removing observers")
@@ -2024,8 +2022,12 @@ class Editor(BalloonTipManager, widgets.Dialog):
         if self.__timer is not None:
             IdProvider.put(self.__timer.GetId())
         IdProvider.put(self.__new_effort_id)
-        _debug_log("  calling self.Destroy()")
-        self.Destroy()
+        _debug_log("  calling event.Skip() to let wx handle destruction")
+        # Let wxWidgets handle destruction timing. Calling Destroy() directly
+        # causes crashes because GTK may still have pending async layout work.
+        # event.Skip() tells wx to continue processing the close event and
+        # destroy the window when it's safe to do so.
+        event.Skip()
         _debug_log("on_close_editor END")
 
     def on_activate(self, event):
