@@ -2031,11 +2031,27 @@ class Editor(BalloonTipManager, widgets.Dialog):
         if self.__timer is not None:
             IdProvider.put(self.__timer.GetId())
         IdProvider.put(self.__new_effort_id)
-        _debug_log("  destroying window")
-        # Destroy is now safe because __initialized ensures GTK has completed
-        # its layout pass (wxWidgets issue #16996 - widgets with 0 size crash).
-        self.Destroy()
+        _debug_log("  hiding window and scheduling destruction")
+        # Hide immediately so user sees instant response to close request
+        self.Hide()
+        # Use CallAfter to schedule Destroy for the next idle event. This is the
+        # proper wxWidgets pattern for destroying windows with AUI managers. The
+        # AuiManager.UnInit() (called by close_edit_book) schedules event handler
+        # cleanup for idle time. By using CallAfter for Destroy, we ensure the
+        # destruction happens AFTER the AUI cleanup has processed, preventing the
+        # "any pushed event handlers must have been removed" GTK assertion failure.
+        # This is NOT a hack - the wxWidgets docs state that windows should be
+        # "deleted on idle time, when all the window's events have been processed."
+        wx.CallAfter(self._do_destroy)
         _debug_log("on_close_editor END")
+
+    def _do_destroy(self):
+        """Actually destroy the window. Called via CallAfter to ensure
+        AUI cleanup has completed first."""
+        _debug_log("_do_destroy START")
+        if self:  # Check window still exists
+            self.Destroy()
+        _debug_log("_do_destroy END")
 
     def on_activate(self, event):
         event.Skip()
