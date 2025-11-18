@@ -1876,7 +1876,8 @@ class Editor(BalloonTipManager, widgets.Dialog):
         column_name = kwargs.pop("columnName", "")
         self.__call_after = kwargs.get("call_after", wx.CallAfter)
         self.__closing = False  # Guard against double-close
-        self.__initialized = False  # Block close until init complete
+        self.__initialized = False  # Track init state for deferred close
+        self.__close_pending = False  # Close requested before init complete
         _debug_log("  calling Dialog super().__init__")
         super().__init__(
             parent, self.__title(), buttonTypes=wx.ID_CLOSE, *args, **kwargs
@@ -1938,9 +1939,13 @@ class Editor(BalloonTipManager, widgets.Dialog):
         _debug_log(f"Editor.__init__ END: {self.__class__.__name__}")
 
     def __mark_initialized(self):
-        """Mark the editor as fully initialized and ready to be closed."""
+        """Mark the editor as fully initialized. If a close was requested
+        during initialization, execute it now that it's safe."""
         _debug_log("Editor marked as initialized")
         self.__initialized = True
+        if self.__close_pending:
+            _debug_log("  executing pending close")
+            self.Close()
 
     def __on_timer(self, event):
         if not self.IsShown():
@@ -1986,12 +1991,13 @@ class Editor(BalloonTipManager, widgets.Dialog):
 
     def on_close_editor(self, event):
         _debug_log("on_close_editor START")
-        # Block close until initialization is complete. This prevents crashes
+        # Defer close until initialization is complete. This prevents crashes
         # when ESC is pressed before pending wx.CallAfter events (like SetFocus)
-        # from Dialog.__init__ have completed.
+        # from Dialog.__init__ have completed. The close will execute automatically
+        # once initialization finishes.
         if not self.__initialized:
-            _debug_log("  not initialized yet, vetoing close")
-            event.Veto()
+            _debug_log("  not initialized yet, deferring close")
+            self.__close_pending = True
             return
 
         # Guard against double-close which causes segfault
