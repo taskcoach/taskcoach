@@ -1995,11 +1995,13 @@ class Editor(BalloonTipManager, widgets.Dialog):
         if self.__timer is not None:
             IdProvider.put(self.__timer.GetId())
         IdProvider.put(self.__new_effort_id)
-        _debug_log("  calling wx.CallAfter(self.Destroy)")
-        # Use CallAfter to defer destruction until pending events (including
-        # layout calculations) complete. This prevents crashes when the dialog
-        # is closed very quickly (e.g., ESC pressed before initialization finishes).
-        wx.CallAfter(self.Destroy)
+        _debug_log("  calling wx.CallLater(100, self.Destroy)")
+        # Use CallLater with a delay to allow GTK to finish pending layout
+        # calculations before destroying the window. CallAfter alone is not
+        # sufficient as GTK may still be processing layout events. This prevents
+        # crashes when the dialog is closed very quickly (e.g., ESC pressed
+        # before GTK initialization finishes).
+        wx.CallLater(100, self.Destroy)
         _debug_log("on_close_editor END")
 
     def on_activate(self, event):
