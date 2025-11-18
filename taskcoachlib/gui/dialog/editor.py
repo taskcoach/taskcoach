@@ -2019,6 +2019,10 @@ class Editor(BalloonTipManager, widgets.Dialog):
             return
         self.__closing = True
 
+        # Set BalloonTipManager's shutdown flag (we replaced its EVT_CLOSE binding)
+        # Access the name-mangled private attribute
+        self._BalloonTipManager__shutdown = True
+
         _debug_log("  closing edit book")
         self._interior.close_edit_book()
         _debug_log("  removing observers")
@@ -2031,6 +2035,17 @@ class Editor(BalloonTipManager, widgets.Dialog):
         if self.__timer is not None:
             IdProvider.put(self.__timer.GetId())
         IdProvider.put(self.__new_effort_id)
+
+        _debug_log("  unbinding event handlers")
+        # Unbind event handlers to prevent GTK from calling them during destruction
+        try:
+            self.Unbind(wx.EVT_CLOSE)
+            self.Unbind(wx.EVT_SIZE)
+            self.Unbind(wx.EVT_MOVE)
+            self.Unbind(wx.EVT_MAXIMIZE)
+        except Exception:
+            pass  # Ignore errors if handlers weren't bound
+
         _debug_log("  scheduling window destruction")
         # Use CallAfter to schedule Destroy for the next idle event. This is the
         # proper wxWidgets pattern for destroying windows with AUI managers. The
