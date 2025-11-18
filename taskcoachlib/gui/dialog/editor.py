@@ -1937,15 +1937,24 @@ class Editor(BalloonTipManager, widgets.Dialog):
                 self, settings, self._interior.settings_section()
             )
         )
-        # Mark as initialized after all pending wx.CallAfter events complete.
-        # This ensures the dialog won't close until GTK layout is finished.
-        wx.CallAfter(self.__mark_initialized)
+        # Mark as initialized after GTK has completed layout. We use CallAfter
+        # twice to ensure we're past all pending event processing - the first
+        # CallAfter gets us past our own callbacks, the second ensures GTK's
+        # internal layout queue has been processed.
+        def _after_layout():
+            wx.CallAfter(self.__mark_initialized)
+        wx.CallAfter(_after_layout)
         _debug_log(f"Editor.__init__ END: {self.__class__.__name__}")
 
     def __mark_initialized(self):
         """Mark the editor as fully initialized. If a close was requested
         during initialization, execute it now that it's safe."""
         _debug_log("Editor marked as initialized")
+        # Ensure GTK has fully processed the window by yielding to process
+        # any remaining idle events. This prevents the pixman crash caused by
+        # destroying widgets with 0 size (wxWidgets issue #16996).
+        if operating_system.isGTK():
+            wx.GetApp().ProcessPendingEvents()
         self.__initialized = True
         if self.__close_pending:
             _debug_log("  executing pending close")
@@ -2022,11 +2031,9 @@ class Editor(BalloonTipManager, widgets.Dialog):
         if self.__timer is not None:
             IdProvider.put(self.__timer.GetId())
         IdProvider.put(self.__new_effort_id)
-        _debug_log("  processing pending events and destroying")
-        # Process all pending events to let GTK complete any async layout work
-        # before destroying the window. This is the proper wx pattern for
-        # ensuring clean destruction on GTK.
-        wx.SafeYield()
+        _debug_log("  destroying window")
+        # Destroy is now safe because __initialized ensures GTK has completed
+        # its layout pass (wxWidgets issue #16996 - widgets with 0 size crash).
         self.Destroy()
         _debug_log("on_close_editor END")
 
