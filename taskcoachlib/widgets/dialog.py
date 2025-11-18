@@ -100,7 +100,17 @@ class Dialog(sized_controls.SizedDialog):
             _debug_log("  CallAfter SetFocus done")
 
         wx.CallAfter(_set_focus_callback)
+
+        # Bind EVT_CLOSE to default handler. Subclasses can override by binding
+        # their own handler after calling super().__init__().
+        self.Bind(wx.EVT_CLOSE, self._on_close)
         _debug_log(f"Dialog.__init__ END: {title}")
+
+    def _on_close(self, event):
+        """Default close handler. Subclasses should override this if they need
+        custom cleanup before destruction."""
+        _debug_log("Dialog._on_close - destroying")
+        self.Destroy()
 
     def SetExtraStyle(self, exstyle):
         # SizedDialog's constructor calls this to set WS_EX_VALIDATE_RECURSIVELY. We don't need
@@ -140,13 +150,17 @@ class Dialog(sized_controls.SizedDialog):
         if event:
             event.Skip()
         self.Close(True)
-        self.Destroy()
+        # Note: Don't call Destroy() here - EVT_CLOSE handler is responsible
+        # for destruction. Calling both Close() and Destroy() causes double
+        # destruction which crashes on GTK.
 
     def cancel(self, event=None):
         if event:
             event.Skip()
         self.Close(True)
-        self.Destroy()
+        # Note: Don't call Destroy() here - EVT_CLOSE handler is responsible
+        # for destruction. Calling both Close() and Destroy() causes double
+        # destruction which crashes on GTK.
 
     def disableOK(self):
         wxhelper.getButtonFromStdDialogButtonSizer(
