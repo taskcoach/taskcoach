@@ -1875,6 +1875,7 @@ class Editor(BalloonTipManager, widgets.Dialog):
         self.__items_are_new = kwargs.pop("items_are_new", False)
         column_name = kwargs.pop("columnName", "")
         self.__call_after = kwargs.get("call_after", wx.CallAfter)
+        self.__closing = False  # Guard against double-close
         _debug_log("  calling Dialog super().__init__")
         super().__init__(
             parent, self.__title(), buttonTypes=wx.ID_CLOSE, *args, **kwargs
@@ -1976,7 +1977,12 @@ class Editor(BalloonTipManager, widgets.Dialog):
 
     def on_close_editor(self, event):
         _debug_log("on_close_editor START")
-        event.Skip()
+        # Guard against double-close which causes segfault
+        if self.__closing:
+            _debug_log("  already closing, ignoring duplicate close event")
+            return
+        self.__closing = True
+
         _debug_log("  closing edit book")
         self._interior.close_edit_book()
         _debug_log("  removing observers")
