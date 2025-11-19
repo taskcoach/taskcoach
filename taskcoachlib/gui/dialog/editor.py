@@ -963,17 +963,15 @@ class PageWithViewer(Page):
         raise NotImplementedError
 
     def close(self):
-        # I guess this happens because of CallAfter in context of #1437...
+        # Detach viewer to stop it from receiving notifications
         if hasattr(self, "viewer"):
             self.viewer.detach()
-            # Don't notify the viewer about any changes anymore, it's about
-            # to be deleted, but don't delete it too soon.
-            wx.CallAfter(self.deleteViewer)
-        super().close()
-
-    def deleteViewer(self):
-        if hasattr(self, "viewer"):
+            # Don't use CallAfter to delete viewer - it causes crashes when
+            # the dialog is being destroyed quickly. The viewer will be
+            # destroyed automatically when its parent window is destroyed.
+            # Just delete the reference to help with garbage collection.
             del self.viewer
+        super().close()
 
 
 class EffortPage(PageWithViewer):
@@ -1505,17 +1503,16 @@ class EditBook(widgets.Notebook):
 
 
 class TaskEditBook(EditBook):
-    # Simplified for debugging - adding simple pages (no embedded viewers)
     allPageNames = [
         "subject",
         "dates",
-        # "prerequisites",  # Has embedded viewer
+        "prerequisites",
         "progress",
-        "categories",  # Testing - Has embedded viewer
+        "categories",
         "budget",
-        # "effort",  # Has embedded viewer - CRASHES
-        # "notes",  # Has embedded viewer
-        # "attachments",  # Has embedded viewer
+        "effort",
+        "notes",
+        "attachments",
         "appearance",
     ]
     domainObject = "task"
