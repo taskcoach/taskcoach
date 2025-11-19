@@ -25,6 +25,7 @@ from taskcoachlib.domain import base, task, category, attachment
 from taskcoachlib.gui import uicommand
 from taskcoachlib.i18n import _
 from pubsub import pub
+import ast
 import wx
 
 
@@ -323,7 +324,7 @@ class SortableViewerMixin(object):
         )
 
     def sortKey(self):
-        return eval(self.settings.get(self.settingsSection(), "sortby"))
+        return ast.literal_eval(self.settings.get(self.settingsSection(), "sortby"))
 
     def isSortOrderAscending(self):
         sortKeys = self.presentation().sortKeys()

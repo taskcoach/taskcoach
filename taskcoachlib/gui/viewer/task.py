@@ -44,6 +44,7 @@ from . import base
 from . import inplace_editor
 from . import mixin
 from . import refresher
+import ast
 import wx
 import tempfile
 import struct
@@ -637,7 +638,7 @@ class SquareTaskViewer(BaseTaskTreeViewer):
             priority=render.priority,
         )
         super().__init__(*args, **kwargs)
-        sortKeys = eval(self.settings.get(self.settingsSection(), "sortby"))
+        sortKeys = ast.literal_eval(self.settings.get(self.settingsSection(), "sortby"))
         orderBy = sortKeys[0] if sortKeys else "budget"
         self.orderBy(sortKeys[0] if sortKeys else "budget")
         pub.subscribe(
@@ -2176,7 +2177,7 @@ class TaskStatsViewer(BaseTaskViewer):  # pylint: disable=W0223
 
     def getFgColor(self, status):
         color = wx.Colour(
-            *eval(self.settings.get("fgcolor", "%stasks" % status))
+            *ast.literal_eval(self.settings.get("fgcolor", "%stasks" % status))
         )
         if status == task.status.active and color == wx.BLACK:
             color = wx.BLUE
@@ -2341,7 +2342,7 @@ else:
 
         def getFgColor(self, status):
             color = wx.Colour(
-                *eval(self.settings.get("fgcolor", "%stasks" % status))
+                *ast.literal_eval(self.settings.get("fgcolor", "%stasks" % status))
             )
             if status == task.status.active and color == wx.BLACK:
                 color = wx.BLUE
