@@ -86,78 +86,40 @@ class IPhoneBonjourDialog(wx.Dialog):
                 wx.ID_ANY,
                 _(
                     "You have enabled the iPhone synchronization feature, which\n"
-                    "needs Bonjour. Bonjour does not seem to be installed on\n"
-                    "your system."
+                    "needs the python-zeroconf library. This library does not seem\n"
+                    "to be installed on your system."
                 ),
             ),
             0,
             wx.ALL,
             3,
         )
-        if operating_system.isWindows():  # pragma: no cover
-            vsizer.Add(
-                wx.StaticText(
-                    self,
-                    wx.ID_ANY,
-                    _(
-                        "Please download and install Bonjour for Windows from\n"
-                    ),
+        vsizer.Add(
+            wx.StaticText(
+                self,
+                wx.ID_ANY,
+                _(
+                    "Please install the zeroconf library using pip:\n\n"
+                    "    pip install zeroconf\n"
                 ),
-                0,
-                wx.ALL,
-                3,
-            )
-            vsizer.Add(
-                hl.HyperLinkCtrl(
-                    self,
-                    wx.ID_ANY,
-                    _("Apple's web site"),
-                    URL="http://support.apple.com/downloads/Bonjour_for_Windows",
-                ),
-                0,
-                wx.ALL,
-                3,
-            )
-        else:  # pragma: no cover
-            # MacOS does support Bonjour in all cases, so we're probably running Linux.
-            vsizer.Add(
-                wx.StaticText(
-                    self,
-                    wx.ID_ANY,
-                    _(
-                        "Bonjour support for Linux is generally provided by\n"
-                        "Avahi."
-                    ),
-                ),
-                0,
-                wx.ALL,
-                3,
-            )
-            vsizer.Add(
-                hl.HyperLinkCtrl(
-                    self,
-                    wx.ID_ANY,
-                    _("You may find details for your distribution here"),
-                    URL="http://avahi.org/wiki/AboutAvahi#Distributions",
-                ),
-                0,
-                wx.ALL,
-                3,
-            )
-            vsizer.Add(
-                wx.StaticText(
-                    self,
-                    wx.ID_ANY,
-                    _(
-                        "Note that under some systems (Fedora), you may have to\n"
-                        "install the avahi-compat-libdns_sd package as well as Avahi in order\n"
-                        "for this to work."
-                    ),
-                ),
-                0,
-                wx.ALL,
-                3,
-            )
+            ),
+            0,
+            wx.ALL,
+            3,
+        )
+        vsizer.Add(
+            hl.HyperLinkCtrl(
+                self,
+                wx.ID_ANY,
+                _("python-zeroconf on PyPI"),
+                URL="https://pypi.org/project/zeroconf/",
+            ),
+            0,
+            wx.ALL,
+            3,
+        )
+        if not operating_system.isWindows() and not operating_system.isMac():
+            # Linux may need firewall configuration
             vsizer.Add(
                 wx.StaticText(
                     self,
@@ -165,7 +127,10 @@ class IPhoneBonjourDialog(wx.Dialog):
                     _(
                         "In addition, if you have a firewall, check that ports 4096-4100 are open."
                     ),
-                )
+                ),
+                0,
+                wx.ALL,
+                3,
             )
 
         btnOK = wx.Button(self, wx.ID_ANY, _("OK"))

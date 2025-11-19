@@ -233,6 +233,13 @@ class Application(object, metaclass=patterns.Singleton):
             except:
                 pass
 
+        # Log zeroconf version (used for iPhone sync)
+        try:
+            import zeroconf
+            print(f"zeroconf {zeroconf.__version__}")
+        except ImportError:
+            print("zeroconf Not Installed")
+
         if self.settings.getboolean("version", "notify"):
             self.__version_checker = meta.VersionChecker(self.settings)
             self.__version_checker.start()
