@@ -965,15 +965,16 @@ class PageWithViewer(Page):
         raise NotImplementedError
 
     def close(self):
-        # Detach viewer to stop it from receiving notifications
+        # Detach viewer to stop it from receiving notifications and destroy it
         if hasattr(self, "viewer"):
             _debug_log(f"  PageWithViewer.close(): detaching viewer {self.viewer.__class__.__name__}")
             self.viewer.detach()
+            _debug_log(f"  PageWithViewer.close(): destroying viewer widget")
+            # Explicitly destroy the viewer widget to ensure any internal timers
+            # or callbacks are stopped before the parent window is destroyed.
+            # This prevents crashes from callbacks trying to access deleted widgets.
+            self.viewer.Destroy()
             _debug_log(f"  PageWithViewer.close(): deleting viewer reference")
-            # Don't use CallAfter to delete viewer - it causes crashes when
-            # the dialog is being destroyed quickly. The viewer will be
-            # destroyed automatically when its parent window is destroyed.
-            # Just delete the reference to help with garbage collection.
             del self.viewer
             _debug_log(f"  PageWithViewer.close(): viewer deleted")
         super().close()
