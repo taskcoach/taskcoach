@@ -2206,6 +2206,7 @@ class TreeListMainWindow(CustomTreeCtrl):
         self._owner = parent
         self._main_column = 0
         self._dragItem = None
+        self._editCtrl = None  # Track the current in-place edit control
 
         self._imgWidth = self._imgWidth2 = 0
         self._imgHeight = self._imgHeight2 = 0
@@ -3690,6 +3691,31 @@ class TreeListMainWindow(CustomTreeCtrl):
         le._editCancelled = True
 
         self._owner.GetEventHandler().ProcessEvent(le)
+
+
+    def ResetEditControl(self):
+        """
+        Reset and destroy the current in-place edit control.
+        Called by :class:`EditCtrl` when editing is finished.
+        """
+        if self._editCtrl is not None:
+            editCtrl = self._editCtrl
+            self._editCtrl = None
+            # Use CallAfter to safely destroy the control after event processing
+            wx.CallAfter(self._DestroyEditCtrl, editCtrl)
+
+    def _DestroyEditCtrl(self, editCtrl):
+        """
+        Safely destroy the edit control widget.
+
+        :param `editCtrl`: the edit control to destroy.
+        """
+        try:
+            if editCtrl:
+                editCtrl.Destroy()
+        except RuntimeError:
+            # Control may already be destroyed
+            pass
 
 
     def OnMouse(self, event):
