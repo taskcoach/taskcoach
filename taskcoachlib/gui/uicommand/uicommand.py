@@ -2892,8 +2892,9 @@ class Search(ViewerCommand, settings_uicommand.SettingsCommand):
             callback=self.onFind,
         )
         toolbar.AddControl(self.searchControl)
-        self.bindKeyDownInViewer()
-        self.bindKeyDownInSearchCtrl()
+        # BINARY SEARCH: Skip bindings to isolate crash
+        # self.bindKeyDownInViewer()
+        # self.bindKeyDownInSearchCtrl()
 
     def bindKeyDownInViewer(self):
         """Bind wx.EVT_KEY_DOWN to self.onViewerKeyDown so we can catch

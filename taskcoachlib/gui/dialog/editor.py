@@ -1028,10 +1028,6 @@ class LocalCategoryViewer(
         kwargs.setdefault("settingsSection", "categoryviewer")
         super().__init__(parent, taskFile, settings, **kwargs)
 
-    def createToolBarUICommands(self):
-        # Skip search UICommand - go directly to TreeViewer
-        return viewer.base.TreeViewer.createToolBarUICommands(self)
-
     def createWidget(self):
         # Use simple HyperTreeList
         from wx.lib.agw.hypertreelist import HyperTreeList
