@@ -64,6 +64,7 @@ install_requires = [
     # FIXME: It's been replaced by new library "fasteners"
     "lockfile>=0.12.2",
     "gntp>=1.0.3",
+    "zeroconf>=0.50.0",  # For iPhone sync service discovery
 ]
 
 system = platform.system()

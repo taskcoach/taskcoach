@@ -127,7 +127,7 @@ class MainWindow(
         if self.settings.getboolean("feature", "iphone"):
             # pylint: disable=W0612,W0404,W0702
             try:
-                from taskcoachlib.thirdparty import pybonjour
+                import zeroconf  # Check if zeroconf library is available
                 from taskcoachlib.iphone import (
                     IPhoneAcceptor,
                     BonjourServiceRegister,
