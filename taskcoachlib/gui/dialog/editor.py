@@ -969,17 +969,22 @@ class PageWithViewer(Page):
         if hasattr(self, "viewer"):
             _debug_log(f"  PageWithViewer.close(): detaching viewer {self.viewer.__class__.__name__}")
             self.viewer.detach()
-            # Clear any tree controls to prevent events during destruction
-            # This is a workaround for wxPython Phoenix issue #1500 where
-            # TreeCtrl sends events after the tree is destroyed
-            _debug_log(f"  PageWithViewer.close(): clearing tree items if applicable")
+            # Unbind all event handlers from the viewer's widget to prevent
+            # GTK from sending events during destruction that crash the app
+            # (wxPython Phoenix issue #1500)
+            _debug_log(f"  PageWithViewer.close(): unbinding viewer widget events")
             if hasattr(self.viewer, 'widget'):
                 widget = self.viewer.widget
-                if hasattr(widget, 'DeleteAllItems'):
-                    try:
-                        widget.DeleteAllItems()
-                    except Exception:
-                        pass  # Ignore errors if already deleted
+                try:
+                    # Unbind all events from the widget
+                    widget.Unbind(wx.EVT_TREE_SEL_CHANGED)
+                    widget.Unbind(wx.EVT_TREE_SEL_CHANGING)
+                    widget.Unbind(wx.EVT_TREE_ITEM_EXPANDED)
+                    widget.Unbind(wx.EVT_TREE_ITEM_COLLAPSED)
+                    widget.Unbind(wx.EVT_TREE_ITEM_ACTIVATED)
+                    widget.Unbind(wx.EVT_LIST_COL_CLICK)
+                except Exception:
+                    pass  # Ignore errors if events weren't bound
             _debug_log(f"  PageWithViewer.close(): deleting viewer reference")
             del self.viewer
             _debug_log(f"  PageWithViewer.close(): viewer deleted")
