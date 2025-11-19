@@ -1505,18 +1505,18 @@ class EditBook(widgets.Notebook):
 
 
 class TaskEditBook(EditBook):
-    # Simplified for debugging - adding pages back one at a time
+    # Simplified for debugging - adding simple pages (no embedded viewers)
     allPageNames = [
         "subject",
-        "dates",  # Testing this page
-        # "prerequisites",
-        # "progress",
-        # "categories",
-        # "budget",
-        # "effort",
-        # "notes",
-        # "attachments",
-        # "appearance",
+        "dates",
+        # "prerequisites",  # Has embedded viewer
+        "progress",
+        # "categories",  # Has embedded viewer
+        "budget",
+        # "effort",  # Has embedded viewer - CRASHES
+        # "notes",  # Has embedded viewer
+        # "attachments",  # Has embedded viewer
+        "appearance",
     ]
     domainObject = "task"
 
