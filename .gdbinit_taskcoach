@@ -1,0 +1,64 @@
+# GDB initialization for TaskCoach debugging
+# Usage: gdb -x .gdbinit_taskcoach --args python3 taskcoach.py
+
+# Disable pagination so output isn't interrupted
+set pagination off
+
+# Don't print thread creation/exit messages (reduces noise)
+set print thread-events off
+
+# Automatically print backtrace on crash
+define hook-stop
+    if $_siginfo
+        printf "=== CRASH DETECTED ===\n"
+        printf "Signal: %d (%s)\n", $_siginfo.si_signo, $_siginfo
+        printf "\n=== C++ BACKTRACE (current thread) ===\n"
+        bt
+        printf "\n=== PYTHON BACKTRACE (if available) ===\n"
+        py-bt
+        printf "\n=== ALL THREADS C++ BACKTRACES ===\n"
+        thread apply all bt
+        printf "\n=== THREAD INFO ===\n"
+        info threads
+        printf "\n=== ANALYSIS COMPLETE ===\n"
+        printf "Crash log saved to /tmp/taskcoach_crash.log by faulthandler\n"
+        printf "\nType 'c' to continue, 'quit' to exit\n"
+    end
+end
+
+# Define helpful commands
+define crash-analysis
+    printf "=== FULL CRASH ANALYSIS ===\n"
+    printf "\n1. Current thread backtrace:\n"
+    bt
+    printf "\n2. All threads backtraces:\n"
+    thread apply all bt
+    printf "\n3. Thread information:\n"
+    info threads
+    printf "\n4. Python backtrace (if available):\n"
+    py-bt
+    printf "\n5. Frame info:\n"
+    info frame
+    printf "\n6. Locals:\n"
+    info locals
+end
+
+document crash-analysis
+Run complete crash analysis showing all available information.
+Usage: crash-analysis
+end
+
+# Print helpful message on start
+printf "TaskCoach GDB Debugger\n"
+printf "======================\n"
+printf "Type 'run' to start the program\n"
+printf "When it crashes, backtrace will be printed automatically\n"
+printf "Or type 'crash-analysis' for detailed analysis\n"
+printf "\nUseful commands:\n"
+printf "  run              - Start the program\n"
+printf "  bt               - Show backtrace of current thread\n"
+printf "  thread apply all bt - Show all threads backtraces\n"
+printf "  py-bt            - Show Python backtrace\n"
+printf "  crash-analysis   - Complete crash analysis\n"
+printf "  quit             - Exit GDB\n"
+printf "======================\n\n"
