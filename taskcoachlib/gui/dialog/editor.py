@@ -1012,45 +1012,62 @@ class EffortPage(PageWithViewer):
         return dict()
 
 
-class LocalCategoryViewer(viewer.BaseCategoryViewer):  # pylint: disable=W0223
-    def __init__(self, items, *args, **kwargs):
-        self.__items = items
-        super().__init__(*args, **kwargs)
-        # REMOVED: item expansion loop to isolate crash
-        # for item in self.domainObjectsToView():
-        #     item.expand(context=self.settingsSection(), notify=False)
-
-    def createWidget(self):
-        # BINARY SEARCH: Skip CheckTreeCtrl creation, use simple HyperTreeList
+# BINARY SEARCH: Skip BaseCategoryViewer entirely, use minimal panel
+class LocalCategoryViewer(wx.Panel):
+    def __init__(self, items, parent, taskFile, settings, **kwargs):
+        super().__init__(parent)
         from wx.lib.agw.hypertreelist import HyperTreeList
-        widget = HyperTreeList(self, agwStyle=wx.TR_DEFAULT_STYLE)
-        widget.AddColumn("Category")
-        widget.AddRoot("Root")
-        # Add minimal methods needed by viewer
-        widget.RefreshAllItems = lambda count=0: None
-        widget.GetItemCount = lambda: 0
-        widget.curselection = lambda: []
-        return widget
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        self.widget = HyperTreeList(self, agwStyle=wx.TR_DEFAULT_STYLE)
+        self.widget.AddColumn("Category")
+        self.widget.AddRoot("Root")
+        sizer.Add(self.widget, 1, wx.EXPAND)
+        self.SetSizer(sizer)
 
-    def getIsItemChecked(self, category):  # pylint: disable=W0621
-        for item in self.__items:
-            if category in item.categories():
-                return True
-        return False
+    def detach(self):
+        pass  # No observers to detach
 
-    # REMOVED: onCheck method to isolate crash
-    # def onCheck(self, event, final):
-    #     """Here we keep track of the items checked by the user so that these
-    #     items remain checked when refreshing the viewer."""
-    #     if final:
-    #         category = self.widget.GetItemPyData(event.GetItem())
-    #         command.ToggleCategoryCommand(
-    #             None, self.__items, category=category
-    #         ).do()
 
-    # REMOVED: createCategoryPopupMenu to isolate crash
-    # def createCategoryPopupMenu(self):  # pylint: disable=W0221
-    #     return super().createCategoryPopupMenu(True)
+# Original LocalCategoryViewer commented out for binary search
+# class LocalCategoryViewer(viewer.BaseCategoryViewer):  # pylint: disable=W0223
+#     def __init__(self, items, *args, **kwargs):
+#         self.__items = items
+#         super().__init__(*args, **kwargs)
+#         # REMOVED: item expansion loop to isolate crash
+#         # for item in self.domainObjectsToView():
+#         #     item.expand(context=self.settingsSection(), notify=False)
+#
+#     def createWidget(self):
+#         # BINARY SEARCH: Skip CheckTreeCtrl creation, use simple HyperTreeList
+#         from wx.lib.agw.hypertreelist import HyperTreeList
+#         widget = HyperTreeList(self, agwStyle=wx.TR_DEFAULT_STYLE)
+#         widget.AddColumn("Category")
+#         widget.AddRoot("Root")
+#         # Add minimal methods needed by viewer
+#         widget.RefreshAllItems = lambda count=0: None
+#         widget.GetItemCount = lambda: 0
+#         widget.curselection = lambda: []
+#         return widget
+#
+#     def getIsItemChecked(self, category):  # pylint: disable=W0621
+#         for item in self.__items:
+#             if category in item.categories():
+#                 return True
+#         return False
+#
+#     # REMOVED: onCheck method to isolate crash
+#     # def onCheck(self, event, final):
+#     #     """Here we keep track of the items checked by the user so that these
+#     #     items remain checked when refreshing the viewer."""
+#     #     if final:
+#     #         category = self.widget.GetItemPyData(event.GetItem())
+#     #         command.ToggleCategoryCommand(
+#     #             None, self.__items, category=category
+#     #         ).do()
+#
+#     # REMOVED: createCategoryPopupMenu to isolate crash
+#     # def createCategoryPopupMenu(self):  # pylint: disable=W0221
+#     #     return super().createCategoryPopupMenu(True)
 
 
 class CategoriesPage(PageWithViewer):
