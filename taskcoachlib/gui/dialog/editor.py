@@ -1036,8 +1036,9 @@ class LocalCategoryViewer(viewer.BaseCategoryViewer):  # pylint: disable=W0223
     #             None, self.__items, category=category
     #         ).do()
 
-    def createCategoryPopupMenu(self):  # pylint: disable=W0221
-        return super().createCategoryPopupMenu(True)
+    # REMOVED: createCategoryPopupMenu to isolate crash
+    # def createCategoryPopupMenu(self):  # pylint: disable=W0221
+    #     return super().createCategoryPopupMenu(True)
 
 
 class CategoriesPage(PageWithViewer):
