@@ -1508,12 +1508,12 @@ class TaskEditBook(EditBook):
     # Simplified for debugging - adding pages back one at a time
     allPageNames = [
         "subject",
-        # "dates",
+        "dates",  # Testing this page
         # "prerequisites",
         # "progress",
         # "categories",
         # "budget",
-        "effort",  # Testing this page
+        # "effort",
         # "notes",
         # "attachments",
         # "appearance",
