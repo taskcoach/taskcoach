@@ -1505,7 +1505,7 @@ class EditBook(widgets.Notebook):
 
 
 class TaskEditBook(EditBook):
-    # Simplified for debugging - only subject page
+    # Simplified for debugging - adding pages back one at a time
     allPageNames = [
         "subject",
         # "dates",
@@ -1513,7 +1513,7 @@ class TaskEditBook(EditBook):
         # "progress",
         # "categories",
         # "budget",
-        # "effort",
+        "effort",  # Testing this page
         # "notes",
         # "attachments",
         # "appearance",
