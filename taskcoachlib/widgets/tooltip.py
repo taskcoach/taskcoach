@@ -39,6 +39,8 @@ class ToolTipMixin(object):
         self.GetMainWindow().Bind(wx.EVT_MOTION, self.__OnMotion)
         self.GetMainWindow().Bind(wx.EVT_LEAVE_WINDOW, self.__OnLeave)
         self.Bind(wx.EVT_TIMER, self.__OnTimer, id=self.__timer.GetId())
+        # Stop timer on window destruction to prevent crashes
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.__OnDestroy)
 
     def SetToolTipsEnabled(self, enabled):
         self.__enabled = enabled
@@ -118,6 +120,12 @@ class ToolTipMixin(object):
             self.HideTip()
             self.__tip = None
 
+        event.Skip()
+
+    def __OnDestroy(self, event):
+        """Stop timer on window destruction to prevent crashes."""
+        if event.GetEventObject() == self and self.__timer.IsRunning():
+            self.__timer.Stop()
         event.Skip()
 
     def cleanupTooltipTimer(self):
