@@ -20,6 +20,7 @@ from taskcoachlib import meta, patterns, operating_system
 from taskcoachlib.i18n import _
 from pubsub import pub
 from taskcoachlib.workarounds import ExceptionAsUnicode
+import ast
 import configparser
 import os
 import sys
@@ -183,7 +184,7 @@ class Settings(CachingConfigParser):
             if result in taskDateColumns:
                 result += "Time"
             try:
-                eval(result)
+                ast.literal_eval(result)
             except:
                 sortKeys = [result]
                 try:
@@ -194,14 +195,14 @@ class Settings(CachingConfigParser):
         elif option == "columns":
             columns = [
                 (col + "Time" if col in taskDateColumns else col)
-                for col in eval(result)
+                for col in ast.literal_eval(result)
             ]
             result = str(columns)
         elif option == "columnwidths":
             widths = dict()
             try:
-                columnWidthMap = eval(result)
-            except SyntaxError:
+                columnWidthMap = ast.literal_eval(result)
+            except (SyntaxError, ValueError):
                 columnWidthMap = dict()
             for column, width in list(columnWidthMap.items()):
                 if column in taskDateColumns:
@@ -223,8 +224,8 @@ class Settings(CachingConfigParser):
             # but I need it so that people can test without resetting their .ini file...
             # Remove this after the 1.3.38 release.
             try:
-                columns = eval(result)
-            except SyntaxError:
+                columns = ast.literal_eval(result)
+            except (SyntaxError, ValueError):
                 columns = ["ordering"]
             else:
                 if "ordering" in columns:
@@ -260,7 +261,7 @@ class Settings(CachingConfigParser):
             pub.sendMessage("settings.%s.%s" % (section, option), value=value)
 
     def getlist(self, section, option):
-        return self.getEvaluatedValue(section, option, eval)
+        return self.getEvaluatedValue(section, option, ast.literal_eval)
 
     getvalue = gettuple = getdict = getlist
 
@@ -283,7 +284,7 @@ class Settings(CachingConfigParser):
             )
 
     def getEvaluatedValue(
-        self, section, option, evaluate=eval, showerror=wx.MessageBox
+        self, section, option, evaluate=ast.literal_eval, showerror=wx.MessageBox
     ):
         stringValue = self.get(section, option)
         try:
