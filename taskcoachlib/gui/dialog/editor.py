@@ -956,26 +956,17 @@ class PageWithViewer(Page):
         raise NotImplementedError
 
     def close(self):
-        # Detach viewer to stop it from receiving notifications
+        # I guess this happens because of CallAfter in context of #1437...
         if hasattr(self, "viewer"):
             self.viewer.detach()
-            # Unbind all event handlers from the viewer's widget to prevent
-            # GTK from sending events during destruction that crash the app
-            # (wxPython Phoenix issue #1500)
-            if hasattr(self.viewer, 'widget'):
-                widget = self.viewer.widget
-                try:
-                    # Unbind all events from the widget
-                    widget.Unbind(wx.EVT_TREE_SEL_CHANGED)
-                    widget.Unbind(wx.EVT_TREE_SEL_CHANGING)
-                    widget.Unbind(wx.EVT_TREE_ITEM_EXPANDED)
-                    widget.Unbind(wx.EVT_TREE_ITEM_COLLAPSED)
-                    widget.Unbind(wx.EVT_TREE_ITEM_ACTIVATED)
-                    widget.Unbind(wx.EVT_LIST_COL_CLICK)
-                except Exception:
-                    pass  # Ignore errors if events weren't bound
-            del self.viewer
+            # Don't notify the viewer about any changes anymore, it's about
+            # to be deleted, but don't delete it too soon.
+            wx.CallAfter(self.deleteViewer)
         super().close()
+
+    def deleteViewer(self):
+        if hasattr(self, "viewer"):
+            del self.viewer
 
 
 class EffortPage(PageWithViewer):
@@ -1491,8 +1482,6 @@ class EditBook(widgets.Notebook):
         for page in self:
             page.close()
         self.__save_perspective()
-        # Clean up AUI resources to prevent 'pushed event handlers' assertion
-        self.cleanup_aui()
 
 
 class TaskEditBook(EditBook):
@@ -1869,9 +1858,6 @@ class Editor(BalloonTipManager, widgets.Dialog):
         self.__items_are_new = kwargs.pop("items_are_new", False)
         column_name = kwargs.pop("columnName", "")
         self.__call_after = kwargs.get("call_after", wx.CallAfter)
-        self.__closing = False  # Guard against double-close
-        self.__initialized = False  # Track init state for deferred close
-        self.__close_pending = False  # Close requested before init complete
         super().__init__(
             parent, self.__title(), buttonTypes=wx.ID_CLOSE, *args, **kwargs
         )
@@ -1921,25 +1907,6 @@ class Editor(BalloonTipManager, widgets.Dialog):
                 self, settings, self._interior.settings_section()
             )
         )
-        # Mark as initialized after GTK has completed layout. We use CallAfter
-        # twice to ensure we're past all pending event processing - the first
-        # CallAfter gets us past our own callbacks, the second ensures GTK's
-        # internal layout queue has been processed.
-        def _after_layout():
-            wx.CallAfter(self.__mark_initialized)
-        wx.CallAfter(_after_layout)
-
-    def __mark_initialized(self):
-        """Mark the editor as fully initialized. If a close was requested
-        during initialization, execute it now that it's safe."""
-        # Ensure GTK has fully processed the window by yielding to process
-        # any remaining idle events. This prevents the pixman crash caused by
-        # destroying widgets with 0 size (wxWidgets issue #16996).
-        if operating_system.isGTK():
-            wx.GetApp().ProcessPendingEvents()
-        self.__initialized = True
-        if self.__close_pending:
-            self.Close()
 
     def __on_timer(self, event):
         if not self.IsShown():
@@ -1984,23 +1951,7 @@ class Editor(BalloonTipManager, widgets.Dialog):
         )
 
     def on_close_editor(self, event):
-        # Defer close until initialization is complete. This prevents crashes
-        # when ESC is pressed before pending wx.CallAfter events (like SetFocus)
-        # from Dialog.__init__ have completed. The close will execute automatically
-        # once initialization finishes.
-        if not self.__initialized:
-            self.__close_pending = True
-            return
-
-        # Guard against double-close which causes segfault
-        if self.__closing:
-            return
-        self.__closing = True
-
-        # Set BalloonTipManager's shutdown flag (we replaced its EVT_CLOSE binding)
-        # Access the name-mangled private attribute
-        self._BalloonTipManager__shutdown = True
-
+        event.Skip()
         self._interior.close_edit_book()
         patterns.Publisher().removeObserver(self.on_item_removed)
         patterns.Publisher().removeObserver(self.on_subject_changed)
@@ -2011,30 +1962,7 @@ class Editor(BalloonTipManager, widgets.Dialog):
         if self.__timer is not None:
             IdProvider.put(self.__timer.GetId())
         IdProvider.put(self.__new_effort_id)
-
-        # Unbind event handlers to prevent GTK from calling them during destruction
-        try:
-            self.Unbind(wx.EVT_CLOSE)
-            self.Unbind(wx.EVT_SIZE)
-            self.Unbind(wx.EVT_MOVE)
-            self.Unbind(wx.EVT_MAXIMIZE)
-        except Exception:
-            pass  # Ignore errors if handlers weren't bound
-
-        # Hide immediately so user sees instant feedback
-        self.Hide()
-        # Use CallLater with a small delay to allow GTK to fully process its
-        # internal cleanup events. This is necessary because GTK performs async
-        # cleanup that can crash if we destroy the window too quickly after
-        # complex widgets (like TreeViewer) are involved.
-        # See wxPython Phoenix issues #679, #1500 for related GTK cleanup issues.
-        wx.CallLater(50, self._do_destroy)
-
-    def _do_destroy(self):
-        """Actually destroy the window. Called via CallAfter to ensure
-        AUI cleanup has completed first."""
-        if self:  # Check window still exists
-            self.Destroy()
+        self.Destroy()
 
     def on_activate(self, event):
         event.Skip()
