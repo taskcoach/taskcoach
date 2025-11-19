@@ -1019,10 +1019,6 @@ class LocalCategoryViewer(viewer.BaseCategoryViewer):  # pylint: disable=W0223
         for item in self.domainObjectsToView():
             item.expand(context=self.settingsSection(), notify=False)
 
-    def createWidget(self):
-        # TEMPORARY: Return simple widget instead of CheckTreeCtrl to isolate crash
-        return wx.StaticText(self, label="LocalCategoryViewer placeholder")
-
     def getIsItemChecked(self, category):  # pylint: disable=W0621
         for item in self.__items:
             if category in item.categories():
