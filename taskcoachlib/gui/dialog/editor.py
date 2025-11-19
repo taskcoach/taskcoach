@@ -1511,7 +1511,7 @@ class TaskEditBook(EditBook):
         "dates",
         # "prerequisites",  # Has embedded viewer
         "progress",
-        # "categories",  # Has embedded viewer
+        "categories",  # Testing - Has embedded viewer
         "budget",
         # "effort",  # Has embedded viewer - CRASHES
         # "notes",  # Has embedded viewer
