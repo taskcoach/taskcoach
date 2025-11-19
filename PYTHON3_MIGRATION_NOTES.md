@@ -232,27 +232,24 @@ class MyWidget(wx.Window):
 
 **Date Implemented:** November 2025
 
-To help diagnose segfaults that occur in wxPython/GTK C++ code, we've enabled Python's `faulthandler` module in `taskcoach.py` with enhanced output:
+To help diagnose segfaults that occur in wxPython/GTK C++ code, we've enabled Python's `faulthandler` module in `taskcoach.py`:
 
 ```python
 import faulthandler
-# Write to file to preserve crash logs
-_fault_log = open('/tmp/taskcoach_crash.log', 'w')
-faulthandler.enable(file=_fault_log, all_threads=True)
+faulthandler.enable(all_threads=True)
 ```
 
 **What this provides:**
 
 - Python traceback on segfaults showing the exact Python code that was executing
 - Stack trace for ALL Python threads at the time of the crash (critical for threading issues)
-- Output written to `/tmp/taskcoach_crash.log` (persists after crash)
-- Also visible in terminal stderr when running from command line
+- Output to stderr (visible in console when running from terminal)
 
 **How to use:**
 
 1. Run Task Coach from terminal: `python taskcoach.py`
 2. Reproduce the crash
-3. Check `/tmp/taskcoach_crash.log` for the faulthandler traceback
+3. Check terminal output for the faulthandler traceback
 4. The traceback will show the Python call stack leading to the segfault
 
 **Example output:**
@@ -339,7 +336,7 @@ Current thread 0x00007fe7dac8d040 (most recent call first):
 5. Thread accessing GUI from non-main thread
 
 **To debug this specific crash:**
-1. Check `/tmp/taskcoach_crash.log` for thread states
+1. Check faulthandler output in console for thread states
 2. Look for patterns: Does it crash on dialog close? On app exit?
 3. Run under GDB to get C++ backtrace showing which GTK/wx function crashed
 4. Enable wx debug logging (already done in application.py) to see events before crash

@@ -25,14 +25,7 @@ import faulthandler
 # Enable faulthandler to get Python tracebacks on segfaults
 # This helps debug crashes in wxPython/GTK C++ code by showing which
 # Python code was executing when the crash occurred
-# Write to a file so we don't lose output if terminal closes
-try:
-    _fault_log = open('/tmp/taskcoach_crash.log', 'w')
-    faulthandler.enable(file=_fault_log, all_threads=True)
-    print(f"Faulthandler enabled. Crash logs will be written to: /tmp/taskcoach_crash.log", file=sys.stderr)
-except (IOError, OSError):
-    # Fallback to stderr if we can't write to /tmp
-    faulthandler.enable(all_threads=True)
+faulthandler.enable(all_threads=True)
 
 # Enable more detailed Python error reporting
 sys.tracebacklimit = 100  # Show full tracebacks, not just last 10 frames

@@ -21,7 +21,6 @@ define hook-stop
         printf "\n=== THREAD INFO ===\n"
         info threads
         printf "\n=== ANALYSIS COMPLETE ===\n"
-        printf "Crash log saved to /tmp/taskcoach_crash.log by faulthandler\n"
         printf "\nType 'c' to continue, 'quit' to exit\n"
     end
 end
