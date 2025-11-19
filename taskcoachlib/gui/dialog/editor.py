@@ -975,14 +975,13 @@ class PageWithViewer(Page):
             _debug_log(f"  PageWithViewer.close(): unbinding viewer widget events")
             if hasattr(self.viewer, 'widget'):
                 widget = self.viewer.widget
+                # Use the widget's unbindEventHandlers method if available
+                if hasattr(widget, 'unbindEventHandlers'):
+                    widget.unbindEventHandlers()
+                # Also unbind TreeViewer-level events
                 try:
-                    # Unbind all events from the widget
-                    widget.Unbind(wx.EVT_TREE_SEL_CHANGED)
-                    widget.Unbind(wx.EVT_TREE_SEL_CHANGING)
                     widget.Unbind(wx.EVT_TREE_ITEM_EXPANDED)
                     widget.Unbind(wx.EVT_TREE_ITEM_COLLAPSED)
-                    widget.Unbind(wx.EVT_TREE_ITEM_ACTIVATED)
-                    widget.Unbind(wx.EVT_LIST_COL_CLICK)
                 except Exception:
                     pass  # Ignore errors if events weren't bound
             _debug_log(f"  PageWithViewer.close(): deleting viewer reference")

@@ -214,6 +214,24 @@ class TreeListCtrl(
         self.Bind(wx.EVT_TREE_ITEM_EXPANDING, self.onItemExpanding)
         self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
 
+    def unbindEventHandlers(self):
+        """Unbind all event handlers to prevent GTK from calling them during
+        destruction. This prevents crashes when the widget is destroyed while
+        GTK has pending events (wxPython Phoenix issue #1500)."""
+        try:
+            self.Unbind(wx.EVT_TREE_SEL_CHANGED)
+            self.Unbind(wx.EVT_TREE_KEY_DOWN)
+            self.Unbind(wx.EVT_TREE_ITEM_ACTIVATED)
+            self.GetMainWindow().Unbind(wx.EVT_LEFT_DCLICK)
+            self.Unbind(wx.EVT_TREE_BEGIN_LABEL_EDIT)
+            self.Unbind(wx.EVT_TREE_END_LABEL_EDIT)
+            self.Unbind(wx.EVT_TREE_ITEM_EXPANDING)
+            self.Unbind(wx.EVT_SET_FOCUS)
+        except Exception:
+            pass  # Ignore errors during cleanup
+        # Clear adapter reference to prevent accessing deleted viewer
+        self._TreeListCtrl__adapter = None
+
     def onSetFocus(self, event):  # pylint: disable=W0613
         # Send a child focus event to let the AuiManager know we received focus
         # so it will activate our pane
@@ -552,6 +570,15 @@ class CheckTreeCtrl(TreeListCtrl):
         self.getItemParentHasExclusiveChildren = (
             parent.getItemParentHasExclusiveChildren
         )
+
+    def unbindEventHandlers(self):
+        """Unbind CheckTreeCtrl-specific events plus parent class events."""
+        try:
+            self.Unbind(customtree.EVT_TREE_ITEM_CHECKED)
+            self.GetMainWindow().Unbind(wx.EVT_LEFT_DOWN)
+        except Exception:
+            pass
+        super().unbindEventHandlers()
 
     def getItemCTType(self, domain_object):
         """Use radio buttons (ct_type == 2) when the object has "exclusive"
