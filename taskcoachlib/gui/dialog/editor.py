@@ -1012,11 +1012,11 @@ class EffortPage(PageWithViewer):
         return dict()
 
 
-# BINARY SEARCH: Test just SortableViewerForCategoriesMixin
-# This mixin has a detach() that unsubscribes from pypubsub
+# BINARY SEARCH: Add FilterableViewerMixin
 from taskcoachlib.domain import category as categoryModule
 
 class LocalCategoryViewer(
+    viewer.mixin.FilterableViewerMixin,
     viewer.mixin.SortableViewerForCategoriesMixin,
     viewer.base.TreeViewer
 ):  # pylint: disable=W0223
