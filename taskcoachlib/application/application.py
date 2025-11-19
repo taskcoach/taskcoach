@@ -502,6 +502,9 @@ class Application(object, metaclass=patterns.Singleton):
             self.taskBarIcon.RemoveIcon()
         if self.mainwindow.bonjourRegister is not None:
             self.mainwindow.bonjourRegister.stop()
+        # Stop notification timers to prevent crashes during shutdown
+        from taskcoachlib.notify.notifier_universal import NotificationCenter
+        NotificationCenter().cleanup()
         from taskcoachlib.domain import date
 
         date.Scheduler().shutdown()
