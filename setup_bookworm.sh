@@ -103,10 +103,10 @@ echo
 
 # Install Python dependencies not available in Debian repos
 echo -e "${BLUE}[4/7] Installing Python dependencies in venv...${NC}"
-echo "Installing: desktop3, lockfile, gntp, distro, pypubsub"
+echo "Installing: desktop3, lockfile, gntp, distro, pypubsub, zeroconf"
 
 source "$VENV_PATH/bin/activate"
-pip install --quiet desktop3 lockfile gntp distro pypubsub
+pip install --quiet desktop3 lockfile gntp distro pypubsub zeroconf
 deactivate
 
 echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
@@ -164,7 +164,7 @@ else
 fi
 
 # Test other packages
-for pkg in "lockfile" "gntp" "distro"; do
+for pkg in "lockfile" "gntp" "distro" "zeroconf"; do
     echo -n "  - $pkg... "
     if python3 -c "import $pkg" 2>/dev/null; then
         echo -e "${GREEN}✓${NC}"
@@ -238,7 +238,7 @@ echo
 echo "TaskCoach has been set up with:"
 echo "  • System packages from Debian repos (wxPython, numpy, lxml, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
-echo "  • Additional packages in venv (desktop3, lockfile, gntp, distro, pypubsub)"
+echo "  • Additional packages in venv (desktop3, lockfile, gntp, distro, pypubsub, zeroconf)"
 echo "  • wxPython background color patch (for category row coloring)"
 echo
 echo "You can now run TaskCoach with:"
