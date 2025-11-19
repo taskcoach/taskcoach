@@ -1057,15 +1057,16 @@ class CategoriesPage(PageWithViewer):
             self.fit()
 
     def createViewer(self, taskFile, settings, settingsSection):
-        assert len(self.items) == 1
-        item = self.items[0]
-        for eventType in (
-            item.categoryAddedEventType(),
-            item.categoryRemovedEventType(),
-        ):
-            self.registerObserver(
-                self.onCategoryChanged, eventType=eventType, eventSource=item
-            )
+        # Temporarily disabled observer registration to debug crash
+        # assert len(self.items) == 1
+        # item = self.items[0]
+        # for eventType in (
+        #     item.categoryAddedEventType(),
+        #     item.categoryRemovedEventType(),
+        # ):
+        #     self.registerObserver(
+        #         self.onCategoryChanged, eventType=eventType, eventSource=item
+        #     )
         return LocalCategoryViewer(
             self.items,
             self,
