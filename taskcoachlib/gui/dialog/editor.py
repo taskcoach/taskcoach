@@ -2066,7 +2066,6 @@ class Editor(BalloonTipManager, widgets.Dialog):
         AUI cleanup has completed first."""
         _debug_log("_do_destroy START")
         if self:  # Check window still exists
-            self.Hide()  # Hide first for better user experience
             _debug_log("  calling Destroy()")
             self.Destroy()
         _debug_log("_do_destroy END")
