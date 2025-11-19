@@ -154,6 +154,12 @@ class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
                 return False
         return True
 
+    def cleanup(self):
+        """Stop the timer and clear callback to prevent crashes during window destruction."""
+        if self.__timer.IsRunning():
+            self.__timer.Stop()
+        self.__callback = lambda *args, **kwargs: None  # Replace with no-op
+
     def onFindLater(self, event):  # pylint: disable=W0613
         # Start the timer so that the actual filtering will be done
         # only when the user pauses typing (at least 0.5 second)

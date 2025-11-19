@@ -2880,21 +2880,20 @@ class Search(ViewerCommand, settings_uicommand.SettingsCommand):
             searchDescription,
             regularExpression,
         ) = self.viewer.getSearchFilter()
-        # BINARY SEARCH: Skip SearchCtrl creation
-        # # pylint: disable=W0201
-        # self.searchControl = widgets.SearchCtrl(
-        #     toolbar,
-        #     value=searchString,
-        #     style=wx.TE_PROCESS_ENTER,
-        #     matchCase=matchCase,
-        #     includeSubItems=includeSubItems,
-        #     searchDescription=searchDescription,
-        #     regularExpression=regularExpression,
-        #     callback=self.onFind,
-        # )
-        # toolbar.AddControl(self.searchControl)
-        # self.bindKeyDownInViewer()
-        # self.bindKeyDownInSearchCtrl()
+        # pylint: disable=W0201
+        self.searchControl = widgets.SearchCtrl(
+            toolbar,
+            value=searchString,
+            style=wx.TE_PROCESS_ENTER,
+            matchCase=matchCase,
+            includeSubItems=includeSubItems,
+            searchDescription=searchDescription,
+            regularExpression=regularExpression,
+            callback=self.onFind,
+        )
+        toolbar.AddControl(self.searchControl)
+        self.bindKeyDownInViewer()
+        self.bindKeyDownInSearchCtrl()
 
     def bindKeyDownInViewer(self):
         """Bind wx.EVT_KEY_DOWN to self.onViewerKeyDown so we can catch
@@ -2915,6 +2914,8 @@ class Search(ViewerCommand, settings_uicommand.SettingsCommand):
 
     def unbind(self, window, id_):
         self.__bound = False
+        if hasattr(self, 'searchControl') and self.searchControl:
+            self.searchControl.cleanup()
         super().unbind(window, id_)
 
     def onViewerKeyDown(self, event):
