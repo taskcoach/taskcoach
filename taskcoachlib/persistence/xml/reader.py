@@ -38,12 +38,84 @@ from taskcoachlib.syncml.config import (
 )
 from taskcoachlib.thirdparty.deltaTime import nlTimeExpression
 from taskcoachlib.thirdparty.guid import generate
+import ast
 import io
+import operator
 import os
 import re
 import stat
 import wx
 from lxml import etree as ET
+
+
+def safe_eval_date_expr(expr, context):
+    """Safely evaluate date expressions using AST parsing.
+
+    Only allows safe operations: attribute access, function calls on allowed
+    objects, arithmetic operations, and string operations.
+    """
+
+    # Allowed binary operators
+    allowed_operators = {
+        ast.Add: operator.add,
+        ast.Sub: operator.sub,
+        ast.Mult: operator.mul,
+        ast.Div: operator.truediv,
+        ast.FloorDiv: operator.floordiv,
+        ast.Mod: operator.mod,
+    }
+
+    # Allowed unary operators
+    allowed_unary = {
+        ast.UAdd: operator.pos,
+        ast.USub: operator.neg,
+    }
+
+    def eval_node(node):
+        if isinstance(node, ast.Expression):
+            return eval_node(node.body)
+        elif isinstance(node, ast.Constant):
+            return node.value
+        elif isinstance(node, ast.Num):  # Python 3.7 compatibility
+            return node.n
+        elif isinstance(node, ast.Str):  # Python 3.7 compatibility
+            return node.s
+        elif isinstance(node, ast.Name):
+            name = node.id
+            if name in context:
+                return context[name]
+            raise ValueError(f"Name '{name}' not allowed in expression")
+        elif isinstance(node, ast.BinOp):
+            if type(node.op) not in allowed_operators:
+                raise ValueError(f"Operator {type(node.op).__name__} not allowed")
+            left = eval_node(node.left)
+            right = eval_node(node.right)
+            return allowed_operators[type(node.op)](left, right)
+        elif isinstance(node, ast.UnaryOp):
+            if type(node.op) not in allowed_unary:
+                raise ValueError(f"Unary operator {type(node.op).__name__} not allowed")
+            operand = eval_node(node.operand)
+            return allowed_unary[type(node.op)](operand)
+        elif isinstance(node, ast.Call):
+            func = eval_node(node.func)
+            args = [eval_node(arg) for arg in node.args]
+            kwargs = {kw.arg: eval_node(kw.value) for kw in node.keywords}
+            return func(*args, **kwargs)
+        elif isinstance(node, ast.Attribute):
+            value = eval_node(node.value)
+            return getattr(value, node.attr)
+        elif isinstance(node, ast.Tuple):
+            return tuple(eval_node(elt) for elt in node.elts)
+        elif isinstance(node, ast.List):
+            return [eval_node(elt) for elt in node.elts]
+        else:
+            raise ValueError(f"Node type {type(node).__name__} not allowed")
+
+    try:
+        tree = ast.parse(expr, mode='eval')
+        return eval_node(tree)
+    except (SyntaxError, ValueError) as e:
+        raise ValueError(f"Invalid expression '{expr}': {e}")
 
 
 def parseAndAdjustDateTime(string, *timeDefaults):
@@ -802,7 +874,7 @@ class TemplateXMLReader(XMLReader):
         if expr in built_in_templates:
             return built_in_templates[expr]
         # Not a built in template:
-        new_datetime = eval(expr, date.__dict__)
+        new_datetime = safe_eval_date_expr(expr, date.__dict__)
         if isinstance(new_datetime, date.date.RealDate):
             new_datetime = date.DateTime(
                 new_datetime.year, new_datetime.month, new_datetime.day

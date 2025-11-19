@@ -6,11 +6,11 @@
 This program converts a textual Uniforum-style message catalog (.po file) into
 a python dictionary 
 
-Based on msgfmt.py by Martin v. Löwis <loewis@informatik.hu-berlin.de>
+Based on msgfmt.py by Martin v. Lï¿½wis <loewis@informatik.hu-berlin.de>
 
 """
 
-import sys, re, os
+import sys, re, os, ast
 
 MESSAGES = {}
 STRINGS = set()
@@ -92,7 +92,7 @@ def make(filename, outfile=None):
         if not l:
             continue
         # XXX: Does this always follow Python escape semantics? # pylint: disable=W0511
-        l = eval(l)
+        l = ast.literal_eval(l)
         if section == ID:
             msgid += l
         elif section == STR:
