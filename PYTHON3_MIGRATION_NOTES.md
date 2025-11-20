@@ -319,25 +319,38 @@ This is why the user observed: *"it doesn't crash if I wait a few seconds before
 
 8. **Debouncing is a best practice:** The timer pattern itself is sound - it's standard UX for search-as-you-type. The issue was missing cleanup, not the pattern itself.
 
-### Debugging Segfaults with Faulthandler
+### Complete Debugging Setup for Timer Crashes
 
 **Date Implemented:** November 2025
 
-To help diagnose segfaults that occur in wxPython/GTK C++ code, we've enabled Python's `faulthandler` module in `taskcoach.py`:
+We have a comprehensive debugging infrastructure that helps diagnose timer crashes and other segfaults. The tools are designed to have **zero runtime cost** unless explicitly enabled.
+
+#### Debug Tools Available:
+
+| Tool | Always On? | Runtime Cost | When to Use |
+|------|-----------|--------------|-------------|
+| faulthandler | ✅ Yes | ZERO (only outputs on crash) | Python-level crash diagnosis |
+| sys.tracebacklimit | ✅ Yes | ZERO (only affects errors) | Full stack traces on exceptions |
+| wx verbose logging | ⚠️ Conditional | HIGH (constant output) | Debugging wx events/widget lifecycle |
+| .gdbinit_taskcoach | Manual | ZERO (only when using GDB) | C++ level crash diagnosis |
+
+#### 1. Faulthandler (Always Enabled)
+
+Python's `faulthandler` module is enabled in `taskcoach.py` and provides automatic crash diagnosis:
 
 ```python
 import faulthandler
-faulthandler.enable(all_threads=True)
+faulthandler.enable(all_threads=True)  # Zero runtime cost!
+sys.tracebacklimit = 100  # Full stack traces
 ```
 
 **What this provides:**
-
 - Python traceback on segfaults showing the exact Python code that was executing
 - Stack trace for ALL Python threads at the time of the crash (critical for threading issues)
 - Output to stderr (visible in console when running from terminal)
+- **Zero performance impact during normal operation**
 
 **How to use:**
-
 1. Run Task Coach from terminal: `python taskcoach.py`
 2. Reproduce the crash
 3. Check terminal output for the faulthandler traceback
@@ -350,49 +363,117 @@ Fatal Python error: Segmentation fault
 Current thread 0x00007f8b4c7fe700 (most recent call first):
   File "/usr/lib/python3/dist-packages/wx/core.py", line 2262 in MainLoop
   File "/usr/lib/python3/dist-packages/twisted/internet/wxreactor.py", line 151 in run
-  File "/taskcoachlib/application/application.py", line 255 in start
+  File "/taskcoachlib/application/application.py", line 263 in start
   File "/taskcoach.py", line 89 in start
 ```
 
-This makes it much easier to identify which timer, callback, or widget is causing crashes during window destruction.
+#### 2. wxPython Verbose Logging (Conditional)
 
-### Getting Even Better Backtraces with GDB
+For debugging wx event sequencing and widget lifecycle issues, enable verbose logging:
 
-For crashes deep in wxPython/GTK C++ code (like `wx.core.MainLoop`), you need C++ level backtraces. Use GDB:
-
-#### **Method 1: Run under GDB**
 ```bash
-# Install debug symbols first
-sudo apt-get install python3-dbg libwxgtk3.2-1-dbg gdb
+# Enable wx debug logging (GTK only)
+export TASKCOACH_DEBUG=1
+python taskcoach.py
+```
 
-# Run under GDB
-gdb --args python3 taskcoach.py
+**What this provides:**
+- All wx events logged to console (EVT_PAINT, EVT_SIZE, etc.)
+- Widget creation/destruction messages
+- Timer events and bindings
+- Helpful for identifying which wx events occur before crashes
+
+**Warning:** This produces **significant console output** and should only be enabled for debugging.
+
+**Example output:**
+```
+07:35:49 PM: Debug: Adding duplicate image handler for 'Windows bitmap file'
+07:35:49 PM: Debug: Adding duplicate animation handler for '1' type
+...
+```
+
+**To disable:** Unset the environment variable:
+```bash
+unset TASKCOACH_DEBUG
+python taskcoach.py
+```
+
+#### 3. GDB for C++ Level Backtraces
+
+For crashes deep in wxPython/GTK C++ code (like `wx.core.MainLoop`), you need C++ level backtraces. We have a custom `.gdbinit_taskcoach` that automates crash analysis.
+
+**Setup:**
+```bash
+# Install debug symbols (Debian/Ubuntu)
+sudo apt-get install python3-dbg libwxgtk3.2-1-dbg gdb
+```
+
+**Method 1: Use .gdbinit_taskcoach (Recommended)**
+
+The `.gdbinit_taskcoach` file in the repository root automatically prints backtraces when crashes occur:
+
+```bash
+# Run with automatic crash analysis
+gdb -x .gdbinit_taskcoach --args .venv/bin/python3 taskcoach.py
+
+# In GDB, just type:
+(gdb) run
+
+# When crash occurs, you'll automatically see:
+# - C++ backtrace showing crash location
+# - Python backtrace if available
+# - All threads backtraces
+# - Helpful analysis commands
+```
+
+**What .gdbinit_taskcoach does:**
+- Automatically catches segfaults
+- Prints complete C++ backtrace showing NULL pointer crashes
+- Prints Python backtrace showing which Python code was executing
+- Shows all threads (helpful for threading issues)
+- Provides helpful commands for further analysis
+
+**Method 2: Manual GDB**
+
+If you need more control:
+
+```bash
+gdb --args .venv/bin/python3 taskcoach.py
 
 # In GDB:
 (gdb) run
 
 # When it crashes:
-(gdb) bt          # C++ backtrace
-(gdb) py-bt       # Python backtrace (if available)
+(gdb) bt                   # C++ backtrace (shows 0x00000000 NULL crashes)
+(gdb) py-bt                # Python backtrace (which Python code was running)
 (gdb) thread apply all bt  # All threads C++ backtraces
-(gdb) info threads          # Show all active threads
+(gdb) info threads         # Show all active threads
+(gdb) frame 0              # Examine crash frame
+(gdb) print <variable>     # Inspect variables
 ```
 
-#### **Method 2: Analyze Core Dumps**
+**Method 3: Analyze Core Dumps**
+
+If you have a core dump file from a previous crash:
+
 ```bash
-# Enable core dumps
+# Enable core dumps (run once)
 ulimit -c unlimited
 
-# Run the app
+# Run the app normally
 python3 taskcoach.py
 
-# After crash, analyze:
-gdb python3 core
-(gdb) bt
-(gdb) thread apply all bt
+# After crash, find core file (usually in /var/lib/systemd/coredump/ or current dir)
+# Analyze the core:
+gdb .venv/bin/python3 /path/to/core
+
+# In GDB:
+(gdb) bt                   # See where it crashed
+(gdb) thread apply all bt  # All threads
+(gdb) py-bt                # Python context
 ```
 
-#### **Method 3: Attach to Running Process**
+**Method 4: Attach to Running Process**
 ```bash
 # Get process ID
 ps aux | grep taskcoach
@@ -404,33 +485,60 @@ sudo gdb -p <PID>
 (gdb) bt
 ```
 
-### Interpreting the Crash from Your Example
+#### 4. Interpreting Crash Output
 
-Your crash shows:
+**Example Timer Crash:**
+
+When a timer crashes, you'll see this pattern in GDB:
+
 ```
-Current thread 0x00007fe7dac8d040 (most recent call first):
-  File "/usr/lib/python3/dist-packages/wx/core.py", line 2262 in MainLoop
-  File "/twisted/internet/wxreactor.py", line 151 in run
+#0  0x0000000000000000 in  ()           ← NULL pointer (destroyed callback)
+#1  wxEvtHandler::SafelyProcessEvent()  ← Trying to deliver event
+#2  wxTimerImpl::SendEvent()            ← Timer is firing
+#3  sipwxTimer::Notify()                ← wxPython wrapper
+#4  [GTK event loop]                    ← Deep in event loop
 ```
 
 **Analysis:**
-- The crash is in `wx.core.MainLoop` (C++ event loop)
-- This is the **symptom**, not the root cause
-- The root cause is likely a timer/callback firing on a destroyed widget
-- Look at what happened BEFORE entering MainLoop (check wx debug logs)
+- `#0  0x0000000000000000` = Trying to call a NULL pointer (destroyed callback function)
+- This means a wx.Timer fired **after** its event handler was destroyed
+- The widget/window that owned the timer no longer exists
+- The timer callback address is now 0x0000000000000000 (NULL)
 
-**Common causes for crashes in MainLoop:**
-1. Timer fires after widget destruction (SearchCtrl - already fixed)
-2. Event handler references destroyed object
-3. Callback holds reference to deleted C++ object
-4. GTK async cleanup race condition
-5. Thread accessing GUI from non-main thread
+**Common Timer Crash Patterns:**
 
-**To debug this specific crash:**
-1. Check faulthandler output in console for thread states
-2. Look for patterns: Does it crash on dialog close? On app exit?
-3. Run under GDB to get C++ backtrace showing which GTK/wx function crashed
-4. Enable wx debug logging (already done in application.py) to see events before crash
+| Crash Address | Meaning | Root Cause |
+|--------------|---------|------------|
+| `0x0000000000000000` | NULL pointer | Timer callback destroyed |
+| `0x0000000000000029` | Nearly NULL | Destroyed event handler |
+| `typeinfo for wxEvtHandler` | RTTI info | Accessing destroyed C++ object |
+| Random hex address | Dangling pointer | Object freed but timer still running |
+
+**Python-level Crash (from faulthandler):**
+
+```
+Fatal Python error: Segmentation fault
+
+Current thread 0x00007f8b4c7fe700 (most recent call first):
+  File "/usr/lib/python3/dist-packages/wx/core.py", line 2262 in MainLoop
+  File "/twisted/internet/wxreactor.py", line 151 in run
+  File "/taskcoachlib/application/application.py", line 263 in start
+```
+
+**Analysis:**
+- The crash is **in** `wx.core.MainLoop` (C++ event loop) - this is the **symptom**
+- The crash is **from** a timer/callback firing - this is the **root cause**
+- faulthandler shows **what Python code was running** (MainLoop)
+- GDB shows **what actually crashed** (NULL pointer at timer callback)
+
+**Debugging Workflow:**
+
+1. **Check faulthandler output** - Shows which Python code was executing
+2. **Look for patterns** - Does it crash on dialog close? On app exit? When typing?
+3. **Run under GDB** - Shows the actual NULL pointer and which timer crashed
+4. **Enable TASKCOACH_DEBUG** - Shows wx events before crash
+5. **Search for timers** - Look for `wx.Timer` in the relevant widgets
+6. **Verify cleanup** - Ensure timer.Stop() is called in EVT_WINDOW_DESTROY
 
 ### Testing Checklist
 

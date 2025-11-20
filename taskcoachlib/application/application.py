@@ -250,12 +250,14 @@ class Application(object, metaclass=patterns.Singleton):
             self.__message_checker.start()
         self.__copy_default_templates()
 
-        # Enable wxPython debug logging to capture events before crashes
+        # Enable wxPython debug logging when TASKCOACH_DEBUG is set
         # This helps identify which wx events/callbacks were active when segfaults occur
-        if operating_system.isGTK():
+        # To enable: export TASKCOACH_DEBUG=1 before running taskcoach
+        if operating_system.isGTK() and os.environ.get('TASKCOACH_DEBUG'):
             wx.Log.SetActiveTarget(wx.LogStderr())
             wx.Log.SetLogLevel(wx.LOG_Info)
             wx.Log.SetVerbose(True)
+            print("TaskCoach: wx debug logging enabled (TASKCOACH_DEBUG=1)", file=sys.stderr)
 
         self.mainwindow.Show()
         from twisted.internet import reactor
