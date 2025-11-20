@@ -139,70 +139,61 @@ When working on sizing issues in the future, test:
 ### Problem Overview
 
 **Date Fixed:** November 2025
-**Affected Components:** Edit Task/Categories dialog, any viewer with SearchCtrl
-**Root Cause:** wx.Timer firing after window destruction causes segfault
+**Affected Components:** All widgets and dialogs using wx.Timer
+**Root Cause:** wx.Timer firing after window/widget destruction causes segfault
 
 ### Symptoms
 
-1. **Crash on Quick Close:** Closing the Edit Task or Edit Categories dialog quickly (e.g., pressing ESC immediately after opening) causes a segmentation fault
+1. **Crash on Quick Close:** Closing dialogs quickly causes a segmentation fault with backtrace showing:
+   ```
+   #0  0x0000000000000000 in  ()  // NULL pointer crash
+   #1  wxEvtHandler::SafelyProcessEvent(wxEvent&)
+   #2  wxTimerImpl::SendEvent()
+   #3  sipwxTimer::Notify()
+   ```
 2. **GTK-specific:** The crash primarily occurs on GTK/Linux platforms
-3. **No Python Traceback:** The crash occurs in C++ code with no useful Python error message
+3. **No Python Traceback:** The crash occurs in C++ code with address 0x00000000
+4. **Timing-dependent:** Only crashes if window closed before timer fires (typically <500ms)
 
 ### Root Cause Analysis
 
-The crash was caused by the **SearchCtrl widget's timer** continuing to run after window destruction:
+The crash was caused by **multiple wx.Timer instances** continuing to run after window destruction:
 
-1. **SearchCtrl creates a timer** in `__init__` that delays search filtering (0.5 second delay)
-2. **User closes dialog quickly** before timer fires
-3. **Window is destroyed** but timer continues running
-4. **Timer fires** and tries to call callback on destroyed objects
-5. **Segfault occurs** in wxWidgets C++ code
+**Why it crashes:**
+1. Widget creates a wx.Timer with callback to itself
+2. User closes window/widget **before timer fires**
+3. Window is destroyed but timer continues running in GTK event loop
+4. Timer fires and tries to call callback on **destroyed object** (NULL pointer)
+5. Segfault occurs at address 0x00000000 in wxWidgets C++ code
+
+**Why "waiting a few seconds" prevents the crash:**
+- One-shot timers (like SearchCtrl's 500ms debounce) fire and complete
+- Once fired, no pending timer exists, so no crash on close
+- This is why the crash is **timing-dependent**
 
 This is a **known wxPython issue**:
 - [Phoenix Issue #429](https://github.com/wxWidgets/Phoenix/issues/429): Timer causes hard crash during shutdown
 - [Phoenix Issue #632](https://github.com/wxWidgets/Phoenix/issues/632): Crash if wx.Timer isn't stopped before window closes
 
-### The Fix
+### All Timers Fixed
 
-#### 1. Add cleanup() method to SearchCtrl (searchctrl.py:157-161)
+A comprehensive audit found **9 wx.Timer instances** that needed cleanup:
 
-```python
-def cleanup(self):
-    """Stop the timer and clear callback to prevent crashes during window destruction."""
-    if self.__timer.IsRunning():
-        self.__timer.Stop()
-    self.__callback = lambda *args, **kwargs: None  # Replace with no-op
-```
+| Component | File | Timer Type | Delay | Fix Applied |
+|-----------|------|------------|-------|-------------|
+| **SearchCtrl** | searchctrl.py | One-shot debounce | 500ms | EVT_WINDOW_DESTROY + refactored |
+| **wxScheduler** | wxScheduler.py | One-shot refresh | Up to 60s | EVT_WINDOW_DESTROY |
+| **wxScheduler** | wxScheduler.py | One-shot resize | 250ms | EVT_WINDOW_DESTROY |
+| **TreeListMainWindow** | hypertreelist.py | One-shot drag | 250ms | EVT_WINDOW_DESTROY |
+| **SmartDateTimeCtrl** | smartdatetimectrl.py | One-shot reset | 2000ms | Stop in Cleanup() |
+| **ToolTipMixin** | tooltip.py | One-shot tooltip | 200ms | EVT_WINDOW_DESTROY |
+| **StatusBar** | status.py | Delayed update | 500ms | Stop in Destroy() |
+| **SecondRefresher** | refresher.py | Repeating | 1000ms | Stop in removeInstance() |
+| **NotificationCenter** | notifier_universal.py | Repeating | 1000ms | Stop in app shutdown |
 
-#### 2. Call cleanup() in Search.unbind() (uicommand.py:2915-2919)
+### The Modern Fix Pattern: EVT_WINDOW_DESTROY
 
-```python
-def unbind(self, window, id_):
-    self.__bound = False
-    if hasattr(self, 'searchControl') and self.searchControl:
-        self.searchControl.cleanup()
-    super().unbind(window, id_)
-```
-
-### Why This Fixes the Issue
-
-1. **Timer.Stop()** prevents the timer from firing after window destruction
-2. **No-op callback** provides a fallback in case the timer fires before Stop() takes effect
-3. **Called during unbind()** ensures cleanup happens during the normal widget teardown process
-
-### Key Learnings
-
-1. **wx.Timer must be explicitly stopped:** Unlike child windows, timers are not automatically stopped when their parent window is destroyed. The timer's "owner" is really just the target for events, not a true parent-child relationship.
-
-2. **Callbacks hold references:** The timer's callback holds a reference to the Search UICommand, which holds a reference to the viewer, which prevents proper cleanup during destruction.
-
-3. **GTK async cleanup:** GTK performs asynchronous cleanup that can crash if we destroy windows while timers are still running.
-
-4. **This is a wxWidgets "wontfix":** The wxWidgets team considers this the application's responsibility, not a bug to fix in the framework.
-
-### Pattern for Future Timer Usage
-
-When using wx.Timer in wxPython, always:
+The **best practice** is to use `EVT_WINDOW_DESTROY` for automatic cleanup:
 
 ```python
 class MyWidget(wx.Window):
@@ -210,23 +201,123 @@ class MyWidget(wx.Window):
         super().__init__(parent)
         self.__timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.onTimer, self.__timer)
-        # ... timer.Start() somewhere
+        # CRITICAL: Bind to EVT_WINDOW_DESTROY for automatic cleanup
+        self.Bind(wx.EVT_WINDOW_DESTROY, self._onDestroy)
+        self.__timer.Start(500, oneShot=True)
+
+    def _onDestroy(self, event):
+        """Automatically cleanup timer on window destruction."""
+        if event.GetEventObject() == self:
+            if self.__timer and self.__timer.IsRunning():
+                self.__timer.Stop()
+        event.Skip()  # MUST call Skip() to continue destruction chain
+```
+
+**Why this is better than manual cleanup() calls:**
+1. **Automatic** - No need to remember to call cleanup()
+2. **Reliable** - Guaranteed to run during widget destruction
+3. **Crash-safe** - Runs even if window closed unexpectedly
+4. **Idempotent** - Can be called multiple times safely
+
+### SearchCtrl: Modern Best Practices Refactoring
+
+The SearchCtrl timer was refactored to follow modern best practices:
+
+#### Before (Magic Numbers, No Auto-Cleanup)
+```python
+def onFindLater(self, event):
+    self.__timer.Start(500, oneShot=True)  # Magic number!
+
+def cleanup(self):  # Never called automatically!
+    if self.__timer.IsRunning():
+        self.__timer.Stop()
+```
+
+#### After (Named Constants, Auto-Cleanup, Configurable)
+```python
+class SearchCtrl(wx.SearchCtrl):
+    # Named constant instead of magic number
+    SEARCH_DEBOUNCE_DELAY_MS = 500
+
+    def __init__(self, *args, **kwargs):
+        # Configurable delay for different use cases
+        self.__debounceDelay = kwargs.pop("debounceDelay", self.SEARCH_DEBOUNCE_DELAY_MS)
+        super().__init__(*args, **kwargs)
+        self.__timer = wx.Timer(self)
+        # Auto-cleanup via EVT_WINDOW_DESTROY
+        self.Bind(wx.EVT_WINDOW_DESTROY, self._onDestroy)
+
+    def onFindLater(self, event):
+        """
+        Debounce search operations using a timer.
+
+        This implements the "search-as-you-type" debouncing pattern:
+        - Restarts the timer on each keystroke
+        - Only triggers the actual search after user stops typing
+        - Prevents expensive filtering operations on every character
+
+        This is a best practice for search UX, used by Google, VS Code, etc.
+        """
+        self.__timer.Start(self.__debounceDelay, oneShot=True)
+
+    def _onDestroy(self, event):
+        """Automatically cleanup timer on window destruction."""
+        if event.GetEventObject() == self:
+            self.cleanup()
+        event.Skip()
 
     def cleanup(self):
-        """Call this before window destruction."""
-        if self.__timer.IsRunning():
+        """Stop the timer and clear callback to prevent crashes."""
+        if self.__timer and self.__timer.IsRunning():
             self.__timer.Stop()
-
-    # OR bind to EVT_WINDOW_DESTROY:
-    def __init__(self, parent):
-        # ...
-        self.Bind(wx.EVT_WINDOW_DESTROY, self.onDestroy)
-
-    def onDestroy(self, event):
-        if self.__timer.IsRunning():
-            self.__timer.Stop()
-        event.Skip()
+        self.__callback = lambda *args, **kwargs: None
 ```
+
+**Benefits:**
+- Named constant (SEARCH_DEBOUNCE_DELAY_MS) instead of magic number
+- Configurable delay via constructor parameter
+- Comprehensive documentation of debouncing pattern
+- Automatic cleanup via EVT_WINDOW_DESTROY
+- Idempotent cleanup() method with safety checks
+
+### Why One-Shot Timers Cause "Quick Close" Crashes
+
+One-shot timers (like SearchCtrl's debounce) explain the timing-dependent crashes:
+
+```python
+# User types in search box
+self.__timer.Start(500, oneShot=True)  # Timer will fire in 500ms
+
+# User closes window IMMEDIATELY (< 500ms later)
+# Window destroyed, but timer still pending in GTK event loop
+
+# 500ms after typing, timer fires
+# Tries to call callback on DESTROYED widget
+# NULL pointer crash at 0x00000000
+```
+
+**If user waits >500ms:** Timer fires normally, no crash
+**If user closes quickly (<500ms):** Timer fires after destruction, crash
+
+This is why the user observed: *"it doesn't crash if I wait a few seconds before closing the window"*
+
+### Key Learnings
+
+1. **wx.Timer must be explicitly stopped:** Unlike child windows, timers are not automatically stopped when their parent window is destroyed. The timer's "owner" is really just the target for events, not a true parent-child relationship.
+
+2. **EVT_WINDOW_DESTROY is the safest pattern:** Automatic cleanup via event binding is more reliable than manual cleanup() calls which can be forgotten.
+
+3. **One-shot timers are the most dangerous:** They create timing-dependent crashes that only occur when closing quickly. Repeating timers are more obvious because they crash consistently.
+
+4. **Callbacks hold references:** The timer's callback holds a reference to widgets/objects, which can prevent proper cleanup and create dangling pointers.
+
+5. **GTK async cleanup:** GTK performs asynchronous cleanup that can crash if timers fire during widget destruction.
+
+6. **This is a wxWidgets "wontfix":** The wxWidgets team considers this the application's responsibility, not a bug to fix in the framework.
+
+7. **Magic numbers are debugging nightmares:** Using named constants (SEARCH_DEBOUNCE_DELAY_MS) makes it much easier to understand timer delays during debugging.
+
+8. **Debouncing is a best practice:** The timer pattern itself is sound - it's standard UX for search-as-you-type. The issue was missing cleanup, not the pattern itself.
 
 ### Debugging Segfaults with Faulthandler
 
@@ -343,14 +434,37 @@ Current thread 0x00007fe7dac8d040 (most recent call first):
 
 ### Testing Checklist
 
-When working with wx.Timer in the future, test:
+When working with wx.Timer in the future, test all timing scenarios:
 
-- [ ] Open dialog and close immediately with ESC
-- [ ] Open dialog, type in search, close quickly before search executes
-- [ ] Open dialog, wait for timer to fire, then close
-- [ ] Rapid open/close cycles (10+ times quickly)
-- [ ] Test on GTK/Linux (most prone to this issue)
-- [ ] Check faulthandler output if crashes occur
+**SearchCtrl (500ms debounce timer):**
+- [ ] Type in search box and close dialog immediately (< 500ms)
+- [ ] Type in search box, wait for search to complete, then close
+- [ ] Rapid typing with quick close
+- [ ] Clear search with X button and close immediately
+
+**Dialog Operations:**
+- [ ] Open dialog and press ESC immediately (< 100ms)
+- [ ] Open dialog, interact with UI, close quickly
+- [ ] Rapid open/close cycles (10+ times in rapid succession)
+
+**Window Resizing (wxScheduler 250ms resize timer):**
+- [ ] Resize window and close immediately (< 250ms)
+- [ ] Resize rapidly then close
+
+**Drag Operations (TreeListMainWindow 250ms drag timer):**
+- [ ] Start drag and close immediately (< 250ms)
+- [ ] Start drag, wait, then close
+
+**Platform Testing:**
+- [ ] Test on GTK/Linux (most prone to timer crashes)
+- [ ] Test on Windows (less common but still possible)
+- [ ] Test on macOS (different event loop behavior)
+
+**Debugging:**
+- [ ] Run under GDB to verify no timer crashes
+- [ ] Check faulthandler output in console
+- [ ] Monitor for NULL pointer crashes at 0x00000000
+- [ ] Verify all timers stopped during destruction using wx debug logs
 
 ---
 
