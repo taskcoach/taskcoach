@@ -2228,12 +2228,23 @@ class TreeListMainWindow(CustomTreeCtrl):
         self.Bind(wx.EVT_MOUSE_EVENTS, self.OnMouse)
         self.Bind(wx.EVT_SCROLLWIN, self.OnScroll)
         self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, lambda evt: None)
+        # Stop timers on window destruction to prevent crashes
+        self.Bind(wx.EVT_WINDOW_DESTROY, self._OnDestroy)
 
         # Sets the focus to ourselves: this is useful if you have items
         # with associated widgets.
         self.SetFocus()
         self.SetBackgroundStyle(wx.BG_STYLE_ERASE)
 
+
+    def _OnDestroy(self, event):
+        """Stop timers on window destruction to prevent crashes."""
+        if event.GetEventObject() == self:
+            if self._dragTimer and self._dragTimer.IsRunning():
+                self._dragTimer.Stop()
+            if self._findTimer and self._findTimer.IsRunning():
+                self._findTimer.Stop()
+        event.Skip()
 
     def SetBuffered(self, buffered):
         """

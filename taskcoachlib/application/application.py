@@ -249,6 +249,15 @@ class Application(object, metaclass=patterns.Singleton):
             )
             self.__message_checker.start()
         self.__copy_default_templates()
+
+        # Enable wxPython debug logging on GTK to help diagnose crashes
+        # This helps identify which wx events/callbacks were active when segfaults occur
+        # Only visible when running from terminal, doesn't affect GUI-only users
+        if operating_system.isGTK():
+            wx.Log.SetActiveTarget(wx.LogStderr())
+            wx.Log.SetLogLevel(wx.LOG_Info)
+            wx.Log.SetVerbose(True)
+
         self.mainwindow.Show()
         from twisted.internet import reactor
 
@@ -494,6 +503,9 @@ class Application(object, metaclass=patterns.Singleton):
             self.taskBarIcon.RemoveIcon()
         if self.mainwindow.bonjourRegister is not None:
             self.mainwindow.bonjourRegister.stop()
+        # Stop notification timers to prevent crashes during shutdown
+        from taskcoachlib.notify.notifier_universal import NotificationCenter
+        NotificationCenter().cleanup()
         from taskcoachlib.domain import date
 
         date.Scheduler().shutdown()

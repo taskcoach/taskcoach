@@ -22,6 +22,10 @@ from taskcoachlib.i18n import _
 
 
 class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
+    # Debounce delay in milliseconds - wait this long after user stops typing
+    # before triggering the search. This prevents expensive operations on every keystroke.
+    SEARCH_DEBOUNCE_DELAY_MS = 500
+
     def __init__(self, *args, **kwargs):
         self.__callback = kwargs.pop("callback")
         self.__matchCase = kwargs.pop("matchCase", False)
@@ -29,6 +33,7 @@ class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
         self.__searchDescription = kwargs.pop("searchDescription", False)
         self.__regularExpression = kwargs.pop("regularExpression", False)
         self.__bitmapSize = kwargs.pop("size", (16, 16))
+        self.__debounceDelay = kwargs.pop("debounceDelay", self.SEARCH_DEBOUNCE_DELAY_MS)
         value = kwargs.pop("value", "")
         super().__init__(*args, **kwargs)
         self.SetSearchMenuBitmap(
@@ -129,6 +134,8 @@ class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
             id=self.__recentSearchMenuItemIds[0],
             id2=self.__recentSearchMenuItemIds[-1],
         )
+        # Stop timer on window destruction to prevent crashes
+        self.Bind(wx.EVT_WINDOW_DESTROY, self._onDestroy)
 
     def setMatchCase(self, matchCase):
         self.__matchCase = matchCase
@@ -154,18 +161,59 @@ class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
                 return False
         return True
 
+    def _onDestroy(self, event):
+        """
+        Automatically cleanup timer on window destruction.
+
+        This is a critical safety mechanism to prevent timer-after-destruction crashes.
+        The EVT_WINDOW_DESTROY binding ensures cleanup happens automatically,
+        following wxPython best practices for timer lifecycle management.
+        """
+        if event.GetEventObject() == self:
+            self.cleanup()
+        event.Skip()
+
     def cleanup(self):
-        """Stop the timer and clear callback to prevent crashes during window destruction."""
-        if self.__timer.IsRunning():
+        """
+        Stop the timer and clear callback to prevent crashes.
+
+        Best practices implemented:
+        1. Stop any running timer to prevent fire-after-destruction
+        2. Replace callback with no-op to safely handle late events
+        3. Can be called multiple times safely (idempotent)
+
+        This prevents the NULL pointer crashes documented in PYTHON3_MIGRATION_NOTES.md
+        """
+        if self.__timer and self.__timer.IsRunning():
             self.__timer.Stop()
-        self.__callback = lambda *args, **kwargs: None  # Replace with no-op
+        # Replace callback with no-op lambda to safely handle any late timer events
+        self.__callback = lambda *args, **kwargs: None
 
     def onFindLater(self, event):  # pylint: disable=W0613
-        # Start the timer so that the actual filtering will be done
-        # only when the user pauses typing (at least 0.5 second)
-        self.__timer.Start(500, oneShot=True)
+        """
+        Debounce search operations using a timer.
+
+        This implements the "search-as-you-type" debouncing pattern:
+        - Restarts the timer on each keystroke
+        - Only triggers the actual search after user stops typing
+        - Prevents expensive filtering operations on every character
+
+        This is a best practice for search UX, used by Google, VS Code, etc.
+        """
+        self.__timer.Start(self.__debounceDelay, oneShot=True)
 
     def onFind(self, event):  # pylint: disable=W0613
+        """
+        Execute the actual search operation.
+
+        This is called either:
+        - After the debounce timer expires (user stopped typing)
+        - Immediately when user presses Enter (EVT_TEXT_ENTER)
+        - Immediately when changing search options via menu
+
+        Best practice: Stop any pending timer to prevent double execution.
+        """
+        # Cancel any pending debounced search
         if self.__timer.IsRunning():
             self.__timer.Stop()
         if not self.IsEnabled():
@@ -200,8 +248,14 @@ class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
         )
 
     def onCancel(self, event):
+        """
+        Handle search cancellation (clear button clicked).
+
+        Best practice: Clear search immediately without debouncing.
+        Users expect instant feedback when clearing a search.
+        """
         self.SetValue("")
-        self.onFind(event)
+        self.onFind(event)  # Immediate search, not debounced
         event.Skip()
 
     def onMatchCaseMenuItem(self, event):

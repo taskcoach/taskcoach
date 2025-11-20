@@ -956,17 +956,12 @@ class PageWithViewer(Page):
         raise NotImplementedError
 
     def close(self):
-        # I guess this happens because of CallAfter in context of #1437...
+        # Clean up the viewer immediately now that the SearchCtrl timer
+        # cleanup is properly implemented (see PYTHON3_MIGRATION_NOTES.md)
         if hasattr(self, "viewer"):
             self.viewer.detach()
-            # Don't notify the viewer about any changes anymore, it's about
-            # to be deleted, but don't delete it too soon.
-            wx.CallAfter(self.deleteViewer)
-        super().close()
-
-    def deleteViewer(self):
-        if hasattr(self, "viewer"):
             del self.viewer
+        super().close()
 
 
 class EffortPage(PageWithViewer):
