@@ -129,6 +129,8 @@ class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
             id=self.__recentSearchMenuItemIds[0],
             id2=self.__recentSearchMenuItemIds[-1],
         )
+        # Stop timer on window destruction to prevent crashes
+        self.Bind(wx.EVT_WINDOW_DESTROY, self._onDestroy)
 
     def setMatchCase(self, matchCase):
         self.__matchCase = matchCase
@@ -153,6 +155,12 @@ class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
             except sre_constants.error:
                 return False
         return True
+
+    def _onDestroy(self, event):
+        """Automatically cleanup timer on window destruction."""
+        if event.GetEventObject() == self:
+            self.cleanup()
+        event.Skip()
 
     def cleanup(self):
         """Stop the timer and clear callback to prevent crashes during window destruction."""
