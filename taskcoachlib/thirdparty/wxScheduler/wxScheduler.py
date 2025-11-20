@@ -35,6 +35,8 @@ class wxScheduler(wxSchedulerCore, scrolled.ScrolledPanel):
         self.Bind(
             wx.EVT_TIMER, self.OnRefreshTimer, id=self._refreshTimer.GetId()
         )
+        # Stop timers on window destruction to prevent crashes
+        self.Bind(wx.EVT_WINDOW_DESTROY, self._OnDestroy)
 
         self.SetScrollRate(10, 10)
 
@@ -76,6 +78,15 @@ class wxScheduler(wxSchedulerCore, scrolled.ScrolledPanel):
     def OnRefreshTimer(self, evt):
         self.Refresh()
         self._refreshTimer.Start(60000, True)
+
+    def _OnDestroy(self, event):
+        """Stop timers on window destruction to prevent crashes."""
+        if event.GetEventObject() == self:
+            if self._sizeTimer and self._sizeTimer.IsRunning():
+                self._sizeTimer.Stop()
+            if self._refreshTimer and self._refreshTimer.IsRunning():
+                self._refreshTimer.Stop()
+        event.Skip()
 
     def Add(self, *args, **kwds):
         wxSchedulerCore.Add(self, *args, **kwds)
