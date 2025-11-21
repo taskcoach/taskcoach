@@ -23,7 +23,7 @@ from taskcoachlib import patterns
 from taskcoachlib.domain import date, categorizable, note, attachment, base
 from taskcoachlib.domain.attribute.icon import getImageOpen
 from pubsub import pub
-from taskcoachlib.thirdparty._weakrefset import WeakSet
+from weakref import WeakSet
 from . import status
 import ast
 import weakref

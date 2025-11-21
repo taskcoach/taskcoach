@@ -241,7 +241,6 @@ if sys.argv[1] == "py2exe":
                     # are imported implicitly:
                     "packages": [
                         "taskcoachlib.i18n",
-                        "taskcoachlib.thirdparty._weakrefset",
                         "igraph.vendor.texttable",
                         "cairo",
                     ],
