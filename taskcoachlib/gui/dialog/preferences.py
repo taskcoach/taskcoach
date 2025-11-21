@@ -27,6 +27,7 @@ from taskcoachlib.meta import data
 from taskcoachlib.i18n import _
 from wx.lib.agw.hyperlink import HyperLinkCtrl
 from wx.adv import BitmapComboBox
+import ast
 import wx, calendar
 
 
@@ -389,13 +390,13 @@ class SettingsPageBase(widgets.BookPage):
         return self.get(section, name)
 
     def getlist(self, section, name):
-        return eval(self.get(section, name))
+        return ast.literal_eval(self.get(section, name))
 
     def setlist(self, section, name, value):
         self.set(section, name, str(value))
 
     def getvalue(self, section, name):
-        return eval(self.get(section, name))
+        return ast.literal_eval(self.get(section, name))
 
     def setvalue(self, section, name, value):
         self.set(section, name, str(value))
