@@ -20,6 +20,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
 import sys
+import faulthandler
+
+# Enable faulthandler to get Python tracebacks on segfaults
+# This helps debug crashes in wxPython/GTK C++ code by showing which
+# Python code was executing when the crash occurred
+faulthandler.enable(all_threads=True)
+
+# Enable more detailed Python error reporting
+sys.tracebacklimit = 100  # Show full tracebacks, not just last 10 frames
 
 # Workaround for a bug in Ubuntu 10.10
 os.environ["XLIB_SKIP_ARGB_VISUALS"] = "1"
