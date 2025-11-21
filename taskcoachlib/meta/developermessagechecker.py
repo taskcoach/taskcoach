@@ -38,7 +38,7 @@ class DeveloperMessageChecker(threading.Thread):
     def run(self, show=True):  # pylint: disable=W0221
         try:
             message, url = self.__get_message()
-        except:  # pylint: disable=W0702
+        except Exception:
             return  # Whatever goes wrong, ignore it.
         if self.__message_is_new(message):
             return self.__notify_user(message, url, show)

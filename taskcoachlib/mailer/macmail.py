@@ -52,8 +52,8 @@ end tell
             if not sp.returncode:
                 self.__title = operating_system.decodeSystemString(out.strip())
                 return
-        except:
-            pass
+        except (OSError, subprocess.SubprocessError):
+            pass  # AppleScript execution failed
 
         self.__title = _("Mail.app message")
 

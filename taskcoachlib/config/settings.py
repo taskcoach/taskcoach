@@ -96,8 +96,8 @@ class Settings(CachingConfigParser):
         if not saveIniFileInProgramDir:
             try:
                 os.remove(self.generatedIniFilename(forceProgramDir=True))
-            except:
-                return  # pylint: disable=W0702
+            except OSError:
+                return  # File might not exist
 
     def initializeWithDefaults(self):
         for section in self.sections():
@@ -185,11 +185,11 @@ class Settings(CachingConfigParser):
                 result += "Time"
             try:
                 ast.literal_eval(result)
-            except:
+            except (ValueError, SyntaxError):
                 sortKeys = [result]
                 try:
                     ascending = self.getboolean(section, "sortascending")
-                except:
+                except (ValueError, configparser.NoOptionError, configparser.NoSectionError):
                     ascending = True
                 result = '["%s%s"]' % (("" if ascending else "-"), result)
         elif option == "columns":
@@ -370,7 +370,7 @@ class Settings(CachingConfigParser):
                 return shell.SHGetSpecialFolderPath(
                     None, shellcon.CSIDL_PERSONAL
                 )
-            except:
+            except Exception:
                 # Yes, one of the documented ways to get this sometimes fail with "Unspecified error". Not sure
                 # this will work either.
                 # Update: There are cases when it doesn't work either; see support request #410...
@@ -378,8 +378,8 @@ class Settings(CachingConfigParser):
                     return shell.SHGetFolderPath(
                         None, shellcon.CSIDL_PERSONAL, None, 0
                     )  # SHGFP_TYPE_CURRENT not in shellcon
-                except:
-                    return os.getcwd()  # Fuck this
+                except Exception:
+                    return os.getcwd()  # Last resort fallback
         elif operating_system.isMac():
             import Carbon.Folder, Carbon.Folders, Carbon.File
 
@@ -432,7 +432,7 @@ class Settings(CachingConfigParser):
                 )
             else:
                 path = self.pathToConfigDir_deprecated(environ=environ)
-        except:  # Fallback to old dir
+        except Exception:  # Fallback to old dir
             path = self.pathToConfigDir_deprecated(environ=environ)
         return path
 
@@ -493,7 +493,7 @@ class Settings(CachingConfigParser):
     def _pathToTemplatesDir(self):
         try:
             return self._pathToDataDir("templates")
-        except:
+        except OSError:
             pass  # Fallback on old path
         return self.pathToTemplatesDir_deprecated(), True
 
@@ -569,7 +569,7 @@ class Settings(CachingConfigParser):
                 # pathToTemplatesDir() has created the directory
                 try:
                     os.rmdir(newPath)
-                except:
+                except OSError:
                     pass
                 shutil.move(oldPath, newPath)
         # Ini file
@@ -585,7 +585,7 @@ class Settings(CachingConfigParser):
         # Cleanup
         try:
             os.rmdir(self.pathToConfigDir_deprecated(environ=os.environ))
-        except:
+        except OSError:
             pass
 
     def __hash__(self) -> int:

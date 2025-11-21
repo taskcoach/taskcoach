@@ -310,7 +310,7 @@ def building_packages(settings, options):
     status = json.load(urllib.request.urlopen('http://%s:8010/json/builders/Release/builds/%d' % (host, buildno)))
     try:
         zipurl = status['steps'][-1]['urls']['Download release']
-    except:
+    except (KeyError, IndexError):
         raise RuntimeError('release.zip URL not found. Build failed.')
 
     if os.path.exists('dist'):

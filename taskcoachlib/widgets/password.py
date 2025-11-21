@@ -117,7 +117,7 @@ def _GetCachedPassword(domain, username, reset):
 def GetPassword(domain, username, reset=False):
     try:
         from keyring import set_password, get_password
-    except:
+    except ImportError:
         # Keychain unavailable.
         return _GetCachedPassword(domain, username, reset)
 

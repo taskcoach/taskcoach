@@ -153,8 +153,8 @@ class DropTarget(wx.DropTarget):
         formatType = receivedFormat.GetType()
         try:
             formatId = receivedFormat.GetId()
-        except:
-            formatId = None  # pylint: disable=W0702
+        except RuntimeError:
+            formatId = None  # Format ID not available
         return formatType, formatId
 
     @staticmethod

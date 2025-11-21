@@ -82,8 +82,8 @@ def signature(func, args, kwargs, result):
     result = str(result)
     try:
         return "%s(%s, %s) -> %s" % (func, str(args), str(kwargs), result)
-    except:
-        return "%s(...) -> %s" % (func, result)  # pylint: disable=W0702
+    except Exception:
+        return "%s(...) -> %s" % (func, result)  # Args couldn't be stringified
 
 
 def format_traceback(frame):

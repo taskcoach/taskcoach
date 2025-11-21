@@ -115,8 +115,8 @@ class TwistedScheduler(object):
                 ts, job, interval = self.__jobs.pop(0)
                 try:
                     job()
-                except:
-                    # Hum.
+                except Exception:
+                    # Log exceptions from scheduled jobs but continue
                     import traceback
 
                     traceback.print_exc()

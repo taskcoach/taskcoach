@@ -28,7 +28,7 @@ class SnarlNotifier(AbstractNotifier):
     def isAvailable(self):
         try:
             return bool(snarl.snGetVersion())
-        except:
+        except Exception:
             return False
 
     def notify(self, title, summary, bitmap, **kwargs):

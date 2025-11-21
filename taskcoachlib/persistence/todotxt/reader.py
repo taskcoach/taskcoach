@@ -59,8 +59,8 @@ class TodoTxtReader(object):
                             line, todoTxtRE, keyValueRE, date.Now, None
                         )
                         self.__deletedTasks.add(taskId)
-                    except:
-                        pass  # Err
+                    except (ValueError, AttributeError):
+                        pass  # Skip invalid lines in meta file
                     metaLines[
                         "->".join(subjects) if self.__version == 0 else taskId
                     ] = line

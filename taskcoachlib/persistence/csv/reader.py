@@ -252,5 +252,5 @@ class CSVReader(object):
                 minute,
                 second,
             )
-        except:  # pylint: disable=W0702
+        except (ValueError, AttributeError):
             return None

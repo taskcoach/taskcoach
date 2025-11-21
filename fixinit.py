@@ -23,8 +23,8 @@ def visitDir(arg, dirname, names):
     try:
         names.remove(".hg")
         names.remove(".git")
-    except:
-        pass
+    except ValueError:
+        pass  # .hg or .git not in list
 
     for name in names:
         if name in ["__init__.py", "itopicdefnprovider.py"]:

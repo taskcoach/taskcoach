@@ -150,7 +150,7 @@ class MultiLineTextCtrl(BaseTextCtrl):
         self.Bind(wx.EVT_TEXT_URL, self.onURLClicked)
         try:
             self.__webbrowser = webbrowser.get()
-        except:
+        except webbrowser.Error:
             self.__webbrowser = None
         self.MacCheckSpelling(self.CheckSpelling)
 

@@ -482,7 +482,7 @@ class TaskFile(patterns.Observer):
                 xml.ChangesXMLWriter(
                     open(self.filename() + ".delta", "wb")
                 ).write(self.__changes)
-        except:
+        except Exception:
             self.setFilename("")
             raise
         finally:
@@ -494,8 +494,8 @@ class TaskFile(patterns.Observer):
     def save(self):
         try:
             pub.sendMessage("taskfile.aboutToSave", taskFile=self)
-        except:
-            pass
+        except Exception:
+            pass  # Ignore errors from subscribers
         # When encountering a problem while saving (disk full,
         # computer on fire), if we were writing directly to the file,
         # it's lost. So write to a temporary file and rename it if
@@ -523,8 +523,8 @@ class TaskFile(patterns.Observer):
             self.__notifier.saved()
             try:
                 pub.sendMessage("taskfile.justSaved", taskFile=self)
-            except:
-                pass
+            except Exception:
+                pass  # Ignore errors from subscribers
 
     def mergeDiskChanges(self):
         self.__loading = True
@@ -690,8 +690,8 @@ class LockedTaskFile(TaskFile):
                     location, mountPoint, fsType, options, a, b = (
                         line.strip().split()
                     )
-                except:
-                    pass
+                except ValueError:
+                    pass  # Skip malformed mount lines
                 if os.path.abspath(path).startswith(
                     mountPoint
                 ) and fsType.startswith("fuse."):

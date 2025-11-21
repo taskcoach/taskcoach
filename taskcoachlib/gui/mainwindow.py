@@ -148,7 +148,7 @@ class MainWindow(
                 BonjourServiceRegister(
                     self.settings, acceptor.port
                 ).addCallbacks(success, error)
-            except:
+            except Exception:
                 from taskcoachlib.gui.dialog.iphone import IPhoneBonjourDialog
 
                 dlg = IPhoneBonjourDialog(self, wx.ID_ANY, _("Warning"))

@@ -133,8 +133,8 @@ class DynamicMenu(Menu):
         # you must carefully check if the window already destroyed.
         try:  # Prepare for menu or window to be destroyed
             self.updateMenu()
-        except:
-            pass
+        except RuntimeError:
+            pass  # Menu or window may be destroyed
 
     def updateMenu(self):
         """Updating the menu consists of two steps: updating the menu item

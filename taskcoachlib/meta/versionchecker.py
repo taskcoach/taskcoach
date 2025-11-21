@@ -42,7 +42,7 @@ class VersionChecker(threading.Thread):
                 self.getLastVersionNotified()
             )
             currentVersion = self.tupleVersion(data.version)
-        except:
+        except Exception:
             if self.verbose:
                 self.notifyUser(
                     version.NoVersionDialog,

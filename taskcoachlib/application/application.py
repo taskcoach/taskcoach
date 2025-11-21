@@ -230,8 +230,8 @@ class Application(object, metaclass=patterns.Singleton):
                 gnu_get_libc_version = libc.gnu_get_libc_version
                 gnu_get_libc_version.restype = ctypes.c_char_p
                 print(f"glibc {gnu_get_libc_version().decode()}")
-            except:
-                pass
+            except (OSError, AttributeError):
+                pass  # glibc version detection may fail
 
         # Log zeroconf version (used for iPhone sync)
         try:
@@ -457,8 +457,8 @@ class Application(object, metaclass=patterns.Singleton):
             from taskcoachlib.gui import taskbaricon  # pylint: disable=W0612
 
             return True
-        except:
-            return False  # pylint: disable=W0702
+        except ImportError:
+            return False  # TaskBarIcon not available on this platform
 
     @staticmethod
     def __close_splash(splash):

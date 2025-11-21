@@ -156,7 +156,7 @@ class IOController(object):
                     self.__taskFile.load(
                         filename, lock=lock, breakLock=breakLock
                     )
-                except:
+                except Exception:
                     # Need to destroy splash screen first because it may
                     # interfere with dialogs we show later on Mac OS X
                     if self.__splash:

@@ -36,8 +36,8 @@ class GrowlNotifier(AbstractNotifier):
                 applicationName=meta.name, notifications=["Reminder"]
             )
             self._notifier.register()
-        except:
-            self._available = False  # pylint: disable=W0702
+        except Exception:
+            self._available = False  # Growl registration failed
         else:
             self._available = True
 

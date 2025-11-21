@@ -2020,7 +2020,7 @@ class Mail(mixin_uicommand.NeedsSelectionMixin, ViewerCommand):
     def mail(self, to, cc, subject, body, mail, showerror):
         try:
             mail(to, subject, body, cc=cc)
-        except:
+        except Exception:
             # Try again with a dummy recipient:
             try:
                 mail("recipient@domain.com", subject, body)

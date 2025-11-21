@@ -225,7 +225,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
                 imageList.Add(
                     wx.ArtProvider.GetBitmap(image, wx.ART_MENU, size)
                 )
-            except:
+            except Exception:
                 print(image)
                 raise
             self.imageIndex[image] = index

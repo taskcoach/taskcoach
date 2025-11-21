@@ -34,8 +34,8 @@ class TempFiles(object, metaclass=patterns.Singleton):
                 if os.name == "nt":
                     os.chmod(name, stat.S_IREAD | stat.S_IWRITE)
                 os.remove(name)
-            except:
-                pass  # pylint: disable=W0702
+            except OSError:
+                pass  # File may already be deleted or inaccessible
 
 
 def get_temp_file(**kwargs):

@@ -1404,8 +1404,8 @@ class EditBook(widgets.Notebook):
                 # DISABLED: LoadPerspective was restoring stale AuiNotebook perspective with broken sizing
                 # self.LoadPerspective(perspective)
                 pass
-            except:  # pylint: disable=W0702
-                pass
+            except Exception:
+                pass  # Perspective loading may fail
         if items_are_new:
             current_page = (
                 self.getPageIndex("subject") or 0

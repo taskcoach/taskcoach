@@ -293,7 +293,7 @@ class SimpleToolTip(ToolTipBase):
     def _drawTextLine(self, dc, textLine, x, y):
         try:
             dc.DrawText(textLine, x, y)
-        except:
+        except Exception:
             raise RuntimeError("Could not draw text %s" % repr(textLine))
         textHeight = dc.GetTextExtent(textLine)[1]
         return y + textHeight + 1

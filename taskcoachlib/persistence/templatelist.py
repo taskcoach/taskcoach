@@ -63,7 +63,7 @@ class TemplateList(object):
         if os.path.exists(listName):
             try:
                 filenames = pickle.load(open(listName, "rb"))
-            except:
+            except (OSError, pickle.UnpicklingError, EOFError):
                 pass
         return filenames
 
