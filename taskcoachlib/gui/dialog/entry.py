@@ -22,9 +22,8 @@ from taskcoachlib import widgets, operating_system
 from taskcoachlib.domain import date
 from taskcoachlib.gui import artprovider
 from taskcoachlib.i18n import _
-from taskcoachlib.thirdparty import combotreebox
 import datetime
-from wx.lib import newevent
+from wx.lib import combotreebox, newevent
 import wx
 
 
@@ -415,6 +414,8 @@ class TaskEntry(wx.Panel):
         self._createInterior()
         self._addTasksRecursively(rootTasks)
         self.SetValue(selectedTask)
+        # Bind to window close to properly clean up the popup
+        self.Bind(wx.EVT_WINDOW_DESTROY, self._onDestroy)
 
     def __getattr__(self, attr):
         """Delegate unknown attributes to the ComboTreeBox. This is needed
@@ -458,6 +459,33 @@ class TaskEntry(wx.Panel):
         """Return the selected task."""
         selection = self._comboTreeBox.GetSelection()
         return self._comboTreeBox.GetClientData(selection)
+
+    def _onDestroy(self, event):
+        """Clean up the popup frame before destruction to avoid RuntimeErrors.
+
+        The wx.lib.combotreebox has issues where focus events fire during
+        destruction, causing RuntimeErrors when C++ objects are already deleted.
+        """
+        event.Skip()
+        # Only handle destruction of this specific window
+        if event.GetEventObject() is not self:
+            return
+        try:
+            # Try to unbind the kill focus handler before destruction
+            popupFrame = self._comboTreeBox._popupFrame
+            if popupFrame:
+                try:
+                    popupFrame._unbindKillFocus()
+                except (RuntimeError, AttributeError):
+                    pass  # Already destroyed or doesn't have the method
+                # Hide the popup if it's showing
+                if popupFrame.IsShown():
+                    try:
+                        popupFrame.Hide()
+                    except RuntimeError:
+                        pass  # Already destroyed
+        except (RuntimeError, AttributeError):
+            pass  # ComboTreeBox already destroyed
 
 
 RecurrenceEntryEvent, EVT_RECURRENCEENTRY = newevent.NewEvent()
