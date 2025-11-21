@@ -22,9 +22,8 @@ from taskcoachlib import widgets, operating_system
 from taskcoachlib.domain import date
 from taskcoachlib.gui import artprovider
 from taskcoachlib.i18n import _
-from taskcoachlib.thirdparty import combotreebox
 import datetime
-from wx.lib import newevent
+from wx.lib import combotreebox, newevent
 import wx
 
 
