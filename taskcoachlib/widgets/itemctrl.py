@@ -447,7 +447,16 @@ class _CtrlWithSortableColumnsMixin(_BaseCtrlWithColumnsMixin):
             column = self._getColumn(columnIndex)
             # Use CallAfter to make sure the window this control is in is
             # activated before we process the column click:
-            wx.CallAfter(column.sort, event)
+            wx.CallAfter(self.__safeColumnSort, column, event)
+
+    def __safeColumnSort(self, column, event):
+        """Safely call column.sort, guarding against deleted C++ objects."""
+        try:
+            if self:
+                column.sort(event)
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            pass
 
     def showSortColumn(self, column):
         if column != self.__currentSortColumn:

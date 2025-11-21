@@ -72,8 +72,26 @@ class Dialog(sized_controls.SizedDialog):
         self.Fit()
         self.CentreOnParent()
         if not operating_system.isGTK():
-            wx.CallAfter(self.Raise)
-        wx.CallAfter(self._panel.SetFocus)
+            wx.CallAfter(self.__safeRaise)
+        wx.CallAfter(self.__safePanelSetFocus)
+
+    def __safeRaise(self):
+        """Safely raise window, guarding against deleted C++ objects."""
+        try:
+            if self:
+                self.Raise()
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            pass
+
+    def __safePanelSetFocus(self):
+        """Safely set focus on panel, guarding against deleted C++ objects."""
+        try:
+            if self._panel:
+                self._panel.SetFocus()
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            pass
 
     def SetExtraStyle(self, exstyle):
         # SizedDialog's constructor calls this to set WS_EX_VALIDATE_RECURSIVELY. We don't need

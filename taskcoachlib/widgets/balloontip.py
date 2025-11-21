@@ -111,8 +111,17 @@ class BalloonTip(wx.Frame):
         wx.GetTopLevelParent(self._target).Unbind(wx.EVT_MOVE)
 
     def _OnDim(self, event):
-        wx.CallAfter(self.Position)
+        wx.CallAfter(self.__safePosition)
         event.Skip()
+
+    def __safePosition(self):
+        """Safely call Position, guarding against deleted C++ objects."""
+        try:
+            if self:
+                self.Position()
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            pass
 
     def DoClose(self, event, unbind=True):
         if unbind:

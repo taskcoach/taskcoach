@@ -1973,6 +1973,14 @@ class Editor(BalloonTipManager, widgets.Dialog):
             )
 
     def __close_if_item_is_deleted(self, items):
+        # Guard against deleted C++ object - can happen when wx.CallAfter
+        # callback executes after window destruction (e.g., closing nested dialogs)
+        try:
+            if not self or self.IsBeingDeleted():
+                return
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            return
         for item in items:
             if (
                 self._interior.isDisplayingItemOrChildOfItem(item)

@@ -49,8 +49,17 @@ class TcSquareMap(tooltip.ToolTipMixin, squaremap.SquareMap):
             self.__selection = []
         else:
             self.__selection = [event.node]
-        wx.CallAfter(self.selectCommand)
+        wx.CallAfter(self.__safeSelectCommand)
         event.Skip()
+
+    def __safeSelectCommand(self):
+        """Safely call selectCommand, guarding against deleted C++ objects."""
+        try:
+            if self:
+                self.selectCommand()
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            pass
 
     def select(self, items):
         pass

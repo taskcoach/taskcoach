@@ -253,7 +253,16 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
         )
         self._validateDragCallback = kwargs.pop("validateDrag", None)
         super().__init__(*args, **kwargs)
-        wx.CallAfter(self._lateInit)
+        wx.CallAfter(self.__safeLateInit)
+
+    def __safeLateInit(self):
+        """Safely perform late initialization, guarding against deleted C++ objects."""
+        try:
+            if self:
+                self._lateInit()
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            pass
 
     def _lateInit(self):
         self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.OnBeginDrag)
@@ -330,8 +339,17 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
             # want, so use wx.CallAfter to clear the selection after
             # HyperTreeList did its (wrong) thing and reselect the previously
             # dragged item.
-            wx.CallAfter(self.select, self._dragItems)
+            wx.CallAfter(self.__safeSelect, self._dragItems)
         self._dragItems = []
+
+    def __safeSelect(self, items):
+        """Safely call select, guarding against deleted C++ objects."""
+        try:
+            if self:
+                self.select(items)
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            pass
 
     def selectDraggedItems(self):
         self.select(reversed(self._dragItems))
