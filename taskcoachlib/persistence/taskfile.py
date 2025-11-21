@@ -22,7 +22,7 @@ from . import xml
 from taskcoachlib import patterns, operating_system
 from taskcoachlib.domain import base, task, category, note, effort, attachment
 from taskcoachlib.syncml.config import createDefaultSyncConfig
-from taskcoachlib.thirdparty.guid import generate
+import uuid
 from taskcoachlib.changes import ChangeMonitor, ChangeSynchronizer
 from taskcoachlib.filesystem import (
     FilesystemNotifier,
@@ -123,7 +123,7 @@ class TaskFile(patterns.Observer):
         self.__categories = category.CategoryList()
         self.__notes = note.NoteContainer()
         self.__efforts = effort.EffortList(self.tasks())
-        self.__guid = generate()
+        self.__guid = str(uuid.uuid4())
         self.__syncMLConfig = createDefaultSyncConfig(self.__guid)
         self.__monitor = ChangeMonitor()
         self.__changes = dict()
@@ -389,7 +389,7 @@ class TaskFile(patterns.Observer):
             self.categories().clear(event=event)
             self.notes().clear(event=event)
             if regenerate:
-                self.__guid = generate()
+                self.__guid = str(uuid.uuid4())
                 self.__syncMLConfig = createDefaultSyncConfig(self.__guid)
         finally:
             pub.sendMessage("taskfile.justCleared", taskFile=self)
@@ -403,7 +403,7 @@ class TaskFile(patterns.Observer):
             )
 
         self.setFilename("")
-        self.__guid = generate()
+        self.__guid = str(uuid.uuid4())
         self.clear()
         self.__monitor.reset()
         self.markClean()
@@ -443,7 +443,7 @@ class TaskFile(patterns.Observer):
                 categories = []
                 notes = []
                 changes = dict()
-                guid = generate()
+                guid = str(uuid.uuid4())
                 syncMLConfig = createDefaultSyncConfig(guid)
             self.clear()
             self.__monitor.reset()

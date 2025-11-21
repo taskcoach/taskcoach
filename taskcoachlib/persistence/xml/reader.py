@@ -37,7 +37,7 @@ from taskcoachlib.syncml.config import (
     createDefaultSyncConfig,
 )
 from taskcoachlib.thirdparty.deltaTime import nlTimeExpression
-from taskcoachlib.thirdparty.guid import generate
+import uuid
 import ast
 import io
 import operator
@@ -661,7 +661,7 @@ class XMLReader(object):
     def __parse_guid_node(self, node):
         """Parse the GUID from the node."""
         guid = self.__parse_text(node).strip()
-        return guid if guid else generate()
+        return guid if guid else str(uuid.uuid4())
 
     def __parse_attachments(self, node):
         """Parse the attachments from the node."""

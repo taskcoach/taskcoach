@@ -22,7 +22,7 @@ from taskcoachlib.domain.note import NoteOwner
 from taskcoachlib.domain.task import Task
 from taskcoachlib.domain.effort import Effort
 from taskcoachlib.domain.attachment import AttachmentOwner
-from taskcoachlib.thirdparty import guid
+import uuid
 from pubsub import pub
 
 
@@ -34,7 +34,7 @@ class ChangeMonitor(Observer):
     def __init__(self, id_=None):
         super().__init__()
 
-        self.__guid = id_ or guid.generate()
+        self.__guid = id_ or str(uuid.uuid4())
         self.__frozen = False
         self.__collections = []
 
