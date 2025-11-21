@@ -18,6 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import ast
 import test, sys, os, configparser, io
 from taskcoachlib import config, meta
 from pubsub import pub
@@ -66,7 +67,7 @@ class SettingsTest(SettingsTestCase):
         self.settings.add_section("effortviewer1")
         self.settings.set("effortviewer", "columnwidths", "dict(subject=10)")
         self.assertEqual(
-            eval(config.defaults.defaults["effortviewer"]["columnwidths"]),
+            ast.literal_eval(config.defaults.defaults["effortviewer"]["columnwidths"]),
             self.settings.getdict("effortviewer1", "columnwidths"),
         )
 
@@ -75,7 +76,7 @@ class SettingsTest(SettingsTestCase):
         self.settings.add_section("effortviewer2")
         self.settings.set("effortviewer1", "columnwidths", "dict(subject=10)")
         self.assertEqual(
-            eval(config.defaults.defaults["effortviewer"]["columnwidths"]),
+            ast.literal_eval(config.defaults.defaults["effortviewer"]["columnwidths"]),
             self.settings.getdict("effortviewer2", "columnwidths"),
         )
 

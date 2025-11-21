@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import ast
 import test
 from taskcoachlib import gui, config, persistence
 
@@ -44,7 +45,7 @@ class PreferencesTest(test.wxTestCase):
         self.preferences.ok()
         self.assertEqual(
             self.newColor,
-            eval(self.settings.get("fgcolor", "activetasks"))[:3],
+            ast.literal_eval(self.settings.get("fgcolor", "activetasks"))[:3],
         )
 
 
