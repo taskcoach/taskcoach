@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import ast
 import wx, test
 from taskcoachlib import gui, config, persistence, meta, operating_system
 from taskcoachlib.domain import task
@@ -177,7 +178,7 @@ class MainWindowIconizedTest(MainWindowTestCase):
     def testWindowSize(self):
         self.assertEqual(
             (900, self.expectedHeight()),
-            eval(self.settings.get("window", "size")),
+            ast.literal_eval(self.settings.get("window", "size")),
         )
 
     def testWindowSizeShouldnotChangeWhenReceivingChangeSizeEvent(self):
@@ -189,5 +190,5 @@ class MainWindowIconizedTest(MainWindowTestCase):
             wx.CallAfter(process, event)  # pragma: no cover
         self.assertEqual(
             (900, self.expectedHeight()),
-            eval(self.settings.get("window", "size")),
+            ast.literal_eval(self.settings.get("window", "size")),
         )

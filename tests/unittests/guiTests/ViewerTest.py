@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import ast
 import test
 from taskcoachlib import gui, config, widgets, persistence
 from taskcoachlib.domain import task, date
@@ -179,7 +180,7 @@ class SortableViewerTest(test.TestCase):
         self.viewer.sortBy("subject")
         self.assertEqual(
             "subject",
-            eval(self.settings.get(self.viewer.settingsSection(), "sortby"))[
+            ast.literal_eval(self.settings.get(self.viewer.settingsSection(), "sortby"))[
                 0
             ],
         )

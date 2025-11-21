@@ -18,6 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import ast
 from taskcoachlib import patterns, config
 from taskcoachlib.domain import task, effort, date, attachment, note, category
 from taskcoachlib.domain.attribute.icon import getImagePlural, getImageOpen
@@ -1121,7 +1122,7 @@ class TaskDueTodayTest(TaskTestCase, CommonTaskTestsMixin):
 
     def testDefaultDueSoonColor(self):
         expectedColor = wx.Colour(
-            *eval(self.settings.get("fgcolor", "duesoontasks"))
+            *ast.literal_eval(self.settings.get("fgcolor", "duesoontasks"))
         )
         self.assertEqual(
             expectedColor, self.task.foregroundColor(recursive=True)
@@ -1248,7 +1249,7 @@ class OverdueTaskTest(TaskTestCase, CommonTaskTestsMixin):
 
     def testDefaultOverdueColor(self):
         expectedColor = wx.Colour(
-            *eval(self.settings.get("fgcolor", "overduetasks"))
+            *ast.literal_eval(self.settings.get("fgcolor", "overduetasks"))
         )
         self.assertEqual(
             expectedColor, self.task.foregroundColor(recursive=True)
@@ -1350,7 +1351,7 @@ class CompletedTaskTest(TaskTestCase, CommonTaskTestsMixin):
 
     def testDefaultCompletedColor(self):
         expectedColor = wx.Colour(
-            *eval(self.settings.get("fgcolor", "completedtasks"))
+            *ast.literal_eval(self.settings.get("fgcolor", "completedtasks"))
         )
         self.assertEqual(
             expectedColor, self.task.foregroundColor(recursive=True)
@@ -1445,7 +1446,7 @@ class TaskWithPlannedStartDateInTheFutureTest(
 
     def testDefaultInactiveColor(self):
         expectedColor = wx.Colour(
-            *eval(self.settings.get("fgcolor", "inactivetasks"))
+            *ast.literal_eval(self.settings.get("fgcolor", "inactivetasks"))
         )
         self.assertEqual(
             expectedColor, self.task.foregroundColor(recursive=True)
@@ -3454,7 +3455,7 @@ class TaskColorTest(test.TestCase):
     def testActive(self):
         active = task.Task(actualStartDateTime=date.Now())
         self.assertEqual(
-            wx.Colour(*eval(self.settings.get("fgcolor", "activetasks"))),
+            wx.Colour(*ast.literal_eval(self.settings.get("fgcolor", "activetasks"))),
             active.statusFgColor(),
         )
 

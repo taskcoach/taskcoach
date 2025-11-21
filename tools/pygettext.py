@@ -5,7 +5,7 @@
 # Minimally patched to make it even more xgettext compatible
 # by Peter Funk <pf@artcom-gmbh.de>
 #
-# 2002-11-22 Jürgen Hermann <jh@web.de>
+# 2002-11-22 Jï¿½rgen Hermann <jh@web.de>
 # Added checks that _() only contains string literals, and
 # command line args are resolved to module lists, i.e. you
 # can now pass a filename, a module or package name, or a
@@ -267,7 +267,7 @@ def make_escapes(pass_iso8859):
     global escapes
     if pass_iso8859:
         # Allow iso-8859 characters to pass through so that e.g. 'msgid
-        # "Höhe"' would result not result in 'msgid "H\366he"'.  Otherwise we
+        # "Hï¿½he"' would result not result in 'msgid "H\366he"'.  Otherwise we
         # escape any character outside the 32..126 range.
         mod = 128
     else:
@@ -294,7 +294,8 @@ def escape(s):
 
 def safe_eval(s):
     # unwrap quotes, safely
-    return eval(s, {"__builtins__": {}}, {})
+    import ast
+    return ast.literal_eval(s)
 
 
 def normalize(s):
