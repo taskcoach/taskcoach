@@ -25,6 +25,7 @@ import wx.adv
 import os
 import sys
 from taskcoachlib import i18n
+from taskcoachlib.tools import wxhelper
 
 
 def get_resource_path(relative_path):
@@ -62,3 +63,5 @@ class SplashScreen(wx.adv.SplashScreen):
             None,
             -1,
         )
+        # Reposition to app's monitor (uses saved monitor_index from settings)
+        wxhelper.centerOnAppMonitor(self)

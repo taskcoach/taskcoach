@@ -196,9 +196,9 @@ class HtmlWindowThatUsesWebBrowserForExternalLinks(wx.html.HtmlWindow):
 
 
 class HTMLDialog(Dialog):
-    def __init__(self, title, htmlText, *args, **kwargs):
+    def __init__(self, title, htmlText, parent=None, *args, **kwargs):
         self._htmlText = htmlText
-        super().__init__(None, title, buttonTypes=wx.ID_CLOSE, *args, **kwargs)
+        super().__init__(parent, title, buttonTypes=wx.ID_CLOSE, *args, **kwargs)
 
     def createInterior(self):
         interior = HtmlWindowThatUsesWebBrowserForExternalLinks(
