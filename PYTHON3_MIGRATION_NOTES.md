@@ -641,6 +641,101 @@ The remaining ntlm module files contain some Python 2 patterns that could be mod
 
 However, since the code works and is only used for IMAP authentication, these are low priority.
 
+### deltaTime.py Module
+
+**Date Updated:** November 2025
+**Location:** `taskcoachlib/thirdparty/deltaTime.py`
+**Source:** https://github.com/pyparsing/pyparsing/blob/master/examples/delta_time.py
+
+#### Background
+
+The `deltaTime.py` module provides natural language time parsing for the task templates feature. It parses expressions like "noon tomorrow", "in 2 hours", "next Monday at 3pm" and converts them to Python datetime objects.
+
+#### Analysis Results
+
+| Attribute | Old Bundled Version | New Upstream Version |
+|-----------|---------------------|----------------------|
+| **Copyright** | 2010 by Paul McGuire | 2010, 2019 by Paul McGuire |
+| **Last Updated** | ~2010 (14 years old) | December 2024 |
+| **Export Name** | `nlTimeExpression` | `time_expression` (alias added for compatibility) |
+| **pyparsing API** | Old style (`from pyparsing import *`) | Modern (`import pyparsing as pp`) |
+| **Local Patches** | Extensive hacks for pyparsing compat | None needed |
+
+#### Problems with Old Version
+
+The bundled 2010 version had extensive local patches to work around pyparsing API changes:
+
+```python
+# Lines 72-147 were full of workarounds like:
+# "In newer pyparsing, absTime might not be accessible reliably"
+# "In newer pyparsing, Group results might be lists, not objects with attributes"
+```
+
+These patches made the code fragile and hard to maintain.
+
+#### Usage in Codebase
+
+The module is used **only for the task templates feature**:
+
+| File | Line | Usage |
+|------|------|-------|
+| `taskcoachlib/gui/dialog/templates.py` | 41 | UI validation of time expressions |
+| `taskcoachlib/persistence/xml/reader.py` | 851 | Parsing template times from XML |
+
+#### Action Taken
+
+1. **Replaced** with upstream version from pyparsing examples (December 2024)
+2. **Added backward compatibility alias**: `nlTimeExpression = time_expression`
+3. **Bumped pyparsing requirement** from `>=3.1.2` to `>=3.1.3` (needed for `pp.Tag`)
+4. **Updated install script** to pip install pyparsing (Debian Bookworm only has 3.0.9)
+
+#### New Features in Upstream Version
+
+The upstream version adds capabilities not in the old bundled version:
+
+| Feature | Example |
+|---------|---------|
+| Word-based numbers | "twenty-four hours from now" |
+| Adverbs | "in just 10 seconds", "only a couple of days ago" |
+| Complex expressions | "in 3 days at 5pm", "8am the day after tomorrow" |
+| Bug fixes | Day-of-week calculations fixed |
+
+#### pyparsing Version Requirement
+
+The upstream `delta_time.py` uses `pp.Tag()` which was added in pyparsing 3.1.3:
+
+```python
+time_ref_present = pp.Tag("time_ref_present")
+```
+
+**Version availability:**
+- Debian Bookworm apt: pyparsing 3.0.9 (too old)
+- Required: pyparsing >= 3.1.3
+- Solution: Install via pip in virtualenv
+
+#### Files Modified
+
+| File | Change |
+|------|--------|
+| `taskcoachlib/thirdparty/deltaTime.py` | Replaced with upstream (Dec 2024) |
+| `setup.py` | `pyparsing>=3.1.2` → `pyparsing>=3.1.3` |
+| `setup_bookworm.sh` | Added `pyparsing>=3.1.3` to pip install |
+| `DEBIAN_BOOKWORM_SETUP.md` | Added note about pyparsing needing pip |
+
+### snarl.py Module (Pending Evaluation)
+
+**Location:** `taskcoachlib/thirdparty/snarl.py`
+**Status:** Python 2 only, abandoned upstream
+
+The Snarl notification bindings are used only for Windows notifications. Issues identified:
+
+- Uses deprecated `array.tostring()` (removed in Python 3.13)
+- Uses deprecated `inspect.getargspec()`
+- No maintained upstream (original author unreachable)
+- Snarl itself has minimal development activity
+
+**Recommendation:** Consider replacing with modern Windows notification library (`win10toast`, `plyer`, or native Windows toast notifications).
+
 ---
 
 ## Known Issues
@@ -695,4 +790,4 @@ When adding new technical notes:
 
 ---
 
-**Last Updated:** November 21, 2025
+**Last Updated:** November 22, 2025

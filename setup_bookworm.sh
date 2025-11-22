@@ -103,10 +103,11 @@ echo
 
 # Install Python dependencies not available in Debian repos
 echo -e "${BLUE}[4/7] Installing Python dependencies in venv...${NC}"
-echo "Installing: desktop3, lockfile, gntp, distro, pypubsub, zeroconf"
+echo "Installing: desktop3, lockfile, gntp, distro, pypubsub, zeroconf, pyparsing>=3.1.3"
 
 source "$VENV_PATH/bin/activate"
-pip install --quiet desktop3 lockfile gntp distro pypubsub zeroconf
+# Note: pyparsing>=3.1.3 required for deltaTime.py (Debian Bookworm only has 3.0.9)
+pip install --quiet desktop3 lockfile gntp distro pypubsub zeroconf 'pyparsing>=3.1.3'
 deactivate
 
 echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
