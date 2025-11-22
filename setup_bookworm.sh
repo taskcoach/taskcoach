@@ -103,11 +103,12 @@ echo
 
 # Install Python dependencies not available in Debian repos
 echo -e "${BLUE}[4/7] Installing Python dependencies in venv...${NC}"
-echo "Installing: desktop3, lockfile, gntp, distro, pypubsub, zeroconf, pyparsing>=3.1.3"
+echo "Installing: desktop3, lockfile, gntp, distro, pypubsub, zeroconf, pyparsing>=3.1.3, squaremap"
 
 source "$VENV_PATH/bin/activate"
 # Note: pyparsing>=3.1.3 required for deltaTime.py (Debian Bookworm only has 3.0.9)
-pip install --quiet desktop3 lockfile gntp distro pypubsub zeroconf 'pyparsing>=3.1.3'
+# Note: squaremap provides hierarchic data visualization for effort viewer
+pip install --quiet desktop3 lockfile gntp distro pypubsub zeroconf 'pyparsing>=3.1.3' squaremap
 deactivate
 
 echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
@@ -239,7 +240,7 @@ echo
 echo "TaskCoach has been set up with:"
 echo "  • System packages from Debian repos (wxPython, numpy, lxml, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
-echo "  • Additional packages in venv (desktop3, lockfile, gntp, distro, pypubsub, zeroconf)"
+echo "  • Additional packages in venv (desktop3, lockfile, gntp, distro, pypubsub, zeroconf, squaremap)"
 echo "  • wxPython background color patch (for category row coloring)"
 echo
 echo "You can now run TaskCoach with:"

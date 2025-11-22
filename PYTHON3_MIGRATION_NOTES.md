@@ -722,6 +722,69 @@ time_ref_present = pp.Tag("time_ref_present")
 | `setup_bookworm.sh` | Added `pyparsing>=3.1.3` to pip install |
 | `DEBIAN_BOOKWORM_SETUP.md` | Added note about pyparsing needing pip |
 
+### squaremap/ Module
+
+**Date Updated:** November 2025
+**Location:** `taskcoachlib/thirdparty/squaremap/` (removed)
+**Status:** **REPLACED WITH PyPI DEPENDENCY**
+
+#### Background
+
+SquareMap is a hierarchic data visualization widget for wxPython that displays nested box trees (treemap visualization). Task Coach uses it for effort visualization in the "Square Map" viewer.
+
+#### Analysis Results
+
+| Attribute | Bundled Version | PyPI Version |
+|-----------|-----------------|--------------|
+| **Version** | 1.0.5 | 1.0.5 |
+| **Functional Differences** | None | None |
+| **Code Differences** | Black-formatted (double quotes) | Original (single quotes) |
+
+The bundled version was **functionally identical** to PyPI version 1.0.5. The only differences were cosmetic formatting changes applied by the project's Black formatter (double quotes vs single quotes, line wrapping).
+
+#### Why Vendoring Was Unnecessary
+
+The library was vendored (copied into the codebase) as a historical pattern from before pip/virtualenvs were reliable. Since the code is identical to PyPI, there was no reason to maintain a local copy.
+
+#### Action Taken
+
+1. **Removed** `taskcoachlib/thirdparty/squaremap/` directory
+2. **Added** `squaremap>=1.0.5` to `install_requires` in `setup.py`
+3. **Updated** import in `tcsquaremap.py` from `from ..thirdparty.squaremap import squaremap` to `from squaremap import squaremap`
+4. **Updated** `setup_bookworm.sh` to include `squaremap` in pip install list
+
+#### Benefits
+
+- **Automatic updates**: Future bug fixes from PyPI are automatically available
+- **Reduced codebase**: Removed ~700 lines of vendored code
+- **Standard dependency management**: Uses pip like all other dependencies
+- **Cleaner imports**: Standard import path instead of internal thirdparty path
+
+#### Files Modified
+
+| File | Change |
+|------|--------|
+| `taskcoachlib/thirdparty/squaremap/` | Removed directory |
+| `setup.py` | Added `squaremap>=1.0.5` dependency |
+| `taskcoachlib/widgets/tcsquaremap.py` | Updated import path, added `FontForLabels` override |
+| `setup_bookworm.sh` | Added `squaremap` to pip install list |
+
+#### PyPI squaremap Bug Workaround
+
+The PyPI squaremap 1.0.5 package has a bug in `FontForLabels()` where it passes a float to `Font.SetPointSize()` which requires an int:
+
+```python
+# Bug in squaremap 1.0.5:
+font.SetPointSize(scale * font.GetPointSize())  # float!
+
+# Fix (in TcSquareMap override):
+font.SetPointSize(int(scale * font.GetPointSize()))  # int
+```
+
+The `TcSquareMap` class overrides `FontForLabels()` to work around this bug until it's fixed upstream.
+
+---
+
 ### snarl.py Module
 
 **Date Removed:** November 2025
