@@ -239,7 +239,12 @@ class TreeListCtrl(
         # Guard against deleted C++ object - can happen when wx.CallAfter
         # callback executes after window destruction (e.g., closing nested dialogs)
         try:
-            return [self.GetItemPyData(item) for item in self.GetSelections()]
+            # Filter out None values - GetItemPyData can return None for some items
+            # (e.g., root items or items without associated PyData)
+            return [
+                data for item in self.GetSelections()
+                if (data := self.GetItemPyData(item)) is not None
+            ]
         except RuntimeError:
             # wrapped C/C++ object has been deleted
             return []

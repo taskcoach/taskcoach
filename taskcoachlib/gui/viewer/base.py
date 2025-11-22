@@ -791,7 +791,7 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
     def updateSelection(self, *args, **kwargs):
         super().updateSelection(*args, **kwargs)
         curselection = self.curselection()
-        if curselection:
+        if curselection and curselection[0] is not None:
             siblings = self.children(self.getItemParent(curselection[0]))
             self.__selectionIndex = (
                 siblings.index(curselection[0])
@@ -824,7 +824,7 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
 
     def getItemParent(self, item):
         """Allow for overriding what the parent of an item is."""
-        return item.parent()
+        return item.parent() if item is not None else None
 
     def getItemExpanded(self, item):
         return item.isExpanded(context=self.settingsSection())

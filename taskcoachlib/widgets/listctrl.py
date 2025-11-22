@@ -180,9 +180,10 @@ class VirtualListCtrl(
         # Guard against deleted C++ object - can happen when wx.CallAfter
         # callback executes after window destruction (e.g., closing nested dialogs)
         try:
+            # Filter out None values - getItemWithIndex can return None for some indices
             return [
-                self.getItemWithIndex(index)
-                for index in self.__curselection_indices()
+                item for index in self.__curselection_indices()
+                if (item := self.getItemWithIndex(index)) is not None
             ]
         except RuntimeError:
             # wrapped C/C++ object has been deleted
