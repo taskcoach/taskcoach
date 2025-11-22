@@ -19,19 +19,20 @@ def centerOnAppMonitor(window):
     target_monitor = None
     debug_info = []  # DEBUG
 
-    # Try to get monitor from main window
+    # Try to get monitor from main window (but not if we ARE the main window)
     if app:
         main_window = app.GetTopWindow()
-        debug_info.append(f"app={app}, main_window={main_window}")  # DEBUG
-        if main_window and main_window.IsShown():
+        debug_info.append(f"app={app}, main_window={main_window}, window={window}")  # DEBUG
+        # Skip if main_window is the window we're trying to position (e.g., splash screen)
+        if main_window and main_window is not window and main_window.IsShown():
             main_rect = main_window.GetScreenRect()
             target_monitor = wx.Display.GetFromPoint(
                 wx.Point(main_rect.x + main_rect.width // 2,
                          main_rect.y + main_rect.height // 2)
             )
-            debug_info.append(f"main_window shown, target_monitor={target_monitor}")  # DEBUG
+            debug_info.append(f"main_window shown (and not self), target_monitor={target_monitor}")  # DEBUG
         else:
-            debug_info.append(f"main_window not shown or None")  # DEBUG
+            debug_info.append(f"main_window not shown, None, or is self")  # DEBUG
     else:
         debug_info.append("no app")  # DEBUG
 
