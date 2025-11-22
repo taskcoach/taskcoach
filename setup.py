@@ -65,6 +65,7 @@ install_requires = [
     "lockfile>=0.12.2",
     "gntp>=1.0.3",
     "zeroconf>=0.50.0",  # For iPhone sync service discovery
+    "squaremap>=1.0.5",  # Hierarchic data visualization for wxPython
 ]
 
 system = platform.system()
