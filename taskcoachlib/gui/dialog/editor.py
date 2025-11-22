@@ -1052,9 +1052,11 @@ class CategoriesPage(PageWithViewer):
         self.viewer.refreshItems(*list(event.values()))
 
     def entries(self):
+        # Always include "categories" key so setFocus() can find this page
+        # before it's realized. The actual viewer is used if available.
         if self.__realized and hasattr(self, "viewer"):
             return dict(firstEntry=self.viewer, categories=self.viewer)
-        return dict()
+        return dict(firstEntry=self, categories=self)
 
 
 class LocalAttachmentViewer(viewer.AttachmentViewer):  # pylint: disable=W0223

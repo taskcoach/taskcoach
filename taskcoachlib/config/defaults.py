@@ -475,6 +475,7 @@ defaults = {
     "window": {
         "size": "(900, 500)",  # Default size of the main window
         "position": "(-1, -1)",  # Position of the main window, undefined by default
+        "monitor_index": "-1",  # Monitor the window was on, -1 means unknown/default
         "iconized": "False",  # Don't start up iconized by default
         "maximized": "False",  # Don't start up maximized by default
         # Possible strticonized values: 'Never', 'Always', 'WhenClosedIconized'

@@ -131,10 +131,27 @@ class WindowSizeAndPositionTracker(_Tracker):
                 # No parent, use safe default
                 x, y = 50, 50
             # else: use saved position (x, y) for dialogs without parent
-        elif x == -1 and y == -1:
-            # For main window with no saved position, use safe default
-            # Not (0, 0) because on some systems this might hide title bar
-            x, y = 50, 50
+        else:
+            # Main window positioning with multi-monitor support
+            saved_monitor = self.get_setting("monitor_index")
+            num_monitors = wx.Display.GetCount()
+
+            if x == -1 and y == -1:
+                # No saved position - center on primary monitor
+                primary = wx.Display(0)
+                rect = primary.GetGeometry()
+                x = rect.x + (rect.width - width) // 2
+                y = rect.y + (rect.height - height) // 2
+            elif saved_monitor >= 0 and saved_monitor < num_monitors:
+                # Saved monitor still exists - use saved position
+                # (position validation happens later in this method)
+                pass
+            else:
+                # Saved monitor no longer exists - center on primary monitor
+                primary = wx.Display(0)
+                rect = primary.GetGeometry()
+                x = rect.x + (rect.width - width) // 2
+                y = rect.y + (rect.height - height) // 2
 
         if operating_system.isMac():
             # Under MacOS 10.5 and 10.4, when setting the size, the actual
@@ -217,3 +234,7 @@ class WindowDimensionsTracker(WindowSizeAndPositionTracker):
         self.set_setting("iconized", iconized)
         if not iconized:
             self.set_setting("position", self._window.GetPosition())
+            # Save which monitor the window is on for multi-monitor support
+            monitor_index = wx.Display.GetFromWindow(self._window)
+            if monitor_index != wx.NOT_FOUND:
+                self.set_setting("monitor_index", monitor_index)
