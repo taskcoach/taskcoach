@@ -17,30 +17,43 @@ def centerOnAppMonitor(window):
     """
     app = wx.GetApp()
     target_monitor = None
+    debug_info = []  # DEBUG
 
     # Try to get monitor from main window
     if app:
         main_window = app.GetTopWindow()
+        debug_info.append(f"app={app}, main_window={main_window}")  # DEBUG
         if main_window and main_window.IsShown():
             main_rect = main_window.GetScreenRect()
             target_monitor = wx.Display.GetFromPoint(
                 wx.Point(main_rect.x + main_rect.width // 2,
                          main_rect.y + main_rect.height // 2)
             )
+            debug_info.append(f"main_window shown, target_monitor={target_monitor}")  # DEBUG
+        else:
+            debug_info.append(f"main_window not shown or None")  # DEBUG
+    else:
+        debug_info.append("no app")  # DEBUG
 
     # Fall back to saved monitor from settings
     if target_monitor is None or target_monitor == wx.NOT_FOUND:
+        debug_info.append(f"hasattr(app, 'settings')={hasattr(app, 'settings') if app else False}")  # DEBUG
         if app and hasattr(app, 'settings'):
             try:
                 saved_monitor = app.settings.getint("window", "monitor_index")
+                debug_info.append(f"saved_monitor={saved_monitor}, display_count={wx.Display.GetCount()}")  # DEBUG
                 if 0 <= saved_monitor < wx.Display.GetCount():
                     target_monitor = saved_monitor
-            except (KeyError, ValueError, AttributeError):
-                pass
+                    debug_info.append(f"using saved_monitor={saved_monitor}")  # DEBUG
+            except (KeyError, ValueError, AttributeError) as e:
+                debug_info.append(f"exception getting monitor_index: {e}")  # DEBUG
+        else:
+            debug_info.append("no settings on app")  # DEBUG
 
     # Fall back to primary monitor
     if target_monitor is None or target_monitor == wx.NOT_FOUND:
         target_monitor = 0
+        debug_info.append(f"falling back to primary monitor 0")  # DEBUG
 
     # Center on target monitor
     if target_monitor < wx.Display.GetCount():
@@ -49,7 +62,13 @@ def centerOnAppMonitor(window):
         window_size = window.GetSize()
         x = display_rect.x + (display_rect.width - window_size.width) // 2
         y = display_rect.y + (display_rect.height - window_size.height) // 2
+        debug_info.append(f"final: target_monitor={target_monitor}, display_rect={display_rect}, pos=({x},{y})")  # DEBUG
         window.SetPosition(wx.Point(x, y))
+
+    # DEBUG output
+    print(f"[centerOnAppMonitor] window={window.__class__.__name__}")
+    for info in debug_info:
+        print(f"  {info}")
 
 
 def getButtonFromStdDialogButtonSizer(
