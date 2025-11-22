@@ -258,7 +258,7 @@ cd "$TASKCOACH_HOME"
 - ✅ python3-dateutil (2.8.2)
 - ✅ python3-chardet (5.1.0)
 - ✅ python3-keyring (23.13.1)
-- ✅ python3-pyparsing (3.0.9)
+- ⚠️ python3-pyparsing (3.0.9) - **Note: requires 3.1.3+, install via pip**
 - ✅ python3-pyxdg (0.28)
 
 ### From PyPI (pip in venv):
@@ -267,6 +267,7 @@ cd "$TASKCOACH_HOME"
 - 📦 gntp
 - 📦 distro
 - 📦 pypubsub
+- 📦 pyparsing>=3.1.3 (Bookworm's 3.0.9 is too old)
 
 ## Why Virtual Environment?
 
