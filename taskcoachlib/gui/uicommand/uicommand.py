@@ -366,6 +366,13 @@ class PrintPreview(ViewerCommand, settings_uicommand.SettingsCommand):
         preview = wx.PrintPreview(
             printout, printout2, printerSettings.printData
         )
+        if not preview.IsOk():
+            wx.MessageBox(
+                _("There was a problem creating the print preview."),
+                _("Print Preview Error"),
+                wx.OK | wx.ICON_ERROR
+            )
+            return
         previewFrame = wx.PreviewFrame(
             preview, self.mainWindow(), _("Print preview"), size=(750, 700)
         )
