@@ -93,7 +93,10 @@ class HTMLPrintout(wx.html.HtmlPrintout):
         super().__init__()
         self.SetHtmlText(html_text)
         self.SetFooter(_("Page") + " @PAGENUM@/@PAGESCNT@", wx.html.PAGE_ALL)
-        self.SetStandardFonts(normal_face="Arial", fixed_face="Courier")
+        # Font sizes for HTML logical font sizes -2 to +4 (7 values required)
+        # These are typical default sizes used by wxHtmlWindow
+        default_font_sizes = [7, 8, 10, 12, 16, 22, 30]
+        self.SetFonts("Arial", "Courier", default_font_sizes)
         printer_settings = PrinterSettings(settings)
         left, top = printer_settings.pageSetupData.GetMarginTopLeft()
         right, bottom = printer_settings.pageSetupData.GetMarginBottomRight()
