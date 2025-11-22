@@ -751,6 +751,7 @@ The library was vendored (copied into the codebase) as a historical pattern from
 1. **Removed** `taskcoachlib/thirdparty/squaremap/` directory
 2. **Added** `squaremap>=1.0.5` to `install_requires` in `setup.py`
 3. **Updated** import in `tcsquaremap.py` from `from ..thirdparty.squaremap import squaremap` to `from squaremap import squaremap`
+4. **Updated** `setup_bookworm.sh` to include `squaremap` in pip install list
 
 #### Benefits
 
@@ -766,6 +767,7 @@ The library was vendored (copied into the codebase) as a historical pattern from
 | `taskcoachlib/thirdparty/squaremap/` | Removed directory |
 | `setup.py` | Added `squaremap>=1.0.5` dependency |
 | `taskcoachlib/widgets/tcsquaremap.py` | Updated import path |
+| `setup_bookworm.sh` | Added `squaremap` to pip install list |
 
 ---
 
