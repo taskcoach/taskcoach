@@ -330,6 +330,8 @@ class Application(object, metaclass=patterns.Singleton):
         ini_file = self._options.inifile if self._options else None
         # pylint: disable=W0201
         self.settings = config.Settings(load_settings, ini_file)
+        # Make settings accessible via wx.GetApp() for dialogs that need it
+        self.__wx_app.settings = self.settings
 
     def __init_language(self):
         """Initialize the current translation."""
