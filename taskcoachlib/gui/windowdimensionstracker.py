@@ -240,22 +240,14 @@ class WindowSizeAndPositionTracker(_Tracker):
         height = max(height, min_h) if height > 0 else min_h
 
         # Handle maximized state FIRST - don't set position targets that could interfere
-        # with positioning on the correct monitor
         if maximized:
-            # Set size only (position will be set for the target monitor)
-            self._window.SetSize(width, height)
-
-            # Position window on the saved monitor before maximizing
-            if saved_monitor is not None and saved_monitor != wx.NOT_FOUND:
-                num_displays = wx.Display.GetCount()
-                if saved_monitor < num_displays:
-                    display = wx.Display(saved_monitor)
-                    geometry = display.GetGeometry()
-                    # Move to center of the target monitor before maximizing
-                    center_x = geometry.x + (geometry.width - width) // 2
-                    center_y = geometry.y + (geometry.height - height) // 2
-                    _log_debug(f"  Positioning on monitor {saved_monitor} at ({center_x}, {center_y}) before maximize")
-                    self._window.SetPosition(wx.Point(center_x, center_y))
+            # Position at the restore position first, then maximize
+            # The restore position determines which monitor to maximize on
+            if x != -1 and y != -1:
+                self._window.SetSize(x, y, width, height)
+                _log_debug(f"  Positioned at restore pos ({x}, {y}) before maximize")
+            else:
+                self._window.SetSize(width, height)
 
             self._window.Maximize()
             self._target_position = None  # Don't correct position when maximized
