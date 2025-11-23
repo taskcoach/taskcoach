@@ -148,7 +148,11 @@ class WindowSizeAndPositionTracker(_Tracker):
         """Track maximize state changes."""
         # Note: We use IsMaximized() in save_state() rather than tracking state here,
         # because EVT_MAXIMIZE only fires when maximizing, not when restoring.
-        _log_debug(f"Window maximize event, IsMaximized={self._window.IsMaximized()}")
+        is_max = self._window.IsMaximized()
+        pos = self._window.GetPosition()
+        size = self._window.GetSize()
+        _log_debug(f"EVT_MAXIMIZE: IsMaximized={is_max} current_pos=({pos.x}, {pos.y}) current_size=({size.width}, {size.height})")
+        _log_debug(f"  Cached (restore values): pos={self._cached_position} size={self._cached_size}")
         event.Skip()
 
     def _on_activate(self, event):
