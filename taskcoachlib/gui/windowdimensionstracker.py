@@ -27,10 +27,12 @@ _DEBUG_WINDOW_TRACKING = True
 
 
 def _log_debug(msg):
-    """Log debug message with timestamp."""
+    """Log debug message with timestamp including milliseconds."""
     if _DEBUG_WINDOW_TRACKING:
-        timestamp = time.strftime("%H:%M:%S")
-        print(f"[{timestamp}] WindowTracker: {msg}")
+        now = time.time()
+        timestamp = time.strftime("%H:%M:%S", time.localtime(now))
+        ms = int((now % 1) * 1000)
+        print(f"[{timestamp}.{ms:03d}] WindowTracker: {msg}")
 
 
 class _Tracker:
@@ -75,6 +77,8 @@ class WindowSizeAndPositionTracker(_Tracker):
         self._target_size = None  # Also track target size (can be reset by AUI)
         self._should_maximize = False  # Maximize after EVT_ACTIVATE (window ready)
         self._maximizing = False  # True between Maximize() call and EVT_MAXIMIZE
+        self._restoring = False  # True during restore (un-maximize) transition
+        self._was_maximized = False  # Track previous maximize state for restore detection
 
         # Cache last known good position (protects against GTK bugs at close)
         self._cached_position = None
@@ -136,11 +140,28 @@ class WindowSizeAndPositionTracker(_Tracker):
         event.Skip()
 
     def _on_size(self, event):
-        """Cache size on resizes (only when not maximized/maximizing)."""
-        # Don't cache during maximize transition (IsMaximized() not yet True)
-        if not self._window.IsIconized() and not self._window.IsMaximized() and not self._maximizing:
-            size = event.GetSize()
-            pos = self._window.GetPosition()
+        """Cache size on resizes (only when in normal state, not during transitions)."""
+        size = event.GetSize()
+        pos = self._window.GetPosition()
+        is_max = self._window.IsMaximized()
+        is_icon = self._window.IsIconized()
+
+        # Detect restore transition: was maximized, now not maximized
+        if self._was_maximized and not is_max and not is_icon:
+            self._restoring = True
+            _log_debug(f"_on_size: RESTORE TRANSITION DETECTED, ignoring size events")
+
+        # Check if restore transition is complete (size matches cached)
+        if self._restoring and self._cached_size:
+            cached_w, cached_h = self._cached_size
+            # Allow small tolerance for restore completion
+            if abs(size.width - cached_w) < 10 and abs(size.height - cached_h) < 10:
+                self._restoring = False
+                self._was_maximized = False
+                _log_debug(f"_on_size: RESTORE COMPLETE pos=({pos.x}, {pos.y}) size=({size.width}, {size.height})")
+
+        # Only cache when in normal state (not maximized, not iconized, not in transition)
+        if not is_icon and not is_max and not self._maximizing and not self._restoring:
             if size.width > 100 and size.height > 100:
                 self._cached_size = (size.width, size.height)
                 if self._window_activated:
@@ -155,6 +176,11 @@ class WindowSizeAndPositionTracker(_Tracker):
         is_max = self._window.IsMaximized()
         pos = self._window.GetPosition()
         size = self._window.GetSize()
+
+        # Track that we're now maximized (for restore detection)
+        if is_max:
+            self._was_maximized = True
+
         _log_debug(f"EVT_MAXIMIZE: IsMaximized={is_max} current_pos=({pos.x}, {pos.y}) current_size=({size.width}, {size.height})")
         _log_debug(f"  Cached (restore values): pos={self._cached_position} size={self._cached_size}")
         event.Skip()
@@ -207,6 +233,10 @@ class WindowSizeAndPositionTracker(_Tracker):
                 self._maximizing = True  # Ignore size events until EVT_MAXIMIZE
                 self._window.Maximize()
                 self._should_maximize = False
+            else:
+                # Not maximizing - start restoring phase to ignore AUI noise
+                self._restoring = True
+                _log_debug(f"  Starting restore phase (ignoring AUI noise until size matches)")
         event.Skip()
 
     def _start_position_logging(self):
