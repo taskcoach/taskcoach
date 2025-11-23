@@ -73,6 +73,10 @@ class WindowSizeAndPositionTracker(_Tracker):
         self._cached_position = None
         self._cached_size = None
 
+        # Position logging timer
+        self._pos_log_count = 0
+        self._pos_log_timer = None
+
         # Check for Wayland
         self._on_wayland = os.environ.get('XDG_SESSION_TYPE') == 'wayland' or \
                           os.environ.get('WAYLAND_DISPLAY') is not None
@@ -92,6 +96,9 @@ class WindowSizeAndPositionTracker(_Tracker):
         self._window.Bind(wx.EVT_MOVE, self._on_move)
         self._window.Bind(wx.EVT_SIZE, self._on_size)
         self._window.Bind(wx.EVT_MAXIMIZE, self._on_maximize)
+
+        # Start rapid position logging
+        self._start_position_logging()
 
     def _on_move(self, event):
         """Cache position on moves (for save, protects against GTK bugs)."""
@@ -115,6 +122,36 @@ class WindowSizeAndPositionTracker(_Tracker):
         self._is_maximized = True
         _log_debug("Window maximized")
         event.Skip()
+
+    def _start_position_logging(self):
+        """Start rapid position logging: 100ms for 2s, then 1s intervals."""
+        self._pos_log_start_time = time.time()
+        self._log_position_tick()
+
+    def _log_position_tick(self):
+        """Log current position and schedule next tick."""
+        if not self._window:
+            return
+
+        elapsed = time.time() - self._pos_log_start_time
+        pos = self._window.GetPosition()
+        shown = self._window.IsShown()
+        ms = int((elapsed % 1) * 1000)
+
+        _log_debug(f"POS_LOG [{elapsed:.1f}s]: ({pos.x}, {pos.y}) shown={shown} applied={self._position_applied}")
+
+        self._pos_log_count += 1
+
+        # First 2 seconds: log every 100ms (20 logs)
+        # After that: log every 1000ms
+        if elapsed < 2.0:
+            interval = 100
+        else:
+            interval = 1000
+
+        # Stop after 10 seconds total
+        if elapsed < 10.0:
+            self._pos_log_timer = wx.CallLater(interval, self._log_position_tick)
 
     def _restore_size_only(self):
         """Restore only size, not position. Position set later after AUI."""
