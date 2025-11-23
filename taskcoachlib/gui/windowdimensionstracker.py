@@ -68,7 +68,6 @@ class WindowSizeAndPositionTracker(_Tracker):
     def __init__(self, window, settings, section):
         super().__init__(settings, section)
         self._window = window
-        self._is_maximized = False
         self._window_activated = False  # Track when window is ready (EVT_ACTIVATE fired)
 
         # Target position for GTK position correction
@@ -143,8 +142,9 @@ class WindowSizeAndPositionTracker(_Tracker):
 
     def _on_maximize(self, event):
         """Track maximize state changes."""
-        self._is_maximized = True
-        _log_debug("Window maximized")
+        # Note: We use IsMaximized() in save_state() rather than tracking state here,
+        # because EVT_MAXIMIZE only fires when maximizing, not when restoring.
+        _log_debug(f"Window maximize event, IsMaximized={self._window.IsMaximized()}")
         event.Skip()
 
     def _on_activate(self, event):
@@ -246,7 +246,6 @@ class WindowSizeAndPositionTracker(_Tracker):
         # Handle maximized state
         if maximized:
             self._window.Maximize()
-            self._is_maximized = True
             self._target_position = None  # Don't correct position when maximized
 
         # Initialize cache
@@ -285,7 +284,7 @@ class WindowSizeAndPositionTracker(_Tracker):
 
     def save_state(self):
         """Save the current window state. Call when window is about to close."""
-        maximized = self._window.IsMaximized() or self._is_maximized
+        maximized = self._window.IsMaximized()
         iconized = self._window.IsIconized()
 
         current_pos = self._window.GetPosition()
