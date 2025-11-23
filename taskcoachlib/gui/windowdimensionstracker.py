@@ -55,21 +55,24 @@ class WindowSizeAndPositionTracker(_Tracker):
 
     DESIGN NOTE: Deferred event binding to avoid spurious events.
 
-    Two sources of spurious resize/move events during window initialization:
+    Multiple sources of spurious resize/move events during window initialization:
     1. AUI LoadPerspective() triggers many layout events
     2. GTK window realization during Show() triggers invalid size/position events
+    3. Deferred operations (e.g., showStatusBar via CallAfter) queue more events
 
-    The GTK realization issue manifests as a Gtk-CRITICAL error followed by
-    spurious events with values like size=(6, 28) position=(80, 0).
+    The root cause is that SendSizeEvent() and other deferred operations queue
+    events that get processed AFTER wx.CallAfter runs but BEFORE the event queue
+    is empty. Using EVT_IDLE ensures we only bind once ALL pending events are done.
 
-    Solution: Defer event binding until AFTER the window is shown:
+    Solution: Defer event binding until AFTER all pending events are processed:
     1. __init__: Only restore window dimensions from settings (no event binding)
     2. start_tracking(): Sets up EVT_SHOW handler (call after AUI LoadPerspective)
-    3. _on_window_shown(): When window is shown, use wx.CallAfter to schedule binding
-    4. _bind_tracking_events(): Actually binds EVT_SIZE/EVT_MOVE/EVT_MAXIMIZE
+    3. _on_window_shown(): When window is shown, bind EVT_IDLE handler
+    4. _on_idle_after_show(): Once event queue is empty, bind tracking events
+    5. _bind_tracking_events(): Actually binds EVT_SIZE/EVT_MOVE/EVT_MAXIMIZE
 
-    The wx.CallAfter ensures event handlers aren't bound until after GTK realization
-    is complete, avoiding the spurious events from Show().
+    Using EVT_IDLE (not CallAfter) is critical - EVT_IDLE only fires when the
+    event queue is truly empty, ensuring all pending resize events are processed.
     """
 
     def __init__(self, window, settings, section):
@@ -108,9 +111,17 @@ class WindowSizeAndPositionTracker(_Tracker):
             # Unbind show handler - we only need it once
             self._window.Unbind(wx.EVT_SHOW, handler=self._on_window_shown)
             self._show_handler_bound = False
-            # Use CallAfter to ensure GTK realization is complete before binding
-            # This ensures spurious resize/move events from Show() are ignored
-            wx.CallAfter(self._bind_tracking_events)
+            # Use EVT_IDLE instead of CallAfter to ensure ALL pending events
+            # (including SendSizeEvent from showStatusBar) are processed first.
+            # EVT_IDLE only fires when the event queue is empty.
+            self._window.Bind(wx.EVT_IDLE, self._on_idle_after_show)
+
+    def _on_idle_after_show(self, event):
+        """Bind tracking handlers once event queue is empty after window show."""
+        event.Skip()
+        # Unbind immediately - we only need this once
+        self._window.Unbind(wx.EVT_IDLE, handler=self._on_idle_after_show)
+        self._bind_tracking_events()
 
     def _bind_tracking_events(self):
         """Actually bind the tracking event handlers."""

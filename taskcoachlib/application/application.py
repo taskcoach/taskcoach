@@ -417,54 +417,18 @@ class Application(object, metaclass=patterns.Singleton):
         # Register cleanup via atexit (runs before Python's final cleanup)
         atexit.register(cleanup_wx)
 
-        # Track signal handling state for double-press detection
-        self._sigint_count = 0
-        self._sigint_time = 0
-
-        def sigint_handler(signum, frame):
-            """Handle Ctrl+C gracefully.
-
-            This is tricky because:
-            - Signal handlers run in interrupt context
-            - wx.CallAfter doesn't wake up blocked event loop
-            - We need to terminate the wx main loop
-
-            Solution: First press tries graceful exit, second press forces exit.
-            """
-            import time
-            import os
-
-            current_time = time.time()
-
-            # If pressed twice within 2 seconds, force exit
-            if self._sigint_count > 0 and (current_time - self._sigint_time) < 2.0:
-                print("\nForce exit (Ctrl+C pressed twice)")
-                # Run cleanup synchronously before exit
-                cleanup_wx()
-                os._exit(0)  # Force exit - bypasses wx event loop
-
-            self._sigint_count += 1
-            self._sigint_time = current_time
-            print("\nCtrl+C received - press again within 2 seconds to force quit")
-
-            # Try graceful exit through wx
-            try:
-                wx.CallAfter(self.__wx_app.ExitMainLoop)
-            except Exception:
-                pass
-
-            # Also try to wake up the event loop
-            try:
-                if wx.App.Get():
-                    wx.WakeUpIdle()
-            except Exception:
-                pass
-
-        # Register SIGINT handler for Unix Ctrl+C
+        # Register SIGINT/SIGTERM handlers for Unix
+        # Use SIG_DFL (default handler) which immediately terminates the process.
+        # This is the recommended approach for GTK applications (see GTK bug #622084).
+        # The atexit handler (cleanup_wx above) will still run to save settings
+        # and clean up AUI before exit.
+        #
+        # References:
+        # - https://stackoverflow.com/questions/16410852/keyboard-interrupt-with-with-python-gtk
+        # - https://bugzilla.gnome.org/show_bug.cgi?id=622084
         if not operating_system.isWindows():
-            signal.signal(signal.SIGINT, sigint_handler)
-            # Also handle SIGTERM for kill command
-            signal.signal(signal.SIGTERM, sigint_handler)
+            signal.signal(signal.SIGINT, signal.SIG_DFL)
+            signal.signal(signal.SIGTERM, signal.SIG_DFL)
 
         if operating_system.isWindows():
             import win32api  # pylint: disable=F0401
