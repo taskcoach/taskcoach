@@ -676,7 +676,9 @@ your Pocket PC."""
     p(
         _(
             """On Linux, you must install the SyncML client binding for
-Python yourself. See the project repository for more information."""
+Python yourself. A 64 bits Debian package for Python 2.7 is available on
+<a target="_blank" href="http://www.taskcoach.org/">taskcoach.org</a>,
+at the end of the Linux downloads section."""
         )
     ),
     h4(a_name(_("Setup"), "syncmlsetup")),

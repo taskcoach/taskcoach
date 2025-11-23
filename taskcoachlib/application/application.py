@@ -413,20 +413,28 @@ class Application(object, metaclass=patterns.Singleton):
             import signal
 
             def quit_adapter(*args):
-                # On Unix, signal handlers run in the main thread, so we can
-                # interact with wx directly. We need to close the main window
-                # properly to trigger clean shutdown with event handler removal.
-                self.mainwindow.setShutdownInProgress()
-                self.mainwindow.Close(force=True)
+                # On Unix, signal handlers run in the main thread.
+                # Schedule the quit via CallAfter and wake up the event loop
+                # to ensure it gets processed.
+                def do_quit():
+                    self.mainwindow.setShutdownInProgress()
+                    self.quitApplication()
+                wx.CallAfter(do_quit)
+                # Wake up the event loop so it processes the CallAfter
+                if wx.GetApp():
+                    wx.WakeUpIdle()
 
             # Handle SIGINT (Ctrl+C) to prevent KeyboardInterrupt and allow clean shutdown
             signal.signal(signal.SIGINT, quit_adapter)
             signal.signal(signal.SIGTERM, quit_adapter)
             if hasattr(signal, "SIGHUP"):
-                forced_quit = lambda *args: (
-                    self.mainwindow.setShutdownInProgress(),
-                    self.mainwindow.Close(force=True)
-                )
+                def forced_quit(*args):
+                    def do_quit():
+                        self.mainwindow.setShutdownInProgress()
+                        self.quitApplication(force=True)
+                    wx.CallAfter(do_quit)
+                    if wx.GetApp():
+                        wx.WakeUpIdle()
                 signal.signal(
                     signal.SIGHUP, forced_quit
                 )  # pylint: disable=E1101
@@ -522,5 +530,24 @@ class Application(object, metaclass=patterns.Singleton):
         if isinstance(sys.stdout, RedirectedOutput):
             sys.stdout.summary()
 
+        # Pop all pushed event handlers from all windows before destroying
+        # to avoid wxAssertionError about pushed event handlers
+        self._cleanup_event_handlers(self.mainwindow)
+
+        # Destroy the main window before stopping the reactor
+        self.mainwindow.Destroy()
+
         self.stopTwisted()
         return True
+
+    def _cleanup_event_handlers(self, window):
+        """Recursively pop all pushed event handlers from window and children."""
+        # Pop all pushed event handlers from this window
+        while window.GetEventHandler() is not window:
+            handler = window.PopEventHandler()
+            if handler:
+                handler.Destroy()
+
+        # Recursively clean up children
+        for child in window.GetChildren():
+            self._cleanup_event_handlers(child)

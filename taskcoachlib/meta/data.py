@@ -125,22 +125,26 @@ author_email = "developers@taskcoach.org"
 filename = name.replace(" ", "")
 filename_lower = filename.lower()
 
-url = "https://github.com/realcarbonneau/taskcoach/"  # Don't remove the trailing slash, other code is assuming it will be there
-screenshot = None  # Screenshots now in GitHub repo
-icon = None  # Icon now in GitHub repo
-pad = None  # PAD file no longer used
-version_url = None  # Version checking disabled - no hosted version file
-message_url = None  # Developer messages disabled - no hosted message file
-download = url + "releases"
-dist_download_prefix = url + "releases/download"  # For build scripts
-faq_url = url + "discussions"
-bug_report_url = url + "issues/new"
-known_bugs_url = url + "issues"
-support_request_url = url + "discussions"
-feature_request_url = url + "issues/new"
-translations_url = url  # Translations via GitHub
-donate_url = url + "sponsor"
-i18n_url = url
+url = "http://taskcoach.org/"  # Don't remove the trailing slash, other code is assuming it will be there
+screenshot = (
+    url
+    + "screenshots/Windows/0.71.2-Windows_XP-Tasks_categories_and_effort.png"
+)
+icon = url + "taskcoach.png"
+pad = url + "pad.xml"
+version_url = url + "version.txt"
+message_url = url + "messages.txt"
+download = url + "download.html"
+dist_download_prefix = "http://downloads.sourceforge.net/%s" % filename_lower
+faq_url = "https://answers.launchpad.net/taskcoach/+faqs"
+sf_tracker_url = "https://sourceforge.net/tracker/"
+bug_report_url = sf_tracker_url + "?func=add&group_id=130831&atid=719134"
+known_bugs_url = sf_tracker_url + "?group_id=130831&atid=719134&status=1"
+support_request_url = sf_tracker_url + "?group_id=130831&atid=719135"
+feature_request_url = "http://taskcoach.uservoice.com"
+translations_url = "https://translations.launchpad.net/taskcoach"
+donate_url = url + "givesupport.html"
+i18n_url = url + "i18n.html"
 
 announcement_addresses = (
     "taskcoach@yahoogroups.com, python-announce-list@python.org"

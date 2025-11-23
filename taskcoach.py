@@ -67,7 +67,7 @@ if not hasattr(sys, "frozen"):
         except ImportError:
             sys.stderr.write(
                 """ERROR: cannot import the library 'taskcoachlib'.
-Please see https://github.com/realcarbonneau/taskcoach/issues
+Please see https://answers.launchpad.net/taskcoach/+faq/1063 
 for more information and possible resolutions.
 """
             )
