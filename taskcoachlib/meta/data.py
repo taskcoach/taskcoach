@@ -166,7 +166,9 @@ platform = "Any"
 pythonversion = "2.6"
 wxpythonversionnumber = "3.0.0.0"
 wxpythonversion = "%s-unicode" % wxpythonversionnumber
-twistedversionnumber = "10.0"
+# NOTE (Twisted Removal - 2024): Twisted is no longer required.
+# Replaced with native wxPython event handling, watchdog, and socketserver.
+watchdogversionnumber = "3.0.0"
 igraphversionnumber = "0.7"
 
 languages = {

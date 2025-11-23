@@ -53,7 +53,12 @@ install_requires = [
     "six>=1.16.0",
     "desktop3",
     "pypubsub",
-    "twisted",
+    # NOTE (Twisted Removal - 2024): Twisted has been removed and replaced with:
+    # - wx.CallLater for scheduling (was reactor.callLater)
+    # - watchdog for file monitoring (was Twisted INotify)
+    # - socketserver for iPhone sync (was Twisted Protocol/ServerFactory)
+    # - concurrent.futures for async threading (was deferToThread)
+    "watchdog>=3.0.0",  # For file system monitoring (replaces Twisted INotify)
     "chardet>=5.2.0",
     "python-dateutil>=2.9.0",
     "pyparsing>=3.1.3",

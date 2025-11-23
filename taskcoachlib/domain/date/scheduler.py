@@ -21,6 +21,7 @@ from . import dateandtime, timedelta
 import logging
 import weakref
 import bisect
+import wx
 
 
 class ScheduledMethod(object):
@@ -55,10 +56,21 @@ class ScheduledMethod(object):
             self.__func(obj, *args, **kwargs)
 
 
-class TwistedScheduler(object):
+class WxScheduler(object):
     """
-    A class to schedule jobs at specified date/time. Unlike apscheduler, this
-    uses Twisted instead of threading, in order to avoid busy waits.
+    A class to schedule jobs at specified date/time.
+
+    DESIGN NOTE (Twisted Removal - 2024):
+    Previously named TwistedScheduler and used reactor.callLater() from Twisted.
+    Now uses wx.CallLater() which integrates naturally with wxPython's event loop.
+
+    This change:
+    - Eliminates dependency on Twisted reactor
+    - Uses wx.CallLater() for millisecond-precision scheduling
+    - Maintains the same API for backward compatibility
+    - wx.CallLater() is well-suited for GUI event scheduling
+
+    Note: wx.CallLater takes milliseconds, so we convert appropriately.
     """
 
     def __init__(self):
@@ -69,7 +81,7 @@ class TwistedScheduler(object):
 
     def __schedule(self, job, dateTime, interval):
         if self.__nextCall is not None:
-            self.__nextCall.cancel()
+            self.__nextCall.Stop()
             self.__nextCall = None
         bisect.insort_right(self.__jobs, (dateTime, job, interval))
         if not self.__firing:
@@ -101,7 +113,7 @@ class TwistedScheduler(object):
 
     def shutdown(self):
         if self.__nextCall is not None:
-            self.__nextCall.cancel()
+            self.__nextCall.Stop()
             self.__nextCall = None
         self.__jobs = []
 
@@ -127,17 +139,16 @@ class TwistedScheduler(object):
 
         if self.__jobs and self.__nextCall is None:
             dt = self.__jobs[0][0] - dateandtime.Now()
+            # Convert timedelta to milliseconds for wx.CallLater
             nextDuration = int(
                 (dt.microseconds + (dt.seconds + dt.days * 24 * 3600) * 10**6)
                 / 10**3
             )
             nextDuration = max(nextDuration, 1)
             nextDuration = min(nextDuration, 2**31 - 1)
-            from twisted.internet import reactor
-
-            self.__nextCall = reactor.callLater(
-                nextDuration / 1000, self.__callback
-            )
+            # Use wx.CallLater instead of reactor.callLater
+            # wx.CallLater takes milliseconds directly (not seconds like Twisted)
+            self.__nextCall = wx.CallLater(nextDuration, self.__callback)
 
     def __callback(self):
         self.__nextCall = None
@@ -147,7 +158,7 @@ class TwistedScheduler(object):
 class Scheduler(object, metaclass=patterns.Singleton):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.__scheduler = TwistedScheduler()
+        self.__scheduler = WxScheduler()
 
     def shutdown(self):
         self.__scheduler.shutdown()

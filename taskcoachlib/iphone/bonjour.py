@@ -14,12 +14,82 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+DESIGN NOTE (Twisted Removal - 2024):
+Previously used Twisted's Deferred and reactor.callLater for async service
+registration. Now uses a simple callback-based pattern with wx.CallAfter
+for thread-safe GUI interaction.
+
+The key changes:
+- Twisted Deferred → AsyncResult class with callback/errback pattern
+- reactor.callLater(0, fn) → wx.CallAfter(fn)
+- Failure → standard Exception handling
+
+This maintains the async pattern for callers while eliminating Twisted dependency.
 """
 
 import socket
+import wx
 from zeroconf import Zeroconf, ServiceInfo
-from twisted.internet.defer import Deferred
-from twisted.python.failure import Failure
+
+
+class AsyncResult:
+    """
+    Simple async result handler replacing Twisted's Deferred.
+
+    Provides callback/errback pattern for async operations.
+    This is a minimal replacement for Twisted Deferred that
+    maintains API compatibility with existing callers.
+    """
+
+    def __init__(self):
+        self._callbacks = []
+        self._errbacks = []
+        self._result = None
+        self._error = None
+        self._called = False
+
+    def addCallback(self, callback):
+        """Add a callback for successful completion."""
+        if self._called:
+            if self._error is None:
+                callback(self._result)
+        else:
+            self._callbacks.append(callback)
+        return self
+
+    def addErrback(self, errback):
+        """Add an error handler for failure."""
+        if self._called:
+            if self._error is not None:
+                errback(self._error)
+        else:
+            self._errbacks.append(errback)
+        return self
+
+    def callback(self, result):
+        """Fire the deferred with a successful result."""
+        if self._called:
+            return
+        self._called = True
+        self._result = result
+        for cb in self._callbacks:
+            try:
+                cb(result)
+            except Exception:
+                pass
+
+    def errback(self, error):
+        """Fire the deferred with an error."""
+        if self._called:
+            return
+        self._called = True
+        self._error = error
+        for eb in self._errbacks:
+            try:
+                eb(error)
+            except Exception:
+                pass
 
 
 class BonjourServiceDescriptor(object):
@@ -83,12 +153,15 @@ def BonjourServiceRegister(settings, port):
         port: The port number the sync service is listening on
 
     Returns:
-        A Twisted Deferred that fires with the BonjourServiceDescriptor
+        An AsyncResult that fires with the BonjourServiceDescriptor
         on success, or errbacks with a RuntimeError on failure.
-    """
-    from twisted.internet import reactor
 
-    d = Deferred()
+    DESIGN NOTE (Twisted Removal - 2024):
+    Previously returned a Twisted Deferred. Now returns an AsyncResult
+    which provides the same callback/errback interface but without
+    Twisted dependency.
+    """
+    d = AsyncResult()
     reader = BonjourServiceDescriptor()
 
     def do_register():
@@ -127,13 +200,10 @@ def BonjourServiceRegister(settings, port):
         except Exception as e:
             reader.stop()
             d.errback(
-                Failure(
-                    RuntimeError(
-                        f"Could not register with Bonjour/Zeroconf: {e}"
-                    )
-                )
+                RuntimeError(f"Could not register with Bonjour/Zeroconf: {e}")
             )
 
-    # Schedule registration on reactor to maintain async pattern
-    reactor.callLater(0, do_register)
+    # Schedule registration on main thread using wx.CallAfter
+    # NOTE: Previously used reactor.callLater(0, do_register)
+    wx.CallAfter(do_register)
     return d

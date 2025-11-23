@@ -38,8 +38,10 @@ from taskcoachlib.widgets import (
     CalendarConfigDialog,
     HierarchicalCalendarConfigDialog,
 )
-from twisted.internet.threads import deferToThread
-from twisted.internet.defer import inlineCallbacks
+# NOTE (Twisted Removal - 2024): Replaced deferToThread/inlineCallbacks with
+# concurrent.futures ThreadPoolExecutor. This provides the same async thread
+# execution without Twisted reactor dependency.
+from concurrent.futures import ThreadPoolExecutor
 from . import base
 from . import inplace_editor
 from . import mixin
@@ -2383,29 +2385,65 @@ else:
                 if not self._updating:
                     self._refresh()
 
-        @inlineCallbacks
         def _refresh(self):
+            """
+            Refresh the graph visualization asynchronously.
+
+            DESIGN NOTE (Twisted Removal - 2024):
+            Previously used @inlineCallbacks and deferToThread from Twisted.
+            Now uses concurrent.futures.ThreadPoolExecutor with wx.CallAfter
+            for thread-safe GUI updates. This maintains the same async behavior
+            without requiring the Twisted reactor.
+            """
             while self._needsUpdate:
                 # Compute this in main thread because of concurrent access issues
                 graph, visual_style = self.form_depend_graph()
                 self._needsUpdate = False  # Any new refresh starting here should trigger a new iteration
                 if graph.get_edgelist():
                     self._updating = True
-                    try:
-                        yield deferToThread(
-                            igraph.plot,
-                            graph,
-                            self.graphFile.name,
-                            **visual_style
-                        )
-                    finally:
-                        self._updating = False
-                    bitmap = wx.Image(
-                        self.graphFile.name, wx.BITMAP_TYPE_ANY
-                    ).ConvertToBitmap()
+                    # Use ThreadPoolExecutor for background thread execution
+                    executor = ThreadPoolExecutor(max_workers=1)
+
+                    def do_plot():
+                        try:
+                            igraph.plot(
+                                graph,
+                                self.graphFile.name,
+                                **visual_style
+                            )
+                        finally:
+                            self._updating = False
+                        return True
+
+                    def on_plot_complete(future):
+                        try:
+                            future.result()  # Check for exceptions
+                            bitmap = wx.Image(
+                                self.graphFile.name, wx.BITMAP_TYPE_ANY
+                            ).ConvertToBitmap()
+                        except Exception:
+                            bitmap = wx.NullBitmap
+
+                        # Update GUI in main thread
+                        def update_gui():
+                            if self._needsUpdate:
+                                # Another refresh was requested, recurse
+                                self._refresh()
+                            else:
+                                self._finish_refresh(bitmap)
+
+                        wx.CallAfter(update_gui)
+
+                    future = executor.submit(do_plot)
+                    future.add_done_callback(on_plot_complete)
+                    return  # Exit and let callback handle completion
                 else:
                     bitmap = wx.NullBitmap
+                    self._finish_refresh(bitmap)
+                    return
 
+        def _finish_refresh(self, bitmap):
+            """Complete the refresh by updating the GUI with the new bitmap."""
             # Only update graphics once all refreshes have been "collapsed"
             graph_png_bm = wx.StaticBitmap(
                 self.scrolled_panel, wx.ID_ANY, bitmap

@@ -122,14 +122,28 @@ class wxApp(wx.App):
 
 
 class Application(object, metaclass=patterns.Singleton):
+    """
+    Main application class for Task Coach.
+
+    DESIGN NOTE (Twisted Removal - 2024):
+    Previously used Twisted's wxreactor to integrate Twisted's event loop with
+    wxPython. This has been replaced with native wxPython functionality:
+    - wxreactor.install() → removed (wx.App.MainLoop() used directly)
+    - reactor.registerWxApp() → removed (not needed)
+    - reactor.run() → wx.App.MainLoop()
+    - reactor.stop() → wx.App.ExitMainLoop() via EVT_CLOSE handlers
+    - reactor.callLater() → wx.CallLater() (in scheduler.py)
+
+    This simplifies the event loop architecture and eliminates potential
+    race conditions between two event loops.
+    """
     def __init__(self, options=None, args=None, **kwargs):
         self._options = options
         self._args = args
-        self.initTwisted()
+        # NOTE: Twisted initialization removed - using native wx event loop
         self.__wx_app = wxApp(
             self.on_end_session, self.on_reopen_app, redirect=False
         )
-        self.registerApp()
         self.init(**kwargs)
 
         if operating_system.isGTK():
@@ -174,38 +188,10 @@ class Application(object, metaclass=patterns.Singleton):
             dict(monday=0, sunday=6)[self.settings.get("view", "weekstart")]
         )
 
-    def initTwisted(self):
-        from twisted.internet import wxreactor
-
-        wxreactor.install()
-
-        # Monkey-patching older versions because of https://twistedmatrix.com/trac/ticket/3948
-        import twisted
-
-        if tuple(map(int, twisted.__version__.split("."))) < (11,):
-            from twisted.internet import reactor
-
-            if wxreactor.WxReactor.callFromThread is not None:
-                oldStop = wxreactor.WxReactor.stop
-
-                def stopFromThread(self):
-                    self.callFromThread(oldStop, self)
-
-                wxreactor.WxReactor.stop = stopFromThread
-
-    def stopTwisted(self):
-        from twisted.internet import reactor, error
-
-        try:
-            reactor.stop()
-        except error.ReactorNotRunning:
-            # Happens on Fedora 14 when running unit tests. Old Twisted ?
-            pass
-
-    def registerApp(self):
-        from twisted.internet import reactor
-
-        reactor.registerWxApp(self.__wx_app)
+    # NOTE: initTwisted(), stopTwisted(), and registerApp() methods removed.
+    # Previously used Twisted's wxreactor for event loop integration.
+    # Now using native wx.App.MainLoop() which is simpler and more reliable.
+    # See class docstring for migration details.
 
     def start(self):
         """Call this to start the Application."""
@@ -259,9 +245,10 @@ class Application(object, metaclass=patterns.Singleton):
             wx.Log.SetVerbose(True)
 
         self.mainwindow.Show()
-        from twisted.internet import reactor
-
-        reactor.run()
+        # Use native wxPython main loop instead of Twisted reactor
+        # NOTE: Previously used reactor.run() with wxreactor integration.
+        # Now using wx.App.MainLoop() directly for simpler event handling.
+        self.__wx_app.MainLoop()
 
     def __copy_default_templates(self):
         """Copy default templates that don't exist yet in the user's
@@ -513,5 +500,6 @@ class Application(object, metaclass=patterns.Singleton):
         if isinstance(sys.stdout, RedirectedOutput):
             sys.stdout.summary()
 
-        self.stopTwisted()
+        # NOTE: stopTwisted() call removed - no longer using Twisted reactor.
+        # wxPython's MainLoop exits naturally when all windows are closed.
         return True
