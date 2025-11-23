@@ -27,7 +27,7 @@ class DesktopTest(test.TestCase):
         desktop, which will cause desktop.open to raise an exception."""
 
         try:
-            desktop.open("http://www.taskcoach.org", desktop="Force exception")
+            desktop.open("https://github.com/realcarbonneau/taskcoach", desktop="Force exception")
             self.fail(
                 "desktop.open() ignored " "our non-existing desktop?!"
             )  # pragma: no cover

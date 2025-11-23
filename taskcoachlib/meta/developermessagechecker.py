@@ -98,4 +98,5 @@ class DeveloperMessageChecker(threading.Thread):
     def __retrieve_message_file(self):
         """Retrieve the message file from the website. Catching exceptions
         is a caller responsibility."""
-        return self.__urlopen(data.message_url)
+        # Legacy: message checking disabled
+        raise Exception("Message checking disabled")

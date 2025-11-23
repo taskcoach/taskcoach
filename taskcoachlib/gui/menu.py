@@ -826,7 +826,6 @@ class HelpMenu(Menu):
             uicommand.RequestFeature(),
             None,
             uicommand.HelpTranslate(),
-            uicommand.Donate(),
             None,
             uicommand.HelpAbout(),
             uicommand.CheckForUpdate(settings=settings),

@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------
-winPenPack Project § X-Software collection
-Copyright © 2005-2010 Danilo Leggieri and winPenPack Development Team
+winPenPack Project ï¿½ X-Software collection
+Copyright ï¿½ 2005-2010 Danilo Leggieri and winPenPack Development Team
 ---------------------------------------------------------------------
 
 http://www.winpenpack.com
@@ -10,7 +10,7 @@ http://www.winpenpack.com/main/page.php?5
 
 =====================================================================
 X-TaskCoach 0.78.2 [rev 2]
-Original software Home: http://www.taskcoach.org
+Original software Home: https://github.com/realcarbonneau/taskcoach
 Original software license: GNU General Public License
 X-Software (portable) released on: 25/01/2010
 =====================================================================

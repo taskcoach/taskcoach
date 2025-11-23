@@ -732,7 +732,7 @@ class LanguagePage(SettingsPage):
             ),
         )
         sizer.Add(text)
-        url = meta.i18n_url
+        url = meta.translations_url
         urlCtrl = HyperLinkCtrl(panel, -1, label=url, URL=url)
         sizer.Add(urlCtrl)
         panel.SetSizerAndFit(sizer)

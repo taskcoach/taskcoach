@@ -18,8 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 Task Coach is listed at the following webpages:
 
-Task Coach Homepage    http://www.taskcoach.org
-Sourceforge homepage   http://www.sourceforge.net/projects/taskcoach
+Task Coach Homepage    https://github.com/realcarbonneau/taskcoach
 Freshmeat homepage     http://freshmeat.net/projects/taskcoach
 Launchpad homepage     http://launchpad.net/taskcoach
 wxPythonPit            http://wiki.wxpython.org/wxPythonPit%20Apps

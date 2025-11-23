@@ -676,9 +676,8 @@ your Pocket PC."""
     p(
         _(
             """On Linux, you must install the SyncML client binding for
-Python yourself. A 64 bits Debian package for Python 2.7 is available on
-<a target="_blank" href="http://www.taskcoach.org/">taskcoach.org</a>,
-at the end of the Linux downloads section."""
+Python yourself. Note: SyncML support is a legacy feature and may not
+be fully supported."""
         )
     ),
     h4(a_name(_("Setup"), "syncmlsetup")),
@@ -1262,7 +1261,7 @@ def _get_splash_path():
 aboutHTML = (
     _(
         """<h4>%(name)s - %(description)s</h4>
-<h5>Version %(version)s, %(date)s</h5>
+<h5>Version %(version_full)s (commit %(version_commit)s), %(date)s</h5>
 <p>By %(author)s &lt;%(author_email)s&gt;<p>
 <p><a href="%(url)s" target="_blank">%(url)s</a></p>
 <p>%(copyright)s</p>
@@ -1279,6 +1278,12 @@ if _splash_path:
     aboutHTML += """
 <hr>
 <h5>Legacy Splash Screen</h5>
-<p><i>This splash screen was displayed on startup in earlier versions of Task Coach.</i></p>
+<p>This splash screen was displayed on startup in earlier versions of Task Coach.</p>
 <p><img src="file://%s" alt="Legacy Splash Screen" /></p>
 """ % _splash_path
+
+# Add legacy site reference
+aboutHTML += """
+<hr>
+<p>Legacy site (no longer maintained): <a href="https://taskcoach.org" target="_blank">https://taskcoach.org</a></p>
+"""
