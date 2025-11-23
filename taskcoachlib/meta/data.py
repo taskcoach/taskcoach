@@ -24,8 +24,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # IMPORTANT: Always increment version_patch with each change/commit!
 
 version = "1.6.1"  # Current version number of the application
-version_patch = "2"  # Patch level - INCREMENT THIS WITH EACH CHANGE!
-version_commit = "087c66f"  # Git commit hash at release
+version_patch = "5"  # Patch level - INCREMENT THIS WITH EACH CHANGE!
+version_commit = ""  # Set after release commit
 version_full = f"{version}.{version_patch}"  # Full version string: 1.6.1.2
 
 tskversion = 37  # Current version number of the task file format, changed to 37 for release 1.3.23.

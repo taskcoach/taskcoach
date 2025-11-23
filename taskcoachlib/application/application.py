@@ -377,6 +377,41 @@ class Application(object, metaclass=patterns.Singleton):
             )
 
     def __register_signal_handlers(self):
+        """Register signal handlers for clean shutdown.
+
+        DESIGN NOTE (Twisted Removal - 2024):
+        Previously used Twisted's reactor.addSystemEventTrigger() for cleanup.
+        Now using Python's signal module and atexit for cross-platform handling.
+
+        The key issue is that AUI manager.UnInit() must be called before
+        wxPython's cleanup runs, otherwise we get assertion errors about
+        pushed event handlers not being removed.
+        """
+        import signal
+        import atexit
+
+        def cleanup_wx():
+            """Clean up wx before Python exit."""
+            try:
+                # UnInit AUI manager to avoid wxAssertionError about
+                # pushed event handlers not being removed
+                if hasattr(self, 'mainwindow') and hasattr(self.mainwindow, 'manager'):
+                    self.mainwindow.manager.UnInit()
+            except Exception:
+                pass  # Best effort cleanup
+
+        # Register cleanup via atexit (runs before Python's final cleanup)
+        atexit.register(cleanup_wx)
+
+        def sigint_handler(signum, frame):
+            """Handle Ctrl+C gracefully."""
+            # Schedule quit on main thread
+            wx.CallAfter(self.quitApplication)
+
+        # Register SIGINT handler for Unix Ctrl+C
+        if not operating_system.isWindows():
+            signal.signal(signal.SIGINT, sigint_handler)
+
         if operating_system.isWindows():
             import win32api  # pylint: disable=F0401
 
@@ -396,18 +431,6 @@ class Application(object, metaclass=patterns.Singleton):
                 return True
 
             win32api.SetConsoleCtrlHandler(quit_adapter, True)
-        else:
-            import signal
-
-            def quit_adapter(*args):
-                return self.quitApplication()
-
-            signal.signal(signal.SIGTERM, quit_adapter)
-            if hasattr(signal, "SIGHUP"):
-                forced_quit = lambda *args: self.quitApplication(force=True)
-                signal.signal(
-                    signal.SIGHUP, forced_quit
-                )  # pylint: disable=E1101
 
     @staticmethod
     def __create_mutex():

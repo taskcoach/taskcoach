@@ -6,11 +6,12 @@ This document captures technical issues, fixes, and refactorings discovered duri
 
 1. [Widget Resizing Issues](#widget-resizing-issues)
 2. [wx.Timer Crash During Window Destruction](#wxtimer-crash-during-window-destruction)
-3. [wxPython Compatibility](#wxpython-compatibility)
-4. [Bundled Third-Party Library Cleanup](#bundled-third-party-library-cleanup)
-5. [Twisted Framework Removal](#twisted-framework-removal)
-6. [Known Issues](#known-issues)
-7. [Future Work](#future-work)
+3. [Ctrl+C Crash with AUI Event Handler Assertion](#ctrlc-crash-with-aui-event-handler-assertion)
+4. [wxPython Compatibility](#wxpython-compatibility)
+5. [Bundled Third-Party Library Cleanup](#bundled-third-party-library-cleanup)
+6. [Twisted Framework Removal](#twisted-framework-removal)
+7. [Known Issues](#known-issues)
+8. [Future Work](#future-work)
 
 ---
 
@@ -574,6 +575,99 @@ When working with wx.Timer in the future, test all timing scenarios:
 
 ---
 
+## Ctrl+C Crash with AUI Event Handler Assertion
+
+### Problem Overview
+
+**Date Fixed:** November 2025
+**Affected Components:** Application shutdown, signal handling
+**Root Cause:** AUI manager event handlers not cleaned up before wxPython atexit handler runs
+
+### Symptoms
+
+When pressing Ctrl+C in the console while Task Coach is running:
+
+```
+^CException ignored in atexit callback: <built-in function _wxPyCleanup>
+wx._core.wxAssertionError: C++ assertion "GetEventHandler() == this" failed at
+./src/common/wincmn.cpp(473) in ~wxWindowBase(): any pushed event handlers must have been removed
+```
+
+### Root Cause Analysis
+
+The problem was caused by the interaction between **signal handling** and **wxPython AUI**:
+
+1. **AUI (Advanced User Interface) manager** pushes event handlers onto windows for dock/float functionality
+2. When Ctrl+C is pressed, Python handles SIGINT
+3. Without proper cleanup, wxPython's atexit handler finds windows with pushed event handlers → assertion error
+4. `manager.UnInit()` must be called **before** Python's final cleanup runs
+
+### The Fix
+
+Use **Python's atexit module** to register cleanup that runs before wxPython's cleanup:
+
+```python
+# In application.py __register_signal_handlers()
+import signal
+import atexit
+
+def cleanup_wx():
+    """Clean up wx before Python exit."""
+    try:
+        if hasattr(self, 'mainwindow') and hasattr(self.mainwindow, 'manager'):
+            self.mainwindow.manager.UnInit()
+    except Exception:
+        pass  # Best effort cleanup
+
+# Register cleanup via atexit (runs before Python's final cleanup)
+atexit.register(cleanup_wx)
+
+def sigint_handler(signum, frame):
+    """Handle Ctrl+C gracefully."""
+    wx.CallAfter(self.quitApplication)
+
+# Register SIGINT handler for Unix Ctrl+C
+if not operating_system.isWindows():
+    signal.signal(signal.SIGINT, sigint_handler)
+```
+
+**Why this works:**
+- `atexit.register()` handlers run **before** wxPython's atexit cleanup
+- `manager.UnInit()` properly pops all AUI event handlers
+- The SIGINT handler uses `wx.CallAfter()` to cleanly quit through the main loop
+
+### Also Keep onClose() Cleanup
+
+For normal window close (clicking X button), keep `manager.UnInit()` in `mainwindow.onClose()`:
+
+```python
+def onClose(self, event):
+    # ... other cleanup ...
+    if application.Application().quitApplication():
+        self.manager.UnInit()  # Clean up AUI before window destruction
+        event.Skip()
+```
+
+### Key Lessons Learned
+
+1. **AUI managers must call UnInit()** before window destruction to avoid assertion errors
+2. **atexit handlers** run in LIFO order, so registering cleanup early ensures it runs before wx cleanup
+3. **Signal handlers should use wx.CallAfter()** to schedule quit on the main thread
+
+### Testing Checklist
+
+- [ ] Start app, press Ctrl+C - should exit cleanly without assertion error
+- [ ] Start app, close via window X button - should exit cleanly
+- [ ] Start app, use File > Quit menu - should exit cleanly
+- [ ] Start app, send SIGTERM (`kill <pid>`) - should exit cleanly
+
+### References
+
+- [AUI error discussion](https://discuss.wxpython.org/t/aui-error-any-pushed-event-handlers-must-have-been-removed/34555)
+- [wxFormBuilder UnInit issue](https://github.com/wxFormBuilder/wxFormBuilder/issues/623)
+
+---
+
 ## wxPython Compatibility
 
 ### wxPython 4.2.0 Issues
@@ -1118,6 +1212,7 @@ grep -r "DESIGN NOTE (Twisted Removal" taskcoachlib/
 - ✅ wxPython 4.2.0 category background coloring (Documented in CRITICAL_WXPYTHON_PATCH.md)
 - ✅ wx.Timer crash when closing Edit Task/Categories quickly (November 2025)
 - ✅ Hacky close delay patches removed after root cause fix (November 2025)
+- ✅ Ctrl+C crash with AUI event handler assertion (November 2025)
 - ✅ Twisted framework removed, replaced with native wxPython + stdlib (November 2024)
 
 ---

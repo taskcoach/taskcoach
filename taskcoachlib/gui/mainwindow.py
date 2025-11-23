@@ -347,6 +347,9 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         self.closeEditors()
 
         if self.__shutdown:
+            # UnInit AUI manager before window destruction to avoid
+            # wxAssertionError about pushed event handlers
+            self.manager.UnInit()
             event.Skip()
             return
         if event.CanVeto() and self.settings.getboolean(
@@ -356,6 +359,9 @@ If this happens again, please make a copy of your TaskCoach.ini file """
             self.Iconize()
         else:
             if application.Application().quitApplication():
+                # UnInit AUI manager before window destruction to avoid
+                # wxAssertionError about pushed event handlers
+                self.manager.UnInit()
                 event.Skip()
                 self.taskFile.stop()
                 self._idleController.stop()
