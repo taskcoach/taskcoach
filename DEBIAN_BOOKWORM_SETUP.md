@@ -324,8 +324,8 @@ sudo apt-get remove python3-wxgtk4.0
 
 ## Support
 
-- TaskCoach Homepage: http://www.taskcoach.org
-- GitHub Issues: https://github.com/taskcoach/taskcoach/issues
+- TaskCoach Homepage: https://github.com/realcarbonneau/taskcoach
+- GitHub Issues: https://github.com/realcarbonneau/taskcoach/issues
 - Documentation: See README.md in the repository
 
 ## Compatibility Notes

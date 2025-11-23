@@ -114,14 +114,8 @@ author_email = "developers@taskcoach.org"
 filename = name.replace(" ", "")
 filename_lower = filename.lower()
 
-url = "http://taskcoach.org/"  # Don't remove the trailing slash, other code is assuming it will be there
-github_url = "https://github.com/realcarbonneau/taskcoach"  # GitHub repository
-screenshot = (
-    url
-    + "screenshots/Windows/0.71.2-Windows_XP-Tasks_categories_and_effort.png"
-)
-icon = url + "taskcoach.png"
-pad = url + "pad.xml"
+url = "https://github.com/realcarbonneau/taskcoach"  # Project homepage (GitHub)
+github_url = url  # Alias for backwards compatibility
 faq_url = "https://answers.launchpad.net/taskcoach/+faqs"
 bug_report_url = github_url + "/issues"  # GitHub issues for bug reports
 known_bugs_url = github_url + "/issues"  # GitHub issues for known bugs
