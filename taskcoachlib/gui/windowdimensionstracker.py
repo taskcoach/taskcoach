@@ -349,25 +349,26 @@ class WindowSizeAndPositionTracker(_Tracker):
 
         save_size = self._cached_size if self._cached_size else (current_size.width, current_size.height)
 
-        _log_debug(f"  SAVING: pos={save_pos} size={save_size} monitor={monitor}")
-
         self.set_setting("maximized", maximized)
 
         if not iconized:
-            self.set_setting("position", save_pos)
-
-            # When maximized, use GetFromWindow (position may not reflect actual monitor)
-            # Otherwise use position-based detection
+            # When maximized, ONLY save the monitor - preserve last non-maximized position/size
+            # This is what "restore" will use when user un-maximizes
             if maximized:
-                save_monitor = monitor  # Use GetFromWindow result
+                _log_debug(f"  SAVING: maximized=True monitor={monitor} (preserving non-maximized pos/size)")
+                if monitor != wx.NOT_FOUND:
+                    self.set_setting("monitor_index", monitor)
+                    _log_debug(f"  Saved monitor_index={monitor}")
             else:
+                # Only save position/size when NOT maximized
+                _log_debug(f"  SAVING: pos={save_pos} size={save_size} monitor (from pos)")
+                self.set_setting("position", save_pos)
+
                 save_monitor = wx.Display.GetFromPoint(wx.Point(save_pos[0], save_pos[1]))
+                if save_monitor != wx.NOT_FOUND:
+                    self.set_setting("monitor_index", save_monitor)
+                    _log_debug(f"  Saved monitor_index={save_monitor}")
 
-            if save_monitor != wx.NOT_FOUND:
-                self.set_setting("monitor_index", save_monitor)
-                _log_debug(f"  Saved monitor_index={save_monitor}")
-
-            if not maximized:
                 if operating_system.isMac():
                     save_size = (self._window.GetClientSize().width, self._window.GetClientSize().height)
                 self.set_setting("size", save_size)
