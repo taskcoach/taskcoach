@@ -639,14 +639,7 @@ class Application(object, metaclass=patterns.Singleton):
 
         def cleanup_and_exit(signum, frame):
             """Save settings and exit on SIGINT/SIGTERM."""
-            try:
-                # Save window position/size before exit
-                if hasattr(self, 'mainwindow'):
-                    self.mainwindow.save_settings()
-                    self.settings.save()
-            except Exception:
-                pass  # Best effort - don't prevent exit
-
+            self.save_all_settings()
             # Exit with appropriate code for signal
             # Using os._exit to avoid any further Python cleanup that might hang
             import os
@@ -740,13 +733,28 @@ class Application(object, metaclass=patterns.Singleton):
     def on_reopen_app(self):
         self.taskBarIcon.onTaskbarClick(None)
 
+    def save_all_settings(self):
+        """Save all settings to disk. Called on normal exit and signal handlers.
+
+        This is the single place for saving settings, ensuring consistency
+        between normal close, Ctrl-C, and other exit paths.
+        """
+        try:
+            # Remember what the user was working on
+            if hasattr(self, 'taskFile'):
+                self.settings.set("file", "lastfile", self.taskFile.lastFilename())
+            # Save window position, size, perspective
+            if hasattr(self, 'mainwindow'):
+                self.mainwindow.save_settings()
+            # Write settings to disk
+            self.settings.save()
+        except Exception:
+            pass  # Best effort - don't prevent exit
+
     def quitApplication(self, force=False):
         if not self.iocontroller.close(force=force):
             return False
-        # Remember what the user was working on:
-        self.settings.set("file", "lastfile", self.taskFile.lastFilename())
-        self.mainwindow.save_settings()
-        self.settings.save()
+        self.save_all_settings()
         if hasattr(self, "taskBarIcon"):
             self.taskBarIcon.RemoveIcon()
         if self.mainwindow.bonjourRegister is not None:
