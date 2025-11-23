@@ -32,16 +32,6 @@ def _log_debug(msg):
         print(f"[{timestamp}] WindowTracker: {msg}")
 
 
-def _log_monitor_info():
-    """Log information about all monitors."""
-    num_monitors = wx.Display.GetCount()
-    _log_debug(f"Monitor configuration: {num_monitors} monitors")
-    for i in range(num_monitors):
-        display = wx.Display(i)
-        geom = display.GetGeometry()
-        _log_debug(f"  Monitor {i}: x={geom.x}, y={geom.y}, w={geom.width}, h={geom.height}")
-
-
 class _Tracker:
     """Utility methods for setting and getting values from/to the settings."""
 
@@ -61,14 +51,14 @@ class _Tracker:
 class WindowSizeAndPositionTracker(_Tracker):
     """Track the size and position of a window in the settings.
 
-    Best practices followed:
-    1. Save only on close (not on every EVT_MOVE/EVT_SIZE)
-    2. Re-apply position after Show() for GTK/X11 compatibility
-    3. Cache position to protect against GTK bugs that corrupt GetPosition()
-    4. Uses Task Coach's existing settings keys (with pre-defined defaults)
+    IMPORTANT: On GTK with AUI, LoadPerspective() triggers async layout
+    that moves the window AFTER Show(). We handle this by:
+    1. NOT setting position in __init__ (it will be overwritten)
+    2. Setting position ONCE in apply_position_after_show() after AUI settles
+    3. Caching position on EVT_MOVE to protect against GTK bugs at close
 
     Platform notes:
-    - X11: Full positioning support, requires re-apply after Show()
+    - X11/GTK: Position must be set after Show() AND after AUI settles
     - Wayland: Positioning blocked by compositor (security feature)
     - Windows/macOS: Full support
     """
@@ -77,14 +67,11 @@ class WindowSizeAndPositionTracker(_Tracker):
         super().__init__(settings, section)
         self._window = window
         self._is_maximized = False
+        self._position_applied = False
 
-        # Cache last known good position (protects against GTK bugs)
+        # Cache last known good position (protects against GTK bugs at close)
         self._cached_position = None
         self._cached_size = None
-
-        # Position monitor state
-        self._target_position = None
-        self._position_monitor_count = 0
 
         # Check for Wayland
         self._on_wayland = os.environ.get('XDG_SESSION_TYPE') == 'wayland' or \
@@ -92,35 +79,31 @@ class WindowSizeAndPositionTracker(_Tracker):
         if self._on_wayland:
             _log_debug("Running on Wayland - window positioning blocked by compositor")
 
-        # Log monitor configuration
-        _log_monitor_info()
-
         # Set minimum size
         if isinstance(self._window, wx.Dialog):
             self._window.SetMinSize((400, 300))
         else:
             self._window.SetMinSize((600, 400))
 
-        # Restore dimensions from settings
-        self._restore_dimensions()
+        # Restore SIZE only (position will be set after Show + AUI settles)
+        self._restore_size_only()
 
-        # Track position changes to maintain cache
+        # Track position changes to cache last known good position
         self._window.Bind(wx.EVT_MOVE, self._on_move)
         self._window.Bind(wx.EVT_SIZE, self._on_size)
         self._window.Bind(wx.EVT_MAXIMIZE, self._on_maximize)
 
     def _on_move(self, event):
-        """Track position changes to cache last known good position."""
-        if not self._window.IsIconized() and not self._window.IsMaximized():
+        """Cache position on moves (for save, protects against GTK bugs)."""
+        if self._position_applied and not self._window.IsIconized() and not self._window.IsMaximized():
             pos = event.GetPosition()
-            # Only cache if position looks valid (not near origin which is often GTK bug)
+            # Only cache if position looks valid
             if pos.x > 50 or pos.y > 30:
                 self._cached_position = (pos.x, pos.y)
-                _log_debug(f"_on_move: cached position ({pos.x}, {pos.y})")
         event.Skip()
 
     def _on_size(self, event):
-        """Track size changes to cache last known good size."""
+        """Cache size on resizes."""
         if not self._window.IsIconized() and not self._window.IsMaximized():
             size = event.GetSize()
             if size.width > 100 and size.height > 100:
@@ -133,35 +116,20 @@ class WindowSizeAndPositionTracker(_Tracker):
         _log_debug("Window maximized")
         event.Skip()
 
-    def _restore_dimensions(self):
-        """Restore window dimensions from settings."""
-        x, y = self.get_setting("position")
+    def _restore_size_only(self):
+        """Restore only size, not position. Position set later after AUI."""
         width, height = self.get_setting("size")
         maximized = self.get_setting("maximized")
-        saved_monitor = self.get_setting("monitor_index")
-        num_monitors = wx.Display.GetCount()
 
-        _log_debug(f"RESTORE: pos=({x}, {y}) size=({width}, {height}) "
-                   f"maximized={maximized} saved_monitor={saved_monitor}")
+        _log_debug(f"RESTORE SIZE: size=({width}, {height}) maximized={maximized}")
 
         # Enforce minimum size
         min_w, min_h = self._window.GetMinSize()
         width = max(width, min_w) if width > 0 else min_w
         height = max(height, min_h) if height > 0 else min_h
 
-        # Handle position
-        if x == -1 and y == -1:
-            # No saved position - center on primary monitor
-            _log_debug("  No saved position, centering on primary")
-            self._window.SetSize(width, height)
-            self._window.Center()
-        else:
-            # Use saved position directly - it's already absolute screen coordinates
-            _log_debug(f"  Setting position directly: ({x}, {y})")
-            self._window.SetSize(x, y, width, height)
-
-            # Validate the position is on SOME visible display
-            self._ensure_visible_on_screen(width, height)
+        # Set size only, let window manager place it initially
+        self._window.SetSize(width, height)
 
         if operating_system.isMac():
             self._window.SetClientSize((width, height))
@@ -171,132 +139,96 @@ class WindowSizeAndPositionTracker(_Tracker):
             self._window.Maximize()
             self._is_maximized = True
 
-        # Initialize cache with restored position
-        pos = self._window.GetPosition()
-        size = self._window.GetSize()
-        self._cached_position = (pos.x, pos.y)
-        self._cached_size = (size.width, size.height)
-        _log_debug(f"  Applied: pos=({pos.x}, {pos.y}) size=({size.width}, {size.height})")
-        _log_debug(f"  Cache initialized: pos={self._cached_position}")
-
-    def _ensure_visible_on_screen(self, width, height):
-        """Ensure at least part of the window is visible on some display."""
-        window_rect = self._window.GetRect()
-        _log_debug(f"  Checking visibility: window at ({window_rect.x}, {window_rect.y})")
-
-        # Check if window center is on any display
-        center_x = window_rect.x + window_rect.width // 2
-        center_y = window_rect.y + window_rect.height // 2
-        display_at_center = wx.Display.GetFromPoint(wx.Point(center_x, center_y))
-
-        if display_at_center != wx.NOT_FOUND:
-            _log_debug(f"  Window center is on display {display_at_center}")
-            return  # Window is visible, nothing to do
-
-        # Window is off-screen - center on primary display
-        _log_debug("  Window is off-screen, centering on primary")
-        primary = wx.Display(0)
-        rect = primary.GetGeometry()
-        x = rect.x + (rect.width - width) // 2
-        y = rect.y + (rect.height - height) // 2
-        self._window.SetPosition(wx.Point(x, y))
+        # Initialize cache
+        self._cached_size = (width, height)
 
     def apply_position_after_show(self):
-        """Re-apply position after Show() for GTK/X11 compatibility.
+        """Apply saved position after Show() and AUI has settled.
 
-        On GTK/X11, SetPosition() before Show() may be ignored due to
-        asynchronous window operations. This re-applies the saved position
-        after the window is visible.
+        This is called via CallLater AFTER Show(). We use EVT_IDLE to wait
+        for AUI's async layout to complete before setting position.
         """
+        if self._position_applied:
+            return
+
         x, y = self.get_setting("position")
         maximized = self.get_setting("maximized")
 
-        if maximized or x == -1 or y == -1:
-            _log_debug("apply_position_after_show: Nothing to re-apply (maximized or no saved pos)")
+        if maximized:
+            _log_debug("apply_position_after_show: Window is maximized, skipping position")
+            self._position_applied = True
             return
 
-        current = self._window.GetPosition()
-        _log_debug(f"apply_position_after_show: current=({current.x}, {current.y}) target=({x}, {y})")
+        if x == -1 and y == -1:
+            _log_debug("apply_position_after_show: No saved position, centering")
+            self._window.Center()
+            self._position_applied = True
+            pos = self._window.GetPosition()
+            self._cached_position = (pos.x, pos.y)
+            return
 
-        # Re-apply saved position
+        _log_debug(f"apply_position_after_show: Will set position to ({x}, {y}) on next idle")
+
+        # Use EVT_IDLE to wait for AUI to finish its async layout
+        self._target_position = (x, y)
+        self._idle_count = 0
+        self._window.Bind(wx.EVT_IDLE, self._on_idle_set_position)
+
+    def _on_idle_set_position(self, event):
+        """Set position on idle, after AUI has settled."""
+        self._idle_count += 1
+
+        # Wait a few idle cycles for AUI to fully settle
+        if self._idle_count < 3:
+            event.RequestMore()  # Request more idle events
+            return
+
+        # Unbind immediately to avoid repeated calls
+        self._window.Unbind(wx.EVT_IDLE, handler=self._on_idle_set_position)
+        self._position_applied = True
+
+        x, y = self._target_position
+        current = self._window.GetPosition()
+        _log_debug(f"_on_idle_set_position: current=({current.x}, {current.y}) target=({x}, {y})")
+
+        # Set position
         self._window.SetPosition(wx.Point(x, y))
 
-        # Verify and cache the final position
+        # Verify
         final = self._window.GetPosition()
         _log_debug(f"  Final position: ({final.x}, {final.y})")
-
-        # Update cache with final position
         self._cached_position = (final.x, final.y)
-        _log_debug(f"  Cache updated: pos={self._cached_position}")
 
         if abs(final.x - x) > 50 or abs(final.y - y) > 50:
             if self._on_wayland:
-                _log_debug("  Position differs from target (expected on Wayland)")
+                _log_debug("  Position differs (expected on Wayland)")
             else:
                 _log_debug("  WARNING: Position differs from target")
-
-        # Start position monitor to detect if something moves the window later
-        self._target_position = (x, y)
-        self._position_monitor_count = 0
-        self._start_position_monitor()
-
-    def _start_position_monitor(self):
-        """Monitor position for a few seconds to detect unwanted moves."""
-        if self._position_monitor_count >= 10:  # Monitor for 5 seconds (10 x 500ms)
-            _log_debug("Position monitor: stopping")
-            return
-
-        self._position_monitor_count += 1
-        pos = self._window.GetPosition()
-        target = self._target_position
-
-        if pos.x != target[0] or pos.y != target[1]:
-            _log_debug(f"Position monitor #{self._position_monitor_count}: "
-                      f"MOVED from target ({target[0]}, {target[1]}) to ({pos.x}, {pos.y})")
-            # Re-apply position
-            _log_debug(f"  Re-applying target position ({target[0]}, {target[1]})")
-            self._window.SetPosition(wx.Point(target[0], target[1]))
-            final = self._window.GetPosition()
-            _log_debug(f"  After re-apply: ({final.x}, {final.y})")
-            self._cached_position = (final.x, final.y)
-        else:
-            _log_debug(f"Position monitor #{self._position_monitor_count}: OK at ({pos.x}, {pos.y})")
-
-        # Schedule next check
-        wx.CallLater(500, self._start_position_monitor)
 
     def save_state(self):
         """Save the current window state. Call when window is about to close."""
         maximized = self._window.IsMaximized() or self._is_maximized
         iconized = self._window.IsIconized()
 
-        # Get current position from window
         current_pos = self._window.GetPosition()
         current_size = self._window.GetSize()
         monitor = wx.Display.GetFromWindow(self._window)
 
         _log_debug(f"SAVE: maximized={maximized} iconized={iconized} monitor={monitor}")
-        _log_debug(f"  GetPosition()=({current_pos.x}, {current_pos.y}) GetSize()=({current_size.width}, {current_size.height})")
-        _log_debug(f"  Cached: pos={self._cached_position} size={self._cached_size}")
+        _log_debug(f"  GetPosition()=({current_pos.x}, {current_pos.y})")
+        _log_debug(f"  Cached: pos={self._cached_position}")
 
-        # Detect GTK bug: position near origin when it shouldn't be
-        # Use cached position if current position looks corrupted
+        # Use cached position if current looks corrupted (GTK bug)
         if current_pos.x < 100 and current_pos.y < 50:
             if self._cached_position and (self._cached_position[0] > 100 or self._cached_position[1] > 50):
-                _log_debug(f"  GTK BUG DETECTED: Using cached position instead of ({current_pos.x}, {current_pos.y})")
+                _log_debug(f"  Using cached position (GTK bug workaround)")
                 save_pos = self._cached_position
             else:
                 save_pos = (current_pos.x, current_pos.y)
         else:
             save_pos = (current_pos.x, current_pos.y)
 
-        # Use cached size if available and current looks wrong
-        if self._cached_size and current_size.width > 100 and current_size.height > 100:
-            save_size = (current_size.width, current_size.height)
-        elif self._cached_size:
-            save_size = self._cached_size
-        else:
-            save_size = (current_size.width, current_size.height)
+        save_size = self._cached_size if self._cached_size else (current_size.width, current_size.height)
 
         _log_debug(f"  SAVING: pos={save_pos} size={save_size}")
 
@@ -305,11 +237,9 @@ class WindowSizeAndPositionTracker(_Tracker):
         if not iconized:
             self.set_setting("position", save_pos)
 
-            # Determine monitor from saved position
             pos_monitor = wx.Display.GetFromPoint(wx.Point(save_pos[0], save_pos[1]))
             if pos_monitor != wx.NOT_FOUND:
                 self.set_setting("monitor_index", pos_monitor)
-                _log_debug(f"  Saved monitor_index={pos_monitor}")
 
             if not maximized:
                 if operating_system.isMac():
@@ -341,12 +271,6 @@ class WindowDimensionsTracker(WindowSizeAndPositionTracker):
         return self.get_setting("iconized")
 
     def save_position(self):
-        """Save the position of the window in the settings.
-
-        Called when window is about to close.
-        """
-        # Save iconized state (Task Coach specific)
+        """Save the position of the window in the settings."""
         self.set_setting("iconized", self._window.IsIconized())
-
-        # Save position/size/maximized/monitor via parent
         self.save_state()
