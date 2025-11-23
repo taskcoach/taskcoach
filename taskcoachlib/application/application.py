@@ -31,6 +31,116 @@ import wx
 import calendar
 import re
 import threading
+import subprocess
+
+
+def _log_gui_environment():
+    """Log GUI environment details for debugging window positioning issues."""
+    print("\n" + "="*60)
+    print("GUI ENVIRONMENT INFO")
+    print("="*60)
+
+    # Basic display info
+    print(f"wx.Version: {wx.version()}")
+    print(f"wx.PlatformInfo: {wx.PlatformInfo}")
+
+    # Session type
+    session_type = os.environ.get('XDG_SESSION_TYPE', 'unknown')
+    print(f"XDG_SESSION_TYPE: {session_type}")
+    print(f"WAYLAND_DISPLAY: {os.environ.get('WAYLAND_DISPLAY', 'not set')}")
+    print(f"DISPLAY: {os.environ.get('DISPLAY', 'not set')}")
+
+    # Desktop environment
+    desktop = os.environ.get('XDG_CURRENT_DESKTOP',
+              os.environ.get('DESKTOP_SESSION', 'unknown'))
+    print(f"Desktop Environment: {desktop}")
+
+    # GTK version (if available)
+    try:
+        import gi
+        gi.require_version('Gtk', '3.0')
+        from gi.repository import Gtk
+        print(f"GTK Version: {Gtk.get_major_version()}.{Gtk.get_minor_version()}.{Gtk.get_micro_version()}")
+    except Exception as e:
+        print(f"GTK Version: unavailable ({e})")
+
+    # Window manager detection
+    wm_name = "unknown"
+    wm_version = "unknown"
+
+    # Try wmctrl first
+    try:
+        result = subprocess.run(['wmctrl', '-m'], capture_output=True, text=True, timeout=2)
+        if result.returncode == 0:
+            for line in result.stdout.split('\n'):
+                if line.startswith('Name:'):
+                    wm_name = line.split(':', 1)[1].strip()
+                    break
+    except Exception:
+        pass
+
+    # Try xprop for WM info
+    if wm_name == "unknown":
+        try:
+            result = subprocess.run(
+                ['xprop', '-root', '-notype', '_NET_WM_NAME', '_NET_SUPPORTING_WM_CHECK'],
+                capture_output=True, text=True, timeout=2
+            )
+            if result.returncode == 0:
+                for line in result.stdout.split('\n'):
+                    if '_NET_WM_NAME' in line and '=' in line:
+                        wm_name = line.split('=', 1)[1].strip().strip('"')
+                        break
+        except Exception:
+            pass
+
+    # Try getting WM version from common WMs
+    wm_lower = wm_name.lower()
+    try:
+        if 'openbox' in wm_lower:
+            result = subprocess.run(['openbox', '--version'], capture_output=True, text=True, timeout=2)
+            if result.returncode == 0:
+                wm_version = result.stdout.split('\n')[0]
+        elif 'mutter' in wm_lower or 'gnome' in wm_lower:
+            result = subprocess.run(['mutter', '--version'], capture_output=True, text=True, timeout=2)
+            if result.returncode == 0:
+                wm_version = result.stdout.strip()
+        elif 'kwin' in wm_lower:
+            result = subprocess.run(['kwin_x11', '--version'], capture_output=True, text=True, timeout=2)
+            if result.returncode == 0:
+                wm_version = result.stdout.split('\n')[0]
+        elif 'xfwm' in wm_lower:
+            result = subprocess.run(['xfwm4', '--version'], capture_output=True, text=True, timeout=2)
+            if result.returncode == 0:
+                wm_version = result.stdout.split('\n')[0]
+        elif 'marco' in wm_lower:
+            result = subprocess.run(['marco', '--version'], capture_output=True, text=True, timeout=2)
+            if result.returncode == 0:
+                wm_version = result.stdout.strip()
+        elif 'metacity' in wm_lower:
+            result = subprocess.run(['metacity', '--version'], capture_output=True, text=True, timeout=2)
+            if result.returncode == 0:
+                wm_version = result.stdout.strip()
+    except Exception:
+        pass
+
+    print(f"Window Manager: {wm_name}")
+    print(f"WM Version: {wm_version}")
+
+    # Display/monitor info
+    try:
+        num_displays = wx.Display.GetCount()
+        print(f"Number of displays: {num_displays}")
+        for i in range(num_displays):
+            display = wx.Display(i)
+            geom = display.GetGeometry()
+            client = display.GetClientArea()
+            print(f"  Display {i}: geometry={geom.x},{geom.y} {geom.width}x{geom.height}  "
+                  f"client_area={client.x},{client.y} {client.width}x{client.height}")
+    except Exception as e:
+        print(f"Display info unavailable: {e}")
+
+    print("="*60 + "\n")
 
 
 class RedirectedOutput(object):
@@ -285,6 +395,9 @@ class Application(object, metaclass=patterns.Singleton):
     def init(self, loadSettings=True, loadTaskFile=True):
         """Initialize the application. Needs to be called before
         Application.start()."""
+        # Log GUI environment for debugging window positioning
+        _log_gui_environment()
+
         self.__init_config(loadSettings)
         self.__init_language()
         self.__init_domain_objects()
