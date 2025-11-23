@@ -6,7 +6,9 @@ Task Coach on Linux/GTK fails to restore window position on startup. The window 
 
 **Root Cause:** wxWidgets/wxGTK does not set the `GDK_HINT_USER_POS` geometry hint when calling `gtk_window_move()`. Without this hint, the window manager ignores application-requested positions and uses its own placement algorithm.
 
-**Working Solution:** Detect unplanned window moves via `EVT_MOVE` and immediately reset to the target position. This works without visible flicker.
+**Working Solution:** Detect unplanned window moves via `EVT_MOVE` and immediately reset to the target position **until `EVT_ACTIVATE` fires**. This works without visible flicker.
+
+**Key Finding:** The window manager may move the window multiple times during setup. Keep correcting position on every `EVT_MOVE` until `EVT_ACTIVATE` (window gains focus) signals the window is ready for user input.
 
 ---
 
@@ -182,7 +184,28 @@ wxGTK's internal sizing/mapping process triggers the WM to reposition the window
 
 ---
 
-## Working Solution: EVT_MOVE Detection
+## Working Solution: EVT_MOVE Detection Until EVT_ACTIVATE
+
+### Key Discovery: EVT_ACTIVATE Signals "Ready"
+
+Testing revealed the exact event sequence during window creation:
+
+```
+[57ms] Before Show: (100, 100)
+[61ms] After Show: (100, 100)
+[62ms] EVT_IDLE #1: pos=(100, 100)
+[63ms] EVT_SHOW: pos=(100, 100) shown=True
+[78ms] EVT_MOVE #1: (80, 0)       ← WM placement - CORRECT THIS
+  -> Unplanned move detected, resetting to (100, 100)
+[78ms] EVT_MOVE #2: (100, 100)    ← Our correction worked
+[79ms] EVT_MOVE #3: (80, 0)       ← WM moved AGAIN! - MUST CORRECT THIS TOO
+[79ms] EVT_ACTIVATE #1: active=True [READY FOR INPUT]  ← STOP CORRECTING HERE
+[80ms] EVT_MOVE #4: (100, 100)    ← Final position is correct
+```
+
+**Critical Insight:** The window manager may move the window **multiple times** before `EVT_ACTIVATE`. The original single-correction approach (`position_applied = True` after first correction) fails because EVT_MOVE #3 occurs BEFORE EVT_ACTIVATE.
+
+**Solution:** Keep correcting position on every `EVT_MOVE` until `EVT_ACTIVATE` fires.
 
 ### Implementation
 
@@ -191,21 +214,30 @@ class MainWindow(wx.Frame):
     def __init__(self):
         super().__init__(None, title="App", size=(800, 600))
         self._target_position = (100, 100)  # Loaded from settings
-        self._position_applied = False
+        self._window_activated = False  # Track when window is ready
 
         # Set initial position hint via 4-param SetSize
         self.SetSize(self._target_position[0], self._target_position[1], 800, 600)
 
         self.Bind(wx.EVT_MOVE, self._on_move)
+        self.Bind(wx.EVT_ACTIVATE, self._on_activate)
+
+    def _on_activate(self, event):
+        """Window gained focus - stop correcting position."""
+        if event.GetActive():
+            self._window_activated = True
+            # Unbind to avoid overhead after window is ready
+            self.Unbind(wx.EVT_MOVE)
+            self.Unbind(wx.EVT_ACTIVATE)
+        event.Skip()
 
     def _on_move(self, event):
         pos = event.GetPosition()
 
-        # Detect unplanned move (WM placement)
-        if not self._position_applied:
+        # Keep correcting until window is activated (ready for input)
+        if not self._window_activated:
             if pos.x != self._target_position[0] or pos.y != self._target_position[1]:
                 # WM moved us - immediately correct
-                self._position_applied = True
                 self.SetPosition(wx.Point(*self._target_position))
 
         event.Skip()
@@ -215,10 +247,11 @@ class MainWindow(wx.Frame):
 
 1. 4-param `SetSize()` provides a position "hint" to GTK
 2. Window initially appears at target position briefly
-3. WM moves window to (80, 0) - triggers `EVT_MOVE`
-4. We detect unplanned move and immediately call `SetPosition()`
-5. After window is shown, `SetPosition()` is honored by WM
-6. Correction happens fast enough that user doesn't see flicker
+3. WM may move window multiple times (each triggers `EVT_MOVE`)
+4. We correct position on **every** unplanned move
+5. `EVT_ACTIVATE` signals the window is ready for user input
+6. After activation, we stop correcting and unbind handlers
+7. Correction happens fast enough that user doesn't see flicker
 
 ### Platform Considerations
 

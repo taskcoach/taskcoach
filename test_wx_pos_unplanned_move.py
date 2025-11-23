@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
-"""Test 7: 4-param SetSize + detect unplanned move + reset position
-   With additional logging for IDLE, off-screen, and ready events"""
+"""Test: EVT_MOVE correction until EVT_ACTIVATE
+
+   Key finding: The window manager may move the window multiple times during setup.
+   Keep correcting position on every EVT_MOVE until EVT_ACTIVATE fires (window is ready).
+
+   See WINDOW_POSITION_PERSISTENCE_ANALYSIS.md for full details."""
 import wx
 import time
 
@@ -9,12 +13,13 @@ START_TIME = None
 
 class TestFrame(wx.Frame):
     def __init__(self):
-        super().__init__(None, title="4-param + unplanned move", size=(200, 150))
-        self.position_applied = False
+        super().__init__(None, title="EVT_MOVE until EVT_ACTIVATE", size=(200, 150))
+        self.window_activated = False  # Track when window is ready for input
         self.move_count = 0
         self.idle_count = 0
         self.paint_count = 0
         self.activate_count = 0
+        self.corrections_made = 0
 
         # Set position via 4-param SetSize (provides position hint)
         self.SetSize(TARGET[0], TARGET[1], 200, 150)
@@ -39,12 +44,11 @@ class TestFrame(wx.Frame):
 
         print(f"[{self._elapsed()}] EVT_MOVE #{self.move_count}: ({pos.x}, {pos.y}){off_screen_str}")
 
-        # Detect unplanned move (not at our target)
-        if not self.position_applied and (pos.x != TARGET[0] or pos.y != TARGET[1]):
-            print(f"  -> Unplanned move detected, resetting to {TARGET}")
-            self.position_applied = True
+        # Keep correcting until window is activated (ready for input)
+        if not self.window_activated and (pos.x != TARGET[0] or pos.y != TARGET[1]):
+            self.corrections_made += 1
+            print(f"  -> Correction #{self.corrections_made}: resetting to {TARGET}")
             self.SetPosition(TARGET)
-            print(f"  -> After reset: {self.GetPosition()}")
 
         event.Skip()
 
@@ -69,8 +73,18 @@ class TestFrame(wx.Frame):
         self.activate_count += 1
         pos = self.GetPosition()
         active = event.GetActive()
-        ready_msg = " [READY FOR INPUT]" if active else ""
-        print(f"[{self._elapsed()}] EVT_ACTIVATE #{self.activate_count}: pos=({pos.x}, {pos.y}) active={active}{ready_msg}")
+
+        if active and not self.window_activated:
+            self.window_activated = True
+            print(f"[{self._elapsed()}] EVT_ACTIVATE #{self.activate_count}: pos=({pos.x}, {pos.y}) active={active}")
+            print(f"  -> WINDOW READY - Made {self.corrections_made} position corrections")
+            print(f"  -> Stopping position corrections (unbinding EVT_MOVE)")
+            # Unbind to avoid overhead after window is ready
+            self.Unbind(wx.EVT_MOVE)
+        else:
+            ready_msg = " [READY]" if self.window_activated else ""
+            print(f"[{self._elapsed()}] EVT_ACTIVATE #{self.activate_count}: pos=({pos.x}, {pos.y}) active={active}{ready_msg}")
+
         event.Skip()
 
     def on_show(self, event):

@@ -1207,6 +1207,8 @@ grep -r "DESIGN NOTE (Twisted Removal" taskcoachlib/
 **Affected Components:** WindowDimensionsTracker, MainWindow
 **Root Cause:** Multiple sources of spurious resize/move events during initialization
 
+> **See also:** [WINDOW_POSITION_PERSISTENCE_ANALYSIS.md](WINDOW_POSITION_PERSISTENCE_ANALYSIS.md) for detailed analysis of GTK/Linux window positioning, including the `GDK_HINT_USER_POS` issue and the EVT_MOVE + EVT_ACTIVATE solution.
+
 ### Problem Overview
 
 After removing Twisted, the main window was not remembering its position and size across restarts. Debug logging revealed that the correct position was loaded from settings, but then immediately overwritten by spurious values.
@@ -1406,6 +1408,7 @@ def __init_window_components(self):
 - ✅ Twisted framework removed, replaced with native wxPython + stdlib (November 2025)
 - ✅ Window position not remembered due to AUI + GTK spurious events (November 2025)
 - ✅ AUI pane flickering during startup fixed with Freeze/Thaw (November 2025)
+- ✅ GTK/Linux window position persistence - WM ignores initial position (November 2025) - See [WINDOW_POSITION_PERSISTENCE_ANALYSIS.md](WINDOW_POSITION_PERSISTENCE_ANALYSIS.md)
 
 ---
 
