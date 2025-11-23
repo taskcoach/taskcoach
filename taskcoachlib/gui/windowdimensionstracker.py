@@ -21,7 +21,7 @@ import wx
 import time
 from taskcoachlib import operating_system
 
-# Debug logging for window position tracking
+# Debug logging for window position tracking (set to False to disable)
 _DEBUG_WINDOW_TRACKING = True
 
 
@@ -29,7 +29,7 @@ def _log_debug(msg):
     """Log debug message with timestamp."""
     if _DEBUG_WINDOW_TRACKING:
         timestamp = time.strftime("%H:%M:%S")
-        print(f"[{timestamp}] WINDOW_TRACKER: {msg}")
+        print(f"[{timestamp}] {msg}")
 
 
 class _Tracker(object):
@@ -40,34 +40,36 @@ class _Tracker(object):
         super().__init__()
         self.__settings = settings
         self.__section = section
-        _log_debug(f"_Tracker.__init__ section={section}")
 
     def set_setting(self, setting, value):
         """Store the value for the setting in the settings."""
-        _log_debug(f"SET [{self.__section}].{setting} = {value}")
         self.__settings.setvalue(self.__section, setting, value)
 
     def get_setting(self, setting):
         """Get the value for the setting from the settings and return it."""
-        value = self.__settings.getvalue(self.__section, setting)
-        _log_debug(f"GET [{self.__section}].{setting} = {value}")
-        return value
+        return self.__settings.getvalue(self.__section, setting)
 
 
 class WindowSizeAndPositionTracker(_Tracker):
     """Track the size and position of a window in the settings.
 
-    DESIGN NOTE: Two-phase initialization to avoid spurious events from AUI layout.
+    DESIGN NOTE: Deferred event binding to avoid spurious events.
 
-    The AUI (Advanced User Interface) manager causes many resize/move events when
-    restoring pane layout via LoadPerspective(). If we bind event handlers before
-    AUI layout is complete, we'd save incorrect window positions.
+    Two sources of spurious resize/move events during window initialization:
+    1. AUI LoadPerspective() triggers many layout events
+    2. GTK window realization during Show() triggers invalid size/position events
 
-    Solution: Split initialization into two phases:
+    The GTK realization issue manifests as a Gtk-CRITICAL error followed by
+    spurious events with values like size=(6, 28) position=(80, 0).
+
+    Solution: Defer event binding until AFTER the window is shown:
     1. __init__: Only restore window dimensions from settings (no event binding)
-    2. start_tracking(): Bind event handlers (call after AUI LoadPerspective)
+    2. start_tracking(): Sets up EVT_SHOW handler (call after AUI LoadPerspective)
+    3. _on_window_shown(): When window is shown, use wx.CallAfter to schedule binding
+    4. _bind_tracking_events(): Actually binds EVT_SIZE/EVT_MOVE/EVT_MAXIMIZE
 
-    This is the proper fix - no hacky timers, just correct initialization order.
+    The wx.CallAfter ensures event handlers aren't bound until after GTK realization
+    is complete, avoiding the spurious events from Show().
     """
 
     def __init__(self, window, settings, section):
@@ -75,23 +77,46 @@ class WindowSizeAndPositionTracker(_Tracker):
         self._window = window
         self._section = section  # Store for logging
         self._tracking_enabled = False
-        _log_debug(f"WindowSizeAndPositionTracker.__init__ section={section} window={type(window).__name__}")
+        self._show_handler_bound = False
         # Phase 1: Only restore dimensions - DO NOT bind events yet
         self.__set_dimensions()
-        _log_debug(f"WindowSizeAndPositionTracker.__init__ COMPLETE - dimensions set (tracking NOT started)")
 
     def start_tracking(self):
         """Start tracking window size/position changes.
 
-        Call this method AFTER the window is fully initialized, including
-        AUI layout restoration (LoadPerspective). This avoids saving spurious
-        events triggered by AUI layout.
+        Call this method AFTER AUI layout restoration (LoadPerspective).
+        Actual event binding is deferred until after the window is shown,
+        to avoid spurious events during GTK window realization.
         """
-        if self._tracking_enabled:
-            _log_debug("start_tracking: Already tracking, ignoring duplicate call")
+        if self._tracking_enabled or self._show_handler_bound:
             return
 
-        _log_debug("start_tracking: Binding event handlers - now tracking changes")
+        # Check if window is already shown
+        if self._window.IsShown():
+            self._bind_tracking_events()
+        else:
+            # Defer tracking until after window is shown (and GTK realization is complete)
+            self._window.Bind(wx.EVT_SHOW, self._on_window_shown)
+            self._show_handler_bound = True
+
+    def _on_window_shown(self, event):
+        """Handle first window show - start tracking after GTK realization."""
+        event.Skip()  # Let the event propagate
+
+        if event.IsShown() and not self._tracking_enabled:
+            # Unbind show handler - we only need it once
+            self._window.Unbind(wx.EVT_SHOW, handler=self._on_window_shown)
+            self._show_handler_bound = False
+            # Use CallAfter to ensure GTK realization is complete before binding
+            # This ensures spurious resize/move events from Show() are ignored
+            wx.CallAfter(self._bind_tracking_events)
+
+    def _bind_tracking_events(self):
+        """Actually bind the tracking event handlers."""
+        if self._tracking_enabled:
+            return
+
+        _log_debug("Tracking STARTED - now saving window changes")
         self._window.Bind(wx.EVT_SIZE, self.on_change_size)
         self._window.Bind(wx.EVT_MOVE, self.on_change_position)
         self._window.Bind(wx.EVT_MAXIMIZE, self.on_maximize)
@@ -106,17 +131,14 @@ class WindowSizeAndPositionTracker(_Tracker):
         maximized = self._window.IsMaximized()
         iconized = self._window.IsIconized()
         new_size = event.GetSize()
-        _log_debug(f"on_change_size: new_size={new_size} maximized={maximized} iconized={iconized}")
         if not maximized and not iconized:
             size_to_save = (
                 self._window.GetClientSize()
                 if operating_system.isMac()
                 else new_size
             )
-            _log_debug(f"on_change_size: SAVING size={size_to_save}")
+            _log_debug(f"on_change_size: SAVING {size_to_save}")
             self.set_setting("size", size_to_save)
-        else:
-            _log_debug(f"on_change_size: NOT saving (maximized={maximized} iconized={iconized})")
         # Jerome, 2008/07/12: On my system (KDE 3.5.7), EVT_MAXIMIZE
         # is not triggered, so set 'maximized' to True here as well as in
         # onMaximize:
@@ -129,14 +151,12 @@ class WindowSizeAndPositionTracker(_Tracker):
         pos = event.GetPosition()
         maximized = self._window.IsMaximized()
         iconized = self._window.IsIconized()
-        monitor = wx.Display.GetFromWindow(self._window)
-        _log_debug(f"on_change_position: pos={pos} maximized={maximized} iconized={iconized} monitor={monitor}")
         if not maximized:
             self.set_setting("maximized", False)
             if not iconized:
                 # Only save position when the window is not maximized
                 # *and* not minimized
-                _log_debug(f"on_change_position: SAVING position={pos}")
+                _log_debug(f"on_change_position: SAVING {pos}")
                 self.set_setting("position", pos)
 
                 # For dialogs, also save offset from parent for multi-monitor support
@@ -167,23 +187,19 @@ class WindowSizeAndPositionTracker(_Tracker):
                         except (configparser.NoSectionError, configparser.NoOptionError):
                             # Old settings section without parent_offset support - skip saving
                             pass
-        else:
-            _log_debug(f"on_change_position: NOT saving (maximized={maximized} iconized={iconized})")
         event.Skip()
 
     def on_maximize(self, event):
         """Handle a maximize event by saving the window maximization state in
         the settings."""
-        _log_debug(f"on_maximize: setting maximized=True")
         self.set_setting("maximized", True)
         event.Skip()
 
     def __set_dimensions(self):
         """Set the window position and size based on the settings."""
-        _log_debug("__set_dimensions: BEGIN")
         x, y = self.get_setting("position")  # pylint: disable=C0103
         width, height = self.get_setting("size")
-        _log_debug(f"__set_dimensions: LOADED position=({x}, {y}) size=({width}, {height})")
+        _log_debug(f"__set_dimensions: LOADED pos=({x}, {y}) size=({width}, {height})")
 
         # Enforce minimum window size to prevent GTK warnings and usability issues
         # Different minimums for dialogs vs main windows
@@ -202,7 +218,7 @@ class WindowSizeAndPositionTracker(_Tracker):
             width, height = min_width, min_height
 
         if (width, height) != (orig_width, orig_height):
-            _log_debug(f"__set_dimensions: size clamped from ({orig_width}, {orig_height}) to ({width}, {height})")
+            pass  # Size was clamped to minimum
 
         # Set minimum size constraint on the window to prevent user from resizing too small
         self._window.SetMinSize((min_width, min_height))
@@ -262,17 +278,9 @@ class WindowSizeAndPositionTracker(_Tracker):
             # Main window positioning with multi-monitor support
             saved_monitor = self.get_setting("monitor_index")
             num_monitors = wx.Display.GetCount()
-            _log_debug(f"__set_dimensions: MAIN WINDOW - saved_monitor={saved_monitor} num_monitors={num_monitors}")
-
-            # Log all monitor geometries
-            for i in range(num_monitors):
-                disp = wx.Display(i)
-                geom = disp.GetGeometry()
-                _log_debug(f"__set_dimensions: Monitor {i}: geometry={geom}")
 
             if x == -1 and y == -1:
                 # No saved position - center on primary monitor
-                _log_debug("__set_dimensions: No saved position (x=-1, y=-1) - centering on primary")
                 primary = wx.Display(0)
                 rect = primary.GetGeometry()
                 x = rect.x + (rect.width - width) // 2
@@ -280,16 +288,12 @@ class WindowSizeAndPositionTracker(_Tracker):
             elif saved_monitor == -1:
                 # Monitor index unknown (first run after update or legacy settings)
                 # Use saved position - validation code below will handle if invalid
-                _log_debug(f"__set_dimensions: Monitor unknown (-1), using saved position ({x}, {y})")
                 pass
             elif saved_monitor >= 0 and saved_monitor < num_monitors:
                 # Saved monitor still exists - use saved position
-                # (position validation happens later in this method)
-                _log_debug(f"__set_dimensions: Saved monitor {saved_monitor} exists, using saved position ({x}, {y})")
                 pass
             else:
                 # Saved monitor no longer exists - center on primary monitor
-                _log_debug(f"__set_dimensions: Saved monitor {saved_monitor} no longer exists - centering on primary")
                 primary = wx.Display(0)
                 rect = primary.GetGeometry()
                 x = rect.x + (rect.width - width) // 2
@@ -301,23 +305,18 @@ class WindowSizeAndPositionTracker(_Tracker):
             # highly annoying. This doesn't hold for dialogs though. Sigh.
             if not isinstance(self._window, wx.Dialog):
                 height += 18
-        _log_debug(f"__set_dimensions: APPLYING SetSize({x}, {y}, {width}, {height})")
         self._window.SetSize(x, y, width, height)
         if operating_system.isMac():
             self._window.SetClientSize((width, height))
         maximized_setting = self.get_setting("maximized")
-        _log_debug(f"__set_dimensions: maximized setting = {maximized_setting}")
         if maximized_setting:
-            _log_debug("__set_dimensions: Calling Maximize()")
             self._window.Maximize()
 
         # Check that the window is on a valid display and move if necessary
         # Use target_monitor_for_validation if set, otherwise fall back to GetFromWindow
         # (GetFromWindow can return wrong index before window is fully realized)
-        _log_debug(f"__set_dimensions: VALIDATION - target_monitor_for_validation={target_monitor_for_validation}")
         if target_monitor_for_validation is not None and target_monitor_for_validation != wx.NOT_FOUND:
             display_index = target_monitor_for_validation
-            _log_debug(f"__set_dimensions: Using target_monitor_for_validation={display_index}")
         elif not isinstance(self._window, wx.Dialog):
             # Main window - try to use saved_monitor
             try:
@@ -325,23 +324,16 @@ class WindowSizeAndPositionTracker(_Tracker):
                 num_monitors = wx.Display.GetCount()
                 if saved_monitor >= 0 and saved_monitor < num_monitors:
                     display_index = saved_monitor
-                    _log_debug(f"__set_dimensions: Using saved_monitor={display_index}")
                 else:
                     display_index = wx.Display.GetFromWindow(self._window)
-                    _log_debug(f"__set_dimensions: saved_monitor invalid, using GetFromWindow={display_index}")
             except (KeyError, TypeError, configparser.NoSectionError, configparser.NoOptionError):
                 display_index = wx.Display.GetFromWindow(self._window)
-                _log_debug(f"__set_dimensions: Exception getting saved_monitor, using GetFromWindow={display_index}")
         else:
             display_index = wx.Display.GetFromWindow(self._window)
-            _log_debug(f"__set_dimensions: Dialog - using GetFromWindow={display_index}")
-
-        _log_debug(f"__set_dimensions: Final display_index={display_index}")
 
         if display_index == wx.NOT_FOUND:
             # Window is completely off-screen, use safe default position
             # Not (0, 0) because on OSX this hides the window bar...
-            _log_debug("__set_dimensions: OFF-SCREEN - moving to (50, 50)")
             self._window.SetSize(50, 50, width, height)
             if operating_system.isMac():
                 self._window.SetClientSize((width, height))
@@ -351,7 +343,6 @@ class WindowSizeAndPositionTracker(_Tracker):
             display = wx.Display(display_index)
             display_rect = display.GetGeometry()
             window_rect = self._window.GetRect()
-            _log_debug(f"__set_dimensions: display_rect={display_rect} window_rect={window_rect}")
 
             # Check if window position is too close to display edges (less than 50px visible)
             visible_left = max(window_rect.x, display_rect.x)
@@ -361,24 +352,20 @@ class WindowSizeAndPositionTracker(_Tracker):
 
             visible_width = visible_right - visible_left
             visible_height = visible_bottom - visible_top
-            _log_debug(f"__set_dimensions: visible_width={visible_width} visible_height={visible_height}")
 
             # If less than 50px visible in either dimension, center on current display
             if visible_width < 50 or visible_height < 50:
                 # Center the window on the display it's currently on
                 center_x = display_rect.x + (display_rect.width - width) // 2
                 center_y = display_rect.y + (display_rect.height - height) // 2
-                _log_debug(f"__set_dimensions: NOT ENOUGH VISIBLE - centering to ({center_x}, {center_y})")
                 self._window.SetSize(center_x, center_y, width, height)
                 if operating_system.isMac():
                     self._window.SetClientSize((width, height))
-            else:
-                _log_debug("__set_dimensions: Position OK - keeping current position")
 
         # Log final window state
         final_rect = self._window.GetRect()
         final_monitor = wx.Display.GetFromWindow(self._window)
-        _log_debug(f"__set_dimensions: END - final_rect={final_rect} final_monitor={final_monitor}")
+        _log_debug(f"__set_dimensions: APPLIED pos=({final_rect.x}, {final_rect.y}) size=({final_rect.width}, {final_rect.height}) monitor={final_monitor}")
 
 
 class WindowDimensionsTracker(WindowSizeAndPositionTracker):
@@ -387,14 +374,6 @@ class WindowDimensionsTracker(WindowSizeAndPositionTracker):
     def __init__(self, window, settings):
         super().__init__(window, settings, "window")
         self.__settings = settings
-        _log_debug("WindowDimensionsTracker.__init__ starting")
-
-        # Start periodic debug logging timer (every 1 second)
-        if _DEBUG_WINDOW_TRACKING:
-            self._debug_timer = wx.Timer()
-            self._debug_timer.Bind(wx.EVT_TIMER, self._on_debug_timer)
-            self._debug_timer.Start(1000)  # 1 second
-            _log_debug("WindowDimensionsTracker: Debug timer started (1s interval)")
 
         if self.__start_iconized():
             if operating_system.isMac() or operating_system.isGTK():
@@ -411,8 +390,6 @@ class WindowDimensionsTracker(WindowSizeAndPositionTracker):
                 # iconized actually closes it on Mac OS...
                 wx.CallAfter(self._window.Hide)
 
-        _log_debug("WindowDimensionsTracker.__init__ complete")
-
     def __start_iconized(self):
         """Return whether the window should be opened iconized."""
         start_iconized = self.__settings.get("window", "starticonized")
@@ -426,56 +403,13 @@ class WindowDimensionsTracker(WindowSizeAndPositionTracker):
         """Save the position of the window in the settings."""
         iconized = self._window.IsIconized()
         pos = self._window.GetPosition()
-        size = self._window.GetSize()
         monitor_index = wx.Display.GetFromWindow(self._window)
-        maximized = self._window.IsMaximized()
 
-        _log_debug(f"save_position: CALLED - pos={pos} size={size} monitor={monitor_index} "
-                   f"iconized={iconized} maximized={maximized}")
+        _log_debug(f"save_position: pos={pos} monitor={monitor_index} iconized={iconized}")
 
         self.set_setting("iconized", iconized)
         if not iconized:
-            _log_debug(f"save_position: SAVING position={pos}")
             self.set_setting("position", pos)
             # Save which monitor the window is on for multi-monitor support
             if monitor_index != wx.NOT_FOUND:
-                _log_debug(f"save_position: SAVING monitor_index={monitor_index}")
                 self.set_setting("monitor_index", monitor_index)
-            else:
-                _log_debug("save_position: NOT saving monitor_index (NOT_FOUND)")
-        else:
-            _log_debug("save_position: NOT saving position (window iconized)")
-
-    def _on_debug_timer(self, event):
-        """Periodic debug logging - logs window state every second."""
-        try:
-            if not self._window:
-                return
-
-            pos = self._window.GetPosition()
-            size = self._window.GetSize()
-            rect = self._window.GetRect()
-            monitor = wx.Display.GetFromWindow(self._window)
-            maximized = self._window.IsMaximized()
-            iconized = self._window.IsIconized()
-
-            # Get saved settings for comparison
-            try:
-                saved_pos = self.get_setting("position")
-                saved_size = self.get_setting("size")
-                saved_monitor = self.get_setting("monitor_index")
-                saved_maximized = self.get_setting("maximized")
-            except Exception as e:
-                saved_pos = saved_size = saved_monitor = saved_maximized = f"ERROR: {e}"
-
-            _log_debug(f"PERIODIC: pos={pos} size={size} monitor={monitor} "
-                       f"maximized={maximized} iconized={iconized}")
-            _log_debug(f"PERIODIC SAVED: pos={saved_pos} size={saved_size} "
-                       f"monitor={saved_monitor} maximized={saved_maximized}")
-
-            # Log if current position differs from saved
-            if isinstance(saved_pos, tuple) and pos != wx.Point(*saved_pos):
-                _log_debug(f"PERIODIC DIFF: Position changed! current={pos} saved={saved_pos}")
-
-        except Exception as e:
-            _log_debug(f"PERIODIC ERROR: {e}")

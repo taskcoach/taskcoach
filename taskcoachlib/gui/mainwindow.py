@@ -172,11 +172,16 @@ class MainWindow(
         self.__shutdown = True
 
     def _create_window_components(self):  # Not private for test purposes
-        self._create_viewer_container()
-        viewer.addViewers(self.viewer, self.taskFile, self.settings)
-        self._create_status_bar()
-        self.__create_menu_bar()
-        self.__create_reminder_controller()
+        # Freeze to prevent flickering during viewer creation
+        self.Freeze()
+        try:
+            self._create_viewer_container()
+            viewer.addViewers(self.viewer, self.taskFile, self.settings)
+            self._create_status_bar()
+            self.__create_menu_bar()
+            self.__create_reminder_controller()
+        finally:
+            self.Thaw()
         wx.CallAfter(self.viewer.componentsCreated)
 
     def _create_viewer_container(self):  # Not private for test purposes
@@ -222,13 +227,18 @@ class MainWindow(
         )
 
     def __init_window_components(self):
-        self.showToolBar(self.settings.getvalue("view", "toolbar"))
-        # We use CallAfter because otherwise the statusbar will appear at the
-        # top of the window when it is initially hidden and later shown.
-        wx.CallAfter(
-            self.showStatusBar, self.settings.getboolean("view", "statusbar")
-        )
-        self.__restore_perspective()
+        # Freeze to prevent flickering during AUI layout restoration
+        self.Freeze()
+        try:
+            self.showToolBar(self.settings.getvalue("view", "toolbar"))
+            # We use CallAfter because otherwise the statusbar will appear at the
+            # top of the window when it is initially hidden and later shown.
+            wx.CallAfter(
+                self.showStatusBar, self.settings.getboolean("view", "statusbar")
+            )
+            self.__restore_perspective()
+        finally:
+            self.Thaw()
         # Start tracking window position/size changes AFTER AUI layout is restored.
         # This avoids saving spurious resize/move events from LoadPerspective().
         self.__dimensions_tracker.start_tracking()

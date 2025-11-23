@@ -1205,7 +1205,7 @@ grep -r "DESIGN NOTE (Twisted Removal" taskcoachlib/
 
 **Date Fixed:** November 2025
 **Affected Components:** WindowDimensionsTracker, MainWindow
-**Root Cause:** Event handlers bound before AUI LoadPerspective() completes
+**Root Cause:** Multiple sources of spurious resize/move events during initialization
 
 ### Problem Overview
 
@@ -1216,127 +1216,159 @@ After removing Twisted, the main window was not remembering its position and siz
 1. Window position resets to default on every startup
 2. Debug logs show position being saved as incorrect values like `(80, 0)` or size `(6, 28)`
 3. Position is correctly loaded but immediately overwritten
+4. GTK-CRITICAL errors during startup: `gtk_distribute_natural_allocation: assertion 'extra_space >= 0' failed`
 
 ### Root Cause Analysis
 
-The `WindowDimensionsTracker` was binding event handlers in `__init__`, but AUI's `LoadPerspective()` was called later during window initialization:
+There are **two sources** of spurious resize/move events during window initialization:
+
+**Source 1: AUI LoadPerspective()**
+The AUI manager causes many resize/move events when restoring pane layout:
 
 ```
 MainWindow.__init__:
-  Line 81: WindowDimensionsTracker created → binds EVT_SIZE, EVT_MOVE, EVT_MAXIMIZE
-  Line 92-94: Window components created
-  Line 231: __restore_perspective() → LoadPerspective() triggers spurious resize/move events!
+  Line 81: WindowDimensionsTracker created
+  Line 231: __restore_perspective() → LoadPerspective() triggers spurious resize/move events
 ```
 
-The AUI (Advanced User Interface) manager causes many resize/move events when restoring pane layout. These spurious events were being saved, **overwriting the correct window position**.
+**Source 2: GTK Window Realization during Show()**
+When `mainwindow.Show()` is called in `Application.start()`, GTK window realization triggers:
+- GTK-CRITICAL assertion failure
+- Spurious events with invalid values like size=(6, 28) position=(80, 0)
 
 Debug log showing the problem:
 ```
-[23:10:04] __set_dimensions: APPLYING SetSize(560, 147, 1135, 789)  ← Correct!
-[23:10:05] on_change_size: new_size=(6, 28) ... SAVING size=(6, 28)  ← AUI spurious event
-[23:10:05] on_change_position: pos=(80, 0) ... SAVING position=(80, 0)  ← AUI spurious event
+[23:27:32] __set_dimensions: LOADED pos=(385, 154) size=(875, 539)  ← Correct!
+[23:27:32] start_tracking: Binding event handlers
+... (resize events during AUI layout)
+(taskcoach.py): Gtk-CRITICAL **: gtk_distribute_natural_allocation: assertion failed
+[23:27:32] on_change_size: SAVING (6, 28)  ← GTK spurious event!
+[23:27:32] on_change_position: SAVING (80, 0)  ← GTK spurious event!
 ```
 
-### Incorrect Fix: Timer-Based Delay (Hacky)
+### Incorrect Fixes
 
-The initial fix used a timer to delay event binding:
-
+**Fix Attempt 1: Timer-Based Delay (Hacky)**
 ```python
 # WRONG - hacky timer-based fix
-def __init__(self, window, settings, section):
+def __init__(self, ...):
     self._initializing = True
-    self.__set_dimensions()
-    self._window.Bind(wx.EVT_SIZE, self.on_change_size)
-    # Delay clearing flag - HACKY!
-    wx.CallLater(500, self._end_initialization)
-
-def on_change_size(self, event):
-    if self._initializing:
-        event.Skip()
-        return  # Ignore during initialization
-    # ... save size
+    wx.CallLater(500, self._end_initialization)  # Magic number!
 ```
+**Why wrong:** Magic number, not deterministic, doesn't address root cause.
 
-**Why this is wrong:**
-- Magic number (500ms) - what if AUI takes longer?
-- Not deterministic - depends on system speed
-- Doesn't address root cause
+**Fix Attempt 2: Call start_tracking() after LoadPerspective()**
+```python
+# INSUFFICIENT - spurious events still happen during Show()
+def __init_window_components(self):
+    self.__restore_perspective()
+    self.__dimensions_tracker.start_tracking()  # Too early!
+```
+**Why insufficient:** `mainwindow.Show()` is called later in `Application.start()`, and GTK realization during Show() triggers more spurious events AFTER start_tracking() was called.
 
-### Correct Fix: Two-Phase Initialization
+### Correct Fix: Deferred Event Binding via EVT_SHOW
 
-The proper fix is to split initialization into two phases:
-
-**Phase 1:** Restore dimensions from settings (no event binding)
-**Phase 2:** Bind event handlers (after AUI layout is complete)
+The proper fix defers event binding until AFTER the window is shown:
 
 ```python
 class WindowSizeAndPositionTracker:
     """
-    DESIGN NOTE: Two-phase initialization to avoid spurious events from AUI layout.
+    DESIGN NOTE: Deferred event binding to avoid spurious events.
 
-    The AUI manager causes many resize/move events when restoring pane layout via
-    LoadPerspective(). If we bind event handlers before AUI layout is complete,
-    we'd save incorrect window positions.
+    Two sources of spurious resize/move events during window initialization:
+    1. AUI LoadPerspective() triggers many layout events
+    2. GTK window realization during Show() triggers invalid size/position events
 
-    Solution: Split initialization into two phases:
+    Solution: Defer event binding until AFTER the window is shown:
     1. __init__: Only restore window dimensions from settings (no event binding)
-    2. start_tracking(): Bind event handlers (call after AUI LoadPerspective)
+    2. start_tracking(): Sets up EVT_SHOW handler (call after AUI LoadPerspective)
+    3. _on_window_shown(): When window is shown, use wx.CallAfter to schedule binding
+    4. _bind_tracking_events(): Actually binds EVT_SIZE/EVT_MOVE/EVT_MAXIMIZE
     """
 
     def __init__(self, window, settings, section):
+        self._tracking_enabled = False
+        self._show_handler_bound = False
         # Phase 1: Only restore dimensions - DO NOT bind events yet
         self.__set_dimensions()
 
     def start_tracking(self):
-        """Start tracking window size/position changes.
+        """Call AFTER AUI LoadPerspective(). Actual binding deferred to EVT_SHOW."""
+        if self._tracking_enabled or self._show_handler_bound:
+            return
 
-        Call this method AFTER the window is fully initialized, including
-        AUI layout restoration (LoadPerspective).
-        """
+        if self._window.IsShown():
+            self._bind_tracking_events()
+        else:
+            # Defer until after window is shown
+            self._window.Bind(wx.EVT_SHOW, self._on_window_shown)
+            self._show_handler_bound = True
+
+    def _on_window_shown(self, event):
+        """Handle first window show - start tracking after GTK realization."""
+        event.Skip()
+        if event.IsShown() and not self._tracking_enabled:
+            self._window.Unbind(wx.EVT_SHOW, handler=self._on_window_shown)
+            self._show_handler_bound = False
+            # wx.CallAfter ensures GTK realization is complete
+            wx.CallAfter(self._bind_tracking_events)
+
+    def _bind_tracking_events(self):
+        """Actually bind the tracking event handlers."""
+        if self._tracking_enabled:
+            return
         self._window.Bind(wx.EVT_SIZE, self.on_change_size)
         self._window.Bind(wx.EVT_MOVE, self.on_change_position)
         self._window.Bind(wx.EVT_MAXIMIZE, self.on_maximize)
         self._tracking_enabled = True
 ```
 
-In MainWindow, call `start_tracking()` after AUI layout is restored:
+### Additional Fix: Freeze/Thaw for AUI Flickering
+
+Users reported visible flickering during startup as AUI panes were repositioned. This is fixed by wrapping initialization in Freeze/Thaw:
 
 ```python
+# In mainwindow.py
+def _create_window_components(self):
+    self.Freeze()  # Prevent flickering during viewer creation
+    try:
+        self._create_viewer_container()
+        viewer.addViewers(...)
+        self._create_status_bar()
+        self.__create_menu_bar()
+    finally:
+        self.Thaw()
+
 def __init_window_components(self):
-    self.showToolBar(...)
-    wx.CallAfter(self.showStatusBar, ...)
-    self.__restore_perspective()
-    # Start tracking AFTER AUI layout is restored
+    self.Freeze()  # Prevent flickering during AUI layout
+    try:
+        self.showToolBar(...)
+        self.__restore_perspective()
+    finally:
+        self.Thaw()
     self.__dimensions_tracker.start_tracking()
 ```
 
 ### Research Validation
 
-This pattern is supported by wxPython documentation:
+The EVT_SHOW + wx.CallAfter pattern is supported by wxPython best practices:
 
 > "Event handlers can be bound at any moment. For example, it's possible to do some initialization first and only bind the handlers if and when it succeeds."
 > — [wxPython Events and Event Handling Documentation](https://docs.wxpython.org/events_overview.html)
 
-Alternative patterns considered:
-1. **EVT_IDLE with self-unbind** - Works but less explicit about when tracking starts
-2. **Freeze/Thaw** - Prevents flicker, not event firing
-3. **wx.CallAfter** - Could work but less clear initialization order
-
-The two-phase pattern is preferred because:
-- Explicit about when tracking starts
-- Deterministic - no timers or idle events
-- The caller (MainWindow) knows exactly when AUI is ready
-- Follows wxPython documentation best practices
+The key insight is that `wx.CallAfter` queues the call for the next event loop iteration, ensuring all pending GTK events (including spurious resize/move from realization) have completed.
 
 ### Key Learnings
 
-1. **Don't bind event handlers too early**: If your window uses AUI, bind tracking events AFTER `LoadPerspective()` completes
+1. **Two sources of spurious events**: Both AUI LoadPerspective() AND GTK window realization (Show()) generate spurious events
 
-2. **Timer-based fixes are code smells**: If you're using `wx.CallLater()` or `wx.CallAfter()` to "wait for things to settle", look for a proper initialization hook
+2. **EVT_SHOW + wx.CallAfter**: The combination ensures event handlers are bound only after GTK realization is complete
 
-3. **AUI generates spurious events**: `LoadPerspective()` and `manager.Update()` cause many resize/move events as panes are repositioned
+3. **Timer-based fixes are code smells**: If you're using magic delays, look for proper initialization hooks
 
-4. **Debug logging is essential**: Without detailed logging, this bug would have been nearly impossible to diagnose
+4. **Freeze/Thaw for flicker**: Batches visual updates to prevent distracting UI flicker during initialization
+
+5. **Debug logging is essential**: Without detailed logging, this multi-source bug would have been nearly impossible to diagnose
 
 ### Testing Checklist
 
@@ -1344,14 +1376,15 @@ The two-phase pattern is preferred because:
 - [ ] Resize window, close and reopen → should remember size
 - [ ] Move window to specific position, close and reopen → should remember position
 - [ ] Maximize window, close and reopen → should remember maximized state
-- [ ] Debug logs should show no spurious saves during startup
+- [ ] No visible flickering of AUI panes during startup
+- [ ] Debug logs should show "Tracking STARTED" AFTER window is fully visible
 
 ### Files Modified
 
 | File | Change |
 |------|--------|
-| `windowdimensionstracker.py` | Split into two-phase init with `start_tracking()` |
-| `mainwindow.py` | Call `start_tracking()` after `__restore_perspective()` |
+| `windowdimensionstracker.py` | Deferred event binding via EVT_SHOW + wx.CallAfter |
+| `mainwindow.py` | Added Freeze/Thaw around viewer creation and AUI layout |
 
 ---
 
@@ -1369,7 +1402,8 @@ The two-phase pattern is preferred because:
 - ✅ Hacky close delay patches removed after root cause fix (November 2025)
 - ✅ Ctrl+C crash with AUI event handler assertion (November 2025)
 - ✅ Twisted framework removed, replaced with native wxPython + stdlib (November 2025)
-- ✅ Window position not remembered due to AUI spurious events (November 2025)
+- ✅ Window position not remembered due to AUI + GTK spurious events (November 2025)
+- ✅ AUI pane flickering during startup fixed with Freeze/Thaw (November 2025)
 
 ---
 
