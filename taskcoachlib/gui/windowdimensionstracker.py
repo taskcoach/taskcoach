@@ -63,11 +63,11 @@ class WindowGeometryTracker:
         # === Persisted state (restore values) ===
         self.position = None  # (x, y)
         self.size = None      # (w, h)
-        self.maximized = False
 
         # === In-memory state ===
         self.ready = False      # Window is ready: activated AND matches target
         self.activated = False  # EVT_ACTIVATE has fired
+        self._pending_maximize = False  # GTK only: maximize after window is ready
 
         # Position logging timer
         self._pos_log_timer = None
@@ -113,9 +113,9 @@ class WindowGeometryTracker:
         """Load state from settings file and apply to window."""
         x, y = self._get_setting("position")
         width, height = self._get_setting("size")
-        self.maximized = self._get_setting("maximized")
+        maximized = self._get_setting("maximized")
 
-        _log_debug(f"LOAD: pos=({x}, {y}) size=({width}, {height}) maximized={self.maximized}")
+        _log_debug(f"LOAD: pos=({x}, {y}) size=({width}, {height}) maximized={maximized}")
 
         # Enforce minimum size
         min_w, min_h = self._window.GetMinSize()
@@ -148,8 +148,16 @@ class WindowGeometryTracker:
         if operating_system.isMac():
             self._window.SetClientSize((width, height))
 
-        if self.maximized:
-            _log_debug(f"  Will maximize after window is ready")
+        # Maximize handling differs by platform
+        if maximized:
+            if operating_system.isGTK():
+                # GTK: defer maximize until position/size are correct (see _mark_ready)
+                self._pending_maximize = True
+                _log_debug(f"  GTK: will maximize after window is ready")
+            else:
+                # Windows/Mac: maximize immediately, they handle restore geometry correctly
+                _log_debug(f"  Maximizing immediately")
+                self._window.Maximize()
 
     def save(self):
         """Save current state to settings file."""
@@ -233,10 +241,11 @@ class WindowGeometryTracker:
         self.size = (size.width, size.height)
         _log_debug(f"  Cached restore values: pos={self.position} size={self.size}")
 
-        # NOW maximize if saved state was maximized
-        if self.maximized:
-            _log_debug(f"  Maximizing now (window ready)")
+        # GTK: now maximize if it was deferred
+        if self._pending_maximize:
+            _log_debug(f"  Maximizing now (GTK deferred)")
             self._window.Maximize()
+            self._pending_maximize = False
 
     # === State updates from window ===
 
