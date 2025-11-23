@@ -1266,84 +1266,71 @@ def __init_window_components(self):
 ```
 **Why insufficient:** `mainwindow.Show()` is called later in `Application.start()`, and GTK realization during Show() triggers more spurious events AFTER start_tracking() was called.
 
-### Correct Fix: Debounced Saving
+### Correct Fix: Save Only on Close
 
-The root cause is that GTK's `configure_event` is asynchronous - the window manager sends positioning events at unpredictable times after `Show()`. There's no reliable way to know when the window has "settled" into its final position using event deferral techniques like EVT_SHOW or EVT_IDLE.
+The simplest and most robust solution: **don't try to save on every resize/move event**.
 
-**The Industry-Standard Solution: Debouncing**
+**Root Cause Analysis:**
 
-This is the approach used by professional applications like VS Code, Chrome, and others:
+There's no reliable way to distinguish "user-initiated" resize/move events from "system-initiated" events in wxWidgets/GTK. The spurious events come from:
+
+1. **Internal code:**
+   - `SendSizeEvent()` in `showStatusBar()`, toolbar changes
+   - AUI `LoadPerspective()` during layout restoration
+   - Various widget updates
+
+2. **System/GTK:**
+   - GTK window realization sends configure events asynchronously
+   - Window manager placement events
+
+**The Solution: Save Only on Close**
 
 ```python
 class WindowSizeAndPositionTracker:
     """
-    DESIGN NOTE: Debounced saving to filter spurious events.
+    DESIGN NOTE: Save only on close.
 
-    GTK/wxWidgets generates many spurious resize/move events during window
-    initialization, AUI layout restoration, and window manager interactions.
+    Previously, we tried to save position/size on every EVT_MOVE/EVT_SIZE event.
+    This caused problems because GTK and our own code generate many spurious
+    resize/move events during window initialization.
 
-    The ROOT CAUSE is that GTK's configure_event is asynchronous - the window
-    manager sends positioning events at unpredictable times after Show().
-
-    SOLUTION: Use debouncing - delay saves until events stop arriving.
-    1. Each position/size change restarts a short timer (300ms)
-    2. Only when the window is stable (no events for 300ms) do we actually save
-    3. Rapid spurious events during startup keep resetting the timer
-    4. The final stable position is saved after initialization completes
+    SOLUTION: Only save window state when the window is closed.
+    - Simpler implementation (no event handlers for saving)
+    - No spurious saves during initialization
+    - Only saves the final stable state the user intended
+    - Uses the existing save_position() method called on EVT_CLOSE
     """
 
-    # Debounce delay in milliseconds
-    _SAVE_DEBOUNCE_MS = 300
-
     def __init__(self, window, settings, section):
-        self._pending_position = None
-        self._pending_size = None
-        self._save_timer = None
-
+        self._is_maximized = False
         self.__set_dimensions()
-        # Bind immediately - debouncing handles spurious events
-        self._window.Bind(wx.EVT_SIZE, self.on_change_size)
-        self._window.Bind(wx.EVT_MOVE, self.on_change_position)
+        # Only track maximize state - position/size saved on close
+        self._window.Bind(wx.EVT_MAXIMIZE, self._on_maximize)
 
-    def _schedule_save(self):
-        """Schedule a debounced save. Resets timer if already pending."""
-        if self._save_timer is not None:
-            self._save_timer.Stop()
-        self._save_timer = wx.CallLater(_SAVE_DEBOUNCE_MS, self._do_save)
-
-    def _do_save(self):
-        """Actually save the pending values after debounce delay."""
-        if self._pending_position is not None:
-            self.set_setting("position", self._pending_position)
-            self._pending_position = None
-        if self._pending_size is not None:
-            self.set_setting("size", self._pending_size)
-            self._pending_size = None
-
-    def on_change_position(self, event):
-        pos = event.GetPosition()
-        self._pending_position = pos  # Queue for debounced save
-        self._schedule_save()
+    def _on_maximize(self, event):
+        """Track maximize state changes."""
+        self._is_maximized = True
         event.Skip()
 
-    def flush_pending_saves(self):
-        """Immediately save any pending values. Call before window closes."""
-        if self._save_timer is not None:
-            self._save_timer.Stop()
-        self._do_save()
+    def save_position(self):
+        """Save the position of the window. Called when window is about to close."""
+        iconized = self._window.IsIconized()
+        if not iconized:
+            self.set_setting("position", self._window.GetPosition())
+            if not self._window.IsMaximized():
+                self.set_setting("size", self._window.GetSize())
+        self.set_setting("maximized", self._window.IsMaximized() or self._is_maximized)
 ```
 
-**Why Debouncing Works:**
+**Why This Works:**
 
-1. **Behavioral filtering**: Spurious events come in rapid bursts during initialization. Debouncing naturally filters them by waiting for events to stop.
+1. **No spurious saves**: By not binding EVT_MOVE/EVT_SIZE for saving, all spurious events are simply ignored.
 
-2. **No magic timing**: Unlike fixed delays (500ms timers), debouncing adapts to actual event patterns.
+2. **Simpler code**: No debouncing, no timers, no event deferral - just save on close.
 
-3. **Industry proven**: This is the standard approach in VS Code, Chrome, Firefox, and most professional desktop applications.
+3. **User intent**: Only saves the final state when the user deliberately closes the window.
 
-4. **Simple implementation**: Uses `wx.CallLater` which is the wxPython equivalent of JavaScript's `setTimeout`.
-
-5. **Robust**: Works regardless of how many spurious events arrive or when they arrive - only the final stable value is saved.
+4. **Already implemented**: The `save_position()` method was already being called on EVT_CLOSE.
 
 ### Additional Fix: Freeze/Thaw for AUI Flickering
 
@@ -1368,29 +1355,18 @@ def __init_window_components(self):
         self.__restore_perspective()
     finally:
         self.Thaw()
-    # Window tracking uses debouncing - no manual start needed
+    # Window tracking saves only on close - no special handling needed
 ```
-
-### Research Validation
-
-The debouncing pattern is widely used in UI programming:
-
-> "Debouncing is a programming practice used to ensure that time-consuming tasks do not fire so often, making the interface unresponsive."
-> — Industry best practices
-
-Key references:
-- [wx.CallLater documentation](https://docs.wxpython.org/wx.CallLater.html) - wxPython timer for debouncing
-- [GTK configure_event](https://docs.gtk.org/gtk3/signal.Widget.configure-event.html) - Asynchronous window positioning
 
 ### Key Learnings
 
-1. **Root Cause: Asynchronous GTK configure_event**: The window manager sends position events at unpredictable times after `Show()`. There's no single point where the window is "fully realized".
+1. **Question the approach first**: The original code tried to save on every EVT_MOVE/EVT_SIZE. The right question was: "Why are we doing this at all?" Saving only on close is simpler and sufficient.
 
-2. **Multiple spurious event sources**: Both AUI LoadPerspective() AND GTK window realization (Show()) generate spurious events - and they can arrive even after `EVT_IDLE`.
+2. **Identify event sources**: Many "spurious" events come from our own code (SendSizeEvent, LoadPerspective) not just GTK. Understanding the sources helps choose the right solution.
 
-3. **Debouncing > Event Deferral**: Trying to find the "right moment" to start tracking fails because GTK events are asynchronous. Debouncing adapts to actual event patterns.
+3. **No way to distinguish user vs system events**: wxWidgets/GTK doesn't provide a flag to identify user-initiated resize/move. Don't try to filter what you can't identify.
 
-4. **Industry-standard pattern**: VS Code, Chrome, Firefox all use debouncing for window state persistence.
+4. **Simpler is better**: Complex solutions (EVT_IDLE deferral, debouncing) were unnecessary. The existing `save_position()` on close was already the right approach.
 
 5. **Freeze/Thaw for flicker**: Batches visual updates to prevent distracting UI flicker during initialization.
 
@@ -1403,13 +1379,13 @@ Key references:
 - [ ] Move window to specific position, close and reopen → should remember position
 - [ ] Maximize window, close and reopen → should remember maximized state
 - [ ] No visible flickering of AUI panes during startup
-- [ ] Debug logs should show pending values followed by SAVING after 300ms delay
+- [ ] Debug logs should only show RESTORING on startup and save_position on close
 
 ### Files Modified
 
 | File | Change |
 |------|--------|
-| `windowdimensionstracker.py` | Debounced saving with wx.CallLater (300ms delay) |
+| `windowdimensionstracker.py` | Removed EVT_MOVE/EVT_SIZE handlers; save only on close |
 | `mainwindow.py` | Added Freeze/Thaw around viewer creation and AUI layout |
 
 ---

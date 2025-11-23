@@ -24,9 +24,6 @@ from taskcoachlib import operating_system
 # Debug logging for window position tracking (set to False to disable)
 _DEBUG_WINDOW_TRACKING = True
 
-# Debounce delay in milliseconds - saves are delayed until window is stable
-_SAVE_DEBOUNCE_MS = 300
-
 
 def _log_debug(msg):
     """Log debug message with timestamp."""
@@ -56,83 +53,73 @@ class _Tracker(object):
 class WindowSizeAndPositionTracker(_Tracker):
     """Track the size and position of a window in the settings.
 
-    DESIGN NOTE: Debounced saving to filter spurious events.
+    DESIGN NOTE: Save only on close.
 
-    GTK/wxWidgets generates many spurious resize/move events during window
-    initialization, AUI layout restoration, and window manager interactions.
-    These include:
-    - Temporary positions near (0,0) before window manager places the window
-    - Minimum sizes during AUI LoadPerspective()
-    - Multiple rapid events during window realization
+    Previously, we tried to save position/size on every EVT_MOVE/EVT_SIZE event.
+    This caused problems because GTK and our own code generate many spurious
+    resize/move events during window initialization:
 
-    The ROOT CAUSE is that GTK's configure_event is asynchronous - the window
-    manager sends positioning events at unpredictable times after Show().
-    There's no reliable way to know when the window has "settled" into its
-    final position.
+    - AUI LoadPerspective() triggers layout events
+    - SendSizeEvent() in showStatusBar(), toolbar changes, etc.
+    - GTK window realization sends configure events asynchronously
+    - Window manager placement events
 
-    SOLUTION: Use debouncing - delay saves until events stop arriving.
-    This is the industry-standard approach (used by VS Code, Chrome, etc.):
-    1. Each position/size change restarts a short timer (300ms)
-    2. Only when the window is stable (no events for 300ms) do we actually save
-    3. Rapid spurious events during startup keep resetting the timer
-    4. The final stable position is saved after initialization completes
+    There's no reliable way to distinguish "user-initiated" events from
+    "system-initiated" events in wxWidgets/GTK.
 
-    This approach is robust because it relies on the behavioral property of
-    spurious events (they come in bursts) rather than trying to predict or
-    filter specific values.
+    SOLUTION: Only save window state when the window is closed.
+    - Simpler implementation (no event handlers for saving)
+    - No spurious saves during initialization
+    - Only saves the final stable state the user intended
+    - Uses the existing save_position() method called on EVT_CLOSE
+
+    The only event we track is EVT_MAXIMIZE to update the maximized state,
+    since IsMaximized() may not be accurate if called during close.
     """
 
     def __init__(self, window, settings, section):
         super().__init__(settings, section)
         self._window = window
         self._section = section  # Store for logging
-
-        # Pending values to save (debounced)
-        self._pending_position = None
-        self._pending_size = None
-        self._pending_maximized = None
-
-        # Debounce timer
-        self._save_timer = None
+        self._is_maximized = False
 
         # Restore window dimensions from settings
         self.__set_dimensions()
 
-        # Bind event handlers immediately - debouncing handles spurious events
-        self._window.Bind(wx.EVT_SIZE, self.on_change_size)
-        self._window.Bind(wx.EVT_MOVE, self.on_change_position)
-        self._window.Bind(wx.EVT_MAXIMIZE, self.on_maximize)
+        # Only track maximize state - position/size saved on close
+        self._window.Bind(wx.EVT_MAXIMIZE, self._on_maximize)
 
-    def _schedule_save(self):
-        """Schedule a debounced save. Resets timer if already pending."""
-        if self._save_timer is not None:
-            self._save_timer.Stop()
+    def _on_maximize(self, event):
+        """Track maximize state changes."""
+        self._is_maximized = True
+        _log_debug("Window maximized")
+        event.Skip()
 
-        self._save_timer = wx.CallLater(_SAVE_DEBOUNCE_MS, self._do_save)
+    def save_state(self):
+        """Save the current window state. Call when window is about to close."""
+        maximized = self._window.IsMaximized() or self._is_maximized
+        iconized = self._window.IsIconized()
 
-    def _do_save(self):
-        """Actually save the pending values after debounce delay."""
-        self._save_timer = None
+        _log_debug(f"save_state: maximized={maximized} iconized={iconized}")
 
-        if self._pending_position is not None:
-            _log_debug(f"SAVING position: {self._pending_position}")
-            self.set_setting("position", self._pending_position)
+        self.set_setting("maximized", maximized)
 
-            # For dialogs, also save offset from parent for multi-monitor support
+        if not maximized and not iconized:
+            # Get current position and size
+            pos = self._window.GetPosition()
+            size = (
+                self._window.GetClientSize()
+                if operating_system.isMac()
+                else self._window.GetSize()
+            )
+
+            _log_debug(f"save_state: SAVING pos={pos} size={size}")
+            self.set_setting("position", pos)
+            self.set_setting("size", size)
+
+            # For dialogs, save offset from parent
             if isinstance(self._window, wx.Dialog):
-                self._save_dialog_offset(self._pending_position)
-
-            self._pending_position = None
-
-        if self._pending_size is not None:
-            _log_debug(f"SAVING size: {self._pending_size}")
-            self.set_setting("size", self._pending_size)
-            self._pending_size = None
-
-        if self._pending_maximized is not None:
-            _log_debug(f"SAVING maximized: {self._pending_maximized}")
-            self.set_setting("maximized", self._pending_maximized)
-            self._pending_maximized = None
+                self._save_dialog_offset(pos)
 
     def _save_dialog_offset(self, pos):
         """Save dialog offset from parent for multi-monitor support."""
@@ -160,55 +147,6 @@ class WindowSizeAndPositionTracker(_Tracker):
                 self.set_setting("parent_offset", (-1, -1))
         except (configparser.NoSectionError, configparser.NoOptionError):
             pass  # Old settings section without parent_offset support
-
-    def on_change_size(self, event):
-        """Handle a size event by scheduling a debounced save."""
-        maximized = self._window.IsMaximized()
-        iconized = self._window.IsIconized()
-
-        if not maximized and not iconized:
-            size = (
-                self._window.GetClientSize()
-                if operating_system.isMac()
-                else event.GetSize()
-            )
-            self._pending_size = size
-            _log_debug(f"on_change_size: pending {size}")
-
-        # Always track maximized state
-        self._pending_maximized = maximized
-        self._schedule_save()
-        event.Skip()
-
-    def on_change_position(self, event):
-        """Handle a move event by scheduling a debounced save."""
-        maximized = self._window.IsMaximized()
-        iconized = self._window.IsIconized()
-
-        if not maximized:
-            self._pending_maximized = False
-            if not iconized:
-                pos = event.GetPosition()
-                self._pending_position = pos
-                _log_debug(f"on_change_position: pending {pos}")
-                self._schedule_save()
-        event.Skip()
-
-    def on_maximize(self, event):
-        """Handle a maximize event."""
-        self._pending_maximized = True
-        self._schedule_save()
-        event.Skip()
-
-    def flush_pending_saves(self):
-        """Immediately save any pending values. Call before window closes."""
-        if self._save_timer is not None:
-            self._save_timer.Stop()
-            self._save_timer = None
-
-        # Only save if we have pending values
-        if self._pending_position or self._pending_size or self._pending_maximized is not None:
-            self._do_save()
 
     def __set_dimensions(self):
         """Set the window position and size based on the settings."""
@@ -241,8 +179,10 @@ class WindowSizeAndPositionTracker(_Tracker):
         if operating_system.isMac():
             self._window.SetClientSize((width, height))
 
-        if self.get_setting("maximized"):
+        maximized = self.get_setting("maximized")
+        if maximized:
             self._window.Maximize()
+            self._is_maximized = True
 
         # Validate window is on a visible display
         self._validate_window_position(width, height)
@@ -350,7 +290,7 @@ class WindowSizeAndPositionTracker(_Tracker):
 
 
 class WindowDimensionsTracker(WindowSizeAndPositionTracker):
-    """Track the dimensions of a window in the settings."""
+    """Track the dimensions of the main window in the settings."""
 
     def __init__(self, window, settings):
         super().__init__(window, settings, "window")
@@ -375,19 +315,31 @@ class WindowDimensionsTracker(WindowSizeAndPositionTracker):
     def save_position(self):
         """Save the position of the window in the settings.
 
-        Called when window is about to close to ensure final position is saved.
+        Called when window is about to close.
         """
-        # Flush any pending debounced saves first
-        self.flush_pending_saves()
-
         iconized = self._window.IsIconized()
         pos = self._window.GetPosition()
         monitor_index = wx.Display.GetFromWindow(self._window)
 
-        _log_debug(f"save_position (close): pos={pos} monitor={monitor_index} iconized={iconized}")
+        _log_debug(f"save_position: pos={pos} monitor={monitor_index} iconized={iconized}")
 
         self.set_setting("iconized", iconized)
+
         if not iconized:
+            # Save position and monitor
             self.set_setting("position", pos)
             if monitor_index != wx.NOT_FOUND:
                 self.set_setting("monitor_index", monitor_index)
+
+            # Save size if not maximized
+            if not self._window.IsMaximized() and not self._is_maximized:
+                size = (
+                    self._window.GetClientSize()
+                    if operating_system.isMac()
+                    else self._window.GetSize()
+                )
+                _log_debug(f"save_position: SAVING size={size}")
+                self.set_setting("size", size)
+
+        # Save maximized state
+        self.set_setting("maximized", self._window.IsMaximized() or self._is_maximized)
