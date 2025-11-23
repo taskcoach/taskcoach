@@ -246,7 +246,11 @@ class Application(object, metaclass=patterns.Singleton):
             wx.Log.SetLogLevel(wx.LOG_Info)
             wx.Log.SetVerbose(True)
 
+        pos_before_show = self.mainwindow.GetPosition()
+        print(f"[DEBUG] application: BEFORE Show() pos=({pos_before_show.x}, {pos_before_show.y})")
         self.mainwindow.Show()
+        pos_after_show = self.mainwindow.GetPosition()
+        print(f"[DEBUG] application: AFTER Show() pos=({pos_after_show.x}, {pos_after_show.y})")
         # Re-apply window position after Show() - GTK ignores position set before Show()
         # Use CallLater with delay to ensure GTK has finished window placement
         wx.CallLater(100, self.mainwindow.applyPositionAfterShow)

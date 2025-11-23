@@ -236,10 +236,17 @@ class MainWindow(
         )
 
     def __init_window_components(self):
+        pos_before = self.GetPosition()
+        print(f"[DEBUG] __init_window_components: START pos=({pos_before.x}, {pos_before.y})")
+
         # Freeze to prevent flickering during AUI layout restoration
         self.Freeze()
+        print(f"[DEBUG] __init_window_components: AFTER Freeze pos=({self.GetPosition().x}, {self.GetPosition().y})")
+
         try:
             self.showToolBar(self.settings.getvalue("view", "toolbar"))
+            print(f"[DEBUG] __init_window_components: AFTER showToolBar pos=({self.GetPosition().x}, {self.GetPosition().y})")
+
             # We use CallAfter because otherwise the statusbar will appear at the
             # top of the window when it is initially hidden and later shown.
             wx.CallAfter(
@@ -247,7 +254,10 @@ class MainWindow(
             )
             self.__restore_perspective()
         finally:
+            print(f"[DEBUG] __init_window_components: BEFORE Thaw pos=({self.GetPosition().x}, {self.GetPosition().y})")
             self.Thaw()
+            print(f"[DEBUG] __init_window_components: AFTER Thaw pos=({self.GetPosition().x}, {self.GetPosition().y})")
+
         # Note: Window position/size tracking uses debouncing to handle spurious
         # events from AUI LoadPerspective() and GTK window realization.
         # Events are bound immediately in __init__, no manual start needed.
