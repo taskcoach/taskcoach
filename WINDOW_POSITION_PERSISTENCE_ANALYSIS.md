@@ -6,9 +6,11 @@ Task Coach on Linux/GTK fails to restore window position on startup. The window 
 
 **Root Cause:** wxWidgets/wxGTK does not set the `GDK_HINT_USER_POS` geometry hint when calling `gtk_window_move()`. Without this hint, the window manager ignores application-requested positions and uses its own placement algorithm.
 
-**Working Solution:** Detect unplanned window moves via `EVT_MOVE` and immediately reset to the target position **until `EVT_ACTIVATE` fires**. This works without visible flicker.
+**Working Solution:** Detect unplanned window moves via `EVT_MOVE` and immediately reset to the target position **until `EVT_ACTIVATE` fires**. Then maximize if saved state was maximized. This works without visible flicker.
 
-**Key Finding:** The window manager may move the window multiple times during setup. Keep correcting position on every `EVT_MOVE` until `EVT_ACTIVATE` (window gains focus) signals the window is ready for user input.
+**Key Finding:** The window manager may move the window multiple times during setup. Keep correcting position on every `EVT_MOVE` until `EVT_ACTIVATE` (window gains focus) signals the window is ready for user input. Only then is it safe to maximize.
+
+**Important:** Never save or restore iconized state - only maximize state persists.
 
 ---
 
@@ -212,38 +214,97 @@ Testing revealed the exact event sequence during window creation:
 ### Implementation
 
 ```python
-class MainWindow(wx.Frame):
-    def __init__(self):
-        super().__init__(None, title="App", size=(800, 600))
-        self._target_position = (100, 100)  # Loaded from settings
+class WindowTracker:
+    def __init__(self, window, settings):
+        self._window = window
         self._window_activated = False  # Track when window is ready
+        self._should_maximize = False   # Maximize after EVT_ACTIVATE
 
-        # Set initial position (WM will likely ignore - corrected via EVT_MOVE)
-        self.SetSize(self._target_position[0], self._target_position[1], 800, 600)
+        # Load from settings
+        self._target_position = settings.get("position")  # e.g., (100, 100)
+        self._target_size = settings.get("size")          # e.g., (800, 600)
+        maximized = settings.get("maximized")
 
-        self.Bind(wx.EVT_MOVE, self._on_move)
-        self.Bind(wx.EVT_ACTIVATE, self._on_activate)
+        # Set initial position and size (WM will likely ignore pos - corrected via EVT_MOVE)
+        x, y = self._target_position
+        w, h = self._target_size
+        self._window.SetSize(x, y, w, h)
 
-    def _on_activate(self, event):
-        """Window gained focus - stop correcting position."""
-        if event.GetActive():
-            self._window_activated = True
-            # Unbind to avoid overhead after window is ready
-            self.Unbind(wx.EVT_MOVE)
-            self.Unbind(wx.EVT_ACTIVATE)
-        event.Skip()
+        # Defer maximize until window is ready
+        if maximized:
+            self._should_maximize = True
+
+        # Cache for save (restore values when maximized)
+        self._cached_position = self._target_position
+        self._cached_size = self._target_size
+
+        self._window.Bind(wx.EVT_MOVE, self._on_move)
+        self._window.Bind(wx.EVT_ACTIVATE, self._on_activate)
 
     def _on_move(self, event):
         pos = event.GetPosition()
 
         # Keep correcting until window is activated (ready for input)
-        if not self._window_activated:
-            if pos.x != self._target_position[0] or pos.y != self._target_position[1]:
+        if not self._window_activated and self._target_position:
+            target_x, target_y = self._target_position
+            if pos.x != target_x or pos.y != target_y:
                 # WM moved us - immediately correct
-                self.SetPosition(wx.Point(*self._target_position))
+                self._window.SetPosition(wx.Point(target_x, target_y))
+                event.Skip()
+                return
+
+        # Cache position for save (only when not maximized)
+        if self._window_activated and not self._window.IsMaximized():
+            self._cached_position = (pos.x, pos.y)
 
         event.Skip()
+
+    def _on_activate(self, event):
+        """Window gained focus - stop correcting, cache values, then maximize if needed."""
+        if event.GetActive() and not self._window_activated:
+            self._window_activated = True
+
+            # Cache the restore values (position/size before maximize)
+            pos = self._window.GetPosition()
+            size = self._window.GetSize()
+            self._cached_position = (pos.x, pos.y)
+            self._cached_size = (size.width, size.height)
+
+            # Clear targets - no longer needed
+            self._target_position = None
+            self._target_size = None
+
+            # NOW maximize if saved state was maximized
+            if self._should_maximize:
+                self._window.Maximize()
+                self._should_maximize = False
+
+        event.Skip()
+
+    def save_state(self):
+        """Save window state. Call on close."""
+        maximized = self._window.IsMaximized()
+
+        # Always save maximize state
+        settings.set("maximized", maximized)
+
+        if maximized:
+            # Only save monitor - preserve last non-maximized pos/size for restore
+            monitor = wx.Display.GetFromWindow(self._window)
+            settings.set("monitor_index", monitor)
+        else:
+            # Save position and size
+            settings.set("position", self._cached_position)
+            settings.set("size", self._cached_size)
 ```
+
+### Key Points
+
+1. **Deferred Maximize**: Don't maximize immediately - wait until `EVT_ACTIVATE`
+2. **Position Correction**: Keep correcting on every `EVT_MOVE` until window is activated
+3. **Cache Restore Values**: Cache position/size before maximizing (for restore button)
+4. **Save Logic**: When maximized, only save monitor index - preserve last non-maximized pos/size
+5. **No Iconized State**: Never save or restore iconized state
 
 ### Why This Works
 
@@ -253,6 +314,7 @@ class MainWindow(wx.Frame):
 4. We correct position on **every** unplanned move by calling `SetPosition()`
 5. After the window is mapped and visible, `SetPosition()` IS honored by the WM
 6. `EVT_ACTIVATE` signals the window is ready for user input - stop correcting
+7. **Deferred maximize**: Maximize only after window is at correct position ensures it maximizes on the correct monitor
 
 ### Flicker
 
@@ -291,12 +353,15 @@ On Wayland, window positioning is **disabled by design**:
 
 ## Recommendations
 
-### For Task Coach
+### For Task Coach (Implemented)
 
-1. **Implement EVT_MOVE detection** in `windowdimensionstracker.py`
-2. Use 4-param `SetSize(x, y, w, h)` to set initial position (WM will likely ignore on GTK)
-3. Detect unplanned moves via EVT_MOVE and immediately correct until EVT_ACTIVATE
-4. Add platform detection for Wayland (disable position restore)
+1. ✅ **EVT_MOVE detection** in `windowdimensionstracker.py` - correct position until EVT_ACTIVATE
+2. ✅ **4-param `SetSize(x, y, w, h)`** to set initial position
+3. ✅ **Deferred maximize** - wait for EVT_ACTIVATE, then maximize if saved state was maximized
+4. ✅ **Cache restore values** - position/size before maximize, used for restore button
+5. ✅ **Save logic** - when maximized, only save monitor index (preserve restore pos/size)
+6. ✅ **No iconized persistence** - never save or restore iconized state
+7. ✅ **Wayland detection** - logs warning (positioning blocked by compositor)
 
 ### For wxWidgets Project
 
