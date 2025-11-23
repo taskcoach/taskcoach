@@ -11,6 +11,8 @@ class TestFrame(wx.Frame):
         # Create frame with explicit position and size
         super().__init__(None, title="Position Test", pos=(100, 100), size=(200, 150))
 
+        self.move_count = 0
+
         # Add a panel with position info
         panel = wx.Panel(self)
         self.label = wx.StaticText(panel, label="", pos=(10, 10))
@@ -26,8 +28,6 @@ class TestFrame(wx.Frame):
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.on_timer)
         self.timer.Start(100)  # Update every 100ms
-
-        self.move_count = 0
 
     def update_position(self):
         pos = self.GetPosition()
