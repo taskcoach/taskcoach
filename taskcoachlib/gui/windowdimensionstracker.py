@@ -70,12 +70,17 @@ class WindowSizeAndPositionTracker(_Tracker):
     def __init__(self, window, settings, section):
         super().__init__(settings, section)
         self._window = window
-        self._window_activated = False  # Track when window is ready (EVT_ACTIVATE fired)
 
-        # Target position for GTK position correction
+        # Target position/size for correction until window is ready
         self._target_position = None
-        self._target_size = None  # Also track target size (can be reset by AUI)
-        self._should_maximize = False  # Maximize after EVT_ACTIVATE (window ready)
+        self._target_size = None
+        self._should_maximize = False  # Maximize after window is ready
+
+        # Window ready state
+        self._activated = False  # EVT_ACTIVATE has fired
+        self._window_ready = False  # Window is ready: activated AND position/size match target
+
+        # Transition flags
         self._maximizing = False  # True between Maximize() call and EVT_MAXIMIZE
         self._restoring = False  # True during restore (un-maximize) transition
         self._was_maximized = False  # Track previous maximize state for restore detection
@@ -113,60 +118,116 @@ class WindowSizeAndPositionTracker(_Tracker):
         self._start_position_logging()
 
     def _on_move(self, event):
-        """Cache position on moves and correct unplanned GTK position changes.
-
-        On GTK/Linux, the window manager ignores initial position and moves the
-        window to its "smart placement" location. We detect this and correct it
-        on every EVT_MOVE until EVT_ACTIVATE fires (window is ready for input).
-        """
-        pos = event.GetPosition()
-
-        size = self._window.GetSize()
-
-        # Correct unplanned moves until window is activated (ready for input)
-        # This handles GTK/WM moving window multiple times during setup
-        if not self._window_activated and self._target_position is not None:
-            target_x, target_y = self._target_position
-            if pos.x != target_x or pos.y != target_y:
-                _log_debug(f"_on_move: UNPLANNED MOVE pos=({pos.x}, {pos.y}) size=({size.width}, {size.height}) -> correcting to ({target_x}, {target_y})")
-                self._window.SetPosition(wx.Point(target_x, target_y))
-                event.Skip()
-                return
-
-        # Cache position for save (only after window is activated)
-        if self._window_activated and not self._window.IsIconized() and not self._window.IsMaximized():
-            self._cached_position = (pos.x, pos.y)
-            _log_debug(f"_on_move: pos=({pos.x}, {pos.y}) size=({size.width}, {size.height}) cached")
+        """Handle window move - correct if needed, cache when ready."""
+        if not self._window_ready:
+            self._check_and_restore()
+        else:
+            # Window is ready - cache position (only when not maximized/iconized)
+            if not self._window.IsIconized() and not self._window.IsMaximized():
+                pos = self._window.GetPosition()
+                self._cached_position = (pos.x, pos.y)
+                _log_debug(f"_on_move: pos=({pos.x}, {pos.y}) cached")
         event.Skip()
 
     def _on_size(self, event):
-        """Cache size on resizes (only when in normal state, not during transitions)."""
-        size = event.GetSize()
-        pos = self._window.GetPosition()
-        is_max = self._window.IsMaximized()
-        is_icon = self._window.IsIconized()
+        """Handle window resize - correct if needed, cache when ready."""
+        if not self._window_ready:
+            self._check_and_restore()
+        else:
+            # Window is ready - handle restore transition or cache
+            size = event.GetSize()
+            is_max = self._window.IsMaximized()
+            is_icon = self._window.IsIconized()
 
-        # Detect restore transition: was maximized, now not maximized
-        if self._was_maximized and not is_max and not is_icon:
-            self._restoring = True
-            _log_debug(f"_on_size: RESTORE TRANSITION DETECTED, ignoring size events")
+            # Detect restore transition: was maximized, now not maximized
+            if self._was_maximized and not is_max and not is_icon:
+                self._restoring = True
+                _log_debug(f"_on_size: RESTORE TRANSITION DETECTED")
 
-        # Check if restore transition is complete (size matches cached)
-        if self._restoring and self._cached_size:
-            cached_w, cached_h = self._cached_size
-            # Allow small tolerance for restore completion
-            if abs(size.width - cached_w) < 10 and abs(size.height - cached_h) < 10:
-                self._restoring = False
-                self._was_maximized = False
-                _log_debug(f"_on_size: RESTORE COMPLETE pos=({pos.x}, {pos.y}) size=({size.width}, {size.height})")
+            # Check if restore transition is complete (size matches cached)
+            if self._restoring and self._cached_size:
+                cached_w, cached_h = self._cached_size
+                if abs(size.width - cached_w) < 10 and abs(size.height - cached_h) < 10:
+                    self._restoring = False
+                    self._was_maximized = False
+                    _log_debug(f"_on_size: RESTORE COMPLETE size=({size.width}, {size.height})")
 
-        # Only cache when in normal state (not maximized, not iconized, not in transition)
-        if not is_icon and not is_max and not self._maximizing and not self._restoring:
-            if size.width > 100 and size.height > 100:
-                self._cached_size = (size.width, size.height)
-                if self._window_activated:
-                    _log_debug(f"_on_size: pos=({pos.x}, {pos.y}) size=({size.width}, {size.height}) cached")
+            # Cache size (only when not maximized/iconized/restoring)
+            if not is_icon and not is_max and not self._maximizing and not self._restoring:
+                if size.width > 100 and size.height > 100:
+                    self._cached_size = (size.width, size.height)
+                    _log_debug(f"_on_size: size=({size.width}, {size.height}) cached")
         event.Skip()
+
+    def _check_and_restore(self):
+        """Check if window matches target and restore if not. Set ready when done.
+
+        Called from both _on_move and _on_size until window is ready.
+        Corrects both position and size if they don't match target.
+        Window becomes ready when: activated AND position matches AND size matches.
+        Then maximizes if saved state was maximized.
+        """
+        if self._window_ready:
+            return
+
+        pos = self._window.GetPosition()
+        size = self._window.GetSize()
+
+        target_pos = self._target_position
+        target_size = self._target_size
+
+        pos_ok = True
+        size_ok = True
+
+        # Check and correct position
+        if target_pos is not None:
+            target_x, target_y = target_pos
+            if pos.x != target_x or pos.y != target_y:
+                pos_ok = False
+                _log_debug(f"_check_and_restore: pos=({pos.x}, {pos.y}) != target=({target_x}, {target_y}), correcting")
+                self._window.SetPosition(wx.Point(target_x, target_y))
+
+        # Check and correct size
+        if target_size is not None:
+            target_w, target_h = target_size
+            if size.width != target_w or size.height != target_h:
+                size_ok = False
+                _log_debug(f"_check_and_restore: size=({size.width}, {size.height}) != target=({target_w}, {target_h}), correcting")
+                self._window.SetSize(target_w, target_h)
+
+        # Check if ready: activated AND position AND size match
+        if self._activated and pos_ok and size_ok:
+            self._set_window_ready()
+
+    def _set_window_ready(self):
+        """Mark window as ready - stop corrections, cache values, maximize if needed."""
+        pos = self._window.GetPosition()
+        size = self._window.GetSize()
+        elapsed = time.time() - self._pos_log_start_time
+
+        self._window_ready = True
+        _log_debug(f"WINDOW READY [{elapsed:.2f}s]: pos=({pos.x}, {pos.y}) size=({size.width}, {size.height})")
+
+        # Stop the position logging timer
+        if self._pos_log_timer:
+            self._pos_log_timer.Stop()
+            self._pos_log_timer = None
+
+        # Cache the final values (these are the restore values)
+        self._cached_position = (pos.x, pos.y)
+        self._cached_size = (size.width, size.height)
+        _log_debug(f"  Cached restore values: pos={self._cached_position} size={self._cached_size}")
+
+        # Clear targets - no longer needed
+        self._target_position = None
+        self._target_size = None
+
+        # NOW maximize if saved state was maximized
+        if self._should_maximize:
+            _log_debug(f"  Maximizing now (window ready)")
+            self._maximizing = True
+            self._window.Maximize()
+            self._should_maximize = False
 
     def _on_maximize(self, event):
         """Track maximize state changes."""
@@ -186,57 +247,15 @@ class WindowSizeAndPositionTracker(_Tracker):
         event.Skip()
 
     def _on_activate(self, event):
-        """Window activated (gained focus) - stop correcting position, then maximize if needed.
+        """Window activated (gained focus) - mark activated and check if ready.
 
-        EVT_ACTIVATE with active=True signals the window is ready for user input.
-        At this point, GTK/WM has finished its setup. We:
-        1. Restore size if changed by AUI
-        2. Cache position/size (restore values)
-        3. Maximize if saved state was maximized
+        EVT_ACTIVATE with active=True signals the window has gained focus.
+        Combined with position and size matching target, this means window is ready.
         """
-        if event.GetActive() and not self._window_activated:
-            self._window_activated = True
-            pos = self._window.GetPosition()
-            size = self._window.GetSize()
-            elapsed = time.time() - self._pos_log_start_time
-            _log_debug(f"WINDOW READY [{elapsed:.2f}s]: pos=({pos.x}, {pos.y}) size=({size.width}, {size.height})")
-
-            # Stop the position logging timer
-            if self._pos_log_timer:
-                self._pos_log_timer.Stop()
-                self._pos_log_timer = None
-
-            # Restore size if it was changed during initialization (e.g., by AUI)
-            if self._target_size is not None:
-                target_w, target_h = self._target_size
-                if size.width != target_w or size.height != target_h:
-                    _log_debug(f"  Size was reset to ({size.width}, {size.height}), restoring to ({target_w}, {target_h})")
-                    self._window.SetSize(target_w, target_h)
-                    size = self._window.GetSize()
-                    _log_debug(f"  After restore: size=({size.width}, {size.height})")
-
-            # Cache the final position and size (these are the restore values)
-            pos = self._window.GetPosition()
-            size = self._window.GetSize()
-            if not self._window.IsIconized():
-                self._cached_position = (pos.x, pos.y)
-                self._cached_size = (size.width, size.height)
-                _log_debug(f"  Cached restore values: pos={self._cached_position} size={self._cached_size}")
-
-            # Clear targets - no longer needed
-            self._target_position = None
-            self._target_size = None
-
-            # NOW maximize if saved state was maximized (window is at correct position)
-            if self._should_maximize:
-                _log_debug(f"  Maximizing now (window at restore position)")
-                self._maximizing = True  # Ignore size events until EVT_MAXIMIZE
-                self._window.Maximize()
-                self._should_maximize = False
-            else:
-                # Not maximizing - start restoring phase to ignore AUI noise
-                self._restoring = True
-                _log_debug(f"  Starting restore phase (ignoring AUI noise until size matches)")
+        if event.GetActive() and not self._activated:
+            self._activated = True
+            _log_debug(f"EVT_ACTIVATE: Window activated, checking if ready")
+            self._check_and_restore()
         event.Skip()
 
     def _start_position_logging(self):
@@ -245,12 +264,12 @@ class WindowSizeAndPositionTracker(_Tracker):
         self._log_position_tick()
 
     def _log_position_tick(self):
-        """Log current position until window is activated."""
+        """Log current position until window is ready."""
         if not self._window:
             return
 
-        # Stop logging once window is activated (final log is in _on_activate)
-        if self._window_activated:
+        # Stop logging once window is ready (final log is in _set_window_ready)
+        if self._window_ready:
             self._pos_log_timer = None
             return
 
