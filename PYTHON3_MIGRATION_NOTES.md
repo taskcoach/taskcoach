@@ -10,8 +10,9 @@ This document captures technical issues, fixes, and refactorings discovered duri
 4. [wxPython Compatibility](#wxpython-compatibility)
 5. [Bundled Third-Party Library Cleanup](#bundled-third-party-library-cleanup)
 6. [Twisted Framework Removal](#twisted-framework-removal)
-7. [Known Issues](#known-issues)
-8. [Future Work](#future-work)
+7. [Window Position Tracking with AUI](#window-position-tracking-with-aui)
+8. [Known Issues](#known-issues)
+9. [Future Work](#future-work)
 
 ---
 
@@ -1200,6 +1201,160 @@ grep -r "DESIGN NOTE (Twisted Removal" taskcoachlib/
 
 ---
 
+## Window Position Tracking with AUI
+
+**Date Fixed:** November 2025
+**Affected Components:** WindowDimensionsTracker, MainWindow
+**Root Cause:** Event handlers bound before AUI LoadPerspective() completes
+
+### Problem Overview
+
+After removing Twisted, the main window was not remembering its position and size across restarts. Debug logging revealed that the correct position was loaded from settings, but then immediately overwritten by spurious values.
+
+### Symptoms
+
+1. Window position resets to default on every startup
+2. Debug logs show position being saved as incorrect values like `(80, 0)` or size `(6, 28)`
+3. Position is correctly loaded but immediately overwritten
+
+### Root Cause Analysis
+
+The `WindowDimensionsTracker` was binding event handlers in `__init__`, but AUI's `LoadPerspective()` was called later during window initialization:
+
+```
+MainWindow.__init__:
+  Line 81: WindowDimensionsTracker created → binds EVT_SIZE, EVT_MOVE, EVT_MAXIMIZE
+  Line 92-94: Window components created
+  Line 231: __restore_perspective() → LoadPerspective() triggers spurious resize/move events!
+```
+
+The AUI (Advanced User Interface) manager causes many resize/move events when restoring pane layout. These spurious events were being saved, **overwriting the correct window position**.
+
+Debug log showing the problem:
+```
+[23:10:04] __set_dimensions: APPLYING SetSize(560, 147, 1135, 789)  ← Correct!
+[23:10:05] on_change_size: new_size=(6, 28) ... SAVING size=(6, 28)  ← AUI spurious event
+[23:10:05] on_change_position: pos=(80, 0) ... SAVING position=(80, 0)  ← AUI spurious event
+```
+
+### Incorrect Fix: Timer-Based Delay (Hacky)
+
+The initial fix used a timer to delay event binding:
+
+```python
+# WRONG - hacky timer-based fix
+def __init__(self, window, settings, section):
+    self._initializing = True
+    self.__set_dimensions()
+    self._window.Bind(wx.EVT_SIZE, self.on_change_size)
+    # Delay clearing flag - HACKY!
+    wx.CallLater(500, self._end_initialization)
+
+def on_change_size(self, event):
+    if self._initializing:
+        event.Skip()
+        return  # Ignore during initialization
+    # ... save size
+```
+
+**Why this is wrong:**
+- Magic number (500ms) - what if AUI takes longer?
+- Not deterministic - depends on system speed
+- Doesn't address root cause
+
+### Correct Fix: Two-Phase Initialization
+
+The proper fix is to split initialization into two phases:
+
+**Phase 1:** Restore dimensions from settings (no event binding)
+**Phase 2:** Bind event handlers (after AUI layout is complete)
+
+```python
+class WindowSizeAndPositionTracker:
+    """
+    DESIGN NOTE: Two-phase initialization to avoid spurious events from AUI layout.
+
+    The AUI manager causes many resize/move events when restoring pane layout via
+    LoadPerspective(). If we bind event handlers before AUI layout is complete,
+    we'd save incorrect window positions.
+
+    Solution: Split initialization into two phases:
+    1. __init__: Only restore window dimensions from settings (no event binding)
+    2. start_tracking(): Bind event handlers (call after AUI LoadPerspective)
+    """
+
+    def __init__(self, window, settings, section):
+        # Phase 1: Only restore dimensions - DO NOT bind events yet
+        self.__set_dimensions()
+
+    def start_tracking(self):
+        """Start tracking window size/position changes.
+
+        Call this method AFTER the window is fully initialized, including
+        AUI layout restoration (LoadPerspective).
+        """
+        self._window.Bind(wx.EVT_SIZE, self.on_change_size)
+        self._window.Bind(wx.EVT_MOVE, self.on_change_position)
+        self._window.Bind(wx.EVT_MAXIMIZE, self.on_maximize)
+        self._tracking_enabled = True
+```
+
+In MainWindow, call `start_tracking()` after AUI layout is restored:
+
+```python
+def __init_window_components(self):
+    self.showToolBar(...)
+    wx.CallAfter(self.showStatusBar, ...)
+    self.__restore_perspective()
+    # Start tracking AFTER AUI layout is restored
+    self.__dimensions_tracker.start_tracking()
+```
+
+### Research Validation
+
+This pattern is supported by wxPython documentation:
+
+> "Event handlers can be bound at any moment. For example, it's possible to do some initialization first and only bind the handlers if and when it succeeds."
+> — [wxPython Events and Event Handling Documentation](https://docs.wxpython.org/events_overview.html)
+
+Alternative patterns considered:
+1. **EVT_IDLE with self-unbind** - Works but less explicit about when tracking starts
+2. **Freeze/Thaw** - Prevents flicker, not event firing
+3. **wx.CallAfter** - Could work but less clear initialization order
+
+The two-phase pattern is preferred because:
+- Explicit about when tracking starts
+- Deterministic - no timers or idle events
+- The caller (MainWindow) knows exactly when AUI is ready
+- Follows wxPython documentation best practices
+
+### Key Learnings
+
+1. **Don't bind event handlers too early**: If your window uses AUI, bind tracking events AFTER `LoadPerspective()` completes
+
+2. **Timer-based fixes are code smells**: If you're using `wx.CallLater()` or `wx.CallAfter()` to "wait for things to settle", look for a proper initialization hook
+
+3. **AUI generates spurious events**: `LoadPerspective()` and `manager.Update()` cause many resize/move events as panes are repositioned
+
+4. **Debug logging is essential**: Without detailed logging, this bug would have been nearly impossible to diagnose
+
+### Testing Checklist
+
+- [ ] Start app on monitor 1, move to monitor 2, close and reopen → should remember monitor 2
+- [ ] Resize window, close and reopen → should remember size
+- [ ] Move window to specific position, close and reopen → should remember position
+- [ ] Maximize window, close and reopen → should remember maximized state
+- [ ] Debug logs should show no spurious saves during startup
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `windowdimensionstracker.py` | Split into two-phase init with `start_tracking()` |
+| `mainwindow.py` | Call `start_tracking()` after `__restore_perspective()` |
+
+---
+
 ## Known Issues
 
 ### Pending Issues
@@ -1213,7 +1368,8 @@ grep -r "DESIGN NOTE (Twisted Removal" taskcoachlib/
 - ✅ wx.Timer crash when closing Edit Task/Categories quickly (November 2025)
 - ✅ Hacky close delay patches removed after root cause fix (November 2025)
 - ✅ Ctrl+C crash with AUI event handler assertion (November 2025)
-- ✅ Twisted framework removed, replaced with native wxPython + stdlib (November 2024)
+- ✅ Twisted framework removed, replaced with native wxPython + stdlib (November 2025)
+- ✅ Window position not remembered due to AUI spurious events (November 2025)
 
 ---
 
