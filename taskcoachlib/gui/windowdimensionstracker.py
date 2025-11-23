@@ -73,6 +73,7 @@ class WindowSizeAndPositionTracker(_Tracker):
         # Target position for GTK position correction
         self._target_position = None
         self._target_size = None  # Also track target size (can be reset by AUI)
+        self._should_maximize = False  # Maximize after EVT_ACTIVATE (window ready)
 
         # Cache last known good position (protects against GTK bugs at close)
         self._cached_position = None
@@ -156,11 +157,13 @@ class WindowSizeAndPositionTracker(_Tracker):
         event.Skip()
 
     def _on_activate(self, event):
-        """Window activated (gained focus) - stop correcting position and restore size.
+        """Window activated (gained focus) - stop correcting position, then maximize if needed.
 
         EVT_ACTIVATE with active=True signals the window is ready for user input.
-        At this point, GTK/WM has finished its setup. We restore the target size
-        if it was changed during initialization (e.g., by AUI).
+        At this point, GTK/WM has finished its setup. We:
+        1. Restore size if changed by AUI
+        2. Cache position/size (restore values)
+        3. Maximize if saved state was maximized
         """
         if event.GetActive() and not self._window_activated:
             self._window_activated = True
@@ -183,14 +186,23 @@ class WindowSizeAndPositionTracker(_Tracker):
                     size = self._window.GetSize()
                     _log_debug(f"  After restore: size=({size.width}, {size.height})")
 
-            # Cache the final position and size
-            if not self._window.IsIconized() and not self._window.IsMaximized():
+            # Cache the final position and size (these are the restore values)
+            pos = self._window.GetPosition()
+            size = self._window.GetSize()
+            if not self._window.IsIconized():
                 self._cached_position = (pos.x, pos.y)
                 self._cached_size = (size.width, size.height)
+                _log_debug(f"  Cached restore values: pos={self._cached_position} size={self._cached_size}")
 
             # Clear targets - no longer needed
             self._target_position = None
             self._target_size = None
+
+            # NOW maximize if saved state was maximized (window is at correct position)
+            if self._should_maximize:
+                _log_debug(f"  Maximizing now (window at restore position)")
+                self._window.Maximize()
+                self._should_maximize = False
         event.Skip()
 
     def _start_position_logging(self):
@@ -239,25 +251,11 @@ class WindowSizeAndPositionTracker(_Tracker):
         width = max(width, min_w) if width > 0 else min_w
         height = max(height, min_h) if height > 0 else min_h
 
-        # Handle maximized state FIRST - don't set position targets that could interfere
+        # If saved state was maximized, we'll maximize AFTER EVT_ACTIVATE
+        # First restore to the non-maximized position (determines which monitor)
         if maximized:
-            # Position at the restore position first, then maximize
-            # The restore position determines which monitor to maximize on
-            if x != -1 and y != -1:
-                self._window.SetSize(x, y, width, height)
-                _log_debug(f"  Positioned at restore pos ({x}, {y}) before maximize")
-            else:
-                self._window.SetSize(width, height)
-
-            self._window.Maximize()
-            self._target_position = None  # Don't correct position when maximized
-            self._target_size = None  # Don't correct size when maximized
-
-            # Initialize cache with saved non-maximized values (for restore)
-            self._cached_position = (x, y) if x != -1 and y != -1 else None
-            self._cached_size = (width, height)
-            _log_debug(f"  Maximized restore complete: cached_pos={self._cached_position} cached_size={self._cached_size}")
-            return
+            self._should_maximize = True
+            _log_debug(f"  Will maximize after EVT_ACTIVATE")
 
         # Non-maximized case: set position and size, enable position correction
         if x == -1 and y == -1:
