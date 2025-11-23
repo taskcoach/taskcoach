@@ -66,9 +66,8 @@ The large size is due to historical binary assets (icon archives, translations, 
 
 ## Prerequisites
 
-You need Python version 3.8 or higher, wxPython version 
-4.2.1-unicode or higher and Twisted. See http://www.taskcoach.org/devinfo.html 
-for more details and platform specific notes. 
+You need Python version 3.8 or higher, wxPython version
+4.2.1-unicode or higher and Twisted. 
     
 For building distributions and running tests, GNU make is used. Make 
 is installed on most systems by default. On Windows you can install 

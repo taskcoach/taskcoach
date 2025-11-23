@@ -35,6 +35,10 @@ class VersionChecker(threading.Thread):
     def run(self):
         from taskcoachlib.gui.dialog import version
 
+        # Skip version checking if no version URL is configured
+        if not data.version_url:
+            return
+
         try:
             latestVersionString = self.getLatestVersion()
             latestVersion = self.tupleVersion(latestVersionString)

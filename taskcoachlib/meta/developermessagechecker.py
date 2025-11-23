@@ -36,6 +36,10 @@ class DeveloperMessageChecker(threading.Thread):
         return True  # Don't block application exit
 
     def run(self, show=True):  # pylint: disable=W0221
+        # Skip message checking if no message URL is configured
+        if not data.message_url:
+            return
+
         try:
             message, url = self.__get_message()
         except Exception:

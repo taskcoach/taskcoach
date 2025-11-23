@@ -16,22 +16,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ----------------------------------------------------------------------
 
-Task Coach is listed at the following webpages:
+Task Coach project home:
 
-Task Coach Homepage    http://www.taskcoach.org
-Sourceforge homepage   http://www.sourceforge.net/projects/taskcoach
-Freshmeat homepage     http://freshmeat.net/projects/taskcoach
-Launchpad homepage     http://launchpad.net/taskcoach
-wxPythonPit            http://wiki.wxpython.org/wxPythonPit%20Apps
-PythonInfo Wiki        http://www.python.org/moin/Applications
-Open Directory         http://dmoz.org/Computers/Software/Freeware/Personal_Information_Managers/
-Python Packages Index  http://pypi.python.org/pypi/TaskCoach/
-Freeware Home          http://www.freewarehome.com/ 
+GitHub                 https://github.com/realcarbonneau/taskcoach
+
+Historical listings (may be outdated):
+
 Wikipedia              http://en.wikipedia.org/wiki/Task_Coach
-MacSoftwareUsingPython http://wiki.python.org/moin/MacPython/MacSoftwareUsingPython
-CNET Upload.com        http://www.upload.com
-Ohloh                  http://www.ohloh.net/p/taskcoach
-Apple                  http://www.apple.com/downloads/macosx/unix_open_source/taskcoach.html
-CIA                    http://cia.vc/stats/project/taskcoach
 FSF                    http://directory.fsf.org/wiki/Task_coach
-MacUpdate        https://www.macupdate.com/app/mac/26043/task-coach
