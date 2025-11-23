@@ -176,7 +176,8 @@ class WindowGeometryTracker:
 
         Rules:
         - Error (iconized, or maximized unexpectedly) → clear state only
-        - Mark ready when: activated AND (state empty OR state achieved)
+        - Mark ready when: activated AND (state empty OR position/size achieved)
+        - Ready is for position/size only, maximize is done after ready
         """
         if self.ready:
             return
@@ -190,37 +191,24 @@ class WindowGeometryTracker:
             self._clear_state()
             return
 
-        # Window is maximized
+        # ERROR: Window is maximized before ready (we haven't set position/size yet)
         if self._window.IsMaximized():
-            if self.maximized:
-                # Expected - state says maximized, window is maximized = state achieved
-                if self.activated:
-                    self._mark_ready()
-            else:
-                # ERROR: Window maximized but we didn't want that
-                _log_debug(f"ERROR: Window is maximized before ready!")
-                _log_debug(f"  Desired state was: pos={self.position} size={self.size} maximized={self.maximized}")
-                self._clear_state()
+            _log_debug(f"ERROR: Window is maximized before ready!")
+            _log_debug(f"  Desired state was: pos={self.position} size={self.size} maximized={self.maximized}")
+            self._clear_state()
             return
 
-        # Window is in normal state - try to achieve desired state
-        state_achieved = False
+        # Window is in normal state - try to achieve position/size
+        position_size_achieved = False
         if not state_empty:
             pos = self._window.GetPosition()
             size = self._window.GetSize()
             pos_ok = self._check_position(pos)
             size_ok = self._check_size(size)
+            position_size_achieved = pos_ok and size_ok
 
-            if pos_ok and size_ok:
-                if self.maximized:
-                    _log_debug(f"check_and_correct: position/size correct, now maximizing")
-                    self._window.Maximize()
-                    return  # Will be called again after EVT_MAXIMIZE
-                else:
-                    state_achieved = True
-
-        # Mark ready when: activated AND (state empty OR state achieved)
-        if self.activated and (state_empty or state_achieved):
+        # Mark ready when: activated AND (state empty OR position/size achieved)
+        if self.activated and (state_empty or position_size_achieved):
             self._mark_ready()
 
     def _check_position(self, pos):
@@ -248,40 +236,43 @@ class WindowGeometryTracker:
         return True
 
     def _mark_ready(self):
-        """Mark window as ready - it now matches desired state."""
+        """Mark window as ready - position/size achieved. Then maximize if needed."""
         elapsed = time.time() - self._pos_log_start_time
 
         self.ready = True
-        _log_debug(f"WINDOW READY [{elapsed:.2f}s]: maximized={self.maximized} pos={self.position} size={self.size}")
+
+        # Update state with actual final position/size values
+        pos = self._window.GetPosition()
+        size = self._window.GetSize()
+        self.position = (pos.x, pos.y)
+        self.size = (size.width, size.height)
+        _log_debug(f"WINDOW READY [{elapsed:.2f}s]: pos={self.position} size={self.size}")
 
         # Stop position logging
         if self._pos_log_timer:
             self._pos_log_timer.Stop()
             self._pos_log_timer = None
 
-        # If not maximized, update state with actual final values
-        if not self.maximized:
-            pos = self._window.GetPosition()
-            size = self._window.GetSize()
-            self.position = (pos.x, pos.y)
-            self.size = (size.width, size.height)
-            _log_debug(f"  Final state: pos={self.position} size={self.size}")
+        # After ready, ONE maximize attempt if state says maximized (fire and forget)
+        if self.maximized:
+            _log_debug(f"  Maximizing (fire and forget)")
+            self._window.Maximize()
 
     # === State updates from window (after ready) ===
 
     def cache_from_window(self):
-        """Update state from window (only when in normal state)."""
+        """Update state from window. Only cache position/size in normal state."""
+        # Always cache maximized state from window
+        self.maximized = self._window.IsMaximized()
+
+        # Only cache position/size when in normal state
         if self._is_normal_state():
             pos = self._window.GetPosition()
             size = self._window.GetSize()
             self.position = (pos.x, pos.y)
             if size.width > 100 and size.height > 100:
                 self.size = (size.width, size.height)
-            self.maximized = False
-            _log_debug(f"cache_from_window: pos={self.position} size={self.size}")
-        elif self._window.IsMaximized():
-            self.maximized = True
-            _log_debug(f"cache_from_window: maximized=True (restore values unchanged)")
+            _log_debug(f"cache_from_window: pos={self.position} size={self.size} maximized={self.maximized}")
 
     # === Event handlers ===
 
