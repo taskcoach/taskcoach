@@ -247,6 +247,8 @@ class Application(object, metaclass=patterns.Singleton):
             wx.Log.SetVerbose(True)
 
         self.mainwindow.Show()
+        # Re-apply window position after Show() - GTK ignores position set before Show()
+        wx.CallAfter(self.mainwindow.applyPositionAfterShow)
         # Use native wxPython main loop instead of Twisted reactor
         # NOTE: Previously used reactor.run() with wxreactor integration.
         # Now using wx.App.MainLoop() directly for simpler event handling.

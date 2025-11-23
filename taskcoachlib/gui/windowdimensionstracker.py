@@ -53,28 +53,9 @@ class _Tracker(object):
 class WindowSizeAndPositionTracker(_Tracker):
     """Track the size and position of a window in the settings.
 
-    DESIGN NOTE: Save only on close.
-
-    Previously, we tried to save position/size on every EVT_MOVE/EVT_SIZE event.
-    This caused problems because GTK and our own code generate many spurious
-    resize/move events during window initialization:
-
-    - AUI LoadPerspective() triggers layout events
-    - SendSizeEvent() in showStatusBar(), toolbar changes, etc.
-    - GTK window realization sends configure events asynchronously
-    - Window manager placement events
-
-    There's no reliable way to distinguish "user-initiated" events from
-    "system-initiated" events in wxWidgets/GTK.
-
-    SOLUTION: Only save window state when the window is closed.
-    - Simpler implementation (no event handlers for saving)
-    - No spurious saves during initialization
-    - Only saves the final stable state the user intended
-    - Uses the existing save_position() method called on EVT_CLOSE
-
-    The only event we track is EVT_MAXIMIZE to update the maximized state,
-    since IsMaximized() may not be accurate if called during close.
+    Uses two-phase initialization to handle GTK's behavior of ignoring
+    window position when set before Show(). The position is set initially
+    in __set_dimensions(), then re-applied after the window is shown.
     """
 
     def __init__(self, window, settings, section):
@@ -82,28 +63,20 @@ class WindowSizeAndPositionTracker(_Tracker):
         self._window = window
         self._section = section  # Store for logging
         self._is_maximized = False
-
-        # Cache last known good position/size (updated on user moves/resizes)
-        # This protects against GTK bugs that corrupt position data during close
-        self._cached_position = None
-        self._cached_size = None
-        self._cached_monitor = None
-
-        # Target position to apply after Show() - GTK ignores SetSize before Show
-        self._target_position = None
-        self._target_size = None
-        self._target_maximized = False
         self._position_applied = False
+
+        # Target position/size to restore
+        self._target_x = 0
+        self._target_y = 0
+        self._target_width = 600
+        self._target_height = 400
+        self._target_maximized = False
 
         # Restore window dimensions from settings
         self.__set_dimensions()
 
-        # Track maximize state and cache position on moves (for GTK bug protection)
+        # Bind events
         self._window.Bind(wx.EVT_MAXIMIZE, self._on_maximize)
-        self._window.Bind(wx.EVT_MOVE, self._on_move)
-        self._window.Bind(wx.EVT_SIZE, self._on_size)
-        # Apply position after window is shown (GTK ignores SetSize before Show)
-        self._window.Bind(wx.EVT_SHOW, self._on_show)
 
     def _on_maximize(self, event):
         """Track maximize state changes."""
@@ -111,58 +84,32 @@ class WindowSizeAndPositionTracker(_Tracker):
         _log_debug("Window maximized")
         event.Skip()
 
-    def _on_move(self, event):
-        """Cache position on moves (protects against GTK bugs during close)."""
-        if not self._window.IsIconized() and not self._window.IsMaximized():
-            pos = event.GetPosition()
-            monitor = wx.Display.GetFromWindow(self._window)
-            # Only cache if position looks valid (not near origin which is often spurious)
-            if pos.x > 100 or pos.y > 50:
-                self._cached_position = (pos.x, pos.y)
-                self._cached_monitor = monitor
-        event.Skip()
+    def apply_position_after_show(self):
+        """Re-apply window position after Show().
 
-    def _on_size(self, event):
-        """Cache size on resizes (protects against GTK bugs during close)."""
-        if not self._window.IsIconized() and not self._window.IsMaximized():
-            size = event.GetSize()
-            # Only cache if size looks valid (not minimum size)
-            if size.width > 600 and size.height > 400:
-                self._cached_size = (size.width, size.height)
-        event.Skip()
-
-    def _on_show(self, event):
-        """Apply saved position after window is shown.
-
-        GTK ignores SetSize() position when called before Show(). We must
-        re-apply the position after the window becomes visible.
+        GTK ignores SetSize() position when called before Show(). Call this
+        method after the window has been shown to ensure position is applied.
         """
-        event.Skip()
-        if event.IsShown() and not self._position_applied and self._target_position:
-            self._position_applied = True
-            x, y = self._target_position
-            width, height = self._target_size
-            _log_debug(f"_on_show: Applying deferred position=({x}, {y}) size=({width}, {height})")
+        if self._position_applied:
+            return
 
-            # Use CallAfter to ensure GTK has finished its window placement
-            def apply_position():
-                if not self._window:
-                    return
-                self._window.SetPosition(wx.Point(x, y))
-                if self._target_maximized:
-                    self._window.Maximize()
-                    self._is_maximized = True
+        self._position_applied = True
 
-                final_rect = self._window.GetRect()
-                final_monitor = wx.Display.GetFromWindow(self._window)
-                _log_debug(f"_on_show: FINAL pos=({final_rect.x}, {final_rect.y}) size=({final_rect.width}, {final_rect.height}) monitor={final_monitor}")
+        if self._target_maximized:
+            _log_debug(f"apply_position_after_show: Window should be maximized")
+            self._window.Maximize()
+            self._is_maximized = True
+            return
 
-                # Update cache with the actual applied position
-                self._cached_position = (final_rect.x, final_rect.y)
-                self._cached_size = (final_rect.width, final_rect.height)
-                self._cached_monitor = final_monitor
+        x, y = self._target_x, self._target_y
+        _log_debug(f"apply_position_after_show: Setting position to ({x}, {y})")
 
-            wx.CallAfter(apply_position)
+        # Use SetPosition to apply saved position
+        self._window.SetPosition(wx.Point(x, y))
+
+        # Verify it was applied
+        final_pos = self._window.GetPosition()
+        _log_debug(f"apply_position_after_show: Final position is ({final_pos.x}, {final_pos.y})")
 
     def save_state(self):
         """Save the current window state. Call when window is about to close."""
@@ -174,7 +121,6 @@ class WindowSizeAndPositionTracker(_Tracker):
         self.set_setting("maximized", maximized)
 
         if not maximized and not iconized:
-            # Get current position and size
             pos = self._window.GetPosition()
             size = (
                 self._window.GetClientSize()
@@ -186,7 +132,6 @@ class WindowSizeAndPositionTracker(_Tracker):
             self.set_setting("position", pos)
             self.set_setting("size", size)
 
-            # For dialogs, save offset from parent
             if isinstance(self._window, wx.Dialog):
                 self._save_dialog_offset(pos)
 
@@ -212,24 +157,19 @@ class WindowSizeAndPositionTracker(_Tracker):
                 offset = (pos.x - parent_rect.x, pos.y - parent_rect.y)
                 self.set_setting("parent_offset", offset)
             else:
-                # Dialog on different monitor - save null offset to force re-center
                 self.set_setting("parent_offset", (-1, -1))
         except (configparser.NoSectionError, configparser.NoOptionError):
-            pass  # Old settings section without parent_offset support
+            pass
 
     def __set_dimensions(self):
-        """Set the window position and size based on the settings.
-
-        NOTE: On GTK, SetSize() position is ignored when called before Show().
-        We store the target position and apply it in _on_show() after the
-        window becomes visible.
-        """
+        """Set the window position and size based on the settings."""
         x, y = self.get_setting("position")
         width, height = self.get_setting("size")
         saved_monitor = self.get_setting("monitor_index")
         num_monitors = wx.Display.GetCount()
 
-        _log_debug(f"RESTORING: pos=({x}, {y}) size=({width}, {height}) saved_monitor={saved_monitor} num_monitors={num_monitors}")
+        _log_debug(f"RESTORING: pos=({x}, {y}) size=({width}, {height}) "
+                   f"saved_monitor={saved_monitor} num_monitors={num_monitors}")
 
         # Enforce minimum window size
         if isinstance(self._window, wx.Dialog):
@@ -244,12 +184,10 @@ class WindowSizeAndPositionTracker(_Tracker):
 
         self._window.SetMinSize((min_width, min_height))
 
-        # For main window, just use saved position directly - no adjustment needed
-        # The saved position is in screen coordinates and should be used as-is
+        # Calculate position
         if not isinstance(self._window, wx.Dialog):
-            # Only adjust if saved monitor no longer exists
             if saved_monitor >= 0 and saved_monitor >= num_monitors:
-                _log_debug(f"  Saved monitor {saved_monitor} no longer exists, centering on primary")
+                _log_debug(f"  Saved monitor {saved_monitor} no longer exists, centering")
                 primary = wx.Display(0)
                 rect = primary.GetGeometry()
                 x = rect.x + (rect.width - width) // 2
@@ -260,7 +198,6 @@ class WindowSizeAndPositionTracker(_Tracker):
                 rect = primary.GetGeometry()
                 x = rect.x + (rect.width - width) // 2
                 y = rect.y + (rect.height - height) // 2
-            # else: use saved position as-is
         else:
             x, y = self._calculate_dialog_position(x, y, width, height)
 
@@ -268,38 +205,26 @@ class WindowSizeAndPositionTracker(_Tracker):
             if not isinstance(self._window, wx.Dialog):
                 height += 18
 
-        # Store target position for deferred application after Show()
-        # GTK ignores SetSize() position when called before Show()
-        self._target_position = (x, y)
-        self._target_size = (width, height)
+        # Store target for re-application after Show()
+        self._target_x = x
+        self._target_y = y
+        self._target_width = width
+        self._target_height = height
         self._target_maximized = self.get_setting("maximized")
 
-        _log_debug(f"  Target position stored: pos=({x}, {y}) size=({width}, {height}) maximized={self._target_maximized}")
+        _log_debug(f"  Setting initial size: pos=({x}, {y}) size=({width}, {height})")
 
-        # Set size now (size usually works), position will be applied in _on_show
+        # Set size and position
         self._window.SetSize(x, y, width, height)
 
         if operating_system.isMac():
             self._window.SetClientSize((width, height))
 
-        # Don't maximize here - do it in _on_show after position is applied
-        # This prevents GTK from moving the window to monitor 0 before we set position
+        # Note: Maximize is deferred to apply_position_after_show()
+        # because on GTK, maximizing before Show() can cause position issues
 
         # Validate window is on a visible display
         self._validate_window_position(width, height)
-
-        # Initialize cache with target position (will be updated in _on_show)
-        self._cached_position = (x, y)
-        self._cached_size = (width, height)
-        self._cached_monitor = saved_monitor if saved_monitor >= 0 else 0
-        _log_debug(f"  Cached target position: {self._cached_position} monitor={self._cached_monitor}")
-
-    def _calculate_position(self, x, y, width, height):
-        """Calculate the window position, handling dialogs and multi-monitor."""
-        if isinstance(self._window, wx.Dialog):
-            return self._calculate_dialog_position(x, y, width, height)
-        else:
-            return self._calculate_main_window_position(x, y, width, height)
 
     def _calculate_dialog_position(self, x, y, width, height):
         """Calculate dialog position relative to parent."""
@@ -328,48 +253,19 @@ class WindowSizeAndPositionTracker(_Tracker):
             if proposed_monitor != wx.NOT_FOUND and proposed_monitor == parent_monitor:
                 return proposed_x, proposed_y
 
-        # Center on parent
         return (parent_rect.x + (parent_rect.width - width) // 2,
                 parent_rect.y + (parent_rect.height - height) // 2)
-
-    def _calculate_main_window_position(self, x, y, width, height):
-        """Calculate main window position with multi-monitor support."""
-        saved_monitor = self.get_setting("monitor_index")
-        num_monitors = wx.Display.GetCount()
-
-        if x == -1 and y == -1:
-            # No saved position - center on primary
-            primary = wx.Display(0)
-            rect = primary.GetGeometry()
-            return (rect.x + (rect.width - width) // 2,
-                    rect.y + (rect.height - height) // 2)
-
-        if saved_monitor >= 0 and saved_monitor < num_monitors:
-            # Saved monitor exists - use saved position
-            return x, y
-
-        if saved_monitor == -1:
-            # Legacy settings - use saved position
-            return x, y
-
-        # Saved monitor no longer exists - center on primary
-        primary = wx.Display(0)
-        rect = primary.GetGeometry()
-        return (rect.x + (rect.width - width) // 2,
-                rect.y + (rect.height - height) // 2)
 
     def _validate_window_position(self, width, height):
         """Ensure window is visible on a display."""
         display_index = wx.Display.GetFromWindow(self._window)
 
         if display_index == wx.NOT_FOUND:
-            # Window is off-screen - move to safe position
             self._window.SetSize(50, 50, width, height)
             if operating_system.isMac():
                 self._window.SetClientSize((width, height))
             return
 
-        # Check window is sufficiently visible
         display = wx.Display(display_index)
         display_rect = display.GetGeometry()
         window_rect = self._window.GetRect()
@@ -385,7 +281,6 @@ class WindowSizeAndPositionTracker(_Tracker):
         visible_height = visible_bottom - visible_top
 
         if visible_width < 50 or visible_height < 50:
-            # Less than 50px visible - center on display
             center_x = display_rect.x + (display_rect.width - width) // 2
             center_y = display_rect.y + (display_rect.height - height) // 2
             self._window.SetSize(center_x, center_y, width, height)
@@ -421,46 +316,30 @@ class WindowDimensionsTracker(WindowSizeAndPositionTracker):
 
         Called when window is about to close.
         """
-        # Get window state
         iconized = self._window.IsIconized()
         maximized = self._window.IsMaximized() or self._is_maximized
-        screen_rect = self._window.GetScreenRect()
+        pos = self._window.GetPosition()
         monitor_index = wx.Display.GetFromWindow(self._window)
 
         _log_debug(f"save_position: iconized={iconized} maximized={maximized}")
-        _log_debug(f"  GetScreenRect()={screen_rect}")
-        _log_debug(f"  cached_position={self._cached_position}")
+        _log_debug(f"  GetPosition()={pos}")
         _log_debug(f"  monitor={monitor_index}")
 
         self.set_setting("iconized", iconized)
 
         if not iconized:
-            # Use cached position if available (more reliable), otherwise use current
-            if self._cached_position:
-                save_pos = self._cached_position
-                save_monitor = self._cached_monitor if self._cached_monitor is not None else monitor_index
-            else:
-                save_pos = (screen_rect.x, screen_rect.y)
-                save_monitor = monitor_index
+            _log_debug(f"  SAVING position={pos}")
+            self.set_setting("position", pos)
+            if monitor_index != wx.NOT_FOUND:
+                self.set_setting("monitor_index", monitor_index)
 
-            _log_debug(f"  SAVING position={save_pos} monitor={save_monitor}")
-            self.set_setting("position", save_pos)
-            if save_monitor != wx.NOT_FOUND:
-                self.set_setting("monitor_index", save_monitor)
-
-            # Save size if not maximized
             if not maximized:
-                if self._cached_size:
-                    size = self._cached_size
-                else:
-                    size = (
-                        self._window.GetClientSize()
-                        if operating_system.isMac()
-                        else self._window.GetSize()
-                    )
-                    size = (size.width, size.height)
+                size = (
+                    self._window.GetClientSize()
+                    if operating_system.isMac()
+                    else self._window.GetSize()
+                )
                 _log_debug(f"  SAVING size={size}")
                 self.set_setting("size", size)
 
-        # Save maximized state
         self.set_setting("maximized", maximized)
