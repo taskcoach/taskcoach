@@ -5,9 +5,15 @@ Tests if GTK honors SetPosition/SetSize for a simple window.
 
 Key finding: Window managers ignore initial positions and use "Smart Placement".
 Position must be set AFTER window is mapped to trigger GDK_HINT_USER_POS.
+
+Usage:
+  python3 test_window_position.py           # Normal mode with MainLoop
+  python3 test_window_position.py --no-loop # Test WITHOUT MainLoop (uses Yield)
 """
 
 import wx
+import sys
+import time
 
 TARGET_POS = (100, 100)
 
@@ -64,7 +70,27 @@ class TestFrame(wx.Frame):
     def on_timer(self, event):
         self.update_position()
 
+
+def test_without_mainloop(app, frame):
+    """Test position behavior WITHOUT entering MainLoop.
+    Uses Yield() to process pending events manually."""
+    print("\n=== Testing WITHOUT MainLoop ===")
+    print("Using wx.Yield() to process events manually...")
+
+    for i in range(20):  # 2 seconds of yielding
+        time.sleep(0.1)
+        app.Yield()  # Process pending events
+        pos = frame.GetPosition()
+        print(f"[{i*0.1:.1f}s] After Yield(): position=({pos.x}, {pos.y}) moves={frame.move_count}")
+
+    print("\n=== End test (no MainLoop was ever started) ===")
+    print(f"Final position: {frame.GetPosition()}")
+    print(f"Total moves: {frame.move_count}")
+
+
 def main():
+    no_loop = '--no-loop' in sys.argv
+
     print("Creating wx.App...")
     app = wx.App()
 
@@ -80,8 +106,11 @@ def main():
     pos_after = frame.GetPosition()
     print(f"After Show(): position=({pos_after.x}, {pos_after.y})")
 
-    print("Starting MainLoop... (WM will move window, then we apply position)")
-    app.MainLoop()
+    if no_loop:
+        test_without_mainloop(app, frame)
+    else:
+        print("Starting MainLoop... (WM will move window, then we apply position)")
+        app.MainLoop()
 
 if __name__ == "__main__":
     main()
