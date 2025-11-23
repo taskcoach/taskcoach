@@ -1,16 +1,126 @@
-# Window Position Persistence Problem Analysis
+# Window Position Persistence Analysis
 
 ## Executive Summary
 
-Task Coach on Linux/GTK fails to restore window position on startup. The window always appears at the window manager's "smart placement" origin (80, 0 with left taskbar) instead of the saved position.
+Task Coach on Linux/GTK fails to restore window position on startup. The window always appears at the window manager's "smart placement" origin instead of the saved position.
 
-**Root Cause:** wxWidgets/wxGTK does not set the `GDK_HINT_USER_POS` geometry hint when calling `gtk_window_move()`. Without this hint, the window manager ignores application-requested positions and uses its own placement algorithm.
+**Root Cause:** wxWidgets/wxGTK does not set the `GDK_HINT_USER_POS` geometry hint when calling `gtk_window_move()`. Without this hint, the window manager ignores application-requested positions.
 
-**Working Solution:** Detect unplanned window moves/resizes via `EVT_MOVE`/`EVT_SIZE` and immediately correct to target values. Keep correcting until window is **ready** (activated AND position AND size match target). Then maximize if saved state was maximized.
+**Working Solution:** Correct position/size on `EVT_MOVE`/`EVT_SIZE` until window is **ready** (activated AND position/size achieved). Then maximize if desired (fire and forget).
 
-**Key Finding:** `EVT_ACTIVATE` does NOT mean GTK/WM is done - it only means the window gained focus. GTK/WM may continue sending move/size events after `EVT_ACTIVATE`. Window is truly ready only when: activated AND position matches target AND size matches target.
+---
 
-**Important:** Never save or restore iconized state - only maximize state persists.
+## State Model
+
+### State (Desired State, Persisted)
+
+```python
+position: (x, y) or None    # Desired restore position
+size: (w, h) or None        # Desired restore size
+maximized: bool             # Desired maximize state
+```
+
+### In-Memory State
+
+```python
+ready: bool      # Position/size achieved (NOT maximized)
+activated: bool  # EVT_ACTIVATE has fired
+```
+
+### Rules
+
+1. **Startup errors** (geometry invalid, iconized, maximized unexpectedly) → **clear state**
+   - Errors repeat until general rule marks ready
+   - This is by design - exceptional cases need investigation
+
+2. **Mark ready when:** `activated` AND (`state empty` OR `position/size achieved`)
+   - Ready is for position/size only, NOT maximized
+
+3. **After ready:** ONE maximize attempt if `state.maximized=True` (fire and forget)
+
+4. **Caching (after ready):**
+   - Always: `maximized = IsMaximized()` (query window directly)
+   - Only if normal state (not maximized, not iconized): cache position/size
+
+5. **State empty** → nothing to correct, WM decides, normal caching captures values
+
+---
+
+## Flow
+
+### 1. `load()` - Startup
+
+```
+Read position, size, maximized from settings file
+Validate geometry (position on screen, size fits monitor)
+├── Valid: set state (position, size, maximized)
+└── Invalid: clear state (position=None, size=None, maximized=False)
+    - Let WM place window
+    - Normal caching will capture values
+```
+
+### 2. `check_and_correct()` - While Not Ready
+
+```
+Called on EVT_MOVE, EVT_SIZE, EVT_MAXIMIZE, EVT_ACTIVATE
+
+If ready: return
+
+If iconized:
+    ERROR - log and clear state
+    return (will repeat until general rule marks ready)
+
+If maximized (unexpectedly):
+    ERROR - log and clear state
+    return (will repeat until general rule marks ready)
+
+If state empty:
+    Mark ready when activated
+else:
+    Correct position if wrong
+    Correct size if wrong
+    Mark ready when activated AND position/size OK
+```
+
+### 3. `_mark_ready()` - Position/Size Done
+
+```
+Set ready = True
+Cache final position/size from window
+Stop position logging
+
+If state.maximized:
+    Call Maximize() once (fire and forget)
+```
+
+### 4. After Ready - Normal Caching
+
+```
+On EVT_MOVE, EVT_SIZE, EVT_MAXIMIZE:
+    maximized = IsMaximized()  # Always query window
+
+    If normal state (not maximized, not iconized):
+        Cache position from window
+        Cache size from window (if reasonable)
+```
+
+### 5. `save()` - On Close
+
+```
+Write state (position, size, maximized) to settings file
+```
+
+---
+
+## Key Points
+
+1. **State = Desired State**: position, size, maximized represent what we want the window to be
+2. **Ready = Position/Size Only**: ready flag indicates position/size achieved, maximized is separate
+3. **Maximize After Ready**: ONE attempt to maximize after position/size done (fire and forget)
+4. **While Maximized**: WM manages the window, we don't attempt move/resize
+5. **Caching**: Query `IsMaximized()` directly, only cache position/size in normal state
+6. **Errors Clear State**: All startup errors clear state, let WM decide, normal caching captures values
+7. **Errors Repeat**: Startup errors repeat until ready, highlighting exceptional cases
 
 ---
 
@@ -18,9 +128,8 @@ Task Coach on Linux/GTK fails to restore window position on startup. The window 
 
 ### Symptoms
 - Window position is saved correctly on close
-- On restart, window appears at (80, 0) instead of saved position
-- Position (80, 0) is the top-left of usable screen area (accounting for 80px left taskbar)
-- Visible "flicker" when using delayed position correction
+- On restart, window appears at WM's default position instead of saved position
+- Position is typically upper-left of usable screen area
 
 ### Environment
 - Platform: Linux (X11)
@@ -40,318 +149,125 @@ Task Coach on Linux/GTK fails to restore window position on startup. The window 
    - `USPosition` - User-specified position (WM should honor this)
 4. **GDK_HINT_USER_POS**: GTK flag that sets `USPosition` hint, telling WM to honor the position
 
-### What Pure GTK Does (Working)
-
-```python
-# This works - window appears at (100, 100)
-geometry = Gdk.Geometry()
-window.set_geometry_hints(None, geometry, Gdk.WindowHints.USER_POS)
-window.move(100, 100)
-window.show_all()
-```
-
-The `USER_POS` hint tells the WM: "User explicitly requested this position, please honor it."
-
 ### What wxWidgets/wxGTK Does (Broken)
 
-From `wxWidgets/src/gtk/toplevel.cpp`:
+wxGTK calls `gtk_window_move()` but does NOT set `GDK_HINT_USER_POS`. Without this hint, the WM ignores application-requested positions.
 
-```cpp
-// wxGTK calls gtk_window_move() but does NOT set GDK_HINT_USER_POS
-if (m_x != old_x || m_y != old_y)
-{
-    gtk_window_move(GTK_WINDOW(m_widget), m_x, m_y);
-}
-```
+### Why Our Solution Works
 
-wxGTK only sets these geometry hints:
-- `GDK_HINT_MIN_SIZE`
-- `GDK_HINT_MAX_SIZE`
-- `GDK_HINT_RESIZE_INC`
-
-**Missing:** `GDK_HINT_USER_POS` - This is why the WM ignores wxPython's position requests.
-
-### The Race Condition
-
-When wxPython shows a window:
-
-1. wxGTK calls `gtk_window_move(m_x, m_y)` - position set to (100, 100)
-2. Window is mapped/shown
-3. WM receives map request WITHOUT `USPosition` hint
-4. WM applies "smart placement" → moves window to (80, 0)
-5. Application receives `EVT_MOVE` with (80, 0)
+1. We set initial position/size via `SetSize(x, y, w, h)`
+2. GTK/WM ignores this and applies "smart placement"
+3. We detect wrong position/size via `EVT_MOVE`/`EVT_SIZE`
+4. We correct by calling `SetPosition()`/`SetSize()` again
+5. After window is mapped and visible, these calls ARE honored
+6. We keep correcting until activated AND position/size match
+7. Then we mark ready and do ONE maximize attempt if needed
 
 ---
 
-## Test Results Summary
-
-### Pure GTK Tests (Working)
-
-| Test | Method | Result |
-|------|--------|--------|
-| `test_gtk_geometry_hints.py` | `set_geometry_hints(USER_POS)` before show | ✓ Works, no flicker |
-| `test_gdk_user_position.py` | `gdk_window.move()` on realize | ✓ Works, no flicker |
-
-### wxPython Standard Approaches (All Fail)
-
-| Test | Method | Result |
-|------|--------|--------|
-| `test_wx_pos_constructor.py` | `pos=` in constructor | ✗ WM ignores |
-| `test_wx_pos_before_show.py` | `SetPosition()` before Show | ✗ WM ignores |
-| `test_wx_pos_after_show.py` | `SetPosition()` after Show | ✗ WM ignores |
-| `test_wx_pos_callafter.py` | `wx.CallAfter(SetPosition)` | ✗ WM ignores |
-| `test_wx_pos_move.py` | `Move()` before Show | ✗ WM ignores |
-| `test_wx_pos_evt_idle.py` | `EVT_IDLE` handler | ✗ Race condition |
-
-### wxPython + GTK Hint Attempts (All Fail)
-
-| Test | Method | Result |
-|------|--------|--------|
-| `test_wx_like_gtk.py` | Find GtkWindow + USER_POS | ✗ WM overrides after |
-| `test_wx_gtk_hint_early.py` | GTK hint before Show | ✗ Goes to 100,100 then 80,0 |
-| `test_wx_gtk_hint_after_show.py` | GTK hint after Show | ✗ Goes to 100,100 then 80,0 |
-| `test_wx_internal_pos.py` | wx pos + GTK hint | ✗ Goes to 80,0 |
-| `test_wx_window_create.py` | EVT_WINDOW_CREATE + from_address | ✗ from_address API doesn't exist |
-| `test_wx_gobject_wrap.py` | GObject.GObject(handle) | ✗ GObject() takes 0 args |
-| `test_wx_xid_lookup.py` | XID → GdkWindow.move() | ✗ move() works but no USER_POS hint |
-
-### wxPython Working Solutions
-
-| Test | Method | Result | Flicker? |
-|------|--------|--------|----------|
-| `test_wx_pos_calllater.py` | `CallLater(50ms)` | ✓ Works | Yes |
-| `test_wx_pos_unplanned_move.py` | EVT_MOVE + EVT_ACTIVATE | ✓ Works | Yes* |
-
-*The EVT_MOVE solution has less flicker than CallLater, but there is still visible flicker when another window covers the WM's default placement area (upper-left corner). This is unavoidable without `GDK_HINT_USER_POS` support.
-
----
-
-## Why GTK Hints Don't Work from wxPython
-
-### Problem 1: GetHandle() Returns XID, Not GtkWidget
+## Implementation
 
 ```python
-handle = frame.GetHandle()  # Returns X11 window ID (XID), NOT GtkWidget pointer
-```
+class WindowGeometryTracker:
+    """Track and restore window geometry (position, size, maximized state).
 
-From [wxWidgets/Phoenix issue #1217](https://github.com/wxWidgets/Phoenix/issues/1217):
-> "GetHandle docs say this returns a GtkHandle on GTK, but the current code is returning e.g. an XID on X11"
+    State = desired state. While not ready, keep trying to achieve it.
+    """
 
-### Problem 2: wxGTK Overrides GTK Hints
+    def __init__(self, window, settings, section):
+        # Desired state (persisted)
+        self.position = None    # (x, y)
+        self.size = None        # (w, h)
+        self.maximized = False
 
-Even when we successfully set GTK hints via `Gtk.Window.list_toplevels()`:
+        # In-memory state
+        self.ready = False      # Position/size achieved
+        self.activated = False  # EVT_ACTIVATE fired
 
-1. Our hint sets position to (100, 100) ✓
-2. wxGTK's `Show()` calls `gtk_window_move(m_x, m_y)`
-3. This call does NOT preserve our `USER_POS` hint
-4. WM sees the move request without `USPosition` → ignores it
+        self.load()  # Load from settings
 
-### Problem 3: EVT_WINDOW_CREATE Timing
+        # Bind events
+        window.Bind(wx.EVT_MOVE, self._on_move)
+        window.Bind(wx.EVT_SIZE, self._on_size)
+        window.Bind(wx.EVT_MAXIMIZE, self._on_maximize)
+        window.Bind(wx.EVT_ACTIVATE, self._on_activate)
 
-`EVT_WINDOW_CREATE` fires **AFTER** `Show()`, not before:
+    def check_and_correct(self):
+        """Try to achieve desired state. Called while not ready."""
+        if self.ready:
+            return
 
-```
-Before Show: (0, 0)
-After Show: (0, 0)
-EVT_WINDOW_CREATE fired    ← Too late!
-EVT_MOVE #1: (994, 0)
-```
+        state_empty = self.position is None and self.size is None
 
-This means we cannot set GTK hints before the window is mapped.
+        # Startup errors - clear state
+        if self._window.IsIconized():
+            self._clear_state()
+            return
 
-### Problem 4: GdkWindow.move() Doesn't Set Hint
+        if self._window.IsMaximized():
+            self._clear_state()
+            return
 
-Even when we successfully get the GdkWindow and call `move()`:
+        # Correct position/size
+        position_size_achieved = False
+        if not state_empty:
+            pos_ok = self._check_position()
+            size_ok = self._check_size()
+            position_size_achieved = pos_ok and size_ok
 
-```python
-gdk_window = GdkX11.X11Window.foreign_new_for_display(display, xid)
-gdk_window.move(100, 100)  # Called successfully
-# But window still goes to (994, 0)!
-```
+        # Mark ready when: activated AND (empty OR achieved)
+        if self.activated and (state_empty or position_size_achieved):
+            self._mark_ready()
 
-`GdkWindow.move()` does NOT set `USER_POS` hint - only `GtkWindow.set_geometry_hints()` does.
+    def _mark_ready(self):
+        """Position/size done. Maximize if needed (fire and forget)."""
+        self.ready = True
 
-### Problem 5: Timing of WM Events
+        # Cache final values
+        pos = self._window.GetPosition()
+        size = self._window.GetSize()
+        self.position = (pos.x, pos.y)
+        self.size = (size.width, size.height)
 
-The monitor test (`test_wx_gtk_monitor.py`) revealed the sequence:
+        # ONE maximize attempt
+        if self.maximized:
+            self._window.Maximize()
 
-```
-wx EVT_MOVE #1: (100, 100)     ← Our position initially works
-GTK configure-event: (2, 25)   ← Client area position
-wx EVT_SIZE: (6, 28)           ← wxGTK internal sizing
-GTK map: (root_x=-2, root_y=-25) ← Strange coordinates
-wx EVT_SHOW
-wx EVT_MOVE #2: (80, 0)        ← WM repositions!
-```
+    def cache_from_window(self):
+        """Update state from window. Called after ready."""
+        self.maximized = self._window.IsMaximized()
 
-wxGTK's internal sizing/mapping process triggers the WM to reposition the window.
-
----
-
-## Working Solution: EVT_MOVE Detection Until EVT_ACTIVATE
-
-### Key Discovery: EVT_ACTIVATE Signals "Ready"
-
-Testing revealed the exact event sequence during window creation:
-
-```
-[57ms] Before Show: (100, 100)
-[61ms] After Show: (100, 100)
-[62ms] EVT_IDLE #1: pos=(100, 100)
-[63ms] EVT_SHOW: pos=(100, 100) shown=True
-[78ms] EVT_MOVE #1: (80, 0)       ← WM placement - CORRECT THIS
-  -> Unplanned move detected, resetting to (100, 100)
-[78ms] EVT_MOVE #2: (100, 100)    ← Our correction worked
-[79ms] EVT_MOVE #3: (80, 0)       ← WM moved AGAIN! - MUST CORRECT THIS TOO
-[79ms] EVT_ACTIVATE #1: active=True [READY FOR INPUT]  ← STOP CORRECTING HERE
-[80ms] EVT_MOVE #4: (100, 100)    ← Final position is correct
-```
-
-**Critical Insight:** The window manager may move the window **multiple times** before `EVT_ACTIVATE`. The original single-correction approach (`position_applied = True` after first correction) fails because EVT_MOVE #3 occurs BEFORE EVT_ACTIVATE.
-
-**Solution:** Keep correcting position on every `EVT_MOVE` until `EVT_ACTIVATE` fires.
-
-### Implementation
-
-```python
-class WindowTracker:
-    def __init__(self, window, settings):
-        self._window = window
-        self._window_activated = False  # Track when window is ready
-        self._should_maximize = False   # Maximize after EVT_ACTIVATE
-
-        # Load from settings
-        self._target_position = settings.get("position")  # e.g., (100, 100)
-        self._target_size = settings.get("size")          # e.g., (800, 600)
-        maximized = settings.get("maximized")
-
-        # Set initial position and size (WM will likely ignore pos - corrected via EVT_MOVE)
-        x, y = self._target_position
-        w, h = self._target_size
-        self._window.SetSize(x, y, w, h)
-
-        # Defer maximize until window is ready
-        if maximized:
-            self._should_maximize = True
-
-        # Cache for save (restore values when maximized)
-        self._cached_position = self._target_position
-        self._cached_size = self._target_size
-
-        self._window.Bind(wx.EVT_MOVE, self._on_move)
-        self._window.Bind(wx.EVT_ACTIVATE, self._on_activate)
-
-    def _on_move(self, event):
-        pos = event.GetPosition()
-
-        # Keep correcting until window is activated (ready for input)
-        if not self._window_activated and self._target_position:
-            target_x, target_y = self._target_position
-            if pos.x != target_x or pos.y != target_y:
-                # WM moved us - immediately correct
-                self._window.SetPosition(wx.Point(target_x, target_y))
-                event.Skip()
-                return
-
-        # Cache position for save (only when not maximized)
-        if self._window_activated and not self._window.IsMaximized():
-            self._cached_position = (pos.x, pos.y)
-
-        event.Skip()
-
-    def _on_activate(self, event):
-        """Window gained focus - stop correcting, cache values, then maximize if needed."""
-        if event.GetActive() and not self._window_activated:
-            self._window_activated = True
-
-            # Cache the restore values (position/size before maximize)
+        if self._is_normal_state():
             pos = self._window.GetPosition()
             size = self._window.GetSize()
-            self._cached_position = (pos.x, pos.y)
-            self._cached_size = (size.width, size.height)
+            self.position = (pos.x, pos.y)
+            self.size = (size.width, size.height)
 
-            # Clear targets - no longer needed
-            self._target_position = None
-            self._target_size = None
-
-            # NOW maximize if saved state was maximized
-            if self._should_maximize:
-                self._window.Maximize()
-                self._should_maximize = False
-
-        event.Skip()
-
-    def save_state(self):
-        """Write window state to file. Call on close."""
-        maximized = self._window.IsMaximized()
-
-        # Always write maximize state and cached restore values
-        settings.set("maximized", maximized)
-        settings.set("position", self._cached_position)
-        settings.set("size", self._cached_size)
-        # Monitor is derived from cached position when reading back
+    def _clear_state(self):
+        """Clear state - WM decides, normal caching captures values."""
+        self.position = None
+        self.size = None
+        self.maximized = False
 ```
 
-### Key Points
+---
 
-1. **Window Ready**: Window is ready when activated AND position AND size match target
-2. **Position/Size Correction**: Keep correcting on every `EVT_MOVE`/`EVT_SIZE` until window is ready
-3. **Deferred Maximize**: Don't maximize immediately - wait until window is ready
-4. **Cache = Restore Values**: Cached position/size are the "restore" values (for both save/restore and maximize/restore)
-5. **Never Cache When Maximized/Iconized**: Only update cached values when window is in normal state
-6. **Always Write Cached Values**: On close, always write cached position/size to file (they're always the restore values)
-7. **Monitor Derived From Position**: Monitor index is derived from cached position - no need to store separately
-8. **No Iconized State**: Never persist iconized state - only maximize state is written to file
+## Platform Considerations
 
-### Terminology
+### Linux/GTK (X11)
+- EVT_MOVE/EVT_SIZE detection needed
+- Window manager may move window multiple times before ready
+- Correct position/size until activated AND achieved
 
-- **Cached**: In-memory values (`_cached_position`, `_cached_size`)
-- **Write to file**: Persist to settings/ini file
-- **Restore values**: The non-maximized position/size used when clicking "restore" button
+### Windows/macOS
+- Standard positioning works
+- No correction needed
 
-### Why This Works
-
-1. 4-param `SetSize()` sets the window's internal position coordinates
-2. GTK/WM ignores this because wxPython cannot set the `GDK_HINT_USER_POS` hint (no API exposed)
-3. WM applies "smart placement" and may move/resize the window multiple times (triggers `EVT_MOVE`/`EVT_SIZE`)
-4. We correct position AND size on **every** unplanned change by calling `SetPosition()`/`SetSize()`
-5. After the window is mapped and visible, these calls ARE honored by the WM
-6. `EVT_ACTIVATE` only means window gained focus - GTK/WM may still send events after this
-7. **Window ready** = activated AND position matches AND size matches target
-8. **Deferred maximize**: Maximize only after window is ready ensures it maximizes on the correct monitor
-
-### Flicker
-
-**There is still a visible flicker** when:
-- Another window is positioned over the WM's default placement area (typically upper-left corner)
-- The window has complex content (heavier windows take longer to render, making the flicker more noticeable)
-
-The window briefly appears at the WM's chosen position before being corrected. This is unavoidable without proper `GDK_HINT_USER_POS` support in wxPython.
-
-**Note:** This is a workaround for wxPython's lack of `GDK_HINT_USER_POS` support. If wxPython exposed this GTK API, we could simply set the hint before `Show()` and avoid this event-based correction entirely.
-
-### Platform Considerations
-
-```python
-import sys
-
-if sys.platform == 'linux':
-    # Use EVT_MOVE detection for GTK/Linux
-    self.Bind(wx.EVT_MOVE, self._on_move)
-elif sys.platform == 'darwin':
-    # macOS: Standard positioning works
-    self.SetPosition(target)
-elif sys.platform == 'win32':
-    # Windows: Standard positioning works
-    self.SetPosition(target)
-```
-
-### Wayland Caveat
-
-On Wayland, window positioning is **disabled by design**:
+### Wayland
+- Window positioning disabled by design
 - `GetPosition()` always returns (0, 0)
 - `SetPosition()` has no effect
-- No workaround exists
+- No workaround exists - log warning
 
 ---
 
@@ -359,14 +275,13 @@ On Wayland, window positioning is **disabled by design**:
 
 ### For Task Coach (Implemented)
 
-1. ✅ **EVT_MOVE/EVT_SIZE detection** - correct position AND size until window is ready
-2. ✅ **4-param `SetSize(x, y, w, h)`** to set initial position and size
-3. ✅ **Window ready** = activated AND position matches AND size matches target
-4. ✅ **Deferred maximize** - wait until window is ready, then maximize if saved state was maximized
-5. ✅ **Cache restore values** - only update cached position/size when not maximized/iconized
-6. ✅ **Always write cached values** - on close, always write cached position/size to file
-7. ✅ **No iconized persistence** - never save or restore iconized state
-8. ✅ **Wayland detection** - logs warning (positioning blocked by compositor)
+1. ✅ State model: position, size, maximized as desired state
+2. ✅ Startup errors clear state, let WM decide
+3. ✅ Ready = activated AND (empty OR position/size achieved)
+4. ✅ After ready: ONE maximize attempt (fire and forget)
+5. ✅ Caching: query IsMaximized(), only cache position/size in normal state
+6. ✅ Geometry validation: position on screen, size fits monitor
+7. ✅ Wayland detection: logs warning
 
 ### For wxWidgets Project
 
@@ -382,34 +297,6 @@ File a feature request to add `GDK_HINT_USER_POS` support:
 - [wxWidgets/Phoenix Issue #1217](https://github.com/wxWidgets/Phoenix/issues/1217) - GetHandle() returns XID
 - [GTK gtk_window_move() docs](https://docs.gtk.org/gtk3/method.Window.move.html) - WM ignores initial positions
 - [Gdk.WindowHints](https://docs.gtk.org/gdk3/flags.WindowHints.html) - USER_POS hint
-- [wxWidgets src/gtk/toplevel.cpp](https://github.com/wxWidgets/wxWidgets/blob/master/src/gtk/toplevel.cpp) - wxGTK implementation
-
----
-
-## Test Files
-
-All test files are in the repository root:
-
-```
-test_gtk_geometry_hints.py      # Pure GTK - works
-test_gdk_user_position.py       # Pure GTK - works
-test_wx_pos_constructor.py      # wx pos in constructor - fails
-test_wx_pos_before_show.py      # wx SetPosition before Show - fails
-test_wx_pos_after_show.py       # wx SetPosition after Show - fails
-test_wx_pos_callafter.py        # wx CallAfter - fails
-test_wx_pos_calllater.py        # wx CallLater 50ms - works with flicker
-test_wx_pos_move.py             # wx Move() - fails
-test_wx_pos_evt_idle.py         # wx EVT_IDLE - fails (race condition)
-test_wx_pos_unplanned_move.py   # wx EVT_MOVE detect - WORKS, NO FLICKER
-test_wx_like_gtk.py             # wx + GTK hint via toplevels - fails
-test_wx_gtk_hint_early.py       # GTK hint before Show - fails
-test_wx_gtk_hint_after_show.py  # GTK hint after Show - fails
-test_wx_gtk_monitor.py          # GTK event monitor - diagnostic
-test_wx_internal_pos.py         # wx internal + GTK hint - fails
-test_wx_window_create.py        # EVT_WINDOW_CREATE - API error
-test_wx_gobject_wrap.py         # GObject wrap - wrong pointer type
-test_wx_xid_lookup.py           # XID lookup - needs testing
-```
 
 ---
 
