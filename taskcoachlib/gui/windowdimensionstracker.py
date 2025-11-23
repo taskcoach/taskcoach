@@ -82,6 +82,10 @@ class WindowSizeAndPositionTracker(_Tracker):
         self._cached_position = None
         self._cached_size = None
 
+        # Position monitor state
+        self._target_position = None
+        self._position_monitor_count = 0
+
         # Check for Wayland
         self._on_wayland = os.environ.get('XDG_SESSION_TYPE') == 'wayland' or \
                           os.environ.get('WAYLAND_DISPLAY') is not None
@@ -230,6 +234,36 @@ class WindowSizeAndPositionTracker(_Tracker):
                 _log_debug("  Position differs from target (expected on Wayland)")
             else:
                 _log_debug("  WARNING: Position differs from target")
+
+        # Start position monitor to detect if something moves the window later
+        self._target_position = (x, y)
+        self._position_monitor_count = 0
+        self._start_position_monitor()
+
+    def _start_position_monitor(self):
+        """Monitor position for a few seconds to detect unwanted moves."""
+        if self._position_monitor_count >= 10:  # Monitor for 5 seconds (10 x 500ms)
+            _log_debug("Position monitor: stopping")
+            return
+
+        self._position_monitor_count += 1
+        pos = self._window.GetPosition()
+        target = self._target_position
+
+        if pos.x != target[0] or pos.y != target[1]:
+            _log_debug(f"Position monitor #{self._position_monitor_count}: "
+                      f"MOVED from target ({target[0]}, {target[1]}) to ({pos.x}, {pos.y})")
+            # Re-apply position
+            _log_debug(f"  Re-applying target position ({target[0]}, {target[1]})")
+            self._window.SetPosition(wx.Point(target[0], target[1]))
+            final = self._window.GetPosition()
+            _log_debug(f"  After re-apply: ({final.x}, {final.y})")
+            self._cached_position = (final.x, final.y)
+        else:
+            _log_debug(f"Position monitor #{self._position_monitor_count}: OK at ({pos.x}, {pos.y})")
+
+        # Schedule next check
+        wx.CallLater(500, self._start_position_monitor)
 
     def save_state(self):
         """Save the current window state. Call when window is about to close."""
