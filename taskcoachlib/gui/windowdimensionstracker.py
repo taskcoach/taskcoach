@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import configparser
+import os
 import wx
 import time
 from taskcoachlib import operating_system
@@ -89,11 +90,20 @@ class WindowSizeAndPositionTracker(_Tracker):
 
         GTK ignores SetSize() position when called before Show(). Call this
         method after the window has been shown to ensure position is applied.
+
+        Note: On Wayland, applications cannot set window positions at all.
+        This is a security feature of Wayland and cannot be worked around.
         """
         if self._position_applied:
             return
 
         self._position_applied = True
+
+        # Check if running on Wayland (position setting won't work)
+        wayland = os.environ.get('XDG_SESSION_TYPE') == 'wayland' or \
+                  os.environ.get('WAYLAND_DISPLAY') is not None
+        if wayland:
+            _log_debug("apply_position_after_show: Running on Wayland - position setting is blocked by compositor")
 
         if self._target_maximized:
             _log_debug(f"apply_position_after_show: Window should be maximized")
@@ -102,14 +112,25 @@ class WindowSizeAndPositionTracker(_Tracker):
             return
 
         x, y = self._target_x, self._target_y
-        _log_debug(f"apply_position_after_show: Setting position to ({x}, {y})")
+        current_pos = self._window.GetPosition()
+        _log_debug(f"apply_position_after_show: Current=({current_pos.x}, {current_pos.y}) Target=({x}, {y})")
 
-        # Use SetPosition to apply saved position
-        self._window.SetPosition(wx.Point(x, y))
+        # Only apply if position differs significantly (avoid flicker)
+        if abs(current_pos.x - x) > 10 or abs(current_pos.y - y) > 10:
+            _log_debug(f"apply_position_after_show: Applying position ({x}, {y})")
+            self._window.SetPosition(wx.Point(x, y))
 
-        # Verify it was applied
-        final_pos = self._window.GetPosition()
-        _log_debug(f"apply_position_after_show: Final position is ({final_pos.x}, {final_pos.y})")
+            # Verify it was applied
+            final_pos = self._window.GetPosition()
+            _log_debug(f"apply_position_after_show: Final position is ({final_pos.x}, {final_pos.y})")
+
+            # Check if it actually worked
+            if abs(final_pos.x - x) > 50 or abs(final_pos.y - y) > 50:
+                _log_debug(f"apply_position_after_show: WARNING - Position not applied correctly!")
+                if wayland:
+                    _log_debug("  This is expected on Wayland - window positioning is blocked")
+        else:
+            _log_debug(f"apply_position_after_show: Position already correct, skipping")
 
     def save_state(self):
         """Save the current window state. Call when window is about to close."""
