@@ -229,6 +229,9 @@ class MainWindow(
             self.showStatusBar, self.settings.getboolean("view", "statusbar")
         )
         self.__restore_perspective()
+        # Start tracking window position/size changes AFTER AUI layout is restored.
+        # This avoids saving spurious resize/move events from LoadPerspective().
+        self.__dimensions_tracker.start_tracking()
 
     def __restore_perspective(self):
         perspective = self.settings.get("view", "perspective")
