@@ -1902,11 +1902,11 @@ class Editor(BalloonTipManager, widgets.Dialog):
 
         # Position and size handling is done by WindowGeometryTracker
         # which will center on parent if no saved position exists, or
-        # restore the last saved position
+        # restore the last saved position (must be on same monitor as parent)
         self.__create_ui_commands()
         self.__dimensions_tracker = (
             windowdimensionstracker.WindowGeometryTracker(
-                self, settings, self._interior.settings_section()
+                self, settings, self._interior.settings_section(), parent=parent
             )
         )
 
