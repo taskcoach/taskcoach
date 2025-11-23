@@ -413,11 +413,20 @@ class Application(object, metaclass=patterns.Singleton):
             import signal
 
             def quit_adapter(*args):
-                return self.quitApplication()
+                # On Unix, signal handlers run in the main thread, so we can
+                # interact with wx directly. We need to close the main window
+                # properly to trigger clean shutdown with event handler removal.
+                self.mainwindow.setShutdownInProgress()
+                self.mainwindow.Close(force=True)
 
+            # Handle SIGINT (Ctrl+C) to prevent KeyboardInterrupt and allow clean shutdown
+            signal.signal(signal.SIGINT, quit_adapter)
             signal.signal(signal.SIGTERM, quit_adapter)
             if hasattr(signal, "SIGHUP"):
-                forced_quit = lambda *args: self.quitApplication(force=True)
+                forced_quit = lambda *args: (
+                    self.mainwindow.setShutdownInProgress(),
+                    self.mainwindow.Close(force=True)
+                )
                 signal.signal(
                     signal.SIGHUP, forced_quit
                 )  # pylint: disable=E1101
