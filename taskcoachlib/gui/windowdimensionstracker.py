@@ -122,32 +122,36 @@ class WindowGeometryTracker:
         width = max(width, min_w) if width > 0 else min_w
         height = max(height, min_h) if height > 0 else min_h
 
-        # Store desired size
-        self.size = (width, height)
-
-        # Validate and set position
+        # Validate geometry against current monitors
         if x == -1 and y == -1:
-            # No saved position - let WM place it
+            # No saved position - let WM place it, clear state
+            _log_debug(f"  No saved position, clearing state, letting WM place window")
+            self._clear_state()
             self._window.SetSize(width, height)
-            self.position = None
-            _log_debug(f"  No saved position, letting WM place window")
         else:
-            validated = self._validate_position(x, y, width, height)
+            validated = self._validate_geometry(x, y, width, height)
             if validated is None:
-                # Position invalid - let WM place it
-                self._window.SetSize(width, height)
-                self.position = None
+                # Geometry invalid - let WM place it, clear state
+                _log_debug(f"  Geometry invalid, clearing state, letting WM place window")
+                self._clear_state()
+                self._window.SetSize(min_w, min_h)
             else:
-                x, y = validated
-                self._window.SetSize(x, y, width, height)
+                # Geometry valid - set desired state
+                x, y, width, height = validated
                 self.position = (x, y)
-                _log_debug(f"  Set desired position={self.position}")
-
-        _log_debug(f"  Set desired size={self.size}")
-        _log_debug(f"  Set desired maximized={self.maximized}")
+                self.size = (width, height)
+                self._window.SetSize(x, y, width, height)
+                _log_debug(f"  Set desired: pos={self.position} size={self.size} maximized={self.maximized}")
 
         if operating_system.isMac():
             self._window.SetClientSize((width, height))
+
+    def _clear_state(self):
+        """Clear all state - let WM decide, normal caching will capture new values."""
+        self.position = None
+        self.size = None
+        self.maximized = False
+        _log_debug(f"  State cleared: pos=None size=None maximized=False")
 
     def save(self):
         """Save current state to settings file."""
@@ -304,30 +308,30 @@ class WindowGeometryTracker:
             self.check_and_correct()
         event.Skip()
 
-    # === Position validation ===
+    # === Geometry validation ===
 
-    def _validate_position(self, x, y, width, height):
-        """Validate position fits on a monitor. Returns (x, y) or None."""
+    def _validate_geometry(self, x, y, width, height):
+        """Validate position and size fit on a monitor. Returns (x, y, w, h) or None."""
         num_displays = wx.Display.GetCount()
-        _log_debug(f"_validate_position: checking ({x}, {y}) against {num_displays} monitors")
+        _log_debug(f"_validate_geometry: checking pos=({x}, {y}) size=({width}, {height}) against {num_displays} monitors")
 
         for i in range(num_displays):
             display = wx.Display(i)
             geometry = display.GetGeometry()
-            _log_debug(f"  Monitor {i}: {geometry.x}, {geometry.y}, {geometry.width}x{geometry.height}")
+            work_area = display.GetClientArea()  # Excludes taskbar
+            _log_debug(f"  Monitor {i}: geometry={geometry.width}x{geometry.height} work_area={work_area.width}x{work_area.height}")
 
-            # Check if window is reasonably within this monitor
+            # Check if position is reasonably within this monitor
             if (geometry.x - width + 100 <= x <= geometry.x + geometry.width - 100 and
                 geometry.y <= y <= geometry.y + geometry.height - 100):
-                _log_debug(f"  Position valid for monitor {i}")
 
-                # Ensure window doesn't go below monitor
-                max_y = geometry.y + geometry.height - height - 50
-                if y > max_y:
-                    _log_debug(f"  Adjusting Y from {y} to {max_y}")
-                    y = max(geometry.y, max_y)
+                # Check if size fits on this monitor's work area
+                if width > work_area.width or height > work_area.height:
+                    _log_debug(f"  Size ({width}x{height}) too big for monitor {i} work area ({work_area.width}x{work_area.height})")
+                    return None  # Size doesn't fit - clear state
 
-                return (x, y)
+                _log_debug(f"  Geometry valid for monitor {i}")
+                return (x, y, width, height)
 
         _log_debug(f"  Position ({x}, {y}) not valid for any monitor")
         return None
