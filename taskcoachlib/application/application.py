@@ -386,12 +386,25 @@ class Application(object, metaclass=patterns.Singleton):
         The key issue is that AUI manager.UnInit() must be called before
         wxPython's cleanup runs, otherwise we get assertion errors about
         pushed event handlers not being removed.
+
+        Also important: save_settings() must be called to preserve window
+        position/size. When Ctrl+C is pressed, wx.CallAfter might not be
+        processed before the event loop exits, so we save settings in atexit.
         """
         import signal
         import atexit
 
         def cleanup_wx():
             """Clean up wx before Python exit."""
+            try:
+                # Save window position/size before cleanup
+                # This is critical for Ctrl+C where quitApplication() might not run
+                if hasattr(self, 'mainwindow'):
+                    self.mainwindow.save_settings()
+                    self.settings.save()
+            except Exception:
+                pass  # Best effort - settings might already be saved
+
             try:
                 # UnInit AUI manager to avoid wxAssertionError about
                 # pushed event handlers not being removed
