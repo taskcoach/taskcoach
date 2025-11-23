@@ -380,16 +380,15 @@ class Application(object, metaclass=patterns.Singleton):
         """Register signal handlers for clean shutdown.
 
         DESIGN NOTE (Twisted Removal - 2024):
-        Previously used Twisted's reactor.addSystemEventTrigger() for cleanup.
-        Now using Python's signal module and atexit for cross-platform handling.
+        Previously used Twisted's reactor which properly handled SIGINT.
+        Now using Python's signal module with wx event posting.
 
-        The key issue is that AUI manager.UnInit() must be called before
-        wxPython's cleanup runs, otherwise we get assertion errors about
-        pushed event handlers not being removed.
+        Key challenges with native wxPython:
+        1. wx.CallAfter alone doesn't wake up a blocked event loop
+        2. Signal handlers run in an interrupt context with limitations
+        3. Must save settings and clean up AUI before exit
 
-        Also important: save_settings() must be called to preserve window
-        position/size. When Ctrl+C is pressed, wx.CallAfter might not be
-        processed before the event loop exits, so we save settings in atexit.
+        Solution: Use atexit for cleanup, and wx.PostEvent + Exit for termination.
         """
         import signal
         import atexit
@@ -417,13 +416,32 @@ class Application(object, metaclass=patterns.Singleton):
         atexit.register(cleanup_wx)
 
         def sigint_handler(signum, frame):
-            """Handle Ctrl+C gracefully."""
-            # Schedule quit on main thread
-            wx.CallAfter(self.quitApplication)
+            """Handle Ctrl+C gracefully.
+
+            This is tricky because:
+            - Signal handlers run in interrupt context
+            - wx.CallAfter doesn't wake up blocked event loop
+            - We need to terminate the wx main loop
+            """
+            # Post quit to main thread and exit the main loop
+            try:
+                # Try to quit gracefully through wx
+                wx.CallAfter(self.__wx_app.ExitMainLoop)
+            except Exception:
+                pass
+
+            # Also try to wake up the event loop
+            try:
+                if wx.App.Get():
+                    wx.WakeUpIdle()
+            except Exception:
+                pass
 
         # Register SIGINT handler for Unix Ctrl+C
         if not operating_system.isWindows():
             signal.signal(signal.SIGINT, sigint_handler)
+            # Also handle SIGTERM for kill command
+            signal.signal(signal.SIGTERM, sigint_handler)
 
         if operating_system.isWindows():
             import win32api  # pylint: disable=F0401
