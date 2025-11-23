@@ -41,17 +41,18 @@ class WindowGeometryTracker:
     the window manager ignores initial position because wxPython cannot set
     GDK_HINT_USER_POS hint.
 
-    State:
-        position: (x, y) - restore position (persisted)
-        size: (w, h) - restore size (persisted)
-        maximized: bool - maximize state (persisted)
-        ready: bool - window is ready (in-memory only)
-        activated: bool - EVT_ACTIVATE fired (in-memory only)
+    State (persisted):
+        position: (x, y) - restore position
+        size: (w, h) - restore size
+        maximized: bool - maximize state
 
-    Platform notes:
-        - X11/GTK: Position/size corrected until window is ready
-        - Wayland: Positioning blocked by compositor (security feature)
-        - Windows/macOS: Full support (no correction needed)
+    State (in-memory):
+        ready: bool - window is ready (activated AND matches target)
+        activated: bool - EVT_ACTIVATE has fired
+
+    Rules:
+        - Only cache position/size when not maximized and not iconized
+        - Only correct position/size when not maximized and not iconized
     """
 
     def __init__(self, window, settings, section):
@@ -65,11 +66,8 @@ class WindowGeometryTracker:
         self.maximized = False
 
         # === In-memory state ===
-        self.ready = False              # Window is ready: activated AND matches target
-        self.activated = False          # EVT_ACTIVATE has fired
-        self.in_maximize_transition = False  # Between Maximize() call and EVT_MAXIMIZE
-        self.in_restore_transition = False   # During un-maximize transition
-        self.was_maximized = False           # Track previous state for restore detection
+        self.ready = False      # Window is ready: activated AND matches target
+        self.activated = False  # EVT_ACTIVATE has fired
 
         # Position logging timer
         self._pos_log_timer = None
@@ -174,10 +172,18 @@ class WindowGeometryTracker:
 
     # === Window correction (GTK workaround) ===
 
+    def _is_normal_state(self):
+        """Return True if window is in normal state (not maximized, not iconized)."""
+        return not self._window.IsMaximized() and not self._window.IsIconized()
+
     def check_and_correct(self):
         """Correct window position/size if they don't match target. Returns True if now ready."""
         if self.ready:
             return True
+
+        # Only correct when in normal state
+        if not self._is_normal_state():
+            return False
 
         pos = self._window.GetPosition()
         size = self._window.GetSize()
@@ -230,38 +236,20 @@ class WindowGeometryTracker:
         # NOW maximize if saved state was maximized
         if self.maximized:
             _log_debug(f"  Maximizing now (window ready)")
-            self.in_maximize_transition = True
             self._window.Maximize()
 
     # === State updates from window ===
 
     def cache_position(self):
-        """Update cached position from window (only when safe to cache)."""
-        if not self._window.IsIconized() and not self._window.IsMaximized():
+        """Update cached position from window (only when in normal state)."""
+        if self._is_normal_state():
             pos = self._window.GetPosition()
             self.position = (pos.x, pos.y)
             _log_debug(f"cache_position: pos=({pos.x}, {pos.y})")
 
     def cache_size(self, size):
-        """Update cached size from window (only when safe to cache)."""
-        is_max = self._window.IsMaximized()
-        is_icon = self._window.IsIconized()
-
-        # Detect restore transition
-        if self.was_maximized and not is_max and not is_icon:
-            self.in_restore_transition = True
-            _log_debug(f"cache_size: RESTORE TRANSITION DETECTED")
-
-        # Check if restore complete
-        if self.in_restore_transition and self.size:
-            cached_w, cached_h = self.size
-            if abs(size.width - cached_w) < 10 and abs(size.height - cached_h) < 10:
-                self.in_restore_transition = False
-                self.was_maximized = False
-                _log_debug(f"cache_size: RESTORE COMPLETE size=({size.width}, {size.height})")
-
-        # Cache size only when safe
-        if not is_icon and not is_max and not self.in_maximize_transition and not self.in_restore_transition:
+        """Update cached size from window (only when in normal state)."""
+        if self._is_normal_state():
             if size.width > 100 and size.height > 100:
                 self.size = (size.width, size.height)
                 _log_debug(f"cache_size: size=({size.width}, {size.height})")
@@ -286,12 +274,7 @@ class WindowGeometryTracker:
 
     def _on_maximize(self, event):
         """Handle maximize/restore."""
-        self.in_maximize_transition = False
-
         is_max = self._window.IsMaximized()
-        if is_max:
-            self.was_maximized = True
-
         pos = self._window.GetPosition()
         size = self._window.GetSize()
         _log_debug(f"EVT_MAXIMIZE: IsMaximized={is_max} pos=({pos.x}, {pos.y}) size=({size.width}, {size.height})")
