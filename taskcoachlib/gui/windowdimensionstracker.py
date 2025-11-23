@@ -72,6 +72,7 @@ class WindowSizeAndPositionTracker(_Tracker):
 
         # Target position for GTK position correction
         self._target_position = None
+        self._target_size = None  # Also track target size (can be reset by AUI)
 
         # Cache last known good position (protects against GTK bugs at close)
         self._cached_position = None
@@ -148,11 +149,11 @@ class WindowSizeAndPositionTracker(_Tracker):
         event.Skip()
 
     def _on_activate(self, event):
-        """Window activated (gained focus) - stop correcting position.
+        """Window activated (gained focus) - stop correcting position and restore size.
 
         EVT_ACTIVATE with active=True signals the window is ready for user input.
-        At this point, GTK/WM has finished its setup and we can stop correcting
-        the position on every EVT_MOVE.
+        At this point, GTK/WM has finished its setup. We restore the target size
+        if it was changed during initialization (e.g., by AUI).
         """
         if event.GetActive() and not self._window_activated:
             self._window_activated = True
@@ -166,13 +167,23 @@ class WindowSizeAndPositionTracker(_Tracker):
                 self._pos_log_timer.Stop()
                 self._pos_log_timer = None
 
+            # Restore size if it was changed during initialization (e.g., by AUI)
+            if self._target_size is not None:
+                target_w, target_h = self._target_size
+                if size.width != target_w or size.height != target_h:
+                    _log_debug(f"  Size was reset to ({size.width}, {size.height}), restoring to ({target_w}, {target_h})")
+                    self._window.SetSize(target_w, target_h)
+                    size = self._window.GetSize()
+                    _log_debug(f"  After restore: size=({size.width}, {size.height})")
+
             # Cache the final position and size
             if not self._window.IsIconized() and not self._window.IsMaximized():
                 self._cached_position = (pos.x, pos.y)
                 self._cached_size = (size.width, size.height)
 
-            # Clear target - no longer needed
+            # Clear targets - no longer needed
             self._target_position = None
+            self._target_size = None
         event.Skip()
 
     def _start_position_logging(self):
@@ -243,10 +254,14 @@ class WindowSizeAndPositionTracker(_Tracker):
         if operating_system.isMac():
             self._window.SetClientSize((width, height))
 
+        # Store target size (AUI/GTK may reset it during initialization)
+        self._target_size = (width, height)
+
         # Handle maximized state
         if maximized:
             self._window.Maximize()
             self._target_position = None  # Don't correct position when maximized
+            self._target_size = None  # Don't correct size when maximized
 
         # Initialize cache
         self._cached_size = (width, height)
