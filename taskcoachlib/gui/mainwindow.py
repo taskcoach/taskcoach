@@ -171,15 +171,6 @@ class MainWindow(
     def setShutdownInProgress(self):
         self.__shutdown = True
 
-    def applyPositionAfterShow(self):
-        """Re-apply window position after Show().
-
-        GTK ignores SetSize() position when called before Show(). This method
-        should be called after the window has been shown to ensure the saved
-        position is correctly applied.
-        """
-        self.__dimensions_tracker.apply_position_after_show()
-
     def _create_window_components(self):  # Not private for test purposes
         # Freeze to prevent flickering during viewer creation
         self.Freeze()

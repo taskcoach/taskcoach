@@ -484,9 +484,8 @@ class Application(object, metaclass=patterns.Singleton):
         self.mainwindow.Show()
         pos_after_show = self.mainwindow.GetPosition()
         print(f"[DEBUG] application: AFTER Show() pos=({pos_after_show.x}, {pos_after_show.y})")
-        # Re-apply window position after Show() - GTK ignores position set before Show()
-        # Use CallLater with delay to ensure GTK has finished window placement
-        wx.CallLater(100, self.mainwindow.applyPositionAfterShow)
+        # Position correction is handled automatically by WindowDimensionsTracker
+        # via EVT_MOVE detection until EVT_ACTIVATE fires (window ready for input)
         # Use native wxPython main loop instead of Twisted reactor
         # NOTE: Previously used reactor.run() with wxreactor integration.
         # Now using wx.App.MainLoop() directly for simpler event handling.

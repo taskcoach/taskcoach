@@ -52,23 +52,27 @@ class _Tracker:
 class WindowSizeAndPositionTracker(_Tracker):
     """Track the size and position of a window in the settings.
 
-    IMPORTANT: On GTK with AUI, LoadPerspective() triggers async layout
-    that moves the window AFTER Show(). We handle this by:
-    1. NOT setting position in __init__ (it will be overwritten)
-    2. Setting position ONCE in apply_position_after_show() after AUI settles
-    3. Caching position on EVT_MOVE to protect against GTK bugs at close
+    GTK/Linux Position Correction:
+    On GTK, the window manager ignores initial window position because wxPython
+    cannot set the GDK_HINT_USER_POS hint. We handle this by:
+    1. Setting target position in __init__ via _restore_size_only()
+    2. Correcting position on every EVT_MOVE until EVT_ACTIVATE fires
+    3. EVT_ACTIVATE signals window is ready for input - stop correcting
 
     Platform notes:
-    - X11/GTK: Position must be set after Show() AND after AUI settles
+    - X11/GTK: Position corrected via EVT_MOVE until EVT_ACTIVATE
     - Wayland: Positioning blocked by compositor (security feature)
-    - Windows/macOS: Full support
+    - Windows/macOS: Full support (no correction needed)
     """
 
     def __init__(self, window, settings, section):
         super().__init__(settings, section)
         self._window = window
         self._is_maximized = False
-        self._position_applied = False
+        self._window_activated = False  # Track when window is ready (EVT_ACTIVATE fired)
+
+        # Target position for GTK position correction
+        self._target_position = None
 
         # Cache last known good position (protects against GTK bugs at close)
         self._cached_position = None
@@ -90,46 +94,41 @@ class WindowSizeAndPositionTracker(_Tracker):
         else:
             self._window.SetMinSize((600, 400))
 
-        # Restore SIZE only (position will be set after Show + AUI settles)
+        # Restore SIZE and set target position for GTK correction
         self._restore_size_only()
 
-        # Track position changes to cache last known good position
+        # Track position changes - on GTK, correct unplanned moves until EVT_ACTIVATE
         self._window.Bind(wx.EVT_MOVE, self._on_move)
         self._window.Bind(wx.EVT_SIZE, self._on_size)
         self._window.Bind(wx.EVT_MAXIMIZE, self._on_maximize)
+        self._window.Bind(wx.EVT_ACTIVATE, self._on_activate)
 
         # Start rapid position logging
         self._start_position_logging()
 
     def _on_move(self, event):
-        """Cache position on moves and detect unplanned GTK position changes."""
-        pos = event.GetPosition()
-        _log_debug(f"_on_move: pos=({pos.x}, {pos.y}) applied={self._position_applied} has_target={hasattr(self, '_target_position')}")
+        """Cache position on moves and correct unplanned GTK position changes.
 
-        # Detect GTK moving window to unexpected position BEFORE we've applied our position
-        # This happens asynchronously after Show() - GTK/window manager resets to default
-        if not self._position_applied and hasattr(self, '_target_position'):
-            if pos.x < 100 and pos.y < 50:
-                # Unplanned move detected - GTK moved window away from our target
-                target = self._target_position
-                _log_debug(f"_on_move: UNPLANNED MOVE detected! Window at ({pos.x}, {pos.y}), correcting to {target}")
-                # Print stack trace to see what triggered this move
-                _log_debug("_on_move: Stack trace of unplanned move:")
-                for line in traceback.format_stack():
-                    for subline in line.strip().split('\n'):
-                        _log_debug(f"  {subline}")
-                # Immediately correct the position
-                self._window.SetPosition(wx.Point(target[0], target[1]))
-                after_pos = self._window.GetPosition()
-                _log_debug(f"_on_move: After correction, pos=({after_pos.x}, {after_pos.y})")
-                # Don't call Skip() - try to prevent further processing of this move
+        On GTK/Linux, the window manager ignores initial position and moves the
+        window to its "smart placement" location. We detect this and correct it
+        on every EVT_MOVE until EVT_ACTIVATE fires (window is ready for input).
+        """
+        pos = event.GetPosition()
+        _log_debug(f"_on_move: pos=({pos.x}, {pos.y}) activated={self._window_activated} target={self._target_position}")
+
+        # Correct unplanned moves until window is activated (ready for input)
+        # This handles GTK/WM moving window multiple times during setup
+        if not self._window_activated and self._target_position is not None:
+            target_x, target_y = self._target_position
+            if pos.x != target_x or pos.y != target_y:
+                _log_debug(f"_on_move: UNPLANNED MOVE detected! Correcting ({pos.x}, {pos.y}) -> ({target_x}, {target_y})")
+                self._window.SetPosition(wx.Point(target_x, target_y))
+                event.Skip()
                 return
 
-        # Cache position for save (only after position has been applied)
-        if self._position_applied and not self._window.IsIconized() and not self._window.IsMaximized():
-            # Only cache if position looks valid
-            if pos.x > 50 or pos.y > 30:
-                self._cached_position = (pos.x, pos.y)
+        # Cache position for save (only after window is activated)
+        if self._window_activated and not self._window.IsIconized() and not self._window.IsMaximized():
+            self._cached_position = (pos.x, pos.y)
         event.Skip()
 
     def _on_size(self, event):
@@ -146,6 +145,26 @@ class WindowSizeAndPositionTracker(_Tracker):
         _log_debug("Window maximized")
         event.Skip()
 
+    def _on_activate(self, event):
+        """Window activated (gained focus) - stop correcting position.
+
+        EVT_ACTIVATE with active=True signals the window is ready for user input.
+        At this point, GTK/WM has finished its setup and we can stop correcting
+        the position on every EVT_MOVE.
+        """
+        if event.GetActive() and not self._window_activated:
+            self._window_activated = True
+            pos = self._window.GetPosition()
+            _log_debug(f"_on_activate: WINDOW READY at ({pos.x}, {pos.y}) - stopping position corrections")
+
+            # Cache the final position
+            if not self._window.IsIconized() and not self._window.IsMaximized():
+                self._cached_position = (pos.x, pos.y)
+
+            # Clear target - no longer needed
+            self._target_position = None
+        event.Skip()
+
     def _start_position_logging(self):
         """Start rapid position logging: 100ms for 2s, then 1s intervals."""
         self._pos_log_start_time = time.time()
@@ -160,7 +179,7 @@ class WindowSizeAndPositionTracker(_Tracker):
         pos = self._window.GetPosition()
         shown = self._window.IsShown()
 
-        _log_debug(f"POS_LOG [{elapsed:.2f}s]: ({pos.x}, {pos.y}) shown={shown} applied={self._position_applied}")
+        _log_debug(f"POS_LOG [{elapsed:.2f}s]: ({pos.x}, {pos.y}) shown={shown} activated={self._window_activated}")
 
         self._pos_log_count += 1
 
@@ -190,13 +209,24 @@ class WindowSizeAndPositionTracker(_Tracker):
 
         # Set initial position and size. On GTK/Linux, the WM will likely ignore
         # the position (wxPython cannot set GDK_HINT_USER_POS). Position is
-        # corrected via EVT_MOVE detection after window is shown.
+        # corrected via EVT_MOVE detection until EVT_ACTIVATE fires.
         if x == -1 and y == -1:
             # No saved position - just set size, let window manager place it
             self._window.SetSize(width, height)
+            self._target_position = None  # No target - let WM place it
         else:
-            # Set initial position along with size
-            self._window.SetSize(x, y, width, height)
+            # Validate position is on a visible monitor
+            validated = self._validate_position(x, y, width, height)
+            if validated is None:
+                # Position invalid (monitor disconnected?) - let WM place it
+                self._window.SetSize(width, height)
+                self._target_position = None
+            else:
+                x, y = validated
+                # Set initial position along with size
+                self._window.SetSize(x, y, width, height)
+                # Set target for GTK position correction (will correct on EVT_MOVE until EVT_ACTIVATE)
+                self._target_position = (x, y)
 
         if operating_system.isMac():
             self._window.SetClientSize((width, height))
@@ -205,6 +235,7 @@ class WindowSizeAndPositionTracker(_Tracker):
         if maximized:
             self._window.Maximize()
             self._is_maximized = True
+            self._target_position = None  # Don't correct position when maximized
 
         # Initialize cache
         self._cached_size = (width, height)
@@ -239,82 +270,6 @@ class WindowSizeAndPositionTracker(_Tracker):
 
         _log_debug(f"  Position ({x}, {y}) not valid for any monitor, will center")
         return None
-
-    def apply_position_after_show(self):
-        """Apply saved position after Show() and AUI has settled.
-
-        This is called via CallLater AFTER Show(). We use EVT_IDLE to wait
-        for AUI's async layout to complete before setting position.
-        """
-        if self._position_applied:
-            return
-
-        x, y = self.get_setting("position")
-        maximized = self.get_setting("maximized")
-
-        if maximized:
-            _log_debug("apply_position_after_show: Window is maximized, skipping position")
-            self._position_applied = True
-            return
-
-        if x == -1 and y == -1:
-            _log_debug("apply_position_after_show: No saved position, centering")
-            self._window.Center()
-            self._position_applied = True
-            pos = self._window.GetPosition()
-            self._cached_position = (pos.x, pos.y)
-            return
-
-        # Validate position fits on a monitor
-        size = self._window.GetSize()
-        validated = self._validate_position(x, y, size.width, size.height)
-
-        if validated is None:
-            _log_debug("apply_position_after_show: Saved position invalid, centering")
-            self._window.Center()
-            self._position_applied = True
-            pos = self._window.GetPosition()
-            self._cached_position = (pos.x, pos.y)
-            return
-
-        x, y = validated
-        _log_debug(f"apply_position_after_show: Will set position to ({x}, {y}) on next idle")
-
-        # Use EVT_IDLE to wait for AUI to finish its async layout
-        self._target_position = (x, y)
-        self._idle_count = 0
-        self._window.Bind(wx.EVT_IDLE, self._on_idle_set_position)
-
-    def _on_idle_set_position(self, event):
-        """Set position on idle, after AUI has settled."""
-        self._idle_count += 1
-
-        # Wait a few idle cycles for AUI to fully settle
-        if self._idle_count < 3:
-            event.RequestMore()  # Request more idle events
-            return
-
-        # Unbind immediately to avoid repeated calls
-        self._window.Unbind(wx.EVT_IDLE, handler=self._on_idle_set_position)
-        self._position_applied = True
-
-        x, y = self._target_position
-        current = self._window.GetPosition()
-        _log_debug(f"_on_idle_set_position: current=({current.x}, {current.y}) target=({x}, {y})")
-
-        # Set position
-        self._window.SetPosition(wx.Point(x, y))
-
-        # Verify
-        final = self._window.GetPosition()
-        _log_debug(f"  Final position: ({final.x}, {final.y})")
-        self._cached_position = (final.x, final.y)
-
-        if abs(final.x - x) > 50 or abs(final.y - y) > 50:
-            if self._on_wayland:
-                _log_debug("  Position differs (expected on Wayland)")
-            else:
-                _log_debug("  WARNING: Position differs from target")
 
     def save_state(self):
         """Save the current window state. Call when window is about to close."""
