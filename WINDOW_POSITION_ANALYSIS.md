@@ -107,9 +107,9 @@ When wxPython shows a window:
 | `test_wx_gtk_hint_early.py` | GTK hint before Show | ✗ Goes to 100,100 then 80,0 |
 | `test_wx_gtk_hint_after_show.py` | GTK hint after Show | ✗ Goes to 100,100 then 80,0 |
 | `test_wx_internal_pos.py` | wx pos + GTK hint | ✗ Goes to 80,0 |
-| `test_wx_window_create.py` | EVT_WINDOW_CREATE | ✗ API doesn't exist |
-| `test_wx_gobject_wrap.py` | GObject.GObject(handle) | ✗ Wrong pointer type |
-| `test_wx_xid_lookup.py` | XID → GdkWindow lookup | ? Needs testing |
+| `test_wx_window_create.py` | EVT_WINDOW_CREATE + from_address | ✗ from_address API doesn't exist |
+| `test_wx_gobject_wrap.py` | GObject.GObject(handle) | ✗ GObject() takes 0 args |
+| `test_wx_xid_lookup.py` | XID → GdkWindow.move() | ✗ move() works but no USER_POS hint |
 
 ### wxPython Working Solutions
 
@@ -140,7 +140,32 @@ Even when we successfully set GTK hints via `Gtk.Window.list_toplevels()`:
 3. This call does NOT preserve our `USER_POS` hint
 4. WM sees the move request without `USPosition` → ignores it
 
-### Problem 3: Timing
+### Problem 3: EVT_WINDOW_CREATE Timing
+
+`EVT_WINDOW_CREATE` fires **AFTER** `Show()`, not before:
+
+```
+Before Show: (0, 0)
+After Show: (0, 0)
+EVT_WINDOW_CREATE fired    ← Too late!
+EVT_MOVE #1: (994, 0)
+```
+
+This means we cannot set GTK hints before the window is mapped.
+
+### Problem 4: GdkWindow.move() Doesn't Set Hint
+
+Even when we successfully get the GdkWindow and call `move()`:
+
+```python
+gdk_window = GdkX11.X11Window.foreign_new_for_display(display, xid)
+gdk_window.move(100, 100)  # Called successfully
+# But window still goes to (994, 0)!
+```
+
+`GdkWindow.move()` does NOT set `USER_POS` hint - only `GtkWindow.set_geometry_hints()` does.
+
+### Problem 5: Timing of WM Events
 
 The monitor test (`test_wx_gtk_monitor.py`) revealed the sequence:
 
