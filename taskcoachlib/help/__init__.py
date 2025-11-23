@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import base64
 import os
 
 from taskcoachlib import meta
@@ -1251,14 +1250,13 @@ helpHTML = (
 )
 
 
-def _get_splash_base64():
-    """Get the legacy splash screen image as base64 for embedding in HTML."""
+def _get_splash_path():
+    """Get the path to the legacy splash screen image."""
     splash_path = os.path.join(os.path.dirname(__file__), "..", "gui", "icons", "splash.png")
-    try:
-        with open(splash_path, "rb") as f:
-            return base64.b64encode(f.read()).decode("utf-8")
-    except (IOError, OSError):
-        return ""
+    splash_path = os.path.normpath(splash_path)
+    if os.path.exists(splash_path):
+        return splash_path
+    return None
 
 
 aboutHTML = (
@@ -1275,11 +1273,12 @@ aboutHTML = (
 )
 
 # Add legacy splash screen to About dialog
-_splash_base64 = _get_splash_base64()
-if _splash_base64:
+# Note: wx.html.HtmlWindow doesn't support data URIs, so we use file:// path
+_splash_path = _get_splash_path()
+if _splash_path:
     aboutHTML += """
 <hr>
 <h5>Legacy Splash Screen</h5>
 <p><i>This splash screen was displayed on startup in earlier versions of Task Coach.</i></p>
-<p><img src="data:image/png;base64,%s" alt="Legacy Splash Screen" /></p>
-""" % _splash_base64
+<p><img src="file://%s" alt="Legacy Splash Screen" /></p>
+""" % _splash_path
