@@ -69,7 +69,6 @@ class MainWindow(
     def __init__(
         self, iocontroller, taskFile, settings: Settings, *args, **kwargs
     ):
-        self.__splash = kwargs.pop("splash", None)
         # Initialize with valid default size to prevent GTK warnings
         # The WindowDimensionsTracker will set the actual saved size/position
         if 'size' not in kwargs:
@@ -247,8 +246,6 @@ class MainWindow(
         except ValueError as reason:
             # This has been reported to happen. Don't know why. Keep going
             # if it does.
-            if self.__splash:
-                self.__splash.Destroy()
             wx.MessageBox(
                 _(
                     """Couldn't restore the pane layout from TaskCoach.ini:

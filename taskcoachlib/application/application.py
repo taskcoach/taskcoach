@@ -296,8 +296,6 @@ class Application(object, metaclass=patterns.Singleton):
         from taskcoachlib import gui, persistence
 
         gui.init()
-        show_splash_screen = self.settings.getboolean("window", "splash")
-        splash = gui.SplashScreen() if show_splash_screen else None
         # pylint: disable=W0201
         self.taskFile = persistence.LockedTaskFile(
             poll=not self.settings.getboolean("file", "nopoll")
@@ -306,22 +304,20 @@ class Application(object, metaclass=patterns.Singleton):
         self.__auto_exporter = persistence.AutoImporterExporter(self.settings)
         self.__auto_backup = persistence.AutoBackup(self.settings)
         self.iocontroller = gui.IOController(
-            self.taskFile, self.displayMessage, self.settings, splash
+            self.taskFile, self.displayMessage, self.settings
         )
         self.mainwindow = gui.MainWindow(
-            self.iocontroller, self.taskFile, self.settings, splash=splash
+            self.iocontroller, self.taskFile, self.settings
         )
         self.__wx_app.SetTopWindow(self.mainwindow)
         self.__init_spell_checking()
         if not self.settings.getboolean("file", "inifileloaded"):
-            self.__close_splash(splash)
             self.__warn_user_that_ini_file_was_not_loaded()
         if loadTaskFile:
             self.iocontroller.openAfterStart(self._args)
         self.__register_signal_handlers()
         self.__create_mutex()
         self.__create_task_bar_icon()
-        wx.CallAfter(self.__close_splash, splash)
         wx.CallAfter(self.__show_tips)
 
     def __init_config(self, load_settings):
@@ -330,6 +326,8 @@ class Application(object, metaclass=patterns.Singleton):
         ini_file = self._options.inifile if self._options else None
         # pylint: disable=W0201
         self.settings = config.Settings(load_settings, ini_file)
+        # Make settings accessible via wx.GetApp() for dialogs that need it
+        self.__wx_app.settings = self.settings
 
     def __init_language(self):
         """Initialize the current translation."""
@@ -459,11 +457,6 @@ class Application(object, metaclass=patterns.Singleton):
             return True
         except ImportError:
             return False  # TaskBarIcon not available on this platform
-
-    @staticmethod
-    def __close_splash(splash):
-        if splash:
-            splash.Destroy()
 
     def __show_tips(self):
         if self.settings.getboolean("window", "tips"):

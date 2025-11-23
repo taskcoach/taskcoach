@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from .splash import SplashScreen
 from .mainwindow import MainWindow
 from .dialog.editor import TaskEditor, EffortEditor, CategoryEditor
 from .dialog.preferences import Preferences

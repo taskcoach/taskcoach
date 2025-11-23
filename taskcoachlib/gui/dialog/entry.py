@@ -25,6 +25,7 @@ from taskcoachlib.i18n import _
 import datetime
 from wx.lib import combotreebox, newevent
 import wx
+import wx.adv
 
 
 DateTimeEntryEvent, EVT_DATETIMEENTRY = newevent.NewEvent()

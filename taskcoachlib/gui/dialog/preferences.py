@@ -576,12 +576,6 @@ class WindowBehaviorPage(SettingsPage):
         super().__init__(columns=2, growableColumn=-1, *args, **kwargs)
         self.addBooleanSetting(
             "window",
-            "splash",
-            _("Show splash screen on startup"),
-            flags=[wx.ALIGN_RIGHT, wx.EXPAND],
-        )
-        self.addBooleanSetting(
-            "window",
             "tips",
             _("Show tips window on startup"),
             flags=[wx.ALIGN_RIGHT, wx.EXPAND],

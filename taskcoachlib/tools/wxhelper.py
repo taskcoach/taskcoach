@@ -5,6 +5,54 @@ import wx
 import numpy as np
 
 
+def centerOnAppMonitor(window):
+    """Center a window on the application's monitor.
+
+    This function determines the correct monitor by:
+    1. If main window exists, use its monitor
+    2. Otherwise, try to get saved monitor_index from app settings
+    3. Fall back to primary monitor
+
+    Call this after the window is created and sized but before Show().
+    """
+    app = wx.GetApp()
+    target_monitor = None
+
+    # Try to get monitor from main window (but not if we ARE the main window)
+    if app:
+        main_window = app.GetTopWindow()
+        # Skip if main_window is the window we're trying to position
+        if main_window and main_window is not window and main_window.IsShown():
+            main_rect = main_window.GetScreenRect()
+            target_monitor = wx.Display.GetFromPoint(
+                wx.Point(main_rect.x + main_rect.width // 2,
+                         main_rect.y + main_rect.height // 2)
+            )
+
+    # Fall back to saved monitor from settings
+    if target_monitor is None or target_monitor == wx.NOT_FOUND:
+        if app and hasattr(app, 'settings'):
+            try:
+                saved_monitor = app.settings.getint("window", "monitor_index")
+                if 0 <= saved_monitor < wx.Display.GetCount():
+                    target_monitor = saved_monitor
+            except (KeyError, ValueError, AttributeError):
+                pass
+
+    # Fall back to primary monitor
+    if target_monitor is None or target_monitor == wx.NOT_FOUND:
+        target_monitor = 0
+
+    # Center on target monitor
+    if target_monitor < wx.Display.GetCount():
+        display = wx.Display(target_monitor)
+        display_rect = display.GetGeometry()
+        window_size = window.GetSize()
+        x = display_rect.x + (display_rect.width - window_size.width) // 2
+        y = display_rect.y + (display_rect.height - window_size.height) // 2
+        window.SetPosition(wx.Point(x, y))
+
+
 def getButtonFromStdDialogButtonSizer(
     sizer: wx.StdDialogButtonSizer, buttonId: int
 ) -> Union[wx.Button, None]:

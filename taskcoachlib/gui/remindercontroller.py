@@ -20,6 +20,7 @@ from taskcoachlib import patterns, meta, notify
 from taskcoachlib.domain import date, task
 from taskcoachlib.gui.dialog import reminder, editor
 from taskcoachlib.i18n import _
+from taskcoachlib.tools import wxhelper
 from pubsub import pub
 import wx
 
@@ -105,6 +106,8 @@ class ReminderController(object):
             self.settings,
             None,
         )
+        # Position on app's monitor even though it has no parent
+        wxhelper.centerOnAppMonitor(reminderDialog)
         reminderDialog.Bind(wx.EVT_CLOSE, self.onCloseReminderDialog)
         reminderDialog.Show()
 

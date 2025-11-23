@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import configparser
 import wx
 from taskcoachlib import operating_system
 
@@ -79,7 +80,37 @@ class WindowSizeAndPositionTracker(_Tracker):
             if not self._window.IsIconized():
                 # Only save position when the window is not maximized
                 # *and* not minimized
-                self.set_setting("position", event.GetPosition())
+                pos = event.GetPosition()
+                self.set_setting("position", pos)
+
+                # For dialogs, also save offset from parent for multi-monitor support
+                if isinstance(self._window, wx.Dialog):
+                    parent = self._window.GetParent()
+                    if parent:
+                        # Use GetScreenRect for consistency with restore logic
+                        parent_rect = parent.GetScreenRect()
+                        parent_monitor = wx.Display.GetFromPoint(
+                            wx.Point(parent_rect.x + parent_rect.width // 2,
+                                     parent_rect.y + parent_rect.height // 2)
+                        )
+                        dialog_rect = self._window.GetScreenRect()
+                        dialog_monitor = wx.Display.GetFromPoint(
+                            wx.Point(dialog_rect.x + dialog_rect.width // 2,
+                                     dialog_rect.y + dialog_rect.height // 2)
+                        )
+
+                        # Only save offset if dialog is on same monitor as parent
+                        # Wrapped in try/except for backward compatibility with old settings
+                        try:
+                            if parent_monitor != wx.NOT_FOUND and parent_monitor == dialog_monitor:
+                                offset = (pos.x - parent_rect.x, pos.y - parent_rect.y)
+                                self.set_setting("parent_offset", offset)
+                            else:
+                                # Dialog on different monitor - save null offset to force re-center
+                                self.set_setting("parent_offset", (-1, -1))
+                        except (configparser.NoSectionError, configparser.NoOptionError):
+                            # Old settings section without parent_offset support - skip saving
+                            pass
         event.Skip()
 
     def on_maximize(self, event):
@@ -111,22 +142,53 @@ class WindowSizeAndPositionTracker(_Tracker):
         # Set minimum size constraint on the window to prevent user from resizing too small
         self._window.SetMinSize((min_width, min_height))
 
-        # For dialogs, center on the same display as parent window
-        # This ensures dialogs appear on the correct screen in multi-monitor setups
+        # Track the target monitor for validation later
+        # (GetFromWindow can return wrong index before window is fully realized)
+        target_monitor_for_validation = None
+
+        # For dialogs, position relative to parent window with multi-monitor support
         if isinstance(self._window, wx.Dialog):
             parent = self._window.GetParent()
             if parent:
-                # Find which display the parent is on
-                parent_display_index = wx.Display.GetFromWindow(parent)
-                if parent_display_index != wx.NOT_FOUND:
-                    # Center dialog on parent's display
-                    display = wx.Display(parent_display_index)
-                    display_rect = display.GetGeometry()
-                    x = display_rect.x + (display_rect.width - width) // 2
-                    y = display_rect.y + (display_rect.height - height) // 2
+                # Use parent's screen rect directly for positioning
+                # This works correctly across monitors (like CentreOnParent does)
+                parent_rect = parent.GetScreenRect()
+
+                # Determine which monitor the parent is on
+                parent_monitor = wx.Display.GetFromPoint(
+                    wx.Point(parent_rect.x + parent_rect.width // 2,
+                             parent_rect.y + parent_rect.height // 2)
+                )
+                target_monitor_for_validation = parent_monitor
+
+                # Try to use saved parent_offset for positioning
+                try:
+                    offset_x, offset_y = self.get_setting("parent_offset")
+                except (KeyError, TypeError, configparser.NoSectionError, configparser.NoOptionError):
+                    # Old settings without parent_offset - use centered
+                    offset_x, offset_y = -1, -1
+
+                if offset_x != -1 and offset_y != -1:
+                    # Calculate proposed position from parent + offset
+                    proposed_x = parent_rect.x + offset_x
+                    proposed_y = parent_rect.y + offset_y
+
+                    # Check if proposed position would place dialog on same monitor as parent
+                    test_x = proposed_x + width // 2
+                    test_y = proposed_y + height // 2
+                    proposed_monitor = wx.Display.GetFromPoint(wx.Point(test_x, test_y))
+
+                    if proposed_monitor != wx.NOT_FOUND and proposed_monitor == parent_monitor:
+                        # Same monitor as parent - use saved offset position
+                        x, y = proposed_x, proposed_y
+                    else:
+                        # Would be on different monitor or off-screen - center on parent
+                        x = parent_rect.x + (parent_rect.width - width) // 2
+                        y = parent_rect.y + (parent_rect.height - height) // 2
                 else:
-                    # Parent not on any display, use safe default
-                    x, y = 50, 50
+                    # No saved offset - center on parent's window
+                    x = parent_rect.x + (parent_rect.width - width) // 2
+                    y = parent_rect.y + (parent_rect.height - height) // 2
             elif x == -1 and y == -1:
                 # No parent, use safe default
                 x, y = 50, 50
@@ -142,6 +204,10 @@ class WindowSizeAndPositionTracker(_Tracker):
                 rect = primary.GetGeometry()
                 x = rect.x + (rect.width - width) // 2
                 y = rect.y + (rect.height - height) // 2
+            elif saved_monitor == -1:
+                # Monitor index unknown (first run after update or legacy settings)
+                # Use saved position - validation code below will handle if invalid
+                pass
             elif saved_monitor >= 0 and saved_monitor < num_monitors:
                 # Saved monitor still exists - use saved position
                 # (position validation happens later in this method)
@@ -164,8 +230,26 @@ class WindowSizeAndPositionTracker(_Tracker):
             self._window.SetClientSize((width, height))
         if self.get_setting("maximized"):
             self._window.Maximize()
-        # Check that the window is on a valid display and move if necessary:
-        display_index = wx.Display.GetFromWindow(self._window)
+
+        # Check that the window is on a valid display and move if necessary
+        # Use target_monitor_for_validation if set, otherwise fall back to GetFromWindow
+        # (GetFromWindow can return wrong index before window is fully realized)
+        if target_monitor_for_validation is not None and target_monitor_for_validation != wx.NOT_FOUND:
+            display_index = target_monitor_for_validation
+        elif not isinstance(self._window, wx.Dialog):
+            # Main window - try to use saved_monitor
+            try:
+                saved_monitor = self.get_setting("monitor_index")
+                num_monitors = wx.Display.GetCount()
+                if saved_monitor >= 0 and saved_monitor < num_monitors:
+                    display_index = saved_monitor
+                else:
+                    display_index = wx.Display.GetFromWindow(self._window)
+            except (KeyError, TypeError, configparser.NoSectionError, configparser.NoOptionError):
+                display_index = wx.Display.GetFromWindow(self._window)
+        else:
+            display_index = wx.Display.GetFromWindow(self._window)
+
         if display_index == wx.NOT_FOUND:
             # Window is completely off-screen, use safe default position
             # Not (0, 0) because on OSX this hides the window bar...

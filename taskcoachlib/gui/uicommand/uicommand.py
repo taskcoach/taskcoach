@@ -2636,6 +2636,7 @@ class DialogCommand(base_uicommand.UICommand):
         self.dialog = widgets.HTMLDialog(
             self._dialogTitle,
             self._dialogText,
+            parent=wx.GetApp().GetTopWindow(),
             bitmap=self.bitmap,
             direction=self._direction,
         )
