@@ -179,19 +179,20 @@ class WindowGeometryTracker:
         is_max = self._window.IsMaximized()
         is_icon = self._window.IsIconized()
 
-        # If iconized, can't do anything
+        # ERROR: Window is iconized before we're ready
         if is_icon:
-            return
+            _log_debug(f"ERROR: Window is iconized before ready!")
+            _log_debug(f"  Cannot set restore position/size - OS/WM opened window iconized")
+            _log_debug(f"  Desired state was: pos={self.position} size={self.size} maximized={self.maximized}")
+            return  # Can't do anything while iconized
 
         # ERROR: Window is maximized before we're ready
-        # This means we cannot set restore geometry - OS opened window maximized
         if is_max:
             _log_debug(f"ERROR: Window is maximized before ready!")
             _log_debug(f"  Cannot set restore position/size - OS/WM opened window maximized")
             _log_debug(f"  Desired state was: pos={self.position} size={self.size} maximized={self.maximized}")
             _log_debug(f"  Restore geometry will be wrong when user un-maximizes")
-            # Mark ready anyway - nothing we can do
-            self._mark_ready()
+            self._mark_ready()  # Nothing we can do
             return
 
         # Window is in normal state - try to achieve desired state
@@ -288,13 +289,8 @@ class WindowGeometryTracker:
 
     def _on_maximize(self, event):
         """Handle maximize/restore."""
-        is_max = self._window.IsMaximized()
-        _log_debug(f"EVT_MAXIMIZE: IsMaximized={is_max}")
-
+        _log_debug(f"EVT_MAXIMIZE: IsMaximized={self._window.IsMaximized()}")
         if not self.ready:
-            if is_max:
-                _log_debug(f"ERROR: EVT_MAXIMIZE fired before window ready!")
-                _log_debug(f"  This is unexpected - OS/WM maximized window before we could set restore geometry")
             self.check_and_correct()
         else:
             self.cache_from_window()
