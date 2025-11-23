@@ -1281,3 +1281,9 @@ if _splash_path:
 <p><i>This splash screen was displayed on startup in earlier versions of Task Coach.</i></p>
 <p><img src="file://%s" alt="Legacy Splash Screen" /></p>
 """ % _splash_path
+
+# Add legacy site reference
+aboutHTML += """
+<hr>
+<p><i>Legacy site (no longer maintained): <a href="https://taskcoach.org" target="_blank">https://taskcoach.org</a></i></p>
+"""
