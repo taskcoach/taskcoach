@@ -249,16 +249,24 @@ class WindowGeometryTracker:
         _log_debug(f"  Rule 6: Using saved geometry: pos={self.position} size={self.size}")
 
     def _is_position_on_screen(self, x, y, width, height, work_area):
-        """Check if position keeps dialog on-screen within work area."""
-        # Dialog must be at least partially visible (100px margin)
-        if x + width < work_area.x + 100:
-            return False
-        if x > work_area.x + work_area.width - 100:
-            return False
-        if y < work_area.y:
-            return False
-        if y > work_area.y + work_area.height - 100:
-            return False
+        """Check if dialog is fully visible on the parent's monitor.
+
+        Dialog must be entirely within the work area (with small tolerance
+        for window decorations). If any edge extends beyond the screen,
+        the dialog will be repositioned.
+        """
+        # Small tolerance for window decorations
+        margin = 10
+
+        # Check all four edges
+        if x < work_area.x - margin:
+            return False  # Left edge off screen
+        if y < work_area.y - margin:
+            return False  # Top edge off screen
+        if x + width > work_area.x + work_area.width + margin:
+            return False  # Right edge off screen
+        if y + height > work_area.y + work_area.height + margin:
+            return False  # Bottom edge off screen
         return True
 
     def _center_on_parent_with_size(self, width, height):
