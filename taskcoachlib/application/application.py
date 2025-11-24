@@ -633,23 +633,21 @@ class Application(object, metaclass=patterns.Singleton):
         3. Must save settings before exit
 
         Solution:
-        - Custom signal handler saves settings then exits
+        - Custom signal handler uses wx.CallAfter for clean shutdown
         - Periodic timer wakes event loop so Python can check signals
         """
         import signal
 
-        def cleanup_and_exit(signum, frame):
-            """Save settings and exit on SIGINT/SIGTERM."""
-            self.save_all_settings()
-            # Exit with appropriate code for signal
-            # Using os._exit to avoid any further Python cleanup that might hang
-            import os
-            os._exit(128 + signum)
+        def handle_signal(signum, frame):
+            """Handle SIGINT/SIGTERM by scheduling clean shutdown."""
+            # Use CallAfter to run shutdown in the main event loop
+            # This ensures proper cleanup of wx resources
+            wx.CallAfter(self.quitApplication)
 
         # Register SIGINT/SIGTERM handlers for Unix
         if not operating_system.isWindows():
-            signal.signal(signal.SIGINT, cleanup_and_exit)
-            signal.signal(signal.SIGTERM, cleanup_and_exit)
+            signal.signal(signal.SIGINT, handle_signal)
+            signal.signal(signal.SIGTERM, handle_signal)
 
             # Start a timer to periodically wake the event loop
             # This allows Python to check for pending signals
