@@ -163,65 +163,71 @@ class WindowGeometryTracker:
                 _log_debug(f"  Set desired: pos={self.position} size={self.size} maximized={self.maximized}")
 
     def _load_dialog_geometry(self, x, y, width, height, min_w, min_h):
-        """Load geometry for dialog (must be on same monitor as parent)."""
+        """Load geometry for dialog (must be on same monitor as parent).
+
+        Rules (in order):
+        1. Get parent's monitor - dialogs always on parent's monitor
+        2. If saved size OR position is missing (-1) → let system decide, clear cache
+        3. If saved size > monitor → clear all cache, let system decide
+        4. If saved position off-screen (but size OK) → keep size, center, clear position
+        5. Otherwise → use saved size and position
+
+        Note: Never save/use maximized or iconized for dialogs.
+        """
         # Get parent's monitor
         parent_display_idx = self._get_parent_display_index()
         if parent_display_idx < 0:
-            _log_debug(f"  Could not determine parent monitor, centering on parent")
-            self._center_on_parent(min_w, min_h)
+            _log_debug(f"  Could not determine parent monitor, letting system decide")
+            self._clear_dialog_cache()
             return
 
         parent_display = wx.Display(parent_display_idx)
         work_area = parent_display.GetClientArea()
         _log_debug(f"  Parent on monitor {parent_display_idx}: work_area={work_area.x},{work_area.y} {work_area.width}x{work_area.height}")
 
-        # Check if saved position is valid and on parent's monitor
-        if x == -1 and y == -1:
-            _log_debug(f"  No saved position, centering on parent")
-            self._center_on_parent(min_w, min_h)
+        # Rule 2: If saved size OR position is missing → let system decide
+        if x == -1 or y == -1 or width == -1 or height == -1:
+            _log_debug(f"  Missing saved geometry (pos=({x},{y}) size=({width},{height})), letting system decide")
+            self._clear_dialog_cache()
             return
 
-        # Validate position is on parent's monitor and size fits
-        if not self._is_on_display(x, y, width, height, work_area):
-            _log_debug(f"  Saved position not on parent's monitor, centering on parent")
-            self._center_on_parent(min_w, min_h)
+        # Rule 3: If saved size > monitor → clear all cache, let system decide
+        if width > work_area.width or height > work_area.height:
+            _log_debug(f"  Saved size ({width}x{height}) too big for monitor ({work_area.width}x{work_area.height}), clearing cache")
+            self._clear_dialog_cache()
             return
 
-        # Valid - set desired state
+        # Rule 4: If saved position off-screen → keep size, center, clear position
+        if not self._is_position_on_screen(x, y, width, height, work_area):
+            _log_debug(f"  Saved position ({x},{y}) off-screen, centering with saved size ({width}x{height})")
+            self._center_on_parent_with_size(width, height)
+            self._clear_position_cache()
+            return
+
+        # Rule 5: Valid - use saved size and position
         self.position = (x, y)
         self.size = (width, height)
-        self.maximized = False  # Dialogs don't maximize
         self._window.SetSize(x, y, width, height)
-        _log_debug(f"  Set desired: pos={self.position} size={self.size}")
+        _log_debug(f"  Using saved geometry: pos={self.position} size={self.size}")
 
-    def _get_parent_display_index(self):
-        """Get the display index where the parent window is located."""
-        if self._parent is None:
-            return -1
-        parent_pos = self._parent.GetPosition()
-        parent_size = self._parent.GetSize()
-        # Use center of parent to determine its monitor
-        center_x = parent_pos.x + parent_size.width // 2
-        center_y = parent_pos.y + parent_size.height // 2
-        return wx.Display.GetFromPoint(wx.Point(center_x, center_y))
-
-    def _is_on_display(self, x, y, width, height, work_area):
-        """Check if position/size is valid within the given work area."""
-        # Position must be reasonably within work area
-        if x < work_area.x - width + 100 or x > work_area.x + work_area.width - 100:
+    def _is_position_on_screen(self, x, y, width, height, work_area):
+        """Check if position keeps dialog on-screen within work area."""
+        # Dialog must be at least partially visible (100px margin)
+        if x + width < work_area.x + 100:
             return False
-        if y < work_area.y or y > work_area.y + work_area.height - 100:
+        if x > work_area.x + work_area.width - 100:
             return False
-        # Size must fit
-        if width > work_area.width or height > work_area.height:
+        if y < work_area.y:
+            return False
+        if y > work_area.y + work_area.height - 100:
             return False
         return True
 
-    def _center_on_parent(self, width, height):
-        """Center the window on the parent with given size. Clear state."""
-        self._clear_state()
+    def _center_on_parent_with_size(self, width, height):
+        """Center on parent with specified size. Sets position and size state."""
         if self._parent is None:
             self._window.SetSize(width, height)
+            self.size = (width, height)
             return
 
         # Get parent geometry
@@ -243,6 +249,30 @@ class WindowGeometryTracker:
         self.size = (width, height)
         self._window.SetSize(x, y, width, height)
         _log_debug(f"  Centered on parent: pos={self.position} size={self.size}")
+
+    def _clear_dialog_cache(self):
+        """Clear dialog geometry cache in settings. Let system decide."""
+        self._set_setting("position", (-1, -1))
+        self._set_setting("size", (-1, -1))
+        self.position = None
+        self.size = None
+        _log_debug(f"  Cleared dialog geometry cache")
+
+    def _clear_position_cache(self):
+        """Clear only position cache in settings."""
+        self._set_setting("position", (-1, -1))
+        _log_debug(f"  Cleared position cache")
+
+    def _get_parent_display_index(self):
+        """Get the display index where the parent window is located."""
+        if self._parent is None:
+            return -1
+        parent_pos = self._parent.GetPosition()
+        parent_size = self._parent.GetSize()
+        # Use center of parent to determine its monitor
+        center_x = parent_pos.x + parent_size.width // 2
+        center_y = parent_pos.y + parent_size.height // 2
+        return wx.Display.GetFromPoint(wx.Point(center_x, center_y))
 
     def _clear_state(self):
         """Clear all state - let WM decide, normal caching will capture new values."""

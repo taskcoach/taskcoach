@@ -322,39 +322,75 @@ class WindowGeometryTracker:
 
 ## Dialog Windows (Subwindows)
 
-Dialogs have special positioning rules to ensure they stay with their parent:
+Dialogs have special positioning rules to ensure they stay with their parent.
 
-### Rules for Dialogs
+### State (Persisted)
 
-1. **Must be on same monitor as parent**: Saved position is only valid if on parent's monitor
-2. **Fallback to center**: If no saved position or invalid, center on parent with default size
-3. **No maximize**: Dialogs don't support maximized state
+```python
+position: (x, y) or (-1, -1)  # (-1, -1) = no saved position
+size: (w, h) or (-1, -1)      # (-1, -1) = let system decide
+# NEVER save/use maximized or iconized for dialogs
+```
+
+### Rules (in order)
+
+1. **Always on parent's monitor** - Dialog appears on same monitor as parent
+2. **Missing size OR position** (-1 value) → let system decide both, clear cache
+3. **Size too big for monitor** → clear all cache, let system decide
+4. **Position off-screen (but size OK)** → keep size, center on parent, clear position cache
+5. **Valid size and position** → use saved values
+
+### Flow
+
+```
+load():
+    1. Get parent's current monitor work_area
+
+    2. If saved size OR position is missing (-1):
+        → Clear geometry cache
+        → Let system choose defaults
+
+    3. If saved size > work_area:
+        → Clear geometry cache
+        → Let system choose defaults
+
+    4. If saved position off-screen:
+        → Keep saved size (it fits)
+        → Center on parent
+        → Clear position cache only
+
+    5. Otherwise:
+        → Use saved size and position
+```
 
 ### Implementation
 
 ```python
-def __init__(self, window, settings, section, parent=None):
-    self._parent = parent  # Parent window for dialogs
-
 def _load_dialog_geometry(self, x, y, width, height, min_w, min_h):
     """Load geometry for dialog (must be on same monitor as parent)."""
     parent_display_idx = self._get_parent_display_index()
-
-    # No saved position or invalid → center on parent
-    if x == -1 and y == -1:
-        self._center_on_parent(min_w, min_h)
-        return
-
-    # Check position is on parent's monitor
     work_area = wx.Display(parent_display_idx).GetClientArea()
-    if not self._is_on_display(x, y, width, height, work_area):
-        self._center_on_parent(min_w, min_h)
+
+    # Rule 2: Missing geometry → let system decide
+    if x == -1 or y == -1 or width == -1 or height == -1:
+        self._clear_dialog_cache()
         return
 
-    # Valid - use saved position
+    # Rule 3: Size too big → clear cache, let system decide
+    if width > work_area.width or height > work_area.height:
+        self._clear_dialog_cache()
+        return
+
+    # Rule 4: Position off-screen → keep size, center, clear position
+    if not self._is_position_on_screen(x, y, width, height, work_area):
+        self._center_on_parent_with_size(width, height)
+        self._clear_position_cache()
+        return
+
+    # Rule 5: Valid → use saved values
     self.position = (x, y)
     self.size = (width, height)
-    self.maximized = False  # Dialogs don't maximize
+    self._window.SetSize(x, y, width, height)
 ```
 
 ### Usage
