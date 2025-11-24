@@ -37,6 +37,10 @@ def _log_debug(msg):
 class WindowGeometryTracker:
     """Track and restore window geometry (position, size, maximized state).
 
+    Handles two window types with different positioning rules:
+
+    == MAIN WINDOW (parent=None) ==
+
     Single source of truth for DESIRED window state. While not ready, we keep
     trying to make the actual window match the desired state.
 
@@ -60,6 +64,29 @@ class WindowGeometryTracker:
         - After ready: ONE maximize attempt (fire and forget)
         - After ready: cache window changes back to state
         - Only cache position/size when not maximized and not iconized
+
+    == DIALOG WINDOW (parent specified) ==
+
+    Dialogs have different positioning rules - they must stay with their parent
+    window and never support maximized/iconized states.
+
+    State (persisted):
+        position: (x, y) or (-1, -1) - saved position, (-1,-1) = none saved
+        size: (w, h) or (-1, -1) - saved size, (-1,-1) = let system decide
+
+    Rules (in order):
+        1. Always on parent's monitor - dialog appears on same monitor as parent
+        2. Missing size (-1 value) → let system decide both, clear cache
+        3. Missing position (but size valid) → keep size, center on parent
+        4. Size too big for monitor → clear all cache, let system decide
+        5. Position off-screen (but size OK) → keep size, center, clear position
+        6. Valid size and position → use saved values
+
+    Key Differences from Main Window:
+        - Monitor: Must be on parent's monitor (not any monitor)
+        - Maximized/Iconized: Never supported for dialogs
+        - No saved geometry: Let system decide (main window lets WM decide)
+        - Position invalid: Keep size, center on parent (main window clears all)
     """
 
     def __init__(self, window, settings, section, parent=None):
@@ -166,11 +193,13 @@ class WindowGeometryTracker:
         """Load geometry for dialog (must be on same monitor as parent).
 
         Rules (in order):
-        1. Get parent's monitor - dialogs always on parent's monitor
-        2. If saved size OR position is missing (-1) → let system decide, clear cache
-        3. If saved size > monitor → clear all cache, let system decide
-        4. If saved position off-screen (but size OK) → keep size, center, clear position
-        5. Otherwise → use saved size and position
+        1. Always on parent's monitor - dialog appears on same monitor as parent
+        2. Missing size (-1 value) → let system decide both, clear cache
+           (Position is meaningless without size)
+        3. Missing position (but size valid) → keep size, center on parent
+        4. Size too big for monitor → clear all cache, let system decide
+        5. Position off-screen (but size OK) → keep size, center, clear position only
+        6. Valid size and position → use saved values
 
         Note: Never save/use maximized or iconized for dialogs.
         """
@@ -185,40 +214,39 @@ class WindowGeometryTracker:
         work_area = parent_display.GetClientArea()
         _log_debug(f"  Parent on monitor {parent_display_idx}: work_area={work_area.x},{work_area.y} {work_area.width}x{work_area.height}")
 
-        # Rule 2: Handle missing geometry
         size_missing = width == -1 or height == -1
         position_missing = x == -1 or y == -1
 
+        # Rule 2: Missing size → let system decide both (position meaningless without size)
         if size_missing:
-            # No saved size → let system decide both (position meaningless without size)
-            _log_debug(f"  Missing saved size, letting system decide")
+            _log_debug(f"  Rule 2: Missing saved size, letting system decide")
             self._clear_dialog_cache()
             return
 
+        # Rule 3: Missing position (but size valid) → center on parent with saved size
         if position_missing:
-            # No saved position but have size → center on parent with saved size
-            _log_debug(f"  Missing saved position, centering with saved size ({width}x{height})")
+            _log_debug(f"  Rule 3: Missing saved position, centering with saved size ({width}x{height})")
             self._center_on_parent_with_size(width, height)
             return
 
-        # Rule 3: If saved size > monitor → clear all cache, let system decide
+        # Rule 4: Size too big for monitor → clear all cache, let system decide
         if width > work_area.width or height > work_area.height:
-            _log_debug(f"  Saved size ({width}x{height}) too big for monitor ({work_area.width}x{work_area.height}), clearing cache")
+            _log_debug(f"  Rule 4: Saved size ({width}x{height}) too big for monitor ({work_area.width}x{work_area.height}), clearing cache")
             self._clear_dialog_cache()
             return
 
-        # Rule 4: If saved position off-screen → keep size, center, clear position
+        # Rule 5: Position off-screen (but size OK) → keep size, center, clear position
         if not self._is_position_on_screen(x, y, width, height, work_area):
-            _log_debug(f"  Saved position ({x},{y}) off-screen, centering with saved size ({width}x{height})")
+            _log_debug(f"  Rule 5: Saved position ({x},{y}) off-screen, centering with saved size ({width}x{height})")
             self._center_on_parent_with_size(width, height)
             self._clear_position_cache()
             return
 
-        # Rule 5: Valid - use saved size and position
+        # Rule 6: Valid size and position → use saved values
         self.position = (x, y)
         self.size = (width, height)
         self._window.SetSize(x, y, width, height)
-        _log_debug(f"  Using saved geometry: pos={self.position} size={self.size}")
+        _log_debug(f"  Rule 6: Using saved geometry: pos={self.position} size={self.size}")
 
     def _is_position_on_screen(self, x, y, width, height, work_area):
         """Check if position keeps dialog on-screen within work area."""

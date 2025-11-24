@@ -782,4 +782,8 @@ class Application(object, metaclass=patterns.Singleton):
 
         # NOTE: stopTwisted() call removed - no longer using Twisted reactor.
         # wxPython's MainLoop exits naturally when all windows are closed.
+        # Explicitly close the main window to trigger exit.
+        # Set shutdown flag so onClose() won't veto or recurse into quitApplication.
+        self.mainwindow.setShutdownInProgress()
+        self.mainwindow.Close()
         return True
