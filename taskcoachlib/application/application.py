@@ -628,12 +628,13 @@ class Application(object, metaclass=patterns.Singleton):
         Now using Python's signal module with direct cleanup.
 
         Key challenges with native wxPython:
-        1. wx.CallAfter alone doesn't wake up a blocked event loop
-        2. Signal handlers run in an interrupt context with limitations
+        1. Python signal handlers only run when main thread has control
+        2. GUI event loops block in C code, preventing signal delivery
         3. Must save settings before exit
 
-        Solution: Custom signal handler saves settings then exits.
-        Note: SIG_DFL does NOT run atexit handlers - signals bypass Python cleanup.
+        Solution:
+        - Custom signal handler saves settings then exits
+        - Periodic timer wakes event loop so Python can check signals
         """
         import signal
 
@@ -649,6 +650,11 @@ class Application(object, metaclass=patterns.Singleton):
         if not operating_system.isWindows():
             signal.signal(signal.SIGINT, cleanup_and_exit)
             signal.signal(signal.SIGTERM, cleanup_and_exit)
+
+            # Start a timer to periodically wake the event loop
+            # This allows Python to check for pending signals
+            self._signal_check_timer = wx.Timer()
+            self._signal_check_timer.Start(500)  # Check every 500ms
 
         if operating_system.isWindows():
             import win32api  # pylint: disable=F0401
