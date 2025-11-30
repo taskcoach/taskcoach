@@ -54,7 +54,7 @@ echo
 # Install system dependencies
 echo -e "${BLUE}[2/7] Installing system dependencies...${NC}"
 echo "This will install system packages from Debian repos."
-echo "Packages: python3-wxgtk4.0, python3-twisted, python3-lxml, python3-numpy,"
+echo "Packages: python3-wxgtk4.0, python3-lxml, python3-numpy,"
 echo "          python3-six, python3-dateutil, python3-chardet, python3-keyring,"
 echo "          python3-pyparsing, python3-pyxdg, python3-venv"
 echo "Requires sudo privileges."
@@ -64,7 +64,6 @@ if command -v sudo &> /dev/null; then
     sudo apt-get install -y \
         python3-wxgtk4.0 \
         python3-six \
-        python3-twisted \
         python3-lxml \
         python3-numpy \
         python3-dateutil \
@@ -103,12 +102,13 @@ echo
 
 # Install Python dependencies not available in Debian repos
 echo -e "${BLUE}[4/7] Installing Python dependencies in venv...${NC}"
-echo "Installing: desktop3, lockfile, gntp, distro, pypubsub, zeroconf, pyparsing>=3.1.3, squaremap"
+echo "Installing: desktop3, lockfile, gntp, distro, pypubsub, zeroconf, pyparsing>=3.1.3, squaremap, watchdog>=3.0.0"
 
 source "$VENV_PATH/bin/activate"
 # Note: pyparsing>=3.1.3 required for deltaTime.py (Debian Bookworm only has 3.0.9)
 # Note: squaremap provides hierarchic data visualization for effort viewer
-pip install --quiet desktop3 lockfile gntp distro pypubsub zeroconf 'pyparsing>=3.1.3' squaremap
+# Note: watchdog>=3.0.0 for file system monitoring (replaced Twisted INotify)
+pip install --quiet desktop3 lockfile gntp distro pypubsub zeroconf 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'
 deactivate
 
 echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
@@ -240,7 +240,7 @@ echo
 echo "TaskCoach has been set up with:"
 echo "  • System packages from Debian repos (wxPython, numpy, lxml, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
-echo "  • Additional packages in venv (desktop3, lockfile, gntp, distro, pypubsub, zeroconf, squaremap)"
+echo "  • Additional packages in venv (desktop3, lockfile, gntp, distro, pypubsub, zeroconf, squaremap, watchdog)"
 echo "  • wxPython background color patch (for category row coloring)"
 echo
 echo "You can now run TaskCoach with:"

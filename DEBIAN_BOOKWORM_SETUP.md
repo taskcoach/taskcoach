@@ -107,7 +107,6 @@ sudo apt-get update
 sudo apt-get install -y \
     python3-wxgtk4.0 \
     python3-six \
-    python3-twisted \
     python3-lxml \
     python3-numpy \
     python3-dateutil \
@@ -120,7 +119,7 @@ sudo apt-get install -y \
 
 #### Step 2: Create Virtual Environment
 
-For packages not available in Debian repos (desktop3, lockfile, gntp, distro, pypubsub):
+For packages not available in Debian repos (desktop3, lockfile, gntp, distro, pypubsub, watchdog):
 
 ```bash
 # Set your TaskCoach directory (change this to your actual path)
@@ -135,13 +134,13 @@ python3 -m venv --system-site-packages .venv
 source .venv/bin/activate
 
 # Install remaining dependencies
-pip install desktop3 lockfile gntp distro pypubsub
+pip install desktop3 lockfile gntp distro pypubsub 'watchdog>=3.0.0'
 
 # Deactivate when done
 deactivate
 ```
 
-**Note**: The `--system-site-packages` flag allows the virtual environment to access system-installed packages (like wxPython, twisted, lxml) while keeping pip-installed packages isolated. This is the recommended approach for TaskCoach.
+**Note**: The `--system-site-packages` flag allows the virtual environment to access system-installed packages (like wxPython, lxml, numpy) while keeping pip-installed packages isolated. This is the recommended approach for TaskCoach.
 
 #### Step 3: Run TaskCoach
 
@@ -252,7 +251,6 @@ cd "$TASKCOACH_HOME"
 ### From Debian Repositories (apt):
 - ✅ python3-wxgtk4.0 (4.2.0)
 - ✅ python3-six (1.16.0)
-- ✅ python3-twisted (22.4.0)
 - ✅ python3-lxml (4.9.2)
 - ✅ python3-numpy (1.24.2)
 - ✅ python3-dateutil (2.8.2)
@@ -268,6 +266,7 @@ cd "$TASKCOACH_HOME"
 - 📦 distro
 - 📦 pypubsub
 - 📦 pyparsing>=3.1.3 (Bookworm's 3.0.9 is too old)
+- 📦 watchdog>=3.0.0 (Bookworm's 2.2.1 is too old, for file system monitoring)
 
 ## Why Virtual Environment?
 
@@ -299,7 +298,7 @@ deactivate
 ### Check System Packages
 ```bash
 dpkg -l | grep python3-wx
-apt list --installed | grep python3-twisted
+dpkg -l | grep python3-lxml
 ```
 
 ### Verbose Logging

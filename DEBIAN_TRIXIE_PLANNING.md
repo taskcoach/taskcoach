@@ -117,7 +117,7 @@ This document tracks known problems with TaskCoach on Debian Trixie (testing) an
 # 1. Install system packages (built for Python 3.12)
 sudo apt-get update
 sudo apt-get install -y python3.12 python3.12-venv python3-wxgtk4.0 \
-    python3-six python3-twisted python3-lxml python3-numpy \
+    python3-six python3-lxml python3-numpy \
     python3-dateutil python3-chardet python3-keyring \
     python3-pyparsing python3-pyxdg
 
@@ -125,7 +125,7 @@ sudo apt-get install -y python3.12 python3.12-venv python3-wxgtk4.0 \
 cd /path/to/taskcoach
 python3.12 -m venv --system-site-packages .venv
 source .venv/bin/activate
-pip install desktop3 lockfile gntp distro pypubsub
+pip install desktop3 lockfile gntp distro pypubsub 'watchdog>=3.0.0'
 deactivate
 
 # 3. Run TaskCoach
