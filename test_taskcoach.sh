@@ -2,9 +2,9 @@
 # Quick test script for TaskCoach
 # Tests various functionality to ensure proper operation
 #
-# Version: 1.1.1.006
-# Branch: claude/fix-wxpython-test-01MbhvMuEKkEkUgdXYHzbBps
-# Last Updated: 2025-11-16
+# Version: 1.1.1.007
+# Last Updated: 2025-12-01
+# Note: Twisted replaced with watchdog in PR #39
 
 # Colors
 GREEN='\033[0;32m'
@@ -27,7 +27,7 @@ fi
 
 echo
 echo -e "${BLUE}TaskCoach Test Suite${NC}"
-echo -e "${BLUE}Version 1.1.1.006${NC}"
+echo -e "${BLUE}Version 1.1.1.007${NC}"
 echo "===================="
 echo
 
@@ -77,8 +77,8 @@ run_test "wxPython patch (background fix)" \
 run_test "pypubsub dependency" \
     "python3 -c 'import pubsub'"
 
-run_test "twisted dependency" \
-    "python3 -c 'import twisted'"
+run_test "watchdog dependency" \
+    "python3 -c 'import watchdog'"
 
 run_test "lxml dependency" \
     "python3 -c 'import lxml'"
