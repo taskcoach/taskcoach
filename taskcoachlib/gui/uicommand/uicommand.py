@@ -2887,6 +2887,9 @@ class Search(ViewerCommand, settings_uicommand.SettingsCommand):
             regularExpression=regularExpression,
             callback=self.onFind,
         )
+        # Set minimum size to ensure the text input is visible in AUI toolbars
+        # that use AUI_TB_NO_AUTORESIZE flag
+        self.searchControl.SetMinSize((150, -1))
         toolbar.AddControl(self.searchControl)
         self.bindKeyDownInViewer()
         self.bindKeyDownInSearchCtrl()
