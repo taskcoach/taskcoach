@@ -183,6 +183,10 @@ class MainWindow(
         finally:
             self.Thaw()
         wx.CallAfter(self.viewer.componentsCreated)
+        # Force layout update after window is shown to fix menu display issues.
+        # Without this, menus may show scroll arrows on first open because
+        # wxWidgets calculates available height before window geometry is final.
+        wx.CallAfter(self.__update_layout_for_menus)
 
     def _create_viewer_container(self):  # Not private for test purposes
         # pylint: disable=W0201
@@ -211,6 +215,18 @@ class MainWindow(
         self.reminderController = remindercontroller.ReminderController(
             self, self.taskFile.tasks(), self.taskFile.efforts(), self.settings
         )
+
+    def __update_layout_for_menus(self):
+        """Force window layout update to fix menu scroll arrow issue.
+
+        On first display, wxWidgets may calculate menu height using stale
+        window geometry, causing scroll arrows to appear on menus that fit
+        the screen. This method forces a layout refresh after the window
+        is realized, ensuring correct menu height calculations.
+        """
+        if self:
+            self.SendSizeEvent()
+            self.Refresh()
 
     def addPane(self, page, caption, floating=False):  # pylint: disable=W0221
         name = page.settingsSection()

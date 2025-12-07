@@ -256,6 +256,7 @@ class FileMenu(Menu):
         self.__iocontroller = iocontroller
         self.__recentFileUICommands = []
         self.__separator = None
+        self.__firstOpen = True  # Track first menu open for layout fix
         self.appendUICommands(
             uicommand.FileOpen(iocontroller=iocontroller),
             uicommand.FileMerge(iocontroller=iocontroller),
@@ -314,6 +315,18 @@ class FileMenu(Menu):
 
     def onOpenMenu(self, event):
         if event.GetMenu() == self:
+            # Fix for menu scroll arrows appearing on first open:
+            # When the window is first realized, wxWidgets may calculate menu
+            # height based on stale work area dimensions. Force window UI
+            # update and size event on first open to ensure correct layout.
+            # This is a known class of wxWidgets timing issues where menus
+            # calculate available space before window geometry is finalized.
+            if self.__firstOpen:
+                self.__firstOpen = False
+                self._window.UpdateWindowUI()
+                self._window.SendSizeEvent()
+                # Force refresh to ensure display geometry is current
+                self._window.Refresh()
             self.__removeRecentFileMenuItems()
             self.__insertRecentFileMenuItems()
         event.Skip()
