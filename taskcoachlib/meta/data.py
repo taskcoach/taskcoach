@@ -21,10 +21,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # pylint: disable=C0103
 
 # Edit these for every release:
-# IMPORTANT: Always increment version_patch with each change/commit!
+# IMPORTANT: Always increment version_patch AND update release_day/release_month below!
 
 version = "1.6.1"  # Current version number of the application
-version_patch = "19"  # Patch level - INCREMENT THIS WITH EACH CHANGE!
+version_patch = "19"  # Patch level - INCREMENT THIS AND UPDATE DATE BELOW!
 version_full = f"{version}.{version_patch}"  # Full version string: 1.6.1.11
 
 
