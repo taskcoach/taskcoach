@@ -109,8 +109,17 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
         return flags & wx.TREE_HITTEST_ONITEMBUTTON
 
     def select(self, selection):
+        items_found = 0
+        items_selected = 0
         for item in self.GetItemChildren(recursively=True):
-            self.SelectItem(item, self.GetItemPyData(item) in selection)
+            items_found += 1
+            pydata = self.GetItemPyData(item)
+            should_select = pydata in selection
+            if should_select:
+                items_selected += 1
+                print(f"DEBUG select: selecting item with pydata={pydata}")
+            self.SelectItem(item, should_select)
+        print(f"DEBUG select: found {items_found} items, selected {items_selected}")
 
     def clear_selection(self):
         self.UnselectAll()
@@ -255,6 +264,7 @@ class TreeListCtrl(
         self.StopEditing()
         self.__refreshing = True  # Suppress selection events during rebuild
         self.__selection = self.curselection()
+        print(f"DEBUG RefreshAllItems: saved selection = {self.__selection}")
         self.DeleteAllItems()
         self.__columns_with_images = [
             index
@@ -268,14 +278,21 @@ class TreeListCtrl(
         # Restore selection AFTER tree is fully built - SelectItem doesn't
         # work reliably during tree construction
         if self.__selection:
+            print(f"DEBUG RefreshAllItems: calling select() with {len(self.__selection)} items")
             self.select(self.__selection)
+        else:
+            print("DEBUG RefreshAllItems: __selection is empty, skipping select()")
         self.__refreshing = False
         selections = self.GetSelections()
+        print(f"DEBUG RefreshAllItems: GetSelections() returned {len(selections)} items: {selections}")
         if selections:
             self.GetMainWindow()._current = (
                 self.GetMainWindow()._key_current
             ) = selections[0]
             self.ScrollTo(selections[0])
+            print(f"DEBUG RefreshAllItems: ScrollTo called on {selections[0]}")
+        else:
+            print("DEBUG RefreshAllItems: No selections, NOT scrolling")
         self.Thaw()
         # Force immediate repaint to reduce visible flicker after rebuild
         self.GetMainWindow().Refresh(eraseBackground=False)
