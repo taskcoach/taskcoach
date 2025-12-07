@@ -183,10 +183,6 @@ class MainWindow(
         finally:
             self.Thaw()
         wx.CallAfter(self.viewer.componentsCreated)
-        # Force layout update after window is shown to fix menu display issues.
-        # Without this, menus may show scroll arrows on first open because
-        # wxWidgets calculates available height before window geometry is final.
-        wx.CallAfter(self.__update_layout_for_menus)
 
     def _create_viewer_container(self):  # Not private for test purposes
         # pylint: disable=W0201
@@ -215,151 +211,6 @@ class MainWindow(
         self.reminderController = remindercontroller.ReminderController(
             self, self.taskFile.tasks(), self.taskFile.efforts(), self.settings
         )
-
-    def __update_layout_for_menus(self):
-        """Force window layout update to fix menu scroll arrow issue.
-
-        On first display, wxWidgets may calculate menu height using stale
-        window geometry, causing scroll arrows to appear on menus that fit
-        the screen. This method forces a layout refresh after the window
-        is realized, ensuring correct menu height calculations.
-        """
-        if self:
-            self._log_window_geometry("UPDATE_LAYOUT_FOR_MENUS")
-            self.SendSizeEvent()
-            self.Refresh()
-            self._log_window_geometry("AFTER_UPDATE_LAYOUT")
-
-            # Schedule a delayed menu prime after window is fully ready
-            # Opening any menu first fixes the scroll arrow issue on subsequent menus
-            wx.CallLater(500, self.__prime_gtk_menus)
-
-            # Start periodic logging of GTK menu state to track changes over time
-            self.__menu_debug_timer_count = 0
-            self.__menu_debug_timer = wx.Timer(self)
-            self.Bind(wx.EVT_TIMER, self.__on_menu_debug_timer, self.__menu_debug_timer)
-            self.__menu_debug_timer.Start(1000)  # Log every 1 second
-
-    def __prime_gtk_menus(self):
-        """Log menu state at prime time - no fix attempts, just logging."""
-        if not self:
-            return
-
-        import time
-        now = time.time()
-        timestamp = time.strftime("%H:%M:%S", time.localtime(now))
-        ms = int((now % 1) * 1000)
-
-        try:
-            win_pos = self.GetPosition()
-            win_size = self.GetSize()
-            display_idx = wx.Display.GetFromWindow(self)
-            menubar = self.GetMenuBar()
-            menu_count = menubar.GetMenuCount() if menubar else 0
-
-            print(f"[{timestamp}.{ms:03d}] PRIME: pos=({win_pos.x},{win_pos.y}) size={win_size.width}x{win_size.height} disp={display_idx} menus={menu_count}")
-
-        except Exception as e:
-            print(f"[{timestamp}.{ms:03d}] PRIME: Error: {e}")
-
-    def __on_menu_debug_timer(self, event):
-        """Periodic timer to log menu state - NO ctypes, wx only."""
-        import time
-        now = time.time()
-        timestamp = time.strftime("%H:%M:%S", time.localtime(now))
-        ms = int((now % 1) * 1000)
-
-        self.__menu_debug_timer_count += 1
-        count = self.__menu_debug_timer_count
-
-        # Stop after 20 seconds
-        if count > 20:
-            self.__menu_debug_timer.Stop()
-            print(f"[{timestamp}.{ms:03d}] T#{count}: STOP")
-            return
-
-        try:
-            menubar = self.GetMenuBar()
-            win_pos = self.GetPosition()
-            win_size = self.GetSize()
-            display_idx = wx.Display.GetFromWindow(self)
-            menu_count = menubar.GetMenuCount() if menubar else 0
-            file_menu = menubar.GetMenu(0) if menubar and menu_count > 0 else None
-            file_menu_items = file_menu.GetMenuItemCount() if file_menu else 0
-
-            print(f"[{timestamp}.{ms:03d}] T#{count}: pos=({win_pos.x},{win_pos.y}) size={win_size.width}x{win_size.height} disp={display_idx} menus={menu_count} file_items={file_menu_items}")
-
-        except Exception as e:
-            print(f"[{timestamp}.{ms:03d}] T#{count}: Error: {e}")
-
-    def _log_gtk_menu_state(self, event_name):
-        """Log GDK display/monitor state using PyGObject (safe, no ctypes)."""
-        import time
-        now = time.time()
-        timestamp = time.strftime("%H:%M:%S", time.localtime(now))
-        ms = int((now % 1) * 1000)
-
-        print(f"[{timestamp}.{ms:03d}] GTK_MENU_STATE ({event_name}):")
-
-        try:
-            import gi
-            gi.require_version('Gdk', '3.0')
-            from gi.repository import Gdk
-
-            # Get GDK display info (safe - doesn't touch wxWidgets internals)
-            gdk_display = Gdk.Display.get_default()
-            if gdk_display:
-                n_monitors = gdk_display.get_n_monitors()
-                print(f"  GDK Display: {n_monitors} monitors")
-
-                # Get workarea for each monitor
-                for i in range(n_monitors):
-                    mon = gdk_display.get_monitor(i)
-                    geom = mon.get_geometry()
-                    work = mon.get_workarea()
-                    scale = mon.get_scale_factor()
-                    print(f"  GDK Monitor {i}: geom=({geom.x},{geom.y}) {geom.width}x{geom.height}, "
-                          f"workarea=({work.x},{work.y}) {work.width}x{work.height}, scale={scale}")
-
-                # Get monitor at window position
-                win_pos = self.GetPosition()
-                gdk_mon = gdk_display.get_monitor_at_point(win_pos.x, win_pos.y)
-                if gdk_mon:
-                    work = gdk_mon.get_workarea()
-                    print(f"  GDK monitor at window ({win_pos.x},{win_pos.y}): "
-                          f"workarea=({work.x},{work.y}) {work.width}x{work.height}")
-
-        except ImportError as e:
-            print(f"  PyGObject not available: {e}")
-        except Exception as e:
-            print(f"  GDK introspection error: {e}")
-
-    def _log_window_geometry(self, event_name):
-        """Log detailed window geometry for debugging menu display issues."""
-        import time
-        now = time.time()
-        timestamp = time.strftime("%H:%M:%S", time.localtime(now))
-        ms = int((now % 1) * 1000)
-
-        pos = self.GetPosition()
-        size = self.GetSize()
-        client_size = self.GetClientSize()
-        is_max = self.IsMaximized()
-        is_icon = self.IsIconized()
-        is_shown = self.IsShown()
-        is_active = self.IsActive() if hasattr(self, 'IsActive') else 'N/A'
-
-        print(f"[{timestamp}.{ms:03d}] MainWindow.{event_name}:")
-        print(f"  pos=({pos.x}, {pos.y}) size=({size.width}x{size.height}) client=({client_size.width}x{client_size.height})")
-        print(f"  maximized={is_max} iconized={is_icon} shown={is_shown} active={is_active}")
-
-        display_idx = wx.Display.GetFromWindow(self)
-        if display_idx != wx.NOT_FOUND:
-            display = wx.Display(display_idx)
-            geom = display.GetGeometry()
-            client_area = display.GetClientArea()
-            print(f"  display={display_idx} geom=({geom.x},{geom.y}) {geom.width}x{geom.height}")
-            print(f"  client_area=({client_area.x},{client_area.y}) {client_area.width}x{client_area.height}")
 
     def addPane(self, page, caption, floating=False):  # pylint: disable=W0221
         name = page.settingsSection()
@@ -548,13 +399,6 @@ If this happens again, please make a copy of your TaskCoach.ini file """
             event.Skip()
 
     def onResize(self, event):
-        # Log first few resize events for debugging menu issues
-        if not hasattr(self, '_resize_count'):
-            self._resize_count = 0
-        self._resize_count += 1
-        if self._resize_count <= 5:
-            self._log_window_geometry(f"RESIZE_{self._resize_count}")
-
         currentToolbar = self.manager.GetPane("toolbar")
         if currentToolbar.IsOk():
             currentToolbar.window.SetSize((event.GetSize().GetWidth(), -1))
@@ -564,16 +408,10 @@ If this happens again, please make a copy of your TaskCoach.ini file """
     def showStatusBar(self, value=True):
         # FIXME: First hiding the statusbar, then hiding the toolbar, then
         # showing the statusbar puts it in the wrong place (only on Linux?)
-        pos_before = self.GetPosition()
-        print(f"[DEBUG] showStatusBar: BEFORE pos=({pos_before.x}, {pos_before.y}) value={value}")
         statusBar = self.GetStatusBar()
         if statusBar:
             statusBar.Show(value)
-            pos_after_show = self.GetPosition()
-            print(f"[DEBUG] showStatusBar: AFTER statusBar.Show() pos=({pos_after_show.x}, {pos_after_show.y})")
             self.SendSizeEvent()
-            pos_after_size = self.GetPosition()
-            print(f"[DEBUG] showStatusBar: AFTER SendSizeEvent() pos=({pos_after_size.x}, {pos_after_size.y})")
 
     def createToolBarUICommands(self):
         """UI commands to put on the toolbar of this window."""

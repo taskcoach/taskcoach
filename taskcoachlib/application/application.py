@@ -479,33 +479,7 @@ class Application(object, metaclass=patterns.Singleton):
             wx.Log.SetLogLevel(wx.LOG_Info)
             wx.Log.SetVerbose(True)
 
-        pos_before_show = self.mainwindow.GetPosition()
-        size_before = self.mainwindow.GetSize()
-        print(f"[DEBUG] application: BEFORE Show() pos=({pos_before_show.x}, {pos_before_show.y}) size=({size_before.width}x{size_before.height})")
-
-        # Log display info before Show
-        display_idx = wx.Display.GetFromWindow(self.mainwindow)
-        print(f"[DEBUG] application: display_idx before Show = {display_idx}")
-        if display_idx != wx.NOT_FOUND:
-            d = wx.Display(display_idx)
-            g = d.GetGeometry()
-            c = d.GetClientArea()
-            print(f"[DEBUG] application: display geom=({g.x},{g.y}) {g.width}x{g.height}, client=({c.x},{c.y}) {c.width}x{c.height}")
-
         self.mainwindow.Show()
-
-        pos_after_show = self.mainwindow.GetPosition()
-        size_after = self.mainwindow.GetSize()
-        print(f"[DEBUG] application: AFTER Show() pos=({pos_after_show.x}, {pos_after_show.y}) size=({size_after.width}x{size_after.height})")
-
-        # Log display info after Show
-        display_idx_after = wx.Display.GetFromWindow(self.mainwindow)
-        print(f"[DEBUG] application: display_idx after Show = {display_idx_after}")
-        if display_idx_after != wx.NOT_FOUND:
-            d = wx.Display(display_idx_after)
-            g = d.GetGeometry()
-            c = d.GetClientArea()
-            print(f"[DEBUG] application: display geom=({g.x},{g.y}) {g.width}x{g.height}, client=({c.x},{c.y}) {c.width}x{c.height}")
         # Position correction is handled automatically by WindowDimensionsTracker
         # via EVT_MOVE detection until EVT_ACTIVATE fires (window ready for input)
         # Use native wxPython main loop instead of Twisted reactor

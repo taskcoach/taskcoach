@@ -21,8 +21,8 @@ import wx
 import time
 from taskcoachlib import operating_system
 
-# Debug logging for window position tracking (set to False to disable)
-_DEBUG_WINDOW_TRACKING = True
+# Debug logging for window position tracking (set to True to enable)
+_DEBUG_WINDOW_TRACKING = False
 
 
 def _log_debug(msg):

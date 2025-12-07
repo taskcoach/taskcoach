@@ -26,19 +26,6 @@ from . import uicommand
 import taskcoachlib.gui.viewer
 import wx
 import os
-import time
-
-# Debug logging for menu display issues
-_DEBUG_MENU = True
-
-
-def _log_menu_debug(msg):
-    """Log debug message for menu tracking with timestamp."""
-    if _DEBUG_MENU:
-        now = time.time()
-        timestamp = time.strftime("%H:%M:%S", time.localtime(now))
-        ms = int((now % 1) * 1000)
-        print(f"[{timestamp}.{ms:03d}] MenuDebug: {msg}")
 
 
 class Menu(wx.Menu, uicommand.UICommandContainerMixin):
@@ -263,13 +250,36 @@ class MainMenu(wx.MenuBar):
 
 
 class FileMenu(Menu):
+    """File menu with recent files list.
+
+    DESIGN NOTE (GTK3 Menu Size Bug Fix - December 2025):
+
+    The recent files list is populated at init time and updated via pub/sub
+    when the settings change. This avoids the GTK3 bug where modifying menu
+    items during EVT_MENU_OPEN causes incorrect size allocation on first popup,
+    resulting in scroll arrows appearing even when there's plenty of space.
+
+    See: GNOME GTK Issue #473, Stack Overflow "size-allocation issue -
+    not calculated on first-popup but is on subsequent pop-up's"
+
+    Previous (broken) approach:
+    - Menu items were removed and re-added on every EVT_MENU_OPEN
+    - GTK calculated size for N items, then N+3 items were shown
+    - Scroll arrows appeared on first open, disappeared on second
+
+    Current (fixed) approach:
+    - Populate recent files at init (full menu size from start)
+    - Subscribe to "settings.file.recentfiles" pub/sub topic
+    - Update menu only when settings actually change
+    - Never modify menu during popup
+    """
+
     def __init__(self, mainwindow, settings, iocontroller, viewerContainer):
         super().__init__(mainwindow)
         self.__settings = settings
         self.__iocontroller = iocontroller
         self.__recentFileUICommands = []
         self.__separator = None
-        self.__firstOpen = True  # Track first menu open for layout fix
         self.appendUICommands(
             uicommand.FileOpen(iocontroller=iocontroller),
             uicommand.FileMerge(iocontroller=iocontroller),
@@ -324,142 +334,23 @@ class FileMenu(Menu):
                 )
         self.__recentFilesStartPosition = len(self)
         self.appendUICommands(None, uicommand.FileQuit())
-        # Pre-populate recent files so menu has full size when GTK first creates it
+
+        # Populate recent files at init (fixes GTK3 menu size bug)
         self.__insertRecentFileMenuItems()
-        self._window.Bind(wx.EVT_MENU_OPEN, self.onOpenMenu)
 
-    def onOpenMenu(self, event):
-        if event.GetMenu() == self:
-            is_first = self.__firstOpen
-            self._log_menu_geometry("MENU_OPEN", is_first)
+        # Subscribe to settings changes to update recent files list
+        # This replaces the broken EVT_MENU_OPEN approach
+        pub.subscribe(self.__onRecentFilesChanged, "settings.file.recentfiles")
 
-            # Log GTK menu state during open
-            self._log_gtk_menu_introspection(is_first)
+    def __onRecentFilesChanged(self, value):
+        """Update recent files menu when settings change.
 
-            if self.__firstOpen:
-                self.__firstOpen = False
-                _log_menu_debug("  First File menu open in this session")
-
-                # Try to fix GTK menu size allocation on first open
-                self._try_fix_gtk_menu_size()
-
-            self.__removeRecentFileMenuItems()
-            self.__insertRecentFileMenuItems()
-            _log_menu_debug(f"  Menu item count: {self.GetMenuItemCount()}")
-        event.Skip()
-
-    def _try_fix_gtk_menu_size(self):
-        """Attempt to fix GTK menu size allocation issue on first open."""
-        try:
-            import gi
-            gi.require_version('Gtk', '3.0')
-            gi.require_version('Gdk', '3.0')
-            from gi.repository import Gtk, Gdk
-
-            # Process any pending GTK events
-            while Gtk.events_pending():
-                Gtk.main_iteration()
-
-            # Get the correct monitor for the window
-            gdk_display = Gdk.Display.get_default()
-            win_pos = self._window.GetPosition()
-            monitor = gdk_display.get_monitor_at_point(win_pos.x, win_pos.y)
-
-            # Find monitor index
-            monitor_idx = -1
-            for i in range(gdk_display.get_n_monitors()):
-                if gdk_display.get_monitor(i) == monitor:
-                    monitor_idx = i
-                    break
-
-            _log_menu_debug(f"  _try_fix_gtk_menu_size: monitor_idx={monitor_idx}")
-            _log_menu_debug(f"  Note: wx.Menu has no GetHandle() - GTK menu widget is created lazily")
-
-            # Process events again
-            while Gtk.events_pending():
-                Gtk.main_iteration()
-
-        except Exception as e:
-            _log_menu_debug(f"  _try_fix_gtk_menu_size failed: {e}")
-
-    def _log_gtk_menu_introspection(self, is_first_open):
-        """Log GTK menu state for debugging the scroll arrows issue."""
-        try:
-            import gi
-            gi.require_version('Gdk', '3.0')
-            from gi.repository import Gdk
-
-            gdk_display = Gdk.Display.get_default()
-            if gdk_display:
-                # Get monitor at window position
-                win_pos = self._window.GetPosition()
-                gdk_mon = gdk_display.get_monitor_at_point(win_pos.x, win_pos.y)
-                if gdk_mon:
-                    work = gdk_mon.get_workarea()
-                    geom = gdk_mon.get_geometry()
-                    _log_menu_debug(f"  GDK monitor at window ({win_pos.x},{win_pos.y}):")
-                    _log_menu_debug(f"    geometry=({geom.x},{geom.y}) {geom.width}x{geom.height}")
-                    _log_menu_debug(f"    workarea=({work.x},{work.y}) {work.width}x{work.height}")
-
-        except ImportError as e:
-            _log_menu_debug(f"  PyGObject not available: {e}")
-        except Exception as e:
-            _log_menu_debug(f"  GDK introspection error: {e}")
-
-        # Note: wx.Menu doesn't have GetHandle() - GTK menu widget is created lazily
-        _log_menu_debug(f"  wx.Menu has no GTK handle (created lazily on first popup)")
-
-    def _log_menu_geometry(self, event_name, is_first_open):
-        """Log detailed geometry information for debugging menu display issues."""
-        win = self._window
-
-        # Window properties
-        win_pos = win.GetPosition()
-        win_size = win.GetSize()
-        win_client_size = win.GetClientSize()
-        win_rect = win.GetRect()
-        is_maximized = win.IsMaximized()
-        is_iconized = win.IsIconized()
-        is_shown = win.IsShown()
-        is_active = win.IsActive() if hasattr(win, 'IsActive') else 'N/A'
-
-        _log_menu_debug(f"{event_name}: first_open={is_first_open}")
-        _log_menu_debug(f"  Window: pos=({win_pos.x}, {win_pos.y}) size=({win_size.width}x{win_size.height})")
-        _log_menu_debug(f"  Window: client_size=({win_client_size.width}x{win_client_size.height})")
-        _log_menu_debug(f"  Window: rect=({win_rect.x}, {win_rect.y}, {win_rect.width}x{win_rect.height})")
-        _log_menu_debug(f"  Window: maximized={is_maximized} iconized={is_iconized} shown={is_shown} active={is_active}")
-
-        # Display info for the window
-        display_idx = wx.Display.GetFromWindow(win)
-        _log_menu_debug(f"  Display index from window: {display_idx}")
-
-        if display_idx != wx.NOT_FOUND:
-            display = wx.Display(display_idx)
-            geom = display.GetGeometry()
-            client_area = display.GetClientArea()
-            _log_menu_debug(f"  Display geometry: ({geom.x}, {geom.y}) {geom.width}x{geom.height}")
-            _log_menu_debug(f"  Display client_area: ({client_area.x}, {client_area.y}) {client_area.width}x{client_area.height}")
-
-            # Calculate available height below menu bar
-            menubar = win.GetMenuBar()
-            if menubar:
-                menubar_rect = menubar.GetRect()
-                _log_menu_debug(f"  MenuBar rect: ({menubar_rect.x}, {menubar_rect.y}) {menubar_rect.width}x{menubar_rect.height}")
-
-                # Estimate where menu would appear (below File menu item)
-                menu_top_y = win_pos.y + menubar_rect.y + menubar_rect.height
-                available_below = client_area.y + client_area.height - menu_top_y
-                _log_menu_debug(f"  Menu estimated top Y: {menu_top_y}")
-                _log_menu_debug(f"  Available height below menu: {available_below}")
-
-        # All displays info
-        num_displays = wx.Display.GetCount()
-        _log_menu_debug(f"  Total displays: {num_displays}")
-        for i in range(num_displays):
-            d = wx.Display(i)
-            g = d.GetGeometry()
-            c = d.GetClientArea()
-            _log_menu_debug(f"    Display {i}: geom=({g.x},{g.y}) {g.width}x{g.height}, client=({c.x},{c.y}) {c.width}x{c.height}")
+        Called via pub/sub when a file is opened or the recent files list
+        is modified. This is the correct way to update dynamic menu content -
+        update when data changes, not on every menu open.
+        """
+        self.__removeRecentFileMenuItems()
+        self.__insertRecentFileMenuItems()
 
     def __insertRecentFileMenuItems(self):
         recentFiles = self.__settings.getlist("file", "recentfiles")

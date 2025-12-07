@@ -11,8 +11,9 @@ This document captures technical issues, fixes, and refactorings discovered duri
 5. [Bundled Third-Party Library Cleanup](#bundled-third-party-library-cleanup)
 6. [Twisted Framework Removal](#twisted-framework-removal)
 7. [Window Position Tracking with AUI](#window-position-tracking-with-aui)
-8. [Known Issues](#known-issues)
-9. [Future Work](#future-work)
+8. [GTK3 Menu Size Allocation Bug](#gtk3-menu-size-allocation-bug)
+9. [Known Issues](#known-issues)
+10. [Future Work](#future-work)
 
 ---
 
@@ -1390,6 +1391,125 @@ def __init_window_components(self):
 
 ---
 
+## GTK3 Menu Size Allocation Bug
+
+**Date Fixed:** December 2025
+**Affected Components:** File menu, Dynamic menus
+**Root Cause:** GTK3 bug where menu size allocation is not calculated on first popup
+
+### Problem Overview
+
+When opening the File menu for the first time, scroll arrows appeared even though there was plenty of screen space to display all menu items. The menu displayed correctly on subsequent opens.
+
+### Symptoms
+
+1. File menu shows scroll arrows on first open
+2. Same menu works perfectly on second and subsequent opens
+3. All measurable wx/GDK properties are identical between first and second open
+4. Problem occurs on multi-monitor setups
+
+### Root Cause Analysis
+
+This is a **known GTK3 bug** where the size allocation for popup menus isn't properly calculated on the first display:
+
+- [GNOME GTK Issue #473](https://gitlab.gnome.org/GNOME/gtk/-/issues/473): GtkMenu has unnecessary scroll handles when menu items are added during popup
+- [Stack Overflow discussion](https://stackoverflow.com/questions/14423971/what-is-the-correct-method-to-display-a-large-popup-menu): "So it looks like some-sort of size-allocation issue - its not been calculated on first-popup but is on subsequent pop-up's"
+- [Debian Bug #838793](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=838793): Menus are too small in GNOME
+
+The problem was triggered by **modifying menu items during EVT_MENU_OPEN**:
+
+1. GTK creates menu widget lazily on first popup
+2. GTK starts calculating size allocation for N items
+3. EVT_MENU_OPEN fires, application adds/removes items
+4. GTK's size calculation is already done for wrong item count
+5. Scroll arrows appear because GTK thinks menu is larger than available space
+
+### The Broken Pattern
+
+The original code modified menu items on every menu open:
+
+```python
+class FileMenu(Menu):
+    def __init__(self, ...):
+        # Build static menu items
+        ...
+        self._window.Bind(wx.EVT_MENU_OPEN, self.onOpenMenu)
+
+    def onOpenMenu(self, event):
+        if event.GetMenu() == self:
+            # WRONG: Modifying menu during popup triggers GTK bug
+            self.__removeRecentFileMenuItems()
+            self.__insertRecentFileMenuItems()
+        event.Skip()
+```
+
+This pattern was also used in several `DynamicMenuThatGetsUICommandsFromViewer` subclasses that rebuild their entire contents on every `EVT_MENU_OPEN`.
+
+### The Correct Pattern: Pub/Sub Updates
+
+The proper approach is to:
+1. Populate menus at initialization time
+2. Subscribe to data change notifications via pub/sub
+3. Update menu items only when data actually changes
+4. Never modify menus during popup
+
+```python
+class FileMenu(Menu):
+    def __init__(self, ...):
+        # Build static menu items
+        ...
+        # Populate recent files at init (fixes GTK3 menu size bug)
+        self.__insertRecentFileMenuItems()
+
+        # Subscribe to settings changes to update recent files list
+        # This replaces the broken EVT_MENU_OPEN approach
+        pub.subscribe(self.__onRecentFilesChanged, "settings.file.recentfiles")
+
+    def __onRecentFilesChanged(self, value):
+        """Update recent files menu when settings change."""
+        self.__removeRecentFileMenuItems()
+        self.__insertRecentFileMenuItems()
+```
+
+### Why TaskTemplateMenu Works Correctly
+
+`TaskTemplateMenu` was already using the correct pattern:
+
+```python
+class TaskTemplateMenu(DynamicMenu):
+    def registerForMenuUpdate(self):
+        pub.subscribe(self.onTemplatesSaved, "templates.saved")
+```
+
+It only rebuilds when templates actually change, not on every menu open.
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `taskcoachlib/gui/menu.py` | FileMenu refactored to use pub/sub instead of EVT_MENU_OPEN |
+
+### Key Learnings
+
+1. **Never modify menus during popup**: GTK3 has a bug where size allocation isn't recalculated when items are added/removed during popup. This causes scroll arrows to appear incorrectly.
+
+2. **Use pub/sub for dynamic content**: Instead of rebuilding menus on every open, subscribe to data change events and update only when data changes.
+
+3. **Pre-populate at init**: Build menus with their full content at initialization time so GTK sees the correct size from the start.
+
+4. **The `EVT_MENU_OPEN` trap**: It's tempting to use EVT_MENU_OPEN for updating dynamic content, but this triggers the GTK bug. Use data change notifications instead.
+
+5. **Submenus may be less affected**: The DynamicMenuThatGetsUICommandsFromViewer submenus (ModeMenu, FilterMenu, etc.) use EVT_MENU_OPEN but are smaller and may not trigger visible scroll arrows.
+
+### Testing Checklist
+
+- [ ] Open File menu on first run - should not show scroll arrows
+- [ ] Open recent files - menu should update automatically (via pub/sub)
+- [ ] Test on multi-monitor setup with different resolutions
+- [ ] Test with window near bottom of screen (minimal space for menu)
+
+---
+
 ## Known Issues
 
 ### Pending Issues
@@ -1407,6 +1527,7 @@ def __init_window_components(self):
 - ✅ Window position not remembered due to AUI + GTK spurious events (November 2025)
 - ✅ AUI pane flickering during startup fixed with Freeze/Thaw (November 2025)
 - ✅ GTK/Linux window position persistence - WM ignores initial position (November 2025) - See [WINDOW_POSITION_PERSISTENCE_ANALYSIS.md](WINDOW_POSITION_PERSISTENCE_ANALYSIS.md)
+- ✅ GTK3 menu scroll arrows on first open (December 2025) - FileMenu refactored to use pub/sub
 
 ---
 
@@ -1447,4 +1568,4 @@ When adding new technical notes:
 
 ---
 
-**Last Updated:** November 23, 2025
+**Last Updated:** December 7, 2025
