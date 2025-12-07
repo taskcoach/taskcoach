@@ -110,23 +110,18 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
 
     def select(self, selection):
         """Select items whose PyData is in the selection list.
-        Returns the first selected tree item (for scrolling)."""
-        items_found = 0
-        items_selected = 0
+        Returns the first selected tree item (for scrolling).
+
+        Note: UnselectAll() is required before SelectItem() - HyperTreeList's
+        internal state management requires clearing selections first."""
         first_selected_item = None
+        self.UnselectAll()
         for item in self.GetItemChildren(recursively=True):
-            items_found += 1
             pydata = self.GetItemPyData(item)
             if pydata in selection:
-                items_selected += 1
-                print(f"DEBUG select: SelectItem on item with pydata={pydata}")
                 self.SelectItem(item, True)
-                # Check if it actually got selected
-                is_selected = item.IsSelected()
-                print(f"DEBUG select: after SelectItem, IsSelected()={is_selected}")
                 if first_selected_item is None:
                     first_selected_item = item
-        print(f"DEBUG select: found {items_found} items, selected {items_selected}")
         return first_selected_item
 
     def clear_selection(self):
@@ -272,7 +267,6 @@ class TreeListCtrl(
         self.StopEditing()
         self.__refreshing = True  # Suppress selection events during rebuild
         self.__selection = self.curselection()
-        print(f"DEBUG RefreshAllItems: saved selection = {self.__selection}")
         self.DeleteAllItems()
         self.__columns_with_images = [
             index
@@ -288,13 +282,8 @@ class TreeListCtrl(
         # Restore selection AFTER Thaw - SelectItem doesn't work while Frozen
         selected_item = None
         if self.__selection:
-            print(f"DEBUG RefreshAllItems: calling select() with {len(self.__selection)} items")
             selected_item = self.select(self.__selection)
-            print(f"DEBUG RefreshAllItems: select() returned item: {selected_item}")
-        else:
-            print("DEBUG RefreshAllItems: __selection is empty, skipping select()")
         selections = self.GetSelections()
-        print(f"DEBUG RefreshAllItems: GetSelections() returned {len(selections)} items")
         # Use the item returned by select() for scrolling if GetSelections fails
         scroll_target = selections[0] if selections else selected_item
         if scroll_target:
@@ -302,9 +291,6 @@ class TreeListCtrl(
                 self.GetMainWindow()._key_current
             ) = scroll_target
             self.ScrollTo(scroll_target)
-            print(f"DEBUG RefreshAllItems: ScrollTo called")
-        else:
-            print("DEBUG RefreshAllItems: No scroll target")
         # Force immediate repaint to reduce visible flicker after rebuild
         self.GetMainWindow().Refresh(eraseBackground=False)
 
