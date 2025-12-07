@@ -241,13 +241,7 @@ class MainWindow(
             self.__menu_debug_timer.Start(1000)  # Log every 1 second
 
     def __prime_gtk_menus(self):
-        """Prime GTK's menu system to fix scroll arrows on first menu open.
-
-        GTK3 has a known bug where menu size allocation isn't calculated on
-        first popup - documented in GNOME GTK issue #473 and various bug reports.
-        We work around this by briefly showing the actual File menu as a popup,
-        which forces GTK to properly allocate its size.
-        """
+        """Log menu state at prime time - no fix attempts, just logging."""
         if not self:
             return
 
@@ -255,94 +249,21 @@ class MainWindow(
         now = time.time()
         timestamp = time.strftime("%H:%M:%S", time.localtime(now))
         ms = int((now % 1) * 1000)
-        print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: Priming GTK menu system")
-
-        # Log GTK introspection data
-        self._log_gtk_menu_state("PRIME_MENUS")
 
         try:
-            import gi
-            gi.require_version('Gtk', '3.0')
-            gi.require_version('Gdk', '3.0')
-            from gi.repository import Gtk, Gdk
-
-            # Process any pending GTK events first
-            while Gtk.events_pending():
-                Gtk.main_iteration()
-            print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: Processed pending GTK events")
-
-            # Get the monitor where our window is located
-            gdk_display = Gdk.Display.get_default()
             win_pos = self.GetPosition()
-            monitor = gdk_display.get_monitor_at_point(win_pos.x, win_pos.y)
-            monitor_idx = -1
-            for i in range(gdk_display.get_n_monitors()):
-                if gdk_display.get_monitor(i) == monitor:
-                    monitor_idx = i
-                    break
-            print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: Window at ({win_pos.x},{win_pos.y}), monitor_idx={monitor_idx}")
-
-            # Try to popup the actual File menu briefly
+            win_size = self.GetSize()
+            display_idx = wx.Display.GetFromWindow(self)
             menubar = self.GetMenuBar()
-            if menubar:
-                file_menu = menubar.GetMenu(0)  # File menu is first
-                if file_menu:
-                    # Get menubar position for popup
-                    menubar_rect = menubar.GetRect()
-                    popup_pos = wx.Point(0, menubar_rect.height)
+            menu_count = menubar.GetMenuCount() if menubar else 0
 
-                    print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: "
-                          f"Popup File menu at {popup_pos}")
-
-                    # Schedule popup and immediate close
-                    # PopupMenu is modal so we need to schedule the close
-                    def close_menu():
-                        # Send escape to close any open menu
-                        import time as t
-                        t.sleep(0.05)  # Brief delay to let menu render
-                        # Dismiss by clicking elsewhere or sending escape
-                        wx.CallAfter(self._dismiss_popup_menu)
-
-                    import threading
-                    close_thread = threading.Thread(target=close_menu, daemon=True)
-                    close_thread.start()
-
-                    # Popup the menu - this is blocking until dismissed
-                    try:
-                        self.PopupMenu(file_menu, popup_pos)
-                        print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: "
-                              f"File menu popup completed")
-                    except Exception as e:
-                        print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: "
-                              f"PopupMenu error: {e}")
-
-            # Also try wx-based approach
-            self.UpdateWindowUI()
+            print(f"[{timestamp}.{ms:03d}] PRIME: pos=({win_pos.x},{win_pos.y}) size={win_size.width}x{win_size.height} disp={display_idx} menus={menu_count}")
 
         except Exception as e:
-            print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: Error: {e}")
-            import traceback
-            traceback.print_exc()
-
-    def _dismiss_popup_menu(self):
-        """Dismiss any open popup menu by simulating Escape key."""
-        import time
-        now = time.time()
-        timestamp = time.strftime("%H:%M:%S", time.localtime(now))
-        ms = int((now % 1) * 1000)
-        print(f"[{timestamp}.{ms:03d}] MainWindow._dismiss_popup_menu: Dismissing popup")
-
-        # Try to find and close any popup window
-        try:
-            # Post an escape key event to close the menu
-            event = wx.KeyEvent(wx.wxEVT_KEY_DOWN)
-            event.SetKeyCode(wx.WXK_ESCAPE)
-            wx.PostEvent(self, event)
-        except Exception as e:
-            print(f"[{timestamp}.{ms:03d}] MainWindow._dismiss_popup_menu: Error: {e}")
+            print(f"[{timestamp}.{ms:03d}] PRIME: Error: {e}")
 
     def __on_menu_debug_timer(self, event):
-        """Periodic timer to log GTK menu state for debugging."""
+        """Periodic timer to log menu state - NO ctypes, wx only."""
         import time
         now = time.time()
         timestamp = time.strftime("%H:%M:%S", time.localtime(now))
@@ -351,67 +272,25 @@ class MainWindow(
         self.__menu_debug_timer_count += 1
         count = self.__menu_debug_timer_count
 
-        # Stop after 15 seconds (enough time to reproduce the issue)
-        if count > 15:
+        # Stop after 20 seconds
+        if count > 20:
             self.__menu_debug_timer.Stop()
-            print(f"[{timestamp}.{ms:03d}] TIMER_LOG: Stopping periodic menu debug logging")
+            print(f"[{timestamp}.{ms:03d}] T#{count}: STOP")
             return
 
         try:
-            import ctypes
-
             menubar = self.GetMenuBar()
-            if not menubar:
-                print(f"[{timestamp}.{ms:03d}] TIMER_LOG #{count}: No menubar")
-                return
-
-            # Get the menubar's GTK handle (menubar is a wx.Window, so it has GetHandle)
-            menubar_handle = menubar.GetHandle()
-
-            # Get window position and display info
             win_pos = self.GetPosition()
+            win_size = self.GetSize()
             display_idx = wx.Display.GetFromWindow(self)
+            menu_count = menubar.GetMenuCount() if menubar else 0
+            file_menu = menubar.GetMenu(0) if menubar and menu_count > 0 else None
+            file_menu_items = file_menu.GetMenuItemCount() if file_menu else 0
 
-            # Query GTK widget state for menubar
-            libgtk = ctypes.CDLL("libgtk-3.so.0")
-
-            gtk_widget_get_realized = libgtk.gtk_widget_get_realized
-            gtk_widget_get_realized.argtypes = [ctypes.c_void_p]
-            gtk_widget_get_realized.restype = ctypes.c_int
-
-            gtk_widget_get_visible = libgtk.gtk_widget_get_visible
-            gtk_widget_get_visible.argtypes = [ctypes.c_void_p]
-            gtk_widget_get_visible.restype = ctypes.c_int
-
-            gtk_widget_get_mapped = libgtk.gtk_widget_get_mapped
-            gtk_widget_get_mapped.argtypes = [ctypes.c_void_p]
-            gtk_widget_get_mapped.restype = ctypes.c_int
-
-            gtk_widget_get_allocated_height = libgtk.gtk_widget_get_allocated_height
-            gtk_widget_get_allocated_height.argtypes = [ctypes.c_void_p]
-            gtk_widget_get_allocated_height.restype = ctypes.c_int
-
-            gtk_widget_get_allocated_width = libgtk.gtk_widget_get_allocated_width
-            gtk_widget_get_allocated_width.argtypes = [ctypes.c_void_p]
-            gtk_widget_get_allocated_width.restype = ctypes.c_int
-
-            if menubar_handle:
-                realized = gtk_widget_get_realized(menubar_handle)
-                visible = gtk_widget_get_visible(menubar_handle)
-                mapped = gtk_widget_get_mapped(menubar_handle)
-                alloc_h = gtk_widget_get_allocated_height(menubar_handle)
-                alloc_w = gtk_widget_get_allocated_width(menubar_handle)
-
-                print(f"[{timestamp}.{ms:03d}] TIMER_LOG #{count}: "
-                      f"menubar_handle={hex(menubar_handle)} realized={realized} visible={visible} mapped={mapped} "
-                      f"alloc={alloc_w}x{alloc_h} "
-                      f"win_pos=({win_pos.x},{win_pos.y}) wx_display={display_idx}")
-            else:
-                print(f"[{timestamp}.{ms:03d}] TIMER_LOG #{count}: "
-                      f"menubar_handle=None win_pos=({win_pos.x},{win_pos.y}) wx_display={display_idx}")
+            print(f"[{timestamp}.{ms:03d}] T#{count}: pos=({win_pos.x},{win_pos.y}) size={win_size.width}x{win_size.height} disp={display_idx} menus={menu_count} file_items={file_menu_items}")
 
         except Exception as e:
-            print(f"[{timestamp}.{ms:03d}] TIMER_LOG #{count}: Error: {e}")
+            print(f"[{timestamp}.{ms:03d}] T#{count}: Error: {e}")
 
     def _log_gtk_menu_state(self, event_name):
         """Log GDK display/monitor state using PyGObject (safe, no ctypes)."""
