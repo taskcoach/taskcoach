@@ -192,6 +192,7 @@ class TreeListCtrl(
         self.__user_double_clicked = False
         self.__columns_with_images = []
         self.__default_font = wx.NORMAL_FONT
+        self.__refreshing = False  # Flag to suppress selection events during refresh
         kwargs.setdefault("resizeableColumn", 0)
         super().__init__(
             parent,
@@ -252,6 +253,7 @@ class TreeListCtrl(
     def RefreshAllItems(self, count=0):  # pylint: disable=W0613
         self.Freeze()
         self.StopEditing()
+        self.__refreshing = True  # Suppress selection events during rebuild
         self.__selection = self.curselection()
         self.DeleteAllItems()
         self.__columns_with_images = [
@@ -263,6 +265,7 @@ class TreeListCtrl(
         if not root_item:
             root_item = self.AddRoot("Hidden root")
         self._addObjectRecursively(root_item)
+        self.__refreshing = False
         selections = self.GetSelections()
         if selections:
             self.GetMainWindow()._current = (
@@ -270,6 +273,8 @@ class TreeListCtrl(
             ) = selections[0]
             self.ScrollTo(selections[0])
         self.Thaw()
+        # Force immediate repaint to reduce visible flicker after rebuild
+        self.GetMainWindow().Refresh(eraseBackground=False)
 
     def RefreshItems(self, *objects):
         self.__selection = self.curselection()
@@ -381,11 +386,18 @@ class TreeListCtrl(
     def _refreshSelection(self, item, domain_object, check=False):
         select = domain_object in self.__selection
         if not check or (check and select != item.IsSelected()):
-            item.SetHilight(select)
+            # Use SelectItem instead of SetHilight to properly update the
+            # selection list, so GetSelections() returns the correct items
+            # and ScrollTo() works after refresh
+            self.SelectItem(item, select)
 
     # Event handlers
 
     def onSelect(self, event):
+        # Skip selection events during refresh to avoid spurious updates
+        if self.__refreshing:
+            event.Skip()
+            return
         # Use CallAfter to prevent handling the select while items are
         # being deleted:
         wx.CallAfter(self.__safeSelectCommand)
