@@ -275,8 +275,8 @@ class TreeListCtrl(
         if not root_item:
             root_item = self.AddRoot("Hidden root")
         self._addObjectRecursively(root_item)
-        # Restore selection AFTER tree is fully built - SelectItem doesn't
-        # work reliably during tree construction
+        self.Thaw()
+        # Restore selection AFTER Thaw - SelectItem doesn't work while Frozen
         if self.__selection:
             print(f"DEBUG RefreshAllItems: calling select() with {len(self.__selection)} items")
             self.select(self.__selection)
@@ -293,7 +293,6 @@ class TreeListCtrl(
             print(f"DEBUG RefreshAllItems: ScrollTo called on {selections[0]}")
         else:
             print("DEBUG RefreshAllItems: No selections, NOT scrolling")
-        self.Thaw()
         # Force immediate repaint to reduce visible flicker after rebuild
         self.GetMainWindow().Refresh(eraseBackground=False)
 
