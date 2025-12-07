@@ -245,8 +245,8 @@ class MainWindow(
 
         GTK3 has a known bug where menu size allocation isn't calculated on
         first popup - documented in GNOME GTK issue #473 and various bug reports.
-        We work around this by briefly showing a dummy popup menu during initialization,
-        which forces GTK to properly initialize its menu system.
+        We work around this by briefly showing the actual File menu as a popup,
+        which forces GTK to properly allocate its size.
         """
         if not self:
             return
@@ -261,63 +261,85 @@ class MainWindow(
         self._log_gtk_menu_state("PRIME_MENUS")
 
         try:
-            # Try to use PyGObject to trigger GTK menu initialization
-            try:
-                import gi
-                gi.require_version('Gtk', '3.0')
-                gi.require_version('Gdk', '3.0')
-                from gi.repository import Gtk, Gdk
+            import gi
+            gi.require_version('Gtk', '3.0')
+            gi.require_version('Gdk', '3.0')
+            from gi.repository import Gtk, Gdk
 
-                # Process any pending GTK events first
-                while Gtk.events_pending():
-                    Gtk.main_iteration()
-                print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: Processed pending GTK events")
+            # Process any pending GTK events first
+            while Gtk.events_pending():
+                Gtk.main_iteration()
+            print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: Processed pending GTK events")
 
-                # Get the monitor where our window is located
-                gdk_display = Gdk.Display.get_default()
-                win_pos = self.GetPosition()
-                monitor = gdk_display.get_monitor_at_point(win_pos.x, win_pos.y)
-                monitor_idx = -1
-                for i in range(gdk_display.get_n_monitors()):
-                    if gdk_display.get_monitor(i) == monitor:
-                        monitor_idx = i
-                        break
-                print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: Window at ({win_pos.x},{win_pos.y}), monitor_idx={monitor_idx}")
+            # Get the monitor where our window is located
+            gdk_display = Gdk.Display.get_default()
+            win_pos = self.GetPosition()
+            monitor = gdk_display.get_monitor_at_point(win_pos.x, win_pos.y)
+            monitor_idx = -1
+            for i in range(gdk_display.get_n_monitors()):
+                if gdk_display.get_monitor(i) == monitor:
+                    monitor_idx = i
+                    break
+            print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: Window at ({win_pos.x},{win_pos.y}), monitor_idx={monitor_idx}")
 
-                # Create a dummy GTK menu and associate it with the correct monitor
-                dummy_menu = Gtk.Menu()
-                dummy_item = Gtk.MenuItem(label="dummy")
-                dummy_menu.append(dummy_item)
+            # Try to popup the actual File menu briefly
+            menubar = self.GetMenuBar()
+            if menubar:
+                file_menu = menubar.GetMenu(0)  # File menu is first
+                if file_menu:
+                    # Get menubar position for popup
+                    menubar_rect = menubar.GetRect()
+                    popup_pos = wx.Point(0, menubar_rect.height)
 
-                # Set the monitor BEFORE showing the menu
-                if monitor_idx >= 0:
-                    dummy_menu.set_monitor(monitor_idx)
-                    print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: Set menu monitor to {monitor_idx}")
+                    print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: "
+                          f"Popup File menu at {popup_pos}")
 
-                # Show and realize to trigger size allocation
-                dummy_menu.show_all()
-                dummy_menu.realize()
+                    # Schedule popup and immediate close
+                    # PopupMenu is modal so we need to schedule the close
+                    def close_menu():
+                        # Send escape to close any open menu
+                        import time as t
+                        t.sleep(0.05)  # Brief delay to let menu render
+                        # Dismiss by clicking elsewhere or sending escape
+                        wx.CallAfter(self._dismiss_popup_menu)
 
-                # Process events again to let GTK calculate sizes
-                while Gtk.events_pending():
-                    Gtk.main_iteration()
+                    import threading
+                    close_thread = threading.Thread(target=close_menu, daemon=True)
+                    close_thread.start()
 
-                # Immediately hide and destroy
-                dummy_menu.popdown()
-                dummy_menu.destroy()
-
-                print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: Created and destroyed dummy GTK menu")
-
-            except Exception as e:
-                print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: PyGObject approach failed: {e}")
-                import traceback
-                traceback.print_exc()
+                    # Popup the menu - this is blocking until dismissed
+                    try:
+                        self.PopupMenu(file_menu, popup_pos)
+                        print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: "
+                              f"File menu popup completed")
+                    except Exception as e:
+                        print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: "
+                              f"PopupMenu error: {e}")
 
             # Also try wx-based approach
             self.UpdateWindowUI()
 
         except Exception as e:
             print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: Error: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def _dismiss_popup_menu(self):
+        """Dismiss any open popup menu by simulating Escape key."""
+        import time
+        now = time.time()
+        timestamp = time.strftime("%H:%M:%S", time.localtime(now))
+        ms = int((now % 1) * 1000)
+        print(f"[{timestamp}.{ms:03d}] MainWindow._dismiss_popup_menu: Dismissing popup")
+
+        # Try to find and close any popup window
+        try:
+            # Post an escape key event to close the menu
+            event = wx.KeyEvent(wx.wxEVT_KEY_DOWN)
+            event.SetKeyCode(wx.WXK_ESCAPE)
+            wx.PostEvent(self, event)
+        except Exception as e:
+            print(f"[{timestamp}.{ms:03d}] MainWindow._dismiss_popup_menu: Error: {e}")
 
     def __on_menu_debug_timer(self, event):
         """Periodic timer to log GTK menu state for debugging."""
@@ -343,19 +365,14 @@ class MainWindow(
                 print(f"[{timestamp}.{ms:03d}] TIMER_LOG #{count}: No menubar")
                 return
 
-            # Get the File menu (first menu)
-            file_menu = menubar.GetMenu(0)
-            if not file_menu:
-                print(f"[{timestamp}.{ms:03d}] TIMER_LOG #{count}: No File menu")
-                return
-
-            menu_handle = file_menu.GetHandle()
+            # Get the menubar's GTK handle (menubar is a wx.Window, so it has GetHandle)
+            menubar_handle = menubar.GetHandle()
 
             # Get window position and display info
             win_pos = self.GetPosition()
             display_idx = wx.Display.GetFromWindow(self)
 
-            # Query GTK widget state
+            # Query GTK widget state for menubar
             libgtk = ctypes.CDLL("libgtk-3.so.0")
 
             gtk_widget_get_realized = libgtk.gtk_widget_get_realized
@@ -378,25 +395,20 @@ class MainWindow(
             gtk_widget_get_allocated_width.argtypes = [ctypes.c_void_p]
             gtk_widget_get_allocated_width.restype = ctypes.c_int
 
-            gtk_menu_get_monitor = libgtk.gtk_menu_get_monitor
-            gtk_menu_get_monitor.argtypes = [ctypes.c_void_p]
-            gtk_menu_get_monitor.restype = ctypes.c_int
-
-            if menu_handle:
-                realized = gtk_widget_get_realized(menu_handle)
-                visible = gtk_widget_get_visible(menu_handle)
-                mapped = gtk_widget_get_mapped(menu_handle)
-                alloc_h = gtk_widget_get_allocated_height(menu_handle)
-                alloc_w = gtk_widget_get_allocated_width(menu_handle)
-                mon_num = gtk_menu_get_monitor(menu_handle)
+            if menubar_handle:
+                realized = gtk_widget_get_realized(menubar_handle)
+                visible = gtk_widget_get_visible(menubar_handle)
+                mapped = gtk_widget_get_mapped(menubar_handle)
+                alloc_h = gtk_widget_get_allocated_height(menubar_handle)
+                alloc_w = gtk_widget_get_allocated_width(menubar_handle)
 
                 print(f"[{timestamp}.{ms:03d}] TIMER_LOG #{count}: "
-                      f"handle={hex(menu_handle)} realized={realized} visible={visible} mapped={mapped} "
-                      f"alloc={alloc_w}x{alloc_h} gtk_monitor={mon_num} "
+                      f"menubar_handle={hex(menubar_handle)} realized={realized} visible={visible} mapped={mapped} "
+                      f"alloc={alloc_w}x{alloc_h} "
                       f"win_pos=({win_pos.x},{win_pos.y}) wx_display={display_idx}")
             else:
                 print(f"[{timestamp}.{ms:03d}] TIMER_LOG #{count}: "
-                      f"handle=None win_pos=({win_pos.x},{win_pos.y}) wx_display={display_idx}")
+                      f"menubar_handle=None win_pos=({win_pos.x},{win_pos.y}) wx_display={display_idx}")
 
         except Exception as e:
             print(f"[{timestamp}.{ms:03d}] TIMER_LOG #{count}: Error: {e}")

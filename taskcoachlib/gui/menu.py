@@ -371,37 +371,7 @@ class FileMenu(Menu):
                     break
 
             _log_menu_debug(f"  _try_fix_gtk_menu_size: monitor_idx={monitor_idx}")
-
-            # Try to get the GTK menu handle and set monitor
-            try:
-                menu_handle = self.GetHandle()
-                if menu_handle and monitor_idx >= 0:
-                    import ctypes
-
-                    # Load GTK library and call gtk_menu_set_monitor
-                    # This is a simple call that just sets the monitor index
-                    try:
-                        libgtk = ctypes.CDLL("libgtk-3.so.0")
-                        gtk_menu_set_monitor = libgtk.gtk_menu_set_monitor
-                        gtk_menu_set_monitor.argtypes = [ctypes.c_void_p, ctypes.c_int]
-                        gtk_menu_set_monitor.restype = None
-
-                        # Set the monitor for this menu
-                        gtk_menu_set_monitor(menu_handle, monitor_idx)
-                        _log_menu_debug(f"  Called gtk_menu_set_monitor({menu_handle}, {monitor_idx})")
-
-                        # Also try to queue a resize on the menu
-                        gtk_widget_queue_resize = libgtk.gtk_widget_queue_resize
-                        gtk_widget_queue_resize.argtypes = [ctypes.c_void_p]
-                        gtk_widget_queue_resize.restype = None
-                        gtk_widget_queue_resize(menu_handle)
-                        _log_menu_debug(f"  Called gtk_widget_queue_resize on menu")
-
-                    except Exception as e:
-                        _log_menu_debug(f"  ctypes GTK call failed: {e}")
-
-            except Exception as e:
-                _log_menu_debug(f"  Could not access GTK menu handle: {e}")
+            _log_menu_debug(f"  Note: wx.Menu has no GetHandle() - GTK menu widget is created lazily")
 
             # Process events again
             while Gtk.events_pending():
@@ -434,71 +404,8 @@ class FileMenu(Menu):
         except Exception as e:
             _log_menu_debug(f"  GDK introspection error: {e}")
 
-        # Log GTK menu widget state using ctypes (safe read-only calls)
-        self._log_gtk_menu_widget_state(is_first_open)
-
-    def _log_gtk_menu_widget_state(self, is_first_open):
-        """Log detailed GTK menu widget state to understand what changes between opens."""
-        try:
-            import ctypes
-
-            menu_handle = self.GetHandle()
-            _log_menu_debug(f"  GTK Menu handle: {menu_handle} (hex: {hex(menu_handle) if menu_handle else 'None'})")
-
-            if not menu_handle:
-                _log_menu_debug(f"  No menu handle available")
-                return
-
-            try:
-                libgtk = ctypes.CDLL("libgtk-3.so.0")
-
-                # gtk_widget_get_realized - returns gboolean
-                gtk_widget_get_realized = libgtk.gtk_widget_get_realized
-                gtk_widget_get_realized.argtypes = [ctypes.c_void_p]
-                gtk_widget_get_realized.restype = ctypes.c_int
-
-                # gtk_widget_get_visible - returns gboolean
-                gtk_widget_get_visible = libgtk.gtk_widget_get_visible
-                gtk_widget_get_visible.argtypes = [ctypes.c_void_p]
-                gtk_widget_get_visible.restype = ctypes.c_int
-
-                # gtk_widget_get_mapped - returns gboolean
-                gtk_widget_get_mapped = libgtk.gtk_widget_get_mapped
-                gtk_widget_get_mapped.argtypes = [ctypes.c_void_p]
-                gtk_widget_get_mapped.restype = ctypes.c_int
-
-                # gtk_widget_get_allocated_height - returns gint
-                gtk_widget_get_allocated_height = libgtk.gtk_widget_get_allocated_height
-                gtk_widget_get_allocated_height.argtypes = [ctypes.c_void_p]
-                gtk_widget_get_allocated_height.restype = ctypes.c_int
-
-                # gtk_widget_get_allocated_width - returns gint
-                gtk_widget_get_allocated_width = libgtk.gtk_widget_get_allocated_width
-                gtk_widget_get_allocated_width.argtypes = [ctypes.c_void_p]
-                gtk_widget_get_allocated_width.restype = ctypes.c_int
-
-                # gtk_menu_get_monitor - returns gint
-                gtk_menu_get_monitor = libgtk.gtk_menu_get_monitor
-                gtk_menu_get_monitor.argtypes = [ctypes.c_void_p]
-                gtk_menu_get_monitor.restype = ctypes.c_int
-
-                # Query widget state
-                realized = gtk_widget_get_realized(menu_handle)
-                visible = gtk_widget_get_visible(menu_handle)
-                mapped = gtk_widget_get_mapped(menu_handle)
-                alloc_height = gtk_widget_get_allocated_height(menu_handle)
-                alloc_width = gtk_widget_get_allocated_width(menu_handle)
-                monitor_num = gtk_menu_get_monitor(menu_handle)
-
-                _log_menu_debug(f"  GTK widget state: realized={realized}, visible={visible}, mapped={mapped}")
-                _log_menu_debug(f"  GTK allocation: {alloc_width}x{alloc_height}")
-                _log_menu_debug(f"  GTK menu monitor: {monitor_num}")
-
-            except Exception as e:
-                _log_menu_debug(f"  GTK widget state query failed: {e}")
-
-        except Exception as e:
-            _log_menu_debug(f"  _log_gtk_menu_widget_state error: {e}")
+        # Note: wx.Menu doesn't have GetHandle() - GTK menu widget is created lazily
+        _log_menu_debug(f"  wx.Menu has no GTK handle (created lazily on first popup)")
 
     def _log_menu_geometry(self, event_name, is_first_open):
         """Log detailed geometry information for debugging menu display issues."""
