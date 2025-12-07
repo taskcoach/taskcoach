@@ -259,19 +259,42 @@ class MainWindow(
             try:
                 import gi
                 gi.require_version('Gtk', '3.0')
-                from gi.repository import Gtk
+                gi.require_version('Gdk', '3.0')
+                from gi.repository import Gtk, Gdk
 
-                # Get the default display's default screen
-                screen = Gtk.Window.get_default().get_screen() if Gtk.Window.get_default() else None
+                # Process any pending GTK events first
+                while Gtk.events_pending():
+                    Gtk.main_iteration()
+                print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: Processed pending GTK events")
 
-                # Create a dummy GTK menu and realize it to prime the menu system
+                # Get the monitor where our window is located
+                gdk_display = Gdk.Display.get_default()
+                win_pos = self.GetPosition()
+                monitor = gdk_display.get_monitor_at_point(win_pos.x, win_pos.y)
+                monitor_idx = -1
+                for i in range(gdk_display.get_n_monitors()):
+                    if gdk_display.get_monitor(i) == monitor:
+                        monitor_idx = i
+                        break
+                print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: Window at ({win_pos.x},{win_pos.y}), monitor_idx={monitor_idx}")
+
+                # Create a dummy GTK menu and associate it with the correct monitor
                 dummy_menu = Gtk.Menu()
                 dummy_item = Gtk.MenuItem(label="dummy")
                 dummy_menu.append(dummy_item)
-                dummy_menu.show_all()  # This triggers size allocation
 
-                # Realize the menu (allocate GDK resources)
+                # Set the monitor BEFORE showing the menu
+                if monitor_idx >= 0:
+                    dummy_menu.set_monitor(monitor_idx)
+                    print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: Set menu monitor to {monitor_idx}")
+
+                # Show and realize to trigger size allocation
+                dummy_menu.show_all()
                 dummy_menu.realize()
+
+                # Process events again to let GTK calculate sizes
+                while Gtk.events_pending():
+                    Gtk.main_iteration()
 
                 # Immediately hide and destroy
                 dummy_menu.popdown()
@@ -281,6 +304,8 @@ class MainWindow(
 
             except Exception as e:
                 print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: PyGObject approach failed: {e}")
+                import traceback
+                traceback.print_exc()
 
             # Also try wx-based approach
             self.UpdateWindowUI()

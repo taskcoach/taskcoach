@@ -338,10 +338,77 @@ class FileMenu(Menu):
                 self.__firstOpen = False
                 _log_menu_debug("  First File menu open in this session")
 
+                # Try to fix GTK menu size allocation on first open
+                self._try_fix_gtk_menu_size()
+
             self.__removeRecentFileMenuItems()
             self.__insertRecentFileMenuItems()
             _log_menu_debug(f"  Menu item count: {self.GetMenuItemCount()}")
         event.Skip()
+
+    def _try_fix_gtk_menu_size(self):
+        """Attempt to fix GTK menu size allocation issue on first open."""
+        try:
+            import gi
+            gi.require_version('Gtk', '3.0')
+            gi.require_version('Gdk', '3.0')
+            from gi.repository import Gtk, Gdk
+
+            # Process any pending GTK events
+            while Gtk.events_pending():
+                Gtk.main_iteration()
+
+            # Get the correct monitor for the window
+            gdk_display = Gdk.Display.get_default()
+            win_pos = self._window.GetPosition()
+            monitor = gdk_display.get_monitor_at_point(win_pos.x, win_pos.y)
+
+            # Find monitor index
+            monitor_idx = -1
+            for i in range(gdk_display.get_n_monitors()):
+                if gdk_display.get_monitor(i) == monitor:
+                    monitor_idx = i
+                    break
+
+            _log_menu_debug(f"  _try_fix_gtk_menu_size: monitor_idx={monitor_idx}")
+
+            # Try to get the GTK menu handle and set monitor
+            try:
+                menu_handle = self.GetHandle()
+                if menu_handle and monitor_idx >= 0:
+                    import ctypes
+
+                    # Load GTK library and call gtk_menu_set_monitor
+                    # This is a simple call that just sets the monitor index
+                    try:
+                        libgtk = ctypes.CDLL("libgtk-3.so.0")
+                        gtk_menu_set_monitor = libgtk.gtk_menu_set_monitor
+                        gtk_menu_set_monitor.argtypes = [ctypes.c_void_p, ctypes.c_int]
+                        gtk_menu_set_monitor.restype = None
+
+                        # Set the monitor for this menu
+                        gtk_menu_set_monitor(menu_handle, monitor_idx)
+                        _log_menu_debug(f"  Called gtk_menu_set_monitor({menu_handle}, {monitor_idx})")
+
+                        # Also try to queue a resize on the menu
+                        gtk_widget_queue_resize = libgtk.gtk_widget_queue_resize
+                        gtk_widget_queue_resize.argtypes = [ctypes.c_void_p]
+                        gtk_widget_queue_resize.restype = None
+                        gtk_widget_queue_resize(menu_handle)
+                        _log_menu_debug(f"  Called gtk_widget_queue_resize on menu")
+
+                    except Exception as e:
+                        _log_menu_debug(f"  ctypes GTK call failed: {e}")
+
+            except Exception as e:
+                _log_menu_debug(f"  Could not access GTK menu handle: {e}")
+
+            # Process events again
+            while Gtk.events_pending():
+                Gtk.main_iteration()
+
+        except Exception as e:
+            _log_menu_debug(f"  _try_fix_gtk_menu_size failed: {e}")
 
     def _log_gtk_menu_introspection(self, is_first_open):
         """Log GDK state for this menu using PyGObject (safe, no ctypes)."""
