@@ -333,7 +333,8 @@ class FileMenu(Menu):
 
             # Fix for menu scroll arrows appearing on first open (GTK3 multi-monitor bug):
             # GTK caches monitor info during window init and may use wrong monitor's
-            # workarea for menu height calculations. Force GTK to recalculate.
+            # workarea for menu height calculations. We need to explicitly tell GTK
+            # which monitor to use for this menu.
             if self.__firstOpen:
                 self.__firstOpen = False
                 _log_menu_debug("  Applying first-open fix...")
@@ -343,18 +344,13 @@ class FileMenu(Menu):
                 self._window.SendSizeEvent()
                 self._window.Refresh()
 
-                # Try to access GTK menu widget and force resize
+                # Try to access GTK and set the correct monitor for this menu
                 try:
-                    # Get the GTK handle for the menu
                     import gi
                     gi.require_version('Gtk', '3.0')
                     from gi.repository import Gtk, Gdk
 
-                    # Get the correct monitor for this window
-                    display_idx = wx.Display.GetFromWindow(self._window)
-                    _log_menu_debug(f"  Display index from wx: {display_idx}")
-
-                    # Get GDK display and monitor
+                    # Get GDK display and find correct monitor
                     gdk_display = Gdk.Display.get_default()
                     if gdk_display:
                         n_monitors = gdk_display.get_n_monitors()
@@ -370,12 +366,48 @@ class FileMenu(Menu):
 
                         # Get window position to find the right monitor
                         win_pos = self._window.GetPosition()
+                        _log_menu_debug(f"  Window position: ({win_pos.x}, {win_pos.y})")
+
+                        # Find which GDK monitor the window is on
+                        correct_monitor_idx = -1
+                        for i in range(n_monitors):
+                            mon = gdk_display.get_monitor(i)
+                            geom = mon.get_geometry()
+                            if (geom.x <= win_pos.x < geom.x + geom.width and
+                                geom.y <= win_pos.y < geom.y + geom.height):
+                                correct_monitor_idx = i
+                                _log_menu_debug(f"  Window is on GDK monitor {i}")
+                                break
+
+                        # Also try GDK's get_monitor_at_point
                         gdk_mon = gdk_display.get_monitor_at_point(win_pos.x, win_pos.y)
                         if gdk_mon:
                             mon_geom = gdk_mon.get_geometry()
                             mon_work = gdk_mon.get_workarea()
-                            _log_menu_debug(f"  GDK monitor at window: geom=({mon_geom.x},{mon_geom.y}) {mon_geom.width}x{mon_geom.height}")
-                            _log_menu_debug(f"  GDK monitor at window: workarea=({mon_work.x},{mon_work.y}) {mon_work.width}x{mon_work.height}")
+                            _log_menu_debug(f"  GDK get_monitor_at_point: geom=({mon_geom.x},{mon_geom.y}) {mon_geom.width}x{mon_geom.height}")
+                            _log_menu_debug(f"  GDK get_monitor_at_point: workarea=({mon_work.x},{mon_work.y}) {mon_work.width}x{mon_work.height}")
+
+                        # Try to get the GTK menu widget and set its monitor
+                        # The wx.Menu wraps a GtkMenu internally
+                        try:
+                            # Get the GtkMenu widget handle
+                            gtk_menu_ptr = self.GetHandle()
+                            _log_menu_debug(f"  GTK menu handle: {gtk_menu_ptr}")
+
+                            if gtk_menu_ptr and correct_monitor_idx >= 0:
+                                # Use ctypes to call gtk_menu_set_monitor
+                                import ctypes
+                                libgtk = ctypes.CDLL("libgtk-3.so.0")
+                                gtk_menu_set_monitor = libgtk.gtk_menu_set_monitor
+                                gtk_menu_set_monitor.argtypes = [ctypes.c_void_p, ctypes.c_int]
+                                gtk_menu_set_monitor.restype = None
+
+                                _log_menu_debug(f"  Calling gtk_menu_set_monitor({gtk_menu_ptr}, {correct_monitor_idx})")
+                                gtk_menu_set_monitor(gtk_menu_ptr, correct_monitor_idx)
+                                _log_menu_debug("  gtk_menu_set_monitor called successfully")
+                        except Exception as e:
+                            _log_menu_debug(f"  Failed to set GTK menu monitor: {e}")
+
                 except ImportError as e:
                     _log_menu_debug(f"  PyGObject not available: {e}")
                 except Exception as e:
