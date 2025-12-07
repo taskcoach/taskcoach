@@ -109,8 +109,22 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
         return flags & wx.TREE_HITTEST_ONITEMBUTTON
 
     def select(self, selection):
+        """Select items whose PyData is in the selection list.
+        Returns the first selected tree item (for scrolling).
+
+        Note: UnselectAll() is required before SelectItem() after a tree rebuild.
+        This appears to be a HyperTreeList quirk/bug - SelectItem() silently fails
+        without it, even though DoSelectItem has unselect_others=True by default.
+        See: https://github.com/wxWidgets/Phoenix/issues/1164 for related issues."""
+        first_selected_item = None
+        self.UnselectAll()
         for item in self.GetItemChildren(recursively=True):
-            self.SelectItem(item, self.GetItemPyData(item) in selection)
+            pydata = self.GetItemPyData(item)
+            if pydata in selection:
+                self.SelectItem(item, True)
+                if first_selected_item is None:
+                    first_selected_item = item
+        return first_selected_item
 
     def clear_selection(self):
         self.UnselectAll()
@@ -192,6 +206,7 @@ class TreeListCtrl(
         self.__user_double_clicked = False
         self.__columns_with_images = []
         self.__default_font = wx.NORMAL_FONT
+        self.__refreshing = False  # Flag to suppress selection events during refresh
         kwargs.setdefault("resizeableColumn", 0)
         super().__init__(
             parent,
@@ -252,6 +267,7 @@ class TreeListCtrl(
     def RefreshAllItems(self, count=0):  # pylint: disable=W0613
         self.Freeze()
         self.StopEditing()
+        self.__refreshing = True  # Suppress selection events during rebuild
         self.__selection = self.curselection()
         self.DeleteAllItems()
         self.__columns_with_images = [
@@ -263,13 +279,22 @@ class TreeListCtrl(
         if not root_item:
             root_item = self.AddRoot("Hidden root")
         self._addObjectRecursively(root_item)
+        self.Thaw()
+        self.__refreshing = False
+        # Restore selection AFTER Thaw - SelectItem doesn't work while Frozen
+        selected_item = None
+        if self.__selection:
+            selected_item = self.select(self.__selection)
         selections = self.GetSelections()
-        if selections:
+        # Use the item returned by select() for scrolling if GetSelections fails
+        scroll_target = selections[0] if selections else selected_item
+        if scroll_target:
             self.GetMainWindow()._current = (
                 self.GetMainWindow()._key_current
-            ) = selections[0]
-            self.ScrollTo(selections[0])
-        self.Thaw()
+            ) = scroll_target
+            self.ScrollTo(scroll_target)
+        # Force immediate repaint to reduce visible flicker after rebuild
+        self.GetMainWindow().Refresh(eraseBackground=False)
 
     def RefreshItems(self, *objects):
         self.__selection = self.curselection()
@@ -381,11 +406,17 @@ class TreeListCtrl(
     def _refreshSelection(self, item, domain_object, check=False):
         select = domain_object in self.__selection
         if not check or (check and select != item.IsSelected()):
+            # Use SetHilight for visual highlighting during tree construction.
+            # Actual selection is done via select() after tree is fully built.
             item.SetHilight(select)
 
     # Event handlers
 
     def onSelect(self, event):
+        # Skip selection events during refresh to avoid spurious updates
+        if self.__refreshing:
+            event.Skip()
+            return
         # Use CallAfter to prevent handling the select while items are
         # being deleted:
         wx.CallAfter(self.__safeSelectCommand)
