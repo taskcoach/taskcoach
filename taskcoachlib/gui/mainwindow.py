@@ -239,7 +239,8 @@ class MainWindow(
 
         GTK3 has a known bug where menu size allocation isn't calculated on
         first popup - documented in GNOME GTK issue #473 and various bug reports.
-        This method logs GTK's internal state and attempts workarounds.
+        We work around this by briefly showing a dummy popup menu during initialization,
+        which forces GTK to properly initialize its menu system.
         """
         if not self:
             return
@@ -254,15 +255,35 @@ class MainWindow(
         self._log_gtk_menu_state("PRIME_MENUS")
 
         try:
-            self.UpdateWindowUI()
+            # Try to use PyGObject to trigger GTK menu initialization
+            try:
+                import gi
+                gi.require_version('Gtk', '3.0')
+                from gi.repository import Gtk
 
-            menubar = self.GetMenuBar()
-            if menubar:
-                first_menu = menubar.GetMenu(0)
-                if first_menu:
-                    evt = wx.MenuEvent(wx.wxEVT_MENU_HIGHLIGHT, -1, first_menu)
-                    self.ProcessEvent(evt)
-                    print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: Sent menu highlight event")
+                # Get the default display's default screen
+                screen = Gtk.Window.get_default().get_screen() if Gtk.Window.get_default() else None
+
+                # Create a dummy GTK menu and realize it to prime the menu system
+                dummy_menu = Gtk.Menu()
+                dummy_item = Gtk.MenuItem(label="dummy")
+                dummy_menu.append(dummy_item)
+                dummy_menu.show_all()  # This triggers size allocation
+
+                # Realize the menu (allocate GDK resources)
+                dummy_menu.realize()
+
+                # Immediately hide and destroy
+                dummy_menu.popdown()
+                dummy_menu.destroy()
+
+                print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: Created and destroyed dummy GTK menu")
+
+            except Exception as e:
+                print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: PyGObject approach failed: {e}")
+
+            # Also try wx-based approach
+            self.UpdateWindowUI()
 
         except Exception as e:
             print(f"[{timestamp}.{ms:03d}] MainWindow.__prime_gtk_menus: Error: {e}")
