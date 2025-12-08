@@ -12,8 +12,9 @@ This document captures technical issues, fixes, and refactorings discovered duri
 6. [Twisted Framework Removal](#twisted-framework-removal)
 7. [Window Position Tracking with AUI](#window-position-tracking-with-aui)
 8. [GTK3 Menu Size Allocation Bug](#gtk3-menu-size-allocation-bug)
-9. [Known Issues](#known-issues)
-10. [Future Work](#future-work)
+9. [Search Box Visibility in AUI Toolbars](#search-box-visibility-in-aui-toolbars)
+10. [Known Issues](#known-issues)
+11. [Future Work](#future-work)
 
 ---
 
@@ -1510,6 +1511,101 @@ It only rebuilds when templates actually change, not on every menu open.
 
 ---
 
+## Search Box Visibility in AUI Toolbars
+
+**Date Fixed:** December 2025
+**Affected Components:** SearchCtrl in viewer toolbars (Task List, Categories, etc.)
+**Root Cause:** Missing minimum size specification for SearchCtrl in AUI toolbars with NO_AUTORESIZE flag
+
+### Problem Overview
+
+The search boxes in viewer toolbars became invisible or too small to click. The search options icon (magnifying glass with dropdown) was visible, but the text input area for typing search terms was collapsed to zero/minimal width.
+
+### Symptoms
+
+1. Search box text input area not visible in toolbar
+2. Only the search icon/button visible
+3. Unable to type search terms
+4. Issue appeared after wxPython version changes
+
+### Root Cause Analysis
+
+The issue was caused by **missing minimum size specification** combined with **AUI toolbar flags**:
+
+1. **No explicit size on SearchCtrl**: The `SearchCtrl` was added to the toolbar without any size or minimum size specification:
+   ```python
+   self.searchControl = widgets.SearchCtrl(toolbar, ...)
+   toolbar.AddControl(self.searchControl)  # No size specified!
+   ```
+
+2. **AUI_TB_NO_AUTORESIZE flag**: The toolbar uses `aui.AUI_TB_NO_AUTORESIZE` (line 27 in toolbar.py), which prevents automatic sizing of controls.
+
+3. **wxPython version behavior change**: The default "best size" calculation for `wx.SearchCtrl` may have changed in newer wxPython versions, causing the text input portion to collapse when no minimum size is specified.
+
+### Historical Note
+
+Investigating the git history revealed that **there was never an explicit size set** for the SearchCtrl:
+
+- The original code (pre-Python 3 migration) had no `SetMinSize()` call
+- The `size` parameter in `SearchCtrl.__init__` was used for **bitmap size** (`self.__bitmapSize`), not control width
+- The control relied on wxPython's default sizing behavior, which worked in older versions but broke in newer ones
+
+This is a case where **implicit behavior changed** between wxPython versions, causing previously working code to fail.
+
+### The Fix
+
+Added explicit minimum size after creating the SearchCtrl:
+
+```python
+# In uicommand.py, Search.appendToToolBar()
+self.searchControl = widgets.SearchCtrl(
+    toolbar,
+    value=searchString,
+    style=wx.TE_PROCESS_ENTER,
+    matchCase=matchCase,
+    includeSubItems=includeSubItems,
+    searchDescription=searchDescription,
+    regularExpression=regularExpression,
+    callback=self.onFind,
+)
+# Set minimum size to ensure the text input is visible in AUI toolbars
+# that use AUI_TB_NO_AUTORESIZE flag
+self.searchControl.SetMinSize((150, -1))
+toolbar.AddControl(self.searchControl)
+```
+
+**Why 150px:**
+- Slider controls in the same toolbar use 120px
+- Search boxes need more space for typing text
+- 150px provides reasonable minimum for search input while not being excessive
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `taskcoachlib/gui/uicommand/uicommand.py` | Added `SetMinSize((150, -1))` to SearchCtrl |
+
+### Key Learnings
+
+1. **Explicit sizes for AUI toolbar controls**: When using AUI toolbars with `AUI_TB_NO_AUTORESIZE`, always specify explicit sizes for controls that need a minimum width.
+
+2. **wxPython version differences**: Default sizing behavior can change between wxPython versions. Code that relies on implicit behavior may break silently.
+
+3. **The `size` parameter trap**: The SearchCtrl's `size` parameter was used for bitmap size, not control size. Always check what parameters actually control.
+
+4. **Compare with working controls**: The slider control (`size=(120, -1)`) provided a reference for how to properly size toolbar controls.
+
+### Testing Checklist
+
+- [ ] Search box visible in Task List toolbar
+- [ ] Search box visible in Categories toolbar
+- [ ] Search box visible in other viewer toolbars
+- [ ] Can click in search box and type search terms
+- [ ] Search functionality works (filters items as expected)
+- [ ] Search options dropdown menu works (click magnifying glass icon)
+
+---
+
 ## Known Issues
 
 ### Pending Issues
@@ -1528,6 +1624,7 @@ It only rebuilds when templates actually change, not on every menu open.
 - ✅ AUI pane flickering during startup fixed with Freeze/Thaw (November 2025)
 - ✅ GTK/Linux window position persistence - WM ignores initial position (November 2025) - See [WINDOW_POSITION_PERSISTENCE_ANALYSIS.md](WINDOW_POSITION_PERSISTENCE_ANALYSIS.md)
 - ✅ GTK3 menu scroll arrows on first open (December 2025) - FileMenu refactored to use pub/sub
+- ✅ Search box text input invisible in AUI toolbars (December 2025) - Added SetMinSize to SearchCtrl
 
 ---
 
