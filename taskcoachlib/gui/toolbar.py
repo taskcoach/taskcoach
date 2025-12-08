@@ -191,24 +191,57 @@ class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
 class MainToolBar(ToolBar):
     """Main window toolbar with proper AUI integration.
 
-    Note: The toolbar width is managed by mainwindow.onResize(), which sets
-    the toolbar size to match the window width. We do NOT use EVT_SIZE here
-    to avoid a feedback loop (toolbar._OnSize -> SendSizeEvent -> onResize
-    -> SetSize -> _OnSize -> repeat).
+    The toolbar width is managed by mainwindow.onResize(). However, when AUI
+    performs internal operations (sash resize, maximize, restore), it can
+    miscalculate the space reserved for the toolbar. The _OnSize handler
+    detects significant size mismatches and triggers a layout recalculation.
 
-    The only place we notify the parent is in Realize(), after toolbar
-    content changes and AUI needs to recalculate layout.
+    A class-level guard prevents the feedback loop:
+    toolbar._OnSize -> SendSizeEvent -> onResize -> SetSize -> _OnSize
     """
 
+    # Guard to prevent SendSizeEvent feedback loop
+    _in_size_event = False
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.Bind(wx.EVT_SIZE, self._OnSize)
+
+    def _OnSize(self, event):
+        """Handle toolbar size changes and fix AUI layout miscalculations.
+
+        When AUI performs operations like sash resize or pane maximize/restore,
+        it can miscalculate the space for the toolbar, causing panes to overlap.
+        This handler detects when the toolbar width differs significantly from
+        the parent width and triggers a layout recalculation to fix it.
+        """
+        event.Skip()
+        # Guard: if we're already processing a size event cascade, don't recurse
+        if MainToolBar._in_size_event:
+            return
+        # Only trigger fixup if toolbar width differs significantly from parent
+        # (The 10px threshold handles minor rounding differences)
+        try:
+            toolbar_width = event.GetSize()[0]
+            parent_width = self.GetParent().GetClientSize()[0]
+            if abs(toolbar_width - parent_width) >= 10:
+                wx.CallAfter(self.__safeParentSendSizeEvent)
+        except RuntimeError:
+            pass  # C++ object deleted
+
     def __safeParentSendSizeEvent(self):
-        """Safely send size event to parent, guarding against deleted C++ objects."""
+        """Send size event to parent with re-entrancy guard."""
+        if MainToolBar._in_size_event:
+            return
+        MainToolBar._in_size_event = True
         try:
             parent = self.GetParent()
             if parent:
                 parent.SendSizeEvent()
         except RuntimeError:
-            # wrapped C/C++ object has been deleted
-            pass
+            pass  # C++ object deleted
+        finally:
+            MainToolBar._in_size_event = False
 
     def __safeSetMinSize(self, size):
         """Safely set min size, guarding against deleted C++ objects."""
@@ -216,8 +249,7 @@ class MainToolBar(ToolBar):
             if self:
                 self.SetMinSize(size)
         except RuntimeError:
-            # wrapped C/C++ object has been deleted
-            pass
+            pass  # C++ object deleted
 
     def Realize(self):
         """Realize the toolbar and notify parent to update layout.
