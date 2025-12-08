@@ -155,31 +155,21 @@ class ViewerContainer(object):
         This handles title bar clicks (sets focus) while protecting the search
         box (doesn't steal focus if user clicked inside the viewer).
         """
-        if not self.activeViewer():
+        viewer = self.activeViewer()
+        if not viewer:
             return
         window = wx.Window.FindFocus()
-        if operating_system.isMacOsXTiger_OrOlder() and window is None:
-            # If the SearchCtrl has focus on Mac OS X Tiger,
-            # wx.Window.FindFocus returns None. If we would continue,
-            # the focus would be set to the active viewer right away,
-            # making it impossible for the user to type in the search
-            # control.
+        # Don't steal focus from text controls
+        if isinstance(window, (wx.TextCtrl, wx.SearchCtrl, wx.ComboBox)):
             return
         # Check if focus is already within the active viewer
         while window:
-            if window == self.activeViewer():
-                break
+            if window == viewer:
+                return  # Focus already inside viewer, don't change it
             window = window.GetParent()
-        else:
-            # Focus is outside the active viewer, so set it
-            wx.CallAfter(self.__safeSetFocusOnActiveViewer)
-
-    def __safeSetFocusOnActiveViewer(self):
-        """Safely set focus on active viewer, guarding against deleted C++ objects."""
+        # Focus is outside the active viewer, so set it directly
         try:
-            viewer = self.activeViewer()
-            if viewer:
-                viewer.SetFocus()
+            viewer.SetFocus()
         except RuntimeError:
             pass  # wrapped C/C++ object has been deleted
 
