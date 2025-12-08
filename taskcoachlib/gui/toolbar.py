@@ -189,40 +189,40 @@ class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
 
 
 class MainToolBar(ToolBar):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.Bind(wx.EVT_SIZE, self._OnSize)
+    """Main window toolbar with proper AUI integration.
 
-    def _OnSize(self, event):
-        event.Skip()
-        # On Windows XP, the sizes are off by 1 pixel. I fear that this value depends
-        # on the user's config so let's take some margin.
-        if abs(event.GetSize()[0] - self.GetParent().GetClientSize()[0]) >= 10:
-            wx.CallAfter(self.__safeParentSendSizeEvent)
+    The toolbar's space is reserved by setting MinSize on the AUI pane info
+    (in mainwindow.showToolBar and onResize). This ensures AUI always
+    allocates proper space for the toolbar during layout calculations.
+
+    Note: We intentionally do NOT use EVT_SIZE here. Previously there was
+    a handler that sent SendSizeEvent to fix AUI layout miscalculations,
+    but this caused performance issues during sash dragging (each drag
+    triggered extra layout recalculations). Now that MinSize is properly
+    set on the pane info, AUI calculates layout correctly without needing
+    the fixup.
+    """
 
     def __safeParentSendSizeEvent(self):
-        """Safely send size event to parent, guarding against deleted C++ objects."""
+        """Send size event to parent, guarding against deleted C++ objects."""
         try:
             parent = self.GetParent()
             if parent:
                 parent.SendSizeEvent()
         except RuntimeError:
-            # wrapped C/C++ object has been deleted
-            pass
-
-    def __safeSetMinSize(self, size):
-        """Safely set min size, guarding against deleted C++ objects."""
-        try:
-            if self:
-                self.SetMinSize(size)
-        except RuntimeError:
-            # wrapped C/C++ object has been deleted
-            pass
+            pass  # C++ object deleted
 
     def Realize(self):
+        """Realize the toolbar and notify parent to update layout.
+
+        Temporarily enables AUI_TB_AUTORESIZE during Realize() so AUI can
+        calculate proper toolbar dimensions, then disables it again to
+        prevent AUI from resizing the toolbar during sash operations.
+        """
         self._agwStyle &= ~aui.AUI_TB_NO_AUTORESIZE
         super().Realize()
         self._agwStyle |= aui.AUI_TB_NO_AUTORESIZE
+        # Notify parent to recalculate layout - this triggers onResize which
+        # sets the correct MinSize (with height=42) on both the window and
+        # the AUI pane info
         wx.CallAfter(self.__safeParentSendSizeEvent)
-        w, h = self.GetParent().GetClientSize()
-        wx.CallAfter(self.__safeSetMinSize, (w, -1))

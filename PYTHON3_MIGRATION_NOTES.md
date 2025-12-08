@@ -13,8 +13,9 @@ This document captures technical issues, fixes, and refactorings discovered duri
 7. [Window Position Tracking with AUI](#window-position-tracking-with-aui)
 8. [GTK3 Menu Size Allocation Bug](#gtk3-menu-size-allocation-bug)
 9. [Search Box Visibility in AUI Toolbars](#search-box-visibility-in-aui-toolbars)
-10. [Known Issues](#known-issues)
-11. [Future Work](#future-work)
+10. [AUI Divider Drag Visual Feedback](#aui-divider-drag-visual-feedback)
+11. [Known Issues](#known-issues)
+12. [Future Work](#future-work)
 
 ---
 
@@ -1606,6 +1607,230 @@ toolbar.AddControl(self.searchControl)
 
 ---
 
+## AUI Divider Drag Visual Feedback
+
+**Date Fixed:** December 2025
+**Affected Components:** AUI panel dividers/sashes, main toolbar positioning
+**Root Cause:** Multiple issues - missing MinSize on AUI pane info, toolbar EVT_SIZE feedback loop
+
+### Problem Overview
+
+When dragging panel dividers (sashes) between AUI panes, there was no visual feedback during the drag operation, flickering occurred, and the toolbar positioning was incorrect. Investigation revealed multiple interacting issues.
+
+### Symptoms
+
+1. Dragging divider shows flickering and dropped mouse events
+2. Toolbar flickers during any AUI resize operation
+3. Panel title bars overlap into toolbar area (cut off at close button X)
+4. Resizing outer window fixes positioning, but inner operations break it
+5. DoUpdate() taking 50-190ms causing performance issues
+
+### Root Cause Analysis
+
+This issue had **three root causes** that were discovered progressively:
+
+#### Root Cause 1: Missing MinSize on AUI Pane Info
+
+The toolbar pane was created without `MinSize` on the `AuiPaneInfo`:
+
+```python
+# BEFORE - No MinSize on pane info
+self.manager.AddPane(
+    bar,
+    aui.AuiPaneInfo()
+    .Name("toolbar")
+    .ToolbarPane()
+    .Top()
+    # No MinSize!
+)
+```
+
+**Why this matters:** AUI uses the **pane info's MinSize** for layout calculations, NOT the window's MinSize. Without it, AUI didn't know to reserve 42px for the toolbar height. This caused panel title bars to be positioned too high, overlapping into the toolbar area.
+
+**Why outer window resize worked:** `mainwindow.onResize()` was setting the toolbar window's MinSize, and `event.Skip()` triggered default handling which recalculated AUI layout correctly. But inner AUI operations (sash drag, maximize, restore) didn't go through onResize, so they used the wrong pane info.
+
+#### Root Cause 2: Toolbar EVT_SIZE Feedback Loop
+
+The `MainToolBar._OnSize()` handler was sending `SendSizeEvent` to the parent on every size change:
+
+```python
+# BEFORE - feedback loop
+def _OnSize(self, event):
+    event.Skip()
+    # This was scheduling SendSizeEvent on every toolbar size change
+    wx.CallAfter(self.__safeParentSendSizeEvent)
+```
+
+This created extra work during sash dragging:
+1. AUI resizes panes during drag
+2. Toolbar gets EVT_SIZE
+3. SendSizeEvent triggers mainwindow.onResize
+4. onResize does extra layout work
+5. This causes flicker and dropped mouse events
+
+#### Root Cause 3: Wrong MinSize in Realize()
+
+The `MainToolBar.Realize()` method was setting MinSize with `height=-1`:
+
+```python
+# BEFORE - wrong height
+def Realize(self):
+    ...
+    wx.CallAfter(self.__safeParentSendSizeEvent)  # Sets height=42 via onResize
+    wx.CallAfter(self.__safeSetMinSize, (w, -1))  # Then overwrites with height=-1!
+```
+
+### The Complete Fix
+
+**Fix 1: Set MinSize on AUI pane info** (mainwindow.py)
+
+```python
+# showToolBar() - set MinSize when creating pane
+self.manager.AddPane(
+    bar,
+    aui.AuiPaneInfo()
+    .Name("toolbar")
+    .ToolbarPane()
+    .Top()
+    .MinSize((-1, 42))  # Tell AUI to reserve 42px height
+    ...
+)
+
+# onResize() - update pane info MinSize, not just window
+def onResize(self, event):
+    currentToolbar = self.manager.GetPane("toolbar")
+    if currentToolbar.IsOk():
+        width = event.GetSize().GetWidth()
+        currentToolbar.window.SetSize((width, -1))
+        currentToolbar.window.SetMinSize((width, 42))
+        currentToolbar.MinSize((width, 42))  # NEW: Also set pane info MinSize
+    event.Skip()
+```
+
+**Fix 2: Remove EVT_SIZE handler** (toolbar.py)
+
+```python
+# AFTER - no EVT_SIZE handler
+class MainToolBar(ToolBar):
+    """Main window toolbar with proper AUI integration.
+
+    The toolbar's space is reserved by setting MinSize on the AUI pane info
+    (in mainwindow.showToolBar and onResize). This ensures AUI always
+    allocates proper space for the toolbar during layout calculations.
+
+    Note: We intentionally do NOT use EVT_SIZE here. Previously there was
+    a handler that sent SendSizeEvent to fix AUI layout miscalculations,
+    but this caused performance issues during sash dragging (each drag
+    triggered extra layout recalculations). Now that MinSize is properly
+    set on the pane info, AUI calculates layout correctly without needing
+    the fixup.
+    """
+    # No __init__ with EVT_SIZE binding
+    # No _OnSize handler
+```
+
+**Fix 3: Remove wrong SetMinSize in Realize()** (toolbar.py)
+
+```python
+# AFTER - only SendSizeEvent, no SetMinSize override
+def Realize(self):
+    self._agwStyle &= ~aui.AUI_TB_NO_AUTORESIZE
+    super().Realize()
+    self._agwStyle |= aui.AUI_TB_NO_AUTORESIZE
+    # Only SendSizeEvent - onResize will set correct MinSize
+    wx.CallAfter(self.__safeParentSendSizeEvent)
+    # REMOVED: wx.CallAfter(self.__safeSetMinSize, (w, -1))
+```
+
+**Fix 4: Enable AUI_MGR_LIVE_RESIZE** (frame.py)
+
+```python
+agwStyle = (
+    aui.AUI_MGR_DEFAULT
+    | aui.AUI_MGR_ALLOW_ACTIVE_PANE
+    | aui.AUI_MGR_LIVE_RESIZE  # Live visual feedback when dragging sashes
+)
+```
+
+**Fix 5: Throttle sash resize updates** (frame.py)
+
+AUI's `LIVE_RESIZE` mode calls `Update()` on every mouse move, which triggers expensive repaints (50-190ms). Added throttling to limit updates to ~30fps:
+
+```python
+def _install_sash_resize_optimization(manager):
+    state = {'last_update_time': 0, 'min_update_interval': 0.033}  # ~30fps
+
+    original_on_motion = getattr(manager, 'OnMotion', None)
+    if original_on_motion:
+        def throttled_on_motion(event):
+            action = getattr(manager, '_action', 0)
+            if action == 3:  # actionResize (sash drag)
+                now = time.time()
+                if now - state['last_update_time'] < state['min_update_interval']:
+                    event.Skip()
+                    return
+                state['last_update_time'] = now
+            return original_on_motion(event)
+        manager.OnMotion = throttled_on_motion
+```
+
+**Fix 6: Defer column resize on all platforms** (autowidth.py)
+
+The `AutoColumnWidthMixin` was calling `DoResize()` directly on Linux during EVT_SIZE, causing cascade repaints. Windows already used `wx.CallAfter` to defer this. Changed to defer on all platforms:
+
+```python
+def OnResize(self, event):
+    event.Skip()
+    # Always defer to avoid cascade repaints during AUI sash drag
+    wx.CallAfter(self.DoResize)
+```
+
+### Investigation Process
+
+This was a complex debugging journey that illustrates the importance of understanding root causes:
+
+1. **Initial symptom**: No visual feedback when dragging dividers
+2. **First attempt**: Added `AUI_MGR_LIVE_RESIZE` flag → Made flickering WORSE
+3. **Investigation**: Found `DoUpdate()` taking 50-190ms per call
+4. **Second attempt**: Added Freeze/Thaw around resize → Still flickered
+5. **Key insight**: "Why does resizing outer window work but inner operations don't?"
+6. **Root cause found**: MinSize was set on window but not on AUI pane info
+7. **Third attempt**: Added MinSize to pane info → Fixed positioning but still slow
+8. **Final fix**: Removed unnecessary EVT_SIZE handler → Fixed performance
+
+### Key Learnings
+
+1. **AUI pane info vs window properties**: AUI uses its own `AuiPaneInfo` properties for layout calculations, not the window's properties. Setting `window.SetMinSize()` doesn't tell AUI anything - you must also set `paneInfo.MinSize()`.
+
+2. **Feedback loops are subtle**: The toolbar's EVT_SIZE handler was meant to fix layout issues, but after fixing the root cause (pane info MinSize), it became unnecessary overhead that caused performance issues.
+
+3. **Test both inner and outer resize**: A bug that only appears during inner AUI operations but not outer window resize indicates different code paths - investigate what the working path does differently.
+
+4. **Remove workarounds after fixing root cause**: The EVT_SIZE handler was a workaround for missing MinSize. Once MinSize was properly set, the workaround became harmful.
+
+5. **Legacy code patterns**: The toolbar's EVT_SIZE handler dated back to Windows XP era (~2010) and was no longer needed with proper AUI configuration.
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `taskcoachlib/widgets/frame.py` | Added `AUI_MGR_LIVE_RESIZE` flag, added ~30fps throttling for sash drag |
+| `taskcoachlib/gui/mainwindow.py` | Added `.MinSize((-1, 42))` to toolbar pane, added `paneInfo.MinSize()` in onResize |
+| `taskcoachlib/gui/toolbar.py` | Removed EVT_SIZE handler and feedback loop code, removed wrong SetMinSize in Realize() |
+| `taskcoachlib/widgets/autowidth.py` | Changed `DoResize()` to use `wx.CallAfter` on all platforms, not just Windows |
+
+### Testing Checklist
+
+- [ ] Drag horizontal divider between panels - should see smooth live resize
+- [ ] Drag vertical divider between panels - should see smooth live resize
+- [ ] Maximize/restore inner panes - toolbar should stay correctly positioned
+- [ ] No toolbar flicker during any operation
+- [ ] Panel title bars fully visible (not cut off at close button)
+- [ ] Resize outer window - layout should be correct
+- [ ] No performance issues (dropped mouse events) during sash drag
+
+---
+
 ## Known Issues
 
 ### Pending Issues
@@ -1625,10 +1850,58 @@ toolbar.AddControl(self.searchControl)
 - ✅ GTK/Linux window position persistence - WM ignores initial position (November 2025) - See [WINDOW_POSITION_PERSISTENCE_ANALYSIS.md](WINDOW_POSITION_PERSISTENCE_ANALYSIS.md)
 - ✅ GTK3 menu scroll arrows on first open (December 2025) - FileMenu refactored to use pub/sub
 - ✅ Search box text input invisible in AUI toolbars (December 2025) - Added SetMinSize to SearchCtrl
+- ✅ AUI divider drag has no visual feedback (December 2025) - Added AUI_MGR_LIVE_RESIZE, throttling, and deferred column resize
 
 ---
 
 ## Future Work
+
+### TODO: Right-Aligned Toolbar Icon Jitter During Sash Drag
+
+**Date Identified:** December 2025
+**Status:** Investigation complete, fix deferred to separate branch
+
+#### Root Cause
+
+Right-aligned toolbar icons (after stretch spacer) jitter horizontally during AUI sash drag. Investigation revealed the issue is in the AGW AUI library itself:
+
+- **Tools** are DRAWN by `AuiToolBar.OnPaint()` and undergo `GetToolFitsByIndex()` filtering during resize
+- **Controls** (wxWindow children) are POSITIONED by wxWidgets' native layout system and remain stable
+- The filtering causes positional mismatch during drag, resulting in visual jitter
+
+This only affects tools added after a stretch spacer. Left-aligned tools and all controls (SearchCtrl, Choice dropdowns) do not jitter.
+
+#### Attempted Workaround (Reverted)
+
+A workaround was attempted using `PlateButton` controls instead of native toolbar tools for icons after the stretch spacer. While this prevented jitter, it introduced new issues:
+
+1. **Toggle buttons (ITEM_CHECK)**: Commands like `ViewerHideTasks_completed`, `ViewerHideTasks_inactive`, and `ResetFilter` are toggle buttons. PlateButton has a `PB_STYLE_TOGGLE` style but:
+   - Known wxPython issue: `SetState()` is overridden by mouse actions (see [wxPython discussion](https://discuss.wxpython.org/t/how-to-manually-set-the-toggle-state-of-wxpython-platebutton/28745))
+   - `EVT_UPDATE_UI` integration needs work to sync initial toggle state from settings
+   - Toggle buttons need proper visual feedback (pressed/unpressed state)
+
+2. **Appearance matching**: PlateButton hover highlight differs from native AuiToolBar tools:
+   - Native tools: Light grey square background on hover
+   - PlateButton with `PB_STYLE_SQUARE | PB_STYLE_NOBG`: Blue oval highlight
+
+3. **Event forwarding complexity**: PlateButton clicks need to be forwarded as `EVT_MENU` events to maintain compatibility with UICommand binding.
+
+The workaround was reverted - all toolbar buttons now use native AuiToolBar tools.
+
+#### Future Work
+
+- Investigate upstream AGW AUI fix for `GetToolFitsByIndex()` during resize
+- Or implement proper PlateButton workaround with:
+  - `PB_STYLE_TOGGLE` for visual toggle state
+  - `EVT_TOGGLEBUTTON` binding for toggle events
+  - Proper `EVT_UPDATE_UI` handling to sync initial state
+  - Custom styling to match native toolbar appearance
+
+#### Test Application
+
+A minimal test app exists at `test_aui_toolbar_jitter.py` that reproduces the issue and can be used to test fixes.
+
+---
 
 ### Areas for Investigation
 
@@ -1665,4 +1938,4 @@ When adding new technical notes:
 
 ---
 
-**Last Updated:** December 7, 2025
+**Last Updated:** December 8, 2025
