@@ -177,13 +177,22 @@ class ViewerContainer(object):
         """Handle pane activation events from AUI.
 
         When AUI activates a pane (user clicks on it, or programmatic activation),
-        we update the status bar and notify the viewer. We let AUI handle focus
-        naturally for user clicks; programmatic activation via activateViewer()
-        sets focus explicitly.
+        we update the status bar and notify the viewer. We explicitly set focus
+        on the active viewer to ensure it receives keyboard input and to prevent
+        the previously focused control from re-claiming focus.
         """
+        active = self.activeViewer()
+        if active is not None:
+            try:
+                # Set focus on the active viewer to ensure it gets keyboard input
+                # and to prevent the old focused control from re-posting
+                # ChildFocusEvent and re-activating its pane
+                active.SetFocus()
+            except RuntimeError:
+                pass  # C++ object may have been deleted
+            if self._notifyActiveViewer:
+                active.activate()
         self.sendViewerStatusEvent()
-        if self._notifyActiveViewer and self.activeViewer() is not None:
-            self.activeViewer().activate()
         event.Skip()
 
     def sendViewerStatusEvent(self):
