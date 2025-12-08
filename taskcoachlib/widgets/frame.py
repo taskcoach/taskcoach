@@ -24,10 +24,19 @@ from taskcoachlib import operating_system
 class AuiManagedFrameWithDynamicCenterPane(wx.Frame):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        agwStyle = aui.AUI_MGR_DEFAULT | aui.AUI_MGR_ALLOW_ACTIVE_PANE
+        agwStyle = (
+            aui.AUI_MGR_DEFAULT
+            | aui.AUI_MGR_ALLOW_ACTIVE_PANE
+            | aui.AUI_MGR_LIVE_RESIZE  # Live visual feedback when dragging sashes
+            | aui.AUI_MGR_TRANSPARENT_DRAG  # Transparent floating panes during drag
+            | aui.AUI_MGR_SMOOTH_DOCKING  # Smooth docking animation
+        )
         if not operating_system.isWindows():
             # With this style on Windows, you can't dock back floating frames
-            agwStyle |= wx.lib.agw.aui.AUI_MGR_USE_NATIVE_MINIFRAMES
+            agwStyle |= aui.AUI_MGR_USE_NATIVE_MINIFRAMES
+        else:
+            # Use modern Aero-style docking guides on Windows
+            agwStyle |= aui.AUI_MGR_AERO_DOCKING_GUIDES
         self.manager = aui.AuiManager(self, agwStyle)
         self.manager.SetAutoNotebookStyle(
             aui.AUI_NB_TOP
