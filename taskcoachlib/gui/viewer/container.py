@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import taskcoachlib.gui.menu
-from taskcoachlib import operating_system
 from pubsub import pub
 import wx.lib.agw.aui as aui
 import wx
