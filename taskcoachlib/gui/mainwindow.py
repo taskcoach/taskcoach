@@ -401,8 +401,13 @@ If this happens again, please make a copy of your TaskCoach.ini file """
     def onResize(self, event):
         currentToolbar = self.manager.GetPane("toolbar")
         if currentToolbar.IsOk():
-            currentToolbar.window.SetSize((event.GetSize().GetWidth(), -1))
-            currentToolbar.window.SetMinSize((event.GetSize().GetWidth(), 42))
+            width = event.GetSize().GetWidth()
+            # Set size on the window widget
+            currentToolbar.window.SetSize((width, -1))
+            currentToolbar.window.SetMinSize((width, 42))
+            # ALSO set MinSize on the AUI pane info - this is what AUI uses
+            # for layout calculations, not the window's MinSize
+            currentToolbar.MinSize((width, 42))
         event.Skip()
 
     def showStatusBar(self, value=True):
@@ -450,6 +455,8 @@ If this happens again, please make a copy of your TaskCoach.ini file """
             currentToolbar.window.Destroy()
         if value:
             bar = toolbar.MainToolBar(self, self.settings, size=value)
+            # Set MinSize on pane info - AUI uses this for layout calculations
+            # Height 42 ensures toolbar has proper space reserved
             self.manager.AddPane(
                 bar,
                 aui.AuiPaneInfo()
@@ -457,6 +464,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
                 .Caption("Toolbar")
                 .ToolbarPane()
                 .Top()
+                .MinSize((-1, 42))
                 .DestroyOnClose()
                 .LeftDockable(False)
                 .RightDockable(False),

@@ -238,14 +238,6 @@ class MainToolBar(ToolBar):
         finally:
             MainToolBar._in_size_event = False
 
-    def __safeSetMinSize(self, size):
-        """Safely set min size, guarding against deleted C++ objects."""
-        try:
-            if self:
-                self.SetMinSize(size)
-        except RuntimeError:
-            pass  # C++ object deleted
-
     def Realize(self):
         """Realize the toolbar and notify parent to update layout.
 
@@ -256,6 +248,7 @@ class MainToolBar(ToolBar):
         self._agwStyle &= ~aui.AUI_TB_NO_AUTORESIZE
         super().Realize()
         self._agwStyle |= aui.AUI_TB_NO_AUTORESIZE
+        # Notify parent to recalculate layout - this triggers onResize which
+        # sets the correct MinSize (with height=42) on both the window and
+        # the AUI pane info
         wx.CallAfter(self.__safeParentSendSizeEvent)
-        w, h = self.GetParent().GetClientSize()
-        wx.CallAfter(self.__safeSetMinSize, (w, -1))
