@@ -106,6 +106,28 @@ class ViewerCommand(base_uicommand.UICommand):  # pylint: disable=W0223
             and self.viewer.settingsSection() == other.viewer.settingsSection()
         )
 
+    def onCommandActivate(self, event, *args, **kwargs):
+        """Activate the viewer before executing the command.
+
+        This ensures that when a viewer-specific command is executed
+        (like clicking a filter button in the viewer's toolbar), the viewer
+        becomes active and its statistics are shown in the status bar.
+        """
+        self._activateViewer()
+        return super().onCommandActivate(event, *args, **kwargs)
+
+    def _activateViewer(self):
+        """Activate the viewer that this command operates on."""
+        if self.viewer is None:
+            return
+        # Get the ViewerContainer (parent of all viewers) to activate this viewer
+        parent = self.viewer.parent
+        if hasattr(parent, "activateViewer"):
+            # Check if this viewer is already active to avoid unnecessary updates
+            active_viewer = parent.activeViewer()
+            if active_viewer != self.viewer:
+                parent.activateViewer(self.viewer)
+
 
 # Commands:
 

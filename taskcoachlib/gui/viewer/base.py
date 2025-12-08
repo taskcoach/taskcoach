@@ -135,6 +135,31 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
     def activate(self):
         pass
 
+    def _bindActivationEvents(self, window):
+        """Bind click events to activate this viewer's pane.
+
+        This ensures that clicking anywhere on the viewer (toolbar, empty space,
+        etc.) will activate the pane, not just clicking on content rows.
+        AUI's AUI_MGR_ALLOW_ACTIVE_PANE handles caption clicks, but clicking on
+        other areas of the pane needs explicit handling.
+        """
+        window.Bind(wx.EVT_LEFT_DOWN, self._onViewerClick)
+        # Recursively bind to children, but skip the main widget (tree/list)
+        # since it has its own focus handling that posts ChildFocusEvent
+        for child in window.GetChildren():
+            if child != self.widget:
+                self._bindActivationEvents(child)
+
+    def _onViewerClick(self, event):
+        """Handle clicks anywhere on the viewer to activate the pane.
+
+        This posts a ChildFocusEvent to notify AUI that this pane should be
+        activated, which is the standard mechanism for pane activation.
+        """
+        # Post ChildFocusEvent to trigger AUI pane activation
+        wx.PostEvent(self, wx.ChildFocusEvent(self))
+        event.Skip()  # Allow normal event processing to continue
+
     def domainObjectsToView(self):
         """Return the domain objects that this viewer should display. For
         global viewers this will be part of the task file,
@@ -220,6 +245,10 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         self.SetSizer(self._sizer)  # Changed from SetSizerAndFit to prevent locking MinSize
         # Prevent GetEffectiveMinSize() from returning child's BestSize
         self.SetMinSize((100, 50))
+        # Bind click events to activate this viewer's pane when clicked anywhere
+        # (toolbar, empty space, etc). Without this, only clicking on content rows
+        # would activate the pane. This binds recursively to the viewer and children.
+        self._bindActivationEvents(self)
 
     def createWidget(self, *args):
         raise NotImplementedError

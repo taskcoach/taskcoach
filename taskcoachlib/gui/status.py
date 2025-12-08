@@ -78,6 +78,11 @@ class StatusBar(wx.StatusBar):
     def Destroy(self):  # pylint: disable=W0221
         for eventType in self.wxEventTypes:
             self.parent.Unbind(eventType)
+        # Unsubscribe from pubsub to prevent callbacks after destruction
+        try:
+            pub.unsubscribe(self.onViewerStatusChanged, "viewer.status")
+        except Exception:
+            pass  # May already be unsubscribed or topic may not exist
         # Stop the status update timer to prevent crashes during destruction
         if self.__timer and self.__timer.IsRunning():
             self.__timer.Stop()
