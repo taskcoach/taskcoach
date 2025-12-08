@@ -22,18 +22,16 @@ from taskcoachlib import operating_system
 
 
 def _install_sash_resize_optimization(manager):
-    """Install optimizations for AUI sash resize operations.
+    """Install throttling for AUI sash resize operations.
 
     AUI's LIVE_RESIZE mode calls Update() on every mouse move during sash drag,
-    which can cause flickering due to expensive repaints. This wrapper:
-    1. Throttles updates during drag to reduce CPU load
-    2. Adds Freeze/Thaw around the final resize to reduce flickering
+    which can cause flickering due to expensive repaints (DoUpdate takes 50-190ms).
+    This wrapper throttles updates to ~30fps to reduce CPU load while maintaining
+    visual feedback.
     """
     import time
 
-    original_on_left_up = getattr(manager, 'OnLeftUp', None)
     original_on_motion = getattr(manager, 'OnMotion', None)
-    frame = manager.GetManagedWindow() if hasattr(manager, 'GetManagedWindow') else None
 
     # Throttle state
     state = {
@@ -42,7 +40,7 @@ def _install_sash_resize_optimization(manager):
     }
 
     # Throttle updates during sash drag
-    if original_on_motion and frame:
+    if original_on_motion:
         def throttled_on_motion(event):
             action = getattr(manager, '_action', 0)
             # action 3 = actionResize (sash drag)
@@ -55,21 +53,6 @@ def _install_sash_resize_optimization(manager):
                 state['last_update_time'] = now
             return original_on_motion(event)
         manager.OnMotion = throttled_on_motion
-
-    # Freeze/Thaw around final resize
-    if original_on_left_up and frame:
-        def optimized_on_left_up(event):
-            action = getattr(manager, '_action', 0)
-            # action 3 = actionResize (sash drag)
-            if action == 3:
-                frame.Freeze()
-                try:
-                    return original_on_left_up(event)
-                finally:
-                    frame.Thaw()
-            else:
-                return original_on_left_up(event)
-        manager.OnLeftUp = optimized_on_left_up
 
 
 class AuiManagedFrameWithDynamicCenterPane(wx.Frame):
