@@ -191,52 +191,26 @@ class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
 class MainToolBar(ToolBar):
     """Main window toolbar with proper AUI integration.
 
-    The toolbar width is managed by mainwindow.onResize(). However, when AUI
-    performs internal operations (sash resize, maximize, restore), it can
-    miscalculate the space reserved for the toolbar. The _OnSize handler
-    detects significant size mismatches and triggers a layout recalculation.
+    The toolbar's space is reserved by setting MinSize on the AUI pane info
+    (in mainwindow.showToolBar and onResize). This ensures AUI always
+    allocates proper space for the toolbar during layout calculations.
 
-    A class-level guard prevents the feedback loop:
-    toolbar._OnSize -> SendSizeEvent -> onResize -> SetSize -> _OnSize
+    Note: We intentionally do NOT use EVT_SIZE here. Previously there was
+    a handler that sent SendSizeEvent to fix AUI layout miscalculations,
+    but this caused performance issues during sash dragging (each drag
+    triggered extra layout recalculations). Now that MinSize is properly
+    set on the pane info, AUI calculates layout correctly without needing
+    the fixup.
     """
 
-    # Guard to prevent SendSizeEvent feedback loop
-    _in_size_event = False
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.Bind(wx.EVT_SIZE, self._OnSize)
-
-    def _OnSize(self, event):
-        """Handle toolbar size changes and fix AUI layout miscalculations.
-
-        When AUI performs operations like sash resize or pane maximize/restore,
-        it can miscalculate the space for the toolbar, causing panes to overlap
-        or have small gaps. This handler triggers a layout recalculation to fix it.
-
-        The re-entrancy guard prevents feedback loops - the scheduled SendSizeEvent
-        will trigger onResize -> SetSize -> _OnSize, but the guard blocks recursion.
-        """
-        event.Skip()
-        # Guard: if we're already processing a size event cascade, don't recurse
-        if MainToolBar._in_size_event:
-            return
-        # Always schedule a layout fixup - the guard prevents loops
-        wx.CallAfter(self.__safeParentSendSizeEvent)
-
     def __safeParentSendSizeEvent(self):
-        """Send size event to parent with re-entrancy guard."""
-        if MainToolBar._in_size_event:
-            return
-        MainToolBar._in_size_event = True
+        """Send size event to parent, guarding against deleted C++ objects."""
         try:
             parent = self.GetParent()
             if parent:
                 parent.SendSizeEvent()
         except RuntimeError:
             pass  # C++ object deleted
-        finally:
-            MainToolBar._in_size_event = False
 
     def Realize(self):
         """Realize the toolbar and notify parent to update layout.
