@@ -26,7 +26,7 @@ class _Toolbar(aui.AuiToolBar):
     def __init__(self, parent, style):
         super().__init__(parent, agwStyle=aui.AUI_TB_NO_AUTORESIZE)
         self._after_stretch_spacer = False
-        self._bitmap_buttons = {}  # Map button id -> (bitmap, disabled_bitmap)
+        self._bitmap_buttons = {}  # Map button id -> button widget
 
     def AddStretchSpacer(self, proportion=1):
         """Override to track when we're past the stretch spacer."""
@@ -39,6 +39,12 @@ class _Toolbar(aui.AuiToolBar):
         self._bitmap_buttons = {}
         super().Clear()
 
+    def _onBitmapButtonClick(self, event):
+        """Forward BitmapButton click as EVT_MENU so command binding works."""
+        menu_event = wx.CommandEvent(wx.wxEVT_MENU, event.GetId())
+        menu_event.SetEventObject(self)
+        self.GetEventHandler().ProcessEvent(menu_event)
+
     def AddLabelTool(self, id, label, bitmap1, bitmap2, kind, **kwargs):
         long_help_string = kwargs.pop("longHelp", "")
         short_help_string = kwargs.pop("shortHelp", "")
@@ -47,13 +53,16 @@ class _Toolbar(aui.AuiToolBar):
         if self._after_stretch_spacer:
             # Use BitmapButton control instead of tool to avoid jitter
             # during AUI sash drag (tools are drawn, controls are positioned)
-            # Use BORDER_NONE and BU_EXACTFIT for flat, compact appearance like toolbar icons
+            # Use BORDER_NONE and BU_EXACTFIT for flat, compact appearance
             btn = wx.BitmapButton(
                 self, id, bitmap1,
                 style=wx.BORDER_NONE | wx.BU_EXACTFIT
             )
             btn.SetToolTip(short_help_string)
-            self._bitmap_buttons[id] = (bitmap1, bitmap2)
+            btn.SetBitmapDisabled(bitmap2)
+            # Bind button click to forward as menu event
+            btn.Bind(wx.EVT_BUTTON, self._onBitmapButtonClick)
+            self._bitmap_buttons[id] = btn
             self.AddControl(btn)
         else:
             super().AddTool(
