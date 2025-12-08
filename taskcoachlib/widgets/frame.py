@@ -52,7 +52,55 @@ def _diagnose_aui_capabilities():
     has_static = hasattr(aui, 'AuiManager_HasLiveResize')
     info.append(f"aui.AuiManager_HasLiveResize exists: {has_static}")
 
+    # List all methods on AuiManager that might be related to flags or resize
+    info.append("AuiManager methods containing 'flag', 'resize', 'live', 'sash':")
+    for name in dir(aui.AuiManager):
+        name_lower = name.lower()
+        if any(x in name_lower for x in ['flag', 'resize', 'live', 'sash', 'hint', 'draw']):
+            info.append(f"  {name}")
+
     return "\n".join(info)
+
+
+def _diagnose_manager_instance(manager):
+    """Diagnose a specific AuiManager instance."""
+    info = []
+
+    # Check for internal flags attribute
+    for attr in ['_agwFlags', '_flags', 'agwFlags', 'flags', '_mgr_flags']:
+        if hasattr(manager, attr):
+            val = getattr(manager, attr)
+            info.append(f"AUI: manager.{attr} = {val} (0x{val:04x})")
+
+    # Check GetFlags and GetAGWFlags
+    for method in ['GetFlags', 'GetAGWFlags', 'GetAGWWindowStyleFlag']:
+        if hasattr(manager, method):
+            try:
+                val = getattr(manager, method)()
+                info.append(f"AUI: manager.{method}() = {val} (0x{val:04x})")
+                if hasattr(aui, 'AUI_MGR_LIVE_RESIZE'):
+                    has_live = bool(val & aui.AUI_MGR_LIVE_RESIZE)
+                    info.append(f"AUI: LIVE_RESIZE in {method}: {'YES' if has_live else 'NO'}")
+            except Exception as e:
+                info.append(f"AUI: manager.{method}() raised: {e}")
+
+    # Try the static function
+    if hasattr(aui, 'AuiManager_HasLiveResize'):
+        try:
+            result = aui.AuiManager_HasLiveResize(manager)
+            info.append(f"AUI: AuiManager_HasLiveResize(manager) = {result}")
+        except Exception as e:
+            info.append(f"AUI: AuiManager_HasLiveResize raised: {e}")
+
+    # Check for HasLiveResize method
+    if hasattr(manager, 'HasLiveResize'):
+        try:
+            result = manager.HasLiveResize()
+            info.append(f"AUI: manager.HasLiveResize() = {result}")
+        except Exception as e:
+            info.append(f"AUI: manager.HasLiveResize() raised: {e}")
+
+    return "\n".join(info) if info else "AUI: No flag methods found on manager instance"
 
 
 class AuiManagedFrameWithDynamicCenterPane(wx.Frame):
@@ -84,15 +132,8 @@ class AuiManagedFrameWithDynamicCenterPane(wx.Frame):
         print(f"AUI: Final agwStyle = {agwStyle} (0x{agwStyle:04x})")
         self.manager = aui.AuiManager(self, agwStyle)
 
-        # Check HasLiveResize after manager creation
-        if hasattr(self.manager, 'HasLiveResize'):
-            print(f"AUI: manager.HasLiveResize() = {self.manager.HasLiveResize()}")
-        if hasattr(self.manager, 'GetFlags'):
-            flags = self.manager.GetFlags()
-            print(f"AUI: manager.GetFlags() = {flags} (0x{flags:04x})")
-            if hasattr(aui, 'AUI_MGR_LIVE_RESIZE'):
-                has_live = bool(flags & aui.AUI_MGR_LIVE_RESIZE)
-                print(f"AUI: LIVE_RESIZE flag is {'SET' if has_live else 'NOT SET'}")
+        # Comprehensive manager instance diagnostics
+        print(_diagnose_manager_instance(self.manager))
         self.manager.SetAutoNotebookStyle(
             aui.AUI_NB_TOP
             | aui.AUI_NB_CLOSE_BUTTON
