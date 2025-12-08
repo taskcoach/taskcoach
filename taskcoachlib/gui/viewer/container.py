@@ -122,21 +122,11 @@ class ViewerContainer(object):
         return None
 
     def activateViewer(self, viewer_to_activate):
-        """Activate (select) the specified viewer and set focus on it.
-
-        This is used for programmatic activation (startup, ViewerCommand, etc).
-        User clicks are handled by AUI's native pane activation via
-        AUI_MGR_ALLOW_ACTIVE_PANE and ChildFocusEvent posted by controls.
-        """
+        """Activate (select) the specified viewer."""
         self.containerWidget.manager.ActivatePane(viewer_to_activate)
         paneInfo = self.containerWidget.manager.GetPane(viewer_to_activate)
         if paneInfo.IsNotebookPage():
             self.containerWidget.manager.ShowPane(viewer_to_activate, True)
-        # Set focus on the viewer for programmatic activation
-        try:
-            viewer_to_activate.SetFocus()
-        except RuntimeError:
-            pass  # C++ object may have been deleted
         self.sendViewerStatusEvent()
 
     def __del__(self):
@@ -148,29 +138,41 @@ class ViewerContainer(object):
         pub.sendMessage("all.viewer.status", viewer=viewer)
 
     def onPageChanged(self, event):
-        """Handle pane activation events from AUI.
-
-        When AUI activates a pane (user clicks on it, or programmatic activation),
-        we update the status bar and notify the viewer. We explicitly set focus
-        on the active viewer to ensure it receives keyboard input and to prevent
-        the previously focused control from re-claiming focus.
-        """
-        active = self.activeViewer()
-        if active is not None:
-            try:
-                # Set focus on the active viewer to ensure it gets keyboard input
-                # and to prevent the old focused control from re-posting
-                # ChildFocusEvent and re-activating its pane
-                active.SetFocus()
-            except RuntimeError:
-                pass  # C++ object may have been deleted
-            if self._notifyActiveViewer:
-                active.activate()
+        """Handle pane activation events from AUI."""
+        self.__ensure_active_viewer_has_focus()
         self.sendViewerStatusEvent()
+        if self._notifyActiveViewer and self.activeViewer() is not None:
+            self.activeViewer().activate()
         event.Skip()
 
     def sendViewerStatusEvent(self):
         pub.sendMessage("viewer.status")
+
+    def __ensure_active_viewer_has_focus(self):
+        """Set focus on active viewer, unless a text control inside it has focus.
+
+        Simple rule: always set focus on the active viewer EXCEPT when a text
+        control (search box, etc.) inside that viewer already has focus.
+        """
+        viewer = self.activeViewer()
+        if not viewer:
+            return
+
+        # Check if a text control inside the active viewer has focus
+        window = wx.Window.FindFocus()
+        if isinstance(window, (wx.TextCtrl, wx.SearchCtrl, wx.ComboBox)):
+            # Walk up to see if this text control is inside the active viewer
+            parent = window
+            while parent:
+                if parent == viewer:
+                    return  # Text control is in active viewer, don't steal focus
+                parent = parent.GetParent()
+
+        # Set focus on the viewer
+        try:
+            viewer.SetFocus()
+        except RuntimeError:
+            pass
 
     def onPageClosed(self, event):
         if event.GetPane().IsToolbar():

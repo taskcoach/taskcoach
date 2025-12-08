@@ -138,27 +138,24 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
     def _bindActivationEvents(self, window):
         """Bind click events to activate this viewer's pane.
 
-        This ensures that clicking anywhere on the viewer (toolbar, empty space,
-        etc.) will activate the pane, not just clicking on content rows.
-        AUI's AUI_MGR_ALLOW_ACTIVE_PANE handles caption clicks, but clicking on
-        other areas of the pane needs explicit handling.
+        This ensures clicking anywhere on the viewer (toolbar, title bar area,
+        empty space) will activate the pane. We skip text controls to avoid
+        interfering with text input focus.
         """
+        # Skip text input controls - they handle their own focus
+        if isinstance(window, (wx.TextCtrl, wx.SearchCtrl, wx.ComboBox)):
+            return
         window.Bind(wx.EVT_LEFT_DOWN, self._onViewerClick)
         # Recursively bind to children, but skip the main widget (tree/list)
-        # since it has its own focus handling that posts ChildFocusEvent
         for child in window.GetChildren():
             if child != self.widget:
                 self._bindActivationEvents(child)
 
     def _onViewerClick(self, event):
-        """Handle clicks anywhere on the viewer to activate the pane.
-
-        This posts a ChildFocusEvent to notify AUI that this pane should be
-        activated, which is the standard mechanism for pane activation.
-        """
-        # Post ChildFocusEvent to trigger AUI pane activation
+        """Handle clicks on the viewer to activate its pane."""
         wx.PostEvent(self, wx.ChildFocusEvent(self))
-        event.Skip()  # Allow normal event processing to continue
+        self.SetFocus()  # Clear focus from other controls (e.g., search box)
+        event.Skip()
 
     def domainObjectsToView(self):
         """Return the domain objects that this viewer should display. For
@@ -245,9 +242,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         self.SetSizer(self._sizer)  # Changed from SetSizerAndFit to prevent locking MinSize
         # Prevent GetEffectiveMinSize() from returning child's BestSize
         self.SetMinSize((100, 50))
-        # Bind click events to activate this viewer's pane when clicked anywhere
-        # (toolbar, empty space, etc). Without this, only clicking on content rows
-        # would activate the pane. This binds recursively to the viewer and children.
+        # Bind click events to activate pane when clicking on toolbar/empty space
         self._bindActivationEvents(self)
 
     def createWidget(self, *args):

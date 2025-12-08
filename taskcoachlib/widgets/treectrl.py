@@ -238,7 +238,7 @@ class TreeListCtrl(
         self.Bind(wx.EVT_TREE_ITEM_EXPANDING, self.onItemExpanding)
         self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
 
-    def onSetFocus(self, event):
+    def onSetFocus(self, event):  # pylint: disable=W0613
         # Send a child focus event to let the AuiManager know we received focus
         # so it will activate our pane
         wx.PostEvent(self, wx.ChildFocusEvent(self))
