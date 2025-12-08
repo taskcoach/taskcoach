@@ -8,7 +8,7 @@ Toggle the flags below to isolate the root cause:
 - ADD_ITEMS_AFTER_SPACER: Add items after the spacer
 """
 
-VERSION = "1.3"
+VERSION = "1.4"
 
 import wx
 import wx.lib.agw.aui as aui
@@ -17,6 +17,7 @@ import wx.lib.agw.aui as aui
 USE_LIVE_RESIZE = True        # Try False - does jitter still happen?
 USE_STRETCH_SPACER = True     # Try False - use TWO TOOLBARS instead
 ADD_ITEMS_AFTER_SPACER = True # Try False - no items after spacer (only if USE_STRETCH_SPACER=True)
+USE_BITMAP_BUTTONS = False    # Try True - use BitmapButton controls instead of AddSimpleTool
 # ============================
 
 
@@ -31,12 +32,19 @@ class TestPanel(wx.Panel):
             # APPROACH 1: Single toolbar with stretch spacer
             self.toolbar = aui.AuiToolBar(self, agwStyle=aui.AUI_TB_DEFAULT_STYLE)
 
-            # Left icon
-            self.toolbar.AddSimpleTool(
-                wx.ID_ANY, "Left",
-                wx.ArtProvider.GetBitmap(wx.ART_FILE_OPEN, wx.ART_TOOLBAR, (16, 16)),
-                "Left icon"
-            )
+            # Left icon - either as tool or as BitmapButton control
+            if USE_BITMAP_BUTTONS:
+                left_btn = wx.BitmapButton(
+                    self.toolbar, wx.ID_ANY,
+                    wx.ArtProvider.GetBitmap(wx.ART_FILE_OPEN, wx.ART_TOOLBAR, (16, 16))
+                )
+                self.toolbar.AddControl(left_btn)
+            else:
+                self.toolbar.AddSimpleTool(
+                    wx.ID_ANY, "Left",
+                    wx.ArtProvider.GetBitmap(wx.ART_FILE_OPEN, wx.ART_TOOLBAR, (16, 16)),
+                    "Left icon"
+                )
 
             self.toolbar.AddStretchSpacer(1)
 
@@ -45,12 +53,19 @@ class TestPanel(wx.Panel):
                 text_ctrl = wx.TextCtrl(self.toolbar, wx.ID_ANY, "Search", size=(100, -1))
                 self.toolbar.AddControl(text_ctrl)
 
-                # Right icon
-                self.toolbar.AddSimpleTool(
-                    wx.ID_ANY, "Right",
-                    wx.ArtProvider.GetBitmap(wx.ART_FILE_SAVE, wx.ART_TOOLBAR, (16, 16)),
-                    "Right icon"
-                )
+                # Right icon - either as tool or as BitmapButton control
+                if USE_BITMAP_BUTTONS:
+                    right_btn = wx.BitmapButton(
+                        self.toolbar, wx.ID_ANY,
+                        wx.ArtProvider.GetBitmap(wx.ART_FILE_SAVE, wx.ART_TOOLBAR, (16, 16))
+                    )
+                    self.toolbar.AddControl(right_btn)
+                else:
+                    self.toolbar.AddSimpleTool(
+                        wx.ID_ANY, "Right",
+                        wx.ArtProvider.GetBitmap(wx.ART_FILE_SAVE, wx.ART_TOOLBAR, (16, 16)),
+                        "Right icon"
+                    )
 
             self.toolbar.Realize()
             toolbar_sizer = self.toolbar  # Will add directly
@@ -83,7 +98,7 @@ class TestPanel(wx.Panel):
             self.toolbar = left_toolbar  # For reference
 
         # Create content
-        flags_info = f"LIVE_RESIZE={USE_LIVE_RESIZE}, STRETCH={USE_STRETCH_SPACER}, ITEMS_AFTER={ADD_ITEMS_AFTER_SPACER}"
+        flags_info = f"LIVE_RESIZE={USE_LIVE_RESIZE}, STRETCH={USE_STRETCH_SPACER}, ITEMS_AFTER={ADD_ITEMS_AFTER_SPACER}, BITMAP_BTNS={USE_BITMAP_BUTTONS}"
         content = wx.TextCtrl(
             self, wx.ID_ANY,
             f"Content for {name}\n\n{flags_info}\n\nDrag the sash and observe toolbar icons.",
@@ -132,7 +147,7 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close)
 
         # Print current settings
-        print(f"Version {VERSION}: LIVE_RESIZE={USE_LIVE_RESIZE}, STRETCH_SPACER={USE_STRETCH_SPACER}, ITEMS_AFTER_SPACER={ADD_ITEMS_AFTER_SPACER}")
+        print(f"Version {VERSION}: LIVE_RESIZE={USE_LIVE_RESIZE}, STRETCH={USE_STRETCH_SPACER}, ITEMS_AFTER={ADD_ITEMS_AFTER_SPACER}, BITMAP_BTNS={USE_BITMAP_BUTTONS}")
 
     def on_close(self, event):
         self.manager.UnInit()
