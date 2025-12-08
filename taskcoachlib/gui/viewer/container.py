@@ -122,21 +122,11 @@ class ViewerContainer(object):
         return None
 
     def activateViewer(self, viewer_to_activate):
-        """Activate (select) the specified viewer and set focus on it.
-
-        This is used for programmatic activation (startup, ViewerCommand, etc).
-        User clicks are handled by AUI's native pane activation via
-        AUI_MGR_ALLOW_ACTIVE_PANE and ChildFocusEvent posted by controls.
-        """
+        """Activate (select) the specified viewer."""
         self.containerWidget.manager.ActivatePane(viewer_to_activate)
         paneInfo = self.containerWidget.manager.GetPane(viewer_to_activate)
         if paneInfo.IsNotebookPage():
             self.containerWidget.manager.ShowPane(viewer_to_activate, True)
-        # Set focus on the viewer for programmatic activation
-        try:
-            viewer_to_activate.SetFocus()
-        except RuntimeError:
-            pass  # C++ object may have been deleted
         self.sendViewerStatusEvent()
 
     def __del__(self):
@@ -148,24 +138,10 @@ class ViewerContainer(object):
         pub.sendMessage("all.viewer.status", viewer=viewer)
 
     def onPageChanged(self, event):
-        """Handle pane activation events from AUI.
-
-        When AUI activates a pane (user clicks on it, or programmatic activation),
-        we update the status bar and notify the viewer. We explicitly set focus
-        on the active viewer to ensure it receives keyboard input and to prevent
-        the previously focused control from re-claiming focus.
-        """
+        """Handle pane activation events from AUI."""
         active = self.activeViewer()
-        if active is not None:
-            try:
-                # Set focus on the active viewer to ensure it gets keyboard input
-                # and to prevent the old focused control from re-posting
-                # ChildFocusEvent and re-activating its pane
-                active.SetFocus()
-            except RuntimeError:
-                pass  # C++ object may have been deleted
-            if self._notifyActiveViewer:
-                active.activate()
+        if active is not None and self._notifyActiveViewer:
+            active.activate()
         self.sendViewerStatusEvent()
         event.Skip()
 
