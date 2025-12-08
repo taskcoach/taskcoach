@@ -89,10 +89,10 @@ class AutoColumnWidthMixin(object):
 
     def OnResize(self, event):
         event.Skip()
-        if operating_system.isWindows():
-            wx.CallAfter(self.DoResize)
-        else:
-            self.DoResize()
+        # Always defer column resize to avoid cascade repaints during resize operations.
+        # This is especially important during AUI sash drag where immediate column
+        # recalculation can cause flickering.
+        wx.CallAfter(self.DoResize)
 
     def DoResize(self):
         if not self:
