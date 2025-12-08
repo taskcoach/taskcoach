@@ -27,8 +27,8 @@ class TestPanel(wx.Panel):
         super().__init__(parent)
         self.name = name
 
-        # Create toolbar
-        self.toolbar = aui.AuiToolBar(self, agwStyle=aui.AUI_TB_DEFAULT_STYLE)
+        # Create toolbar with NO_AUTORESIZE to prevent AUI from resizing during sash ops
+        self.toolbar = aui.AuiToolBar(self, agwStyle=aui.AUI_TB_NO_AUTORESIZE)
 
         # Left icon
         self.toolbar.AddSimpleTool(
