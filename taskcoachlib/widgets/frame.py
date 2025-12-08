@@ -111,24 +111,46 @@ def _install_resize_tracing(manager):
     # Store original methods
     original_update = manager.Update if hasattr(manager, 'Update') else None
     original_do_update = manager.DoUpdate if hasattr(manager, 'DoUpdate') else None
+    original_on_left_up = manager.OnLeftUp if hasattr(manager, 'OnLeftUp') else None
+    original_on_left_up_resize = manager.OnLeftUp_Resize if hasattr(manager, 'OnLeftUp_Resize') else None
 
     state = {
         'do_update_count': 0,
-        'in_do_update': False,  # Re-entrancy guard
-        'last_stack_time': 0,
+        'left_up_count': 0,
+        'left_up_resize_count': 0,
+        'in_do_update': False,
     }
+
+    # Trace OnLeftUp to see why it's called multiple times
+    if original_on_left_up:
+        def traced_on_left_up(event):
+            state['left_up_count'] += 1
+            count = state['left_up_count']
+            action = getattr(manager, '_action', 'unknown')
+            print(f"AUI TRACE: OnLeftUp #{count} _action={action}")
+            return original_on_left_up(event)
+        manager.OnLeftUp = traced_on_left_up
+
+    # Trace OnLeftUp_Resize specifically
+    if original_on_left_up_resize:
+        def traced_on_left_up_resize(event):
+            state['left_up_resize_count'] += 1
+            count = state['left_up_resize_count']
+            print(f"AUI TRACE: OnLeftUp_Resize #{count} called")
+            stack = traceback.extract_stack()
+            callers = [f"{f.filename.split('/')[-1]}:{f.lineno}:{f.name}" for f in stack[-6:-2]]
+            print(f"  from: {' <- '.join(callers)}")
+            return original_on_left_up_resize(event)
+        manager.OnLeftUp_Resize = traced_on_left_up_resize
 
     if original_update:
         def traced_update():
             start = time.time()
-            # Show abbreviated call stack for first few calls
-            if state['do_update_count'] < 15:
+            # Show abbreviated call stack
+            if state['do_update_count'] < 20:
                 stack = traceback.extract_stack()
-                # Get caller info (skip traced_update and Update frames)
-                callers = []
-                for frame in stack[-6:-2]:  # Last 4 meaningful frames
-                    callers.append(f"{frame.filename.split('/')[-1]}:{frame.lineno}:{frame.name}")
-                print(f"AUI TRACE: Update() called from: {' <- '.join(callers)}")
+                callers = [f"{f.filename.split('/')[-1]}:{f.lineno}:{f.name}" for f in stack[-6:-2]]
+                print(f"AUI TRACE: Update() from: {' <- '.join(callers)}")
             result = original_update()
             elapsed_ms = (time.time() - start) * 1000
             if elapsed_ms > 30:
@@ -145,19 +167,11 @@ def _install_resize_tracing(manager):
             if state['in_do_update']:
                 stack = traceback.extract_stack()
                 callers = [f"{f.filename.split('/')[-1]}:{f.lineno}" for f in stack[-5:-1]]
-                print(f"AUI CASCADE: DoUpdate() re-entered! count={count} from: {' <- '.join(callers)}")
+                print(f"AUI CASCADE: DoUpdate() re-entered! #{count} from: {' <- '.join(callers)}")
                 return  # Skip re-entrant calls
 
             state['in_do_update'] = True
             start = time.time()
-
-            # Show call stack for first 10 DoUpdate calls
-            if count <= 10:
-                stack = traceback.extract_stack()
-                callers = []
-                for frame in stack[-8:-2]:  # More context
-                    callers.append(f"{frame.filename.split('/')[-1]}:{frame.lineno}:{frame.name}")
-                print(f"AUI TRACE: DoUpdate() #{count} from: {' <- '.join(callers)}")
 
             try:
                 result = original_do_update()
@@ -165,11 +179,12 @@ def _install_resize_tracing(manager):
                 state['in_do_update'] = False
 
             elapsed_ms = (time.time() - start) * 1000
-            print(f"AUI: DoUpdate() #{count} took {elapsed_ms:.1f}ms")
+            if elapsed_ms > 20:
+                print(f"AUI: DoUpdate() #{count} took {elapsed_ms:.1f}ms")
             return result
         manager.DoUpdate = traced_do_update
 
-    print("AUI: Call stack tracing installed")
+    print("AUI: Resize event tracing installed")
 
 
 class AuiManagedFrameWithDynamicCenterPane(wx.Frame):
