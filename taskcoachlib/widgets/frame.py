@@ -104,68 +104,79 @@ def _diagnose_manager_instance(manager):
 
 
 def _install_resize_tracing(manager):
-    """Monkey-patch AuiManager to trace sash resize events."""
-    import functools
+    """Monkey-patch AuiManager to trace sash resize events with timing."""
+    import time
 
     # Store original methods
-    original_on_motion = manager.OnMotion if hasattr(manager, 'OnMotion') else None
     original_on_motion_resize = manager.OnMotion_Resize if hasattr(manager, 'OnMotion_Resize') else None
-    original_on_left_down = manager.OnLeftDown if hasattr(manager, 'OnLeftDown') else None
-    original_on_left_up = manager.OnLeftUp if hasattr(manager, 'OnLeftUp') else None
-    original_on_left_up_resize = manager.OnLeftUp_Resize if hasattr(manager, 'OnLeftUp_Resize') else None
+    original_update = manager.Update if hasattr(manager, 'Update') else None
+    original_do_update = manager.DoUpdate if hasattr(manager, 'DoUpdate') else None
 
-    call_count = {'motion': 0, 'motion_resize': 0, 'left_down': 0, 'left_up': 0, 'left_up_resize': 0}
-
-    if original_on_motion:
-        def traced_on_motion(event):
-            call_count['motion'] += 1
-            if call_count['motion'] <= 5:  # Only log first 5 to avoid spam
-                print(f"AUI TRACE: OnMotion called (count={call_count['motion']})")
-            return original_on_motion(event)
-        manager.OnMotion = traced_on_motion
+    stats = {
+        'motion_resize_count': 0,
+        'motion_resize_total_ms': 0,
+        'update_count': 0,
+        'update_total_ms': 0,
+        'do_update_count': 0,
+        'do_update_total_ms': 0,
+        'last_report_time': time.time(),
+    }
 
     if original_on_motion_resize:
         def traced_on_motion_resize(event):
-            call_count['motion_resize'] += 1
-            print(f"AUI TRACE: OnMotion_Resize called (count={call_count['motion_resize']})")
-            return original_on_motion_resize(event)
+            start = time.time()
+            result = original_on_motion_resize(event)
+            elapsed_ms = (time.time() - start) * 1000
+            stats['motion_resize_count'] += 1
+            stats['motion_resize_total_ms'] += elapsed_ms
+            if elapsed_ms > 50:  # Log slow operations
+                print(f"AUI SLOW: OnMotion_Resize took {elapsed_ms:.1f}ms")
+            return result
         manager.OnMotion_Resize = traced_on_motion_resize
 
-    if original_on_left_down:
-        def traced_on_left_down(event):
-            call_count['left_down'] += 1
-            print(f"AUI TRACE: OnLeftDown called (count={call_count['left_down']})")
-            # Check what action would be taken
-            if hasattr(manager, '_action'):
-                print(f"AUI TRACE: Current _action = {manager._action}")
-            if hasattr(manager, '_action_part'):
-                print(f"AUI TRACE: Current _action_part = {manager._action_part}")
-            return original_on_left_down(event)
-        manager.OnLeftDown = traced_on_left_down
+    if original_update:
+        def traced_update():
+            start = time.time()
+            result = original_update()
+            elapsed_ms = (time.time() - start) * 1000
+            stats['update_count'] += 1
+            stats['update_total_ms'] += elapsed_ms
+            if elapsed_ms > 50:  # Log slow operations
+                print(f"AUI SLOW: Update() took {elapsed_ms:.1f}ms (count={stats['update_count']})")
+            return result
+        manager.Update = traced_update
 
-    if original_on_left_up:
-        def traced_on_left_up(event):
-            call_count['left_up'] += 1
-            print(f"AUI TRACE: OnLeftUp called (count={call_count['left_up']})")
-            if hasattr(manager, '_action'):
-                print(f"AUI TRACE: _action before OnLeftUp = {manager._action}")
-            return original_on_left_up(event)
-        manager.OnLeftUp = traced_on_left_up
+    if original_do_update:
+        def traced_do_update():
+            start = time.time()
+            result = original_do_update()
+            elapsed_ms = (time.time() - start) * 1000
+            stats['do_update_count'] += 1
+            stats['do_update_total_ms'] += elapsed_ms
+            if elapsed_ms > 50:  # Log slow operations
+                print(f"AUI SLOW: DoUpdate() took {elapsed_ms:.1f}ms (count={stats['do_update_count']})")
+            return result
+        manager.DoUpdate = traced_do_update
 
-    if original_on_left_up_resize:
-        def traced_on_left_up_resize(event):
-            call_count['left_up_resize'] += 1
-            print(f"AUI TRACE: OnLeftUp_Resize called (count={call_count['left_up_resize']})")
-            return original_on_left_up_resize(event)
-        manager.OnLeftUp_Resize = traced_on_left_up_resize
+    # Periodic stats report
+    def report_stats():
+        now = time.time()
+        if now - stats['last_report_time'] > 2.0 and stats['motion_resize_count'] > 0:
+            avg_motion = stats['motion_resize_total_ms'] / max(1, stats['motion_resize_count'])
+            avg_update = stats['update_total_ms'] / max(1, stats['update_count'])
+            print(f"AUI STATS: motion_resize={stats['motion_resize_count']} (avg={avg_motion:.1f}ms), "
+                  f"update={stats['update_count']} (avg={avg_update:.1f}ms)")
+            stats['last_report_time'] = now
+            stats['motion_resize_count'] = 0
+            stats['motion_resize_total_ms'] = 0
+            stats['update_count'] = 0
+            stats['update_total_ms'] = 0
 
-    # Also check the action constants
-    print("AUI: Action constants:")
-    for name in dir(aui):
-        if name.startswith('actionResize') or name.startswith('action'):
-            val = getattr(aui, name, None)
-            if isinstance(val, int):
-                print(f"  {name} = {val}")
+    # Store for periodic reporting
+    manager._resize_stats = stats
+    manager._report_stats = report_stats
+
+    print("AUI: Resize timing tracing installed")
 
 
 class AuiManagedFrameWithDynamicCenterPane(wx.Frame):
