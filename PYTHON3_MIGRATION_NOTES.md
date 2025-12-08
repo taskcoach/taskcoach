@@ -1610,104 +1610,190 @@ toolbar.AddControl(self.searchControl)
 ## AUI Divider Drag Visual Feedback
 
 **Date Fixed:** December 2025
-**Affected Components:** AUI panel dividers/sashes in main window
-**Root Cause:** Missing AUI_MGR_LIVE_RESIZE flag in AuiManager initialization
+**Affected Components:** AUI panel dividers/sashes, main toolbar positioning
+**Root Cause:** Multiple issues - missing MinSize on AUI pane info, toolbar EVT_SIZE feedback loop
 
 ### Problem Overview
 
-When dragging panel dividers (sashes) between AUI panes, there was no visual feedback during the drag operation. The panels would only resize after releasing the mouse button, with no indication of where the divider was being moved.
+When dragging panel dividers (sashes) between AUI panes, there was no visual feedback during the drag operation, flickering occurred, and the toolbar positioning was incorrect. Investigation revealed multiple interacting issues.
 
 ### Symptoms
 
-1. Dragging divider shows no movement during drag
-2. No shadow or resize hint visible
-3. No live resize of panels
-4. Panels suddenly snap to new size on mouse release
-5. Poor UX for adjusting panel layouts
+1. Dragging divider shows flickering and dropped mouse events
+2. Toolbar flickers during any AUI resize operation
+3. Panel title bars overlap into toolbar area (cut off at close button X)
+4. Resizing outer window fixes positioning, but inner operations break it
+5. DoUpdate() taking 50-190ms causing performance issues
 
 ### Root Cause Analysis
 
-The `AuiManager` was initialized with only `AUI_MGR_DEFAULT`, which does **not** include `AUI_MGR_LIVE_RESIZE`:
+This issue had **three root causes** that were discovered progressively:
+
+#### Root Cause 1: Missing MinSize on AUI Pane Info
+
+The toolbar pane was created without `MinSize` on the `AuiPaneInfo`:
 
 ```python
-# Before - missing live resize
-agwStyle = aui.AUI_MGR_DEFAULT | aui.AUI_MGR_ALLOW_ACTIVE_PANE
+# BEFORE - No MinSize on pane info
+self.manager.AddPane(
+    bar,
+    aui.AuiPaneInfo()
+    .Name("toolbar")
+    .ToolbarPane()
+    .Top()
+    # No MinSize!
+)
 ```
 
-**What `AUI_MGR_DEFAULT` includes:**
-| Flag | Bit | Purpose |
-|------|-----|---------|
-| `AUI_MGR_ALLOW_FLOATING` | 1 << 0 | Allow panes to float |
-| `AUI_MGR_TRANSPARENT_HINT` | 1 << 3 | Transparent hint window |
-| `AUI_MGR_HINT_FADE` | 1 << 6 | Hint window fade effect |
-| `AUI_MGR_NO_VENETIAN_BLINDS_FADE` | 1 << 7 | Disable venetian blind fade |
+**Why this matters:** AUI uses the **pane info's MinSize** for layout calculations, NOT the window's MinSize. Without it, AUI didn't know to reserve 42px for the toolbar height. This caused panel title bars to be positioned too high, overlapping into the toolbar area.
 
-**What was missing:**
-| Flag | Bit | Purpose |
-|------|-----|---------|
-| `AUI_MGR_LIVE_RESIZE` | 1 << 8 | Live visual feedback when dragging sashes |
+**Why outer window resize worked:** `mainwindow.onResize()` was setting the toolbar window's MinSize, and `event.Skip()` triggered default handling which recalculated AUI layout correctly. But inner AUI operations (sash drag, maximize, restore) didn't go through onResize, so they used the wrong pane info.
 
-### The Fix
+#### Root Cause 2: Toolbar EVT_SIZE Feedback Loop
 
-Added multiple visual feedback flags to improve the AUI experience:
+The `MainToolBar._OnSize()` handler was sending `SendSizeEvent` to the parent on every size change:
 
 ```python
-# After - comprehensive visual feedback
+# BEFORE - feedback loop
+def _OnSize(self, event):
+    event.Skip()
+    # This was scheduling SendSizeEvent on every toolbar size change
+    wx.CallAfter(self.__safeParentSendSizeEvent)
+```
+
+This created extra work during sash dragging:
+1. AUI resizes panes during drag
+2. Toolbar gets EVT_SIZE
+3. SendSizeEvent triggers mainwindow.onResize
+4. onResize does extra layout work
+5. This causes flicker and dropped mouse events
+
+#### Root Cause 3: Wrong MinSize in Realize()
+
+The `MainToolBar.Realize()` method was setting MinSize with `height=-1`:
+
+```python
+# BEFORE - wrong height
+def Realize(self):
+    ...
+    wx.CallAfter(self.__safeParentSendSizeEvent)  # Sets height=42 via onResize
+    wx.CallAfter(self.__safeSetMinSize, (w, -1))  # Then overwrites with height=-1!
+```
+
+### The Complete Fix
+
+**Fix 1: Set MinSize on AUI pane info** (mainwindow.py)
+
+```python
+# showToolBar() - set MinSize when creating pane
+self.manager.AddPane(
+    bar,
+    aui.AuiPaneInfo()
+    .Name("toolbar")
+    .ToolbarPane()
+    .Top()
+    .MinSize((-1, 42))  # Tell AUI to reserve 42px height
+    ...
+)
+
+# onResize() - update pane info MinSize, not just window
+def onResize(self, event):
+    currentToolbar = self.manager.GetPane("toolbar")
+    if currentToolbar.IsOk():
+        width = event.GetSize().GetWidth()
+        currentToolbar.window.SetSize((width, -1))
+        currentToolbar.window.SetMinSize((width, 42))
+        currentToolbar.MinSize((width, 42))  # NEW: Also set pane info MinSize
+    event.Skip()
+```
+
+**Fix 2: Remove EVT_SIZE handler** (toolbar.py)
+
+```python
+# AFTER - no EVT_SIZE handler
+class MainToolBar(ToolBar):
+    """Main window toolbar with proper AUI integration.
+
+    The toolbar's space is reserved by setting MinSize on the AUI pane info
+    (in mainwindow.showToolBar and onResize). This ensures AUI always
+    allocates proper space for the toolbar during layout calculations.
+
+    Note: We intentionally do NOT use EVT_SIZE here. Previously there was
+    a handler that sent SendSizeEvent to fix AUI layout miscalculations,
+    but this caused performance issues during sash dragging (each drag
+    triggered extra layout recalculations). Now that MinSize is properly
+    set on the pane info, AUI calculates layout correctly without needing
+    the fixup.
+    """
+    # No __init__ with EVT_SIZE binding
+    # No _OnSize handler
+```
+
+**Fix 3: Remove wrong SetMinSize in Realize()** (toolbar.py)
+
+```python
+# AFTER - only SendSizeEvent, no SetMinSize override
+def Realize(self):
+    self._agwStyle &= ~aui.AUI_TB_NO_AUTORESIZE
+    super().Realize()
+    self._agwStyle |= aui.AUI_TB_NO_AUTORESIZE
+    # Only SendSizeEvent - onResize will set correct MinSize
+    wx.CallAfter(self.__safeParentSendSizeEvent)
+    # REMOVED: wx.CallAfter(self.__safeSetMinSize, (w, -1))
+```
+
+**Fix 4: Enable AUI_MGR_LIVE_RESIZE** (frame.py)
+
+```python
 agwStyle = (
     aui.AUI_MGR_DEFAULT
     | aui.AUI_MGR_ALLOW_ACTIVE_PANE
     | aui.AUI_MGR_LIVE_RESIZE  # Live visual feedback when dragging sashes
-    | aui.AUI_MGR_TRANSPARENT_DRAG  # Transparent floating panes during drag
-    | aui.AUI_MGR_SMOOTH_DOCKING  # Smooth docking animation
 )
-if not operating_system.isWindows():
-    # With this style on Windows, you can't dock back floating frames
-    agwStyle |= aui.AUI_MGR_USE_NATIVE_MINIFRAMES
-else:
-    # Use modern Aero-style docking guides on Windows
-    agwStyle |= aui.AUI_MGR_AERO_DOCKING_GUIDES
 ```
 
-### Flags Added
+### Investigation Process
 
-| Flag | Platform | Purpose |
-|------|----------|---------|
-| `AUI_MGR_LIVE_RESIZE` | All | Panels resize in real-time as dividers are dragged |
-| `AUI_MGR_TRANSPARENT_DRAG` | All (if supported) | Floating panes become semi-transparent during drag |
-| `AUI_MGR_SMOOTH_DOCKING` | All | Smooth animation when docking floating panes |
-| `AUI_MGR_AERO_DOCKING_GUIDES` | Windows only | Modern Aero-style visual docking guides |
+This was a complex debugging journey that illustrates the importance of understanding root causes:
 
-### Platform Notes
+1. **Initial symptom**: No visual feedback when dragging dividers
+2. **First attempt**: Added `AUI_MGR_LIVE_RESIZE` flag → Made flickering WORSE
+3. **Investigation**: Found `DoUpdate()` taking 50-190ms per call
+4. **Second attempt**: Added Freeze/Thaw around resize → Still flickered
+5. **Key insight**: "Why does resizing outer window work but inner operations don't?"
+6. **Root cause found**: MinSize was set on window but not on AUI pane info
+7. **Third attempt**: Added MinSize to pane info → Fixed positioning but still slow
+8. **Final fix**: Removed unnecessary EVT_SIZE handler → Fixed performance
 
-- **GTK3 (Wayland) and macOS**: Live resize is always used regardless of the flag (non-live resize not implemented)
-- **GTK3 (X11) and Windows**: The `AUI_MGR_LIVE_RESIZE` flag is required to enable live resize
-- **Windows**: `AUI_MGR_AERO_DOCKING_GUIDES` provides modern docking guide visuals
-- **Linux/macOS**: `AUI_MGR_USE_NATIVE_MINIFRAMES` provides native caption bars for floating panes
+### Key Learnings
+
+1. **AUI pane info vs window properties**: AUI uses its own `AuiPaneInfo` properties for layout calculations, not the window's properties. Setting `window.SetMinSize()` doesn't tell AUI anything - you must also set `paneInfo.MinSize()`.
+
+2. **Feedback loops are subtle**: The toolbar's EVT_SIZE handler was meant to fix layout issues, but after fixing the root cause (pane info MinSize), it became unnecessary overhead that caused performance issues.
+
+3. **Test both inner and outer resize**: A bug that only appears during inner AUI operations but not outer window resize indicates different code paths - investigate what the working path does differently.
+
+4. **Remove workarounds after fixing root cause**: The EVT_SIZE handler was a workaround for missing MinSize. Once MinSize was properly set, the workaround became harmful.
+
+5. **Legacy code patterns**: The toolbar's EVT_SIZE handler dated back to Windows XP era (~2010) and was no longer needed with proper AUI configuration.
 
 ### Files Modified
 
 | File | Change |
 |------|--------|
-| `taskcoachlib/widgets/frame.py` | Added visual feedback flags to AuiManager initialization |
-
-### Key Learnings
-
-1. **AUI_MGR_DEFAULT is minimal**: It doesn't include many useful visual feedback flags that improve UX.
-
-2. **Check flag documentation**: The AGW AUI library has many flags beyond the defaults that can significantly improve user experience.
-
-3. **Platform-specific flags**: Some flags only apply to specific platforms (e.g., AERO_DOCKING_GUIDES on Windows).
-
-4. **Safe to enable broadly**: Most visual feedback flags degrade gracefully on platforms that don't support them.
+| `taskcoachlib/widgets/frame.py` | Added `AUI_MGR_LIVE_RESIZE` flag, removed diagnostic code |
+| `taskcoachlib/gui/mainwindow.py` | Added `.MinSize((-1, 42))` to toolbar pane, added `paneInfo.MinSize()` in onResize |
+| `taskcoachlib/gui/toolbar.py` | Removed EVT_SIZE handler and feedback loop code, removed wrong SetMinSize in Realize() |
 
 ### Testing Checklist
 
-- [ ] Drag horizontal divider between panels - should see live resize
-- [ ] Drag vertical divider between panels - should see live resize
-- [ ] Float a panel and drag it - should be semi-transparent (if platform supports)
-- [ ] Dock a floating panel - should animate smoothly
-- [ ] On Windows: Docking guides should have modern Aero style
-- [ ] On Linux/macOS: Floating panes should have native caption bars
+- [ ] Drag horizontal divider between panels - should see smooth live resize
+- [ ] Drag vertical divider between panels - should see smooth live resize
+- [ ] Maximize/restore inner panes - toolbar should stay correctly positioned
+- [ ] No toolbar flicker during any operation
+- [ ] Panel title bars fully visible (not cut off at close button)
+- [ ] Resize outer window - layout should be correct
+- [ ] No performance issues (dropped mouse events) during sash drag
 
 ---
 
@@ -1771,4 +1857,4 @@ When adding new technical notes:
 
 ---
 
-**Last Updated:** December 7, 2025
+**Last Updated:** December 8, 2025
