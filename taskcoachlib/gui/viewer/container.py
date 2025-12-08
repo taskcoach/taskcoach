@@ -158,13 +158,14 @@ class ViewerContainer(object):
         if not viewer:
             return
         window = wx.Window.FindFocus()
-        # Don't steal focus from text controls
-        if isinstance(window, (wx.TextCtrl, wx.SearchCtrl, wx.ComboBox)):
-            return
+        is_text_control = isinstance(window, (wx.TextCtrl, wx.SearchCtrl, wx.ComboBox))
         # Check if focus is already within the active viewer
         while window:
             if window == viewer:
-                return  # Focus already inside viewer, don't change it
+                # Focus is inside active viewer - only protect text controls here
+                if is_text_control:
+                    return  # Don't steal focus from search box in active viewer
+                return  # Focus already inside viewer
             window = window.GetParent()
         # Focus is outside the active viewer, so set it directly
         try:
