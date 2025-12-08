@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import operating_system
 from wx.lib.agw import aui
-from wx.lib.platebtn import PlateButton, PB_STYLE_NOBG
 import wx
 from . import uicommand
 
@@ -26,54 +25,22 @@ from . import uicommand
 class _Toolbar(aui.AuiToolBar):
     def __init__(self, parent, style):
         super().__init__(parent, agwStyle=aui.AUI_TB_NO_AUTORESIZE)
-        self._after_stretch_spacer = False
-        self._bitmap_buttons = {}  # Map button id -> button widget
-
-    def AddStretchSpacer(self, proportion=1):
-        """Override to track when we're past the stretch spacer."""
-        super().AddStretchSpacer(proportion)
-        self._after_stretch_spacer = True
-
-    def Clear(self):
-        """Reset stretch spacer tracking on clear."""
-        self._after_stretch_spacer = False
-        self._bitmap_buttons = {}
-        super().Clear()
-
-    def _onBitmapButtonClick(self, event):
-        """Forward BitmapButton click as EVT_MENU so command binding works."""
-        menu_event = wx.CommandEvent(wx.wxEVT_MENU, event.GetId())
-        menu_event.SetEventObject(self)
-        self.GetEventHandler().ProcessEvent(menu_event)
 
     def AddLabelTool(self, id, label, bitmap1, bitmap2, kind, **kwargs):
         long_help_string = kwargs.pop("longHelp", "")
         short_help_string = kwargs.pop("shortHelp", "")
         bitmap2 = self.MakeDisabledBitmap(bitmap1)
-
-        if self._after_stretch_spacer:
-            # Use PlateButton control instead of tool to avoid jitter
-            # during AUI sash drag (tools are drawn, controls are positioned)
-            # PlateButton provides flat toolbar-style appearance with proper hover
-            btn = PlateButton(self, id, bmp=bitmap1, style=PB_STYLE_NOBG)
-            btn.SetToolTip(short_help_string)
-            btn.SetBitmapDisabled(bitmap2)
-            # Bind button click to forward as menu event
-            btn.Bind(wx.EVT_BUTTON, self._onBitmapButtonClick)
-            self._bitmap_buttons[id] = btn
-            self.AddControl(btn)
-        else:
-            super().AddTool(
-                id,
-                label,
-                bitmap1,
-                bitmap2,
-                kind,
-                short_help_string,
-                long_help_string,
-                None,
-                None,
-            )
+        super().AddTool(
+            id,
+            label,
+            bitmap1,
+            bitmap2,
+            kind,
+            short_help_string,
+            long_help_string,
+            None,
+            None,
+        )
 
     def GetToolState(self, toolid):
         return self.GetToolToggled(toolid)
