@@ -13,8 +13,9 @@ This document captures technical issues, fixes, and refactorings discovered duri
 7. [Window Position Tracking with AUI](#window-position-tracking-with-aui)
 8. [GTK3 Menu Size Allocation Bug](#gtk3-menu-size-allocation-bug)
 9. [Search Box Visibility in AUI Toolbars](#search-box-visibility-in-aui-toolbars)
-10. [Known Issues](#known-issues)
-11. [Future Work](#future-work)
+10. [AUI Divider Drag Visual Feedback](#aui-divider-drag-visual-feedback)
+11. [Known Issues](#known-issues)
+12. [Future Work](#future-work)
 
 ---
 
@@ -1606,6 +1607,110 @@ toolbar.AddControl(self.searchControl)
 
 ---
 
+## AUI Divider Drag Visual Feedback
+
+**Date Fixed:** December 2025
+**Affected Components:** AUI panel dividers/sashes in main window
+**Root Cause:** Missing AUI_MGR_LIVE_RESIZE flag in AuiManager initialization
+
+### Problem Overview
+
+When dragging panel dividers (sashes) between AUI panes, there was no visual feedback during the drag operation. The panels would only resize after releasing the mouse button, with no indication of where the divider was being moved.
+
+### Symptoms
+
+1. Dragging divider shows no movement during drag
+2. No shadow or resize hint visible
+3. No live resize of panels
+4. Panels suddenly snap to new size on mouse release
+5. Poor UX for adjusting panel layouts
+
+### Root Cause Analysis
+
+The `AuiManager` was initialized with only `AUI_MGR_DEFAULT`, which does **not** include `AUI_MGR_LIVE_RESIZE`:
+
+```python
+# Before - missing live resize
+agwStyle = aui.AUI_MGR_DEFAULT | aui.AUI_MGR_ALLOW_ACTIVE_PANE
+```
+
+**What `AUI_MGR_DEFAULT` includes:**
+| Flag | Bit | Purpose |
+|------|-----|---------|
+| `AUI_MGR_ALLOW_FLOATING` | 1 << 0 | Allow panes to float |
+| `AUI_MGR_TRANSPARENT_HINT` | 1 << 3 | Transparent hint window |
+| `AUI_MGR_HINT_FADE` | 1 << 6 | Hint window fade effect |
+| `AUI_MGR_NO_VENETIAN_BLINDS_FADE` | 1 << 7 | Disable venetian blind fade |
+
+**What was missing:**
+| Flag | Bit | Purpose |
+|------|-----|---------|
+| `AUI_MGR_LIVE_RESIZE` | 1 << 8 | Live visual feedback when dragging sashes |
+
+### The Fix
+
+Added multiple visual feedback flags to improve the AUI experience:
+
+```python
+# After - comprehensive visual feedback
+agwStyle = (
+    aui.AUI_MGR_DEFAULT
+    | aui.AUI_MGR_ALLOW_ACTIVE_PANE
+    | aui.AUI_MGR_LIVE_RESIZE  # Live visual feedback when dragging sashes
+    | aui.AUI_MGR_TRANSPARENT_DRAG  # Transparent floating panes during drag
+    | aui.AUI_MGR_SMOOTH_DOCKING  # Smooth docking animation
+)
+if not operating_system.isWindows():
+    # With this style on Windows, you can't dock back floating frames
+    agwStyle |= aui.AUI_MGR_USE_NATIVE_MINIFRAMES
+else:
+    # Use modern Aero-style docking guides on Windows
+    agwStyle |= aui.AUI_MGR_AERO_DOCKING_GUIDES
+```
+
+### Flags Added
+
+| Flag | Platform | Purpose |
+|------|----------|---------|
+| `AUI_MGR_LIVE_RESIZE` | All | Panels resize in real-time as dividers are dragged |
+| `AUI_MGR_TRANSPARENT_DRAG` | All (if supported) | Floating panes become semi-transparent during drag |
+| `AUI_MGR_SMOOTH_DOCKING` | All | Smooth animation when docking floating panes |
+| `AUI_MGR_AERO_DOCKING_GUIDES` | Windows only | Modern Aero-style visual docking guides |
+
+### Platform Notes
+
+- **GTK3 (Wayland) and macOS**: Live resize is always used regardless of the flag (non-live resize not implemented)
+- **GTK3 (X11) and Windows**: The `AUI_MGR_LIVE_RESIZE` flag is required to enable live resize
+- **Windows**: `AUI_MGR_AERO_DOCKING_GUIDES` provides modern docking guide visuals
+- **Linux/macOS**: `AUI_MGR_USE_NATIVE_MINIFRAMES` provides native caption bars for floating panes
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `taskcoachlib/widgets/frame.py` | Added visual feedback flags to AuiManager initialization |
+
+### Key Learnings
+
+1. **AUI_MGR_DEFAULT is minimal**: It doesn't include many useful visual feedback flags that improve UX.
+
+2. **Check flag documentation**: The AGW AUI library has many flags beyond the defaults that can significantly improve user experience.
+
+3. **Platform-specific flags**: Some flags only apply to specific platforms (e.g., AERO_DOCKING_GUIDES on Windows).
+
+4. **Safe to enable broadly**: Most visual feedback flags degrade gracefully on platforms that don't support them.
+
+### Testing Checklist
+
+- [ ] Drag horizontal divider between panels - should see live resize
+- [ ] Drag vertical divider between panels - should see live resize
+- [ ] Float a panel and drag it - should be semi-transparent (if platform supports)
+- [ ] Dock a floating panel - should animate smoothly
+- [ ] On Windows: Docking guides should have modern Aero style
+- [ ] On Linux/macOS: Floating panes should have native caption bars
+
+---
+
 ## Known Issues
 
 ### Pending Issues
@@ -1625,6 +1730,7 @@ toolbar.AddControl(self.searchControl)
 - ✅ GTK/Linux window position persistence - WM ignores initial position (November 2025) - See [WINDOW_POSITION_PERSISTENCE_ANALYSIS.md](WINDOW_POSITION_PERSISTENCE_ANALYSIS.md)
 - ✅ GTK3 menu scroll arrows on first open (December 2025) - FileMenu refactored to use pub/sub
 - ✅ Search box text input invisible in AUI toolbars (December 2025) - Added SetMinSize to SearchCtrl
+- ✅ AUI divider drag has no visual feedback (December 2025) - Added AUI_MGR_LIVE_RESIZE and related flags
 
 ---
 
@@ -1665,4 +1771,4 @@ When adding new technical notes:
 
 ---
 
-**Last Updated:** December 7, 2025
+**Last Updated:** December 8, 2025
