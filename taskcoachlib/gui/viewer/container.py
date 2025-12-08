@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import operating_system
 import taskcoachlib.gui.menu
 from pubsub import pub
 import wx.lib.agw.aui as aui
@@ -42,10 +41,35 @@ class ViewerContainer(object):
 
     def componentsCreated(self):
         self._notifyActiveViewer = True
-        # Ensure the first viewer (TaskViewer) is active after startup,
-        # overriding whatever pane was active in the saved perspective
-        if self.viewers:
+        # Activate the center pane (the one that resizes with the window).
+        # This is the proper default active pane at startup.
+        center_viewer = self._findCenterPaneViewer()
+        if center_viewer:
+            self.activateViewer(center_viewer)
+        elif self.viewers:
+            # Fallback to first viewer if no center pane found
             self.activateViewer(self.viewers[0])
+
+    def _findCenterPaneViewer(self):
+        """Find the viewer that is in the center pane (the resizable one).
+
+        The center pane is the main content area that resizes with the window,
+        while other panes have fixed sizes. This should be the default active
+        pane at startup.
+        """
+        for pane in self.containerWidget.manager.GetAllPanes():
+            if pane.IsToolbar():
+                continue
+            if self.containerWidget.isCenterPane(pane):
+                # Handle notebook pages
+                if pane.IsNotebookControl():
+                    notebook = aui.GetNotebookRoot(
+                        self.containerWidget.manager.GetAllPanes(),
+                        pane.notebook_id
+                    )
+                    return notebook.window.GetCurrentPage()
+                return pane.window
+        return None
 
     def advanceSelection(self, forward):
         """Activate the next viewer if forward is true else the previous
@@ -124,11 +148,21 @@ class ViewerContainer(object):
         return None
 
     def activateViewer(self, viewer_to_activate):
-        """Activate (select) the specified viewer."""
+        """Activate (select) the specified viewer and set focus on it.
+
+        This is used for programmatic activation (startup, ViewerCommand, etc).
+        User clicks are handled by AUI's native pane activation via
+        AUI_MGR_ALLOW_ACTIVE_PANE and ChildFocusEvent posted by controls.
+        """
         self.containerWidget.manager.ActivatePane(viewer_to_activate)
         paneInfo = self.containerWidget.manager.GetPane(viewer_to_activate)
         if paneInfo.IsNotebookPage():
             self.containerWidget.manager.ShowPane(viewer_to_activate, True)
+        # Set focus on the viewer for programmatic activation
+        try:
+            viewer_to_activate.SetFocus()
+        except RuntimeError:
+            pass  # C++ object may have been deleted
         self.sendViewerStatusEvent()
 
     def __del__(self):
@@ -140,7 +174,13 @@ class ViewerContainer(object):
         pub.sendMessage("all.viewer.status", viewer=viewer)
 
     def onPageChanged(self, event):
-        self.__ensure_active_viewer_has_focus()
+        """Handle pane activation events from AUI.
+
+        When AUI activates a pane (user clicks on it, or programmatic activation),
+        we update the status bar and notify the viewer. We let AUI handle focus
+        naturally for user clicks; programmatic activation via activateViewer()
+        sets focus explicitly.
+        """
         self.sendViewerStatusEvent()
         if self._notifyActiveViewer and self.activeViewer() is not None:
             self.activeViewer().activate()
@@ -148,54 +188,6 @@ class ViewerContainer(object):
 
     def sendViewerStatusEvent(self):
         pub.sendMessage("viewer.status")
-
-    def __ensure_active_viewer_has_focus(self):
-        """Ensure focus is within the active viewer.
-
-        This method is called when a pane is activated. If focus is outside
-        the active viewer, we schedule setting focus on it. We store the
-        viewer reference to verify it's still active when the callback runs.
-        """
-        active = self.activeViewer()
-        if not active:
-            return
-        window = wx.Window.FindFocus()
-        if operating_system.isMacOsXTiger_OrOlder() and window is None:
-            # If the SearchCtrl has focus on Mac OS X Tiger,
-            # wx.Window.FindFocus returns None. If we would continue,
-            # the focus would be set to the active viewer right away,
-            # making it impossible for the user to type in the search
-            # control.
-            return
-        while window:
-            if window == active:
-                break
-            window = window.GetParent()
-        else:
-            # Store the viewer so we can verify it's still active when
-            # the CallAfter callback runs
-            wx.CallAfter(self.__safeSetFocusOnActiveViewer, active)
-
-    def __safeSetFocusOnActiveViewer(self, intended_viewer=None):
-        """Safely set focus on active viewer, guarding against deleted C++ objects.
-
-        Args:
-            intended_viewer: The viewer that was active when this callback was
-                scheduled. If provided, we verify it's still active before
-                setting focus. This prevents focus flickering when panes are
-                rapidly activated.
-        """
-        try:
-            current_active = self.activeViewer()
-            # Only set focus if the intended viewer is still active
-            # This prevents focus flickering when switching panes quickly
-            if intended_viewer is not None and intended_viewer != current_active:
-                return
-            if current_active:
-                current_active.SetFocus()
-        except RuntimeError:
-            # wrapped C/C++ object has been deleted
-            pass
 
     def onPageClosed(self, event):
         if event.GetPane().IsToolbar():
