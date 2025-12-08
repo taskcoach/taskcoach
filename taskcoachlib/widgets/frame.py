@@ -47,8 +47,7 @@ def _install_sash_resize_optimization(manager):
             if action == 3:
                 now = time.time()
                 if now - state['last_update_time'] < state['min_update_interval']:
-                    # Skip this update to reduce CPU load
-                    event.Skip()
+                    # Skip this update - don't call Skip() to prevent other handlers
                     return
                 state['last_update_time'] = now
             return original_on_motion(event)
