@@ -1771,4 +1771,4 @@ When adding new technical notes:
 
 ---
 
-**Last Updated:** December 8, 2025
+**Last Updated:** December 7, 2025
