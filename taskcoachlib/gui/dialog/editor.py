@@ -573,7 +573,7 @@ class DatesPage(Page):
             commandClass,
             entry.EVT_DATETIMEENTRY,
             eventType,
-            debounce_ms=500,  # Batch rapid changes while typing
+            commit_on_focus_loss=True,  # Only commit when focus leaves the field
             keep_delta=keep_delta,
             callback=(
                 self.__onPlannedStartDateTimeChanged
@@ -613,7 +613,7 @@ class DatesPage(Page):
             command.EditReminderDateTimeCommand,
             entry.EVT_DATETIMEENTRY,
             self.items[0].reminderChangedEventType(),
-            debounce_ms=500,  # Batch rapid changes while typing
+            commit_on_focus_loss=True,  # Only commit when focus leaves the field
         )
         self.addEntry(
             _("Reminder"),
@@ -1654,7 +1654,7 @@ class EffortEditBook(Page):
             command.EditEffortStartDateTimeCommand,
             entry.EVT_DATETIMEENTRY,
             self.items[0].startChangedEventType(),
-            debounce_ms=500,  # Batch rapid changes while typing
+            commit_on_focus_loss=True,  # Only commit when focus leaves the field
             callback=self.__onStartDateTimeChanged,
         )
         self._startDateTimeEntry.Bind(
@@ -1693,7 +1693,7 @@ class EffortEditBook(Page):
             command.EditEffortStopDateTimeCommand,
             entry.EVT_DATETIMEENTRY,
             self.items[0].stopChangedEventType(),
-            debounce_ms=500,  # Batch rapid changes while typing
+            commit_on_focus_loss=True,  # Only commit when focus leaves the field
             callback=self.__onStopDateTimeChanged,
         )
         self._stopDateTimeEntry.Bind(

@@ -21,7 +21,6 @@ from pubsub import pub
 from taskcoachlib.i18n import _
 import wx
 import logging
-import threading
 
 # Enable debug logging for AttributeSync
 _log = logging.getLogger('AttributeSync')
@@ -41,8 +40,9 @@ class AttributeSync(object):
     attribute of the domain object is changed (e.g. in another dialog) the
     value of the control is updated.
 
-    When debounce_ms > 0, command execution is delayed until typing stops.
-    This creates a single undo entry for rapid edits (e.g., typing a date)."""
+    When commit_on_focus_loss=True, command execution is delayed until focus
+    leaves the control. This creates a single undo entry for the entire edit
+    session (e.g., typing a complete date)."""
 
     def __init__(
         self,
@@ -54,7 +54,7 @@ class AttributeSync(object):
         editedEventType,
         changedEventType,
         callback=None,
-        debounce_ms=0,
+        commit_on_focus_loss=False,
         **kwargs
     ):
         self._getter = attributeGetterName
@@ -65,18 +65,71 @@ class AttributeSync(object):
         self.__commandKwArgs = kwargs
         self.__changedEventType = changedEventType
         self.__callback = callback
-        self.__debounce_ms = debounce_ms
-        self.__pendingValue = None
-        self.__debounceTimer = None
-        self.__timerLock = threading.Lock()  # Protect timer access across threads
-        _log.debug("AttributeSync.__init__: getter=%s, entry=%s (%s), debounce_ms=%s, editedEventType=%s",
-                   attributeGetterName, entry, type(entry).__name__, debounce_ms, editedEventType)
-        # Note: debounce_ms > 0 means we use threading.Timer + wx.CallAfter
-        # This avoids wx.Timer issues with widget hierarchies
+        self.__commit_on_focus_loss = commit_on_focus_loss
+        self.__editSessionValue = None  # Value at start of edit session
+        self.__hasChanges = False  # Track if any changes during this focus session
+
+        _log.debug("AttributeSync.__init__: getter=%s, entry=%s (%s), commit_on_focus_loss=%s, editedEventType=%s",
+                   attributeGetterName, entry, type(entry).__name__, commit_on_focus_loss, editedEventType)
+
         entry.Bind(editedEventType, self.onAttributeEdited)
         _log.debug("AttributeSync.__init__: Bound %s to onAttributeEdited", editedEventType)
+
+        if commit_on_focus_loss:
+            # For composite widgets like DateTimeEntry, we need to track focus
+            # on the widget and all its children
+            self.__bindFocusEvents(entry)
+            _log.debug("AttributeSync.__init__: Bound focus events for commit_on_focus_loss mode")
+
         if len(items) == 1:
             self.__start_observing_attribute(changedEventType, items[0])
+
+    def __bindFocusEvents(self, widget):
+        """Bind focus events to widget and all its children recursively."""
+        # Bind to the widget itself
+        widget.Bind(wx.EVT_SET_FOCUS, self.__onSetFocus)
+        widget.Bind(wx.EVT_KILL_FOCUS, self.__onKillFocus)
+        # Bind to all children (for composite widgets)
+        for child in widget.GetChildren():
+            self.__bindFocusEvents(child)
+
+    def __onSetFocus(self, event):
+        """Called when any part of the widget gains focus."""
+        event.Skip()
+        if self.__editSessionValue is None:
+            # Starting a new edit session - remember the initial value
+            self.__editSessionValue = self._currentValue
+            self.__hasChanges = False
+            _log.debug("__onSetFocus: Starting edit session, initial value=%s", self.__editSessionValue)
+
+    def __onKillFocus(self, event):
+        """Called when any part of the widget loses focus."""
+        event.Skip()
+        # Check if focus is moving to another child of the same parent widget
+        # If so, we're still in the same edit session
+        new_focus = event.GetWindow()
+        _log.debug("__onKillFocus: Focus leaving, new_focus=%s", new_focus)
+
+        if new_focus is not None:
+            # Check if new focus is within the same entry widget
+            parent = new_focus
+            while parent is not None:
+                if parent is self._entry:
+                    _log.debug("__onKillFocus: Focus moving within same widget, not committing")
+                    return  # Still within the same widget, don't commit yet
+                parent = parent.GetParent()
+
+        # Focus is leaving the widget entirely - commit if there are changes
+        if self.__hasChanges and self.__editSessionValue is not None:
+            new_value = self.getValue()
+            _log.debug("__onKillFocus: Focus left widget, committing. old=%s, new=%s",
+                       self.__editSessionValue, new_value)
+            if new_value != self.__editSessionValue:
+                self.__executeCommand(new_value)
+
+        # Reset edit session
+        self.__editSessionValue = None
+        self.__hasChanges = False
 
     def onAttributeEdited(self, event):
         _log.debug("onAttributeEdited: event=%s, event.GetEventType()=%s", event, event.GetEventType())
@@ -84,54 +137,18 @@ class AttributeSync(object):
         new_value = self.getValue()
         _log.debug("onAttributeEdited: new_value=%s, current_value=%s, changed=%s",
                    new_value, self._currentValue, new_value != self._currentValue)
+
         if new_value != self._currentValue:
-            if self.__debounce_ms > 0:
-                # Debounced: store value and restart timer using threading.Timer + wx.CallAfter
-                # This is more reliable than wx.Timer for composite widgets
-                with self.__timerLock:
-                    self.__pendingValue = new_value
-                    # Cancel existing timer if any
-                    if self.__debounceTimer is not None:
-                        self.__debounceTimer.cancel()
-                        _log.debug("onAttributeEdited: Cancelled existing timer")
-                    # Start new timer (threading.Timer uses seconds, not ms)
-                    delay_seconds = self.__debounce_ms / 1000.0
-                    self.__debounceTimer = threading.Timer(delay_seconds, self.__onDebounceTimerThread)
-                    self.__debounceTimer.daemon = True  # Don't block app exit
-                    self.__debounceTimer.start()
-                    _log.debug("onAttributeEdited: Started threading.Timer for %.3f seconds", delay_seconds)
+            if self.__commit_on_focus_loss:
+                # Just track that we have changes, don't commit yet
+                self.__hasChanges = True
+                # Update internal state but don't execute command
+                self._currentValue = new_value
+                _log.debug("onAttributeEdited: commit_on_focus_loss mode - tracking change, not committing")
             else:
                 # Immediate: execute command now
-                _log.debug("onAttributeEdited: executing command immediately (no debounce)")
+                _log.debug("onAttributeEdited: executing command immediately")
                 self.__executeCommand(new_value)
-
-    def __onDebounceTimerThread(self):
-        """Called on timer thread - use wx.CallAfter to execute on main thread."""
-        _log.debug("__onDebounceTimerThread: Timer fired on thread %s, using wx.CallAfter",
-                   threading.current_thread().name)
-        # wx.CallAfter safely posts to the main thread's event queue
-        wx.CallAfter(self.__onDebounceTimerMain)
-
-    def __onDebounceTimerMain(self):
-        """Called on main thread via wx.CallAfter - execute the command."""
-        try:
-            _log.debug("__onDebounceTimerMain: Executing on main thread, pendingValue=%s, entry=%s",
-                       self.__pendingValue, self._entry)
-            # Safety check: make sure the entry widget is still valid
-            if self._entry and hasattr(self._entry, 'IsShown'):
-                _log.debug("__onDebounceTimerMain: entry.IsShown()=%s", self._entry.IsShown())
-
-            with self.__timerLock:
-                pending = self.__pendingValue
-                self.__pendingValue = None
-                self.__debounceTimer = None
-
-            if pending is not None:
-                self.__executeCommand(pending)
-            else:
-                _log.debug("__onDebounceTimerMain: pendingValue is None, nothing to execute")
-        except Exception as e:
-            _log.exception("__onDebounceTimerMain: Exception occurred: %s", e)
 
     def __executeCommand(self, new_value):
         """Execute the command to update the model."""
@@ -146,20 +163,13 @@ class AttributeSync(object):
         _log.debug("__executeCommand: command executed successfully")
         self.__invokeCallback(new_value)
 
-    def __cancelPendingDebounce(self):
-        """Cancel any pending debounced change."""
-        with self.__timerLock:
-            self.__pendingValue = None
-            if self.__debounceTimer is not None:
-                self.__debounceTimer.cancel()
-                self.__debounceTimer = None
-
     def onAttributeChanged_Deprecated(self, event):  # pylint: disable=W0613
         if self._entry:
             new_value = getattr(self._items[0], self._getter)()
             if new_value != self._currentValue:
                 self._currentValue = new_value
-                self.__cancelPendingDebounce()  # Cancel any pending debounced change
+                self.__editSessionValue = None  # Cancel any pending edit session
+                self.__hasChanges = False
                 self.setValue(new_value)
                 self.__invokeCallback(new_value)
         else:
@@ -170,7 +180,8 @@ class AttributeSync(object):
             if self._entry:
                 if newValue != self._currentValue:
                     self._currentValue = newValue
-                    self.__cancelPendingDebounce()  # Cancel any pending debounced change
+                    self.__editSessionValue = None  # Cancel any pending edit session
+                    self.__hasChanges = False
                     self.setValue(newValue)
                     self.__invokeCallback(newValue)
             else:
