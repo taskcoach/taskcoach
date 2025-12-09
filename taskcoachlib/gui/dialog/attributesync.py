@@ -67,15 +67,18 @@ class AttributeSync(object):
         self.__debounce_ms = debounce_ms
         self.__pendingValue = None
         self.__debounceTimer = None
+        self.__debounceTimerId = None
         _log.debug("AttributeSync.__init__: getter=%s, entry=%s (%s), debounce_ms=%s, editedEventType=%s",
                    attributeGetterName, entry, type(entry).__name__, debounce_ms, editedEventType)
         if debounce_ms > 0:
-            # Create timer bound to the entry widget for reliable event delivery
-            self.__debounceTimer = wx.Timer(entry)
-            _log.debug("AttributeSync.__init__: Created timer %s bound to entry %s",
-                       self.__debounceTimer, entry)
-            entry.Bind(wx.EVT_TIMER, self.__onDebounceTimer, self.__debounceTimer)
-            _log.debug("AttributeSync.__init__: Bound EVT_TIMER to __onDebounceTimer")
+            # Create timer bound to the entry widget with explicit ID for reliable event delivery
+            # (Using ID-based binding like other timers in the codebase)
+            self.__debounceTimerId = wx.NewId()
+            self.__debounceTimer = wx.Timer(entry, self.__debounceTimerId)
+            _log.debug("AttributeSync.__init__: Created timer %s with id=%s bound to entry %s",
+                       self.__debounceTimer, self.__debounceTimerId, entry)
+            entry.Bind(wx.EVT_TIMER, self.__onDebounceTimer, id=self.__debounceTimerId)
+            _log.debug("AttributeSync.__init__: Bound EVT_TIMER (id=%s) to __onDebounceTimer", self.__debounceTimerId)
         entry.Bind(editedEventType, self.onAttributeEdited)
         _log.debug("AttributeSync.__init__: Bound %s to onAttributeEdited", editedEventType)
         if len(items) == 1:
@@ -102,12 +105,15 @@ class AttributeSync(object):
 
     def __onDebounceTimer(self, event):
         """Timer fired - execute the command with the pending value."""
-        _log.debug("__onDebounceTimer: TIMER FIRED! event=%s, pendingValue=%s", event, self.__pendingValue)
-        if self.__pendingValue is not None:
-            self.__executeCommand(self.__pendingValue)
-            self.__pendingValue = None
-        else:
-            _log.debug("__onDebounceTimer: pendingValue is None, nothing to execute")
+        try:
+            _log.debug("__onDebounceTimer: TIMER FIRED! event=%s, pendingValue=%s", event, self.__pendingValue)
+            if self.__pendingValue is not None:
+                self.__executeCommand(self.__pendingValue)
+                self.__pendingValue = None
+            else:
+                _log.debug("__onDebounceTimer: pendingValue is None, nothing to execute")
+        except Exception as e:
+            _log.exception("__onDebounceTimer: Exception occurred: %s", e)
 
     def __executeCommand(self, new_value):
         """Execute the command to update the model."""
