@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import os
 import wx
 from wx.lib.agw import hypertreelist
 from taskcoachlib import operating_system
@@ -193,9 +194,50 @@ class AutoColumnWidthMixin(object):
         return self.MainWindow.HasScrollbar(wx.VERTICAL)
 
     def __is_scrollbar_included_in_client_size(self):
-        # NOTE: on GTK, the scrollbar is included in the client size, but on
-        # Windows it is not included
+        """Determine if scrollbar width should be subtracted from client size.
+
+        This depends on whether the platform uses overlay scrollbars:
+        - Overlay scrollbars: render on top of content, don't take layout space
+        - Fixed scrollbars: take up layout space, may be included in client size
+
+        Returns True if we need to subtract scrollbar width from available width.
+        """
         if operating_system.isWindows():
+            # Windows Win32: fixed scrollbars, but only included in client size
+            # for HyperTreeList widgets
             return isinstance(self, hypertreelist.HyperTreeList)
+
+        if operating_system.isMac():
+            # macOS: overlay scrollbars by default since 10.7
+            # User can change in System Preferences, but overlay is the norm
+            return False
+
+        # Linux/BSD with GTK
+        if self.__has_overlay_scrollbars():
+            # Overlay scrollbars don't take layout space
+            return False
         else:
+            # Fixed scrollbars (GTK2 or GTK3 with overlay disabled)
+            # are included in client size
             return True
+
+    def __has_overlay_scrollbars(self):
+        """Detect if the system uses overlay scrollbars (GTK3/GTK4 default).
+
+        GTK3 and GTK4 use overlay scrollbars by default. This can be disabled
+        by setting GTK_OVERLAY_SCROLLING=0 environment variable.
+        GTK2 always uses fixed scrollbars.
+        """
+        # Check for GTK3 or GTK4 in wx.PlatformInfo
+        platform_info = wx.PlatformInfo
+        has_gtk3_or_gtk4 = 'gtk3' in platform_info or 'gtk4' in platform_info
+
+        if not has_gtk3_or_gtk4:
+            # GTK2 or unknown: no overlay scrollbars
+            return False
+
+        # GTK3/GTK4: overlay is default, but can be disabled via env var
+        if os.environ.get('GTK_OVERLAY_SCROLLING') == '0':
+            return False
+
+        return True
