@@ -75,15 +75,16 @@ jobs:
           PYTHON_APPIMAGE_VERSION="${{ env.PYTHON_VERSION }}"
 
           # Map Python version to the latest available AppImage
+          # URLs verified from https://github.com/niess/python-appimage/releases
           case "$PYTHON_APPIMAGE_VERSION" in
             "3.10")
-              PYTHON_APPIMAGE_URL="https://github.com/niess/python-appimage/releases/download/python3.10/python3.10.14-cp310-cp310-manylinux_2_28_x86_64.AppImage"
+              PYTHON_APPIMAGE_URL="https://github.com/niess/python-appimage/releases/download/python3.10/python3.10.19-cp310-cp310-manylinux_2_28_x86_64.AppImage"
               ;;
             "3.11")
-              PYTHON_APPIMAGE_URL="https://github.com/niess/python-appimage/releases/download/python3.11/python3.11.9-cp311-cp311-manylinux_2_28_x86_64.AppImage"
+              PYTHON_APPIMAGE_URL="https://github.com/niess/python-appimage/releases/download/python3.11/python3.11.14-cp311-cp311-manylinux_2_28_x86_64.AppImage"
               ;;
             "3.12")
-              PYTHON_APPIMAGE_URL="https://github.com/niess/python-appimage/releases/download/python3.12/python3.12.4-cp312-cp312-manylinux_2_28_x86_64.AppImage"
+              PYTHON_APPIMAGE_URL="https://github.com/niess/python-appimage/releases/download/python3.12/python3.12.12-cp312-cp312-manylinux_2_28_x86_64.AppImage"
               ;;
           esac
 

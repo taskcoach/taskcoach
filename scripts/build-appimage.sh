@@ -60,15 +60,16 @@ download_python_appimage() {
     echo "Downloading Python $PYTHON_VERSION AppImage base..."
 
     local url
+    # URLs verified from https://github.com/niess/python-appimage/releases
     case "$PYTHON_VERSION" in
         "3.10")
-            url="https://github.com/niess/python-appimage/releases/download/python3.10/python3.10.14-cp310-cp310-manylinux_2_28_x86_64.AppImage"
+            url="https://github.com/niess/python-appimage/releases/download/python3.10/python3.10.19-cp310-cp310-manylinux_2_28_x86_64.AppImage"
             ;;
         "3.11")
-            url="https://github.com/niess/python-appimage/releases/download/python3.11/python3.11.9-cp311-cp311-manylinux_2_28_x86_64.AppImage"
+            url="https://github.com/niess/python-appimage/releases/download/python3.11/python3.11.14-cp311-cp311-manylinux_2_28_x86_64.AppImage"
             ;;
         "3.12")
-            url="https://github.com/niess/python-appimage/releases/download/python3.12/python3.12.4-cp312-cp312-manylinux_2_28_x86_64.AppImage"
+            url="https://github.com/niess/python-appimage/releases/download/python3.12/python3.12.12-cp312-cp312-manylinux_2_28_x86_64.AppImage"
             ;;
         *)
             echo "ERROR: Unsupported Python version: $PYTHON_VERSION"
