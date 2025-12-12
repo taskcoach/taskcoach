@@ -13,23 +13,10 @@ on:
       - main
       - master
   workflow_dispatch:
-    inputs:
-      python_version:
-        description: 'Python version for AppImage'
-        required: false
-        default: '3.11'
-        type: choice
-        options:
-          - '3.10'
-          - '3.11'
-          - '3.12'
-
-env:
-  PYTHON_VERSION: ${{ github.event.inputs.python_version || '3.11' }}
 
 jobs:
   build-appimage:
-    name: Build AppImage (Python ${{ github.event.inputs.python_version || '3.11' }})
+    name: Build AppImage
     # Use Ubuntu 22.04 for reasonable glibc compatibility
     # AppImages built here should work on Debian Bookworm and newer
     runs-on: ubuntu-22.04
@@ -70,23 +57,9 @@ jobs:
 
       - name: Download Python AppImage base
         run: |
-          # Download pre-built Python AppImage from python-appimage project
-          # These include Python with many pre-compiled wheels
-          PYTHON_APPIMAGE_VERSION="${{ env.PYTHON_VERSION }}"
-
-          # Map Python version to the latest available AppImage
-          # URLs verified from https://github.com/niess/python-appimage/releases
-          case "$PYTHON_APPIMAGE_VERSION" in
-            "3.10")
-              PYTHON_APPIMAGE_URL="https://github.com/niess/python-appimage/releases/download/python3.10/python3.10.19-cp310-cp310-manylinux_2_28_x86_64.AppImage"
-              ;;
-            "3.11")
-              PYTHON_APPIMAGE_URL="https://github.com/niess/python-appimage/releases/download/python3.11/python3.11.14-cp311-cp311-manylinux_2_28_x86_64.AppImage"
-              ;;
-            "3.12")
-              PYTHON_APPIMAGE_URL="https://github.com/niess/python-appimage/releases/download/python3.12/python3.12.12-cp312-cp312-manylinux_2_28_x86_64.AppImage"
-              ;;
-          esac
+          # Download pre-built Python 3.11 AppImage from python-appimage project
+          # URL from https://github.com/niess/python-appimage/releases
+          PYTHON_APPIMAGE_URL="https://github.com/niess/python-appimage/releases/download/python3.11/python3.11.14-cp311-cp311-manylinux_2_28_x86_64.AppImage"
 
           echo "Downloading Python AppImage from: $PYTHON_APPIMAGE_URL"
           wget -q "$PYTHON_APPIMAGE_URL" -O python.AppImage

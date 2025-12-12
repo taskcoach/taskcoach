@@ -3,14 +3,12 @@
 # Build TaskCoach AppImage locally
 # This script can be run on Debian Bookworm or similar systems
 #
-# Usage: ./scripts/build-appimage.sh [python_version]
-#   python_version: 3.10, 3.11 (default), or 3.12
+# Usage: ./scripts/build-appimage.sh
 #
 
 set -e
 
 # Configuration
-PYTHON_VERSION="${1:-3.11}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 BUILD_DIR="$PROJECT_ROOT/build/appimage"
@@ -19,7 +17,6 @@ APPDIR="$BUILD_DIR/TaskCoach.AppDir"
 echo "=========================================="
 echo "TaskCoach AppImage Builder"
 echo "=========================================="
-echo "Python version: $PYTHON_VERSION"
 echo "Project root: $PROJECT_ROOT"
 echo "Build directory: $BUILD_DIR"
 echo ""
@@ -57,26 +54,10 @@ clean_build() {
 
 # Download Python AppImage base
 download_python_appimage() {
-    echo "Downloading Python $PYTHON_VERSION AppImage base..."
+    echo "Downloading Python 3.11 AppImage base..."
 
-    local url
-    # URLs verified from https://github.com/niess/python-appimage/releases
-    case "$PYTHON_VERSION" in
-        "3.10")
-            url="https://github.com/niess/python-appimage/releases/download/python3.10/python3.10.19-cp310-cp310-manylinux_2_28_x86_64.AppImage"
-            ;;
-        "3.11")
-            url="https://github.com/niess/python-appimage/releases/download/python3.11/python3.11.14-cp311-cp311-manylinux_2_28_x86_64.AppImage"
-            ;;
-        "3.12")
-            url="https://github.com/niess/python-appimage/releases/download/python3.12/python3.12.12-cp312-cp312-manylinux_2_28_x86_64.AppImage"
-            ;;
-        *)
-            echo "ERROR: Unsupported Python version: $PYTHON_VERSION"
-            echo "Supported versions: 3.10, 3.11, 3.12"
-            exit 1
-            ;;
-    esac
+    # Python 3.11 with manylinux_2_28 (glibc 2.28+, compatible with Debian Bookworm)
+    local url="https://github.com/niess/python-appimage/releases/download/python3.11/python3.11.14-cp311-cp311-manylinux_2_28_x86_64.AppImage"
 
     wget -q --show-progress "$url" -O "$BUILD_DIR/python.AppImage"
     chmod +x "$BUILD_DIR/python.AppImage"
