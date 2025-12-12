@@ -178,15 +178,19 @@ create_apprun() {
 # Get the directory where this AppImage is mounted
 APPDIR="$(dirname "$(readlink -f "$0")")"
 
+# In python-appimage (manylinux), the actual Python binary is in opt/
+# usr/bin/python3 is a wrapper script that breaks when PYTHONHOME is set
+PYTHON="$APPDIR/opt/python3.11/bin/python3.11"
+
 # Set up Python environment
-export PYTHONHOME="$APPDIR/usr"
-export PYTHONPATH="$APPDIR/usr/share/taskcoach:$APPDIR/usr/lib/python3.11/site-packages:$PYTHONPATH"
+export PYTHONHOME="$APPDIR/opt/python3.11"
+export PYTHONPATH="$APPDIR/usr/share/taskcoach:$APPDIR/opt/python3.11/lib/python3.11/site-packages:$PYTHONPATH"
 
 # Set up library paths
-export LD_LIBRARY_PATH="$APPDIR/usr/lib:$APPDIR/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH="$APPDIR/opt/python3.11/lib:$APPDIR/usr/lib:$LD_LIBRARY_PATH"
 
 # Set up PATH
-export PATH="$APPDIR/usr/bin:$PATH"
+export PATH="$APPDIR/opt/python3.11/bin:$APPDIR/usr/bin:$PATH"
 
 # Set up XDG paths for proper desktop integration
 export XDG_DATA_DIRS="$APPDIR/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
@@ -201,7 +205,7 @@ export PYTHONDONTWRITEBYTECODE=1
 export TASKCOACH_APPIMAGE=1
 
 # Handle file associations - pass file arguments to TaskCoach
-exec "$APPDIR/usr/bin/python3" "$APPDIR/usr/share/taskcoach/taskcoach.py" "$@"
+exec "$PYTHON" "$APPDIR/usr/share/taskcoach/taskcoach.py" "$@"
 APPRUN_EOF
 
     chmod +x "$APPDIR/AppRun"
