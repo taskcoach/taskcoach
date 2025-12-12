@@ -71,6 +71,15 @@ jobs:
           ./python.AppImage --appimage-extract
           mv squashfs-root TaskCoach.AppDir
 
+          # Debug: Show the structure to find where Python actually is
+          echo "=== Python AppImage structure ==="
+          ls -la TaskCoach.AppDir/
+          echo "=== Looking for python binaries ==="
+          find TaskCoach.AppDir -name "python*" -type f 2>/dev/null | head -20
+          echo "=== Original AppRun content ==="
+          cat TaskCoach.AppDir/AppRun
+          echo "=== End of AppRun ==="
+
       - name: Install wxPython and dependencies
         run: |
           cd TaskCoach.AppDir
@@ -145,21 +154,45 @@ jobs:
 
       - name: Create AppRun script
         run: |
-          printf '%s\n' '#!/bin/bash' '' \
-            '# AppRun script for Task Coach AppImage' \
-            'APPDIR="$(dirname "$(readlink -f "$0")")"' '' \
-            '# In python-appimage (manylinux), actual Python binary is in opt/' \
-            'PYTHON="$APPDIR/opt/python3.11/bin/python3.11"' '' \
-            '# Set up Python environment' \
-            'export PYTHONHOME="$APPDIR/opt/python3.11"' \
-            'export PYTHONPATH="$APPDIR/usr/share/taskcoach:$APPDIR/opt/python3.11/lib/python3.11/site-packages"' \
-            'export LD_LIBRARY_PATH="$APPDIR/opt/python3.11/lib:$APPDIR/usr/lib:$LD_LIBRARY_PATH"' \
-            'export PATH="$APPDIR/opt/python3.11/bin:$APPDIR/usr/bin:$PATH"' \
-            'export XDG_DATA_DIRS="$APPDIR/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"' \
-            'export PYTHONDONTWRITEBYTECODE=1' '' \
-            'exec "$PYTHON" "$APPDIR/usr/share/taskcoach/taskcoach.py" "$@"' \
-            > TaskCoach.AppDir/AppRun
+          # First, find where Python actually is in the extracted AppImage
+          echo "Finding Python binary location..."
+          PYTHON_BIN=$(find TaskCoach.AppDir -name "python3.11" -type f -path "*/bin/*" | head -1)
+          echo "Found Python at: $PYTHON_BIN"
+
+          # Get the relative path from TaskCoach.AppDir
+          PYTHON_REL=${PYTHON_BIN#TaskCoach.AppDir/}
+          PYTHON_DIR=$(dirname $(dirname "$PYTHON_REL"))
+          echo "Python relative path: $PYTHON_REL"
+          echo "Python directory: $PYTHON_DIR"
+
+          # Create AppRun that uses the correct path
+          cat > TaskCoach.AppDir/AppRun << 'APPRUNEOF'
+#!/bin/bash
+APPDIR="$(dirname "$(readlink -f "$0")")"
+APPRUNEOF
+
+          # Add the Python path dynamically
+          echo "PYTHON=\"\$APPDIR/$PYTHON_REL\"" >> TaskCoach.AppDir/AppRun
+          echo "export PYTHONHOME=\"\$APPDIR/$PYTHON_DIR\"" >> TaskCoach.AppDir/AppRun
+
+          cat >> TaskCoach.AppDir/AppRun << 'APPRUNEOF'
+export PYTHONPATH="$APPDIR/usr/share/taskcoach:$PYTHONHOME/lib/python3.11/site-packages"
+export LD_LIBRARY_PATH="$PYTHONHOME/lib:$APPDIR/usr/lib:$LD_LIBRARY_PATH"
+export PATH="$PYTHONHOME/bin:$APPDIR/usr/bin:$PATH"
+export XDG_DATA_DIRS="$APPDIR/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+export PYTHONDONTWRITEBYTECODE=1
+
+# If first arg is -c, run Python with the command (for testing)
+if [ "$1" = "-c" ]; then
+    exec "$PYTHON" "$@"
+fi
+
+exec "$PYTHON" "$APPDIR/usr/share/taskcoach/taskcoach.py" "$@"
+APPRUNEOF
+
           chmod +x TaskCoach.AppDir/AppRun
+          echo "=== Created AppRun ==="
+          cat TaskCoach.AppDir/AppRun
 
       - name: Create desktop file
         run: |
@@ -250,8 +283,37 @@ jobs:
             exit 1
           fi
 
-          # Cleanup test extraction
+          # Debug: Show the generated AppRun
+          echo "=== Generated AppRun content ==="
+          cat squashfs-root/AppRun
+          echo "=== End of AppRun ==="
+
+          # Test that Python actually works in the AppImage
+          echo "Testing Python in AppImage..."
+          cd squashfs-root
+          echo "Current directory: $(pwd)"
+          echo "AppRun exists: $(ls -la AppRun)"
+
+          # Run AppRun with a simple Python test
+          ./AppRun -c "import sys; print('Python works:', sys.version)" || {
+            echo "ERROR: AppRun failed to execute Python"
+            echo "Debugging..."
+            ls -la opt/ 2>/dev/null || echo "No opt/ directory"
+            ls -la usr/bin/ 2>/dev/null | head -10
+            find . -name "python3.11" -type f 2>/dev/null
+            exit 1
+          }
+
+          # Test importing taskcoachlib
+          echo "Testing taskcoachlib import..."
+          ./AppRun -c "import taskcoachlib; print('taskcoachlib imported successfully')" || {
+            echo "ERROR: Failed to import taskcoachlib"
+            exit 1
+          }
+
+          cd ..
           rm -rf squashfs-root
+          echo "All tests passed!"
 
       - name: Upload AppImage artifact
         uses: actions/upload-artifact@v4
