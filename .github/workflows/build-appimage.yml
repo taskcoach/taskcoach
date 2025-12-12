@@ -146,65 +146,43 @@ jobs:
       - name: Create AppRun script
         run: |
           cat > TaskCoach.AppDir/AppRun << 'APPRUN_EOF'
-          #!/bin/bash
+#!/bin/bash
 
-          # AppRun script for Task Coach AppImage
-          # This script sets up the environment and launches the application
+# AppRun script for Task Coach AppImage
+APPDIR="$(dirname "$(readlink -f "$0")")"
 
-          # Get the directory where this AppImage is mounted
-          APPDIR="$(dirname "$(readlink -f "$0")")"
+# In python-appimage (manylinux), actual Python binary is in opt/
+PYTHON="$APPDIR/opt/python3.11/bin/python3.11"
 
-          # In python-appimage (manylinux), the actual Python binary is in opt/
-          # usr/bin/python3 is a wrapper script that breaks when PYTHONHOME is set
-          PYTHON="$APPDIR/opt/python3.11/bin/python3.11"
+# Set up Python environment
+export PYTHONHOME="$APPDIR/opt/python3.11"
+export PYTHONPATH="$APPDIR/usr/share/taskcoach:$APPDIR/opt/python3.11/lib/python3.11/site-packages"
+export LD_LIBRARY_PATH="$APPDIR/opt/python3.11/lib:$APPDIR/usr/lib:$LD_LIBRARY_PATH"
+export PATH="$APPDIR/opt/python3.11/bin:$APPDIR/usr/bin:$PATH"
+export XDG_DATA_DIRS="$APPDIR/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+export PYTHONDONTWRITEBYTECODE=1
 
-          # Set up Python environment
-          export PYTHONHOME="$APPDIR/opt/python3.11"
-          export PYTHONPATH="$APPDIR/usr/share/taskcoach:$APPDIR/opt/python3.11/lib/python3.11/site-packages:$PYTHONPATH"
-
-          # Set up library paths
-          export LD_LIBRARY_PATH="$APPDIR/opt/python3.11/lib:$APPDIR/usr/lib:$LD_LIBRARY_PATH"
-
-          # Set up PATH
-          export PATH="$APPDIR/opt/python3.11/bin:$APPDIR/usr/bin:$PATH"
-
-          # Set up XDG paths for proper desktop integration
-          export XDG_DATA_DIRS="$APPDIR/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
-
-          # GTK settings for better compatibility
-          export GTK_THEME="${GTK_THEME:-Adwaita}"
-
-          # Disable Python bytecode generation in AppImage (read-only)
-          export PYTHONDONTWRITEBYTECODE=1
-
-          # Set application icon for window managers
-          export TASKCOACH_APPIMAGE=1
-
-          # Handle file associations - pass file arguments to TaskCoach
-          exec "$PYTHON" "$APPDIR/usr/share/taskcoach/taskcoach.py" "$@"
-          APPRUN_EOF
-
+exec "$PYTHON" "$APPDIR/usr/share/taskcoach/taskcoach.py" "$@"
+APPRUN_EOF
           chmod +x TaskCoach.AppDir/AppRun
 
       - name: Create desktop file
         run: |
           cat > TaskCoach.AppDir/taskcoach.desktop << 'DESKTOP_EOF'
-          [Desktop Entry]
-          Name=Task Coach
-          GenericName=Task Manager
-          Comment=Your friendly task manager
-          Exec=taskcoach %f
-          Icon=taskcoach
-          Terminal=false
-          Type=Application
-          Categories=Office;Calendar;ProjectManagement;
-          Keywords=task;todo;reminder;project;gtd;
-          MimeType=application/x-taskcoach;
-          StartupNotify=true
-          StartupWMClass=TaskCoach
-          DESKTOP_EOF
-
-          # Also copy to standard location
+[Desktop Entry]
+Name=Task Coach
+GenericName=Task Manager
+Comment=Your friendly task manager
+Exec=taskcoach %f
+Icon=taskcoach
+Terminal=false
+Type=Application
+Categories=Office;Calendar;ProjectManagement;
+Keywords=task;todo;reminder;project;gtd;
+MimeType=application/x-taskcoach;
+StartupNotify=true
+StartupWMClass=TaskCoach
+DESKTOP_EOF
           mkdir -p TaskCoach.AppDir/usr/share/applications
           cp TaskCoach.AppDir/taskcoach.desktop TaskCoach.AppDir/usr/share/applications/
 
@@ -212,44 +190,24 @@ jobs:
         run: |
           mkdir -p TaskCoach.AppDir/usr/share/metainfo
           cat > TaskCoach.AppDir/usr/share/metainfo/taskcoach.appdata.xml << 'APPDATA_EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <component type="desktop-application">
-            <id>org.taskcoach.TaskCoach</id>
-            <name>Task Coach</name>
-            <summary>Your friendly task manager</summary>
-            <metadata_license>CC0-1.0</metadata_license>
-            <project_license>GPL-3.0+</project_license>
-            <description>
-              <p>
-                Task Coach is a free open source todo manager. It grew out of
-                frustration about other programs not handling composite tasks well.
-              </p>
-              <p>
-                In addition to flexible composite tasks, Task Coach has grown to include
-                prerequisites, prioritizing, effort tracking, category tags, budgets,
-                notes, and many other features.
-              </p>
-              <p>
-                However, users are not forced to use all these features; Task Coach can
-                be as simple or complex as you need it to be.
-              </p>
-            </description>
-            <launchable type="desktop-id">taskcoach.desktop</launchable>
-            <url type="homepage">https://github.com/realcarbonneau/taskcoach</url>
-            <url type="bugtracker">https://github.com/realcarbonneau/taskcoach/issues</url>
-            <provides>
-              <binary>taskcoach</binary>
-            </provides>
-            <content_rating type="oars-1.1" />
-            <releases>
-              <release version="1.6.1" date="2025-12-08">
-                <description>
-                  <p>Latest stable release with improved performance and bug fixes.</p>
-                </description>
-              </release>
-            </releases>
-          </component>
-          APPDATA_EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.taskcoach.TaskCoach</id>
+  <name>Task Coach</name>
+  <summary>Your friendly task manager</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0+</project_license>
+  <description>
+    <p>Task Coach is a free open source todo manager.</p>
+  </description>
+  <launchable type="desktop-id">taskcoach.desktop</launchable>
+  <url type="homepage">https://github.com/realcarbonneau/taskcoach</url>
+  <provides>
+    <binary>taskcoach</binary>
+  </provides>
+  <content_rating type="oars-1.1" />
+</component>
+APPDATA_EOF
 
       - name: Download appimagetool
         run: |
