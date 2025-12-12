@@ -102,38 +102,38 @@ jobs:
         run: |
           cd TaskCoach.AppDir
 
-          # Use the bundled Python
-          export PATH="$(pwd)/usr/bin:$PATH"
-          export PYTHONHOME="$(pwd)/usr"
-          export LD_LIBRARY_PATH="$(pwd)/usr/lib:$LD_LIBRARY_PATH"
+          # The python-appimage bundles Python with correct paths
+          # DO NOT set PYTHONHOME - it breaks the bundled Python's path resolution
+          # Use the AppRun wrapper which sets up the environment correctly
+          PYTHON="$(pwd)/AppRun"
 
           # Upgrade pip first
-          ./usr/bin/python3 -m pip install --upgrade pip setuptools wheel
+          $PYTHON -m pip install --upgrade pip setuptools wheel
 
           # Install wxPython - this may take a while as it might need to compile
           # Try pre-built wheel first, fall back to source
           echo "Installing wxPython..."
-          ./usr/bin/python3 -m pip install wxPython --prefer-binary || \
-            ./usr/bin/python3 -m pip install wxPython
+          $PYTHON -m pip install wxPython --prefer-binary || \
+            $PYTHON -m pip install wxPython
 
           # Install all TaskCoach dependencies
           echo "Installing TaskCoach dependencies..."
-          ./usr/bin/python3 -m pip install \
-            six>=1.16.0 \
+          $PYTHON -m pip install \
+            "six>=1.16.0" \
             desktop3 \
             pypubsub \
-            watchdog>=3.0.0 \
-            chardet>=5.2.0 \
-            python-dateutil>=2.9.0 \
-            pyparsing>=3.1.3 \
+            "watchdog>=3.0.0" \
+            "chardet>=5.2.0" \
+            "python-dateutil>=2.9.0" \
+            "pyparsing>=3.1.3" \
             lxml \
             pyxdg \
             keyring \
             numpy \
-            lockfile>=0.12.2 \
-            gntp>=1.0.3 \
-            zeroconf>=0.50.0 \
-            squaremap>=1.0.5 \
+            "lockfile>=0.12.2" \
+            "gntp>=1.0.3" \
+            "zeroconf>=0.50.0" \
+            "squaremap>=1.0.5" \
             distro
 
           # Clean up pip cache to reduce AppImage size

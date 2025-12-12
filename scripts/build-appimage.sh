@@ -100,22 +100,22 @@ install_dependencies() {
 
     cd "$APPDIR"
 
-    # Set up environment for the bundled Python
-    export PATH="$(pwd)/usr/bin:$PATH"
-    export PYTHONHOME="$(pwd)/usr"
-    export LD_LIBRARY_PATH="$(pwd)/usr/lib:$LD_LIBRARY_PATH"
+    # The python-appimage bundles Python with correct paths
+    # DO NOT set PYTHONHOME - it breaks the bundled Python's path resolution
+    # Use the AppRun wrapper which sets up the environment correctly
+    PYTHON="$(pwd)/AppRun"
 
     # Upgrade pip
-    ./usr/bin/python3 -m pip install --upgrade pip setuptools wheel
+    $PYTHON -m pip install --upgrade pip setuptools wheel
 
     # Install wxPython (try wheel first, then source)
     echo "Installing wxPython..."
-    ./usr/bin/python3 -m pip install wxPython --prefer-binary || \
-        ./usr/bin/python3 -m pip install wxPython
+    $PYTHON -m pip install wxPython --prefer-binary || \
+        $PYTHON -m pip install wxPython
 
     # Install TaskCoach dependencies
     echo "Installing TaskCoach dependencies..."
-    ./usr/bin/python3 -m pip install \
+    $PYTHON -m pip install \
         "six>=1.16.0" \
         desktop3 \
         pypubsub \
