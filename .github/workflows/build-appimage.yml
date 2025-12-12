@@ -125,6 +125,52 @@ jobs:
           find . -name "*.pyc" -delete 2>/dev/null || true
           find . -name "*.pyo" -delete 2>/dev/null || true
 
+      - name: Bundle required libraries
+        run: |
+          cd TaskCoach.AppDir
+          mkdir -p usr/lib
+
+          # Find and copy libraries that wxPython needs but aren't bundled
+          # These are typically image format libraries
+          echo "Bundling required shared libraries..."
+
+          # List of libraries to bundle (these are commonly needed by wxPython)
+          LIBS_TO_BUNDLE=(
+            libjpeg.so.8
+            libpng16.so.16
+            libtiff.so.5
+            libwebp.so.7
+            libSDL2-2.0.so.0
+          )
+
+          for lib in "${LIBS_TO_BUNDLE[@]}"; do
+            # Find the library on the system
+            LIB_PATH=$(ldconfig -p | grep "$lib" | head -1 | awk '{print $NF}')
+            if [ -n "$LIB_PATH" ] && [ -f "$LIB_PATH" ]; then
+              echo "Copying $lib from $LIB_PATH"
+              cp -L "$LIB_PATH" usr/lib/
+            else
+              echo "Warning: $lib not found on system"
+            fi
+          done
+
+          # Also find libraries that wx .so files depend on
+          echo "Checking wxPython library dependencies..."
+          WX_LIBS=$(find opt/python3.11/lib/python3.11/site-packages/wx -name "*.so" 2>/dev/null)
+          for wxlib in $WX_LIBS; do
+            ldd "$wxlib" 2>/dev/null | grep "not found" | awk '{print $1}' | while read missing; do
+              echo "Looking for missing: $missing"
+              LIB_PATH=$(ldconfig -p | grep "$missing" | head -1 | awk '{print $NF}')
+              if [ -n "$LIB_PATH" ] && [ -f "$LIB_PATH" ]; then
+                echo "Copying $missing from $LIB_PATH"
+                cp -L "$LIB_PATH" usr/lib/
+              fi
+            done
+          done
+
+          echo "Bundled libraries:"
+          ls -la usr/lib/
+
       - name: Copy TaskCoach application
         run: |
           cd TaskCoach.AppDir
