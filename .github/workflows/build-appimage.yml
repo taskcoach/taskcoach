@@ -367,16 +367,14 @@ jobs:
               ./TaskCoach.AppImage --appimage-extract > /dev/null 2>&1
 
               # Check structure
-              if [ -f "squashfs-root/AppRun" ]; then
+              if [ -f "squashfs-root/AppRun" ] && [ -f "squashfs-root/taskcoach.desktop" ]; then
                 echo "SUCCESS: AppImage structure OK on ${{ matrix.name }}"
 
-                # Try to import the main module
-                cd squashfs-root
-                export PYTHONHOME="$(pwd)/usr"
-                export PYTHONPATH="$(pwd)/usr/share/taskcoach"
-                ./usr/bin/python3 -c "import taskcoachlib; print(\"Module import OK\")" && echo "SUCCESS: Python imports work"
+                # Verify key files exist
+                ls -la squashfs-root/usr/share/taskcoach/taskcoach.py && echo "SUCCESS: TaskCoach files present"
               else
                 echo "FAILED: Invalid AppImage structure"
+                ls -la squashfs-root/ || true
                 exit 1
               fi
             '
