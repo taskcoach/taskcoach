@@ -1,0 +1,439 @@
+name: Build AppImage
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - 'claude/**'
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build-appimage:
+    name: Build AppImage
+    # Use Ubuntu 22.04 for reasonable glibc compatibility
+    # AppImages built here should work on Debian Bookworm and newer
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for version info
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            wget \
+            file \
+            fuse \
+            libfuse2 \
+            desktop-file-utils \
+            libgtk-3-0 \
+            libgtk-3-dev \
+            libgstreamer1.0-0 \
+            libgstreamer-plugins-base1.0-0 \
+            libwebkit2gtk-4.0-37 \
+            libnotify4 \
+            libsm6 \
+            libxxf86vm1 \
+            libsdl2-2.0-0 \
+            libjpeg-turbo8 \
+            libpng16-16 \
+            libtiff5 \
+            libxtst6 \
+            libsecret-1-0 \
+            libgl1-mesa-glx \
+            libegl1-mesa \
+            patchelf \
+            strace
+
+      - name: Download Python AppImage base
+        run: |
+          # Download pre-built Python 3.11 AppImage from python-appimage project
+          # URL from https://github.com/niess/python-appimage/releases
+          PYTHON_APPIMAGE_URL="https://github.com/niess/python-appimage/releases/download/python3.11/python3.11.14-cp311-cp311-manylinux_2_28_x86_64.AppImage"
+
+          echo "Downloading Python AppImage from: $PYTHON_APPIMAGE_URL"
+          wget -q "$PYTHON_APPIMAGE_URL" -O python.AppImage
+          chmod +x python.AppImage
+
+      - name: Extract Python AppImage
+        run: |
+          # Extract the AppImage to get the AppDir
+          ./python.AppImage --appimage-extract
+          mv squashfs-root TaskCoach.AppDir
+
+          # Debug: Show the structure to find where Python actually is
+          echo "=== Python AppImage structure ==="
+          ls -la TaskCoach.AppDir/
+          echo "=== Looking for python binaries ==="
+          find TaskCoach.AppDir -name "python*" -type f 2>/dev/null | head -20
+          echo "=== Original AppRun content ==="
+          cat TaskCoach.AppDir/AppRun
+          echo "=== End of AppRun ==="
+
+      - name: Install wxPython and dependencies
+        run: |
+          cd TaskCoach.AppDir
+
+          # The python-appimage bundles Python with correct paths
+          # DO NOT set PYTHONHOME - it breaks the bundled Python's path resolution
+          # Use the AppRun wrapper which sets up the environment correctly
+          PYTHON="$(pwd)/AppRun"
+
+          # Upgrade pip first
+          $PYTHON -m pip install --upgrade pip setuptools wheel
+
+          # Install wxPython - use pre-built wheels from wxPython extras repository
+          echo "Installing wxPython..."
+          $PYTHON -m pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython || \
+            $PYTHON -m pip install wxPython --prefer-binary
+
+          # Install all TaskCoach dependencies
+          echo "Installing TaskCoach dependencies..."
+          $PYTHON -m pip install \
+            "six>=1.16.0" \
+            desktop3 \
+            pypubsub \
+            "watchdog>=3.0.0" \
+            "chardet>=5.2.0" \
+            "python-dateutil>=2.9.0" \
+            "pyparsing>=3.1.3" \
+            lxml \
+            pyxdg \
+            keyring \
+            numpy \
+            "lockfile>=0.12.2" \
+            "gntp>=1.0.3" \
+            "zeroconf>=0.50.0" \
+            "squaremap>=1.0.5" \
+            distro
+
+          # Clean up pip cache to reduce AppImage size
+          rm -rf ./usr/lib/python*/site-packages/pip
+          rm -rf ./usr/lib/python*/site-packages/setuptools
+          rm -rf ./usr/lib/python*/site-packages/wheel
+          find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+          find . -name "*.pyc" -delete 2>/dev/null || true
+          find . -name "*.pyo" -delete 2>/dev/null || true
+
+      - name: Bundle required libraries
+        run: |
+          cd TaskCoach.AppDir
+          mkdir -p usr/lib
+
+          # Find and copy libraries that wxPython needs but aren't bundled
+          # These are typically image format libraries
+          echo "Bundling required shared libraries..."
+
+          # List of libraries to bundle (these are commonly needed by wxPython)
+          LIBS_TO_BUNDLE=(
+            libjpeg.so.8
+            libpng16.so.16
+            libtiff.so.5
+            libwebp.so.7
+            libSDL2-2.0.so.0
+          )
+
+          for lib in "${LIBS_TO_BUNDLE[@]}"; do
+            # Find the library on the system
+            LIB_PATH=$(ldconfig -p | grep "$lib" | head -1 | awk '{print $NF}')
+            if [ -n "$LIB_PATH" ] && [ -f "$LIB_PATH" ]; then
+              echo "Copying $lib from $LIB_PATH"
+              cp -L "$LIB_PATH" usr/lib/
+            else
+              echo "Warning: $lib not found on system"
+            fi
+          done
+
+          # Also find libraries that wx .so files depend on
+          echo "Checking wxPython library dependencies..."
+          WX_LIBS=$(find opt/python3.11/lib/python3.11/site-packages/wx -name "*.so" 2>/dev/null)
+          for wxlib in $WX_LIBS; do
+            ldd "$wxlib" 2>/dev/null | grep "not found" | awk '{print $1}' | while read missing; do
+              echo "Looking for missing: $missing"
+              LIB_PATH=$(ldconfig -p | grep "$missing" | head -1 | awk '{print $NF}')
+              if [ -n "$LIB_PATH" ] && [ -f "$LIB_PATH" ]; then
+                echo "Copying $missing from $LIB_PATH"
+                cp -L "$LIB_PATH" usr/lib/
+              fi
+            done
+          done
+
+          echo "Bundled libraries:"
+          ls -la usr/lib/
+
+      - name: Copy TaskCoach application
+        run: |
+          cd TaskCoach.AppDir
+
+          # Create application directory
+          mkdir -p usr/share/taskcoach
+
+          # Copy TaskCoach source
+          cp -r ${{ github.workspace }}/taskcoachlib usr/share/taskcoach/
+          cp ${{ github.workspace }}/taskcoach.py usr/share/taskcoach/
+
+          # Copy icons
+          mkdir -p usr/share/icons/hicolor/256x256/apps
+          mkdir -p usr/share/icons/hicolor/128x128/apps
+          mkdir -p usr/share/icons/hicolor/64x64/apps
+          mkdir -p usr/share/icons/hicolor/48x48/apps
+          mkdir -p usr/share/icons/hicolor/32x32/apps
+          mkdir -p usr/share/pixmaps
+
+          # Copy main icon (will be used at multiple sizes)
+          if [ -f "${{ github.workspace }}/icons.in/taskcoach.png" ]; then
+            cp ${{ github.workspace }}/icons.in/taskcoach.png usr/share/icons/hicolor/256x256/apps/
+            cp ${{ github.workspace }}/icons.in/taskcoach.png usr/share/pixmaps/
+            # Also copy to AppDir root for AppImage
+            cp ${{ github.workspace }}/icons.in/taskcoach.png ./taskcoach.png
+          fi
+
+      - name: Create AppRun script
+        run: |
+          # First, find where Python actually is in the extracted AppImage
+          echo "Finding Python binary location..."
+          PYTHON_BIN=$(find TaskCoach.AppDir/opt -name "python3.11" -type f -path "*/bin/*" | head -1)
+          echo "Found Python at: $PYTHON_BIN"
+
+          # Get the relative path from TaskCoach.AppDir
+          PYTHON_REL=${PYTHON_BIN#TaskCoach.AppDir/}
+          PYTHON_DIR=$(dirname $(dirname "$PYTHON_REL"))
+          echo "Python relative path: $PYTHON_REL"
+          echo "Python directory: $PYTHON_DIR"
+
+          # IMPORTANT: Remove the AppRun symlink first, otherwise writing to it
+          # will write to the target file instead of replacing the symlink
+          rm -f TaskCoach.AppDir/AppRun
+          echo "Removed original AppRun symlink"
+
+          # Create AppRun using echo to avoid YAML heredoc issues
+          {
+            echo '#!/bin/bash'
+            echo 'APPDIR="$(dirname "$(readlink -f "$0")")"'
+            echo "PYTHON=\"\$APPDIR/$PYTHON_REL\""
+            echo "export PYTHONHOME=\"\$APPDIR/$PYTHON_DIR\""
+            echo 'export PYTHONPATH="$APPDIR/usr/share/taskcoach:$PYTHONHOME/lib/python3.11/site-packages"'
+            echo 'export LD_LIBRARY_PATH="$PYTHONHOME/lib:$APPDIR/usr/lib:$LD_LIBRARY_PATH"'
+            echo 'export PATH="$PYTHONHOME/bin:$APPDIR/usr/bin:$PATH"'
+            echo 'export XDG_DATA_DIRS="$APPDIR/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"'
+            echo 'export PYTHONDONTWRITEBYTECODE=1'
+            echo ''
+            echo '# If first arg is -c, run Python with the command (for testing)'
+            echo 'if [ "$1" = "-c" ]; then'
+            echo '    exec "$PYTHON" "$@"'
+            echo 'fi'
+            echo ''
+            echo 'exec "$PYTHON" "$APPDIR/usr/share/taskcoach/taskcoach.py" "$@"'
+          } > TaskCoach.AppDir/AppRun
+
+          chmod +x TaskCoach.AppDir/AppRun
+          echo "=== Created AppRun ==="
+          cat TaskCoach.AppDir/AppRun
+
+      - name: Create desktop file
+        run: |
+          printf '%s\n' '[Desktop Entry]' \
+            'Name=Task Coach' \
+            'GenericName=Task Manager' \
+            'Comment=Your friendly task manager' \
+            'Exec=taskcoach %f' \
+            'Icon=taskcoach' \
+            'Terminal=false' \
+            'Type=Application' \
+            'Categories=Office;Calendar;ProjectManagement;' \
+            'Keywords=task;todo;reminder;project;gtd;' \
+            'MimeType=application/x-taskcoach;' \
+            'StartupNotify=true' \
+            'StartupWMClass=TaskCoach' \
+            > TaskCoach.AppDir/taskcoach.desktop
+          mkdir -p TaskCoach.AppDir/usr/share/applications
+          cp TaskCoach.AppDir/taskcoach.desktop TaskCoach.AppDir/usr/share/applications/
+
+      - name: Create AppStream metadata
+        run: |
+          mkdir -p TaskCoach.AppDir/usr/share/metainfo
+          printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>' \
+            '<component type="desktop-application">' \
+            '  <id>org.taskcoach.TaskCoach</id>' \
+            '  <name>Task Coach</name>' \
+            '  <summary>Your friendly task manager</summary>' \
+            '  <metadata_license>CC0-1.0</metadata_license>' \
+            '  <project_license>GPL-3.0+</project_license>' \
+            '  <description><p>Task Coach is a free open source todo manager.</p></description>' \
+            '  <launchable type="desktop-id">taskcoach.desktop</launchable>' \
+            '  <url type="homepage">https://github.com/realcarbonneau/taskcoach</url>' \
+            '  <provides><binary>taskcoach</binary></provides>' \
+            '  <content_rating type="oars-1.1" />' \
+            '</component>' \
+            > TaskCoach.AppDir/usr/share/metainfo/taskcoach.appdata.xml
+
+      - name: Download appimagetool
+        run: |
+          wget -q "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" -O appimagetool
+          chmod +x appimagetool
+
+      - name: Get version info
+        id: version
+        run: |
+          # Extract version from meta/data.py
+          VERSION=$(python3 -c "
+          import sys
+          sys.path.insert(0, '${{ github.workspace }}')
+          from taskcoachlib.meta import data
+          print(data.version_full)
+          ")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Build AppImage
+        run: |
+          # Set version in filename
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Create the AppImage
+          ARCH=x86_64 ./appimagetool TaskCoach.AppDir "TaskCoach-${VERSION}-x86_64.AppImage"
+
+          # Make it executable
+          chmod +x "TaskCoach-${VERSION}-x86_64.AppImage"
+
+          # List the result
+          ls -la *.AppImage
+
+      - name: Test AppImage
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Basic test - check if AppImage runs and shows help
+          echo "Testing AppImage execution..."
+          ./TaskCoach-${VERSION}-x86_64.AppImage --help || echo "Help test completed"
+
+          # Test that it extracts and has correct structure
+          echo "Testing AppImage structure..."
+          ./TaskCoach-${VERSION}-x86_64.AppImage --appimage-extract > /dev/null
+
+          if [ -f "squashfs-root/AppRun" ] && [ -f "squashfs-root/taskcoach.desktop" ]; then
+            echo "AppImage structure is correct"
+          else
+            echo "ERROR: AppImage structure is incorrect"
+            ls -la squashfs-root/
+            exit 1
+          fi
+
+          # Debug: Show the generated AppRun
+          echo "=== Generated AppRun content ==="
+          cat squashfs-root/AppRun
+          echo "=== End of AppRun ==="
+
+          # Test that Python actually works in the AppImage
+          echo "Testing Python in AppImage..."
+          cd squashfs-root
+          echo "Current directory: $(pwd)"
+          echo "AppRun exists: $(ls -la AppRun)"
+
+          # Run AppRun with a simple Python test
+          ./AppRun -c "import sys; print('Python works:', sys.version)" || {
+            echo "ERROR: AppRun failed to execute Python"
+            echo "Debugging..."
+            ls -la opt/ 2>/dev/null || echo "No opt/ directory"
+            ls -la usr/bin/ 2>/dev/null | head -10
+            find . -name "python3.11" -type f 2>/dev/null
+            exit 1
+          }
+
+          # Test importing taskcoachlib
+          echo "Testing taskcoachlib import..."
+          ./AppRun -c "import taskcoachlib; print('taskcoachlib imported successfully')" || {
+            echo "ERROR: Failed to import taskcoachlib"
+            exit 1
+          }
+
+          cd ..
+          rm -rf squashfs-root
+          echo "All tests passed!"
+
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TaskCoach-AppImage-${{ steps.version.outputs.version }}
+          path: TaskCoach-*.AppImage
+          retention-days: 30
+
+      - name: Create Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: TaskCoach-*.AppImage
+          draft: false
+          prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Optional: Test on multiple Linux distributions using Docker
+  test-appimage:
+    name: Test AppImage on ${{ matrix.distro }}
+    needs: build-appimage
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distro: debian:bookworm
+            name: Debian Bookworm
+          - distro: ubuntu:22.04
+            name: Ubuntu 22.04
+          - distro: ubuntu:24.04
+            name: Ubuntu 24.04
+          - distro: fedora:39
+            name: Fedora 39
+
+    steps:
+      - name: Download AppImage artifact
+        uses: actions/download-artifact@v4
+        with:
+          pattern: TaskCoach-AppImage-*
+          merge-multiple: true
+
+      - name: Test AppImage in Docker
+        run: |
+          # Find the AppImage file
+          APPIMAGE=$(ls TaskCoach-*.AppImage | head -1)
+          chmod +x "$APPIMAGE"
+
+          # Run test in Docker container
+          docker run --rm \
+            -v "$(pwd)/$APPIMAGE:/app/TaskCoach.AppImage:ro" \
+            ${{ matrix.distro }} \
+            bash -c '
+              # Install minimal dependencies for testing
+              if command -v apt-get &> /dev/null; then
+                apt-get update && apt-get install -y file libfuse2 2>/dev/null || apt-get install -y file fuse 2>/dev/null || true
+              elif command -v dnf &> /dev/null; then
+                dnf install -y file fuse-libs 2>/dev/null || true
+              fi
+
+              # Extract and test (since FUSE may not work in Docker)
+              cd /app
+              ./TaskCoach.AppImage --appimage-extract > /dev/null 2>&1
+
+              # Check structure
+              if [ -f "squashfs-root/AppRun" ] && [ -f "squashfs-root/taskcoach.desktop" ]; then
+                echo "SUCCESS: AppImage structure OK on ${{ matrix.name }}"
+
+                # Verify key files exist
+                ls -la squashfs-root/usr/share/taskcoach/taskcoach.py && echo "SUCCESS: TaskCoach files present"
+              else
+                echo "FAILED: Invalid AppImage structure"
+                ls -la squashfs-root/ || true
+                exit 1
+              fi
+            '
