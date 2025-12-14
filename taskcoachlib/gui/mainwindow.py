@@ -288,6 +288,10 @@ If this happens again, please make a copy of your TaskCoach.ini file """
             # incorrect when the user changes translation:
             if hasattr(pane.window, "title"):
                 pane.Caption(pane.window.title())
+            # Reset toolbar MinSize - width is derived from window, not saved.
+            # Old INI files may have hard-coded widths like minw=1840.
+            if pane.name == "toolbar":
+                pane.MinSize((-1, 42))
         self.manager.Update()
 
     def __perspective_and_settings_viewer_count_differ(self, viewer_type):
