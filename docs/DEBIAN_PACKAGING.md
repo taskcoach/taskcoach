@@ -21,14 +21,18 @@ debian/
 ├── control                                           # Package metadata
 ├── copyright                                         # DEP-5 license info
 ├── patches/
-│   ├── fix-hypertreelist-background-coloring.patch  # wxPython fix (DEP-3)
-│   └── series                                        # Patch order
+│   └── series                                        # Empty (see note below)
 ├── rules                                             # Build instructions
 ├── source/
 │   └── format                                        # 3.0 (quilt)
 ├── taskcoach.install                                 # Installation notes
 └── watch                                             # Upstream version tracking
 ```
+
+**Note on patches:** The wxPython hypertreelist fix is NOT applied via quilt patches.
+The file `wx/lib/agw/hypertreelist.py` belongs to `python3-wxgtk4.0`, not Task Coach.
+Instead, we bundle a pre-patched copy at `patches/wxpython/hypertreelist.py` and
+install it via `debian/rules` to `/usr/share/taskcoach/lib/`.
 
 ### Files Status
 

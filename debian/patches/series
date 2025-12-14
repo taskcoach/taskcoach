@@ -1,7 +1,11 @@
 # Patches for Task Coach Debian package
-# These patches are applied in order during package build
-
-# wxPython hypertreelist background coloring fix (PR #2088)
-# Required for wxPython < 4.2.4 (Bookworm 4.2.0, Trixie/Sid 4.2.3)
-# Can be removed when Debian ships wxPython >= 4.2.4
-fix-hypertreelist-background-coloring.patch
+#
+# Note: The wxPython hypertreelist patch (PR #2088) is NOT applied via quilt.
+# Instead, the pre-patched file is bundled at patches/wxpython/hypertreelist.py
+# and installed to /usr/share/taskcoach/lib/ by debian/rules.
+#
+# This is because the file being patched (wx/lib/agw/hypertreelist.py) belongs
+# to the python3-wxgtk4.0 package, not Task Coach. We bundle a patched copy
+# rather than modifying the system wxPython installation.
+#
+# The patch can be removed when Debian ships wxPython >= 4.2.4.
