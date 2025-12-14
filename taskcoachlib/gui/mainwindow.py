@@ -403,12 +403,13 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         currentToolbar = self.manager.GetPane("toolbar")
         if currentToolbar.IsOk():
             width = event.GetSize().GetWidth()
-            # Set size on the window widget
+            # Set size on the window widget for current display
             currentToolbar.window.SetSize((width, -1))
             currentToolbar.window.SetMinSize((width, 42))
-            # ALSO set MinSize on the AUI pane info - this is what AUI uses
-            # for layout calculations, not the window's MinSize
-            currentToolbar.MinSize((width, 42))
+            # Use -1 for width on pane info so SavePerspective doesn't save
+            # a hard-coded width value. The toolbar width is derived from
+            # window width at runtime, not a user preference to persist.
+            currentToolbar.MinSize((-1, 42))
         event.Skip()
 
     def showStatusBar(self, value=True):
