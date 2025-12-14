@@ -259,9 +259,10 @@ class MainWindow(
 
         try:
             self.manager.LoadPerspective(perspective)
-        except ValueError as reason:
-            # This has been reported to happen. Don't know why. Keep going
-            # if it does.
+        except Exception as reason:
+            # wxPython's AUI LoadPerspective can raise Exception (not ValueError)
+            # with "Bad perspective string" when the saved layout is corrupt.
+            # Keep going if it does.
             wx.MessageBox(
                 _(
                     """Couldn't restore the pane layout from TaskCoach.ini:
