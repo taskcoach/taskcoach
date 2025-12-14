@@ -36,28 +36,12 @@ import subprocess
 
 def _log_gui_environment():
     """Log GUI environment details for debugging window positioning issues."""
-    import platform
-    from taskcoachlib import meta
-
     print("\n" + "="*60)
     print("GUI ENVIRONMENT INFO")
     print("="*60)
 
-    # TaskCoach version first - critical for debugging
-    print(f"TaskCoach: {meta.data.version}")
-
-    # Basic info
-    print(f"Platform: {sys.platform}")
-    print(f"Python: {platform.python_version()}")
-    print(f"wx.Version: {wx.version()}")
+    # wx platform details (more detailed than basic wx.version())
     print(f"wx.PlatformInfo: {wx.PlatformInfo}")
-
-    # Additional package versions
-    try:
-        from pubsub import __version__ as pubsub_version
-        print(f"pubsub: {pubsub_version}")
-    except (ImportError, AttributeError):
-        pass
 
     # Platform-specific info
     if sys.platform == 'win32':
@@ -437,13 +421,10 @@ class Application(object, metaclass=patterns.Singleton):
     # Now using native wx.App.MainLoop() which is simpler and more reliable.
     # See class docstring for migration details.
 
-    def start(self):
-        """Call this to start the Application."""
-        # pylint: disable=W0201
+    def _log_version_info(self):
+        """Log version info for debugging - called early in init() before any GUI."""
         from taskcoachlib import meta
-        import sys
         import platform
-        import wx
 
         # Log version info at startup for debugging
         if meta.git_commit_hash:
@@ -470,7 +451,11 @@ class Application(object, metaclass=patterns.Singleton):
             import zeroconf
             print(f"zeroconf {zeroconf.__version__}")
         except ImportError:
-            print("zeroconf Not Installed")
+            pass  # zeroconf is optional
+
+    def start(self):
+        """Call this to start the Application."""
+        from taskcoachlib import meta
 
         if self.settings.getboolean("version", "notify"):
             self.__version_checker = meta.VersionChecker(self.settings)
@@ -524,6 +509,9 @@ class Application(object, metaclass=patterns.Singleton):
     def init(self, loadSettings=True, loadTaskFile=True):
         """Initialize the application. Needs to be called before
         Application.start()."""
+        # Log version info FIRST - critical for debugging crashes during init
+        self._log_version_info()
+
         # Log GUI environment for debugging window positioning
         _log_gui_environment()
 
