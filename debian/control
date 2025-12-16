@@ -5,7 +5,8 @@ Maintainer: Task Coach Developers <developers@taskcoach.org>
 Build-Depends: debhelper-compat (= 13),
                dh-python,
                python3-all,
-               python3-setuptools
+               python3-setuptools,
+               python3-distro
 Standards-Version: 4.6.2
 Homepage: https://github.com/realcarbonneau/taskcoach
 Vcs-Git: https://github.com/realcarbonneau/taskcoach.git
