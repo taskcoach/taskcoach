@@ -74,9 +74,14 @@ integer.set_name("numeric")
 
 CK = pp.CaselessKeyword
 CL = pp.CaselessLiteral
-today, tomorrow, yesterday, noon, midnight, now = CK.using_each(
-    "today tomorrow yesterday noon midnight now".split()
-)
+# Create keywords individually for compatibility with pyparsing < 3.1.0
+# (using_each was added in pyparsing 3.1.0, Debian Bookworm has 3.0.9)
+today = CK("today")
+tomorrow = CK("tomorrow")
+yesterday = CK("yesterday")
+noon = CK("noon")
+midnight = CK("midnight")
+now = CK("now")
 
 
 def _now():
@@ -112,7 +117,7 @@ a_ = CK("a")
 an_ = CK("an")
 of_ = CK("of")
 the_ = CK("the")
-adverb_ = pp.MatchFirst(CK.using_each("just only exactly".split())).suppress()
+adverb_ = pp.MatchFirst([CK("just"), CK("only"), CK("exactly")]).suppress()
 
 couple = (
     (pp.Opt(CK("a")) + CK("couple") + pp.Opt(CK("of")))
@@ -125,11 +130,13 @@ the_qty = the_.set_parse_action(pp.replace_with(1))
 qty = pp.ungroup(
     (pp.Opt(adverb_) + (integer | couple | a_qty | the_qty)).set_name("qty_expression")
 ).set_name("qty")
-time_ref_present = pp.Tag("time_ref_present")
+# pp.Tag was added in pyparsing 3.1.0, but Debian Bookworm has 3.0.9
+# Use Empty() with a parse action to set the flag as a compatible alternative
+time_ref_present = pp.Empty().add_parse_action(lambda t: t.__setitem__("time_ref_present", True))
 
 # get weekday names from the calendar module
 weekday_names = list(calendar.day_name)
-weekday_name = pp.MatchFirst(CK.using_each(weekday_names)).set_name("weekday_name")
+weekday_name = pp.MatchFirst([CK(name) for name in weekday_names]).set_name("weekday_name")
 
 # expressions for military 2400 time
 _24hour_time = ~(pp.Word(pp.nums) + any_time_units).set_name(

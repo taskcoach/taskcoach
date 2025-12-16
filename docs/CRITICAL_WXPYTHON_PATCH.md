@@ -343,10 +343,13 @@ This workaround can be removed when **ANY** of the following conditions are met:
 
 ### Option 1: Debian Ships wxPython 4.2.4+
 
-**Current Status** (2025-11-16):
-- Debian Bookworm (12): wxPython 4.2.0 (patch REQUIRED)
-- Debian Trixie (13): TBD - check when released
-- Debian Sid (unstable): TBD
+**Current Status** (2025-12-14):
+- Debian Bookworm (12): wxPython 4.2.0+dfsg-3 (patch REQUIRED)
+- Debian Trixie (13): wxPython 4.2.3+dfsg-2 (patch REQUIRED)
+- Debian Sid (unstable): wxPython 4.2.3+dfsg-2 (patch REQUIRED)
+
+**Note**: wxPython 4.2.4 (which includes the fix) was released on October 28, 2025,
+but has not yet been packaged for Debian.
 
 **How to check**:
 ```bash
@@ -371,10 +374,11 @@ If version >= 4.2.4, the upstream fix is included.
 
 ### Option 2: wxPython 4.2.4+ Available via pip
 
-**Current Status** (2025-11-16):
-- wxPython in PyPI requires building from source
+**Current Status** (2025-12-14):
+- wxPython 4.2.4 released on PyPI (October 28, 2025)
+- Binary wheels may be available for some platforms
 - Debian's system wxPython is pre-compiled for Python 3.11
-- pip install would require C++ compiler + dependencies
+- pip install on Debian may require C++ compiler + dependencies
 
 **How to check**:
 ```bash
@@ -406,10 +410,10 @@ Look for binary wheels (`.whl`) for Linux.
   - Reporter: Jorilx
   - https://github.com/wxWidgets/Phoenix/issues/1898
 
-- **wxPython PR #2088**: "Fix for both issues"
+- **wxPython PR #2088**: "Major speedups and bug fixes to CustomTreeCtrl and HyperTreeList"
   - Author: cbeytas
-  - Merged: 2023
-  - Included in: wxPython 4.2.4+
+  - Merged: August 5, 2025
+  - Included in: wxPython 4.2.4 (released October 28, 2025)
   - https://github.com/wxWidgets/Phoenix/pull/2088
 
 ### TaskCoach Project
@@ -470,7 +474,8 @@ If ALL items are checked ✓, the patch is working correctly!
 
 **⚠️ DO NOT REMOVE THIS PATCH UNTIL WXPYTHON 4.2.4+ IS AVAILABLE IN DEBIAN OR VIA PIP**
 
-Last verified working: 2025-11-16
-Debian version: 12 (Bookworm)
-wxPython version: 4.2.0
+Last verified working: 2025-12-14
+Debian version: 12 (Bookworm), 13 (Trixie)
+wxPython versions checked: 4.2.0 (Bookworm), 4.2.3 (Trixie/Sid)
+Upstream fix available in: wxPython 4.2.4 (not yet in Debian)
 Python version: 3.11.2

@@ -1,8 +1,80 @@
 # -*- coding: utf-8 -*-
 
 import sys
-import wx
+import os
 import inspect
+
+# =============================================================================
+# wxPython hypertreelist Import Hook
+# =============================================================================
+# This import hook redirects imports of wx.lib.agw.hypertreelist to our bundled
+# patched version. This is needed because wxPython < 4.2.4 has bugs in
+# TR_FULL_ROW_HIGHLIGHT and TR_FILL_WHOLE_COLUMN_BACKGROUND that break
+# background coloring in tree list widgets.
+#
+# The patched file is bundled at: taskcoachlib/patches/hypertreelist.py
+# This works for all installation methods (pip, deb, rpm, Windows, macOS).
+#
+# For details, see: docs/CRITICAL_WXPYTHON_PATCH.md
+# =============================================================================
+
+from importlib.abc import MetaPathFinder
+from importlib.util import spec_from_file_location
+
+
+def _find_patched_hypertreelist():
+    """Find the patched hypertreelist.py file.
+
+    Returns the path to the patched file, or None if not found.
+    The file is located relative to this module, so it works regardless
+    of installation method (pip, deb, rpm, source, etc.).
+    """
+    # Path relative to this file: workarounds/ -> taskcoachlib/ -> patches/
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    taskcoachlib_dir = os.path.dirname(this_dir)
+    patch_path = os.path.join(taskcoachlib_dir, "patches", "hypertreelist.py")
+
+    if os.path.exists(patch_path):
+        return patch_path
+
+    return None
+
+
+class HyperTreeListPatchFinder(MetaPathFinder):
+    """Import hook to replace wx.lib.agw.hypertreelist with patched version."""
+
+    def __init__(self, patched_file_path):
+        self.patched_file_path = patched_file_path
+
+    def find_spec(self, fullname, path, target=None):
+        if fullname == "wx.lib.agw.hypertreelist":
+            return spec_from_file_location(fullname, self.patched_file_path)
+        return None
+
+
+def _install_hypertreelist_hook():
+    """Install the import hook if patched file is available and needed."""
+    patched_path = _find_patched_hypertreelist()
+    if patched_path is None:
+        return  # No patched file found, use system version
+
+    # Check if hook is already installed
+    for finder in sys.meta_path:
+        if isinstance(finder, HyperTreeListPatchFinder):
+            return  # Already installed
+
+    # Install the hook at position 0 (highest priority)
+    sys.meta_path.insert(0, HyperTreeListPatchFinder(patched_path))
+
+
+# Install the hook before wx is imported
+_install_hypertreelist_hook()
+
+# =============================================================================
+# Other Monkeypatches
+# =============================================================================
+
+import wx
 from collections import namedtuple
 from wx.core import Window
 

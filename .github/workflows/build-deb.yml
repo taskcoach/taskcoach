@@ -1,0 +1,258 @@
+name: Build Debian Package
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - 'claude/**'
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build-deb:
+    name: Build .deb on ${{ matrix.distro }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distro: debian:bookworm
+            name: Debian Bookworm (12)
+            codename: bookworm
+            os: debian
+            osver: "12"
+          - distro: debian:trixie
+            name: Debian Trixie (13)
+            codename: trixie
+            os: debian
+            osver: "13"
+          - distro: debian:sid
+            name: Debian Sid (unstable)
+            codename: sid
+            os: debian
+            osver: sid
+          - distro: ubuntu:22.04
+            name: Ubuntu 22.04 LTS (Jammy)
+            codename: jammy
+            os: ubuntu
+            osver: "22.04"
+          - distro: ubuntu:24.04
+            name: Ubuntu 24.04 LTS (Noble)
+            codename: noble
+            os: ubuntu
+            osver: "24.04"
+
+    container:
+      image: ${{ matrix.distro }}
+
+    steps:
+      - name: Install git and dependencies
+        run: |
+          apt-get update
+          apt-get install -y git ca-certificates
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          apt-get install -y \
+            build-essential \
+            debhelper \
+            dh-python \
+            python3-all \
+            python3-setuptools \
+            python3-distro \
+            python3-pip \
+            devscripts \
+            lintian \
+            fakeroot
+
+      - name: Get version info
+        id: version
+        run: |
+          # Extract version from meta/data.py
+          VERSION=$(python3 -c "
+          import sys
+          sys.path.insert(0, '.')
+          from taskcoachlib.meta import data
+          print(data.version_full)
+          ")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Build source package
+        run: |
+          # Build source package (unsigned)
+          dpkg-buildpackage -us -uc -S
+          echo "Source package built"
+          ls -la ../
+
+      - name: Build binary package
+        run: |
+          # Build binary package (unsigned)
+          dpkg-buildpackage -us -uc -b
+          echo "Binary package built"
+          ls -la ../
+
+      - name: Run lintian
+        continue-on-error: true
+        run: |
+          echo "=== Running lintian on .changes file ==="
+          lintian --info --display-info ../*.changes || true
+          echo ""
+          echo "=== Running lintian on .deb file ==="
+          lintian --info --display-info ../*.deb || true
+
+      - name: Collect build artifacts
+        run: |
+          mkdir -p artifacts
+          VERSION="${{ steps.version.outputs.version }}"
+          OS="${{ matrix.os }}"
+          OSVER="${{ matrix.osver }}"
+          CODENAME="${{ matrix.codename }}"
+
+          # Copy and rename .deb file with descriptive name
+          for deb in ../*.deb; do
+            if [ -f "$deb" ]; then
+              # Extract package name and arch from original filename
+              BASENAME=$(basename "$deb" .deb)
+              PKGNAME=$(echo "$BASENAME" | cut -d_ -f1)
+              ARCH=$(echo "$BASENAME" | cut -d_ -f3)
+              # Create descriptive filename: taskcoach_1.6.1_debian-12-bookworm_all.deb
+              NEWNAME="${PKGNAME}_${VERSION}_${OS}-${OSVER}-${CODENAME}_${ARCH}.deb"
+              cp "$deb" "artifacts/$NEWNAME"
+              echo "Renamed: $deb -> $NEWNAME"
+            fi
+          done
+
+          # Copy other build artifacts with original names
+          cp ../*.changes artifacts/ 2>/dev/null || echo "No .changes files"
+          cp ../*.buildinfo artifacts/ 2>/dev/null || echo "No .buildinfo files"
+          cp ../*.dsc artifacts/ 2>/dev/null || echo "No .dsc files"
+          cp ../*.tar.* artifacts/ 2>/dev/null || echo "No .tar files"
+          ls -la artifacts/
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: taskcoach-${{ steps.version.outputs.version }}-${{ matrix.os }}-${{ matrix.osver }}-${{ matrix.codename }}
+          path: artifacts/
+          retention-days: 30
+
+  # Test installation on clean systems
+  test-install:
+    name: Test install on ${{ matrix.distro }}
+    needs: build-deb
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distro: debian:bookworm
+            os: debian
+            osver: "12"
+            codename: bookworm
+          - distro: debian:trixie
+            os: debian
+            osver: "13"
+            codename: trixie
+          - distro: ubuntu:22.04
+            os: ubuntu
+            osver: "22.04"
+            codename: jammy
+          - distro: ubuntu:24.04
+            os: ubuntu
+            osver: "24.04"
+            codename: noble
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          pattern: taskcoach-*-${{ matrix.os }}-${{ matrix.osver }}-${{ matrix.codename }}
+          merge-multiple: true
+          path: packages
+
+      - name: Test installation in Docker
+        run: |
+          # Find the .deb file
+          DEB_FILE=$(ls packages/*.deb 2>/dev/null | head -1)
+          if [ -z "$DEB_FILE" ]; then
+            echo "No .deb file found in packages/"
+            ls -la packages/
+            exit 1
+          fi
+          echo "Testing installation of: $DEB_FILE"
+
+          # Run installation test in Docker
+          docker run --rm \
+            -e DEBIAN_FRONTEND=noninteractive \
+            -e TZ=UTC \
+            -v "$(pwd)/packages:/packages:ro" \
+            ${{ matrix.distro }} \
+            bash -c '
+              set -e
+              apt-get update
+
+              # Install the package (this will fail on dependencies first)
+              echo "Attempting package installation..."
+              apt-get install -y /packages/*.deb 2>&1 || {
+                echo "Installing dependencies..."
+                apt-get install -f -y
+              }
+
+              # Verify installation
+              echo "Verifying installation..."
+              dpkg -l | grep taskcoach || {
+                echo "Package not installed!"
+                exit 1
+              }
+
+              # Check that key files exist
+              echo "Checking installed files..."
+              test -d /usr/lib/python3/dist-packages/taskcoachlib && echo "SUCCESS: taskcoachlib installed"
+              test -f /usr/lib/python3/dist-packages/taskcoachlib/patches/hypertreelist.py && echo "SUCCESS: Bundled patch installed"
+
+              # Test that Python can import the module
+              echo "Testing Python import..."
+              python3 -c "import taskcoachlib; print(taskcoachlib.__file__)" && echo "SUCCESS: taskcoachlib imports correctly"
+
+              echo "All installation tests passed!"
+            '
+
+  # Create release with all packages
+  release:
+    name: Create Release
+    needs: [build-deb, test-install]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: debian-package-*
+          merge-multiple: true
+          path: packages
+
+      - name: List packages
+        run: ls -la packages/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: packages/*.deb
+          draft: false
+          prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

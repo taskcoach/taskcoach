@@ -2,9 +2,19 @@
 
 This directory contains a patched version of wxPython's `hypertreelist.py` file.
 
+## Patch Status (2025-12-14)
+
+| Debian Release | wxPython Version | Patch Required? |
+|----------------|------------------|-----------------|
+| Bookworm (12)  | 4.2.0+dfsg-3     | YES |
+| Trixie (13)    | 4.2.3+dfsg-2     | YES |
+| Sid (unstable) | 4.2.3+dfsg-2     | YES |
+
+**Upstream fix**: wxPython 4.2.4 (released October 28, 2025) - not yet in Debian.
+
 ## What This Fixes
 
-The patch applies fixes from wxPython [PR #2088](https://github.com/wxWidgets/Phoenix/pull/2088) (included in wxPython 4.2.4) to wxPython 4.2.1:
+The patch applies fixes from wxPython [PR #2088](https://github.com/wxWidgets/Phoenix/pull/2088) (included in wxPython 4.2.4) to wxPython < 4.2.4:
 
 - ✓ Full-row background colors (not just text backgrounds)
 - ✓ Right-aligned columns (date fields) now fully colored
@@ -56,17 +66,22 @@ if self.HasAGWFlag(TR_FILL_WHOLE_COLUMN_BACKGROUND):
 
 **Why this fix is needed**: For right-aligned text, `text_x` is positioned far from the left edge of the column, leaving gaps in the background. Using `x_colstart` (column start position) ensures the background fills the entire column width.
 
-## How It Works
+## Installation Methods
 
+There are two ways to apply this patch, depending on how Task Coach is installed:
+
+### Method 1: Development / Source Installation (venv)
+
+For developers or users running Task Coach from source using a virtual environment.
+
+**How it works:**
 1. The venv is created with `--system-site-packages` to access system wxPython
 2. The patched file is copied to `.venv/lib/python3.11/site-packages/wx/lib/agw/hypertreelist.py`
-3. Python's import system finds the venv version first, using our patched file instead of the system one
-4. No system files are modified
+3. An import hook in `usercustomize.py` intercepts imports of `wx.lib.agw.hypertreelist`
+4. Python loads the patched venv version instead of the system version
+5. No system files are modified
 
-## Installation
-
-Run the patch installation script from the repository root:
-
+**Installation:**
 ```bash
 ./apply-wxpython-patch.sh
 ```
@@ -74,7 +89,22 @@ Run the patch installation script from the repository root:
 This script:
 1. Creates the necessary directory structure in the venv
 2. Copies the patched file to the correct location
-3. Verifies the patch was applied successfully
+3. Installs the import hook (`usercustomize.py`)
+4. Verifies the patch was applied successfully
+
+### Method 2: Package Installation (All Platforms)
+
+For users installing Task Coach via a package (`.deb`, `.rpm`, pip, etc.).
+
+**How it works:**
+1. The patched `hypertreelist.py` is bundled inside `taskcoachlib/patches/`
+2. An import hook in `taskcoachlib/workarounds/monkeypatches.py` intercepts imports
+3. Python loads the bundled patched version instead of the system version
+4. The system wxPython package remains unmodified
+
+This works identically for all installation methods (Debian, Fedora, pip, Windows, macOS).
+
+For packaging details, see [docs/PACKAGING.md](../../docs/PACKAGING.md).
 
 ## Maintenance
 
@@ -85,8 +115,16 @@ To update this patch:
 3. Save to `patches/wxpython/hypertreelist.py`
 4. Run `./apply-wxpython-patch.sh` to update the venv
 
+## Debian Quilt Patch
+
+For official Debian packaging, a quilt-format patch with DEP-3 headers is available at:
+`debian/patches/fix-hypertreelist-background-coloring.patch`
+
+This patch is listed in `debian/patches/series` and will be applied during package build.
+
 ## References
 
-- wxPython Issue #2081: TR_FULL_ROW_HIGHLIGHT broken in Phoenix 4.x
-- wxPython Issue #1898: TR_FILL_WHOLE_COLUMN_BACKGROUND broken for right-aligned columns
-- wxPython PR #2088: Fix for both issues (included in 4.2.4)
+- [wxPython Issue #2081](https://github.com/wxWidgets/Phoenix/issues/2081): TR_FULL_ROW_HIGHLIGHT broken in Phoenix 4.x
+- [wxPython Issue #1898](https://github.com/wxWidgets/Phoenix/issues/1898): TR_FILL_WHOLE_COLUMN_BACKGROUND broken for right-aligned columns
+- [wxPython PR #2088](https://github.com/wxWidgets/Phoenix/pull/2088): Fix for both issues (merged August 5, 2025)
+- [wxPython 4.2.4 Release](https://wxpython.org/news/2025-10-28-wxpython-424-release/index.html): Released October 28, 2025
