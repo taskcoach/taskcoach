@@ -16,5 +16,8 @@ override_dh_auto_install:
 	# Install appdata/metainfo for software centers
 	install -D -m 644 build.in/debian/taskcoach.appdata.xml \
 		debian/taskcoach/usr/share/metainfo/taskcoach.appdata.xml
+	# Install application icon
+	install -D -m 644 icons.in/taskcoach.png \
+		debian/taskcoach/usr/share/pixmaps/taskcoach.png
 	# Note: The wxPython hypertreelist patch is now bundled inside taskcoachlib/patches/
 	# and installed automatically by pybuild. No manual installation needed.

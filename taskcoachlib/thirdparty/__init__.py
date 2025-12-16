@@ -16,4 +16,5 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import desktop
+# Import bundled desktop module from thirdparty/desktop/
+from taskcoachlib.thirdparty import desktop
