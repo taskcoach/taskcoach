@@ -241,7 +241,7 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: debian-package-*
+          pattern: taskcoach-*
           merge-multiple: true
           path: packages
 
