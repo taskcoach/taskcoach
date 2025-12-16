@@ -24,14 +24,29 @@ jobs:
         include:
           - distro: debian:bookworm
             name: Debian Bookworm (12)
+            codename: bookworm
+            os: debian
+            osver: "12"
           - distro: debian:trixie
             name: Debian Trixie (13)
+            codename: trixie
+            os: debian
+            osver: "13"
           - distro: debian:sid
             name: Debian Sid (unstable)
+            codename: sid
+            os: debian
+            osver: sid
           - distro: ubuntu:22.04
             name: Ubuntu 22.04 LTS (Jammy)
+            codename: jammy
+            os: ubuntu
+            osver: "22.04"
           - distro: ubuntu:24.04
             name: Ubuntu 24.04 LTS (Noble)
+            codename: noble
+            os: ubuntu
+            osver: "24.04"
 
     container:
       image: ${{ matrix.distro }}
@@ -101,7 +116,26 @@ jobs:
       - name: Collect build artifacts
         run: |
           mkdir -p artifacts
-          cp ../*.deb artifacts/ 2>/dev/null || echo "No .deb files"
+          VERSION="${{ steps.version.outputs.version }}"
+          OS="${{ matrix.os }}"
+          OSVER="${{ matrix.osver }}"
+          CODENAME="${{ matrix.codename }}"
+
+          # Copy and rename .deb file with descriptive name
+          for deb in ../*.deb; do
+            if [ -f "$deb" ]; then
+              # Extract package name and arch from original filename
+              BASENAME=$(basename "$deb" .deb)
+              PKGNAME=$(echo "$BASENAME" | cut -d_ -f1)
+              ARCH=$(echo "$BASENAME" | cut -d_ -f3)
+              # Create descriptive filename: taskcoach_1.6.1_debian-12-bookworm_all.deb
+              NEWNAME="${PKGNAME}_${VERSION}_${OS}-${OSVER}-${CODENAME}_${ARCH}.deb"
+              cp "$deb" "artifacts/$NEWNAME"
+              echo "Renamed: $deb -> $NEWNAME"
+            fi
+          done
+
+          # Copy other build artifacts with original names
           cp ../*.changes artifacts/ 2>/dev/null || echo "No .changes files"
           cp ../*.buildinfo artifacts/ 2>/dev/null || echo "No .buildinfo files"
           cp ../*.dsc artifacts/ 2>/dev/null || echo "No .dsc files"
@@ -111,7 +145,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: debian-package-${{ matrix.distro == 'debian:bookworm' && 'bookworm' || matrix.distro == 'debian:trixie' && 'trixie' || matrix.distro == 'debian:sid' && 'sid' || matrix.distro == 'ubuntu:22.04' && 'jammy' || 'noble' }}-${{ steps.version.outputs.version }}
+          name: taskcoach-${{ steps.version.outputs.version }}-${{ matrix.os }}-${{ matrix.osver }}-${{ matrix.codename }}
           path: artifacts/
           retention-days: 30
 
@@ -125,19 +159,27 @@ jobs:
       matrix:
         include:
           - distro: debian:bookworm
-            artifact: bookworm
+            os: debian
+            osver: "12"
+            codename: bookworm
           - distro: debian:trixie
-            artifact: trixie
+            os: debian
+            osver: "13"
+            codename: trixie
           - distro: ubuntu:22.04
-            artifact: jammy
+            os: ubuntu
+            osver: "22.04"
+            codename: jammy
           - distro: ubuntu:24.04
-            artifact: noble
+            os: ubuntu
+            osver: "24.04"
+            codename: noble
 
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          pattern: debian-package-${{ matrix.artifact }}-*
+          pattern: taskcoach-*-${{ matrix.os }}-${{ matrix.osver }}-${{ matrix.codename }}
           merge-multiple: true
           path: packages
 
