@@ -154,6 +154,8 @@ jobs:
 
           # Run installation test in Docker
           docker run --rm \
+            -e DEBIAN_FRONTEND=noninteractive \
+            -e TZ=UTC \
             -v "$(pwd)/packages:/packages:ro" \
             ${{ matrix.distro }} \
             bash -c '
