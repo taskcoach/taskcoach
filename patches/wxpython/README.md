@@ -92,19 +92,19 @@ This script:
 3. Installs the import hook (`usercustomize.py`)
 4. Verifies the patch was applied successfully
 
-### Method 2: Debian Package Installation (system-wide)
+### Method 2: Package Installation (All Platforms)
 
-For users installing Task Coach via a `.deb` package. Debian packages do not use virtual environments.
+For users installing Task Coach via a package (`.deb`, `.rpm`, pip, etc.).
 
 **How it works:**
-1. The patched `hypertreelist.py` is bundled within the Task Coach package
-2. Installed to `/usr/share/taskcoach/lib/hypertreelist.py`
-3. Task Coach activates an import hook at startup to use the bundled version
+1. The patched `hypertreelist.py` is bundled inside `taskcoachlib/patches/`
+2. An import hook in `taskcoachlib/workarounds/monkeypatches.py` intercepts imports
+3. Python loads the bundled patched version instead of the system version
 4. The system wxPython package remains unmodified
 
-**Key difference:** The venv approach relies on Python's site-packages search order, while the Debian package approach bundles the file and uses an import hook activated by the application itself.
+This works identically for all installation methods (Debian, Fedora, pip, Windows, macOS).
 
-For Debian packaging details, see [docs/DEBIAN_PACKAGING.md](../../docs/DEBIAN_PACKAGING.md).
+For packaging details, see [docs/PACKAGING.md](../../docs/PACKAGING.md).
 
 ## Maintenance
 
