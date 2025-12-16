@@ -74,9 +74,14 @@ integer.set_name("numeric")
 
 CK = pp.CaselessKeyword
 CL = pp.CaselessLiteral
-today, tomorrow, yesterday, noon, midnight, now = CK.using_each(
-    "today tomorrow yesterday noon midnight now".split()
-)
+# Create keywords individually for compatibility with pyparsing < 3.1.0
+# (using_each was added in pyparsing 3.1.0, Debian Bookworm has 3.0.9)
+today = CK("today")
+tomorrow = CK("tomorrow")
+yesterday = CK("yesterday")
+noon = CK("noon")
+midnight = CK("midnight")
+now = CK("now")
 
 
 def _now():
