@@ -94,6 +94,10 @@ setupOptions = {
     "tests_require": tests_requires,
     "setup_requires": setup_requires,
     "packages": findPackages("taskcoachlib") + findPackages("buildlib"),
+    "package_data": {
+        "taskcoachlib.gui": ["icons/*.png"],
+    },
+    "include_package_data": True,
     "scripts": ["taskcoach.py"],
     "classifiers": [
         "Development Status :: 5 - Production/Stable",
