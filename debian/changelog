@@ -1,4 +1,4 @@
-taskcoach (1.6.1-1) unstable; urgency=medium
+taskcoach (1.6.1) unstable; urgency=medium
 
   * Initial Debian packaging.
   * Includes wxPython hypertreelist patch for background coloring fix
