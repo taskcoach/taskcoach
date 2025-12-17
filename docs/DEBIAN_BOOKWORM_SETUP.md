@@ -78,10 +78,20 @@ Debian Bookworm ships wxPython 4.2.0, which has critical bugs affecting category
 ### Getting the Code
 
 ```bash
-# Clone the repository
-git clone https://github.com/realcarbonneau/taskcoach.git
+# Clone the repository (shallow clone to save space)
+git clone --depth 1 https://github.com/realcarbonneau/taskcoach.git
 cd taskcoach
 ```
+
+### Updating to Latest Version
+
+```bash
+cd ~/Downloads/taskcoach  # or wherever you cloned it
+git fetch --depth=1 origin master
+git checkout FETCH_HEAD
+```
+
+This fetches only the latest commit without downloading full history.
 
 ### Important Note About PEP 668
 
