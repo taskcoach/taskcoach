@@ -258,7 +258,7 @@ class _ToolBarEditorInterior(wx.Panel):
             self.__visibleCommands.SetItemImage(
                 item, self.__imgListIndex.get(uiCommand.bitmap, -1)
             )
-        self.__visibleCommands.SetItemData(item, uiCommand)
+        self.__visibleCommands.SetItemPyData(item, uiCommand)
         self.__visible.append(uiCommand)
         if isinstance(uiCommand, uicommand.UICommand):
             self.__remainingCommands.EnableItem(
@@ -277,7 +277,7 @@ class _ToolBarEditorInterior(wx.Panel):
         item = self.__visibleCommands.InsertItem(
             self.__visibleCommands.GetRootItem(), index + delta, text
         )
-        self.__visibleCommands.SetItemData(item, data)
+        self.__visibleCommands.SetItemPyData(item, data)
         if isinstance(data, uicommand.UICommand):
             self.__visibleCommands.SetItemImage(
                 item, self.__imgListIndex.get(data.bitmap, -1)
@@ -348,7 +348,7 @@ class _ToolBarEditorInterior(wx.Panel):
             item = self.__visibleCommands.InsertItem(
                 self.__visibleCommands.GetRootItem(), targetIndex, text
             )
-            self.__visibleCommands.SetItemData(item, uiCommand)
+            self.__visibleCommands.SetItemPyData(item, uiCommand)
             self.__visibleCommands.SetItemImage(item, img)
             self.__HackPreview()
         self.__draggedItem = None
