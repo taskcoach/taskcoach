@@ -14,8 +14,9 @@ This document captures technical issues, fixes, and refactorings discovered duri
 8. [GTK3 Menu Size Allocation Bug](#gtk3-menu-size-allocation-bug)
 9. [Search Box Visibility in AUI Toolbars](#search-box-visibility-in-aui-toolbars)
 10. [AUI Divider Drag Visual Feedback](#aui-divider-drag-visual-feedback)
-11. [Known Issues](#known-issues)
-12. [Future Work](#future-work)
+11. [GTK BitmapComboBox Icon Clipping](#gtk-bitmapcombobox-icon-clipping)
+12. [Known Issues](#known-issues)
+13. [Future Work](#future-work)
 
 ---
 
@@ -1831,6 +1832,70 @@ This was a complex debugging journey that illustrates the importance of understa
 
 ---
 
+## GTK BitmapComboBox Icon Clipping
+
+**Date Fixed:** December 2025
+**Affected Components:** Icon dropdowns in task editor appearance tab, preferences dialog
+**Root Cause:** GTK's native BitmapComboBox implementation clips icons in the closed/selected state
+**Platform:** GTK/Linux only
+
+### Problem Overview
+
+On GTK/Linux, `wx.adv.BitmapComboBox` displays icons correctly in the dropdown list when opened, but clips the left edge of icons when the dropdown is closed (showing the selected item).
+
+### Symptoms
+
+1. Icon appears cut off on the left side when dropdown is closed
+2. Opening the dropdown shows icons correctly in the list
+3. Other dropdowns without icons (like `wx.Choice`) don't have this issue
+4. Problem only occurs on GTK - Windows and macOS render correctly
+
+### Root Cause Analysis
+
+This is a **known limitation of GTK's native BitmapComboBox implementation**:
+
+- BitmapComboBox on GTK uses native `GtkCellRendererPixbuf` for rendering
+- The cell renderer doesn't properly account for icon space in the closed state
+- Related issues: [wxWidgets #24563](https://github.com/wxWidgets/wxWidgets/issues/24563), [wxWidgets #11241](https://trac.wxwidgets.org/ticket/11241)
+
+### Attempted Solutions That Failed
+
+1. **`SetMargins()`** - GTK's native implementation ignores margin settings
+2. **Padded bitmaps** - Creating bitmaps with transparent left padding caused pixman rendering errors and black backgrounds
+3. **`OwnerDrawnComboBox`** - Replacing BitmapComboBox with custom-drawn version caused segfaults on GTK3
+
+### Working Workaround
+
+Oversize the control by setting a generous minimum width, giving GTK more space to render without clipping:
+
+```python
+# GTK's native BitmapComboBox clips icons in the closed state.
+# Oversizing the control gives the renderer more space to work with.
+if operating_system.isGTK():
+    longestLabel = max(
+        (artprovider.chooseableItemImages[name] for name in imageNames),
+        key=len
+    )
+    textWidth, _ = self.GetTextExtent(longestLabel)
+    # icon (16) + text + extra padding (16) + dropdown button (30)
+    minWidth = 16 + textWidth + 16 + 30
+    self.SetMinSize(wx.Size(minWidth, -1))
+```
+
+### Files Modified
+
+- `taskcoachlib/gui/dialog/entry.py` - `IconEntry` class
+- `taskcoachlib/gui/dialog/preferences.py` - `addAppearanceSetting()` method
+
+### Notes
+
+- The workaround is **GTK-specific** using `operating_system.isGTK()` check
+- Windows and macOS users are not affected by the extra width
+- This is a cosmetic workaround, not a complete fix - some minor clipping may still be visible
+- A proper fix would require changes in wxWidgets/wxPython's GTK integration
+
+---
+
 ## Known Issues
 
 ### Pending Issues
@@ -1851,6 +1916,7 @@ This was a complex debugging journey that illustrates the importance of understa
 - ✅ GTK3 menu scroll arrows on first open (December 2025) - FileMenu refactored to use pub/sub
 - ✅ Search box text input invisible in AUI toolbars (December 2025) - Added SetMinSize to SearchCtrl
 - ✅ AUI divider drag has no visual feedback (December 2025) - Added AUI_MGR_LIVE_RESIZE, throttling, and deferred column resize
+- ✅ GTK BitmapComboBox icon clipping (December 2025) - Oversized control width as workaround
 
 ---
 
