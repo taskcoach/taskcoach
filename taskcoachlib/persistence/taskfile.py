@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import logging
 import os
 import lockfile
 from . import xml
@@ -413,7 +414,35 @@ class TaskFile(patterns.Observer):
         self.__notifier.stop()
 
     def _read(self, fd):
-        return xml.XMLReader(fd).read()
+        reader = xml.XMLReader(fd)
+        result = reader.read()
+        duplicate_ids = reader.get_duplicate_ids()
+        return result, duplicate_ids
+
+    def _log_duplicate_ids(self, duplicate_ids):
+        """Log duplicate IDs found in the task file.
+
+        Duplicate IDs can cause issues with sync and data integrity.
+        To fix: Either manually edit the .tsk XML file to assign unique IDs,
+        or delete and recreate the affected items in Task Coach.
+        """
+        logger = logging.getLogger(__name__)
+        logger.warning("=" * 70)
+        logger.warning("WARNING: Duplicate IDs found in task file: %s",
+                       self.__filename)
+        logger.warning("This may cause sync issues or data integrity problems.")
+        logger.warning("")
+        logger.warning("To fix: Either manually edit the .tsk XML file to")
+        logger.warning("assign unique IDs, or delete and recreate the affected")
+        logger.warning("items in Task Coach.")
+        logger.warning("")
+        logger.warning("Duplicate IDs and their locations:")
+        for obj_id, locations in duplicate_ids.items():
+            logger.warning("")
+            logger.warning("  ID: %s", obj_id)
+            for obj_type, path in locations:
+                logger.warning("    - %s", path)
+        logger.warning("=" * 70)
 
     def exists(self):
         return os.path.isfile(self.__filename)
@@ -433,11 +462,13 @@ class TaskFile(patterns.Observer):
             if self.exists():
                 fd = self._openForRead()
                 try:
-                    tasks, categories, notes, syncMLConfig, changes, guid = (
-                        self._read(fd)
-                    )
+                    (tasks, categories, notes, syncMLConfig, changes, guid), \
+                        duplicate_ids = self._read(fd)
                 finally:
                     fd.close()
+                # Log any duplicate IDs found in the file
+                if duplicate_ids:
+                    self._log_duplicate_ids(duplicate_ids)
             else:
                 tasks = []
                 categories = []
@@ -544,8 +575,9 @@ class TaskFile(patterns.Observer):
                         syncMLConfig,
                         allChanges,
                         guid,
-                    ) = self._read(fd)
+                    ), _duplicate_ids = self._read(fd)
                     fd.close()
+                    # Don't log duplicates here - already logged on initial load
 
                     self.__changes = allChanges
 

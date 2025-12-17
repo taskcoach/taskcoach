@@ -169,12 +169,37 @@ class XMLReader(object):
         self.__modification_datetimes = {}
         self.__prerequisites = {}
         self.__categorizables = {}
+        # Track all IDs and their locations for duplicate detection
+        # Maps ID -> list of (object_type, hierarchical_path) tuples
+        self.__id_registry = {}
+        self.__current_path = []  # Stack for tracking hierarchical location
 
     def tskversion(self):
         """Return the version of the current task file. Note that this is not
         the version of the application. The task file has its own version
         numbering (a number that is increasing on every change)."""
         return self.__tskversion
+
+    def __register_id(self, obj_id, obj_type, subject):
+        """Register an object's ID for duplicate detection."""
+        if not obj_id:
+            return
+        path = " -> ".join(self.__current_path + [f"{obj_type}: {subject}"])
+        if obj_id not in self.__id_registry:
+            self.__id_registry[obj_id] = []
+        self.__id_registry[obj_id].append((obj_type, path))
+
+    def get_duplicate_ids(self):
+        """Return a dict of IDs that appear more than once.
+
+        Returns dict mapping ID -> list of (object_type, path) tuples
+        for IDs that have duplicates.
+        """
+        return {
+            obj_id: locations
+            for obj_id, locations in self.__id_registry.items()
+            if len(locations) > 1
+        }
 
     def read(self):
         """Read the task file and return the tasks, categories, notes, SyncML
@@ -339,34 +364,41 @@ class XMLReader(object):
     def __parse_category_node(self, category_node):
         """Recursively parse the categories from the node and return a
         category instance."""
-        kwargs = self.__parse_base_composite_attributes(
-            category_node, self.__parse_category_nodes
-        )
-        notes = self.__parse_note_nodes(category_node)
-        filtered = self.__parse_boolean(
-            category_node.attrib.get("filtered", "False")
-        )
-        exclusive = self.__parse_boolean(
-            category_node.attrib.get("exclusiveSubcategories", "False")
-        )
-        kwargs.update(
-            dict(
-                notes=notes,
-                filtered=filtered,
-                exclusiveSubcategories=exclusive,
+        subject = category_node.attrib.get("subject", "")
+        obj_id = category_node.attrib.get("id", "")
+        self.__register_id(obj_id, "Category", subject)
+        self.__current_path.append(f"Category: {subject}")
+        try:
+            kwargs = self.__parse_base_composite_attributes(
+                category_node, self.__parse_category_nodes
             )
-        )
-        if self.__tskversion < 19:
-            categorizable_ids = category_node.attrib.get("tasks", "")
-        else:
-            categorizable_ids = category_node.attrib.get("categorizables", "")
-        if self.__tskversion > 20:
-            kwargs["attachments"] = self.__parse_attachments(category_node)
-        theCategory = category.Category(**kwargs)  # pylint: disable=W0142
-        self.__categorizables.setdefault(theCategory.id(), list()).extend(
-            categorizable_ids.split(" ")
-        )
-        return self.__save_modification_datetime(theCategory)
+            notes = self.__parse_note_nodes(category_node)
+            filtered = self.__parse_boolean(
+                category_node.attrib.get("filtered", "False")
+            )
+            exclusive = self.__parse_boolean(
+                category_node.attrib.get("exclusiveSubcategories", "False")
+            )
+            kwargs.update(
+                dict(
+                    notes=notes,
+                    filtered=filtered,
+                    exclusiveSubcategories=exclusive,
+                )
+            )
+            if self.__tskversion < 19:
+                categorizable_ids = category_node.attrib.get("tasks", "")
+            else:
+                categorizable_ids = category_node.attrib.get("categorizables", "")
+            if self.__tskversion > 20:
+                kwargs["attachments"] = self.__parse_attachments(category_node)
+            theCategory = category.Category(**kwargs)  # pylint: disable=W0142
+            self.__categorizables.setdefault(theCategory.id(), list()).extend(
+                categorizable_ids.split(" ")
+            )
+            return self.__save_modification_datetime(theCategory)
+        finally:
+            self.__current_path.pop()
 
     def __parse_category_nodes_from_task_nodes(self, root):
         """In tskversion <=13 category nodes were subnodes of task nodes."""
@@ -398,67 +430,74 @@ class XMLReader(object):
 
     def _parse_task_node(self, task_node):
         """Recursively parse the node and return a task instance."""
-
-        planned_start_datetime_attribute_name = (
-            "startdate" if self.tskversion() <= 33 else "plannedstartdate"
-        )
-        kwargs = self.__parse_base_composite_attributes(
-            task_node, self.__parse_task_nodes
-        )
-        kwargs.update(
-            dict(
-                plannedStartDateTime=date.parseDateTime(
-                    task_node.attrib.get(
-                        planned_start_datetime_attribute_name, ""
-                    ),
-                    *self.defaultStartTime
-                ),
-                dueDateTime=parseAndAdjustDateTime(
-                    task_node.attrib.get("duedate", ""), *self.defaultEndTime
-                ),
-                actualStartDateTime=date.parseDateTime(
-                    task_node.attrib.get("actualstartdate", ""),
-                    *self.defaultStartTime
-                ),
-                completionDateTime=date.parseDateTime(
-                    task_node.attrib.get("completiondate", ""),
-                    *self.defaultEndTime
-                ),
-                percentageComplete=self.__parse_int_attribute(
-                    task_node, "percentageComplete"
-                ),
-                budget=date.parseTimeDelta(task_node.attrib.get("budget", "")),
-                priority=self.__parse_int_attribute(task_node, "priority"),
-                hourlyFee=float(task_node.attrib.get("hourlyFee", "0")),
-                fixedFee=float(task_node.attrib.get("fixedFee", "0")),
-                reminder=self.__parse_datetime(
-                    task_node.attrib.get("reminder", "")
-                ),
-                reminderBeforeSnooze=self.__parse_datetime(
-                    task_node.attrib.get("reminderBeforeSnooze", "")
-                ),
-                # Ignore prerequisites for now, they'll be resolved later
-                prerequisites=[],
-                shouldMarkCompletedWhenAllChildrenCompleted=self.__parse_boolean(
-                    task_node.attrib.get(
-                        "shouldMarkCompletedWhenAllChildrenCompleted", ""
-                    )
-                ),
-                efforts=self.__parse_effort_nodes(task_node),
-                notes=self.__parse_note_nodes(task_node),
-                recurrence=self.__parse_recurrence(task_node),
+        # Get subject early for path tracking
+        subject = task_node.attrib.get("subject", "")
+        obj_id = task_node.attrib.get("id", "")
+        self.__register_id(obj_id, "Task", subject)
+        self.__current_path.append(f"Task: {subject}")
+        try:
+            planned_start_datetime_attribute_name = (
+                "startdate" if self.tskversion() <= 33 else "plannedstartdate"
             )
-        )
-        self.__prerequisites[kwargs["id"]] = [
-            id_
-            for id_ in task_node.attrib.get("prerequisites", "").split(" ")
-            if id_
-        ]
-        if self.__tskversion > 20:
-            kwargs["attachments"] = self.__parse_attachments(task_node)
-        return self.__save_modification_datetime(
-            task.Task(**kwargs)
-        )  # pylint: disable=W0142
+            kwargs = self.__parse_base_composite_attributes(
+                task_node, self.__parse_task_nodes
+            )
+            kwargs.update(
+                dict(
+                    plannedStartDateTime=date.parseDateTime(
+                        task_node.attrib.get(
+                            planned_start_datetime_attribute_name, ""
+                        ),
+                        *self.defaultStartTime
+                    ),
+                    dueDateTime=parseAndAdjustDateTime(
+                        task_node.attrib.get("duedate", ""), *self.defaultEndTime
+                    ),
+                    actualStartDateTime=date.parseDateTime(
+                        task_node.attrib.get("actualstartdate", ""),
+                        *self.defaultStartTime
+                    ),
+                    completionDateTime=date.parseDateTime(
+                        task_node.attrib.get("completiondate", ""),
+                        *self.defaultEndTime
+                    ),
+                    percentageComplete=self.__parse_int_attribute(
+                        task_node, "percentageComplete"
+                    ),
+                    budget=date.parseTimeDelta(task_node.attrib.get("budget", "")),
+                    priority=self.__parse_int_attribute(task_node, "priority"),
+                    hourlyFee=float(task_node.attrib.get("hourlyFee", "0")),
+                    fixedFee=float(task_node.attrib.get("fixedFee", "0")),
+                    reminder=self.__parse_datetime(
+                        task_node.attrib.get("reminder", "")
+                    ),
+                    reminderBeforeSnooze=self.__parse_datetime(
+                        task_node.attrib.get("reminderBeforeSnooze", "")
+                    ),
+                    # Ignore prerequisites for now, they'll be resolved later
+                    prerequisites=[],
+                    shouldMarkCompletedWhenAllChildrenCompleted=self.__parse_boolean(
+                        task_node.attrib.get(
+                            "shouldMarkCompletedWhenAllChildrenCompleted", ""
+                        )
+                    ),
+                    efforts=self.__parse_effort_nodes(task_node),
+                    notes=self.__parse_note_nodes(task_node),
+                    recurrence=self.__parse_recurrence(task_node),
+                )
+            )
+            self.__prerequisites[kwargs["id"]] = [
+                id_
+                for id_ in task_node.attrib.get("prerequisites", "").split(" ")
+                if id_
+            ]
+            if self.__tskversion > 20:
+                kwargs["attachments"] = self.__parse_attachments(task_node)
+            return self.__save_modification_datetime(
+                task.Task(**kwargs)
+            )  # pylint: disable=W0142
+        finally:
+            self.__current_path.pop()
 
     def __parse_recurrence(self, task_node):
         """Parse the recurrence from the node and return a recurrence
@@ -512,14 +551,21 @@ class XMLReader(object):
 
     def __parse_note_node(self, note_node):
         """Parse the attributes and child notes from the noteNode."""
-        kwargs = self.__parse_base_composite_attributes(
-            note_node, self.__parse_note_nodes
-        )
-        if self.__tskversion > 20:
-            kwargs["attachments"] = self.__parse_attachments(note_node)
-        return self.__save_modification_datetime(
-            note.Note(**kwargs)
-        )  # pylint: disable=W0142
+        subject = note_node.attrib.get("subject", "")
+        obj_id = note_node.attrib.get("id", "")
+        self.__register_id(obj_id, "Note", subject)
+        self.__current_path.append(f"Note: {subject}")
+        try:
+            kwargs = self.__parse_base_composite_attributes(
+                note_node, self.__parse_note_nodes
+            )
+            if self.__tskversion > 20:
+                kwargs["attachments"] = self.__parse_attachments(note_node)
+            return self.__save_modification_datetime(
+                note.Note(**kwargs)
+            )  # pylint: disable=W0142
+        finally:
+            self.__current_path.pop()
 
     def __parse_base_attributes(self, node):
         """Parse the attributes all composite domain objects share, such as
@@ -614,6 +660,9 @@ class XMLReader(object):
             kwargs["status"] = int(node.attrib.get("status", "1"))
         if self.__tskversion >= 29:
             kwargs["id"] = node.attrib["id"]
+            # Register effort ID for duplicate detection
+            start_str = node.attrib.get("start", "")
+            self.__register_id(kwargs["id"], "Effort", f"started {start_str}")
         start = node.attrib.get("start", "")
         stop = node.attrib.get("stop", "")
         description = self.__parse_description(node)
@@ -675,6 +724,9 @@ class XMLReader(object):
 
     def __parse_attachment(self, node):
         """Parse the attachment from the node."""
+        subject = node.attrib.get("subject", "")
+        obj_id = node.attrib.get("id", "")
+        self.__register_id(obj_id, "Attachment", subject)
         kwargs = self.__parse_base_attributes(node)
         kwargs["notes"] = self.__parse_note_nodes(node)
 

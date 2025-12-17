@@ -97,9 +97,10 @@ class PIElementTree(ET.ElementTree):
 
 
 def sortedById(objects):
-    s = [(obj.id(), obj) for obj in objects]
-    s.sort()
-    return [obj for dummy_id, obj in s]
+    """Sort objects by their ID. Uses key function to avoid comparing objects
+    directly, which would fail if two objects have the same ID and the object
+    class doesn't implement __lt__."""
+    return sorted(objects, key=lambda obj: obj.id())
 
 
 class XMLWriter(object):

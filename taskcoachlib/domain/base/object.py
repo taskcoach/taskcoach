@@ -135,6 +135,7 @@ class SynchronizedObject(object):
         return self.__status == self.STATUS_DELETED
 
 
+@functools.total_ordering
 class Object(SynchronizedObject):
     rx_attributes = re.compile(r"\[(\w+):(.+)\]")
 
@@ -180,6 +181,19 @@ class Object(SynchronizedObject):
 
     def __repr__(self):
         return self.subject()
+
+    def __eq__(self, other):
+        if not isinstance(other, Object):
+            return NotImplemented
+        return self.id() == other.id()
+
+    def __lt__(self, other):
+        if not isinstance(other, Object):
+            return NotImplemented
+        return self.id() < other.id()
+
+    def __hash__(self):
+        return hash(self.id())
 
     def __getstate__(self):
         try:
