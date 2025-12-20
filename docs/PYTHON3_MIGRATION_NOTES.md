@@ -1962,6 +1962,66 @@ if operating_system.isGTK():
 - ✅ File locking library deprecated (December 2025) - Replaced lockfile with fasteners
 - ✅ App icon grouping across platforms (December 2025) - Added WM_CLASS, StartupWMClass, CFBundleIdentifier, AppUserModelID
 - ✅ GNOME Wayland app icon shows generic gear (December 2025) - Added g_set_prgname via ctypes before GTK init
+- ✅ Python 3.12+ SyntaxWarning for invalid escape sequence (December 2025) - Fixed with raw string in desktop module docstring
+
+---
+
+## Python 3.12+ Escape Sequence Warning
+
+**Date Fixed:** December 2025
+**Affected Components:** `taskcoachlib/thirdparty/desktop/__init__.py`
+**Root Cause:** Python 3.12+ raises SyntaxWarning for invalid escape sequences in regular strings
+
+### Problem Overview
+
+On Debian Trixie (which uses Python 3.12+), installing Task Coach produced a warning:
+
+```
+/usr/lib/python3/dist-packages/taskcoachlib/thirdparty/desktop/__init__.py:61: SyntaxWarning: invalid escape sequence '\ '
+  DESKTOP_LAUNCH="my\ opener"             Should run the "my opener" program to
+```
+
+### Root Cause Analysis
+
+Python 3.12 introduced stricter handling of escape sequences. The module docstring contained example text with `\ ` (backslash-space) which is not a valid escape sequence:
+
+```python
+DESKTOP_LAUNCH="my\ opener"             Should run the "my opener" program to
+```
+
+In regular strings (not raw strings), `\ ` is interpreted as an escape sequence attempt but `\ ` has no special meaning, triggering the warning.
+
+### The Fix
+
+Converted the module docstring from a regular string to a raw string:
+
+```python
+# BEFORE
+"""
+Simple desktop integration for Python...
+"""
+
+# AFTER
+r"""
+Simple desktop integration for Python...
+"""
+```
+
+Raw strings treat backslashes as literal characters, avoiding the warning while preserving the documentation's content.
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `taskcoachlib/thirdparty/desktop/__init__.py` | Changed docstring from `"""` to `r"""` |
+
+### Key Learnings
+
+1. **Python 3.12+ is stricter about escape sequences**: What was silently ignored before now produces warnings.
+
+2. **Docstrings are still strings**: Even documentation strings are parsed for escape sequences. Use raw strings (`r"""..."""`) when documentation contains backslashes.
+
+3. **Test on newer Python versions**: Issues like this only appear on newer Python versions (3.12+).
 
 ---
 

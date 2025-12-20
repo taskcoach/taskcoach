@@ -65,6 +65,20 @@ Note: Calendar/schedule visualization widget for wxPython
 
 ---
 
+Component: desktop/
+Name: desktop (Cross-platform Desktop Integration)
+Author: Paul Boddie
+Version: 0.5.3 (August 2019)
+License: LGPL v3 or later
+Source: Based on https://pypi.org/project/desktop3/
+Copied on: Unknown (pre-2016)
+Changes for Task Coach:
+  - 2025-12: Fixed Python 3.12+ SyntaxWarning by converting docstring to raw string
+Note: Provides desktop.open() and desktop.get_desktop() for cross-platform URL/file opening.
+      Used in taskcoachlib/tools/openfile.py and taskcoachlib/render.py.
+
+---
+
 ## Removed Libraries (Python 3 Migration)
 
 The following libraries were previously bundled but have been removed:
@@ -73,7 +87,6 @@ The following libraries were previously bundled but have been removed:
 - **customtreectrl.py**: Now using wx.lib.agw.customtreectrl from wxPython directly
 - **hypertreelist.py**: Now using wx.lib.agw.hypertreelist from wxPython directly
   (with patch applied via apply-wxpython-patch.sh for Debian Bookworm)
-- **desktop/**: Replaced with desktop3 package from PyPI
 - **squaremap/**: Replaced with squaremap package from PyPI
 - **snarl.py**: Removed (Windows Snarl notifications - superseded by built-in notifier)
 - **guid.py**: Removed (no longer used)
