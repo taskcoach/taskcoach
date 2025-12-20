@@ -274,6 +274,7 @@ elif sys.argv[1] == "py2app":
                         for filename in glob.glob("taskcoachlib/i18n/*.py")
                     ],
                     plist=dict(
+                        CFBundleIdentifier="org.taskcoach.TaskCoach",
                         CFBundleIconFile="taskcoach.icns",
                         CFBundleDocumentTypes=[
                             dict(

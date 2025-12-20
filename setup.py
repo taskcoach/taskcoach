@@ -66,8 +66,7 @@ install_requires = [
     "pyxdg",
     "keyring",
     "numpy",
-    # FIXME: It's been replaced by new library "fasteners"
-    "lockfile>=0.12.2",
+    "fasteners>=0.19",  # Cross-platform file locking (replaces deprecated lockfile)
     "gntp>=1.0.3",
     "zeroconf>=0.50.0",  # For iPhone sync service discovery
     "squaremap>=1.0.5",  # Hierarchic data visualization for wxPython

@@ -125,7 +125,7 @@ sudo apt-get install -y python3.12 python3.12-venv python3-wxgtk4.0 \
 cd /path/to/taskcoach
 python3.12 -m venv --system-site-packages .venv
 source .venv/bin/activate
-pip install desktop3 lockfile gntp distro pypubsub 'watchdog>=3.0.0'
+pip install desktop3 fasteners gntp distro pypubsub 'watchdog>=3.0.0'
 deactivate
 
 # 3. Run TaskCoach
@@ -209,5 +209,6 @@ If you encounter Trixie-specific issues or have solutions, please:
 ## See Also
 
 - [DEBIAN_BOOKWORM_SETUP.md](DEBIAN_BOOKWORM_SETUP.md) - Main setup guide (recommended)
-- [setup_bookworm.sh](../setup_bookworm.sh) - Automated setup script
+- [setup.sh](../setup.sh) - Auto-detect OS and run appropriate setup script
+- [setup_debian13_trixie.sh](../setup_debian13_trixie.sh) - Trixie-specific setup script
 - [README.md](../README.md) - General TaskCoach information

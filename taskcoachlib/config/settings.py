@@ -67,7 +67,15 @@ class Settings(CachingConfigParser):
         self.initializeWithDefaults()
         self.__loadAndSave = load
         self.__iniFileSpecifiedOnCommandLine = iniFile
+        self.__ini_lock = None  # Lock for ini file to prevent concurrent access
+
         self.migrateConfigurationFiles()
+
+        # Acquire lock on ini file to prevent multiple instances from
+        # corrupting the config. This must happen before reading the file.
+        if load:
+            self.__acquire_ini_lock()
+
         if load:
             # First, try to load the settings file from the program directory,
             # if that fails, load the settings file from the settings directory
@@ -90,6 +98,43 @@ class Settings(CachingConfigParser):
             self.onSettingsFileLocationChanged,
             "settings.file.saveinifileinprogramdir",
         )
+
+    def __acquire_ini_lock(self):
+        """Acquire lock on ini file to prevent multiple instances from
+        corrupting config. Shows error and exits if another instance has lock."""
+        try:
+            import fasteners
+            lock_path = self.filename() + ".lock"
+            self.__ini_lock = fasteners.InterProcessLock(lock_path)
+            acquired = self.__ini_lock.acquire(blocking=False)
+            if not acquired:
+                # Another instance has the lock
+                wx.MessageBox(
+                    _("Another instance of %s is already running with the same "
+                      "configuration file.\n\n"
+                      "You can run multiple instances with different configuration "
+                      "files using the --ini option:\n"
+                      "  taskcoach --ini=/path/to/other.ini\n\n"
+                      "The program will now exit.") % meta.name,
+                    _("%s: configuration locked") % meta.name,
+                    style=wx.OK | wx.ICON_ERROR,
+                )
+                sys.exit(1)
+        except ImportError:
+            # fasteners not available - skip locking
+            pass
+        except Exception:
+            # Lock failed for other reasons (permissions, etc.) - continue without lock
+            pass
+
+    def release_ini_lock(self):
+        """Release the ini file lock. Call this on application shutdown."""
+        if self.__ini_lock is not None:
+            try:
+                self.__ini_lock.release()
+            except Exception:
+                pass  # Ignore errors during cleanup
+            self.__ini_lock = None
 
     def onSettingsFileLocationChanged(self, value):
         saveIniFileInProgramDir = value

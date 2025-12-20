@@ -28,7 +28,7 @@ Depends: ${python3:Depends},
          python3-xdg,
          python3-keyring,
          python3-numpy,
-         python3-lockfile,
+         python3-fasteners,
          libxss1,
          xdg-utils
 Recommends: python3-zeroconf,

@@ -1959,6 +1959,153 @@ if operating_system.isGTK():
 - ✅ AUI divider drag has no visual feedback (December 2025) - Added AUI_MGR_LIVE_RESIZE, throttling, and deferred column resize
 - ✅ GTK BitmapComboBox icon clipping (December 2025) - Oversized control width as workaround
 - ✅ Main toolbar flicker on customization (December 2025) - Simplified to use GetBestSize() for automatic height
+- ✅ File locking library deprecated (December 2025) - Replaced lockfile with fasteners
+- ✅ App icon grouping across platforms (December 2025) - Added WM_CLASS, StartupWMClass, CFBundleIdentifier, AppUserModelID
+
+---
+
+## File Locking: lockfile → fasteners Migration
+
+**Date:** December 2025
+**Status:** Complete
+
+### Background
+
+The `lockfile` library used for cooperative file locking was deprecated and unmaintained. It has been replaced with `fasteners`, the officially recommended cross-platform file locking library.
+
+### Key Changes
+
+#### Core Implementation
+
+**Before:**
+```python
+import lockfile
+
+lock = lockfile.FileLock(filename)
+lock.acquire(timeout=10)
+# ... use file ...
+lock.release()
+```
+
+**After:**
+```python
+import fasteners
+
+lock = fasteners.InterProcessLock(filename + ".lock")
+acquired = lock.acquire(blocking=True, timeout=0.1)
+if not acquired:
+    raise LockTimeout(f"File is locked: {filename}")
+# ... use file ...
+lock.release()
+```
+
+#### Custom Exception Classes
+
+Custom exception classes were added to `taskcoachlib/persistence/taskfile.py`:
+
+```python
+class LockTimeout(Exception):
+    """Raised when file lock cannot be acquired (another process has it)."""
+    pass
+
+class LockFailed(Exception):
+    """Raised when file locking fails for other reasons."""
+    pass
+```
+
+These are exported from `taskcoachlib/persistence/__init__.py` and used by `iocontroller.py`.
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `taskcoachlib/persistence/taskfile.py` | Core locking implementation using fasteners |
+| `taskcoachlib/persistence/__init__.py` | Export LockTimeout, LockFailed |
+| `taskcoachlib/gui/iocontroller.py` | Use persistence.LockTimeout/LockFailed |
+| `setup.py` | Replace lockfile with fasteners>=0.19 |
+| `debian/control` | Replace python3-lockfile with python3-fasteners |
+| `setup_*.sh` | Update pip install commands |
+| `tests/unittests/thirdPartySoftwareTests/LockFileTest.py` | Test fasteners instead of lockfile |
+
+### Why Lock File Pattern (Not flock)
+
+The lock file pattern (existence of `.lock` file indicates lock) was preserved because:
+- Works reliably on **network drives** (NFS, SMB) where `flock()` may not work
+- Cross-platform compatibility
+- Safer for document-oriented applications
+
+### References
+
+- [fasteners documentation](https://fasteners.readthedocs.io/)
+- [lockfile deprecation notice](https://pypi.org/project/lockfile/)
+
+---
+
+## App Icon Grouping Across Platforms
+
+**Date:** December 2025
+**Status:** Complete
+
+### Background
+
+TaskCoach windows were not grouping properly in taskbars/docks across different operating systems. Each platform has its own mechanism for identifying related windows.
+
+### Platform-Specific Solutions
+
+#### Linux: WM_CLASS
+
+Set at application startup in `taskcoachlib/application/application.py`:
+
+```python
+if operating_system.isGTK():
+    self.SetClassName("taskcoach")
+```
+
+The `WM_CLASS` property tells the window manager which windows belong together.
+
+#### Linux: StartupWMClass (Desktop Entry)
+
+Added to `build.in/linux_common/taskcoach.desktop`:
+
+```ini
+[Desktop Entry]
+...
+StartupWMClass=taskcoach
+```
+
+This links the desktop entry to the WM_CLASS for proper dock/taskbar integration.
+
+#### macOS: CFBundleIdentifier
+
+Set in `pymake.py` for app bundle creation:
+
+```python
+"CFBundleIdentifier": "org.taskcoach.TaskCoach"
+```
+
+#### Windows: AppUserModelID
+
+Set at application startup in `taskcoachlib/application/application.py`:
+
+```python
+if operating_system.isWindows():
+    import ctypes
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("org.taskcoach.TaskCoach")
+```
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `taskcoachlib/application/application.py` | SetClassName (Linux), AppUserModelID (Windows) |
+| `build.in/linux_common/taskcoach.desktop` | StartupWMClass=taskcoach |
+| `pymake.py` | CFBundleIdentifier for macOS |
+
+### Testing
+
+- **Linux (GNOME/KDE)**: All TaskCoach windows group under single taskbar icon
+- **Windows**: Windows group in taskbar with correct app identity
+- **macOS**: Windows group under single Dock icon
 
 ---
 
@@ -2046,4 +2193,4 @@ When adding new technical notes:
 
 ---
 
-**Last Updated:** December 17, 2025
+**Last Updated:** December 20, 2025

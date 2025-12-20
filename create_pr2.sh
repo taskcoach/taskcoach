@@ -41,7 +41,7 @@ sudo apt-get install python3-wxgtk4.0 python3-twisted python3-lxml ...
 # Create venv for packages not in Debian repos
 python3 -m venv ~/.taskcoach-venv
 source ~/.taskcoach-venv/bin/activate
-pip install desktop3 lockfile gntp distro pypubsub
+pip install desktop3 fasteners gntp distro pypubsub
 deactivate
 
 # Use the launcher script
@@ -56,7 +56,7 @@ deactivate
 
 **Package strategy:**
 - **System (apt)**: python3-wxgtk4.0, python3-twisted, python3-lxml, python3-numpy, python3-six, python3-dateutil, python3-chardet, python3-keyring, python3-pyparsing, python3-pyxdg
-- **Venv (pip)**: desktop3, lockfile, gntp, distro, pypubsub
+- **Venv (pip)**: desktop3, fasteners, gntp, distro, pypubsub
 
 ### 2. Separate xvfb Instructions (Commit 5acbcac)
 

@@ -1,11 +1,15 @@
 #!/bin/bash
-# TaskCoach Setup Script for Debian Bookworm
+# TaskCoach Setup Script for Debian 12 (Bookworm)
 # This script automates the setup and testing of TaskCoach on Debian 12
-# Updated to handle PEP 668 properly
 #
-# Version: 1.1.1.003 (f20c4dc)
-# Branch: claude/add-module-loading-logs-01SvgNHroJJfg6fZCGp2mqd5
-# Last Updated: 2025-11-16
+# For other distributions, see:
+#   - setup_debian13_trixie.sh (Debian 13 Trixie)
+#   - setup_ubuntu2204_jammy.sh (Ubuntu 22.04 Jammy)
+#   - setup_ubuntu2404_noble.sh (Ubuntu 24.04 Noble)
+#   - setup.sh (unified auto-detection script)
+#
+# Version: 1.2.0
+# Last Updated: 2025-12-20
 
 set -e  # Exit on error
 
@@ -20,13 +24,24 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}TaskCoach Setup for Debian Bookworm${NC}"
-echo -e "${BLUE}Version 1.1.1.003 (f20c4dc)${NC}"
+echo -e "${BLUE}TaskCoach Setup for Debian 12 (Bookworm)${NC}"
+echo -e "${BLUE}Version 1.2.0${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo
 
-# Check if running on Debian
-if [ ! -f /etc/debian_version ]; then
+# Check if running on Debian Bookworm
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    if [ "$ID" != "debian" ] || [ "$VERSION_CODENAME" != "bookworm" ]; then
+        echo -e "${YELLOW}Warning: This script is designed for Debian 12 (Bookworm)${NC}"
+        echo -e "${YELLOW}Detected: $PRETTY_NAME${NC}"
+        read -p "Continue anyway? (y/n) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            exit 1
+        fi
+    fi
+elif [ ! -f /etc/debian_version ]; then
     echo -e "${YELLOW}Warning: This doesn't appear to be Debian${NC}"
     read -p "Continue anyway? (y/n) " -n 1 -r
     echo
@@ -102,13 +117,14 @@ echo
 
 # Install Python dependencies not available in Debian repos
 echo -e "${BLUE}[4/7] Installing Python dependencies in venv...${NC}"
-echo "Installing: desktop3, lockfile, gntp, distro, pypubsub, zeroconf, pyparsing>=3.1.3, squaremap, watchdog>=3.0.0"
+echo "Installing: desktop3, fasteners, gntp, distro, pypubsub, zeroconf, pyparsing>=3.1.3, squaremap, watchdog>=3.0.0"
 
 source "$VENV_PATH/bin/activate"
 # Note: pyparsing>=3.1.3 required for deltaTime.py (Debian Bookworm only has 3.0.9)
 # Note: squaremap provides hierarchic data visualization for effort viewer
 # Note: watchdog>=3.0.0 for file system monitoring (replaced Twisted INotify)
-pip install --quiet desktop3 lockfile gntp distro pypubsub zeroconf 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'
+# Note: fasteners replaces deprecated lockfile for cross-platform file locking
+pip install --quiet desktop3 fasteners gntp distro pypubsub zeroconf 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'
 deactivate
 
 echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
@@ -166,7 +182,7 @@ else
 fi
 
 # Test other packages
-for pkg in "lockfile" "gntp" "distro" "zeroconf"; do
+for pkg in "fasteners" "gntp" "distro" "zeroconf"; do
     echo -n "  - $pkg... "
     if python3 -c "import $pkg" 2>/dev/null; then
         echo -e "${GREEN}✓${NC}"
@@ -193,7 +209,7 @@ if [ $VENV_FAILED -eq 1 ]; then
     echo "  rm -rf $VENV_PATH"
     echo "  python3 -m venv --system-site-packages $VENV_PATH"
     echo "  source $VENV_PATH/bin/activate"
-    echo "  pip install desktop3 lockfile gntp distro pypubsub"
+    echo "  pip install desktop3 fasteners gntp distro pypubsub"
     exit 1
 fi
 
@@ -240,7 +256,7 @@ echo
 echo "TaskCoach has been set up with:"
 echo "  • System packages from Debian repos (wxPython, numpy, lxml, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
-echo "  • Additional packages in venv (desktop3, lockfile, gntp, distro, pypubsub, zeroconf, squaremap, watchdog)"
+echo "  • Additional packages in venv (desktop3, fasteners, gntp, distro, pypubsub, zeroconf, squaremap, watchdog)"
 echo "  • wxPython background color patch (for category row coloring)"
 echo
 echo "You can now run TaskCoach with:"
@@ -249,5 +265,5 @@ echo
 echo "To see all options:"
 echo -e "  ${BLUE}./taskcoach-run.sh --help${NC}"
 echo
-echo "For more information, see DEBIAN_BOOKWORM_SETUP.md"
+echo "For more information, see docs/DEBIAN_BOOKWORM_SETUP.md"
 echo

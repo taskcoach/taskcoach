@@ -100,8 +100,11 @@ Debian Bookworm implements PEP 668, which prevents `pip install --user` from mod
 ### Option 1: Automated Setup Script (Recommended for Development)
 
 ```bash
-# Run the automated setup script
-./setup_bookworm.sh
+# Auto-detect your OS and run appropriate setup
+./setup.sh
+
+# Or explicitly run for Debian 12:
+./setup_debian12_bookworm.sh
 
 # This will:
 # - Install system packages
@@ -111,6 +114,13 @@ Debian Bookworm implements PEP 668, which prevents `pip install --user` from mod
 # Run TaskCoach
 ./taskcoach-run.sh
 ```
+
+**Available setup scripts:**
+- `setup.sh` - Auto-detects OS and runs appropriate script
+- `setup_debian12_bookworm.sh` - Debian 12 (Bookworm)
+- `setup_debian13_trixie.sh` - Debian 13 (Trixie)
+- `setup_ubuntu2204_jammy.sh` - Ubuntu 22.04 (Jammy)
+- `setup_ubuntu2404_noble.sh` - Ubuntu 24.04 (Noble)
 
 ### Option 2: Manual Setup
 
@@ -138,7 +148,7 @@ sudo apt-get install -y \
 
 #### Step 2: Create Virtual Environment
 
-For packages not available in Debian repos (desktop3, lockfile, gntp, distro, pypubsub, watchdog):
+For packages not available in Debian repos (desktop3, fasteners, gntp, distro, pypubsub, watchdog):
 
 ```bash
 cd /path/to/taskcoach
@@ -150,7 +160,7 @@ python3 -m venv --system-site-packages .venv
 source .venv/bin/activate
 
 # Install remaining dependencies
-pip install desktop3 lockfile gntp distro pypubsub 'watchdog>=3.0.0'
+pip install desktop3 fasteners gntp distro pypubsub 'watchdog>=3.0.0'
 
 # Deactivate when done
 deactivate
@@ -279,7 +289,7 @@ dpkg -l | grep python3-lxml
 
 ### From PyPI (pip in venv, for development):
 - 📦 desktop3
-- 📦 lockfile
+- 📦 fasteners
 - 📦 gntp
 - 📦 distro
 - 📦 pypubsub

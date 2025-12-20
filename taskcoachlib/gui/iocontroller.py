@@ -29,7 +29,6 @@ import gc
 import sys
 import codecs
 import traceback
-import lockfile
 
 try:
     from taskcoachlib.syncml import sync
@@ -117,17 +116,33 @@ class IOController(object):
             [note for note in self.__taskFile.notes() if note.isDeleted()]
         )
 
-    def openAfterStart(self, commandLineArgs):
+    def openAfterStart(self, commandLineArgs, earlyLockResult=None):
         """Open either the file specified on the command line, or the file
-        the user was working on previously, or none at all."""
+        the user was working on previously, or none at all.
+
+        Args:
+            commandLineArgs: Command line arguments
+            earlyLockResult: Result from early lock check before main window:
+                None = no file to open
+                'ok' = file not locked, proceed normally
+                'break' = file locked, user chose to break lock
+                'skip' = file locked, user chose not to break (start fresh)
+        """
         if commandLineArgs:
             filename = commandLineArgs[0].decode(sys.getfilesystemencoding())
         else:
             filename = self.__settings.get("file", "lastfile")
         if filename:
-            # Use CallAfter so that the main window is opened first and any
-            # error messages are shown on top of it
-            wx.CallAfter(self.open, filename)
+            # If early lock check was done, use its result
+            if earlyLockResult == 'break':
+                # User already confirmed breaking the lock
+                wx.CallAfter(self.open, filename, breakLock=True)
+            elif earlyLockResult == 'skip':
+                # User chose not to break lock - start with no file (fresh)
+                pass
+            else:
+                # Normal case - open file (will check lock again if needed)
+                wx.CallAfter(self.open, filename)
 
     def open(
         self,
@@ -157,7 +172,7 @@ class IOController(object):
                     )
                 except Exception:
                     raise
-            except lockfile.LockTimeout:
+            except persistence.LockTimeout:
                 if breakLock:
                     if self.__askOpenUnlocked(filename):
                         self.open(filename, showerror, lock=False)
@@ -165,7 +180,7 @@ class IOController(object):
                     self.open(filename, showerror, breakLock=True)
                 else:
                     return
-            except lockfile.LockFailed:
+            except persistence.LockFailed:
                 if self.__askOpenUnlocked(filename):
                     self.open(filename, showerror, lock=False)
                 else:
@@ -206,7 +221,7 @@ class IOController(object):
         if filename:
             try:
                 self.__taskFile.merge(filename)
-            except lockfile.LockTimeout:
+            except persistence.LockTimeout:
                 showerror(
                     _("Cannot open %(filename)s\nbecause it is locked.")
                     % dict(filename=filename),
@@ -305,13 +320,13 @@ class IOController(object):
             self.__showSaveMessage(taskFile)
             self.__addRecentFile(filename)
             return True
-        except lockfile.LockTimeout:
+        except persistence.LockTimeout:
             errorMessage = _(
                 "Cannot save %s\nIt is locked by another instance " "of %s.\n"
             ) % (filename, meta.name)
             showerror(errorMessage, **self.__errorMessageOptions)
             return False
-        except (OSError, IOError, lockfile.LockFailed) as reason:
+        except (OSError, IOError, persistence.LockFailed) as reason:
             errorMessage = _("Cannot save %s\n%s") % (
                 filename,
                 ExceptionAsUnicode(reason),

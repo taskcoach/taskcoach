@@ -116,7 +116,7 @@ python3-lxml
 python3-xdg
 python3-keyring
 python3-numpy
-python3-lockfile (>= 0.12.2)
+python3-fasteners (>= 0.19)
 python3-gntp (>= 1.0.3)
 python3-zeroconf (>= 0.50.0)
 python3-squaremap (>= 1.0.5)

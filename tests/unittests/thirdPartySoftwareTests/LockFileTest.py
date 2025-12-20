@@ -16,35 +16,70 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import test, tempfile
-import lockfile
+import test, tempfile, os
+import fasteners
 
 
-class LockFileTest(test.TestCase):
+class FastenersLockTest(test.TestCase):
+    """Tests for the fasteners library (replacement for deprecated lockfile)."""
+
     def setUp(self):
-        self.tmpfile = tempfile.NamedTemporaryFile()
-        self.lock = lockfile.FileLock(self.tmpfile.name)
+        self.tmpfile = tempfile.NamedTemporaryFile(delete=False)
+        self.lock_path = self.tmpfile.name + ".lock"
+        self.lock = fasteners.InterProcessLock(self.lock_path)
+        self._lock_acquired = False
 
     def tearDown(self):
         super().tearDown()
-        self.tmpfile.close()  # Temp files are deleted when closed
+        if self._lock_acquired:
+            self.lock.release()
+        self.tmpfile.close()
+        # Clean up temp files
+        if os.path.exists(self.tmpfile.name):
+            os.unlink(self.tmpfile.name)
+        if os.path.exists(self.lock_path):
+            os.unlink(self.lock_path)
 
-    def testFileIsNotLockedInitially(self):
-        self.assertFalse(self.lock.is_locked())
+    def testLockCanBeAcquired(self):
+        result = self.lock.acquire(blocking=False)
+        self._lock_acquired = result
+        self.assertTrue(result)
 
-    def testFileIsLockedAfterLocking(self):
-        self.lock.acquire()
-        self.assertTrue(self.lock.is_locked())
+    def testLockCanBeReleased(self):
+        self.lock.acquire(blocking=False)
+        self._lock_acquired = True
+        self.lock.release()
+        self._lock_acquired = False
+        # Should be able to acquire again after release
+        result = self.lock.acquire(blocking=False)
+        self._lock_acquired = result
+        self.assertTrue(result)
 
     def testLockingWithContextManager(self):
         with self.lock:
-            self.assertTrue(self.lock.is_locked())
-        self.assertFalse(self.lock.is_locked())
+            # Lock is held inside context
+            pass
+        # Lock is released after context
+        # Should be able to acquire again
+        result = self.lock.acquire(blocking=False)
+        self._lock_acquired = result
+        self.assertTrue(result)
 
     def testLockingTwoFiles(self):
-        self.lock.acquire()
-        tmpfile2 = tempfile.NamedTemporaryFile()
-        lock2 = lockfile.FileLock(tmpfile2.name)
-        lock2.acquire()
-        self.assertTrue(self.lock.is_locked())
-        self.assertTrue(lock2.is_locked())
+        self.lock.acquire(blocking=False)
+        self._lock_acquired = True
+
+        tmpfile2 = tempfile.NamedTemporaryFile(delete=False)
+        lock_path2 = tmpfile2.name + ".lock"
+        lock2 = fasteners.InterProcessLock(lock_path2)
+
+        try:
+            result2 = lock2.acquire(blocking=False)
+            self.assertTrue(result2)
+            lock2.release()
+        finally:
+            tmpfile2.close()
+            if os.path.exists(tmpfile2.name):
+                os.unlink(tmpfile2.name)
+            if os.path.exists(lock_path2):
+                os.unlink(lock_path2)
