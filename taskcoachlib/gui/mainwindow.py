@@ -242,6 +242,9 @@ class MainWindow(
         finally:
             self.Thaw()
 
+        # Reset toolbar position after perspective is loaded
+        wx.CallAfter(self._resetToolbarPosition)
+
         # Note: Window position/size tracking uses debouncing to handle spurious
         # events from AUI LoadPerspective() and GTK window realization.
         # Events are bound immediately in __init__, no manual start needed.
@@ -311,6 +314,8 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         pub.subscribe(self.showStatusBar, "settings.view.statusbar")
         pub.subscribe(self.showToolBar, "settings.view.toolbar")
         self.Bind(aui.EVT_AUI_PANE_CLOSE, self.onCloseToolBar)
+        # Detect toolbar drag-end and float-to-dock transitions to reset position
+        self.manager.Bind(aui.EVT_AUI_RENDER, self._onAuiRender)
 
     def __onFilenameChanged(self, filename):
         self.__filename = filename
@@ -483,6 +488,52 @@ If this happens again, please make a copy of your TaskCoach.ini file """
     def onCloseToolBar(self, event):
         if event.GetPane().IsToolbar():
             self.settings.setvalue("view", "toolbar", None)
+        event.Skip()
+
+    def _resetToolbarPosition(self):
+        """Reset toolbar to position 0 to fill the dock area.
+
+        Called on startup, drag-end, and float-to-dock transitions.
+        For top/bottom docking: sticks left and fills width.
+        For left/right docking: sticks up and fills height.
+        Does nothing if toolbar is floating.
+        """
+        pane = self.manager.GetPane("toolbar")
+        if not pane.IsOk() or pane.IsFloating():
+            return
+
+        direction = pane.dock_direction
+        # Only handle docked positions: 1=top, 2=right, 3=bottom, 4=left
+        if direction not in (1, 2, 3, 4):
+            return
+
+        if pane.dock_pos != 0:
+            pane.Position(0)
+            if direction in (1, 3):  # top/bottom: fill width
+                pane.MinSize((self.GetSize().GetWidth(), -1))
+            else:  # left/right: fill height
+                pane.MinSize((-1, self.GetSize().GetHeight()))
+            self.manager.Update()
+
+    def _onAuiRender(self, event):
+        """Detect toolbar drag-end and float-to-dock to reset position."""
+        action = getattr(self.manager, '_action', 0)
+        prev_action = getattr(self, '_prev_manager_action', 0)
+
+        # Detect transition from dragging to idle
+        if prev_action != 0 and action == 0:
+            wx.CallAfter(self._resetToolbarPosition)
+
+        # Detect floating->docked transition
+        pane = self.manager.GetPane("toolbar")
+        if pane.IsOk():
+            was_floating = getattr(self, '_toolbar_was_floating', False)
+            is_floating = pane.IsFloating()
+            if was_floating and not is_floating:
+                wx.CallAfter(self._resetToolbarPosition)
+            self._toolbar_was_floating = is_floating
+
+        self._prev_manager_action = action
         event.Skip()
 
     # Viewers
