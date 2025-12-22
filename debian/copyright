@@ -1,10 +1,11 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: Task Coach
-Upstream-Contact: Task Coach developers <developers@taskcoach.org>
+Upstream-Contact: https://github.com/realcarbonneau/taskcoach/issues
 Source: https://github.com/realcarbonneau/taskcoach
 
 Files: *
-Copyright: 2004-2025 Task Coach developers <developers@taskcoach.org>
+Copyright: 2004-2025 Task Coach developers
+           2025 Réal Carbonneau
            2004-2016 Frank Niessink
            2004-2016 Jerome Laheurte
            2004-2016 Aaron Wolf
@@ -16,7 +17,7 @@ Copyright: 2006-2014 Andrea Gavana <andrea.gavana@gmail.com>
 License: wxWindows
 
 Files: debian/*
-Copyright: 2025 Task Coach developers <developers@taskcoach.org>
+Copyright: 2025 Task Coach developers
 License: GPL-3+
 
 License: GPL-3+

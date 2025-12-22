@@ -4,4 +4,4 @@ taskcoach (1.6.1) unstable; urgency=medium
   * Includes wxPython hypertreelist patch for background coloring fix
     (upstream PR #2088, needed until wxPython >= 4.2.4 in Debian).
 
- -- Task Coach Developers <developers@taskcoach.org>  Sat, 14 Dec 2025 12:00:00 +0000
+ -- Task Coach Developers <https://github.com/realcarbonneau/taskcoach>  Sat, 14 Dec 2025 12:00:00 +0000

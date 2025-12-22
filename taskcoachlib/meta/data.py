@@ -140,7 +140,7 @@ author_unicode = "%s %s, Jérôme Laheurte, and Aaron Wolf" % (
     author_first,
     author_last,
 )
-author_email = "developers@taskcoach.org"
+author_email = "https://github.com/realcarbonneau/taskcoach/issues"
 
 filename = name.replace(" ", "")
 filename_lower = filename.lower()

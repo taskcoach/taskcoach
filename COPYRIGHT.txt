@@ -1,7 +1,8 @@
 Task Coach - Your friendly task manager
-Copyright (C) 2004-2016 Task Coach developers <developers@taskcoach.org>
+Copyright (C) 2004-2025 Task Coach developers
 
 Task Coach developers are:
+Copyright (C) 2025 Réal Carbonneau <https://github.com/realcarbonneau>
 Copyright (C) 2012 Aaron Wolf <wolftune@gmail.com>
 Copyright (C) 2005-2011 Jérôme Laheurte <fraca7@free.fr>
 Copyright (C) 2004-2011 Frank Niessink <frank@niessink.com>
