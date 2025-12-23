@@ -19,5 +19,8 @@ override_dh_auto_install:
 	# Install application icon
 	install -D -m 644 icons.in/taskcoach.png \
 		debian/taskcoach/usr/share/pixmaps/taskcoach.png
+	# Install Welcome.tsk example file for first-run experience
+	install -D -m 644 Welcome.tsk \
+		debian/taskcoach/usr/share/taskcoach/Welcome.tsk
 	# Note: The wxPython hypertreelist patch is now bundled inside taskcoachlib/patches/
 	# and installed automatically by pybuild. No manual installation needed.

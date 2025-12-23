@@ -63,6 +63,10 @@ desktop-file-install --vendor fedora \
         --dir %%{buildroot}%%{_datadir}/applications \
         %%{SOURCE2}
 
+# Install Welcome.tsk for first-run experience
+%%{__mkdir} -p %%{buildroot}%%{_datadir}/taskcoach
+%%{__cp} -a Welcome.tsk %%{buildroot}%%{_datadir}/taskcoach/
+
 %%clean
 %%{__rm} -rf %%{buildroot}
 
@@ -73,7 +77,8 @@ desktop-file-install --vendor fedora \
 %%{python_sitelib}/TaskCoach-*-py2.*.egg-info
 %%{_datadir}/applications/fedora-taskcoach.desktop
 %%{_datadir}/pixmaps/taskcoach.png
-%%doc CHANGES.txt LICENSE.txt PUBLICITY.txt README.txt TODO.tsk
+%%{_datadir}/taskcoach/Welcome.tsk
+%%doc CHANGES.txt LICENSE.txt PUBLICITY.txt README.txt Welcome.tsk
 
 %%exclude %%{python_sitelib}/buildlib/*.py*
 

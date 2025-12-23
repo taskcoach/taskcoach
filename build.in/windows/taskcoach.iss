@@ -44,6 +44,8 @@ Name: userstartup; Description: "Run %(name)s every time Windows is started"; Gr
 [Files]
 Source: "%(filename)s-%(version)s-win32exe\%(filename)s.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "%(filename)s-%(version)s-win32exe\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
+; Welcome.tsk for first-run experience
+Source: "..\Welcome.tsk"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [INI]

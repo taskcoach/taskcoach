@@ -60,6 +60,10 @@ desktop-file-install --vendor opensuse \
         --dir %%{buildroot}%%{_datadir}/applications \
         %%{SOURCE2}
 
+# Install Welcome.tsk for first-run experience
+%%{__mkdir} -p %%{buildroot}%%{_datadir}/taskcoach
+%%{__cp} -a Welcome.tsk %%{buildroot}%%{_datadir}/taskcoach/
+
 %%clean
 %%{__rm} -rf %%{buildroot}
 
@@ -70,7 +74,8 @@ desktop-file-install --vendor opensuse \
 %%{_libdir}/python*/site-packages/%%{originalName}-%%{version}-py*.egg-info
 %%{_datadir}/applications/opensuse-taskcoach.desktop
 %%{_datadir}/pixmaps/taskcoach.png
-%%doc CHANGES.txt LICENSE.txt PUBLICITY.txt README.txt TODO.tsk
+%%{_datadir}/taskcoach/Welcome.tsk
+%%doc CHANGES.txt LICENSE.txt PUBLICITY.txt README.txt Welcome.tsk
 
 %%exclude %%{_libdir}/python*/site-packages/buildlib/*.py*
 

@@ -267,6 +267,7 @@ elif sys.argv[1] == "py2app":
                     dist_dir=os.path.join(builddir, "Task Coach"),
                     optimize=2,
                     iconfile="icons.in/taskcoach.icns",
+                    resources=["Welcome.tsk"],
                     # We need to explicitly include i18n modules because they
                     # are imported implicitly via __import__:
                     includes=[
