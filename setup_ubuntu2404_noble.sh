@@ -8,8 +8,6 @@
 #   - setup_ubuntu2204_jammy.sh (Ubuntu 22.04 Jammy)
 #   - setup.sh (unified auto-detection script)
 #
-# Version: 1.2.0
-# Last Updated: 2025-12-20
 
 set -e  # Exit on error
 

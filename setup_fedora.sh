@@ -13,8 +13,6 @@
 #   - setup_manjaro.sh (Arch/Manjaro)
 #   - setup.sh (unified auto-detection script)
 #
-# Version: 1.0.0
-# Last Updated: 2024-12-24
 
 set -e  # Exit on error
 

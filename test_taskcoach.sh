@@ -2,8 +2,6 @@
 # Quick test script for TaskCoach
 # Tests various functionality to ensure proper operation
 #
-# Version: 1.1.1.007
-# Last Updated: 2025-12-01
 # Note: Twisted replaced with watchdog in PR #39
 
 # Colors

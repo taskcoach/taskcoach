@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # IMPORTANT: Always increment version_patch AND update release_day/release_month below!
 
 version = "1.6.1"  # Current version number of the application
-version_patch = "73"  # Patch level - INCREMENT THIS AND UPDATE DATE BELOW!
+version_patch = "74"  # Patch level - INCREMENT THIS AND UPDATE DATE BELOW!
 version_full = f"{version}.{version_patch}"  # Full version string: 1.6.1.11
 
 
@@ -61,7 +61,7 @@ git_commit_hash = _get_git_commit_hash()
 version_commit = git_commit_hash if git_commit_hash else "(n/a)"
 
 tskversion = 37  # Current version number of the task file format, changed to 37 for release 1.3.23.
-release_day = "23"  # Day number of the release, 1-31, as string
+release_day = "24"  # Day number of the release, 1-31, as string
 release_month = "December"  # Month of the release in plain English
 release_year = "2025"  # Year of the release as string
 release_status = "stable"  # One of 'alpha', 'beta', 'stable'

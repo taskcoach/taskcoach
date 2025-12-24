@@ -8,8 +8,6 @@
 #   - setup_ubuntu2404_noble.sh (Ubuntu 24.04 Noble)
 #   - setup.sh (unified auto-detection script)
 #
-# Version: 1.2.0
-# Last Updated: 2025-12-20
 
 set -e  # Exit on error
 

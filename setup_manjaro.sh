@@ -10,8 +10,6 @@
 #   - setup_fedora.sh (Fedora 39/40)
 #   - setup.sh (unified auto-detection script)
 #
-# Version: 1.0.0
-# Last Updated: 2025-12-24
 
 set -e  # Exit on error
 

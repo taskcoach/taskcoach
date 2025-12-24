@@ -10,8 +10,6 @@
 #   - base-devel package group installed
 #   - makepkg command available
 #
-# Version: 1.0.0
-# Last Updated: 2025-12-24
 
 set -e  # Exit on error
 

@@ -9,8 +9,6 @@
 #   - Manjaro/Arch Linux
 #   - Fedora 39/40
 #
-# Version: 1.4.0
-# Last Updated: 2025-12-24
 
 set -e  # Exit on error
 
