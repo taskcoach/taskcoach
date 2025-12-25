@@ -2251,7 +2251,10 @@ class _CalendarPopup(_PopupWindow):
 
     def OnPaint(self, event):
         dc = wx.PaintDC(event.GetEventObject())
-        dc.SetBackground(wx.WHITE_BRUSH)
+        # Use system colors for proper dark/light theme support
+        bgColour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+        fgColour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+        dc.SetBackground(wx.Brush(bgColour))
         dc.Clear()
         dc.SetFont(wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT))
 
@@ -2259,9 +2262,9 @@ class _CalendarPopup(_PopupWindow):
 
         # Header: current month/year
 
-        dc.SetPen(wx.BLACK_PEN)
-        dc.SetBrush(wx.BLACK_BRUSH)
-        dc.SetTextForeground(wx.BLACK)  # Ensure header text is visible on white background
+        dc.SetPen(wx.Pen(fgColour))
+        dc.SetBrush(wx.Brush(fgColour))
+        dc.SetTextForeground(fgColour)
 
         header = decodeSystemString(
             datetime.date(
@@ -2277,8 +2280,8 @@ class _CalendarPopup(_PopupWindow):
         cy = th // 2 + 1
 
         gc = wx.GraphicsContext.Create(dc)
-        gc.SetPen(wx.BLACK_PEN)
-        gc.SetBrush(wx.BLACK_BRUSH)
+        gc.SetPen(wx.Pen(fgColour))
+        gc.SetBrush(wx.Brush(fgColour))
 
         # Prev month
         if self.__month != 1 or self.__year != 1:
@@ -2359,11 +2362,11 @@ class _CalendarPopup(_PopupWindow):
                 )
                 thisMonth = year == self.__year and month == self.__month
 
-                dc.SetPen(wx.BLACK_PEN)
+                dc.SetPen(wx.Pen(fgColour))
                 dc.SetTextForeground(
                     wx.RED
                     if (dayIndex + calendar.firstweekday()) % 7 in [5, 6]
-                    else wx.BLACK
+                    else fgColour
                 )
 
                 if dt == self.__selection:
