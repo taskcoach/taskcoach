@@ -9,8 +9,17 @@ Copyright (C) 2005-2011 Jérôme Laheurte <fraca7@free.fr>
 Copyright (C) 2004-2011 Frank Niessink <frank@niessink.com>
 
 Portions were contributed by:
+Copyright (C) 2025 Vít Kučera <https://github.com/vkucera>
+Copyright (C) 2020 Christopher Head <chead@chead.ca>
+Copyright (C) 2016 Roger (rogerdc@gmail.com)
+Copyright (C) 2015 Nicola (https://sourceforge.net/u/swisscarbon/profile/)
+Copyright (C) 2014 Joseph Wang <https://sourceforge.net/u/drjoe/profile/>
+Copyright (C) 2014 Tom Monaco <http://www.thomasmonaco.com/>
+Copyright (C) 2014 Manab Chetia <manab.chetia@outlook.com>
+Copyright (C) 2013 Ivan Romanov <https://sourceforge.net/u/ivanromanov/>
 Copyright (C) 2012 Nicola Chiapolini <nicola.chiapolini@physik.uzh.ch>
 Copyright (C) 2011 David Harks <dave@dwink.net>
+Copyright (C) 2011 Tobias Gradl <https://sourceforge.net/users/greentomato>
 Copyright (C) 2010 Svetoslav Trochev <sal_electronics@hotmail.com>
 Copyright (C) 2009 George Weeks <gcw52@telus.net>
 Copyright (C) 2008 Rob McMullen <rob.mcmullen@gmail.com>
@@ -18,15 +27,6 @@ Copyright (C) 2008 Carl Zmola <zmola@acm.org>
 Copyright (C) 2008 Thomas Sonne Olesen <tpo@sonnet.dk>
 Copyright (C) 2008 João Alexandre de Toledo <jtoledo@griffo.com.br>
 Copyright (C) 2008 Marcin Zajaczkowski <mszpak@wp.pl>
-Copyright (C) 2011 Tobias Gradl <https://sourceforge.net/users/greentomato>
-Copyright (C) 2013 Ivan Romanov <https://sourceforge.net/u/ivanromanov/>
-Copyright (C) 2014 Joseph Wang <https://sourceforge.net/u/drjoe/profile/>
-Copyright (C) 2014 Tom Monaco <http://www.thomasmonaco.com/>
-Copyright (C) 2014 Manab Chetia <manab.chetia@outlook.com>
-Copyright (C) 2015 Nicola (https://sourceforge.net/u/swisscarbon/profile/)
-Copyright (C) 2016 Roger (rogerdc@gmail.com)
-Copyright (C) 2020 Christopher Head <chead@chead.ca>
-Copyright (C) 2025 Vít Kučera <https://github.com/vkucera>
 
 Files under taskcoachlib/thirdparty are, well, third party. They come
 with their own license. They may include modifications from the
