@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?taskcoach release="1.6.1" tskversion="37"?>
+
+<tasks>
+<task id="28ce6440-5463-11e2-a497-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:32:43.764578" modificationDateTime="2025-12-22 22:28:42.077279" subject="This task is dependent" plannedstartdate="2013-01-01 17:32:00" actualstartdate="2025-12-22 22:27:00" priority="3" prerequisites="e9f1cf82-5462-11e2-b0b5-0016cbad0bd0">
+<description>
+It has "Welcome to Task Coach" as a prerequisite.
+Even though this has a planned start time in the past,
+it is inactive until the prerequisite is completed,
+Then, it gets marked "late"
+So, hiding inactive tasks will hide it until the prerequisite is done
+</description>
+</task>
+<task id="41745a54-5466-11e2-a067-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:54:53.607728" modificationDateTime="2025-12-22 22:24:28.162914" subject="Task Coach has many features!" actualstartdate="2013-01-01 18:04:03.077518">
+<description>
+• EFFORT TRACKING
+• Notes and attachments
+• Budgeting and fee calculation
+• Calendar view, timeline, and more
+</description>
+<note id="4a55b1de-546a-11e2-b838-0016cbad0bd0" status="1" creationDateTime="2013-01-01 18:23:46.493220" modificationDateTime="2025-12-20 13:18:27.534665" subject="A note!">
+<description>
+We are continually improving Task Coach!
+One day we'll get better text formatting.
+</description>
+</note>
+</task>
+<task id="6bb4ceb5-5468-11e2-ab5f-0016cbad0bd0" status="1" creationDateTime="2013-01-01 18:10:23.487902" subject="Appearance is adjustable" fgColor="(47, 47, 111, 255)" bgColor="(203, 243, 179, 255)" font="DejaVu Sans 8">
+<description>
+choose your own fonts and colors
+either per task, per category tag,
+or overall for the whole program
+</description>
+</task>
+<task id="e557eb35-5463-11e2-9c94-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:38:00.077533" subject="Task Coach uses hierarchies" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" actualstartdate="2013-01-01 18:15:32.470513" priority="2">
+<task id="1c6acfee-5464-11e2-bd7c-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:39:32.476048" modificationDateTime="2025-12-22 22:25:50.976600" subject="tasks can be subtasks of larger projects" priority="2" />
+<task id="5a5a8573-5464-11e2-83f7-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:41:16.388014" modificationDateTime="2025-12-22 22:29:27.138169" subject="there is no limited to the hierarchy" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" priority="2">
+<task id="7c1e4dbd-5464-11e2-a871-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:42:13.035916" modificationDateTime="2025-12-22 22:29:12.225269" subject="any task can have its own subtasks" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" priority="2">
+<task id="1a253523-5466-11e2-9c94-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:53:47.657904" modificationDateTime="2025-12-20 13:17:50.466476" subject="grey color means &quot;inactive&quot;" priority="2">
+<description>
+not started
+no planned start date or planned start is in the future
+</description>
+</task>
+<task id="3b68b747-5465-11e2-9118-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:47:33.968405" modificationDateTime="2025-12-22 22:29:05.761860" subject="orange means &quot;due soon&quot;" duedate="2025-12-21 10:00:00" />
+<task id="49b38e17-5465-11e2-998c-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:47:57.946961" modificationDateTime="2025-12-20 13:15:12.616042" subject="purple means &quot;late&quot;" plannedstartdate="2013-01-01 17:48:00" priority="2">
+<description>
+planned start time has passed
+but no actual start date
+</description>
+</task>
+<task id="8f46a6e8-5467-11e2-98a8-0016cbad0bd0" status="1" creationDateTime="2013-01-01 18:04:13.667241" modificationDateTime="2025-12-20 13:14:52.291717" subject="blue icon, black text is &quot;active&quot;" actualstartdate="2013-01-01 18:04:49.717792" priority="1">
+<description>
+task has an actual start date
+</description>
+</task>
+<task id="aea5a88f-5467-11e2-97b4-0016cbad0bd0" status="1" creationDateTime="2013-01-01 18:05:06.299246" modificationDateTime="2025-12-22 22:23:16.462721" subject="red means &quot;overdue&quot;" expandedContexts="('taskviewer',)" duedate="2025-12-04 00:00:00" priority="-3">
+<description>
+just because it is overdue, doesn't mean high priority
+priority is separate
+</description>
+<task id="7be82e5c-5465-11e2-b8cf-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:49:22.177948" subject="priorities are relative!" expandedContexts="('taskviewer',)" actualstartdate="2013-01-01 17:53:36.214854" priority="-1">
+<description>
+You don't need to force priorities into a few strict levels
+neutral is zero
+priorities are relative  positive and negative
+whatever range accommodates sorting your tasks
+</description>
+</task>
+<task id="e8ee4bf8-5465-11e2-be5f-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:52:25.089681" modificationDateTime="2013-02-06 23:43:16.598195" subject="or use categories if you prefer" actualstartdate="2013-01-01 17:53:33.103233" priority="-2">
+<description>
+With category TAGS you can organize your way
+</description>
+</task>
+</task>
+<task id="ddcdd028-5464-11e2-a3f1-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:44:56.925130" subject="green indicates completed tasks" completiondate="2013-01-01 17:44:00" percentageComplete="100" priority="1" />
+<task id="fc357e4f-5464-11e2-ae09-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:45:47.936254" subject="it is easy to hide or show any task state" priority="-5" />
+</task>
+</task>
+<effort id="23dfd100-5469-11e2-b0d7-0016cbad0bd0" status="1" start="2013-01-01 18:15:32" stop="2013-01-01 21:00:45" />
+</task>
+<task id="e9f1cf82-5462-11e2-b0b5-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:30:58.300237" modificationDateTime="2013-02-06 23:41:34.713284" subject="Welcome to Task Coach" actualstartdate="2013-01-01 17:30:00" priority="4" />
+<category id="24d473ba-5487-11e2-a71f-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:50:18.975673" subject="category B" expandedContexts="('categoryviewerintaskeditor',)" categorizables="3b68b747-5465-11e2-9118-0016cbad0bd0" />
+<category id="2f476514-5487-11e2-a6ae-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:50:36.506176" subject="*contexts" expandedContexts="('categoryviewer', 'categoryviewerintaskeditor')" categorizables="28ce6440-5463-11e2-a497-0016cbad0bd0 7c1e4dbd-5464-11e2-a871-0016cbad0bd0">
+<category id="3e1eac3a-5487-11e2-8b71-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:51:01.405129" modificationDateTime="2025-12-22 22:24:44.970852" subject="home" bgColor="(143, 240, 164, 255)" icon="house_red_icon" selectedIcon="house_red_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="aea5a88f-5467-11e2-97b4-0016cbad0bd0" />
+<category id="42afb411-5487-11e2-8fc4-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:51:09.066488" modificationDateTime="2025-12-22 22:25:38.517403" subject="work" bgColor="(249, 240, 107, 255)" icon="computer_desktop_icon" selectedIcon="computer_desktop_icon" expandedContexts="('categoryviewer', 'categoryviewerintaskeditor')" categorizables="1c6acfee-5464-11e2-bd7c-0016cbad0bd0">
+<category id="44c04275-5487-11e2-bb73-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:51:12.530430" subject="meeting" expandedContexts="('categoryviewerintaskeditor',)" />
+</category>
+<category id="493027fd-5487-11e2-8d2d-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:51:19.974644" subject="errands" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5a5a8573-5464-11e2-83f7-0016cbad0bd0" />
+</category>
+<category id="80f0f933-5487-11e2-ba71-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:52:53.512969" modificationDateTime="2025-12-22 22:27:16.313247" subject="Task Coach does GTD" bgColor="(153, 193, 241, 255)" icon="weather_lightning_icon" selectedIcon="weather_lightning_icon" expandedContexts="('categoryviewer', 'categoryviewerintaskeditor')" categorizables="28ce6440-5463-11e2-a497-0016cbad0bd0">
+<category id="107f6994-5488-11e2-a61b-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:56:54.360656" subject="or other systems!" expandedContexts="('categoryviewerintaskeditor',)" />
+</category>
+<category id="9f760359-5463-11e2-acc6-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:36:02.834248" modificationDateTime="2025-12-22 22:23:45.534725" subject="category A" bgColor="(220, 138, 221, 255)" icon="charts_icon" selectedIcon="charts_icon" expandedContexts="('categoryviewer', 'categoryviewerinnoteeditor', 'categoryviewerintaskeditor')" categorizables="41745a54-5466-11e2-a067-0016cbad0bd0">
+<category id="ac9c1023-5463-11e2-bb73-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:36:24.893996" subject="subcategory 1" expandedContexts="('categoryviewerinnoteeditor', 'categoryviewerintaskeditor')" />
+<category id="b21a4eb3-5463-11e2-8de1-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:36:34.109957" subject="subcategory 2" expandedContexts="('categoryviewerinnoteeditor', 'categoryviewerintaskeditor')" />
+</category>
+<syncmlconfig>
+<TaskCoach-0000013bf83c92df060be7b4000a27c5014d766d>
+<spds>
+<sources>
+<TaskCoach-0000013bf83c92df060be7b4000a27c5014d766d.Tasks />
+<TaskCoach-0000013bf83c92df060be7b4000a27c5014d766d.Notes />
+</sources>
+<syncml>
+<Auth />
+<Conn />
+</syncml>
+</spds>
+</TaskCoach-0000013bf83c92df060be7b4000a27c5014d766d>
+</syncmlconfig>
+<guid>
+0000013bf83c92df060be7b4000a27c5014d766d
+</guid>
+</tasks>

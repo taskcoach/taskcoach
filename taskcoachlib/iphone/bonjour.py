@@ -14,78 +14,196 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+DESIGN NOTE (Twisted Removal - 2024):
+Previously used Twisted's Deferred and reactor.callLater for async service
+registration. Now uses a simple callback-based pattern with wx.CallAfter
+for thread-safe GUI interaction.
+
+The key changes:
+- Twisted Deferred → AsyncResult class with callback/errback pattern
+- reactor.callLater(0, fn) → wx.CallAfter(fn)
+- Failure → standard Exception handling
+
+This maintains the async pattern for callers while eliminating Twisted dependency.
 """
 
-from taskcoachlib.thirdparty import pybonjour
-from twisted.internet.interfaces import IReadDescriptor
-from twisted.internet.defer import Deferred, AlreadyCalledError
-from twisted.python.failure import Failure
-from zope import interface
+import socket
+import wx
+from zeroconf import Zeroconf, ServiceInfo
+
+
+class AsyncResult:
+    """
+    Simple async result handler replacing Twisted's Deferred.
+
+    Provides callback/errback pattern for async operations.
+    This is a minimal replacement for Twisted Deferred that
+    maintains API compatibility with existing callers.
+    """
+
+    def __init__(self):
+        self._callbacks = []
+        self._errbacks = []
+        self._result = None
+        self._error = None
+        self._called = False
+
+    def addCallback(self, callback):
+        """Add a callback for successful completion."""
+        if self._called:
+            if self._error is None:
+                callback(self._result)
+        else:
+            self._callbacks.append(callback)
+        return self
+
+    def addErrback(self, errback):
+        """Add an error handler for failure."""
+        if self._called:
+            if self._error is not None:
+                errback(self._error)
+        else:
+            self._errbacks.append(errback)
+        return self
+
+    def callback(self, result):
+        """Fire the deferred with a successful result."""
+        if self._called:
+            return
+        self._called = True
+        self._result = result
+        for cb in self._callbacks:
+            try:
+                cb(result)
+            except Exception:
+                pass
+
+    def errback(self, error):
+        """Fire the deferred with an error."""
+        if self._called:
+            return
+        self._called = True
+        self._error = error
+        for eb in self._errbacks:
+            try:
+                eb(error)
+            except Exception:
+                pass
 
 
 class BonjourServiceDescriptor(object):
-    interface.implements(IReadDescriptor)
+    """
+    Wrapper for Zeroconf service registration.
+
+    This class manages the lifecycle of a registered Bonjour/Zeroconf service,
+    providing start/stop methods for integration with the application lifecycle.
+
+    Previously used pybonjour with Twisted reactor integration. Now uses
+    python-zeroconf which is pure Python and doesn't require system Bonjour
+    libraries or reactor file descriptor polling.
+    """
 
     def __init__(self):
-        self.__fd = None
+        self._zeroconf = None
+        self._service_info = None
 
-    def start(self, fd):
-        from twisted.internet import reactor
+    def start(self, service_info):
+        """
+        Start the Zeroconf service registration.
 
-        self.__fd = fd
-        reactor.addReader(self)
+        Args:
+            service_info: A ServiceInfo object describing the service to register
+        """
+        self._zeroconf = Zeroconf()
+        self._service_info = service_info
+        self._zeroconf.register_service(service_info)
 
     def stop(self):
-        if self.__fd is not None:
-            from twisted.internet import reactor
+        """
+        Stop and unregister the Zeroconf service.
 
-            reactor.removeReader(self)
-            self.__fd.close()
-            self.__fd = None
-
-    def doRead(self):
-        if self.__fd is not None:
-            pybonjour.DNSServiceProcessResult(self.__fd)
-
-    def fileno(self):
-        return None if self.__fd is None else self.__fd.fileno()
+        This should be called during application shutdown to properly
+        clean up the service registration.
+        """
+        if self._zeroconf is not None:
+            if self._service_info is not None:
+                self._zeroconf.unregister_service(self._service_info)
+                self._service_info = None
+            self._zeroconf.close()
+            self._zeroconf = None
 
     def logPrefix(self):
+        """Return log prefix for this service."""
         return "bonjour"
-
-    def connectionLost(self, reason):
-        if self.__fd is not None:
-            self.__fd.close()
 
 
 def BonjourServiceRegister(settings, port):
-    from twisted.internet import reactor
+    """
+    Register a Bonjour/Zeroconf service for iPhone sync discovery.
 
-    d = Deferred()
+    This function registers a '_taskcoachsync._tcp' service on the local
+    network, allowing iPhone/iPad devices to automatically discover the
+    Task Coach sync service without manual configuration.
+
+    The service type is registered at http://www.dns-sd.org/ServiceTypes.html
+
+    Args:
+        settings: Application settings object with iPhone configuration
+        port: The port number the sync service is listening on
+
+    Returns:
+        An AsyncResult that fires with the BonjourServiceDescriptor
+        on success, or errbacks with a RuntimeError on failure.
+
+    DESIGN NOTE (Twisted Removal - 2024):
+    Previously returned a Twisted Deferred. Now returns an AsyncResult
+    which provides the same callback/errback interface but without
+    Twisted dependency.
+    """
+    d = AsyncResult()
     reader = BonjourServiceDescriptor()
 
-    def registerCallback(sdRef, flags, errorCode, name, regtype, domain):
+    def do_register():
         try:
-            if errorCode == pybonjour.kDNSServiceErr_NoError:
-                d.callback(reader)
-            else:
-                reader.stop()
-                d.errback(
-                    Failure(
-                        RuntimeError(
-                            "Could not register with Bonjour: %d" % errorCode
-                        )
-                    )
-                )
-        except AlreadyCalledError:
-            pass
+            # Get service name from settings, or use default
+            service_name = settings.get("iphone", "service") or "Task Coach"
 
-    # This ID is registered, see http://www.dns-sd.org/ServiceTypes.html
-    sdRef = pybonjour.DNSServiceRegister(
-        name=settings.get("iphone", "service") or None,
-        regtype="_taskcoachsync._tcp",
-        port=port,
-        callBack=registerCallback,
-    )
-    reader.start(sdRef)
+            # Create ServiceInfo for the sync service
+            # Service type format: "_service._protocol.local."
+            service_type = "_taskcoachsync._tcp.local."
+            service_full_name = f"{service_name}.{service_type}"
+
+            # Get local IP addresses for service registration
+            # Using empty list lets zeroconf use all available interfaces
+            addresses = []
+            try:
+                # Try to get the primary local IP
+                hostname = socket.gethostname()
+                local_ip = socket.gethostbyname(hostname)
+                if local_ip and local_ip != "127.0.0.1":
+                    addresses = [socket.inet_aton(local_ip)]
+            except socket.error:
+                pass  # Will use all interfaces if we can't get specific IP
+
+            service_info = ServiceInfo(
+                service_type,
+                service_full_name,
+                port=port,
+                addresses=addresses if addresses else None,
+                properties={},
+            )
+
+            reader.start(service_info)
+            d.callback(reader)
+
+        except Exception as e:
+            reader.stop()
+            d.errback(
+                RuntimeError(f"Could not register with Bonjour/Zeroconf: {e}")
+            )
+
+    # Schedule registration on main thread using wx.CallAfter
+    # NOTE: Previously used reactor.callLater(0, do_register)
+    wx.CallAfter(do_register)
     return d

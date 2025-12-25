@@ -1,0 +1,4 @@
+# Exclude debian/ from release tarballs created by GitHub/git archive
+# The debian/ directory in upstream is for local builds only.
+# Official Debian packaging should be maintained in separate debian/* branches.
+debian/ export-ignore

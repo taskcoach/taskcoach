@@ -68,13 +68,35 @@ def loadPreferences():
 
     config = {}
 
-    def user_pref(key, value):
-        config[key] = value
+    # Regex to parse user_pref("key", value) lines safely
+    pref_pattern = re.compile(r'user_pref\s*\(\s*"([^"]+)"\s*,\s*(.+?)\s*\)\s*;')
 
     for line in open(os.path.join(getDefaultProfileDir(), "prefs.js"), "r"):
         if line.startswith("user_pref("):
-            # pylint: disable=W0122
-            exec(line, {"user_pref": user_pref, "true": True, "false": False})
+            match = pref_pattern.match(line.strip())
+            if match:
+                key = match.group(1)
+                value_str = match.group(2)
+
+                # Parse the value safely
+                if value_str == "true":
+                    value = True
+                elif value_str == "false":
+                    value = False
+                elif value_str.startswith('"') and value_str.endswith('"'):
+                    # String value - handle escape sequences
+                    value = value_str[1:-1].replace('\\"', '"').replace('\\\\', '\\')
+                else:
+                    # Try to parse as number
+                    try:
+                        if '.' in value_str:
+                            value = float(value_str)
+                        else:
+                            value = int(value_str)
+                    except ValueError:
+                        value = value_str
+
+                config[key] = value
 
     return config
 

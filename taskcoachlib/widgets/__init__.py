@@ -23,7 +23,10 @@ from .itemctrl import Column
 from .listctrl import VirtualListCtrl
 from .checklistbox import CheckListBox
 from .treectrl import CheckTreeCtrl, TreeListCtrl
-from .tcsquaremap import TcSquareMap
+try:
+    from .tcsquaremap import TcSquareMap
+except ImportError:
+    TcSquareMap = None  # squaremap not installed
 from .timeline import Timeline
 from .datectrl import DateTimeCtrl, TimeEntry
 from .textctrl import (

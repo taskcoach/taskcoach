@@ -42,23 +42,18 @@ def skipOnPlatform(*platforms):
 
 
 def skipOnTwistedVersions(*versions):
-    """Decorator for unit tests that are to be skipped on specific
-    versions of Twisted. Versions are strings. The test is
-    skipped if the current Twisted version string is prefixed by any
-    of the specified ones."""
+    """
+    Decorator for unit tests that were previously skipped on specific
+    versions of Twisted.
 
+    DESIGN NOTE (Twisted Removal - 2024):
+    This decorator is now a no-op since Twisted has been removed.
+    It's kept for backward compatibility with existing test code.
+    Tests that used reactor.iterate() have been updated to use
+    wx event processing instead.
+    """
     def wrapper(func):
-        import twisted
-
-        if any(
-            [
-                twisted.version.short().startswith(version)
-                for version in versions
-            ]
-        ):
-            return lambda self, *args, **kwargs: self.skipTest(
-                "Twisted version is %s" % twisted.version.short()
-            )
+        # No longer skip based on Twisted versions since Twisted is removed
         return func
 
     return wrapper

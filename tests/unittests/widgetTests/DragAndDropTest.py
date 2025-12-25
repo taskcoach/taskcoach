@@ -43,7 +43,7 @@ class TreeCtrlDragAndDropMixinTest(test.wxTestCase):
         self.treeCtrl.AddColumn("First")
 
         self.rootItem = self.treeCtrl.AddRoot("root")
-        self.item = self.treeCtrl.Append(self.rootItem, "item")
+        self.item = self.treeCtrl.AppendItem(self.rootItem, "item")
 
     def assertEventIsVetoed(self, event):
         self.assertTrue(event.vetoed)

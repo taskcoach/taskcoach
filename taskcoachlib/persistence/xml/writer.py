@@ -44,13 +44,28 @@ class PIElementTree(ET.ElementTree):
     def _write(self, file, node, encoding, namespaces):
         if node == self._root:
             # WTF? ElementTree does not write the encoding if it's ASCII or UTF-8...
-            if encoding in ["us-ascii", "utf-8"]:
-                file.write(
-                    (
-                        '<?xml version="1.0" encoding="%s"?>\n' % encoding
-                    ).encode(encoding)
-                )
-            file.write((self.__pi + "\n").encode(encoding))
+            if encoding in ["us-ascii", "utf-8", "unicode"]:
+                # Check if file is in binary mode or text mode
+                # Default to binary if mode cannot be determined (for wrapped file objects)
+                is_binary = not (hasattr(file, 'mode') and 'b' not in file.mode)
+                if is_binary:
+                    # Binary mode: write bytes
+                    if encoding == "unicode":
+                        file.write('<?xml version="1.0" encoding="utf-8"?>\n'.encode('utf-8'))
+                    else:
+                        file.write(('<?xml version="1.0" encoding="%s"?>\n' % encoding).encode(encoding))
+                else:
+                    # Text mode: write strings
+                    if encoding == "unicode":
+                        file.write('<?xml version="1.0" encoding="utf-8"?>\n')
+                    else:
+                        file.write('<?xml version="1.0" encoding="%s"?>\n' % encoding)
+            # Write processing instruction
+            is_binary = not (hasattr(file, 'mode') and 'b' not in file.mode)
+            if is_binary:
+                file.write((self.__pi + "\n").encode(encoding if encoding != "unicode" else "utf-8"))
+            else:
+                file.write(self.__pi + "\n")
         ET.ElementTree._write(
             self, file, node, encoding, namespaces
         )  # pylint: disable=E1101
@@ -59,20 +74,33 @@ class PIElementTree(ET.ElementTree):
         if encoding is None:
             encoding = "utf-8"
         if sys.version_info >= (2, 7):
-            file.write(
-                ('<?xml version="1.0" encoding="%s"?>\n' % encoding).encode(
-                    encoding
-                )
-            )
-            file.write((self.__pi + "\n").encode(encoding))
-            kwargs["xml_declaration"] = False
-        ET.ElementTree.write(self, file, encoding, *args, **kwargs)
+            # Check if file is in binary mode or text mode
+            # Default to binary if mode cannot be determined (for wrapped file objects)
+            is_binary = not (hasattr(file, 'mode') and 'b' not in file.mode)
+
+            # Write XML declaration and processing instruction
+            if is_binary:
+                # Binary mode: write bytes
+                file.write(('<?xml version="1.0" encoding="%s"?>\n' % encoding).encode(encoding))
+                file.write((self.__pi + "\n").encode(encoding))
+                kwargs["xml_declaration"] = False
+                ET.ElementTree.write(self, file, encoding, *args, **kwargs)
+            else:
+                # Text mode: write strings
+                file.write('<?xml version="1.0" encoding="%s"?>\n' % encoding)
+                file.write(self.__pi + "\n")
+                kwargs["xml_declaration"] = False
+                # Use 'unicode' encoding to write strings instead of bytes
+                ET.ElementTree.write(self, file, 'unicode', *args, **kwargs)
+        else:
+            ET.ElementTree.write(self, file, encoding, *args, **kwargs)
 
 
 def sortedById(objects):
-    s = [(obj.id(), obj) for obj in objects]
-    s.sort()
-    return [obj for dummy_id, obj in s]
+    """Sort objects by their ID. Uses key function to avoid comparing objects
+    directly, which would fail if two objects have the same ID and the object
+    class doesn't implement __lt__."""
+    return sorted(objects, key=lambda obj: obj.id())
 
 
 class XMLWriter(object):

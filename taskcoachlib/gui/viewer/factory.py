@@ -29,7 +29,6 @@ def viewerTypes():
     settings."""
     types = [
         "timelineviewer",
-        "squaretaskviewer",
         "taskviewer",
         "taskstatsviewer",
         "noteviewer",
@@ -39,6 +38,12 @@ def viewerTypes():
         "hierarchicalcalendarviewer",
         "effortviewerforselectedtasks",
     ]
+    try:
+        import squaremap
+    except ImportError:
+        pass
+    else:
+        types.append("squaretaskviewer")
     try:
         import igraph
     except ImportError:
@@ -69,7 +74,12 @@ class addViewers(object):  # pylint: disable=C0103, R0903
         """Open viewers as saved previously in the settings."""
         self.__add_viewers(task.TaskViewer)
         self.__add_viewers(task.TaskStatsViewer)
-        self.__add_viewers(task.SquareTaskViewer)
+        try:
+            import squaremap
+        except ImportError:
+            pass
+        else:
+            self.__add_viewers(task.SquareTaskViewer)
         self.__add_viewers(task.TimelineViewer)
         self.__add_viewers(task.CalendarViewer)
         self.__add_viewers(task.HierarchicalCalendarViewer)

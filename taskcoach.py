@@ -21,6 +21,57 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import sys
 
+# Initialize output tee FIRST, before any other imports that might
+# produce output (especially wx/GTK which load native libraries).
+# This captures all stdout/stderr to the log file.
+from taskcoachlib.tee import init_tee
+init_tee()
+
+import faulthandler
+
+# Enable faulthandler to get Python tracebacks on segfaults
+# This helps debug crashes in wxPython/GTK C++ code by showing which
+# Python code was executing when the crash occurred
+faulthandler.enable(all_threads=True)
+
+
+def _set_wayland_app_id():
+    """Set GLib prgname for Wayland app_id matching.
+
+    On Wayland, GNOME Shell uses the app_id (derived from GLib's prgname)
+    to match running applications to their .desktop files for proper
+    icon display. This must be called BEFORE wxPython imports GTK.
+
+    On X11, wxPython's SetClassName() handles WM_CLASS which serves
+    the same purpose.
+    """
+    if sys.platform != "linux":
+        return
+
+    try:
+        import ctypes
+
+        libglib = ctypes.CDLL("libglib-2.0.so.0")
+        g_set_prgname = libglib.g_set_prgname
+        g_set_prgname.argtypes = [ctypes.c_char_p]
+        g_set_prgname.restype = None
+        g_set_prgname(b"taskcoach")
+
+        # Also set application name for display purposes
+        g_set_application_name = libglib.g_set_application_name
+        g_set_application_name.argtypes = [ctypes.c_char_p]
+        g_set_application_name.restype = None
+        g_set_application_name(b"Task Coach")
+    except (OSError, AttributeError):
+        pass  # GLib not available or function not found
+
+
+# Set prgname before any wx/GTK imports
+_set_wayland_app_id()
+
+# Enable more detailed Python error reporting
+sys.tracebacklimit = 100  # Show full tracebacks, not just last 10 frames
+
 # Workaround for a bug in Ubuntu 10.10
 os.environ["XLIB_SKIP_ARGB_VISUALS"] = "1"
 

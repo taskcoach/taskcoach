@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import gui, config, persistence
 from taskcoachlib.domain import task, note, category
 from unittests import dummy
-import lockfile
 import os
 import shutil
 import wx
@@ -300,7 +299,7 @@ class IOControllerTest(test.TestCase):
             targetFile.stop()
 
     def testOpenWhenLockFailed(self):
-        self.taskFile.raiseError = lockfile.LockFailed
+        self.taskFile.raiseError = persistence.LockFailed
 
         def askOpenUnlocked(*args, **kwargs):  # pylint: disable=W0613
             self.askOpenUnlockedCalled = True
@@ -312,7 +311,7 @@ class IOControllerTest(test.TestCase):
         self.assertTrue(self.askOpenUnlockedCalled)
 
     def testOpenWhenAlreadyLocked(self):
-        self.taskFile.raiseError = lockfile.LockTimeout
+        self.taskFile.raiseError = persistence.LockTimeout
 
         def askBreakLock(*args, **kwargs):  # pylint: disable=W0613
             self.askBreakLockCalled = True

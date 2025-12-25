@@ -1,0 +1,19 @@
+taskcoach (2.0.0.75-1) UNRELEASED; urgency=medium
+
+  * Major version bump to 2.0.0 reflecting Python 3 modernization
+  * Merged detached fork with 600+ patches and improvements
+  * Full GTK3/wxPython 4.x compatibility
+  * New GitHub Actions CI/CD workflows
+
+ -- Task Coach developers <developers@taskcoach.org>  Wed, 25 Dec 2024 12:00:00 +0000
+
+taskcoach (1.6.1.74-1) UNRELEASED; urgency=medium
+
+  * Upstream debian/ directory for local builds only.
+  * This is NOT the official Debian package. Official Debian packaging
+    should be maintained in separate debian/* branches.
+  * Based on former Debian packaging work.
+  * Includes bundled wxPython hypertreelist patch for background coloring fix
+    (upstream PR #2088, needed until wxPython >= 4.2.4 in Debian).
+
+ -- Task Coach developers <developers@taskcoach.org>  Mon, 23 Dec 2025 12:00:00 +0000

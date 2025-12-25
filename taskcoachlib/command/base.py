@@ -403,6 +403,8 @@ class OrderingDragAndDropCommand(DragAndDropCommand):
         self.column = kwargs.pop("column", None)
         self.isTreeMode = kwargs.pop("isTree", True)
         self.part = kwargs.pop("part", 0)
+        self.dropColumn = kwargs.pop("dropColumn", -1)
+        self.dropColumnName = kwargs.pop("dropColumnName", None)
         super().__init__(*args, **kwargs)
 
     def isOrdering(self):

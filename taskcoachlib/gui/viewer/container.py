@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import operating_system
 import taskcoachlib.gui.menu
 from pubsub import pub
 import wx.lib.agw.aui as aui
@@ -42,6 +41,9 @@ class ViewerContainer(object):
 
     def componentsCreated(self):
         self._notifyActiveViewer = True
+        # Activate the first viewer (TaskViewer) as the default at startup
+        if self.viewers:
+            self.activateViewer(self.viewers[0])
 
     def advanceSelection(self, forward):
         """Activate the next viewer if forward is true else the previous
@@ -136,6 +138,7 @@ class ViewerContainer(object):
         pub.sendMessage("all.viewer.status", viewer=viewer)
 
     def onPageChanged(self, event):
+        """Handle pane activation events from AUI."""
         self.__ensure_active_viewer_has_focus()
         self.sendViewerStatusEvent()
         if self._notifyActiveViewer and self.activeViewer() is not None:
@@ -146,22 +149,30 @@ class ViewerContainer(object):
         pub.sendMessage("viewer.status")
 
     def __ensure_active_viewer_has_focus(self):
-        if not self.activeViewer():
+        """Set focus on active viewer, unless a text control inside it has focus.
+
+        Simple rule: always set focus on the active viewer EXCEPT when a text
+        control (search box, etc.) inside that viewer already has focus.
+        """
+        viewer = self.activeViewer()
+        if not viewer:
             return
+
+        # Check if a text control inside the active viewer has focus
         window = wx.Window.FindFocus()
-        if operating_system.isMacOsXTiger_OrOlder() and window is None:
-            # If the SearchCtrl has focus on Mac OS X Tiger,
-            # wx.Window.FindFocus returns None. If we would continue,
-            # the focus would be set to the active viewer right away,
-            # making it impossible for the user to type in the search
-            # control.
-            return
-        while window:
-            if window == self.activeViewer():
-                break
-            window = window.GetParent()
-        else:
-            wx.CallAfter(self.activeViewer().SetFocus)
+        if isinstance(window, (wx.TextCtrl, wx.SearchCtrl, wx.ComboBox)):
+            # Walk up to see if this text control is inside the active viewer
+            parent = window
+            while parent:
+                if parent == viewer:
+                    return  # Text control is in active viewer, don't steal focus
+                parent = parent.GetParent()
+
+        # Set focus on the viewer
+        try:
+            viewer.SetFocus()
+        except RuntimeError:
+            pass
 
     def onPageClosed(self, event):
         if event.GetPane().IsToolbar():
@@ -186,6 +197,11 @@ class ViewerContainer(object):
         # be prepared:
         if viewer in self.viewers:
             self.viewers.remove(viewer)
+            # Unsubscribe from the viewer's status event before detaching
+            try:
+                pub.unsubscribe(self.onStatusChanged, viewer.viewerStatusEventType())
+            except Exception:
+                pass  # May already be unsubscribed
             viewer.detach()
 
     @staticmethod

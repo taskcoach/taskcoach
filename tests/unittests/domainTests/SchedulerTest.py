@@ -14,10 +14,28 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+DESIGN NOTE (Twisted Removal - 2024):
+Tests updated to use wx event processing instead of reactor.iterate().
+The scheduler now uses wx.CallLater so we process wx events to trigger
+scheduled callbacks.
 """
 
-import test, time
+import test, time, wx
 from taskcoachlib.domain import date
+
+
+def process_wx_events(duration_seconds):
+    """
+    Process wx events for a specified duration.
+
+    This replaces reactor.iterate() calls from when Twisted was used.
+    wx.CallLater callbacks require wx event processing to fire.
+    """
+    t0 = time.time()
+    while time.time() - t0 < duration_seconds:
+        wx.GetApp().Yield(True)
+        time.sleep(0.05)  # Small sleep to avoid CPU spin
 
 
 class SchedulerTest(test.TestCase):
@@ -34,11 +52,8 @@ class SchedulerTest(test.TestCase):
         futureDate = date.Now() + date.TimeDelta(seconds=1)
         self.scheduler.schedule(self.callback, futureDate)
         self.assertTrue(self.scheduler.is_scheduled(self.callback))
-        t0 = time.time()
-        from twisted.internet import reactor
-
-        while time.time() - t0 < 2.1:
-            reactor.iterate()
+        # Process wx events instead of reactor.iterate()
+        process_wx_events(2.1)
         self.assertFalse(self.scheduler.is_scheduled(self.callback))
         self.assertEqual(self.callCount, 1)
 
@@ -48,11 +63,8 @@ class SchedulerTest(test.TestCase):
         self.scheduler.schedule(self.callback, futureDate)
         self.scheduler.unschedule(self.callback)
         self.assertFalse(self.scheduler.is_scheduled(self.callback))
-        t0 = time.time()
-        from twisted.internet import reactor
-
-        while time.time() - t0 < 1.2:
-            reactor.iterate()
+        # Process wx events instead of reactor.iterate()
+        process_wx_events(1.2)
         self.assertEqual(self.callCount, 0)
 
     @test.skipOnTwistedVersions("12.")
@@ -60,9 +72,8 @@ class SchedulerTest(test.TestCase):
         pastDate = date.Now() - date.TimeDelta(seconds=1)
         self.scheduler.schedule(self.callback, pastDate)
         self.assertFalse(self.scheduler.is_scheduled(self.callback))
-        from twisted.internet import reactor
-
-        reactor.iterate()
+        # Process wx events instead of reactor.iterate()
+        process_wx_events(0.1)
         self.assertFalse(self.scheduler.is_scheduled(self.callback))
         self.assertEqual(self.callCount, 1)
 
@@ -70,11 +81,8 @@ class SchedulerTest(test.TestCase):
     def testScheduleInterval(self):
         self.scheduler.schedule_interval(self.callback, seconds=1)
         try:
-            t0 = time.time()
-            from twisted.internet import reactor
-
-            while time.time() - t0 < 2.1:
-                reactor.iterate()
+            # Process wx events instead of reactor.iterate()
+            process_wx_events(2.1)
             self.assertEqual(self.callCount, 2)
         finally:
             self.scheduler.unschedule(self.callback)

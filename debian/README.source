@@ -1,0 +1,26 @@
+Upstream debian/ Directory for Local Builds
+============================================
+
+This debian/ directory is provided by upstream for local testing and builds.
+It is NOT intended for official Debian archive submission.
+
+Purpose
+-------
+- Local .deb builds for testing
+- Development convenience
+- Not included in release tarballs (via .gitattributes export-ignore)
+
+Official Debian Packaging
+-------------------------
+Official Debian packaging should be maintained separately in debian/* branches
+following the standard Debian workflow:
+
+- upstream/master: Contains release tarball contents (no debian/)
+- debian/master: Derived from upstream/master, contains official debian/
+
+This separation allows Debian maintainers to properly track upstream releases
+and maintain patches independently using quilt and gbp-pq tooling.
+
+This upstream debian/ directory is based on former Debian packaging work
+and is provided as a convenience for contributors who want to build and
+test .deb packages locally.

@@ -20,6 +20,7 @@ from taskcoachlib import meta, patterns, operating_system
 from taskcoachlib.i18n import _
 from pubsub import pub
 from taskcoachlib.workarounds import ExceptionAsUnicode
+import ast
 import configparser
 import os
 import sys
@@ -66,7 +67,13 @@ class Settings(CachingConfigParser):
         self.initializeWithDefaults()
         self.__loadAndSave = load
         self.__iniFileSpecifiedOnCommandLine = iniFile
+        self.__ini_lock = None  # Lock for ini file to prevent concurrent access
+
         self.migrateConfigurationFiles()
+
+        # Check if this is first run (no INI file exists yet)
+        isFirstRun = load and not self._iniFileExists()
+
         if load:
             # First, try to load the settings file from the program directory,
             # if that fails, load the settings file from the settings directory
@@ -81,6 +88,9 @@ class Settings(CachingConfigParser):
                 # Also record the failure in the settings:
                 self.initializeWithDefaults()
                 self.setLoadStatus(ExceptionAsUnicode(errorMessage))
+            # On first run, set up Welcome.tsk in user's Documents folder
+            if isFirstRun:
+                self._setupFirstRunWelcomeFile()
         else:
             # Assume that if the settings are not to be loaded, we also
             # should be quiet (i.e. we are probably in test mode):
@@ -90,13 +100,53 @@ class Settings(CachingConfigParser):
             "settings.file.saveinifileinprogramdir",
         )
 
+    def acquire_ini_lock(self):
+        """Acquire lock on ini file to prevent multiple instances from
+        corrupting config. Shows error and exits if another instance has lock.
+
+        Note: This must be called after wxApp is created, as it may display
+        a wx.MessageBox on failure."""
+        try:
+            import fasteners
+            lock_path = self.filename() + ".lock"
+            self.__ini_lock = fasteners.InterProcessLock(lock_path)
+            acquired = self.__ini_lock.acquire(blocking=False)
+            if not acquired:
+                # Another instance has the lock
+                wx.MessageBox(
+                    _("Another instance of %s is already running with the same "
+                      "configuration file.\n\n"
+                      "You can run multiple instances with different configuration "
+                      "files using the --ini option:\n"
+                      "  taskcoach --ini=/path/to/other.ini\n\n"
+                      "The program will now exit.") % meta.name,
+                    _("%s: configuration locked") % meta.name,
+                    style=wx.OK | wx.ICON_ERROR,
+                )
+                sys.exit(1)
+        except ImportError:
+            # fasteners not available - skip locking
+            pass
+        except Exception:
+            # Lock failed for other reasons (permissions, etc.) - continue without lock
+            pass
+
+    def release_ini_lock(self):
+        """Release the ini file lock. Call this on application shutdown."""
+        if self.__ini_lock is not None:
+            try:
+                self.__ini_lock.release()
+            except Exception:
+                pass  # Ignore errors during cleanup
+            self.__ini_lock = None
+
     def onSettingsFileLocationChanged(self, value):
         saveIniFileInProgramDir = value
         if not saveIniFileInProgramDir:
             try:
                 os.remove(self.generatedIniFilename(forceProgramDir=True))
-            except:
-                return  # pylint: disable=W0702
+            except OSError:
+                return  # File might not exist
 
     def initializeWithDefaults(self):
         for section in self.sections():
@@ -183,25 +233,25 @@ class Settings(CachingConfigParser):
             if result in taskDateColumns:
                 result += "Time"
             try:
-                eval(result)
-            except:
+                ast.literal_eval(result)
+            except (ValueError, SyntaxError):
                 sortKeys = [result]
                 try:
                     ascending = self.getboolean(section, "sortascending")
-                except:
+                except (ValueError, configparser.NoOptionError, configparser.NoSectionError):
                     ascending = True
                 result = '["%s%s"]' % (("" if ascending else "-"), result)
         elif option == "columns":
             columns = [
                 (col + "Time" if col in taskDateColumns else col)
-                for col in eval(result)
+                for col in ast.literal_eval(result)
             ]
             result = str(columns)
         elif option == "columnwidths":
             widths = dict()
             try:
-                columnWidthMap = eval(result)
-            except SyntaxError:
+                columnWidthMap = ast.literal_eval(result)
+            except (SyntaxError, ValueError):
                 columnWidthMap = dict()
             for column, width in list(columnWidthMap.items()):
                 if column in taskDateColumns:
@@ -223,8 +273,8 @@ class Settings(CachingConfigParser):
             # but I need it so that people can test without resetting their .ini file...
             # Remove this after the 1.3.38 release.
             try:
-                columns = eval(result)
-            except SyntaxError:
+                columns = ast.literal_eval(result)
+            except (SyntaxError, ValueError):
                 columns = ["ordering"]
             else:
                 if "ordering" in columns:
@@ -260,7 +310,7 @@ class Settings(CachingConfigParser):
             pub.sendMessage("settings.%s.%s" % (section, option), value=value)
 
     def getlist(self, section, option):
-        return self.getEvaluatedValue(section, option, eval)
+        return self.getEvaluatedValue(section, option, ast.literal_eval)
 
     getvalue = gettuple = getdict = getlist
 
@@ -283,7 +333,7 @@ class Settings(CachingConfigParser):
             )
 
     def getEvaluatedValue(
-        self, section, option, evaluate=eval, showerror=wx.MessageBox
+        self, section, option, evaluate=ast.literal_eval, showerror=wx.MessageBox
     ):
         stringValue = self.get(section, option)
         try:
@@ -369,7 +419,7 @@ class Settings(CachingConfigParser):
                 return shell.SHGetSpecialFolderPath(
                     None, shellcon.CSIDL_PERSONAL
                 )
-            except:
+            except Exception:
                 # Yes, one of the documented ways to get this sometimes fail with "Unspecified error". Not sure
                 # this will work either.
                 # Update: There are cases when it doesn't work either; see support request #410...
@@ -377,8 +427,8 @@ class Settings(CachingConfigParser):
                     return shell.SHGetFolderPath(
                         None, shellcon.CSIDL_PERSONAL, None, 0
                     )  # SHGFP_TYPE_CURRENT not in shellcon
-                except:
-                    return os.getcwd()  # Fuck this
+                except Exception:
+                    return os.getcwd()  # Last resort fallback
         elif operating_system.isMac():
             import Carbon.Folder, Carbon.Folders, Carbon.File
 
@@ -395,8 +445,81 @@ class Settings(CachingConfigParser):
                 pass
             else:
                 return str(KGlobalSettings.documentPath())
-        # Assuming Unix-like
+            # Check XDG_DOCUMENTS_DIR (standard on Linux)
+            xdg_docs = os.environ.get("XDG_DOCUMENTS_DIR")
+            if xdg_docs and os.path.isdir(xdg_docs):
+                return xdg_docs
+            # Fall back to ~/Documents if it exists
+            docs_dir = os.path.join(os.path.expanduser("~"), "Documents")
+            if os.path.isdir(docs_dir):
+                return docs_dir
+        # Assuming Unix-like, fall back to home
         return os.path.expanduser("~")
+
+    def _iniFileExists(self):
+        """Check if INI file exists in either program dir or config dir."""
+        return (
+            os.path.exists(self.filename(forceProgramDir=True))
+            or os.path.exists(self.filename())
+        )
+
+    @staticmethod
+    def pathToSystemWelcomeFile():
+        """Find the system-installed Welcome.tsk file."""
+        # Check platform-specific locations
+        if operating_system.isWindows():
+            # Windows: look in install directory
+            candidates = [
+                os.path.join(os.path.dirname(sys.executable), "Welcome.tsk"),
+                os.path.join(os.path.dirname(sys.argv[0]), "Welcome.tsk"),
+            ]
+        elif operating_system.isMac():
+            # macOS: look in app bundle Resources
+            candidates = [
+                os.path.join(
+                    os.path.dirname(sys.executable),
+                    "..", "Resources", "Welcome.tsk"
+                ),
+                os.path.join(os.path.dirname(sys.argv[0]), "Welcome.tsk"),
+            ]
+        else:
+            # Linux: check standard system locations
+            candidates = [
+                "/usr/share/taskcoach/Welcome.tsk",
+                "/usr/local/share/taskcoach/Welcome.tsk",
+                "/usr/share/doc/taskcoach/Welcome.tsk",
+                os.path.join(os.path.dirname(sys.argv[0]), "Welcome.tsk"),
+            ]
+        for path in candidates:
+            if os.path.exists(path):
+                return path
+        return None
+
+    def _setupFirstRunWelcomeFile(self):
+        """On first run, copy Welcome.tsk to user's Documents folder."""
+        systemWelcome = self.pathToSystemWelcomeFile()
+        if not systemWelcome:
+            return  # No system Welcome.tsk found
+
+        # Create TaskCoach folder in user's Documents
+        docsDir = self.pathToDocumentsDir()
+        taskcoachDocsDir = os.path.join(docsDir, meta.filename)
+        userWelcome = os.path.join(taskcoachDocsDir, "Welcome.tsk")
+
+        # Don't overwrite if user already has a Welcome.tsk
+        if os.path.exists(userWelcome):
+            # But still set it as the file to open on first run
+            self.set("file", "lastfile", userWelcome)
+            return
+
+        try:
+            if not os.path.exists(taskcoachDocsDir):
+                os.makedirs(taskcoachDocsDir)
+            shutil.copy(systemWelcome, userWelcome)
+            # Set this as the last opened file so it opens on startup
+            self.set("file", "lastfile", userWelcome)
+        except OSError:
+            pass  # Silently fail if we can't copy
 
     def pathToProgramDir(self):
         path = sys.argv[0]
@@ -431,7 +554,7 @@ class Settings(CachingConfigParser):
                 )
             else:
                 path = self.pathToConfigDir_deprecated(environ=environ)
-        except:  # Fallback to old dir
+        except Exception:  # Fallback to old dir
             path = self.pathToConfigDir_deprecated(environ=environ)
         return path
 
@@ -492,7 +615,7 @@ class Settings(CachingConfigParser):
     def _pathToTemplatesDir(self):
         try:
             return self._pathToDataDir("templates")
-        except:
+        except OSError:
             pass  # Fallback on old path
         return self.pathToTemplatesDir_deprecated(), True
 
@@ -568,7 +691,7 @@ class Settings(CachingConfigParser):
                 # pathToTemplatesDir() has created the directory
                 try:
                     os.rmdir(newPath)
-                except:
+                except OSError:
                     pass
                 shutil.move(oldPath, newPath)
         # Ini file
@@ -584,7 +707,7 @@ class Settings(CachingConfigParser):
         # Cleanup
         try:
             os.rmdir(self.pathToConfigDir_deprecated(environ=os.environ))
-        except:
+        except OSError:
             pass
 
     def __hash__(self) -> int:

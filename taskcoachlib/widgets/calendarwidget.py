@@ -161,7 +161,16 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
             self.__selection = [schedule.task]
             schedule.SetSelected(True)
 
-        wx.CallAfter(self.selectCommand)
+        wx.CallAfter(self.__safeSelectCommand)
+
+    def __safeSelectCommand(self):
+        """Safely call selectCommand, guarding against deleted C++ objects."""
+        try:
+            if self:
+                self.selectCommand()
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            pass
 
     def SelectTask(self, task):
         if task.id() in self.taskMap:
@@ -173,7 +182,16 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
 
     def OnPopup(self, event):
         self.OnActivation(event)
-        wx.CallAfter(self.PopupMenu, self.popupMenu)
+        wx.CallAfter(self.__safePopupMenu)
+
+    def __safePopupMenu(self):
+        """Safely show popup menu, guarding against deleted C++ objects."""
+        try:
+            if self:
+                self.PopupMenu(self.popupMenu)
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            pass
 
     def OnEdit(self, event):
         if event.schedule is None:
@@ -238,7 +256,7 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
                     schedule.SetSelected(True)
 
         self.Add(schedules)
-        wx.CallAfter(self.selectCommand)
+        wx.CallAfter(self.__safeSelectCommand)
         self.Scroll(x, y)
 
     def RefreshItems(self, *args):

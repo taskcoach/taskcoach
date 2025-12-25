@@ -89,7 +89,7 @@ class BackupManifest(object):
                         ],
                     )
                 )
-            except:
+            except ValueError:
                 continue
             backups.append(date.DateTime(*tuple(comp)))
         return list(reversed(sorted(backups)))

@@ -39,6 +39,8 @@ class ToolTipMixin(object):
         self.GetMainWindow().Bind(wx.EVT_MOTION, self.__OnMotion)
         self.GetMainWindow().Bind(wx.EVT_LEAVE_WINDOW, self.__OnLeave)
         self.Bind(wx.EVT_TIMER, self.__OnTimer, id=self.__timer.GetId())
+        # Stop timer on window destruction to prevent crashes
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.__OnDestroy)
 
     def SetToolTipsEnabled(self, enabled):
         self.__enabled = enabled
@@ -119,6 +121,18 @@ class ToolTipMixin(object):
             self.__tip = None
 
         event.Skip()
+
+    def __OnDestroy(self, event):
+        """Stop timer on window destruction to prevent crashes."""
+        if event.GetEventObject() == self and self.__timer.IsRunning():
+            self.__timer.Stop()
+        event.Skip()
+
+    def cleanupTooltipTimer(self):
+        """Stop the tooltip timer to prevent crashes during widget destruction.
+        This should be called from the widget's Destroy() or cleanup method."""
+        if self.__timer and self.__timer.IsRunning():
+            self.__timer.Stop()
 
     def __OnTimer(self, event):  # pylint: disable=W0613
         self.ShowTip(*self.GetMainWindow().ClientToScreen(*self.__position))
@@ -279,7 +293,7 @@ class SimpleToolTip(ToolTipBase):
     def _drawTextLine(self, dc, textLine, x, y):
         try:
             dc.DrawText(textLine, x, y)
-        except:
+        except Exception:
             raise RuntimeError("Could not draw text %s" % repr(textLine))
         textHeight = dc.GetTextExtent(textLine)[1]
         return y + textHeight + 1

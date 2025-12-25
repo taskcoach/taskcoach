@@ -16,6 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import os
+
 from taskcoachlib import meta
 from taskcoachlib.i18n import _
 from .tips import showTips
@@ -674,9 +676,8 @@ your Pocket PC."""
     p(
         _(
             """On Linux, you must install the SyncML client binding for
-Python yourself. A 64 bits Debian package for Python 2.7 is available on
-<a target="_blank" href="http://www.taskcoach.org/">taskcoach.org</a>,
-at the end of the Linux downloads section."""
+Python yourself. Note: SyncML support is a legacy feature and may not
+be fully supported."""
         )
     ),
     h4(a_name(_("Setup"), "syncmlsetup")),
@@ -1248,10 +1249,19 @@ helpHTML = (
 )
 
 
+def _get_splash_path():
+    """Get the path to the legacy splash screen image."""
+    splash_path = os.path.join(os.path.dirname(__file__), "..", "gui", "icons", "splash.png")
+    splash_path = os.path.normpath(splash_path)
+    if os.path.exists(splash_path):
+        return splash_path
+    return None
+
+
 aboutHTML = (
     _(
         """<h4>%(name)s - %(description)s</h4>
-<h5>Version %(version)s, %(date)s</h5>
+<h5>Version %(version_full)s (commit %(version_commit)s), %(date)s</h5>
 <p>By %(author)s &lt;%(author_email)s&gt;<p>
 <p><a href="%(url)s" target="_blank">%(url)s</a></p>
 <p>%(copyright)s</p>
@@ -1260,3 +1270,20 @@ aboutHTML = (
     )
     % meta.metaDict
 )
+
+# Add legacy splash screen to About dialog
+# Note: wx.html.HtmlWindow doesn't support data URIs, so we use file:// path
+_splash_path = _get_splash_path()
+if _splash_path:
+    aboutHTML += """
+<hr>
+<h5>Legacy Splash Screen</h5>
+<p>This splash screen was displayed on startup in earlier versions of Task Coach.</p>
+<p><img src="file://%s" alt="Legacy Splash Screen" /></p>
+""" % _splash_path
+
+# Add legacy site reference
+aboutHTML += """
+<hr>
+<p>Legacy site (no longer maintained): <a href="https://taskcoach.org" target="_blank">https://taskcoach.org</a></p>
+"""

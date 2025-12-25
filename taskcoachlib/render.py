@@ -134,8 +134,8 @@ if language_and_country and (
     timeWithSecondsFormat = "%I:%M:%S %p"
 else:
     timeFormat = "%H"
-    timeWithMinutesFormat = "%H:%M"  # %X includes seconds (see http://stackoverflow.com/questions/2507726)
-    timeWithSecondsFormat = "%X"
+    timeWithMinutesFormat = "%H:%M"
+    timeWithSecondsFormat = "%H:%M:%S"  # Changed from %X to match 24h format
 
 
 def rawTimeFunc(dt, minutes=True, seconds=False):

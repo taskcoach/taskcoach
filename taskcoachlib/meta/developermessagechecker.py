@@ -38,7 +38,7 @@ class DeveloperMessageChecker(threading.Thread):
     def run(self, show=True):  # pylint: disable=W0221
         try:
             message, url = self.__get_message()
-        except:  # pylint: disable=W0702
+        except Exception:
             return  # Whatever goes wrong, ignore it.
         if self.__message_is_new(message):
             return self.__notify_user(message, url, show)
@@ -98,4 +98,5 @@ class DeveloperMessageChecker(threading.Thread):
     def __retrieve_message_file(self):
         """Retrieve the message file from the website. Catching exceptions
         is a caller responsibility."""
-        return self.__urlopen(data.message_url)
+        # Legacy: message checking disabled
+        raise Exception("Message checking disabled")

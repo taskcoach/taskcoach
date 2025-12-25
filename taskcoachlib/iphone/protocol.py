@@ -14,6 +14,19 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+DESIGN NOTE (Twisted Removal - 2024):
+Previously used Twisted's Protocol and ServerFactory for the iPhone sync
+server. Now uses Python's socketserver module which provides similar
+functionality without Twisted dependency.
+
+Key changes:
+- Twisted Protocol → socketserver.BaseRequestHandler subclass
+- Twisted ServerFactory → socketserver.ThreadingTCPServer
+- reactor.listenTCP() → ThreadingTCPServer.serve_forever() in thread
+- reactor.callLater() → wx.CallLater() for delayed close
+
+The sync protocol logic is preserved - only the network layer is replaced.
 """
 
 # pylint: disable=W0201,E1101
@@ -32,8 +45,9 @@ from taskcoachlib.domain.effort import Effort
 
 from taskcoachlib.i18n import _
 
-from twisted.internet.protocol import Protocol, ServerFactory
-from twisted.internet.error import CannotListenError
+# Replace Twisted with socketserver
+import socketserver
+import threading
 
 import wx, struct, random, time, hashlib, io, socket, os
 
@@ -493,100 +507,237 @@ class State(object):
 _PROTOVERSION = 5
 
 
-class IPhoneHandler(Protocol):
-    def __init__(self):
+class SocketTransport:
+    """
+    Transport wrapper providing Twisted-compatible interface for socket.
+
+    DESIGN NOTE (Twisted Removal - 2024):
+    This class wraps a raw socket to provide the same interface that the
+    State classes expect (write, loseConnection). This maintains compatibility
+    with the existing protocol state machine.
+    """
+
+    def __init__(self, sock):
+        self.socket = sock
+        self._closed = False
+
+    def write(self, data):
+        """Write data to the socket."""
+        if not self._closed:
+            try:
+                if isinstance(data, str):
+                    data = data.encode('latin-1')
+                self.socket.sendall(data)
+            except (socket.error, OSError):
+                pass
+
+    def loseConnection(self):
+        """Close the connection."""
+        if not self._closed:
+            self._closed = True
+            try:
+                self.socket.close()
+            except (socket.error, OSError):
+                pass
+
+
+class IPhoneHandler:
+    """
+    Handler for iPhone sync connections.
+
+    DESIGN NOTE (Twisted Removal - 2024):
+    Previously subclassed Twisted's Protocol. Now uses a simpler design
+    that's called from IPhoneRequestHandler. The interface is maintained
+    for compatibility with the State classes.
+    """
+
+    def __init__(self, sock, window, settings, iocontroller):
+        self.transport = SocketTransport(sock)
+        self.window = window
+        self.settings = settings
+        self.iocontroller = iocontroller
         self.state = None
-        self.__buffer = ""
+        self.__buffer = b""
         self.__expecting = None
+        self._close_pending = False
         random.seed(time.time())
 
     def connectionMade(self):
+        """Called when connection is established."""
         self.transport.socket.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
         self.state = BaseState(self)
         self.state.setState(InitialState, _PROTOVERSION)
 
     def log(self, msg, *args):
+        """Log a message to the UI."""
         if self.state.ui is not None:
             self.state.ui.AddLogLine(msg % args)
 
     def _flush(self):
+        """Process buffered data."""
         while (
             self.__expecting is not None
             and len(self.__buffer) >= self.__expecting
         ):
             data = self.__buffer[: self.__expecting]
             self.__buffer = self.__buffer[self.__expecting :]
+            # Convert bytes to string for state machine compatibility
+            if isinstance(data, bytes):
+                data = data.decode('latin-1')
             self.state.collect_incoming_data(data)
             self.state.found_terminator()
 
     def set_terminator(self, terminator):
+        """Set the number of bytes expected for next read."""
         self.__expecting = terminator
         self._flush()
 
     def close_when_done(self):
-        # XXX: without this delay, the other side sometimes doesn't "notice" the socket has been
-        # closed... I should take a look with Wireshark...
-        from twisted.internet import reactor
+        """
+        Close connection after a short delay.
 
-        reactor.callLater(0.5, self.transport.loseConnection)
+        NOTE: Without this delay, the other side sometimes doesn't notice
+        the socket has been closed.
+        """
+        self._close_pending = True
+        # Use wx.CallLater instead of reactor.callLater
+        wx.CallLater(500, self._do_close)  # 500ms = 0.5 seconds
+
+    def _do_close(self):
+        """Actually close the connection."""
+        self.transport.loseConnection()
 
     def dataReceived(self, data):
+        """Process received data."""
+        if isinstance(data, str):
+            data = data.encode('latin-1')
         self.__buffer += data
         self._flush()
 
-    def connectionLost(self, reason):
+    def connectionLost(self, reason=None):
+        """Called when connection is lost."""
         self.state.handleClose()
 
     def push(self, data):
+        """Send data to the client."""
         self.transport.write(data)
 
+    def handle(self):
+        """
+        Main handler loop - processes data until connection closes.
 
-class IPhoneAcceptor(ServerFactory):
-    protocol = IPhoneHandler
+        Called by IPhoneRequestHandler to process the connection.
+        """
+        self.connectionMade()
+        sock = self.transport.socket
+
+        try:
+            while not self.transport._closed:
+                try:
+                    data = sock.recv(4096)
+                    if not data:
+                        break
+                    self.dataReceived(data)
+                except socket.timeout:
+                    continue
+                except (socket.error, OSError):
+                    break
+        finally:
+            self.connectionLost(None)
+
+
+class IPhoneRequestHandler(socketserver.BaseRequestHandler):
+    """
+    socketserver request handler for iPhone connections.
+
+    DESIGN NOTE (Twisted Removal - 2024):
+    This replaces Twisted's Protocol/Factory pattern with socketserver.
+    Each connection spawns a new handler in its own thread.
+    """
+
+    def handle(self):
+        """Handle an incoming connection."""
+        # Check password before proceeding
+        password = self.server.settings.get("iphone", "password")
+        if not password:
+            wx.CallAfter(
+                wx.MessageBox,
+                _(
+                    """An iPhone or iPod Touch tried to connect to Task Coach,\n"""
+                    """but no password is set. Please set a password in the\n"""
+                    """iPhone section of the configuration and try again."""
+                ),
+                _("Error"),
+                wx.OK,
+            )
+            return
+
+        # Create and run handler
+        handler = IPhoneHandler(
+            self.request,
+            self.server.window,
+            self.server.settings,
+            self.server.iocontroller
+        )
+        handler.handle()
+
+
+class IPhoneAcceptor:
+    """
+    TCP server acceptor for iPhone sync connections.
+
+    DESIGN NOTE (Twisted Removal - 2024):
+    Previously subclassed Twisted's ServerFactory and used reactor.listenTCP().
+    Now uses socketserver.ThreadingTCPServer which provides similar functionality
+    without Twisted dependency. The server runs in a background thread.
+    """
 
     def __init__(self, window, settings, iocontroller):
-        from twisted.internet import reactor
-
         self.window = window
         self.settings = settings
         self.iocontroller = iocontroller
+        self._server = None
+        self._server_thread = None
+        self.port = None
 
+        # Try to bind to a port in range 4096-8191
         for port in range(4096, 8192):
             try:
-                self.__listening = reactor.listenTCP(port, self, backlog=5)
-            except CannotListenError:
-                pass
-            else:
+                # Create server with SO_REUSEADDR
+                self._server = socketserver.ThreadingTCPServer(
+                    ('', port),
+                    IPhoneRequestHandler
+                )
+                self._server.socket.setsockopt(
+                    socket.SOL_SOCKET, socket.SO_REUSEADDR, 1
+                )
+                # Store references on server for handler access
+                self._server.window = window
+                self._server.settings = settings
+                self._server.iocontroller = iocontroller
+                self.port = port
                 break
+            except OSError:
+                continue
         else:
             raise RuntimeError("Could not find a port to bind to.")
 
-        self.port = port
-
-    def buildProtocol(self, addr):
-        password = self.settings.get("iphone", "password")
-        if password:
-            protocol = ServerFactory.buildProtocol(self, addr)
-            protocol.window = self.window
-            protocol.settings = self.settings
-            protocol.iocontroller = self.iocontroller
-            return protocol
-
-        wx.MessageBox(
-            _(
-                """An iPhone or iPod Touch tried to connect to Task Coach,\n"""
-                """but no password is set. Please set a password in the\n"""
-                """iPhone section of the configuration and try again."""
-            ),
-            _("Error"),
-            wx.OK,
+        # Start server in background thread
+        self._server_thread = threading.Thread(
+            target=self._server.serve_forever,
+            daemon=True
         )
-
-        return None
+        self._server_thread.start()
 
     def close(self):
-        self.__listening.stopListening()
-        self.__listening = None
+        """Stop the server."""
+        if self._server is not None:
+            self._server.shutdown()
+            self._server.server_close()
+            self._server = None
+        if self._server_thread is not None:
+            self._server_thread.join(timeout=1.0)
+            self._server_thread = None
 
 
 class BaseState(State):  # pylint: disable=W0223

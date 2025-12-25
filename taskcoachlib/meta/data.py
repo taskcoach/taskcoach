@@ -21,13 +21,54 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # pylint: disable=C0103
 
 # Edit these for every release:
+# IMPORTANT: Always increment version_patch AND update release_day/release_month below!
 
-version = "1.5.0"  # Current version number of the application
+version = "2.0.0"  # Current version number of the application
+version_patch = "75"  # Patch level - INCREMENT THIS AND UPDATE DATE BELOW!
+version_full = f"{version}.{version_patch}"  # Full version string: 2.0.0.75
+
+
+def _get_git_commit_hash():
+    """Dynamically get the current git commit hash at runtime.
+
+    Returns the short (7-char) commit hash, or empty string if not in a git repo
+    or git is not available.
+    """
+    import subprocess
+    import os
+
+    try:
+        # Get the directory where this file is located
+        this_dir = os.path.dirname(os.path.abspath(__file__))
+        # Run git rev-parse to get the short commit hash
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=this_dir,
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+    except (subprocess.SubprocessError, FileNotFoundError, OSError):
+        pass  # git not available or not in a git repo
+    return ""
+
+
+# Get git commit hash dynamically (empty string if not available)
+git_commit_hash = _get_git_commit_hash()
+# For display purposes, show "(n/a)" if no commit hash available
+version_commit = git_commit_hash if git_commit_hash else "(n/a)"
+
 tskversion = 37  # Current version number of the task file format, changed to 37 for release 1.3.23.
-release_day = "5"  # Day number of the release, 1-31, as string
-release_month = "September"  # Month of the release in plain English
-release_year = "2020"  # Year of the release as string
+release_day = "24"  # Day number of the release, 1-31, as string
+release_month = "December"  # Month of the release in plain English
+release_year = "2025"  # Year of the release as string
 release_status = "stable"  # One of 'alpha', 'beta', 'stable'
+
+# Legacy: keep version_with_patch for backwards compatibility
+version_with_patch = version_full
+git_commit_count = version_patch
 
 # No editing needed below this line for doing a release.
 
@@ -99,31 +140,19 @@ author_unicode = "%s %s, Jérôme Laheurte, and Aaron Wolf" % (
     author_first,
     author_last,
 )
-author_email = "developers@taskcoach.org"
+author_email = "https://github.com/taskcoach/taskcoach/issues"
 
 filename = name.replace(" ", "")
 filename_lower = filename.lower()
 
-url = "http://taskcoach.org/"  # Don't remove the trailing slash, other code is assuming it will be there
-screenshot = (
-    url
-    + "screenshots/Windows/0.71.2-Windows_XP-Tasks_categories_and_effort.png"
-)
-icon = url + "taskcoach.png"
-pad = url + "pad.xml"
-version_url = url + "version.txt"
-message_url = url + "messages.txt"
-download = url + "download.html"
-dist_download_prefix = "http://downloads.sourceforge.net/%s" % filename_lower
+url = "https://github.com/taskcoach/taskcoach"  # Project homepage (GitHub)
+github_url = url  # Alias for backwards compatibility
 faq_url = "https://answers.launchpad.net/taskcoach/+faqs"
-sf_tracker_url = "https://sourceforge.net/tracker/"
-bug_report_url = sf_tracker_url + "?func=add&group_id=130831&atid=719134"
-known_bugs_url = sf_tracker_url + "?group_id=130831&atid=719134&status=1"
-support_request_url = sf_tracker_url + "?group_id=130831&atid=719135"
-feature_request_url = "http://taskcoach.uservoice.com"
-translations_url = "https://translations.launchpad.net/taskcoach"
-donate_url = url + "givesupport.html"
-i18n_url = url + "i18n.html"
+bug_report_url = github_url + "/issues"  # GitHub issues for bug reports
+known_bugs_url = github_url + "/issues"  # GitHub issues for known bugs
+support_request_url = github_url + "/issues"  # GitHub issues for support
+feature_request_url = github_url + "/issues"  # GitHub issues for feature requests
+translations_url = github_url + "/pulls"  # GitHub pull requests for translations
 
 announcement_addresses = (
     "taskcoach@yahoogroups.com, python-announce-list@python.org"
@@ -168,7 +197,9 @@ platform = "Any"
 pythonversion = "2.6"
 wxpythonversionnumber = "3.0.0.0"
 wxpythonversion = "%s-unicode" % wxpythonversionnumber
-twistedversionnumber = "10.0"
+# NOTE (Twisted Removal - 2024): Twisted is no longer required.
+# Replaced with native wxPython event handling, watchdog, and socketserver.
+watchdogversionnumber = "3.0.0"
 igraphversionnumber = "0.7"
 
 languages = {

@@ -42,8 +42,11 @@ class TemplateList(object):
             return
         try:
             return TemplateReader(fd).read()
-        except:
-            pass
+        except Exception as e:
+            import sys
+            print(f"Error reading template {filename}: {e}", file=sys.stderr)
+            import traceback
+            traceback.print_exc()
         finally:
             fd.close()
 
@@ -60,7 +63,7 @@ class TemplateList(object):
         if os.path.exists(listName):
             try:
                 filenames = pickle.load(open(listName, "rb"))
-            except:
+            except (OSError, pickle.UnpicklingError, EOFError):
                 pass
         return filenames
 

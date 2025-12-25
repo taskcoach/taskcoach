@@ -1,0 +1,58 @@
+Source: taskcoach
+Section: productivity
+Priority: optional
+Maintainer: Task Coach developers <developers@taskcoach.org>
+Build-Depends: debhelper-compat (= 13),
+               dh-python,
+               python3-all,
+               python3-setuptools,
+               python3-distro
+Standards-Version: 4.6.2
+Homepage: https://github.com/taskcoach/taskcoach
+Rules-Requires-Root: no
+
+Package: taskcoach
+Architecture: all
+Depends: ${python3:Depends},
+         ${misc:Depends},
+         python3-wxgtk4.0,
+         python3-six,
+         python3-pubsub,
+         python3-watchdog,
+         python3-chardet,
+         python3-dateutil,
+         python3-pyparsing,
+         python3-lxml,
+         python3-xdg,
+         python3-keyring,
+         python3-numpy,
+         python3-fasteners,
+         libxss1,
+         xdg-utils
+Recommends: python3-zeroconf,
+            python3-squaremap
+Suggests: python3-gntp
+Description: Personal task manager with support for composite tasks
+ Task Coach is a free open source todo manager. It grew out of frustration
+ about other programs not handling composite tasks well. In addition to
+ flexible composite tasks, Task Coach has grown to include prerequisites,
+ prioritizing, effort tracking, category tags, budgets, notes, and many
+ other features.
+ .
+ However, users are not forced to use all these features; Task Coach can
+ be as simple or complex as you need it to be.
+ .
+ Features include:
+  * Composite tasks (tasks with subtasks)
+  * Task prerequisites
+  * Effort tracking and time registration
+  * Categories and tags
+  * Budget tracking
+  * Notes attachment
+  * Multiple views (tree, list, calendar)
+  * Cross-platform (Windows, macOS, Linux)
+ .
+ Optional features:
+  * python3-zeroconf: iPhone sync service discovery
+  * python3-squaremap: Hierarchical data visualization
+  * python3-gntp: Growl notification support (not available in Bookworm)

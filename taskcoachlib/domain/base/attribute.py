@@ -17,8 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
+from weakref import WeakSet
 import weakref
-from taskcoachlib.thirdparty._weakrefset import WeakSet
 
 
 class Attribute(object):

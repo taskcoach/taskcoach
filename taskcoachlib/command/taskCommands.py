@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 
+from pubsub import pub
 from taskcoachlib import patterns
 from taskcoachlib.domain import task, effort, date
 from taskcoachlib.i18n import _
@@ -62,47 +63,59 @@ class DragAndDropTaskCommand(base.OrderingDragAndDropCommand):
 
     def getItemsToSave(self):
         toSave = super().getItemsToSave()
-        if self.part != 0:
+        if self._isPrereqOrDepDrop():
             toSave.extend(self.getSiblings())
         return list(
             set(toSave)
         )  # Because parent may have added siblings as well
 
+    def _isPrereqOrDepDrop(self):
+        """Check if this is a prerequisite or dependency column drop."""
+        return self.dropColumnName in ("prerequisites", "dependencies")
+
+    def _isPrereqDrop(self):
+        """Check if dropping on prerequisites column."""
+        return self.dropColumnName == "prerequisites"
+
+    def _isDepDrop(self):
+        """Check if dropping on dependencies column."""
+        return self.dropColumnName == "dependencies"
+
     def do_command(self):
-        if self.part == 0 or self.isOrdering():
-            super().do_command()
-        else:
-            if self.part == -1:
-                # Up part. Add dropped items as prerequisites of dropped on item.
-                self._itemToDropOn.addPrerequisites(self.items)
-                self._itemToDropOn.addTaskAsDependencyOf(self.items)
-            else:
-                # Down. Add dropped on item as prerequisite of dropped items.
-                for item in self.items:
-                    item.addPrerequisites([self._itemToDropOn])
-                    item.addTaskAsDependencyOf([self._itemToDropOn])
-
-    def undo_command(self):
-        if self.part == 0 or self.isOrdering():
-            super().undo_command()
-        elif self.part == -1:
-            self._itemToDropOn.removePrerequisites(self.items)
-            self._itemToDropOn.removeTaskAsDependencyOf(self.items)
-        else:
-            for item in self.items:
-                item.removePrerequisites([self._itemToDropOn])
-                item.removeTaskAsDependencyOf([self._itemToDropOn])
-
-    def redo_command(self):
-        if self.part == 0 or self.isOrdering():
-            super().redo_command()
-        elif self.part == -1:
+        if self._isPrereqDrop():
+            # Dropped on prerequisites column: make dragged items prerequisites of drop target
             self._itemToDropOn.addPrerequisites(self.items)
             self._itemToDropOn.addTaskAsDependencyOf(self.items)
-        else:
+        elif self._isDepDrop():
+            # Dropped on dependencies column: make drop target a prerequisite of dragged items
             for item in self.items:
                 item.addPrerequisites([self._itemToDropOn])
                 item.addTaskAsDependencyOf([self._itemToDropOn])
+        else:
+            # Drop on other columns: make child (change parent)
+            super().do_command()
+
+    def undo_command(self):
+        if self._isPrereqDrop():
+            self._itemToDropOn.removePrerequisites(self.items)
+            self._itemToDropOn.removeTaskAsDependencyOf(self.items)
+        elif self._isDepDrop():
+            for item in self.items:
+                item.removePrerequisites([self._itemToDropOn])
+                item.removeTaskAsDependencyOf([self._itemToDropOn])
+        else:
+            super().undo_command()
+
+    def redo_command(self):
+        if self._isPrereqDrop():
+            self._itemToDropOn.addPrerequisites(self.items)
+            self._itemToDropOn.addTaskAsDependencyOf(self.items)
+        elif self._isDepDrop():
+            for item in self.items:
+                item.addPrerequisites([self._itemToDropOn])
+                item.addTaskAsDependencyOf([self._itemToDropOn])
+        else:
+            super().redo_command()
 
 
 class DeleteTaskCommand(base.DeleteCommand, EffortCommand):
@@ -247,17 +260,29 @@ class MarkCompletedCommand(base.SaveStateMixin, EffortCommand):
         self.saveStates(itemsToSave)
 
     def do_command(self):
-        super().do_command()
-        for item in self.items:
-            item.setCompletionDateTime(task.Task.suggestedCompletionDateTime())
+        pub.sendMessage("command.aboutToBulkModify")
+        try:
+            super().do_command()
+            for item in self.items:
+                item.setCompletionDateTime(task.Task.suggestedCompletionDateTime())
+        finally:
+            pub.sendMessage("command.justBulkModified")
 
     def undo_command(self):
-        self.undoStates()
-        super().undo_command()
+        pub.sendMessage("command.aboutToBulkModify")
+        try:
+            self.undoStates()
+            super().undo_command()
+        finally:
+            pub.sendMessage("command.justBulkModified")
 
     def redo_command(self):
-        self.redoStates()
-        super().redo_command()
+        pub.sendMessage("command.aboutToBulkModify")
+        try:
+            self.redoStates()
+            super().redo_command()
+        finally:
+            pub.sendMessage("command.justBulkModified")
 
     def tasksToStopTracking(self):
         return self.items
@@ -281,20 +306,32 @@ class MarkActiveCommand(base.SaveStateMixin, base.BaseCommand):
         self.saveStates(itemsToSave)
 
     def do_command(self):
-        super().do_command()
-        for item in self.items:
-            item.setActualStartDateTime(
-                task.Task.suggestedActualStartDateTime()
-            )
-            item.setCompletionDateTime(date.DateTime())
+        pub.sendMessage("command.aboutToBulkModify")
+        try:
+            super().do_command()
+            for item in self.items:
+                item.setActualStartDateTime(
+                    task.Task.suggestedActualStartDateTime()
+                )
+                item.setCompletionDateTime(date.DateTime())
+        finally:
+            pub.sendMessage("command.justBulkModified")
 
     def undo_command(self):
-        self.undoStates()
-        super().undo_command()
+        pub.sendMessage("command.aboutToBulkModify")
+        try:
+            self.undoStates()
+            super().undo_command()
+        finally:
+            pub.sendMessage("command.justBulkModified")
 
     def redo_command(self):
-        self.redoStates()
-        super().redo_command()
+        pub.sendMessage("command.aboutToBulkModify")
+        try:
+            self.redoStates()
+            super().redo_command()
+        finally:
+            pub.sendMessage("command.justBulkModified")
 
 
 class MarkInactiveCommand(base.SaveStateMixin, base.BaseCommand):
@@ -315,18 +352,30 @@ class MarkInactiveCommand(base.SaveStateMixin, base.BaseCommand):
         self.saveStates(itemsToSave)
 
     def do_command(self):
-        super().do_command()
-        for item in self.items:
-            item.setActualStartDateTime(date.DateTime())
-            item.setCompletionDateTime(date.DateTime())
+        pub.sendMessage("command.aboutToBulkModify")
+        try:
+            super().do_command()
+            for item in self.items:
+                item.setActualStartDateTime(date.DateTime())
+                item.setCompletionDateTime(date.DateTime())
+        finally:
+            pub.sendMessage("command.justBulkModified")
 
     def undo_command(self):
-        self.undoStates()
-        super().undo_command()
+        pub.sendMessage("command.aboutToBulkModify")
+        try:
+            self.undoStates()
+            super().undo_command()
+        finally:
+            pub.sendMessage("command.justBulkModified")
 
     def redo_command(self):
-        self.redoStates()
-        super().redo_command()
+        pub.sendMessage("command.aboutToBulkModify")
+        try:
+            self.redoStates()
+            super().redo_command()
+        finally:
+            pub.sendMessage("command.justBulkModified")
 
 
 class StartEffortCommand(EffortCommand):

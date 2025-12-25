@@ -49,6 +49,8 @@ class VirtualListCtrl(
             *args,
             **kwargs
         )
+        # Override GetEffectiveMinSize() which returns BestSize - allows sizer to shrink widget
+        self.SetMinSize((100, 50))
         self.__parent = parent
         self.bindEventHandlers(selectCommand, editCommand)
 
@@ -175,10 +177,17 @@ class VirtualListCtrl(
         return index, flags, column
 
     def curselection(self):
-        return [
-            self.getItemWithIndex(index)
-            for index in self.__curselection_indices()
-        ]
+        # Guard against deleted C++ object - can happen when wx.CallAfter
+        # callback executes after window destruction (e.g., closing nested dialogs)
+        try:
+            # Filter out None values - getItemWithIndex can return None for some indices
+            return [
+                item for index in self.__curselection_indices()
+                if (item := self.getItemWithIndex(index)) is not None
+            ]
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            return []
 
     def select(self, items):
         indices = [self.__parent.getIndexOfItem(item) for item in items]

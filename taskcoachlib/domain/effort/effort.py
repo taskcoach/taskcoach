@@ -21,9 +21,11 @@ from taskcoachlib import patterns
 from taskcoachlib.domain import date, base, task
 from pubsub import pub
 from . import base as baseeffort
+import functools
 import weakref
 
 
+@functools.total_ordering
 class Effort(baseeffort.BaseEffort, base.Object):
     def __init__(self, task=None, start=None, stop=None, *args, **kwargs):
         super().__init__(
@@ -70,6 +72,22 @@ class Effort(baseeffort.BaseEffort, base.Object):
         return "Effort(%s, %s, %s)" % (self.task(), self._start, self._stop)
 
     __repr__ = __str__
+
+    def __eq__(self, other):
+        if not isinstance(other, Effort):
+            return NotImplemented
+        return self.id() == other.id()
+
+    def __lt__(self, other):
+        if not isinstance(other, Effort):
+            return NotImplemented
+        # Compare by start time first, then stop time, then id for total ordering
+        self_stop = self._stop if self._stop is not None else date.DateTime.max
+        other_stop = other._stop if other._stop is not None else date.DateTime.max
+        return (self._start, self_stop, self.id()) < (other._start, other_stop, other.id())
+
+    def __hash__(self):
+        return hash(self.id())
 
     def __getstate__(self):
         state = super().__getstate__()

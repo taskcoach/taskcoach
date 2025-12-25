@@ -49,26 +49,53 @@ def majorAndMinorPythonVersion():
         return info[0], info[1]
 
 
+# Dependency Installation Strategy
+# ================================
+# On Linux distros: Use distro packages where available, pip fallback for missing.
+# On Windows/macOS: Use pip for all dependencies.
+#
+# IMPORTANT: Some packages have minimum version requirements:
+# - pyparsing>=3.1.3: Required for pp.Tag() in delta_time.py
+# - watchdog>=3.0.0: Required for file monitoring API
+# - fasteners>=0.19: Required for file locking API
+# - zeroconf>=0.50.0: Required for iPhone sync
+#
+# Debian Bookworm note: pyparsing (3.0.9) and watchdog (2.2.1) are too old,
+# must pip install newer versions. See docs/DEBIAN_BOOKWORM_SETUP.md
+#
+# Optional dependencies (in extras_require):
+# - squaremap: Hierarchic data visualization (not in Fedora/Arch repos)
+# - gntp: Growl notifications (Windows/Mac only)
+# - desktop3: Removed - bundled in taskcoachlib/thirdparty/desktop
+
 install_requires = [
-    "six>=1.16.0",
-    "desktop3",
+    "six",
     "pypubsub",
-    "twisted",
-    "chardet>=5.2.0",
-    "python-dateutil>=2.9.0",
-    "pyparsing>=3.1.2",
+    "watchdog>=3.0.0",  # File monitoring - Bookworm too old, needs pip
+    "chardet",
+    "python-dateutil",
+    "pyparsing>=3.1.3",  # For pp.Tag() - Bookworm too old, needs pip
     "lxml",
     "pyxdg",
     "keyring",
     "numpy",
-    # FIXME: It's been replaced by new library "fasteners"
-    "lockfile>=0.12.2",
-    "gntp>=1.0.3",
+    "fasteners>=0.19",  # File locking
+    "zeroconf>=0.50.0",  # iPhone sync
 ]
+
+# Optional/platform-specific dependencies
+extras_require = {
+    "squaremap": ["squaremap>=1.0.5"],  # Not in Fedora/Arch repos
+    "growl": ["gntp>=1.0.3"],            # Growl notifications (Mac/Windows)
+    "all": ["squaremap>=1.0.5", "gntp>=1.0.3"],
+}
 
 system = platform.system()
 if system == "Windows":
-    install_requires.append("WMI>=1.5.1")
+    install_requires.append("WMI")
+    install_requires.append("gntp")  # Growl notifications
+elif system == "Darwin":
+    install_requires.append("gntp")  # Growl notifications
 
 setup_requires = ["distro"]
 
@@ -83,11 +110,15 @@ setupOptions = {
     "version": meta.version,
     "url": meta.url,
     "license": meta.license,
-    "download_url": meta.download,
     "install_requires": install_requires,
+    "extras_require": extras_require,
     "tests_require": tests_requires,
     "setup_requires": setup_requires,
     "packages": findPackages("taskcoachlib") + findPackages("buildlib"),
+    "package_data": {
+        "taskcoachlib.gui": ["icons/*.png"],
+    },
+    "include_package_data": True,
     "scripts": ["taskcoach.py"],
     "classifiers": [
         "Development Status :: 5 - Production/Stable",

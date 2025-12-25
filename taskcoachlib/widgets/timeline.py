@@ -46,8 +46,17 @@ class Timeline(tooltip.ToolTipMixin, timeline.TimeLine):
             self.__selection = []
         else:
             self.__selection = [event.node]
-        wx.CallAfter(self.selectCommand)
+        wx.CallAfter(self.__safeSelectCommand)
         event.Skip()
+
+    def __safeSelectCommand(self):
+        """Safely call selectCommand, guarding against deleted C++ objects."""
+        try:
+            if self:
+                self.selectCommand()
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            pass
 
     def select(self, items):
         pass
@@ -76,8 +85,17 @@ class Timeline(tooltip.ToolTipMixin, timeline.TimeLine):
         self.OnClickRelease(event)  # Make sure the node is selected
         self.SetFocus()
         wx.CallAfter(
-            self.PopupMenu, self.popupMenu
+            self.__safePopupMenu
         )  # Make sure the select event has been processed
+
+    def __safePopupMenu(self):
+        """Safely show popup menu, guarding against deleted C++ objects."""
+        try:
+            if self:
+                self.PopupMenu(self.popupMenu)
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            pass
 
     def curselection(self):
         return self.__selection

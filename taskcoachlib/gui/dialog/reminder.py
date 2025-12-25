@@ -82,7 +82,6 @@ class ReminderDialog(patterns.Observer, sized_controls.SizedDialog):
             wx.StaticText(pane, label=label)
 
         self.snoozeOptions = wx.ComboBox(pane, style=wx.CB_READONLY)
-        sizer.Add(self.snoozeOptions, flag=wx.ALIGN_CENTER_VERTICAL)
         snoozeTimesUserWantsToSee = [0] + self.settings.getlist(
             "view", "snoozetimes"
         )

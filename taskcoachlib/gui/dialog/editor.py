@@ -90,7 +90,7 @@ class Page(patterns.Observer, widgets.BookPage):
     def close(self):
         self.removeInstance()
         for entry in list(self.entries().values()):
-            if isinstance(entry, widgets.DateTimeCtrl):
+            if hasattr(entry, 'Cleanup'):
                 entry.Cleanup()
 
 
@@ -573,6 +573,7 @@ class DatesPage(Page):
             commandClass,
             entry.EVT_DATETIMEENTRY,
             eventType,
+            commit_on_focus_loss=True,  # Only commit when focus leaves the field
             keep_delta=keep_delta,
             callback=(
                 self.__onPlannedStartDateTimeChanged
@@ -612,6 +613,7 @@ class DatesPage(Page):
             command.EditReminderDateTimeCommand,
             entry.EVT_DATETIMEENTRY,
             self.items[0].reminderChangedEventType(),
+            commit_on_focus_loss=True,  # Only commit when focus leaves the field
         )
         self.addEntry(
             _("Reminder"),
@@ -956,17 +958,12 @@ class PageWithViewer(Page):
         raise NotImplementedError
 
     def close(self):
-        # I guess this happens because of CallAfter in context of #1437...
+        # Clean up the viewer immediately now that the SearchCtrl timer
+        # cleanup is properly implemented (see PYTHON3_MIGRATION_NOTES.md)
         if hasattr(self, "viewer"):
             self.viewer.detach()
-            # Don't notify the viewer about any changes anymore, it's about
-            # to be deleted, but don't delete it too soon.
-            wx.CallAfter(self.deleteViewer)
-        super().close()
-
-    def deleteViewer(self):
-        if hasattr(self, "viewer"):
             del self.viewer
+        super().close()
 
 
 class EffortPage(PageWithViewer):
@@ -1057,9 +1054,11 @@ class CategoriesPage(PageWithViewer):
         self.viewer.refreshItems(*list(event.values()))
 
     def entries(self):
+        # Always include "categories" key so setFocus() can find this page
+        # before it's realized. The actual viewer is used if available.
         if self.__realized and hasattr(self, "viewer"):
             return dict(firstEntry=self.viewer, categories=self.viewer)
-        return dict()
+        return dict(firstEntry=self, categories=self)
 
 
 class LocalAttachmentViewer(viewer.AttachmentViewer):  # pylint: disable=W0223
@@ -1265,8 +1264,9 @@ class EditBook(widgets.Notebook):
         for page_name in page_names:
             page = self.createPage(page_name, task_file, items_are_new)
             self.AddPage(page, page.pageTitle, page.pageIcon)
-        width, height = self.__get_minimum_page_size()
-        self.SetMinSize((width, self.GetHeightForPageHeight(height)))
+        # DISABLED: SetMinSize was locking entire notebook to max page size
+        # width, height = self.__get_minimum_page_size()
+        # self.SetMinSize((width, self.GetHeightForPageHeight(height)))
 
     def onPageChanged(self, event):
         self.GetPage(event.Selection).selected()
@@ -1405,9 +1405,11 @@ class EditBook(widgets.Notebook):
         perspective = self.perspective()
         if perspective:
             try:
-                self.LoadPerspective(perspective)
-            except:  # pylint: disable=W0702
+                # DISABLED: LoadPerspective was restoring stale AuiNotebook perspective with broken sizing
+                # self.LoadPerspective(perspective)
                 pass
+            except Exception:
+                pass  # Perspective loading may fail
         if items_are_new:
             current_page = (
                 self.getPageIndex("subject") or 0
@@ -1449,6 +1451,10 @@ class EditBook(widgets.Notebook):
         section = self.__settings_section_name()
         if not self.settings.has_section(section):
             self.__create_settings_section(section)
+        else:
+            # Ensure parent_offset exists for backward compatibility with old sections
+            if not self.settings.has_option(section, "parent_offset"):
+                self.settings.init(section, "parent_offset", "(-1, -1)")
         return section
 
     def __settings_section_name(self):
@@ -1468,6 +1474,7 @@ class EditBook(widgets.Notebook):
                 pages=str(self.__pages_to_create()),
                 size="(-1, -1)",
                 position="(-1, -1)",
+                parent_offset="(-1, -1)",  # Offset from parent window for multi-monitor support
                 maximized="False",
             ).items()
         ):
@@ -1524,9 +1531,73 @@ class AttachmentEditBook(EditBook):
         return targetItem in self.items
 
 
+class NullableDateTimeWrapper:
+    """Virtual wrapper linking a checkbox with a DateTimeEntry.
+
+    GetValue returns None when checkbox is unchecked, otherwise returns
+    the datetime value. The checkbox and datetime entry remain separate
+    widgets for grid layout, but this wrapper provides unified GetValue.
+    """
+
+    def __init__(self, checkbox, datetime_entry):
+        self._checkbox = checkbox
+        self._datetime_entry = datetime_entry
+
+    def GetValue(self):
+        """Return None if checkbox unchecked, else datetime value."""
+        try:
+            if not self._checkbox.GetValue():
+                return None
+            return self._datetime_entry.GetValue()
+        except RuntimeError:
+            return None  # Widget already deleted (dialog closed)
+
+    def SetValue(self, value):
+        """Set value - None unchecks checkbox, otherwise sets datetime."""
+        try:
+            if value is None:
+                self._checkbox.SetValue(False)
+                self._datetime_entry.Enable(False)
+            else:
+                self._checkbox.SetValue(True)
+                self._datetime_entry.Enable(True)
+                self._datetime_entry.SetValue(value)
+        except RuntimeError:
+            pass  # Widget already deleted (dialog closed)
+
+    def Bind(self, event_type, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
+        """Forward bind to datetime entry."""
+        self._datetime_entry.Bind(event_type, handler, source, id, id2)
+
+    def LoadChoices(self, choices):
+        """Forward to datetime entry."""
+        self._datetime_entry.LoadChoices(choices)
+
+    def SetRelativeChoicesStart(self, start=None):
+        """Forward to datetime entry."""
+        self._datetime_entry.SetRelativeChoicesStart(start)
+
+    def GetChildren(self):
+        """Return children for focus tracking."""
+        return self._datetime_entry.GetChildren()
+
+    def SetFocus(self):
+        """Forward focus to datetime entry."""
+        self._datetime_entry.SetFocus()
+
+    def Enable(self, enable=True):
+        """Enable/disable the datetime entry."""
+        self._datetime_entry.Enable(enable)
+        return True
+
+    def Cleanup(self):
+        """Forward cleanup to datetime entry."""
+        self._datetime_entry.Cleanup()
+
+
 class EffortEditBook(Page):
     domainObject = "effort"
-    columns = 3
+    columns = 4  # Label, Checkbox, DateTime, Button
 
     def __init__(
         self,
@@ -1621,24 +1692,27 @@ class EffortEditBook(Page):
 
     def __add_start_and_stop_entries(self):
         # pylint: disable=W0201,W0142
+        # Using 4 columns: Label, Checkbox, DateTime, Button
+        # Start row has empty space where Stop row has checkbox
+        # This ensures proper grid alignment
         date_time_entry_kw_args = dict(showSeconds=True)
         flags = [
-            None,
-            wx.ALIGN_RIGHT | wx.ALL,
-            wx.ALIGN_LEFT | wx.ALL | wx.ALIGN_CENTER_VERTICAL,
-            None,
+            None,  # Label - default left align
+            wx.ALL | wx.ALIGN_CENTER_VERTICAL,  # Checkbox column
+            wx.ALL | wx.ALIGN_CENTER_VERTICAL,  # DateTime
+            wx.ALL | wx.ALIGN_CENTER_VERTICAL,  # Button
         ]
 
+        # --- Start row: Label, (empty), DateTime, Button ---
         current_start_date_time = self.items[0].getStart()
         self._startDateTimeEntry = entry.DateTimeEntry(
             self,
             self._settings,
             current_start_date_time,
             noneAllowed=False,
-            showRelative=True,
+            showRelative=False,
             **date_time_entry_kw_args
         )
-        wx.CallAfter(self._startDateTimeEntry.HideRelativeButton)
         self._startDateTimeSync = attributesync.AttributeSync(
             "getStart",
             self._startDateTimeEntry,
@@ -1647,6 +1721,7 @@ class EffortEditBook(Page):
             command.EditEffortStartDateTimeCommand,
             entry.EVT_DATETIMEENTRY,
             self.items[0].startChangedEventType(),
+            commit_on_focus_loss=True,
             callback=self.__onStartDateTimeChanged,
         )
         self._startDateTimeEntry.Bind(
@@ -1655,19 +1730,27 @@ class EffortEditBook(Page):
         start_from_last_effort_button = (
             self.__create_start_from_last_effort_button()
         )
+        # Empty panel as placeholder for checkbox column
+        start_checkbox_placeholder = wx.Panel(self, size=(1, 1))
         self.addEntry(
             _("Start"),
+            start_checkbox_placeholder,
             self._startDateTimeEntry,
             start_from_last_effort_button,
             flags=flags,
         )
 
+        # --- Stop row: Label, Checkbox, DateTime, Button ---
         current_stop_date_time = self.items[0].getStop()
-        self._stopDateTimeEntry = entry.DateTimeEntry(
+        # Create checkbox separately for proper grid column alignment
+        self._stopCheckbox = wx.CheckBox(self)
+        self._stopCheckbox.SetValue(current_stop_date_time is not None)
+
+        stop_datetime_entry = entry.DateTimeEntry(
             self,
             self._settings,
-            current_stop_date_time,
-            noneAllowed=True,
+            current_stop_date_time or date.DateTime.now(),
+            noneAllowed=False,  # Checkbox is external now
             showRelative=True,
             units=[
                 (_("Minute(s)"), 60),
@@ -1677,14 +1760,28 @@ class EffortEditBook(Page):
             ],
             **date_time_entry_kw_args
         )
+        # Disable if no stop time initially
+        if current_stop_date_time is None:
+            stop_datetime_entry.Enable(False)
+
+        # Create wrapper that combines checkbox with datetime entry
+        # Wrapper provides GetValue that returns None when unchecked
+        self._stopDateTimeEntry = NullableDateTimeWrapper(
+            self._stopCheckbox, stop_datetime_entry
+        )
+
+        # Bind checkbox to handle toggle
+        self._stopCheckbox.Bind(wx.EVT_CHECKBOX, self.__onStopCheckboxToggle)
+
         self._stopDateTimeSync = attributesync.AttributeSync(
             "getStop",
-            self._stopDateTimeEntry,
+            self._stopDateTimeEntry,  # Uses the wrapper
             current_stop_date_time,
             self.items,
             command.EditEffortStopDateTimeCommand,
             entry.EVT_DATETIMEENTRY,
             self.items[0].stopChangedEventType(),
+            commit_on_focus_loss=True,
             callback=self.__onStopDateTimeChanged,
         )
         self._stopDateTimeEntry.Bind(
@@ -1693,17 +1790,42 @@ class EffortEditBook(Page):
         stop_now_button = self.__create_stop_now_button()
         self._invalidPeriodMessage = self.__create_invalid_period_message()
         self.addEntry(
-            _("Stop"), self._stopDateTimeEntry, stop_now_button, flags=flags
+            _("Stop"),
+            self._stopCheckbox,
+            stop_datetime_entry,  # Add the actual widget, not wrapper
+            stop_now_button,
+            flags=flags,
         )
         self.__onStartDateTimeChanged(current_start_date_time)
         self._stopDateTimeEntry.LoadChoices(
             self._settings.get("feature", "sdtcspans_effort")
         )
 
-        self._stopDateTimeEntry.Bind(
+        stop_datetime_entry.Bind(
             sdtc.EVT_TIME_CHOICES_CHANGE, self.__onChoicesChanged
         )
-        self.addEntry("", self._invalidPeriodMessage)
+        # Add warning message spanning full width
+        self.addEntry(
+            self._invalidPeriodMessage,
+            flags=[wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT | wx.EXPAND]
+        )
+
+    def __onStopCheckboxToggle(self, event):
+        """Handle stop checkbox toggle - enable/disable datetime entry."""
+        if self._stopCheckbox.GetValue():
+            # Checkbox checked - enable and set to now
+            new_value = date.DateTime.now()
+            self._stopDateTimeEntry.SetValue(new_value)
+            command.EditEffortStopDateTimeCommand(
+                None, self.items, newValue=new_value
+            ).do()
+        else:
+            # Checkbox unchecked - set to None (resume tracking)
+            # Set directly on effort since command doesn't handle None
+            self._stopDateTimeEntry.SetValue(None)
+            for item in self.items:
+                item.setStop(date.DateTime.max)  # DateTime.max means None/tracking
+        self.onDateTimeChanged(event)
 
     def __create_start_from_last_effort_button(self):
         button = wx.Button(self, label=_("Start tracking from last stop time"))
@@ -1732,7 +1854,12 @@ class EffortEditBook(Page):
         self.onDateTimeChanged(event)
 
     def onStopNow(self, event):
-        command.StopEffortCommand(self._effortList, self.items).do()
+        # Stop only the specific effort(s) being edited, not all efforts for the task
+        new_value = date.DateTime.now()
+        self._stopDateTimeEntry.SetValue(new_value)
+        command.EditEffortStopDateTimeCommand(
+            None, self.items, newValue=new_value
+        ).do()
 
     def onStopDateTimeChanged(self, *args, **kwargs):
         self.onDateTimeChanged(*args, **kwargs)
@@ -1761,10 +1888,10 @@ class EffortEditBook(Page):
         """Return whether the current period is valid, i.e. the start date
         and time is earlier than the stop date and time."""
         try:
-            return (
-                self._startDateTimeEntry.GetValue()
-                < self._stopDateTimeEntry.GetValue()
-            )
+            stop_value = self._stopDateTimeEntry.GetValue()
+            if stop_value is None:
+                return True  # No stop time means effort is ongoing
+            return self._startDateTimeEntry.GetValue() < stop_value
         except AttributeError:
             return True  # Entries not created yet
 
@@ -1816,7 +1943,12 @@ class EffortEditBook(Page):
             wx.EVT_KILL_FOCUS,
             self.items[0].descriptionChangedEventType(),
         )
-        self.addEntry(_("Description"), self._descriptionEntry, growable=True)
+        # Description text box spans full width - label not needed as purpose is obvious
+        self.addEntry(
+            self._descriptionEntry,
+            flags=[wx.ALL | wx.EXPAND],
+            growable=True
+        )
 
     def setFocus(self, column_name):
         self.setFocusOnEntry(column_name)
@@ -1883,6 +2015,11 @@ class Editor(BalloonTipManager, widgets.Dialog):
             )
         self.Bind(wx.EVT_CLOSE, self.on_close_editor)
 
+        # Note: We intentionally do NOT freeze viewers while the dialog is open.
+        # Updates should propagate immediately so other windows stay in sync.
+        # The commit_on_focus_loss option on AttributeSync handles batching
+        # rapid edits into single commands.
+
         if operating_system.isMac():
             # Sigh. On OS X, if you open an editor, switch back to the main window, open
             # another editor, then hit Escape twice, the second editor disappears without any
@@ -1895,21 +2032,13 @@ class Editor(BalloonTipManager, widgets.Dialog):
         else:
             self.__timer = None
 
-        # On Mac OS X, the frame opens by default in the top-left
-        # corner of the first display. This gets annoying on a
-        # 2560x1440 27" + 1920x1200 24" dual screen...
-
-        # On Windows, for some reason, the Python 2.5 and 2.6 versions
-        # of wxPython 2.8.11.0 behave differently; on Python 2.5 the
-        # frame opens centered on its parent but on 2.6 it opens on
-        # the first display!
-
-        # On Linux this is not needed but doesn't do any harm.
-        self.CentreOnParent()
+        # Position and size handling is done by WindowGeometryTracker
+        # which will center on parent if no saved position exists, or
+        # restore the last saved position (must be on same monitor as parent)
         self.__create_ui_commands()
         self.__dimensions_tracker = (
-            windowdimensionstracker.WindowSizeAndPositionTracker(
-                self, settings, self._interior.settings_section()
+            windowdimensionstracker.WindowGeometryTracker(
+                self, settings, self._interior.settings_section(), parent=parent
             )
         )
 
@@ -1957,6 +2086,8 @@ class Editor(BalloonTipManager, widgets.Dialog):
 
     def on_close_editor(self, event):
         event.Skip()
+        # Save dialog position/size before closing
+        self.__dimensions_tracker.save()
         self._interior.close_edit_book()
         patterns.Publisher().removeObserver(self.on_item_removed)
         patterns.Publisher().removeObserver(self.on_subject_changed)
@@ -1967,6 +2098,7 @@ class Editor(BalloonTipManager, widgets.Dialog):
         if self.__timer is not None:
             IdProvider.put(self.__timer.GetId())
         IdProvider.put(self.__new_effort_id)
+        # Note: No need to thaw viewers since we don't freeze them on open anymore
         self.Destroy()
 
     def on_activate(self, event):
@@ -1983,6 +2115,14 @@ class Editor(BalloonTipManager, widgets.Dialog):
             )
 
     def __close_if_item_is_deleted(self, items):
+        # Guard against deleted C++ object - can happen when wx.CallAfter
+        # callback executes after window destruction (e.g., closing nested dialogs)
+        try:
+            if not self or self.IsBeingDeleted():
+                return
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            return
         for item in items:
             if (
                 self._interior.isDisplayingItemOrChildOfItem(item)

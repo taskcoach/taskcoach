@@ -69,7 +69,10 @@ class MainWindow(
     def __init__(
         self, iocontroller, taskFile, settings: Settings, *args, **kwargs
     ):
-        self.__splash = kwargs.pop("splash", None)
+        # Initialize with valid default size to prevent GTK warnings
+        # The WindowDimensionsTracker will set the actual saved size/position
+        if 'size' not in kwargs:
+            kwargs['size'] = (800, 600)
         super().__init__(None, -1, "", *args, **kwargs)
         # This prevents the viewers from flickering on Windows 7 when refreshed:
         if operating_system.isWindows7_OrNewer():
@@ -123,7 +126,7 @@ class MainWindow(
         if self.settings.getboolean("feature", "iphone"):
             # pylint: disable=W0612,W0404,W0702
             try:
-                from taskcoachlib.thirdparty import pybonjour
+                import zeroconf  # Check if zeroconf library is available
                 from taskcoachlib.iphone import (
                     IPhoneAcceptor,
                     BonjourServiceRegister,
@@ -144,7 +147,7 @@ class MainWindow(
                 BonjourServiceRegister(
                     self.settings, acceptor.port
                 ).addCallbacks(success, error)
-            except:
+            except Exception:
                 from taskcoachlib.gui.dialog.iphone import IPhoneBonjourDialog
 
                 dlg = IPhoneBonjourDialog(self, wx.ID_ANY, _("Warning"))
@@ -169,11 +172,16 @@ class MainWindow(
         self.__shutdown = True
 
     def _create_window_components(self):  # Not private for test purposes
-        self._create_viewer_container()
-        viewer.addViewers(self.viewer, self.taskFile, self.settings)
-        self._create_status_bar()
-        self.__create_menu_bar()
-        self.__create_reminder_controller()
+        # Freeze to prevent flickering during viewer creation
+        self.Freeze()
+        try:
+            self._create_viewer_container()
+            viewer.addViewers(self.viewer, self.taskFile, self.settings)
+            self._create_status_bar()
+            self.__create_menu_bar()
+            self.__create_reminder_controller()
+        finally:
+            self.Thaw()
         wx.CallAfter(self.viewer.componentsCreated)
 
     def _create_viewer_container(self):  # Not private for test purposes
@@ -219,13 +227,27 @@ class MainWindow(
         )
 
     def __init_window_components(self):
-        self.showToolBar(self.settings.getvalue("view", "toolbar"))
-        # We use CallAfter because otherwise the statusbar will appear at the
-        # top of the window when it is initially hidden and later shown.
-        wx.CallAfter(
-            self.showStatusBar, self.settings.getboolean("view", "statusbar")
-        )
-        self.__restore_perspective()
+        # Freeze to prevent flickering during AUI layout restoration
+        self.Freeze()
+
+        try:
+            self.showToolBar(self.settings.getvalue("view", "toolbar"))
+
+            # We use CallAfter because otherwise the statusbar will appear at the
+            # top of the window when it is initially hidden and later shown.
+            wx.CallAfter(
+                self.showStatusBar, self.settings.getboolean("view", "statusbar")
+            )
+            self.__restore_perspective()
+        finally:
+            self.Thaw()
+
+        # Reset toolbar position after perspective is loaded
+        wx.CallAfter(self._resetToolbarPosition)
+
+        # Note: Window position/size tracking uses debouncing to handle spurious
+        # events from AUI LoadPerspective() and GTK window realization.
+        # Events are bound immediately in __init__, no manual start needed.
 
     def __restore_perspective(self):
         perspective = self.settings.get("view", "perspective")
@@ -240,11 +262,10 @@ class MainWindow(
 
         try:
             self.manager.LoadPerspective(perspective)
-        except ValueError as reason:
-            # This has been reported to happen. Don't know why. Keep going
-            # if it does.
-            if self.__splash:
-                self.__splash.Destroy()
+        except Exception as reason:
+            # wxPython's AUI LoadPerspective can raise Exception (not ValueError)
+            # with "Bad perspective string" when the saved layout is corrupt.
+            # Keep going if it does.
             wx.MessageBox(
                 _(
                     """Couldn't restore the pane layout from TaskCoach.ini:
@@ -270,6 +291,12 @@ If this happens again, please make a copy of your TaskCoach.ini file """
             # incorrect when the user changes translation:
             if hasattr(pane.window, "title"):
                 pane.Caption(pane.window.title())
+            # Reset toolbar MinSize - width is derived from window, not saved.
+            # Old INI files may have hard-coded widths like minw=1840.
+            # Use GetBestSize() for height - toolbar calculates this in Realize()
+            if pane.name == "toolbar":
+                best_size = pane.window.GetBestSize()
+                pane.MinSize((-1, best_size.GetHeight()))
         self.manager.Update()
 
     def __perspective_and_settings_viewer_count_differ(self, viewer_type):
@@ -287,6 +314,8 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         pub.subscribe(self.showStatusBar, "settings.view.statusbar")
         pub.subscribe(self.showToolBar, "settings.view.toolbar")
         self.Bind(aui.EVT_AUI_PANE_CLOSE, self.onCloseToolBar)
+        # Detect toolbar drag-end and float-to-dock transitions to reset position
+        self.manager.Bind(aui.EVT_AUI_RENDER, self._onAuiRender)
 
     def __onFilenameChanged(self, filename):
         self.__filename = filename
@@ -346,6 +375,9 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         self.closeEditors()
 
         if self.__shutdown:
+            # UnInit AUI manager before window destruction to avoid
+            # wxAssertionError about pushed event handlers
+            self.manager.UnInit()
             event.Skip()
             return
         if event.CanVeto() and self.settings.getboolean(
@@ -355,6 +387,9 @@ If this happens again, please make a copy of your TaskCoach.ini file """
             self.Iconize()
         else:
             if application.Application().quitApplication():
+                # UnInit AUI manager before window destruction to avoid
+                # wxAssertionError about pushed event handlers
+                self.manager.UnInit()
                 event.Skip()
                 self.taskFile.stop()
                 self._idleController.stop()
@@ -378,8 +413,17 @@ If this happens again, please make a copy of your TaskCoach.ini file """
     def onResize(self, event):
         currentToolbar = self.manager.GetPane("toolbar")
         if currentToolbar.IsOk():
-            currentToolbar.window.SetSize((event.GetSize().GetWidth(), -1))
-            currentToolbar.window.SetMinSize((event.GetSize().GetWidth(), 42))
+            width = event.GetSize().GetWidth()
+            # Get height from toolbar's GetBestSize() - calculated during Realize()
+            best_size = currentToolbar.window.GetBestSize()
+            height = best_size.GetHeight()
+            # Set size on the window widget for current display
+            currentToolbar.window.SetSize((width, -1))
+            currentToolbar.window.SetMinSize((width, height))
+            # Use -1 for width on pane info so SavePerspective doesn't save
+            # a hard-coded width value. The toolbar width is derived from
+            # window width at runtime, not a user preference to persist.
+            currentToolbar.MinSize((-1, height))
         event.Skip()
 
     def showStatusBar(self, value=True):
@@ -427,6 +471,8 @@ If this happens again, please make a copy of your TaskCoach.ini file """
             currentToolbar.window.Destroy()
         if value:
             bar = toolbar.MainToolBar(self, self.settings, size=value)
+            # Use GetBestSize() for height - toolbar calculates this during Realize()
+            best_size = bar.GetBestSize()
             self.manager.AddPane(
                 bar,
                 aui.AuiPaneInfo()
@@ -434,17 +480,60 @@ If this happens again, please make a copy of your TaskCoach.ini file """
                 .Caption("Toolbar")
                 .ToolbarPane()
                 .Top()
-                .DestroyOnClose()
-                .LeftDockable(False)
-                .RightDockable(False),
+                .MinSize((-1, best_size.GetHeight()))
+                .DestroyOnClose(),
             )
-            # Using .Gripper(False) does not work here
-            wx.CallAfter(bar.SetGripperVisible, False)
         self.manager.Update()
 
     def onCloseToolBar(self, event):
         if event.GetPane().IsToolbar():
             self.settings.setvalue("view", "toolbar", None)
+        event.Skip()
+
+    def _resetToolbarPosition(self):
+        """Reset toolbar to position 0 to fill the dock area.
+
+        Called on startup, drag-end, and float-to-dock transitions.
+        For top/bottom docking: sticks left and fills width.
+        For left/right docking: sticks up and fills height.
+        Does nothing if toolbar is floating.
+        """
+        pane = self.manager.GetPane("toolbar")
+        if not pane.IsOk() or pane.IsFloating():
+            return
+
+        direction = pane.dock_direction
+        # Only handle docked positions: 1=top, 2=right, 3=bottom, 4=left
+        if direction not in (1, 2, 3, 4):
+            return
+
+        if pane.dock_pos != 0:
+            pane.Position(0)
+            if direction in (1, 3):  # top/bottom: fill width
+                pane.MinSize((self.GetSize().GetWidth(), -1))
+            else:  # left/right: fill height
+                pane.MinSize((-1, self.GetSize().GetHeight()))
+            self.manager.Update()
+
+    def _onAuiRender(self, event):
+        """Detect toolbar drag-end and float-to-dock to reset position."""
+        action = getattr(self.manager, '_action', 0)
+        prev_action = getattr(self, '_prev_manager_action', 0)
+
+        # Detect transition from dragging to idle
+        if prev_action != 0 and action == 0:
+            wx.CallAfter(self._resetToolbarPosition)
+
+        # Detect floating->docked transition
+        pane = self.manager.GetPane("toolbar")
+        if pane.IsOk():
+            was_floating = getattr(self, '_toolbar_was_floating', False)
+            is_floating = pane.IsFloating()
+            if was_floating and not is_floating:
+                wx.CallAfter(self._resetToolbarPosition)
+            self._toolbar_was_floating = is_floating
+
+        self._prev_manager_action = action
         event.Skip()
 
     # Viewers

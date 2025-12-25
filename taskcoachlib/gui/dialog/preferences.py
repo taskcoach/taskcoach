@@ -27,6 +27,7 @@ from taskcoachlib.meta import data
 from taskcoachlib.i18n import _
 from wx.lib.agw.hyperlink import HyperLinkCtrl
 from wx.adv import BitmapComboBox
+import ast
 import wx, calendar
 
 
@@ -260,6 +261,17 @@ class SettingsPageBase(widgets.BookPage):
         currentIcon = self.gettext(iconSection, iconSetting)
         currentSelectionIndex = imageNames.index(currentIcon)
         iconEntry.SetSelection(currentSelectionIndex)  # pylint: disable=E1101
+        # GTK's native BitmapComboBox clips icons in the closed state.
+        # Oversizing the control gives the renderer more space to work with.
+        if operating_system.isGTK():
+            longestLabel = max(
+                (artprovider.chooseableItemImages[name] for name in imageNames),
+                key=len
+            )
+            textWidth, _ = iconEntry.GetTextExtent(longestLabel)
+            # icon (16) + text + extra padding (16) + dropdown button (30)
+            minWidth = 16 + textWidth + 16 + 30
+            iconEntry.SetMinSize(wx.Size(minWidth, -1))
 
         self.addEntry(
             text,
@@ -389,13 +401,13 @@ class SettingsPageBase(widgets.BookPage):
         return self.get(section, name)
 
     def getlist(self, section, name):
-        return eval(self.get(section, name))
+        return ast.literal_eval(self.get(section, name))
 
     def setlist(self, section, name, value):
         self.set(section, name, str(value))
 
     def getvalue(self, section, name):
-        return eval(self.get(section, name))
+        return ast.literal_eval(self.get(section, name))
 
     def setvalue(self, section, name, value):
         self.set(section, name, str(value))
@@ -575,12 +587,6 @@ class WindowBehaviorPage(SettingsPage):
         super().__init__(columns=2, growableColumn=-1, *args, **kwargs)
         self.addBooleanSetting(
             "window",
-            "splash",
-            _("Show splash screen on startup"),
-            flags=[wx.ALIGN_RIGHT, wx.EXPAND],
-        )
-        self.addBooleanSetting(
-            "window",
             "tips",
             _("Show tips window on startup"),
             flags=[wx.ALIGN_RIGHT, wx.EXPAND],
@@ -737,7 +743,7 @@ class LanguagePage(SettingsPage):
             ),
         )
         sizer.Add(text)
-        url = meta.i18n_url
+        url = meta.translations_url
         urlCtrl = HyperLinkCtrl(panel, -1, label=url, URL=url)
         sizer.Add(urlCtrl)
         panel.SetSizerAndFit(sizer)

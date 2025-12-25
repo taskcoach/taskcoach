@@ -189,21 +189,10 @@ class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
 
 
 class MainToolBar(ToolBar):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.Bind(wx.EVT_SIZE, self._OnSize)
+    """Main window toolbar for use in AUI-managed main window.
 
-    def _OnSize(self, event):
-        event.Skip()
-        # On Windows XP, the sizes are off by 1 pixel. I fear that this value depends
-        # on the user's config so let's take some margin.
-        if abs(event.GetSize()[0] - self.GetParent().GetClientSize()[0]) >= 10:
-            wx.CallAfter(self.GetParent().SendSizeEvent)
-
-    def Realize(self):
-        self._agwStyle &= ~aui.AUI_TB_NO_AUTORESIZE
-        super().Realize()
-        self._agwStyle |= aui.AUI_TB_NO_AUTORESIZE
-        wx.CallAfter(self.GetParent().SendSizeEvent)
-        w, h = self.GetParent().GetClientSize()
-        wx.CallAfter(self.SetMinSize, (w, -1))
+    The toolbar is docked at the top and spans full window width.
+    Uses standard AUI toolbar behavior with GetBestSize() for automatic
+    height calculation based on icon size.
+    """
+    pass

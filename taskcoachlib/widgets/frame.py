@@ -21,14 +21,60 @@ import wx.lib.agw.aui as aui
 from taskcoachlib import operating_system
 
 
+def _install_sash_resize_optimization(manager):
+    """Install throttling for AUI sash resize operations.
+
+    AUI's LIVE_RESIZE mode calls Update() on every mouse move during sash drag,
+    which can cause flickering due to expensive repaints (DoUpdate takes 50-190ms).
+    This wrapper throttles updates to ~30fps to reduce CPU load while maintaining
+    visual feedback.
+    """
+    import time
+
+    original_on_motion = getattr(manager, 'OnMotion', None)
+
+    # Throttle state
+    state = {
+        'last_update_time': 0,
+        'min_update_interval': 0.033,  # ~30fps max update rate
+    }
+
+    # Throttle updates during sash drag
+    if original_on_motion:
+        def throttled_on_motion(event):
+            action = getattr(manager, '_action', 0)
+            # action 3 = actionResize (sash drag)
+            if action == 3:
+                now = time.time()
+                if now - state['last_update_time'] < state['min_update_interval']:
+                    # Skip this update - don't call Skip() to prevent other handlers
+                    return
+                state['last_update_time'] = now
+            return original_on_motion(event)
+        manager.OnMotion = throttled_on_motion
+
+
 class AuiManagedFrameWithDynamicCenterPane(wx.Frame):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        agwStyle = aui.AUI_MGR_DEFAULT | aui.AUI_MGR_ALLOW_ACTIVE_PANE
+
+        # Build AUI style flags with live resize for visual feedback when dragging sashes
+        agwStyle = (
+            aui.AUI_MGR_DEFAULT
+            | aui.AUI_MGR_ALLOW_ACTIVE_PANE
+            | aui.AUI_MGR_LIVE_RESIZE  # Live visual feedback when dragging sashes
+        )
+
         if not operating_system.isWindows():
             # With this style on Windows, you can't dock back floating frames
-            agwStyle |= wx.lib.agw.aui.AUI_MGR_USE_NATIVE_MINIFRAMES
+            agwStyle |= aui.AUI_MGR_USE_NATIVE_MINIFRAMES
+
         self.manager = aui.AuiManager(self, agwStyle)
+
+        # Install optimization for sash resize to reduce flickering
+        # TEMPORARILY DISABLED for testing - uncomment to re-enable
+        # _install_sash_resize_optimization(self.manager)
+
         self.manager.SetAutoNotebookStyle(
             aui.AUI_NB_TOP
             | aui.AUI_NB_CLOSE_BUTTON

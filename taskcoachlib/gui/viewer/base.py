@@ -50,6 +50,8 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         self.settings = settings
         self.__settingsSection = kwargs.pop("settingsSection")
         self.__freezeCount = 0
+        # Track items changed during bulk operations
+        self.__pendingRefreshItems = set()
         # The how maniest of this viewer type are we? Used for settings
         self.__instanceNumber = kwargs.pop("instanceNumber")
         self.__use_separate_settings_section = kwargs.pop(
@@ -82,6 +84,9 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         pub.subscribe(self.onEndIO, "taskfile.justRead")
         pub.subscribe(self.onEndIO, "taskfile.justCleared")
         pub.subscribe(self.onEndIO, "taskfile.justSaved")
+        # Subscribe to bulk operation signals to freeze/thaw during batch updates
+        pub.subscribe(self.onBeginBulkOperation, "command.aboutToBulkModify")
+        pub.subscribe(self.onEndBulkOperation, "command.justBulkModified")
 
         if isinstance(self.widget, ToolTipMixin):
             pub.subscribe(
@@ -94,6 +99,14 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         wx.CallAfter(self.__DisplayBalloon)
 
     def __DisplayBalloon(self):
+        # Guard against deleted C++ object - can happen when wx.CallAfter
+        # callback executes after window destruction (e.g., closing nested dialogs)
+        try:
+            if not self or self.IsBeingDeleted():
+                return
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            return
         # AuiFloatingFrame is instantiated from framemanager, we can't derive it from BalloonTipManager
         if self.toolbar.IsShownOnScreen() and hasattr(
             wx.GetTopLevelParent(self), "AddBalloonTip"
@@ -124,8 +137,47 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         if self.__freezeCount == 0:
             self.refresh()
 
+    def onBeginBulkOperation(self):
+        """Freeze viewer and presentation to batch updates during bulk operations."""
+        self.__freezeCount += 1
+        self.__presentation.freeze()
+
+    def onEndBulkOperation(self):
+        """Thaw viewer and presentation after bulk operation, refresh only changed items."""
+        self.__freezeCount -= 1
+        self.__presentation.thaw()
+        if self.__freezeCount == 0 and self.__pendingRefreshItems:
+            # Refresh only items that changed during the bulk operation
+            items = [item for item in self.__pendingRefreshItems
+                     if item in self.presentation()]
+            self.__pendingRefreshItems.clear()
+            if items:
+                self.widget.RefreshItems(*items)
+
     def activate(self):
         pass
+
+    def _bindActivationEvents(self, window):
+        """Bind click events to activate this viewer's pane.
+
+        This ensures clicking anywhere on the viewer (toolbar, title bar area,
+        empty space) will activate the pane. We skip text controls to avoid
+        interfering with text input focus.
+        """
+        # Skip text input controls - they handle their own focus
+        if isinstance(window, (wx.TextCtrl, wx.SearchCtrl, wx.ComboBox)):
+            return
+        window.Bind(wx.EVT_LEFT_DOWN, self._onViewerClick)
+        # Recursively bind to children, but skip the main widget (tree/list)
+        for child in window.GetChildren():
+            if child != self.widget:
+                self._bindActivationEvents(child)
+
+    def _onViewerClick(self, event):
+        """Handle clicks on the viewer to activate its pane."""
+        wx.PostEvent(self, wx.ChildFocusEvent(self))
+        self.SetFocus()  # Clear focus from other controls (e.g., search box)
+        event.Skip()
 
     def domainObjectsToView(self):
         """Return the domain objects that this viewer should display. For
@@ -178,6 +230,8 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         pub.unsubscribe(self.onEndIO, "taskfile.justRead")
         pub.unsubscribe(self.onEndIO, "taskfile.justCleared")
         pub.unsubscribe(self.onEndIO, "taskfile.justSaved")
+        pub.unsubscribe(self.onBeginBulkOperation, "command.aboutToBulkModify")
+        pub.unsubscribe(self.onEndBulkOperation, "command.justBulkModified")
 
         self.presentation().detach()
         self.toolbar.detach()
@@ -209,7 +263,11 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         self._sizer = wx.BoxSizer(wx.VERTICAL)  # pylint: disable=W0201
         self._sizer.Add(self.toolbar, flag=wx.EXPAND)
         self._sizer.Add(self.widget, proportion=1, flag=wx.EXPAND)
-        self.SetSizerAndFit(self._sizer)
+        self.SetSizer(self._sizer)  # Changed from SetSizerAndFit to prevent locking MinSize
+        # Prevent GetEffectiveMinSize() from returning child's BestSize
+        self.SetMinSize((100, 50))
+        # Bind click events to activate pane when clicking on toolbar/empty space
+        self._bindActivationEvents(self)
 
     def createWidget(self, *args):
         raise NotImplementedError
@@ -223,7 +281,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
                 imageList.Add(
                     wx.ArtProvider.GetBitmap(image, wx.ART_MENU, size)
                 )
-            except:
+            except Exception:
                 print(image)
                 raise
             self.imageIndex[image] = index
@@ -250,10 +308,18 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
 
     def onAttributeChanged(self, newValue, sender):  # pylint: disable=W0613
         if self:
-            self.refreshItems(sender)
+            if self.__freezeCount:
+                # During bulk operation, collect items to refresh later
+                self.__pendingRefreshItems.add(sender)
+            else:
+                self.refreshItems(sender)
 
     def onAttributeChanged_Deprecated(self, event):
-        self.refreshItems(*event.sources())
+        if self.__freezeCount:
+            # During bulk operation, collect items to refresh later
+            self.__pendingRefreshItems.update(event.sources())
+        else:
+            self.refreshItems(*event.sources())
 
     def onNewItem(self, event):
         self.select(
@@ -302,6 +368,14 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             pass
 
     def updateSelection(self, sendViewerStatusEvent=True):
+        # Guard against deleted C++ object - can happen when wx.CallAfter
+        # callback executes after window destruction (e.g., closing nested dialogs)
+        try:
+            if not self or self.IsBeingDeleted():
+                return
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            return
         newSelection = self.widget.curselection()
         if newSelection != self.__curselection:
             self.__curselection = newSelection
@@ -355,6 +429,14 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         wx.CallAfter(self.endOfSelectAll)
 
     def endOfSelectAll(self):
+        # Guard against deleted C++ object - can happen when wx.CallAfter
+        # callback executes after window destruction (e.g., closing nested dialogs)
+        try:
+            if not self or self.IsBeingDeleted():
+                return
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            return
         self.__curselection = self.presentation()
         self.__selectingAllItems = False
         # Pretend we received one selection event for the select_all() call:
@@ -765,7 +847,7 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
     def updateSelection(self, *args, **kwargs):
         super().updateSelection(*args, **kwargs)
         curselection = self.curselection()
-        if curselection:
+        if curselection and curselection[0] is not None:
             siblings = self.children(self.getItemParent(curselection[0]))
             self.__selectionIndex = (
                 siblings.index(curselection[0])
@@ -798,7 +880,7 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
 
     def getItemParent(self, item):
         """Allow for overriding what the parent of an item is."""
-        return item.parent()
+        return item.parent() if item is not None else None
 
     def getItemExpanded(self, item):
         return item.isExpanded(context=self.settingsSection())

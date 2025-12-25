@@ -20,11 +20,16 @@ from .task import (
     TaskViewer,
     TaskStatsViewer,
     CheckableTaskViewer,
-    SquareTaskViewer,
     TimelineViewer,
     CalendarViewer,
     HierarchicalCalendarViewer,
 )
+
+# SquareTaskViewer requires optional squaremap dependency
+try:
+    from .task import SquareTaskViewer
+except ImportError:
+    SquareTaskViewer = None
 from .category import CategoryViewer, BaseCategoryViewer
 from .effort import EffortViewer, EffortViewerForSelectedTasks
 from .note import NoteViewer, BaseNoteViewer

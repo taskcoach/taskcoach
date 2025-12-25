@@ -294,7 +294,7 @@ def escape(s):
 
 def safe_eval(s):
     # unwrap quotes, safely
-    return eval(s, {"__builtins__": {}}, {})
+    import ast; return ast.literal_eval(s)
 
 
 def normalize(s):

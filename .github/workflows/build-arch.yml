@@ -1,0 +1,329 @@
+name: Build Arch/Manjaro Package
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - 'claude/**'
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build-arch:
+    name: Build .pkg.tar.zst on Arch Linux
+    runs-on: ubuntu-latest
+
+    container:
+      image: archlinux:latest
+
+    steps:
+      - name: Install base dependencies
+        run: |
+          # Update and install base-devel and git
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm --needed \
+            base-devel \
+            git \
+            python \
+            python-pip \
+            python-setuptools \
+            sudo
+
+      - name: Create build user
+        run: |
+          # makepkg cannot run as root, create a build user
+          useradd -m builder
+          echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fix repository ownership
+        run: |
+          # Fix git ownership issues in container
+          chown -R builder:builder .
+          git config --global --add safe.directory "$PWD"
+
+      - name: Install build dependencies
+        run: |
+          pacman -S --noconfirm --needed \
+            python-wxpython \
+            python-six \
+            python-lxml \
+            python-numpy \
+            python-dateutil \
+            python-chardet \
+            python-keyring \
+            python-pyparsing \
+            python-pyxdg \
+            python-watchdog \
+            python-fasteners \
+            python-zeroconf \
+            python-distro \
+            libxss \
+            xdg-utils
+
+      - name: Get version info
+        id: version
+        run: |
+          # Extract version from meta/data.py
+          VERSION=$(python3 -c "
+          import sys
+          sys.path.insert(0, '.')
+          from taskcoachlib.meta import data
+          print(data.version_full)
+          ")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Prepare build directory
+        run: |
+          # Create build directory
+          mkdir -p build-area/arch
+
+          # Create source tarball
+          VERSION="${{ steps.version.outputs.version }}"
+          tar --exclude='.git' \
+              --exclude='.venv' \
+              --exclude='__pycache__' \
+              --exclude='*.pyc' \
+              --exclude='*.pyo' \
+              --exclude='build-area' \
+              --exclude='.mypy_cache' \
+              --exclude='.pytest_cache' \
+              --exclude='*.egg-info' \
+              -czf "build-area/arch/taskcoach-$VERSION.tar.gz" \
+              --transform "s,^.,taskcoach-$VERSION," \
+              .
+
+          # Copy PKGBUILD and install files
+          cp build.in/arch/PKGBUILD build-area/arch/
+          cp build.in/arch/taskcoach.install build-area/arch/
+
+          # Generate SHA256 checksum
+          cd build-area/arch
+          SHA256=$(sha256sum "taskcoach-$VERSION.tar.gz" | cut -d' ' -f1)
+          echo "SHA256: $SHA256"
+
+          # Update PKGBUILD with correct version and checksum
+          sed -i "s/^pkgver=.*/pkgver=$VERSION/" PKGBUILD
+          sed -i "s/^sha256sums=.*/sha256sums=('$SHA256')/" PKGBUILD
+          sed -i "s|^source=.*|source=(\"taskcoach-\$pkgver.tar.gz\")|" PKGBUILD
+
+          # Update prepare() function for local build
+          sed -i '/^prepare()/,/^}/c\
+          prepare() {\
+              # Local build - directory is already named correctly\
+              true\
+          }' PKGBUILD
+
+          # Set ownership for builder user
+          cd ../..
+          chown -R builder:builder build-area
+
+      - name: Build package
+        run: |
+          cd build-area/arch
+
+          # Build package as non-root user
+          su builder -c "makepkg -sf --noconfirm"
+
+          # List built packages
+          echo "Built packages:"
+          ls -la *.pkg.tar.*
+
+      - name: Collect build artifacts
+        run: |
+          mkdir -p artifacts
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Rename package to match other distro naming pattern
+          for pkg in build-area/arch/*.pkg.tar.*; do
+            if [ -f "$pkg" ]; then
+              # Extract extension (pkg.tar.zst or pkg.tar.xz)
+              EXT="${pkg#*.pkg.}"
+              NEWNAME="taskcoach-${VERSION}-arch.pkg.${EXT}"
+              cp "$pkg" "artifacts/$NEWNAME"
+              echo "Package: $NEWNAME"
+            fi
+          done
+
+          ls -la artifacts/
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: taskcoach-${{ steps.version.outputs.version }}-arch-linux
+          path: artifacts/
+          retention-days: 30
+
+  # Test installation on clean Arch system
+  test-install:
+    name: Test install on Arch Linux
+    needs: build-arch
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          pattern: taskcoach-*-arch-linux
+          merge-multiple: true
+          path: packages
+
+      - name: Test installation in Docker
+        run: |
+          # Find the package file
+          PKG_FILE=$(ls packages/*.pkg.tar.* 2>/dev/null | head -1)
+          if [ -z "$PKG_FILE" ]; then
+            echo "No package file found in packages/"
+            ls -la packages/
+            exit 1
+          fi
+          echo "Testing installation of: $PKG_FILE"
+
+          # Run installation test in Docker
+          docker run --rm \
+            -v "$(pwd)/packages:/packages:ro" \
+            archlinux:latest \
+            bash -c '
+              set -e
+
+              # Update system
+              pacman -Syu --noconfirm
+
+              # Install the package (--noconfirm to accept all prompts)
+              echo "Installing package..."
+              pacman -U --noconfirm /packages/*.pkg.tar.*
+
+              # Verify installation
+              echo "Verifying installation..."
+              pacman -Q taskcoach || {
+                echo "Package not installed!"
+                exit 1
+              }
+
+              # Check that key files exist
+              echo "Checking installed files..."
+              SITE_PACKAGES=$(python3 -c "import site; print(site.getsitepackages()[0])")
+              test -d "$SITE_PACKAGES/taskcoachlib" && echo "SUCCESS: taskcoachlib installed"
+
+              # Test that Python can import the module
+              echo "Testing Python import..."
+              python3 -c "import taskcoachlib; print(taskcoachlib.__file__)" && echo "SUCCESS: taskcoachlib imports correctly"
+
+              # Check desktop file
+              test -f /usr/share/applications/taskcoach.desktop && echo "SUCCESS: Desktop file installed"
+
+              # Check icon
+              test -f /usr/share/pixmaps/taskcoach.png && echo "SUCCESS: Icon installed"
+
+              echo "All installation tests passed!"
+            '
+
+  # Test on Manjaro (optional - Manjaro Docker images often have keyring issues)
+  test-manjaro:
+    name: Test install on Manjaro
+    needs: build-arch
+    runs-on: ubuntu-latest
+    continue-on-error: true  # Manjaro Docker images often have stale keyrings
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          pattern: taskcoach-*-arch-linux
+          merge-multiple: true
+          path: packages
+
+      - name: Test installation in Docker
+        run: |
+          # Find the package file
+          PKG_FILE=$(ls packages/*.pkg.tar.* 2>/dev/null | head -1)
+          echo "Testing installation of: $PKG_FILE"
+
+          # Run installation test in Docker using Manjaro image
+          docker run --rm \
+            -v "$(pwd)/packages:/packages:ro" \
+            manjarolinux/base:latest \
+            bash -c '
+              set -e
+
+              # Refresh keyring first (Manjaro Docker images often have stale keys)
+              echo "Refreshing Manjaro keyring..."
+              pacman-key --init || true
+              pacman-key --populate archlinux manjaro || true
+              pacman -Sy --noconfirm archlinux-keyring manjaro-keyring || true
+
+              # Update system
+              echo "Updating system..."
+              pacman -Syu --noconfirm
+
+              # Install the package
+              echo "Installing package..."
+              pacman -U --noconfirm /packages/*.pkg.tar.* || {
+                echo "Installing dependencies..."
+                # Install dependencies first if needed
+                pacman -S --noconfirm --needed \
+                  python-wxpython \
+                  python-six \
+                  python-lxml \
+                  python-numpy \
+                  python-dateutil \
+                  python-chardet \
+                  python-keyring \
+                  python-pyparsing \
+                  python-pyxdg \
+                  python-watchdog \
+                  python-fasteners \
+                  python-zeroconf \
+                  libxss \
+                  xdg-utils
+                pacman -U --noconfirm /packages/*.pkg.tar.*
+              }
+
+              # Verify installation
+              echo "Verifying installation..."
+              pacman -Q taskcoach && echo "SUCCESS: Package installed on Manjaro"
+
+              # Test Python import
+              echo "Testing Python import..."
+              python3 -c "import taskcoachlib; print(\"SUCCESS: taskcoachlib works on Manjaro\")"
+
+              echo "All Manjaro tests passed!"
+            '
+
+  # Create release with packages
+  release:
+    name: Create Release
+    needs: [build-arch, test-install]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: taskcoach-*-arch-linux
+          merge-multiple: true
+          path: packages
+
+      - name: List packages
+        run: ls -la packages/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: packages/*.pkg.tar.*
+          draft: false
+          prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

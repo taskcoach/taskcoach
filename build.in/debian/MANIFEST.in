@@ -1,6 +1,6 @@
 include *.txt
 recursive-include tests *.py
-include TODO.tsk
+include Welcome.tsk
 include setup.py
 include pymake.py
 prune dist.in

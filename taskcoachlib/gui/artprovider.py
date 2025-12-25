@@ -20,7 +20,24 @@ from taskcoachlib import patterns, operating_system
 from taskcoachlib.i18n import _
 from taskcoachlib.tools import wxhelper
 import wx
-from . import icons
+import os
+import sys
+
+
+def get_resource_path(relative_path):
+    """Get absolute path to resource - works for development and frozen apps."""
+    if getattr(sys, 'frozen', False):
+        # Running as frozen executable (PyInstaller, py2exe, etc.)
+        if hasattr(sys, '_MEIPASS'):
+            # PyInstaller
+            base_path = sys._MEIPASS
+        else:
+            # py2exe
+            base_path = os.path.dirname(sys.executable)
+    else:
+        # Running in normal Python (development)
+        base_path = os.path.dirname(__file__)
+    return os.path.join(base_path, relative_path)
 
 
 class ArtProvider(wx.ArtProvider):
@@ -37,33 +54,69 @@ class ArtProvider(wx.ArtProvider):
         ).ConvertToImage()
         overlay_image.Rescale(width // 2, height // 2, wx.IMAGE_QUALITY_HIGH)
 
-        # Create main image
+        # Create main image and preserve its original alpha
         main_image = self._CreateBitmap(main, client, size).ConvertToImage()
 
-        # Clear main image alpha and draw overlay image
-        wxhelper.clearAlphaDataOfImage(main_image, 255)
+        # Ensure both images have alpha channels
+        if not main_image.HasAlpha():
+            main_image.InitAlpha()
+        if not overlay_image.HasAlpha():
+            overlay_image.InitAlpha()
+
+        # Save the original alpha channel of the main image
+        original_main_alpha = wxhelper.getAlphaDataFromImage(main_image, as_numpy=True).copy()
+
+        # Convert to bitmap for drawing the overlay
         main_bitmap = main_image.ConvertToBitmap()
 
-        # Draw overlay image
+        # Draw overlay image on top
         with wx.MemoryDC(main_bitmap) as dc:
             dc.DrawBitmap(
                 overlay_image.ConvertToBitmap(), width // 2, height // 2, True
             )
 
-        # Merge alpha channels
-        main_image = main_bitmap.ConvertToImage()
+        # Convert back to image and merge alpha channels properly
+        result_image = main_bitmap.ConvertToImage()
+
+        # Merge the original main alpha with the overlay alpha
         result_image = wxhelper.mergeImagesWithAlpha(
-            main_image, overlay_image, (width // 2, height // 2)
+            result_image, overlay_image, (width // 2, height // 2)
         )
+
+        # Restore the original main image's alpha in the non-overlay area
+        main_width, main_height = main_image.GetWidth(), main_image.GetHeight()
+        overlay_width, overlay_height = overlay_image.GetWidth(), overlay_image.GetHeight()
+        overlay_x, overlay_y = width // 2, height // 2
+
+        result_alpha = wxhelper.getAlphaDataFromImage(result_image, as_numpy=True).copy()
+        result_alpha_2d = result_alpha.reshape(main_height, main_width)
+        original_alpha_2d = original_main_alpha.reshape(main_height, main_width)
+
+        # Restore original alpha for non-overlay regions
+        import numpy as np
+        mask = np.ones((main_height, main_width), dtype=bool)
+        y_end = min(overlay_y + overlay_height, main_height)
+        x_end = min(overlay_x + overlay_width, main_width)
+        mask[overlay_y:y_end, overlay_x:x_end] = False
+        result_alpha_2d[mask] = original_alpha_2d[mask]
+
+        wxhelper.setAlphaDataToImage(result_image, result_alpha_2d)
 
         return result_image.ConvertToBitmap()
 
     def _CreateBitmap(self, artId, artClient, size) -> wx.Bitmap:
         if not artId:
             return wx.Bitmap(*size)
-        catalogKey = "%s%dx%d" % (artId, size[0], size[1])
-        if catalogKey in list(icons.catalog.keys()):
-            bitmap = icons.catalog[catalogKey].GetBitmap()
+
+        # Construct icon filename: "copy" + "16x16" -> "copy16x16.png"
+        icon_filename = "%s%dx%d.png" % (artId, size[0], size[1])
+        icon_path = get_resource_path(os.path.join('icons', icon_filename))
+
+        if os.path.exists(icon_path):
+            image = wx.Image(icon_path)
+            if not image.IsOk():
+                return wx.NullBitmap
+            bitmap = image.ConvertToBitmap()
             if artClient == wx.ART_FRAME_ICON:
                 bitmap = self.convertAlphaToMask(bitmap)
             return bitmap

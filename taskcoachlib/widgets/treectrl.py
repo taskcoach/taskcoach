@@ -59,7 +59,16 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
         # On Ubuntu, when the user has scrolled to the bottom of the tree
         # and collapses an item, the tree is not redrawn correctly. Refreshing
         # solves this. See http://trac.wxwidgets.org/ticket/11704
-        wx.CallAfter(self.MainWindow.Refresh)
+        wx.CallAfter(self.__safeRefresh)
+
+    def __safeRefresh(self):
+        """Safely refresh the main window, guarding against deleted C++ objects."""
+        try:
+            if self.MainWindow:
+                self.MainWindow.Refresh()
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            pass
 
     def GetSelections(self):  # pylint: disable=C0103
         """If the root item is hidden, it should never be selected.
@@ -100,8 +109,22 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
         return flags & wx.TREE_HITTEST_ONITEMBUTTON
 
     def select(self, selection):
+        """Select items whose PyData is in the selection list.
+        Returns the first selected tree item (for scrolling).
+
+        Note: UnselectAll() is required before SelectItem() after a tree rebuild.
+        This appears to be a HyperTreeList quirk/bug - SelectItem() silently fails
+        without it, even though DoSelectItem has unselect_others=True by default.
+        See: https://github.com/wxWidgets/Phoenix/issues/1164 for related issues."""
+        first_selected_item = None
+        self.UnselectAll()
         for item in self.GetItemChildren(recursively=True):
-            self.SelectItem(item, self.GetItemPyData(item) in selection)
+            pydata = self.GetItemPyData(item)
+            if pydata in selection:
+                self.SelectItem(item, True)
+                if first_selected_item is None:
+                    first_selected_item = item
+        return first_selected_item
 
     def clear_selection(self):
         self.UnselectAll()
@@ -183,6 +206,7 @@ class TreeListCtrl(
         self.__user_double_clicked = False
         self.__columns_with_images = []
         self.__default_font = wx.NORMAL_FONT
+        self.__refreshing = False  # Flag to suppress selection events during refresh
         kwargs.setdefault("resizeableColumn", 0)
         super().__init__(
             parent,
@@ -217,8 +241,8 @@ class TreeListCtrl(
     def onSetFocus(self, event):  # pylint: disable=W0613
         # Send a child focus event to let the AuiManager know we received focus
         # so it will activate our pane
-        wx.PostEvent(self._main_win, wx.ChildFocusEvent(self._main_win))
-        self.SetFocus()
+        wx.PostEvent(self, wx.ChildFocusEvent(self))
+        event.Skip()
 
     def getItemTooltipData(self, item):
         return self.__adapter.getItemTooltipData(item)
@@ -227,11 +251,23 @@ class TreeListCtrl(
         return self.ct_type
 
     def curselection(self):
-        return [self.GetItemPyData(item) for item in self.GetSelections()]
+        # Guard against deleted C++ object - can happen when wx.CallAfter
+        # callback executes after window destruction (e.g., closing nested dialogs)
+        try:
+            # Filter out None values - GetItemPyData can return None for some items
+            # (e.g., root items or items without associated PyData)
+            return [
+                data for item in self.GetSelections()
+                if (data := self.GetItemPyData(item)) is not None
+            ]
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            return []
 
     def RefreshAllItems(self, count=0):  # pylint: disable=W0613
         self.Freeze()
         self.StopEditing()
+        self.__refreshing = True  # Suppress selection events during rebuild
         self.__selection = self.curselection()
         self.DeleteAllItems()
         self.__columns_with_images = [
@@ -243,13 +279,22 @@ class TreeListCtrl(
         if not root_item:
             root_item = self.AddRoot("Hidden root")
         self._addObjectRecursively(root_item)
+        self.Thaw()
+        self.__refreshing = False
+        # Restore selection AFTER Thaw - SelectItem doesn't work while Frozen
+        selected_item = None
+        if self.__selection:
+            selected_item = self.select(self.__selection)
         selections = self.GetSelections()
-        if selections:
+        # Use the item returned by select() for scrolling if GetSelections fails
+        scroll_target = selections[0] if selections else selected_item
+        if scroll_target:
             self.GetMainWindow()._current = (
                 self.GetMainWindow()._key_current
-            ) = selections[0]
-            self.ScrollTo(selections[0])
-        self.Thaw()
+            ) = scroll_target
+            self.ScrollTo(scroll_target)
+        # Force immediate repaint to reduce visible flicker after rebuild
+        self.GetMainWindow().Refresh(eraseBackground=False)
 
     def RefreshItems(self, *objects):
         self.__selection = self.curselection()
@@ -361,15 +406,30 @@ class TreeListCtrl(
     def _refreshSelection(self, item, domain_object, check=False):
         select = domain_object in self.__selection
         if not check or (check and select != item.IsSelected()):
+            # Use SetHilight for visual highlighting during tree construction.
+            # Actual selection is done via select() after tree is fully built.
             item.SetHilight(select)
 
     # Event handlers
 
     def onSelect(self, event):
+        # Skip selection events during refresh to avoid spurious updates
+        if self.__refreshing:
+            event.Skip()
+            return
         # Use CallAfter to prevent handling the select while items are
         # being deleted:
-        wx.CallAfter(self.selectCommand)
+        wx.CallAfter(self.__safeSelectCommand)
         event.Skip()
+
+    def __safeSelectCommand(self):
+        """Safely call selectCommand, guarding against deleted C++ objects."""
+        try:
+            if self:
+                self.selectCommand()
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            pass
 
     def onKeyDown(self, event):
         if event.GetKeyCode() == wx.WXK_RETURN:
@@ -389,8 +449,29 @@ class TreeListCtrl(
             self.GetItemPyData(drag_item) for drag_item in drag_items
         )
         wx.CallAfter(
-            self.dragAndDropCommand, drop_item, drag_items, part, column
+            self.__safeDragAndDropCommand, drop_item, drag_items, part, column
         )
+
+    def __safeDragAndDropCommand(self, drop_item, drag_items, part, column):
+        """Safely call dragAndDropCommand, guarding against deleted C++ objects."""
+        try:
+            if self:
+                self.dragAndDropCommand(drop_item, drag_items, part, column)
+                # Expand the drop target if items were dropped on it
+                if drop_item is not None:
+                    self._expandDropTarget(drop_item)
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            pass
+
+    def _expandDropTarget(self, drop_item):
+        """Expand the drop target item so the dropped children are visible."""
+        # Find the tree item for the drop target
+        for item in self.GetItemChildren(recursively=True):
+            if self.GetItemPyData(item) == drop_item:
+                if self.GetChildrenCount(item, recursively=False) > 0 or self.ItemHasChildren(item):
+                    self.Expand(item)
+                break
 
     def onItemExpanding(self, event):
         event.Skip()
@@ -472,7 +553,8 @@ class TreeListCtrl(
 
     @staticmethod
     def __get_style():
-        return wx.WANTS_CHARS
+        # Enable horizontal scrollbar for natural column resizing
+        return wx.WANTS_CHARS | wx.HSCROLL
 
     @staticmethod
     def __get_agw_style():

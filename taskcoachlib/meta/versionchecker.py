@@ -42,7 +42,7 @@ class VersionChecker(threading.Thread):
                 self.getLastVersionNotified()
             )
             currentVersion = self.tupleVersion(data.version)
-        except:
+        except Exception:
             if self.verbose:
                 self.notifyUser(
                     version.NoVersionDialog,
@@ -102,7 +102,8 @@ class VersionChecker(threading.Thread):
 
     @staticmethod
     def retrieveVersionFile():
-        return urllib.request.urlopen(data.version_url)
+        # Legacy: version checking disabled - use GitHub for updates
+        raise Exception("Version checking disabled - visit GitHub for updates")
 
     @staticmethod
     def tupleVersion(versionString):

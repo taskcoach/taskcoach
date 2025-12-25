@@ -377,6 +377,12 @@ class _NotificationCenter(wx.EvtHandler):
             frame.Close()
         self.waitingFrames = []
 
+    def cleanup(self):
+        """Stop the notification timer to prevent crashes during app shutdown."""
+        if self.__tmr and self.__tmr.IsRunning():
+            self.__tmr.Stop()
+        self.HideAll()
+
     def GetDisplayRect(self):
         """
         Returns the geometry of the main application frame's display

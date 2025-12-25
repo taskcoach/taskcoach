@@ -246,6 +246,6 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         icon = artprovider.getIcon(self.__bitmap)
         try:
             self.SetIcon(icon, self.__tooltipText)
-        except:
+        except Exception:
             # wx assert errors on macOS but the icon still gets set... Whatever
             pass

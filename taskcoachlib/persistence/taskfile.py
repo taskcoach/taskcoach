@@ -16,13 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import logging
 import os
-import lockfile
+import fasteners
 from . import xml
 from taskcoachlib import patterns, operating_system
 from taskcoachlib.domain import base, task, category, note, effort, attachment
 from taskcoachlib.syncml.config import createDefaultSyncConfig
-from taskcoachlib.thirdparty.guid import generate
+import uuid
 from taskcoachlib.changes import ChangeMonitor, ChangeSynchronizer
 from taskcoachlib.filesystem import (
     FilesystemNotifier,
@@ -123,7 +124,7 @@ class TaskFile(patterns.Observer):
         self.__categories = category.CategoryList()
         self.__notes = note.NoteContainer()
         self.__efforts = effort.EffortList(self.tasks())
-        self.__guid = generate()
+        self.__guid = str(uuid.uuid4())
         self.__syncMLConfig = createDefaultSyncConfig(self.__guid)
         self.__monitor = ChangeMonitor()
         self.__changes = dict()
@@ -389,7 +390,7 @@ class TaskFile(patterns.Observer):
             self.categories().clear(event=event)
             self.notes().clear(event=event)
             if regenerate:
-                self.__guid = generate()
+                self.__guid = str(uuid.uuid4())
                 self.__syncMLConfig = createDefaultSyncConfig(self.__guid)
         finally:
             pub.sendMessage("taskfile.justCleared", taskFile=self)
@@ -403,7 +404,7 @@ class TaskFile(patterns.Observer):
             )
 
         self.setFilename("")
-        self.__guid = generate()
+        self.__guid = str(uuid.uuid4())
         self.clear()
         self.__monitor.reset()
         self.markClean()
@@ -413,7 +414,35 @@ class TaskFile(patterns.Observer):
         self.__notifier.stop()
 
     def _read(self, fd):
-        return xml.XMLReader(fd).read()
+        reader = xml.XMLReader(fd)
+        result = reader.read()
+        duplicate_ids = reader.get_duplicate_ids()
+        return result, duplicate_ids
+
+    def _log_duplicate_ids(self, duplicate_ids):
+        """Log duplicate IDs found in the task file.
+
+        Duplicate IDs can cause issues with sync and data integrity.
+        To fix: Either manually edit the .tsk XML file to assign unique IDs,
+        or delete and recreate the affected items in Task Coach.
+        """
+        logger = logging.getLogger(__name__)
+        logger.warning("=" * 70)
+        logger.warning("WARNING: Duplicate IDs found in task file: %s",
+                       self.__filename)
+        logger.warning("This may cause sync issues or data integrity problems.")
+        logger.warning("")
+        logger.warning("To fix: Either manually edit the .tsk XML file to")
+        logger.warning("assign unique IDs, or delete and recreate the affected")
+        logger.warning("items in Task Coach.")
+        logger.warning("")
+        logger.warning("Duplicate IDs and their locations:")
+        for obj_id, locations in duplicate_ids.items():
+            logger.warning("")
+            logger.warning("  ID: %s", obj_id)
+            for obj_type, path in locations:
+                logger.warning("    - %s", path)
+        logger.warning("=" * 70)
 
     def exists(self):
         return os.path.isfile(self.__filename)
@@ -433,17 +462,19 @@ class TaskFile(patterns.Observer):
             if self.exists():
                 fd = self._openForRead()
                 try:
-                    tasks, categories, notes, syncMLConfig, changes, guid = (
-                        self._read(fd)
-                    )
+                    (tasks, categories, notes, syncMLConfig, changes, guid), \
+                        duplicate_ids = self._read(fd)
                 finally:
                     fd.close()
+                # Log any duplicate IDs found in the file
+                if duplicate_ids:
+                    self._log_duplicate_ids(duplicate_ids)
             else:
                 tasks = []
                 categories = []
                 notes = []
                 changes = dict()
-                guid = generate()
+                guid = str(uuid.uuid4())
                 syncMLConfig = createDefaultSyncConfig(guid)
             self.clear()
             self.__monitor.reset()
@@ -482,7 +513,7 @@ class TaskFile(patterns.Observer):
                 xml.ChangesXMLWriter(
                     open(self.filename() + ".delta", "wb")
                 ).write(self.__changes)
-        except:
+        except Exception:
             self.setFilename("")
             raise
         finally:
@@ -494,8 +525,8 @@ class TaskFile(patterns.Observer):
     def save(self):
         try:
             pub.sendMessage("taskfile.aboutToSave", taskFile=self)
-        except:
-            pass
+        except Exception:
+            pass  # Ignore errors from subscribers
         # When encountering a problem while saving (disk full,
         # computer on fire), if we were writing directly to the file,
         # it's lost. So write to a temporary file and rename it if
@@ -523,8 +554,8 @@ class TaskFile(patterns.Observer):
             self.__notifier.saved()
             try:
                 pub.sendMessage("taskfile.justSaved", taskFile=self)
-            except:
-                pass
+            except Exception:
+                pass  # Ignore errors from subscribers
 
     def mergeDiskChanges(self):
         self.__loading = True
@@ -544,8 +575,9 @@ class TaskFile(patterns.Observer):
                         syncMLConfig,
                         allChanges,
                         guid,
-                    ) = self._read(fd)
+                    ), _duplicate_ids = self._read(fd)
                     fd.close()
+                    # Don't log duplicates here - already logged on initial load
 
                     self.__changes = allChanges
 
@@ -659,77 +691,89 @@ class TaskFile(patterns.Observer):
         self.markDirty()
 
 
-class DummyLockFile(object):
-    def acquire(self, timeout=None):
-        pass
+class LockTimeout(Exception):
+    """Raised when file lock cannot be acquired (another process has it)."""
+    pass
 
-    def release(self):
-        pass
 
-    def is_locked(self):
-        return True
-
-    def i_am_locking(self):
-        return True
-
-    def break_lock(self):
-        pass
+class LockFailed(Exception):
+    """Raised when file locking fails for other reasons."""
+    pass
 
 
 class LockedTaskFile(TaskFile):
-    """LockedTaskFile adds cooperative locking to the TaskFile."""
+    """LockedTaskFile adds cooperative locking to the TaskFile.
+
+    Uses fasteners.InterProcessLock for cross-platform file locking.
+    The lock is held for the entire time the file is open and is
+    automatically released when the process exits (even on crash).
+
+    See: https://fasteners.readthedocs.io/
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.__lock = None
+        self.__lock_acquired = False
 
-    def __isFuse(self, path):
-        if operating_system.isGTK() and os.path.exists("/proc/mounts"):
-            for line in open("/proc/mounts", "r", encoding="utf-8"):
-                try:
-                    location, mountPoint, fsType, options, a, b = (
-                        line.strip().split()
-                    )
-                except:
-                    pass
-                if os.path.abspath(path).startswith(
-                    mountPoint
-                ) and fsType.startswith("fuse."):
-                    return True
-        return False
-
-    def __isCloud(self, filename):
-        return _isCloud(os.path.dirname(filename))
-
-    def __createLockFile(self, filename):
-        if operating_system.isWindows() and self.__isCloud(filename):
-            return DummyLockFile()
-        if self.__isFuse(filename):
-            return lockfile.MkdirFileLock(filename)
-        return lockfile.FileLock(filename)
+    def __getLockPath(self, filename):
+        """Get the path to the lock file."""
+        return filename + ".lock"
 
     def is_locked(self):
-        return self.__lock and self.__lock.is_locked()
+        """Check if we currently hold the lock."""
+        return self.__lock is not None and self.__lock_acquired
 
     def is_locked_by_me(self):
-        return self.is_locked() and self.__lock.i_am_locking()
+        """Check if we currently hold the lock."""
+        return self.is_locked()
 
     def release_lock(self):
-        if self.is_locked_by_me():
-            self.__lock.release()
+        """Release the lock if we hold it."""
+        if self.__lock is not None and self.__lock_acquired:
+            try:
+                self.__lock.release()
+            except Exception:
+                pass  # Best effort release
+            self.__lock_acquired = False
+        self.__lock = None
 
     def acquire_lock(self, filename):
-        if not self.is_locked_by_me():
-            self.__lock = self.__createLockFile(filename)
-            self.__lock.acquire(5)
+        """Acquire an exclusive lock on the file.
+
+        Raises:
+            LockTimeout: If another process holds the lock.
+            LockFailed: If locking fails for other reasons.
+        """
+        if self.is_locked_by_me():
+            return  # Already holding the lock
+
+        lock_path = self.__getLockPath(filename)
+        try:
+            self.__lock = fasteners.InterProcessLock(lock_path)
+            # Try to acquire with short timeout (non-blocking for document apps)
+            acquired = self.__lock.acquire(blocking=True, timeout=0.1)
+            if not acquired:
+                self.__lock = None
+                raise LockTimeout(f"File is locked: {filename}")
+            self.__lock_acquired = True
+        except LockTimeout:
+            raise
+        except (PermissionError, OSError) as e:
+            self.__lock = None
+            raise LockFailed(str(e)) from e
 
     def break_lock(self, filename):
-        self.__lock = self.__createLockFile(filename)
-        self.__lock.break_lock()
+        """Break a stale lock by removing the lock file."""
+        lock_path = self.__getLockPath(filename)
+        try:
+            if os.path.exists(lock_path):
+                os.remove(lock_path)
+        except OSError:
+            pass  # If we can't remove it, acquire will fail anyway
 
     def close(self):
-        if self.filename() and os.path.exists(self.filename()):
-            self.acquire_lock(self.filename())
+        """Close the file and release the lock."""
         try:
             super().close()
         finally:
@@ -738,28 +782,29 @@ class LockedTaskFile(TaskFile):
     def load(
         self, filename=None, lock=True, breakLock=False
     ):  # pylint: disable=W0221
-        """Lock the file before we load, if not already locked."""
+        """Lock the file and keep it locked until close() is called."""
         filename = filename or self.filename()
+        if lock and filename:
+            if breakLock:
+                self.break_lock(filename)
+            self.acquire_lock(filename)
         try:
-            if lock and filename:
-                if breakLock:
-                    self.break_lock(filename)
-                self.acquire_lock(filename)
             return super().load(filename)
-        finally:
+        except Exception:
+            # Release lock if load fails
             self.release_lock()
+            raise
 
     def save(self, **kwargs):
-        """Lock the file before we save, if not already locked."""
-        self.acquire_lock(self.filename())
-        try:
-            return super().save(**kwargs)
-        finally:
-            self.release_lock()
+        """Save the file. Lock should already be held from load()."""
+        # We should already hold the lock from load()
+        if not self.is_locked_by_me() and self.filename():
+            self.acquire_lock(self.filename())
+        return super().save(**kwargs)
 
     def mergeDiskChanges(self):
-        self.acquire_lock(self.filename())
-        try:
-            super().mergeDiskChanges()
-        finally:
-            self.release_lock()
+        """Merge disk changes. Lock should already be held from load()."""
+        # We should already hold the lock from load()
+        if not self.is_locked_by_me() and self.filename():
+            self.acquire_lock(self.filename())
+        super().mergeDiskChanges()

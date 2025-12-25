@@ -50,7 +50,7 @@ def getSubject(message):
             encoding = "utf-8"
         try:
             return subject.decode(encoding)
-        except:
+        except (UnicodeDecodeError, LookupError):
             return repr(subject)
 
 
@@ -114,8 +114,8 @@ def openMail(filename):
                     try:
                         if openMailWithOutlook(filename):
                             return
-                    except:
-                        pass
+                    except Exception:
+                        pass  # Fall back to default handler
         finally:
             winreg.CloseKey(key)
 

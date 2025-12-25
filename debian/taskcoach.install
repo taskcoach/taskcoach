@@ -1,0 +1,3 @@
+# Additional files installed by debian/rules override
+# Desktop file and metainfo are installed via override_dh_auto_install
+# wxPython patch is installed to /usr/share/taskcoach/lib/

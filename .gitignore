@@ -5,13 +5,11 @@ dist
 CHANGES.txt
 changelog_content
 taskcoachlib/imported.xml
-taskcoachlib/gui/icons.py
 taskcoachlib/i18n/[a-z][a-z].py
 taskcoachlib/i18n/[a-z][a-z]_[A-Z][A-Z].py
 taskcoachlib/i18n/nds.py
 taskcoachlib/i18n/pap.py
 taskcoachlib/thirdparty/wmi.py
-taskcoachlib/persistence/xml/templates.py
 website.out
 taskcoachlib/used.txt
 website.in/all_changes.html
@@ -31,3 +29,5 @@ __pycache__
 *.old
 .vscode
 .idea
+.venv
+venv

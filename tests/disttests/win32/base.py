@@ -52,8 +52,8 @@ class Window(object):
 
         try:
             win32gui.EnumChildWindows(self.hwnd, cb, None)
-        except:
-            result = []  # pylint: disable=W0702
+        except Exception:
+            result = []  # Window enumeration failed
         return result
 
     children = property(_get_children, doc="The window direct children")
@@ -214,8 +214,8 @@ class Win32TestCase(unittest.TestCase):
                 try:
                     if titleRegex.search(win32gui.GetWindowText(hwnd)):
                         windows.append(hwnd)
-                except:
-                    pass  # pylint: disable=W0702
+                except Exception:
+                    pass  # Window title matching failed
                 return True
 
             win32gui.EnumWindows(enumCb, None)

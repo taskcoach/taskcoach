@@ -83,11 +83,12 @@ class ReminderControllerTest(ReminderControllerTestCase):
     def testAfterReminderJobIsRemovedFromScheduler(self):
         self.task.setReminder(date.Now() + date.TimeDelta(seconds=1))
         self.assertTrue(date.Scheduler().get_jobs())
+        # Process wx events instead of reactor.iterate()
+        # NOTE (Twisted Removal - 2024): Using wx event processing
         t0 = time.time()
-        from twisted.internet import reactor
-
         while time.time() - t0 < 1.1:
-            reactor.iterate()
+            wx.GetApp().Yield(True)
+            time.sleep(0.05)
         self.assertFalse(date.Scheduler().get_jobs())
 
     def testAddTaskWithReminderSchedulesJob(self):

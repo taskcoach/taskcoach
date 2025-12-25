@@ -366,6 +366,13 @@ class PrintPreview(ViewerCommand, settings_uicommand.SettingsCommand):
         preview = wx.PrintPreview(
             printout, printout2, printerSettings.printData
         )
+        if not preview.IsOk():
+            wx.MessageBox(
+                _("There was a problem creating the print preview."),
+                _("Print Preview Error"),
+                wx.OK | wx.ICON_ERROR
+            )
+            return
         previewFrame = wx.PreviewFrame(
             preview, self.mainWindow(), _("Print preview"), size=(750, 700)
         )
@@ -1839,10 +1846,11 @@ class DragAndDropCommand(ViewerCommand):
             dragItems,
             part,
             None if column == -1 else self.viewer.visibleColumns()[column],
+            column,  # Pass raw column index as dropColumn
         )
 
     def doCommand(
-        self, dropItem, dragItems, part, column
+        self, dropItem, dragItems, part, column, dropColumn=-1
     ):  # pylint: disable=W0221
         dragAndDropCommand = self.createCommand(
             dropItem=dropItem,
@@ -1850,19 +1858,20 @@ class DragAndDropCommand(ViewerCommand):
             part=part,
             column=column,
             isTree=self.viewer.isTreeViewer(),
+            dropColumn=dropColumn,
         )
         if dragAndDropCommand.canDo():
             dragAndDropCommand.do()
             return dragAndDropCommand
 
-    def createCommand(self, dropItem, dragItems, part, isTree):
+    def createCommand(self, dropItem, dragItems, part, column, isTree, dropColumn=-1):
         raise NotImplementedError  # pragma: no cover
 
 
 class OrderingDragAndDropCommand(DragAndDropCommand):
-    def doCommand(self, dropItem, dragItems, part, column):
-        command = super().doCommand(dropItem, dragItems, part, column)
-        if command is not None and command.isOrdering():
+    def doCommand(self, dropItem, dragItems, part, column, dropColumn=-1):
+        cmd = super().doCommand(dropItem, dragItems, part, column, dropColumn)
+        if cmd is not None and cmd.isOrdering():
             sortCommand = ViewerSortByCommand(
                 viewer=self.viewer, value="ordering"
             )
@@ -1870,7 +1879,14 @@ class OrderingDragAndDropCommand(DragAndDropCommand):
 
 
 class TaskDragAndDrop(OrderingDragAndDropCommand, TaskListCommand):
-    def createCommand(self, dropItem, dragItems, part, column, isTree):
+    def createCommand(self, dropItem, dragItems, part, column, isTree, dropColumn=-1):
+        # Get column name if dropColumn is valid
+        dropColumnName = None
+        if dropColumn >= 0:
+            visibleCols = self.viewer.visibleColumns()
+            if dropColumn < len(visibleCols):
+                dropColumnName = visibleCols[dropColumn].name()
+
         return command.DragAndDropTaskCommand(
             self.taskList,
             dragItems,
@@ -1878,6 +1894,8 @@ class TaskDragAndDrop(OrderingDragAndDropCommand, TaskListCommand):
             part=part,
             column=column,
             isTree=isTree,
+            dropColumn=dropColumn,
+            dropColumnName=dropColumnName,
         )
 
 
@@ -2020,7 +2038,7 @@ class Mail(mixin_uicommand.NeedsSelectionMixin, ViewerCommand):
     def mail(self, to, cc, subject, body, mail, showerror):
         try:
             mail(to, subject, body, cc=cc)
-        except:
+        except Exception:
             # Try again with a dummy recipient:
             try:
                 mail("recipient@domain.com", subject, body)
@@ -2445,7 +2463,7 @@ class CategoryNew(CategoriesCommand, settings_uicommand.SettingsCommand):
 
 
 class CategoryDragAndDrop(OrderingDragAndDropCommand, CategoriesCommand):
-    def createCommand(self, dropItem, dragItems, part, column, isTree):
+    def createCommand(self, dropItem, dragItems, part, column, isTree, dropColumn=-1):
         return command.DragAndDropCategoryCommand(
             self.categories,
             dragItems,
@@ -2453,6 +2471,7 @@ class CategoryDragAndDrop(OrderingDragAndDropCommand, CategoriesCommand):
             part=part,
             column=column,
             isTree=isTree,
+            dropColumn=dropColumn,
         )
 
 
@@ -2501,7 +2520,7 @@ class NewNoteWithSelectedCategories(NoteNew, ViewerCommand):
 
 
 class NoteDragAndDrop(OrderingDragAndDropCommand, NotesCommand):
-    def createCommand(self, dropItem, dragItems, part, column, isTree):
+    def createCommand(self, dropItem, dragItems, part, column, isTree, dropColumn=-1):
         return command.DragAndDropNoteCommand(
             self.notes,
             dragItems,
@@ -2509,6 +2528,7 @@ class NoteDragAndDrop(OrderingDragAndDropCommand, NotesCommand):
             part=part,
             column=column,
             isTree=isTree,
+            dropColumn=dropColumn,
         )
 
 
@@ -2629,6 +2649,7 @@ class DialogCommand(base_uicommand.UICommand):
         self.dialog = widgets.HTMLDialog(
             self._dialogTitle,
             self._dialogText,
+            parent=wx.GetApp().GetTopWindow(),
             bitmap=self.bitmap,
             direction=self._direction,
         )
@@ -2730,21 +2751,6 @@ class HelpLicense(DialogCommand):
         )
 
 
-class CheckForUpdate(settings_uicommand.SettingsCommand):
-    def __init__(self, *args, **kwargs):
-        super().__init__(
-            menuText=_("Check for update"),
-            helpText=_("Check for the availability of a new version of %s")
-            % meta.name,
-            bitmap="box_icon",
-            *args,
-            **kwargs
-        )
-
-    def doCommand(self, event):
-        meta.VersionChecker(self.settings, verbose=True).start()
-
-
 class URLCommand(base_uicommand.UICommand):
     def __init__(self, *args, **kwargs):
         self.url = kwargs.pop("url")
@@ -2821,13 +2827,16 @@ class HelpTranslate(URLCommand):
         )
 
 
-class Donate(URLCommand):
+class CheckForUpdate(URLCommand):
     def __init__(self, *args, **kwargs):
+        # Remove settings from kwargs if present (not needed for URLCommand)
+        kwargs.pop("settings", None)
         super().__init__(
-            menuText=_("&Donate..."),
-            helpText=_("Donate to support the development of %s") % meta.name,
-            bitmap="heart_icon",
-            url=meta.donate_url,
+            menuText=_("Check for update"),
+            helpText=_("Check for the availability of a new version of %s")
+            % meta.name,
+            bitmap="box_icon",
+            url=meta.github_url,
             *args,
             **kwargs
         )
@@ -2891,6 +2900,9 @@ class Search(ViewerCommand, settings_uicommand.SettingsCommand):
             regularExpression=regularExpression,
             callback=self.onFind,
         )
+        # Set minimum size to ensure the text input is visible in AUI toolbars
+        # that use AUI_TB_NO_AUTORESIZE flag
+        self.searchControl.SetMinSize((150, -1))
         toolbar.AddControl(self.searchControl)
         self.bindKeyDownInViewer()
         self.bindKeyDownInSearchCtrl()
@@ -2914,6 +2926,8 @@ class Search(ViewerCommand, settings_uicommand.SettingsCommand):
 
     def unbind(self, window, id_):
         self.__bound = False
+        if hasattr(self, 'searchControl') and self.searchControl:
+            self.searchControl.cleanup()
         super().unbind(window, id_)
 
     def onViewerKeyDown(self, event):
@@ -3307,7 +3321,15 @@ class ToggleAutoColumnResizing(
         wx.CallAfter(self.updateWidget)
 
     def updateWidget(self):
-        self.viewer.getWidget().ToggleAutoResizing(self.isSettingChecked())
+        # Guard against deleted C++ object - can happen when wx.CallAfter
+        # callback executes after window destruction
+        try:
+            widget = self.viewer.getWidget()
+            if widget:
+                widget.ToggleAutoResizing(self.isSettingChecked())
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            pass
 
     def isSettingChecked(self):
         return self.settings.getboolean(

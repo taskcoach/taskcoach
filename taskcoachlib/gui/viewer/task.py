@@ -38,12 +38,15 @@ from taskcoachlib.widgets import (
     CalendarConfigDialog,
     HierarchicalCalendarConfigDialog,
 )
-from twisted.internet.threads import deferToThread
-from twisted.internet.defer import inlineCallbacks
+# NOTE (Twisted Removal - 2024): Replaced deferToThread/inlineCallbacks with
+# concurrent.futures ThreadPoolExecutor. This provides the same async thread
+# execution without Twisted reactor dependency.
+from concurrent.futures import ThreadPoolExecutor
 from . import base
 from . import inplace_editor
 from . import mixin
 from . import refresher
+import ast
 import wx
 import tempfile
 import struct
@@ -104,6 +107,14 @@ class BaseTaskViewer(
         wx.CallAfter(self.__DisplayBalloon)
 
     def __DisplayBalloon(self):
+        # Guard against deleted C++ object - can happen when wx.CallAfter
+        # callback executes after window destruction (e.g., closing nested dialogs)
+        try:
+            if not self or self.IsBeingDeleted():
+                return
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            return
         if (
             self.toolbar.getToolIdByCommand("ViewerHideTasks_completed")
             != wx.ID_ANY
@@ -637,7 +648,7 @@ class SquareTaskViewer(BaseTaskTreeViewer):
             priority=render.priority,
         )
         super().__init__(*args, **kwargs)
-        sortKeys = eval(self.settings.get(self.settingsSection(), "sortby"))
+        sortKeys = ast.literal_eval(self.settings.get(self.settingsSection(), "sortby"))
         orderBy = sortKeys[0] if sortKeys else "budget"
         self.orderBy(sortKeys[0] if sortKeys else "budget")
         pub.subscribe(
@@ -1066,7 +1077,16 @@ class CalendarViewer(
 
         if self.settings.getboolean("calendarviewer", "gradient"):
             # If called directly, we crash with a Cairo assert failing...
-            wx.CallAfter(widget.SetDrawer, wxFancyDrawer)
+            wx.CallAfter(self.__safeSetDrawer, widget, wxFancyDrawer)
+
+    def __safeSetDrawer(self, widget, drawer):
+        """Safely set the drawer on a widget, guarding against deleted C++ objects."""
+        try:
+            if widget:
+                widget.SetDrawer(drawer)
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            pass
 
         return widget
 
@@ -2176,7 +2196,7 @@ class TaskStatsViewer(BaseTaskViewer):  # pylint: disable=W0223
 
     def getFgColor(self, status):
         color = wx.Colour(
-            *eval(self.settings.get("fgcolor", "%stasks" % status))
+            *ast.literal_eval(self.settings.get("fgcolor", "%stasks" % status))
         )
         if status == task.status.active and color == wx.BLACK:
             color = wx.BLUE
@@ -2341,7 +2361,7 @@ else:
 
         def getFgColor(self, status):
             color = wx.Colour(
-                *eval(self.settings.get("fgcolor", "%stasks" % status))
+                *ast.literal_eval(self.settings.get("fgcolor", "%stasks" % status))
             )
             if status == task.status.active and color == wx.BLACK:
                 color = wx.BLUE
@@ -2365,33 +2385,78 @@ else:
                 if not self._updating:
                     self._refresh()
 
-        @inlineCallbacks
         def _refresh(self):
+            """
+            Refresh the graph visualization asynchronously.
+
+            DESIGN NOTE (Twisted Removal - 2024):
+            Previously used @inlineCallbacks and deferToThread from Twisted.
+            Now uses concurrent.futures.ThreadPoolExecutor with wx.CallAfter
+            for thread-safe GUI updates. This maintains the same async behavior
+            without requiring the Twisted reactor.
+            """
             while self._needsUpdate:
                 # Compute this in main thread because of concurrent access issues
                 graph, visual_style = self.form_depend_graph()
                 self._needsUpdate = False  # Any new refresh starting here should trigger a new iteration
                 if graph.get_edgelist():
                     self._updating = True
-                    try:
-                        yield deferToThread(
-                            igraph.plot,
-                            graph,
-                            self.graphFile.name,
-                            **visual_style
-                        )
-                    finally:
-                        self._updating = False
-                    bitmap = wx.Image(
-                        self.graphFile.name, wx.BITMAP_TYPE_ANY
-                    ).ConvertToBitmap()
+                    # Use ThreadPoolExecutor for background thread execution
+                    executor = ThreadPoolExecutor(max_workers=1)
+
+                    def do_plot():
+                        try:
+                            igraph.plot(
+                                graph,
+                                self.graphFile.name,
+                                **visual_style
+                            )
+                        finally:
+                            self._updating = False
+                        return True
+
+                    def on_plot_complete(future):
+                        try:
+                            future.result()  # Check for exceptions
+                            bitmap = wx.Image(
+                                self.graphFile.name, wx.BITMAP_TYPE_ANY
+                            ).ConvertToBitmap()
+                        except Exception:
+                            bitmap = wx.NullBitmap
+
+                        # Update GUI in main thread
+                        def update_gui():
+                            if self._needsUpdate:
+                                # Another refresh was requested, recurse
+                                self._refresh()
+                            else:
+                                self._finish_refresh(bitmap)
+
+                        wx.CallAfter(update_gui)
+
+                    future = executor.submit(do_plot)
+                    future.add_done_callback(on_plot_complete)
+                    return  # Exit and let callback handle completion
                 else:
                     bitmap = wx.NullBitmap
+                    self._finish_refresh(bitmap)
+                    return
 
+        def _finish_refresh(self, bitmap):
+            """Complete the refresh by updating the GUI with the new bitmap."""
             # Only update graphics once all refreshes have been "collapsed"
             graph_png_bm = wx.StaticBitmap(
                 self.scrolled_panel, wx.ID_ANY, bitmap
             )
             self.hbox.Clear(True)
             self.hbox.Add(graph_png_bm, 1, wx.ALL, 3)
-            wx.CallAfter(self.scrolled_panel.SendSizeEvent)
+            wx.CallAfter(self.__safeSendSizeEvent)
+
+    def __safeSendSizeEvent(self):
+        """Safely send size event to scrolled panel, guarding against deleted C++ objects."""
+        try:
+            if self.scrolled_panel:
+                self.scrolled_panel.SendSizeEvent()
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            pass

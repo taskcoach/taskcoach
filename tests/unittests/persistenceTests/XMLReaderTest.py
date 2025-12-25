@@ -163,8 +163,8 @@ class TempFileLockTest(XMLReaderTestCase):
             try:
                 os.remove(self.__filename)
                 os.remove(self.__filename + ".delta")
-            except:
-                pass  # pylint: disable=W0702
+            except OSError:
+                pass  # File removal may fail on Windows
 
             self.assertTrue(os.path.exists(self.__filename))
 

@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import test, wx
-from taskcoachlib.gui import splash, icons
+import test, wx, os
+from taskcoachlib.gui import splash
 
 
 class SplashTest(test.wxTestCase):
@@ -31,7 +31,10 @@ class SplashTest(test.wxTestCase):
         super().tearDown()
 
     def assertCorrectBitmap(self):
-        expectedBitmap = icons.catalog["splash"].getBitmap()
+        # Load the expected bitmap from the splash.png file
+        splash_path = splash.get_resource_path(os.path.join('icons', 'splash.png'))
+        expectedImage = wx.Image(splash_path)
+        expectedBitmap = expectedImage.ConvertToBitmap()
         actualBitmap = self.splashScreen.GetSplashWindow().GetBitmap()
         bitmapData = lambda bitmap: bitmap.ConvertToImage().GetData()
         self.assertEqual(bitmapData(expectedBitmap), bitmapData(actualBitmap))

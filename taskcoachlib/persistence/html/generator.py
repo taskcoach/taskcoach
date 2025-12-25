@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import wx, cgi, io
+import wx, html, io
 from taskcoachlib.domain import task
 
 # pylint: disable=W0142
@@ -343,9 +343,9 @@ class Viewer2HTMLConverter(object):
                 bf = io.StringIO()
                 for note in sorted(notes, key=lambda note: note.subject()):
                     bf.write("<p>\n")
-                    bf.write(cgi.escape(note.subject()))
+                    bf.write(html.escape(note.subject()))
                     bf.write("<br />\n")
-                    bf.write(cgi.escape(note.description()))
+                    bf.write(html.escape(note.description()))
                     bf.write("</p>\n")
                     if note.children():
                         bf.write('<div style="padding-left: 20px;">\n')
@@ -357,7 +357,7 @@ class Viewer2HTMLConverter(object):
         elif column.name() == "attachments":
             return "<br />".join(
                 map(
-                    cgi.escape,
+                    html.escape,
                     sorted(
                         [
                             attachment.subject()
@@ -367,7 +367,7 @@ class Viewer2HTMLConverter(object):
                 )
             )
 
-        renderedItem = cgi.escape(
+        renderedItem = html.escape(
             column.render(item, humanReadable=False)
         ).replace("\n", "<br>")
         if indent:

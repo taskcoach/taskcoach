@@ -23,8 +23,9 @@ from taskcoachlib import patterns
 from taskcoachlib.domain import date, categorizable, note, attachment, base
 from taskcoachlib.domain.attribute.icon import getImageOpen
 from pubsub import pub
-from taskcoachlib.thirdparty._weakrefset import WeakSet
+from weakref import WeakSet
 from . import status
+import ast
 import weakref
 import wx
 
@@ -939,7 +940,7 @@ class Task(
     @classmethod
     def fgColorForStatus(class_, taskStatus):
         return wx.Colour(
-            *eval(class_.settings.get("fgcolor", "%stasks" % taskStatus))
+            *ast.literal_eval(class_.settings.get("fgcolor", "%stasks" % taskStatus))
         )  # pylint: disable=E1101
 
     def appearanceChangedEvent(self, event):
@@ -999,7 +1000,7 @@ class Task(
     @classmethod
     def bgColorForStatus(class_, taskStatus):
         return wx.Colour(
-            *eval(class_.settings.get("bgcolor", "%stasks" % taskStatus))
+            *ast.literal_eval(class_.settings.get("bgcolor", "%stasks" % taskStatus))
         )  # pylint: disable=E1101
 
     # Font

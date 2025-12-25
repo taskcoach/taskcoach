@@ -93,7 +93,7 @@ defaults = {
         "columns": "['plannedStartDateTime', 'dueDateTime']",
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'attachments': 28, 'notes': 28, 'ordering': 28}",
-        "columnautoresizing": "True",
+        "columnautoresizing": "False",
         "hideinactivetasks": "False",
         "hidelatetasks": "False",
         "hideactivetasks": "False",
@@ -151,7 +151,7 @@ defaults = {
         "'dueDateTime']",
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'attachments': 28, 'notes': 28}",
-        "columnautoresizing": "True",
+        "columnautoresizing": "False",
         "hideinactivetasks": "False",
         "hidelatetasks": "False",
         "hideduesoontasks": "False",
@@ -259,7 +259,7 @@ defaults = {
         "columns": "[]",
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'attachments': 28, 'notes': 28, 'ordering': 28}",
-        "columnautoresizing": "True",
+        "columnautoresizing": "False",
     },
     "categoryviewerintaskeditor": {
         "title": "",
@@ -274,7 +274,7 @@ defaults = {
         "columns": "[]",
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'attachments': 28, 'notes': 28, 'ordering': 28}",
-        "columnautoresizing": "True",
+        "columnautoresizing": "False",
     },
     "categoryviewerinnoteeditor": {
         "title": "",
@@ -289,7 +289,7 @@ defaults = {
         "columns": "[]",
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'attachments': 28, 'notes': 28, 'ordering': 28}",
-        "columnautoresizing": "True",
+        "columnautoresizing": "False",
     },
     "noteviewer": {
         "title": "",
@@ -305,7 +305,7 @@ defaults = {
                  'modificationDateTime']",
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'attachments': 28, 'description': 200, 'ordering': 28}",
-        "columnautoresizing": "True",
+        "columnautoresizing": "False",
     },
     "noteviewerintaskeditor": {
         "toolbarperspective": "NoteNew,NewSubItem,Separator,Edit,Delete,Spacer,ResetFilter,Search",
@@ -315,7 +315,7 @@ defaults = {
                  'modificationDateTime']",
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'attachments': 28, 'description': 200, 'ordering': 28}",
-        "columnautoresizing": "True",
+        "columnautoresizing": "False",
         "searchfilterstring": "",
         "searchfiltermatchcase": "False",
         "searchfilterincludesubitems": "False",
@@ -329,7 +329,7 @@ defaults = {
         "columns": "['subject']",
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'ordering': 28}",
-        "columnautoresizing": "True",
+        "columnautoresizing": "False",
         "searchfilterstring": "",
         "searchfiltermatchcase": "False",
         "searchfilterincludesubitems": "False",
@@ -343,7 +343,7 @@ defaults = {
         "columns": "['subject']",
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'ordering': 28}",
-        "columnautoresizing": "True",
+        "columnautoresizing": "False",
         "searchfilterstring": "",
         "searchfiltermatchcase": "False",
         "searchfilterincludesubitems": "False",
@@ -361,7 +361,7 @@ defaults = {
         "columnwidths": "{'period': 160, 'monday': 70, 'tuesday': 70, "
         "'wednesday': 70, 'thursday': 70, 'friday': 70, "
         "'saturday': 70, 'sunday': 70, 'description': 200}",
-        "columnautoresizing": "True",
+        "columnautoresizing": "False",
         "searchfilterstring": "",
         "searchfiltermatchcase": "False",
         "searchfilterincludesubitems": "False",
@@ -382,7 +382,7 @@ defaults = {
         "columnwidths": "{'period': 160, 'monday': 70, 'tuesday': 70, "
         "'wednesday': 70, 'thursday': 70, 'friday': 70, "
         "'saturday': 70, 'sunday': 70, 'description': 200}",
-        "columnautoresizing": "True",
+        "columnautoresizing": "False",
         "searchfilterstring": "",
         "searchfiltermatchcase": "False",
         "searchfilterincludesubitems": "False",
@@ -402,7 +402,7 @@ defaults = {
         "columnwidths": "{'period': 160, 'monday': 70, 'tuesday': 70, "
         "'wednesday': 70, 'thursday': 70, 'friday': 70, "
         "'saturday': 70, 'sunday': 70, 'description': 200}",
-        "columnautoresizing": "True",
+        "columnautoresizing": "False",
         "searchfilterstring": "",
         "searchfiltermatchcase": "False",
         "searchfilterincludesubitems": "False",
@@ -425,7 +425,7 @@ defaults = {
         "columns": "[]",
         "columnsalwaysvisible": "['type', 'subject']",
         "columnwidths": "{'notes': 28, 'type': 28}",
-        "columnautoresizing": "True",
+        "columnautoresizing": "False",
     },
     "attachmentviewerintaskeditor": {
         "title": "",
@@ -440,7 +440,7 @@ defaults = {
         "columns": "[]",
         "columnsalwaysvisible": "['type', 'subject']",
         "columnwidths": "{'notes': 28, 'type': 28}",
-        "columnautoresizing": "True",
+        "columnautoresizing": "False",
     },
     "attachmentviewerinnoteeditor": {
         "title": "",
@@ -455,7 +455,7 @@ defaults = {
         "columns": "[]",
         "columnsalwaysvisible": "['type', 'subject']",
         "columnwidths": "{'notes': 28, 'type': 28}",
-        "columnautoresizing": "True",
+        "columnautoresizing": "False",
     },
     "attachmentviewerincategoryeditor": {
         "title": "",
@@ -470,16 +470,16 @@ defaults = {
         "columns": "[]",
         "columnsalwaysvisible": "['type', 'subject']",
         "columnwidths": "{'notes': 28, 'type': 28}",
-        "columnautoresizing": "True",
+        "columnautoresizing": "False",
     },
     "window": {
         "size": "(900, 500)",  # Default size of the main window
         "position": "(-1, -1)",  # Position of the main window, undefined by default
+        "monitor_index": "-1",  # Monitor the window was on, -1 means unknown/default
         "iconized": "False",  # Don't start up iconized by default
         "maximized": "False",  # Don't start up maximized by default
         # Possible strticonized values: 'Never', 'Always', 'WhenClosedIconized'
         "starticonized": "WhenClosedIconized",
-        "splash": "True",  # Show a splash screen while starting up
         "hidewheniconized": "False",  # Don't hide the window from the task bar
         "hidewhenclosed": "False",  # Close window quits the application
         "tips": "True",  # Show tips after starting up
@@ -489,6 +489,7 @@ defaults = {
     "effortdialog": {
         "size": "(-1, -1)",  # Size of the dialogs, calculated by default
         "position": "(-1, -1)",  # Position of the dialog, undefined by default
+        "parent_offset": "(-1, -1)",  # Offset from parent window for multi-monitor support
         "maximized": "False",  # Don't open the dialog maximized by default
     },
     "file": {
@@ -571,6 +572,7 @@ defaults = {
         "sdtcspans": "60,120,1440,2880",
         "sdtcspans_effort": "60,120,180,240",
         "decimaltime": "False",
+        # New settings should use snake_case naming convention (PEP 8)
     },
     "syncml": {
         "url": "",
