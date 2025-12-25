@@ -1,5 +1,5 @@
 Task Coach - Your friendly task manager
-Copyright (C) 2004-2016 Task Coach developers <developers@taskcoach.org>
+Copyright (C) 2004-2026 Task Coach developers <developers@taskcoach.org>
 
 Task Coach is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,13 +19,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 Task Coach is listed at the following webpages:
 
 Task Coach Homepage    https://github.com/taskcoach/taskcoach
+Sourceforge homepage   http://www.sourceforge.net/projects/taskcoach
 Freshmeat homepage     http://freshmeat.net/projects/taskcoach
 Launchpad homepage     http://launchpad.net/taskcoach
 wxPythonPit            http://wiki.wxpython.org/wxPythonPit%20Apps
 PythonInfo Wiki        http://www.python.org/moin/Applications
 Open Directory         http://dmoz.org/Computers/Software/Freeware/Personal_Information_Managers/
 Python Packages Index  http://pypi.python.org/pypi/TaskCoach/
-Freeware Home          http://www.freewarehome.com/ 
+Freeware Home          http://www.freewarehome.com/
 Wikipedia              http://en.wikipedia.org/wiki/Task_Coach
 MacSoftwareUsingPython http://wiki.python.org/moin/MacPython/MacSoftwareUsingPython
 CNET Upload.com        http://www.upload.com
