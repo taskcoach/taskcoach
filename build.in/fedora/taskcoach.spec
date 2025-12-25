@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2004-2016 Task Coach developers <developers@taskcoach.org>
 # Copyright (C) 2008 Marcin Zajaczkowski <mszpak@wp.pl>
-# Copyright (C) 2024 Aaron Wolf <https://github.com/realcarbonneau>
+# Copyright (C) 2024 Réal Carbonneau <https://github.com/realcarbonneau>
 #
 # Task Coach is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
