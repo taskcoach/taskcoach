@@ -41,7 +41,9 @@ Date: 2012-11-03
 License: GPL v3
 Source: https://bitbucket.org/fraca7/smartdatetimectrl
 Copied on: 2012-11-03
-Changes for Task Coach: Timer cleanup fix for wx.Timer crash on window destroy
+Changes for Task Coach:
+  - Timer cleanup fix for wx.Timer crash on window destroy
+  - 2025-12: Fixed dark theme issue - set explicit text foreground color for month header in calendar popup (issue #43)
 
 ---
 
