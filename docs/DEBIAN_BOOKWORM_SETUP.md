@@ -10,10 +10,10 @@ The easiest way to install TaskCoach on Debian Bookworm is using the pre-built `
 
 ```bash
 # Download the latest .deb from GitHub releases
-wget https://github.com/realcarbonneau/taskcoach/releases/latest/download/taskcoach_1.6.1.74_debian-12-bookworm.deb
+wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach_2.0.0.75_debian-12-bookworm.deb
 
 # Install it (this will also install dependencies)
-sudo apt install ./taskcoach_1.6.1.74_debian-12-bookworm.deb
+sudo apt install ./taskcoach_2.0.0.75_debian-12-bookworm.deb
 
 # Run TaskCoach
 taskcoach
@@ -45,7 +45,7 @@ If you want to build the package from source:
 sudo apt install build-essential debhelper dh-python python3-all python3-setuptools devscripts
 
 # Clone the repository
-git clone https://github.com/realcarbonneau/taskcoach.git
+git clone https://github.com/taskcoach/taskcoach.git
 cd taskcoach
 
 # Build the package
@@ -79,7 +79,7 @@ Debian Bookworm ships wxPython 4.2.0, which has critical bugs affecting category
 
 ```bash
 # Clone the repository (shallow clone to save space)
-git clone --depth 1 https://github.com/realcarbonneau/taskcoach.git
+git clone --depth 1 https://github.com/taskcoach/taskcoach.git
 cd taskcoach
 ```
 
@@ -302,8 +302,8 @@ dpkg -l | grep python3-lxml
 
 ## Support
 
-- TaskCoach Homepage: https://github.com/realcarbonneau/taskcoach
-- GitHub Issues: https://github.com/realcarbonneau/taskcoach/issues
+- TaskCoach Homepage: https://github.com/taskcoach/taskcoach
+- GitHub Issues: https://github.com/taskcoach/taskcoach/issues
 - Documentation: See README.md in the repository
 
 ## Related Documentation

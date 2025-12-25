@@ -264,8 +264,8 @@ create_appdata() {
     </p>
   </description>
   <launchable type="desktop-id">taskcoach.desktop</launchable>
-  <url type="homepage">https://github.com/realcarbonneau/taskcoach</url>
-  <url type="bugtracker">https://github.com/realcarbonneau/taskcoach/issues</url>
+  <url type="homepage">https://github.com/taskcoach/taskcoach</url>
+  <url type="bugtracker">https://github.com/taskcoach/taskcoach/issues</url>
   <provides>
     <binary>taskcoach</binary>
   </provides>

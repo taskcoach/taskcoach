@@ -271,7 +271,7 @@ jobs:
             '  <project_license>GPL-3.0+</project_license>' \
             '  <description><p>Task Coach is a free open source todo manager.</p></description>' \
             '  <launchable type="desktop-id">taskcoach.desktop</launchable>' \
-            '  <url type="homepage">https://github.com/realcarbonneau/taskcoach</url>' \
+            '  <url type="homepage">https://github.com/taskcoach/taskcoach</url>' \
             '  <provides><binary>taskcoach</binary></provides>' \
             '  <content_rating type="oars-1.1" />' \
             '</component>' \

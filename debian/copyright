@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: Task Coach
-Upstream-Contact: https://github.com/realcarbonneau/taskcoach/issues
-Source: https://github.com/realcarbonneau/taskcoach
+Upstream-Contact: https://github.com/taskcoach/taskcoach/issues
+Source: https://github.com/taskcoach/taskcoach
 
 Files: *
 Copyright: 2004-2025 Task Coach developers

@@ -4,26 +4,26 @@ Task Coach is a simple open source todo manager to keep track of personal tasks 
 
 ## Quick Start
 
-Download the package for your system from the [latest release](https://github.com/realcarbonneau/taskcoach/releases):
+Download the package for your system from the [latest release](https://github.com/taskcoach/taskcoach/releases):
 
 | Platform | Package |
 |----------|---------|
-| Debian 12 (Bookworm) | `taskcoach_1.6.1.74_debian-12-bookworm.deb` |
-| Debian 13 (Trixie) | `taskcoach_1.6.1.74_debian-13-trixie.deb` |
-| Debian Sid | `taskcoach_1.6.1.74_debian-sid.deb` |
-| Ubuntu 22.04 (Jammy) | `taskcoach_1.6.1.74_ubuntu-22.04-jammy.deb` |
-| Ubuntu 24.04 (Noble) | `taskcoach_1.6.1.74_ubuntu-24.04-noble.deb` |
+| Debian 12 (Bookworm) | `taskcoach_2.0.0.75_debian-12-bookworm.deb` |
+| Debian 13 (Trixie) | `taskcoach_2.0.0.75_debian-13-trixie.deb` |
+| Debian Sid | `taskcoach_2.0.0.75_debian-sid.deb` |
+| Ubuntu 22.04 (Jammy) | `taskcoach_2.0.0.75_ubuntu-22.04-jammy.deb` |
+| Ubuntu 24.04 (Noble) | `taskcoach_2.0.0.75_ubuntu-24.04-noble.deb` |
 | Linux Mint | Use Ubuntu `.deb` (Mint is Ubuntu-based) |
-| Arch Linux / Manjaro | `taskcoach-1.6.1.74-arch.pkg.tar.zst` |
-| Fedora 39/40 | `taskcoach-1.6.1.74-fedora39.noarch.rpm` |
-| Any Linux (x86_64) | `TaskCoach-1.6.1.74-x86_64.AppImage` |
+| Arch Linux / Manjaro | `taskcoach-2.0.0.75-arch.pkg.tar.zst` |
+| Fedora 39/40 | `taskcoach-2.0.0.75-fedora39.noarch.rpm` |
+| Any Linux (x86_64) | `TaskCoach-2.0.0.75-x86_64.AppImage` |
 
 **Example: Install on Debian/Ubuntu**
 
 ```bash
 cd ~/Downloads
-wget https://github.com/realcarbonneau/taskcoach/releases/latest/download/taskcoach_1.6.1.74_debian-13-trixie.deb
-sudo apt install ./taskcoach_1.6.1.74_debian-13-trixie.deb
+wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach_2.0.0.75_debian-13-trixie.deb
+sudo apt install ./taskcoach_2.0.0.75_debian-13-trixie.deb
 taskcoach.py
 ```
 
@@ -39,8 +39,8 @@ sudo apt autoremove  # optional: remove unused dependencies
 
 ```bash
 cd ~/Downloads
-wget https://github.com/realcarbonneau/taskcoach/releases/latest/download/taskcoach-1.6.1.74-arch.pkg.tar.zst
-sudo pacman -U taskcoach-1.6.1.74-arch.pkg.tar.zst
+wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach-2.0.0.75-arch.pkg.tar.zst
+sudo pacman -U taskcoach-2.0.0.75-arch.pkg.tar.zst
 taskcoach.py
 ```
 
@@ -54,8 +54,8 @@ sudo pacman -Qdtq | sudo pacman -Rs -  # optional: remove orphaned dependencies
 
 ```bash
 cd ~/Downloads
-wget https://github.com/realcarbonneau/taskcoach/releases/latest/download/taskcoach-1.6.1.74-fedora40.noarch.rpm
-sudo dnf install ./taskcoach-1.6.1.74-fedora40.noarch.rpm
+wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach-2.0.0.75-fedora40.noarch.rpm
+sudo dnf install ./taskcoach-2.0.0.75-fedora40.noarch.rpm
 taskcoach.py
 ```
 
@@ -69,9 +69,9 @@ sudo dnf autoremove  # optional: remove unused dependencies
 
 ```bash
 cd ~/Downloads
-wget https://github.com/realcarbonneau/taskcoach/releases/latest/download/TaskCoach-1.6.1.74-x86_64.AppImage
-chmod +x TaskCoach-1.6.1.74-x86_64.AppImage
-./TaskCoach-1.6.1.74-x86_64.AppImage
+wget https://github.com/taskcoach/taskcoach/releases/latest/download/TaskCoach-2.0.0.75-x86_64.AppImage
+chmod +x TaskCoach-2.0.0.75-x86_64.AppImage
+./TaskCoach-2.0.0.75-x86_64.AppImage
 ```
 
 To remove: simply delete the AppImage file.
@@ -81,7 +81,7 @@ To remove: simply delete the AppImage file.
 For development or if you prefer running from git:
 
 ```bash
-git clone --depth 1 https://github.com/realcarbonneau/taskcoach.git
+git clone --depth 1 https://github.com/taskcoach/taskcoach.git
 cd taskcoach
 ./setup.sh
 ./taskcoach-run.sh
@@ -135,4 +135,4 @@ Key packages:
 
 ## Support
 
-- GitHub Issues: https://github.com/realcarbonneau/taskcoach/issues
+- GitHub Issues: https://github.com/taskcoach/taskcoach/issues

@@ -11,12 +11,12 @@
 # (at your option) any later version.
 
 Name:           taskcoach
-Version:        1.6.1.74
+Version:        2.0.0.75
 Release:        1%{?dist}
 Summary:        Your friendly task manager
 
 License:        GPL-3.0-or-later
-URL:            https://github.com/realcarbonneau/taskcoach
+URL:            https://github.com/taskcoach/taskcoach
 Source0:        %{url}/archive/refs/heads/main.tar.gz#/%{name}-%{version}.tar.gz
 
 BuildArch:      noarch
@@ -133,6 +133,13 @@ install -Dm644 Welcome.tsk \
 %{_datadir}/%{name}/
 
 %changelog
+* Wed Dec 25 2024 Task Coach Developers <developers@taskcoach.org> - 2.0.0.75-1
+- Major version bump to 2.0.0 reflecting Python 3 modernization
+- Merged detached fork with 600+ patches and improvements
+- Full GTK3/wxPython 4.x compatibility
+- New GitHub Actions CI/CD workflows
+- Comprehensive packaging for Debian, Fedora, Arch, AppImage
+
 * Tue Dec 24 2024 Task Coach Developers <developers@taskcoach.org> - 1.6.1.74-1
 - Modernized spec file for Fedora 39+
 - Consistent dependency strategy: distro packages first, pip fallback

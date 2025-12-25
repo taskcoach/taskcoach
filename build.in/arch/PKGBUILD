@@ -2,11 +2,11 @@
 # Contributor: Aaron Wolf <https://github.com/realcarbonneau>
 
 pkgname=taskcoach
-pkgver=1.6.1.74
+pkgver=2.0.0.75
 pkgrel=1
 pkgdesc="Your friendly task manager - personal task manager with composite tasks, effort tracking, and more"
 arch=('any')
-url="https://github.com/realcarbonneau/taskcoach"
+url="https://github.com/taskcoach/taskcoach"
 license=('GPL3')
 depends=(
     'python>=3.8'

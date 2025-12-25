@@ -377,7 +377,7 @@ pristine-tar = True
 ```
 version=4
 opts=filenamemangle=s/.+\/v?(\d\S+)\.tar\.gz/taskcoach-$1\.tar\.gz/ \
-  https://github.com/realcarbonneau/taskcoach/tags .*/v?(\d[\d.]+)\.tar\.gz
+  https://github.com/taskcoach/taskcoach/tags .*/v?(\d[\d.]+)\.tar\.gz
 ```
 
 ### 4. File ITP Bug

@@ -14,11 +14,11 @@
   <p xml:lang="fr">Task Coach est un gestionnaire de tâches libre pour gérer vos tâches et listes de choses à faire. Il supporte les tâches composites, càd les tâches faisant partie d'une autre. De plus, Task Coach vous permet de catégoriser vos tâches, suivre le temps passé par rapport à un budget associé à chaque tâche, et bien plus. Task Coach est disponible pour Windows, Mac OS X, BSD, Linux, iPhone et iPad.</p>
   <p xml:lang="fr">Votre base de données peut être synchronisée à travers toutes ces plate-formes. Si espeak est installé, les rappels peuvent être énoncés.</p>
  </description>
- <url type="homepage">https://github.com/realcarbonneau/taskcoach</url>
- <url type="bugtracker">https://github.com/realcarbonneau/taskcoach/issues</url>
+ <url type="homepage">https://github.com/taskcoach/taskcoach</url>
+ <url type="bugtracker">https://github.com/taskcoach/taskcoach/issues</url>
  <url type="faq">https://answers.launchpad.net/taskcoach/+faqs</url>
  <provides>
    <binary>taskcoach.py</binary>
  </provides>
- <updatecontact>https://github.com/realcarbonneau/taskcoach/issues</updatecontact>
+ <updatecontact>https://github.com/taskcoach/taskcoach/issues</updatecontact>
 </application>
