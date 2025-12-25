@@ -33,8 +33,7 @@ license.
 The following files do not include any copyright information except
 for the original author's name:
 
- - taskcoachlib/thirdparty/snarl.py: that's how we found it on the Interwebs.
- - taskcoachlib/i18n/po2dict.py: same.
+ - taskcoachlib/i18n/po2dict.py: that's how we found it on the Interwebs.
  - taskcoachlib/persistence/xml/templates.py: because it's a generated
    file.
 
