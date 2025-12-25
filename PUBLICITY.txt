@@ -1,5 +1,5 @@
 Task Coach - Your friendly task manager
-Copyright (C) 2004-2025 Task Coach developers <developers@taskcoach.org>
+Copyright (C) 2004-2026 Task Coach developers <developers@taskcoach.org>
 
 Task Coach is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
