@@ -2261,6 +2261,7 @@ class _CalendarPopup(_PopupWindow):
 
         dc.SetPen(wx.BLACK_PEN)
         dc.SetBrush(wx.BLACK_BRUSH)
+        dc.SetTextForeground(wx.BLACK)  # Ensure header text is visible on white background
 
         header = decodeSystemString(
             datetime.date(
