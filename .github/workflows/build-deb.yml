@@ -14,6 +14,9 @@ on:
       - master
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-deb:
     name: Build .deb on ${{ matrix.distro }}
