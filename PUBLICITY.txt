@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 Task Coach is listed at the following webpages:
 
-Task Coach Homepage    http://www.taskcoach.org
+Task Coach Homepage    https://github.com/taskcoach/taskcoach
 Sourceforge homepage   http://www.sourceforge.net/projects/taskcoach
 Freshmeat homepage     http://freshmeat.net/projects/taskcoach
 Launchpad homepage     http://launchpad.net/taskcoach
