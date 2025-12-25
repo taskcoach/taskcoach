@@ -1,8 +1,7 @@
 Task Coach - Your friendly task manager
-Copyright (C) 2004-2025 Task Coach developers
+Copyright (C) 2004-2016 Task Coach developers <developers@taskcoach.org>
 
 Task Coach developers are:
-Copyright (C) 2025 Réal Carbonneau <https://github.com/realcarbonneau>
 Copyright (C) 2012 Aaron Wolf <wolftune@gmail.com>
 Copyright (C) 2005-2011 Jérôme Laheurte <fraca7@free.fr>
 Copyright (C) 2004-2011 Frank Niessink <frank@niessink.com>
@@ -15,7 +14,7 @@ Copyright (C) 2009 George Weeks <gcw52@telus.net>
 Copyright (C) 2008 Rob McMullen <rob.mcmullen@gmail.com>
 Copyright (C) 2008 Carl Zmola <zmola@acm.org>
 Copyright (C) 2008 Thomas Sonne Olesen <tpo@sonnet.dk>
-Copyright (C) 2008 Joăo Alexandre de Toledo <jtoledo@griffo.com.br>
+Copyright (C) 2008 João Alexandre de Toledo <jtoledo@griffo.com.br>
 Copyright (C) 2008 Marcin Zajaczkowski <mszpak@wp.pl>
 Copyright (C) 2011 Tobias Gradl <https://sourceforge.net/users/greentomato>
 Copyright (C) 2013 Ivan Romanov <https://sourceforge.net/u/ivanromanov/>
@@ -34,9 +33,10 @@ license.
 The following files do not include any copyright information except
 for the original author's name:
 
- - taskcoachlib/i18n/po2dict.py: that's how we found it on the Interwebs.
+ - taskcoachlib/thirdparty/snarl.py: that's how we found it on the Interwebs.
+ - taskcoachlib/i18n/po2dict.py: same.
  - taskcoachlib/persistence/xml/templates.py: because it's a generated
-    file.
+   file.
 
 Also thanks to Nicolas Boulenguez for helping make this list complete,
 doing some anal harm to various lepidopterans in the process (French
