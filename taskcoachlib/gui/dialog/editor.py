@@ -573,6 +573,7 @@ class DatesPage(Page):
             commandClass,
             entry.EVT_DATETIMEENTRY,
             eventType,
+            commit_on_focus_loss=True,  # Only commit when focus leaves the field
             keep_delta=keep_delta,
             callback=(
                 self.__onPlannedStartDateTimeChanged
@@ -612,6 +613,7 @@ class DatesPage(Page):
             command.EditReminderDateTimeCommand,
             entry.EVT_DATETIMEENTRY,
             self.items[0].reminderChangedEventType(),
+            commit_on_focus_loss=True,  # Only commit when focus leaves the field
         )
         self.addEntry(
             _("Reminder"),
@@ -1567,10 +1569,6 @@ class NullableDateTimeWrapper:
         """Forward bind to datetime entry."""
         self._datetime_entry.Bind(event_type, handler, source, id, id2)
 
-    def Unbind(self, event_type, source=None, id=wx.ID_ANY, id2=wx.ID_ANY, handler=None):
-        """Forward unbind to datetime entry."""
-        return self._datetime_entry.Unbind(event_type, source, id, id2, handler)
-
     def LoadChoices(self, choices):
         """Forward to datetime entry."""
         self._datetime_entry.LoadChoices(choices)
@@ -1723,6 +1721,7 @@ class EffortEditBook(Page):
             command.EditEffortStartDateTimeCommand,
             entry.EVT_DATETIMEENTRY,
             self.items[0].startChangedEventType(),
+            commit_on_focus_loss=True,
             callback=self.__onStartDateTimeChanged,
         )
         self._startDateTimeEntry.Bind(
@@ -1782,6 +1781,7 @@ class EffortEditBook(Page):
             command.EditEffortStopDateTimeCommand,
             entry.EVT_DATETIMEENTRY,
             self.items[0].stopChangedEventType(),
+            commit_on_focus_loss=True,
             callback=self.__onStopDateTimeChanged,
         )
         self._stopDateTimeEntry.Bind(
@@ -1970,26 +1970,13 @@ class EffortEditBook(Page):
         )
 
     def close_edit_book(self):
-        """Cleanup timers before closing to prevent crash."""
-        import sys
-        import time
-        def _ts():
-            return "%.3f" % time.time()
-        sys.stderr.write("[%s][EDITOR] close_edit_book called\n" % _ts())
-        sys.stderr.flush()
-        # Stop timers in DateTimeEntry widgets to prevent crash after dialog closes
+        """Stop timers in DateTimeEntry widgets to prevent crash after close."""
         if hasattr(self, '_startDateTimeEntry') and self._startDateTimeEntry:
-            sys.stderr.write("[%s][EDITOR] Calling _startDateTimeEntry.Cleanup()\n" % _ts())
-            sys.stderr.flush()
             if hasattr(self._startDateTimeEntry, 'Cleanup'):
                 self._startDateTimeEntry.Cleanup()
         if hasattr(self, '_stopDateTimeEntry') and self._stopDateTimeEntry:
-            sys.stderr.write("[%s][EDITOR] Calling _stopDateTimeEntry.Cleanup()\n" % _ts())
-            sys.stderr.flush()
             if hasattr(self._stopDateTimeEntry, 'Cleanup'):
                 self._stopDateTimeEntry.Cleanup()
-        sys.stderr.write("[%s][EDITOR] close_edit_book complete\n" % _ts())
-        sys.stderr.flush()
 
 
 class Editor(BalloonTipManager, widgets.Dialog):
@@ -2036,6 +2023,8 @@ class Editor(BalloonTipManager, widgets.Dialog):
 
         # Note: We intentionally do NOT freeze viewers while the dialog is open.
         # Updates should propagate immediately so other windows stay in sync.
+        # The commit_on_focus_loss option on AttributeSync handles batching
+        # rapid edits into single commands.
 
         if operating_system.isMac():
             # Sigh. On OS X, if you open an editor, switch back to the main window, open
@@ -2102,20 +2091,10 @@ class Editor(BalloonTipManager, widgets.Dialog):
         )
 
     def on_close_editor(self, event):
-        import sys
-        import time
-        def _ts():
-            return "%.3f" % time.time()
-        sys.stderr.write("[%s][EDITOR] on_close_editor called\n" % _ts())
-        sys.stderr.flush()
         event.Skip()
         # Save dialog position/size before closing
         self.__dimensions_tracker.save()
-        sys.stderr.write("[%s][EDITOR] About to call close_edit_book\n" % _ts())
-        sys.stderr.flush()
         self._interior.close_edit_book()
-        sys.stderr.write("[%s][EDITOR] close_edit_book returned\n" % _ts())
-        sys.stderr.flush()
         patterns.Publisher().removeObserver(self.on_item_removed)
         patterns.Publisher().removeObserver(self.on_subject_changed)
         # On Mac OS X, the text control does not lose focus when
@@ -2125,11 +2104,8 @@ class Editor(BalloonTipManager, widgets.Dialog):
         if self.__timer is not None:
             IdProvider.put(self.__timer.GetId())
         IdProvider.put(self.__new_effort_id)
-        sys.stderr.write("[%s][EDITOR] About to call Destroy\n" % _ts())
-        sys.stderr.flush()
+        # Note: No need to thaw viewers since we don't freeze them on open anymore
         self.Destroy()
-        sys.stderr.write("[%s][EDITOR] Destroy returned\n" % _ts())
-        sys.stderr.flush()
 
     def on_activate(self, event):
         event.Skip()

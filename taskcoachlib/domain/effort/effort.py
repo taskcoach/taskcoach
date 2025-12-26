@@ -23,11 +23,6 @@ from pubsub import pub
 from . import base as baseeffort
 import functools
 import weakref
-import sys
-import time
-
-def _ts():
-    return "%.3f" % time.time()
 
 
 @functools.total_ordering
@@ -125,28 +120,15 @@ class Effort(baseeffort.BaseEffort, base.Object):
     def setStart(self, startDateTime):
         if startDateTime == self._start:
             return
-        sys.stderr.write("[%s][EFFORT] setStart called, effort=%s (id=%s), startDateTime=%s\n" % (
-            _ts(), self, id(self), startDateTime))
-        sys.stderr.flush()
         self._start = startDateTime
         self.__updateDurationCache()
-        sys.stderr.write("[%s][EFFORT] Sending startChangedEventType\n" % _ts())
-        sys.stderr.flush()
         pub.sendMessage(
             self.startChangedEventType(), newValue=startDateTime, sender=self
         )
-        sys.stderr.write("[%s][EFFORT] Sending timeSpentChangedMessage\n" % _ts())
-        sys.stderr.flush()
         self.task().sendTimeSpentChangedMessage()
-        sys.stderr.write("[%s][EFFORT] Sending durationChangedMessage\n" % _ts())
-        sys.stderr.flush()
         self.sendDurationChangedMessage()
         if self.task().hourlyFee():
-            sys.stderr.write("[%s][EFFORT] Sending revenueChangedMessage\n" % _ts())
-            sys.stderr.flush()
             self.sendRevenueChangedMessage()
-        sys.stderr.write("[%s][EFFORT] setStart complete\n" % _ts())
-        sys.stderr.flush()
 
     @classmethod
     def startChangedEventType(class_):
