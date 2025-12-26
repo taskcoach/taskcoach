@@ -118,17 +118,36 @@ class Effort(baseeffort.BaseEffort, base.Object):
         )
 
     def setStart(self, startDateTime):
+        import sys
+        sys.stderr.write("[EFFORT] setStart called with %s (current=%s)\n" % (startDateTime, self._start))
+        sys.stderr.flush()
         if startDateTime == self._start:
+            sys.stderr.write("[EFFORT] No change, returning\n")
+            sys.stderr.flush()
             return
         self._start = startDateTime
         self.__updateDurationCache()
+        sys.stderr.write("[EFFORT] About to send startChangedEventType message\n")
+        sys.stderr.flush()
         pub.sendMessage(
             self.startChangedEventType(), newValue=startDateTime, sender=self
         )
+        sys.stderr.write("[EFFORT] startChangedEventType message sent, about to send timeSpentChanged\n")
+        sys.stderr.flush()
         self.task().sendTimeSpentChangedMessage()
+        sys.stderr.write("[EFFORT] timeSpentChanged sent, about to send durationChanged\n")
+        sys.stderr.flush()
         self.sendDurationChangedMessage()
+        sys.stderr.write("[EFFORT] durationChanged sent\n")
+        sys.stderr.flush()
         if self.task().hourlyFee():
+            sys.stderr.write("[EFFORT] About to send revenueChanged\n")
+            sys.stderr.flush()
             self.sendRevenueChangedMessage()
+            sys.stderr.write("[EFFORT] revenueChanged sent\n")
+            sys.stderr.flush()
+        sys.stderr.write("[EFFORT] setStart complete\n")
+        sys.stderr.flush()
 
     @classmethod
     def startChangedEventType(class_):

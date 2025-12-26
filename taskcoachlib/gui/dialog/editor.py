@@ -1971,12 +1971,25 @@ class EffortEditBook(Page):
 
     def close_edit_book(self):
         """Flush any pending changes from commit_on_focus_loss entries."""
+        import sys
+        sys.stderr.write("[CLOSE] EffortEditBook.close_edit_book called\n")
+        sys.stderr.flush()
         # Flush pending changes from date/time entries before closing
         # This ensures changes are saved even if focus hasn't left the entry
         if hasattr(self, '_startDateTimeSync') and self._startDateTimeSync:
+            sys.stderr.write("[CLOSE] Flushing _startDateTimeSync\n")
+            sys.stderr.flush()
             self._startDateTimeSync.flushPendingChanges()
+            sys.stderr.write("[CLOSE] _startDateTimeSync flushed\n")
+            sys.stderr.flush()
         if hasattr(self, '_stopDateTimeSync') and self._stopDateTimeSync:
+            sys.stderr.write("[CLOSE] Flushing _stopDateTimeSync\n")
+            sys.stderr.flush()
             self._stopDateTimeSync.flushPendingChanges()
+            sys.stderr.write("[CLOSE] _stopDateTimeSync flushed\n")
+            sys.stderr.flush()
+        sys.stderr.write("[CLOSE] EffortEditBook.close_edit_book complete\n")
+        sys.stderr.flush()
 
 
 class Editor(BalloonTipManager, widgets.Dialog):
@@ -2091,10 +2104,19 @@ class Editor(BalloonTipManager, widgets.Dialog):
         )
 
     def on_close_editor(self, event):
+        import sys
+        sys.stderr.write("[EDITOR] on_close_editor called on %s\n" % self.__class__.__name__)
+        sys.stderr.flush()
         event.Skip()
         # Save dialog position/size before closing
+        sys.stderr.write("[EDITOR] Saving dimensions\n")
+        sys.stderr.flush()
         self.__dimensions_tracker.save()
+        sys.stderr.write("[EDITOR] About to call close_edit_book\n")
+        sys.stderr.flush()
         self._interior.close_edit_book()
+        sys.stderr.write("[EDITOR] close_edit_book complete\n")
+        sys.stderr.flush()
         patterns.Publisher().removeObserver(self.on_item_removed)
         patterns.Publisher().removeObserver(self.on_subject_changed)
         # On Mac OS X, the text control does not lose focus when
@@ -2105,7 +2127,11 @@ class Editor(BalloonTipManager, widgets.Dialog):
             IdProvider.put(self.__timer.GetId())
         IdProvider.put(self.__new_effort_id)
         # Note: No need to thaw viewers since we don't freeze them on open anymore
+        sys.stderr.write("[EDITOR] About to Destroy\n")
+        sys.stderr.flush()
         self.Destroy()
+        sys.stderr.write("[EDITOR] Destroy complete\n")
+        sys.stderr.flush()
 
     def on_activate(self, event):
         event.Skip()

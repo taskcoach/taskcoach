@@ -20,6 +20,11 @@ from taskcoachlib import patterns
 from pubsub import pub
 from taskcoachlib.i18n import _
 import wx
+import logging
+import sys
+
+# Set up logging for crash debugging
+_logger = logging.getLogger(__name__)
 
 
 class AttributeSync(object):
@@ -87,17 +92,26 @@ class AttributeSync(object):
 
     def __onKillFocus(self, event):
         """Called when any part of the widget loses focus."""
+        _logger.warning("[KILLFOCUS] __onKillFocus called, hasChanges=%s", self.__hasChanges)
+        sys.stderr.write("[KILLFOCUS] __onKillFocus called, hasChanges=%s\n" % self.__hasChanges)
+        sys.stderr.flush()
         event.Skip()
 
         # Guard against destroyed widgets (e.g., when dialog is closing)
         try:
             # Check if the entry widget is still valid
             if not self._entry:
+                _logger.warning("[KILLFOCUS] Entry is invalid, returning")
+                sys.stderr.write("[KILLFOCUS] Entry is invalid, returning\n")
+                sys.stderr.flush()
                 self.__editSessionValue = None
                 self.__hasChanges = False
                 return
-        except RuntimeError:
+        except RuntimeError as e:
             # Widget has been deleted (wrapped C/C++ object deleted)
+            _logger.warning("[KILLFOCUS] RuntimeError checking entry: %s", e)
+            sys.stderr.write("[KILLFOCUS] RuntimeError checking entry: %s\n" % e)
+            sys.stderr.flush()
             self.__editSessionValue = None
             self.__hasChanges = False
             return
@@ -105,6 +119,9 @@ class AttributeSync(object):
         # Check if focus is moving to another child of the same parent widget
         # If so, we're still in the same edit session
         new_focus = event.GetWindow()
+        _logger.warning("[KILLFOCUS] new_focus=%s", new_focus)
+        sys.stderr.write("[KILLFOCUS] new_focus=%s\n" % new_focus)
+        sys.stderr.flush()
 
         if new_focus is not None:
             try:
@@ -112,27 +129,52 @@ class AttributeSync(object):
                 parent = new_focus
                 while parent is not None:
                     if parent is self._entry:
+                        _logger.warning("[KILLFOCUS] Focus still within same widget, returning")
+                        sys.stderr.write("[KILLFOCUS] Focus still within same widget, returning\n")
+                        sys.stderr.flush()
                         return  # Still within the same widget, don't commit yet
                     parent = parent.GetParent()
-            except RuntimeError:
+            except RuntimeError as e:
                 # Widget has been deleted during parent traversal
+                _logger.warning("[KILLFOCUS] RuntimeError during parent traversal: %s", e)
+                sys.stderr.write("[KILLFOCUS] RuntimeError during parent traversal: %s\n" % e)
+                sys.stderr.flush()
                 self.__editSessionValue = None
                 self.__hasChanges = False
                 return
 
         # Focus is leaving the widget entirely - commit if there are changes
+        _logger.warning("[KILLFOCUS] Focus leaving widget, hasChanges=%s, editSessionValue=%s",
+                       self.__hasChanges, self.__editSessionValue)
+        sys.stderr.write("[KILLFOCUS] Focus leaving widget, hasChanges=%s, editSessionValue=%s\n" %
+                        (self.__hasChanges, self.__editSessionValue))
+        sys.stderr.flush()
         if self.__hasChanges and self.__editSessionValue is not None:
             try:
                 new_value = self.getValue()
+                _logger.warning("[KILLFOCUS] new_value=%s", new_value)
+                sys.stderr.write("[KILLFOCUS] new_value=%s\n" % new_value)
+                sys.stderr.flush()
                 if new_value != self.__editSessionValue:
+                    _logger.warning("[KILLFOCUS] Values differ, executing command")
+                    sys.stderr.write("[KILLFOCUS] Values differ, executing command\n")
+                    sys.stderr.flush()
                     self.__executeCommand(new_value)
-            except RuntimeError:
+                    _logger.warning("[KILLFOCUS] Command executed")
+                    sys.stderr.write("[KILLFOCUS] Command executed\n")
+                    sys.stderr.flush()
+            except RuntimeError as e:
                 # Widget has been deleted, can't get value or execute command
-                pass
+                _logger.warning("[KILLFOCUS] RuntimeError during command execution: %s", e)
+                sys.stderr.write("[KILLFOCUS] RuntimeError during command execution: %s\n" % e)
+                sys.stderr.flush()
 
         # Reset edit session
         self.__editSessionValue = None
         self.__hasChanges = False
+        _logger.warning("[KILLFOCUS] __onKillFocus complete")
+        sys.stderr.write("[KILLFOCUS] __onKillFocus complete\n")
+        sys.stderr.flush()
 
     def flushPendingChanges(self):
         """Commit any pending changes immediately.
@@ -140,17 +182,36 @@ class AttributeSync(object):
         Call this before closing a dialog to ensure any uncommitted edits
         from commit_on_focus_loss mode are saved.
         """
+        _logger.warning("[FLUSH] flushPendingChanges called, hasChanges=%s, editSessionValue=%s",
+                       self.__hasChanges, self.__editSessionValue)
+        sys.stderr.write("[FLUSH] flushPendingChanges called, hasChanges=%s, editSessionValue=%s\n" %
+                        (self.__hasChanges, self.__editSessionValue))
+        sys.stderr.flush()
         if self.__hasChanges and self.__editSessionValue is not None:
             try:
                 new_value = self.getValue()
+                _logger.warning("[FLUSH] new_value=%s, editSessionValue=%s", new_value, self.__editSessionValue)
+                sys.stderr.write("[FLUSH] new_value=%s, editSessionValue=%s\n" % (new_value, self.__editSessionValue))
+                sys.stderr.flush()
                 if new_value != self.__editSessionValue:
+                    _logger.warning("[FLUSH] About to execute command")
+                    sys.stderr.write("[FLUSH] About to execute command\n")
+                    sys.stderr.flush()
                     self.__executeCommand(new_value)
-            except RuntimeError:
+                    _logger.warning("[FLUSH] Command executed successfully")
+                    sys.stderr.write("[FLUSH] Command executed successfully\n")
+                    sys.stderr.flush()
+            except RuntimeError as e:
                 # Widget has been deleted
-                pass
+                _logger.warning("[FLUSH] RuntimeError: %s", e)
+                sys.stderr.write("[FLUSH] RuntimeError: %s\n" % e)
+                sys.stderr.flush()
         # Reset edit session
         self.__editSessionValue = None
         self.__hasChanges = False
+        _logger.warning("[FLUSH] flushPendingChanges complete")
+        sys.stderr.write("[FLUSH] flushPendingChanges complete\n")
+        sys.stderr.flush()
 
     def onAttributeEdited(self, event):
         event.Skip()
@@ -167,19 +228,37 @@ class AttributeSync(object):
 
     def __executeCommand(self, new_value):
         """Execute the command to update the model."""
+        _logger.warning("[EXEC] __executeCommand called with new_value=%s", new_value)
+        sys.stderr.write("[EXEC] __executeCommand called with new_value=%s\n" % new_value)
+        sys.stderr.flush()
         # Guard against destroyed widgets
         try:
             if not self._entry:
+                _logger.warning("[EXEC] Entry is invalid, returning")
+                sys.stderr.write("[EXEC] Entry is invalid, returning\n")
+                sys.stderr.flush()
                 return
-        except RuntimeError:
+        except RuntimeError as e:
+            _logger.warning("[EXEC] RuntimeError checking entry: %s", e)
+            sys.stderr.write("[EXEC] RuntimeError checking entry: %s\n" % e)
+            sys.stderr.flush()
             return
 
         self._currentValue = new_value
         commandKwArgs = self.commandKwArgs(new_value)
+        _logger.warning("[EXEC] About to call command.do(), commandClass=%s", self._commandClass.__name__)
+        sys.stderr.write("[EXEC] About to call command.do(), commandClass=%s\n" % self._commandClass.__name__)
+        sys.stderr.flush()
         self._commandClass(
             None, self._items, **commandKwArgs
         ).do()  # pylint: disable=W0142
+        _logger.warning("[EXEC] command.do() completed, about to invoke callback")
+        sys.stderr.write("[EXEC] command.do() completed, about to invoke callback\n")
+        sys.stderr.flush()
         self.__invokeCallback(new_value)
+        _logger.warning("[EXEC] __executeCommand complete")
+        sys.stderr.write("[EXEC] __executeCommand complete\n")
+        sys.stderr.flush()
 
     def onAttributeChanged_Deprecated(self, event):  # pylint: disable=W0613
         if self._entry:
@@ -216,14 +295,31 @@ class AttributeSync(object):
         return self._entry.GetValue()
 
     def __invokeCallback(self, value):
+        _logger.warning("[CALLBACK] __invokeCallback called, callback=%s", self.__callback)
+        sys.stderr.write("[CALLBACK] __invokeCallback called, callback=%s\n" % self.__callback)
+        sys.stderr.flush()
         if self.__callback is not None:
             try:
+                _logger.warning("[CALLBACK] About to call callback")
+                sys.stderr.write("[CALLBACK] About to call callback\n")
+                sys.stderr.flush()
                 self.__callback(value)
-            except RuntimeError:
+                _logger.warning("[CALLBACK] Callback completed successfully")
+                sys.stderr.write("[CALLBACK] Callback completed successfully\n")
+                sys.stderr.flush()
+            except RuntimeError as e:
                 # Widget has been deleted (e.g., dialog closing)
-                pass
+                _logger.warning("[CALLBACK] RuntimeError: %s", e)
+                sys.stderr.write("[CALLBACK] RuntimeError: %s\n" % e)
+                sys.stderr.flush()
             except Exception as e:
+                _logger.warning("[CALLBACK] Exception: %s", e)
+                sys.stderr.write("[CALLBACK] Exception: %s\n" % e)
+                sys.stderr.flush()
                 wx.MessageBox(str(e), _("Error"), wx.OK)
+        _logger.warning("[CALLBACK] __invokeCallback complete")
+        sys.stderr.write("[CALLBACK] __invokeCallback complete\n")
+        sys.stderr.flush()
 
     def __start_observing_attribute(self, eventType, eventSource):
         if eventType.startswith("pubsub"):
