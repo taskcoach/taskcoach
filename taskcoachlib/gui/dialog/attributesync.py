@@ -70,32 +70,10 @@ class AttributeSync(object):
 
     def __bindFocusEvents(self, widget):
         """Bind focus events to widget and all its children recursively."""
-        # Bind to the widget itself
         widget.Bind(wx.EVT_SET_FOCUS, self.__onSetFocus)
         widget.Bind(wx.EVT_KILL_FOCUS, self.__onKillFocus)
-        # Track bound widgets for cleanup
-        if not hasattr(self, '_boundWidgets'):
-            self._boundWidgets = []
-        self._boundWidgets.append(widget)
-        # Bind to all children (for composite widgets)
         for child in widget.GetChildren():
             self.__bindFocusEvents(child)
-
-    def unbindFocusEvents(self):
-        """Unbind focus events from all tracked widgets.
-
-        Call this before the dialog is destroyed to prevent crashes from
-        pending focus events on destroyed widgets.
-        """
-        if hasattr(self, '_boundWidgets'):
-            for widget in self._boundWidgets:
-                try:
-                    widget.Unbind(wx.EVT_SET_FOCUS)
-                    widget.Unbind(wx.EVT_KILL_FOCUS)
-                except (RuntimeError, AttributeError):
-                    # Widget may be destroyed or wrapper without Unbind
-                    pass
-            self._boundWidgets = []
 
     def __onSetFocus(self, event):
         """Called when any part of the widget gains focus."""
@@ -153,23 +131,6 @@ class AttributeSync(object):
         self.__editSessionValue = None
         self.__hasChanges = False
 
-    def flushPendingChanges(self):
-        """Commit any pending changes immediately.
-
-        Call this before closing a dialog to ensure any uncommitted edits
-        from commit_on_focus_loss mode are saved.
-        """
-        if self.__hasChanges and self.__editSessionValue is not None:
-            try:
-                new_value = self.getValue()
-                if new_value != self.__editSessionValue:
-                    self.__executeCommand(new_value)
-            except RuntimeError:
-                pass  # Widget has been deleted
-        # Reset edit session
-        self.__editSessionValue = None
-        self.__hasChanges = False
-
     def onAttributeEdited(self, event):
         event.Skip()
         new_value = self.getValue()
@@ -192,13 +153,6 @@ class AttributeSync(object):
                 when the dialog is closing to avoid queuing UI events that would
                 crash after the dialog is destroyed.
         """
-        # Guard against destroyed widgets
-        try:
-            if not self._entry:
-                return
-        except RuntimeError:
-            return
-
         self._currentValue = new_value
         commandKwArgs = self.commandKwArgs(new_value)
         self._commandClass(
