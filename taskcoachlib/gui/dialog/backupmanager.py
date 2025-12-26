@@ -92,10 +92,6 @@ class BackupManagerDialog(wx.Dialog):
         )
         self.__btnRestore.Bind(wx.EVT_BUTTON, self._OnRestore)
 
-        # Debug: log size changes
-        self.Bind(wx.EVT_SIZE, self._OnSize)
-        self.__splitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self._OnSashChanged)
-
         if selection is not None:
             self.__files.SetItemState(
                 selection,
@@ -123,26 +119,6 @@ class BackupManagerDialog(wx.Dialog):
 
     def DoClose(self, event):
         self.EndModal(wx.ID_CANCEL)
-
-    def _OnSize(self, event):
-        event.Skip()
-        size = self.GetSize()
-        sashPos = self.__splitter.GetSashPosition()
-        splitterWidth = self.__splitter.GetSize().GetWidth()
-        leftWidth = sashPos
-        rightWidth = splitterWidth - sashPos
-        print(f"Window: {size.GetWidth()}x{size.GetHeight()}, "
-              f"Sash: {sashPos}, Left: {leftWidth}, Right: {rightWidth}")
-
-    def _OnSashChanged(self, event):
-        event.Skip()
-        size = self.GetSize()
-        sashPos = self.__splitter.GetSashPosition()
-        splitterWidth = self.__splitter.GetSize().GetWidth()
-        leftWidth = sashPos
-        rightWidth = splitterWidth - sashPos
-        print(f"Sash moved - Window: {size.GetWidth()}x{size.GetHeight()}, "
-              f"Sash: {sashPos}, Left: {leftWidth}, Right: {rightWidth}")
 
     def _OnSelectFile(self, event):
         self.__backups.DeleteAllItems()
