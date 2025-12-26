@@ -61,13 +61,9 @@ class EffortList(
         for task in tasks:
             effortsToAdd.extend(task.efforts())
         super().extendSelf(effortsToAdd, event)
-        for effort in effortsToAdd:
-            if effort.getStop() is None:
-                pub.sendMessage(
-                    effort.trackingChangedEventType(),
-                    newValue=True,
-                    sender=effort,
-                )
+        # No need to send trackingChangedEventType here - the add event
+        # already triggers proper refresh, and SecondRefresher.onItemAdded
+        # handles tracking state.
 
     def removeItemsFromSelf(self, tasks, event=None):
         """This method is called when a task is removed from the observed
@@ -100,11 +96,14 @@ class EffortList(
         ]
         super().extendSelf(effortsToAdd)
         super().removeItemsFromSelf(effortsToRemove)
-        for effort in effortsToAdd + effortsToRemove:
+        # Only send trackingChangedEventType for removed efforts.
+        # For added efforts, the add event already triggers proper refresh,
+        # and SecondRefresher.onItemAdded handles tracking state.
+        for effort in effortsToRemove:
             if effort.getStop() is None:
                 pub.sendMessage(
                     effort.trackingChangedEventType(),
-                    newValue=effort in effortsToAdd,
+                    newValue=False,
                     sender=effort,
                 )
 
