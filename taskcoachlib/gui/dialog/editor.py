@@ -2121,6 +2121,14 @@ class Editor(BalloonTipManager, widgets.Dialog):
         if self.__timer is not None:
             IdProvider.put(self.__timer.GetId())
         IdProvider.put(self.__new_effort_id)
+        # Process any pending events before destroying to avoid crash
+        # This flushes paint/refresh events that may have been queued
+        # when other dialogs editing the same item updated their UI
+        sys.stderr.write("[%s][EDITOR] About to call ProcessPendingEvents\n" % _ts())
+        sys.stderr.flush()
+        wx.GetApp().ProcessPendingEvents()
+        sys.stderr.write("[%s][EDITOR] ProcessPendingEvents returned\n" % _ts())
+        sys.stderr.flush()
         sys.stderr.write("[%s][EDITOR] About to call Destroy\n" % _ts())
         sys.stderr.flush()
         self.Destroy()
