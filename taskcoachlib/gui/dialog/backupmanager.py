@@ -127,11 +127,13 @@ class BackupManagerDialog(wx.Dialog):
             self.__backups.InsertItem(
                 index, render.dateTime(dateTime, humanReadable=True)
             )
-        # Use LIST_AUTOSIZE_USEHEADER when empty, LIST_AUTOSIZE when has content
-        if backups:
-            self.__backups.SetColumnWidth(0, wx.LIST_AUTOSIZE)
-        else:
-            self.__backups.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
+        # Size column to max of header width and content width
+        self.__backups.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
+        headerWidth = self.__backups.GetColumnWidth(0)
+        self.__backups.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        contentWidth = self.__backups.GetColumnWidth(0)
+        if headerWidth > contentWidth:
+            self.__backups.SetColumnWidth(0, headerWidth)
         self.__backups.Enable(True)
         self.__selection = (self.__filenames[event.GetIndex()], None)
 
