@@ -89,9 +89,6 @@ class Page(patterns.Observer, widgets.BookPage):
 
     def close(self):
         self.removeInstance()
-        for entry in list(self.entries().values()):
-            if hasattr(entry, 'Cleanup'):
-                entry.Cleanup()
 
 
 class SubjectPage(Page):
@@ -1590,10 +1587,6 @@ class NullableDateTimeWrapper:
         self._datetime_entry.Enable(enable)
         return True
 
-    def Cleanup(self):
-        """Forward cleanup to datetime entry."""
-        self._datetime_entry.Cleanup()
-
 
 class EffortEditBook(Page):
     domainObject = "effort"
@@ -2098,7 +2091,6 @@ class Editor(BalloonTipManager, widgets.Dialog):
         if self.__timer is not None:
             IdProvider.put(self.__timer.GetId())
         IdProvider.put(self.__new_effort_id)
-        # Note: No need to thaw viewers since we don't freeze them on open anymore
         self.Destroy()
 
     def on_activate(self, event):
