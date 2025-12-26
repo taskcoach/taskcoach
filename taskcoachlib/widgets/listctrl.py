@@ -161,6 +161,26 @@ class VirtualListCtrl(
         else:
             self.RefreshAllItems(self.GetItemCount())
 
+    def RefreshAfterRemoval(self, count):
+        """Efficiently refresh the list after items have been removed.
+
+        Unlike RefreshAllItems which refreshes all items, this method only
+        updates the item count and refreshes the visible range, making it
+        much more efficient for large lists.
+        """
+        self.SetItemCount(count)
+        if count == 0:
+            self.DeleteAllItems()
+        else:
+            # Only refresh the visible range for efficiency
+            top = self.GetTopItem()
+            per_page = self.GetCountPerPage()
+            # Ensure we don't go past the end of the list
+            end = min(count - 1, top + per_page)
+            if top <= end:
+                super().RefreshItems(top, end)
+        self.selectCommand()
+
     def HitTest(self, xxx_todo_changeme, *args, **kwargs):
         """Always return a three-tuple (item, flag, column)."""
         (x, y) = xxx_todo_changeme

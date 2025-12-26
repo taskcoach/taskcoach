@@ -340,9 +340,13 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         def allItemsAreSelected():
             return set(self.__curselection).issubset(set(event.values()))
 
-        self.refresh()
-        if itemsRemoved() and allItemsAreSelected():
-            self.selectNextItemsAfterRemoval(list(event.values()))
+        if itemsRemoved():
+            # Use efficient refresh that only updates visible items
+            self.refreshAfterRemoval()
+            if allItemsAreSelected():
+                self.selectNextItemsAfterRemoval(list(event.values()))
+        else:
+            self.refresh()
         self.updateSelection(sendViewerStatusEvent=False)
         self.sendViewerStatusEvent()
 
@@ -396,6 +400,18 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         if not self.__freezeCount:
             items = [item for item in items if item in self.presentation()]
             self.widget.RefreshItems(*items)  # pylint: disable=W0142
+
+    def refreshAfterRemoval(self):
+        """Efficiently refresh after items have been removed.
+
+        Uses a more efficient refresh method that only updates visible items
+        if the widget supports it. Falls back to full refresh otherwise.
+        """
+        if self and not self.__freezeCount:
+            if hasattr(self.widget, "RefreshAfterRemoval"):
+                self.widget.RefreshAfterRemoval(len(self.presentation()))
+            else:
+                self.widget.RefreshAllItems(len(self.presentation()))
 
     def select(self, items):
         self.__curselection = items
