@@ -88,10 +88,24 @@ class Page(patterns.Observer, widgets.BookPage):
         return True
 
     def close(self):
+        import sys
+        import time
+        def _ts():
+            return "%.3f" % time.time()
+        sys.stderr.write("[%s][PAGE] Page.close called on %s\n" % (_ts(), self.__class__.__name__))
+        sys.stderr.flush()
         self.removeInstance()
+        sys.stderr.write("[%s][PAGE] removeInstance complete, cleaning up entries\n" % _ts())
+        sys.stderr.flush()
         for entry in list(self.entries().values()):
             if hasattr(entry, 'Cleanup'):
+                sys.stderr.write("[%s][PAGE] Calling Cleanup on %s\n" % (_ts(), entry))
+                sys.stderr.flush()
                 entry.Cleanup()
+                sys.stderr.write("[%s][PAGE] Cleanup complete for %s\n" % (_ts(), entry))
+                sys.stderr.flush()
+        sys.stderr.write("[%s][PAGE] Page.close complete\n" % _ts())
+        sys.stderr.flush()
 
 
 class SubjectPage(Page):
@@ -2003,6 +2017,29 @@ class EffortEditBook(Page):
             self._stopDateTimeSync.unbindFocusEvents()
             sys.stderr.write("[%s][CLOSE] _stopDateTimeSync unbound\n" % _ts())
             sys.stderr.flush()
+        # Also cleanup the DateTimeEntry widgets to stop timers
+        sys.stderr.write("[%s][CLOSE] Cleaning up DateTimeEntry widgets\n" % _ts())
+        sys.stderr.flush()
+        if hasattr(self, '_startDateTimeEntry') and self._startDateTimeEntry:
+            try:
+                sys.stderr.write("[%s][CLOSE] Calling Cleanup on _startDateTimeEntry\n" % _ts())
+                sys.stderr.flush()
+                self._startDateTimeEntry.Cleanup()
+                sys.stderr.write("[%s][CLOSE] _startDateTimeEntry Cleanup complete\n" % _ts())
+                sys.stderr.flush()
+            except (RuntimeError, AttributeError) as e:
+                sys.stderr.write("[%s][CLOSE] Exception in _startDateTimeEntry Cleanup: %s\n" % (_ts(), e))
+                sys.stderr.flush()
+        if hasattr(self, '_stopDateTimeEntry') and self._stopDateTimeEntry:
+            try:
+                sys.stderr.write("[%s][CLOSE] Calling Cleanup on _stopDateTimeEntry\n" % _ts())
+                sys.stderr.flush()
+                self._stopDateTimeEntry.Cleanup()
+                sys.stderr.write("[%s][CLOSE] _stopDateTimeEntry Cleanup complete\n" % _ts())
+                sys.stderr.flush()
+            except (RuntimeError, AttributeError) as e:
+                sys.stderr.write("[%s][CLOSE] Exception in _stopDateTimeEntry Cleanup: %s\n" % (_ts(), e))
+                sys.stderr.flush()
         sys.stderr.write("[%s][CLOSE] EffortEditBook.close_edit_book complete\n" % _ts())
         sys.stderr.flush()
 

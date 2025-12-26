@@ -157,7 +157,15 @@ class DateTimeCtrl(wx.Panel):
         self.__callback = callback
 
     def Cleanup(self):
+        import sys
+        import time as time_module
+        def _ts():
+            return "%.3f" % time_module.time()
+        sys.stderr.write("[%s][DTCTRL] DateTimeCtrl.Cleanup called\n" % _ts())
+        sys.stderr.flush()
         self.__ctrl.Cleanup()
+        sys.stderr.write("[%s][DTCTRL] DateTimeCtrl.Cleanup complete\n" % _ts())
+        sys.stderr.flush()
 
 
 class TimeEntry(wx.Panel):

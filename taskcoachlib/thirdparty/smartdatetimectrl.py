@@ -446,13 +446,30 @@ class Entry(wx.Panel):
 
     def Cleanup(self):
         # It's complicated.
+        import sys
+        import time as time_module
+        def _ts():
+            return "%.3f" % time_module.time()
+        sys.stderr.write("[%s][SDTC] SmartDateTimeCtrl.Cleanup called\n" % _ts())
+        sys.stderr.flush()
         # Stop the timer to prevent crashes during widget destruction
         if self.__timer and self.__timer.IsRunning():
+            sys.stderr.write("[%s][SDTC] Stopping timer\n" % _ts())
+            sys.stderr.flush()
             self.__timer.Stop()
+            sys.stderr.write("[%s][SDTC] Timer stopped\n" % _ts())
+            sys.stderr.flush()
         try:
+            sys.stderr.write("[%s][SDTC] About to DismissPopup\n" % _ts())
+            sys.stderr.flush()
             self.DismissPopup()
-        except RuntimeError:
-            pass
+            sys.stderr.write("[%s][SDTC] DismissPopup complete\n" % _ts())
+            sys.stderr.flush()
+        except RuntimeError as e:
+            sys.stderr.write("[%s][SDTC] RuntimeError in DismissPopup: %s\n" % (_ts(), e))
+            sys.stderr.flush()
+        sys.stderr.write("[%s][SDTC] SmartDateTimeCtrl.Cleanup complete\n" % _ts())
+        sys.stderr.flush()
 
     def Format(self):
         bf = io.StringIO()
@@ -2662,8 +2679,20 @@ class SmartDateTimeCtrl(wx.Panel):
         return False
 
     def Cleanup(self):
+        import sys
+        import time as time_module
+        def _ts():
+            return "%.3f" % time_module.time()
+        sys.stderr.write("[%s][SDTE] SmartDateTimeEntry.Cleanup called\n" % _ts())
+        sys.stderr.flush()
+        sys.stderr.write("[%s][SDTE] Cleaning up __dateCtrl\n" % _ts())
+        sys.stderr.flush()
         self.__dateCtrl.Cleanup()
+        sys.stderr.write("[%s][SDTE] __dateCtrl cleaned up, cleaning up __timeCtrl\n" % _ts())
+        sys.stderr.flush()
         self.__timeCtrl.Cleanup()
+        sys.stderr.write("[%s][SDTE] SmartDateTimeEntry.Cleanup complete\n" % _ts())
+        sys.stderr.flush()
 
     def GetLabelWidth(self):
         if self.__label is not None:
