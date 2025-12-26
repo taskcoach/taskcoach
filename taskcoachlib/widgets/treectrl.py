@@ -362,6 +362,21 @@ class TreeListCtrl(
             child_item, cookie = self.GetNextChild(parent_item, cookie)
         return items_to_delete
 
+    def RefreshAfterAddition(self, count, added_items=None):
+        """Refresh the tree after items have been added.
+
+        For tree controls, adding items requires rebuilding the tree structure
+        to maintain proper parent-child relationships and sort order. However,
+        we preserve selection and expansion state.
+
+        Args:
+            count: The new item count after addition (unused for trees).
+            added_items: List of domain objects that were added.
+        """
+        # For trees, we need to rebuild to maintain structure
+        # but we optimize by preserving state
+        self.RefreshAllItems(count)
+
     def _refreshTargetObjects(self, parent_item, *target_objects):
         child_item, cookie = self.GetFirstChild(parent_item)
         while child_item:

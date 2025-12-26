@@ -322,12 +322,14 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             self.refreshItems(*event.sources())
 
     def onNewItem(self, event):
+        # Skip refresh since tree/list was just updated by refreshAfterAddition
         self.select(
             [
                 item
                 for item in list(event.values())
                 if item in self.presentation()
-            ]
+            ],
+            refresh=False
         )
 
     def onPresentationChanged(self, event):  # pylint: disable=W0613
@@ -336,6 +338,9 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
 
         def itemsRemoved():
             return event.type() == self.presentation().removeItemEventType()
+
+        def itemsAdded():
+            return event.type() == self.presentation().addItemEventType()
 
         def allItemsAreSelected():
             return set(self.__curselection).issubset(set(event.values()))
@@ -346,6 +351,10 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             self.refreshAfterRemoval(removed_items)
             if allItemsAreSelected():
                 self.selectNextItemsAfterRemoval(removed_items)
+        elif itemsAdded():
+            # Use efficient refresh that only adds new items
+            added_items = list(event.values())
+            self.refreshAfterAddition(added_items)
         else:
             self.refresh()
         self.updateSelection(sendViewerStatusEvent=False)
@@ -420,7 +429,25 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             else:
                 self.widget.RefreshAllItems(len(self.presentation()))
 
-    def select(self, items):
+    def refreshAfterAddition(self, added_items):
+        """Efficiently refresh after items have been added.
+
+        Uses a more efficient refresh method that only adds the new items
+        if the widget supports it. Falls back to full refresh otherwise.
+
+        Args:
+            added_items: List of domain objects that were added to
+                the presentation.
+        """
+        if self and not self.__freezeCount:
+            if hasattr(self.widget, "RefreshAfterAddition"):
+                self.widget.RefreshAfterAddition(
+                    len(self.presentation()), added_items
+                )
+            else:
+                self.widget.RefreshAllItems(len(self.presentation()))
+
+    def select(self, items, refresh=True):  # pylint: disable=W0613
         self.__curselection = items
         self.widget.select(items)
 
@@ -840,10 +867,11 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
     def isTreeViewer(self):
         return True
 
-    def select(self, items):
+    def select(self, items, refresh=True):
         for item in items:
             self.__expandItemRecursively(item)
-        self.refresh()
+        if refresh:
+            self.refresh()
         super().select(items)
 
     def __expandItemRecursively(self, item):
@@ -865,7 +893,8 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
             else parent
         )
         if newSelection:
-            self.select([newSelection])
+            # Skip refresh since tree was already updated by refreshAfterRemoval
+            self.select([newSelection], refresh=False)
 
     def updateSelection(self, *args, **kwargs):
         super().updateSelection(*args, **kwargs)

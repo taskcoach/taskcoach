@@ -154,12 +154,27 @@ class VirtualListCtrl(
         self.selectCommand()
 
     def RefreshItems(self, *items):
-        """Refresh specific items."""
-        if len(items) <= 7:
-            for item in items:
-                self.RefreshItem(self.__parent.getIndexOfItem(item))
-        else:
-            self.RefreshAllItems(self.GetItemCount())
+        """Refresh specific items.
+
+        Only refreshes items that are currently visible to avoid flickering
+        and unnecessary rendering work.
+        """
+        if not items:
+            return
+        # Get visible range
+        top = self.GetTopItem()
+        per_page = self.GetCountPerPage()
+        visible_end = top + per_page
+
+        for item in items:
+            try:
+                index = self.__parent.getIndexOfItem(item)
+                # Only refresh if item is in visible range
+                if top <= index <= visible_end:
+                    self.RefreshItem(index)
+            except (ValueError, IndexError):
+                # Item may no longer be in the list
+                pass
 
     def RefreshAfterRemoval(self, count, removed_items=None):
         """Efficiently refresh the list after items have been removed.
@@ -184,6 +199,28 @@ class VirtualListCtrl(
             end = min(count - 1, top + per_page)
             if top <= end:
                 super().RefreshItems(top, end)
+        self.selectCommand()
+
+    def RefreshAfterAddition(self, count, added_items=None):
+        """Efficiently refresh the list after items have been added.
+
+        Unlike RefreshAllItems which refreshes all items, this method only
+        updates the item count and refreshes the visible range, making it
+        much more efficient for large lists.
+
+        Args:
+            count: The new item count after addition.
+            added_items: List of added domain objects (unused for virtual
+                lists since we only need to refresh visible items).
+        """
+        self.SetItemCount(count)
+        # Only refresh the visible range for efficiency
+        top = self.GetTopItem()
+        per_page = self.GetCountPerPage()
+        # Ensure we don't go past the end of the list
+        end = min(count - 1, top + per_page)
+        if top <= end:
+            super().RefreshItems(top, end)
         self.selectCommand()
 
     def HitTest(self, xxx_todo_changeme, *args, **kwargs):
