@@ -570,7 +570,6 @@ class DatesPage(Page):
             commandClass,
             entry.EVT_DATETIMEENTRY,
             eventType,
-            commit_on_focus_loss=True,  # Only commit when focus leaves the field
             keep_delta=keep_delta,
             callback=(
                 self.__onPlannedStartDateTimeChanged
@@ -610,7 +609,6 @@ class DatesPage(Page):
             command.EditReminderDateTimeCommand,
             entry.EVT_DATETIMEENTRY,
             self.items[0].reminderChangedEventType(),
-            commit_on_focus_loss=True,  # Only commit when focus leaves the field
         )
         self.addEntry(
             _("Reminder"),
@@ -1723,7 +1721,6 @@ class EffortEditBook(Page):
             command.EditEffortStartDateTimeCommand,
             entry.EVT_DATETIMEENTRY,
             self.items[0].startChangedEventType(),
-            commit_on_focus_loss=True,
             callback=self.__onStartDateTimeChanged,
         )
         self._startDateTimeEntry.Bind(
@@ -1783,7 +1780,6 @@ class EffortEditBook(Page):
             command.EditEffortStopDateTimeCommand,
             entry.EVT_DATETIMEENTRY,
             self.items[0].stopChangedEventType(),
-            commit_on_focus_loss=True,
             callback=self.__onStopDateTimeChanged,
         )
         self._stopDateTimeEntry.Bind(
@@ -1972,22 +1968,13 @@ class EffortEditBook(Page):
         )
 
     def close_edit_book(self):
-        """Unbind focus events and cleanup timers before closing."""
+        """Cleanup timers before closing to prevent crash."""
         import sys
         import time
         def _ts():
             return "%.3f" % time.time()
         sys.stderr.write("[%s][EDITOR] close_edit_book called\n" % _ts())
         sys.stderr.flush()
-        # Unbind focus events from AttributeSync
-        if hasattr(self, '_startDateTimeSync') and self._startDateTimeSync:
-            sys.stderr.write("[%s][EDITOR] Calling _startDateTimeSync.unbindFocusEvents()\n" % _ts())
-            sys.stderr.flush()
-            self._startDateTimeSync.unbindFocusEvents()
-        if hasattr(self, '_stopDateTimeSync') and self._stopDateTimeSync:
-            sys.stderr.write("[%s][EDITOR] Calling _stopDateTimeSync.unbindFocusEvents()\n" % _ts())
-            sys.stderr.flush()
-            self._stopDateTimeSync.unbindFocusEvents()
         # Stop timers in DateTimeEntry widgets to prevent crash after dialog closes
         if hasattr(self, '_startDateTimeEntry') and self._startDateTimeEntry:
             sys.stderr.write("[%s][EDITOR] Calling _startDateTimeEntry.Cleanup()\n" % _ts())
@@ -2047,8 +2034,6 @@ class Editor(BalloonTipManager, widgets.Dialog):
 
         # Note: We intentionally do NOT freeze viewers while the dialog is open.
         # Updates should propagate immediately so other windows stay in sync.
-        # The commit_on_focus_loss option on AttributeSync handles batching
-        # rapid edits into single commands.
 
         if operating_system.isMac():
             # Sigh. On OS X, if you open an editor, switch back to the main window, open
@@ -2138,14 +2123,6 @@ class Editor(BalloonTipManager, widgets.Dialog):
         if self.__timer is not None:
             IdProvider.put(self.__timer.GetId())
         IdProvider.put(self.__new_effort_id)
-        # Process any pending events before destroying to avoid crash
-        # SafeYield is more thorough than ProcessPendingEvents - it processes
-        # all pending events including those queued by native widgets (GTK)
-        sys.stderr.write("[%s][EDITOR] About to call SafeYield\n" % _ts())
-        sys.stderr.flush()
-        wx.SafeYield()
-        sys.stderr.write("[%s][EDITOR] SafeYield returned\n" % _ts())
-        sys.stderr.flush()
         sys.stderr.write("[%s][EDITOR] About to call Destroy\n" % _ts())
         sys.stderr.flush()
         self.Destroy()
