@@ -492,8 +492,9 @@ class Entry(wx.Panel):
         self.__timer.Start(2000, True)
 
     def __SetFocus(self, field):
+        timer = getattr(self, '_Entry__timer', None)
         sys.stderr.write("[%s][SDTC] __SetFocus called on %s, field=%s, timer running=%s\n" % (
-            _ts(), self, field, self.__timer.IsRunning() if self.__timer else 'N/A'))
+            _ts(), self, field, timer.IsRunning() if timer else 'N/A'))
         sys.stderr.flush()
         if self.__popup is not None:
             self.__popup[0].Dismiss()
@@ -519,8 +520,9 @@ class Entry(wx.Panel):
         event.Skip()
 
     def OnKillFocus(self, event):
+        timer = getattr(self, '_Entry__timer', None)
         sys.stderr.write("[%s][SDTC] OnKillFocus called on %s, timer running=%s\n" % (
-            _ts(), self, self.__timer.IsRunning() if self.__timer else 'N/A'))
+            _ts(), self, timer.IsRunning() if timer else 'N/A'))
         sys.stderr.flush()
         self.Refresh()
         sys.stderr.write("[%s][SDTC] OnKillFocus Refresh done\n" % _ts())
