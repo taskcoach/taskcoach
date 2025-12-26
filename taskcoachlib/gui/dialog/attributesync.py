@@ -62,6 +62,7 @@ class AttributeSync(object):
         self.__commit_on_focus_loss = commit_on_focus_loss
         self.__editSessionValue = None  # Value at start of edit session
         self.__hasChanges = False  # Track if any changes during this focus session
+        self.__skipCallbacks = False  # Flag to suppress callbacks during close
 
         entry.Bind(editedEventType, self.onAttributeEdited)
 
@@ -166,7 +167,10 @@ class AttributeSync(object):
                     skip_callback = (new_focus is None)
                     sys.stderr.write("[%s][SYNC] About to executeCommand, skip_callback=%s\n" % (_ts(), skip_callback))
                     sys.stderr.flush()
+                    if skip_callback:
+                        self.__skipCallbacks = True  # Suppress callbacks from pubsub too
                     self.__executeCommand(new_value, skip_callback=skip_callback)
+                    self.__skipCallbacks = False
                     sys.stderr.write("[%s][SYNC] executeCommand complete\n" % _ts())
                     sys.stderr.flush()
             except RuntimeError as e:
@@ -257,8 +261,12 @@ class AttributeSync(object):
         return self._entry.GetValue()
 
     def __invokeCallback(self, value):
-        sys.stderr.write("[%s][SYNC] __invokeCallback called, callback=%s\n" % (_ts(), self.__callback))
+        sys.stderr.write("[%s][SYNC] __invokeCallback called, callback=%s, skipCallbacks=%s\n" % (_ts(), self.__callback, self.__skipCallbacks))
         sys.stderr.flush()
+        if self.__skipCallbacks:
+            sys.stderr.write("[%s][SYNC] Skipping callback due to __skipCallbacks flag\n" % _ts())
+            sys.stderr.flush()
+            return
         if self.__callback is not None:
             try:
                 self.__callback(value)
