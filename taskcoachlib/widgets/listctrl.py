@@ -161,12 +161,17 @@ class VirtualListCtrl(
         else:
             self.RefreshAllItems(self.GetItemCount())
 
-    def RefreshAfterRemoval(self, count):
+    def RefreshAfterRemoval(self, count, removed_items=None):
         """Efficiently refresh the list after items have been removed.
 
         Unlike RefreshAllItems which refreshes all items, this method only
         updates the item count and refreshes the visible range, making it
         much more efficient for large lists.
+
+        Args:
+            count: The new item count after removal.
+            removed_items: List of removed domain objects (unused for virtual
+                lists since we only need to refresh visible items).
         """
         self.SetItemCount(count)
         if count == 0:

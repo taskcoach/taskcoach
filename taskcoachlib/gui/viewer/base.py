@@ -342,9 +342,10 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
 
         if itemsRemoved():
             # Use efficient refresh that only updates visible items
-            self.refreshAfterRemoval()
+            removed_items = list(event.values())
+            self.refreshAfterRemoval(removed_items)
             if allItemsAreSelected():
-                self.selectNextItemsAfterRemoval(list(event.values()))
+                self.selectNextItemsAfterRemoval(removed_items)
         else:
             self.refresh()
         self.updateSelection(sendViewerStatusEvent=False)
@@ -401,15 +402,21 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             items = [item for item in items if item in self.presentation()]
             self.widget.RefreshItems(*items)  # pylint: disable=W0142
 
-    def refreshAfterRemoval(self):
+    def refreshAfterRemoval(self, removed_items):
         """Efficiently refresh after items have been removed.
 
         Uses a more efficient refresh method that only updates visible items
         if the widget supports it. Falls back to full refresh otherwise.
+
+        Args:
+            removed_items: List of domain objects that were removed from
+                the presentation.
         """
         if self and not self.__freezeCount:
             if hasattr(self.widget, "RefreshAfterRemoval"):
-                self.widget.RefreshAfterRemoval(len(self.presentation()))
+                self.widget.RefreshAfterRemoval(
+                    len(self.presentation()), removed_items
+                )
             else:
                 self.widget.RefreshAllItems(len(self.presentation()))
 

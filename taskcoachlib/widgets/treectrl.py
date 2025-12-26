@@ -300,6 +300,68 @@ class TreeListCtrl(
         self.__selection = self.curselection()
         self._refreshTargetObjects(self.GetRootItem(), *objects)
 
+    def RefreshAfterRemoval(self, count, removed_items=None):
+        """Efficiently remove specific items from the tree.
+
+        Unlike RefreshAllItems which rebuilds the entire tree, this method
+        only deletes the tree items corresponding to the removed domain
+        objects, making it much more efficient for large trees.
+
+        Args:
+            count: The new item count after removal (unused for trees).
+            removed_items: List of domain objects that were removed.
+        """
+        if not removed_items:
+            # No items to remove, nothing to do
+            return
+
+        self.Freeze()
+        self.__selection = self.curselection()
+
+        # Find and collect tree items to delete
+        items_to_delete = self._findTreeItemsForObjects(
+            self.GetRootItem(), set(removed_items)
+        )
+
+        # Delete the found tree items
+        for tree_item in items_to_delete:
+            self.Delete(tree_item)
+
+        self.Thaw()
+
+        # Restore selection for items that still exist
+        remaining_selection = [
+            item for item in self.__selection if item not in removed_items
+        ]
+        if remaining_selection:
+            self.select(remaining_selection)
+
+    def _findTreeItemsForObjects(self, parent_item, target_objects):
+        """Find tree items whose PyData matches any of the target objects.
+
+        Args:
+            parent_item: The parent tree item to search from.
+            target_objects: Set of domain objects to find.
+
+        Returns:
+            List of tree items to delete.
+        """
+        items_to_delete = []
+        child_item, cookie = self.GetFirstChild(parent_item)
+        while child_item:
+            item_object = self.GetItemPyData(child_item)
+            if item_object in target_objects:
+                # Found a matching item - add it to delete list
+                # (deleting parent will also delete children)
+                items_to_delete.append(child_item)
+            else:
+                # Recursively search children
+                items_to_delete.extend(
+                    self._findTreeItemsForObjects(child_item, target_objects)
+                )
+            child_item, cookie = self.GetNextChild(parent_item, cookie)
+        return items_to_delete
+
     def _refreshTargetObjects(self, parent_item, *target_objects):
         child_item, cookie = self.GetFirstChild(parent_item)
         while child_item:
