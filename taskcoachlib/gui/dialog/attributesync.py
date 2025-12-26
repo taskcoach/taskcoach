@@ -83,9 +83,35 @@ class AttributeSync(object):
         # Bind to the widget itself
         widget.Bind(wx.EVT_SET_FOCUS, self.__onSetFocus)
         widget.Bind(wx.EVT_KILL_FOCUS, self.__onKillFocus)
+        # Track bound widgets for cleanup
+        if not hasattr(self, '_boundWidgets'):
+            self._boundWidgets = []
+        self._boundWidgets.append(widget)
         # Bind to all children (for composite widgets)
         for child in widget.GetChildren():
             self.__bindFocusEvents(child)
+
+    def unbindFocusEvents(self):
+        """Unbind focus events from all tracked widgets.
+
+        Call this before the dialog is destroyed to prevent crashes from
+        pending focus events on destroyed widgets.
+        """
+        sys.stderr.write("[%s][UNBIND] unbindFocusEvents called\n" % _ts())
+        sys.stderr.flush()
+        if hasattr(self, '_boundWidgets'):
+            for widget in self._boundWidgets:
+                try:
+                    widget.Unbind(wx.EVT_SET_FOCUS)
+                    widget.Unbind(wx.EVT_KILL_FOCUS)
+                    sys.stderr.write("[%s][UNBIND] Unbound events from %s\n" % (_ts(), widget))
+                    sys.stderr.flush()
+                except RuntimeError as e:
+                    sys.stderr.write("[%s][UNBIND] RuntimeError unbinding from %s: %s\n" % (_ts(), widget, e))
+                    sys.stderr.flush()
+            self._boundWidgets = []
+        sys.stderr.write("[%s][UNBIND] unbindFocusEvents complete\n" % _ts())
+        sys.stderr.flush()
 
     def __onSetFocus(self, event):
         """Called when any part of the widget gains focus."""

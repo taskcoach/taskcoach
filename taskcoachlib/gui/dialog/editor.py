@@ -1970,7 +1970,7 @@ class EffortEditBook(Page):
         )
 
     def close_edit_book(self):
-        """Flush any pending changes from commit_on_focus_loss entries."""
+        """Flush any pending changes and unbind events before closing."""
         import sys
         import time
         def _ts():
@@ -1985,11 +1985,23 @@ class EffortEditBook(Page):
             self._startDateTimeSync.flushPendingChanges()
             sys.stderr.write("[%s][CLOSE] _startDateTimeSync flushed\n" % _ts())
             sys.stderr.flush()
+            # Unbind focus events to prevent crashes during destruction
+            sys.stderr.write("[%s][CLOSE] Unbinding _startDateTimeSync focus events\n" % _ts())
+            sys.stderr.flush()
+            self._startDateTimeSync.unbindFocusEvents()
+            sys.stderr.write("[%s][CLOSE] _startDateTimeSync unbound\n" % _ts())
+            sys.stderr.flush()
         if hasattr(self, '_stopDateTimeSync') and self._stopDateTimeSync:
             sys.stderr.write("[%s][CLOSE] Flushing _stopDateTimeSync\n" % _ts())
             sys.stderr.flush()
             self._stopDateTimeSync.flushPendingChanges()
             sys.stderr.write("[%s][CLOSE] _stopDateTimeSync flushed\n" % _ts())
+            sys.stderr.flush()
+            # Unbind focus events to prevent crashes during destruction
+            sys.stderr.write("[%s][CLOSE] Unbinding _stopDateTimeSync focus events\n" % _ts())
+            sys.stderr.flush()
+            self._stopDateTimeSync.unbindFocusEvents()
+            sys.stderr.write("[%s][CLOSE] _stopDateTimeSync unbound\n" % _ts())
             sys.stderr.flush()
         sys.stderr.write("[%s][CLOSE] EffortEditBook.close_edit_book complete\n" % _ts())
         sys.stderr.flush()
@@ -2123,8 +2135,12 @@ class Editor(BalloonTipManager, widgets.Dialog):
         self._interior.close_edit_book()
         sys.stderr.write("[%s][EDITOR] close_edit_book complete\n" % _ts())
         sys.stderr.flush()
+        sys.stderr.write("[%s][EDITOR] Removing observers\n" % _ts())
+        sys.stderr.flush()
         patterns.Publisher().removeObserver(self.on_item_removed)
         patterns.Publisher().removeObserver(self.on_subject_changed)
+        sys.stderr.write("[%s][EDITOR] Observers removed\n" % _ts())
+        sys.stderr.flush()
         # On Mac OS X, the text control does not lose focus when
         # destroyed...
         if operating_system.isMac():
@@ -2132,6 +2148,16 @@ class Editor(BalloonTipManager, widgets.Dialog):
         if self.__timer is not None:
             IdProvider.put(self.__timer.GetId())
         IdProvider.put(self.__new_effort_id)
+        # Process any pending events before destruction to prevent crashes
+        sys.stderr.write("[%s][EDITOR] Processing pending events\n" % _ts())
+        sys.stderr.flush()
+        try:
+            wx.GetApp().ProcessPendingEvents()
+        except Exception as e:
+            sys.stderr.write("[%s][EDITOR] Exception processing pending events: %s\n" % (_ts(), e))
+            sys.stderr.flush()
+        sys.stderr.write("[%s][EDITOR] Pending events processed\n" % _ts())
+        sys.stderr.flush()
         # Note: No need to thaw viewers since we don't freeze them on open anymore
         sys.stderr.write("[%s][EDITOR] About to Destroy\n" % _ts())
         sys.stderr.flush()
