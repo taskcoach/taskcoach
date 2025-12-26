@@ -157,7 +157,10 @@ class VirtualListCtrl(
         """Refresh specific items."""
         if len(items) <= 7:
             for item in items:
-                self.RefreshItem(self.__parent.getIndexOfItem(item))
+                try:
+                    self.RefreshItem(self.__parent.getIndexOfItem(item))
+                except ValueError:
+                    pass  # Item no longer in list (removed between schedule and execution)
         else:
             self.RefreshAllItems(self.GetItemCount())
 
