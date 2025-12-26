@@ -52,10 +52,6 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         self.__freezeCount = 0
         # Track items changed during bulk operations (used by onEndBulkOperation)
         self.__pendingRefreshItems = set()
-        # Track items pending refresh due to debouncing (used by refreshItems)
-        self.__debouncedRefreshItems = set()
-        # Flag to track if a refresh is already scheduled via wx.CallAfter
-        self.__refreshScheduled = False
         # The how maniest of this viewer type are we? Used for settings
         self.__instanceNumber = kwargs.pop("instanceNumber")
         self.__use_separate_settings_section = kwargs.pop(
@@ -409,45 +405,11 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
     def refresh(self):
         if self and not self.__freezeCount:
             self.widget.RefreshAllItems(len(self.presentation()))
-            # Clear any pending debounced refreshes since we just did a full refresh
-            self.__debouncedRefreshItems.clear()
 
     def refreshItems(self, *items):
-        """Refresh specific items in the viewer.
-
-        Uses debouncing to batch multiple rapid refresh requests into a single
-        update, which prevents flickering when multiple events are fired in
-        quick succession (e.g., when tracking changes trigger multiple events).
-        """
         if not self.__freezeCount:
             items = [item for item in items if item in self.presentation()]
-            if items:
-                self.__debouncedRefreshItems.update(items)
-                if not self.__refreshScheduled:
-                    self.__refreshScheduled = True
-                    wx.CallAfter(self._doRefreshItems)
-
-    def _doRefreshItems(self):
-        """Actually perform the batched refresh of pending items."""
-        # Guard against deleted C++ object
-        try:
-            if not self or self.IsBeingDeleted():
-                return
-        except RuntimeError:
-            return
-        self.__refreshScheduled = False
-        if self.__debouncedRefreshItems and not self.__freezeCount:
-            items = list(self.__debouncedRefreshItems)
-            self.__debouncedRefreshItems.clear()
             self.widget.RefreshItems(*items)
-
-    def clearPendingRefresh(self):
-        """Clear any pending debounced refresh requests.
-
-        Should be called after a full visible refresh to prevent redundant
-        refreshes from already-scheduled debounced callbacks.
-        """
-        self.__debouncedRefreshItems.clear()
 
     def refreshAfterRemoval(self, removed_items):
         """Efficiently refresh after items have been removed.

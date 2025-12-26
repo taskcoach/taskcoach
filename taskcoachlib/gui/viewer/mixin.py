@@ -298,19 +298,12 @@ class SortableViewerMixin(object):
     def onSortOrderChanged(self, sender):
         if sender == self.presentation():
             # For virtual lists, refresh visible area and sync count.
-            # The count is passed to handle add operations - the count update
-            # is deferred until after sorting to avoid displaying unsorted data.
             if hasattr(self.widget, 'RefreshVisibleItems'):
                 self.widget.RefreshVisibleItems(len(self.presentation()))
             else:
                 self.refresh()
-            # Clear any pending debounced refreshes since we just did a full
-            # visible refresh - prevents redundant refreshes from events that
-            # were already collected (like trackingChanged after add).
-            self.clearPendingRefresh()
             # Re-sync widget selection: items may have moved to different
             # indices after sorting, so update widget with the cached selection
-            # (which contains the correct items, just at old indices)
             self.widget.select(self.curselection())
             self.updateSelection(sendViewerStatusEvent=False)
             self.sendViewerStatusEvent()
