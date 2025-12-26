@@ -49,7 +49,7 @@ class BackupManagerDialog(wx.Dialog):
 
         # Configure splitter
         self.__splitter.SplitVertically(self.__files, self.__backups)
-        self.__splitter.SetMinimumPaneSize(70)
+        self.__splitter.SetMinimumPaneSize(150)
         self.__splitter.SetSashGravity(1.0)
 
         # Button column
@@ -105,9 +105,19 @@ class BackupManagerDialog(wx.Dialog):
         self.__files.SetColumnWidth(0, -1)
         self.__files.SetColumnWidth(1, -1)
 
-        # Set dialog size and sash position
-        self.SetSize(wx.Size(600, 400))
-        self.__splitter.SetSashPosition(600 - 70 - 100)  # width - date_pane - buttons
+        # Set dialog size constrained to screen
+        targetWidth, targetHeight = 600, 400
+        datePaneWidth = 150
+        display = wx.Display(wx.Display.GetFromWindow(parent) if parent else 0)
+        screenRect = display.GetClientArea()
+        width = min(targetWidth, screenRect.GetWidth() - 50)
+        height = min(targetHeight, screenRect.GetHeight() - 50)
+        self.SetSize(wx.Size(width, height))
+
+        # Set sash position (splitter width - date pane width)
+        self.Layout()
+        splitterWidth = self.__splitter.GetSize().GetWidth()
+        self.__splitter.SetSashPosition(splitterWidth - datePaneWidth)
         self.CentreOnParent()
 
     def restoredFilename(self):
