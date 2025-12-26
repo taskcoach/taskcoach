@@ -154,32 +154,12 @@ class VirtualListCtrl(
         self.selectCommand()
 
     def RefreshItems(self, *items):
-        """Refresh specific items.
-
-        Only refreshes items that are currently visible to avoid flickering
-        and unnecessary rendering work.
-        """
-        if not items:
-            return
-        count = self.GetItemCount()
-        if count == 0:
-            return
-        # Get visible range
-        top = self.GetTopItem()
-        if top < 0:
-            top = 0  # GetTopItem returns -1 if list is empty or not ready
-        per_page = self.GetCountPerPage()
-        visible_end = min(top + per_page, count - 1)
-
-        for item in items:
-            try:
-                index = self.__parent.getIndexOfItem(item)
-                # Only refresh if item is in visible range and valid
-                if 0 <= index < count and top <= index <= visible_end:
-                    self.RefreshItem(index)
-            except (ValueError, IndexError):
-                # Item may no longer be in the list
-                pass
+        """Refresh specific items."""
+        if len(items) <= 7:
+            for item in items:
+                self.RefreshItem(self.__parent.getIndexOfItem(item))
+        else:
+            self.RefreshAllItems(self.GetItemCount())
 
     def RefreshVisibleItems(self, newCount=None):
         """Refresh only the currently visible items.
@@ -190,8 +170,7 @@ class VirtualListCtrl(
 
         Args:
             newCount: Optional new item count. If provided and different from
-                current count, the count is updated first. This allows
-                deferring count updates until after sorting.
+                current count, the count is updated first.
         """
         if newCount is not None:
             currentCount = self.GetItemCount()
@@ -201,10 +180,7 @@ class VirtualListCtrl(
         if count == 0:
             return
         top = self.GetTopItem()
-        if top < 0:
-            top = 0  # GetTopItem returns -1 if list is empty or not ready
         per_page = self.GetCountPerPage()
-        # RefreshItems takes inclusive range, cap at count-1
         end = min(top + per_page, count - 1)
         if top <= end:
             super().RefreshItems(top, end)
@@ -212,14 +188,9 @@ class VirtualListCtrl(
     def RefreshAfterRemoval(self, count, removed_items=None):
         """Efficiently refresh the list after items have been removed.
 
-        Unlike RefreshAllItems which refreshes all items, this method only
-        updates the item count. The virtual list will request data on demand
-        when it needs to repaint visible items.
-
         Args:
             count: The new item count after removal.
-            removed_items: List of removed domain objects (unused for virtual
-                lists since we only need to refresh visible items).
+            removed_items: List of removed domain objects (unused).
         """
         if count == 0:
             self.Freeze()
@@ -229,17 +200,11 @@ class VirtualListCtrl(
             finally:
                 self.Thaw()
         else:
-            # Just update the count - virtual list will fetch data on demand
-            # No need to call RefreshItems which can cause flicker
             self.SetItemCount(count)
         self.selectCommand()
 
     def RefreshAfterAddition(self, count, added_items=None):
         """Called after items have been added to the presentation.
-
-        Updates the item count so the widget knows about the new items.
-        The actual display update is handled by RefreshVisibleItems called
-        from onSortOrderChanged after the sort completes.
 
         Args:
             count: The new item count after addition.
@@ -281,20 +246,14 @@ class VirtualListCtrl(
         Optimized to only modify items that need to change state,
         rather than iterating over all items.
         """
-        count = self.GetItemCount()
         new_indices = set()
         for item in items:
             try:
-                index = self.__parent.getIndexOfItem(item)
-                if 0 <= index < count:
-                    new_indices.add(index)
+                new_indices.add(self.__parent.getIndexOfItem(item))
             except (ValueError, IndexError):
                 pass  # Item not in list
 
-        # Filter current indices to only valid ones (count may have changed)
-        current_indices = set(
-            i for i in self.__curselection_indices() if 0 <= i < count
-        )
+        current_indices = set(self.__curselection_indices())
 
         # Deselect items that should no longer be selected
         for index in current_indices - new_indices:
@@ -304,17 +263,13 @@ class VirtualListCtrl(
         for index in new_indices - current_indices:
             self.Select(index, True)
 
-        # Focus the first selected item if any
-        first_selected = self.GetFirstSelected()
-        if first_selected >= 0:
-            self.Focus(first_selected)
+        if self.curselection():
+            self.Focus(self.GetFirstSelected())
 
     def clear_selection(self):
         """Unselect all selected items."""
-        count = self.GetItemCount()
         for index in self.__curselection_indices():
-            if 0 <= index < count:
-                self.Select(index, False)
+            self.Select(index, False)
 
     def select_all(self):
         """Select all items."""
