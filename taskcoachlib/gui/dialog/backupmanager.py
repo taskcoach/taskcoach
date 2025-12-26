@@ -34,10 +34,12 @@ class BackupManagerDialog(wx.Dialog):
         )
         self.__files.InsertColumn(0, _("File"))
         self.__files.InsertColumn(1, _("Full path"))
+        self.__files.SetMinSize(wx.Size(150, -1))
         self.__backups = wx.ListCtrl(
             container, wx.ID_ANY, style=wx.LC_REPORT | wx.LC_SINGLE_SEL
         )
         self.__backups.InsertColumn(0, _("Date"))
+        self.__backups.SetMinSize(wx.Size(150, -1))
         self.__backups.Enable(False)
         self.__btnRestore = wx.Button(container, wx.ID_ANY, _("Restore"))
         self.__btnRestore.Enable(False)
@@ -70,9 +72,6 @@ class BackupManagerDialog(wx.Dialog):
             if filename == selectedFile:
                 selection = item
 
-        self.SetSize(wx.Size(800, 400))
-        self.CentreOnParent()
-
         btn.Bind(wx.EVT_BUTTON, self.DoClose)
         self.__files.Bind(wx.EVT_LIST_ITEM_SELECTED, self._OnSelectFile)
         self.__files.Bind(wx.EVT_LIST_ITEM_DESELECTED, self._OnDeselectFile)
@@ -90,12 +89,41 @@ class BackupManagerDialog(wx.Dialog):
             )
         self.__files.SetColumnWidth(0, -1)
         self.__files.SetColumnWidth(1, -1)
+        self._updateDialogSize()
+        self.CentreOnParent()
 
     def restoredFilename(self):
         return self.__filename
 
     def DoClose(self, event):
         self.EndModal(wx.ID_CANCEL)
+
+    def _getListWidth(self, listCtrl):
+        """Calculate the total width needed for all columns in a list control."""
+        width = 0
+        for col in range(listCtrl.GetColumnCount()):
+            width += listCtrl.GetColumnWidth(col)
+        # Add space for scrollbar and borders
+        width += wx.SystemSettings.GetMetric(wx.SYS_VSCROLL_X) + 10
+        return max(width, listCtrl.GetMinSize().GetWidth())
+
+    def _updateDialogSize(self):
+        """Update dialog size based on list contents."""
+        filesWidth = self._getListWidth(self.__files)
+        backupsWidth = self._getListWidth(self.__backups)
+        buttonWidth = self.__btnRestore.GetSize().GetWidth() + 20
+
+        # Calculate total width with padding
+        totalWidth = filesWidth + backupsWidth + buttonWidth + 30
+
+        # Apply min/max constraints
+        minWidth, maxWidth = 400, 1200
+        totalWidth = max(minWidth, min(maxWidth, totalWidth))
+
+        # Get current height or use default
+        currentHeight = max(400, self.GetSize().GetHeight())
+
+        self.SetSize(wx.Size(totalWidth, currentHeight))
 
     def _OnSelectFile(self, event):
         self.__backups.DeleteAllItems()
@@ -108,6 +136,7 @@ class BackupManagerDialog(wx.Dialog):
         self.__backups.SetColumnWidth(0, -1)
         self.__backups.Enable(True)
         self.__selection = (self.__filenames[event.GetIndex()], None)
+        self._updateDialogSize()
 
     def _OnDeselectFile(self, event):
         self.__btnRestore.Enable(False)
