@@ -109,6 +109,10 @@ class AttributeSync(object):
                 except RuntimeError as e:
                     sys.stderr.write("[%s][UNBIND] RuntimeError unbinding from %s: %s\n" % (_ts(), widget, e))
                     sys.stderr.flush()
+                except AttributeError as e:
+                    # Widget wrapper might not have Unbind method
+                    sys.stderr.write("[%s][UNBIND] AttributeError unbinding from %s: %s\n" % (_ts(), widget, e))
+                    sys.stderr.flush()
             self._boundWidgets = []
         sys.stderr.write("[%s][UNBIND] unbindFocusEvents complete\n" % _ts())
         sys.stderr.flush()

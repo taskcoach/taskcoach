@@ -1583,6 +1583,10 @@ class NullableDateTimeWrapper:
         """Forward bind to datetime entry."""
         self._datetime_entry.Bind(event_type, handler, source, id, id2)
 
+    def Unbind(self, event_type, source=None, id=wx.ID_ANY, id2=wx.ID_ANY, handler=None):
+        """Forward unbind to datetime entry."""
+        return self._datetime_entry.Unbind(event_type, source, id, id2, handler)
+
     def LoadChoices(self, choices):
         """Forward to datetime entry."""
         self._datetime_entry.LoadChoices(choices)
