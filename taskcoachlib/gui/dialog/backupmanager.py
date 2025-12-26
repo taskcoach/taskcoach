@@ -70,7 +70,7 @@ class BackupManagerDialog(wx.Dialog):
             if filename == selectedFile:
                 selection = item
 
-        self.SetSize(wx.Size(600, 400))
+        self.SetSize(wx.Size(800, 400))
         self.CentreOnParent()
 
         btn.Bind(wx.EVT_BUTTON, self.DoClose)
