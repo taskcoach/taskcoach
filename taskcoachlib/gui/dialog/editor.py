@@ -1591,6 +1591,11 @@ class NullableDateTimeWrapper:
         self._datetime_entry.Enable(enable)
         return True
 
+    def Cleanup(self):
+        """Forward cleanup to datetime entry to stop timers."""
+        if hasattr(self._datetime_entry, 'Cleanup'):
+            self._datetime_entry.Cleanup()
+
 
 class EffortEditBook(Page):
     domainObject = "effort"
@@ -1967,13 +1972,14 @@ class EffortEditBook(Page):
         )
 
     def close_edit_book(self):
-        """Unbind focus events before closing."""
+        """Unbind focus events and cleanup timers before closing."""
         import sys
         import time
         def _ts():
             return "%.3f" % time.time()
         sys.stderr.write("[%s][EDITOR] close_edit_book called\n" % _ts())
         sys.stderr.flush()
+        # Unbind focus events from AttributeSync
         if hasattr(self, '_startDateTimeSync') and self._startDateTimeSync:
             sys.stderr.write("[%s][EDITOR] Calling _startDateTimeSync.unbindFocusEvents()\n" % _ts())
             sys.stderr.flush()
@@ -1982,6 +1988,17 @@ class EffortEditBook(Page):
             sys.stderr.write("[%s][EDITOR] Calling _stopDateTimeSync.unbindFocusEvents()\n" % _ts())
             sys.stderr.flush()
             self._stopDateTimeSync.unbindFocusEvents()
+        # Stop timers in DateTimeEntry widgets to prevent crash after dialog closes
+        if hasattr(self, '_startDateTimeEntry') and self._startDateTimeEntry:
+            sys.stderr.write("[%s][EDITOR] Calling _startDateTimeEntry.Cleanup()\n" % _ts())
+            sys.stderr.flush()
+            if hasattr(self._startDateTimeEntry, 'Cleanup'):
+                self._startDateTimeEntry.Cleanup()
+        if hasattr(self, '_stopDateTimeEntry') and self._stopDateTimeEntry:
+            sys.stderr.write("[%s][EDITOR] Calling _stopDateTimeEntry.Cleanup()\n" % _ts())
+            sys.stderr.flush()
+            if hasattr(self._stopDateTimeEntry, 'Cleanup'):
+                self._stopDateTimeEntry.Cleanup()
         sys.stderr.write("[%s][EDITOR] close_edit_book complete\n" % _ts())
         sys.stderr.flush()
 

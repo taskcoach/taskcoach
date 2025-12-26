@@ -15,8 +15,11 @@
 #    You should have received a copy of the GNU General Public License
 #    along with smartdatetimectrl.  If not, see <http://www.gnu.org/licenses/>.
 
-import wx, math, time, re, datetime, calendar, io, platform
+import wx, math, time, re, datetime, calendar, io, platform, sys
 import wx.lib.platebtn as pbtn
+
+def _ts():
+    return "%.3f" % time.time()
 
 
 # We expect the user application to inject _ into __builtins__
@@ -446,12 +449,19 @@ class Entry(wx.Panel):
 
     def Cleanup(self):
         # Stop the timer to prevent crashes during widget destruction
+        sys.stderr.write("[%s][SDTC] Cleanup called on %s, timer running=%s\n" % (
+            _ts(), self, self.__timer.IsRunning() if self.__timer else 'N/A'))
+        sys.stderr.flush()
         if self.__timer and self.__timer.IsRunning():
+            sys.stderr.write("[%s][SDTC] Stopping timer\n" % _ts())
+            sys.stderr.flush()
             self.__timer.Stop()
         try:
             self.DismissPopup()
         except RuntimeError:
             pass  # Widget may already be destroyed
+        sys.stderr.write("[%s][SDTC] Cleanup complete\n" % _ts())
+        sys.stderr.flush()
 
     def Format(self):
         bf = io.StringIO()
@@ -463,26 +473,41 @@ class Entry(wx.Panel):
         return bf.getvalue()
 
     def ForceFocus(self, force=True):
+        sys.stderr.write("[%s][SDTC] ForceFocus(%s) called on %s\n" % (_ts(), force, self))
+        sys.stderr.flush()
         self.__forceFocus = force
         self.Refresh()
 
     def OnTimer(self, event):
+        sys.stderr.write("[%s][SDTC] OnTimer called on %s, focus=%s\n" % (_ts(), self, self.__focus))
+        sys.stderr.flush()
         if self.__focus is not None:
             self.__focus.ResetState()
+        sys.stderr.write("[%s][SDTC] OnTimer complete\n" % _ts())
+        sys.stderr.flush()
 
     def StartTimer(self):
+        sys.stderr.write("[%s][SDTC] StartTimer called on %s, starting 2s timer\n" % (_ts(), self))
+        sys.stderr.flush()
         self.__timer.Start(2000, True)
 
     def __SetFocus(self, field):
+        sys.stderr.write("[%s][SDTC] __SetFocus called on %s, field=%s, timer running=%s\n" % (
+            _ts(), self, field, self.__timer.IsRunning() if self.__timer else 'N/A'))
+        sys.stderr.flush()
         if self.__popup is not None:
             self.__popup[0].Dismiss()
 
         if self.__focus is not None:
+            sys.stderr.write("[%s][SDTC] __SetFocus stopping timer\n" % _ts())
+            sys.stderr.flush()
             self.__timer.Stop()
             self.__focus.ResetState()
 
         self.__focus = field
         self.Refresh()
+        sys.stderr.write("[%s][SDTC] __SetFocus complete\n" % _ts())
+        sys.stderr.flush()
 
     def DismissPopup(self):
         if self.__popup is not None:
@@ -494,10 +519,17 @@ class Entry(wx.Panel):
         event.Skip()
 
     def OnKillFocus(self, event):
+        sys.stderr.write("[%s][SDTC] OnKillFocus called on %s, timer running=%s\n" % (
+            _ts(), self, self.__timer.IsRunning() if self.__timer else 'N/A'))
+        sys.stderr.flush()
         self.Refresh()
+        sys.stderr.write("[%s][SDTC] OnKillFocus Refresh done\n" % _ts())
+        sys.stderr.flush()
         event.Skip()
 
     def OnSetFocus(self, event):
+        sys.stderr.write("[%s][SDTC] OnSetFocus called on %s\n" % (_ts(), self))
+        sys.stderr.flush()
         self.__focusStamp = time.time()
         self.Refresh()
         event.Skip()
@@ -675,6 +707,8 @@ class Entry(wx.Panel):
             self.ForceFocus()
         else:
             if self.__focus is not None and self.__focus.HandleKey(event):
+                sys.stderr.write("[%s][SDTC] OnChar: key handled by field, calling StartTimer on %s\n" % (_ts(), self))
+                sys.stderr.flush()
                 self.StartTimer()
                 return
             if not hasattr(
