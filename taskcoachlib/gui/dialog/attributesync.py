@@ -63,6 +63,9 @@ class AttributeSync(object):
         self.__editSessionValue = None  # Value at start of edit session
         self.__hasChanges = False  # Track if any changes during this focus session
         self.__skipCallbacks = False  # Flag to suppress callbacks during close
+        self.__syncId = "%s_%s" % (attributeGetterName, id(self))  # For logging
+        sys.stderr.write("[%s][SYNC] Created AttributeSync id=%s, getter=%s\n" % (_ts(), self.__syncId, attributeGetterName))
+        sys.stderr.flush()
 
         entry.Bind(editedEventType, self.onAttributeEdited)
 
@@ -114,8 +117,8 @@ class AttributeSync(object):
         event.Skip()
 
         new_focus = event.GetWindow()
-        sys.stderr.write("[%s][SYNC] __onKillFocus called, new_focus=%s, hasChanges=%s, editSessionValue=%s\n" % (
-            _ts(), new_focus, self.__hasChanges, self.__editSessionValue))
+        sys.stderr.write("[%s][SYNC:%s] __onKillFocus called, new_focus=%s, hasChanges=%s, editSessionValue=%s\n" % (
+            _ts(), self.__syncId, new_focus, self.__hasChanges, self.__editSessionValue))
         sys.stderr.flush()
 
         # Guard against destroyed widgets (e.g., when dialog is closing)
@@ -239,9 +242,14 @@ class AttributeSync(object):
             self.__stop_observing_attribute()
 
     def onAttributeChanged(self, newValue, sender):
+        sys.stderr.write("[%s][SYNC:%s] onAttributeChanged called, newValue=%s, sender=%s, skipCallbacks=%s\n" % (
+            _ts(), self.__syncId, newValue, sender, self.__skipCallbacks))
+        sys.stderr.flush()
         if sender in self._items:
             if self._entry:
                 if newValue != self._currentValue:
+                    sys.stderr.write("[%s][SYNC:%s] Value changed, about to setValue and invokeCallback\n" % (_ts(), self.__syncId))
+                    sys.stderr.flush()
                     self._currentValue = newValue
                     self.__editSessionValue = None  # Cancel any pending edit session
                     self.__hasChanges = False
@@ -261,7 +269,7 @@ class AttributeSync(object):
         return self._entry.GetValue()
 
     def __invokeCallback(self, value):
-        sys.stderr.write("[%s][SYNC] __invokeCallback called, callback=%s, skipCallbacks=%s\n" % (_ts(), self.__callback, self.__skipCallbacks))
+        sys.stderr.write("[%s][SYNC:%s] __invokeCallback called, callback=%s, skipCallbacks=%s\n" % (_ts(), self.__syncId, self.__callback, self.__skipCallbacks))
         sys.stderr.flush()
         if self.__skipCallbacks:
             sys.stderr.write("[%s][SYNC] Skipping callback due to __skipCallbacks flag\n" % _ts())
