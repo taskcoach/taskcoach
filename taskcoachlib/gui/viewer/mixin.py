@@ -304,6 +304,10 @@ class SortableViewerMixin(object):
                 self.widget.RefreshVisibleItems(len(self.presentation()))
             else:
                 self.refresh()
+            # Clear any pending debounced refreshes since we just did a full
+            # visible refresh - prevents redundant refreshes from events that
+            # were already collected (like trackingChanged after add).
+            self.clearPendingRefresh()
             # Re-sync widget selection: items may have moved to different
             # indices after sorting, so update widget with the cached selection
             # (which contains the correct items, just at old indices)

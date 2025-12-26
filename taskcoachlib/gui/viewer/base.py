@@ -409,6 +409,8 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
     def refresh(self):
         if self and not self.__freezeCount:
             self.widget.RefreshAllItems(len(self.presentation()))
+            # Clear any pending debounced refreshes since we just did a full refresh
+            self.__debouncedRefreshItems.clear()
 
     def refreshItems(self, *items):
         """Refresh specific items in the viewer.
@@ -438,6 +440,14 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             items = list(self.__debouncedRefreshItems)
             self.__debouncedRefreshItems.clear()
             self.widget.RefreshItems(*items)
+
+    def clearPendingRefresh(self):
+        """Clear any pending debounced refresh requests.
+
+        Should be called after a full visible refresh to prevent redundant
+        refreshes from already-scheduled debounced callbacks.
+        """
+        self.__debouncedRefreshItems.clear()
 
     def refreshAfterRemoval(self, removed_items):
         """Efficiently refresh after items have been removed.

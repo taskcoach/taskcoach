@@ -161,16 +161,21 @@ class VirtualListCtrl(
         """
         if not items:
             return
+        count = self.GetItemCount()
+        if count == 0:
+            return
         # Get visible range
         top = self.GetTopItem()
+        if top < 0:
+            top = 0  # GetTopItem returns -1 if list is empty or not ready
         per_page = self.GetCountPerPage()
-        visible_end = top + per_page
+        visible_end = min(top + per_page, count - 1)
 
         for item in items:
             try:
                 index = self.__parent.getIndexOfItem(item)
-                # Only refresh if item is in visible range
-                if top <= index <= visible_end:
+                # Only refresh if item is in visible range and valid
+                if 0 <= index < count and top <= index <= visible_end:
                     self.RefreshItem(index)
             except (ValueError, IndexError):
                 # Item may no longer be in the list
@@ -276,14 +281,20 @@ class VirtualListCtrl(
         Optimized to only modify items that need to change state,
         rather than iterating over all items.
         """
+        count = self.GetItemCount()
         new_indices = set()
         for item in items:
             try:
-                new_indices.add(self.__parent.getIndexOfItem(item))
+                index = self.__parent.getIndexOfItem(item)
+                if 0 <= index < count:
+                    new_indices.add(index)
             except (ValueError, IndexError):
                 pass  # Item not in list
 
-        current_indices = set(self.__curselection_indices())
+        # Filter current indices to only valid ones (count may have changed)
+        current_indices = set(
+            i for i in self.__curselection_indices() if 0 <= i < count
+        )
 
         # Deselect items that should no longer be selected
         for index in current_indices - new_indices:
@@ -293,13 +304,17 @@ class VirtualListCtrl(
         for index in new_indices - current_indices:
             self.Select(index, True)
 
-        if self.curselection():
-            self.Focus(self.GetFirstSelected())
+        # Focus the first selected item if any
+        first_selected = self.GetFirstSelected()
+        if first_selected >= 0:
+            self.Focus(first_selected)
 
     def clear_selection(self):
         """Unselect all selected items."""
+        count = self.GetItemCount()
         for index in self.__curselection_indices():
-            self.Select(index, False)
+            if 0 <= index < count:
+                self.Select(index, False)
 
     def select_all(self):
         """Select all items."""
