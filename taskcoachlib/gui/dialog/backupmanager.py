@@ -134,6 +134,9 @@ class BackupManagerDialog(wx.Dialog):
         contentWidth = self.__backups.GetColumnWidth(0)
         if headerWidth > contentWidth:
             self.__backups.SetColumnWidth(0, headerWidth)
+        # Force refresh to update header rendering
+        self.__backups.Refresh()
+        self.__backups.Update()
         self.__backups.Enable(True)
         self.__selection = (self.__filenames[event.GetIndex()], None)
 
