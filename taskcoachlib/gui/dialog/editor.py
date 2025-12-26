@@ -89,6 +89,9 @@ class Page(patterns.Observer, widgets.BookPage):
 
     def close(self):
         self.removeInstance()
+        for entry in list(self.entries().values()):
+            if hasattr(entry, 'Cleanup'):
+                entry.Cleanup()
 
 
 class SubjectPage(Page):
@@ -1566,6 +1569,10 @@ class NullableDateTimeWrapper:
         """Forward bind to datetime entry."""
         self._datetime_entry.Bind(event_type, handler, source, id, id2)
 
+    def Unbind(self, event_type, source=None, id=wx.ID_ANY, id2=wx.ID_ANY, handler=None):
+        """Forward unbind to datetime entry."""
+        return self._datetime_entry.Unbind(event_type, source, id, id2, handler)
+
     def LoadChoices(self, choices):
         """Forward to datetime entry."""
         self._datetime_entry.LoadChoices(choices)
@@ -1586,6 +1593,10 @@ class NullableDateTimeWrapper:
         """Enable/disable the datetime entry."""
         self._datetime_entry.Enable(enable)
         return True
+
+    def Cleanup(self):
+        """Forward cleanup to datetime entry."""
+        self._datetime_entry.Cleanup()
 
 
 class EffortEditBook(Page):
@@ -1963,7 +1974,25 @@ class EffortEditBook(Page):
         )
 
     def close_edit_book(self):
-        pass
+        """Flush any pending changes and unbind events before closing."""
+        # Flush pending changes from date/time entries before closing
+        if hasattr(self, '_startDateTimeSync') and self._startDateTimeSync:
+            self._startDateTimeSync.flushPendingChanges()
+            self._startDateTimeSync.unbindFocusEvents()
+        if hasattr(self, '_stopDateTimeSync') and self._stopDateTimeSync:
+            self._stopDateTimeSync.flushPendingChanges()
+            self._stopDateTimeSync.unbindFocusEvents()
+        # Also cleanup the DateTimeEntry widgets to stop timers
+        if hasattr(self, '_startDateTimeEntry') and self._startDateTimeEntry:
+            try:
+                self._startDateTimeEntry.Cleanup()
+            except (RuntimeError, AttributeError):
+                pass
+        if hasattr(self, '_stopDateTimeEntry') and self._stopDateTimeEntry:
+            try:
+                self._stopDateTimeEntry.Cleanup()
+            except (RuntimeError, AttributeError):
+                pass
 
 
 class Editor(BalloonTipManager, widgets.Dialog):
@@ -2091,6 +2120,11 @@ class Editor(BalloonTipManager, widgets.Dialog):
         if self.__timer is not None:
             IdProvider.put(self.__timer.GetId())
         IdProvider.put(self.__new_effort_id)
+        # Process any pending events before destruction to prevent crashes
+        try:
+            wx.GetApp().ProcessPendingEvents()
+        except Exception:
+            pass
         self.Destroy()
 
     def on_activate(self, event):
