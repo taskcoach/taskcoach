@@ -70,32 +70,10 @@ class AttributeSync(object):
 
     def __bindFocusEvents(self, widget):
         """Bind focus events to widget and all its children recursively."""
-        # Bind to the widget itself
         widget.Bind(wx.EVT_SET_FOCUS, self.__onSetFocus)
         widget.Bind(wx.EVT_KILL_FOCUS, self.__onKillFocus)
-        # Track bound widgets for cleanup
-        if not hasattr(self, '_boundWidgets'):
-            self._boundWidgets = []
-        self._boundWidgets.append(widget)
-        # Bind to all children (for composite widgets)
         for child in widget.GetChildren():
             self.__bindFocusEvents(child)
-
-    def unbindFocusEvents(self):
-        """Unbind focus events from all tracked widgets.
-
-        Call this before the dialog is destroyed to prevent crashes from
-        pending focus events on destroyed widgets.
-        """
-        if hasattr(self, '_boundWidgets'):
-            for widget in self._boundWidgets:
-                try:
-                    widget.Unbind(wx.EVT_SET_FOCUS)
-                    widget.Unbind(wx.EVT_KILL_FOCUS)
-                except (RuntimeError, AttributeError):
-                    # Widget may be destroyed or wrapper without Unbind
-                    pass
-            self._boundWidgets = []
 
     def __onSetFocus(self, event):
         """Called when any part of the widget gains focus."""
@@ -109,13 +87,15 @@ class AttributeSync(object):
         """Called when any part of the widget loses focus."""
         event.Skip()
 
-        # Guard against destroyed widgets (e.g., when dialog is closing)
+        # Check if the dialog is being destroyed - if so, bail out immediately
+        # This is the recommended wxPython pattern to avoid crashes during destruction
         try:
-            if not self._entry:
+            top_level = self._entry.GetTopLevelParent()
+            if top_level is None or top_level.IsBeingDeleted():
                 self.__editSessionValue = None
                 self.__hasChanges = False
                 return
-        except RuntimeError:
+        except (RuntimeError, AttributeError):
             self.__editSessionValue = None
             self.__hasChanges = False
             return
@@ -141,31 +121,10 @@ class AttributeSync(object):
             try:
                 new_value = self.getValue()
                 if new_value != self.__editSessionValue:
-                    # Skip callback if focus is going to None (dialog closing)
-                    # The callback updates UI which can queue events that crash
-                    # after the dialog is destroyed
-                    skip_callback = (new_focus is None)
-                    self.__executeCommand(new_value, skip_callback=skip_callback)
+                    self.__executeCommand(new_value)
             except RuntimeError:
                 pass  # Widget deleted, can't get value or execute command
 
-        # Reset edit session
-        self.__editSessionValue = None
-        self.__hasChanges = False
-
-    def flushPendingChanges(self):
-        """Commit any pending changes immediately.
-
-        Call this before closing a dialog to ensure any uncommitted edits
-        from commit_on_focus_loss mode are saved.
-        """
-        if self.__hasChanges and self.__editSessionValue is not None:
-            try:
-                new_value = self.getValue()
-                if new_value != self.__editSessionValue:
-                    self.__executeCommand(new_value)
-            except RuntimeError:
-                pass  # Widget has been deleted
         # Reset edit session
         self.__editSessionValue = None
         self.__hasChanges = False
@@ -183,29 +142,14 @@ class AttributeSync(object):
                 # Immediate: execute command now
                 self.__executeCommand(new_value)
 
-    def __executeCommand(self, new_value, skip_callback=False):
-        """Execute the command to update the model.
-
-        Args:
-            new_value: The new value to set
-            skip_callback: If True, skip the callback invocation. This is used
-                when the dialog is closing to avoid queuing UI events that would
-                crash after the dialog is destroyed.
-        """
-        # Guard against destroyed widgets
-        try:
-            if not self._entry:
-                return
-        except RuntimeError:
-            return
-
+    def __executeCommand(self, new_value):
+        """Execute the command to update the model."""
         self._currentValue = new_value
         commandKwArgs = self.commandKwArgs(new_value)
         self._commandClass(
             None, self._items, **commandKwArgs
         ).do()  # pylint: disable=W0142
-        if not skip_callback:
-            self.__invokeCallback(new_value)
+        self.__invokeCallback(new_value)
 
     def onAttributeChanged_Deprecated(self, event):  # pylint: disable=W0613
         if self._entry:
