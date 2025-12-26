@@ -119,34 +119,37 @@ class Effort(baseeffort.BaseEffort, base.Object):
 
     def setStart(self, startDateTime):
         import sys
-        sys.stderr.write("[EFFORT] setStart called with %s (current=%s)\n" % (startDateTime, self._start))
+        import time
+        def _ts():
+            return "%.3f" % time.time()
+        sys.stderr.write("[%s][EFFORT] setStart called with %s (current=%s)\n" % (_ts(), startDateTime, self._start))
         sys.stderr.flush()
         if startDateTime == self._start:
-            sys.stderr.write("[EFFORT] No change, returning\n")
+            sys.stderr.write("[%s][EFFORT] No change, returning\n" % _ts())
             sys.stderr.flush()
             return
         self._start = startDateTime
         self.__updateDurationCache()
-        sys.stderr.write("[EFFORT] About to send startChangedEventType message\n")
+        sys.stderr.write("[%s][EFFORT] About to send startChangedEventType message\n" % _ts())
         sys.stderr.flush()
         pub.sendMessage(
             self.startChangedEventType(), newValue=startDateTime, sender=self
         )
-        sys.stderr.write("[EFFORT] startChangedEventType message sent, about to send timeSpentChanged\n")
+        sys.stderr.write("[%s][EFFORT] startChangedEventType message sent, about to send timeSpentChanged\n" % _ts())
         sys.stderr.flush()
         self.task().sendTimeSpentChangedMessage()
-        sys.stderr.write("[EFFORT] timeSpentChanged sent, about to send durationChanged\n")
+        sys.stderr.write("[%s][EFFORT] timeSpentChanged sent, about to send durationChanged\n" % _ts())
         sys.stderr.flush()
         self.sendDurationChangedMessage()
-        sys.stderr.write("[EFFORT] durationChanged sent\n")
+        sys.stderr.write("[%s][EFFORT] durationChanged sent\n" % _ts())
         sys.stderr.flush()
         if self.task().hourlyFee():
-            sys.stderr.write("[EFFORT] About to send revenueChanged\n")
+            sys.stderr.write("[%s][EFFORT] About to send revenueChanged\n" % _ts())
             sys.stderr.flush()
             self.sendRevenueChangedMessage()
-            sys.stderr.write("[EFFORT] revenueChanged sent\n")
+            sys.stderr.write("[%s][EFFORT] revenueChanged sent\n" % _ts())
             sys.stderr.flush()
-        sys.stderr.write("[EFFORT] setStart complete\n")
+        sys.stderr.write("[%s][EFFORT] setStart complete\n" % _ts())
         sys.stderr.flush()
 
     @classmethod

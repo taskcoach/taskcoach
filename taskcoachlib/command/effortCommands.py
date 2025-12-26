@@ -124,13 +124,16 @@ class EditEffortStartDateTimeCommand(base.BaseCommand):
 
     def do_command(self):
         import sys
-        sys.stderr.write("[CMD] EditEffortStartDateTimeCommand.do_command called, datetime=%s\n" % self.__datetime)
+        import time
+        def _ts():
+            return "%.3f" % time.time()
+        sys.stderr.write("[%s][CMD] EditEffortStartDateTimeCommand.do_command called, datetime=%s\n" % (_ts(), self.__datetime))
         sys.stderr.flush()
         for item in self.items:
-            sys.stderr.write("[CMD] About to call item.setStart(%s)\n" % self.__datetime)
+            sys.stderr.write("[%s][CMD] About to call item.setStart(%s)\n" % (_ts(), self.__datetime))
             sys.stderr.flush()
             item.setStart(self.__datetime)
-            sys.stderr.write("[CMD] item.setStart complete\n")
+            sys.stderr.write("[%s][CMD] item.setStart complete\n" % _ts())
             sys.stderr.flush()
             task = item.task()
             if (
@@ -140,12 +143,12 @@ class EditEffortStartDateTimeCommand(base.BaseCommand):
                 self.__oldActualStartDateTimes[task] = (
                     task.actualStartDateTime()
                 )
-                sys.stderr.write("[CMD] About to call task.setActualStartDateTime\n")
+                sys.stderr.write("[%s][CMD] About to call task.setActualStartDateTime\n" % _ts())
                 sys.stderr.flush()
                 task.setActualStartDateTime(self.__datetime)
-                sys.stderr.write("[CMD] task.setActualStartDateTime complete\n")
+                sys.stderr.write("[%s][CMD] task.setActualStartDateTime complete\n" % _ts())
                 sys.stderr.flush()
-        sys.stderr.write("[CMD] EditEffortStartDateTimeCommand.do_command complete\n")
+        sys.stderr.write("[%s][CMD] EditEffortStartDateTimeCommand.do_command complete\n" % _ts())
         sys.stderr.flush()
 
     def undo_command(self):
