@@ -180,47 +180,42 @@ class VirtualListCtrl(
         """Efficiently refresh the list after items have been removed.
 
         Unlike RefreshAllItems which refreshes all items, this method only
-        updates the item count and refreshes the visible range, making it
-        much more efficient for large lists.
+        updates the item count. The virtual list will request data on demand
+        when it needs to repaint visible items.
 
         Args:
             count: The new item count after removal.
             removed_items: List of removed domain objects (unused for virtual
                 lists since we only need to refresh visible items).
         """
-        self.SetItemCount(count)
         if count == 0:
-            self.DeleteAllItems()
+            self.Freeze()
+            try:
+                self.SetItemCount(0)
+                self.DeleteAllItems()
+            finally:
+                self.Thaw()
         else:
-            # Only refresh the visible range for efficiency
-            top = self.GetTopItem()
-            per_page = self.GetCountPerPage()
-            # Ensure we don't go past the end of the list
-            end = min(count - 1, top + per_page)
-            if top <= end:
-                super().RefreshItems(top, end)
+            # Just update the count - virtual list will fetch data on demand
+            # No need to call RefreshItems which can cause flicker
+            self.SetItemCount(count)
         self.selectCommand()
 
     def RefreshAfterAddition(self, count, added_items=None):
         """Efficiently refresh the list after items have been added.
 
         Unlike RefreshAllItems which refreshes all items, this method only
-        updates the item count and refreshes the visible range, making it
-        much more efficient for large lists.
+        updates the item count. The virtual list will request data on demand
+        when it needs to repaint visible items.
 
         Args:
             count: The new item count after addition.
             added_items: List of added domain objects (unused for virtual
                 lists since we only need to refresh visible items).
         """
+        # Just update the count - virtual list will fetch data on demand
+        # No need to call RefreshItems which can cause flicker
         self.SetItemCount(count)
-        # Only refresh the visible range for efficiency
-        top = self.GetTopItem()
-        per_page = self.GetCountPerPage()
-        # Ensure we don't go past the end of the list
-        end = min(count - 1, top + per_page)
-        if top <= end:
-            super().RefreshItems(top, end)
         self.selectCommand()
 
     def HitTest(self, xxx_todo_changeme, *args, **kwargs):
