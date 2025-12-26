@@ -28,36 +28,49 @@ class BackupManagerDialog(wx.Dialog):
             parent, wx.ID_ANY, style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         )
 
-        container = wx.Panel(self)
+        # Create splitter for the two lists
+        self.__splitter = wx.SplitterWindow(
+            self, wx.ID_ANY, style=wx.SP_LIVE_UPDATE
+        )
+
+        # Left pane: Files list
         self.__files = wx.ListCtrl(
-            container, wx.ID_ANY, style=wx.LC_REPORT | wx.LC_SINGLE_SEL
+            self.__splitter, wx.ID_ANY, style=wx.LC_REPORT | wx.LC_SINGLE_SEL
         )
         self.__files.InsertColumn(0, _("File"))
         self.__files.InsertColumn(1, _("Full path"))
+
+        # Right pane: Backups/Date list
         self.__backups = wx.ListCtrl(
-            container, wx.ID_ANY, style=wx.LC_REPORT | wx.LC_SINGLE_SEL
+            self.__splitter, wx.ID_ANY, style=wx.LC_REPORT | wx.LC_SINGLE_SEL
         )
         self.__backups.InsertColumn(0, _("Date"))
         self.__backups.Enable(False)
-        self.__btnRestore = wx.Button(container, wx.ID_ANY, _("Restore"))
+
+        # Configure splitter
+        self.__splitter.SplitVertically(self.__files, self.__backups)
+        self.__splitter.SetMinimumPaneSize(150)
+        self.__splitter.SetSashGravity(1.0)
+
+        # Button column
+        btnPanel = wx.Panel(self)
+        btnSizer = wx.BoxSizer(wx.VERTICAL)
+        self.__btnRestore = wx.Button(btnPanel, wx.ID_ANY, _("Restore"))
         self.__btnRestore.Enable(False)
+        btnClose = wx.Button(btnPanel, wx.ID_ANY, _("Close"))
+        btnSizer.Add(self.__btnRestore, 0, wx.ALL, 3)
+        btnSizer.AddStretchSpacer(1)
+        btnSizer.Add(btnClose, 0, wx.ALL, 3)
+        btnPanel.SetSizer(btnSizer)
+
+        # Main horizontal layout: splitter + buttons
+        mainSizer = wx.BoxSizer(wx.HORIZONTAL)
+        mainSizer.Add(self.__splitter, 1, wx.EXPAND | wx.ALL, 3)
+        mainSizer.Add(btnPanel, 0, wx.EXPAND | wx.ALL, 3)
+        self.SetSizer(mainSizer)
+
         self.__filename = selectedFile
         self.__selection = (None, None)
-
-        vsz = wx.BoxSizer(wx.VERTICAL)
-        hsz = wx.BoxSizer(wx.HORIZONTAL)
-        hsz.Add(self.__files, 1, wx.EXPAND | wx.ALL, 3)
-        hsz.Add(self.__backups, 1, wx.EXPAND | wx.ALL, 3)
-        hsz.Add(self.__btnRestore, 0, wx.ALIGN_TOP | wx.ALL, 3)
-        vsz.Add(hsz, 1, wx.EXPAND)
-
-        container.SetSizer(vsz)
-
-        vsz = wx.BoxSizer(wx.VERTICAL)
-        vsz.Add(container, 1, wx.EXPAND)
-        btn = wx.Button(self, wx.ID_ANY, _("Close"))
-        vsz.Add(btn, 0, wx.ALL | wx.ALIGN_RIGHT, 3)
-        self.SetSizer(vsz)
 
         self.__manifest = BackupManifest(settings)
         self.__filenames = self.__manifest.listFiles()
@@ -70,10 +83,7 @@ class BackupManagerDialog(wx.Dialog):
             if filename == selectedFile:
                 selection = item
 
-        self.SetSize(wx.Size(600, 400))
-        self.CentreOnParent()
-
-        btn.Bind(wx.EVT_BUTTON, self.DoClose)
+        btnClose.Bind(wx.EVT_BUTTON, self.DoClose)
         self.__files.Bind(wx.EVT_LIST_ITEM_SELECTED, self._OnSelectFile)
         self.__files.Bind(wx.EVT_LIST_ITEM_DESELECTED, self._OnDeselectFile)
         self.__backups.Bind(wx.EVT_LIST_ITEM_SELECTED, self._OnSelectBackup)
@@ -91,6 +101,19 @@ class BackupManagerDialog(wx.Dialog):
         self.__files.SetColumnWidth(0, -1)
         self.__files.SetColumnWidth(1, -1)
 
+        # Set dialog size constrained to screen
+        targetWidth, targetHeight = 800, 600
+        datePaneWidth = 150
+        display = wx.Display(wx.Display.GetFromWindow(parent) if parent else 0)
+        screenRect = display.GetClientArea()
+        width = min(targetWidth, screenRect.GetWidth() - 50)
+        height = min(targetHeight, screenRect.GetHeight() - 50)
+        self.SetSize(wx.Size(width, height))
+
+        # Set sash position from right edge (negative value)
+        self.__splitter.SetSashPosition(-datePaneWidth)
+        self.CentreOnParent()
+
     def restoredFilename(self):
         return self.__filename
 
@@ -99,13 +122,18 @@ class BackupManagerDialog(wx.Dialog):
 
     def _OnSelectFile(self, event):
         self.__backups.DeleteAllItems()
-        for index, dateTime in enumerate(
-            self.__manifest.listBackups(self.__filenames[event.GetIndex()])
-        ):
+        backups = self.__manifest.listBackups(self.__filenames[event.GetIndex()])
+        for index, dateTime in enumerate(backups):
             self.__backups.InsertItem(
                 index, render.dateTime(dateTime, humanReadable=True)
             )
-        self.__backups.SetColumnWidth(0, -1)
+        # Size column to max of header width and content width
+        self.__backups.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
+        headerWidth = self.__backups.GetColumnWidth(0)
+        self.__backups.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        contentWidth = self.__backups.GetColumnWidth(0)
+        self.__backups.SetColumnWidth(0, max(headerWidth, contentWidth))
+        self.__backups.Refresh()
         self.__backups.Enable(True)
         self.__selection = (self.__filenames[event.GetIndex()], None)
 

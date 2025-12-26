@@ -1963,7 +1963,13 @@ class EffortEditBook(Page):
         )
 
     def close_edit_book(self):
-        pass
+        """Stop timers in DateTimeEntry widgets to prevent crash after close."""
+        if hasattr(self, '_startDateTimeEntry') and self._startDateTimeEntry:
+            if hasattr(self._startDateTimeEntry, 'Cleanup'):
+                self._startDateTimeEntry.Cleanup()
+        if hasattr(self, '_stopDateTimeEntry') and self._stopDateTimeEntry:
+            if hasattr(self._stopDateTimeEntry, 'Cleanup'):
+                self._stopDateTimeEntry.Cleanup()
 
 
 class Editor(BalloonTipManager, widgets.Dialog):
