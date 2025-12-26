@@ -89,6 +89,9 @@ class Page(patterns.Observer, widgets.BookPage):
 
     def close(self):
         self.removeInstance()
+        for entry in list(self.entries().values()):
+            if hasattr(entry, 'Cleanup'):
+                entry.Cleanup()
 
 
 class SubjectPage(Page):
@@ -1590,9 +1593,8 @@ class NullableDateTimeWrapper:
         return True
 
     def Cleanup(self):
-        """Forward cleanup to datetime entry to stop timers."""
-        if hasattr(self._datetime_entry, 'Cleanup'):
-            self._datetime_entry.Cleanup()
+        """Forward cleanup to datetime entry."""
+        self._datetime_entry.Cleanup()
 
 
 class EffortEditBook(Page):
