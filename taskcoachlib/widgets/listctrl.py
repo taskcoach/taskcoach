@@ -176,17 +176,28 @@ class VirtualListCtrl(
                 # Item may no longer be in the list
                 pass
 
-    def RefreshVisibleItems(self):
+    def RefreshVisibleItems(self, newCount=None):
         """Refresh only the currently visible items.
 
-        Used when the underlying data order has changed (e.g., after sorting)
-        but the item count hasn't changed. The virtual list will fetch the
-        correct data for each visible position when it repaints.
+        Used when the underlying data order has changed (e.g., after sorting).
+        The virtual list will fetch the correct data for each visible position
+        when it repaints.
+
+        Args:
+            newCount: Optional new item count. If provided and different from
+                current count, the count is updated first. This allows
+                deferring count updates until after sorting.
         """
+        if newCount is not None:
+            currentCount = self.GetItemCount()
+            if newCount != currentCount:
+                self.SetItemCount(newCount)
         count = self.GetItemCount()
         if count == 0:
             return
         top = self.GetTopItem()
+        if top < 0:
+            top = 0  # GetTopItem returns -1 if list is empty or not ready
         per_page = self.GetCountPerPage()
         # RefreshItems takes inclusive range, cap at count-1
         end = min(top + per_page, count - 1)
@@ -219,20 +230,17 @@ class VirtualListCtrl(
         self.selectCommand()
 
     def RefreshAfterAddition(self, count, added_items=None):
-        """Efficiently refresh the list after items have been added.
+        """Called after items have been added to the presentation.
 
-        Unlike RefreshAllItems which refreshes all items, this method only
-        updates the item count. The virtual list will request data on demand
-        when it needs to repaint visible items.
+        Updates the item count so the widget knows about the new items.
+        The actual display update is handled by RefreshVisibleItems called
+        from onSortOrderChanged after the sort completes.
 
         Args:
             count: The new item count after addition.
-            added_items: List of added domain objects (unused for virtual
-                lists since we only need to refresh visible items).
+            added_items: List of added domain objects (unused).
         """
         self.SetItemCount(count)
-        # Note: Don't call selectCommand here - selection is handled by
-        # onNewItem which calls select() after this method returns
 
     def HitTest(self, xxx_todo_changeme, *args, **kwargs):
         """Always return a three-tuple (item, flag, column)."""
