@@ -247,9 +247,28 @@ class VirtualListCtrl(
             return []
 
     def select(self, items):
-        indices = [self.__parent.getIndexOfItem(item) for item in items]
-        for index in range(self.GetItemCount()):
-            self.Select(index, index in indices)
+        """Select the specified items, deselecting others.
+
+        Optimized to only modify items that need to change state,
+        rather than iterating over all items which causes flicker.
+        """
+        new_indices = set()
+        for item in items:
+            try:
+                new_indices.add(self.__parent.getIndexOfItem(item))
+            except (ValueError, IndexError):
+                pass  # Item not in list
+
+        current_indices = set(self.__curselection_indices())
+
+        # Deselect items that should no longer be selected
+        for index in current_indices - new_indices:
+            self.Select(index, False)
+
+        # Select items that should now be selected
+        for index in new_indices - current_indices:
+            self.Select(index, True)
+
         if self.curselection():
             self.Focus(self.GetFirstSelected())
 
