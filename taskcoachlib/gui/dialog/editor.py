@@ -1968,10 +1968,22 @@ class EffortEditBook(Page):
 
     def close_edit_book(self):
         """Unbind focus events before closing."""
+        import sys
+        import time
+        def _ts():
+            return "%.3f" % time.time()
+        sys.stderr.write("[%s][EDITOR] close_edit_book called\n" % _ts())
+        sys.stderr.flush()
         if hasattr(self, '_startDateTimeSync') and self._startDateTimeSync:
+            sys.stderr.write("[%s][EDITOR] Calling _startDateTimeSync.unbindFocusEvents()\n" % _ts())
+            sys.stderr.flush()
             self._startDateTimeSync.unbindFocusEvents()
         if hasattr(self, '_stopDateTimeSync') and self._stopDateTimeSync:
+            sys.stderr.write("[%s][EDITOR] Calling _stopDateTimeSync.unbindFocusEvents()\n" % _ts())
+            sys.stderr.flush()
             self._stopDateTimeSync.unbindFocusEvents()
+        sys.stderr.write("[%s][EDITOR] close_edit_book complete\n" % _ts())
+        sys.stderr.flush()
 
 
 class Editor(BalloonTipManager, widgets.Dialog):
@@ -2086,10 +2098,20 @@ class Editor(BalloonTipManager, widgets.Dialog):
         )
 
     def on_close_editor(self, event):
+        import sys
+        import time
+        def _ts():
+            return "%.3f" % time.time()
+        sys.stderr.write("[%s][EDITOR] on_close_editor called\n" % _ts())
+        sys.stderr.flush()
         event.Skip()
         # Save dialog position/size before closing
         self.__dimensions_tracker.save()
+        sys.stderr.write("[%s][EDITOR] About to call close_edit_book\n" % _ts())
+        sys.stderr.flush()
         self._interior.close_edit_book()
+        sys.stderr.write("[%s][EDITOR] close_edit_book returned\n" % _ts())
+        sys.stderr.flush()
         patterns.Publisher().removeObserver(self.on_item_removed)
         patterns.Publisher().removeObserver(self.on_subject_changed)
         # On Mac OS X, the text control does not lose focus when
@@ -2099,7 +2121,11 @@ class Editor(BalloonTipManager, widgets.Dialog):
         if self.__timer is not None:
             IdProvider.put(self.__timer.GetId())
         IdProvider.put(self.__new_effort_id)
+        sys.stderr.write("[%s][EDITOR] About to call Destroy\n" % _ts())
+        sys.stderr.flush()
         self.Destroy()
+        sys.stderr.write("[%s][EDITOR] Destroy returned\n" % _ts())
+        sys.stderr.flush()
 
     def on_activate(self, event):
         event.Skip()
