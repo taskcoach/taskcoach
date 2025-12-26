@@ -296,24 +296,10 @@ class SortableViewerMixin(object):
         )
 
     def onSortOrderChanged(self, sender):
-        import sys
-        import time
-        def _ts():
-            return "%.3f" % time.time()
-        sys.stderr.write("[%s][VIEWER] onSortOrderChanged called on %s\n" % (_ts(), self.__class__.__name__))
-        sys.stderr.flush()
         if sender == self.presentation():
-            sys.stderr.write("[%s][VIEWER] About to refresh\n" % _ts())
-            sys.stderr.flush()
             self.refresh()
-            sys.stderr.write("[%s][VIEWER] Refresh complete, about to updateSelection\n" % _ts())
-            sys.stderr.flush()
             self.updateSelection(sendViewerStatusEvent=False)
-            sys.stderr.write("[%s][VIEWER] updateSelection complete, about to sendViewerStatusEvent\n" % _ts())
-            sys.stderr.flush()
             self.sendViewerStatusEvent()
-            sys.stderr.write("[%s][VIEWER] onSortOrderChanged complete\n" % _ts())
-            sys.stderr.flush()
 
     def createSorter(self, presentation):
         return self.SorterClass(presentation, **self.sorterOptions())

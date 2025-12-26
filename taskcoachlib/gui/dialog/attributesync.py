@@ -20,16 +20,6 @@ from taskcoachlib import patterns
 from pubsub import pub
 from taskcoachlib.i18n import _
 import wx
-import logging
-import sys
-import time
-
-# Set up logging for crash debugging
-_logger = logging.getLogger(__name__)
-
-def _ts():
-    """Return timestamp with millisecond precision."""
-    return "%.3f" % time.time()
 
 
 class AttributeSync(object):
@@ -97,25 +87,15 @@ class AttributeSync(object):
         Call this before the dialog is destroyed to prevent crashes from
         pending focus events on destroyed widgets.
         """
-        sys.stderr.write("[%s][UNBIND] unbindFocusEvents called\n" % _ts())
-        sys.stderr.flush()
         if hasattr(self, '_boundWidgets'):
             for widget in self._boundWidgets:
                 try:
                     widget.Unbind(wx.EVT_SET_FOCUS)
                     widget.Unbind(wx.EVT_KILL_FOCUS)
-                    sys.stderr.write("[%s][UNBIND] Unbound events from %s\n" % (_ts(), widget))
-                    sys.stderr.flush()
-                except RuntimeError as e:
-                    sys.stderr.write("[%s][UNBIND] RuntimeError unbinding from %s: %s\n" % (_ts(), widget, e))
-                    sys.stderr.flush()
-                except AttributeError as e:
-                    # Widget wrapper might not have Unbind method
-                    sys.stderr.write("[%s][UNBIND] AttributeError unbinding from %s: %s\n" % (_ts(), widget, e))
-                    sys.stderr.flush()
+                except (RuntimeError, AttributeError):
+                    # Widget may be destroyed or wrapper without Unbind
+                    pass
             self._boundWidgets = []
-        sys.stderr.write("[%s][UNBIND] unbindFocusEvents complete\n" % _ts())
-        sys.stderr.flush()
 
     def __onSetFocus(self, event):
         """Called when any part of the widget gains focus."""
@@ -127,32 +107,21 @@ class AttributeSync(object):
 
     def __onKillFocus(self, event):
         """Called when any part of the widget loses focus."""
-        sys.stderr.write("[%s][KILLFOCUS] __onKillFocus called, hasChanges=%s\n" % (_ts(), self.__hasChanges))
-        sys.stderr.flush()
         event.Skip()
 
         # Guard against destroyed widgets (e.g., when dialog is closing)
         try:
-            # Check if the entry widget is still valid
             if not self._entry:
-                sys.stderr.write("[%s][KILLFOCUS] Entry is invalid, returning\n" % _ts())
-                sys.stderr.flush()
                 self.__editSessionValue = None
                 self.__hasChanges = False
                 return
-        except RuntimeError as e:
-            # Widget has been deleted (wrapped C/C++ object deleted)
-            sys.stderr.write("[%s][KILLFOCUS] RuntimeError checking entry: %s\n" % (_ts(), e))
-            sys.stderr.flush()
+        except RuntimeError:
             self.__editSessionValue = None
             self.__hasChanges = False
             return
 
         # Check if focus is moving to another child of the same parent widget
-        # If so, we're still in the same edit session
         new_focus = event.GetWindow()
-        sys.stderr.write("[%s][KILLFOCUS] new_focus=%s\n" % (_ts(), new_focus))
-        sys.stderr.flush()
 
         if new_focus is not None:
             try:
@@ -160,47 +129,29 @@ class AttributeSync(object):
                 parent = new_focus
                 while parent is not None:
                     if parent is self._entry:
-                        sys.stderr.write("[%s][KILLFOCUS] Focus still within same widget, returning\n" % _ts())
-                        sys.stderr.flush()
                         return  # Still within the same widget, don't commit yet
                     parent = parent.GetParent()
-            except RuntimeError as e:
-                # Widget has been deleted during parent traversal
-                sys.stderr.write("[%s][KILLFOCUS] RuntimeError during parent traversal: %s\n" % (_ts(), e))
-                sys.stderr.flush()
+            except RuntimeError:
                 self.__editSessionValue = None
                 self.__hasChanges = False
                 return
 
         # Focus is leaving the widget entirely - commit if there are changes
-        sys.stderr.write("[%s][KILLFOCUS] Focus leaving widget, hasChanges=%s, editSessionValue=%s\n" %
-                        (_ts(), self.__hasChanges, self.__editSessionValue))
-        sys.stderr.flush()
         if self.__hasChanges and self.__editSessionValue is not None:
             try:
                 new_value = self.getValue()
-                sys.stderr.write("[%s][KILLFOCUS] new_value=%s\n" % (_ts(), new_value))
-                sys.stderr.flush()
                 if new_value != self.__editSessionValue:
-                    sys.stderr.write("[%s][KILLFOCUS] Values differ, executing command\n" % _ts())
-                    sys.stderr.flush()
                     # Skip callback if focus is going to None (dialog closing)
                     # The callback updates UI which can queue events that crash
                     # after the dialog is destroyed
                     skip_callback = (new_focus is None)
                     self.__executeCommand(new_value, skip_callback=skip_callback)
-                    sys.stderr.write("[%s][KILLFOCUS] Command executed\n" % _ts())
-                    sys.stderr.flush()
-            except RuntimeError as e:
-                # Widget has been deleted, can't get value or execute command
-                sys.stderr.write("[%s][KILLFOCUS] RuntimeError during command execution: %s\n" % (_ts(), e))
-                sys.stderr.flush()
+            except RuntimeError:
+                pass  # Widget deleted, can't get value or execute command
 
         # Reset edit session
         self.__editSessionValue = None
         self.__hasChanges = False
-        sys.stderr.write("[%s][KILLFOCUS] __onKillFocus complete\n" % _ts())
-        sys.stderr.flush()
 
     def flushPendingChanges(self):
         """Commit any pending changes immediately.
@@ -208,29 +159,16 @@ class AttributeSync(object):
         Call this before closing a dialog to ensure any uncommitted edits
         from commit_on_focus_loss mode are saved.
         """
-        sys.stderr.write("[%s][FLUSH] flushPendingChanges called, hasChanges=%s, editSessionValue=%s\n" %
-                        (_ts(), self.__hasChanges, self.__editSessionValue))
-        sys.stderr.flush()
         if self.__hasChanges and self.__editSessionValue is not None:
             try:
                 new_value = self.getValue()
-                sys.stderr.write("[%s][FLUSH] new_value=%s, editSessionValue=%s\n" % (_ts(), new_value, self.__editSessionValue))
-                sys.stderr.flush()
                 if new_value != self.__editSessionValue:
-                    sys.stderr.write("[%s][FLUSH] About to execute command\n" % _ts())
-                    sys.stderr.flush()
                     self.__executeCommand(new_value)
-                    sys.stderr.write("[%s][FLUSH] Command executed successfully\n" % _ts())
-                    sys.stderr.flush()
-            except RuntimeError as e:
-                # Widget has been deleted
-                sys.stderr.write("[%s][FLUSH] RuntimeError: %s\n" % (_ts(), e))
-                sys.stderr.flush()
+            except RuntimeError:
+                pass  # Widget has been deleted
         # Reset edit session
         self.__editSessionValue = None
         self.__hasChanges = False
-        sys.stderr.write("[%s][FLUSH] flushPendingChanges complete\n" % _ts())
-        sys.stderr.flush()
 
     def onAttributeEdited(self, event):
         event.Skip()
@@ -254,37 +192,20 @@ class AttributeSync(object):
                 when the dialog is closing to avoid queuing UI events that would
                 crash after the dialog is destroyed.
         """
-        sys.stderr.write("[%s][EXEC] __executeCommand called with new_value=%s, skip_callback=%s\n" % (_ts(), new_value, skip_callback))
-        sys.stderr.flush()
         # Guard against destroyed widgets
         try:
             if not self._entry:
-                sys.stderr.write("[%s][EXEC] Entry is invalid, returning\n" % _ts())
-                sys.stderr.flush()
                 return
-        except RuntimeError as e:
-            sys.stderr.write("[%s][EXEC] RuntimeError checking entry: %s\n" % (_ts(), e))
-            sys.stderr.flush()
+        except RuntimeError:
             return
 
         self._currentValue = new_value
         commandKwArgs = self.commandKwArgs(new_value)
-        sys.stderr.write("[%s][EXEC] About to call command.do(), commandClass=%s\n" % (_ts(), self._commandClass.__name__))
-        sys.stderr.flush()
         self._commandClass(
             None, self._items, **commandKwArgs
         ).do()  # pylint: disable=W0142
-        sys.stderr.write("[%s][EXEC] command.do() completed\n" % _ts())
-        sys.stderr.flush()
         if not skip_callback:
-            sys.stderr.write("[%s][EXEC] About to invoke callback\n" % _ts())
-            sys.stderr.flush()
             self.__invokeCallback(new_value)
-        else:
-            sys.stderr.write("[%s][EXEC] Skipping callback (dialog closing)\n" % _ts())
-            sys.stderr.flush()
-        sys.stderr.write("[%s][EXEC] __executeCommand complete\n" % _ts())
-        sys.stderr.flush()
 
     def onAttributeChanged_Deprecated(self, event):  # pylint: disable=W0613
         if self._entry:
@@ -321,25 +242,13 @@ class AttributeSync(object):
         return self._entry.GetValue()
 
     def __invokeCallback(self, value):
-        sys.stderr.write("[%s][CALLBACK] __invokeCallback called, callback=%s\n" % (_ts(), self.__callback))
-        sys.stderr.flush()
         if self.__callback is not None:
             try:
-                sys.stderr.write("[%s][CALLBACK] About to call callback\n" % _ts())
-                sys.stderr.flush()
                 self.__callback(value)
-                sys.stderr.write("[%s][CALLBACK] Callback completed successfully\n" % _ts())
-                sys.stderr.flush()
-            except RuntimeError as e:
-                # Widget has been deleted (e.g., dialog closing)
-                sys.stderr.write("[%s][CALLBACK] RuntimeError: %s\n" % (_ts(), e))
-                sys.stderr.flush()
+            except RuntimeError:
+                pass  # Widget has been deleted (e.g., dialog closing)
             except Exception as e:
-                sys.stderr.write("[%s][CALLBACK] Exception: %s\n" % (_ts(), e))
-                sys.stderr.flush()
                 wx.MessageBox(str(e), _("Error"), wx.OK)
-        sys.stderr.write("[%s][CALLBACK] __invokeCallback complete\n" % _ts())
-        sys.stderr.flush()
 
     def __start_observing_attribute(self, eventType, eventSource):
         if eventType.startswith("pubsub"):

@@ -88,24 +88,10 @@ class Page(patterns.Observer, widgets.BookPage):
         return True
 
     def close(self):
-        import sys
-        import time
-        def _ts():
-            return "%.3f" % time.time()
-        sys.stderr.write("[%s][PAGE] Page.close called on %s\n" % (_ts(), self.__class__.__name__))
-        sys.stderr.flush()
         self.removeInstance()
-        sys.stderr.write("[%s][PAGE] removeInstance complete, cleaning up entries\n" % _ts())
-        sys.stderr.flush()
         for entry in list(self.entries().values()):
             if hasattr(entry, 'Cleanup'):
-                sys.stderr.write("[%s][PAGE] Calling Cleanup on %s\n" % (_ts(), entry))
-                sys.stderr.flush()
                 entry.Cleanup()
-                sys.stderr.write("[%s][PAGE] Cleanup complete for %s\n" % (_ts(), entry))
-                sys.stderr.flush()
-        sys.stderr.write("[%s][PAGE] Page.close complete\n" % _ts())
-        sys.stderr.flush()
 
 
 class SubjectPage(Page):
@@ -1989,63 +1975,24 @@ class EffortEditBook(Page):
 
     def close_edit_book(self):
         """Flush any pending changes and unbind events before closing."""
-        import sys
-        import time
-        def _ts():
-            return "%.3f" % time.time()
-        sys.stderr.write("[%s][CLOSE] EffortEditBook.close_edit_book called\n" % _ts())
-        sys.stderr.flush()
         # Flush pending changes from date/time entries before closing
-        # This ensures changes are saved even if focus hasn't left the entry
         if hasattr(self, '_startDateTimeSync') and self._startDateTimeSync:
-            sys.stderr.write("[%s][CLOSE] Flushing _startDateTimeSync\n" % _ts())
-            sys.stderr.flush()
             self._startDateTimeSync.flushPendingChanges()
-            sys.stderr.write("[%s][CLOSE] _startDateTimeSync flushed\n" % _ts())
-            sys.stderr.flush()
-            # Unbind focus events to prevent crashes during destruction
-            sys.stderr.write("[%s][CLOSE] Unbinding _startDateTimeSync focus events\n" % _ts())
-            sys.stderr.flush()
             self._startDateTimeSync.unbindFocusEvents()
-            sys.stderr.write("[%s][CLOSE] _startDateTimeSync unbound\n" % _ts())
-            sys.stderr.flush()
         if hasattr(self, '_stopDateTimeSync') and self._stopDateTimeSync:
-            sys.stderr.write("[%s][CLOSE] Flushing _stopDateTimeSync\n" % _ts())
-            sys.stderr.flush()
             self._stopDateTimeSync.flushPendingChanges()
-            sys.stderr.write("[%s][CLOSE] _stopDateTimeSync flushed\n" % _ts())
-            sys.stderr.flush()
-            # Unbind focus events to prevent crashes during destruction
-            sys.stderr.write("[%s][CLOSE] Unbinding _stopDateTimeSync focus events\n" % _ts())
-            sys.stderr.flush()
             self._stopDateTimeSync.unbindFocusEvents()
-            sys.stderr.write("[%s][CLOSE] _stopDateTimeSync unbound\n" % _ts())
-            sys.stderr.flush()
         # Also cleanup the DateTimeEntry widgets to stop timers
-        sys.stderr.write("[%s][CLOSE] Cleaning up DateTimeEntry widgets\n" % _ts())
-        sys.stderr.flush()
         if hasattr(self, '_startDateTimeEntry') and self._startDateTimeEntry:
             try:
-                sys.stderr.write("[%s][CLOSE] Calling Cleanup on _startDateTimeEntry\n" % _ts())
-                sys.stderr.flush()
                 self._startDateTimeEntry.Cleanup()
-                sys.stderr.write("[%s][CLOSE] _startDateTimeEntry Cleanup complete\n" % _ts())
-                sys.stderr.flush()
-            except (RuntimeError, AttributeError) as e:
-                sys.stderr.write("[%s][CLOSE] Exception in _startDateTimeEntry Cleanup: %s\n" % (_ts(), e))
-                sys.stderr.flush()
+            except (RuntimeError, AttributeError):
+                pass
         if hasattr(self, '_stopDateTimeEntry') and self._stopDateTimeEntry:
             try:
-                sys.stderr.write("[%s][CLOSE] Calling Cleanup on _stopDateTimeEntry\n" % _ts())
-                sys.stderr.flush()
                 self._stopDateTimeEntry.Cleanup()
-                sys.stderr.write("[%s][CLOSE] _stopDateTimeEntry Cleanup complete\n" % _ts())
-                sys.stderr.flush()
-            except (RuntimeError, AttributeError) as e:
-                sys.stderr.write("[%s][CLOSE] Exception in _stopDateTimeEntry Cleanup: %s\n" % (_ts(), e))
-                sys.stderr.flush()
-        sys.stderr.write("[%s][CLOSE] EffortEditBook.close_edit_book complete\n" % _ts())
-        sys.stderr.flush()
+            except (RuntimeError, AttributeError):
+                pass
 
 
 class Editor(BalloonTipManager, widgets.Dialog):
@@ -2160,28 +2107,12 @@ class Editor(BalloonTipManager, widgets.Dialog):
         )
 
     def on_close_editor(self, event):
-        import sys
-        import time
-        def _ts():
-            return "%.3f" % time.time()
-        sys.stderr.write("[%s][EDITOR] on_close_editor called on %s\n" % (_ts(), self.__class__.__name__))
-        sys.stderr.flush()
         event.Skip()
         # Save dialog position/size before closing
-        sys.stderr.write("[%s][EDITOR] Saving dimensions\n" % _ts())
-        sys.stderr.flush()
         self.__dimensions_tracker.save()
-        sys.stderr.write("[%s][EDITOR] About to call close_edit_book\n" % _ts())
-        sys.stderr.flush()
         self._interior.close_edit_book()
-        sys.stderr.write("[%s][EDITOR] close_edit_book complete\n" % _ts())
-        sys.stderr.flush()
-        sys.stderr.write("[%s][EDITOR] Removing observers\n" % _ts())
-        sys.stderr.flush()
         patterns.Publisher().removeObserver(self.on_item_removed)
         patterns.Publisher().removeObserver(self.on_subject_changed)
-        sys.stderr.write("[%s][EDITOR] Observers removed\n" % _ts())
-        sys.stderr.flush()
         # On Mac OS X, the text control does not lose focus when
         # destroyed...
         if operating_system.isMac():
@@ -2190,21 +2121,11 @@ class Editor(BalloonTipManager, widgets.Dialog):
             IdProvider.put(self.__timer.GetId())
         IdProvider.put(self.__new_effort_id)
         # Process any pending events before destruction to prevent crashes
-        sys.stderr.write("[%s][EDITOR] Processing pending events\n" % _ts())
-        sys.stderr.flush()
         try:
             wx.GetApp().ProcessPendingEvents()
-        except Exception as e:
-            sys.stderr.write("[%s][EDITOR] Exception processing pending events: %s\n" % (_ts(), e))
-            sys.stderr.flush()
-        sys.stderr.write("[%s][EDITOR] Pending events processed\n" % _ts())
-        sys.stderr.flush()
-        # Note: No need to thaw viewers since we don't freeze them on open anymore
-        sys.stderr.write("[%s][EDITOR] About to Destroy\n" % _ts())
-        sys.stderr.flush()
+        except Exception:
+            pass
         self.Destroy()
-        sys.stderr.write("[%s][EDITOR] Destroy complete\n" % _ts())
-        sys.stderr.flush()
 
     def on_activate(self, event):
         event.Skip()

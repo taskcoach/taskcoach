@@ -123,18 +123,8 @@ class EditEffortStartDateTimeCommand(base.BaseCommand):
         )
 
     def do_command(self):
-        import sys
-        import time
-        def _ts():
-            return "%.3f" % time.time()
-        sys.stderr.write("[%s][CMD] EditEffortStartDateTimeCommand.do_command called, datetime=%s\n" % (_ts(), self.__datetime))
-        sys.stderr.flush()
         for item in self.items:
-            sys.stderr.write("[%s][CMD] About to call item.setStart(%s)\n" % (_ts(), self.__datetime))
-            sys.stderr.flush()
             item.setStart(self.__datetime)
-            sys.stderr.write("[%s][CMD] item.setStart complete\n" % _ts())
-            sys.stderr.flush()
             task = item.task()
             if (
                 task not in self.__oldActualStartDateTimes
@@ -143,13 +133,7 @@ class EditEffortStartDateTimeCommand(base.BaseCommand):
                 self.__oldActualStartDateTimes[task] = (
                     task.actualStartDateTime()
                 )
-                sys.stderr.write("[%s][CMD] About to call task.setActualStartDateTime\n" % _ts())
-                sys.stderr.flush()
                 task.setActualStartDateTime(self.__datetime)
-                sys.stderr.write("[%s][CMD] task.setActualStartDateTime complete\n" % _ts())
-                sys.stderr.flush()
-        sys.stderr.write("[%s][CMD] EditEffortStartDateTimeCommand.do_command complete\n" % _ts())
-        sys.stderr.flush()
 
     def undo_command(self):
         for item, oldDateTime in zip(self.items, self.__oldDateTimes):

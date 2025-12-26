@@ -95,35 +95,19 @@ class Sorter(patterns.ListDecorator):
     def reset(self, forceEvent=False):
         """reset does the actual sorting. If the order of the list changes,
         observers are notified by means of the list-sorted event."""
-        import sys
-        import time
-        def _ts():
-            return "%.3f" % time.time()
-        sys.stderr.write("[%s][SORTER] reset called on %s, frozen=%s\n" % (_ts(), self.__class__.__name__, self.isFrozen()))
-        sys.stderr.flush()
         if self.isFrozen():
-            sys.stderr.write("[%s][SORTER] Frozen, returning\n" % _ts())
-            sys.stderr.flush()
             return
 
         oldSelf = self[:]
         # XXXTODO: create only one function with all keys ? Reversing may
         # be problematic.
         for sortKey in reversed(self._sortKeys):
-            sys.stderr.write("[%s][SORTER] Sorting by %s\n" % (_ts(), sortKey))
-            sys.stderr.flush()
             self.sort(
                 key=self.createSortKeyFunction(sortKey.lstrip("-")),
                 reverse=sortKey.startswith("-"),
             )
         if forceEvent or self != oldSelf:
-            sys.stderr.write("[%s][SORTER] About to send sortEventType message\n" % _ts())
-            sys.stderr.flush()
             pub.sendMessage(self.sortEventType(), sender=self)
-            sys.stderr.write("[%s][SORTER] sortEventType message sent\n" % _ts())
-            sys.stderr.flush()
-        sys.stderr.write("[%s][SORTER] reset complete\n" % _ts())
-        sys.stderr.flush()
 
     def createSortKeyFunction(self, sortKey):
         """createSortKeyFunction returns a function that is passed to the
