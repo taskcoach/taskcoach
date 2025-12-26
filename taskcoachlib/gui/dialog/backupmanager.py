@@ -114,6 +114,16 @@ class BackupManagerDialog(wx.Dialog):
         self.__splitter.SetSashPosition(-datePaneWidth)
         self.CentreOnParent()
 
+        # Debug timer to log column widths
+        self.__debugTimer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self._OnDebugTimer, self.__debugTimer)
+        self.__debugTimer.Start(1000)
+
+    def _OnDebugTimer(self, event):
+        colWidth = self.__backups.GetColumnWidth(0)
+        itemCount = self.__backups.GetItemCount()
+        print(f"Debug: Column width={colWidth}, Items={itemCount}")
+
     def restoredFilename(self):
         return self.__filename
 
@@ -132,11 +142,10 @@ class BackupManagerDialog(wx.Dialog):
         headerWidth = self.__backups.GetColumnWidth(0)
         self.__backups.SetColumnWidth(0, wx.LIST_AUTOSIZE)
         contentWidth = self.__backups.GetColumnWidth(0)
-        if headerWidth > contentWidth:
-            self.__backups.SetColumnWidth(0, headerWidth)
-        # Force refresh to update header rendering
+        finalWidth = max(headerWidth, contentWidth)
+        self.__backups.SetColumnWidth(0, finalWidth)
+        print(f"OnSelect: header={headerWidth}, content={contentWidth}, final={finalWidth}")
         self.__backups.Refresh()
-        self.__backups.Update()
         self.__backups.Enable(True)
         self.__selection = (self.__filenames[event.GetIndex()], None)
 
