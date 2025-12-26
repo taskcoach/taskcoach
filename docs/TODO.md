@@ -2,6 +2,14 @@
 
 This document tracks planned improvements and known issues to address in future releases.
 
+## Table of Contents
+
+- [Simultaneous Processes and Locking](#simultaneous-processes-and-locking)
+- [Configuration Naming Convention](#configuration-naming-convention)
+- [Refactoring Save Patterns](#refactoring-save-patterns)
+- [Backup Feature Review](#backup-feature-review)
+- [Other TODOs](#other-todos)
+
 ---
 
 ## Simultaneous Processes and Locking
@@ -65,6 +73,66 @@ showsmwarning = True     # Old style (avoid for new settings)
 
 **Note:** Existing settings should NOT be renamed to avoid breaking user INI files.
 The `defaults.py` file has a comment marking where new snake_case settings begin.
+
+---
+
+## Refactoring Save Patterns
+
+### Current Status
+
+The application currently uses a per-change save pattern with debouncing to avoid excessive disk writes.
+
+### Proposed Change
+
+Refactor from **per-change with debounce** to **per-window active/lost-focus** save pattern.
+
+| Aspect | Current (Debounce) | Proposed (Focus-based) |
+|--------|-------------------|------------------------|
+| Save trigger | Timer after last change | Window loses focus |
+| Complexity | Complex timers, debounce logic | Simpler event-based |
+| Multi-screen | Complex interactions | Cleaner handling |
+
+**Pros:**
+- No need for debounce timers
+- Simpler implementation without complex timer management
+- Cleaner multi-screen/multi-window interactions
+
+**Cons:**
+- Less precise undo log (changes batched per focus session)
+- Less granular save points if crash or power failure occurs mid-session
+- User must switch focus to trigger save
+
+**Status:** To be reviewed
+
+---
+
+## Backup Feature Review
+
+### Issues to Investigate
+
+The backup/restore feature needs review - testing showed unexpected restore behavior.
+
+**Questions to answer:**
+
+1. **Where is the backup file stored?**
+   - Document the backup file location
+   - Is it configurable?
+
+2. **How are backup/restore points decided?**
+   - What triggers a backup point creation?
+   - How many backup points are retained?
+   - What is the rotation/cleanup policy?
+
+3. **Is the backup file safe against corruption?**
+   - What happens if save/update is interrupted (crash, power failure)?
+   - Is there atomic write protection?
+   - Are there checksums or integrity verification?
+
+4. **Restore behavior:**
+   - Why might restore not return expected data?
+   - Is there a mismatch between what's shown and what's restored?
+
+**Status:** Needs investigation and documentation
 
 ---
 
