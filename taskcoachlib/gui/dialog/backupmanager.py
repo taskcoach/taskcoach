@@ -122,13 +122,16 @@ class BackupManagerDialog(wx.Dialog):
 
     def _OnSelectFile(self, event):
         self.__backups.DeleteAllItems()
-        for index, dateTime in enumerate(
-            self.__manifest.listBackups(self.__filenames[event.GetIndex()])
-        ):
+        backups = self.__manifest.listBackups(self.__filenames[event.GetIndex()])
+        for index, dateTime in enumerate(backups):
             self.__backups.InsertItem(
                 index, render.dateTime(dateTime, humanReadable=True)
             )
-        self.__backups.SetColumnWidth(0, -1)
+        # Use LIST_AUTOSIZE_USEHEADER when empty, LIST_AUTOSIZE when has content
+        if backups:
+            self.__backups.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        else:
+            self.__backups.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
         self.__backups.Enable(True)
         self.__selection = (self.__filenames[event.GetIndex()], None)
 
