@@ -176,6 +176,23 @@ class VirtualListCtrl(
                 # Item may no longer be in the list
                 pass
 
+    def RefreshVisibleItems(self):
+        """Refresh only the currently visible items.
+
+        Used when the underlying data order has changed (e.g., after sorting)
+        but the item count hasn't changed. The virtual list will fetch the
+        correct data for each visible position when it repaints.
+        """
+        count = self.GetItemCount()
+        if count == 0:
+            return
+        top = self.GetTopItem()
+        per_page = self.GetCountPerPage()
+        # RefreshItems takes inclusive range, cap at count-1
+        end = min(top + per_page, count - 1)
+        if top <= end:
+            super().RefreshItems(top, end)
+
     def RefreshAfterRemoval(self, count, removed_items=None):
         """Efficiently refresh the list after items have been removed.
 
@@ -213,12 +230,7 @@ class VirtualListCtrl(
             added_items: List of added domain objects (unused for virtual
                 lists since we only need to refresh visible items).
         """
-        # Freeze to prevent flicker from SetItemCount triggering repaint
-        self.Freeze()
-        try:
-            self.SetItemCount(count)
-        finally:
-            self.Thaw()
+        self.SetItemCount(count)
         # Note: Don't call selectCommand here - selection is handled by
         # onNewItem which calls select() after this method returns
 
@@ -254,8 +266,7 @@ class VirtualListCtrl(
         """Select the specified items, deselecting others.
 
         Optimized to only modify items that need to change state,
-        rather than iterating over all items which causes flicker.
-        Uses Freeze/Thaw to batch all selection changes into one repaint.
+        rather than iterating over all items.
         """
         new_indices = set()
         for item in items:
@@ -266,26 +277,16 @@ class VirtualListCtrl(
 
         current_indices = set(self.__curselection_indices())
 
-        # Calculate changes needed
-        to_deselect = current_indices - new_indices
-        to_select = new_indices - current_indices
+        # Deselect items that should no longer be selected
+        for index in current_indices - new_indices:
+            self.Select(index, False)
 
-        # Only freeze/thaw if there are actual changes to make
-        if to_deselect or to_select:
-            self.Freeze()
-            try:
-                # Deselect items that should no longer be selected
-                for index in to_deselect:
-                    self.Select(index, False)
+        # Select items that should now be selected
+        for index in new_indices - current_indices:
+            self.Select(index, True)
 
-                # Select items that should now be selected
-                for index in to_select:
-                    self.Select(index, True)
-
-                if self.curselection():
-                    self.Focus(self.GetFirstSelected())
-            finally:
-                self.Thaw()
+        if self.curselection():
+            self.Focus(self.GetFirstSelected())
 
     def clear_selection(self):
         """Unselect all selected items."""

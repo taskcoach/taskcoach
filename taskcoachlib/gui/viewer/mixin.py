@@ -297,7 +297,12 @@ class SortableViewerMixin(object):
 
     def onSortOrderChanged(self, sender):
         if sender == self.presentation():
-            self.refresh()
+            # For virtual lists, just invalidate the visible area - the list
+            # will fetch correct data on repaint. No need for RefreshAllItems.
+            if hasattr(self.widget, 'RefreshVisibleItems'):
+                self.widget.RefreshVisibleItems()
+            else:
+                self.refresh()
             self.updateSelection(sendViewerStatusEvent=False)
             self.sendViewerStatusEvent()
 
