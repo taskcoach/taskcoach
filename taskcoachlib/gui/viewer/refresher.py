@@ -27,6 +27,10 @@ from taskcoachlib.domain import date
 from pubsub import pub
 from taskcoachlib.gui.newid import IdProvider
 import wx
+import time
+
+def _log(msg):
+    print(f"[{time.time():.3f}] REFRESHER: {msg}")
 
 
 class MinuteRefresher(object):
@@ -85,12 +89,15 @@ class SecondRefresher(patterns.Observer, wx.EvtHandler):
         super().removeInstance()
 
     def onItemAdded(self, event):
+        _log(f"onItemAdded: {len(list(event.values()))} items")
         self.addTrackedItems(self.trackedItems(list(event.values())))
 
     def onItemRemoved(self, event):
+        _log(f"onItemRemoved: {len(list(event.values()))} items")
         self.removeTrackedItems(self.trackedItems(list(event.values())))
 
     def onTrackingChanged(self, newValue, sender):
+        _log(f"onTrackingChanged: newValue={newValue}")
         if sender not in self.__presentation:
             self.setTrackedItems(self.trackedItems(self.__presentation))
             return
@@ -98,12 +105,14 @@ class SecondRefresher(patterns.Observer, wx.EvtHandler):
             self.addTrackedItems([sender])
         else:
             self.removeTrackedItems([sender])
+        _log(f"onTrackingChanged: calling refreshItems")
         self.refreshItems([sender])
 
     def onEverySecond(self, event=None):
         self.refreshItems(self.__trackedItems)
 
     def refreshItems(self, items):
+        _log(f"refreshItems: {len(items)} items")
         if self.__viewer:
             self.__viewer.refreshItems(*items)  # pylint: disable=W0142
         else:

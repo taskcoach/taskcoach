@@ -18,6 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns
 from pubsub import pub
+import time
+
+def _log(msg):
+    print(f"[{time.time():.3f}] SORTER: {msg}")
 
 
 class Sorter(patterns.ListDecorator):
@@ -47,8 +51,10 @@ class Sorter(patterns.ListDecorator):
 
     @patterns.eventSource
     def extendSelf(self, items, event=None):
+        _log(f"extendSelf START items={len(items)}")
         super().extendSelf(items, event)
         self._sortWithoutEvent()
+        _log(f"extendSelf END")
 
     def _sortWithoutEvent(self):
         """Sort the list without sending a sort event.
@@ -56,13 +62,16 @@ class Sorter(patterns.ListDecorator):
         Used during add operations where the add event is sufficient
         to notify observers of the change.
         """
+        _log(f"_sortWithoutEvent START")
         if self.isFrozen():
+            _log(f"_sortWithoutEvent FROZEN, skipping")
             return
         for sortKey in reversed(self._sortKeys):
             self.sort(
                 key=self.createSortKeyFunction(sortKey.lstrip("-")),
                 reverse=sortKey.startswith("-"),
             )
+        _log(f"_sortWithoutEvent END")
 
     def isAscending(self):
         if self._sortKeys:

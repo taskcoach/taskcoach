@@ -23,6 +23,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import command
 from taskcoachlib.domain import base, task, category, attachment
 from taskcoachlib.gui import uicommand
+import time
+
+def _log(msg):
+    print(f"[{time.time():.3f}] MIXIN: {msg}")
 from taskcoachlib.i18n import _
 from pubsub import pub
 import ast
@@ -296,17 +300,22 @@ class SortableViewerMixin(object):
         )
 
     def onSortOrderChanged(self, sender):
+        _log(f"onSortOrderChanged START")
         if sender == self.presentation():
             # For virtual lists, refresh visible area and sync count.
             if hasattr(self.widget, 'RefreshVisibleItems'):
+                _log(f"onSortOrderChanged: calling RefreshVisibleItems")
                 self.widget.RefreshVisibleItems(len(self.presentation()))
             else:
+                _log(f"onSortOrderChanged: calling refresh()")
                 self.refresh()
             # Re-sync widget selection: items may have moved to different
             # indices after sorting, so update widget with the cached selection
+            _log(f"onSortOrderChanged: calling widget.select")
             self.widget.select(self.curselection())
             self.updateSelection(sendViewerStatusEvent=False)
             self.sendViewerStatusEvent()
+        _log(f"onSortOrderChanged END")
 
     def createSorter(self, presentation):
         return self.SorterClass(presentation, **self.sorterOptions())

@@ -21,8 +21,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import wx
+import time
 from taskcoachlib import patterns, widgets, command, render
 from taskcoachlib.i18n import _
+
+def _log(msg):
+    print(f"[{time.time():.3f}] VIEWER: {msg}")
 from taskcoachlib.gui import uicommand, toolbar, artprovider
 from wx.lib.agw import hypertreelist
 from pubsub import pub
@@ -335,6 +339,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
     def onPresentationChanged(self, event):  # pylint: disable=W0613
         """Whenever our presentation is changed (items added, items removed)
         the viewer refreshes itself."""
+        _log(f"onPresentationChanged START type={event.type()}")
 
         def itemsRemoved():
             return event.type() == self.presentation().removeItemEventType()
@@ -346,21 +351,26 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             return set(self.__curselection).issubset(set(event.values()))
 
         if itemsRemoved():
+            _log(f"onPresentationChanged: itemsRemoved")
             # Use efficient refresh that only updates visible items
             removed_items = list(event.values())
             self.refreshAfterRemoval(removed_items)
             if allItemsAreSelected():
                 self.selectNextItemsAfterRemoval(removed_items)
         elif itemsAdded():
+            _log(f"onPresentationChanged: itemsAdded count={len(list(event.values()))}")
             # Refresh after add (items are already sorted)
             added_items = list(event.values())
             self.refreshAfterAddition(added_items)
             # Re-sync widget selection since items may have shifted due to sort
+            _log(f"onPresentationChanged: calling widget.select")
             self.widget.select(self.curselection())
         else:
+            _log(f"onPresentationChanged: other, calling refresh()")
             self.refresh()
         self.updateSelection(sendViewerStatusEvent=False)
         self.sendViewerStatusEvent()
+        _log(f"onPresentationChanged END")
 
     def selectNextItemsAfterRemoval(self, removedItems):
         raise NotImplementedError
@@ -405,10 +415,12 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         self.widget.Thaw()
 
     def refresh(self):
+        _log(f"refresh() called")
         if self and not self.__freezeCount:
             self.widget.RefreshAllItems(len(self.presentation()))
 
     def refreshItems(self, *items):
+        _log(f"refreshItems() called with {len(items)} items")
         if not self.__freezeCount:
             items = [item for item in items if item in self.presentation()]
             self.widget.RefreshItems(*items)
@@ -441,12 +453,15 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             added_items: List of domain objects that were added to
                 the presentation.
         """
+        _log(f"refreshAfterAddition() called with {len(added_items)} items")
         if self and not self.__freezeCount:
             if hasattr(self.widget, "RefreshAfterAddition"):
+                _log(f"refreshAfterAddition: calling widget.RefreshAfterAddition")
                 self.widget.RefreshAfterAddition(
                     len(self.presentation()), added_items
                 )
             else:
+                _log(f"refreshAfterAddition: calling widget.RefreshAllItems")
                 self.widget.RefreshAllItems(len(self.presentation()))
 
     def select(self, items, refresh=True):  # pylint: disable=W0613

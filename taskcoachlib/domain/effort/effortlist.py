@@ -23,6 +23,10 @@ from pubsub import pub
 from pubsub.core import Publisher
 from taskcoachlib.domain import task
 from . import effort
+import time
+
+def _log(msg):
+    print(f"[{time.time():.3f}] EFFORTLIST: {msg}")
 
 
 class MaxDateTimeMixin(object):
@@ -85,7 +89,9 @@ class EffortList(
         super().removeItemsFromSelf(effortsToRemove, event)
 
     def onAddEffortToOrRemoveEffortFromTask(self, newValue, sender):
+        _log(f"onAddEffortToOrRemoveEffortFromTask START")
         if sender not in self.observable():
+            _log(f"onAddEffortToOrRemoveEffortFromTask: sender not in observable, returning")
             return
         newValue, oldValue = newValue
         effortsToAdd = [
@@ -94,7 +100,9 @@ class EffortList(
         effortsToRemove = [
             effort for effort in oldValue if not effort in newValue
         ]
+        _log(f"onAddEffortToOrRemoveEffortFromTask: adding {len(effortsToAdd)}, removing {len(effortsToRemove)}")
         super().extendSelf(effortsToAdd)
+        _log(f"onAddEffortToOrRemoveEffortFromTask: extendSelf done")
         super().removeItemsFromSelf(effortsToRemove)
         # Only send trackingChangedEventType for removed efforts.
         # For added efforts, the add event already triggers proper refresh,
@@ -106,6 +114,7 @@ class EffortList(
                     newValue=False,
                     sender=effort,
                 )
+        _log(f"onAddEffortToOrRemoveEffortFromTask END")
 
     def originalLength(self):
         """Do not delegate originalLength to the underlying TaskList because

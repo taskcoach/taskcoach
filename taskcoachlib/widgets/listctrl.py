@@ -19,6 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import operating_system
 from taskcoachlib.widgets import itemctrl
 import wx.lib.mixins.listctrl
+import time
+
+def _log(msg):
+    print(f"[{time.time():.3f}] LISTCTRL: {msg}")
 
 
 class VirtualListCtrl(
@@ -215,13 +219,18 @@ class VirtualListCtrl(
             count: The new item count after addition.
             added_items: List of added domain objects (unused).
         """
+        _log(f"RefreshAfterAddition START count={count}")
         self.SetItemCount(count)
+        _log(f"RefreshAfterAddition: SetItemCount done")
         if count > 0:
             top = self.GetTopItem()
             per_page = self.GetCountPerPage()
             end = min(top + per_page, count - 1)
+            _log(f"RefreshAfterAddition: top={top} end={end}")
             if top <= end:
+                _log(f"RefreshAfterAddition: calling super().RefreshItems({top}, {end})")
                 super().RefreshItems(top, end)
+        _log(f"RefreshAfterAddition END")
 
     def HitTest(self, xxx_todo_changeme, *args, **kwargs):
         """Always return a three-tuple (item, flag, column)."""
