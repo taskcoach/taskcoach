@@ -275,6 +275,17 @@ class AttributeSync(object):
             sys.stderr.write("[%s][SYNC] Skipping callback due to __skipCallbacks flag\n" % _ts())
             sys.stderr.flush()
             return
+        # Check if the widget's dialog is being destroyed
+        try:
+            top_level = self._entry.GetTopLevelParent()
+            if top_level is None or top_level.IsBeingDeleted():
+                sys.stderr.write("[%s][SYNC:%s] Skipping callback - dialog is being deleted\n" % (_ts(), self.__syncId))
+                sys.stderr.flush()
+                return
+        except (RuntimeError, AttributeError):
+            sys.stderr.write("[%s][SYNC:%s] Skipping callback - widget destroyed\n" % (_ts(), self.__syncId))
+            sys.stderr.flush()
+            return
         if self.__callback is not None:
             try:
                 self.__callback(value)
