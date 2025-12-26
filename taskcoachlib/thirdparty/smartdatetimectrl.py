@@ -445,14 +445,13 @@ class Entry(wx.Panel):
         )
 
     def Cleanup(self):
-        # It's complicated.
         # Stop the timer to prevent crashes during widget destruction
         if self.__timer and self.__timer.IsRunning():
             self.__timer.Stop()
         try:
             self.DismissPopup()
         except RuntimeError:
-            pass
+            pass  # Widget may already be destroyed
 
     def Format(self):
         bf = io.StringIO()

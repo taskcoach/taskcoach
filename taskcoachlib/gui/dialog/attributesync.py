@@ -70,10 +70,8 @@ class AttributeSync(object):
 
     def __bindFocusEvents(self, widget):
         """Bind focus events to widget and all its children recursively."""
-        # Bind to the widget itself
         widget.Bind(wx.EVT_SET_FOCUS, self.__onSetFocus)
         widget.Bind(wx.EVT_KILL_FOCUS, self.__onKillFocus)
-        # Bind to all children (for composite widgets)
         for child in widget.GetChildren():
             self.__bindFocusEvents(child)
 
@@ -88,23 +86,46 @@ class AttributeSync(object):
     def __onKillFocus(self, event):
         """Called when any part of the widget loses focus."""
         event.Skip()
+
+        # Guard against destroyed widgets (e.g., when dialog is closing)
+        try:
+            if not self._entry:
+                self.__editSessionValue = None
+                self.__hasChanges = False
+                return
+        except RuntimeError:
+            self.__editSessionValue = None
+            self.__hasChanges = False
+            return
+
         # Check if focus is moving to another child of the same parent widget
-        # If so, we're still in the same edit session
         new_focus = event.GetWindow()
 
         if new_focus is not None:
-            # Check if new focus is within the same entry widget
-            parent = new_focus
-            while parent is not None:
-                if parent is self._entry:
-                    return  # Still within the same widget, don't commit yet
-                parent = parent.GetParent()
+            try:
+                # Check if new focus is within the same entry widget
+                parent = new_focus
+                while parent is not None:
+                    if parent is self._entry:
+                        return  # Still within the same widget, don't commit yet
+                    parent = parent.GetParent()
+            except RuntimeError:
+                self.__editSessionValue = None
+                self.__hasChanges = False
+                return
 
         # Focus is leaving the widget entirely - commit if there are changes
         if self.__hasChanges and self.__editSessionValue is not None:
-            new_value = self.getValue()
-            if new_value != self.__editSessionValue:
-                self.__executeCommand(new_value)
+            try:
+                new_value = self.getValue()
+                if new_value != self.__editSessionValue:
+                    # Skip callback if focus is going to None (dialog closing)
+                    # The callback updates UI which can queue events that crash
+                    # after the dialog is destroyed
+                    skip_callback = (new_focus is None)
+                    self.__executeCommand(new_value, skip_callback=skip_callback)
+            except RuntimeError:
+                pass  # Widget deleted, can't get value or execute command
 
         # Reset edit session
         self.__editSessionValue = None
@@ -123,14 +144,22 @@ class AttributeSync(object):
                 # Immediate: execute command now
                 self.__executeCommand(new_value)
 
-    def __executeCommand(self, new_value):
-        """Execute the command to update the model."""
+    def __executeCommand(self, new_value, skip_callback=False):
+        """Execute the command to update the model.
+
+        Args:
+            new_value: The new value to set
+            skip_callback: If True, skip the callback invocation. This is used
+                when the dialog is closing to avoid queuing UI events that would
+                crash after the dialog is destroyed.
+        """
         self._currentValue = new_value
         commandKwArgs = self.commandKwArgs(new_value)
         self._commandClass(
             None, self._items, **commandKwArgs
         ).do()  # pylint: disable=W0142
-        self.__invokeCallback(new_value)
+        if not skip_callback:
+            self.__invokeCallback(new_value)
 
     def onAttributeChanged_Deprecated(self, event):  # pylint: disable=W0613
         if self._entry:
@@ -170,6 +199,8 @@ class AttributeSync(object):
         if self.__callback is not None:
             try:
                 self.__callback(value)
+            except RuntimeError:
+                pass  # Widget has been deleted (e.g., dialog closing)
             except Exception as e:
                 wx.MessageBox(str(e), _("Error"), wx.OK)
 
