@@ -64,7 +64,9 @@ class AttributeSync(object):
         self.__hasChanges = False  # Track if any changes during this focus session
         self.__skipCallbacks = False  # Flag to suppress callbacks during close
         self.__syncId = "%s_%s" % (attributeGetterName, id(self))  # For logging
-        sys.stderr.write("[%s][SYNC] Created AttributeSync id=%s, getter=%s\n" % (_ts(), self.__syncId, attributeGetterName))
+        sys.stderr.write("[%s][SYNC] Created AttributeSync id=%s, getter=%s, items=[%s]\n" % (
+            _ts(), self.__syncId, attributeGetterName,
+            ", ".join("%s (id=%s)" % (i, id(i)) for i in items)))
         sys.stderr.flush()
 
         entry.Bind(editedEventType, self.onAttributeEdited)
@@ -242,10 +244,13 @@ class AttributeSync(object):
             self.__stop_observing_attribute()
 
     def onAttributeChanged(self, newValue, sender):
-        sys.stderr.write("[%s][SYNC:%s] onAttributeChanged called, newValue=%s, sender=%s, skipCallbacks=%s\n" % (
-            _ts(), self.__syncId, newValue, sender, self.__skipCallbacks))
+        sender_in_items = sender in self._items
+        sys.stderr.write("[%s][SYNC:%s] onAttributeChanged: sender=%s (id=%s), _items=[%s], match=%s, skipCallbacks=%s\n" % (
+            _ts(), self.__syncId, sender, id(sender),
+            ", ".join("%s (id=%s)" % (i, id(i)) for i in self._items),
+            sender_in_items, self.__skipCallbacks))
         sys.stderr.flush()
-        if sender in self._items:
+        if sender_in_items:
             if self._entry:
                 if newValue != self._currentValue:
                     sys.stderr.write("[%s][SYNC:%s] Value changed, about to setValue and invokeCallback\n" % (_ts(), self.__syncId))
