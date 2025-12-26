@@ -154,7 +154,11 @@ class AttributeSync(object):
                 if new_value != self.__editSessionValue:
                     sys.stderr.write("[%s][KILLFOCUS] Values differ, executing command\n" % _ts())
                     sys.stderr.flush()
-                    self.__executeCommand(new_value)
+                    # Skip callback if focus is going to None (dialog closing)
+                    # The callback updates UI which can queue events that crash
+                    # after the dialog is destroyed
+                    skip_callback = (new_focus is None)
+                    self.__executeCommand(new_value, skip_callback=skip_callback)
                     sys.stderr.write("[%s][KILLFOCUS] Command executed\n" % _ts())
                     sys.stderr.flush()
             except RuntimeError as e:
@@ -211,9 +215,16 @@ class AttributeSync(object):
                 # Immediate: execute command now
                 self.__executeCommand(new_value)
 
-    def __executeCommand(self, new_value):
-        """Execute the command to update the model."""
-        sys.stderr.write("[%s][EXEC] __executeCommand called with new_value=%s\n" % (_ts(), new_value))
+    def __executeCommand(self, new_value, skip_callback=False):
+        """Execute the command to update the model.
+
+        Args:
+            new_value: The new value to set
+            skip_callback: If True, skip the callback invocation. This is used
+                when the dialog is closing to avoid queuing UI events that would
+                crash after the dialog is destroyed.
+        """
+        sys.stderr.write("[%s][EXEC] __executeCommand called with new_value=%s, skip_callback=%s\n" % (_ts(), new_value, skip_callback))
         sys.stderr.flush()
         # Guard against destroyed widgets
         try:
@@ -233,9 +244,15 @@ class AttributeSync(object):
         self._commandClass(
             None, self._items, **commandKwArgs
         ).do()  # pylint: disable=W0142
-        sys.stderr.write("[%s][EXEC] command.do() completed, about to invoke callback\n" % _ts())
+        sys.stderr.write("[%s][EXEC] command.do() completed\n" % _ts())
         sys.stderr.flush()
-        self.__invokeCallback(new_value)
+        if not skip_callback:
+            sys.stderr.write("[%s][EXEC] About to invoke callback\n" % _ts())
+            sys.stderr.flush()
+            self.__invokeCallback(new_value)
+        else:
+            sys.stderr.write("[%s][EXEC] Skipping callback (dialog closing)\n" % _ts())
+            sys.stderr.flush()
         sys.stderr.write("[%s][EXEC] __executeCommand complete\n" % _ts())
         sys.stderr.flush()
 
