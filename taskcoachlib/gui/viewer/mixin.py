@@ -27,6 +27,11 @@ from taskcoachlib.i18n import _
 from pubsub import pub
 import ast
 import wx
+import sys
+import time
+
+def _ts():
+    return "%.3f" % time.time()
 
 
 class SearchableViewerMixin(object):
@@ -297,9 +302,15 @@ class SortableViewerMixin(object):
 
     def onSortOrderChanged(self, sender):
         if sender == self.presentation():
+            sys.stderr.write("[%s][VIEWER] onSortOrderChanged, about to refresh, self=%s\n" % (_ts(), self))
+            sys.stderr.flush()
             self.refresh()
+            sys.stderr.write("[%s][VIEWER] refresh complete, updating selection\n" % _ts())
+            sys.stderr.flush()
             self.updateSelection(sendViewerStatusEvent=False)
             self.sendViewerStatusEvent()
+            sys.stderr.write("[%s][VIEWER] onSortOrderChanged complete\n" % _ts())
+            sys.stderr.flush()
 
     def createSorter(self, presentation):
         return self.SorterClass(presentation, **self.sorterOptions())

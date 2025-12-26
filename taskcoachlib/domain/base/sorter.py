@@ -18,6 +18,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns
 from pubsub import pub
+import sys
+import time
+
+def _ts():
+    return "%.3f" % time.time()
 
 
 class Sorter(patterns.ListDecorator):
@@ -107,7 +112,11 @@ class Sorter(patterns.ListDecorator):
                 reverse=sortKey.startswith("-"),
             )
         if forceEvent or self != oldSelf:
+            sys.stderr.write("[%s][SORTER] reset sending sortEventType %s\n" % (_ts(), self.sortEventType()))
+            sys.stderr.flush()
             pub.sendMessage(self.sortEventType(), sender=self)
+            sys.stderr.write("[%s][SORTER] reset complete\n" % _ts())
+            sys.stderr.flush()
 
     def createSortKeyFunction(self, sortKey):
         """createSortKeyFunction returns a function that is passed to the
@@ -144,9 +153,14 @@ class Sorter(patterns.ListDecorator):
                 )
 
     def onAttributeChanged(self, newValue, sender):  # pylint: disable=W0613
+        sys.stderr.write("[%s][SORTER] onAttributeChanged called, sender=%s (id=%s), about to reset\n" % (
+            _ts(), sender, id(sender)))
+        sys.stderr.flush()
         self.reset()
 
     def onAttributeChanged_Deprecated(self, event):  # pylint: disable=W0613
+        sys.stderr.write("[%s][SORTER] onAttributeChanged_Deprecated called, about to reset\n" % _ts())
+        sys.stderr.flush()
         self.reset()
 
     def _getSortEventTypes(self, attribute):

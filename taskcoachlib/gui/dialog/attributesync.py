@@ -268,7 +268,12 @@ class AttributeSync(object):
         return self.__commandKwArgs
 
     def setValue(self, new_value):
+        sys.stderr.write("[%s][SYNC:%s] setValue called, new_value=%s, entry=%s\n" % (
+            _ts(), self.__syncId, new_value, self._entry))
+        sys.stderr.flush()
         self._entry.SetValue(new_value)
+        sys.stderr.write("[%s][SYNC:%s] setValue complete\n" % (_ts(), self.__syncId))
+        sys.stderr.flush()
 
     def getValue(self):
         return self._entry.GetValue()
