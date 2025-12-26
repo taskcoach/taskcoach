@@ -88,24 +88,66 @@ class AttributeSync(object):
     def __onKillFocus(self, event):
         """Called when any part of the widget loses focus."""
         event.Skip()
+
+        # Guard against destroyed widgets (e.g., when dialog is closing)
+        try:
+            # Check if the entry widget is still valid
+            if not self._entry:
+                self.__editSessionValue = None
+                self.__hasChanges = False
+                return
+        except RuntimeError:
+            # Widget has been deleted (wrapped C/C++ object deleted)
+            self.__editSessionValue = None
+            self.__hasChanges = False
+            return
+
         # Check if focus is moving to another child of the same parent widget
         # If so, we're still in the same edit session
         new_focus = event.GetWindow()
 
         if new_focus is not None:
-            # Check if new focus is within the same entry widget
-            parent = new_focus
-            while parent is not None:
-                if parent is self._entry:
-                    return  # Still within the same widget, don't commit yet
-                parent = parent.GetParent()
+            try:
+                # Check if new focus is within the same entry widget
+                parent = new_focus
+                while parent is not None:
+                    if parent is self._entry:
+                        return  # Still within the same widget, don't commit yet
+                    parent = parent.GetParent()
+            except RuntimeError:
+                # Widget has been deleted during parent traversal
+                self.__editSessionValue = None
+                self.__hasChanges = False
+                return
 
         # Focus is leaving the widget entirely - commit if there are changes
         if self.__hasChanges and self.__editSessionValue is not None:
-            new_value = self.getValue()
-            if new_value != self.__editSessionValue:
-                self.__executeCommand(new_value)
+            try:
+                new_value = self.getValue()
+                if new_value != self.__editSessionValue:
+                    self.__executeCommand(new_value)
+            except RuntimeError:
+                # Widget has been deleted, can't get value or execute command
+                pass
 
+        # Reset edit session
+        self.__editSessionValue = None
+        self.__hasChanges = False
+
+    def flushPendingChanges(self):
+        """Commit any pending changes immediately.
+
+        Call this before closing a dialog to ensure any uncommitted edits
+        from commit_on_focus_loss mode are saved.
+        """
+        if self.__hasChanges and self.__editSessionValue is not None:
+            try:
+                new_value = self.getValue()
+                if new_value != self.__editSessionValue:
+                    self.__executeCommand(new_value)
+            except RuntimeError:
+                # Widget has been deleted
+                pass
         # Reset edit session
         self.__editSessionValue = None
         self.__hasChanges = False
@@ -125,6 +167,13 @@ class AttributeSync(object):
 
     def __executeCommand(self, new_value):
         """Execute the command to update the model."""
+        # Guard against destroyed widgets
+        try:
+            if not self._entry:
+                return
+        except RuntimeError:
+            return
+
         self._currentValue = new_value
         commandKwArgs = self.commandKwArgs(new_value)
         self._commandClass(
@@ -170,6 +219,9 @@ class AttributeSync(object):
         if self.__callback is not None:
             try:
                 self.__callback(value)
+            except RuntimeError:
+                # Widget has been deleted (e.g., dialog closing)
+                pass
             except Exception as e:
                 wx.MessageBox(str(e), _("Error"), wx.OK)
 

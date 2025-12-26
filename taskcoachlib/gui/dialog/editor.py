@@ -1970,7 +1970,13 @@ class EffortEditBook(Page):
         )
 
     def close_edit_book(self):
-        pass
+        """Flush any pending changes from commit_on_focus_loss entries."""
+        # Flush pending changes from date/time entries before closing
+        # This ensures changes are saved even if focus hasn't left the entry
+        if hasattr(self, '_startDateTimeSync') and self._startDateTimeSync:
+            self._startDateTimeSync.flushPendingChanges()
+        if hasattr(self, '_stopDateTimeSync') and self._stopDateTimeSync:
+            self._stopDateTimeSync.flushPendingChanges()
 
 
 class Editor(BalloonTipManager, widgets.Dialog):
