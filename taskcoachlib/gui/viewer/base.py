@@ -352,9 +352,11 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             if allItemsAreSelected():
                 self.selectNextItemsAfterRemoval(removed_items)
         elif itemsAdded():
-            # Use efficient refresh that only adds new items
+            # Refresh after add (items are already sorted)
             added_items = list(event.values())
             self.refreshAfterAddition(added_items)
+            # Re-sync widget selection since items may have shifted due to sort
+            self.widget.select(self.curselection())
         else:
             self.refresh()
         self.updateSelection(sendViewerStatusEvent=False)

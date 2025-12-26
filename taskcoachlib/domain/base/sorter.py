@@ -48,7 +48,21 @@ class Sorter(patterns.ListDecorator):
     @patterns.eventSource
     def extendSelf(self, items, event=None):
         super().extendSelf(items, event)
-        self.reset()
+        self._sortWithoutEvent()
+
+    def _sortWithoutEvent(self):
+        """Sort the list without sending a sort event.
+
+        Used during add operations where the add event is sufficient
+        to notify observers of the change.
+        """
+        if self.isFrozen():
+            return
+        for sortKey in reversed(self._sortKeys):
+            self.sort(
+                key=self.createSortKeyFunction(sortKey.lstrip("-")),
+                reverse=sortKey.startswith("-"),
+            )
 
     def isAscending(self):
         if self._sortKeys:

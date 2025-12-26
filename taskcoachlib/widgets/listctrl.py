@@ -207,13 +207,21 @@ class VirtualListCtrl(
         self.selectCommand()
 
     def RefreshAfterAddition(self, count, added_items=None):
-        """Called after items have been added to the presentation.
+        """Called after items have been added and sorted.
+
+        Updates the count and refreshes visible items to show sorted data.
 
         Args:
             count: The new item count after addition.
             added_items: List of added domain objects (unused).
         """
         self.SetItemCount(count)
+        if count > 0:
+            top = self.GetTopItem()
+            per_page = self.GetCountPerPage()
+            end = min(top + per_page, count - 1)
+            if top <= end:
+                super().RefreshItems(top, end)
 
     def HitTest(self, xxx_todo_changeme, *args, **kwargs):
         """Always return a three-tuple (item, flag, column)."""
