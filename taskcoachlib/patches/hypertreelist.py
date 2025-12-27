@@ -1955,7 +1955,12 @@ class EditCtrl(object):
 
         self._column = column
 
-        w = self._itemEdited.GetWidth()
+        # Use column width instead of item text width to avoid text cutoff
+        header_win = self._owner.GetParent()._header_win
+        if header_win.IsColumnShown(column):
+            w = header_win.GetColumn(column).GetWidth()
+        else:
+            w = self._itemEdited.GetWidth()
         h = self._itemEdited.GetHeight()
 
         wnd = self._itemEdited.GetWindow(column)
@@ -2008,7 +2013,7 @@ class EditCtrl(object):
         w -= image_w + 2*_MARGIN + wcheck
 
         super(EditCtrl, self).__init__(parent, id, value, wx.Point(x,y),
-                                       wx.Size(w+15, h),
+                                       wx.Size(w, h),
                                        style=style|wx.SIMPLE_BORDER,
                                        name=name, **kwargs)
 
