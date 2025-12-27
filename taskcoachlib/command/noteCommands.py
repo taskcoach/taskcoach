@@ -51,6 +51,8 @@ class NewSubNoteCommand(base.NewSubItemCommand):
         attachments = kwargs.pop("attachments", [])
         categories = kwargs.get("categories", None)
         super().__init__(*args, **kwargs)
+        # Store parent notes before overwriting self.items
+        self.__parents = self.items[:]
         self.items = self.notes = [
             parent.newChild(
                 subject=subject,
@@ -58,9 +60,26 @@ class NewSubNoteCommand(base.NewSubItemCommand):
                 categories=categories,
                 attachments=attachments,
             )
-            for parent in self.items
+            for parent in self.__parents
         ]
         self.save_modification_datetimes()
+
+    @patterns.eventSource
+    def do_command(self, event=None):
+        # Add subnotes to parent notes as children. The parent's addChild
+        # handles the parent-child relationship. We also need to add to the
+        # container for the viewer to see them, but CompositeCollection.extend
+        # will handle both adding to the container AND calling addChild via
+        # _addCompositesToParent, so we just call the parent implementation.
+        base.NewItemCommand.do_command(self, event=event)
+
+    @patterns.eventSource
+    def undo_command(self, event=None):
+        base.NewItemCommand.undo_command(self, event=event)
+
+    @patterns.eventSource
+    def redo_command(self, event=None):
+        base.NewItemCommand.redo_command(self, event=event)
 
 
 class DeleteNoteCommand(base.DeleteCommand):
@@ -142,19 +161,24 @@ class AddSubNoteCommand(base.BaseCommand):
         self.save_modification_datetimes()
 
     def modified_items(self):
-        return self.__parents + [self.__owner]
+        return self.__parents
 
     @patterns.eventSource
     def addNotes(self, event=None):
+        # Only add subnotes to their parent notes, not to the owner's notes list.
+        # This fixes the bug where subnotes were duplicated at root level.
         for parent, subnote in zip(self.__parents, self.__notes):
             parent.addChild(subnote, event=event)
-            self.__owner.addNote(subnote, event=event)
+        # Notify the owner that notes changed so the viewer refreshes.
+        # The viewer will pick up the subnote from parent.children().
+        self.__owner.notesChangedEvent(event, *self.__notes)
 
     @patterns.eventSource
     def removeNotes(self, event=None):
         for parent, subnote in zip(self.__parents, self.__notes):
             parent.removeChild(subnote, event=event)
-            self.__owner.removeNote(subnote, event=event)
+        # Notify the owner that notes changed so the viewer refreshes.
+        self.__owner.notesChangedEvent(event, *self.__notes)
 
     def do_command(self):
         super().do_command()
