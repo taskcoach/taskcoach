@@ -1,3 +1,10 @@
+taskcoach (2.0.0.76-1) UNRELEASED; urgency=medium
+
+  * Fix Calendar viewer crash on startup when previously opened
+  * Fix wxPython 4.2+ compatibility issues with float arguments
+
+ -- Task Coach developers <developers@taskcoach.org>  Fri, 27 Dec 2025 12:00:00 +0000
+
 taskcoach (2.0.0.75-1) UNRELEASED; urgency=medium
 
   * Major version bump to 2.0.0 reflecting Python 3 modernization

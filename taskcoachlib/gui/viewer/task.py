@@ -1079,6 +1079,8 @@ class CalendarViewer(
             # If called directly, we crash with a Cairo assert failing...
             wx.CallAfter(self.__safeSetDrawer, widget, wxFancyDrawer)
 
+        return widget
+
     def __safeSetDrawer(self, widget, drawer):
         """Safely set the drawer on a widget, guarding against deleted C++ objects."""
         try:

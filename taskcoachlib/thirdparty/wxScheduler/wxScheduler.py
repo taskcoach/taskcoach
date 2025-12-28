@@ -149,7 +149,7 @@ class wxScheduler(wxSchedulerCore, scrolled.ScrolledPanel):
         unitX, unitY = self.GetScrollPixelsPerUnit()
 
         coords = wx.Point(
-            event.GetX() + (originX * unitX), event.GetY() + (originY * unitY)
+            int(event.GetX() + (originX * unitX)), int(event.GetY() + (originY * unitY))
         )
 
         return coords

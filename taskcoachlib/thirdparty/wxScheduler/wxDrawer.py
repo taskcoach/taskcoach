@@ -105,6 +105,10 @@ class wxDrawer(object):
         """
         Draws a schedule in the specified rectangle.
         """
+        # Ensure coordinates are integers for wxPython compatibility
+        x, y, w = int(x), int(y), int(w)
+        if h is not None:
+            h = int(h)
 
         offsetY = SCHEDULE_INSIDE_MARGIN
         offsetX = SCHEDULE_INSIDE_MARGIN
@@ -558,7 +562,7 @@ class BackgroundDrawerDCMixin(object):
 
         self.context.SetPen(FOREGROUND_PEN)
 
-        self.context.DrawRectangle(x, y - 1, w, h + 1)
+        self.context.DrawRectangle(int(x), int(y) - 1, int(w), int(h) + 1)
 
 
 class HeaderDrawerDCMixin(object):
@@ -590,7 +594,7 @@ class HeaderDrawerDCMixin(object):
         else:
             self.context.SetBrush(wx.Brush(SCHEDULER_BACKGROUND_BRUSH()))
 
-        self.context.DrawRectangle(x, y, w, int(textH * 1.5))
+        self.context.DrawRectangle(int(x), int(y), int(w), int(textH * 1.5))
 
         self.context.SetTextForeground(wx.BLACK)
 
@@ -613,7 +617,7 @@ class HeaderDrawerDCMixin(object):
         else:
             self.context.SetBrush(wx.Brush(DAY_BACKGROUND_BRUSH()))
 
-        self.context.DrawRectangle(x, y, width, height)
+        self.context.DrawRectangle(int(x), int(y), int(width), int(height))
 
         results = []
 
@@ -660,12 +664,12 @@ class HeaderDrawerDCMixin(object):
                     break
 
                 self.context.SetBrush(wx.Brush(schedule.color))
-                self.context.DrawRectangle(x, y, width, textH * 1.2)
+                self.context.DrawRectangle(int(x), int(y), int(width), int(textH * 1.2))
                 results.append(
                     (
                         schedule,
-                        wx.Point(x, y),
-                        wx.Point(x + width, y + textH * 1.2),
+                        wx.Point(int(x), int(y)),
+                        wx.Point(int(x + width), int(y + textH * 1.2)),
                     )
                 )
 
@@ -709,7 +713,7 @@ class BackgroundDrawerGCMixin(object):
 
         self.context.SetPen(self.context.CreatePen(FOREGROUND_PEN))
 
-        self.context.DrawRectangle(x, y - 1, w, h + 1)
+        self.context.DrawRectangle(int(x), int(y) - 1, int(w), int(h) + 1)
 
 
 class HeaderDrawerGCMixin(object):
@@ -762,7 +766,7 @@ class HeaderDrawerGCMixin(object):
                         SCHEDULER_BACKGROUND_BRUSH(),
                     )
                 )
-            self.context.DrawRectangle(x1, y1, x2 - x1, y2 - y1)
+            self.context.DrawRectangle(int(x1), int(y1), int(x2 - x1), int(y2 - y1))
 
             if alignRight:
                 self.context.DrawText(
@@ -801,7 +805,7 @@ class HeaderDrawerGCMixin(object):
             )
 
         self.context.SetBrush(brush)
-        self.context.DrawRectangle(x, y, width, height)
+        self.context.DrawRectangle(int(x), int(y), int(width), int(height))
 
         font = wx.NORMAL_FONT
         fsize = font.GetPointSize()
@@ -870,8 +874,8 @@ class HeaderDrawerGCMixin(object):
                     results.append(
                         (
                             schedule,
-                            wx.Point(x, y),
-                            wx.Point(x + width, int(y + textH * 1.2)),
+                            wx.Point(int(x), int(y)),
+                            wx.Point(int(x + width), int(y + textH * 1.2)),
                         )
                     )
 
@@ -943,7 +947,7 @@ class wxBaseDrawer(
     def DrawHours(self, x, y, w, h, direction, includeText=True):
         if direction == wxSCHEDULER_VERTICAL:
             self.context.SetBrush(wx.Brush(SCHEDULER_BACKGROUND_BRUSH()))
-            self.context.DrawRectangle(x, y, LEFT_COLUMN_SIZE, h)
+            self.context.DrawRectangle(int(x), int(y), int(LEFT_COLUMN_SIZE), int(h))
 
         font = self.context.GetFont()
         fWeight = font.GetWeight()
@@ -1039,13 +1043,13 @@ class wxBaseDrawer(
         self.context.SetBrush(wx.Brush(wx.Colour(0, 128, 0)))
         self.context.SetPen(wx.Pen(wx.Colour(0, 128, 0)))
         self.context.DrawArc(x, y + 5, x, y - 5, x, y)
-        self.context.DrawRectangle(x, y - 1, w, 3)
+        self.context.DrawRectangle(int(x), int(y) - 1, int(w), 3)
 
     def DrawNowVertical(self, x, y, h):
         self.context.SetBrush(wx.Brush(wx.Colour(0, 128, 0)))
         self.context.SetPen(wx.Pen(wx.Colour(0, 128, 0)))
         self.context.DrawArc(x - 5, y, x + 5, y, x, y)
-        self.context.DrawRectangle(x - 1, y, 3, h)
+        self.context.DrawRectangle(int(x) - 1, int(y), 3, int(h))
 
 
 class wxFancyDrawer(
@@ -1068,7 +1072,7 @@ class wxFancyDrawer(
                 DAY_BACKGROUND_BRUSH(),
             )
             self.context.SetBrush(brush)
-            self.context.DrawRectangle(x, y, LEFT_COLUMN_SIZE, h)
+            self.context.DrawRectangle(int(x), int(y), int(LEFT_COLUMN_SIZE), int(h))
 
         font = wx.NORMAL_FONT
         fsize = font.GetPointSize()
@@ -1172,7 +1176,7 @@ class wxFancyDrawer(
             wx.Colour(0, 255, 0, 128),
         )
         self.context.SetBrush(brush)
-        self.context.DrawRectangle(x + 4, y - 2, w - 4, 3)
+        self.context.DrawRectangle(int(x) + 4, int(y) - 2, int(w) - 4, 3)
 
         brush = self.context.CreateRadialGradientBrush(
             x,
@@ -1199,7 +1203,7 @@ class wxFancyDrawer(
             wx.Colour(0, 255, 0, 128),
         )
         self.context.SetBrush(brush)
-        self.context.DrawRectangle(x - 2, y + 4, 3, h - 4)
+        self.context.DrawRectangle(int(x) - 2, int(y) + 4, 3, int(h) - 4)
 
         brush = self.context.CreateRadialGradientBrush(
             x - 5,

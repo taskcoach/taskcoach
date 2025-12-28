@@ -551,8 +551,8 @@ class wxSchedulerPaint(object):
                         self._schedulesCoords.append(
                             (
                                 schedule,
-                                wx.Point(xx, yy),
-                                wx.Point(xx + w, yy + h),
+                                wx.Point(int(xx), int(yy)),
+                                wx.Point(int(xx + w), int(yy + h)),
                             )
                         )
                     else:
@@ -1042,9 +1042,9 @@ class wxSchedulerPaint(object):
                             self._datetimeCoords.append(
                                 (
                                     utils.copyDateTime(theDay),
-                                    wx.Point(d * cellW, w * cellH),
+                                    wx.Point(int(d * cellW), int(w * cellH)),
                                     wx.Point(
-                                        d * cellW + cellW, w * cellH + cellH
+                                        int(d * cellW + cellW), int(w * cellH + cellH)
                                     ),
                                 )
                             )

@@ -2,7 +2,7 @@
 # Contributor: Aaron Wolf <https://github.com/realcarbonneau>
 
 pkgname=taskcoach
-pkgver=2.0.0.75
+pkgver=2.0.0.76
 pkgrel=1
 pkgdesc="Your friendly task manager - personal task manager with composite tasks, effort tracking, and more"
 arch=('any')

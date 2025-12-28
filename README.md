@@ -8,22 +8,22 @@ Download the package for your system from the [latest release](https://github.co
 
 | Platform | Package |
 |----------|---------|
-| Debian 12 (Bookworm) | `taskcoach_2.0.0.75_debian-12-bookworm.deb` |
-| Debian 13 (Trixie) | `taskcoach_2.0.0.75_debian-13-trixie.deb` |
-| Debian Sid | `taskcoach_2.0.0.75_debian-sid.deb` |
-| Ubuntu 22.04 (Jammy) | `taskcoach_2.0.0.75_ubuntu-22.04-jammy.deb` |
-| Ubuntu 24.04 (Noble) | `taskcoach_2.0.0.75_ubuntu-24.04-noble.deb` |
+| Debian 12 (Bookworm) | `taskcoach_2.0.0.76_debian-12-bookworm.deb` |
+| Debian 13 (Trixie) | `taskcoach_2.0.0.76_debian-13-trixie.deb` |
+| Debian Sid | `taskcoach_2.0.0.76_debian-sid.deb` |
+| Ubuntu 22.04 (Jammy) | `taskcoach_2.0.0.76_ubuntu-22.04-jammy.deb` |
+| Ubuntu 24.04 (Noble) | `taskcoach_2.0.0.76_ubuntu-24.04-noble.deb` |
 | Linux Mint | Use Ubuntu `.deb` (Mint is Ubuntu-based) |
-| Arch Linux / Manjaro | `taskcoach-2.0.0.75-arch.pkg.tar.zst` |
-| Fedora 39/40 | `taskcoach-2.0.0.75-fedora39.noarch.rpm` |
-| Any Linux (x86_64) | `TaskCoach-2.0.0.75-x86_64.AppImage` |
+| Arch Linux / Manjaro | `taskcoach-2.0.0.76-arch.pkg.tar.zst` |
+| Fedora 39/40 | `taskcoach-2.0.0.76-fedora39.noarch.rpm` |
+| Any Linux (x86_64) | `TaskCoach-2.0.0.76-x86_64.AppImage` |
 
 **Example: Install on Debian/Ubuntu**
 
 ```bash
 cd ~/Downloads
-wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach_2.0.0.75_debian-13-trixie.deb
-sudo apt install ./taskcoach_2.0.0.75_debian-13-trixie.deb
+wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach_2.0.0.76_debian-13-trixie.deb
+sudo apt install ./taskcoach_2.0.0.76_debian-13-trixie.deb
 taskcoach.py
 ```
 
@@ -39,8 +39,8 @@ sudo apt autoremove  # optional: remove unused dependencies
 
 ```bash
 cd ~/Downloads
-wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach-2.0.0.75-arch.pkg.tar.zst
-sudo pacman -U taskcoach-2.0.0.75-arch.pkg.tar.zst
+wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach-2.0.0.76-arch.pkg.tar.zst
+sudo pacman -U taskcoach-2.0.0.76-arch.pkg.tar.zst
 taskcoach.py
 ```
 
@@ -54,8 +54,8 @@ sudo pacman -Qdtq | sudo pacman -Rs -  # optional: remove orphaned dependencies
 
 ```bash
 cd ~/Downloads
-wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach-2.0.0.75-fedora40.noarch.rpm
-sudo dnf install ./taskcoach-2.0.0.75-fedora40.noarch.rpm
+wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach-2.0.0.76-fedora40.noarch.rpm
+sudo dnf install ./taskcoach-2.0.0.76-fedora40.noarch.rpm
 taskcoach.py
 ```
 
@@ -69,9 +69,9 @@ sudo dnf autoremove  # optional: remove unused dependencies
 
 ```bash
 cd ~/Downloads
-wget https://github.com/taskcoach/taskcoach/releases/latest/download/TaskCoach-2.0.0.75-x86_64.AppImage
-chmod +x TaskCoach-2.0.0.75-x86_64.AppImage
-./TaskCoach-2.0.0.75-x86_64.AppImage
+wget https://github.com/taskcoach/taskcoach/releases/latest/download/TaskCoach-2.0.0.76-x86_64.AppImage
+chmod +x TaskCoach-2.0.0.76-x86_64.AppImage
+./TaskCoach-2.0.0.76-x86_64.AppImage
 ```
 
 To remove: simply delete the AppImage file.
