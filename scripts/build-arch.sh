@@ -79,16 +79,11 @@ if ! command -v makepkg &> /dev/null; then
 fi
 echo -e "${GREEN}✓ makepkg found${NC}"
 
-# Get version from VERSION file (single source of truth)
+# Get version from data.py (single source of truth)
 echo -e "${BLUE}[2/5] Getting version information...${NC}"
 cd "$PROJECT_ROOT"
 
-if [ -f "$PROJECT_ROOT/VERSION" ]; then
-    FULL_VERSION=$(grep -v '^#' "$PROJECT_ROOT/VERSION" | grep -v '^$' | head -1 | tr -d '[:space:]')
-else
-    echo -e "${RED}✗ VERSION file not found${NC}"
-    exit 1
-fi
+FULL_VERSION=$(python3 -c "from taskcoachlib.meta.data import version_full; print(version_full)")
 
 echo "Version: $FULL_VERSION"
 echo -e "${GREEN}✓ Version detected${NC}"

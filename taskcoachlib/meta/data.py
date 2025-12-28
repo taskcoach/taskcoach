@@ -20,70 +20,36 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # pylint: disable=C0103
 
-import os as _os
+# =============================================================================
+# VERSION CONFIGURATION - Edit these for every release
+# =============================================================================
+# IMPORTANT: When releasing a new version:
+#   1. Increment patch below (and version if needed)
+#   2. Update release_day, release_month, release_year below
+#   3. Update changelogs (debian/changelog, build.in/fedora/taskcoach.spec)
+#
+# The version is defined HERE in data.py as the single source of truth.
+# This ensures the version is always available since it's embedded in the
+# Python source code and cannot be lost during packaging or installation.
+#
+# Version format: Major.Minor.Milestone.Patch
+#   - Major: Breaking changes or major new features
+#   - Minor: New features, backwards compatible
+#   - Milestone: Target milestone for a set of patches
+#   - Patch: Incremented for each bug fix release
+# =============================================================================
 
-def _read_version():
-    """Read version from VERSION file (single source of truth)."""
-    # Try multiple locations for VERSION file
-    this_dir = _os.path.dirname(_os.path.abspath(__file__))
-    locations = [
-        _os.path.join(this_dir, "..", "..", "VERSION"),  # Development: taskcoachlib/meta/../../VERSION
-        _os.path.join(this_dir, "..", "VERSION"),        # Installed: taskcoachlib/VERSION
-        "/usr/share/taskcoach/VERSION",                  # System install
-    ]
-    for loc in locations:
-        try:
-            with open(loc, "r") as f:
-                for line in f:
-                    line = line.strip()
-                    # Skip comments and empty lines
-                    if line and not line.startswith("#"):
-                        return line
-        except (IOError, OSError):
-            continue
-    return "0.0.0.0"  # Fallback if VERSION file not found
+version = "2.0.0"  # Major.Minor.Milestone
+patch = "81"  # Patch number - INCREMENT THIS for each release
+version_full = f"{version}.{patch}"  # Full version: 2.0.0.81
 
-version_full = _read_version()  # e.g., "2.0.0.80"
-_version_parts = version_full.rsplit(".", 1)
-version = _version_parts[0] if len(_version_parts) == 2 else version_full  # e.g., "2.0.0"
-version_patch = _version_parts[1] if len(_version_parts) == 2 else "0"  # e.g., "80"
+release_day = "28"  # Day of the release (1-31)
+release_month = "December"  # Month of the release
+release_year = "2025"  # Year of the release
 
-
-def _read_version_date():
-    """Read release date from VERSION_DATE file (ISO format: YYYY-MM-DD)."""
-    this_dir = _os.path.dirname(_os.path.abspath(__file__))
-    locations = [
-        _os.path.join(this_dir, "..", "..", "VERSION_DATE"),  # Development
-        _os.path.join(this_dir, "..", "VERSION_DATE"),        # Installed
-        "/usr/share/taskcoach/VERSION_DATE",                  # System install
-    ]
-    for loc in locations:
-        try:
-            with open(loc, "r") as f:
-                for line in f:
-                    line = line.strip()
-                    # Skip comments and empty lines
-                    if line and not line.startswith("#"):
-                        return line
-        except (IOError, OSError):
-            continue
-    return "1970-01-01"  # Fallback
-
-
-def _parse_release_date(iso_date):
-    """Parse ISO date string and return (day, month_name, year) tuple."""
-    import datetime
-    try:
-        dt = datetime.datetime.strptime(iso_date, "%Y-%m-%d")
-        month_names = ["January", "February", "March", "April", "May", "June",
-                       "July", "August", "September", "October", "November", "December"]
-        return str(dt.day), month_names[dt.month - 1], str(dt.year)
-    except ValueError:
-        return "1", "January", "1970"
-
-
-_release_date_iso = _read_version_date()
-release_day, release_month, release_year = _parse_release_date(_release_date_iso)
+# =============================================================================
+# END VERSION CONFIGURATION
+# =============================================================================
 
 
 def _get_git_commit_hash():
@@ -119,12 +85,10 @@ git_commit_hash = _get_git_commit_hash()
 version_commit = git_commit_hash if git_commit_hash else "(n/a)"
 
 tskversion = 37  # Current version number of the task file format, changed to 37 for release 1.3.23.
-release_status = "stable"  # One of 'alpha', 'beta', 'stable'
-# Note: release_day, release_month, release_year are now read from VERSION_DATE file above
+release_status = "alpha"  # One of 'alpha', 'beta', 'stable'
 
 # Legacy: keep version_with_patch for backwards compatibility
 version_with_patch = version_full
-git_commit_count = version_patch
 
 # No editing needed below this line for doing a release.
 

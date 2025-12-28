@@ -1,12 +1,17 @@
-# Task Coach Version File
-# This is the single source of truth for the application version.
+# Task Coach Version Reference
 #
-# For releases:
-#   1. Increment the version number below
-#   2. Update release_day, release_month, release_year in taskcoachlib/meta/data.py
-#   3. Update changelogs (debian/changelog, build.in/fedora/taskcoach.spec)
+# IMPORTANT: This file is for REFERENCE ONLY. It is NOT read at runtime.
+# DO NOT DELETE!!! This file helps find where to set the version.
 #
-# Format: MAJOR.MINOR.PATCH.BUILD
-# Lines starting with # are comments and ignored.
-
-2.0.0.80
+# =============================================================================
+# WHERE TO UPDATE VERSION INFORMATION
+# =============================================================================
+#
+# Primary (single source of truth):
+#   taskcoachlib/meta/data.py - version, patch, release date, formatting docs
+#
+# Also update (manual, version in file):
+#   debian/changelog - version in header, add changelog entry
+#   build.in/fedora/taskcoach.spec - Version: line, add %changelog entry
+#
+# =============================================================================
