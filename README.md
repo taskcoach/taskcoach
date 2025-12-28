@@ -1,6 +1,8 @@
 # Task Coach - Your friendly task manager
 
-Task Coach is a simple open source todo manager to keep track of personal tasks and todo lists.
+Task Coach is a free/libre/open task manager for keeping track of projects and todo lists.
+
+It's over 20 years old, and development was stagnant in recent years. Here, the project is continued again and has been updated to Python3!
 
 ## Quick Start
 
@@ -18,16 +20,15 @@ Download the package for your system from the [latest release](https://github.co
 | Fedora 39/40 | `taskcoach-2.0.0.80-fedora39.noarch.rpm` |
 | Any Linux (x86_64) | `TaskCoach-2.0.0.80-x86_64.AppImage` |
 
-**Example: Install on Debian/Ubuntu**
+After installing, Task Coach should be in normal system launchers (Applications → Office → Task Coach). For CLI, the launch command is `taskcoach.py`.
+
+**Example: Install on Debian Trixie** (similar for other Debian/Ubuntu systems, just different .deb file)
 
 ```bash
 cd ~/Downloads
 wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach_2.0.0.80_debian-13-trixie.deb
 sudo apt install ./taskcoach_2.0.0.80_debian-13-trixie.deb
-taskcoach.py
 ```
-
-Or launch from **Applications → Office → Task Coach**.
 
 To uninstall:
 ```bash
@@ -41,7 +42,6 @@ sudo apt autoremove  # optional: remove unused dependencies
 cd ~/Downloads
 wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach-2.0.0.80-arch.pkg.tar.zst
 sudo pacman -U taskcoach-2.0.0.80-arch.pkg.tar.zst
-taskcoach.py
 ```
 
 To uninstall:
@@ -56,7 +56,6 @@ sudo pacman -Qdtq | sudo pacman -Rs -  # optional: remove orphaned dependencies
 cd ~/Downloads
 wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach-2.0.0.80-fedora40.noarch.rpm
 sudo dnf install ./taskcoach-2.0.0.80-fedora40.noarch.rpm
-taskcoach.py
 ```
 
 To uninstall:
@@ -71,6 +70,10 @@ sudo dnf autoremove  # optional: remove unused dependencies
 cd ~/Downloads
 wget https://github.com/taskcoach/taskcoach/releases/latest/download/TaskCoach-2.0.0.80-x86_64.AppImage
 chmod +x TaskCoach-2.0.0.80-x86_64.AppImage
+```
+
+To run, open the file or run:
+```
 ./TaskCoach-2.0.0.80-x86_64.AppImage
 ```
 
@@ -89,7 +92,7 @@ cd taskcoach
 
 See [docs/DEBIAN_BOOKWORM_SETUP.md](docs/DEBIAN_BOOKWORM_SETUP.md) for detailed setup options, troubleshooting, and platform-specific instructions.
 
-## Testing
+### Testing after git installaion
 
 Quick sanity check to verify the installation:
 
@@ -135,4 +138,5 @@ Key packages:
 
 ## Support
 
-- GitHub Issues: https://github.com/taskcoach/taskcoach/issues
+- Report bugs or request features at GitHub Issues: https://github.com/taskcoach/taskcoach/issues
+- Ask for help or haveaaaa other open discussion at https://github.com/orgs/taskcoach/discussions
