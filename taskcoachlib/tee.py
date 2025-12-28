@@ -26,6 +26,8 @@ import threading
 STDERR_IGNORE_PATTERNS = (
     # GTK 3.20+ layout bug - wxWidgets #17585, harmless
     "gtk_distribute_natural_allocation",
+    # GTK scrollbar size assertion during layout, harmless cosmetic issue
+    "gtk_box_gadget_distribute",
     # wxPython calls gtk_init before gtk_disable_setlocale, harmless
     "gtk_disable_setlocale",
     # Pixman rect validation, cosmetic issue
