@@ -1,5 +1,6 @@
-taskcoach (2.0.0.76-1) UNRELEASED; urgency=medium
+taskcoach (2.0.0.80-1) UNRELEASED; urgency=medium
 
+  * Centralize version in single VERSION file
   * Fix Calendar viewer crash on startup when previously opened
   * Fix wxPython 4.2+ compatibility issues with float arguments
 

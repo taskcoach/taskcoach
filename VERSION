@@ -1,0 +1,12 @@
+# Task Coach Version File
+# This is the single source of truth for the application version.
+#
+# For releases:
+#   1. Increment the version number below
+#   2. Update release_day, release_month, release_year in taskcoachlib/meta/data.py
+#   3. Update changelogs (debian/changelog, build.in/fedora/taskcoach.spec)
+#
+# Format: MAJOR.MINOR.PATCH.BUILD
+# Lines starting with # are comments and ignored.
+
+2.0.0.80

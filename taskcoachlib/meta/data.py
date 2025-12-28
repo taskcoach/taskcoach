@@ -20,12 +20,70 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # pylint: disable=C0103
 
-# Edit these for every release:
-# IMPORTANT: Always increment version_patch AND update release_day/release_month below!
+import os as _os
 
-version = "2.0.0"  # Current version number of the application
-version_patch = "79"  # Patch level - INCREMENT THIS AND UPDATE DATE BELOW!
-version_full = f"{version}.{version_patch}"  # Full version string: 2.0.0.76
+def _read_version():
+    """Read version from VERSION file (single source of truth)."""
+    # Try multiple locations for VERSION file
+    this_dir = _os.path.dirname(_os.path.abspath(__file__))
+    locations = [
+        _os.path.join(this_dir, "..", "..", "VERSION"),  # Development: taskcoachlib/meta/../../VERSION
+        _os.path.join(this_dir, "..", "VERSION"),        # Installed: taskcoachlib/VERSION
+        "/usr/share/taskcoach/VERSION",                  # System install
+    ]
+    for loc in locations:
+        try:
+            with open(loc, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    # Skip comments and empty lines
+                    if line and not line.startswith("#"):
+                        return line
+        except (IOError, OSError):
+            continue
+    return "0.0.0.0"  # Fallback if VERSION file not found
+
+version_full = _read_version()  # e.g., "2.0.0.80"
+_version_parts = version_full.rsplit(".", 1)
+version = _version_parts[0] if len(_version_parts) == 2 else version_full  # e.g., "2.0.0"
+version_patch = _version_parts[1] if len(_version_parts) == 2 else "0"  # e.g., "80"
+
+
+def _read_version_date():
+    """Read release date from VERSION_DATE file (ISO format: YYYY-MM-DD)."""
+    this_dir = _os.path.dirname(_os.path.abspath(__file__))
+    locations = [
+        _os.path.join(this_dir, "..", "..", "VERSION_DATE"),  # Development
+        _os.path.join(this_dir, "..", "VERSION_DATE"),        # Installed
+        "/usr/share/taskcoach/VERSION_DATE",                  # System install
+    ]
+    for loc in locations:
+        try:
+            with open(loc, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    # Skip comments and empty lines
+                    if line and not line.startswith("#"):
+                        return line
+        except (IOError, OSError):
+            continue
+    return "1970-01-01"  # Fallback
+
+
+def _parse_release_date(iso_date):
+    """Parse ISO date string and return (day, month_name, year) tuple."""
+    import datetime
+    try:
+        dt = datetime.datetime.strptime(iso_date, "%Y-%m-%d")
+        month_names = ["January", "February", "March", "April", "May", "June",
+                       "July", "August", "September", "October", "November", "December"]
+        return str(dt.day), month_names[dt.month - 1], str(dt.year)
+    except ValueError:
+        return "1", "January", "1970"
+
+
+_release_date_iso = _read_version_date()
+release_day, release_month, release_year = _parse_release_date(_release_date_iso)
 
 
 def _get_git_commit_hash():
@@ -61,10 +119,8 @@ git_commit_hash = _get_git_commit_hash()
 version_commit = git_commit_hash if git_commit_hash else "(n/a)"
 
 tskversion = 37  # Current version number of the task file format, changed to 37 for release 1.3.23.
-release_day = "27"  # Day number of the release, 1-31, as string
-release_month = "December"  # Month of the release in plain English
-release_year = "2025"  # Year of the release as string
 release_status = "stable"  # One of 'alpha', 'beta', 'stable'
+# Note: release_day, release_month, release_year are now read from VERSION_DATE file above
 
 # Legacy: keep version_with_patch for backwards compatibility
 version_with_patch = version_full

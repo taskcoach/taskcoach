@@ -291,13 +291,13 @@ build_appimage() {
 
     cd "$BUILD_DIR"
 
-    # Get version from TaskCoach
-    VERSION=$(python3 -c "
-import sys
-sys.path.insert(0, '$PROJECT_ROOT')
-from taskcoachlib.meta import data
-print(data.version_full)
-" 2>/dev/null || echo "1.6.1")
+    # Get version from VERSION file (single source of truth)
+    if [ -f "$PROJECT_ROOT/VERSION" ]; then
+        VERSION=$(grep -v '^#' "$PROJECT_ROOT/VERSION" | grep -v '^$' | head -1 | tr -d '[:space:]')
+    else
+        echo "ERROR: VERSION file not found"
+        exit 1
+    fi
 
     echo "Version: $VERSION"
 

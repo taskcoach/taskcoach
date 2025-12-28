@@ -11,7 +11,7 @@
 # (at your option) any later version.
 
 Name:           taskcoach
-Version:        2.0.0.76
+Version:        2.0.0.80
 Release:        1%{?dist}
 Summary:        Your friendly task manager
 
@@ -133,7 +133,8 @@ install -Dm644 Welcome.tsk \
 %{_datadir}/%{name}/
 
 %changelog
-* Fri Dec 27 2025 Task Coach Developers <developers@taskcoach.org> - 2.0.0.76-1
+* Fri Dec 27 2025 Task Coach Developers <developers@taskcoach.org> - 2.0.0.80-1
+- Centralize version in single VERSION file
 - Fix Calendar viewer crash on startup when previously opened
 - Fix wxPython 4.2+ compatibility issues with float arguments
 

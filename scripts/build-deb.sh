@@ -71,16 +71,14 @@ clean_build() {
     rm -f "${PROJECT_DIR}"/../taskcoach_*.tar.*
 }
 
-# Get version from Python
+# Get version from VERSION file (single source of truth)
 get_version() {
-    cd "$PROJECT_DIR"
-    VERSION=$(python3 -c "
-import sys
-sys.path.insert(0, '.')
-from taskcoachlib.meta import data
-print(data.version_full)
-")
-    echo "$VERSION"
+    if [ -f "$PROJECT_DIR/VERSION" ]; then
+        grep -v '^#' "$PROJECT_DIR/VERSION" | grep -v '^$' | head -1 | tr -d '[:space:]'
+    else
+        error "VERSION file not found"
+        exit 1
+    fi
 }
 
 # Build the package
