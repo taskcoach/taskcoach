@@ -2051,14 +2051,21 @@ class Editor(BalloonTipManager, widgets.Dialog):
         # FIXME: there are more keyboard shortcuts that don't work in dialogs
         # at the moment, like DELETE
         self.__new_effort_id = IdProvider.get()
+        self.__next_tab_id = IdProvider.get()
+        self.__prev_tab_id = IdProvider.get()
         table = wx.AcceleratorTable(
             [
                 (wx.ACCEL_CMD, ord("Z"), wx.ID_UNDO),
                 (wx.ACCEL_CMD, ord("Y"), wx.ID_REDO),
                 (wx.ACCEL_CMD, ord("E"), self.__new_effort_id),
+                (wx.ACCEL_CTRL, wx.WXK_TAB, self.__next_tab_id),
+                (wx.ACCEL_CTRL | wx.ACCEL_SHIFT, wx.WXK_TAB, self.__prev_tab_id),
             ]
         )
         self._interior.SetAcceleratorTable(table)
+        # Bind tab navigation commands
+        self._interior.Bind(wx.EVT_MENU, self.__on_next_tab, id=self.__next_tab_id)
+        self._interior.Bind(wx.EVT_MENU, self.__on_prev_tab, id=self.__prev_tab_id)
         # pylint: disable=W0201
         self.__undo_command = uicommand.EditUndo()
         self.__redo_command = uicommand.EditRedo()
@@ -2073,6 +2080,14 @@ class Editor(BalloonTipManager, widgets.Dialog):
         self.__undo_command.bind(self._interior, wx.ID_UNDO)
         self.__redo_command.bind(self._interior, wx.ID_REDO)
         self.__new_effort_command.bind(self._interior, self.__new_effort_id)
+
+    def __on_next_tab(self, event):
+        """Handle Ctrl+Tab to move to next tab."""
+        self._interior.AdvanceSelectionForward()
+
+    def __on_prev_tab(self, event):
+        """Handle Ctrl+Shift+Tab to move to previous tab."""
+        self._interior.AdvanceSelectionBackward()
 
     def createInterior(self):
         return self.EditBookClass(
@@ -2097,6 +2112,8 @@ class Editor(BalloonTipManager, widgets.Dialog):
         if self.__timer is not None:
             IdProvider.put(self.__timer.GetId())
         IdProvider.put(self.__new_effort_id)
+        IdProvider.put(self.__next_tab_id)
+        IdProvider.put(self.__prev_tab_id)
         self.Destroy()
 
     def on_activate(self, event):

@@ -32,11 +32,12 @@ class FixOverwriteSelectionMixin(object):
         super()._SetSelection(start, end)
 
     def _OnKeyDown(self, event):
-        # Allow keyboard navigation in notebook. Just skipping the event does not work;
-        # propagate it all the way up...
+        # Allow Ctrl+Tab keyboard navigation in notebook.
+        # Just skipping the event does not work; propagate it all the way up...
+        # Note: Only handle Ctrl+Tab, not Shift+Tab (which is normal reverse navigation)
         if (
             event.GetKeyCode() == wx.WXK_TAB
-            and event.GetModifiers()
+            and event.ControlDown()
             and hasattr(self.GetParent(), "NavigateBook")
         ):
             if self.GetParent().NavigateBook(event):

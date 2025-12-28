@@ -195,3 +195,23 @@ class Notebook(BookMixin, aui.AuiNotebook):
             & ~aui.AUI_NB_MIDDLE_CLICK_CLOSE
         )
         super().__init__(*args, **kwargs)
+        # Bind mouse wheel directly on the tab control for tab scrolling
+        tabCtrl = self.GetActiveTabCtrl()
+        if tabCtrl:
+            tabCtrl.Bind(wx.EVT_MOUSEWHEEL, self.__onTabMouseWheel)
+
+    def __onTabMouseWheel(self, event):
+        """Handle mouse wheel scrolling on the tab bar to switch tabs."""
+        rotation = event.GetWheelRotation()
+        if rotation > 0:
+            self.AdvanceSelection(False)  # Previous tab
+        elif rotation < 0:
+            self.AdvanceSelection(True)  # Next tab
+
+    def AdvanceSelectionForward(self):
+        """Move to the next tab (wraps around)."""
+        self.AdvanceSelection(True)
+
+    def AdvanceSelectionBackward(self):
+        """Move to the previous tab (wraps around)."""
+        self.AdvanceSelection(False)
