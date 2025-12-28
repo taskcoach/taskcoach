@@ -246,7 +246,7 @@ class wxSchedulerPaint(object):
 
             theTime = utils.copyDateTime(dt)
             if self._style == wxSCHEDULER_VERTICAL:
-                theTime.AddTS(
+                theTime.Add(
                     wx.TimeSpan.Minutes(
                         int(
                             30.0
@@ -256,7 +256,7 @@ class wxSchedulerPaint(object):
                     )
                 )
             else:
-                theTime.AddTS(
+                theTime.Add(
                     wx.TimeSpan.Minutes(
                         int(
                             30.0

@@ -310,8 +310,8 @@ class wxSchedule(wx.EvtHandler):
         """
         Offsets the schedule by the specified time span.
         """
-        self._start.AddTS(ts)
-        self._end.AddTS(ts)
+        self._start.Add(ts)
+        self._end.Add(ts)
         self._eventNotification(True)
 
     def GetIcons(self):

@@ -491,19 +491,19 @@ class TaskSchedule(wxSchedule):
         kwargs = dict()
         if self.task.plannedStartDateTime() != date.DateTime():
             start = self.GetStart()
-            start.AddTS(ts)
+            start.Add(ts)
             command.EditPlannedStartDateTimeCommand(
                 items=[self.task], newValue=self.tcDateTime(start)
             ).do()
         if self.task.completed():
             end = self.GetEnd()
-            end.AddTS(ts)
+            end.Add(ts)
             command.EditCompletionDateTimeCommand(
                 items=[self.task], newValue=self.tcDateTime(end)
             ).do()
         elif self.task.dueDateTime() != date.DateTime():
             end = self.GetEnd()
-            end.AddTS(ts)
+            end.Add(ts)
             command.EditDueDateTimeCommand(
                 items=[self.task], newValue=self.tcDateTime(end)
             ).do()
