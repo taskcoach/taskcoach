@@ -1213,8 +1213,9 @@ class SortableViewerWithColumns(
         self.widget.showSortOrder(self.imageIndex[self.getSortOrderImage()])
 
     def getSortOrderImage(self):
+        # Arrow points in direction of sort: down for A→Z/old→new, up for Z→A/new→old
         return (
-            "arrow_up_icon"
+            "arrow_down_icon"
             if self.isSortOrderAscending()
-            else "arrow_down_icon"
+            else "arrow_up_icon"
         )
