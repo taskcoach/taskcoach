@@ -72,7 +72,7 @@ wget https://github.com/taskcoach/taskcoach/releases/latest/download/TaskCoach-2
 chmod +x TaskCoach-2.0.0.80-x86_64.AppImage
 ```
 
-To run, open the file or run:
+To launch the AppImage, open the file or run:
 ```
 ./TaskCoach-2.0.0.80-x86_64.AppImage
 ```
@@ -106,7 +106,7 @@ This tests Python version, dependencies, module imports, and wxPython patch stat
 
 Task Coach is free software licensed under the [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0.html).
 
-Copyright (C) 2004-2016 Task Coach developers
+Copyright (C) 2004-2025 Task Coach developers
 
 ## Architecture Overview
 
@@ -139,4 +139,4 @@ Key packages:
 ## Support
 
 - Report bugs or request features at GitHub Issues: https://github.com/taskcoach/taskcoach/issues
-- Ask for help or haveaaaa other open discussion at https://github.com/orgs/taskcoach/discussions
+- Ask for help or have other open discussion at https://github.com/orgs/taskcoach/discussions
