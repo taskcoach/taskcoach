@@ -940,7 +940,12 @@ class ToggleCategoryMenu(DynamicMenu):
 
     def updateMenuItems(self):
         self.clearMenu()
-        self.addMenuItemsForCategories(self.categories.rootItems(), self)
+        rootItems = self.categories.rootItems()
+        if rootItems:
+            self.addMenuItemsForCategories(rootItems, self)
+        else:
+            menuItem = self.Append(wx.ID_ANY, _("(No categories defined yet)"))
+            menuItem.Enable(False)
 
     def addMenuItemsForCategories(self, categories, menu):
         # pylint: disable=W0621
