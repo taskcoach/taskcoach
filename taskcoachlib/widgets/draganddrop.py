@@ -23,22 +23,85 @@ import urllib.request, urllib.parse, urllib.error
 from taskcoachlib.mailer import thunderbird, outlook
 from taskcoachlib.i18n import _
 
-# Create a link cursor for drag over prereq/dep columns
-_linkCursor = None
+# Cached cursors for different scale factors
+_linkCursors = {}  # size -> cursor
+_homeCursors = {}  # size -> cursor
 
-def _getLinkCursor():
-    """Get or create a link cursor for prereq/dep column drag."""
-    global _linkCursor
-    if _linkCursor is None:
-        iconPath = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)),
-            'gui', 'icons', 'paperclip_icon16x16.png'
-        )
+
+def _getIconPath(iconName):
+    """Get the full path to an icon file."""
+    return os.path.join(
+        os.path.dirname(os.path.dirname(__file__)),
+        'gui', 'icons', iconName
+    )
+
+
+def _getLinkCursor(window=None):
+    """Get or create a link cursor for prereq/dep column drag.
+
+    Uses HiDPI-appropriate icon size based on window's content scale factor.
+    """
+    # Determine scale factor
+    scaleFactor = 1.0
+    if window:
+        try:
+            scaleFactor = window.GetContentScaleFactor()
+        except (AttributeError, RuntimeError):
+            pass
+
+    # Round to nearest supported size: 1.0->16, 1.25-1.5->22, 2.0+->32
+    if scaleFactor >= 1.75:
+        size = 32
+    elif scaleFactor >= 1.125:
+        size = 22
+    else:
+        size = 16
+
+    # Cache cursors by size
+    if size not in _linkCursors:
+        iconPath = _getIconPath(f'link_icon{size}x{size}.png')
         image = wx.Image(iconPath)
-        image.SetOption(wx.IMAGE_OPTION_CUR_HOTSPOT_X, 8)
-        image.SetOption(wx.IMAGE_OPTION_CUR_HOTSPOT_Y, 8)
-        _linkCursor = wx.Cursor(image)
-    return _linkCursor
+        # Set hotspot to center of icon
+        hotspot = size // 2
+        image.SetOption(wx.IMAGE_OPTION_CUR_HOTSPOT_X, hotspot)
+        image.SetOption(wx.IMAGE_OPTION_CUR_HOTSPOT_Y, hotspot)
+        _linkCursors[size] = wx.Cursor(image)
+
+    return _linkCursors[size]
+
+
+def _getHomeCursor(window=None):
+    """Get or create a home folder cursor for root drop locations.
+
+    Uses HiDPI-appropriate icon size based on window's content scale factor.
+    """
+    # Determine scale factor
+    scaleFactor = 1.0
+    if window:
+        try:
+            scaleFactor = window.GetContentScaleFactor()
+        except (AttributeError, RuntimeError):
+            pass
+
+    # Round to nearest supported size: 1.0->16, 1.25-1.5->22, 2.0+->32
+    if scaleFactor >= 1.75:
+        size = 32
+    elif scaleFactor >= 1.125:
+        size = 22
+    else:
+        size = 16
+
+    # Cache cursors by size
+    if size not in _homeCursors:
+        iconPath = _getIconPath(f'folder_home_icon{size}x{size}.png')
+        image = wx.Image(iconPath)
+        # Set hotspot to center of icon
+        hotspot = size // 2
+        image.SetOption(wx.IMAGE_OPTION_CUR_HOTSPOT_X, hotspot)
+        image.SetOption(wx.IMAGE_OPTION_CUR_HOTSPOT_Y, hotspot)
+        _homeCursors[size] = wx.Cursor(image)
+
+    return _homeCursors[size]
 
 
 class FileDropTarget(wx.FileDropTarget):
@@ -393,11 +456,14 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
             return
         point = wx.Point(event.GetX(), event.GetY())
         item, flags, column = self.HitTest(point)
+        isRootDrop = not item or item == self.GetRootItem()
         if not item:
             item = self.GetRootItem()
         if self.IsValidDropTarget(item):
-            # Use link cursor when over prereq/dep columns
-            if self._isPrereqOrDepColumn(column):
+            # Use appropriate cursor based on drop location
+            if isRootDrop:
+                self.SetCursorToHome()
+            elif self._isPrereqOrDepColumn(column):
                 self.SetCursorToLink()
             else:
                 self.SetCursorToDragging()
@@ -463,7 +529,11 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
 
     def SetCursorToLink(self):
         """Set cursor to link icon when over prereq/dep columns."""
-        self.GetMainWindow().SetCursor(_getLinkCursor())
+        self.GetMainWindow().SetCursor(_getLinkCursor(self.GetMainWindow()))
+
+    def SetCursorToHome(self):
+        """Set cursor to home folder icon when over root drop locations."""
+        self.GetMainWindow().SetCursor(_getHomeCursor(self.GetMainWindow()))
 
     def SetCursorToDroppingImpossible(self):
         self.GetMainWindow().SetCursor(wx.Cursor(wx.CURSOR_NO_ENTRY))
@@ -482,10 +552,10 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
         if not self._dragItems:
             event.Skip()
             return
-        # Show hand cursor when over header
+        # Show home folder cursor when over header (indicates root drop)
         headerWin = self.GetHeaderWindow()
         if headerWin:
-            headerWin.SetCursor(wx.Cursor(wx.CURSOR_HAND))
+            headerWin.SetCursor(_getHomeCursor(headerWin))
         # Clear drop feedback in main window since we're over header
         self._ClearDropFeedback()
         event.Skip()
@@ -543,6 +613,9 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
                 return isValid
 
         if dropTarget:
+            # Dropping on hidden root is always valid (makes items root-level)
+            if dropTarget == self.GetRootItem():
+                return True
             invalidDropTargets = set(self._dragItems)
             invalidDropTargets |= set(
                 self.GetItemParent(item) for item in self._dragItems
