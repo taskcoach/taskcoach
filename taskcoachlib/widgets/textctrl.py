@@ -135,11 +135,12 @@ class SingleLineTextCtrl(BaseTextCtrl):
     pass
 
 
-class MultiLineTextCtrl(BaseTextCtrl):
+class _MultiLineTextCtrlInner(BaseTextCtrl):
+    """Inner text control for MultiLineTextCtrl with URL handling."""
     CheckSpelling = True
 
     def __init__(self, parent, text="", *args, **kwargs):
-        kwargs["style"] = kwargs.get("style", 0) | wx.TE_MULTILINE
+        kwargs["style"] = kwargs.get("style", 0) | wx.TE_MULTILINE | wx.BORDER_NONE
         if not i18n.currentLanguageIsRightToLeft():
             # Using wx.TE_RICH will remove the RTL specific menu items
             # from the right-click menu in the TextCtrl, so we don't use
@@ -166,6 +167,173 @@ class MultiLineTextCtrl(BaseTextCtrl):
     def __initializeText(self, text):
         self.AppendText(text)
         self.SetInsertionPoint(0)
+
+
+class MultiLineTextCtrl(wx.Panel):
+    """Multiline text control with internal padding.
+
+    Wraps the text control in a panel with a sizer to provide consistent
+    padding on all platforms (SetMargins doesn't work on GTK).
+    Uses RendererNative to draw native-looking border with focus state.
+    """
+    CheckSpelling = True
+    _nativePadding = None  # Cached native padding value
+
+    @classmethod
+    def _getNativePadding(cls, parent):
+        """Get the native TextCtrl padding by querying the GTK theme."""
+        if cls._nativePadding is not None:
+            return cls._nativePadding
+
+        # Try to get padding from GTK directly via PyGObject
+        if operating_system.isGTK():
+            try:
+                import gi
+                gi.require_version('Gtk', '3.0')
+                from gi.repository import Gtk
+
+                # Create a temporary GtkEntry to get its style context
+                entry = Gtk.Entry()
+                style_context = entry.get_style_context()
+
+                # Get the padding from the style context
+                padding = style_context.get_padding(Gtk.StateFlags.NORMAL)
+
+                # Use horizontal padding (left)
+                if padding.left > 0:
+                    cls._nativePadding = padding.left
+                    return cls._nativePadding
+            except Exception:
+                pass
+
+        # Fallback: try wxPython GetMargins (works on Windows)
+        try:
+            temp = wx.TextCtrl(parent, -1, "X", style=wx.TE_MULTILINE | wx.BORDER_DEFAULT)
+            margins = temp.GetMargins()
+            temp.Destroy()
+
+            if margins.x > 0:
+                cls._nativePadding = margins.x
+                return cls._nativePadding
+        except Exception:
+            pass
+
+        # Last fallback: use a reasonable default
+        cls._nativePadding = 6
+        return cls._nativePadding
+
+    def __init__(self, parent, text="", *args, **kwargs):
+        # Extract style for the panel - remove text-specific styles
+        kwargs.pop("style", 0)
+        super().__init__(parent, style=wx.BORDER_NONE)
+
+        # Track focus state for border drawing
+        self._hasFocus = False
+
+        # Get native padding from theme
+        self._padding = self._getNativePadding(parent)
+
+        # Create the inner text control
+        self._textCtrl = _MultiLineTextCtrlInner(self, text, *args, **kwargs)
+        self._textCtrl.CheckSpelling = self.CheckSpelling
+
+        # Match background colors
+        self.SetBackgroundColour(self._textCtrl.GetBackgroundColour())
+
+        # Use sizer to add padding
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self._textCtrl, 1, wx.EXPAND | wx.ALL, self._padding)
+        self.SetSizer(sizer)
+
+        # Bind focus events to update focus state and repaint
+        self._textCtrl.Bind(wx.EVT_SET_FOCUS, self._onFocus)
+        self._textCtrl.Bind(wx.EVT_KILL_FOCUS, self._onKillFocus)
+
+        # Bind paint event to draw native border
+        self.Bind(wx.EVT_PAINT, self._onPaint)
+
+    def _onFocus(self, event):
+        """Update focus state and repaint."""
+        self._hasFocus = True
+        self.Refresh()
+        event.Skip()
+
+    def _onKillFocus(self, event):
+        """Update focus state and repaint."""
+        self._hasFocus = False
+        self.Refresh()
+        event.Skip()
+
+    def _onPaint(self, event):
+        """Draw native TextCtrl border using RendererNative."""
+        dc = wx.PaintDC(self)
+        renderer = wx.RendererNative.Get()
+        rect = self.GetClientRect()
+        flags = wx.CONTROL_FOCUSED if self._hasFocus else 0
+        renderer.DrawTextCtrl(self, dc, rect, flags)
+
+    # Proxy common TextCtrl methods to the inner control
+    def GetValue(self, *args, **kwargs):
+        return self._textCtrl.GetValue(*args, **kwargs)
+
+    def SetValue(self, *args, **kwargs):
+        return self._textCtrl.SetValue(*args, **kwargs)
+
+    def AppendText(self, *args, **kwargs):
+        return self._textCtrl.AppendText(*args, **kwargs)
+
+    def SetFont(self, *args, **kwargs):
+        return self._textCtrl.SetFont(*args, **kwargs)
+
+    def GetFont(self, *args, **kwargs):
+        return self._textCtrl.GetFont(*args, **kwargs)
+
+    def SetForegroundColour(self, *args, **kwargs):
+        return self._textCtrl.SetForegroundColour(*args, **kwargs)
+
+    def SetBackgroundColour(self, colour):
+        super().SetBackgroundColour(colour)
+        if hasattr(self, '_textCtrl'):
+            self._textCtrl.SetBackgroundColour(colour)
+
+    def SetData(self, data):
+        return self._textCtrl.SetData(data)
+
+    def GetData(self):
+        return self._textCtrl.GetData()
+
+    def CanUndo(self):
+        return self._textCtrl.CanUndo()
+
+    def Undo(self):
+        return self._textCtrl.Undo()
+
+    def CanRedo(self):
+        return self._textCtrl.CanRedo()
+
+    def Redo(self):
+        return self._textCtrl.Redo()
+
+    def SetInsertionPoint(self, *args, **kwargs):
+        return self._textCtrl.SetInsertionPoint(*args, **kwargs)
+
+    def GetInsertionPoint(self):
+        return self._textCtrl.GetInsertionPoint()
+
+    def GetRange(self, *args, **kwargs):
+        return self._textCtrl.GetRange(*args, **kwargs)
+
+    def SetFocus(self):
+        return self._textCtrl.SetFocus()
+
+    def MacCheckSpelling(self, check):
+        return self._textCtrl.MacCheckSpelling(check)
+
+    def Bind(self, event, handler, *args, **kwargs):
+        # Bind text events to inner control, others to panel
+        if event in (wx.EVT_TEXT, wx.EVT_TEXT_URL, wx.EVT_TEXT_ENTER):
+            return self._textCtrl.Bind(event, handler, *args, **kwargs)
+        return super().Bind(event, handler, *args, **kwargs)
 
 
 class StaticTextWithToolTip(wx.StaticText):
