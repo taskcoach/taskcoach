@@ -330,7 +330,7 @@ _EXTRA_HEIGHT = 4
 
 _MAX_WIDTH = 30000  # pixels; used by OnPaint to redraw only exposed items
 
-_DRAG_TIMER_TICKS = 250   # minimum drag wait time in ms
+_DRAG_TIMER_TICKS = 250   # not used for drag detection anymore (3-pixel threshold is sufficient)
 _FIND_TIMER_TICKS = 500   # minimum find wait time in ms
 _EDIT_TIMER_TICKS = 250 # minimum edit wait time in ms
 
@@ -3898,15 +3898,10 @@ class TreeListMainWindow(CustomTreeCtrl):
             if item is None:
                 return # we need an item to dragging
 
-            # determine drag start
-            if self._dragCount == 0:
-                self._dragTimer.Start(_DRAG_TIMER_TICKS, wx.TIMER_ONE_SHOT)
-
+            # determine drag start - require minimum 3 pixel movement
             self._dragCount += 1
             if self._dragCount < 3:
                 return # minimum drag 3 pixel
-            if self._dragTimer.IsRunning():
-                return
 
             # we're going to drag
             self._dragCount = 0
@@ -4073,9 +4068,13 @@ class TreeListMainWindow(CustomTreeCtrl):
                 self._current = self._key_current = item # make the new item the current item
                 self._left_down_selection = True
 
-            # For some reason, Windows isn't recognizing a left double-click,
-            # so we need to simulate it here.  Allow 200 milliseconds for now.
             if event.LeftDClick():
+                # For double-click, always ensure the clicked item is selected
+                # This fixes fast double-click opening the wrong (previously selected) item
+                if self._current != item:
+                    unselect_others = not ((event.ShiftDown() or event.CmdDown()) and self.HasAGWFlag(wx.TR_MULTIPLE))
+                    self.DoSelectItem(item, unselect_others, event.ShiftDown())
+                    self._current = self._key_current = item
 
                 # double clicking should not start editing the item label
                 self._editTimer.Stop()
