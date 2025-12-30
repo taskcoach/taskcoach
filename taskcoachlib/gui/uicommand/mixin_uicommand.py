@@ -26,7 +26,9 @@ class NeedsSelectionMixin(object):
     """Mixin class for UI commands that need at least one selected item."""
 
     def enabled(self, event):
-        return super().enabled(event) and self.viewer.curselection()
+        # Use forceUpdate=True to get fresh selection, not stale cache.
+        # This fixes double-click on inactive pane not opening editor.
+        return super().enabled(event) and self.viewer.curselection(forceUpdate=True)
 
 
 class NeedsSelectedCategorizableMixin(NeedsSelectionMixin):
