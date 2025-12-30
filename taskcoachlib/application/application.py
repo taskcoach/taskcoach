@@ -534,7 +534,7 @@ class Application(object, metaclass=patterns.Singleton):
 
         # Get filename from args or last file
         if self._args:
-            filename = self._args[0].decode(sys.getfilesystemencoding())
+            filename = self._args[0]
         else:
             filename = self.settings.get("file", "lastfile")
 

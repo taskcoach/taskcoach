@@ -129,7 +129,7 @@ class IOController(object):
                 'skip' = file locked, user chose not to break (start fresh)
         """
         if commandLineArgs:
-            filename = commandLineArgs[0].decode(sys.getfilesystemencoding())
+            filename = commandLineArgs[0]
         else:
             filename = self.__settings.get("file", "lastfile")
         if filename:
