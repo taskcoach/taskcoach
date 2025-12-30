@@ -527,10 +527,10 @@ class TimelineViewer(BaseTaskTreeViewer):
         edit = uicommand.Edit(viewer=self)
         edit(item)
 
-    def curselection(self):
+    def curselection(self, forceUpdate=False):  # pylint: disable=W0613
         # Override curselection, because there is no need to translate indices
         # back to domain objects. Our widget already returns the selected domain
-        # object itself.
+        # object itself. forceUpdate is ignored since widget always returns fresh data.
         return self.widget.curselection()
 
     def bounds(self, item):
@@ -749,10 +749,10 @@ class SquareTaskViewer(BaseTaskTreeViewer):
             self.__zero = 0
         self.refresh()
 
-    def curselection(self):
+    def curselection(self, forceUpdate=False):  # pylint: disable=W0613
         # Override curselection, because there is no need to translate indices
         # back to domain objects. Our widget already returns the selected domain
-        # object itself.
+        # object itself. forceUpdate is ignored since widget always returns fresh data.
         return self.widget.curselection()
 
     def nrOfVisibleTasks(self):

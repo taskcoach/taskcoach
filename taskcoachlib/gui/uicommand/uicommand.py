@@ -1355,8 +1355,10 @@ class Edit(mixin_uicommand.NeedsSelectionMixin, ViewerCommand):
             columnName = event.columnName
         except AttributeError:
             columnName = ""
+        # Use forceUpdate=True to ensure we get the current selection,
+        # not a stale cached value (important for fast double-click)
         editor = self.viewer.editItemDialog(
-            self.viewer.curselection(), self.bitmap, columnName
+            self.viewer.curselection(forceUpdate=True), self.bitmap, columnName
         )
         editor.Show(show)
 

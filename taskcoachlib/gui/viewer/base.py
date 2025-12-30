@@ -401,9 +401,17 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         self.__curselection = items
         self.widget.select(items)
 
-    def curselection(self):
+    def curselection(self, forceUpdate=False):
         """Return a list of items (domain objects) currently selected in our
-        widget."""
+        widget.
+
+        If forceUpdate is True, refresh the cached selection from the widget
+        before returning. This is useful when selection may have changed but
+        the cached value hasn't been updated yet (e.g., during double-click
+        handling where wx.CallAfter hasn't executed yet).
+        """
+        if forceUpdate:
+            self.updateSelection(sendViewerStatusEvent=False)
         return self.__curselection
 
     def curselectionIsInstanceOf(self, class_):
