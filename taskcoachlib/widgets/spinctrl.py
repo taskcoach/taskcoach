@@ -41,12 +41,12 @@ class SpinCtrl(wx.Panel):
         **kwargs
     ):  # pylint: disable=W0613
         super().__init__(parent, wxId, pos=pos, size=size, name=name)
-        minValue = kwargs["min"] if "min" in kwargs else -self.maxRange
-        maxValue = kwargs["max"] if "max" in kwargs else self.maxRange
-        value = min(maxValue, max(int(value), minValue))
+        self._minValue = kwargs["min"] if "min" in kwargs else -self.maxRange
+        self._maxValue = kwargs["max"] if "max" in kwargs else self.maxRange
+        value = min(self._maxValue, max(int(value), self._minValue))
         self._textCtrl = wx.TextCtrl(self, value=str(value))
         self._spinButton = wx.SpinButton(self)
-        self._spinButton.SetRange(minValue, maxValue)
+        self._spinButton.SetRange(self._minValue, self._maxValue)
         self._spinButton.SetValue(value)
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -55,17 +55,27 @@ class SpinCtrl(wx.Panel):
         self._textCtrl.Bind(wx.EVT_TEXT, self.onText)
         self._textCtrl.Bind(wx.EVT_KEY_DOWN, self.onKey)
         self._textCtrl.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
+        self._textCtrl.Bind(wx.EVT_KILL_FOCUS, self.onKillFocus)
         self._spinButton.Bind(wx.EVT_SPIN, self.onSpin)
 
     def onText(self, event):
+        """Handle text changes. Allow empty field during editing - validation
+        happens on focus loss. Only fire events when value actually changes."""
         event.Skip()
+        text = event.GetString().strip()
+        if not text:
+            # Allow empty field during editing - will be fixed on focus loss
+            return
         try:
-            newValue = int(event.GetString())
+            newValue = int(text)
+            # Clamp to valid range
+            newValue = min(self._maxValue, max(newValue, self._minValue))
             if newValue != self._spinButton.GetValue():
                 self._spinButton.SetValue(newValue)
-                self.__postEvent()
+                # Don't post event on every keystroke - only on focus loss
         except (ValueError, OverflowError):
-            self._textCtrl.SetValue(str(self._spinButton.GetValue()))
+            # Allow partial/invalid input during editing - will be fixed on focus loss
+            pass
 
     def onKey(self, event):
         deltaByKeyCode = {
@@ -92,6 +102,34 @@ class SpinCtrl(wx.Panel):
     def onSetFocus(self, event):
         self._textCtrl.SelectAll()
         event.Skip()
+
+    def onKillFocus(self, event):
+        """Handle focus loss - validate and fix the value, then notify."""
+        event.Skip()
+        text = self._textCtrl.GetValue().strip()
+        if not text:
+            # Empty field - use closest valid value to 0
+            if self._minValue <= 0 <= self._maxValue:
+                newValue = 0
+            elif self._minValue > 0:
+                newValue = self._minValue
+            else:  # self._maxValue < 0
+                newValue = self._maxValue
+        else:
+            try:
+                newValue = int(text)
+                # Clamp to valid range
+                newValue = min(self._maxValue, max(newValue, self._minValue))
+            except (ValueError, OverflowError):
+                # Invalid input - revert to current valid value
+                newValue = self._spinButton.GetValue()
+
+        # Update both controls to show the validated value
+        if newValue != self._spinButton.GetValue():
+            self._spinButton.SetValue(newValue)
+        self._textCtrl.SetValue(str(newValue))
+        # Post event to notify listeners of the final value
+        self.__postEvent()
 
     def onSpin(self, event):  # pylint: disable=W0613
         self._textCtrl.SetValue(str(self._spinButton.GetValue()))
