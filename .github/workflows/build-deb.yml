@@ -80,7 +80,7 @@ jobs:
             lintian \
             fakeroot
 
-      - name: Get version info
+      - name: Get version info and update debian/changelog
         id: version
         run: |
           # Extract version from meta/data.py
@@ -92,6 +92,19 @@ jobs:
           ")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
+
+          # Update debian/changelog with the correct version
+          # This ensures the .deb package metadata matches the actual version
+          CODENAME="${{ matrix.codename }}"
+          DATE=$(date -R)
+          echo "taskcoach (${VERSION}-1) ${CODENAME}; urgency=medium" > debian/changelog
+          echo "" >> debian/changelog
+          echo "  * Release ${VERSION}" >> debian/changelog
+          echo "" >> debian/changelog
+          echo " -- Task Coach developers <developers@taskcoach.org>  ${DATE}" >> debian/changelog
+          echo "" >> debian/changelog
+          echo "Updated debian/changelog:"
+          cat debian/changelog
 
       - name: Bundle pip packages for distros with old versions
         run: |
