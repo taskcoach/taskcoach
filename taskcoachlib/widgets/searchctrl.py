@@ -97,10 +97,7 @@ class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
         x, y = rect[0], rect[1] + rect[3] + 3
         # Hide tooltip first to avoid Wayland popup parent conflict
         self.HideTip()
-        # Use top-level parent for Wayland compatibility
-        pos = self.ClientToScreen(wx.Point(x, y))
-        pos = self.GetTopLevelParent().ScreenToClient(pos)
-        self.GetTopLevelParent().PopupMenu(self.Getmenu(), pos)
+        super().PopupMenu(self.Getmenu(), wx.Point(x, y))
 
     def bindEventHandlers(self):
         # pylint: disable=W0142,W0612,W0201
