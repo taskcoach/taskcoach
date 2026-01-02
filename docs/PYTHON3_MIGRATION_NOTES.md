@@ -17,6 +17,7 @@ This document captures technical issues, fixes, and refactorings discovered duri
 11. [GTK BitmapComboBox Icon Clipping](#gtk-bitmapcombobox-icon-clipping)
 12. [Known Issues](#known-issues)
 13. [Future Work](#future-work)
+14. [Internationalization and Locale Issues](#internationalization-and-locale-issues)
 
 ---
 
@@ -2389,6 +2390,186 @@ A minimal test app exists at `test_aui_toolbar_jitter.py` that reproduces the is
    - Review all wx.FONTSTYLE_* usage
    - Check for other deprecated constants/methods
 
+5. **Internationalization Modernization**
+   - Migrate from custom `po2dict.py` translation system to standard GNU gettext
+   - Replace custom `Translator` class with `wx.GetTranslation`
+   - Convert `.po` files to `.mo` using standard `msgfmt`
+   - Adopt standard `locale/<lang>/LC_MESSAGES/` directory structure
+   - See [Internationalization and Locale Issues](#internationalization-and-locale-issues) for details
+
+---
+
+## Internationalization and Locale Issues
+
+### Problem Overview
+
+**Date Fixed:** January 2026
+**Affected Components:** Language detection, translation loading, wx.Locale initialization
+**Root Cause:** Deprecated Python APIs, wx.Locale lifecycle issues, missing diagnostic logging
+
+During investigation of a segfault on Ubuntu 24.04 with German locale, several i18n-related issues were discovered:
+
+| Issue | Severity | Status |
+|-------|----------|--------|
+| `locale.getdefaultlocale()` deprecated since Python 3.11 | High | Fixed |
+| wx.Locale object lifecycle can cause segfaults | High | Fixed |
+| No diagnostic logging for locale/i18n issues | Medium | Fixed |
+| Custom translation system diverges from standard gettext | Low | Future work |
+
+### Root Cause Analysis
+
+#### Issue 1: Deprecated `locale.getdefaultlocale()`
+
+`locale.getdefaultlocale()` was deprecated in Python 3.11 and will be removed in Python 3.15. More importantly, it doesn't reliably read the `LANG` environment variable on Linux, returning incorrect values.
+
+**Example of the problem:**
+```
+User's environment:  LANG=de_DE.UTF-8
+getdefaultlocale():  ('en_US', 'UTF-8')  # Wrong!
+```
+
+This caused Task Coach to detect the wrong language for users with non-English locales.
+
+#### Issue 2: wx.Locale Object Lifecycle
+
+According to wxPython documentation, the old C++ wx.Locale object must be explicitly deleted before creating a new one. Failure to do so can cause segfaults:
+
+> "The old C++ object needs to be deleted before the new one is created, and if we just assign a new instance to the old Python variable, the old C++ locale will not be destroyed soon enough, likely causing a crash."
+
+Source: [wxPython Locale Issue Discussion](https://discuss.wxpython.org/t/questions-on-the-locale-issue/36084)
+
+#### Issue 3: No Diagnostic Logging
+
+When locale/translation issues occurred, there was no way to diagnose them from the log file. The user would only see a segfault with no context about what language was being loaded or what locale operations were attempted.
+
+### Fixes Applied
+
+#### Fix 1: Replace Deprecated `locale.getdefaultlocale()` (application.py, i18n/__init__.py)
+
+```python
+# BEFORE - Broken (deprecated, unreliable on Linux)
+language = locale.getdefaultlocale()[0]
+
+# AFTER - Fixed (reads environment variables directly)
+def _get_system_language():
+    # Check LANG and LC_ALL environment variables first
+    lang = os.environ.get('LANG', os.environ.get('LC_ALL', ''))
+    if lang:
+        # Strip encoding suffix (e.g., "de_DE.UTF-8" -> "de_DE")
+        lang = lang.split('.')[0]
+        if lang and lang != "C" and lang != "POSIX":
+            return lang
+
+    # Fallback to locale.getlocale()
+    try:
+        lang = locale.getlocale(locale.LC_MESSAGES)[0]
+        if lang and lang != "C" and lang != "POSIX":
+            return lang
+    except Exception:
+        pass
+
+    return "en_US"
+```
+
+#### Fix 2: wx.Locale Lifecycle Management (i18n/__init__.py)
+
+```python
+# BEFORE - Broken (old locale not deleted)
+self.__locale = wx.Locale(languageInfo.Language)
+
+# AFTER - Fixed (explicitly delete old locale first)
+# Initialize to None in __init__
+self.__locale = None
+
+# In _setLocale():
+if self.__locale is not None:
+    del self.__locale
+    self.__locale = None
+
+self.__locale = wx.Locale(languageInfo.Language)
+```
+
+#### Fix 3: Comprehensive Locale Logging (application.py, i18n/__init__.py)
+
+Added `_log_locale_info()` function that logs:
+- Environment variables: LANG, LC_ALL, LC_CTYPE, LC_MESSAGES, LC_TIME, LC_NUMERIC, LC_COLLATE, LANGUAGE
+- Python locale settings: `locale.getdefaultlocale()`, `locale.getlocale()`, `locale.getpreferredencoding()`
+- System encoding: `sys.getdefaultencoding()`, `sys.getfilesystemencoding()`
+
+Added `[i18n]` prefixed logging for:
+- Translation module loading attempts and failures
+- wx.Locale creation attempts
+- Locale setting operations
+
+**Example log output after fix:**
+```
+Locale/Language Info:
+  LANG: de_DE.UTF-8
+  LC_CTYPE: de_DE.UTF-8
+  locale.getdefaultlocale(): ('de_DE', 'UTF-8')
+  locale.getlocale(): ('de_DE', 'UTF-8')
+  locale.getpreferredencoding(): UTF-8
+  sys.getdefaultencoding(): utf-8
+  sys.getfilesystemencoding(): utf-8
+...
+[i18n] Initializing Translator with language: 'de_DE'
+[i18n] Could not load translation module 'de_DE': No module named 'de_DE'
+[i18n] Could not load translation module 'de': No module named 'de'
+[i18n] No translation module found for language 'de_DE' (tried: ['de_DE', 'de']). Using English.
+[i18n] Setting locale for language: 'de_DE'
+[i18n] Trying wx.Locale for: 'de_DE'
+[i18n] Found wx language info: de_DE (Language=376)
+[i18n] Created wx.Locale successfully
+```
+
+### Future Work: Modernize Translation System
+
+#### Current Implementation (Custom)
+
+Task Coach uses a custom translation system:
+
+1. **`po2dict.py`** converts `.po` files to Python dict modules (based on `msgfmt.py`)
+2. **`Translator` class** looks up translations in these Python dicts
+3. Translation modules stored as `.py` files in `taskcoachlib/i18n/`
+4. Custom `translate()` function instead of standard `wx.GetTranslation`
+
+**No documented reason exists for this custom approach.** It appears to be legacy from the early Python 2 era.
+
+#### Standard Best Practice (Recommended)
+
+Modern wxPython applications use:
+
+1. **GNU gettext `.mo` files** created with standard `msgfmt` tool
+2. **`wx.GetTranslation`** for translation lookup: `_ = wx.GetTranslation`
+3. Standard directory structure: `locale/<lang>/LC_MESSAGES/*.mo`
+4. **`wx.Locale.AddCatalog()`** to load translation catalogs
+
+#### Benefits of Migration
+
+| Benefit | Description |
+|---------|-------------|
+| Standard tooling | Poedit, msgfmt, xgettext work directly |
+| Familiar workflow | Translators use standard .po/.mo process |
+| Native wx strings | wxPython dialogs/buttons auto-translated |
+| Less code | Remove custom Translator class and po2dict.py |
+| Better compatibility | Works with modern Python/wxPython versions |
+
+#### Migration Steps (Future)
+
+1. Convert `.po` files to `.mo` using standard `msgfmt`
+2. Replace custom `Translator` class with `wx.GetTranslation`
+3. Set `_ = wx.GetTranslation` in builtins
+4. Use `wx.Locale.AddCatalog()` for translation catalogs
+5. Adopt standard `locale/<lang>/LC_MESSAGES/` directory structure
+6. Remove `po2dict.py` and generated Python translation modules
+
+### References
+
+- [wxPython i18n Wiki](https://wiki.wxpython.org/How%20to%20use%20the%20Internationalization%20-%20i18n%20(Phoenix))
+- [Python locale.getdefaultlocale() deprecation](https://github.com/python/cpython/issues/90817)
+- [wxPython Locale Questions](https://discuss.wxpython.org/t/questions-on-the-locale-issue/36084)
+- [Python gettext documentation](https://docs.python.org/3/library/gettext.html)
+
 ---
 
 ## Contributing to This Document
@@ -2403,4 +2584,4 @@ When adding new technical notes:
 
 ---
 
-**Last Updated:** December 20, 2025
+**Last Updated:** January 1, 2026

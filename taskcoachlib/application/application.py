@@ -162,6 +162,45 @@ def _log_required_packages():
         log_message(f"  {pkg_name}: {version}")
 
 
+def _log_locale_info():
+    """Log locale and language settings for debugging i18n issues."""
+    import locale as locale_module
+
+    log_message("-" * 60)
+    log_message("Locale/Language Info:")
+
+    # Environment variables related to locale
+    locale_vars = ['LANG', 'LC_ALL', 'LC_CTYPE', 'LC_MESSAGES', 'LC_TIME',
+                   'LC_NUMERIC', 'LC_COLLATE', 'LANGUAGE']
+    for var in locale_vars:
+        value = os.environ.get(var)
+        if value:
+            log_message(f"  {var}: {value}")
+
+    # Python locale settings
+    try:
+        default_locale = locale_module.getdefaultlocale()
+        log_message(f"  locale.getdefaultlocale(): {default_locale}")
+    except Exception as e:
+        log_message(f"  locale.getdefaultlocale(): ERROR - {e}")
+
+    try:
+        current_locale = locale_module.getlocale()
+        log_message(f"  locale.getlocale(): {current_locale}")
+    except Exception as e:
+        log_message(f"  locale.getlocale(): ERROR - {e}")
+
+    try:
+        preferred_encoding = locale_module.getpreferredencoding()
+        log_message(f"  locale.getpreferredencoding(): {preferred_encoding}")
+    except Exception as e:
+        log_message(f"  locale.getpreferredencoding(): ERROR - {e}")
+
+    # sys.getdefaultencoding and filesystem encoding
+    log_message(f"  sys.getdefaultencoding(): {sys.getdefaultencoding()}")
+    log_message(f"  sys.getfilesystemencoding(): {sys.getfilesystemencoding()}")
+
+
 def _log_linux_environment_early():
     """Log Linux environment variables (no wx needed)."""
     log_message(f"XDG_SESSION_TYPE: {os.environ.get('XDG_SESSION_TYPE', 'not set')}")
@@ -172,6 +211,9 @@ def _log_linux_environment_early():
     desktop = os.environ.get('XDG_CURRENT_DESKTOP',
               os.environ.get('DESKTOP_SESSION', 'unknown'))
     log_message(f"Desktop Environment: {desktop}")
+
+    # Log locale info (important for debugging i18n segfaults)
+    _log_locale_info()
 
 
 def _log_wx_info():
@@ -257,6 +299,9 @@ def _log_windows_environment():
     except Exception as e:
         log_message(f"System DPI: unavailable ({e})")
 
+    # Log locale info on Windows too
+    _log_locale_info()
+
 
 def _log_macos_environment():
     """Log macOS-specific GUI environment info."""
@@ -304,6 +349,9 @@ def _log_macos_environment():
             log_message("WindowServer: accessible")
     except Exception:
         pass
+
+    # Log locale info on macOS too
+    _log_locale_info()
 
 
 # pylint: disable=W0404
@@ -606,9 +654,22 @@ Break the lock?"""
             # Get language as set by the user or externally (e.g. PortableApps)
             language = settings.get("view", "language")
         if not language:
-            # Use the user's locale
-            language = locale.getdefaultlocale()[0]
-            if language == "C":
+            # Use the user's locale from environment variables
+            # Note: locale.getdefaultlocale() is deprecated since Python 3.11
+            # and doesn't reliably read LANG on Linux. We check env vars directly.
+            language = os.environ.get('LANG', os.environ.get('LC_ALL', ''))
+            if language:
+                # Strip encoding suffix (e.g., "de_DE.UTF-8" -> "de_DE")
+                language = language.split('.')[0]
+                if not language or language == "C" or language == "POSIX":
+                    language = None
+        if not language:
+            # Fallback to locale.getlocale() which may work after setlocale
+            try:
+                language = locale.getlocale(locale.LC_MESSAGES)[0]
+                if language == "C" or language == "POSIX":
+                    language = None
+            except Exception:
                 language = None
         if not language:
             # Fall back on what the majority of our users use

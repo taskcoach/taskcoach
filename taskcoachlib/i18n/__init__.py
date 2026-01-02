@@ -21,8 +21,16 @@ from taskcoachlib import patterns, operating_system
 from . import po2dict
 
 
+def _log_i18n(msg):
+    """Log i18n-related messages for debugging."""
+    print(f"[i18n] {msg}")
+
+
 class Translator(metaclass=patterns.Singleton):
     def __init__(self, language):
+        self.__locale = None  # Initialize to None for proper lifecycle management
+        _log_i18n(f"Initializing Translator with language: {language!r}")
+
         load = (
             self._loadPoFile if language.endswith(".po") else self._loadModule
         )
@@ -50,12 +58,20 @@ class Translator(metaclass=patterns.Singleton):
     def _loadModule(self, language):
         """Load the translation from a python module that has been
         created from a .po file with po2dict before."""
+        module = None
+        tried_modules = []
         for moduleName in self._localeStrings(language):
+            tried_modules.append(moduleName)
             try:
                 module = __import__(moduleName, globals())
+                _log_i18n(f"Loaded translation module: {moduleName}")
                 break
-            except ImportError:
+            except ImportError as e:
+                _log_i18n(f"Could not load translation module '{moduleName}': {e}")
                 module = None
+        if module is None:
+            _log_i18n(f"No translation module found for language '{language}' "
+                      f"(tried: {tried_modules}). Using English.")
         return module, language
 
     def _installModule(self, module):
@@ -66,36 +82,79 @@ class Translator(metaclass=patterns.Singleton):
             self.__encoding = module.encoding
 
     def _setLocale(self, language):
-        """Try to set the locale, trying possibly multiple localeStrings."""
+        """Try to set the locale, trying possibly multiple localeStrings.
+
+        IMPORTANT: wx.Locale objects must be properly managed to avoid segfaults.
+        The old locale must be deleted before creating a new one.
+        See: https://discuss.wxpython.org/t/questions-on-the-locale-issue/36084
+        """
+        _log_i18n(f"Setting locale for language: {language!r}")
+
         if not operating_system.isGTK():
-            locale.setlocale(locale.LC_ALL, "")
+            try:
+                locale.setlocale(locale.LC_ALL, "")
+                _log_i18n("Set Python locale to system default (non-GTK)")
+            except locale.Error as e:
+                _log_i18n(f"Failed to set Python locale: {e}")
+
         # Set the wxPython locale:
+        locale_set = False
         for localeString in self._localeStrings(language):
+            _log_i18n(f"Trying wx.Locale for: {localeString!r}")
             languageInfo = wx.Locale.FindLanguageInfo(localeString)
             if languageInfo:
-                self.__locale = wx.Locale(
-                    languageInfo.Language
-                )  # pylint: disable=W0201
-                # Add the wxWidgets message catalog. This is really only for
-                # py2exe'ified versions, but it doesn't seem to hurt on other
-                # platforms...
-                localeDir = os.path.join(
-                    wx.StandardPaths.Get().GetResourcesDir(), "locale"
-                )
-                self.__locale.AddCatalogLookupPathPrefix(localeDir)
-                self.__locale.AddCatalog("wxstd")
-                break
+                _log_i18n(f"Found wx language info: {languageInfo.CanonicalName} "
+                          f"(Language={languageInfo.Language})")
+
+                # CRITICAL: Delete old locale before creating new one to prevent
+                # segfaults. The C++ locale object must be destroyed first.
+                if self.__locale is not None:
+                    _log_i18n("Deleting previous wx.Locale object")
+                    del self.__locale
+                    self.__locale = None
+
+                try:
+                    self.__locale = wx.Locale(languageInfo.Language)
+                    _log_i18n(f"Created wx.Locale successfully")
+
+                    # Add the wxWidgets message catalog. This is really only for
+                    # py2exe'ified versions, but it doesn't seem to hurt on other
+                    # platforms...
+                    localeDir = os.path.join(
+                        wx.StandardPaths.Get().GetResourcesDir(), "locale"
+                    )
+                    self.__locale.AddCatalogLookupPathPrefix(localeDir)
+                    self.__locale.AddCatalog("wxstd")
+                    locale_set = True
+                    break
+                except Exception as e:
+                    _log_i18n(f"Failed to create wx.Locale for {localeString}: {e}")
+                    self.__locale = None
+            else:
+                _log_i18n(f"No wx language info found for: {localeString!r}")
+
+        if not locale_set:
+            _log_i18n(f"WARNING: Could not set wx.Locale for language '{language}'")
+
         if operating_system.isGTK():
             try:
                 locale.setlocale(locale.LC_ALL, "")
-            except locale.Error:
+                _log_i18n("Set Python locale to system default (GTK)")
+            except locale.Error as e:
                 # Mmmh. wx will display a message box later, so don't do anything.
-                pass
+                _log_i18n(f"Failed to set Python locale on GTK: {e}")
+
         self._fixBrokenLocales()
 
     def _fixBrokenLocales(self):
-        current_language = locale.getlocale(locale.LC_TIME)[0]
+        try:
+            current_language = locale.getlocale(locale.LC_TIME)[0]
+        except Exception as e:
+            _log_i18n(f"Failed to get LC_TIME locale: {e}")
+            return
+
         if current_language and "_NO" in current_language:
+            _log_i18n(f"Detected problematic Norwegian locale: {current_language}")
             # nb_BO and ny_NO cause crashes in the wx.DatePicker. Set the
             # time part of the locale to some other locale. Since we don't
             # know which ones are available we try a few. First we try the
@@ -107,9 +166,14 @@ class Translator(metaclass=patterns.Singleton):
             for lang in ["", "en_GB.utf8", "C"]:
                 try:
                     locale.setlocale(locale.LC_TIME, lang)
-                except locale.Error:
+                    _log_i18n(f"Set LC_TIME to: {lang!r}")
+                except locale.Error as e:
+                    _log_i18n(f"Failed to set LC_TIME to {lang!r}: {e}")
                     continue
-                current_language = locale.getlocale(locale.LC_TIME)[0]
+                try:
+                    current_language = locale.getlocale(locale.LC_TIME)[0]
+                except Exception:
+                    break
                 if current_language and "_NO" in current_language:
                     continue
                 else:
@@ -141,8 +205,35 @@ def currentLanguageIsRightToLeft():
     return wx.GetApp().GetLayoutDirection() == wx.Layout_RightToLeft
 
 
+def _get_system_language():
+    """Get the system language from environment or locale settings.
+
+    Note: locale.getdefaultlocale() is deprecated since Python 3.11 and
+    doesn't reliably read LANG environment variable on Linux. We check
+    environment variables directly first.
+    """
+    # Check LANG and LC_ALL environment variables first
+    lang = os.environ.get('LANG', os.environ.get('LC_ALL', ''))
+    if lang:
+        # Strip encoding suffix (e.g., "de_DE.UTF-8" -> "de_DE")
+        lang = lang.split('.')[0]
+        if lang and lang != "C" and lang != "POSIX":
+            return lang
+
+    # Fallback to locale.getlocale()
+    try:
+        lang = locale.getlocale(locale.LC_MESSAGES)[0]
+        if lang and lang != "C" and lang != "POSIX":
+            return lang
+    except Exception:
+        pass
+
+    # Final fallback
+    return "en_US"
+
+
 def translate(string):
-    return Translator(locale.getdefaultlocale()[0]).translate(string)
+    return Translator(_get_system_language()).translate(string)
 
 
 _ = translate  # This prevents a warning from pygettext.py
