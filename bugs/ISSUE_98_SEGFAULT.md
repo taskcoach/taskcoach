@@ -243,34 +243,21 @@ sudo apt install linux-generic-hwe-24.04
    cat ~/.config/gtk-3.0/gtk.css
    ```
 
-2. **Display Scale Factor:** What is the KDE display scale setting?
-   ```bash
-   echo $QT_SCALE_FACTOR
-   echo $GDK_SCALE
-   ```
+2. **Fresh Install Test:** Does a fresh Ubuntu 24.04.3 install (with kernel 6.14) work?
 
-3. **Fresh Install Test:** Does a fresh Ubuntu 24.04.3 install (not upgrade) with kernel 6.14 work?
+### Already Known From Logs
 
-4. **X11 vs Wayland:** Is KDE running on X11 or Wayland?
-   ```bash
-   echo $XDG_SESSION_TYPE
-   ```
-
-5. **Scaling Environment Variables:** What display-related environment variables are set?
-   ```bash
-   env | grep -E "(SCALE|DPI|HI|DISPLAY|GDK|QT)"
-   ```
+- **X11 vs Wayland:** X11 (logs show `XDG_SESSION_TYPE: x11`)
+- **Display:** Logs show display geometry and PPI
+- **Desktop:** KDE
 
 ---
 
 ## Next Steps
 
-1. **Reproduce on HiDPI:** Need access to a HiDPI display system to reproduce
-2. **Add display diagnostics:** Enhance startup logging to capture:
-   - Actual vs reported display geometry
-   - Scale factors (GDK_SCALE, QT_SCALE_FACTOR)
-   - Display PPI
-3. **Test with different scaling:** See if the crash occurs at 100% vs 200% scaling
+1. **Ask user to test different kernel:** The primary suspect is kernel 6.8.0-90. Ask user to boot with older kernel (6.8.0-84 or earlier) or install HWE kernel (6.14).
+
+2. **Wait for user feedback:** Cannot reproduce without access to a system with kernel 6.8.0-90.
 
 ---
 
