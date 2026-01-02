@@ -66,7 +66,7 @@ These GTK theme parsing warnings may indicate a corrupted or incompatible GTK th
 
 ## Test Systems Reported in Issue #98
 
-### System 1: wolftune (Original Reporter) - CRASHES
+### System 1: thomas2net (Original Reporter) - CRASHES
 
 | Component | Value |
 |-----------|-------|
@@ -79,7 +79,7 @@ These GTK theme parsing warnings may indicate a corrupted or incompatible GTK th
 | Display | HiDPI 3840x2400 (reported as 1920x1200) |
 | **Result** | **CRASH** - Segfault on startup |
 
-### System 2: thomas2net Computer #1 - CRASHES
+### System 2: thomas2net Computer #2 - CRASHES
 
 | Component | Value |
 |-----------|-------|
@@ -91,7 +91,7 @@ These GTK theme parsing warnings may indicate a corrupted or incompatible GTK th
 | Display | 1920x1200 (standard DPI) |
 | **Result** | **CRASH** - KDE: won't start; MATE: crashes on adding task |
 
-### System 3: thomas2net Computer #2 - WORKS
+### System 3: thomas2net Computer #3 - WORKS
 
 | Component | Value |
 |-----------|-------|
