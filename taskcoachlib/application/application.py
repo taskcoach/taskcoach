@@ -85,8 +85,20 @@ def _log_environment():
     log_message(f"wxPython {wx.version()}")
     log_message(f"Platform: {platform.platform()}")
 
-    # Log GTK/glibc info on Linux
+    # Log GTK/glibc/distro info on Linux
     if platform.system() == 'Linux':
+        # Log distro version (e.g., "Ubuntu 24.04.3 LTS (Noble Numbat)")
+        try:
+            os_release = platform.freedesktop_os_release()
+            distro_name = os_release.get('NAME', 'Unknown')
+            distro_version = os_release.get('VERSION', '')
+            if distro_version:
+                log_message(f"Distro: {distro_name} {distro_version}")
+            else:
+                log_message(f"Distro: {distro_name}")
+        except OSError:
+            pass
+
         try:
             import ctypes
             libc = ctypes.CDLL('libc.so.6')
