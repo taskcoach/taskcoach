@@ -823,12 +823,6 @@ class FeaturesPage(SettingsPage):
                 _("Enable SyncML"),
                 flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTRE_VERTICAL, wx.EXPAND),
             )
-        self.addBooleanSetting(
-            "feature",
-            "iphone",
-            _("Enable iPhone synchronization"),
-            flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTRE_VERTICAL, wx.EXPAND),
-        )
         if operating_system.isGTK():
             self.addBooleanSetting(
                 "feature",
