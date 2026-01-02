@@ -8,6 +8,7 @@ This document tracks planned improvements and known issues to address in future 
 - [Configuration Naming Convention](#configuration-naming-convention)
 - [Refactoring Save Patterns](#refactoring-save-patterns)
 - [Backup Feature Review](#backup-feature-review)
+- [Setup/Installation Issues](#setupinstallation-issues)
 - [Other TODOs](#other-todos)
 
 ---
@@ -136,10 +137,39 @@ The backup/restore feature needs review - testing showed unexpected restore beha
 
 ---
 
+## Setup/Installation Issues
+
+### setup.py Does Not Install Prerequisites
+
+**Problem:** Running `python3 setup.py` on a fresh system fails because required dependencies (setuptools, pip, wxPython) are not installed and setup.py does not handle this.
+
+**Current behavior:**
+- `python3 setup.py develop` fails with `ModuleNotFoundError: No module named 'setuptools'`
+- Even if setuptools is present, wxPython must be installed separately
+- No clear error message guiding users to install prerequisites
+
+**Expected behavior:**
+- setup.py should either install prerequisites automatically, or
+- Provide clear error messages with installation instructions, or
+- README should have complete "from scratch" installation instructions
+
+**Workaround:** Users must manually install system packages:
+```bash
+# Ubuntu/Debian
+sudo apt install python3-pip python3-setuptools python3-wxgtk4.0
+```
+
+**TODO:**
+- [ ] Add prerequisite checks to setup.py with helpful error messages
+- [ ] Update README with complete fresh-install instructions
+- [ ] Consider using pyproject.toml for modern Python packaging
+
+---
+
 ## Other TODOs
 
 *Add future TODO items here as they are identified.*
 
 ---
 
-**Last Updated:** December 2025
+**Last Updated:** January 2026

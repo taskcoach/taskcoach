@@ -439,8 +439,7 @@ Look for binary wheels (`.whl`) for Linux.
 - wxPython Team: Merged PR #2088 into 4.2.4
 
 **TaskCoach Integration**:
-- Claude (Anthropic AI): Integration, testing, documentation
-- Session: claude/add-module-loading-logs-01SvgNHroJJfg6fZCGp2mqd5
+- TaskCoach maintainers: Integration, testing, documentation
 
 ---
 
