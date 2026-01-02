@@ -1,7 +1,6 @@
 # Issue #98: Segmentation Fault on Ubuntu 24.04.3 (HiDPI/KDE)
 
 **Possibly related:**
-- https://github.com/taskcoach/taskcoach/issues/90 (Resolution scaling)
 - https://github.com/taskcoach/taskcoach/issues/64 (Segfault on Ubuntu 24.04)
 
 ## Summary
@@ -137,12 +136,6 @@ This suggests wxWidgets/GTK is applying 200% scaling. The mismatch between actua
 
 Different crash locations suggest these may be different manifestations of the same underlying issue (HiDPI/display handling) or separate bugs.
 
-### Related Issue #90
-
-Issue #90 specifically addresses resolution scaling problems, which aligns with the HiDPI hypothesis.
-
----
-
 ## Suspected Root Cause
 
 **Primary hypothesis:** HiDPI display scaling causes invalid geometry calculations in wxWidgets/GTK3 integration layer, leading to memory access violations.
@@ -211,12 +204,11 @@ mv ~/.config/Task\ Coach ~/.config/Task\ Coach.backup
 ## Next Steps
 
 1. **Reproduce on HiDPI:** Need access to a HiDPI display system to reproduce
-2. **Check issue #90:** Review resolution scaling fixes that may apply
-3. **Add display diagnostics:** Enhance startup logging to capture:
+2. **Add display diagnostics:** Enhance startup logging to capture:
    - Actual vs reported display geometry
    - Scale factors (GDK_SCALE, QT_SCALE_FACTOR)
    - Display PPI
-4. **Test with different scaling:** See if the crash occurs at 100% vs 200% scaling
+3. **Test with different scaling:** See if the crash occurs at 100% vs 200% scaling
 
 ---
 
