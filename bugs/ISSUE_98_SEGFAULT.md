@@ -156,6 +156,58 @@ This proves KDE alone is not the issue - **kernel 6.14.0-37 + KDE works fine**.
 | GDK Errors | Unknown | Unknown | Unknown | Unknown | Yes (no crash) |
 | Crashes | Startup | Add task | None | None | None |
 
+### Package Version Comparison: GNOME/MATE Systems
+
+| Package | Sys 1 (CRASH) | Sys 2 (CRASH) | Sys 4 GNOME (WORKS) | Match |
+|---------|---------------|---------------|---------------------|-------|
+| Python | 3.12.3 | 3.12.3 | 3.12.3 | ✓ |
+| wxPython | 4.2.1 gtk3 | 4.2.1 gtk3 | 4.2.1 gtk3 | ✓ |
+| wxWidgets | 3.2.4 | 3.2.4 | 3.2.4 | ✓ |
+| GTK | 3.24.41 | 3.24.41 | 3.24.41 | ✓ |
+| glibc | 2.39 | 2.39 | 2.39 | ✓ |
+| six | 1.16.0 | 1.16.0 | 1.16.0 | ✓ |
+| desktop3 | 0.5.3 | 0.5.3 | 0.5.3 | ✓ |
+| pypubsub | 4.0.3 | 4.0.3 | 4.0.3 | ✓ |
+| watchdog | 3.0.0 | 3.0.0 | 3.0.0 | ✓ |
+| chardet | 5.2.0 | 5.2.0 | 5.2.0 | ✓ |
+| python-dateutil | 2.8.2 | 2.8.2 | 2.8.2 | ✓ |
+| pyparsing | 3.1.1 | 3.1.1 | 3.1.1 | ✓ |
+| lxml | 5.2.1 | 5.2.1 | 5.2.1 | ✓ |
+| pyxdg | 0.28 | 0.28 | 0.28 | ✓ |
+| keyring | 24.3.1 | 24.3.1 | 24.3.1 | ✓ |
+| numpy | 1.26.4 | 1.26.4 | 1.26.4 | ✓ |
+| fasteners | 0.18 | 0.18 | 0.18 | ✓ |
+| zeroconf | 0.131.0 | 0.131.0 | 0.131.0 | ✓ |
+| squaremap | missing | missing | 1.0.5 | optional |
+| **Kernel** | **6.8.0-90** | **6.8.0-90** | **6.14.0-37** | **✗** |
+
+### Package Version Comparison: KDE Systems
+
+| Package | Sys 1 (CRASH) | Sys 2 (CRASH) | Sys 5 KDE (WORKS) | Match |
+|---------|---------------|---------------|-------------------|-------|
+| Python | 3.12.3 | 3.12.3 | 3.12.3 | ✓ |
+| wxPython | 4.2.1 gtk3 | 4.2.1 gtk3 | 4.2.1 gtk3 | ✓ |
+| wxWidgets | 3.2.4 | 3.2.4 | 3.2.4 | ✓ |
+| GTK | 3.24.41 | 3.24.41 | 3.24.41 | ✓ |
+| glibc | 2.39 | 2.39 | 2.39 | ✓ |
+| six | 1.16.0 | 1.16.0 | 1.16.0 | ✓ |
+| desktop3 | 0.5.3 | 0.5.3 | 0.5.3 | ✓ |
+| pypubsub | 4.0.3 | 4.0.3 | 4.0.3 | ✓ |
+| watchdog | 3.0.0 | 3.0.0 | 3.0.0 | ✓ |
+| chardet | 5.2.0 | 5.2.0 | 5.2.0 | ✓ |
+| python-dateutil | 2.8.2 | 2.8.2 | 2.8.2 | ✓ |
+| pyparsing | 3.1.1 | 3.1.1 | 3.1.1 | ✓ |
+| lxml | 5.2.1 | 5.2.1 | 5.2.1 | ✓ |
+| pyxdg | 0.28 | 0.28 | 0.28 | ✓ |
+| keyring | 24.3.1 | 24.3.1 | 24.3.1 | ✓ |
+| numpy | 1.26.4 | 1.26.4 | 1.26.4 | ✓ |
+| fasteners | 0.18 | 0.18 | 0.18 | ✓ |
+| zeroconf | 0.131.0 | 0.131.0 | 0.131.0 | ✓ |
+| squaremap | missing | missing | 1.0.5 | optional |
+| **Kernel** | **6.8.0-90** | **6.8.0-90** | **6.14.0-37** | **✗** |
+
+**Conclusion:** All packages match exactly. The **only difference is the kernel version**.
+
 ### Pattern Analysis
 
 **What CRASHES have in common:**
