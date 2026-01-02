@@ -263,32 +263,6 @@ sudo apt install linux-generic-hwe-24.04
 
 ---
 
-## Potential Workarounds
-
-### Workaround 1: Force 1x Scaling
-```bash
-export GDK_SCALE=1
-export GDK_DPI_SCALE=1
-./taskcoach-run.sh
-```
-
-### Workaround 2: Disable HiDPI
-Set KDE display scaling to 100% (may make UI very small).
-
-### Workaround 3: Use X11 Instead of Wayland
-```bash
-export XDG_SESSION_TYPE=x11
-# or log into X11 session from login screen
-```
-
-### Workaround 4: Fresh Config
-```bash
-mv ~/.config/Task\ Coach ~/.config/Task\ Coach.backup
-./taskcoach-run.sh
-```
-
----
-
 ## Next Steps
 
 1. **Reproduce on HiDPI:** Need access to a HiDPI display system to reproduce
