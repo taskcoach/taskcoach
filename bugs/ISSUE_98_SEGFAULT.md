@@ -103,19 +103,43 @@ These GTK theme parsing warnings may indicate a corrupted or incompatible GTK th
 | Display | 2560x1440 (standard DPI) |
 | **Result** | **WORKS** - No crashes |
 
-### System 4: Issue #64 Test System (Reference) - WORKS
+### System 4: Maintainer Test System (GNOME/MATE + X11) - WORKS
 
 | Component | Value |
 |-----------|-------|
 | OS | Ubuntu 24.04 |
 | Kernel | Linux 6.14.0-37-generic |
 | Python | 3.12.3 |
-| wxPython | 4.2.1 gtk3 |
-| wxWidgets | 3.2.4 |
+| wxPython | 4.2.1 gtk3 (phoenix) wxWidgets 3.2.4 |
 | GTK | 3.24.41 |
-| Desktop | X11/GNOME |
+| glibc | 2.39 |
+| Desktop | GNOME/MATE + X11 |
 | Display | 1920x1029 (standard DPI) |
 | **Result** | **WORKS** - No crashes |
+
+### System 5: Maintainer Test System (KDE + X11) - WORKS
+
+| Component | Value |
+|-----------|-------|
+| OS | Ubuntu 24.04 |
+| Kernel | Linux 6.14.0-37-generic |
+| Python | 3.12.3 |
+| wxPython | 4.2.1 gtk3 (phoenix) wxWidgets 3.2.4 |
+| GTK | 3.24.41 |
+| glibc | 2.39 |
+| Desktop | **KDE + X11** |
+| Display | 1440x900 @ 96 PPI (standard DPI) |
+| **Result** | **WORKS** - No crashes |
+
+**Note:** System 5 shows GDK_CRITICAL errors but does NOT crash:
+```
+Gdk-CRITICAL: gdk_visual_get_red_pixel_details: assertion 'GDK_IS_VISUAL (visual)' failed
+Gdk-CRITICAL: gdk_visual_get_green_pixel_details: assertion 'GDK_IS_VISUAL (visual)' failed
+Gdk-CRITICAL: gdk_visual_get_blue_pixel_details: assertion 'GDK_IS_VISUAL (visual)' failed
+Gdk-CRITICAL: gdk_visual_get_depth: assertion 'GDK_IS_VISUAL (visual)' failed
+```
+
+This proves KDE alone is not the issue - **kernel 6.14.0-37 + KDE works fine**.
 
 ---
 
@@ -123,35 +147,40 @@ These GTK theme parsing warnings may indicate a corrupted or incompatible GTK th
 
 ### Comparison Matrix
 
-| Factor | System 1 (CRASH) | System 2 (CRASH) | System 3 (WORKS) | System 4 (WORKS) |
-|--------|------------------|------------------|------------------|------------------|
-| Kernel | 6.8.0-90 | 6.8.0-90 | 6.8.0-84 | 6.14.0-37 |
-| Desktop | KDE | KDE/MATE | MATE | X11/GNOME |
-| Display | 3840x2400 HiDPI | 1920x1200 | 2560x1440 | 1920x1029 |
-| HiDPI | Yes (2x scale) | No | No | No |
-| Crashes | Startup | Add task | None | None |
+| Factor | Sys 1 (CRASH) | Sys 2 (CRASH) | Sys 3 (WORKS) | Sys 4 (WORKS) | Sys 5 (WORKS) |
+|--------|---------------|---------------|---------------|---------------|---------------|
+| Kernel | **6.8.0-90** | **6.8.0-90** | 6.8.0-84 | 6.14.0-37 | 6.14.0-37 |
+| Desktop | KDE | KDE/MATE | MATE | GNOME/MATE | **KDE** |
+| Display | 3840x2400 | 1920x1200 | 2560x1440 | 1920x1029 | 1440x900 |
+| HiDPI | Yes (2x) | No | No | No | No |
+| GDK Errors | Unknown | Unknown | Unknown | Unknown | Yes (no crash) |
+| Crashes | Startup | Add task | None | None | None |
 
 ### Pattern Analysis
 
 **What CRASHES have in common:**
-- Kernel 6.8.0-90-generic (both crashing systems)
-- KDE desktop environment (at least initially)
+- **Kernel 6.8.0-90-generic** (both crashing systems have this exact version)
 - Ubuntu 24.04.3 (claimed, but kernel suggests upgrade not fresh install)
 
 **What WORKS have in common:**
 - Different kernel versions (6.8.0-84 and 6.14.0-37)
-- Non-KDE desktops (MATE, GNOME)
-- Standard DPI displays (no 2x scaling)
+- Standard DPI displays
+
+**KDE is NOT the cause:**
+- System 4 runs KDE + X11 with kernel 6.14.0-37 and works fine
+- System 4 shows GDK_CRITICAL errors but doesn't crash
 
 **Key observations:**
 
-1. **Kernel 6.8.0-90 is suspect** - Both crashing systems have this exact kernel version. The working system 3 has 6.8.0-84 (slightly older), and system 4 has 6.14.0-37 (much newer).
+1. **Kernel 6.8.0-90 is the primary suspect** - Both crashing systems have this exact kernel version. Working systems have 6.8.0-84 or 6.14.0-37.
 
-2. **HiDPI is NOT the only factor** - System 2 crashes with standard 1920x1200 display, disproving pure HiDPI theory.
+2. **HiDPI is NOT the cause** - System 2 crashes with standard 1920x1200 display.
 
-3. **KDE is strongly correlated** - Both crashing systems use KDE. System 2 only partially works in MATE (crashes on adding task).
+3. **KDE is NOT the cause** - System 4 runs KDE + X11 with kernel 6.14.0-37 and works fine (despite GDK_CRITICAL errors).
 
-4. **Crash timing varies:**
+4. **GDK_CRITICAL errors are normal** - System 4 shows `gdk_visual_get_*` assertion failures but doesn't crash. These errors alone don't cause the segfault.
+
+5. **Crash timing varies:**
    - System 1 (HiDPI + KDE): Crashes on startup
    - System 2 (standard + KDE→MATE): Crashes on adding task
 
@@ -170,29 +199,26 @@ Different crash locations suggest these may be different manifestations of the s
 
 ### Updated Hypothesis (Based on Multi-System Analysis)
 
-**Primary suspect: Kernel 6.8.0-90-generic + KDE combination**
+**Primary suspect: Kernel 6.8.0-90-generic**
 
-The cross-system analysis reveals that HiDPI is NOT the sole cause:
-- System 2 crashes with standard 1920x1200 display
-- Both crashing systems share kernel 6.8.0-90 and KDE
-- Working systems have different kernels (6.8.0-84, 6.14.0-37) and non-KDE desktops
+The cross-system analysis reveals:
+- **HiDPI is NOT the cause** - System 2 crashes with standard display
+- **KDE is NOT the cause** - System 4 runs KDE with kernel 6.14 and works fine
+- **Kernel 6.8.0-90 is the common factor** - Both crashing systems have this exact version
 
 **Possible causes (in order of likelihood):**
 
-1. **Kernel 6.8.0-90 regression** - Something specific to this kernel version interacts badly with wxPython/GTK
+1. **Kernel 6.8.0-90 regression** - Something specific to this kernel version interacts badly with wxPython/GTK. This is the only common factor between crashing systems.
 
-2. **KDE/Plasma compositor issue** - KDE's compositor may handle wxWidgets windows differently, causing memory corruption
+2. **GTK theme corruption** - The gtk.css parsing errors suggest a broken theme, but System 4 has GDK errors and works fine.
 
-3. **GTK theme corruption** - The gtk.css parsing errors suggest a broken theme that may cause crashes
-
-4. **Combination of factors** - The crash may require multiple conditions (specific kernel + KDE + possibly display config)
+3. **Unknown system state** - The crashing systems may have other commonalities not captured in logs (corrupted packages, specific GPU drivers, etc.)
 
 **Supporting evidence:**
 - Both crashing systems: kernel 6.8.0-90-generic
 - Working system 3: kernel 6.8.0-84-generic (6 patch versions older)
-- Working system 4: kernel 6.14.0-37-generic (much newer)
-- Both crashing systems started with KDE
-- System 2 partially works in MATE but still crashes on task creation
+- Working system 4: kernel 6.14.0-37-generic + KDE (proves KDE is not the issue)
+- System 4 shows GDK_CRITICAL errors but doesn't crash (proves GDK errors alone don't cause crash)
 
 ---
 
