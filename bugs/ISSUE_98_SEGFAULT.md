@@ -64,68 +64,98 @@ These GTK theme parsing warnings may indicate a corrupted or incompatible GTK th
 
 ---
 
-## User Testing Summary
+## Test Systems Reported in Issue #98
 
-### Test 1: KDE Desktop (Primary Environment)
-- **Result:** CRASH on startup
-- **Crash point:** `acquire_ini_lock()` in settings.py
+### System 1: wolftune (Original Reporter) - CRASHES
 
-### Test 2: After Removing Config File
-- **Action:** Removed `~/.config/Task Coach/TaskCoach.ini`
-- **Result:** Application started successfully in MATE
+| Component | Value |
+|-----------|-------|
+| OS | Ubuntu 24.04.3 LTS (noble) |
+| Kernel | Linux 6.8.0-90-generic |
+| Python | 3.12.3 |
+| wxPython | 4.2.1 gtk3 (phoenix) |
+| wxWidgets | 3.2.4 |
+| Desktop | KDE |
+| Display | HiDPI 3840x2400 (reported as 1920x1200) |
+| **Result** | **CRASH** - Segfault on startup |
 
-### Test 3: MATE Desktop with Clean Config
-- **Result:** Application starts
-- **Crash trigger:** "Adding a new task triggers segfault in typical manner"
+### System 2: thomas2net Computer #1 - CRASHES
 
-### Test 4: Second System (Non-HiDPI)
-- **Display:** 2560x1440 (standard DPI)
-- **Result:** NO CRASHES after clean install
-- **Conclusion:** HiDPI display (3840x2400) correlates with failure
+| Component | Value |
+|-----------|-------|
+| OS | Ubuntu 24.04.3 LTS (noble) |
+| Kernel | Linux 6.8.0-90-generic |
+| Python | 3.12.3 |
+| wxPython | 4.2.1 gtk3 |
+| Desktop | KDE (primary), MATE (fallback) |
+| Display | 1920x1200 (standard DPI) |
+| **Result** | **CRASH** - KDE: won't start; MATE: crashes on adding task |
+
+### System 3: thomas2net Computer #2 - WORKS
+
+| Component | Value |
+|-----------|-------|
+| OS | Ubuntu 24.04.3 LTS (noble) |
+| Kernel | Linux 6.8.0-84-generic |
+| Python | 3.12.3 |
+| wxPython | 4.2.1 gtk3 |
+| Desktop | MATE |
+| Display | 2560x1440 (standard DPI) |
+| **Result** | **WORKS** - No crashes |
+
+### System 4: Issue #64 Test System (Reference) - WORKS
+
+| Component | Value |
+|-----------|-------|
+| OS | Ubuntu 24.04 |
+| Kernel | Linux 6.14.0-37-generic |
+| Python | 3.12.3 |
+| wxPython | 4.2.1 gtk3 |
+| wxWidgets | 3.2.4 |
+| GTK | 3.24.41 |
+| Desktop | X11/GNOME |
+| Display | 1920x1029 (standard DPI) |
+| **Result** | **WORKS** - No crashes |
 
 ---
 
-## Comparison with Test Systems (January 2, 2026)
+## Cross-System Analysis
 
-### Environment Comparison
+### Comparison Matrix
 
-| Component | Issue #98 User | Issue #64 Test System | Match |
-|-----------|----------------|----------------------|-------|
-| OS | Ubuntu 24.04.3 | Ubuntu 24.04 | Similar |
-| Kernel | 6.8.0-90-generic | 6.14.0-37-generic | **No** (user older) |
-| Python | 3.12.3 | 3.12.3 | Yes |
-| wxPython | 4.2.1 gtk3 | 4.2.1 gtk3 | Yes |
-| wxWidgets | 3.2.4 | 3.2.4 | Yes |
-| GTK | 3.24.41 | 3.24.41 | Yes |
-| glibc | 2.39 | 2.39 | Yes |
-| Desktop | KDE | X11/GNOME | **No** |
-| Display | 3840x2400 HiDPI | 1920x1029 | **No** |
-| Monitors | 1 (HiDPI) | 1 (standard) | **No** |
+| Factor | System 1 (CRASH) | System 2 (CRASH) | System 3 (WORKS) | System 4 (WORKS) |
+|--------|------------------|------------------|------------------|------------------|
+| Kernel | 6.8.0-90 | 6.8.0-90 | 6.8.0-84 | 6.14.0-37 |
+| Desktop | KDE | KDE/MATE | MATE | X11/GNOME |
+| Display | 3840x2400 HiDPI | 1920x1200 | 2560x1440 | 1920x1029 |
+| HiDPI | Yes (2x scale) | No | No | No |
+| Crashes | Startup | Add task | None | None |
 
-### Key Differences
+### Pattern Analysis
 
-| Factor | Issue #98 User | Test System | Likely Impact |
-|--------|----------------|-------------|---------------|
-| **HiDPI Display** | 3840x2400 @ 192 PPI | 1920x1029 | **HIGH** - Display scaling issues |
-| **Desktop** | KDE | X11/GNOME | **MEDIUM** - Different compositor |
-| **Kernel** | 6.8.0-90 | 6.14.0-37 | **LOW** - But may affect display drivers |
-| **GTK Theme** | Has parse errors | Unknown | **MEDIUM** - Corrupted theme |
+**What CRASHES have in common:**
+- Kernel 6.8.0-90-generic (both crashing systems)
+- KDE desktop environment (at least initially)
+- Ubuntu 24.04.3 (claimed, but kernel suggests upgrade not fresh install)
 
----
+**What WORKS have in common:**
+- Different kernel versions (6.8.0-84 and 6.14.0-37)
+- Non-KDE desktops (MATE, GNOME)
+- Standard DPI displays (no 2x scaling)
 
-## Analysis
+**Key observations:**
 
-### HiDPI Display Discrepancy
+1. **Kernel 6.8.0-90 is suspect** - Both crashing systems have this exact kernel version. The working system 3 has 6.8.0-84 (slightly older), and system 4 has 6.14.0-37 (much newer).
 
-The user's logs show a critical discrepancy:
-- **Actual resolution:** 3840x2400 pixels
-- **Reported resolution:** 1920x1200 pixels
-- **PPI:** 192x192 (2x scaling)
+2. **HiDPI is NOT the only factor** - System 2 crashes with standard 1920x1200 display, disproving pure HiDPI theory.
 
-This suggests wxWidgets/GTK is applying 200% scaling. The mismatch between actual and reported geometry may cause:
-1. Memory access violations when calculating window positions
-2. Buffer overflows in display rendering code
-3. Invalid coordinates passed to GTK/wxWidgets functions
+3. **KDE is strongly correlated** - Both crashing systems use KDE. System 2 only partially works in MATE (crashes on adding task).
+
+4. **Crash timing varies:**
+   - System 1 (HiDPI + KDE): Crashes on startup
+   - System 2 (standard + KDE→MATE): Crashes on adding task
+
+   This suggests multiple crash paths or the same underlying issue manifesting differently.
 
 ### Crash Location Difference
 
@@ -138,17 +168,49 @@ Different crash locations suggest these may be different manifestations of the s
 
 ## Suspected Root Cause
 
-**Primary hypothesis:** HiDPI display scaling causes invalid geometry calculations in wxWidgets/GTK3 integration layer, leading to memory access violations.
+### Updated Hypothesis (Based on Multi-System Analysis)
+
+**Primary suspect: Kernel 6.8.0-90-generic + KDE combination**
+
+The cross-system analysis reveals that HiDPI is NOT the sole cause:
+- System 2 crashes with standard 1920x1200 display
+- Both crashing systems share kernel 6.8.0-90 and KDE
+- Working systems have different kernels (6.8.0-84, 6.14.0-37) and non-KDE desktops
+
+**Possible causes (in order of likelihood):**
+
+1. **Kernel 6.8.0-90 regression** - Something specific to this kernel version interacts badly with wxPython/GTK
+
+2. **KDE/Plasma compositor issue** - KDE's compositor may handle wxWidgets windows differently, causing memory corruption
+
+3. **GTK theme corruption** - The gtk.css parsing errors suggest a broken theme that may cause crashes
+
+4. **Combination of factors** - The crash may require multiple conditions (specific kernel + KDE + possibly display config)
 
 **Supporting evidence:**
-1. User's non-HiDPI system (2560x1440) has no crashes
-2. Display geometry is reported incorrectly (3840x2400 → 1920x1200)
-3. GTK theme parsing errors indicate possible display subsystem issues
-4. KDE compositor may handle HiDPI differently than GNOME/X11
+- Both crashing systems: kernel 6.8.0-90-generic
+- Working system 3: kernel 6.8.0-84-generic (6 patch versions older)
+- Working system 4: kernel 6.14.0-37-generic (much newer)
+- Both crashing systems started with KDE
+- System 2 partially works in MATE but still crashes on task creation
 
 ---
 
-## Questions for User
+## Questions for Users
+
+### Critical: Kernel Version Test
+
+Both crashing systems have kernel 6.8.0-90. Can users test with a different kernel?
+
+```bash
+# Check available kernels
+dpkg --list | grep linux-image
+
+# Boot into older kernel from GRUB menu, or install newer HWE kernel:
+sudo apt install linux-generic-hwe-24.04
+```
+
+### Other Questions
 
 1. **GTK Theme:** What GTK theme is active? The parsing errors suggest a corrupted theme file.
    ```bash
