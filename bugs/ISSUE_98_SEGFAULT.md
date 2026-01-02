@@ -158,8 +158,8 @@ This proves KDE alone is not the issue - **kernel 6.14.0-37 + KDE works fine**.
 
 ### Package Version Comparison: GNOME/MATE Systems
 
-| Package | Sys 1 (CRASH) | Sys 2 (CRASH) | Sys 4 GNOME (WORKS) | Match |
-|---------|---------------|---------------|---------------------|-------|
+| Package | Sys 2 MATE (CRASH) | Sys 3 MATE (WORKS) | Sys 4 GNOME (WORKS) | Match |
+|---------|--------------------|--------------------|---------------------|-------|
 | Python | 3.12.3 | 3.12.3 | 3.12.3 | ✓ |
 | wxPython | 4.2.1 gtk3 | 4.2.1 gtk3 | 4.2.1 gtk3 | ✓ |
 | wxWidgets | 3.2.4 | 3.2.4 | 3.2.4 | ✓ |
@@ -179,12 +179,12 @@ This proves KDE alone is not the issue - **kernel 6.14.0-37 + KDE works fine**.
 | fasteners | 0.18 | 0.18 | 0.18 | ✓ |
 | zeroconf | 0.131.0 | 0.131.0 | 0.131.0 | ✓ |
 | squaremap | missing | missing | 1.0.5 | optional |
-| **Kernel** | **6.8.0-90** | **6.8.0-90** | **6.14.0-37** | **✗** |
+| **Kernel** | **6.8.0-90** | **6.8.0-84** | **6.14.0-37** | **✗** |
 
 ### Package Version Comparison: KDE Systems
 
-| Package | Sys 1 (CRASH) | Sys 2 (CRASH) | Sys 5 KDE (WORKS) | Match |
-|---------|---------------|---------------|-------------------|-------|
+| Package | Sys 1 KDE (CRASH) | Sys 2 KDE (CRASH) | Sys 5 KDE (WORKS) | Match |
+|---------|-------------------|-------------------|-------------------|-------|
 | Python | 3.12.3 | 3.12.3 | 3.12.3 | ✓ |
 | wxPython | 4.2.1 gtk3 | 4.2.1 gtk3 | 4.2.1 gtk3 | ✓ |
 | wxWidgets | 3.2.4 | 3.2.4 | 3.2.4 | ✓ |
