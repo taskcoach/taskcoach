@@ -47,7 +47,11 @@ class ToolTipMixin(object):
 
     def PopupMenu(self, menu):
         self.__frozen = False
-        super().PopupMenu(menu)
+        # Hide any visible tooltip first to avoid Wayland popup parent conflict
+        # (GTK bug #1785: popup menus fail when tooltip is visible)
+        self.HideTip()
+        # Use top-level parent for Wayland compatibility
+        self.GetTopLevelParent().PopupMenu(menu)
         self.__frozen = True
 
     def ShowTip(self, x, y):
