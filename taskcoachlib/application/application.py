@@ -271,6 +271,18 @@ def _log_wx_info():
     except Exception as e:
         log_message(f"Display info unavailable: {e}")
 
+    # Log scaling info (useful for HiDPI debugging)
+    try:
+        scale_factors = [wx.Display(i).GetScaleFactor() for i in range(wx.Display.GetCount())]
+        log_message(f"wx scale factors: {scale_factors}")
+    except Exception:
+        pass
+    # Linux-specific scaling environment variables
+    if sys.platform == 'linux':
+        scale_vars = ['GDK_SCALE', 'GDK_DPI_SCALE', 'QT_SCALE_FACTOR', 'QT_AUTO_SCREEN_SCALE_FACTOR']
+        scale_info = [f"{v}={os.environ.get(v, 'not set')}" for v in scale_vars]
+        log_message(f"Scaling env: {', '.join(scale_info)}")
+
     log_message("=" * 60)
 
 
