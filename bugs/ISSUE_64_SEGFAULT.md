@@ -8,7 +8,7 @@ Task Coach crashes with a segmentation fault on startup for one user running Ubu
 
 **GitHub Issue:** https://github.com/taskcoach/taskcoach/issues/64
 
-**Status:** NOT REPRODUCED - **Kernel 6.8.0-90-generic is the primary suspect.** User tested on empty system with 1 monitor and Welcome.tsk - still crashed. All other theories (wxPython version, TEE, config files, multi-monitor, missing packages) have been ruled out. Only difference: user has kernel 6.8.0-90, developer has 6.14.0-37.
+**Status:** NOT REPRODUCED - Cannot reproduce in VM even with identical kernel 6.8.0-90. **Real hardware GPU drivers or server kernel security settings** are the primary suspects. User is on GA kernel track (server default) which may have different security configurations (AppArmor, seccomp) than desktop HWE track.
 
 ---
 
@@ -207,9 +207,7 @@ User sjefbosman tested on a **minimal configuration** to isolate the issue:
 
 User also installed missing packages (python3-squaremap, gntp-send) - same crash.
 
-### Developer Test: Fresh Ubuntu 24.04 VM
-
-A fresh Ubuntu 24.04 installation with **identical wxPython version** was tested:
+### Developer Test 1: Fresh Ubuntu 24.04 VM (Kernel 6.14)
 
 | Component | Value |
 |-----------|-------|
@@ -218,37 +216,53 @@ A fresh Ubuntu 24.04 installation with **identical wxPython version** was tested
 | wxPython | 4.2.1 gtk3 (phoenix) wxWidgets 3.2.4 |
 | Kernel | 6.14.0-37-generic |
 | GTK | 3.24.41 |
-| glibc | 2.39 |
 | Desktop | ubuntu:GNOME (X11) |
-| Displays | 1 monitor (1920x1029) |
-| Config | Fresh (no INI file) |
-| Locale | en_US.UTF-8 only |
+| Displays | 1 monitor |
+| Hardware | **VM (virt-manager, virtio graphics)** |
 
-**Result: NO CRASH** - Application started successfully, TEE worked correctly, "Adding duplicate handler" messages captured without issue.
+**Result: NO CRASH**
+
+### Developer Test 2: Same VM with Kernel 6.8.0-90
+
+Installed kernel 6.8.0-90-generic on the same VM to match user's kernel:
+
+| Component | Value |
+|-----------|-------|
+| Task Coach | 2.0.0.92 |
+| Python | 3.12.3 |
+| wxPython | 4.2.1 gtk3 (phoenix) wxWidgets 3.2.4 |
+| **Kernel** | **6.8.0-90-generic** |
+| GTK | 3.24.41 |
+| Desktop | ubuntu:GNOME (X11) |
+| Displays | 1 monitor |
+| Hardware | **VM (virt-manager, virtio graphics)** |
+
+**Result: NO CRASH** - Tested on both Wayland and X11 sessions.
 
 ### What This Proves
 
 | Hypothesis | Status |
 |------------|--------|
-| wxPython 4.2.1 is broken | **RULED OUT** - Same version works on dev system |
-| TEE stderr redirection is broken | **RULED OUT** - TEE works on dev system |
-| Python 3.12 + wxPython combo | **RULED OUT** - Same combo works on dev system |
+| wxPython 4.2.1 is broken | **RULED OUT** - Works on dev system |
+| TEE stderr redirection is broken | **RULED OUT** - Works on dev system |
+| Python 3.12 + wxPython combo | **RULED OUT** - Works on dev system |
 | 3-monitor setup causes crash | **RULED OUT** - User crashed with 1 monitor |
 | Config files cause crash | **RULED OUT** - User crashed on empty system |
 | Missing packages cause crash | **RULED OUT** - Installing squaremap didn't help |
-| **Kernel 6.8.0-90 is the issue** | **PRIMARY SUSPECT** - Only remaining difference |
+| Kernel 6.8.0-90 is the issue | **RULED OUT** - Works in VM with same kernel |
+| **Real hardware vs VM** | **PRIMARY SUSPECT** - Only remaining difference |
 
 ### Comparison Summary
 
-| Factor | User (CRASH) | Developer (OK) |
-|--------|--------------|----------------|
-| wxPython | 4.2.1 | 4.2.1 |
-| Python | 3.12.3 | 3.12.3 |
-| GTK | 3.24.41 | 3.24.41 |
-| glibc | 2.39 | 2.39 |
-| Displays | 1 monitor | 1 monitor |
-| Config | Empty/fresh | Fresh |
-| **Kernel** | **6.8.0-90-generic** | **6.14.0-37-generic** |
+| Factor | User (CRASH) | Dev VM (OK) | Dev VM (OK) |
+|--------|--------------|-------------|-------------|
+| Kernel | 6.8.0-90 | 6.14.0-37 | 6.8.0-90 |
+| Hardware | **Real PC** | VM | VM |
+| Graphics | **Real GPU** | virtio | virtio |
+| X11 | Yes | Yes | Yes |
+| Result | **CRASH** | OK | OK |
+
+The crash cannot be reproduced in a VM even with the same kernel. The issue appears to be related to **real hardware GPU drivers** interacting with wxPython/GTK.
 
 ---
 
@@ -337,30 +351,82 @@ The "Extension modules:" line is **crash-only diagnostic output** - it never app
 
 ---
 
-## Remaining Suspect: Kernel Version
+## Remaining Suspect: Real Hardware GPU Drivers
 
-All other hypotheses have been ruled out by user testing. The **only remaining difference** is the kernel:
+All software hypotheses have been ruled out. Kernel 6.8.0-90 works fine in a VM. The crash only occurs on **real hardware**.
 
-| System | Kernel | Result |
-|--------|--------|--------|
-| User (sjefbosman) | 6.8.0-90-generic | CRASH |
-| Developer test | 6.14.0-37-generic | OK |
+| System | Kernel | Hardware | Result |
+|--------|--------|----------|--------|
+| User (sjefbosman) | 6.8.0-90 | Real PC + real GPU | **CRASH** |
+| Developer VM | 6.8.0-90 | VM + virtio graphics | OK |
+| Developer VM | 6.14.0-37 | VM + virtio graphics | OK |
 
-### Possible Kernel-Related Causes
+### Possible Hardware-Related Causes
 
-1. **Pipe/fd behavior differences** - The TEE module uses `os.dup2()` to redirect stderr to a pipe. Kernel 6.8.0 may handle pipe buffering or fd state differently than 6.14.0.
+1. **GPU driver interaction with stderr** - Real GPU drivers (NVIDIA, AMD, Intel) may interact differently with GTK/wxWidgets logging and file descriptors than VM virtual graphics.
 
-2. **Memory management** - Different kernel versions have different memory allocators and ASLR behavior, which could affect when/if the crash manifests.
+2. **Driver-specific GTK initialization** - Real GPU drivers perform additional initialization during GTK startup that may conflict with TEE's stderr redirection.
 
-3. **GTK/GLib kernel interactions** - GTK and GLib make syscalls that may behave differently across kernel versions.
+3. **Proprietary vs open-source drivers** - NVIDIA proprietary drivers or specific Mesa versions may have bugs when stderr is redirected to a pipe.
 
-4. **Bug in kernel 6.8.0-90** - There may be a kernel bug that was fixed in later versions.
+4. **Known wxPython/GTK issues** - There are documented cases of wxPython segfaults related to GTK initialization order and logging ([wxWidgets #15898](https://github.com/wxWidgets/wxWidgets/issues/15898)).
 
-### User's Note on Kernel
+### Possible Security-Related Causes (Server Kernel)
 
-User commented: "Hm, strange that the update/upgrade didn't install the newer kernel then. On the other hand, IMHO TaskCoach should work on even older kernels..."
+The GA kernel (6.8.0) is the default for **server installs**, which may have different security configurations:
 
-The user ran `apt full-upgrade` but kernel 6.8.0-90 was not updated, possibly due to regional mirror lag.
+1. **AppArmor profiles** - Can restrict pipe, write, and signal operations. AppArmor controls 'pipe' signal and 'write' access types. Check with:
+   ```bash
+   sudo aa-status
+   cat /var/log/syslog | grep -i apparmor
+   ```
+
+2. **Seccomp filtering** - Can filter syscalls like `dup2()`, `pipe()`, `write()`. A segfault could occur if seccomp kills the process for a blocked syscall.
+
+3. **User namespace restrictions** - Ubuntu 24.04 restricts unprivileged user namespaces by default. This is enabled starting with 24.04.
+
+4. **Different kernel config** - Server kernels may have different security hardening options compiled in.
+
+### Questions for User
+
+To investigate security-related causes:
+```bash
+# Check AppArmor status
+sudo aa-status
+
+# Check for AppArmor denials
+sudo dmesg | grep -i apparmor
+
+# Check audit log
+sudo ausearch -m avc -ts recent
+
+# Check if running in confined mode
+cat /proc/self/attr/current
+```
+
+### Ubuntu 24.04 Kernel Tracks
+
+The user is on the **GA (General Availability) kernel track** which stays on 6.8.x:
+
+| Track | Kernel | Default For |
+|-------|--------|-------------|
+| GA | 6.8.0-xx | Server installs |
+| HWE | 6.14.0-xx | Desktop installs |
+
+Running `apt upgrade` does not switch tracks. To get kernel 6.14:
+```bash
+sudo apt install linux-generic-hwe-24.04
+```
+
+### Recommended Workaround for User
+
+Ask user to switch to the HWE kernel track:
+```bash
+sudo apt install linux-generic-hwe-24.04
+sudo reboot
+```
+
+This provides kernel 6.14.x which may resolve the GPU driver interaction issue.
 
 ---
 
@@ -408,27 +474,40 @@ However, this code does not crash in our test environment (see Investigation sec
 | Corrupted config files | User tested on empty system, still crashed |
 | Missing packages (squaremap, gntp) | User installed them, still crashed |
 | Locale/i18n issues | User has simple en_US/en_GB, still crashed |
+| Kernel 6.8.0-90 is broken | Works in VM with same kernel |
 
-The crash appears to be **kernel-specific**, not a bug in Task Coach, wxPython, or TEE.
+The crash appears to be **hardware or security-configuration specific**, not a bug in Task Coach, wxPython, TEE, or the kernel itself.
 
 ---
 
 ## Next Steps
 
-1. **Ask user to upgrade kernel:**
+1. **Ask user to switch to HWE kernel (most likely fix):**
    ```bash
    sudo apt install linux-generic-hwe-24.04
+   sudo reboot
    ```
-   Or wait for regional mirrors to provide kernel updates.
+   This switches from GA (server) kernel 6.8.x to HWE (desktop) kernel 6.14.x.
 
-2. **Test on kernel 6.8.0-90:** Developer should try to obtain/test on kernel 6.8.0-90-generic to reproduce the issue.
+2. **Ask user to check security configurations:**
+   ```bash
+   sudo aa-status                          # AppArmor status
+   sudo dmesg | grep -i apparmor          # AppArmor denials
+   sudo ausearch -m avc -ts recent        # Audit log
+   cat /proc/self/attr/current            # Confinement status
+   ```
 
-3. **Investigate kernel differences:** Research what changed between kernel 6.8.0 and 6.14.0 regarding pipes, file descriptors, or memory management.
+3. **Ask user for GPU/driver info:**
+   ```bash
+   lspci | grep -i vga
+   glxinfo | grep "OpenGL renderer"
+   dpkg -l | grep -i nvidia
+   ```
 
-4. **Consider workaround:** If kernel is confirmed as the issue, consider:
-   - Making `SetActiveTarget(wx.LogStderr())` conditional
-   - Wrapping it in try/except
-   - Skipping it on affected kernel versions
+4. **Consider workaround in code:** If cannot be resolved:
+   - Wrap `SetActiveTarget(wx.LogStderr())` in try/except
+   - Make it conditional based on platform detection
+   - Skip it entirely (wx auto-detects log target anyway)
 
 ---
 
