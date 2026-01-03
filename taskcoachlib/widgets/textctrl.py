@@ -330,8 +330,10 @@ class MultiLineTextCtrl(wx.Panel):
         return self._textCtrl.MacCheckSpelling(check)
 
     def Bind(self, event, handler, *args, **kwargs):
-        # Bind text events to inner control, others to panel
-        if event in (wx.EVT_TEXT, wx.EVT_TEXT_URL, wx.EVT_TEXT_ENTER):
+        # Bind text and focus events to inner control, others to panel
+        # Focus events must go to inner control since it receives focus, not the panel
+        if event in (wx.EVT_TEXT, wx.EVT_TEXT_URL, wx.EVT_TEXT_ENTER,
+                     wx.EVT_SET_FOCUS, wx.EVT_KILL_FOCUS):
             return self._textCtrl.Bind(event, handler, *args, **kwargs)
         return super().Bind(event, handler, *args, **kwargs)
 
