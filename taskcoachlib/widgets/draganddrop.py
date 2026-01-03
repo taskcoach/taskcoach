@@ -502,6 +502,7 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
 
     def StartDragging(self):
         self.GetMainWindow().Bind(wx.EVT_MOTION, self.OnDragging)
+        self.GetMainWindow().Bind(wx.EVT_KEY_DOWN, self.OnKeyDuringDrag)
         self.Bind(wx.EVT_TREE_END_DRAG, self.OnEndDrag)
         # Also bind to header window for header drops
         headerWin = self.GetHeaderWindow()
@@ -513,16 +514,34 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
 
     def StopDragging(self):
         self.GetMainWindow().Unbind(wx.EVT_MOTION)
+        self.GetMainWindow().Unbind(wx.EVT_KEY_DOWN)
         self.Unbind(wx.EVT_TREE_END_DRAG)
         # Unbind header events
         headerWin = self.GetHeaderWindow()
         if headerWin:
             headerWin.Unbind(wx.EVT_MOTION)
             headerWin.Unbind(wx.EVT_LEFT_UP)
+        # Clean up HyperTreeList's internal drag state
+        mainWin = self.GetMainWindow()
+        if hasattr(mainWin, '_dragImage') and mainWin._dragImage:
+            mainWin._dragImage.EndDrag()
+            mainWin._dragImage = None
+        if hasattr(mainWin, '_isDragging'):
+            mainWin._isDragging = False
         self.ResetCursor()
         self._ResetHeaderCursor()
         self._ClearDropFeedback()
         self.selectDraggedItems()
+        # Refresh to clear any visual artifacts
+        mainWin.Refresh()
+
+    def OnKeyDuringDrag(self, event):
+        """Handle key presses during drag - Escape cancels the operation."""
+        if event.GetKeyCode() == wx.WXK_ESCAPE:
+            self.StopDragging()
+            self._dragItems = []
+        else:
+            event.Skip()
 
     def SetCursorToDragging(self):
         self.GetMainWindow().SetCursor(wx.Cursor(wx.CURSOR_HAND))
