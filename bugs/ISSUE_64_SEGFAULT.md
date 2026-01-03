@@ -406,17 +406,22 @@ cat /proc/self/attr/current
 
 ### Ubuntu 24.04 Kernel Tracks
 
-The user is on the **GA (General Availability) kernel track** which stays on 6.8.x:
+Ubuntu 24.04 LTS has **two separate kernel tracks** that do not cross-update:
 
-| Track | Kernel | Default For |
-|-------|--------|-------------|
-| GA | 6.8.0-xx | Server installs |
-| HWE | 6.14.0-xx | Desktop installs |
+| Track | Name | Kernel | Default For | Updates |
+|-------|------|--------|-------------|---------|
+| **GA** | General Availability | 6.8.0-xx | Server installs | Security patches only, stays on 6.8.x forever |
+| **HWE** | Hardware Enablement | 6.14.0-xx | Desktop installs | Rolling updates to newer kernels |
 
-Running `apt upgrade` does not switch tracks. To get kernel 6.14:
-```bash
-sudo apt install linux-generic-hwe-24.04
-```
+**Key points:**
+- Running `apt upgrade` does **NOT** switch tracks - GA stays on 6.8.x
+- The user (sjefbosman) is on the GA track, likely from a server-style install
+- GA kernel may have different security configurations than HWE
+- To switch to HWE kernel:
+  ```bash
+  sudo apt install linux-generic-hwe-24.04
+  sudo reboot
+  ```
 
 ### Recommended Workaround for User
 
