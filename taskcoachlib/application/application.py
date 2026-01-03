@@ -50,8 +50,9 @@ import subprocess
 #
 # ============================================================================
 
-# Import tee module for shutdown and error checking
-from taskcoachlib import tee
+# TEMPORARILY DISABLED: TEE module import
+# See GitHub issue #64 - TEE disabled to avoid segfault on some systems
+# from taskcoachlib import tee
 
 
 def log_message(msg):
@@ -510,13 +511,18 @@ class Application(object, metaclass=patterns.Singleton):
             self.__message_checker.start()
         self.__copy_default_templates()
 
-        # Enable wxPython debug logging on GTK to help diagnose crashes
-        # This helps identify which wx events/callbacks were active when segfaults occur
-        # Only visible when running from terminal, doesn't affect GUI-only users
-        if operating_system.isGTK():
-            wx.Log.SetActiveTarget(wx.LogStderr())
-            wx.Log.SetLogLevel(wx.LOG_Info)
-            wx.Log.SetVerbose(True)
+        # TEMPORARILY DISABLED: wx.Log.SetActiveTarget(wx.LogStderr())
+        # This call crashes on some systems (see GitHub issue #64). The crash
+        # occurs when wxWidgets C++ code accesses stderr after TEE has redirected
+        # the file descriptor. This may be a race condition related to server
+        # kernel CONFIG settings (CONFIG_PREEMPT_NONE, 100Hz timer).
+        #
+        # wx debug messages still go to stderr via the default log target.
+        #
+        # if operating_system.isGTK():
+        #     wx.Log.SetActiveTarget(wx.LogStderr())
+        #     wx.Log.SetLogLevel(wx.LOG_Info)
+        #     wx.Log.SetVerbose(True)
 
         self.mainwindow.Show()
         # Position correction is handled automatically by WindowDimensionsTracker
@@ -900,15 +906,17 @@ Break the lock?"""
         if operating_system.isGTK() and self.sessionMonitor is not None:
             self.sessionMonitor.stop()
 
-        # Shutdown tee and show error popup if any errors occurred
-        has_errors = tee.shutdown_tee()
-        if has_errors:
-            log_path = tee.get_log_path()
-            wx.MessageBox(
-                _('Errors have occured. Please see "%s"') % log_path,
-                _("Error"),
-                wx.OK,
-            )
+        # TEMPORARILY DISABLED: TEE shutdown and error popup
+        # See GitHub issue #64 - TEE disabled to avoid segfault on some systems
+        #
+        # has_errors = tee.shutdown_tee()
+        # if has_errors:
+        #     log_path = tee.get_log_path()
+        #     wx.MessageBox(
+        #         _('Errors have occured. Please see "%s"') % log_path,
+        #         _("Error"),
+        #         wx.OK,
+        #     )
 
         # NOTE: stopTwisted() call removed - no longer using Twisted reactor.
         # wxPython's MainLoop exits naturally when all windows are closed.

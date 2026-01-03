@@ -21,11 +21,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import sys
 
-# Initialize output tee FIRST, before any other imports that might
-# produce output (especially wx/GTK which load native libraries).
-# This captures all stdout/stderr to the log file.
-from taskcoachlib.tee import init_tee
-init_tee()
+# TEMPORARILY DISABLED: TEE stdout/stderr redirection to log file
+# This code uses os.dup2() to redirect file descriptors to a pipe, which
+# may cause segfaults on some systems due to race conditions with wxPython/GTK
+# stderr access. See GitHub issue #64 for details.
+#
+# Until the root cause is identified, logging goes directly to console.
+# Users should run Task Coach from a terminal to see all output.
+#
+# from taskcoachlib.tee import init_tee
+# init_tee()
 
 import faulthandler
 
