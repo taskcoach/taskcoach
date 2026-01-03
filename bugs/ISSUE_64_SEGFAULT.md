@@ -4,11 +4,18 @@
 
 ## Summary
 
-Task Coach crashes with a segmentation fault on startup for one user running Ubuntu 24.04. The crash occurs at `wx.Log.SetActiveTarget(wx.LogStderr())` but **cannot be reproduced** on developer test systems.
+Task Coach crashes with a segmentation fault on startup for one user running Ubuntu 24.04. The crash **cannot be reproduced** on developer test systems.
+
+| Version | Crash Location | Code |
+|---------|----------------|------|
+| 2.0.0.92 | `application.py:493` | `wx.Log.SetActiveTarget(wx.LogStderr())` |
+| 2.0.0.96 | `iocontroller.py:213` | `wx.MessageBox()` (file-not-found error) |
+
+The `SetActiveTarget` call was commented out in v2.0.0.96, but the crash moved to the next wx GUI call. This suggests an **underlying wxPython/GTK initialization issue** on the user's system, not a problem with any specific wx call.
 
 **GitHub Issue:** https://github.com/taskcoach/taskcoach/issues/64
 
-**Status:** NOT REPRODUCED - Cannot reproduce in VM even with identical kernel 6.8.0-90. **Real hardware GPU drivers or server kernel security settings** are the primary suspects. User is on GA kernel track (server default) which may have different security configurations (AppArmor, seccomp) than desktop HWE track.
+**Status:** NOT REPRODUCED - Cannot reproduce in VM even with identical kernel 6.8.0-90. **Real hardware GPU drivers or server kernel CONFIG settings** are the primary suspects. User is on GA kernel track (server default) which has different preemption/timing settings than desktop HWE track.
 
 ---
 
@@ -43,12 +50,22 @@ LANGUAGE: en
 Fatal Python error: Segmentation fault
 ```
 
-### Location
+### Version 2.0.0.92 Crash Location
+
 - **File:** `taskcoachlib/application/application.py`
-- **Line:** 493 (version 2.0.0.92)
+- **Line:** 493
 - **Code:** `wx.Log.SetActiveTarget(wx.LogStderr())`
 
-### Sequence Before Crash
+### Version 2.0.0.96 Crash Location (NEW)
+
+- **File:** `taskcoachlib/gui/iocontroller.py`
+- **Line:** 213
+- **Code:** `showerror(errorMessage, ...)` where `showerror=wx.MessageBox`
+- **Context:** Called when file specified on command line doesn't exist
+
+The `SetActiveTarget` call was **commented out** in v2.0.0.96 (lines 522-525 in application.py), causing the crash to move to the next wx GUI operation.
+
+### Sequence Before Crash (v2.0.0.92)
 1. TEE initializes - redirects stderr (fd 2) to a pipe
 2. wx imports - default log target writes to stderr (works)
 3. wx.App created
@@ -56,6 +73,19 @@ Fatal Python error: Segmentation fault
 5. i18n initialization completes
 6. "Adding duplicate handler" messages appear via default log target (works)
 7. `wx.Log.SetActiveTarget(wx.LogStderr())` called - **CRASH**
+
+### Sequence Before Crash (v2.0.0.96)
+1. TEE initializes - redirects stderr (fd 2) to a pipe
+2. wx imports - default log target writes to stderr (works)
+3. wx.App created
+4. wx.Locale created for en_US
+5. i18n initialization completes
+6. "Adding duplicate handler" messages appear (works)
+7. MainWindow created (works)
+8. `mainwindow.Show()` called (line 527) - **unknown if succeeds**
+9. `MainLoop()` starts (line 533)
+10. First `wx.CallAfter` event fires → `iocontroller.open()` runs
+11. File doesn't exist → `wx.MessageBox()` called - **CRASH**
 
 ### Debug Output Before Crash
 ```
@@ -266,15 +296,141 @@ The crash cannot be reproduced in a VM even with the same kernel. The issue appe
 
 ---
 
-## Technical Analysis: Why the Crash Occurs at SetActiveTarget
+## Investigation (January 3, 2026) - Version 2.0.0.96
 
-### The Crash Line
+### User Test: 3 Monitors with GNOME Extensions
 
+User sjefbosman tested v2.0.0.96 with full desktop configuration:
+
+| Component | Value |
+|-----------|-------|
+| Task Coach | 2.0.0.96 |
+| Python | 3.12.3 |
+| wxPython | 4.2.1 gtk3 (phoenix) wxWidgets 3.2.4 |
+| **Kernel** | **6.8.0-90-generic** |
+| GTK | 3.24.41 |
+| glibc | 2.39 |
+| Desktop | ubuntu:GNOME (X11) |
+| Displays | **3 monitors** (1920x1080, 2560x1440, 2560x1440) |
+| GNOME Extensions | Active |
+| Task file | `~/Documents/Welcome.tsk` |
+| Locale | en_US.UTF-8 (LC_TIME/LC_NUMERIC: en_GB.UTF-8) |
+
+**Result: CRASH** - Segfault at `iocontroller.py:213` (wx.MessageBox)
+
+### Stack Trace (v2.0.0.96)
+
+```
+Fatal Python error: Segmentation fault
+
+Thread 0x00007c384c82b6c0 (most recent call first):
+  File "taskcoachlib/filesystem/fs_poller.py", line 54 in run
+  File "threading.py", line 1073 in _bootstrap_inner
+
+Current thread 0x00007c386724f080 (most recent call first):
+  File "taskcoachlib/gui/iocontroller.py", line 213 in open      ← CRASH HERE
+  File "wx/core.py", line 3427 in <lambda>
+  File "wx/core.py", line 2262 in MainLoop
+  File "taskcoachlib/application/application.py", line 533 in start
+  File "taskcoach.py", line 139 in start
+  File "taskcoach.py", line 143 in <module>
+```
+
+### Analysis: Crash Location Changed
+
+The crash moved from `SetActiveTarget` (v2.0.0.92) to `wx.MessageBox` (v2.0.0.96):
+
+| Version | Crash Point | wx Call | When |
+|---------|-------------|---------|------|
+| 2.0.0.92 | `application.py:493` | `wx.Log.SetActiveTarget()` | Before MainLoop |
+| 2.0.0.96 | `iocontroller.py:213` | `wx.MessageBox()` | During MainLoop (first event) |
+
+**Key insight:** The `SetActiveTarget` line was commented out in v2.0.0.96, so the crash simply moved to the **next wx GUI call**. This confirms the issue is NOT specific to `SetActiveTarget` - it's a general wxPython/GTK problem on this system.
+
+### The Crashing Code Path (v2.0.0.96)
+
+```python
+# iocontroller.py lines 203-214
+def open(self, filename=None, showerror=wx.MessageBox, ...):
+    ...
+    if fileExists(filename):
+        # Load file...
+    else:
+        errorMessage = _("Cannot open %s because it doesn't exist") % filename
+        if operating_system.isMac():
+            wx.CallAfter(showerror, errorMessage, ...)
+        else:
+            showerror(errorMessage, ...)  # ← LINE 213: CRASH
+```
+
+The user ran:
+```bash
+taskcoach.py ~/Documents/Welcome.tsk
+```
+
+If `~/Documents/Welcome.tsk` doesn't exist, the code attempts to show an error dialog via `wx.MessageBox`, which crashes.
+
+### Key Diagnostic Question
+
+**Did `mainwindow.Show()` succeed before the crash?**
+
+The startup sequence is:
+```
+init():
+  ├─ MainWindow created
+  ├─ openAfterStart() schedules wx.CallAfter(self.open, filename)
+
+start():
+  ├─ mainwindow.Show()     ← Did this work? Any window flash?
+  └─ MainLoop() starts
+       └─ CallAfter fires → open() → wx.MessageBox → CRASH
+```
+
+If `mainwindow.Show()` succeeded (window appeared even briefly), then some wx GUI operations work. The crash may be specific to dialogs during early MainLoop.
+
+If no window appeared at all, then wx GUI is fundamentally broken on this system.
+
+### Questions Asked to User
+
+1. **Did any GUI elements show up or flash quickly before the crash?**
+2. **Does the file exist?** `ls -la ~/Documents/Welcome.tsk`
+3. **Test with AppImage** (uses wxPython 4.2.4, wxWidgets 3.2.8):
+   ```bash
+   wget https://github.com/taskcoach/taskcoach/releases/download/v2.0.0.96/TaskCoach-2.0.0.96-x86_64.AppImage
+   chmod +x TaskCoach-2.0.0.96-x86_64.AppImage
+   ./TaskCoach-2.0.0.96-x86_64.AppImage
+   ```
+4. **Test both v2.0.0.96 .deb and AppImage on minimal system** (empty system, no extensions, single monitor)
+
+### Pattern: Three Users on Kernel 6.8.0-90
+
+So far, **three users** have reported segfaults, all on `Linux-6.8.0-90-generic`:
+
+| User | Kernel | Hardware | Result |
+|------|--------|----------|--------|
+| sjefbosman | 6.8.0-90 | Real PC | CRASH |
+| User 2 | 6.8.0-90 | Real PC | CRASH |
+| User 3 | 6.8.0-90 | Real PC | CRASH |
+| Developer VM | 6.8.0-90 | VM (virtio) | OK |
+| Other users | Various | Various | OK |
+
+This strongly suggests a kernel-specific issue, possibly related to:
+- GA kernel CONFIG settings (preemption, timer rate)
+- Interaction with real GPU drivers
+- Security settings specific to GA kernel track
+
+---
+
+## Technical Analysis: Why wx GUI Calls Crash
+
+### Original Theory: SetActiveTarget and stderr
+
+The original crash line in v2.0.0.92:
 ```python
 wx.Log.SetActiveTarget(wx.LogStderr())
 ```
 
-This line is the **first explicit C++ stderr access** after TEE's file descriptor manipulation.
+This was theorized to be the **first explicit C++ stderr access** after TEE's file descriptor manipulation. However, since commenting out this line just moved the crash to `wx.MessageBox`, the theory is **partially invalidated** - the issue is broader than just stderr access.
 
 ### Thread State at Crash Time
 
@@ -467,16 +623,21 @@ The following files are accessed during startup before the crash point:
 
 ## Fix Status
 
-**No fix will be applied** until the issue can be reproduced.
+**No fix will be applied** until the issue can be reproduced or root cause identified.
 
-### Suspected Code
+### What We Know
 
-The user's stack trace points to this line in `taskcoachlib/application/application.py`:
-```python
-wx.Log.SetActiveTarget(wx.LogStderr())
-```
+1. **Crash location is not fixed** - it moves to the next wx GUI call when the previous one is removed
+2. **Three users affected**, all on kernel 6.8.0-90-generic (GA track)
+3. **Cannot reproduce in VM** even with identical kernel
+4. **Real hardware + GA kernel** appears to be the common factor
 
-However, this code does not crash in our test environment (see Investigation section above).
+### Suspected Code (Historical)
+
+| Version | Crash Location | Status |
+|---------|----------------|--------|
+| 2.0.0.92 | `wx.Log.SetActiveTarget(wx.LogStderr())` | Commented out in v2.0.0.96 |
+| 2.0.0.96 | `wx.MessageBox()` in `iocontroller.py:213` | **Current crash point** |
 
 ### Ruled Out Theories
 
@@ -490,21 +651,56 @@ However, this code does not crash in our test environment (see Investigation sec
 | Missing packages (squaremap, gntp) | User installed them, still crashed |
 | Locale/i18n issues | User has simple en_US/en_GB, still crashed |
 | Kernel 6.8.0-90 is broken | Works in VM with same kernel |
+| SetActiveTarget specifically | Commenting it out moved crash elsewhere |
 
-The crash appears to be **hardware or security-configuration specific**, not a bug in Task Coach, wxPython, TEE, or the kernel itself.
+### Current Theory
+
+The crash appears to be caused by a **timing-sensitive race condition** or **hardware-specific wxPython/GTK issue** that only manifests on:
+- Real hardware (not VMs)
+- GA kernel track (6.8.0-xx with CONFIG_PREEMPT_NONE)
+- Specific GPU driver configurations
+
+The issue is **not a bug in Task Coach code** - it's an environmental incompatibility that we cannot reproduce.
 
 ---
 
 ## Next Steps
 
-1. **Ask user to switch to HWE kernel (most likely fix):**
+### Immediate Testing (Ask User)
+
+1. **Confirm file existence:**
+   ```bash
+   ls -la ~/Documents/Welcome.tsk
+   ```
+   If file doesn't exist, test with a file that does exist to isolate the issue.
+
+2. **Observe startup carefully:**
+   - Does any window appear, even briefly, before the crash?
+   - This determines if `mainwindow.Show()` succeeds
+
+3. **Test AppImage** (uses newer wxPython 4.2.4, wxWidgets 3.2.8):
+   ```bash
+   wget https://github.com/taskcoach/taskcoach/releases/download/v2.0.0.96/TaskCoach-2.0.0.96-x86_64.AppImage
+   chmod +x TaskCoach-2.0.0.96-x86_64.AppImage
+   ./TaskCoach-2.0.0.96-x86_64.AppImage
+   ```
+   The AppImage bundles its own wxPython, which may behave differently.
+
+4. **Test on minimal system:**
+   - Empty system, no GNOME extensions, no other apps running
+   - Single monitor
+   - Test both .deb package and AppImage
+
+### If Testing Confirms Broader wx Issue
+
+5. **Ask user to switch to HWE kernel:**
    ```bash
    sudo apt install linux-generic-hwe-24.04
    sudo reboot
    ```
    This switches from GA (server) kernel 6.8.x to HWE (desktop) kernel 6.14.x.
 
-2. **Ask user to check security configurations:**
+6. **Ask user to check security configurations:**
    ```bash
    sudo aa-status                          # AppArmor status
    sudo dmesg | grep -i apparmor          # AppArmor denials
@@ -512,17 +708,28 @@ The crash appears to be **hardware or security-configuration specific**, not a b
    cat /proc/self/attr/current            # Confinement status
    ```
 
-3. **Ask user for GPU/driver info:**
+7. **Ask user for GPU/driver info:**
    ```bash
    lspci | grep -i vga
    glxinfo | grep "OpenGL renderer"
    dpkg -l | grep -i nvidia
    ```
 
-4. **Consider workaround in code:** If cannot be resolved:
-   - Wrap `SetActiveTarget(wx.LogStderr())` in try/except
-   - Make it conditional based on platform detection
-   - Skip it entirely (wx auto-detects log target anyway)
+### Potential Code Workarounds
+
+If the issue cannot be resolved at the system level:
+
+1. **Delay file opening until window is ready:**
+   - Use `wx.CallLater(100, self.open, filename)` instead of `wx.CallAfter`
+   - Or wait for `EVT_ACTIVATE` on main window before opening file
+
+2. **Avoid dialogs during early startup:**
+   - Check file existence in `openAfterStart()` before scheduling `wx.CallAfter`
+   - Log errors to console instead of showing dialogs during startup
+
+3. **Skip SetActiveTarget entirely:**
+   - Already done in v2.0.0.96, but crash moved elsewhere
+   - Confirms the issue is broader than just this call
 
 ---
 
@@ -534,4 +741,4 @@ The crash appears to be **hardware or security-configuration specific**, not a b
 
 ---
 
-**Last Updated:** January 3, 2026
+**Last Updated:** January 3, 2026 (v2.0.0.96 crash analysis added)
