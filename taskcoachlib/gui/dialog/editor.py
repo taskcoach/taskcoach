@@ -365,13 +365,13 @@ class AttachmentSubjectPage(SubjectPage):
             wx.EVT_KILL_FOCUS,
             self.items[0].locationChangedEventType(),
         )
-        sizer.Add(self._locationEntry, 1, wx.ALL, 3)
+        sizer.Add(self._locationEntry, 1, wx.EXPAND)
         if all(item.type_ == "file" for item in self.items):
             button = wx.Button(panel, wx.ID_ANY, _("Browse"))
-            sizer.Add(button, 0, wx.ALL, 3)
+            sizer.Add(button, 0, wx.LEFT, 5)
             button.Bind(wx.EVT_BUTTON, self.onSelectLocation)
         panel.SetSizer(sizer)
-        self.addEntry(_("Location"), panel, flags=[None, wx.ALL | wx.EXPAND])
+        self.addEntry(_("Location"), panel, flags=[wx.ALIGN_RIGHT, wx.EXPAND])
 
     def onSelectLocation(self, event):  # pylint: disable=W0613
         base_path = self._settings.get("file", "lastattachmentpath")

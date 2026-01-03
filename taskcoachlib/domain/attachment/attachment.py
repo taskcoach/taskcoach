@@ -106,14 +106,11 @@ class Attachment(base.Object, NoteOwner):
     def open(self, workingDir=None):
         raise NotImplementedError
 
-    def __hash__(self) -> int:
-        return hash(self.location())
-
-    def __eq__(self, other):
-        try:
-            return self.location() == other.location()
-        except AttributeError:
-            return False
+    # Note: We intentionally do NOT override __hash__ or __eq__ here.
+    # The parent class (base.Object) provides stable ID-based hashing
+    # which is required for observer registration to work correctly.
+    # Using location-based hashing caused KeyError crashes when the
+    # location changed after observer registration (issue #84).
 
     def __lt__(self, other):
         try:
