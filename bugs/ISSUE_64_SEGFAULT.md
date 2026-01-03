@@ -371,21 +371,31 @@ All software hypotheses have been ruled out. Kernel 6.8.0-90 works fine in a VM.
 
 4. **Known wxPython/GTK issues** - There are documented cases of wxPython segfaults related to GTK initialization order and logging ([wxWidgets #15898](https://github.com/wxWidgets/wxWidgets/issues/15898)).
 
-### Possible Security-Related Causes (Server Kernel)
+### Server vs Desktop Kernel CONFIG Differences
 
-The GA kernel (6.8.0) is the default for **server installs**, which may have different security configurations:
+The GA kernel (server default) has different compile-time settings than desktop kernels:
 
-1. **AppArmor profiles** - Can restrict pipe, write, and signal operations. AppArmor controls 'pipe' signal and 'write' access types. Check with:
-   ```bash
-   sudo aa-status
-   cat /var/log/syslog | grep -i apparmor
-   ```
+| Setting | Server (GA 6.8) | Desktop (HWE 6.14) | Impact |
+|---------|-----------------|---------------------|--------|
+| **Preemption** | `CONFIG_PREEMPT_NONE` (off) | `CONFIG_PREEMPT_VOLUNTARY` (on) | Race condition timing |
+| **Timer rate** | 100 Hz | 250 Hz | Interrupt frequency |
+| **I/O scheduler** | Deadline | CFQ | I/O ordering |
+| **Mesa** | Older | 25.0 (backported) | Graphics stack |
 
-2. **Seccomp filtering** - Can filter syscalls like `dup2()`, `pipe()`, `write()`. A segfault could occur if seccomp kills the process for a blocked syscall.
+**The preemption and timer differences could cause race conditions to manifest differently.**
 
-3. **User namespace restrictions** - Ubuntu 24.04 restricts unprivileged user namespaces by default. This is enabled starting with 24.04.
+If there's a timing-sensitive race between TEE's `dup2()` and wxWidgets' stderr access:
+- Server kernel (100Hz, no preemption) → race condition triggers → CRASH
+- Desktop kernel (250Hz, preemptive) → race condition doesn't trigger → OK
+- VM (different timing characteristics) → race condition doesn't trigger → OK
 
-4. **Different kernel config** - Server kernels may have different security hardening options compiled in.
+### AppArmor (Both Have It)
+
+Both server and desktop have AppArmor enabled by default, so this is unlikely to be the difference. However, it's still worth checking for denials:
+```bash
+sudo aa-status
+sudo dmesg | grep -i apparmor
+```
 
 ### Questions for User
 
