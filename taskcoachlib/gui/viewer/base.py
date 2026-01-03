@@ -973,10 +973,6 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
                 break
 
     def showColumn(self, column, show=True, refresh=True):
-        if column.name() == "ordering":
-            self.widget.SetResizeColumn(1 if show else 0)
-            self.widget.SetMainColumn(1 if show else 0)
-
         if show:
             self.__visibleColumns.append(column)
             # Make sure we keep the columns in the right order:
@@ -988,6 +984,10 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
             self.__visibleColumns.remove(column)
             self.__stopObserving(column.eventTypes())
         self.widget.showColumn(column, show)
+        # Set main column AFTER inserting/removing the ordering column
+        if column.name() == "ordering":
+            self.widget.SetResizeColumn(1 if show else 0)
+            self.widget.SetMainColumn(1 if show else 0)
         self.settings.set(
             self.settingsSection(),
             "columns",
