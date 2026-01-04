@@ -56,7 +56,7 @@ class AutoColumnWidthMixin(object):
             self.Bind(wx.EVT_SIZE, self.OnResize)
             self.Bind(wx.EVT_LIST_COL_BEGIN_DRAG, self.OnBeginColumnDrag)
             self.Bind(wx.EVT_LIST_COL_END_DRAG, self.OnEndColumnDrag)
-            self.DoResize()
+            wx.CallAfter(self.DoResize)
         else:
             self.Unbind(wx.EVT_SIZE)
             self.Unbind(wx.EVT_LIST_COL_BEGIN_DRAG)
@@ -99,6 +99,9 @@ class AutoColumnWidthMixin(object):
         if not self:
             return  # Avoid a potential PyDeadObject error
         if not self.IsAutoResizing():
+            return
+        # Skip resize if widget isn't shown on screen yet or too small
+        if not self.IsShownOnScreen():
             return
         if self.GetSize().height < 32:
             return  # Avoid an endless update bug when the height is small.
@@ -167,25 +170,25 @@ class AutoColumnWidthMixin(object):
     def InsertColumn(self, *args, **kwargs):
         """Insert the new column and then resize."""
         result = super().InsertColumn(*args, **kwargs)
-        self.DoResize()
+        wx.CallAfter(self.DoResize)
         return result
 
     def DeleteColumn(self, *args, **kwargs):
         """Delete the column and then resize."""
         result = super().DeleteColumn(*args, **kwargs)
-        self.DoResize()
+        wx.CallAfter(self.DoResize)
         return result
 
     def RemoveColumn(self, *args, **kwargs):
         """Remove the column and then resize."""
         result = super().RemoveColumn(*args, **kwargs)
-        self.DoResize()
+        wx.CallAfter(self.DoResize)
         return result
 
     def AddColumn(self, *args, **kwargs):
         """Add the column and then resize."""
         result = super().AddColumn(*args, **kwargs)
-        self.DoResize()
+        wx.CallAfter(self.DoResize)
         return result
 
     # Private helper methods:
