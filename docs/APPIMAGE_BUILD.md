@@ -5,12 +5,54 @@ This document describes the GitHub Actions workflow and local build script for c
 ## Overview
 
 The AppImage build system creates a portable, self-contained Linux executable that bundles:
-- Python 3.11 interpreter
-- All Python dependencies (wxPython, etc.)
+- Python 3.11.14 interpreter (manylinux_2_28)
+- wxPython 4.2.4 with wxWidgets 3.2.8
+- All Python dependencies
 - Required shared libraries (libjpeg, libpng, etc.)
 - TaskCoach application code
 
 The resulting AppImage runs on most Linux distributions with glibc 2.28+ (Debian Bookworm, Ubuntu 22.04+, Fedora 37+, etc.).
+
+## Design Decisions
+
+### Why Python 3.11 (not 3.12 or 3.13)?
+
+| Factor | Python 3.11 | Python 3.12/3.13 |
+|--------|-------------|------------------|
+| wxPython wheels | Pre-built available | May require compilation |
+| Stability | Mature, well-tested | Newer, less tested with wx |
+| Compatibility | Broad library support | Some packages may lag |
+
+**Primary reason:** The [wxPython extras repository](https://extras.wxpython.org/wxPython4/extras/linux/gtk3/) provides pre-built wheels for Python 3.11 on Ubuntu 22.04 (the build platform). Using pre-built wheels:
+- Avoids lengthy compilation during CI builds
+- Ensures consistent, tested binaries
+- Reduces build failures
+
+**Future consideration:** When wxPython wheels are reliably available for Python 3.12+, upgrading should be straightforward - just change the URL in `build-appimage.yml`.
+
+### Why manylinux_2_28?
+
+The Python AppImage is built on a `manylinux_2_28` base (CentOS/RHEL with glibc 2.28). This ensures compatibility with:
+- Debian 12 Bookworm (glibc 2.36)
+- Ubuntu 22.04+ (glibc 2.35+)
+- Fedora 37+ (glibc 2.36+)
+- Any distro with glibc >= 2.28
+
+The "(Red Hat 14.2.1-7)" in the Python version string refers to the GCC version used to compile Python on the manylinux build system.
+
+### What's Bundled vs System Libraries
+
+| Component | Bundled in AppImage | Uses System |
+|-----------|:------------------:|:-----------:|
+| Python interpreter | ✓ | |
+| wxPython/wxWidgets | ✓ | |
+| Image libraries (jpeg, png, tiff) | ✓ | |
+| GTK 3 | | ✓ |
+| Graphics drivers | | ✓ |
+| Fonts | | ✓ |
+| glibc | | ✓ |
+
+**Note:** GTK is NOT bundled because it's tightly integrated with the display server, themes, and graphics stack. This means GTK-related issues may still be system-specific.
 
 ## How It Works
 

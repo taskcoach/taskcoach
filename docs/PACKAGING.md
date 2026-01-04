@@ -84,19 +84,21 @@ This table shows how dependencies are handled in **built packages** and **setup 
 
 ### Build Scripts and Workflows
 
-| Target | ID | Setup Script | GitHub Workflow | Notes |
-|--------|:--:|--------------|-----------------|-------|
-| Debian 12 Bookworm | debian12 | `setup_debian12_bookworm.sh` | `build-deb.yml` | pip: pyparsing, watchdog |
-| Debian 13 Trixie | debian13 | `setup_debian13_trixie.sh` | `build-deb.yml` | Distro deps sufficient |
-| Ubuntu 22.04 Jammy | ubuntu22 | `setup_ubuntu2204_jammy.sh` | `build-deb.yml` | pip: pyparsing, watchdog |
-| Ubuntu 24.04 Noble | ubuntu24 | `setup_ubuntu2404_noble.sh` | `build-deb.yml` | Distro deps sufficient |
-| Arch Linux | arch | `setup_arch.sh` | `build-arch.yml` | pip: squaremap; pypubsub from AUR |
-| Manjaro | arch | `setup_arch.sh` | `build-arch.yml` | pip: squaremap; pypubsub from AUR |
-| Fedora 39 | fedora39 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap, pyparsing |
-| Fedora 40 | fedora40 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap, pyparsing |
-| AppImage | appimage | — | `build-appimage.yml` | Self-contained, all deps included |
-| Windows | windows | — | — | Not currently building |
-| macOS | macos | — | — | Not currently building |
+| Target | ID | Python | wxPython | Setup Script | GitHub Workflow | Notes |
+|--------|:--:|:------:|:--------:|--------------|-----------------|-------|
+| Debian 12 Bookworm | debian12 | 3.11 | 4.2.0 | `setup_debian12_bookworm.sh` | `build-deb.yml` | pip: pyparsing, watchdog |
+| Debian 13 Trixie | debian13 | 3.12 | 4.2.3 | `setup_debian13_trixie.sh` | `build-deb.yml` | Distro deps sufficient |
+| Ubuntu 22.04 Jammy | ubuntu22 | 3.10 | 4.1.1 | `setup_ubuntu2204_jammy.sh` | `build-deb.yml` | pip: pyparsing, watchdog |
+| Ubuntu 24.04 Noble | ubuntu24 | 3.12 | 4.2.1 | `setup_ubuntu2404_noble.sh` | `build-deb.yml` | Distro deps sufficient |
+| Arch Linux | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap; pypubsub from AUR |
+| Manjaro | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap; pypubsub from AUR |
+| Fedora 39 | fedora39 | 3.12 | 4.2.1 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap, pyparsing |
+| Fedora 40 | fedora40 | 3.12 | 4.2.1 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap, pyparsing |
+| **AppImage** | appimage | **3.11** | **4.2.4** | — | `build-appimage.yml` | Bundles Python + all deps |
+| Windows | windows | — | — | — | — | Not currently building |
+| macOS | macos | — | — | — | — | Not currently building |
+
+**AppImage note:** Uses Python 3.11 (not 3.12) for wxPython wheel availability. See [APPIMAGE_BUILD.md](APPIMAGE_BUILD.md) for details.
 
 **pip packages are bundled at build time** - users just install the package, no pip runs at install.
 
@@ -774,6 +776,7 @@ Features:
 
 ## Related Documentation
 
+- [APPIMAGE_BUILD.md](APPIMAGE_BUILD.md) - AppImage build system, design decisions, and troubleshooting
 - [CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md) - Detailed patch information
 - [patches/wxpython/README.md](../patches/wxpython/README.md) - Patch installation methods
 - [DEBIAN_BOOKWORM_SETUP.md](DEBIAN_BOOKWORM_SETUP.md) - Development setup on Bookworm
