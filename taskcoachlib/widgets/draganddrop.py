@@ -427,7 +427,9 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
                 part = -1
             elif flags & wx.TREE_HITTEST_ONITEMLOWERPART:
                 part = 1
-            self.OnDrop(dropTarget, self._dragItems, part, dropColumn)
+            # Use _dragColumn (where drag started) for ordering detection,
+            # not dropColumn from HitTest which returns -1 for narrow columns
+            self.OnDrop(dropTarget, self._dragItems, part, self._dragColumn)
         else:
             # Work around an issue with HyperTreeList. HyperTreeList will
             # restore the selection to the last item highlighted by the drag,
