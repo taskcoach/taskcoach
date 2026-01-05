@@ -288,10 +288,7 @@ class FilePurgeDeletedItems(mixin_uicommand.NeedsDeletedItemsMixin, IOCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
             menuText=_("&Purge deleted items"),
-            helpText=_(
-                "Actually delete deleted tasks and notes "
-                "(see the SyncML chapter in Help)"
-            ),
+            helpText=_("Permanently delete tasks and notes marked as deleted"),
             bitmap="delete",
             *args,
             **kwargs
@@ -300,15 +297,7 @@ class FilePurgeDeletedItems(mixin_uicommand.NeedsDeletedItemsMixin, IOCommand):
     def doCommand(self, event):
         if (
             wx.MessageBox(
-                _(
-                    """Purging deleted items is undoable.
-If you're planning on enabling
-the SyncML feature again with the
-same server you used previously,
-these items will probably come back.
-
-Do you still want to purge?"""
-                ),
+                _("Purging deleted items cannot be undone.\n\nDo you still want to purge?"),
                 _("Warning"),
                 wx.YES_NO,
             )
@@ -629,23 +618,6 @@ class FileImportTodoTxt(IOCommand):
             self.iocontroller.importTodoTxt(filename)
 
 
-class FileSynchronize(IOCommand, settings_uicommand.SettingsCommand):
-    """Action for synchronizing the current task file with a SyncML
-    server."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(
-            menuText=_("S&yncML synchronization..."),
-            helpText=_("Synchronize with a SyncML server"),
-            bitmap="arrows_looped_icon",
-            *args,
-            **kwargs
-        )
-
-    def doCommand(self, event):
-        self.iocontroller.synchronize()
-
-
 class FileQuit(base_uicommand.UICommand):
     """Action for quitting the application."""
 
@@ -898,27 +870,6 @@ class EditPreferences(settings_uicommand.SettingsCommand):
             parent=self.mainWindow(),
             title=_("Preferences"),
             settings=self.settings,
-        )
-        editor.Show(show=show)
-
-
-class EditSyncPreferences(IOCommand):
-    """Action for bringing up the synchronization preferences dialog."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(
-            menuText=_("&SyncML preferences..."),
-            helpText=_("Edit SyncML preferences"),
-            bitmap="arrows_looped_icon",
-            *args,
-            **kwargs
-        )
-
-    def doCommand(self, event, show=True):  # pylint: disable=W0221
-        editor = dialog.syncpreferences.SyncMLPreferences(
-            parent=self.mainWindow(),
-            iocontroller=self.iocontroller,
-            title=_("SyncML preferences"),
         )
         editor.Show(show=show)
 

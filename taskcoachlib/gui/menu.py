@@ -292,10 +292,9 @@ class FileMenu(Menu):
                 iocontroller=iocontroller, viewer=viewerContainer
             ),
         )
-        if not settings.getboolean("feature", "syncml"):
-            self.appendUICommands(
-                uicommand.FilePurgeDeletedItems(iocontroller=iocontroller)
-            )
+        self.appendUICommands(
+            uicommand.FilePurgeDeletedItems(iocontroller=iocontroller),
+        )
         self.appendUICommands(
             None,
             uicommand.FileSaveSelectedTaskAsTemplate(
@@ -321,17 +320,6 @@ class FileMenu(Menu):
                 iocontroller=iocontroller, settings=settings
             ),
         )
-        if settings.getboolean("feature", "syncml"):
-            try:
-                import taskcoachlib.syncml.core  # pylint: disable=W0612,W0404
-            except ImportError:
-                pass
-            else:
-                self.appendUICommands(
-                    uicommand.FileSynchronize(
-                        iocontroller=iocontroller, settings=settings
-                    )
-                )
         self.__recentFilesStartPosition = len(self)
         self.appendUICommands(None, uicommand.FileQuit())
 
@@ -465,17 +453,6 @@ class EditMenu(Menu):
             _("&Select") + " " * 50, SelectMenu(mainwindow, viewerContainer)
         )
         self.appendUICommands(None, uicommand.EditPreferences(settings))
-        if settings.getboolean("feature", "syncml"):
-            try:
-                import taskcoachlib.syncml.core  # pylint: disable=W0612,W0404
-            except ImportError:
-                pass
-            else:
-                self.appendUICommands(
-                    uicommand.EditSyncPreferences(
-                        mainwindow=mainwindow, iocontroller=iocontroller
-                    )
-                )
 
 
 class SelectMenu(Menu):

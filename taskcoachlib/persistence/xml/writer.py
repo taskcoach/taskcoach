@@ -127,8 +127,7 @@ class XMLWriter(object):
         for rootNote in sortedById(noteContainer.rootItems()):
             self.noteNode(root, rootNote)
 
-        if syncMLConfig:
-            self.syncMLNode(root, syncMLConfig)
+        # syncMLConfig no longer written - SyncML removed
         if guid:
             ET.SubElement(root, "guid").text = guid
 
@@ -363,19 +362,6 @@ class XMLWriter(object):
         for eachNote in sortedById(attachment.notes()):
             self.noteNode(node, eachNote)
         return node
-
-    def syncMLNode(self, parentNode, syncMLConfig):
-        node = ET.SubElement(parentNode, "syncmlconfig")
-        self.__syncMLNode(syncMLConfig, node)
-        return node
-
-    def __syncMLNode(self, cfg, node):
-        for name, value in cfg.properties():
-            ET.SubElement(node, "property", dict(name=name)).text = value
-
-        for childCfg in cfg.children():
-            child = ET.SubElement(node, childCfg.name)
-            self.__syncMLNode(childCfg, child)
 
     def budgetAsAttribute(self, budget):
         return "%d:%02d:%02d" % budget.hoursMinutesSeconds()

@@ -114,9 +114,6 @@ class XMLReaderTestCase(test.TestCase):
     def writeAndReadNotes(self, xml_contents):
         return self.writeAndRead(xml_contents)[2]
 
-    def writeAndReadSyncMLConfig(self, xml_contents):
-        return self.writeAndRead(xml_contents)[3]
-
     def writeAndReadGUID(self, xml_contents):
         return self.writeAndRead(xml_contents)[5]
 
@@ -1320,12 +1317,6 @@ class XMLReaderVersion23Test(XMLReaderTestCase):
         guid = self.writeAndReadGUID("<tasks><guid>GUID</guid></tasks>")
         self.assertEqual("GUID", guid)
 
-    def testSyncMLConfig(self):
-        syncmlConfig = self.writeAndReadSyncMLConfig(
-            '<tasks><syncml><property name="name">value</property></syncml></tasks>'
-        )
-        self.assertEqual("value", syncmlConfig.get("name"))
-
 
 class XMLReaderVersion24Test(XMLReaderTestCase):
     tskversion = 24  # New in release 0.72.9
@@ -1357,18 +1348,11 @@ class XMLReaderVersion24Test(XMLReaderTestCase):
         )
         self.assertEqual("GUID", guid)
 
-    def testSyncMLConfig(self):
-        syncmlConfig = self.writeAndReadSyncMLConfig(
-            "<tasks>\n<syncml>\n"
-            '<property name="name">\nvalue\n</property>\n'
-            "</syncml>\n</tasks>\n"
-        )
-        self.assertEqual("value", syncmlConfig.get("name"))
-
-    def testSyncMLConfigWithNewLinesInXMLNodes(self):
-        """Release 0.72.9 (and earlier?) had a bug where tags in the syncml
+    def testGUIDWithLegacySyncMLNodes(self):
+        """Test that GUID is correctly parsed even with legacy syncml nodes present.
+        Release 0.72.9 (and earlier?) had a bug where tags in the syncml
         config information would be split across multiple lines. Fixed in
-        release 0.72.10."""
+        release 0.72.10. SyncML is now removed but old files may still have these nodes."""
         expectedGUID = "0000011d209a4b6c3f9f7c32000a00b100240032"
         actualGUID = self.writeAndReadGUID(
             "<tasks>\n<syncml><TaskCoach-\n"

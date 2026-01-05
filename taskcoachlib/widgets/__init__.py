@@ -40,7 +40,6 @@ from .spinctrl import SpinCtrl
 from .tooltip import ToolTipMixin, SimpleToolTip
 from .dirchooser import DirectoryChooser
 from .fontpicker import FontPickerCtrl
-from .syncmlwarning import SyncMLWarningDialog
 from .calendarwidget import Calendar
 from .calendarconfig import CalendarConfigDialog
 from .password import GetPassword

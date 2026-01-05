@@ -22,7 +22,6 @@ import fasteners
 from . import xml
 from taskcoachlib import patterns, operating_system
 from taskcoachlib.domain import base, task, category, note, effort, attachment
-from taskcoachlib.syncml.config import createDefaultSyncConfig
 import uuid
 from taskcoachlib.changes import ChangeMonitor, ChangeSynchronizer
 from taskcoachlib.filesystem import (
@@ -125,7 +124,7 @@ class TaskFile(patterns.Observer):
         self.__notes = note.NoteContainer()
         self.__efforts = effort.EffortList(self.tasks())
         self.__guid = str(uuid.uuid4())
-        self.__syncMLConfig = createDefaultSyncConfig(self.__guid)
+        self.__syncMLConfig = None  # SyncML removed - kept for file format compatibility
         self.__monitor = ChangeMonitor()
         self.__changes = dict()
         self.__changes[self.__monitor.guid()] = self.__monitor
@@ -227,8 +226,8 @@ class TaskFile(patterns.Observer):
         return self.__changes
 
     def setSyncMLConfig(self, config):
-        self.__syncMLConfig = config
-        self.markDirty()
+        # SyncML removed - method kept for backwards compatibility
+        pass
 
     def isEmpty(self):
         return (
@@ -391,7 +390,7 @@ class TaskFile(patterns.Observer):
             self.notes().clear(event=event)
             if regenerate:
                 self.__guid = str(uuid.uuid4())
-                self.__syncMLConfig = createDefaultSyncConfig(self.__guid)
+                self.__syncMLConfig = None
         finally:
             pub.sendMessage("taskfile.justCleared", taskFile=self)
 
@@ -475,7 +474,6 @@ class TaskFile(patterns.Observer):
                 notes = []
                 changes = dict()
                 guid = str(uuid.uuid4())
-                syncMLConfig = createDefaultSyncConfig(guid)
             self.clear()
             self.__monitor.reset()
             self.__changes = changes
@@ -505,7 +503,7 @@ class TaskFile(patterns.Observer):
             registerOtherObjects(self.tasks().rootItems())
             registerOtherObjects(self.notes().rootItems())
             self.__monitor.resetAllChanges()
-            self.__syncMLConfig = syncMLConfig
+            # syncMLConfig from file is ignored - SyncML removed
             self.__guid = guid
 
             if os.path.exists(self.filename()):

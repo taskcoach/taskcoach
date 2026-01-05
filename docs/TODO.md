@@ -169,32 +169,46 @@ sudo apt install python3-pip python3-setuptools python3-wxgtk4.0
 
 ## SyncML Removal
 
-### Background
+### Status: COMPLETED (January 2026)
 
-SyncML is a legacy synchronization protocol that was used for syncing with mobile devices and other applications. The feature adds significant complexity to the codebase but is rarely used in modern workflows.
+SyncML was a legacy synchronization protocol that was used for syncing with mobile devices and other applications. The feature added significant complexity to the codebase but was rarely used in modern workflows.
 
-### TODO
+**SyncML has been fully removed from the codebase.** The following items were completed:
 
-- [ ] Audit all SyncML-related code paths
-- [ ] Identify dependencies on SyncML functionality
-- [ ] Create migration plan for any users still using SyncML
-- [ ] Remove SyncML code and related UI elements
-- [ ] Update documentation to reflect removal
-- [ ] Simplify data model if SyncML-specific fields can be removed
+- [x] Audit all SyncML-related code paths
+- [x] Identify dependencies on SyncML functionality
+- [x] Remove SyncML code and related UI elements
+- [x] Update documentation to reflect removal
+- [x] Backwards compatibility: Old task files with syncmlconfig nodes can still be read
 
-### Files to Review
+### Removed Files/Directories
 
-- `taskcoachlib/syncml/` - Main SyncML implementation
-- `taskcoachlib/gui/dialog/preferences.py` - SyncML settings UI
-- `taskcoachlib/persistence/` - SyncML-related persistence code
-- Any iPhone/mobile sync related code
+- `taskcoachlib/syncml/` - Main SyncML implementation (7 Python files)
+- `taskcoachlib/widgets/syncmlwarning.py` - SyncML warning dialog
+- `taskcoachlib/gui/dialog/syncpreferences.py` - SyncML preferences dialog
+- `taskcoachlib/bin.in/` - pysyncml binary modules for Windows/macOS
+
+### Modified Files
+
+- `taskcoachlib/gui/dialog/preferences.py` - Removed SyncML feature toggle
+- `taskcoachlib/gui/menu.py` - Removed SyncML menu items
+- `taskcoachlib/gui/uicommand/uicommand.py` - Removed SyncML commands
+- `taskcoachlib/gui/mainwindow.py` - Removed SyncML warning display
+- `taskcoachlib/gui/iocontroller.py` - Removed synchronize method
+- `taskcoachlib/config/defaults.py` - Removed SyncML settings
+- `taskcoachlib/persistence/taskfile.py` - Removed SyncML config handling
+- `taskcoachlib/persistence/xml/reader.py` - Removed SyncML parsing
+- `taskcoachlib/persistence/xml/writer.py` - Removed SyncML writing
+- `taskcoachlib/widgets/__init__.py` - Removed SyncML import
+- `taskcoachlib/help/__init__.py` - Removed SyncML help section
 
 ### Rationale
 
-- Simplifies codebase maintenance
-- Reduces attack surface and potential bugs
-- Modern sync solutions (cloud, file sync) have replaced SyncML
-- Removes dependency on potentially unmaintained SyncML libraries
+- Simplified codebase maintenance (~2600 lines removed)
+- Reduced attack surface and potential bugs
+- Modern sync solutions (cloud file sync, Dropbox) have replaced SyncML
+- Removed dependency on unmaintained pysyncml/Funambol libraries
+- SyncML was not functional on Linux and required unavailable binary dependencies
 
 ---
 

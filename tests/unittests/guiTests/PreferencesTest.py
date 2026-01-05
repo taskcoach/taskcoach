@@ -47,17 +47,3 @@ class PreferencesTest(test.wxTestCase):
             self.newColor,
             ast.literal_eval(self.settings.get("fgcolor", "activetasks"))[:3],
         )
-
-
-class SyncMLPreferencesTest(test.TestCase):
-    def testCreate(self):
-        taskFile = persistence.TaskFile()
-        try:
-            gui.dialog.syncpreferences.SyncMLPreferences(
-                parent=None,
-                iocontroller=gui.IOController(taskFile, None, None),
-                title="Edit SyncML preferences",
-            )
-        finally:
-            taskFile.close()
-            taskFile.stop()

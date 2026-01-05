@@ -812,17 +812,6 @@ class FeaturesPage(SettingsPage):
             % meta.name,
             flags=(wx.ALIGN_CENTER,),
         )
-        try:
-            import taskcoachlib.syncml.core  # pylint: disable=W0404,W0612
-        except ImportError:
-            pass
-        else:
-            self.addBooleanSetting(
-                "feature",
-                "syncml",
-                _("Enable SyncML"),
-                flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTRE_VERTICAL, wx.EXPAND),
-            )
         if operating_system.isGTK():
             self.addBooleanSetting(
                 "feature",

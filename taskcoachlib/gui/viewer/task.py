@@ -304,7 +304,7 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
         return command.DeleteTaskCommand(
             self.presentation(),
             self.curselection(),
-            shadow=self.settings.getboolean("feature", "syncml"),
+            shadow=False,  # SyncML removed
         )
 
     def createTaskPopupMenu(self):

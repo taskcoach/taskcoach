@@ -145,16 +145,6 @@ _TOC = sequence(
             ),
         ),
         li(
-            a_href(_("SyncML support"), "syncml"),
-            ul(
-                li(a_href(_("What is SyncML"), "aboutsyncml")),
-                li(a_href(_("Setup"), "syncmlsetup")),
-                li(a_href(_("Limitations"), "syncmllimits")),
-                li(a_href(_("Troubleshooting"), "syncmltrouble")),
-                li(a_href(_("Purging deleted items"), "syncmlpurge")),
-            ),
-        ),
-        li(
             a_href(_("iPhone and iPod Touch"), "iphone"),
             ul(
                 li(
@@ -648,137 +638,6 @@ attached to the newly created task."""
 )
 
 
-_syncmlSection = sequence(
-    h3(a_name(_("SyncML support"), "syncml")),
-    h4(a_name(_("What is SyncML"), "aboutsyncml")),
-    p(
-        _(
-            """SyncML is an XML protocol designed to synchronize several
-applications with a server. A popular open-source server is <a
-href="http://www.funambol.com/" target="_blank">Funambol</a>. Synchronization 
-clients are available for many devices and applications (Outlook, Pocket PC,
-iPod, iPhone, Evolution, etc...), as well as so-called "connectors"
-which allow the server to synchronize with Exchange, Google Calendar,
-etc."""
-        )
-    ),
-    p(
-        _(
-            """%(name)s has built-in SyncML client support on Windows and Mac OS X
-(provided that you use the supplied binaries). This means you can
-setup %(name)s to synchronize with the same SyncML server you
-synchronize Outlook with and have all Outlook tasks and notes in
-your %(name)s file, as well as %(name)s tasks and notes in Outlook. Or
-your Pocket PC."""
-        )
-        % meta.metaDict
-    ),
-    p(
-        _(
-            """On Linux, you must install the SyncML client binding for
-Python yourself. Note: SyncML support is a legacy feature and may not
-be fully supported."""
-        )
-    ),
-    h4(a_name(_("Setup"), "syncmlsetup")),
-    p(
-        _(
-            """This feature is optional and off by default. In order to turn it on,
-go to the preferences dialog and check it on the Features page."""
-        )
-    ),
-    p(
-        _(
-            """To setup SyncML, edit the SyncML preferences in Edit/SyncML 
-preferences. Fill in the synchronization URL, your ID on the server and choose 
-which items to synchronize (tasks and/or notes). The URL depends on the server
-you choose; some examples are:"""
-        ),
-        ul(
-            li(
-                """<a href="http://www.horde.org/" target="_blank">The Horde project</a>"""
-            ),
-            li(
-                """<a href="http://memotoo.com" target="_blank">MemoToo</a>:
-http://sync.memotoo.com/syncml"""
-            ),
-        ),
-        _(
-            """The database names are pretty standard; the default values 
-should work."""
-        ),
-    ),
-    p(
-        _(
-            """Each task file has its own client ID, so that two different task 
-files will be considered different "devices" by the server."""
-        )
-    ),
-    h4(a_name(_("Limitations"), "syncmllimits")),
-    p(
-        _(
-            """Some limitations are due to the fact that, the underlying data 
-type being vcalendar, some %(name)s features cannot be presented to the 
-server."""
-        )
-        % meta.metaDict,
-        ul(
-            li(_("Task and category hierarchy are lost to the server.")),
-            li(_("Recurrence and reminders are not supported yet.")),
-            li(_("Note categories are lost to the server.")),
-            li(
-                _(
-                    """The conflict detection/resolution system is a workaround 
-for a Funambol limitation. It should work in most cases, but if many 
-applications synchronize with the same server at the same time, problems may 
-arise."""
-                )
-            ),
-            li(_("Probably some others...")),
-        ),
-    ),
-    h4(a_name(_("Troubleshooting"), "syncmltrouble")),
-    p(
-        _(
-            """The SyncML menu items are only present if your platform is 
-supported. Currently supported platforms are:"""
-        ),
-        ul(
-            li(_("Windows, 32 bits (see below)")),
-            li(_("Linux, 32 bits")),
-            li(_("Mac OS 10.3 and later, both Intel and PPC")),
-        ),
-        _(
-            """You may experience problems under Windows if you don't have the 
-Microsoft Visual 8 runtime installed. You can download it on the
-<a target="_blank" href="%s"> Microsoft download site</a>."""
-        )
-        % _MSURL,
-    ),
-    h4(a_name(_("Purging deleted items"), "syncmlpurge")),
-    p(
-        _(
-            """When SyncML is enabled, deleting a task or a note does not actually
-delete it, but rather mark it as deleted. The deleted task or note is actually 
-removed from the task or note list on the next synchronization. For this reason, 
-if you happen to use the SyncML feature, then disable it without having done a 
-sync, there may be some deleted notes or tasks in your task file. This is not a 
-problem, but takes a little more disk space."""
-        )
-    ),
-    p(
-        _(
-            """In this case, the "Purge deleted items" menu item in the File menu 
-can be used to actually delete these tasks. It is only enabled when you
-need it, that is when there are items to purge. Be aware that after doing this,
-if you re-enable SyncML and make a sync with the same server you used
-previously, all those items will reappear, as the server
-doesn't know they're deleted."""
-        )
-    ),
-)
-
-
 _iPhoneSection = sequence(
     h3(a_name(_("iPhone, iPod Touch and iPad"), "iphone")),
     h4(
@@ -1240,7 +1099,6 @@ helpHTML = (
     + _multiuserSection
     + _emailTasksSection
     + _emailSection
-    + _syncmlSection
     + _iPhoneSection
     + _androidSection
     + _templatesSection

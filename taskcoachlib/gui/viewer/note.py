@@ -279,7 +279,7 @@ class BaseNoteViewer(
         return command.DeleteNoteCommand(
             self.presentation(),
             self.curselection(),
-            shadow=self.settings.getboolean("feature", "syncml"),
+            shadow=False,  # SyncML removed
         )
 
     def itemEditorClass(self):

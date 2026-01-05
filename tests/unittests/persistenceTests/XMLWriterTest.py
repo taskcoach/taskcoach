@@ -30,7 +30,6 @@ from taskcoachlib.domain import (
     note,
     attachment,
 )
-from taskcoachlib.syncml.config import SyncMLConfigNode
 
 
 class XMLWriterTest(test.TestCase):
@@ -53,7 +52,7 @@ class XMLWriterTest(test.TestCase):
             self.taskList,
             self.categoryContainer,
             self.noteContainer,
-            SyncMLConfigNode("root"),
+            None,  # SyncML removed
             "GUID",
         )
         return self.fd.getvalue().decode(self.fd.encoding)

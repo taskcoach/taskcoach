@@ -32,10 +32,6 @@ from taskcoachlib.domain import (
     attachment,
 )
 from taskcoachlib.i18n import translate
-from taskcoachlib.syncml.config import (
-    SyncMLConfigNode,
-    createDefaultSyncConfig,
-)
 from taskcoachlib.thirdparty.deltaTime import nlTimeExpression
 import uuid
 import ast
@@ -679,33 +675,12 @@ class XMLReader(object):
         )
 
     def __parse_syncml_node(self, nodes, guid):
-        """Parse the SyncML node from the nodes."""
-        syncml_config = createDefaultSyncConfig(guid)
+        """Parse the SyncML node from the nodes.
 
-        node_name = "syncmlconfig"
-        if self.__tskversion < 25:
-            node_name = "syncml"
-
-        for node in nodes.findall(node_name):
-            self.__parse_syncml_nodes(node, syncml_config)
-        return syncml_config
-
-    def __parse_syncml_nodes(self, node, config_node):
-        """Parse the SyncML nodes from the node."""
-        for child_node in node:
-            if child_node.tag == "property":
-                config_node.set(
-                    child_node.attrib["name"], self.__parse_text(child_node)
-                )
-            else:
-                for child_config_node in config_node.children():
-                    if child_config_node.name == child_node.tag:
-                        break
-                else:
-                    tag = child_node.tag
-                    child_config_node = SyncMLConfigNode(tag)
-                    config_node.addChild(child_config_node)
-                self.__parse_syncml_nodes(child_node, child_config_node)
+        SyncML has been removed. This method now returns None but is kept
+        for backwards compatibility with old task files that contain syncmlconfig.
+        """
+        return None
 
     def __parse_guid_node(self, node):
         """Parse the GUID from the node."""
