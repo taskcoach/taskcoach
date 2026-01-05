@@ -9,6 +9,7 @@ This document tracks planned improvements and known issues to address in future 
 - [Refactoring Save Patterns](#refactoring-save-patterns)
 - [Backup Feature Review](#backup-feature-review)
 - [Setup/Installation Issues](#setupinstallation-issues)
+- [SyncML Removal](#syncml-removal)
 - [Other TODOs](#other-todos)
 
 ---
@@ -163,6 +164,37 @@ sudo apt install python3-pip python3-setuptools python3-wxgtk4.0
 - [ ] Add prerequisite checks to setup.py with helpful error messages
 - [ ] Update README with complete fresh-install instructions
 - [ ] Consider using pyproject.toml for modern Python packaging
+
+---
+
+## SyncML Removal
+
+### Background
+
+SyncML is a legacy synchronization protocol that was used for syncing with mobile devices and other applications. The feature adds significant complexity to the codebase but is rarely used in modern workflows.
+
+### TODO
+
+- [ ] Audit all SyncML-related code paths
+- [ ] Identify dependencies on SyncML functionality
+- [ ] Create migration plan for any users still using SyncML
+- [ ] Remove SyncML code and related UI elements
+- [ ] Update documentation to reflect removal
+- [ ] Simplify data model if SyncML-specific fields can be removed
+
+### Files to Review
+
+- `taskcoachlib/syncml/` - Main SyncML implementation
+- `taskcoachlib/gui/dialog/preferences.py` - SyncML settings UI
+- `taskcoachlib/persistence/` - SyncML-related persistence code
+- Any iPhone/mobile sync related code
+
+### Rationale
+
+- Simplifies codebase maintenance
+- Reduces attack surface and potential bugs
+- Modern sync solutions (cloud, file sync) have replaced SyncML
+- Removes dependency on potentially unmaintained SyncML libraries
 
 ---
 
