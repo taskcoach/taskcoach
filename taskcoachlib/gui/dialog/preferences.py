@@ -1144,33 +1144,6 @@ class TaskReminderPage(SettingsPage):
         self.fit()
 
 
-class IPhonePage(SettingsPage):
-    pageName = "iphone"
-    pageTitle = _("iPhone")
-    pageIcon = "computer_handheld_icon"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(columns=3, *args, **kwargs)
-        self.addTextSetting(
-            "iphone",
-            "password",
-            _("Password for synchronization with iPhone"),
-            helpText=_(
-                "When synchronizing, enter this password on the iPhone to authorize it"
-            ),
-        )
-        self.addTextSetting(
-            "iphone", "service", _("Bonjour service name"), helpText="restart"
-        )
-        self.addBooleanSetting(
-            "iphone", "synccompleted", _("Upload completed tasks to device")
-        )
-        self.addBooleanSetting(
-            "iphone", "showlog", _("Show the synchronization log")
-        )
-        self.fit()
-
-
 class EditorPage(SettingsPage):
     pageName = "editor"
     pageTitle = _("Editor")
@@ -1246,7 +1219,6 @@ class Preferences(widgets.NotebookDialog):
         "reminder",
         "appearance",
         "features",
-        "iphone",
         "editor",
         "os_darwin",
         "os_linux",
@@ -1259,7 +1231,6 @@ class Preferences(widgets.NotebookDialog):
         language=LanguagePage,
         appearance=TaskAppearancePage,
         features=FeaturesPage,
-        iphone=IPhonePage,
         editor=EditorPage,
         os_darwin=OSXPage,
         os_linux=LinuxPage,
@@ -1279,9 +1250,7 @@ class Preferences(widgets.NotebookDialog):
                 self._interior.AddPage(page, page.pageTitle, page.pageIcon)
 
     def __should_create_page(self, page_name):
-        if page_name == "iphone":
-            return self.settings.getboolean("feature", "iphone")
-        elif page_name == "os_darwin":
+        if page_name == "os_darwin":
             return operating_system.isMac()
         elif page_name == "os_linux":
             return operating_system.isGTK()

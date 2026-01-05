@@ -19,7 +19,7 @@ This document captures technical issues, fixes, and refactorings discovered duri
 13. [Future Work](#future-work)
 14. [Internationalization and Locale Issues](#internationalization-and-locale-issues)
 15. [SyncML Removal](#syncml-removal)
-16. [Mobile Sync Features Status](#mobile-sync-features-status)
+16. [Mobile Sync Features Removal](#mobile-sync-features-removal)
 
 ---
 
@@ -2665,92 +2665,52 @@ After removal, verify:
 
 ---
 
-## Mobile Sync Features Status
+## Mobile Sync Features Removal
 
-**Date Reviewed:** January 2026
+**Date Completed:** January 2026
 
-This section documents the status of mobile synchronization features in Task Coach.
+### Why Mobile Sync Was Removed
 
-### iPhone/iPad Sync
+**The mobile apps are dead.** Both the iOS app and Android third-party app are no longer available or maintained.
 
-**Status: Active (but iOS app status unknown)**
+| Platform | Previous Status | Reason for Removal |
+|----------|-----------------|-------------------|
+| **iOS (iPhone/iPad)** | Had companion app on App Store | App no longer available; last update ~2012-2016 |
+| **Android** | Third-party app by Ajiget | Developer site abandoned; app not maintained |
+| **SyncML (all)** | Funambol-based sync | Protocol dead; see SyncML Removal section above |
 
-Task Coach includes a built-in iPhone/iPad synchronization feature that allows syncing tasks, categories, and efforts between the desktop app and iOS devices over the local network.
+### Removed Files/Directories
 
-#### Implementation
+```
+taskcoachlib/iphone/           # iPhone sync implementation
+├── __init__.py
+├── bonjour.py                 # Zeroconf service discovery
+└── protocol.py                # Binary sync protocol (~1800 lines)
 
-| Component | File(s) | Description |
-|-----------|---------|-------------|
-| **Bonjour/Zeroconf** | `taskcoachlib/iphone/bonjour.py` | Service discovery for LAN sync |
-| **Sync Protocol** | `taskcoachlib/iphone/protocol.py` | Binary protocol (v5) for data exchange |
-| **GUI** | `taskcoachlib/gui/iphone.py` | Sync progress frame |
-| **Dialogs** | `taskcoachlib/gui/dialog/iphone.py` | Sync type and Bonjour dialogs |
+taskcoachlib/gui/iphone.py     # Sync progress frame
+taskcoachlib/gui/dialog/iphone.py  # Sync type and Bonjour dialogs
+```
 
-#### How It Works
+### Modified Files
 
-1. Desktop registers a `_taskcoachsync._tcp` Zeroconf service on ports 4096-8191
-2. iOS app discovers the service via Bonjour
-3. Password-based authentication (SHA1 hash challenge)
-4. Two-way sync of tasks, categories, and efforts
-
-#### Dependencies
-
-- `zeroconf` library (pip install zeroconf)
-- Firewall must allow ports 4096-4100 on Linux
-
-#### Technical Notes (Twisted Removal)
-
-During Python 3 migration, Twisted was replaced with native Python:
-- `twisted.internet.reactor` → `wx.CallAfter()` and `wx.CallLater()`
-- `twisted.internet.protocol` → `socketserver.ThreadingTCPServer`
-- `twisted.internet.defer.Deferred` → Custom `AsyncResult` class
-
-#### iOS App Status
-
-**Unknown/Needs Research:**
-- The Task Coach iOS app was previously available on the Apple App Store
-- Current availability is unknown - may have been removed
-- Last protocol version is 5, implemented around 2012-2016
-- If the iOS app is no longer available, this feature is effectively orphaned
-
-#### Configuration
-
-Settings in `[iphone]` section:
-- `service` - Bonjour service name
-- `password` - Sync password (required)
-- `synccompleted` - Whether to sync completed tasks
-- `showlog` - Show sync log during sync
-
-### Android Sync
-
-**Status: Not Implemented**
-
-Task Coach does NOT have native Android support. This is clearly documented in the help system:
-
-> "No, Task Coach is not available for the Android platform."
-
-#### Third-Party Alternatives (Historical)
-
-The website and help mention:
-- **Ajiget's Task Coach for Android** - Third-party app at `sites.google.com/site/ajiget/`
-  - Status: Unknown/likely abandoned
-  - Used Task Coach's XML file format
-- **Todo.txt Touch** - Suggested alternative using todo.txt format
-
-#### Future Considerations
-
-If Android support is desired, options include:
-1. **File-based sync** - Share `.tsk` files via cloud storage (Dropbox, etc.)
-2. **Export to todo.txt** - Task Coach can export to todo.txt format
-3. **Native Android app** - Would require new development effort
+| File | Change |
+|------|--------|
+| `taskcoachlib/gui/mainwindow.py` | Removed Bonjour registration, iPhone sync methods |
+| `taskcoachlib/gui/dialog/preferences.py` | Removed IPhonePage preferences |
+| `taskcoachlib/config/defaults.py` | Removed `[iphone]` config section and `feature.iphone` |
+| `taskcoachlib/application/application.py` | Removed Bonjour cleanup on quit |
+| `taskcoachlib/help/__init__.py` | Removed iPhone and Android help sections |
+| `setup.py` | Removed `zeroconf` dependency |
+| `website.in/make.py` | Removed Android download page and references |
+| `website.in/style.py` | Removed Android from download menu |
 
 ### Summary Table
 
-| Platform | Status | Implementation | Notes |
-|----------|--------|----------------|-------|
-| **iOS (iPhone/iPad)** | Implemented | Native LAN sync | iOS app availability unknown |
-| **Android** | Not implemented | N/A | Third-party alternatives exist |
-| **SyncML (all)** | Removed | N/A | Protocol is dead (see above) |
+| Platform | Status | Notes |
+|----------|--------|-------|
+| **iOS (iPhone/iPad)** | **Removed** | App no longer available |
+| **Android** | **Removed** | Third-party app abandoned |
+| **SyncML (all)** | **Removed** | Protocol is dead (see above) |
 
 ---
 

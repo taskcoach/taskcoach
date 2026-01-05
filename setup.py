@@ -58,7 +58,6 @@ def majorAndMinorPythonVersion():
 # - pyparsing>=3.1.3: Required for pp.Tag() in delta_time.py
 # - watchdog>=3.0.0: Required for file monitoring API
 # - fasteners>=0.19: Required for file locking API
-# - zeroconf>=0.50.0: Required for iPhone sync
 #
 # Debian Bookworm note: pyparsing (3.0.9) and watchdog (2.2.1) are too old,
 # must pip install newer versions. See docs/DEBIAN_BOOKWORM_SETUP.md
@@ -80,7 +79,6 @@ install_requires = [
     "keyring",
     "numpy",
     "fasteners>=0.19",  # File locking
-    "zeroconf>=0.50.0",  # iPhone sync
 ]
 
 # Optional/platform-specific dependencies

@@ -33,10 +33,8 @@ from taskcoachlib.gui import (
     windowdimensionstracker,
     idlecontroller,
 )
-from taskcoachlib.gui.dialog.iphone import IPhoneSyncTypeDialog
 from taskcoachlib.gui.dialog.xfce4warning import XFCE4WarningDialog
 from taskcoachlib.gui.dialog.editor import Editor
-from taskcoachlib.gui.iphone import IPhoneSyncFrame
 from taskcoachlib.i18n import _
 from taskcoachlib.powermgt import PowerStateMixin
 from taskcoachlib.help.balloontips import BalloonTipManager
@@ -94,55 +92,11 @@ class MainWindow(
         self.__init_window()
         self.__register_for_window_component_changes()
 
-        self.bonjourRegister = None
-        self.bonjourAcceptor = None
-        self._registerBonjour()
-        pub.subscribe(self._registerBonjour, "settings.feature.iphone")
-
         self._idleController = idlecontroller.IdleController(
             self, self.settings, self.taskFile.efforts()
         )
 
         wx.CallAfter(self.checkXFCE4)
-
-    def _registerBonjour(self, value=True):
-        if self.bonjourRegister is not None:
-            self.bonjourRegister.stop()
-            self.bonjourAcceptor.close()
-            self.bonjourRegister = self.bonjourAcceptor = None
-
-        if self.settings.getboolean("feature", "iphone"):
-            # pylint: disable=W0612,W0404,W0702
-            try:
-                import zeroconf  # Check if zeroconf library is available
-                from taskcoachlib.iphone import (
-                    IPhoneAcceptor,
-                    BonjourServiceRegister,
-                )
-
-                acceptor = IPhoneAcceptor(
-                    self, self.settings, self.iocontroller
-                )
-
-                def success(reader):
-                    self.bonjourRegister = reader
-                    self.bonjourAcceptor = acceptor
-
-                def error(reason):
-                    acceptor.close()
-                    wx.MessageBox(reason.getErrorMessage(), _("Error"), wx.OK)
-
-                BonjourServiceRegister(
-                    self.settings, acceptor.port
-                ).addCallbacks(success, error)
-            except Exception:
-                from taskcoachlib.gui.dialog.iphone import IPhoneBonjourDialog
-
-                dlg = IPhoneBonjourDialog(self, wx.ID_ANY, _("Warning"))
-                try:
-                    dlg.ShowModal()
-                finally:
-                    dlg.Destroy()
 
     def checkXFCE4(self):
         if operating_system.isGTK():
@@ -538,104 +492,3 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         pub.sendMessage(
             "powermgt.%s" % {self.POWERON: "on", self.POWEROFF: "off"}[state]
         )
-
-    # iPhone-related methods.
-
-    def createIPhoneProgressFrame(self):
-        return IPhoneSyncFrame(
-            self.settings,
-            _("iPhone/iPod"),
-            icon=wx.ArtProvider.GetBitmap(
-                "taskcoach", wx.ART_FRAME_ICON, (16, 16)
-            ),
-            parent=self,
-        )
-
-    def getIPhoneSyncType(self, guid):
-        if guid == self.taskFile.guid():
-            return 0  # two-way
-
-        dlg = IPhoneSyncTypeDialog(self, wx.ID_ANY, _("Synchronization type"))
-        try:
-            dlg.ShowModal()
-            return dlg.value
-        finally:
-            dlg.Destroy()
-
-    def notifyIPhoneProtocolFailed(self):
-        # This should actually never happen.
-        wx.MessageBox(
-            _(
-                """An iPhone or iPod Touch device tried to synchronize with this\n"""
-                """task file, but the protocol negotiation failed. Please file a\n"""
-                """bug report."""
-            ),
-            _("Error"),
-            wx.OK,
-        )
-
-    def clearTasks(self):
-        self.taskFile.clear(False)
-
-    def restoreTasks(self, categories, tasks):
-        self.taskFile.clear(False)
-        self.taskFile.categories().extend(categories)
-        self.taskFile.tasks().extend(tasks)
-
-    def addIPhoneCategory(self, category):
-        self.taskFile.categories().append(category)
-
-    def removeIPhoneCategory(self, category):
-        self.taskFile.categories().remove(category)
-
-    def modifyIPhoneCategory(self, category, name):
-        category.setSubject(name)
-
-    def addIPhoneTask(self, task, categories):
-        self.taskFile.tasks().append(task)
-        for category in categories:
-            task.addCategory(category)
-            category.addCategorizable(task)
-
-    def removeIPhoneTask(self, task):
-        self.taskFile.tasks().remove(task)
-
-    def addIPhoneEffort(self, task, effort):
-        if task is not None:
-            task.addEffort(effort)
-
-    def modifyIPhoneEffort(self, effort, subject, started, ended):
-        effort.setSubject(subject)
-        effort.setStart(started)
-        effort.setStop(ended)
-
-    def modifyIPhoneTask(
-        self,
-        task,
-        subject,
-        description,
-        plannedStartDateTime,
-        dueDateTime,
-        completionDateTime,
-        reminderDateTime,
-        recurrence,
-        priority,
-        categories,
-    ):
-        task.setSubject(subject)
-        task.setDescription(description)
-        task.setPlannedStartDateTime(plannedStartDateTime)
-        task.setDueDateTime(dueDateTime)
-        task.setCompletionDateTime(completionDateTime)
-        task.setReminder(reminderDateTime)
-        task.setRecurrence(recurrence)
-        task.setPriority(priority)
-
-        if categories is not None:  # Protocol v2
-            for toRemove in task.categories() - categories:
-                task.removeCategory(toRemove)
-                toRemove.removeCategorizable(task)
-
-            for toAdd in categories - task.categories():
-                task.addCategory(toAdd)
-                toAdd.addCategorizable(task)

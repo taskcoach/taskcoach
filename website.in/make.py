@@ -139,7 +139,6 @@ pages[
                             <span class="caret"></span>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a href="https://answers.launchpad.net/taskcoach/+faq/1756">Is Task Coach available for Android?</a></li>
                             <li><a href="https://answers.launchpad.net/taskcoach/+faq/1724">Why can I not mark this task completed?</a></li>
                             <li><a href="https://answers.launchpad.net/taskcoach/+faq/1448">Can a task file be edited by multiple users?</a></li>
                             <li class="divider"></li>
@@ -673,27 +672,6 @@ pages["download_for_bsd"] = sep.join(
 )
 
 
-android = download_table(
-    image="logoandroid",
-    action="Install",
-    download_urls={
-        "Ajiget's site": "https://sites.google.com/site/ajiget/programs/android-programs/taskcoach-for-android"
-    },
-    package_type="Android app",
-    platform="Android",
-    platform_lower="android",
-    platform_versions_supported="Android 2.2 or newer",
-    installation="Follow the link to Google Play from the site.",
-)
-
-pages["download_for_android"] = sep.join(
-    [
-        download_header(platform="Android", release="0.25"),
-        android,
-        download_footer(one_ad),
-    ]
-)
-
 sourceOptions = dict(
     image="source",
     prerequisites=prerequisites,
@@ -867,11 +845,7 @@ pages["download"] = (
                                     <a href="download_for_bsd.html"><img alt="BSD" src="images/freebsd.png"></a>
                                 </td>
                             </tr>
-                            <tr> 
-                                <td>
-                                    <h3>Android</h3>
-                                    <a href="download_for_android.html"><img alt="Android" src="images/logoandroid.png"></a>
-                                </td>
+                            <tr>
                                 <td>
                                     <h3>Sources</h3>
                                     <a href="download_sources.html"><img alt="Sources" src="images/sources.png"></a>
@@ -941,9 +915,6 @@ pages["features"] = (
                         view, including any filters and sort order.</li>
                         <li>%(name)s can be run from a removable medium.</li>
                     </ul>
-                    <h2>%(name)s for Android</h2>
-                    <p>The Android version is separately developed; we don't support it ourselves. See the developer's site for
-                    details.</p>
                 </div>
                 <div class="span2">"""
     + ads

@@ -562,7 +562,6 @@ defaults = {
         "duesoonhours": "24",  # When a task is considered to be "due soon"
     },
     "feature": {
-        "iphone": "False",
         "notifier": "Task Coach",
         "minidletime": "0",
         "usesm2": "False",
@@ -572,12 +571,6 @@ defaults = {
         "sdtcspans_effort": "60,120,180,240",
         "decimaltime": "False",
         # New settings should use snake_case naming convention (PEP 8)
-    },
-    "iphone": {
-        "password": "",
-        "service": "",
-        "synccompleted": "True",
-        "showlog": "False",
     },
     "printer": {
         "margin_left": "0",
