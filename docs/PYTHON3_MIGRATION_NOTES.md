@@ -18,6 +18,7 @@ This document captures technical issues, fixes, and refactorings discovered duri
 12. [Known Issues](#known-issues)
 13. [Future Work](#future-work)
 14. [Internationalization and Locale Issues](#internationalization-and-locale-issues)
+15. [SyncML Removal](#syncml-removal)
 
 ---
 
@@ -2572,6 +2573,97 @@ Modern wxPython applications use:
 
 ---
 
+## SyncML Removal
+
+**Date Completed:** January 2026
+
+### Background
+
+SyncML was a synchronization protocol designed for the pre-smartphone era when syncing between PDAs, desktop apps, and servers was complex. Task Coach used the Funambol C++ API via a Python wrapper (`_pysyncml`).
+
+### Why It Was Removed
+
+**The SyncML project is dead.** This is the primary reason for removal.
+
+| Aspect | Status |
+|--------|--------|
+| **SyncML Protocol** | Absorbed into OMA (Open Mobile Alliance) in 2009; now only used in enterprise MDM |
+| **Funambol** | Company pivoted away from open-source; last meaningful activity ~2007-2012 |
+| **pysyncml wrapper** | Source at `svn://www.fraca7.net/fraca7/pysyncml` is gone/inaccessible |
+| **Consumer adoption** | All major vendors (Google, Apple, Microsoft) use proprietary cloud sync instead |
+| **Task Coach binaries** | Were built for Python 2.6/2.7; cannot be rebuilt |
+
+Modern cloud sync solutions (Dropbox, iCloud, Google Drive, OneDrive) have completely replaced SyncML for consumer use. There is no path forward for this feature.
+
+Additional technical issues:
+- Not functional on Linux (used Python 2 style `sys.platform == "linux2"` check)
+- ~2600 lines of unmaintainable code with no upstream support
+
+### Removed Files/Directories
+
+```
+taskcoachlib/syncml/           # Main SyncML implementation (7 Python files)
+├── __init__.py
+├── basesource.py
+├── config.py
+├── core.py
+├── notesource.py
+├── sync.py
+└── tasksource.py
+
+taskcoachlib/widgets/syncmlwarning.py    # SyncML warning dialog
+taskcoachlib/gui/dialog/syncpreferences.py  # SyncML preferences dialog
+taskcoachlib/bin.in/                     # pysyncml binary modules
+├── README.txt
+├── macos/IA32/_pysyncml.so
+└── windows/py26/_pysyncml.pyd, py27/_pysyncml.pyd
+```
+
+### Modified Files
+
+| File | Change |
+|------|--------|
+| `taskcoachlib/gui/dialog/preferences.py` | Removed SyncML feature toggle |
+| `taskcoachlib/gui/menu.py` | Removed SyncML menu items |
+| `taskcoachlib/gui/uicommand/uicommand.py` | Removed `FileSynchronize`, `EditSyncPreferences` commands |
+| `taskcoachlib/gui/mainwindow.py` | Removed SyncML warning display |
+| `taskcoachlib/gui/iocontroller.py` | Removed `synchronize()` method |
+| `taskcoachlib/gui/viewer/task.py` | Changed `shadow=False` (was syncml setting) |
+| `taskcoachlib/gui/viewer/note.py` | Changed `shadow=False` (was syncml setting) |
+| `taskcoachlib/config/defaults.py` | Removed `syncml` settings section |
+| `taskcoachlib/persistence/taskfile.py` | Removed SyncML config handling |
+| `taskcoachlib/persistence/xml/reader.py` | `__parse_syncml_node()` now returns `None` |
+| `taskcoachlib/persistence/xml/writer.py` | Removed `syncMLNode()` method |
+| `taskcoachlib/widgets/__init__.py` | Removed `SyncMLWarningDialog` import |
+| `taskcoachlib/help/__init__.py` | Removed SyncML help section |
+
+### Backwards Compatibility
+
+Old `.tsk` files with `syncmlconfig` nodes can still be read:
+
+```python
+def __parse_syncml_node(self, nodes, guid):
+    """Parse the SyncML node from the nodes.
+
+    SyncML has been removed. This method now returns None but is kept
+    for backwards compatibility with old task files that contain syncmlconfig.
+    """
+    return None
+```
+
+The XML writer no longer writes `syncmlconfig` nodes to new files.
+
+### Testing
+
+After removal, verify:
+- [ ] Application starts without SyncML-related errors
+- [ ] Old task files with `syncmlconfig` load correctly
+- [ ] New task files save without `syncmlconfig` nodes
+- [ ] "Purge deleted items" menu works (was tied to SyncML shadow deletion)
+- [ ] No "syncml" references in preferences dialog
+
+---
+
 ## Contributing to This Document
 
 When adding new technical notes:
@@ -2584,4 +2676,4 @@ When adding new technical notes:
 
 ---
 
-**Last Updated:** January 1, 2026
+**Last Updated:** January 5, 2026
