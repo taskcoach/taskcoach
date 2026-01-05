@@ -9,10 +9,10 @@
  <summary>Your Friendly Task Manager</summary>
  <summary xml:lang="fr">Your Friendly Task Manager</summary>
  <description>
-  <p>Task Coach is an open source todo manager to manage personal tasks and todo lists. It supports composite tasks, i.e. tasks within tasks. In addition, Task Coach allows you to categorize your tasks, track efforts against a budget per task, and much more. Task Coach is available for Windows, Mac OS X, BSD, Linux, iPhone and iPad.</p>
-  <p>Your database may be synchronized across these platforms. If espeak is installed, reminders can be spoken.</p>
-  <p xml:lang="fr">Task Coach est un gestionnaire de tâches libre pour gérer vos tâches et listes de choses à faire. Il supporte les tâches composites, càd les tâches faisant partie d'une autre. De plus, Task Coach vous permet de catégoriser vos tâches, suivre le temps passé par rapport à un budget associé à chaque tâche, et bien plus. Task Coach est disponible pour Windows, Mac OS X, BSD, Linux, iPhone et iPad.</p>
-  <p xml:lang="fr">Votre base de données peut être synchronisée à travers toutes ces plate-formes. Si espeak est installé, les rappels peuvent être énoncés.</p>
+  <p>Task Coach is an open source todo manager to manage personal tasks and todo lists. It supports composite tasks, i.e. tasks within tasks. In addition, Task Coach allows you to categorize your tasks, track efforts against a budget per task, and much more. Task Coach is available for Windows, Mac OS X, BSD, and Linux.</p>
+  <p>If espeak is installed, reminders can be spoken.</p>
+  <p xml:lang="fr">Task Coach est un gestionnaire de tâches libre pour gérer vos tâches et listes de choses à faire. Il supporte les tâches composites, càd les tâches faisant partie d'une autre. De plus, Task Coach vous permet de catégoriser vos tâches, suivre le temps passé par rapport à un budget associé à chaque tâche, et bien plus. Task Coach est disponible pour Windows, Mac OS X, BSD et Linux.</p>
+  <p xml:lang="fr">Si espeak est installé, les rappels peuvent être énoncés.</p>
  </description>
  <url type="homepage">https://github.com/taskcoach/taskcoach</url>
  <url type="bugtracker">https://github.com/taskcoach/taskcoach/issues</url>

@@ -29,8 +29,7 @@ Depends: ${python3:Depends},
          python3-fasteners,
          libxss1,
          xdg-utils
-Recommends: python3-zeroconf,
-            python3-squaremap
+Recommends: python3-squaremap
 Suggests: python3-gntp
 Description: Personal task manager with support for composite tasks
  Task Coach is a free open source todo manager. It grew out of frustration
@@ -53,6 +52,5 @@ Description: Personal task manager with support for composite tasks
   * Cross-platform (Windows, macOS, Linux)
  .
  Optional features:
-  * python3-zeroconf: iPhone sync service discovery
   * python3-squaremap: Hierarchical data visualization
   * python3-gntp: Growl notification support (not available in Bookworm)

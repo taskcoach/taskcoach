@@ -6,7 +6,6 @@ post_install() {
     echo "You can start Task Coach by running 'taskcoach.py' or from your application menu."
     echo ""
     echo "Optional dependencies for additional features:"
-    echo "  - python-zeroconf: iPhone sync service discovery"
     echo "  - python-squaremap: Hierarchical data visualization"
     echo "  - python-gntp: Growl notification support"
     echo "  - espeak-ng: Spoken reminders"

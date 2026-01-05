@@ -31,7 +31,6 @@ makedepends=(
     'python-pip'
 )
 optdepends=(
-    'python-zeroconf: iPhone sync service discovery'
     'python-gntp: Growl notification support'
     'espeak-ng: Spoken reminders'
 )
