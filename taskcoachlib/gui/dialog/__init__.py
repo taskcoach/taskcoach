@@ -20,6 +20,5 @@ from . import developer_message
 from . import entry
 from . import export
 from . import preferences
-from . import syncpreferences
 from . import templates
 from .backupmanager import BackupManagerDialog

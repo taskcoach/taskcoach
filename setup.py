@@ -165,15 +165,6 @@ if system == "Linux":
         ]
 elif system == "Windows":
     setupOptions["scripts"].append("taskcoach.pyw")
-    major, minor = majorAndMinorPythonVersion()
-    sys.path.insert(
-        0,
-        os.path.join(
-            "taskcoachlib", "bin.in", "windows", "py%d%d" % (major, minor)
-        ),
-    )
-    import _pysyncml
-
     # ...
     # ModuleFinder can't handle runtime changes to __path__, but win32com uses them
     try:

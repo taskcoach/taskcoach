@@ -20,7 +20,6 @@ import time, os
 import test, mock
 from taskcoachlib import persistence, config
 from taskcoachlib.domain import task, category, note
-from taskcoachlib.syncml.config import createDefaultSyncConfig
 
 
 class PerformanceTest(test.TestCase):
@@ -35,7 +34,7 @@ class PerformanceTest(test.TestCase):
             taskList,
             category.CategoryList(),
             note.NoteContainer(),
-            createDefaultSyncConfig("fake"),
+            None,  # SyncML removed
             "fake",
         )
         taskfile.close()

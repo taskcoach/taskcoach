@@ -634,19 +634,6 @@ linux = download_table(
     installation="Use your package manager to install the package",
 )
 
-syncml = download_table(
-    image="linux",
-    download_urls={
-        "taskcoach.org": "downloads/python2.7-syncml_0.3-1_amd64.deb"
-    },
-    package_type="SyncML module",
-    platform="Debian",
-    platform_lower="debian",
-    platform_versions_supported="64 bits Debian-based distribution",
-    prerequisites="",
-    installation="Use your package manager to install the package",
-)
-
 pages["download_for_linux"] = sep.join(
     [
         download_header(platform="Linux", release="%(version)s"),
@@ -659,7 +646,6 @@ pages["download_for_linux"] = sep.join(
         redhat_el4and5,
         archlinux,
         linux,
-        syncml,
         download_footer(),
     ]
 )
@@ -954,9 +940,6 @@ pages["features"] = (
                         %(name)s prints the information that is visible in the current
                         view, including any filters and sort order.</li>
                         <li>%(name)s can be run from a removable medium.</li>
-                        <li>Tasks and notes can be synchronized via a 
-                        <a href="https://www.funambol.com/">Funambol</a> server such
-                        as <a href="https://my.funambol.com">My Funambol</a>.</li>
                     </ul>
                     <h2>%(name)s for Android</h2>
                     <p>The Android version is separately developed; we don't support it ourselves. See the developer's site for
