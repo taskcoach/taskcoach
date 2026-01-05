@@ -2715,45 +2715,130 @@ taskcoachlib/gui/dialog/iphone.py  # Sync type and Bonjour dialogs
 ## Native Filesystem Monitors: Deleted
 
 **Date Completed:** January 2026
+**Affected Files:** `taskcoachlib/filesystem/`
+**Root Cause:** Redundant platform-specific code duplicated functionality provided by watchdog library
 
-### Summary
+### Background
 
-Deleted redundant native filesystem monitor implementations. The cross-platform `watchdog` library now handles all platforms.
+The `taskcoachlib/filesystem/` module monitors `.tsk` task files for external changes. When a file is modified outside Task Coach (e.g., by sync tools, backup software, or manual editing), the application detects the change and prompts the user to reload.
+
+**Original architecture (BEFORE):**
+```
+taskcoachlib/filesystem/
+├── __init__.py      # Platform selector
+├── base.py          # Base class
+├── fs_darwin.py     # macOS: Native kqueue/kevent (289 lines)
+├── fs_win32.py      # Windows: Native ReadDirectoryChangesW (142 lines)
+├── fs_inotify.py    # Linux: Used watchdog library
+└── fs_poller.py     # Fallback: polling every 10 seconds
+```
+
+### Why fs_darwin.py and fs_win32.py Were Redundant
+
+The `watchdog` library (a Python package) already provides cross-platform file monitoring:
+
+- **fs_darwin.py** (289 lines): Implemented native macOS `kqueue`/`kevent` API
+  - watchdog already uses FSEvents on macOS (more efficient than kqueue for file monitoring)
+
+- **fs_win32.py** (142 lines): Implemented native Windows `ReadDirectoryChangesW` API
+  - watchdog already uses this same API on Windows
+
+- **fs_inotify.py**: Already used watchdog library (despite the name suggesting Linux inotify)
+  - watchdog uses inotify on Linux, FSEvents on macOS, ReadDirectoryChangesW on Windows
+  - The file was misnamed; it was actually a cross-platform watchdog wrapper
+
+**Key insight:** We were maintaining 431 lines of platform-specific native code that duplicated functionality already provided by our existing dependency.
+
+### Old Platform Selection Code (BEFORE - __init__.py)
+
+```python
+import platform
+
+_system = platform.system()
+
+if _system == 'Linux':
+    from .fs_inotify import *     # Used watchdog
+elif _system == 'Darwin':
+    from .fs_darwin import *      # Native kqueue (289 lines)
+elif _system == 'Windows':
+    from .fs_win32 import *       # Native Win32 API (142 lines)
+else:
+    from .fs_poller import *      # Polling fallback
+```
+
+### New Platform Selection Code (AFTER - __init__.py)
+
+```python
+"""
+File system monitoring module.
+
+Uses the cross-platform watchdog library for all platforms:
+- Linux: inotify
+- macOS: FSEvents
+- Windows: ReadDirectoryChangesW
+- Other: Polling fallback
+"""
+
+import logging
+
+from .fs_poller import *
+
+try:
+    from .fs_watchdog import *
+except ImportError:
+    logging.warning(
+        "watchdog library not installed. File monitoring will use polling fallback "
+        "(less efficient). Install watchdog for better performance: pip install watchdog"
+    )
+
+    class FilesystemNotifier(FilesystemPollerNotifier):
+        pass
+```
 
 ### Files Deleted
 
-| File | Lines | Reason |
-|------|-------|--------|
-| `fs_darwin.py` | 289 | watchdog handles macOS via FSEvents |
-| `fs_win32.py` | 142 | watchdog handles Windows via ReadDirectoryChangesW |
+| File | Lines | Native API | Why Redundant |
+|------|-------|------------|---------------|
+| `fs_darwin.py` | 289 | kqueue/kevent | watchdog uses FSEvents (more efficient) |
+| `fs_win32.py` | 142 | ReadDirectoryChangesW | watchdog uses same API |
+
+**Total code removed:** 431 lines of platform-specific native code
 
 ### Files Renamed
 
 | Old Name | New Name | Reason |
 |----------|----------|--------|
-| `fs_inotify.py` | `fs_watchdog.py` | No longer inotify-specific |
+| `fs_inotify.py` | `fs_watchdog.py` | Reflects actual implementation (cross-platform watchdog) |
 
 ### Current Module Structure
 
 ```
 taskcoachlib/filesystem/
-├── __init__.py      # Platform selector (uses watchdog for all)
-├── base.py          # Base class
+├── __init__.py      # Uses watchdog for all platforms, falls back to polling
+├── base.py          # Base class (FilesystemNotifierBase)
 ├── fs_watchdog.py   # Cross-platform watchdog implementation
 └── fs_poller.py     # Fallback polling (if watchdog unavailable)
 ```
 
-### Watchdog Platform Support
+### Watchdog Official Platform Support
 
 Per [PyPI watchdog 6.0.0](https://pypi.org/project/watchdog/) (November 2024):
 
-| Platform | Backend |
-|----------|---------|
-| Linux 2.6+ | inotify |
-| macOS | FSEvents |
-| Windows | ReadDirectoryChangesW |
-| FreeBSD/BSD | kqueue |
-| Other | Polling fallback |
+| Platform | Backend | Notes |
+|----------|---------|-------|
+| Linux 2.6+ | inotify | Kernel-level file notification |
+| macOS | FSEvents | Apple's file system events API |
+| Windows | ReadDirectoryChangesW | Win32 native API |
+| FreeBSD/BSD | kqueue | BSD kernel events |
+| Other | Polling fallback | Automatic fallback |
+
+### Benefits of This Change
+
+1. **Reduced maintenance:** 431 fewer lines of platform-specific code to maintain
+2. **Better macOS support:** FSEvents is more efficient than kqueue for file monitoring
+3. **Consistent behavior:** Same watchdog library handles all platforms identically
+4. **Graceful degradation:** Falls back to polling with a warning if watchdog unavailable
+5. **Simpler testing:** Only need to test watchdog wrapper, not three native implementations
 
 ---
 
