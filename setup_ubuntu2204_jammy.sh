@@ -76,7 +76,6 @@ if command -v sudo &> /dev/null; then
         python3-pyparsing \
         python3-xdg \
         python3-venv \
-        python3-zeroconf \
         python3-squaremap
     echo -e "${GREEN}✓ System packages installed${NC}"
 else
@@ -164,7 +163,7 @@ fi
 echo "Testing key packages..."
 FAILED=0
 
-for pkg in "fasteners" "desktop" "gntp" "distro" "zeroconf"; do
+for pkg in "fasteners" "desktop" "gntp" "distro"; do
     echo -n "  - $pkg... "
     if python3 -c "import $pkg" 2>/dev/null; then
         echo -e "${GREEN}✓${NC}"
@@ -219,7 +218,7 @@ echo -e "${GREEN}Setup completed successfully!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo
 echo "TaskCoach has been set up for Ubuntu 22.04 (Jammy) with:"
-echo "  • System packages from Ubuntu repos (wxPython, numpy, lxml, zeroconf, squaremap, etc.)"
+echo "  • System packages from Ubuntu repos (wxPython, numpy, lxml, squaremap, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
 echo "  • Additional packages in venv (desktop3, fasteners, gntp, distro, pypubsub, pyparsing, watchdog)"
 echo "  • wxPython background color patch (for category row coloring)"

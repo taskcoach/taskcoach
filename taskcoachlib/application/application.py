@@ -162,7 +162,6 @@ def _log_required_packages():
         ('numpy', None),
         ('fasteners', None),
         ('gntp', None),
-        ('zeroconf', None),
         ('squaremap', None),
     ]
 

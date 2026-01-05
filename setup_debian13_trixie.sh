@@ -88,7 +88,6 @@ if command -v sudo &> /dev/null; then
         python3-fasteners \
         python3-watchdog \
         python3-pubsub \
-        python3-zeroconf \
         python3-squaremap
     echo -e "${GREEN}✓ System packages installed${NC}"
 else
@@ -175,7 +174,7 @@ fi
 echo "Testing key packages..."
 FAILED=0
 
-for pkg in "fasteners" "desktop" "gntp" "distro" "zeroconf" "watchdog"; do
+for pkg in "fasteners" "desktop" "gntp" "distro" "watchdog"; do
     echo -n "  - $pkg... "
     if $PYTHON_CMD -c "import $pkg" 2>/dev/null; then
         echo -e "${GREEN}✓${NC}"
@@ -243,7 +242,7 @@ echo -e "${GREEN}========================================${NC}"
 echo
 echo "TaskCoach has been set up for Debian 13 (Trixie) with:"
 echo "  • Python: $PYTHON_CMD ($PYTHON_VERSION)"
-echo "  • System packages from Debian repos (wxPython, numpy, lxml, fasteners, watchdog, zeroconf, squaremap, etc.)"
+echo "  • System packages from Debian repos (wxPython, numpy, lxml, fasteners, watchdog, squaremap, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
 echo "  • Additional packages in venv (desktop3, gntp, distro)"
 echo "  • wxPython background color patch (for category row coloring)"

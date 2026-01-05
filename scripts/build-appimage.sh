@@ -110,7 +110,6 @@ install_dependencies() {
         numpy \
         "fasteners>=0.19" \
         "gntp>=1.0.3" \
-        "zeroconf>=0.50.0" \
         "squaremap>=1.0.5" \
         distro
 

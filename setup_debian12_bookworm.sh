@@ -76,7 +76,6 @@ if command -v sudo &> /dev/null; then
         python3-pyparsing \
         python3-pyxdg \
         python3-venv \
-        python3-zeroconf \
         python3-squaremap
     echo -e "${GREEN}✓ System packages installed${NC}"
 else
@@ -172,7 +171,7 @@ else
 fi
 
 # Test other packages
-for pkg in "fasteners" "gntp" "distro" "zeroconf"; do
+for pkg in "fasteners" "gntp" "distro"; do
     echo -n "  - $pkg... "
     if python3 -c "import $pkg" 2>/dev/null; then
         echo -e "${GREEN}✓${NC}"
@@ -244,7 +243,7 @@ echo -e "${GREEN}Setup completed successfully!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo
 echo "TaskCoach has been set up with:"
-echo "  • System packages from Debian repos (wxPython, numpy, lxml, zeroconf, squaremap, etc.)"
+echo "  • System packages from Debian repos (wxPython, numpy, lxml, squaremap, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
 echo "  • Additional packages in venv (desktop3, fasteners, gntp, distro, pypubsub, pyparsing, watchdog)"
 echo "  • wxPython background color patch (for category row coloring)"

@@ -81,7 +81,6 @@ if command -v sudo &> /dev/null; then
         python-pyxdg \
         python-watchdog \
         python-fasteners \
-        python-zeroconf \
         libxss \
         xdg-utils
 
@@ -240,7 +239,7 @@ fi
 echo "Testing key packages..."
 FAILED=0
 
-for pkg in "fasteners" "desktop" "distro" "zeroconf" "watchdog"; do
+for pkg in "fasteners" "desktop" "distro" "watchdog"; do
     echo -n "  - $pkg... "
     if python3 -c "import $pkg" 2>/dev/null; then
         echo -e "${GREEN}✓${NC}"

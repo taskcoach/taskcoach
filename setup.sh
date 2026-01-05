@@ -168,11 +168,11 @@ get_pip_packages() {
         bookworm)
             # Bookworm needs more packages from pip
             # Note: fasteners replaces deprecated lockfile for cross-platform file locking
-            echo "desktop3 fasteners gntp distro pypubsub zeroconf 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'"
+            echo "desktop3 fasteners gntp distro pypubsub 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'"
             ;;
         *)
             # Default: install most from pip to be safe
-            echo "desktop3 fasteners gntp distro pypubsub zeroconf 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'"
+            echo "desktop3 fasteners gntp distro pypubsub 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'"
             ;;
     esac
 }

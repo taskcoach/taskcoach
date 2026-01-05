@@ -1181,9 +1181,6 @@ The `@test.skipOnTwistedVersions()` decorator is now a no-op but kept for backwa
 **Added:**
 - `watchdog>=3.0.0` - Cross-platform file system monitoring
 
-**Already Present (unchanged):**
-- `zeroconf>=0.50.0` - For Bonjour/mDNS service discovery (iPhone sync)
-
 ### Code Locations with Design Notes
 
 All modified files contain `DESIGN NOTE (Twisted Removal - 2024):` comments explaining:

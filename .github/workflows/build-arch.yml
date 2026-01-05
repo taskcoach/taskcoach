@@ -69,7 +69,6 @@ jobs:
             python-pyxdg \
             python-watchdog \
             python-fasteners \
-            python-zeroconf \
             python-distro \
             libxss \
             xdg-utils
@@ -287,7 +286,6 @@ jobs:
                   python-pyxdg \
                   python-watchdog \
                   python-fasteners \
-                  python-zeroconf \
                   libxss \
                   xdg-utils
                 pacman -U --noconfirm /packages/*.pkg.tar.*

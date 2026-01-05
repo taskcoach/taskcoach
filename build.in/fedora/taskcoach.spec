@@ -47,7 +47,6 @@ Requires:       python3-pyxdg
 Requires:       python3-keyring
 Requires:       python3-numpy
 Requires:       python3-fasteners
-Requires:       python3-zeroconf
 Requires:       libXScrnSaver
 Requires:       xdg-utils
 

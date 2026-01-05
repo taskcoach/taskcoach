@@ -85,7 +85,6 @@ if command -v sudo &> /dev/null; then
         python3-fasteners \
         python3-watchdog \
         python3-pypubsub \
-        python3-zeroconf \
         libXScrnSaver \
         xdg-utils
     echo -e "${GREEN}✓ System packages installed${NC}"
@@ -174,7 +173,7 @@ fi
 echo "Testing key packages..."
 FAILED=0
 
-for pkg in "fasteners" "distro" "zeroconf" "watchdog" "squaremap"; do
+for pkg in "fasteners" "distro" "watchdog" "squaremap"; do
     echo -n "  - $pkg... "
     if $PYTHON_CMD -c "import $pkg" 2>/dev/null; then
         echo -e "${GREEN}✓${NC}"

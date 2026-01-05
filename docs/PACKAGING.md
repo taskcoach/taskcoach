@@ -87,7 +87,6 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | keyring | distro | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
 | pyxdg | distro | distro | distro | distro | distro | distro | distro | bundled | — | — |
 | fasteners | distro | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
-| zeroconf | distro | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
 | hypertreelist | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | bundled | **patch** | **patch** |
 | desktop3 | **bundled** | **bundled** | **bundled** | **bundled** | **bundled** | **bundled** | **bundled** | bundled | **bundled** | **bundled** |
 | gntp | — | — | — | — | — | — | — | — | pip | pip |
@@ -545,7 +544,6 @@ python-pyxdg
 python-keyring
 python-numpy
 python-fasteners
-python-zeroconf
 libxss
 xdg-utils
 ```

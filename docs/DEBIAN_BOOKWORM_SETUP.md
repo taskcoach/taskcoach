@@ -286,7 +286,6 @@ dpkg -l | grep python3-lxml
 - ✅ python3-keyring (23.13.1)
 - ⚠️ python3-pyparsing (3.0.9) - **Note: requires 3.1.3+, install via pip**
 - ✅ python3-pyxdg (0.28)
-- ✅ python3-zeroconf
 - ✅ python3-squaremap
 
 ### From PyPI (pip in venv, for development):
