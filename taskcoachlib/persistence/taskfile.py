@@ -129,7 +129,7 @@ class TaskFile(patterns.Observer):
         self.__changes = dict()
         self.__changes[self.__monitor.guid()] = self.__monitor
         self.__changedOnDisk = False
-        if kwargs.pop("poll", True):
+        if kwargs.pop("poll", False):
             self.__notifier = TaskCoachFilesystemPollerNotifier(self)
         else:
             self.__notifier = TaskCoachFilesystemNotifier(self)

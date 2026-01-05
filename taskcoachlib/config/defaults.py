@@ -504,7 +504,7 @@ defaults = {
         # Formats to automatically export to, only "Todo.txt" supported at this
         # time:
         "autoexport": "[]",
-        "nopoll": "False",
+        "fspoll": "False",  # Use polling instead of watchdog for file monitoring
         "saveinifileinprogramdir": "False",
         "attachmentbase": "",
         "lastattachmentpath": "",

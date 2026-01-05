@@ -579,7 +579,7 @@ class Application(object, metaclass=patterns.Singleton):
         gui.init()
         # pylint: disable=W0201
         self.taskFile = persistence.LockedTaskFile(
-            poll=not self.settings.getboolean("file", "nopoll")
+            poll=self.settings.getboolean("file", "fspoll")
         )
         self.__auto_saver = persistence.AutoSaver(self.settings)
         self.__auto_exporter = persistence.AutoImporterExporter(self.settings)

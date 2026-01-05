@@ -494,10 +494,10 @@ class SavePage(SettingsPage):
         )
         self.addBooleanSetting(
             "file",
-            "nopoll",
-            _("Smart filesystem monitoring"),
+            "fspoll",
+            _("Use polling for file monitoring"),
             _(
-                "Try to detect changes to the task file in real time.\nDo not check this if your task file is on a network share.\nYou must restart %s after changing this."
+                "Use slow polling (every 10s) instead of efficient OS notifications.\nEnable this if your task file is on a network share.\nYou must restart %s after changing this."
             )
             % meta.name,
             flags=(
