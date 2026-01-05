@@ -15,16 +15,15 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-DESIGN NOTE (Twisted Removal - 2024):
-Previously used Twisted's INotify wrapper for file system monitoring on Linux.
-Now uses the 'watchdog' library which is:
-- Pure Python and cross-platform
-- Actively maintained
-- Does not require Twisted reactor integration
-- Uses inotify on Linux, FSEvents on macOS, ReadDirectoryChangesW on Windows
+Cross-platform file system monitoring using the watchdog library.
 
-The watchdog library provides a cleaner API and eliminates the need for
-reactor file descriptor polling that was required with Twisted's INotify.
+The watchdog library (https://pypi.org/project/watchdog/) provides:
+- Cross-platform support: Linux (inotify), macOS (FSEvents), Windows (ReadDirectoryChangesW)
+- Pure Python, actively maintained
+- Clean API without reactor integration
+
+This module monitors task files for external modifications (e.g., Dropbox sync,
+another instance) and triggers reload prompts.
 """
 
 from watchdog.observers import Observer

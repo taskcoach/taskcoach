@@ -20,6 +20,7 @@ This document captures technical issues, fixes, and refactorings discovered duri
 14. [Internationalization and Locale Issues](#internationalization-and-locale-issues)
 15. [SyncML Removal](#syncml-removal)
 16. [Mobile Sync Features Removal](#mobile-sync-features-removal)
+17. [Native Filesystem Monitors: Deleted](#native-filesystem-monitors-deleted)
 
 ---
 
@@ -2708,6 +2709,51 @@ taskcoachlib/gui/dialog/iphone.py  # Sync type and Bonjour dialogs
 | **iOS (iPhone/iPad)** | **Removed** | App no longer available |
 | **Android** | **Removed** | Third-party app abandoned |
 | **SyncML (all)** | **Removed** | Protocol is dead (see above) |
+
+---
+
+## Native Filesystem Monitors: Deleted
+
+**Date Completed:** January 2026
+
+### Summary
+
+Deleted redundant native filesystem monitor implementations. The cross-platform `watchdog` library now handles all platforms.
+
+### Files Deleted
+
+| File | Lines | Reason |
+|------|-------|--------|
+| `fs_darwin.py` | 289 | watchdog handles macOS via FSEvents |
+| `fs_win32.py` | 142 | watchdog handles Windows via ReadDirectoryChangesW |
+
+### Files Renamed
+
+| Old Name | New Name | Reason |
+|----------|----------|--------|
+| `fs_inotify.py` | `fs_watchdog.py` | No longer inotify-specific |
+
+### Current Module Structure
+
+```
+taskcoachlib/filesystem/
+├── __init__.py      # Platform selector (uses watchdog for all)
+├── base.py          # Base class
+├── fs_watchdog.py   # Cross-platform watchdog implementation
+└── fs_poller.py     # Fallback polling (if watchdog unavailable)
+```
+
+### Watchdog Platform Support
+
+Per [PyPI watchdog 6.0.0](https://pypi.org/project/watchdog/) (November 2024):
+
+| Platform | Backend |
+|----------|---------|
+| Linux 2.6+ | inotify |
+| macOS | FSEvents |
+| Windows | ReadDirectoryChangesW |
+| FreeBSD/BSD | kqueue |
+| Other | Polling fallback |
 
 ---
 
