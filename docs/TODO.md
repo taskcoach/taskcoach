@@ -53,7 +53,7 @@ Currently, all Task Coach instances write to the same `taskcoachlog.txt` file. W
 ### Current Status
 
 The INI file settings use a mix of naming conventions (legacy):
-- `syncml`, `iphone` - single lowercase words
+- `iphone`, `effort` - single lowercase words
 - `minidletime`, `showsmwarning` - concatenated lowercase (hard to read)
 - `sdtcspans_effort` - some use underscores
 
