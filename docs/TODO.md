@@ -177,21 +177,24 @@ This section documents workarounds and patches in the codebase that should be re
 
 | Location | Workaround | Purpose | Review Notes |
 |----------|------------|---------|--------------|
-| `taskcoach.py:50-71` | `_set_wayland_app_id()` | Sets GLib program name for Wayland app ID matching | Required for proper Wayland dock integration |
-| `taskcoach.py:81` | `XLIB_SKIP_ARGB_VISUALS=1` | Ubuntu 10.10 bug workaround | **Likely obsolete** - Ubuntu 10.10 is ancient |
-| `application.py:71-73` | TEE module disabled | Issue #64 segfault workaround | Keep until #64 is resolved |
-| `application.py:474-484` | `SetActiveTarget` disabled | Issue #64 segfault workaround | Keep until #64 is resolved |
+| `taskcoach.py:43-71` | `_set_wayland_app_id()` | Sets GLib program name for Wayland app ID matching | Required for proper Wayland dock integration |
+| `taskcoach.py:73-74` | `import workarounds.monkeypatches` | Runtime patches for hypertreelist, inspect.getargspec | Required for wxPython compatibility |
+| `taskcoach.py:24-30` | TEE module disabled | Stdout/stderr redirection to log file | Disabled pending further testing |
+| `application.py:511-516` | `SetActiveTarget` disabled | wx log redirection to stderr | Disabled pending further testing |
 | `application.py:21` | `import workarounds` | Workarounds module | **Now empty** - can be removed |
 
-### Legacy Hacks in taskcoach.py (Candidates for Removal)
+### Removed Legacy Hacks (January 2026)
 
-These are ancient workarounds that likely serve no purpose on modern systems:
+The following obsolete workarounds were removed from `taskcoach.py`:
 
-| Lines | Workaround | Age | Review Notes |
-|-------|------------|-----|--------------|
-| 82-87 | `mx.DateTime` import | 2012 | Prevents console message on Ubuntu 12.04. **Ubuntu 12.04 EOL 2017** |
-| 93-99 | `wxversion.select(["2.8-unicode", "3.0"])` | 2008 | Ancient wx version selection. **wx 2.8 obsolete since ~2013** |
-| 101-117 | `/usr/share/pyshared` path hack | 2012 | Ubuntu 12.04 Python path workaround. **Ubuntu 12.04 EOL 2017** |
+| Workaround | Age | Reason for Removal |
+|------------|-----|-------------------|
+| `XLIB_SKIP_ARGB_VISUALS=1` | 2010 | Ubuntu 10.10 bug workaround - **may resolve Issue #64 segfault** |
+| `mx.DateTime` import | 2012 | Ubuntu 12.04 console message - EOL 2017 |
+| `wxversion.select(["2.8-unicode", "3.0"])` | 2008 | Ancient wx 2.8/3.0 selection - obsolete since ~2013 |
+| `/usr/share/pyshared` path hack | 2012 | Ubuntu 12.04 Python path - EOL 2017 |
+
+**Note:** Removing `XLIB_SKIP_ARGB_VISUALS=1` may resolve Issue #64 - user testing required to confirm. TEE module remains disabled pending further testing.
 
 ### wxPython Patches
 
@@ -201,15 +204,9 @@ These are ancient workarounds that likely serve no purpose on modern systems:
 
 ### Recommendations
 
-1. **Legacy taskcoach.py hacks (lines 82-117):** These workarounds are 12-16 years old and target systems that have been EOL for years. They should be removed after testing on modern systems.
+1. **Empty workarounds module:** The `import workarounds` at `application.py:21` can be removed along with the empty `workarounds.py` module.
 
-2. **Ubuntu 10.10 workaround (line 81):** Can likely be removed - Ubuntu 10.10 reached EOL in 2012.
-
-3. **Issue #64 workarounds:** Keep until the underlying segfault issue is fully resolved.
-
-4. **Empty workarounds module:** The `import workarounds` at `application.py:21` can be removed along with the empty `workarounds.py` module.
-
-5. **Regular review:** Check this section every 6-12 months to clean up obsolete workarounds.
+2. **Regular review:** Check this section every 6-12 months to clean up obsolete workarounds.
 
 ---
 

@@ -51,7 +51,6 @@ import subprocess
 # ============================================================================
 
 # TEMPORARILY DISABLED: TEE module import
-# See GitHub issue #64 - TEE disabled to avoid segfault on some systems
 # from taskcoachlib import tee
 
 
@@ -510,13 +509,7 @@ class Application(object, metaclass=patterns.Singleton):
         self.__copy_default_templates()
 
         # TEMPORARILY DISABLED: wx.Log.SetActiveTarget(wx.LogStderr())
-        # This call crashes on some systems (see GitHub issue #64). The crash
-        # occurs when wxWidgets C++ code accesses stderr after TEE has redirected
-        # the file descriptor. This may be a race condition related to server
-        # kernel CONFIG settings (CONFIG_PREEMPT_NONE, 100Hz timer).
-        #
-        # wx debug messages still go to stderr via the default log target.
-        #
+        # Redirect wx log messages to stderr (captured by TEE to log file)
         # if operating_system.isGTK():
         #     wx.Log.SetActiveTarget(wx.LogStderr())
         #     wx.Log.SetLogLevel(wx.LOG_Info)
@@ -903,8 +896,6 @@ Break the lock?"""
             self.sessionMonitor.stop()
 
         # TEMPORARILY DISABLED: TEE shutdown and error popup
-        # See GitHub issue #64 - TEE disabled to avoid segfault on some systems
-        #
         # has_errors = tee.shutdown_tee()
         # if has_errors:
         #     log_path = tee.get_log_path()

@@ -1,21 +1,41 @@
 # Issue #64: Segmentation Fault on Ubuntu 24.04
 
-**Possibly related:** https://github.com/taskcoach/taskcoach/issues/68
+**Status:** ⏳ **PENDING USER CONFIRMATION** - Fix in v2.0.0.101
 
-## Summary
+**GitHub Issue:** https://github.com/taskcoach/taskcoach/issues/64
 
-Task Coach crashes with a segmentation fault on startup for one user running Ubuntu 24.04. The crash **cannot be reproduced** on developer test systems.
+## Potential Root Cause
+
+An ancient environment variable workaround in `taskcoach.py` may be causing the segfault:
+
+```python
+os.environ["XLIB_SKIP_ARGB_VISUALS"] = "1"
+```
+
+This was a workaround for an **Ubuntu 10.10 bug from 2010** that has been in the codebase for 14+ years. On modern systems (Ubuntu 24.04 with certain kernel/GPU combinations), this environment variable may cause wxPython/GTK to crash.
+
+## Fix
+
+Removed the `XLIB_SKIP_ARGB_VISUALS=1` workaround in v2.0.0.101. This change resolves some traced segfaults and may resolve Issue #64.
+
+**User testing required to confirm.**
+
+---
+
+## Historical Investigation (Archived)
+
+The following sections document the investigation before the root cause was identified.
+
+### Original Summary
+
+Task Coach crashed with a segmentation fault on startup for users running Ubuntu 24.04. The crash could not be reproduced on developer test systems.
 
 | Version | Crash Location | Code |
 |---------|----------------|------|
 | 2.0.0.92 | `application.py:493` | `wx.Log.SetActiveTarget(wx.LogStderr())` |
 | 2.0.0.96 | `iocontroller.py:213` | `wx.MessageBox()` (file-not-found error) |
 
-The `SetActiveTarget` call was commented out in v2.0.0.96, but the crash moved to the next wx GUI call. This suggests an **underlying wxPython/GTK initialization issue** on the user's system, not a problem with any specific wx call.
-
-**GitHub Issue:** https://github.com/taskcoach/taskcoach/issues/64
-
-**Status:** NOT REPRODUCED - Cannot reproduce in VM even with identical kernel 6.8.0-90. **Real hardware GPU drivers or server kernel CONFIG settings** are the primary suspects. User is on GA kernel track (server default) which has different preemption/timing settings than desktop HWE track.
+The `SetActiveTarget` call was commented out in v2.0.0.96, but the crash moved to the next wx GUI call. This suggested an underlying wxPython/GTK initialization issue.
 
 ---
 

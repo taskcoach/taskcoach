@@ -23,11 +23,8 @@ import sys
 
 # TEMPORARILY DISABLED: TEE stdout/stderr redirection to log file
 # This code uses os.dup2() to redirect file descriptors to a pipe, which
-# may cause segfaults on some systems due to race conditions with wxPython/GTK
-# stderr access. See GitHub issue #64 for details.
-#
-# Until the root cause is identified, logging goes directly to console.
-# Users should run Task Coach from a terminal to see all output.
+# may cause issues on some systems. Until further testing, logging goes
+# directly to console. Users should run Task Coach from a terminal to see output.
 #
 # from taskcoachlib.tee import init_tee
 # init_tee()
@@ -77,48 +74,8 @@ _set_wayland_app_id()
 # Enable more detailed Python error reporting
 sys.tracebacklimit = 100  # Show full tracebacks, not just last 10 frames
 
-# Workaround for a bug in Ubuntu 10.10
-os.environ["XLIB_SKIP_ARGB_VISUALS"] = "1"
-
+# Apply runtime patches (e.g., hypertreelist, inspect.getargspec)
 import taskcoachlib.workarounds.monkeypatches
-
-
-# This prevents a message printed to the console when wx.lib.masked
-# is imported from taskcoachlib.widgets on Ubuntu 12.04 64 bits...
-try:
-    from mx import DateTime
-except ImportError:
-    pass
-
-
-if not hasattr(sys, "frozen"):
-    # These checks are only necessary in a non-frozen environment, i.e. we
-    # skip these checks when run from a py2exe-fied application
-    try:
-        import wxversion
-
-        wxversion.select(["2.8-unicode", "3.0"], optionsRequired=True)
-    except ImportError:
-        # There is no wxversion for py3
-        pass
-
-    try:
-        import taskcoachlib  # pylint: disable=W0611
-    except ImportError:
-        # On Ubuntu 12.04, taskcoachlib is installed in /usr/share/pyshared,
-        # but that folder is not on the python path. Don't understand why.
-        # We'll add it manually so the application can find it.
-        sys.path.insert(0, "/usr/share/pyshared")
-        try:
-            import taskcoachlib  # pylint: disable=W0611
-        except ImportError:
-            sys.stderr.write(
-                """ERROR: cannot import the library 'taskcoachlib'.
-Please see https://answers.launchpad.net/taskcoach/+faq/1063 
-for more information and possible resolutions.
-"""
-            )
-            sys.exit(1)
 
 
 def start():
