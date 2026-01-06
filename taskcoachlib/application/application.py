@@ -508,12 +508,11 @@ class Application(object, metaclass=patterns.Singleton):
             self.__message_checker.start()
         self.__copy_default_templates()
 
-        # TEMPORARILY DISABLED: wx.Log.SetActiveTarget(wx.LogStderr())
-        # Redirect wx log messages to stderr (captured by TEE to log file)
-        # if operating_system.isGTK():
-        #     wx.Log.SetActiveTarget(wx.LogStderr())
-        #     wx.Log.SetLogLevel(wx.LOG_Info)
-        #     wx.Log.SetVerbose(True)
+        # Redirect wx log messages to stderr instead of popup dialogs
+        if operating_system.isGTK():
+            wx.Log.SetActiveTarget(wx.LogStderr())
+            wx.Log.SetLogLevel(wx.LOG_Info)
+            wx.Log.SetVerbose(True)
 
         self.mainwindow.Show()
         # Position correction is handled automatically by WindowDimensionsTracker
