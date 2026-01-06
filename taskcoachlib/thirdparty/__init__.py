@@ -16,5 +16,5 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-# Import bundled desktop module from thirdparty/desktop/
-from taskcoachlib.thirdparty import desktop
+# Third-party modules bundled with Task Coach
+# (desktop module removed - replaced with direct OS calls in tools/openfile.py)

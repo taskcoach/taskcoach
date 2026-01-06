@@ -150,7 +150,6 @@ def _log_required_packages():
     # Core packages (package_name, import_name if different)
     packages = [
         ('six', None),
-        ('desktop3', 'desktop'),
         ('pypubsub', 'pubsub'),
         ('watchdog', None),
         ('chardet', None),

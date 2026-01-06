@@ -159,10 +159,10 @@ echo
 # Install Python dependencies not available in Arch repos
 echo -e "${BLUE}[5/8] Installing Python dependencies in venv...${NC}"
 # Most packages are available in Arch repos, only install what's missing
-echo "Installing: desktop3, distro"
+echo "Installing: distro"
 
 source "$VENV_PATH/bin/activate"
-pip install --quiet desktop3 distro
+pip install --quiet distro
 
 # Install optional packages if not available from system
 if ! python3 -c "from pubsub import pub" 2>/dev/null; then
@@ -282,7 +282,7 @@ echo
 echo "TaskCoach has been set up for Arch/Manjaro Linux with:"
 echo "  • System packages from official repos (wxPython, numpy, lxml, fasteners, watchdog, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
-echo "  • Additional packages in venv (desktop3, distro)"
+echo "  • Additional packages in venv (distro)"
 echo "  • wxPython background color patch (for category row coloring)"
 echo
 echo "Optional packages (install from AUR if needed):"

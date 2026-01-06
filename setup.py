@@ -65,7 +65,6 @@ def majorAndMinorPythonVersion():
 # Optional dependencies (in extras_require):
 # - squaremap: Hierarchic data visualization (not in Fedora/Arch repos)
 # - gntp: Growl notifications (Windows/Mac only)
-# - desktop3: Removed - bundled in taskcoachlib/thirdparty/desktop
 
 install_requires = [
     "six",

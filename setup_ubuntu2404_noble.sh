@@ -112,10 +112,10 @@ echo
 # Install Python dependencies not available in Ubuntu repos
 echo -e "${BLUE}[4/7] Installing Python dependencies in venv...${NC}"
 # Ubuntu 24.04 has most packages in repos, only need a few from pip
-echo "Installing: desktop3, gntp, distro"
+echo "Installing: gntp, distro"
 
 source "$VENV_PATH/bin/activate"
-pip install --quiet desktop3 gntp distro
+pip install --quiet gntp distro
 deactivate
 
 echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
@@ -222,7 +222,7 @@ echo
 echo "TaskCoach has been set up for Ubuntu 24.04 (Noble) with:"
 echo "  • System packages from Ubuntu repos (wxPython, numpy, lxml, fasteners, watchdog, squaremap, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
-echo "  • Additional packages in venv (desktop3, gntp, distro)"
+echo "  • Additional packages in venv (gntp, distro)"
 echo "  • wxPython background color patch (for category row coloring)"
 echo
 echo "You can now run TaskCoach with:"

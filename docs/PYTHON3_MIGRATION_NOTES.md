@@ -21,6 +21,7 @@ This document captures technical issues, fixes, and refactorings discovered duri
 15. [SyncML Removal](#syncml-removal)
 16. [Mobile Sync Features Removal](#mobile-sync-features-removal)
 17. [Native Filesystem Monitors: Deleted](#native-filesystem-monitors-deleted)
+18. [Monkeypatches and Workarounds](#monkeypatches-and-workarounds)
 
 ---
 
@@ -2839,6 +2840,41 @@ Per [PyPI watchdog 6.0.0](https://pypi.org/project/watchdog/) (November 2024):
 3. **Consistent behavior:** Same watchdog library handles all platforms identically
 4. **Graceful degradation:** Falls back to polling with a warning if watchdog unavailable
 5. **Simpler testing:** Only need to test watchdog wrapper, not three native implementations
+
+---
+
+## Monkeypatches and Workarounds
+
+**Status:** Review periodically to determine if still needed
+
+This section documents workarounds and patches in the codebase that should be regularly reviewed to determine if they are still necessary. As wxPython, GTK, and other dependencies evolve, some of these may become obsolete.
+
+### Active Workarounds
+
+| Location | Workaround | Purpose | Review Notes |
+|----------|------------|---------|--------------|
+| `taskcoach.py:50-71` | `_set_wayland_app_id()` | Sets GLib program name for Wayland app ID matching | Required for proper Wayland dock integration |
+| `taskcoach.py:81` | `XLIB_SKIP_ARGB_VISUALS=1` | Ubuntu 10.10 bug workaround | **Likely obsolete** - Ubuntu 10.10 is ancient |
+| `taskcoach.py:85-88` | `mx.DateTime` import | Prevents console message on Ubuntu 12.04 | **Likely obsolete** - Ubuntu 12.04 is EOL |
+| `application.py:71-73` | TEE module disabled | Issue #64 segfault workaround | Keep until #64 is resolved |
+| `application.py:474-484` | `SetActiveTarget` disabled | Issue #64 segfault workaround | Keep until #64 is resolved |
+| `application.py:21` | `import workarounds` | Workarounds module | **Now empty** - can be removed |
+
+### wxPython Patches
+
+| Location | Patch | Purpose |
+|----------|-------|---------|
+| `apply-wxpython-patch.sh` | `hypertreelist.py` patch | Fixes category row background coloring |
+
+### Recommendations
+
+1. **Ubuntu 10.10/12.04 workarounds:** These can likely be removed as those Ubuntu versions are well past EOL. Test on modern systems first.
+
+2. **Issue #64 workarounds:** Keep until the underlying segfault issue is fully resolved.
+
+3. **Empty workarounds module:** The `import workarounds` at `application.py:21` can be removed along with the empty `workarounds.py` module.
+
+4. **Regular review:** Check this section every 6-12 months to clean up obsolete workarounds.
 
 ---
 

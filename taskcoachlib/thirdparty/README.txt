@@ -67,24 +67,14 @@ Note: Calendar/schedule visualization widget for wxPython
 
 ---
 
-Component: desktop/
-Name: desktop (Cross-platform Desktop Integration)
-Author: Paul Boddie
-Version: 0.5.3 (August 2019)
-License: LGPL v3 or later
-Source: Based on https://pypi.org/project/desktop3/
-Copied on: Unknown (pre-2016)
-Changes for Task Coach:
-  - 2025-12: Fixed Python 3.12+ SyntaxWarning by converting docstring to raw string
-Note: Provides desktop.open() and desktop.get_desktop() for cross-platform URL/file opening.
-      Used in taskcoachlib/tools/openfile.py and taskcoachlib/render.py.
-
----
-
 ## Removed Libraries (Python 3 Migration)
 
 The following libraries were previously bundled but have been removed:
 
+- **desktop/**: Replaced with direct OS calls (xdg-open, open, os.startfile) in tools/openfile.py.
+  The module provided desktop.open() and desktop.get_desktop() but was redundant since modern
+  systems have standardized file opening via xdg-open (Linux), open (macOS), or os.startfile (Windows).
+  The KDE4-specific date formatting code (using PyKDE4/PyQt4) was also removed as dead code.
 - **aui/**: Now using wx.lib.agw.aui from wxPython directly
 - **customtreectrl.py**: Now using wx.lib.agw.customtreectrl from wxPython directly
 - **hypertreelist.py**: Now using wx.lib.agw.hypertreelist from wxPython directly

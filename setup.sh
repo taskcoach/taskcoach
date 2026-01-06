@@ -163,16 +163,16 @@ get_pip_packages() {
     case "$DISTRO_CODENAME" in
         trixie|sid)
             # Trixie has most packages in repos, only need a few from pip
-            echo "desktop3 gntp distro 'pyparsing>=3.1.3' squaremap"
+            echo "gntp distro 'pyparsing>=3.1.3' squaremap"
             ;;
         bookworm)
             # Bookworm needs more packages from pip
             # Note: fasteners replaces deprecated lockfile for cross-platform file locking
-            echo "desktop3 fasteners gntp distro pypubsub 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'"
+            echo "fasteners gntp distro pypubsub 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'"
             ;;
         *)
             # Default: install most from pip to be safe
-            echo "desktop3 fasteners gntp distro pypubsub 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'"
+            echo "fasteners gntp distro pypubsub 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'"
             ;;
     esac
 }

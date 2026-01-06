@@ -66,7 +66,6 @@ The `setup.py` file lists core dependencies with version requirements where need
 |---------|----------|-------|
 | gntp | Windows/macOS only | Growl notifications |
 | WMI | Windows only | System information |
-| desktop3 | None (bundled) | Already in `taskcoachlib/thirdparty/` |
 
 ## Install Overview by Build Target
 
@@ -88,7 +87,6 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | pyxdg | distro | distro | distro | distro | distro | distro | distro | bundled | — | — |
 | fasteners | distro | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
 | hypertreelist | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | bundled | **patch** | **patch** |
-| desktop3 | **bundled** | **bundled** | **bundled** | **bundled** | **bundled** | **bundled** | **bundled** | bundled | **bundled** | **bundled** |
 | gntp | — | — | — | — | — | — | — | — | pip | pip |
 | WMI | — | — | — | — | — | — | — | — | pip | — |
 

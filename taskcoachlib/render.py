@@ -22,7 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 etc. """  # pylint: disable=W0105
 
 from taskcoachlib.domain import date as datemodule
-from taskcoachlib.thirdparty import desktop
 from taskcoachlib.i18n import _
 from taskcoachlib import operating_system
 import datetime
@@ -267,29 +266,6 @@ elif operating_system.isMac():
             datetime.datetime.combine(dt, datetime.time(0, 0, 0, 0)),
             _dateFormatter,
         )
-
-elif desktop.get_desktop() == "KDE4":
-    try:
-        from PyKDE4.kdecore import KGlobal, KLocale
-        from PyQt4.QtCore import QTime, QDate
-    except ImportError:
-        pass
-    else:
-        _localeCopy = KLocale(KGlobal.locale())
-        if "%p" in KGlobal.locale().timeFormat():
-            _localeCopy.setTimeFormat("%I %p")
-        else:
-            _localeCopy.setTimeFormat("%H")
-
-        def rawTimeFunc(dt, minutes=True, seconds=False):
-            qtdt = QTime(dt.hour, dt.minute, dt.second)
-            if minutes:
-                return str(KGlobal.locale().formatTime(qtdt, seconds))
-            return str(_localeCopy.formatTime(qtdt))
-
-        def rawDateFunc(dt):
-            qtdt = QDate(dt.year, dt.month, dt.day)
-            return str(KGlobal.locale().formatDate(qtdt, 0))
 
 
 timeFunc = lambda dt, minutes=True, seconds=False: operating_system.decodeSystemString(

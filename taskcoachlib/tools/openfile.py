@@ -14,20 +14,39 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+Open files with the system's default application.
+
+This module provides cross-platform file opening using native OS mechanisms:
+- Linux: xdg-open (freedesktop.org standard)
+- macOS: open command
+- Windows: os.startfile()
 """
 
-from taskcoachlib.thirdparty import desktop
+import os
 import platform
 import subprocess
 
 
 def openFile(filename):
-    try:
-        desktop.open(filename)
-    except OSError:
-        if platform.system() == "Linux":
-            result = subprocess.run(['xdg-open', filename], shell=False)
-            if result.returncode != 0:
-                raise OSError('Unable to open "%s"' % filename)
-        else:
-            raise
+    """Open a file with the system's default application.
+
+    Args:
+        filename: Path to the file to open
+
+    Raises:
+        OSError: If the file cannot be opened
+    """
+    system = platform.system()
+
+    if system == "Windows":
+        os.startfile(filename)
+    elif system == "Darwin":
+        result = subprocess.run(["open", filename], check=False)
+        if result.returncode != 0:
+            raise OSError(f'Unable to open "{filename}"')
+    else:
+        # Linux and other Unix-like systems use xdg-open
+        result = subprocess.run(["xdg-open", filename], check=False)
+        if result.returncode != 0:
+            raise OSError(f'Unable to open "{filename}"')

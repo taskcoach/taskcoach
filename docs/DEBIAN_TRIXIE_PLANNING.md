@@ -125,7 +125,7 @@ sudo apt-get install -y python3.12 python3.12-venv python3-wxgtk4.0 \
 cd /path/to/taskcoach
 python3.12 -m venv --system-site-packages .venv
 source .venv/bin/activate
-pip install desktop3 fasteners gntp distro pypubsub 'watchdog>=3.0.0'
+pip install fasteners gntp distro pypubsub 'watchdog>=3.0.0'
 deactivate
 
 # 3. Run TaskCoach

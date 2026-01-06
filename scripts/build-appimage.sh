@@ -98,7 +98,6 @@ install_dependencies() {
     echo "Installing TaskCoach dependencies..."
     $PYTHON -m pip install \
         "six>=1.16.0" \
-        desktop3 \
         pypubsub \
         "watchdog>=3.0.0" \
         "chardet>=5.2.0" \
