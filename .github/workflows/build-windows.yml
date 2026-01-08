@@ -29,12 +29,14 @@ jobs:
             python_version: "3.11.9"
             python_arch: "amd64"
             pth_file: "python311._pth"
+            pip_url: "https://bootstrap.pypa.io/get-pip.py"
             suffix: "x64"
           # 32-bit build with Python 3.8 (for older Windows compatibility)
           - arch: x86
             python_version: "3.8.10"
             python_arch: "win32"
             pth_file: "python38._pth"
+            pip_url: "https://bootstrap.pypa.io/pip/3.8/get-pip.py"
             suffix: "x86-py38"
 
     steps:
@@ -93,9 +95,9 @@ jobs:
           Write-Host "Modified ${{ matrix.pth_file }}:"
           Get-Content $pthFile
 
-          # Download and install pip
+          # Download and install pip (Python 3.8 needs special URL)
           Write-Host "Installing pip..."
-          Invoke-WebRequest -Uri "https://bootstrap.pypa.io/get-pip.py" -OutFile "get-pip.py"
+          Invoke-WebRequest -Uri "${{ matrix.pip_url }}" -OutFile "get-pip.py"
           & "build\TaskCoach\python\python.exe" get-pip.py --no-warn-script-location
 
           Write-Host "Pip installed successfully"
