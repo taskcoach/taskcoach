@@ -1,0 +1,304 @@
+name: Build Windows Package
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - 'claude/**'
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build Windows Executable
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+
+          # Install wxPython (pre-built wheel available for Windows)
+          pip install wxPython
+
+          # Install all TaskCoach dependencies
+          pip install `
+            "six>=1.16.0" `
+            pypubsub `
+            "watchdog>=3.0.0" `
+            "chardet>=5.2.0" `
+            "python-dateutil>=2.9.0" `
+            "pyparsing>=3.1.3" `
+            lxml `
+            keyring `
+            numpy `
+            "fasteners>=0.19" `
+            "gntp>=1.0.3" `
+            "squaremap>=1.0.5" `
+            distro `
+            WMI `
+            pywin32
+
+          # Install PyInstaller for building executable
+          pip install pyinstaller
+
+      - name: Get version info
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(python -c "
+          import sys
+          sys.path.insert(0, '.')
+          from taskcoachlib.meta import data
+          print(data.version_full)
+          ")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Create PyInstaller spec file
+        shell: bash
+        run: |
+          cat > taskcoach.spec << 'EOF'
+          # -*- mode: python ; coding: utf-8 -*-
+          import os
+          import sys
+
+          block_cipher = None
+
+          # Get the path to taskcoachlib
+          taskcoach_path = os.path.abspath('.')
+
+          a = Analysis(
+              ['taskcoach.py'],
+              pathex=[taskcoach_path],
+              binaries=[],
+              datas=[
+                  ('taskcoachlib', 'taskcoachlib'),
+                  ('icons.in', 'icons.in'),
+                  ('build.in', 'build.in'),
+              ],
+              hiddenimports=[
+                  'wx',
+                  'wx.adv',
+                  'wx.html',
+                  'wx.html2',
+                  'wx.lib.agw',
+                  'wx.lib.agw.customtreectrl',
+                  'wx.lib.agw.hypertreelist',
+                  'wx.lib.mixins.listctrl',
+                  'wx.lib.newevent',
+                  'wx.lib.scrolledpanel',
+                  'wx.lib.sized_controls',
+                  'wx.lib.expando',
+                  'wx.lib.buttons',
+                  'wx.lib.colourselect',
+                  'wx.lib.embeddedimage',
+                  'wx.lib.calendar',
+                  'wx.lib.masked',
+                  'wx.lib.masked.numctrl',
+                  'wx.lib.intctrl',
+                  'wx.lib.stattext',
+                  'wx.grid',
+                  'wx.stc',
+                  'pubsub',
+                  'pubsub.core',
+                  'pubsub.core.kwargs',
+                  'watchdog',
+                  'watchdog.observers',
+                  'watchdog.events',
+                  'chardet',
+                  'dateutil',
+                  'dateutil.parser',
+                  'dateutil.tz',
+                  'pyparsing',
+                  'lxml',
+                  'lxml.etree',
+                  'keyring',
+                  'keyring.backends',
+                  'numpy',
+                  'fasteners',
+                  'gntp',
+                  'gntp.notifier',
+                  'squaremap',
+                  'wmi',
+                  'win32api',
+                  'win32com',
+                  'win32com.client',
+                  'pythoncom',
+                  'pywintypes',
+                  'taskcoachlib',
+                  'taskcoachlib.patches',
+                  'taskcoachlib.patches.hypertreelist',
+                  'taskcoachlib.workarounds',
+                  'taskcoachlib.workarounds.monkeypatches',
+              ],
+              hookspath=[],
+              hooksconfig={},
+              runtime_hooks=[],
+              excludes=[],
+              win_no_prefer_redirects=False,
+              win_private_assemblies=False,
+              cipher=block_cipher,
+              noarchive=False,
+          )
+
+          pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+          exe = EXE(
+              pyz,
+              a.scripts,
+              [],
+              exclude_binaries=True,
+              name='TaskCoach',
+              debug=False,
+              bootloader_ignore_signals=False,
+              strip=False,
+              upx=True,
+              console=False,
+              disable_windowed_traceback=False,
+              argv_emulation=False,
+              target_arch=None,
+              codesign_identity=None,
+              entitlements_file=None,
+              icon='icons.in/taskcoach.ico' if os.path.exists('icons.in/taskcoach.ico') else None,
+          )
+
+          coll = COLLECT(
+              exe,
+              a.binaries,
+              a.zipfiles,
+              a.datas,
+              strip=False,
+              upx=True,
+              upx_exclude=[],
+              name='TaskCoach',
+          )
+          EOF
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller taskcoach.spec --noconfirm
+          echo "Build completed"
+          Get-ChildItem -Path dist -Recurse | Select-Object FullName
+
+      - name: Test executable
+        run: |
+          # Check that the executable exists
+          if (Test-Path "dist\TaskCoach\TaskCoach.exe") {
+            Write-Host "SUCCESS: TaskCoach.exe created"
+            $fileInfo = Get-Item "dist\TaskCoach\TaskCoach.exe"
+            Write-Host "Size: $($fileInfo.Length / 1MB) MB"
+          } else {
+            Write-Host "ERROR: TaskCoach.exe not found"
+            Get-ChildItem -Path dist -Recurse
+            exit 1
+          }
+
+          # Check that taskcoachlib is included
+          if (Test-Path "dist\TaskCoach\taskcoachlib") {
+            Write-Host "SUCCESS: taskcoachlib directory included"
+          } else {
+            Write-Host "WARNING: taskcoachlib directory not found in expected location"
+          }
+
+      - name: Create ZIP archive
+        shell: bash
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          cd dist
+          7z a -tzip "../TaskCoach-${VERSION}-windows-x64.zip" TaskCoach/
+          cd ..
+          ls -la *.zip
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TaskCoach-windows-${{ steps.version.outputs.version }}
+          path: TaskCoach-*.zip
+          retention-days: 30
+
+  # Test the built executable
+  test-windows:
+    name: Test Windows Build
+    needs: build-windows
+    runs-on: windows-latest
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          pattern: TaskCoach-windows-*
+          merge-multiple: true
+
+      - name: Extract and test
+        run: |
+          # Find and extract the ZIP
+          $zipFile = Get-ChildItem -Filter "TaskCoach-*.zip" | Select-Object -First 1
+          Write-Host "Extracting: $($zipFile.Name)"
+          Expand-Archive -Path $zipFile.FullName -DestinationPath "test-install"
+
+          # Verify structure
+          if (Test-Path "test-install\TaskCoach\TaskCoach.exe") {
+            Write-Host "SUCCESS: Executable found in extracted archive"
+
+            # Check file size is reasonable (should be > 10MB for a full app)
+            $exeSize = (Get-Item "test-install\TaskCoach\TaskCoach.exe").Length / 1MB
+            Write-Host "Executable size: $exeSize MB"
+
+            if ($exeSize -lt 1) {
+              Write-Host "WARNING: Executable seems too small"
+            }
+          } else {
+            Write-Host "ERROR: Executable not found"
+            Get-ChildItem -Path "test-install" -Recurse | Select-Object FullName
+            exit 1
+          }
+
+          Write-Host "All tests passed!"
+
+  # Create release with Windows package
+  release:
+    name: Create Release
+    needs: [build-windows, test-windows]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: TaskCoach-windows-*
+          merge-multiple: true
+          path: packages
+
+      - name: List packages
+        run: ls -la packages/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: packages/TaskCoach-*.zip
+          draft: false
+          prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

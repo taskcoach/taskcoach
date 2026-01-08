@@ -18,6 +18,7 @@ This document describes the packaging setup for Task Coach on various Linux dist
 - [Arch Linux / Manjaro Packaging](#arch-linux--manjaro-packaging)
 - [Fedora Packaging](#fedora-packaging)
 - [AppImage Packaging](#appimage-packaging)
+- [Windows Packaging](#windows-packaging)
 - [References](#references)
 
 ## Dependency Installation Strategy
@@ -111,7 +112,7 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | Fedora 39 | fedora39 | 3.12 | 4.2.1 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap, pyparsing |
 | Fedora 40 | fedora40 | 3.12 | 4.2.1 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap, pyparsing |
 | **AppImage** | appimage | **3.11** | **4.2.4** | — | `build-appimage.yml` | Bundles Python + all deps |
-| Windows | windows | — | — | — | — | Not currently building |
+| **Windows** | windows | **3.11** | **4.2.x** | — | `build-windows.yml` | PyInstaller executable |
 | macOS | macos | — | — | — | — | Not currently building |
 
 **AppImage note:** Uses Python 3.11 (not 3.12) for wxPython wheel availability. See [AppImage Packaging](#appimage-packaging) section for details.
@@ -865,6 +866,104 @@ Requires: `wget`, `file`, `patchelf`, and optionally `libfuse2`
 | Python path issues | Check PYTHONHOME, PYTHONPATH, LD_LIBRARY_PATH in AppRun |
 | YAML heredoc issues | Use `echo` statements instead of heredocs in workflow |
 | AppRun symlink | Remove original symlink before creating custom AppRun |
+
+---
+
+## Windows Packaging
+
+Task Coach provides a Windows executable built using PyInstaller via GitHub Actions.
+
+### What's Included
+
+| Component | Version | Source |
+|-----------|---------|--------|
+| Python | 3.11 | GitHub Actions `setup-python@v5` |
+| wxPython | 4.2.x | pip (pre-built Windows wheel) |
+| PyInstaller | latest | pip |
+
+The resulting executable runs on Windows 10 and later (x64).
+
+### Build Process
+
+The GitHub Actions workflow (`.github/workflows/build-windows.yml`):
+
+1. **Setup** - Installs Python 3.11 on Windows runner
+2. **Dependencies** - Installs wxPython and all dependencies via pip
+3. **PyInstaller** - Creates a bundled executable with all dependencies
+4. **Packaging** - Creates a ZIP archive for distribution
+
+### Dependencies
+
+All dependencies are installed via pip:
+
+```
+wxPython
+six
+pypubsub
+watchdog
+chardet
+python-dateutil
+pyparsing
+lxml
+keyring
+numpy
+fasteners
+gntp          # Growl notifications (Windows-specific)
+squaremap
+distro
+WMI           # Windows-specific
+pywin32       # Windows-specific
+```
+
+### Building Locally
+
+#### Prerequisites
+
+- Python 3.11 (recommended) or 3.10+
+- Windows 10 or later
+
+#### Build Steps
+
+```powershell
+# Install dependencies
+pip install wxPython pypubsub watchdog chardet python-dateutil pyparsing lxml keyring numpy fasteners gntp squaremap distro WMI pywin32 pyinstaller
+
+# Build executable
+pyinstaller taskcoach.spec --noconfirm
+
+# Output will be in dist\TaskCoach\
+```
+
+### GitHub Actions CI
+
+The workflow triggers on:
+- Push to `main`, `master`, or `claude/**` branches
+- Version tags (`v*`)
+- Pull requests to `main` or `master`
+- Manual dispatch
+
+Features:
+- Builds on `windows-latest` runner
+- Tests that executable is created successfully
+- Creates ZIP archive with version in filename
+- Uploads artifacts for 30 days
+- Creates GitHub release on version tags
+
+### Distribution
+
+The Windows build produces a portable ZIP archive:
+- `TaskCoach-X.Y.Z-windows-x64.zip`
+
+Users can extract and run `TaskCoach.exe` directly without installation.
+
+### Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Missing DLLs | Ensure Visual C++ Redistributable is installed |
+| Import errors | Check that all hiddenimports are listed in spec file |
+| Icon not showing | Verify `icons.in/taskcoach.ico` exists |
+| Antivirus warnings | PyInstaller executables may trigger false positives |
 
 ---
 
