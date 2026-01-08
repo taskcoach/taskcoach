@@ -144,6 +144,32 @@ jobs:
 
           Write-Host "All dependencies installed"
 
+      - name: Run pywin32 post-install
+        shell: pwsh
+        run: |
+          $pythonExe = "build\TaskCoach\python\python.exe"
+
+          # pywin32 requires post-install to copy DLLs and create .pth file
+          # The -install flag copies pywintypesXX.dll and pythoncomXX.dll
+          Write-Host "Running pywin32 post-install script..."
+          & $pythonExe -m pywin32_postinstall -install
+
+          # Verify the pywin32.pth file was created (adds pywin32_system32 to PATH)
+          $pthPath = "build\TaskCoach\python\Lib\site-packages\pywin32.pth"
+          if (Test-Path $pthPath) {
+            Write-Host "pywin32.pth contents:"
+            Get-Content $pthPath
+          } else {
+            Write-Host "Warning: pywin32.pth not found"
+          }
+
+          # List pywin32_system32 directory
+          $sysDir = "build\TaskCoach\python\Lib\site-packages\pywin32_system32"
+          if (Test-Path $sysDir) {
+            Write-Host "pywin32_system32 contents:"
+            Get-ChildItem $sysDir
+          }
+
       - name: Copy application files
         shell: pwsh
         run: |
@@ -189,6 +215,9 @@ jobs:
         run: |
           Write-Host "Testing Python installation..."
           & "build\TaskCoach\python\python.exe" -c "import sys; print(f'Python {sys.version}')"
+
+          Write-Host "Testing pywin32 import (pywintypes DLL)..."
+          & "build\TaskCoach\python\python.exe" -c "import win32api; print('pywin32 loaded successfully')"
 
           Write-Host "Testing wxPython import..."
           & "build\TaskCoach\python\python.exe" -c "import wx; print(f'wxPython {wx.version()}')"
