@@ -1021,6 +1021,18 @@ The Windows build produces two packages:
 - [XDG Desktop Entry Spec](https://specifications.freedesktop.org/desktop-entry-spec/latest/)
 - [AppStream Metadata](https://www.freedesktop.org/software/appstream/docs/)
 
+### Windows Packaging
+- [Inno Setup](https://jrsoftware.org/isinfo.php) - Free installer builder
+- [NSIS](https://nsis.sourceforge.io/) - Nullsoft Scriptable Install System
+- [PyInstaller](https://pyinstaller.org/) - Freeze Python applications
+- [Python Embeddable Package](https://www.python.org/downloads/windows/) - Portable Python distribution
+
+#### wxPython Windows Examples
+- [MeerK40t](https://github.com/meerk40t/meerk40t) - wxPython app with working Windows exe builds using PyInstaller (32-bit Python 3.8 for compatibility)
+  - Workflow: https://github.com/meerk40t/meerk40t/blob/main/.github/workflows/win.yml
+- [Wrye Bash](https://github.com/wrye-bash/wrye-bash) - wxPython app with NSIS Windows installer
+  - NSIS scripts: https://github.com/wrye-bash/wrye-bash/tree/dev/scripts/build/installer
+
 ## Related Documentation
 
 - [CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md) - Detailed patch information
