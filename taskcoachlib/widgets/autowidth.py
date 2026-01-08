@@ -66,26 +66,21 @@ class AutoColumnWidthMixin(object):
         return self.__is_auto_resizing
 
     def OnBeginColumnDrag(self, event):
-        # pylint: disable=W0201
+        # Block resizing of the auto-fill column (ResizeColumn) when auto-resize
+        # is enabled. This column always fills remaining space automatically.
+        # Users can resize other columns, which will take/give space from the
+        # ResizeColumn. This follows modern UX patterns where auto-fill columns
+        # are not directly resizable.
         if event.Column == self.ResizeColumn:
-            self.__oldResizeColumnWidth = self.GetColumnWidth(
-                self.ResizeColumn
-            )
+            event.Veto()
+            return
         # Temporarily unbind the EVT_SIZE to prevent resizing during dragging
         self.Unbind(wx.EVT_SIZE)
-        event.Skip()  # Always skip to allow default drag handling on all platforms
+        event.Skip()
 
     def OnEndColumnDrag(self, event):
-        if event.Column == self.ResizeColumn and self.GetColumnCount() > 1:
-            extra_width = self.__oldResizeColumnWidth - self.GetColumnWidth(
-                self.ResizeColumn
-            )
-            self.DistributeWidthAcrossColumns(extra_width)
         self.Bind(wx.EVT_SIZE, self.OnResize)
-        # Only auto-resize if the user dragged a different column
-        # If they dragged the ResizeColumn itself, respect their manual sizing
-        if event.Column != self.ResizeColumn:
-            wx.CallAfter(self.DoResize)
+        wx.CallAfter(self.DoResize)
         event.Skip()
 
     def OnResize(self, event):
@@ -112,23 +107,6 @@ class AutoColumnWidthMixin(object):
         resize_column_width = self.ResizeColumnMinWidth + unused_width
         self.SetColumnWidth(self.ResizeColumn, resize_column_width)
 
-    def DistributeWidthAcrossColumns(self, extra_width):
-        # When the user resizes the ResizeColumn distribute the extra available
-        # space across the other columns, or get the extra needed space from
-        # the other columns. The other columns are resized proportionally to
-        # their previous width.
-        other_columns = [
-            index
-            for index in range(self.GetColumnCount())
-            if index != self.ResizeColumn
-        ]
-        total_width = float(
-            sum(self.GetColumnWidth(index) for index in other_columns)
-        )
-        for column_index in other_columns:
-            this_column_width = self.GetColumnWidth(column_index)
-            this_column_width += this_column_width // total_width * extra_width
-            self.SetColumnWidth(column_index, int(this_column_width))
 
     def GetResizeColumn(self):
         if self.__resize_column == -1:
