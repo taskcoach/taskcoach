@@ -92,14 +92,16 @@ jobs:
           $pthFile = "build\TaskCoach\python\${{ matrix.pth_file }}"
           # Derive zip filename from pth filename (python311._pth -> python311.zip)
           $zipFile = "${{ matrix.pth_file }}".Replace("._pth", ".zip")
-          $pthContent = @"
-$zipFile
-.
-Lib\site-packages
-..
-import site
-"@
-          Set-Content $pthFile $pthContent -Encoding ASCII
+          # Build pth content as array then join with newlines
+          $pthLines = @(
+            $zipFile,
+            ".",
+            "Lib\site-packages",
+            "..",
+            "import site"
+          )
+          $pthContent = $pthLines -join "`n"
+          Set-Content $pthFile $pthContent -Encoding ASCII -NoNewline
 
           Write-Host "Modified ${{ matrix.pth_file }}:"
           Get-Content $pthFile
