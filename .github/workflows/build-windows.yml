@@ -71,6 +71,8 @@ jobs:
           $content = $content -replace '#import site', 'import site'
           # Add Lib\site-packages
           $content += "`nLib\site-packages"
+          # Add parent directory for taskcoachlib (.. goes from python/ to TaskCoach/)
+          $content += "`n.."
           Set-Content $pthFile $content
 
           Write-Host "Modified python311._pth:"
@@ -208,7 +210,7 @@ jobs:
           & "build\TaskCoach\python\python.exe" -c "import wx; print(f'wxPython {wx.version()}')"
 
           Write-Host "Testing taskcoachlib import..."
-          $env:PYTHONPATH = "build\TaskCoach"
+          # The ._pth file includes '..' so taskcoachlib is found relative to python/
           & "build\TaskCoach\python\python.exe" -c "import taskcoachlib; print('taskcoachlib imported successfully')"
 
           Write-Host "All tests passed!"
