@@ -881,7 +881,14 @@ Task Coach provides a Windows installer and portable package built using Python'
 | wxPython | 4.2.x | pip (pre-built Windows wheel) |
 | Inno Setup | 6.x | [Inno Setup Action](https://github.com/Minionguyjpro/Inno-Setup-Action) |
 
-The installer runs on Windows 10 and later (x64).
+### Available Builds
+
+| Build | Python | Architecture | Target Users |
+|-------|--------|--------------|--------------|
+| `TaskCoach-X.Y.Z-windows-x64-setup.exe` | 3.11 | 64-bit | Most Windows 10/11 users |
+| `TaskCoach-X.Y.Z-windows-x86-py38-setup.exe` | 3.8 | 32-bit | Older Windows, VMs, compatibility |
+
+Portable ZIP versions are also available for users who prefer not to install.
 
 ### Why Python Embeddable + Inno Setup?
 

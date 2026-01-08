@@ -19,8 +19,23 @@ permissions:
 
 jobs:
   build-windows:
-    name: Build Windows Installer
+    name: Build Windows ${{ matrix.arch }}
     runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          # 64-bit build with Python 3.11
+          - arch: x64
+            python_version: "3.11.9"
+            python_arch: "amd64"
+            pth_file: "python311._pth"
+            suffix: "x64"
+          # 32-bit build with Python 3.8 (for older Windows compatibility)
+          - arch: x86
+            python_version: "3.8.20"
+            python_arch: "win32"
+            pth_file: "python38._pth"
+            suffix: "x86-py38"
 
     steps:
       - name: Checkout repository
@@ -45,11 +60,11 @@ jobs:
       - name: Download Python embeddable package
         shell: pwsh
         run: |
-          # Download Python 3.11 embeddable package (64-bit)
-          $pythonVersion = "3.11.9"
-          $pythonUrl = "https://www.python.org/ftp/python/$pythonVersion/python-$pythonVersion-embed-amd64.zip"
+          $pythonVersion = "${{ matrix.python_version }}"
+          $pythonArch = "${{ matrix.python_arch }}"
+          $pythonUrl = "https://www.python.org/ftp/python/$pythonVersion/python-$pythonVersion-embed-$pythonArch.zip"
 
-          Write-Host "Downloading Python $pythonVersion embeddable package..."
+          Write-Host "Downloading Python $pythonVersion embeddable package ($pythonArch)..."
           Invoke-WebRequest -Uri $pythonUrl -OutFile "python-embed.zip"
 
           # Create build directory
@@ -64,8 +79,8 @@ jobs:
       - name: Configure Python embeddable for pip
         shell: pwsh
         run: |
-          # Enable site-packages by modifying python311._pth
-          $pthFile = "build\TaskCoach\python\python311._pth"
+          # Enable site-packages by modifying the ._pth file
+          $pthFile = "build\TaskCoach\python\${{ matrix.pth_file }}"
           $content = Get-Content $pthFile
           # Uncomment import site
           $content = $content -replace '#import site', 'import site'
@@ -75,7 +90,7 @@ jobs:
           $content += "`n.."
           Set-Content $pthFile $content
 
-          Write-Host "Modified python311._pth:"
+          Write-Host "Modified ${{ matrix.pth_file }}:"
           Get-Content $pthFile
 
           # Download and install pip
@@ -139,66 +154,26 @@ jobs:
           Write-Host "Application files copied"
           Get-ChildItem "build\TaskCoach"
 
-      - name: Create launcher executable
+      - name: Create launcher scripts
         shell: pwsh
         run: |
           # Create a simple batch launcher
           $launcherContent = @'
-          @echo off
-          cd /d "%~dp0"
-          start "" "python\pythonw.exe" "taskcoach.py" %*
-          '@
+@echo off
+cd /d "%~dp0"
+start "" "python\pythonw.exe" "taskcoach.py" %*
+'@
           Set-Content -Path "build\TaskCoach\TaskCoach.bat" -Value $launcherContent
 
           # Also create a VBS launcher for silent execution (no console window)
           $vbsContent = @'
-          Set WshShell = CreateObject("WScript.Shell")
-          WshShell.CurrentDirectory = CreateObject("Scripting.FileSystemObject").GetParentFolderName(WScript.ScriptFullName)
-          WshShell.Run "python\pythonw.exe taskcoach.py", 0, False
-          '@
+Set WshShell = CreateObject("WScript.Shell")
+WshShell.CurrentDirectory = CreateObject("Scripting.FileSystemObject").GetParentFolderName(WScript.ScriptFullName)
+WshShell.Run "python\pythonw.exe taskcoach.py", 0, False
+'@
           Set-Content -Path "build\TaskCoach\TaskCoach.vbs" -Value $vbsContent
 
           Write-Host "Launchers created"
-
-      - name: Create launcher EXE using iexpress
-        shell: pwsh
-        run: |
-          # Create a proper .exe launcher using iexpress (built into Windows)
-          # First create the SED file for iexpress
-          $sedContent = @"
-          [Version]
-          Class=IEXPRESS
-          SEDVersion=3
-          [Options]
-          PackagePurpose=InstallApp
-          ShowInstallProgramWindow=0
-          HideExtractAnimation=1
-          UseLongFileName=1
-          InsideCompressed=0
-          CAB_FixedSize=0
-          CAB_ResvCodeSigning=0
-          RebootMode=N
-          InstallPrompt=
-          DisplayLicense=
-          FinishMessage=
-          TargetName=build\TaskCoach\TaskCoach.exe
-          FriendlyName=Task Coach
-          AppLaunched=cmd /c start "" "%~dp0python\pythonw.exe" "%~dp0taskcoach.py"
-          PostInstallCmd=<None>
-          AdminQuietInstCmd=
-          UserQuietInstCmd=
-          SourceFiles=SourceFiles
-          [Strings]
-          [SourceFiles]
-          SourceFiles0=build\TaskCoach\
-          [SourceFiles0]
-          TaskCoach.bat=
-          "@
-
-          # Actually, let's use a simpler approach - create a .cmd that gets converted
-          # The batch approach works well for now
-
-          Write-Host "Launcher configuration complete"
 
       - name: Test the build
         shell: pwsh
@@ -210,7 +185,6 @@ jobs:
           & "build\TaskCoach\python\python.exe" -c "import wx; print(f'wxPython {wx.version()}')"
 
           Write-Host "Testing taskcoachlib import..."
-          # The ._pth file includes '..' so taskcoachlib is found relative to python/
           & "build\TaskCoach\python\python.exe" -c "import taskcoachlib; print('taskcoachlib imported successfully')"
 
           Write-Host "All tests passed!"
@@ -219,64 +193,75 @@ jobs:
         shell: pwsh
         run: |
           $version = "${{ steps.version.outputs.version }}"
+          $suffix = "${{ matrix.suffix }}"
+          $arch = "${{ matrix.arch }}"
+
+          # Set architecture-specific settings
+          if ($arch -eq "x64") {
+            $archAllowed = "x64"
+            $archInstall = "x64"
+          } else {
+            $archAllowed = ""
+            $archInstall = ""
+          }
 
           $issContent = @"
-          ; Task Coach Inno Setup Script
-          #define MyAppName "Task Coach"
-          #define MyAppVersion "$version"
-          #define MyAppPublisher "Task Coach developers"
-          #define MyAppURL "https://github.com/taskcoach/taskcoach"
+; Task Coach Inno Setup Script ($suffix)
+#define MyAppName "Task Coach"
+#define MyAppVersion "$version"
+#define MyAppPublisher "Task Coach developers"
+#define MyAppURL "https://github.com/taskcoach/taskcoach"
 
-          [Setup]
-          AppId={{A8F5E5D4-7B2C-4D3E-9F1A-6B8C2D4E5F6A}
-          AppName={#MyAppName}
-          AppVersion={#MyAppVersion}
-          AppVerName={#MyAppName} {#MyAppVersion}
-          AppPublisher={#MyAppPublisher}
-          AppPublisherURL={#MyAppURL}
-          AppSupportURL={#MyAppURL}/issues
-          AppUpdatesURL={#MyAppURL}/releases
-          DefaultDirName={autopf}\{#MyAppName}
-          DefaultGroupName={#MyAppName}
-          AllowNoIcons=yes
-          OutputDir=dist
-          OutputBaseFilename=TaskCoach-{#MyAppVersion}-windows-x64-setup
-          Compression=lzma2/ultra64
-          SolidCompression=yes
-          WizardStyle=modern
-          SetupIconFile=build\TaskCoach\taskcoach.ico
-          UninstallDisplayIcon={app}\taskcoach.ico
-          PrivilegesRequired=lowest
-          PrivilegesRequiredOverridesAllowed=dialog
-          MinVersion=6.0
-          ArchitecturesAllowed=x64
-          ArchitecturesInstallIn64BitMode=x64
-          DisableProgramGroupPage=yes
-          LicenseFile=COPYRIGHT.txt
+[Setup]
+AppId={{A8F5E5D4-7B2C-4D3E-9F1A-6B8C2D4E5F6A}
+AppName={#MyAppName}
+AppVersion={#MyAppVersion}
+AppVerName={#MyAppName} {#MyAppVersion}
+AppPublisher={#MyAppPublisher}
+AppPublisherURL={#MyAppURL}
+AppSupportURL={#MyAppURL}/issues
+AppUpdatesURL={#MyAppURL}/releases
+DefaultDirName={autopf}\{#MyAppName}
+DefaultGroupName={#MyAppName}
+AllowNoIcons=yes
+OutputDir=dist
+OutputBaseFilename=TaskCoach-{#MyAppVersion}-windows-$suffix-setup
+Compression=lzma2/ultra64
+SolidCompression=yes
+WizardStyle=modern
+SetupIconFile=build\TaskCoach\taskcoach.ico
+UninstallDisplayIcon={app}\taskcoach.ico
+PrivilegesRequired=lowest
+PrivilegesRequiredOverridesAllowed=dialog
+MinVersion=6.1sp1
+$(if ($archAllowed) { "ArchitecturesAllowed=$archAllowed" })
+$(if ($archInstall) { "ArchitecturesInstallIn64BitMode=$archInstall" })
+DisableProgramGroupPage=yes
+LicenseFile=COPYRIGHT.txt
 
-          [Languages]
-          Name: "english"; MessagesFile: "compiler:Default.isl"
+[Languages]
+Name: "english"; MessagesFile: "compiler:Default.isl"
 
-          [Tasks]
-          Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+[Tasks]
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
-          [Files]
-          Source: "build\TaskCoach\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+[Files]
+Source: "build\TaskCoach\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-          [Icons]
-          Name: "{group}\{#MyAppName}"; Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\taskcoach.py"""; WorkingDir: "{app}"; IconFilename: "{app}\taskcoach.ico"
-          Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
-          Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\taskcoach.py"""; WorkingDir: "{app}"; IconFilename: "{app}\taskcoach.ico"; Tasks: desktopicon
+[Icons]
+Name: "{group}\{#MyAppName}"; Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\taskcoach.py"""; WorkingDir: "{app}"; IconFilename: "{app}\taskcoach.ico"
+Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\taskcoach.py"""; WorkingDir: "{app}"; IconFilename: "{app}\taskcoach.ico"; Tasks: desktopicon
 
-          [Run]
-          Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\taskcoach.py"""; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+[Run]
+Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\taskcoach.py"""; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
-          [Registry]
-          Root: HKA; Subkey: "Software\Classes\.tsk"; ValueType: string; ValueName: ""; ValueData: "TaskCoach.TaskFile"; Flags: uninsdeletevalue
-          Root: HKA; Subkey: "Software\Classes\TaskCoach.TaskFile"; ValueType: string; ValueName: ""; ValueData: "Task Coach Task File"; Flags: uninsdeletekey
-          Root: HKA; Subkey: "Software\Classes\TaskCoach.TaskFile\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\taskcoach.ico,0"
-          Root: HKA; Subkey: "Software\Classes\TaskCoach.TaskFile\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\python\pythonw.exe"" ""{app}\taskcoach.py"" ""%1"""
-          "@
+[Registry]
+Root: HKA; Subkey: "Software\Classes\.tsk"; ValueType: string; ValueName: ""; ValueData: "TaskCoach.TaskFile"; Flags: uninsdeletevalue
+Root: HKA; Subkey: "Software\Classes\TaskCoach.TaskFile"; ValueType: string; ValueName: ""; ValueData: "Task Coach Task File"; Flags: uninsdeletekey
+Root: HKA; Subkey: "Software\Classes\TaskCoach.TaskFile\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\taskcoach.ico,0"
+Root: HKA; Subkey: "Software\Classes\TaskCoach.TaskFile\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\python\pythonw.exe"" ""{app}\taskcoach.py"" ""%1"""
+"@
 
           Set-Content -Path "taskcoach-installer.iss" -Value $issContent
           Write-Host "Inno Setup script created"
@@ -306,7 +291,7 @@ jobs:
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
-          name: TaskCoach-windows-installer-${{ steps.version.outputs.version }}
+          name: TaskCoach-windows-${{ matrix.suffix }}-installer-${{ steps.version.outputs.version }}
           path: dist/TaskCoach-*.exe
           retention-days: 30
 
@@ -314,15 +299,16 @@ jobs:
         shell: bash
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+          SUFFIX="${{ matrix.suffix }}"
           cd build
-          7z a -tzip "../TaskCoach-${VERSION}-windows-x64-portable.zip" TaskCoach/
+          7z a -tzip "../TaskCoach-${VERSION}-windows-${SUFFIX}-portable.zip" TaskCoach/
           cd ..
           ls -la *.zip
 
       - name: Upload portable artifact
         uses: actions/upload-artifact@v4
         with:
-          name: TaskCoach-windows-portable-${{ steps.version.outputs.version }}
+          name: TaskCoach-windows-${{ matrix.suffix }}-portable-${{ steps.version.outputs.version }}
           path: TaskCoach-*-portable.zip
           retention-days: 30
 
