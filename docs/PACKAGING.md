@@ -882,24 +882,58 @@ Windows builds use Python's embeddable distribution + Inno Setup (same approach 
 | `TaskCoach-X.Y.Z-windows-x86-py39-setup.exe` | 3.9 | 32-bit | VMs, older systems |
 | `TaskCoach-X.Y.Z-windows-x86-py39-portable.zip` | 3.9 | 32-bit | Portable, compatibility |
 
-### Why This Approach?
-
-| Method | Issue |
-|--------|-------|
-| PyInstaller | Hangs at "Looking for dynamic libraries" on GitHub Actions |
-| cx_Freeze | Produces executables that fail to run |
-| **Python Embed + Inno Setup** | Reliable, proper installer, file associations |
-
 ### Build Workflow
 
 See `.github/workflows/build-windows.yml`
 
+### Windows Packaging Options
+
+#### Executable Generators (Python → EXE)
+
+| Tool | GitHub Actions | Pros | Cons | Example Projects |
+|------|:--------------:|------|------|------------------|
+| **[PyInstaller](https://pyinstaller.org/)** | ✅ | Most popular, good library support | Can hang on GitHub Actions, large output | [Pyfa](https://github.com/pyfa-org/Pyfa) (wxPython, AppVeyor) |
+| **[Nuitka](https://nuitka.net/)** | ✅ | Compiles to C, 2-3x faster, obfuscated | Long compile times, 2x larger output | [Nuitka-Action](https://github.com/Nuitka/Nuitka-Action) (official) |
+| **[cx_Freeze](https://cx-freeze.readthedocs.io/)** | ✅ | Cross-platform, simple | Doesn't auto-detect imports, no obfuscation | — |
+| **[Briefcase](https://beeware.org/briefcase/)** | ✅ | Good docs, native packaging, uses WiX 5 | Newer, fewer examples | [BeeWare CI Guide](https://briefcase.beeware.org/en/latest/how-to/ci.html) |
+| **[PyOxidizer](https://pyoxidizer.readthedocs.io/)** | ✅ | Single-file, embeds Python, WiX integration | More complex setup | [doc2dash](https://github.com/hynek/doc2dash) |
+| **Python Embed** | ✅ | No compilation, reliable, exact Python version | Requires separate installer tool | [Thonny](https://github.com/thonny/thonny), **Task Coach** |
+
+#### Installer Builders (EXE → Installer)
+
+| Tool | Output | GitHub Actions | Pre-installed | Example Projects |
+|------|--------|:--------------:|:-------------:|------------------|
+| **[Inno Setup](https://jrsoftware.org/isinfo.php)** | `.exe` | ✅ | windows-2022, windows-2025 | [Thonny](https://github.com/thonny/thonny), [Pyfa](https://github.com/pyfa-org/Pyfa), **Task Coach** |
+| **[WiX Toolset](https://wixtoolset.org/)** | `.msi` | ✅ | windows-2022, windows-2025 | [Briefcase](https://github.com/beeware/briefcase) apps |
+| **[NSIS](https://nsis.sourceforge.net/)** | `.exe` | ⚠️ | windows-2022 only | [Mu Editor](https://github.com/mu-editor/mu) (via pynsist) |
+| **[pynsist](https://pynsist.readthedocs.io/)** | `.exe` | ✅ | Uses NSIS | [Mu Editor](https://github.com/mu-editor/mu) |
+
+#### GitHub Runner Pre-installed Tools
+
+| Tool | windows-2022 | windows-2025 | Action if Missing |
+|------|:------------:|:------------:|-------------------|
+| Inno Setup 6.6.1 | ✅ | ✅ | [Inno-Setup-Action](https://github.com/Minionguyjpro/Inno-Setup-Action) |
+| WiX Toolset 3.14.1 | ✅ | ✅ | — |
+| NSIS 3.10 | ✅ | ❌ | [nsis-install](https://github.com/marketplace/actions/install-nsis-compiler) |
+
+### Why Python Embed + Inno Setup?
+
+| Method | Status | Notes |
+|--------|--------|-------|
+| PyInstaller | ⚠️ | Can hang at "Looking for dynamic libraries" on GitHub Actions |
+| cx_Freeze | ❌ | Produced executables that failed to run |
+| Nuitka | ✅ | Viable alternative, longer build times |
+| Briefcase | ✅ | Viable alternative, produces MSI instead of EXE |
+| **Python Embed + Inno Setup** | ✅ **Current** | Reliable, proper installer, file associations, fast builds |
+
 ### Reference Implementations
 
-| Project | Approach | Notes |
-|---------|----------|-------|
-| [Thonny](https://github.com/thonny/thonny) | Python Embed + Inno Setup | 64-bit and 32-bit builds |
-| [PixelFlasher](https://github.com/badabing2005/PixelFlasher) | PyInstaller | 64-bit only, wxPython app |
+| Project | Exe Generator | Installer | CI Platform | Notes |
+|---------|---------------|-----------|-------------|-------|
+| [Thonny](https://github.com/thonny/thonny) | Python Embed | Inno Setup | GitHub Actions | 64-bit and 32-bit, same approach as Task Coach |
+| [Pyfa](https://github.com/pyfa-org/Pyfa) | PyInstaller | Inno Setup | AppVeyor | wxPython app, EVE Online fitting tool |
+| [Mu Editor](https://github.com/mu-editor/mu) | PUP | pynsist/NSIS | GitHub Actions | Python IDE for beginners |
+| [doc2dash](https://github.com/hynek/doc2dash) | PyOxidizer | WiX | GitHub Actions | Documentation tool |
 
 ### Testing in VMs
 
