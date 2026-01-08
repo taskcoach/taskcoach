@@ -31,8 +31,6 @@ jobs:
             pth_file: "python311._pth"
             pip_url: "https://bootstrap.pypa.io/get-pip.py"
             suffix: "x64"
-            vc_redist_url: "https://aka.ms/vs/17/release/vc_redist.x64.exe"
-            vc_redist_file: "vc_redist.x64.exe"
           # 32-bit build with Python 3.9 (for older Windows/VM compatibility)
           - arch: x86
             python_version: "3.9.13"
@@ -40,8 +38,6 @@ jobs:
             pth_file: "python39._pth"
             pip_url: "https://bootstrap.pypa.io/get-pip.py"
             suffix: "x86-py39"
-            vc_redist_url: "https://aka.ms/vs/17/release/vc_redist.x86.exe"
-            vc_redist_file: "vc_redist.x86.exe"
 
     steps:
       - name: Checkout repository
@@ -160,14 +156,6 @@ jobs:
           Write-Host "Application files copied"
           Get-ChildItem "build\TaskCoach"
 
-      - name: Download Visual C++ Redistributable
-        shell: pwsh
-        run: |
-          Write-Host "Downloading Visual C++ Redistributable..."
-          Invoke-WebRequest -Uri "${{ matrix.vc_redist_url }}" -OutFile "build\TaskCoach\${{ matrix.vc_redist_file }}"
-          Write-Host "VC++ Redistributable downloaded: ${{ matrix.vc_redist_file }}"
-          Get-ChildItem "build\TaskCoach\${{ matrix.vc_redist_file }}"
-
       - name: Create launcher scripts
         shell: pwsh
         run: |
@@ -250,8 +238,7 @@ jobs:
           [void]$lines.Add('Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked')
           [void]$lines.Add('')
           [void]$lines.Add('[Files]')
-          [void]$lines.Add('Source: "build\TaskCoach\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "${{ matrix.vc_redist_file }}"')
-          [void]$lines.Add('Source: "build\TaskCoach\${{ matrix.vc_redist_file }}"; DestDir: "{tmp}"; Flags: deleteafterinstall')
+          [void]$lines.Add('Source: "build\TaskCoach\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs')
           [void]$lines.Add('')
           [void]$lines.Add('[Icons]')
           [void]$lines.Add('Name: "{group}\{#MyAppName}"; Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\taskcoach.py"""; WorkingDir: "{app}"; IconFilename: "{app}\taskcoach.ico"')
@@ -259,7 +246,6 @@ jobs:
           [void]$lines.Add('Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\taskcoach.py"""; WorkingDir: "{app}"; IconFilename: "{app}\taskcoach.ico"; Tasks: desktopicon')
           [void]$lines.Add('')
           [void]$lines.Add('[Run]')
-          [void]$lines.Add('Filename: "{tmp}\${{ matrix.vc_redist_file }}"; Parameters: "/install /quiet /norestart"; StatusMsg: "Installing Visual C++ Runtime (required)..."; Flags: waituntilterminated')
           [void]$lines.Add('Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\taskcoach.py"""; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, ''&'', ''&&'')}}"; Flags: nowait postinstall skipifsilent')
           [void]$lines.Add('')
           [void]$lines.Add('[Registry]')
