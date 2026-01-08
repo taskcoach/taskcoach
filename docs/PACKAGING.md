@@ -1027,14 +1027,11 @@ The Windows build produces two packages:
 - [PyInstaller](https://pyinstaller.org/) - Freeze Python applications
 - [Python Embeddable Package](https://www.python.org/downloads/windows/) - Portable Python distribution
 
-#### Python Windows Installer Examples
+#### Python Windows Installer Example
 - [Thonny](https://github.com/thonny/thonny) - Python IDE with working Inno Setup Windows installer (recommended reference)
   - Inno Setup script: https://github.com/thonny/thonny/blob/master/packaging/windows/inno_setup.iss
   - Build script: https://github.com/thonny/thonny/blob/master/packaging/windows/create_installer.bat
-- [MeerK40t](https://github.com/meerk40t/meerk40t) - wxPython app with working standalone exe using PyInstaller (32-bit Python 3.8)
-  - Workflow: https://github.com/meerk40t/meerk40t/blob/main/.github/workflows/win.yml
-- [Wrye Bash](https://github.com/wrye-bash/wrye-bash) - wxPython app with NSIS Windows installer (fallback if Inno Setup fails)
-  - NSIS scripts: https://github.com/wrye-bash/wrye-bash/tree/dev/scripts/build/installer
+  - Note: Thonny provides both 64-bit (thonny-X.Y.Z.exe) and 32-bit (thonny-py38-X.Y.Z.exe) builds for compatibility with older Windows systems
 
 ## Related Documentation
 
