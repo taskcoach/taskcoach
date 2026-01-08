@@ -248,6 +248,7 @@ jobs:
           UninstallDisplayIcon={app}\taskcoach.ico
           PrivilegesRequired=lowest
           PrivilegesRequiredOverridesAllowed=dialog
+          MinVersion=6.0
           ArchitecturesAllowed=x64
           ArchitecturesInstallIn64BitMode=x64
           DisableProgramGroupPage=yes
@@ -281,11 +282,18 @@ jobs:
           Write-Host "Inno Setup script created"
           Get-Content "taskcoach-installer.iss"
 
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          # Install Inno Setup 6.2.2 via Chocolatey (known stable version)
+          choco install innosetup --version=6.2.2 -y
+          # Verify installation
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /? | Select-Object -First 5
+
       - name: Build installer with Inno Setup
-        uses: Minionguyjpro/Inno-Setup-Action@v1.2.4
-        with:
-          path: taskcoach-installer.iss
-          options: /O+
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /O+ "taskcoach-installer.iss"
 
       - name: List build artifacts
         shell: bash
