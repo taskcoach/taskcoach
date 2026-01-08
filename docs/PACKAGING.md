@@ -901,6 +901,16 @@ See `.github/workflows/build-windows.yml`
 | [Thonny](https://github.com/thonny/thonny) | Python Embed + Inno Setup | 64-bit and 32-bit builds |
 | [PixelFlasher](https://github.com/badabing2005/PixelFlasher) | PyInstaller | 64-bit only, wxPython app |
 
+### Testing in VMs
+
+**32-bit vs 64-bit Windows:** Check `System Information > System Type`:
+- "X86-based PC" = 32-bit Windows (use x86-py39 build)
+- "x64-based PC" = 64-bit Windows (use x64 build)
+
+**Common issue:** QEMU/KVM VMs may have 32-bit Windows installed even with 64-bit CPU passthrough. 64-bit apps fail with "not compatible with the version of Windows" error. Solution: use 32-bit build or reinstall with 64-bit Windows ISO.
+
+**Windows 10 testing:** Installs without product key (watermark only, fully functional).
+
 ---
 
 ## References
