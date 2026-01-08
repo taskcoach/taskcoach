@@ -879,8 +879,8 @@ Windows builds use Python's embeddable distribution + Inno Setup (same approach 
 |-------|--------|------|--------|
 | `TaskCoach-X.Y.Z-windows-x64-setup.exe` | 3.11 | 64-bit | Most users |
 | `TaskCoach-X.Y.Z-windows-x64-portable.zip` | 3.11 | 64-bit | Portable |
-| `TaskCoach-X.Y.Z-windows-x86-py38-setup.exe` | 3.8 | 32-bit | VMs, older systems |
-| `TaskCoach-X.Y.Z-windows-x86-py38-portable.zip` | 3.8 | 32-bit | Portable, compatibility |
+| `TaskCoach-X.Y.Z-windows-x86-py39-setup.exe` | 3.9 | 32-bit | VMs, older systems |
+| `TaskCoach-X.Y.Z-windows-x86-py39-portable.zip` | 3.9 | 32-bit | Portable, compatibility |
 
 ### Why This Approach?
 

@@ -31,13 +31,13 @@ jobs:
             pth_file: "python311._pth"
             pip_url: "https://bootstrap.pypa.io/get-pip.py"
             suffix: "x64"
-          # 32-bit build with Python 3.8 (for older Windows compatibility)
+          # 32-bit build with Python 3.9 (for older Windows/VM compatibility)
           - arch: x86
-            python_version: "3.8.10"
+            python_version: "3.9.13"
             python_arch: "win32"
-            pth_file: "python38._pth"
-            pip_url: "https://bootstrap.pypa.io/pip/3.8/get-pip.py"
-            suffix: "x86-py38"
+            pth_file: "python39._pth"
+            pip_url: "https://bootstrap.pypa.io/get-pip.py"
+            suffix: "x86-py39"
 
     steps:
       - name: Checkout repository
