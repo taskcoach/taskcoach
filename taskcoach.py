@@ -21,6 +21,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import sys
 
+# Fix DLL loading on Windows with Python 3.8+
+# Python 3.8 changed DLL search behavior - PATH is no longer searched.
+# We must explicitly add the wx package directory so wxPython DLLs can be found.
+# This must happen BEFORE importing wx (which happens in monkeypatches).
+if sys.platform == 'win32' and sys.version_info >= (3, 8):
+    if hasattr(os, 'add_dll_directory'):
+        # Find wx package in site-packages
+        for path in sys.path:
+            wx_path = os.path.join(path, 'wx')
+            if os.path.isdir(wx_path):
+                os.add_dll_directory(wx_path)
+                break
+        # Also add the python directory itself (for embeddable package)
+        python_dir = os.path.dirname(sys.executable)
+        if os.path.isdir(python_dir):
+            os.add_dll_directory(python_dir)
+
 # TEMPORARILY DISABLED: TEE stdout/stderr redirection to log file
 # This code uses os.dup2() to redirect file descriptors to a pipe, which
 # may cause issues on some systems. Until further testing, logging goes
