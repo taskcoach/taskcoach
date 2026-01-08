@@ -21,22 +21,30 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import sys
 
-# Fix DLL loading on Windows with Python 3.8+
-# Python 3.8 changed DLL search behavior - PATH is no longer searched.
-# We must explicitly add the wx package directory so wxPython DLLs can be found.
-# This must happen BEFORE importing wx (which happens in monkeypatches).
-if sys.platform == 'win32' and sys.version_info >= (3, 8):
-    if hasattr(os, 'add_dll_directory'):
-        # Find wx package in site-packages
-        for path in sys.path:
-            wx_path = os.path.join(path, 'wx')
-            if os.path.isdir(wx_path):
-                os.add_dll_directory(wx_path)
-                break
-        # Also add the python directory itself (for embeddable package)
-        python_dir = os.path.dirname(sys.executable)
-        if os.path.isdir(python_dir):
-            os.add_dll_directory(python_dir)
+# Fix DLL loading on Windows with Python embeddable package
+# The embeddable package doesn't process .pth files by default.
+# pywin32's .pth file adds DLL directories to PATH, which is required.
+# We must call site.addsitedir() to process .pth files before importing wx.
+if sys.platform == 'win32':
+    import site
+    # Find site-packages directory and process .pth files there
+    python_dir = os.path.dirname(os.path.abspath(sys.executable))
+    site_packages = os.path.join(python_dir, 'Lib', 'site-packages')
+    if os.path.isdir(site_packages):
+        site.addsitedir(site_packages)
+
+    # Python 3.8+ also needs explicit DLL directory registration
+    if sys.version_info >= (3, 8) and hasattr(os, 'add_dll_directory'):
+        # Add wx package directory for wxPython DLLs
+        wx_path = os.path.join(site_packages, 'wx')
+        if os.path.isdir(wx_path):
+            os.add_dll_directory(wx_path)
+        # Add pywin32_system32 for pywin32 DLLs
+        pywin32_dir = os.path.join(site_packages, 'pywin32_system32')
+        if os.path.isdir(pywin32_dir):
+            os.add_dll_directory(pywin32_dir)
+        # Add python directory itself
+        os.add_dll_directory(python_dir)
 
 # TEMPORARILY DISABLED: TEE stdout/stderr redirection to log file
 # This code uses os.dup2() to redirect file descriptors to a pipe, which
