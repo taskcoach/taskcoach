@@ -86,16 +86,20 @@ jobs:
           New-Item -ItemType Directory -Force -Path "build\TaskCoach\python\DLLs"
           Write-Host "Created DLLs folder"
 
-          # Enable site-packages by modifying the ._pth file
+          # Rewrite the ._pth file with correct order
+          # IMPORTANT: "import site" must come AFTER paths are added,
+          # so site.main() can find and process .pth files in site-packages
           $pthFile = "build\TaskCoach\python\${{ matrix.pth_file }}"
-          $content = Get-Content $pthFile
-          # Uncomment import site
-          $content = $content -replace '#import site', 'import site'
-          # Add Lib\site-packages
-          $content += "`nLib\site-packages"
-          # Add parent directory for taskcoachlib (.. goes from python/ to TaskCoach/)
-          $content += "`n.."
-          Set-Content $pthFile $content
+          # Derive zip filename from pth filename (python311._pth -> python311.zip)
+          $zipFile = "${{ matrix.pth_file }}".Replace("._pth", ".zip")
+          $pthContent = @"
+$zipFile
+.
+Lib\site-packages
+..
+import site
+"@
+          Set-Content $pthFile $pthContent -Encoding ASCII
 
           Write-Host "Modified ${{ matrix.pth_file }}:"
           Get-Content $pthFile
