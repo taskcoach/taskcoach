@@ -27,15 +27,16 @@ import sys
 # This must happen BEFORE importing wx (which happens in monkeypatches).
 if sys.platform == 'win32' and sys.version_info >= (3, 8):
     if hasattr(os, 'add_dll_directory'):
-        # Get absolute path to Python directory (embeddable package structure)
-        # sys.executable = <install>/python/python.exe
-        python_dir = os.path.dirname(os.path.abspath(sys.executable))
-        os.add_dll_directory(python_dir)
-
-        # Add wx package directory: <install>/python/Lib/site-packages/wx
-        wx_path = os.path.join(python_dir, 'Lib', 'site-packages', 'wx')
-        if os.path.isdir(wx_path):
-            os.add_dll_directory(wx_path)
+        # Find wx package in site-packages
+        for path in sys.path:
+            wx_path = os.path.join(path, 'wx')
+            if os.path.isdir(wx_path):
+                os.add_dll_directory(wx_path)
+                break
+        # Also add the python directory itself (for embeddable package)
+        python_dir = os.path.dirname(sys.executable)
+        if os.path.isdir(python_dir):
+            os.add_dll_directory(python_dir)
 
 # TEMPORARILY DISABLED: TEE stdout/stderr redirection to log file
 # This code uses os.dup2() to redirect file descriptors to a pipe, which
