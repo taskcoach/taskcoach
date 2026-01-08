@@ -158,20 +158,16 @@ jobs:
         shell: pwsh
         run: |
           # Create a simple batch launcher
-          $launcherContent = @'
-@echo off
-cd /d "%~dp0"
-start "" "python\pythonw.exe" "taskcoach.py" %*
-'@
-          Set-Content -Path "build\TaskCoach\TaskCoach.bat" -Value $launcherContent
+          $launcherContent = "@echo off`r`ncd /d `"%~dp0`"`r`nstart `"`" `"python\pythonw.exe`" `"taskcoach.py`" %*"
+          Set-Content -Path "build\TaskCoach\TaskCoach.bat" -Value $launcherContent -Encoding ASCII
 
           # Also create a VBS launcher for silent execution (no console window)
-          $vbsContent = @'
-Set WshShell = CreateObject("WScript.Shell")
-WshShell.CurrentDirectory = CreateObject("Scripting.FileSystemObject").GetParentFolderName(WScript.ScriptFullName)
-WshShell.Run "python\pythonw.exe taskcoach.py", 0, False
-'@
-          Set-Content -Path "build\TaskCoach\TaskCoach.vbs" -Value $vbsContent
+          $vbsLines = @(
+            'Set WshShell = CreateObject("WScript.Shell")',
+            'WshShell.CurrentDirectory = CreateObject("Scripting.FileSystemObject").GetParentFolderName(WScript.ScriptFullName)',
+            'WshShell.Run "python\pythonw.exe taskcoach.py", 0, False'
+          )
+          Set-Content -Path "build\TaskCoach\TaskCoach.vbs" -Value $vbsLines
 
           Write-Host "Launchers created"
 
@@ -196,74 +192,68 @@ WshShell.Run "python\pythonw.exe taskcoach.py", 0, False
           $suffix = "${{ matrix.suffix }}"
           $arch = "${{ matrix.arch }}"
 
-          # Set architecture-specific settings
+          # Build Inno Setup script line by line to avoid YAML here-string issues
+          $lines = [System.Collections.ArrayList]::new()
+          [void]$lines.Add("; Task Coach Inno Setup Script ($suffix)")
+          [void]$lines.Add('#define MyAppName "Task Coach"')
+          [void]$lines.Add("#define MyAppVersion `"$version`"")
+          [void]$lines.Add('#define MyAppPublisher "Task Coach developers"')
+          [void]$lines.Add('#define MyAppURL "https://github.com/taskcoach/taskcoach"')
+          [void]$lines.Add('')
+          [void]$lines.Add('[Setup]')
+          [void]$lines.Add('AppId={{A8F5E5D4-7B2C-4D3E-9F1A-6B8C2D4E5F6A}')
+          [void]$lines.Add('AppName={#MyAppName}')
+          [void]$lines.Add('AppVersion={#MyAppVersion}')
+          [void]$lines.Add('AppVerName={#MyAppName} {#MyAppVersion}')
+          [void]$lines.Add('AppPublisher={#MyAppPublisher}')
+          [void]$lines.Add('AppPublisherURL={#MyAppURL}')
+          [void]$lines.Add('AppSupportURL={#MyAppURL}/issues')
+          [void]$lines.Add('AppUpdatesURL={#MyAppURL}/releases')
+          [void]$lines.Add('DefaultDirName={autopf}\{#MyAppName}')
+          [void]$lines.Add('DefaultGroupName={#MyAppName}')
+          [void]$lines.Add('AllowNoIcons=yes')
+          [void]$lines.Add('OutputDir=dist')
+          [void]$lines.Add("OutputBaseFilename=TaskCoach-{#MyAppVersion}-windows-$suffix-setup")
+          [void]$lines.Add('Compression=lzma2/ultra64')
+          [void]$lines.Add('SolidCompression=yes')
+          [void]$lines.Add('WizardStyle=modern')
+          [void]$lines.Add('SetupIconFile=build\TaskCoach\taskcoach.ico')
+          [void]$lines.Add('UninstallDisplayIcon={app}\taskcoach.ico')
+          [void]$lines.Add('PrivilegesRequired=lowest')
+          [void]$lines.Add('PrivilegesRequiredOverridesAllowed=dialog')
+          [void]$lines.Add('MinVersion=6.1sp1')
           if ($arch -eq "x64") {
-            $archAllowed = "x64"
-            $archInstall = "x64"
-          } else {
-            $archAllowed = ""
-            $archInstall = ""
+            [void]$lines.Add('ArchitecturesAllowed=x64')
+            [void]$lines.Add('ArchitecturesInstallIn64BitMode=x64')
           }
+          [void]$lines.Add('DisableProgramGroupPage=yes')
+          [void]$lines.Add('LicenseFile=COPYRIGHT.txt')
+          [void]$lines.Add('')
+          [void]$lines.Add('[Languages]')
+          [void]$lines.Add('Name: "english"; MessagesFile: "compiler:Default.isl"')
+          [void]$lines.Add('')
+          [void]$lines.Add('[Tasks]')
+          [void]$lines.Add('Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked')
+          [void]$lines.Add('')
+          [void]$lines.Add('[Files]')
+          [void]$lines.Add('Source: "build\TaskCoach\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs')
+          [void]$lines.Add('')
+          [void]$lines.Add('[Icons]')
+          [void]$lines.Add('Name: "{group}\{#MyAppName}"; Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\taskcoach.py"""; WorkingDir: "{app}"; IconFilename: "{app}\taskcoach.ico"')
+          [void]$lines.Add('Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"')
+          [void]$lines.Add('Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\taskcoach.py"""; WorkingDir: "{app}"; IconFilename: "{app}\taskcoach.ico"; Tasks: desktopicon')
+          [void]$lines.Add('')
+          [void]$lines.Add('[Run]')
+          [void]$lines.Add('Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\taskcoach.py"""; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, ''&'', ''&&'')}}"; Flags: nowait postinstall skipifsilent')
+          [void]$lines.Add('')
+          [void]$lines.Add('[Registry]')
+          [void]$lines.Add('Root: HKA; Subkey: "Software\Classes\.tsk"; ValueType: string; ValueName: ""; ValueData: "TaskCoach.TaskFile"; Flags: uninsdeletevalue')
+          [void]$lines.Add('Root: HKA; Subkey: "Software\Classes\TaskCoach.TaskFile"; ValueType: string; ValueName: ""; ValueData: "Task Coach Task File"; Flags: uninsdeletekey')
+          [void]$lines.Add('Root: HKA; Subkey: "Software\Classes\TaskCoach.TaskFile\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\taskcoach.ico,0"')
+          [void]$lines.Add('Root: HKA; Subkey: "Software\Classes\TaskCoach.TaskFile\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\python\pythonw.exe"" ""{app}\taskcoach.py"" ""%1"""')
 
-          $issContent = @"
-; Task Coach Inno Setup Script ($suffix)
-#define MyAppName "Task Coach"
-#define MyAppVersion "$version"
-#define MyAppPublisher "Task Coach developers"
-#define MyAppURL "https://github.com/taskcoach/taskcoach"
-
-[Setup]
-AppId={{A8F5E5D4-7B2C-4D3E-9F1A-6B8C2D4E5F6A}
-AppName={#MyAppName}
-AppVersion={#MyAppVersion}
-AppVerName={#MyAppName} {#MyAppVersion}
-AppPublisher={#MyAppPublisher}
-AppPublisherURL={#MyAppURL}
-AppSupportURL={#MyAppURL}/issues
-AppUpdatesURL={#MyAppURL}/releases
-DefaultDirName={autopf}\{#MyAppName}
-DefaultGroupName={#MyAppName}
-AllowNoIcons=yes
-OutputDir=dist
-OutputBaseFilename=TaskCoach-{#MyAppVersion}-windows-$suffix-setup
-Compression=lzma2/ultra64
-SolidCompression=yes
-WizardStyle=modern
-SetupIconFile=build\TaskCoach\taskcoach.ico
-UninstallDisplayIcon={app}\taskcoach.ico
-PrivilegesRequired=lowest
-PrivilegesRequiredOverridesAllowed=dialog
-MinVersion=6.1sp1
-$(if ($archAllowed) { "ArchitecturesAllowed=$archAllowed" })
-$(if ($archInstall) { "ArchitecturesInstallIn64BitMode=$archInstall" })
-DisableProgramGroupPage=yes
-LicenseFile=COPYRIGHT.txt
-
-[Languages]
-Name: "english"; MessagesFile: "compiler:Default.isl"
-
-[Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
-
-[Files]
-Source: "build\TaskCoach\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-
-[Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\taskcoach.py"""; WorkingDir: "{app}"; IconFilename: "{app}\taskcoach.ico"
-Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\taskcoach.py"""; WorkingDir: "{app}"; IconFilename: "{app}\taskcoach.ico"; Tasks: desktopicon
-
-[Run]
-Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\taskcoach.py"""; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
-
-[Registry]
-Root: HKA; Subkey: "Software\Classes\.tsk"; ValueType: string; ValueName: ""; ValueData: "TaskCoach.TaskFile"; Flags: uninsdeletevalue
-Root: HKA; Subkey: "Software\Classes\TaskCoach.TaskFile"; ValueType: string; ValueName: ""; ValueData: "Task Coach Task File"; Flags: uninsdeletekey
-Root: HKA; Subkey: "Software\Classes\TaskCoach.TaskFile\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\taskcoach.ico,0"
-Root: HKA; Subkey: "Software\Classes\TaskCoach.TaskFile\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\python\pythonw.exe"" ""{app}\taskcoach.py"" ""%1"""
-"@
-
-          Set-Content -Path "taskcoach-installer.iss" -Value $issContent
+          $issContent = $lines -join "`r`n"
+          Set-Content -Path "taskcoach-installer.iss" -Value $issContent -Encoding ASCII
           Write-Host "Inno Setup script created"
           Get-Content "taskcoach-installer.iss"
 

@@ -871,127 +871,35 @@ Requires: `wget`, `file`, `patchelf`, and optionally `libfuse2`
 
 ## Windows Packaging
 
-Task Coach provides a Windows installer and portable package built using Python's embeddable distribution and Inno Setup.
-
-### What's Included
-
-| Component | Version | Source |
-|-----------|---------|--------|
-| Python | 3.11.9 | [Python embeddable package](https://www.python.org/downloads/windows/) |
-| wxPython | 4.2.x | pip (pre-built Windows wheel) |
-| Inno Setup | 6.x | [Inno Setup Action](https://github.com/Minionguyjpro/Inno-Setup-Action) |
+Windows builds use Python's embeddable distribution + Inno Setup (same approach as [Thonny](https://github.com/thonny/thonny)).
 
 ### Available Builds
 
-| Build | Python | Architecture | Target Users |
-|-------|--------|--------------|--------------|
-| `TaskCoach-X.Y.Z-windows-x64-setup.exe` | 3.11 | 64-bit | Most Windows 10/11 users |
-| `TaskCoach-X.Y.Z-windows-x64-portable.zip` | 3.11 | 64-bit | Portable (no install) |
-| `TaskCoach-X.Y.Z-windows-x86-py38-setup.exe` | 3.8 | 32-bit | Older Windows, VMs, compatibility |
-| `TaskCoach-X.Y.Z-windows-x86-py38-portable.zip` | 3.8 | 32-bit | Portable (no install, compatibility) |
+| Build | Python | Arch | Target |
+|-------|--------|------|--------|
+| `TaskCoach-X.Y.Z-windows-x64-setup.exe` | 3.11 | 64-bit | Most users |
+| `TaskCoach-X.Y.Z-windows-x64-portable.zip` | 3.11 | 64-bit | Portable |
+| `TaskCoach-X.Y.Z-windows-x86-py38-setup.exe` | 3.8 | 32-bit | VMs, older systems |
+| `TaskCoach-X.Y.Z-windows-x86-py38-portable.zip` | 3.8 | 32-bit | Portable, compatibility |
 
-### Why Python Embeddable + Inno Setup?
+### Why This Approach?
 
-This approach is used instead of PyInstaller/cx_Freeze because:
-- **More reliable** - No freezing bugs or "Looking for dynamic libraries" hangs
-- **Official Python** - Uses Python's official embeddable distribution
-- **Proper installer** - Inno Setup creates a standard Windows installer with:
-  - Start menu shortcuts
-  - Desktop icon option
-  - File associations (.tsk files)
-  - Proper uninstaller
-- **Portable option** - Also creates a ZIP for portable use
+| Method | Issue |
+|--------|-------|
+| PyInstaller | Hangs at "Looking for dynamic libraries" on GitHub Actions |
+| cx_Freeze | Produces executables that fail to run |
+| **Python Embed + Inno Setup** | Reliable, proper installer, file associations |
 
-### Build Process
+### Build Workflow
 
-The GitHub Actions workflow (`.github/workflows/build-windows.yml`):
+See `.github/workflows/build-windows.yml`
 
-1. **Download** - Gets Python 3.11 embeddable package from python.org
-2. **Configure** - Enables pip by modifying python311._pth
-3. **Dependencies** - Installs wxPython and all dependencies via pip
-4. **Package** - Copies application files and creates launchers
-5. **Installer** - Uses Inno Setup to create proper Windows installer
-6. **Portable** - Also creates a ZIP archive for portable use
+### Reference Implementation
 
-### Dependencies
-
-All dependencies are installed via pip:
-
-```
-wxPython
-six
-pypubsub
-watchdog
-chardet
-python-dateutil
-pyparsing
-lxml
-keyring
-numpy
-fasteners
-gntp          # Growl notifications (Windows-specific)
-squaremap
-distro
-WMI           # Windows-specific
-pywin32       # Windows-specific
-```
-
-### Building Locally
-
-#### Prerequisites
-
-- Python 3.11 (recommended) or 3.10+
-- Windows 10 or later
-
-#### Build Steps
-
-```powershell
-# Download Python embeddable package
-Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip" -OutFile "python-embed.zip"
-Expand-Archive -Path "python-embed.zip" -DestinationPath "TaskCoach\python"
-
-# Enable pip (modify python311._pth to uncomment 'import site')
-# Then install pip
-Invoke-WebRequest -Uri "https://bootstrap.pypa.io/get-pip.py" -OutFile "get-pip.py"
-.\TaskCoach\python\python.exe get-pip.py
-
-# Install dependencies
-.\TaskCoach\python\python.exe -m pip install wxPython pypubsub watchdog chardet python-dateutil pyparsing lxml keyring numpy fasteners gntp squaremap distro WMI pywin32
-
-# Copy application files to TaskCoach folder
-# Then use Inno Setup to create installer
-```
-
-### GitHub Actions CI
-
-The workflow triggers on:
-- Push to `main`, `master`, or `claude/**` branches
-- Version tags (`v*`)
-- Pull requests to `main` or `master`
-- Manual dispatch
-
-Features:
-- Builds on `windows-latest` runner
-- Creates proper Windows installer (.exe) with Inno Setup
-- Creates portable ZIP archive
-- Uploads artifacts for 30 days
-- Creates GitHub release on version tags
-
-### Distribution
-
-The Windows build produces two packages:
-- `TaskCoach-X.Y.Z-windows-x64-setup.exe` - Full installer with shortcuts and file associations
-- `TaskCoach-X.Y.Z-windows-x64-portable.zip` - Portable version (extract and run)
-
-### Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| Missing DLLs | Ensure Visual C++ Redistributable 2015-2022 is installed |
-| Import errors | Check pip install output for failed packages |
-| Icon not showing | Verify `icons.in/taskcoach.ico` exists |
-| Antivirus warnings | Inno Setup installers may trigger false positives - submit for analysis |
-| "App can't run" | Architecture mismatch - ensure 64-bit Windows |
+[Thonny](https://github.com/thonny/thonny) uses the same approach:
+- [Inno Setup script](https://github.com/thonny/thonny/blob/master/packaging/windows/inno_setup.iss)
+- [Build script](https://github.com/thonny/thonny/blob/master/packaging/windows/create_installer.bat)
+- Provides both 64-bit and 32-bit builds for compatibility
 
 ---
 
@@ -1029,16 +937,9 @@ The Windows build produces two packages:
 - [AppStream Metadata](https://www.freedesktop.org/software/appstream/docs/)
 
 ### Windows Packaging
-- [Inno Setup](https://jrsoftware.org/isinfo.php) - Free installer builder
-- [NSIS](https://nsis.sourceforge.io/) - Nullsoft Scriptable Install System
-- [PyInstaller](https://pyinstaller.org/) - Freeze Python applications
+- [Inno Setup](https://jrsoftware.org/isinfo.php) - Free installer builder (recommended)
 - [Python Embeddable Package](https://www.python.org/downloads/windows/) - Portable Python distribution
-
-#### Python Windows Installer Example
-- [Thonny](https://github.com/thonny/thonny) - Python IDE with working Inno Setup Windows installer (recommended reference)
-  - Inno Setup script: https://github.com/thonny/thonny/blob/master/packaging/windows/inno_setup.iss
-  - Build script: https://github.com/thonny/thonny/blob/master/packaging/windows/create_installer.bat
-  - Note: Thonny provides both 64-bit (thonny-X.Y.Z.exe) and 32-bit (thonny-py38-X.Y.Z.exe) builds for compatibility with older Windows systems
+- [Thonny](https://github.com/thonny/thonny) - Reference implementation for Python + Inno Setup
 
 ## Related Documentation
 
