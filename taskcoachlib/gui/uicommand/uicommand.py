@@ -1378,8 +1378,105 @@ class Delete(mixin_uicommand.NeedsSelectionMixin, ViewerCommand):
                 fromIndex, toIndex = pos, pos + 1
             windowWithFocus.Remove(fromIndex, toIndex)
         else:
+            # Check if we're deleting categories that have assigned objects
+            selectedItems = self.viewer.curselection()
+            if selectedItems and isinstance(selectedItems[0], category.Category):
+                assignedObjects = self._getAssignedObjectsForCategories(selectedItems)
+                if assignedObjects:
+                    self._showCategoryInUseDialog(assignedObjects)
+                    return
             deleteCommand = self.viewer.deleteItemCommand()
             deleteCommand.do()
+
+    def _getAssignedObjectsForCategories(self, categories):
+        """Collect all objects assigned to the given categories and their subcategories."""
+        allAssigned = {}
+        for cat in categories:
+            # Get all children of this category (including nested subcategories)
+            allCategories = [cat] + list(cat.children(recursive=True))
+            for c in allCategories:
+                categorizables = c.categorizables()
+                if categorizables:
+                    allAssigned[c] = list(categorizables)
+        return allAssigned
+
+    def _findNoteOwner(self, targetNote, taskFile):
+        """Find the owner (task or category) of a note."""
+        # Search through all tasks
+        for aTask in taskFile.tasks():
+            if hasattr(aTask, 'notes'):
+                for aNote in aTask.notes(recursive=True):
+                    if aNote is targetNote:
+                        return aTask
+        # Search through all categories
+        for aCat in taskFile.categories():
+            if hasattr(aCat, 'notes'):
+                for aNote in aCat.notes(recursive=True):
+                    if aNote is targetNote:
+                        return aCat
+        return None
+
+    def _getObjectDisplayPath(self, obj, taskFile):
+        """Get the full display path for an object, including its owner if applicable."""
+        objType = obj.__class__.__name__
+        objSubject = obj.subject(recursive=True)
+
+        # For notes, try to find their owner (task or category)
+        if isinstance(obj, note.Note):
+            owner = self._findNoteOwner(obj, taskFile)
+            if owner:
+                ownerPath = owner.subject(recursive=True)
+                ownerType = owner.__class__.__name__
+                return "[%s] %s -> [%s] %s" % (ownerType, ownerPath, objType, objSubject)
+
+        return "[%s] %s" % (objType, objSubject)
+
+    def _showCategoryInUseDialog(self, assignedObjects):
+        """Show a scrollable dialog listing all objects that prevent category deletion."""
+        # Build the list content only (no header/footer)
+        lines = []
+
+        # Get taskFile for finding note owners
+        taskFile = self.mainWindow().taskFile
+
+        for cat, objects in assignedObjects.items():
+            catName = cat.subject(recursive=True)
+            lines.append(_("Category: %s") % catName)
+            for obj in sorted(objects, key=lambda x: x.subject(recursive=True)):
+                displayPath = self._getObjectDisplayPath(obj, taskFile)
+                lines.append("  - %s" % displayPath)
+            lines.append("")
+
+        # Create a scrollable dialog for potentially long lists
+        dlg = wx.Dialog(self.mainWindow(), title=_("Cannot Delete - Category In Use"),
+                        style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        # Header message (outside the scrollable area)
+        headerText = wx.StaticText(dlg, label=_("Cannot delete the selected category/categories because they have assigned objects:"))
+        sizer.Add(headerText, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
+
+        # Scrollable text area with the list
+        textCtrl = wx.TextCtrl(dlg, value="\n".join(lines),
+                               style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_DONTWRAP,
+                               size=(600, 400))
+        sizer.Add(textCtrl, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
+
+        # Footer message (outside the scrollable area)
+        footerText = wx.StaticText(dlg, label=_("Please remove these assignments before deleting the category."))
+        sizer.Add(footerText, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
+
+        # OK button
+        okBtn = wx.Button(dlg, wx.ID_OK, _("OK"))
+        okBtn.SetDefault()
+        sizer.Add(okBtn, 0, wx.ALIGN_CENTER | wx.BOTTOM, 10)
+
+        dlg.SetSizer(sizer)
+        dlg.Fit()
+        dlg.CentreOnParent()
+        dlg.ShowModal()
+        dlg.Destroy()
 
     def enabled(self, event):
         windowWithFocus = wx.Window.FindFocus()
