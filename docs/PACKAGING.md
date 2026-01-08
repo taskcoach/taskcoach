@@ -112,7 +112,7 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | Fedora 39 | fedora39 | 3.12 | 4.2.1 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap, pyparsing |
 | Fedora 40 | fedora40 | 3.12 | 4.2.1 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap, pyparsing |
 | **AppImage** | appimage | **3.11** | **4.2.4** | — | `build-appimage.yml` | Bundles Python + all deps |
-| **Windows** | windows | **3.11** | **4.2.x** | — | `build-windows.yml` | cx_Freeze executable |
+| **Windows** | windows | **3.11** | **4.2.x** | — | `build-windows.yml` | Python embed + Inno Setup |
 | macOS | macos | — | — | — | — | Not currently building |
 
 **AppImage note:** Uses Python 3.11 (not 3.12) for wxPython wheel availability. See [AppImage Packaging](#appimage-packaging) section for details.
@@ -871,33 +871,40 @@ Requires: `wget`, `file`, `patchelf`, and optionally `libfuse2`
 
 ## Windows Packaging
 
-Task Coach provides a Windows executable built using cx_Freeze via GitHub Actions.
+Task Coach provides a Windows installer and portable package built using Python's embeddable distribution and Inno Setup.
 
 ### What's Included
 
 | Component | Version | Source |
 |-----------|---------|--------|
-| Python | 3.11 | GitHub Actions `setup-python@v5` |
+| Python | 3.11.9 | [Python embeddable package](https://www.python.org/downloads/windows/) |
 | wxPython | 4.2.x | pip (pre-built Windows wheel) |
-| cx_Freeze | latest | pip |
+| Inno Setup | 6.x | [Inno Setup Action](https://github.com/Minionguyjpro/Inno-Setup-Action) |
 
-The resulting executable runs on Windows 10 and later (x64).
+The installer runs on Windows 10 and later (x64).
 
-### Why cx_Freeze?
+### Why Python Embeddable + Inno Setup?
 
-cx_Freeze is used instead of PyInstaller because:
-- Better compatibility with wxPython on Windows
-- More reliable builds on GitHub Actions Windows runners
-- No hanging issues during dependency analysis phase
+This approach is used instead of PyInstaller/cx_Freeze because:
+- **More reliable** - No freezing bugs or "Looking for dynamic libraries" hangs
+- **Official Python** - Uses Python's official embeddable distribution
+- **Proper installer** - Inno Setup creates a standard Windows installer with:
+  - Start menu shortcuts
+  - Desktop icon option
+  - File associations (.tsk files)
+  - Proper uninstaller
+- **Portable option** - Also creates a ZIP for portable use
 
 ### Build Process
 
 The GitHub Actions workflow (`.github/workflows/build-windows.yml`):
 
-1. **Setup** - Installs Python 3.11 on Windows runner
-2. **Dependencies** - Installs wxPython and all dependencies via pip
-3. **cx_Freeze** - Creates a bundled executable with all dependencies
-4. **Packaging** - Creates a ZIP archive for distribution
+1. **Download** - Gets Python 3.11 embeddable package from python.org
+2. **Configure** - Enables pip by modifying python311._pth
+3. **Dependencies** - Installs wxPython and all dependencies via pip
+4. **Package** - Copies application files and creates launchers
+5. **Installer** - Uses Inno Setup to create proper Windows installer
+6. **Portable** - Also creates a ZIP archive for portable use
 
 ### Dependencies
 
@@ -932,14 +939,20 @@ pywin32       # Windows-specific
 #### Build Steps
 
 ```powershell
+# Download Python embeddable package
+Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip" -OutFile "python-embed.zip"
+Expand-Archive -Path "python-embed.zip" -DestinationPath "TaskCoach\python"
+
+# Enable pip (modify python311._pth to uncomment 'import site')
+# Then install pip
+Invoke-WebRequest -Uri "https://bootstrap.pypa.io/get-pip.py" -OutFile "get-pip.py"
+.\TaskCoach\python\python.exe get-pip.py
+
 # Install dependencies
-pip install wxPython pypubsub watchdog chardet python-dateutil pyparsing lxml keyring numpy fasteners gntp squaremap distro WMI pywin32 cx_Freeze
+.\TaskCoach\python\python.exe -m pip install wxPython pypubsub watchdog chardet python-dateutil pyparsing lxml keyring numpy fasteners gntp squaremap distro WMI pywin32
 
-# Create setup script (see workflow for full example)
-# Build executable
-python setup_cxfreeze.py build
-
-# Output will be in build\exe.win-amd64-3.11\
+# Copy application files to TaskCoach folder
+# Then use Inno Setup to create installer
 ```
 
 ### GitHub Actions CI
@@ -952,26 +965,26 @@ The workflow triggers on:
 
 Features:
 - Builds on `windows-latest` runner
-- Tests that executable is created successfully
-- Creates ZIP archive with version in filename
+- Creates proper Windows installer (.exe) with Inno Setup
+- Creates portable ZIP archive
 - Uploads artifacts for 30 days
 - Creates GitHub release on version tags
 
 ### Distribution
 
-The Windows build produces a portable ZIP archive:
-- `TaskCoach-X.Y.Z-windows-x64.zip`
-
-Users can extract and run `TaskCoach.exe` directly without installation.
+The Windows build produces two packages:
+- `TaskCoach-X.Y.Z-windows-x64-setup.exe` - Full installer with shortcuts and file associations
+- `TaskCoach-X.Y.Z-windows-x64-portable.zip` - Portable version (extract and run)
 
 ### Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
-| Missing DLLs | Ensure Visual C++ Redistributable is installed |
-| Import errors | Add missing packages to the `packages` list in setup script |
+| Missing DLLs | Ensure Visual C++ Redistributable 2015-2022 is installed |
+| Import errors | Check pip install output for failed packages |
 | Icon not showing | Verify `icons.in/taskcoach.ico` exists |
-| Antivirus warnings | cx_Freeze executables may trigger false positives |
+| Antivirus warnings | Inno Setup installers may trigger false positives - submit for analysis |
+| "App can't run" | Architecture mismatch - ensure 64-bit Windows |
 
 ---
 

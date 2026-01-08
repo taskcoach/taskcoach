@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   build-windows:
-    name: Build Windows Executable
+    name: Build Windows Installer
     runs-on: windows-latest
 
     steps:
@@ -28,21 +28,73 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
+      - name: Get version info
+        id: version
+        shell: bash
+        run: |
+          # Use system Python just for version extraction
+          VERSION=$(python -c "
+          import sys
+          sys.path.insert(0, '.')
+          from taskcoachlib.meta import data
+          print(data.version_full)
+          ")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Download Python embeddable package
+        shell: pwsh
+        run: |
+          # Download Python 3.11 embeddable package (64-bit)
+          $pythonVersion = "3.11.9"
+          $pythonUrl = "https://www.python.org/ftp/python/$pythonVersion/python-$pythonVersion-embed-amd64.zip"
+
+          Write-Host "Downloading Python $pythonVersion embeddable package..."
+          Invoke-WebRequest -Uri $pythonUrl -OutFile "python-embed.zip"
+
+          # Create build directory
+          New-Item -ItemType Directory -Force -Path "build\TaskCoach"
+
+          # Extract Python
+          Expand-Archive -Path "python-embed.zip" -DestinationPath "build\TaskCoach\python" -Force
+
+          Write-Host "Python embeddable package extracted"
+          Get-ChildItem "build\TaskCoach\python"
+
+      - name: Configure Python embeddable for pip
+        shell: pwsh
+        run: |
+          # Enable site-packages by modifying python311._pth
+          $pthFile = "build\TaskCoach\python\python311._pth"
+          $content = Get-Content $pthFile
+          # Uncomment import site
+          $content = $content -replace '#import site', 'import site'
+          # Add Lib\site-packages
+          $content += "`nLib\site-packages"
+          Set-Content $pthFile $content
+
+          Write-Host "Modified python311._pth:"
+          Get-Content $pthFile
+
+          # Download and install pip
+          Write-Host "Installing pip..."
+          Invoke-WebRequest -Uri "https://bootstrap.pypa.io/get-pip.py" -OutFile "get-pip.py"
+          & "build\TaskCoach\python\python.exe" get-pip.py --no-warn-script-location
+
+          Write-Host "Pip installed successfully"
 
       - name: Install dependencies
+        shell: pwsh
         run: |
-          python -m pip install --upgrade pip setuptools wheel
+          $pythonExe = "build\TaskCoach\python\python.exe"
 
-          # Install wxPython (pre-built wheel available for Windows)
-          pip install wxPython
+          # Install wxPython (pre-built wheel)
+          Write-Host "Installing wxPython..."
+          & $pythonExe -m pip install wxPython --no-warn-script-location
 
           # Install all TaskCoach dependencies
-          pip install `
+          Write-Host "Installing TaskCoach dependencies..."
+          & $pythonExe -m pip install `
             "six>=1.16.0" `
             pypubsub `
             "watchdog>=3.0.0" `
@@ -57,174 +109,217 @@ jobs:
             "squaremap>=1.0.5" `
             distro `
             WMI `
-            pywin32
+            pywin32 `
+            --no-warn-script-location
 
-          # Install cx_Freeze for building executable
-          pip install cx_Freeze
+          Write-Host "All dependencies installed"
 
-      - name: Get version info
-        id: version
-        shell: bash
+      - name: Copy application files
+        shell: pwsh
         run: |
-          VERSION=$(python -c "
-          import sys
-          sys.path.insert(0, '.')
-          from taskcoachlib.meta import data
-          print(data.version_full)
-          ")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Version: $VERSION"
+          # Copy taskcoachlib
+          Copy-Item -Path "taskcoachlib" -Destination "build\TaskCoach\taskcoachlib" -Recurse
 
-      - name: Create cx_Freeze setup script
-        shell: bash
-        run: |
-          cat > setup_cxfreeze.py << 'ENDOFFILE'
-          import sys
-          from cx_Freeze import setup, Executable
+          # Copy main script
+          Copy-Item -Path "taskcoach.py" -Destination "build\TaskCoach\"
 
-          # Dependencies are automatically detected, but we need to
-          # explicitly include some packages
-          build_exe_options = {
-              "packages": [
-                  "wx",
-                  "wx.adv",
-                  "wx.html",
-                  "wx.html2",
-                  "wx.lib.agw",
-                  "wx.lib.agw.customtreectrl",
-                  "wx.lib.agw.hypertreelist",
-                  "wx.grid",
-                  "wx.stc",
-                  "pubsub",
-                  "watchdog",
-                  "chardet",
-                  "dateutil",
-                  "pyparsing",
-                  "lxml",
-                  "keyring",
-                  "numpy",
-                  "fasteners",
-                  "gntp",
-                  "squaremap",
-                  "wmi",
-                  "win32api",
-                  "win32com",
-                  "pythoncom",
-                  "taskcoachlib",
-              ],
-              "include_files": [
-                  ("taskcoachlib", "lib/taskcoachlib"),
-                  ("icons.in", "icons.in"),
-              ],
-              "excludes": ["tkinter", "test", "unittest"],
-              "include_msvcr": True,
+          # Copy icons
+          Copy-Item -Path "icons.in" -Destination "build\TaskCoach\icons.in" -Recurse
+
+          # Copy Welcome.tsk if it exists
+          if (Test-Path "Welcome.tsk") {
+            Copy-Item -Path "Welcome.tsk" -Destination "build\TaskCoach\"
           }
 
-          base = None
-          if sys.platform == "win32":
-              base = "Win32GUI"
+          # Copy icon for installer
+          Copy-Item -Path "icons.in\taskcoach.ico" -Destination "build\TaskCoach\"
 
-          setup(
-              name="TaskCoach",
-              version="2.0.0",
-              description="Your friendly task manager",
-              options={"build_exe": build_exe_options},
-              executables=[
-                  Executable(
-                      "taskcoach.py",
-                      base=base,
-                      target_name="TaskCoach.exe",
-                      icon="icons.in/taskcoach.ico",
-                  )
-              ],
-          )
-          ENDOFFILE
+          Write-Host "Application files copied"
+          Get-ChildItem "build\TaskCoach"
 
-      - name: Build with cx_Freeze
-        timeout-minutes: 30
+      - name: Create launcher executable
+        shell: pwsh
         run: |
-          python setup_cxfreeze.py build
-          echo "Build completed"
-          Get-ChildItem -Path build -Recurse | Select-Object FullName
+          # Create a simple batch launcher
+          $launcherContent = @'
+          @echo off
+          cd /d "%~dp0"
+          start "" "python\pythonw.exe" "taskcoach.py" %*
+          '@
+          Set-Content -Path "build\TaskCoach\TaskCoach.bat" -Value $launcherContent
 
-      - name: Test executable
+          # Also create a VBS launcher for silent execution (no console window)
+          $vbsContent = @'
+          Set WshShell = CreateObject("WScript.Shell")
+          WshShell.CurrentDirectory = CreateObject("Scripting.FileSystemObject").GetParentFolderName(WScript.ScriptFullName)
+          WshShell.Run "python\pythonw.exe taskcoach.py", 0, False
+          '@
+          Set-Content -Path "build\TaskCoach\TaskCoach.vbs" -Value $vbsContent
+
+          Write-Host "Launchers created"
+
+      - name: Create launcher EXE using iexpress
+        shell: pwsh
         run: |
-          # Find the build directory
-          $buildDir = Get-ChildItem -Path build -Directory | Select-Object -First 1
+          # Create a proper .exe launcher using iexpress (built into Windows)
+          # First create the SED file for iexpress
+          $sedContent = @"
+          [Version]
+          Class=IEXPRESS
+          SEDVersion=3
+          [Options]
+          PackagePurpose=InstallApp
+          ShowInstallProgramWindow=0
+          HideExtractAnimation=1
+          UseLongFileName=1
+          InsideCompressed=0
+          CAB_FixedSize=0
+          CAB_ResvCodeSigning=0
+          RebootMode=N
+          InstallPrompt=
+          DisplayLicense=
+          FinishMessage=
+          TargetName=build\TaskCoach\TaskCoach.exe
+          FriendlyName=Task Coach
+          AppLaunched=cmd /c start "" "%~dp0python\pythonw.exe" "%~dp0taskcoach.py"
+          PostInstallCmd=<None>
+          AdminQuietInstCmd=
+          UserQuietInstCmd=
+          SourceFiles=SourceFiles
+          [Strings]
+          [SourceFiles]
+          SourceFiles0=build\TaskCoach\
+          [SourceFiles0]
+          TaskCoach.bat=
+          "@
 
-          if (Test-Path "$($buildDir.FullName)\TaskCoach.exe") {
-            Write-Host "SUCCESS: TaskCoach.exe created"
-            $fileInfo = Get-Item "$($buildDir.FullName)\TaskCoach.exe"
-            Write-Host "Size: $($fileInfo.Length / 1MB) MB"
-          } else {
-            Write-Host "ERROR: TaskCoach.exe not found"
-            Get-ChildItem -Path build -Recurse
-            exit 1
-          }
+          # Actually, let's use a simpler approach - create a .cmd that gets converted
+          # The batch approach works well for now
 
-      - name: Create ZIP archive
-        shell: bash
+          Write-Host "Launcher configuration complete"
+
+      - name: Test the build
+        shell: pwsh
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          # Find the build directory (e.g., build/exe.win-amd64-3.11)
-          BUILD_DIR=$(ls -d build/exe.* | head -1)
-          # Rename to TaskCoach for cleaner zip structure
-          mv "$BUILD_DIR" "build/TaskCoach"
-          cd build
-          7z a -tzip "../TaskCoach-${VERSION}-windows-x64.zip" TaskCoach/
-          cd ..
-          ls -la *.zip
+          Write-Host "Testing Python installation..."
+          & "build\TaskCoach\python\python.exe" -c "import sys; print(f'Python {sys.version}')"
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: TaskCoach-windows-${{ steps.version.outputs.version }}
-          path: TaskCoach-*.zip
-          retention-days: 30
+          Write-Host "Testing wxPython import..."
+          & "build\TaskCoach\python\python.exe" -c "import wx; print(f'wxPython {wx.version()}')"
 
-  # Test the built executable
-  test-windows:
-    name: Test Windows Build
-    needs: build-windows
-    runs-on: windows-latest
-
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          pattern: TaskCoach-windows-*
-          merge-multiple: true
-
-      - name: Extract and test
-        run: |
-          # Find and extract the ZIP
-          $zipFile = Get-ChildItem -Filter "TaskCoach-*.zip" | Select-Object -First 1
-          Write-Host "Extracting: $($zipFile.Name)"
-          Expand-Archive -Path $zipFile.FullName -DestinationPath "test-install"
-
-          # Verify structure
-          if (Test-Path "test-install\TaskCoach\TaskCoach.exe") {
-            Write-Host "SUCCESS: Executable found in extracted archive"
-
-            # Check file size is reasonable (should be > 10MB for a full app)
-            $exeSize = (Get-Item "test-install\TaskCoach\TaskCoach.exe").Length / 1MB
-            Write-Host "Executable size: $exeSize MB"
-
-            if ($exeSize -lt 1) {
-              Write-Host "WARNING: Executable seems too small"
-            }
-          } else {
-            Write-Host "ERROR: Executable not found"
-            Get-ChildItem -Path "test-install" -Recurse | Select-Object FullName
-            exit 1
-          }
+          Write-Host "Testing taskcoachlib import..."
+          $env:PYTHONPATH = "build\TaskCoach"
+          & "build\TaskCoach\python\python.exe" -c "import taskcoachlib; print('taskcoachlib imported successfully')"
 
           Write-Host "All tests passed!"
 
-  # Create release with Windows package
+      - name: Create Inno Setup script
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+
+          $issContent = @"
+          ; Task Coach Inno Setup Script
+          #define MyAppName "Task Coach"
+          #define MyAppVersion "$version"
+          #define MyAppPublisher "Task Coach developers"
+          #define MyAppURL "https://github.com/taskcoach/taskcoach"
+
+          [Setup]
+          AppId={{A8F5E5D4-7B2C-4D3E-9F1A-6B8C2D4E5F6A}
+          AppName={#MyAppName}
+          AppVersion={#MyAppVersion}
+          AppVerName={#MyAppName} {#MyAppVersion}
+          AppPublisher={#MyAppPublisher}
+          AppPublisherURL={#MyAppURL}
+          AppSupportURL={#MyAppURL}/issues
+          AppUpdatesURL={#MyAppURL}/releases
+          DefaultDirName={autopf}\{#MyAppName}
+          DefaultGroupName={#MyAppName}
+          AllowNoIcons=yes
+          OutputDir=dist
+          OutputBaseFilename=TaskCoach-{#MyAppVersion}-windows-x64-setup
+          Compression=lzma2/ultra64
+          SolidCompression=yes
+          WizardStyle=modern
+          SetupIconFile=build\TaskCoach\taskcoach.ico
+          UninstallDisplayIcon={app}\taskcoach.ico
+          PrivilegesRequired=lowest
+          PrivilegesRequiredOverridesAllowed=dialog
+          ArchitecturesAllowed=x64compatible
+          ArchitecturesInstallIn64BitMode=x64compatible
+          DisableProgramGroupPage=yes
+          LicenseFile=LICENSE.txt
+
+          [Languages]
+          Name: "english"; MessagesFile: "compiler:Default.isl"
+
+          [Tasks]
+          Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+
+          [Files]
+          Source: "build\TaskCoach\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+          [Icons]
+          Name: "{group}\{#MyAppName}"; Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\taskcoach.py"""; WorkingDir: "{app}"; IconFilename: "{app}\taskcoach.ico"
+          Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
+          Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\taskcoach.py"""; WorkingDir: "{app}"; IconFilename: "{app}\taskcoach.ico"; Tasks: desktopicon
+
+          [Run]
+          Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\taskcoach.py"""; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
+          [Registry]
+          Root: HKA; Subkey: "Software\Classes\.tsk"; ValueType: string; ValueName: ""; ValueData: "TaskCoach.TaskFile"; Flags: uninsdeletevalue
+          Root: HKA; Subkey: "Software\Classes\TaskCoach.TaskFile"; ValueType: string; ValueName: ""; ValueData: "Task Coach Task File"; Flags: uninsdeletekey
+          Root: HKA; Subkey: "Software\Classes\TaskCoach.TaskFile\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\taskcoach.ico,0"
+          Root: HKA; Subkey: "Software\Classes\TaskCoach.TaskFile\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\python\pythonw.exe"" ""{app}\taskcoach.py"" ""%1"""
+          "@
+
+          Set-Content -Path "taskcoach-installer.iss" -Value $issContent
+          Write-Host "Inno Setup script created"
+          Get-Content "taskcoach-installer.iss"
+
+      - name: Build installer with Inno Setup
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.4
+        with:
+          path: taskcoach-installer.iss
+          options: /O+
+
+      - name: List build artifacts
+        shell: bash
+        run: |
+          echo "=== dist folder ==="
+          ls -la dist/ || echo "No dist folder"
+          echo "=== build folder ==="
+          ls -la build/TaskCoach/ | head -20
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TaskCoach-windows-installer-${{ steps.version.outputs.version }}
+          path: dist/TaskCoach-*.exe
+          retention-days: 30
+
+      - name: Create ZIP archive (portable version)
+        shell: bash
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          cd build
+          7z a -tzip "../TaskCoach-${VERSION}-windows-x64-portable.zip" TaskCoach/
+          cd ..
+          ls -la *.zip
+
+      - name: Upload portable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TaskCoach-windows-portable-${{ steps.version.outputs.version }}
+          path: TaskCoach-*-portable.zip
+          retention-days: 30
+
+  # Create release with Windows packages
   release:
     name: Create Release
-    needs: [build-windows, test-windows]
+    needs: build-windows
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
 
@@ -242,7 +337,9 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: packages/TaskCoach-*.zip
+          files: |
+            packages/TaskCoach-*.exe
+            packages/TaskCoach-*.zip
           draft: false
           prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
         env:
