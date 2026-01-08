@@ -81,6 +81,11 @@ jobs:
       - name: Configure Python embeddable for pip
         shell: pwsh
         run: |
+          # Create DLLs folder - required for embeddable package to find DLLs
+          # Without this, Python can't locate DLLs and imports fail
+          New-Item -ItemType Directory -Force -Path "build\TaskCoach\python\DLLs"
+          Write-Host "Created DLLs folder"
+
           # Enable site-packages by modifying the ._pth file
           $pthFile = "build\TaskCoach\python\${{ matrix.pth_file }}"
           $content = Get-Content $pthFile
