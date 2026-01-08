@@ -894,12 +894,12 @@ Windows builds use Python's embeddable distribution + Inno Setup (same approach 
 
 See `.github/workflows/build-windows.yml`
 
-### Reference Implementation
+### Reference Implementations
 
-[Thonny](https://github.com/thonny/thonny) uses the same approach:
-- [Inno Setup script](https://github.com/thonny/thonny/blob/master/packaging/windows/inno_setup.iss)
-- [Build script](https://github.com/thonny/thonny/blob/master/packaging/windows/create_installer.bat)
-- Provides both 64-bit and 32-bit builds for compatibility
+| Project | Approach | Notes |
+|---------|----------|-------|
+| [Thonny](https://github.com/thonny/thonny) | Python Embed + Inno Setup | 64-bit and 32-bit builds |
+| [PixelFlasher](https://github.com/badabing2005/PixelFlasher) | PyInstaller | 64-bit only, wxPython app |
 
 ---
 
