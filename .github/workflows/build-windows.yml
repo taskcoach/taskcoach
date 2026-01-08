@@ -32,7 +32,7 @@ jobs:
             suffix: "x64"
           # 32-bit build with Python 3.8 (for older Windows compatibility)
           - arch: x86
-            python_version: "3.8.20"
+            python_version: "3.8.10"
             python_arch: "win32"
             pth_file: "python38._pth"
             suffix: "x86-py38"
@@ -257,13 +257,11 @@ jobs:
           Write-Host "Inno Setup script created"
           Get-Content "taskcoach-installer.iss"
 
-      - name: Install Inno Setup
+      - name: Verify Inno Setup
         shell: pwsh
         run: |
-          # Install Inno Setup 6.2.2 via Chocolatey (known stable version)
-          choco install innosetup --version=6.2.2 -y
-          # Verify installation
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /? | Select-Object -First 5
+          # Inno Setup is pre-installed on windows-latest runners
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /? | Select-Object -First 3
 
       - name: Build installer with Inno Setup
         shell: pwsh
