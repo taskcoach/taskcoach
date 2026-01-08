@@ -59,12 +59,8 @@ jobs:
             WMI `
             pywin32
 
-          # Pin pefile to avoid performance regression in 2024.8.26
-          # See: https://github.com/pyinstaller/pyinstaller/issues/8762
-          pip install "pefile<2024.8.26"
-
-          # Install PyInstaller for building executable
-          pip install pyinstaller
+          # Install cx_Freeze for building executable
+          pip install cx_Freeze
 
       - name: Get version info
         id: version
@@ -79,159 +75,102 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
 
-      - name: Create PyInstaller spec file
+      - name: Create cx_Freeze setup script
         shell: bash
         run: |
-          cat > taskcoach.spec << 'EOF'
-          # -*- mode: python ; coding: utf-8 -*-
-          import os
+          cat > setup_cxfreeze.py << 'ENDOFFILE'
           import sys
+          from cx_Freeze import setup, Executable
 
-          block_cipher = None
-
-          # Get the path to taskcoachlib
-          taskcoach_path = os.path.abspath('.')
-
-          a = Analysis(
-              ['taskcoach.py'],
-              pathex=[taskcoach_path],
-              binaries=[],
-              datas=[
-                  ('taskcoachlib', 'taskcoachlib'),
-                  ('icons.in', 'icons.in'),
-                  ('build.in', 'build.in'),
+          # Dependencies are automatically detected, but we need to
+          # explicitly include some packages
+          build_exe_options = {
+              "packages": [
+                  "wx",
+                  "wx.adv",
+                  "wx.html",
+                  "wx.html2",
+                  "wx.lib.agw",
+                  "wx.lib.agw.customtreectrl",
+                  "wx.lib.agw.hypertreelist",
+                  "wx.grid",
+                  "wx.stc",
+                  "pubsub",
+                  "watchdog",
+                  "chardet",
+                  "dateutil",
+                  "pyparsing",
+                  "lxml",
+                  "keyring",
+                  "numpy",
+                  "fasteners",
+                  "gntp",
+                  "squaremap",
+                  "wmi",
+                  "win32api",
+                  "win32com",
+                  "pythoncom",
+                  "taskcoachlib",
               ],
-              hiddenimports=[
-                  'wx',
-                  'wx.adv',
-                  'wx.html',
-                  'wx.html2',
-                  'wx.lib.agw',
-                  'wx.lib.agw.customtreectrl',
-                  'wx.lib.agw.hypertreelist',
-                  'wx.lib.mixins.listctrl',
-                  'wx.lib.newevent',
-                  'wx.lib.scrolledpanel',
-                  'wx.lib.sized_controls',
-                  'wx.lib.expando',
-                  'wx.lib.buttons',
-                  'wx.lib.colourselect',
-                  'wx.lib.embeddedimage',
-                  'wx.lib.calendar',
-                  'wx.lib.masked',
-                  'wx.lib.masked.numctrl',
-                  'wx.lib.intctrl',
-                  'wx.lib.stattext',
-                  'wx.grid',
-                  'wx.stc',
-                  'pubsub',
-                  'pubsub.core',
-                  'pubsub.core.kwargs',
-                  'watchdog',
-                  'watchdog.observers',
-                  'watchdog.events',
-                  'chardet',
-                  'dateutil',
-                  'dateutil.parser',
-                  'dateutil.tz',
-                  'pyparsing',
-                  'lxml',
-                  'lxml.etree',
-                  'keyring',
-                  'keyring.backends',
-                  'numpy',
-                  'fasteners',
-                  'gntp',
-                  'gntp.notifier',
-                  'squaremap',
-                  'wmi',
-                  'win32api',
-                  'win32com',
-                  'win32com.client',
-                  'pythoncom',
-                  'pywintypes',
-                  'taskcoachlib',
-                  'taskcoachlib.patches',
-                  'taskcoachlib.patches.hypertreelist',
-                  'taskcoachlib.workarounds',
-                  'taskcoachlib.workarounds.monkeypatches',
-                  'pkg_resources.extern',
+              "include_files": [
+                  ("taskcoachlib", "lib/taskcoachlib"),
+                  ("icons.in", "icons.in"),
               ],
-              hookspath=[],
-              hooksconfig={},
-              runtime_hooks=[],
-              excludes=[],
-              win_no_prefer_redirects=False,
-              win_private_assemblies=False,
-              cipher=block_cipher,
-              noarchive=False,
+              "excludes": ["tkinter", "test", "unittest"],
+              "include_msvcr": True,
+          }
+
+          base = None
+          if sys.platform == "win32":
+              base = "Win32GUI"
+
+          setup(
+              name="TaskCoach",
+              version="2.0.0",
+              description="Your friendly task manager",
+              options={"build_exe": build_exe_options},
+              executables=[
+                  Executable(
+                      "taskcoach.py",
+                      base=base,
+                      target_name="TaskCoach.exe",
+                      icon="icons.in/taskcoach.ico",
+                  )
+              ],
           )
+          ENDOFFILE
 
-          pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
-
-          exe = EXE(
-              pyz,
-              a.scripts,
-              [],
-              exclude_binaries=True,
-              name='TaskCoach',
-              debug=False,
-              bootloader_ignore_signals=False,
-              strip=False,
-              upx=True,
-              console=False,
-              disable_windowed_traceback=False,
-              argv_emulation=False,
-              target_arch=None,
-              codesign_identity=None,
-              entitlements_file=None,
-              icon='icons.in/taskcoach.ico' if os.path.exists('icons.in/taskcoach.ico') else None,
-          )
-
-          coll = COLLECT(
-              exe,
-              a.binaries,
-              a.zipfiles,
-              a.datas,
-              strip=False,
-              upx=True,
-              upx_exclude=[],
-              name='TaskCoach',
-          )
-          EOF
-
-      - name: Build with PyInstaller
+      - name: Build with cx_Freeze
         timeout-minutes: 30
         run: |
-          pyinstaller taskcoach.spec --noconfirm
+          python setup_cxfreeze.py build
           echo "Build completed"
-          Get-ChildItem -Path dist -Recurse | Select-Object FullName
+          Get-ChildItem -Path build -Recurse | Select-Object FullName
 
       - name: Test executable
         run: |
-          # Check that the executable exists
-          if (Test-Path "dist\TaskCoach\TaskCoach.exe") {
+          # Find the build directory
+          $buildDir = Get-ChildItem -Path build -Directory | Select-Object -First 1
+
+          if (Test-Path "$($buildDir.FullName)\TaskCoach.exe") {
             Write-Host "SUCCESS: TaskCoach.exe created"
-            $fileInfo = Get-Item "dist\TaskCoach\TaskCoach.exe"
+            $fileInfo = Get-Item "$($buildDir.FullName)\TaskCoach.exe"
             Write-Host "Size: $($fileInfo.Length / 1MB) MB"
           } else {
             Write-Host "ERROR: TaskCoach.exe not found"
-            Get-ChildItem -Path dist -Recurse
+            Get-ChildItem -Path build -Recurse
             exit 1
-          }
-
-          # Check that taskcoachlib is included
-          if (Test-Path "dist\TaskCoach\taskcoachlib") {
-            Write-Host "SUCCESS: taskcoachlib directory included"
-          } else {
-            Write-Host "WARNING: taskcoachlib directory not found in expected location"
           }
 
       - name: Create ZIP archive
         shell: bash
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          cd dist
+          # Find the build directory (e.g., build/exe.win-amd64-3.11)
+          BUILD_DIR=$(ls -d build/exe.* | head -1)
+          # Rename to TaskCoach for cleaner zip structure
+          mv "$BUILD_DIR" "build/TaskCoach"
+          cd build
           7z a -tzip "../TaskCoach-${VERSION}-windows-x64.zip" TaskCoach/
           cd ..
           ls -la *.zip

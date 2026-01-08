@@ -112,7 +112,7 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | Fedora 39 | fedora39 | 3.12 | 4.2.1 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap, pyparsing |
 | Fedora 40 | fedora40 | 3.12 | 4.2.1 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap, pyparsing |
 | **AppImage** | appimage | **3.11** | **4.2.4** | — | `build-appimage.yml` | Bundles Python + all deps |
-| **Windows** | windows | **3.11** | **4.2.x** | — | `build-windows.yml` | PyInstaller executable |
+| **Windows** | windows | **3.11** | **4.2.x** | — | `build-windows.yml` | cx_Freeze executable |
 | macOS | macos | — | — | — | — | Not currently building |
 
 **AppImage note:** Uses Python 3.11 (not 3.12) for wxPython wheel availability. See [AppImage Packaging](#appimage-packaging) section for details.
@@ -871,7 +871,7 @@ Requires: `wget`, `file`, `patchelf`, and optionally `libfuse2`
 
 ## Windows Packaging
 
-Task Coach provides a Windows executable built using PyInstaller via GitHub Actions.
+Task Coach provides a Windows executable built using cx_Freeze via GitHub Actions.
 
 ### What's Included
 
@@ -879,9 +879,16 @@ Task Coach provides a Windows executable built using PyInstaller via GitHub Acti
 |-----------|---------|--------|
 | Python | 3.11 | GitHub Actions `setup-python@v5` |
 | wxPython | 4.2.x | pip (pre-built Windows wheel) |
-| PyInstaller | latest | pip |
+| cx_Freeze | latest | pip |
 
 The resulting executable runs on Windows 10 and later (x64).
+
+### Why cx_Freeze?
+
+cx_Freeze is used instead of PyInstaller because:
+- Better compatibility with wxPython on Windows
+- More reliable builds on GitHub Actions Windows runners
+- No hanging issues during dependency analysis phase
 
 ### Build Process
 
@@ -889,7 +896,7 @@ The GitHub Actions workflow (`.github/workflows/build-windows.yml`):
 
 1. **Setup** - Installs Python 3.11 on Windows runner
 2. **Dependencies** - Installs wxPython and all dependencies via pip
-3. **PyInstaller** - Creates a bundled executable with all dependencies
+3. **cx_Freeze** - Creates a bundled executable with all dependencies
 4. **Packaging** - Creates a ZIP archive for distribution
 
 ### Dependencies
@@ -926,12 +933,13 @@ pywin32       # Windows-specific
 
 ```powershell
 # Install dependencies
-pip install wxPython pypubsub watchdog chardet python-dateutil pyparsing lxml keyring numpy fasteners gntp squaremap distro WMI pywin32 pyinstaller
+pip install wxPython pypubsub watchdog chardet python-dateutil pyparsing lxml keyring numpy fasteners gntp squaremap distro WMI pywin32 cx_Freeze
 
+# Create setup script (see workflow for full example)
 # Build executable
-pyinstaller taskcoach.spec --noconfirm
+python setup_cxfreeze.py build
 
-# Output will be in dist\TaskCoach\
+# Output will be in build\exe.win-amd64-3.11\
 ```
 
 ### GitHub Actions CI
@@ -961,9 +969,9 @@ Users can extract and run `TaskCoach.exe` directly without installation.
 | Issue | Solution |
 |-------|----------|
 | Missing DLLs | Ensure Visual C++ Redistributable is installed |
-| Import errors | Check that all hiddenimports are listed in spec file |
+| Import errors | Add missing packages to the `packages` list in setup script |
 | Icon not showing | Verify `icons.in/taskcoach.ico` exists |
-| Antivirus warnings | PyInstaller executables may trigger false positives |
+| Antivirus warnings | cx_Freeze executables may trigger false positives |
 
 ---
 
