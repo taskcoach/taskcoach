@@ -78,7 +78,10 @@ import faulthandler
 # Enable faulthandler to get Python tracebacks on segfaults
 # This helps debug crashes in wxPython/GTK C++ code by showing which
 # Python code was executing when the crash occurred
-faulthandler.enable(all_threads=True)
+# NOTE: On Windows, only enable if stderr is redirected to a file,
+# as faulthandler writing to console during shutdown can cause issues
+if sys.platform != 'win32' or not sys.stderr.isatty():
+    faulthandler.enable(all_threads=True)
 
 
 def _set_wayland_app_id():
