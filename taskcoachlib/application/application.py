@@ -532,13 +532,22 @@ class Application(object, metaclass=patterns.Singleton):
                 self._signal_check_timer.Stop()
                 print("[EXIT DEBUG] Signal check timer stopped", file=sys.stderr)
 
-            # On Windows, redirect stdout/stderr to devnull before destroying app
-            # The crash only happens with console handles, not with devnull
-            # This matches what launcher.pyw does with pythonw.exe
+            # On Windows with console (python.exe), detach from console before cleanup
+            # The crash only happens with python.exe (console subsystem), not pythonw.exe (GUI subsystem)
+            # This suggests the crash is related to console cleanup during Python shutdown
             if operating_system.isWindows():
-                print("[EXIT DEBUG] Redirecting stdout/stderr to devnull", file=sys.stderr)
+                print("[EXIT DEBUG] Detaching from console", file=sys.stderr)
                 sys.stderr.flush()
                 sys.stdout.flush()
+                try:
+                    import ctypes
+                    # FreeConsole detaches the process from its console
+                    # This prevents console-related cleanup issues during Python shutdown
+                    ctypes.windll.kernel32.FreeConsole()
+                    print("[EXIT DEBUG] FreeConsole called", file=sys.stderr)
+                except Exception as e:
+                    print(f"[EXIT DEBUG] FreeConsole failed: {e}", file=sys.stderr)
+                # Also redirect stdout/stderr to devnull
                 sys.stderr = open(os.devnull, 'w')
                 sys.stdout = open(os.devnull, 'w')
 
