@@ -358,15 +358,33 @@ def dateTimePeriod(start, stop, humanReadable=False):
 
 
 def time(dateTime, seconds=False, minutes=True):
+    """Format a time or datetime for display.
+
+    For time objects (not full datetimes), we use Python's strftime directly
+    to avoid timezone issues with pywintypes.Time() on Windows. The Windows
+    API interprets naive datetimes as UTC and converts to local time, which
+    causes incorrect offsets when formatting standalone times.
+    """
+    is_time_only = False
     try:
         # strftime doesn't handle years before 1900, be prepared:
         dateTime = dateTime.replace(year=2000)
     except TypeError:  # We got a time instead of a dateTime
-        # Use a fixed date to avoid timezone issues with pywintypes.Time on Windows.
-        # Using datemodule.Now() caused timezone offset problems because
-        # pywintypes.Time() may interpret the datetime differently.
+        is_time_only = True
         import datetime as dt
         dateTime = dt.datetime(2000, 1, 1, dateTime.hour, dateTime.minute, dateTime.second)
+
+    # For time-only values on Windows, use Python's strftime to avoid
+    # pywintypes.Time() timezone conversion issues
+    if is_time_only and operating_system.isWindows():
+        if seconds:
+            fmt = timeWithSecondsFormat
+        elif minutes:
+            fmt = timeWithMinutesFormat
+        else:
+            fmt = timeFormat
+        return operating_system.decodeSystemString(dateTime.strftime(fmt))
+
     return timeFunc(dateTime, minutes=minutes, seconds=seconds)
 
 
