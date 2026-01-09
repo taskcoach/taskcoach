@@ -520,7 +520,9 @@ class Application(object, metaclass=patterns.Singleton):
         # Use native wxPython main loop instead of Twisted reactor
         # NOTE: Previously used reactor.run() with wxreactor integration.
         # Now using wx.App.MainLoop() directly for simpler event handling.
+        print("[EXIT DEBUG] Entering MainLoop", file=sys.stderr)
         self.__wx_app.MainLoop()
+        print("[EXIT DEBUG] MainLoop exited normally", file=sys.stderr)
 
     def __copy_default_templates(self):
         """Copy default templates that don't exist yet in the user's
@@ -875,24 +877,34 @@ Break the lock?"""
             pass  # Best effort - don't prevent exit
 
     def quitApplication(self, force=False):
+        print("[EXIT DEBUG] quitApplication() called", file=sys.stderr)
         if not self.iocontroller.close(force=force):
+            print("[EXIT DEBUG] iocontroller.close() returned False", file=sys.stderr)
             return False
+        print("[EXIT DEBUG] iocontroller closed", file=sys.stderr)
         self.save_all_settings()
+        print("[EXIT DEBUG] settings saved", file=sys.stderr)
         if hasattr(self, "taskBarIcon"):
             self.taskBarIcon.RemoveIcon()
+            print("[EXIT DEBUG] taskBarIcon removed", file=sys.stderr)
         # Stop notification timers to prevent crashes during shutdown
         from taskcoachlib.notify.notifier_universal import NotificationCenter
         NotificationCenter().cleanup()
+        print("[EXIT DEBUG] NotificationCenter cleaned up", file=sys.stderr)
         from taskcoachlib.domain import date
 
         date.Scheduler().shutdown()
+        print("[EXIT DEBUG] Scheduler shutdown", file=sys.stderr)
         wx.EventLoop.GetActive().ProcessIdle()
+        print("[EXIT DEBUG] ProcessIdle done", file=sys.stderr)
 
         # For PowerStateMixin
         self.mainwindow.OnQuit()
+        print("[EXIT DEBUG] OnQuit called", file=sys.stderr)
 
         if operating_system.isGTK() and self.sessionMonitor is not None:
             self.sessionMonitor.stop()
+            print("[EXIT DEBUG] sessionMonitor stopped", file=sys.stderr)
 
         # TEMPORARILY DISABLED: TEE shutdown and error popup
         # has_errors = tee.shutdown_tee()
@@ -908,6 +920,8 @@ Break the lock?"""
         # wxPython's MainLoop exits naturally when all windows are closed.
         # Explicitly close the main window to trigger exit.
         # Set shutdown flag so onClose() won't veto or recurse into quitApplication.
+        print("[EXIT DEBUG] About to close mainwindow", file=sys.stderr)
         self.mainwindow.setShutdownInProgress()
         self.mainwindow.Close()
+        print("[EXIT DEBUG] mainwindow.Close() called", file=sys.stderr)
         return True
