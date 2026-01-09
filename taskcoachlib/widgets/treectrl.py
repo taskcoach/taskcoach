@@ -385,16 +385,24 @@ class TreeListCtrl(
                 item.SetImage(column_index, image, which)
 
     def _refreshColors(self, item, domain_object, check=False):
-        bg_color = (
-            domain_object.backgroundColor(recursive=True) or wx.NullColour
-        )
+        bg_color = domain_object.backgroundColor(recursive=True)
+        if bg_color is None:
+            # wx.NullColour doesn't work correctly on Windows - it renders as
+            # black instead of transparent. Use system window color instead.
+            if operating_system.isWindows():
+                bg_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+            else:
+                bg_color = wx.NullColour
         if not check or (
             check and bg_color != self.GetItemBackgroundColour(item)
         ):
             self.SetItemBackgroundColour(item, bg_color)
-        fg_color = (
-            domain_object.foregroundColor(recursive=True) or wx.NullColour
-        )
+        fg_color = domain_object.foregroundColor(recursive=True)
+        if fg_color is None:
+            if operating_system.isWindows():
+                fg_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+            else:
+                fg_color = wx.NullColour
         if not check or (check and fg_color != self.GetItemTextColour(item)):
             self.SetItemTextColour(item, fg_color)
 
