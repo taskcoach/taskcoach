@@ -78,6 +78,44 @@ jobs:
           Write-Host "Python embeddable package extracted"
           Get-ChildItem "build\TaskCoach\python"
 
+          # Check for VC++ Runtime DLLs already included
+          Write-Host "Checking for VC++ Runtime DLLs..."
+          Get-ChildItem "build\TaskCoach\python" -Filter "*.dll" | ForEach-Object { $_.Name }
+
+      - name: Copy VC++ Runtime DLLs
+        shell: pwsh
+        run: |
+          # wxPython and other packages require msvcp140.dll and vcruntime140.dll
+          # vcruntime140.dll is included with Python embeddable, but msvcp140.dll may not be
+          # Copy from Windows SDK or Visual Studio installation on the runner
+
+          $pythonDir = "build\TaskCoach\python"
+
+          # Find and copy VC++ runtime DLLs from system
+          $vcRedistPaths = @(
+            "C:\Windows\System32\msvcp140.dll",
+            "C:\Windows\System32\vcruntime140.dll",
+            "C:\Windows\System32\vcruntime140_1.dll"
+          )
+
+          foreach ($dllPath in $vcRedistPaths) {
+            $dllName = Split-Path $dllPath -Leaf
+            $destPath = Join-Path $pythonDir $dllName
+            if (Test-Path $dllPath) {
+              if (-not (Test-Path $destPath)) {
+                Write-Host "Copying $dllName to Python directory..."
+                Copy-Item $dllPath -Destination $destPath -Force
+              } else {
+                Write-Host "$dllName already exists in Python directory"
+              }
+            } else {
+              Write-Host "Warning: $dllName not found at $dllPath"
+            }
+          }
+
+          Write-Host "DLLs in Python directory:"
+          Get-ChildItem "$pythonDir\*.dll" | ForEach-Object { $_.Name }
+
       - name: Configure Python embeddable for pip
         shell: pwsh
         run: |
