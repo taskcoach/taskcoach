@@ -184,21 +184,14 @@ class UICommand(object):
 
     def updateMenuText(self, menuText):
         self.menuText = menuText
-        if operating_system.isWindows():
-            for menuItem in self.menuItems[:]:
-                menu = menuItem.GetMenu()
-                pos = menu.GetMenuItems().index(menuItem)
-                newMenuItem = wx.MenuItem(
-                    menu, self.id, menuText, self.helpText, self.kind
-                )
-                self.addBitmapToMenuItem(newMenuItem)
-                menu.Delete(menuItem)
-                self.menuItems.remove(menuItem)
-                self.menuItems.append(newMenuItem)
-                menu.InsertItem(pos, newMenuItem)
-        else:
-            for menuItem in self.menuItems:
+        # SetItemLabel works on all platforms in modern wxPython 4.x
+        # The old Windows-specific code that deleted/inserted menu items
+        # was causing access violations when popup menus were displayed.
+        for menuItem in self.menuItems:
+            try:
                 menuItem.SetItemLabel(menuText)
+            except Exception:
+                pass  # Ignore errors from deleted menu items
 
     def mainWindow(self):
         return wx.GetApp().TopWindow
