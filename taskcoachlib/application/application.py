@@ -521,7 +521,19 @@ class Application(object, metaclass=patterns.Singleton):
         # NOTE: Previously used reactor.run() with wxreactor integration.
         # Now using wx.App.MainLoop() directly for simpler event handling.
         print("[EXIT DEBUG] Entering MainLoop", file=sys.stderr)
-        self.__wx_app.MainLoop()
+        try:
+            self.__wx_app.MainLoop()
+        finally:
+            # Explicitly cleanup wx.App to prevent crashes during Python shutdown
+            # See: https://github.com/wxWidgets/Phoenix/issues/429
+            print("[EXIT DEBUG] MainLoop exited, cleaning up wx.App", file=sys.stderr)
+            # Stop signal check timer if running
+            if hasattr(self, '_signal_check_timer') and self._signal_check_timer:
+                self._signal_check_timer.Stop()
+                print("[EXIT DEBUG] Signal check timer stopped", file=sys.stderr)
+            # Prevent destructor issues by explicitly destroying the app
+            self.__wx_app.Destroy()
+            print("[EXIT DEBUG] wx.App destroyed", file=sys.stderr)
         print("[EXIT DEBUG] MainLoop exited normally", file=sys.stderr)
 
     def __copy_default_templates(self):
@@ -876,6 +888,52 @@ Break the lock?"""
         except Exception:
             pass  # Best effort - don't prevent exit
 
+    def _stopAllTimers(self):
+        """Stop all known timers to prevent crashes during shutdown.
+
+        Timer events can be delivered after frames are destroyed but before
+        the program ends, causing access violations on Windows.
+        See: https://github.com/wxWidgets/Phoenix/issues/429
+        """
+        import sys
+        # Stop signal check timer
+        if hasattr(self, '_signal_check_timer') and self._signal_check_timer:
+            try:
+                self._signal_check_timer.Stop()
+            except Exception:
+                pass
+
+        # Stop all wx.Timer instances we can find
+        # Walk through all top-level windows and their children
+        def stop_timers_in_window(window):
+            if window is None:
+                return
+            # Check for timer attributes
+            for attr_name in ['__timer', '_timer', 'timer', '_sizeTimer', '_refreshTimer',
+                              '_dragTimer', '_findTimer', '_editTimer', '__tmr',
+                              'scheduledStatusDisplay']:
+                # Try both public and name-mangled private attributes
+                for prefix in ['', '_' + window.__class__.__name__]:
+                    full_name = prefix + attr_name
+                    timer = getattr(window, full_name, None)
+                    if timer is not None and hasattr(timer, 'Stop'):
+                        try:
+                            if hasattr(timer, 'IsRunning') and timer.IsRunning():
+                                timer.Stop()
+                        except Exception:
+                            pass
+            # Recurse into children
+            if hasattr(window, 'GetChildren'):
+                try:
+                    for child in window.GetChildren():
+                        stop_timers_in_window(child)
+                except Exception:
+                    pass
+
+        # Stop timers in all top-level windows
+        for window in wx.GetTopLevelWindows():
+            stop_timers_in_window(window)
+
     def quitApplication(self, force=False):
         print("[EXIT DEBUG] quitApplication() called", file=sys.stderr)
         if not self.iocontroller.close(force=force):
@@ -918,6 +976,13 @@ Break the lock?"""
 
         # NOTE: stopTwisted() call removed - no longer using Twisted reactor.
         # wxPython's MainLoop exits naturally when all windows are closed.
+
+        # Stop all timers before closing windows to prevent crashes
+        # See: https://github.com/wxWidgets/Phoenix/issues/429
+        print("[EXIT DEBUG] Stopping all timers", file=sys.stderr)
+        self._stopAllTimers()
+        print("[EXIT DEBUG] All timers stopped", file=sys.stderr)
+
         # Explicitly close the main window to trigger exit.
         # Set shutdown flag so onClose() won't veto or recurse into quitApplication.
         print("[EXIT DEBUG] About to close mainwindow", file=sys.stderr)
