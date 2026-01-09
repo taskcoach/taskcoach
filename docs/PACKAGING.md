@@ -1005,6 +1005,55 @@ if sys.platform == 'win32':
                 os.add_dll_directory(dll_dir)
 ```
 
+### Windows Exit/Shutdown Behavior
+
+wxPython applications on Windows require special handling for clean shutdown, particularly when launched from a console vs from the Start Menu.
+
+#### python.exe vs pythonw.exe
+
+| Executable | Subsystem | Console | Use Case |
+|------------|-----------|---------|----------|
+| `python.exe` | `IMAGE_SUBSYSTEM_WINDOWS_CUI` | Attached | Command line, debugging |
+| `pythonw.exe` | `IMAGE_SUBSYSTEM_WINDOWS_GUI` | None | Start Menu, shortcuts |
+
+When running with `python.exe`, the app inherits a console window. This creates complications during shutdown because:
+1. The console has its own close handler that may conflict with wxPython's event loop
+2. Writing to stdout/stderr after console cleanup causes access violations
+
+#### SetConsoleCtrlHandler - Don't Use It
+
+**Important:** Do NOT use `SetConsoleCtrlHandler` in wxPython applications.
+
+According to [Microsoft documentation](https://learn.microsoft.com/en-us/windows/console/setconsolectrlhandler):
+> If a console application loads the gdi32.dll or user32.dll library, the HandlerRoutine function [...] isn't called for the CTRL_LOGOFF_EVENT and CTRL_SHUTDOWN_EVENT events.
+
+wxPython loads both libraries, so `SetConsoleCtrlHandler` won't receive shutdown events and can cause zombie processes.
+
+**Instead, use:**
+- `wx.EVT_CLOSE` - Window close event
+- `wx.EVT_END_SESSION` - System shutdown event (if needed)
+- `wx.App.OnExit()` - Application cleanup
+
+#### Proper Shutdown Sequence
+
+The shutdown must:
+1. **Destroy the TaskBarIcon** - `RemoveIcon()` alone is not sufficient; must call `Destroy()`
+2. **Stop all timers** - Timers firing during shutdown cause crashes
+3. **Call ExitMainLoop()** - Force the event loop to exit
+4. **Detach from console** - Call `FreeConsole()` and redirect stderr to `os.devnull`
+
+See `taskcoachlib/application/application.py` `quitApplication()` method for the implementation.
+
+#### Power Management Events
+
+Windows power events (suspend/resume) are handled using native wxPython events:
+- `wx.EVT_POWER_SUSPENDED`
+- `wx.EVT_POWER_RESUME`
+
+Do NOT use WNDPROC subclassing or `ctypes` to handle `WM_POWERBROADCAST` - this can cause crashes during shutdown.
+
+See `taskcoachlib/powermgt/win32.py` for the implementation.
+
 ### Testing in VMs
 
 **32-bit vs 64-bit Windows:** Check `System Information > System Type`:
