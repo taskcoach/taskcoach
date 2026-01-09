@@ -107,7 +107,8 @@ class VirtualListCtrl(
         foreground_color = item.foregroundColor(recursive=True)
         background_color = item.backgroundColor(recursive=True)
         # wx.NullColour doesn't work correctly on Windows - it renders as
-        # black instead of transparent. Use system colors instead.
+        # black instead of transparent. Use system colors to match
+        # HyperTreeList's GetClassDefaultAttributes.
         if operating_system.isWindows():
             if foreground_color is None:
                 foreground_color = wx.SystemSettings.GetColour(
@@ -115,7 +116,7 @@ class VirtualListCtrl(
                 )
             if background_color is None:
                 background_color = wx.SystemSettings.GetColour(
-                    wx.SYS_COLOUR_WINDOW
+                    wx.SYS_COLOUR_LISTBOX
                 )
         item_attribute_arguments = [foreground_color, background_color]
         font = item.font(recursive=True)

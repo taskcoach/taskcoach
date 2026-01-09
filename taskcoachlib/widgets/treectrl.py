@@ -388,9 +388,10 @@ class TreeListCtrl(
         bg_color = domain_object.backgroundColor(recursive=True)
         if bg_color is None:
             # wx.NullColour doesn't work correctly on Windows - it renders as
-            # black instead of transparent. Use system window color instead.
+            # black instead of transparent. Use system listbox color to match
+            # HyperTreeList's GetClassDefaultAttributes (SYS_COLOUR_LISTBOX).
             if operating_system.isWindows():
-                bg_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+                bg_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_LISTBOX)
             else:
                 bg_color = wx.NullColour
         if not check or (

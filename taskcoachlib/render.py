@@ -174,6 +174,22 @@ if operating_system.isWindows():
     import pywintypes, win32api
 
     def rawTimeFunc(dt, minutes=True, seconds=False):
+        if dt is None:
+            return operating_system.decodeSystemString(
+                win32api.GetTimeFormat(0x400, 0, None, None)
+            )
+        # pywintypes.Time() can't handle dates far in the future (e.g., year 3333)
+        # due to mktime limitations on Windows. Fall back to strftime for such dates.
+        try:
+            pytime = pywintypes.Time(dt)
+        except (OverflowError, OSError):
+            # Fall back to Python's strftime for dates outside Windows range
+            if seconds:
+                return dt.strftime("%H:%M:%S")
+            elif minutes:
+                return dt.strftime("%H:%M")
+            else:
+                return dt.strftime("%H")
         if seconds:
             # You can't include seconds without minutes
             flags = 0x0
@@ -183,16 +199,23 @@ if operating_system.isWindows():
             else:
                 flags = 0x1
         return operating_system.decodeSystemString(
-            win32api.GetTimeFormat(
-                0x400, flags, None if dt is None else pywintypes.Time(dt), None
-            )
+            win32api.GetTimeFormat(0x400, flags, pytime, None)
         )
 
     def rawDateFunc(dt):
-        return operating_system.decodeSystemString(
-            win32api.GetDateFormat(
-                0x400, 0, None if dt is None else pywintypes.Time(dt), None
+        if dt is None:
+            return operating_system.decodeSystemString(
+                win32api.GetDateFormat(0x400, 0, None, None)
             )
+        # pywintypes.Time() can't handle dates far in the future (e.g., year 3333)
+        # due to mktime limitations on Windows. Fall back to strftime for such dates.
+        try:
+            pytime = pywintypes.Time(dt)
+        except (OverflowError, OSError):
+            # Fall back to Python's strftime for dates outside Windows range
+            return dt.strftime("%x")
+        return operating_system.decodeSystemString(
+            win32api.GetDateFormat(0x400, 0, pytime, None)
         )
 
 elif operating_system.isMac():
