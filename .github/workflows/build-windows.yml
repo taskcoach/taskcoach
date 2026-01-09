@@ -200,8 +200,9 @@ jobs:
           # Copy taskcoachlib
           Copy-Item -Path "taskcoachlib" -Destination "build\TaskCoach\taskcoachlib" -Recurse
 
-          # Copy main script
+          # Copy main scripts
           Copy-Item -Path "taskcoach.py" -Destination "build\TaskCoach\"
+          Copy-Item -Path "launcher.pyw" -Destination "build\TaskCoach\"
 
           # Copy icons
           Copy-Item -Path "icons.in" -Destination "build\TaskCoach\icons.in" -Recurse
@@ -220,15 +221,16 @@ jobs:
       - name: Create launcher scripts
         shell: pwsh
         run: |
-          # Create a simple batch launcher
-          $launcherContent = "@echo off`r`ncd /d `"%~dp0`"`r`nstart `"`" `"python\pythonw.exe`" `"taskcoach.py`" %*"
+          # Create a simple batch launcher (for command-line use with console output)
+          $launcherContent = "@echo off`r`ncd /d `"%~dp0`"`r`nstart `"`" `"python\pythonw.exe`" `"launcher.pyw`" %*"
           Set-Content -Path "build\TaskCoach\TaskCoach.bat" -Value $launcherContent -Encoding ASCII
 
           # Also create a VBS launcher for silent execution (no console window)
+          # This uses launcher.pyw which has proper error handling
           $vbsLines = @(
             'Set WshShell = CreateObject("WScript.Shell")',
             'WshShell.CurrentDirectory = CreateObject("Scripting.FileSystemObject").GetParentFolderName(WScript.ScriptFullName)',
-            'WshShell.Run "python\pythonw.exe taskcoach.py", 0, False'
+            'WshShell.Run "python\pythonw.exe launcher.pyw", 0, False'
           )
           Set-Content -Path "build\TaskCoach\TaskCoach.vbs" -Value $vbsLines
 
@@ -305,18 +307,20 @@ jobs:
           [void]$lines.Add('Source: "build\TaskCoach\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs')
           [void]$lines.Add('')
           [void]$lines.Add('[Icons]')
-          [void]$lines.Add('Name: "{group}\{#MyAppName}"; Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\taskcoach.py"""; WorkingDir: "{app}"; IconFilename: "{app}\taskcoach.ico"')
+          [void]$lines.Add('; Use launcher.pyw which handles working directory and has better error handling')
+          [void]$lines.Add('Name: "{group}\{#MyAppName}"; Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\launcher.pyw"""; WorkingDir: "{app}"; IconFilename: "{app}\taskcoach.ico"')
           [void]$lines.Add('Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"')
-          [void]$lines.Add('Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\taskcoach.py"""; WorkingDir: "{app}"; IconFilename: "{app}\taskcoach.ico"; Tasks: desktopicon')
+          [void]$lines.Add('Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\launcher.pyw"""; WorkingDir: "{app}"; IconFilename: "{app}\taskcoach.ico"; Tasks: desktopicon')
           [void]$lines.Add('')
           [void]$lines.Add('[Run]')
-          [void]$lines.Add('Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\taskcoach.py"""; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, ''&'', ''&&'')}}"; Flags: nowait postinstall skipifsilent')
+          [void]$lines.Add('Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\launcher.pyw"""; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, ''&'', ''&&'')}}"; Flags: nowait postinstall skipifsilent')
           [void]$lines.Add('')
           [void]$lines.Add('[Registry]')
           [void]$lines.Add('Root: HKA; Subkey: "Software\Classes\.tsk"; ValueType: string; ValueName: ""; ValueData: "TaskCoach.TaskFile"; Flags: uninsdeletevalue')
           [void]$lines.Add('Root: HKA; Subkey: "Software\Classes\TaskCoach.TaskFile"; ValueType: string; ValueName: ""; ValueData: "Task Coach Task File"; Flags: uninsdeletekey')
           [void]$lines.Add('Root: HKA; Subkey: "Software\Classes\TaskCoach.TaskFile\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\taskcoach.ico,0"')
-          [void]$lines.Add('Root: HKA; Subkey: "Software\Classes\TaskCoach.TaskFile\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\python\pythonw.exe"" ""{app}\taskcoach.py"" ""%1"""')
+          [void]$lines.Add('; File association also uses launcher.pyw for proper startup')
+          [void]$lines.Add('Root: HKA; Subkey: "Software\Classes\TaskCoach.TaskFile\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\python\pythonw.exe"" ""{app}\launcher.pyw"" ""%1"""')
 
           $issContent = $lines -join "`r`n"
           Set-Content -Path "taskcoach-installer.iss" -Value $issContent -Encoding ASCII
