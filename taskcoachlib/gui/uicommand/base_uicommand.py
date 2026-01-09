@@ -192,7 +192,7 @@ class UICommand(object):
                     menu, self.id, menuText, self.helpText, self.kind
                 )
                 self.addBitmapToMenuItem(newMenuItem)
-                menu.DeleteItem(menuItem)
+                menu.Delete(menuItem)
                 self.menuItems.remove(menuItem)
                 self.menuItems.append(newMenuItem)
                 menu.InsertItem(pos, newMenuItem)

@@ -362,9 +362,11 @@ def time(dateTime, seconds=False, minutes=True):
         # strftime doesn't handle years before 1900, be prepared:
         dateTime = dateTime.replace(year=2000)
     except TypeError:  # We got a time instead of a dateTime
-        dateTime = datemodule.Now().replace(
-            hour=dateTime.hour, minute=dateTime.minute, second=dateTime.second
-        )
+        # Use a fixed date to avoid timezone issues with pywintypes.Time on Windows.
+        # Using datemodule.Now() caused timezone offset problems because
+        # pywintypes.Time() may interpret the datetime differently.
+        import datetime as dt
+        dateTime = dt.datetime(2000, 1, 1, dateTime.hour, dateTime.minute, dateTime.second)
     return timeFunc(dateTime, minutes=minutes, seconds=seconds)
 
 
