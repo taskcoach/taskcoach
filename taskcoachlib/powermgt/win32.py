@@ -31,18 +31,26 @@ class PowerStateMixin(PowerStateMixinBase):
 
         # Store handle now - can't call GetHandle() later when window is being destroyed
         self.__hWnd = self.GetHandle()
+        self.__destroyed = False
         self.__oldProc = win32gui.SetWindowLong(
             self.__hWnd, win32con.GWL_WNDPROC, self.__WndProc
         )
 
     def __WndProc(self, hWnd, msg, wParam, lParam):
+        # After WM_DESTROY, stop all processing to avoid access violations
+        if self.__destroyed:
+            return win32gui.DefWindowProc(hWnd, msg, wParam, lParam)
+
         if msg == win32con.WM_DESTROY:
+            self.__destroyed = True
             try:
                 win32api.SetWindowLong(
                     self.__hWnd, win32con.GWL_WNDPROC, self.__oldProc
                 )
             except Exception:
                 pass  # Window already destroyed, nothing to restore
+            # Let Windows handle destroy with default proc
+            return win32gui.DefWindowProc(hWnd, msg, wParam, lParam)
 
         if msg == win32con.WM_POWERBROADCAST:
             if wParam == win32con.PBT_APMSUSPEND:
