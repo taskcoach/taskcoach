@@ -360,10 +360,10 @@ def dateTimePeriod(start, stop, humanReadable=False):
 def time(dateTime, seconds=False, minutes=True):
     """Format a time or datetime for display.
 
-    For time objects (not full datetimes), we use Python's strftime directly
-    to avoid timezone issues with pywintypes.Time() on Windows. The Windows
-    API interprets naive datetimes as UTC and converts to local time, which
-    causes incorrect offsets when formatting standalone times.
+    For time objects (not full datetimes) on Windows, we use Python's strftime
+    directly to avoid timezone issues with pywintypes.Time(). The Windows API
+    interprets naive datetimes as UTC and converts to local time, which causes
+    incorrect offsets when formatting standalone times.
     """
     is_time_only = False
     try:
@@ -371,19 +371,23 @@ def time(dateTime, seconds=False, minutes=True):
         dateTime = dateTime.replace(year=2000)
     except TypeError:  # We got a time instead of a dateTime
         is_time_only = True
-        import datetime as dt
-        dateTime = dt.datetime(2000, 1, 1, dateTime.hour, dateTime.minute, dateTime.second)
-
-    # For time-only values on Windows, use Python's strftime to avoid
-    # pywintypes.Time() timezone conversion issues
-    if is_time_only and operating_system.isWindows():
-        if seconds:
-            fmt = timeWithSecondsFormat
-        elif minutes:
-            fmt = timeWithMinutesFormat
+        # For time-only values on Windows, use plain datetime to avoid
+        # pywintypes.Time() timezone conversion issues
+        if operating_system.isWindows():
+            import datetime as dt
+            dateTime = dt.datetime(2000, 1, 1, dateTime.hour, dateTime.minute, dateTime.second)
+            if seconds:
+                fmt = timeWithSecondsFormat
+            elif minutes:
+                fmt = timeWithMinutesFormat
+            else:
+                fmt = timeFormat
+            return operating_system.decodeSystemString(dateTime.strftime(fmt))
         else:
-            fmt = timeFormat
-        return operating_system.decodeSystemString(dateTime.strftime(fmt))
+            # On Linux/Mac, use datemodule.DateTime which rawTimeFunc expects
+            dateTime = datemodule.Now().replace(
+                hour=dateTime.hour, minute=dateTime.minute, second=dateTime.second
+            )
 
     return timeFunc(dateTime, minutes=minutes, seconds=seconds)
 
