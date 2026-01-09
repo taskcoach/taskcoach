@@ -531,6 +531,17 @@ class Application(object, metaclass=patterns.Singleton):
             if hasattr(self, '_signal_check_timer') and self._signal_check_timer:
                 self._signal_check_timer.Stop()
                 print("[EXIT DEBUG] Signal check timer stopped", file=sys.stderr)
+
+            # On Windows, redirect stdout/stderr to devnull before destroying app
+            # The crash only happens with console handles, not with devnull
+            # This matches what launcher.pyw does with pythonw.exe
+            if operating_system.isWindows():
+                print("[EXIT DEBUG] Redirecting stdout/stderr to devnull", file=sys.stderr)
+                sys.stderr.flush()
+                sys.stdout.flush()
+                sys.stderr = open(os.devnull, 'w')
+                sys.stdout = open(os.devnull, 'w')
+
             # Prevent destructor issues by explicitly destroying the app
             self.__wx_app.Destroy()
             print("[EXIT DEBUG] wx.App destroyed", file=sys.stderr)
