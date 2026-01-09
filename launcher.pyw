@@ -17,6 +17,14 @@ import sys
 import traceback
 from datetime import datetime
 
+# When running with pythonw.exe, sys.stderr and sys.stdout are None.
+# This causes issues with code that tries to write to them.
+# Redirect to devnull to prevent crashes.
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, 'w')
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, 'w')
+
 def get_log_path():
     """Get path for startup log file."""
     log_dir = os.environ.get('LOCALAPPDATA', os.environ.get('TEMP', '.'))
