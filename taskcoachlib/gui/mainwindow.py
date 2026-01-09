@@ -314,19 +314,13 @@ If this happens again, please make a copy of your TaskCoach.ini file """
                 child.Close()
 
     def onClose(self, event):
-        import sys
-        print("[EXIT DEBUG] mainwindow.onClose() called", file=sys.stderr)
         self.closeEditors()
-        print("[EXIT DEBUG] editors closed", file=sys.stderr)
 
         if self.__shutdown:
             # UnInit AUI manager before window destruction to avoid
             # wxAssertionError about pushed event handlers
-            print("[EXIT DEBUG] shutdown flag set, uniniting AUI manager", file=sys.stderr)
             self.manager.UnInit()
-            print("[EXIT DEBUG] AUI manager uninited, calling event.Skip()", file=sys.stderr)
             event.Skip()
-            print("[EXIT DEBUG] event.Skip() called, returning", file=sys.stderr)
             return
         if event.CanVeto() and self.settings.getboolean(
             "window", "hidewhenclosed"
@@ -334,19 +328,13 @@ If this happens again, please make a copy of your TaskCoach.ini file """
             event.Veto()
             self.Iconize()
         else:
-            print("[EXIT DEBUG] calling quitApplication()", file=sys.stderr)
             if application.Application().quitApplication():
                 # UnInit AUI manager before window destruction to avoid
                 # wxAssertionError about pushed event handlers
-                print("[EXIT DEBUG] quitApplication returned True, uniniting AUI", file=sys.stderr)
                 self.manager.UnInit()
-                print("[EXIT DEBUG] calling event.Skip()", file=sys.stderr)
                 event.Skip()
-                print("[EXIT DEBUG] stopping taskFile", file=sys.stderr)
                 self.taskFile.stop()
-                print("[EXIT DEBUG] stopping idleController", file=sys.stderr)
                 self._idleController.stop()
-                print("[EXIT DEBUG] onClose() done", file=sys.stderr)
 
     def restore(self, event):  # pylint: disable=W0613
         if self.settings.getboolean("window", "maximized"):

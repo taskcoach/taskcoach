@@ -520,23 +520,18 @@ class Application(object, metaclass=patterns.Singleton):
         # Use native wxPython main loop instead of Twisted reactor
         # NOTE: Previously used reactor.run() with wxreactor integration.
         # Now using wx.App.MainLoop() directly for simpler event handling.
-        print("[EXIT DEBUG] Entering MainLoop", file=sys.stderr)
         try:
             self.__wx_app.MainLoop()
         finally:
             # Explicitly cleanup wx.App to prevent crashes during Python shutdown
             # See: https://github.com/wxWidgets/Phoenix/issues/429
-            print("[EXIT DEBUG] MainLoop exited, cleaning up wx.App", file=sys.stderr)
-            # Stop signal check timer if running
             if hasattr(self, '_signal_check_timer') and self._signal_check_timer:
                 self._signal_check_timer.Stop()
-                print("[EXIT DEBUG] Signal check timer stopped", file=sys.stderr)
 
             # On Windows with console (python.exe), detach from console before cleanup
             # The crash only happens with python.exe (console subsystem), not pythonw.exe (GUI subsystem)
             # This suggests the crash is related to console cleanup during Python shutdown
             if operating_system.isWindows():
-                print("[EXIT DEBUG] Detaching from console", file=sys.stderr)
                 sys.stderr.flush()
                 sys.stdout.flush()
                 try:
@@ -544,17 +539,14 @@ class Application(object, metaclass=patterns.Singleton):
                     # FreeConsole detaches the process from its console
                     # This prevents console-related cleanup issues during Python shutdown
                     ctypes.windll.kernel32.FreeConsole()
-                    print("[EXIT DEBUG] FreeConsole called", file=sys.stderr)
-                except Exception as e:
-                    print(f"[EXIT DEBUG] FreeConsole failed: {e}", file=sys.stderr)
-                # Also redirect stdout/stderr to devnull
+                except Exception:
+                    pass
+                # Redirect stdout/stderr to devnull to prevent write errors after console detach
                 sys.stderr = open(os.devnull, 'w')
                 sys.stdout = open(os.devnull, 'w')
 
             # Prevent destructor issues by explicitly destroying the app
             self.__wx_app.Destroy()
-            print("[EXIT DEBUG] wx.App destroyed", file=sys.stderr)
-        print("[EXIT DEBUG] MainLoop exited normally", file=sys.stderr)
 
     def __copy_default_templates(self):
         """Copy default templates that don't exist yet in the user's
@@ -948,72 +940,42 @@ Break the lock?"""
             stop_timers_in_window(window)
 
     def quitApplication(self, force=False):
-        print("[EXIT DEBUG] quitApplication() called", file=sys.stderr)
         # Prevent re-entry - quitApplication may be called multiple times
         # (e.g., from window close, signal handler, console ctrl handler)
         if getattr(self, '_quitting', False):
-            print("[EXIT DEBUG] Already quitting, skipping", file=sys.stderr)
             return True
         self._quitting = True
 
-
         if not self.iocontroller.close(force=force):
-            print("[EXIT DEBUG] iocontroller.close() returned False", file=sys.stderr)
             return False
-        print("[EXIT DEBUG] iocontroller closed", file=sys.stderr)
         self.save_all_settings()
-        print("[EXIT DEBUG] settings saved", file=sys.stderr)
         if hasattr(self, "taskBarIcon"):
             self.taskBarIcon.RemoveIcon()
             self.taskBarIcon.Destroy()
-            print("[EXIT DEBUG] taskBarIcon removed and destroyed", file=sys.stderr)
         # Stop notification timers to prevent crashes during shutdown
         from taskcoachlib.notify.notifier_universal import NotificationCenter
         NotificationCenter().cleanup()
-        print("[EXIT DEBUG] NotificationCenter cleaned up", file=sys.stderr)
         from taskcoachlib.domain import date
 
         date.Scheduler().shutdown()
-        print("[EXIT DEBUG] Scheduler shutdown", file=sys.stderr)
         wx.EventLoop.GetActive().ProcessIdle()
-        print("[EXIT DEBUG] ProcessIdle done", file=sys.stderr)
 
         # For PowerStateMixin
         self.mainwindow.OnQuit()
-        print("[EXIT DEBUG] OnQuit called", file=sys.stderr)
 
         if operating_system.isGTK() and self.sessionMonitor is not None:
             self.sessionMonitor.stop()
-            print("[EXIT DEBUG] sessionMonitor stopped", file=sys.stderr)
-
-        # TEMPORARILY DISABLED: TEE shutdown and error popup
-        # has_errors = tee.shutdown_tee()
-        # if has_errors:
-        #     log_path = tee.get_log_path()
-        #     wx.MessageBox(
-        #         _('Errors have occured. Please see "%s"') % log_path,
-        #         _("Error"),
-        #         wx.OK,
-        #     )
-
-        # NOTE: stopTwisted() call removed - no longer using Twisted reactor.
-        # wxPython's MainLoop exits naturally when all windows are closed.
 
         # Stop all timers before closing windows to prevent crashes
         # See: https://github.com/wxWidgets/Phoenix/issues/429
-        print("[EXIT DEBUG] Stopping all timers", file=sys.stderr)
         self._stopAllTimers()
-        print("[EXIT DEBUG] All timers stopped", file=sys.stderr)
 
         # Explicitly close the main window to trigger exit.
         # Set shutdown flag so onClose() won't veto or recurse into quitApplication.
-        print("[EXIT DEBUG] About to close mainwindow", file=sys.stderr)
         self.mainwindow.setShutdownInProgress()
         self.mainwindow.Close()
-        print("[EXIT DEBUG] mainwindow.Close() called", file=sys.stderr)
 
         # Force MainLoop to exit in case something is keeping it alive
         # See: https://discuss.wxpython.org/t/wxpython-app-hanging-not-ending-mainloop/29797
-        print("[EXIT DEBUG] Calling ExitMainLoop", file=sys.stderr)
         wx.GetApp().ExitMainLoop()
         return True
