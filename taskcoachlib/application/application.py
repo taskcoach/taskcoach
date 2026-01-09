@@ -805,25 +805,12 @@ Break the lock?"""
             self._signal_check_timer = wx.Timer()
             self._signal_check_timer.Start(500)  # Check every 500ms
 
-        if operating_system.isWindows():
-            import win32api  # pylint: disable=F0401
-
-            def quit_adapter(*args):
-                # The handler is called from something that is not the main thread, so we can't do
-                # much wx-related
-                event = threading.Event()
-
-                def quit():
-                    try:
-                        self.quitApplication()
-                    finally:
-                        event.set()
-
-                wx.CallAfter(quit)
-                event.wait()
-                return True
-
-            win32api.SetConsoleCtrlHandler(quit_adapter, True)
+        # NOTE: We intentionally do NOT use SetConsoleCtrlHandler on Windows.
+        # According to Microsoft docs, if an app loads gdi32.dll or user32.dll
+        # (which wxPython does), the handler doesn't receive CTRL_LOGOFF_EVENT
+        # or CTRL_SHUTDOWN_EVENT. It can also cause shutdown issues.
+        # Instead, we rely on wxPython's EVT_CLOSE and EVT_END_SESSION events.
+        # See: https://learn.microsoft.com/en-us/windows/console/setconsolectrlhandler
 
     @staticmethod
     def __create_mutex():
@@ -969,15 +956,6 @@ Break the lock?"""
             return True
         self._quitting = True
 
-        # On Windows, unregister console control handler to prevent it from
-        # triggering more quit attempts after we start shutting down
-        if operating_system.isWindows():
-            try:
-                import win32api
-                win32api.SetConsoleCtrlHandler(None, True)
-                print("[EXIT DEBUG] Console ctrl handler disabled", file=sys.stderr)
-            except Exception as e:
-                print(f"[EXIT DEBUG] Failed to disable console handler: {e}", file=sys.stderr)
 
         if not self.iocontroller.close(force=force):
             print("[EXIT DEBUG] iocontroller.close() returned False", file=sys.stderr)
