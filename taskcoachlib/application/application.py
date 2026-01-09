@@ -965,7 +965,8 @@ Break the lock?"""
         print("[EXIT DEBUG] settings saved", file=sys.stderr)
         if hasattr(self, "taskBarIcon"):
             self.taskBarIcon.RemoveIcon()
-            print("[EXIT DEBUG] taskBarIcon removed", file=sys.stderr)
+            self.taskBarIcon.Destroy()
+            print("[EXIT DEBUG] taskBarIcon removed and destroyed", file=sys.stderr)
         # Stop notification timers to prevent crashes during shutdown
         from taskcoachlib.notify.notifier_universal import NotificationCenter
         NotificationCenter().cleanup()
@@ -1010,4 +1011,9 @@ Break the lock?"""
         self.mainwindow.setShutdownInProgress()
         self.mainwindow.Close()
         print("[EXIT DEBUG] mainwindow.Close() called", file=sys.stderr)
+
+        # Force MainLoop to exit in case something is keeping it alive
+        # See: https://discuss.wxpython.org/t/wxpython-app-hanging-not-ending-mainloop/29797
+        print("[EXIT DEBUG] Calling ExitMainLoop", file=sys.stderr)
+        wx.GetApp().ExitMainLoop()
         return True
