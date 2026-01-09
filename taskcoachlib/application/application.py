@@ -879,7 +879,13 @@ Break the lock?"""
         self.settings.setboolean("file", "inifileloaded", True)  # Reset
 
     def displayMessage(self, message):
-        self.mainwindow.displayMessage(message)
+        # Guard against deleted mainwindow during shutdown
+        if getattr(self, '_quitting', False):
+            return
+        try:
+            self.mainwindow.displayMessage(message)
+        except RuntimeError:
+            pass  # MainWindow C++ object already deleted
 
     def on_end_session(self):
         self.mainwindow.setShutdownInProgress()
@@ -956,6 +962,23 @@ Break the lock?"""
 
     def quitApplication(self, force=False):
         print("[EXIT DEBUG] quitApplication() called", file=sys.stderr)
+        # Prevent re-entry - quitApplication may be called multiple times
+        # (e.g., from window close, signal handler, console ctrl handler)
+        if getattr(self, '_quitting', False):
+            print("[EXIT DEBUG] Already quitting, skipping", file=sys.stderr)
+            return True
+        self._quitting = True
+
+        # On Windows, unregister console control handler to prevent it from
+        # triggering more quit attempts after we start shutting down
+        if operating_system.isWindows():
+            try:
+                import win32api
+                win32api.SetConsoleCtrlHandler(None, True)
+                print("[EXIT DEBUG] Console ctrl handler disabled", file=sys.stderr)
+            except Exception as e:
+                print(f"[EXIT DEBUG] Failed to disable console handler: {e}", file=sys.stderr)
+
         if not self.iocontroller.close(force=force):
             print("[EXIT DEBUG] iocontroller.close() returned False", file=sys.stderr)
             return False
