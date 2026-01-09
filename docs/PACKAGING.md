@@ -935,6 +935,76 @@ See `.github/workflows/build-windows.yml`
 | [Mu Editor](https://github.com/mu-editor/mu) | PUP | pynsist/NSIS | GitHub Actions | Python IDE for beginners |
 | [doc2dash](https://github.com/hynek/doc2dash) | PyOxidizer | WiX | GitHub Actions | Documentation tool |
 
+### Key Configuration for Python Embeddable Package
+
+The Python embeddable package requires careful configuration to work with pip-installed packages like wxPython and pywin32.
+
+#### 1. The `._pth` File (Critical)
+
+The `pythonXX._pth` file controls `sys.path`. The order matters - `import site` must come **AFTER** all paths:
+
+```
+python311.zip
+.
+Lib\site-packages
+..
+import site
+```
+
+**Why?** `import site` triggers `site.main()` which looks for `.pth` files in directories already in `sys.path`. If `import site` comes before `Lib\site-packages`, packages like pywin32 that use `.pth` files for DLL path setup won't work.
+
+#### 2. Create the DLLs Folder
+
+Create an empty `DLLs` folder in the Python directory. Without this, Python can't locate some modules and imports fail with "FileNotFoundError".
+
+#### 3. Copy pywin32 DLLs
+
+pywin32's `pywin32_bootstrap` mechanism (via `.pth` file) doesn't reliably work with embeddable Python. Copy DLLs directly to the Python directory:
+
+```powershell
+Copy-Item "Lib\site-packages\pywin32_system32\*.dll" -Destination "python\" -Force
+```
+
+This copies `pywintypesXX.dll` and `pythoncomXX.dll` where they'll be found.
+
+#### 4. Bundle VC++ Runtime DLLs
+
+wxPython requires Visual C++ Runtime DLLs that are **NOT** included in Windows by default:
+- `msvcp140.dll`
+- `vcruntime140.dll`
+- `vcruntime140_1.dll`
+
+Copy these from the build system (GitHub Actions runner has them in `C:\Windows\System32\`) to the Python directory:
+
+```powershell
+Copy-Item "C:\Windows\System32\msvcp140.dll" -Destination "python\"
+Copy-Item "C:\Windows\System32\vcruntime140.dll" -Destination "python\"
+Copy-Item "C:\Windows\System32\vcruntime140_1.dll" -Destination "python\"
+```
+
+**Note:** The Python embeddable package includes `vcruntime140.dll` but NOT `msvcp140.dll`. wxPython (built with C++) requires `msvcp140.dll`.
+
+#### Runtime DLL Setup in Application
+
+In `taskcoach.py`, additional DLL directory registration is needed for Python 3.8+:
+
+```python
+if sys.platform == 'win32':
+    import site
+    python_dir = os.path.dirname(os.path.abspath(sys.executable))
+    site_packages = os.path.join(python_dir, 'Lib', 'site-packages')
+    if os.path.isdir(site_packages):
+        site.addsitedir(site_packages)  # Process .pth files
+
+    if sys.version_info >= (3, 8) and hasattr(os, 'add_dll_directory'):
+        # Register DLL directories for Python 3.8+
+        for dll_dir in [os.path.join(site_packages, 'wx'),
+                        os.path.join(site_packages, 'pywin32_system32'),
+                        python_dir]:
+            if os.path.isdir(dll_dir):
+                os.add_dll_directory(dll_dir)
+```
+
 ### Testing in VMs
 
 **32-bit vs 64-bit Windows:** Check `System Information > System Type`:
