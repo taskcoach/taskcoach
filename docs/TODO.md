@@ -10,6 +10,7 @@ This document tracks planned improvements and known issues to address in future 
 - [Backup Feature Review](#backup-feature-review)
 - [Setup/Installation Issues](#setupinstallation-issues)
 - [Monkeypatches and Workarounds](#monkeypatches-and-workarounds)
+- [Datetime and Timezone Refactoring](#datetime-and-timezone-refactoring)
 - [Other TODOs](#other-todos)
 
 ---
@@ -207,6 +208,80 @@ The following obsolete workarounds were removed from `taskcoach.py`:
 1. **Empty workarounds module:** The `import workarounds` at `application.py:21` can be removed along with the empty `workarounds.py` module.
 
 2. **Regular review:** Check this section every 6-12 months to clean up obsolete workarounds.
+
+---
+
+## Datetime and Timezone Refactoring
+
+### Current Status
+
+TaskCoach uses **naive (timezone-unaware) datetime objects** throughout the codebase. This was common practice in Python 2 era but is now deprecated - Python 3.12+ emits warnings about naive datetime usage.
+
+### The Problem
+
+The naive datetime approach causes issues on Windows with `pywintypes.Time()`:
+
+1. **pywin32 timezone confusion** ([issue #1760](https://github.com/mhammond/pywin32/issues/1760)): When converting datetime objects, pywin32 has inconsistent timezone handling. Windows FILETIME is always UTC, but the conversion to/from Python datetime uses `mktime` which expects local time.
+
+2. **Symptom**: When passing a naive datetime like `datetime(2026, 1, 8, 11, 33, 0)` to `pywintypes.Time()`, it may interpret it as UTC and convert to local time, causing 11:33 AM to display as 7:33 PM (e.g., 8-hour PST offset).
+
+3. **Python 2 vs 3 differences**: The behavior changed between pywin32 versions ([issue #1355](https://github.com/mhammond/pywin32/issues/1355)), which is why this worked before the Python 3 migration.
+
+### Current Workaround
+
+In `taskcoachlib/render.py`, we bypass `pywintypes.Time()` for time-only formatting on Windows:
+
+```python
+# For time-only values on Windows, use Python's strftime directly
+# to avoid pywintypes.Time() timezone conversion issues
+if is_time_only and operating_system.isWindows():
+    return dateTime.strftime("%H:%M")
+```
+
+This is a pragmatic fix that avoids a major refactor.
+
+### Proper Long-Term Solution
+
+Migrate TaskCoach to use **timezone-aware datetime objects** throughout:
+
+```python
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo  # Python 3.9+
+
+# Modern approach - always use timezone-aware datetimes
+aware_dt = datetime.now(timezone.utc)  # UTC
+local_dt = datetime.now(ZoneInfo("America/New_York"))  # Local with zone
+
+# Convert to local for display
+display_time = aware_dt.astimezone()  # System local timezone
+```
+
+### Refactoring Scope
+
+| Component | Location | Effort |
+|-----------|----------|--------|
+| `DateTime` class | `taskcoachlib/domain/date/dateandtime.py` | High - Core class used everywhere |
+| `Date` class | `taskcoachlib/domain/date/date.py` | Medium |
+| `TimeDelta` class | `taskcoachlib/domain/date/timedelta.py` | Low |
+| Task file I/O | `taskcoachlib/persistence/` | High - Must handle legacy files |
+| Rendering | `taskcoachlib/render.py` | Medium |
+| UI controls | `taskcoachlib/widgets/datectrl.py` | Medium |
+
+### Migration Strategy
+
+1. **Add timezone support to DateTime class** - Make it timezone-aware while maintaining backward compatibility
+2. **Update file I/O** - Store times in UTC, convert to local for display
+3. **Update rendering** - Remove Windows-specific workarounds once datetimes are timezone-aware
+4. **Legacy file support** - Assume naive datetimes in old files are local time
+
+### References
+
+- [pywin32 issue #1760 - Datetime timezone issues](https://github.com/mhammond/pywin32/issues/1760)
+- [pywin32 issue #1355 - DST differences Python 2 vs 3](https://github.com/mhammond/pywin32/issues/1355)
+- [Python datetime documentation](https://docs.python.org/3/library/datetime.html)
+- [PEP 495 - Local Time Disambiguation](https://peps.python.org/pep-0495/)
+
+**Status:** Workaround in place. Full refactor is a significant undertaking.
 
 ---
 
