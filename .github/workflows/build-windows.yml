@@ -144,18 +144,16 @@ jobs:
 
           Write-Host "All dependencies installed"
 
-          # Verify pywin32 setup (it uses pywin32_bootstrap via .pth file)
-          $pthPath = "build\TaskCoach\python\Lib\site-packages\pywin32.pth"
-          if (Test-Path $pthPath) {
-            Write-Host "pywin32.pth contents:"
-            Get-Content $pthPath
-          }
-
-          # List pywin32_system32 directory (DLLs should be here)
+          # Copy pywin32 DLLs to Python directory for reliable loading
+          # The pywin32_bootstrap mechanism doesn't always work with embeddable Python
+          # Copying DLLs to the python.exe directory ensures they're found
           $sysDir = "build\TaskCoach\python\Lib\site-packages\pywin32_system32"
+          $pythonDir = "build\TaskCoach\python"
           if (Test-Path $sysDir) {
-            Write-Host "pywin32_system32 contents:"
-            Get-ChildItem $sysDir
+            Write-Host "Copying pywin32 DLLs to Python directory..."
+            Copy-Item "$sysDir\*.dll" -Destination $pythonDir -Force
+            Write-Host "DLLs copied:"
+            Get-ChildItem "$pythonDir\*.dll"
           }
 
       - name: Copy application files
