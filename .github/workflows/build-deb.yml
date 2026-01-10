@@ -35,11 +35,12 @@ jobs:
             codename: trixie
             os: debian
             osver: "13"
-          - distro: debian:sid
-            name: Debian Sid (unstable)
-            codename: sid
-            os: debian
-            osver: sid
+          # DISABLED: Sid is rolling/unstable, not for end users. Uncomment if needed.
+          # - distro: debian:sid
+          #   name: Debian Sid (unstable)
+          #   codename: sid
+          #   os: debian
+          #   osver: sid
           - distro: ubuntu:22.04
             name: Ubuntu 22.04 LTS (Jammy)
             codename: jammy
