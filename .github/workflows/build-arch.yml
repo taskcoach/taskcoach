@@ -213,10 +213,22 @@ jobs:
                 exit 1
               }
 
+              # Debug: Show Python and site-packages info
+              echo "Python version:"
+              python3 --version
+              echo "Site-packages locations:"
+              python3 -c "import site; print(site.getsitepackages())"
+
               # Check that key files exist
               echo "Checking installed files..."
               SITE_PACKAGES=$(python3 -c "import site; print(site.getsitepackages()[0])")
-              test -d "$SITE_PACKAGES/taskcoachlib" && echo "SUCCESS: taskcoachlib installed"
+              echo "Checking $SITE_PACKAGES for taskcoachlib..."
+              ls -la "$SITE_PACKAGES/" | grep -i task || echo "No taskcoach found in site-packages"
+              test -d "$SITE_PACKAGES/taskcoachlib" && echo "SUCCESS: taskcoachlib directory exists"
+
+              # Debug: Check pacman file list
+              echo "Files installed by taskcoach package:"
+              pacman -Ql taskcoach | grep -E "\.py$|site-packages" | head -20
 
               # Test that Python can import the module
               echo "Testing Python import..."
@@ -294,6 +306,21 @@ jobs:
               # Verify installation
               echo "Verifying installation..."
               pacman -Q taskcoach && echo "SUCCESS: Package installed on Manjaro"
+
+              # Debug: Show Python and site-packages info
+              echo "Python version:"
+              python3 --version
+              echo "Site-packages locations:"
+              python3 -c "import site; print(site.getsitepackages())"
+
+              # Debug: Check if taskcoachlib was installed
+              SITE_PACKAGES=$(python3 -c "import site; print(site.getsitepackages()[0])")
+              echo "Checking $SITE_PACKAGES for taskcoachlib..."
+              ls -la "$SITE_PACKAGES/" | grep -i task || echo "No taskcoach found in site-packages"
+
+              # Debug: Check pacman file list
+              echo "Files installed by taskcoach package:"
+              pacman -Ql taskcoach | grep -E "\.py$|site-packages" | head -20
 
               # Test Python import
               echo "Testing Python import..."
