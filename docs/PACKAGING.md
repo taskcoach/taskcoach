@@ -71,23 +71,23 @@ The `setup.py` file lists core dependencies with version requirements where need
 
 This table shows how dependencies are handled in **built packages** and **setup scripts**.
 
-| Package | debian12 | ubuntu22 | debian13 | ubuntu24 | arch | fedora39 | fedora40 | appimage | windows | macos |
-|---------|:--------:|:--------:|:--------:|:--------:|:----:|:--------:|:--------:|:--------:|:-------:|:-----:|
-| wxpython | distro | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
-| pypubsub | distro | distro | distro | distro | AUR | distro | distro | bundled | pip | pip |
-| pyparsing | **pip** | **pip** | distro | distro | distro | **pip** | **pip** | bundled | pip | pip |
-| watchdog | **pip** | **pip** | distro | distro | distro | distro | distro | bundled | pip | pip |
-| squaremap | distro | distro | distro | distro | **pip** | **pip** | **pip** | bundled | pip | pip |
-| six | distro | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
-| lxml | distro | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
-| numpy | distro | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
-| chardet | distro | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
-| python-dateutil | distro | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
-| keyring | distro | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
-| pyxdg | distro | distro | distro | distro | distro | distro | distro | bundled | — | — |
-| fasteners | distro | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
-| hypertreelist | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | bundled | **patch** | **patch** |
-| WMI | — | — | — | — | — | — | — | — | pip | — |
+| Package | debian12 | ubuntu22 | debian13 | ubuntu24 | arch | fedora | appimage | windows | macos |
+|---------|:--------:|:--------:|:--------:|:--------:|:----:|:------:|:--------:|:-------:|:-----:|
+| wxpython | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
+| pypubsub | distro | distro | distro | distro | AUR | distro | bundled | pip | pip |
+| pyparsing | **pip** | **pip** | distro | distro | distro | **pip** | bundled | pip | pip |
+| watchdog | **pip** | **pip** | distro | distro | distro | distro | bundled | pip | pip |
+| squaremap | distro | distro | distro | distro | **pip** | **pip** | bundled | pip | pip |
+| six | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
+| lxml | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
+| numpy | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
+| chardet | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
+| python-dateutil | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
+| keyring | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
+| pyxdg | distro | distro | distro | distro | distro | distro | bundled | — | — |
+| fasteners | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
+| hypertreelist | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | bundled | **patch** | **patch** |
+| WMI | — | — | — | — | — | — | — | pip | — |
 
 **Key:**
 - `distro` = Installed from distribution repos (required dependency)
@@ -768,7 +768,7 @@ Features:
 
 | Distribution | Version | Tested | Notes |
 |--------------|---------|--------|-------|
-| Fedora | 39, 40 | ✓ | Primary target |
+| Fedora | 40 | ✓ | Primary target (noarch RPM works on 39 too) |
 
 ---
 
