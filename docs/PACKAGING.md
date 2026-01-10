@@ -356,8 +356,8 @@ taskcoach (1.6.1-1~ppa1) noble; urgency=medium
 
 | Codename | Version | wxPython | Status |
 |----------|---------|----------|--------|
-| Noble | 24.04 LTS | 4.2.1 | Patch required |
 | Jammy | 22.04 LTS | 4.1.1 | Patch required |
+| Noble | 24.04 LTS | 4.2.1 | Patch required |
 | Oracular | 24.10 | 4.2.1 | Patch required |
 
 ## Official Debian Packaging (For Debian Maintainers)
