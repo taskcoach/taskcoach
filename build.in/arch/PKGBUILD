@@ -71,8 +71,8 @@ package() {
 
     # Install squaremap (not available in Arch repos)
     # Build wheel from source and install with python-installer
-    pip wheel --no-deps --wheel-dir="$srcdir" squaremap
-    python -m installer --destdir="$pkgdir" "$srcdir"/SquareMap*.whl
+    pip wheel --no-deps --no-cache-dir --wheel-dir="$srcdir" squaremap
+    python -m installer --destdir="$pkgdir" "$srcdir"/squaremap*.whl
 
     # Install desktop file
     install -Dm644 build.in/linux_common/taskcoach.desktop \
