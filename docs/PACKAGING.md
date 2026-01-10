@@ -897,6 +897,11 @@ Windows builds use Python's embeddable distribution + Inno Setup (same approach 
 |-------|--------|------|--------|
 | `TaskCoach-X.Y.Z-windows-x64-setup.exe` | 3.11 | 64-bit | Most users |
 | `TaskCoach-X.Y.Z-windows-x64-portable.zip` | 3.11 | 64-bit | Portable |
+
+**32-bit builds (disabled):** The following builds are commented out in the workflow since no current users require them. To reactivate, uncomment the x86 matrix entry in `.github/workflows/build-windows.yml`:
+
+| Build | Python | Arch | Target |
+|-------|--------|------|--------|
 | `TaskCoach-X.Y.Z-windows-x86-py39-setup.exe` | 3.9 | 32-bit | VMs, older systems |
 | `TaskCoach-X.Y.Z-windows-x86-py39-portable.zip` | 3.9 | 32-bit | Portable, compatibility |
 
@@ -1075,10 +1080,10 @@ See `taskcoachlib/powermgt/win32.py` for the implementation.
 ### Testing in VMs
 
 **32-bit vs 64-bit Windows:** Check `System Information > System Type`:
-- "X86-based PC" = 32-bit Windows (use x86-py39 build)
+- "X86-based PC" = 32-bit Windows (32-bit builds currently disabled, see above)
 - "x64-based PC" = 64-bit Windows (use x64 build)
 
-**Common issue:** QEMU/KVM VMs may have 32-bit Windows installed even with 64-bit CPU passthrough. 64-bit apps fail with "not compatible with the version of Windows" error. Solution: use 32-bit build or reinstall with 64-bit Windows ISO.
+**Common issue:** QEMU/KVM VMs may have 32-bit Windows installed even with 64-bit CPU passthrough. 64-bit apps fail with "not compatible with the version of Windows" error. Solution: reinstall with 64-bit Windows ISO, or reactivate 32-bit builds in the workflow.
 
 **Windows 10 testing:** Installs without product key (watermark only, fully functional).
 
