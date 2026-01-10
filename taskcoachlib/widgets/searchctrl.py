@@ -374,10 +374,13 @@ class SearchCtrl(wx.Panel):
         super().__init__(parent)
 
         # Create sizer and inner search control
+        # Use proportion=0 to prevent Panel from stretching beyond SearchCtrl size
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.__searchCtrl = _SearchCtrlInner(self, self, *args, **kwargs)
-        sizer.Add(self.__searchCtrl, 1, wx.EXPAND)
+        sizer.Add(self.__searchCtrl, 0, wx.EXPAND)
         self.SetSizer(sizer)
+        # Fit Panel tightly to SearchCtrl for correct popup positioning
+        self.Fit()
 
     # Delegate methods to inner search control
     def GetMainWindow(self):
@@ -423,3 +426,11 @@ class SearchCtrl(wx.Panel):
 
     def GetMenu(self):
         return self.__searchCtrl.GetMenu()
+
+    def PopupMenu(self):
+        """Show the search options menu with Wayland-compatible positioning.
+
+        This is called when user presses Ctrl-Down to drop down the menu.
+        Delegates to inner control's _onSearchButton which handles positioning.
+        """
+        self.__searchCtrl._onSearchButton(None)
