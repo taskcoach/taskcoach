@@ -17,7 +17,7 @@ Download the package for your system from the [latest release](https://github.co
 | Ubuntu 24.04 (Noble) | `taskcoach_2.0.0.80_ubuntu-24.04-noble.deb` |
 | Linux Mint | Use Ubuntu `.deb` (Mint is Ubuntu-based) |
 | Arch Linux / Manjaro | `taskcoach-2.0.0.80-arch.pkg.tar.zst` |
-| Fedora 40 | `taskcoach-2.0.0.80-fedora40.noarch.rpm` |
+| Fedora 39/40 | `taskcoach-2.0.0.80-fedora40.noarch.rpm` |
 | Any Linux (x86_64) | `TaskCoach-2.0.0.80-x86_64.AppImage` |
 
 After installing, Task Coach should be in normal system launchers (Applications → Office → Task Coach). For CLI, the launch command is `taskcoach.py`.
