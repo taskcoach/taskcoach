@@ -255,7 +255,7 @@ User sjefbosman tested on a **minimal configuration** to isolate the issue:
 
 **Result: CRASH** - Same segfault at `application.py:493`, identical stack trace.
 
-User also installed missing packages (python3-squaremap, gntp-send) - same crash.
+User also installed missing packages (python3-squaremap) - same crash.
 
 ### Developer Test 1: Fresh Ubuntu 24.04 VM (Kernel 6.14)
 
@@ -668,7 +668,7 @@ The following files are accessed during startup before the crash point:
 | Python 3.12 + wxPython combo issue | Same combination works on dev system |
 | 3-monitor setup causes crash | User tested with 1 monitor, still crashed |
 | Corrupted config files | User tested on empty system, still crashed |
-| Missing packages (squaremap, gntp) | User installed them, still crashed |
+| Missing packages (squaremap) | User installed them, still crashed |
 | Locale/i18n issues | User has simple en_US/en_GB, still crashed |
 | Kernel 6.8.0-90 is broken | Works in VM with same kernel |
 | SetActiveTarget specifically | Commenting it out moved crash elsewhere |

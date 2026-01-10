@@ -16,13 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import operating_system
-
 
 class AbstractNotifier(object):
     """
-    Abstract base class for interfacing with notification systems
-    (Growl, Snarl...).
+    Abstract base class for interfacing with notification systems.
+    Uses native platform notifications via the universal notifier.
     """
 
     notifiers = {}
@@ -49,17 +47,12 @@ class AbstractNotifier(object):
     @classmethod
     def getSimple(klass):
         """
-        Returns a notifier suitable for simple notifications. This
-        defaults to Growl/Snarl depending on their availability.
+        Returns a notifier suitable for simple notifications.
+        Uses the universal notifier on all platforms.
         """
 
         if klass._enabled:
-            if operating_system.isMac():
-                return klass.get("Growl") or klass.get("Task Coach")
-            elif operating_system.isWindows():
-                return klass.get("Snarl") or klass.get("Task Coach")
-            else:
-                return klass.get("Task Coach")
+            return klass.get("Task Coach")
         else:
 
             class DummyNotifier(AbstractNotifier):

@@ -310,13 +310,6 @@ completed. It is also possible to snooze the reminder."""
         )
         % meta.metaDict
     ),
-    p(
-        _(
-            """If you have Growl or Snarl installed, you can instruct
-%(name)s to use these for reminders in the preferences dialog."""
-        )
-        % meta.metaDict
-    ),
 )
 
 _effortSection = sequence(

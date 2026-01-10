@@ -31,7 +31,6 @@ makedepends=(
     'python-pip'
 )
 optdepends=(
-    'python-gntp: Growl notification support'
     'espeak-ng: Spoken reminders'
 )
 # Note: squaremap is not in Arch repos, installed via pip at build time

@@ -5023,14 +5023,6 @@ msgstr ""
 "afgerond\n"
 "markeren. De herinnering kan ook worden uitgesteld."
 
-#: taskcoachlib/help/__init__.py:249
-msgid ""
-"If you have Growl or Snarl installed, you can instruct\n"
-"%(name)s to use these for reminders in the preferences dialog."
-msgstr ""
-"Als u Growl of Snarl heeft geïnstalleerd kunt u in de voorkeurendialoog\n"
-"%(name)s instrueren Growl of Snarl te gebruiken voor herinneringen."
-
 #: taskcoachlib/help/__init__.py:258
 msgid ""
 "Whenever you spent time on tasks, you can record the amount of time\n"

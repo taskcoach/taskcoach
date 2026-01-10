@@ -5002,14 +5002,6 @@ msgstr ""
 "you can open the task, start tracking effort for the task, or mark the task\n"
 "completed. It is also possible to snooze the reminder."
 
-#: taskcoachlib/help/__init__.py:249
-msgid ""
-"If you have Growl or Snarl installed, you can instruct\n"
-"%(name)s to use these for reminders in the preferences dialog."
-msgstr ""
-"If you have Growl or Snarl installed, you can instruct\n"
-"%(name)s to use these for reminders in the preferences dialog."
-
 #: taskcoachlib/help/__init__.py:258
 msgid ""
 "Whenever you spent time on tasks, you can record the amount of time\n"

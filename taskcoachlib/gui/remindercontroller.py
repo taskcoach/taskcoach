@@ -165,8 +165,7 @@ class ReminderController(object):
             notifier != "Task Coach"
             and notify.AbstractNotifier.get(notifier) is not None
         ):
-            # When using Growl/Snarl, this is not necessary. Even when not using Growl, it's
-            # annoying as hell. Anyway.
+            # When using an external notifier, requesting user attention is not necessary
             return
         self.__mainWindowWasHidden = not self.__mainWindow.IsShown()
         if self.__mainWindowWasHidden:

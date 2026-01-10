@@ -5050,14 +5050,6 @@ msgstr ""
 "pourrez ouvrir la tâche, commencer à la suivre ou la marquer terminée. Vous\n"
 "pourrez aussi la retarder."
 
-#: taskcoachlib/help/__init__.py:249
-msgid ""
-"If you have Growl or Snarl installed, you can instruct\n"
-"%(name)s to use these for reminders in the preferences dialog."
-msgstr ""
-"Si vous avez installé Growl ou Snarl, vous pouvez configurer %(name)s\n"
-"pour les utiliser, depuis le dialogue des préférences."
-
 #: taskcoachlib/help/__init__.py:258
 msgid ""
 "Whenever you spent time on tasks, you can record the amount of time\n"

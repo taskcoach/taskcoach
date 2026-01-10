@@ -1540,10 +1540,6 @@ msgstr "السماح بأخذ الملاحظات"
 msgid "Notification system"
 msgstr ""
 
-#: taskcoachlib\gui\dialog\preferences.py:313
-msgid "Notification system to use for reminders (Growl, Snarl, etc)"
-msgstr ""
-
 #: taskcoachlib\gui\dialog\preferences.py:320
 msgid "Enable SyncML"
 msgstr ""

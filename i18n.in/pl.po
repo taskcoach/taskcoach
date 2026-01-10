@@ -5024,14 +5024,6 @@ msgstr ""
 "otworzyć zadanie, rozpocząć mierzenie nakładu pracy lub oznaczyć je jako "
 "zakończone. Można także uśpić przypomnienie na wybrany czas."
 
-#: taskcoachlib/help/__init__.py:249
-msgid ""
-"If you have Growl or Snarl installed, you can instruct\n"
-"%(name)s to use these for reminders in the preferences dialog."
-msgstr ""
-"Jeżeli na komputerze zainstalowany jest Growl lub Snarl, to można "
-"skonfigurować %(name)s tak by z nich korzystał dla przypomnień."
-
 #: taskcoachlib/help/__init__.py:258
 msgid ""
 "Whenever you spent time on tasks, you can record the amount of time\n"

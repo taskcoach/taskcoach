@@ -107,13 +107,13 @@ echo
 
 # Install Python dependencies not available in Debian repos or with version issues
 echo -e "${BLUE}[4/7] Installing Python dependencies in venv...${NC}"
-echo "Installing: fasteners, gntp, distro, pypubsub, pyparsing>=3.1.3, watchdog>=3.0.0"
+echo "Installing: fasteners, distro, pypubsub, pyparsing>=3.1.3, watchdog>=3.0.0"
 
 source "$VENV_PATH/bin/activate"
 # Note: pyparsing>=3.1.3 required for deltaTime.py (Debian Bookworm only has 3.0.9)
 # Note: watchdog>=3.0.0 for file system monitoring (Bookworm has 2.2.1)
 # Note: fasteners replaces deprecated lockfile for cross-platform file locking
-pip install --quiet fasteners gntp distro pypubsub 'pyparsing>=3.1.3' 'watchdog>=3.0.0'
+pip install --quiet fasteners distro pypubsub 'pyparsing>=3.1.3' 'watchdog>=3.0.0'
 deactivate
 
 echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
@@ -162,7 +162,7 @@ source "$VENV_PATH/bin/activate"
 VENV_FAILED=0
 
 # Test venv packages
-for pkg in "fasteners" "gntp" "distro"; do
+for pkg in "fasteners" "distro"; do
     echo -n "  - $pkg... "
     if python3 -c "import $pkg" 2>/dev/null; then
         echo -e "${GREEN}✓${NC}"
@@ -189,7 +189,7 @@ if [ $VENV_FAILED -eq 1 ]; then
     echo "  rm -rf $VENV_PATH"
     echo "  python3 -m venv --system-site-packages $VENV_PATH"
     echo "  source $VENV_PATH/bin/activate"
-    echo "  pip install fasteners gntp distro pypubsub"
+    echo "  pip install fasteners distro pypubsub"
     exit 1
 fi
 
@@ -236,7 +236,7 @@ echo
 echo "TaskCoach has been set up with:"
 echo "  • System packages from Debian repos (wxPython, numpy, lxml, squaremap, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
-echo "  • Additional packages in venv (fasteners, gntp, distro, pypubsub, pyparsing, watchdog)"
+echo "  • Additional packages in venv (fasteners, distro, pypubsub, pyparsing, watchdog)"
 echo "  • wxPython background color patch (for category row coloring)"
 echo
 echo "You can now run TaskCoach with:"

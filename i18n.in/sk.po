@@ -5041,14 +5041,6 @@ msgstr ""
 "ako\n"
 "dokončenú. Takisto je možné dočasné vypnúť pripomínač."
 
-#: taskcoachlib/help/__init__.py:249
-msgid ""
-"If you have Growl or Snarl installed, you can instruct\n"
-"%(name)s to use these for reminders in the preferences dialog."
-msgstr ""
-"Ak máte nainštalovaný Growl alebo Snarl, môžete v nastaveniach program\n"
-"%(name)s nastaviť tak, aby použil tieto pripomínače."
-
 #: taskcoachlib/help/__init__.py:258
 msgid ""
 "Whenever you spent time on tasks, you can record the amount of time\n"

@@ -4953,14 +4953,6 @@ msgstr ""
 "вы можаце адкрыць задачу,  пачаць улік працы ці адзначыць задачу\n"
 "як выкананую.  Гэтак жа магчыма пераназначыць напамінак на іншыя дату і час."
 
-#: taskcoachlib/help/__init__.py:249
-msgid ""
-"If you have Growl or Snarl installed, you can instruct\n"
-"%(name)s to use these for reminders in the preferences dialog."
-msgstr ""
-"Калі ў Вас усталяваны Growl ці Snarl,  вы можаце даць указаньні\n"
-"%(name)s выкарыстоўваць іх для напамінку ў дыялогу налад."
-
 #: taskcoachlib/help/__init__.py:258
 msgid ""
 "Whenever you spent time on tasks, you can record the amount of time\n"

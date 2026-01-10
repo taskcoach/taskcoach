@@ -5039,14 +5039,6 @@ msgstr ""
 "a tarefa\n"
 "como concluída. É também possível adiar o lembrete."
 
-#: taskcoachlib/help/__init__.py:249
-msgid ""
-"If you have Growl or Snarl installed, you can instruct\n"
-"%(name)s to use these for reminders in the preferences dialog."
-msgstr ""
-"Se tiver o Growl ou Snarl instalados, pode instruir\n"
-"%(name)s para usá-los para lembretes na caixa de diálogo de preferências."
-
 #: taskcoachlib/help/__init__.py:258
 msgid ""
 "Whenever you spent time on tasks, you can record the amount of time\n"

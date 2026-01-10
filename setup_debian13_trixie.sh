@@ -120,10 +120,10 @@ echo
 # Install Python dependencies not available in Debian repos
 echo -e "${BLUE}[4/7] Installing Python dependencies in venv...${NC}"
 # Trixie has most packages in repos, only need a few from pip
-echo "Installing: gntp, distro"
+echo "Installing: distro"
 
 source "$VENV_PATH/bin/activate"
-pip install --quiet gntp distro
+pip install --quiet distro
 deactivate
 
 echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
@@ -174,7 +174,7 @@ fi
 echo "Testing key packages..."
 FAILED=0
 
-for pkg in "fasteners" "desktop" "gntp" "distro" "watchdog"; do
+for pkg in "fasteners" "desktop" "distro" "watchdog"; do
     echo -n "  - $pkg... "
     if $PYTHON_CMD -c "import $pkg" 2>/dev/null; then
         echo -e "${GREEN}✓${NC}"
@@ -244,7 +244,7 @@ echo "TaskCoach has been set up for Debian 13 (Trixie) with:"
 echo "  • Python: $PYTHON_CMD ($PYTHON_VERSION)"
 echo "  • System packages from Debian repos (wxPython, numpy, lxml, fasteners, watchdog, squaremap, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
-echo "  • Additional packages in venv (gntp, distro)"
+echo "  • Additional packages in venv (distro)"
 echo "  • wxPython background color patch (for category row coloring)"
 echo
 echo "You can now run TaskCoach with:"

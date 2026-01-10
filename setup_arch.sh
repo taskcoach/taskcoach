@@ -105,9 +105,6 @@ if ! pacman -Q python-squaremap &>/dev/null; then
     echo -e "${YELLOW}Note: python-squaremap is optional (for hierarchical visualization)${NC}"
 fi
 
-# Check for python-gntp (optional)
-if ! pacman -Q python-gntp &>/dev/null; then
-    echo -e "${YELLOW}Note: python-gntp is optional (for Growl notifications)${NC}"
 fi
 
 if [ -n "$AUR_PACKAGES" ]; then
@@ -175,9 +172,6 @@ if ! python3 -c "import squaremap" 2>/dev/null; then
     pip install --quiet squaremap || echo -e "${YELLOW}squaremap install failed (optional)${NC}"
 fi
 
-if ! python3 -c "import gntp" 2>/dev/null; then
-    echo "Installing gntp from pip (optional)..."
-    pip install --quiet gntp || echo -e "${YELLOW}gntp install failed (optional)${NC}"
 fi
 
 deactivate
@@ -287,7 +281,6 @@ echo "  • wxPython background color patch (for category row coloring)"
 echo
 echo "Optional packages (install from AUR if needed):"
 echo "  • python-squaremap: Hierarchical data visualization"
-echo "  • python-gntp: Growl notification support"
 echo
 echo "You can now run TaskCoach with:"
 echo -e "  ${BLUE}./taskcoach-run.sh${NC}"

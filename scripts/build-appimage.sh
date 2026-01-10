@@ -108,7 +108,6 @@ install_dependencies() {
         keyring \
         numpy \
         "fasteners>=0.19" \
-        "gntp>=1.0.3" \
         "squaremap>=1.0.5" \
         distro
 

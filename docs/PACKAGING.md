@@ -59,13 +59,12 @@ No manual steps required for users installing from packages.
 
 The `setup.py` file lists core dependencies with version requirements where needed:
 - Packages with API requirements have version specs (pyparsing, watchdog, etc.)
-- Optional features in `extras_require` (e.g., `squaremap`, `gntp`)
+- Optional features in `extras_require` (e.g., `squaremap`)
 
 ### Platform-Specific Dependencies
 
 | Package | Platform | Notes |
 |---------|----------|-------|
-| gntp | Windows/macOS only | Growl notifications |
 | WMI | Windows only | System information |
 
 ## Install Overview by Build Target
@@ -88,7 +87,6 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | pyxdg | distro | distro | distro | distro | distro | distro | distro | bundled | — | — |
 | fasteners | distro | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
 | hypertreelist | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | bundled | **patch** | **patch** |
-| gntp | — | — | — | — | — | — | — | — | pip | pip |
 | WMI | — | — | — | — | — | — | — | — | pip | — |
 
 **Key:**
@@ -290,7 +288,6 @@ xdg-utils
 
 ```
 python3-squaremap    # Hierarchical data visualization
-python3-gntp         # Growl notifications (not in all distros)
 ```
 
 ### Build Dependencies
@@ -551,7 +548,6 @@ xdg-utils
 
 ```
 python-squaremap    # Hierarchical data visualization (AUR)
-python-gntp         # Growl notifications (AUR)
 espeak-ng           # Spoken reminders
 ```
 
@@ -568,13 +564,12 @@ python-distro
 Some dependencies are only available from the AUR:
 - `python-pypubsub` - Required for pub/sub messaging
 - `python-squaremap` - Optional visualization
-- `python-gntp` - Optional Growl support
 
 Install using an AUR helper:
 ```bash
-yay -S python-pypubsub python-squaremap python-gntp
+yay -S python-pypubsub python-squaremap
 # or
-paru -S python-pypubsub python-squaremap python-gntp
+paru -S python-pypubsub python-squaremap
 ```
 
 ### Setup Script

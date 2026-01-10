@@ -5022,14 +5022,6 @@ msgstr ""
 "как выполненную.  Так же возможно переназначить напоминание на другие дату и "
 "время."
 
-#: taskcoachlib/help/__init__.py:249
-msgid ""
-"If you have Growl or Snarl installed, you can instruct\n"
-"%(name)s to use these for reminders in the preferences dialog."
-msgstr ""
-"Если у Вас установлены Growl или Snarl,  вы можете дать указания\n"
-"%(name)s использовать их для напоминания в диалоге настроек."
-
 #: taskcoachlib/help/__init__.py:258
 msgid ""
 "Whenever you spent time on tasks, you can record the amount of time\n"

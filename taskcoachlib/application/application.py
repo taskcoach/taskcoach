@@ -159,7 +159,6 @@ def _log_required_packages():
         ('keyring', None),
         ('numpy', None),
         ('fasteners', None),
-        ('gntp', None),
         ('squaremap', None),
     ]
 

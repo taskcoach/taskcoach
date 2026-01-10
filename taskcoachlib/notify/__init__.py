@@ -16,18 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import operating_system
-
-
-# Note: Snarl support (notifier_windows.py) was removed in November 2025.
-# Windows now uses the universal notifier like other platforms.
-# See PYTHON3_MIGRATION_NOTES.md for details.
-
-if operating_system.isWindows():
-    from .notifier_growl import *
-elif operating_system.isMac():
-    from .notifier_growl import *
-
 from .notifier_universal import *
 
 from .notifier import *

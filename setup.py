@@ -64,7 +64,6 @@ def majorAndMinorPythonVersion():
 #
 # Optional dependencies (in extras_require):
 # - squaremap: Hierarchic data visualization (not in Fedora/Arch repos)
-# - gntp: Growl notifications (Windows/Mac only)
 
 install_requires = [
     "six",
@@ -83,16 +82,12 @@ install_requires = [
 # Optional/platform-specific dependencies
 extras_require = {
     "squaremap": ["squaremap>=1.0.5"],  # Not in Fedora/Arch repos
-    "growl": ["gntp>=1.0.3"],            # Growl notifications (Mac/Windows)
-    "all": ["squaremap>=1.0.5", "gntp>=1.0.3"],
+    "all": ["squaremap>=1.0.5"],
 }
 
 system = platform.system()
 if system == "Windows":
     install_requires.append("WMI")
-    install_requires.append("gntp")  # Growl notifications
-elif system == "Darwin":
-    install_requires.append("gntp")  # Growl notifications
 
 setup_requires = ["distro"]
 
