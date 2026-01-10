@@ -32,6 +32,50 @@ class NativeSearchCtrl(wx.SearchCtrl):
         # NO event binding - let wx.SearchCtrl handle menu natively
 
 
+class TightContainerSearch(wx.Panel):
+    """SearchCtrl in a tight-fitting panel - popup on container at (0, height)."""
+
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.search = wx.SearchCtrl(self, size=kwargs.get('size', (200, -1)))
+        menu = wx.Menu()
+        menu.AppendCheckItem(wx.ID_ANY, "Match case")
+        menu.AppendCheckItem(wx.ID_ANY, "Include sub items")
+        menu.AppendCheckItem(wx.ID_ANY, "Search description")
+        self.search.SetMenu(menu)
+        sizer.Add(self.search, 1, wx.EXPAND)
+        self.SetSizer(sizer)
+        # Intercept menu button to popup on container
+        self.search.Bind(wx.EVT_SEARCHCTRL_SEARCH_BTN, self._on_menu_btn)
+
+    def _on_menu_btn(self, event):
+        menu = self.search.GetMenu()
+        if menu:
+            height = self.GetSize().GetHeight()
+            self.PopupMenu(menu, wx.Point(0, height))
+
+
+class ParentOffsetSearch(wx.SearchCtrl):
+    """SearchCtrl that calls PopupMenu on parent with position offset."""
+
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent, **kwargs)
+        menu = wx.Menu()
+        menu.AppendCheckItem(wx.ID_ANY, "Match case")
+        menu.AppendCheckItem(wx.ID_ANY, "Include sub items")
+        menu.AppendCheckItem(wx.ID_ANY, "Search description")
+        self.SetMenu(menu)
+        self.Bind(wx.EVT_SEARCHCTRL_SEARCH_BTN, self._on_menu_btn)
+
+    def _on_menu_btn(self, event):
+        menu = self.GetMenu()
+        if menu:
+            pos = self.GetPosition()
+            height = self.GetSize().GetHeight()
+            self.GetParent().PopupMenu(menu, wx.Point(pos.x, pos.y + height))
+
+
 class CustomSearchCtrl(wx.SearchCtrl):
     """SearchCtrl with configurable PopupMenu positioning."""
 
@@ -154,10 +198,22 @@ class TestFrame(wx.Frame):
 
         self.toolbar_search = CustomSearchCtrl(toolbar, fix_method="none", size=(150, -1))
         toolbar.AddControl(self.toolbar_search, "Search")
+
+        toolbar.AddStretchSpacer()
+        toolbar.AddLabel(wx.ID_ANY, "Tight:", width=40)
+        self.toolbar_tight = TightContainerSearch(toolbar, size=(150, -1))
+        toolbar.AddControl(self.toolbar_tight, "TightSearch")
+
+        toolbar.AddStretchSpacer()
+        toolbar.AddLabel(wx.ID_ANY, "Parent+:", width=50)
+        self.toolbar_parent = ParentOffsetSearch(toolbar, size=(150, -1))
+        toolbar.AddControl(self.toolbar_parent, "ParentSearch")
         toolbar.Realize()
 
+        # Use regular pane (not ToolbarPane) to get full width stretching
         self.mgr.AddPane(toolbar, aui.AuiPaneInfo().Name("toolbar").
-                         ToolbarPane().Top().Row(0).LeftDockable(False).RightDockable(False))
+                         Top().CaptionVisible(False).CloseButton(False).
+                         Floatable(False).Movable(False).PaneBorder(False))
 
         # Main panel with all experiments
         main_panel = wx.Panel(self)
@@ -201,6 +257,16 @@ class TestFrame(wx.Frame):
         grid.Add(wx.StaticText(main_panel, label="Native (no container):"), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT)
         native_direct = NativeSearchCtrl(main_panel, size=(200, -1))
         grid.Add(native_direct, 0, wx.ALIGN_RIGHT)
+
+        # Add tight container test - SearchCtrl and popup share same tight panel
+        grid.Add(wx.StaticText(main_panel, label="Tight container (0,h):"), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT)
+        tight_container = TightContainerSearch(main_panel, size=(200, -1))
+        grid.Add(tight_container, 0, wx.ALIGN_RIGHT)
+
+        # Add parent offset test - popup on parent with position offset
+        grid.Add(wx.StaticText(main_panel, label="Parent + offset:"), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT)
+        parent_offset = ParentOffsetSearch(main_panel, size=(200, -1))
+        grid.Add(parent_offset, 0, wx.ALIGN_RIGHT)
 
         main_sizer.Add(grid, 0, wx.EXPAND | wx.ALL, 15)
 

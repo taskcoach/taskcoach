@@ -21,12 +21,25 @@ from taskcoachlib.widgets import tooltip
 from taskcoachlib.i18n import _
 
 
-class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
+class SearchCtrl(tooltip.ToolTipMixin, wx.Panel):
+    """SearchCtrl wrapped in tight-fitting panel for Wayland popup compatibility.
+
+    On Wayland, popup menus position relative to their transient parent window.
+    When PopupMenu() is called on a widget nested inside containers with spacers,
+    the coordinates are relative to a parent container rather than the widget.
+
+    Solution: Wrap the wx.SearchCtrl in a tight-fitting panel and call PopupMenu()
+    on the panel at (0, height). Since the panel fits exactly, its origin matches
+    the SearchCtrl, positioning the menu correctly.
+
+    See bugs/ISSUE_159_SEARCH_DROPDOWN_POSITION.md for details.
+    """
+
     # Debounce delay in milliseconds - wait this long after user stops typing
     # before triggering the search. This prevents expensive operations on every keystroke.
     SEARCH_DEBOUNCE_DELAY_MS = 500
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, parent, **kwargs):
         self.__callback = kwargs.pop("callback")
         self.__matchCase = kwargs.pop("matchCase", False)
         self.__includeSubItems = kwargs.pop("includeSubItems", False)
@@ -35,30 +48,47 @@ class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
         self.__bitmapSize = kwargs.pop("size", (16, 16))
         self.__debounceDelay = kwargs.pop("debounceDelay", self.SEARCH_DEBOUNCE_DELAY_MS)
         value = kwargs.pop("value", "")
-        super().__init__(*args, **kwargs)
-        self.SetSearchMenuBitmap(
+
+        # Initialize wx.Panel first (don't use super() yet - tooltip mixin needs __searchCtrl)
+        wx.Panel.__init__(self, parent)
+
+        # Create internal SearchCtrl in tight-fitting sizer
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.__searchCtrl = wx.SearchCtrl(self, **kwargs)
+        sizer.Add(self.__searchCtrl, 1, wx.EXPAND)
+        self.SetSizer(sizer)
+
+        # Delay tooltip mixin initialization until after widget is realized
+        wx.CallAfter(self._initTooltipMixin)
+
+        # Configure the search control
+        self.__searchCtrl.SetSearchMenuBitmap(
             self.getBitmap("magnifier_glass_dropdown_icon")
         )
-        self.SetSearchBitmap(self.getBitmap("magnifier_glass_icon"))
-        self.SetCancelBitmap(self.getBitmap("cross_red_icon"))
+        self.__searchCtrl.SetSearchBitmap(self.getBitmap("magnifier_glass_icon"))
+        self.__searchCtrl.SetCancelBitmap(self.getBitmap("cross_red_icon"))
         self.__timer = wx.Timer(self)
         self.__recentSearches = []
         self.__maxRecentSearches = 5
-        self.__tooltip = tooltip.SimpleToolTip(self)
+        self.__tooltip = tooltip.SimpleToolTip(self.__searchCtrl)
         self.createMenu()
         self.bindEventHandlers()
-        self.SetValue(value)
+        self.__searchCtrl.SetValue(value)
+
+    def _initTooltipMixin(self):
+        """Initialize tooltip mixin after widget is realized."""
+        tooltip.ToolTipMixin.__init__(self)
 
     def GetMainWindow(self):
-        return self
+        return self.__searchCtrl
 
     def getTextCtrl(self):
         textCtrl = [
             child
-            for child in self.GetChildren()
+            for child in self.__searchCtrl.GetChildren()
             if isinstance(child, wx.TextCtrl)
         ]
-        return textCtrl[0] if textCtrl else self
+        return textCtrl[0] if textCtrl else self.__searchCtrl
 
     def getBitmap(self, bitmap):
         return wx.ArtProvider.GetBitmap(
@@ -90,46 +120,43 @@ class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
             _("Consider search text as a regular expression"),
         )
         self.__regularExpressionMenuItem.Check(self.__regularExpression)
-        self.SetMenu(menu)
+        self.__searchCtrl.SetMenu(menu)
 
     def PopupMenu(self):  # pylint: disable=W0221
-        # Hide tooltip first to avoid popup conflicts
-        self.HideTip()
-        # Don't pass position - let wxGTK handle it (required for Wayland compatibility)
-        super().PopupMenu(self.GetMenu())
+        """Show the search options menu below the control.
+
+        Wayland fix: Call PopupMenu on this panel (tight container) at (0, height).
+        This establishes the correct transient parent relationship.
+        """
+        if hasattr(self, 'HideTip'):
+            self.HideTip()
+        menu = self.__searchCtrl.GetMenu()
+        if menu:
+            height = self.GetSize().GetHeight()
+            wx.Panel.PopupMenu(self, menu, wx.Point(0, height))
 
     def bindEventHandlers(self):
         # pylint: disable=W0142,W0612,W0201
-        for args in [
-            (wx.EVT_TIMER, self.onFind, self.__timer),
-            (wx.EVT_TEXT_ENTER, self.onFind),
-            (wx.EVT_TEXT, self.onFindLater),
-            (wx.EVT_SEARCHCTRL_CANCEL_BTN, self.onCancel),
-            (wx.EVT_MENU, self.onMatchCaseMenuItem, self.__matchCaseMenuItem),
-            (
-                wx.EVT_MENU,
-                self.onIncludeSubItemsMenuItem,
-                self.__includeSubItemsMenuItem,
-            ),
-            (
-                wx.EVT_MENU,
-                self.onSearchDescriptionMenuItem,
-                self.__searchDescriptionMenuItem,
-            ),
-            (
-                wx.EVT_MENU,
-                self.onRegularExpressionMenuItem,
-                self.__regularExpressionMenuItem,
-            ),
-        ]:
-            self.Bind(*args)
-        # Precreate menu item ids for the recent searches and bind the event
-        # handler for those menu item ids. It's no problem that the actual menu
-        # items don't exist yet.
+        # Bind events to internal search control
+        self.__searchCtrl.Bind(wx.EVT_TEXT_ENTER, self.onFind)
+        self.__searchCtrl.Bind(wx.EVT_TEXT, self.onFindLater)
+        self.__searchCtrl.Bind(wx.EVT_SEARCHCTRL_CANCEL_BTN, self.onCancel)
+        self.__searchCtrl.Bind(wx.EVT_SEARCHCTRL_SEARCH_BTN, self._onSearchBtn)
+
+        # Bind menu events
+        self.__searchCtrl.Bind(wx.EVT_MENU, self.onMatchCaseMenuItem, self.__matchCaseMenuItem)
+        self.__searchCtrl.Bind(wx.EVT_MENU, self.onIncludeSubItemsMenuItem, self.__includeSubItemsMenuItem)
+        self.__searchCtrl.Bind(wx.EVT_MENU, self.onSearchDescriptionMenuItem, self.__searchDescriptionMenuItem)
+        self.__searchCtrl.Bind(wx.EVT_MENU, self.onRegularExpressionMenuItem, self.__regularExpressionMenuItem)
+
+        # Bind timer to panel
+        self.Bind(wx.EVT_TIMER, self.onFind, self.__timer)
+
+        # Precreate menu item ids for the recent searches
         self.__recentSearchMenuItemIds = [
             wx.NewId() for dummy in range(self.__maxRecentSearches)
         ]
-        self.Bind(
+        self.__searchCtrl.Bind(
             wx.EVT_MENU_RANGE,
             self.onRecentSearchMenuItem,
             id=self.__recentSearchMenuItemIds[0],
@@ -137,6 +164,11 @@ class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
         )
         # Stop timer on window destruction to prevent crashes
         self.Bind(wx.EVT_WINDOW_DESTROY, self._onDestroy)
+
+    def _onSearchBtn(self, event):
+        """Intercept search button click to show menu with correct positioning."""
+        self.PopupMenu()
+        # Don't skip - we handle the menu ourselves
 
     def setMatchCase(self, matchCase):
         self.__matchCase = matchCase
@@ -157,64 +189,29 @@ class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
     def isValid(self):
         if self.__regularExpression:
             try:
-                re.compile(self.GetValue())
+                re.compile(self.__searchCtrl.GetValue())
             except sre_constants.error:
                 return False
         return True
 
     def _onDestroy(self, event):
-        """
-        Automatically cleanup timer on window destruction.
-
-        This is a critical safety mechanism to prevent timer-after-destruction crashes.
-        The EVT_WINDOW_DESTROY binding ensures cleanup happens automatically,
-        following wxPython best practices for timer lifecycle management.
-        """
+        """Automatically cleanup timer on window destruction."""
         if event.GetEventObject() == self:
             self.cleanup()
         event.Skip()
 
     def cleanup(self):
-        """
-        Stop the timer and clear callback to prevent crashes.
-
-        Best practices implemented:
-        1. Stop any running timer to prevent fire-after-destruction
-        2. Replace callback with no-op to safely handle late events
-        3. Can be called multiple times safely (idempotent)
-
-        This prevents the NULL pointer crashes documented in PYTHON3_MIGRATION_NOTES.md
-        """
+        """Stop the timer and clear callback to prevent crashes."""
         if self.__timer and self.__timer.IsRunning():
             self.__timer.Stop()
-        # Replace callback with no-op lambda to safely handle any late timer events
         self.__callback = lambda *args, **kwargs: None
 
     def onFindLater(self, event):  # pylint: disable=W0613
-        """
-        Debounce search operations using a timer.
-
-        This implements the "search-as-you-type" debouncing pattern:
-        - Restarts the timer on each keystroke
-        - Only triggers the actual search after user stops typing
-        - Prevents expensive filtering operations on every character
-
-        This is a best practice for search UX, used by Google, VS Code, etc.
-        """
+        """Debounce search operations using a timer."""
         self.__timer.Start(self.__debounceDelay, oneShot=True)
 
     def onFind(self, event):  # pylint: disable=W0613
-        """
-        Execute the actual search operation.
-
-        This is called either:
-        - After the debounce timer expires (user stopped typing)
-        - Immediately when user presses Enter (EVT_TEXT_ENTER)
-        - Immediately when changing search options via menu
-
-        Best practice: Stop any pending timer to prevent double execution.
-        """
-        # Cancel any pending debounced search
+        """Execute the actual search operation."""
         if self.__timer.IsRunning():
             self.__timer.Stop()
         if not self.IsEnabled():
@@ -233,13 +230,15 @@ class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
             )
             x, y = self.GetParent().ClientToScreen(*self.GetPosition())
             height = self.GetClientSize()[1]
-            self.DoShowTip(x + 3, y + height + 4, self.__tooltip)
+            if hasattr(self, 'DoShowTip'):
+                self.DoShowTip(x + 3, y + height + 4, self.__tooltip)
         else:
-            self.HideTip()
-        searchString = self.GetValue()
+            if hasattr(self, 'HideTip'):
+                self.HideTip()
+        searchString = self.__searchCtrl.GetValue()
         if searchString:
             self.rememberSearchString(searchString)
-        self.ShowCancelButton(bool(searchString))
+        self.__searchCtrl.ShowCancelButton(bool(searchString))
         self.__callback(
             searchString,
             self.__matchCase,
@@ -249,23 +248,14 @@ class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
         )
 
     def onCancel(self, event):
-        """
-        Handle search cancellation (clear button clicked).
-
-        Best practice: Clear search immediately without debouncing.
-        Users expect instant feedback when clearing a search.
-        """
-        self.SetValue("")
-        self.onFind(event)  # Immediate search, not debounced
+        """Handle search cancellation (clear button clicked)."""
+        self.__searchCtrl.SetValue("")
+        self.onFind(event)
         event.Skip()
 
     def onMatchCaseMenuItem(self, event):
         self.__matchCase = self._isMenuItemChecked(event)
         self.onFind(event)
-        # XXXFIXME: when skipping on OS X, we receive several events with different
-        # IsChecked(), the last one being False. I can't reproduce this in a unit
-        # test. Not skipping the event doesn't harm on other platforms (tested by
-        # hand)
 
     def onIncludeSubItemsMenuItem(self, event):
         self.__includeSubItems = self._isMenuItemChecked(event)
@@ -280,15 +270,12 @@ class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
         self.onFind(event)
 
     def onRecentSearchMenuItem(self, event):
-        self.SetValue(
+        self.__searchCtrl.SetValue(
             self.__recentSearches[
                 event.GetId() - self.__recentSearchMenuItemIds[0]
             ]
         )
         self.onFind(event)
-        # Don't call event.Skip(). It will result in this event handler being
-        # called again with the next menu item since wxPython thinks the
-        # event has not been dealt with (on Mac OS X at least).
 
     def rememberSearchString(self, searchString):
         if searchString in self.__recentSearches:
@@ -299,7 +286,7 @@ class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
         self.updateRecentSearches()
 
     def updateRecentSearches(self):
-        menu = self.GetMenu()
+        menu = self.__searchCtrl.GetMenu()
         self.removeRecentSearches(menu)
         self.addRecentSearches(menu)
 
@@ -316,20 +303,13 @@ class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
             menu.Append(self.__recentSearchMenuItemIds[index], searchString)
 
     def Enable(self, enable=True):  # pylint: disable=W0221
-        """When wx.SearchCtrl is disabled it doesn't grey out the buttons,
-        so we remove those."""
-        self.SetValue("" if enable else _("Viewer not searchable"))
-        super().Enable(enable)
-        self.ShowCancelButton(enable and bool(self.GetValue()))
-        self.ShowSearchButton(enable)
+        """When wx.SearchCtrl is disabled it doesn't grey out the buttons."""
+        self.__searchCtrl.SetValue("" if enable else _("Viewer not searchable"))
+        self.__searchCtrl.Enable(enable)
+        self.__searchCtrl.ShowCancelButton(enable and bool(self.__searchCtrl.GetValue()))
+        self.__searchCtrl.ShowSearchButton(enable)
 
     def _isMenuItemChecked(self, event):
-        # There's a bug in wxPython 2.8.3 on Windows XP that causes
-        # event.IsChecked() to return the wrong value in the context menu.
-        # The menu on the main window works fine. So we first try to access the
-        # context menu to get the checked state from the menu item itself.
-        # This will fail if the event is coming from the window, but in that
-        # case we can event.IsChecked() expect to work so we use that.
         try:
             return (
                 event.GetEventObject().FindItemById(event.GetId()).IsChecked()
@@ -339,3 +319,25 @@ class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
 
     def OnBeforeShowToolTip(self, x, y):
         return None
+
+    # Forward common wx.SearchCtrl methods to internal control
+    def GetValue(self):
+        return self.__searchCtrl.GetValue()
+
+    def SetValue(self, value):
+        return self.__searchCtrl.SetValue(value)
+
+    def SetFocus(self):
+        return self.__searchCtrl.SetFocus()
+
+    def ShowCancelButton(self, show):
+        return self.__searchCtrl.ShowCancelButton(show)
+
+    def ShowSearchButton(self, show):
+        return self.__searchCtrl.ShowSearchButton(show)
+
+    def GetMenu(self):
+        return self.__searchCtrl.GetMenu()
+
+    def SetMenu(self, menu):
+        return self.__searchCtrl.SetMenu(menu)
