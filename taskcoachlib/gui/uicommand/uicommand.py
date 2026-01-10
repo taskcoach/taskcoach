@@ -1308,10 +1308,14 @@ class Edit(mixin_uicommand.NeedsSelectionMixin, ViewerCommand):
             columnName = ""
         # Use forceUpdate=True to ensure we get the current selection,
         # not a stale cached value (important for fast double-click)
-        editor = self.viewer.editItemDialog(
-            self.viewer.curselection(forceUpdate=True), self.bitmap, columnName
-        )
-        editor.Show(show)
+        items = self.viewer.curselection(forceUpdate=True)
+        editor = self.viewer.editItemDialog(items, self.bitmap, columnName)
+        if len(items) > 1:
+            # Use modal dialog for multi-item editing to prevent selection
+            # changes while editing
+            editor.ShowModal()
+        else:
+            editor.Show(show)
 
     def enabled(self, event):
         windowWithFocus = wx.Window.FindFocus()
@@ -2523,6 +2527,45 @@ class CategoryDragAndDrop(OrderingDragAndDropCommand, CategoriesCommand):
             isTree=isTree,
             dropColumn=dropColumn,
         )
+
+
+class CategoryCheckAll(ViewerCommand):
+    """Command to check all category checkboxes in the viewer.
+
+    Used in the category viewer to quickly select all categories for
+    filtering or assignment.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(
+            bitmap="checkall",
+            menuText=_("Check &all categories"),
+            helpText=_("Check all category checkboxes"),
+            *args,
+            **kwargs
+        )
+
+    def doCommand(self, event):
+        self.viewer.checkAllCategories()
+
+
+class CategoryUncheckAll(ViewerCommand):
+    """Command to uncheck all category checkboxes in the viewer.
+
+    Used in the category viewer to quickly deselect all categories.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(
+            bitmap="uncheckall",
+            menuText=_("&Uncheck all categories"),
+            helpText=_("Uncheck all category checkboxes"),
+            *args,
+            **kwargs
+        )
+
+    def doCommand(self, event):
+        self.viewer.uncheckAllCategories()
 
 
 class NoteNew(NotesCommand, settings_uicommand.SettingsCommand, ViewerCommand):

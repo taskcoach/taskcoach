@@ -987,15 +987,24 @@ class EffortPage(PageWithViewer):
 class LocalCategoryViewer(viewer.BaseCategoryViewer):  # pylint: disable=W0223
     def __init__(self, items, *args, **kwargs):
         self.__items = items
+        # Track original category state for each item to support tri-state "no change"
+        self.__originalCategories = {
+            item: set(item.categories()) for item in items
+        }
         super().__init__(*args, **kwargs)
         for item in self.domainObjectsToView():
             item.expand(context=self.settingsSection(), notify=False)
 
     def getIsItemChecked(self, category):  # pylint: disable=W0621
-        for item in self.__items:
-            if category in item.categories():
-                return True
-        return False
+        items_with_category = sum(
+            1 for item in self.__items if category in item.categories()
+        )
+        if items_with_category == 0:
+            return False  # No items have category
+        elif items_with_category == len(self.__items):
+            return True  # All items have category
+        else:
+            return None  # Mixed state
 
     def onCheck(self, event, final):
         """Here we keep track of the items checked by the user so that these
@@ -1005,6 +1014,29 @@ class LocalCategoryViewer(viewer.BaseCategoryViewer):  # pylint: disable=W0223
             command.ToggleCategoryCommand(
                 None, self.__items, category=category
             ).do()
+
+    def checkAllCategories(self):
+        """Assign all categories to the items being edited."""
+        for cat in self.presentation():
+            for item in self.__items:
+                if cat not in item.categories():
+                    item.addCategory(cat)
+        self.widget.refreshAllCheckStates()
+
+    def uncheckAllCategories(self):
+        """Remove all categories from the items being edited."""
+        for cat in self.presentation():
+            for item in self.__items:
+                if cat in item.categories():
+                    item.removeCategory(cat)
+        self.widget.refreshAllCheckStates()
+
+    def createActionToolBarUICommands(self):
+        """UI commands for check/uncheck all in the edit task categories tab."""
+        return (
+            uicommand.CategoryCheckAll(viewer=self),
+            uicommand.CategoryUncheckAll(viewer=self),
+        )
 
     def createCategoryPopupMenu(self):  # pylint: disable=W0221
         return super().createCategoryPopupMenu(True)
@@ -1029,15 +1061,14 @@ class CategoriesPage(PageWithViewer):
             self.fit()
 
     def createViewer(self, taskFile, settings, settingsSection):
-        assert len(self.items) == 1
-        item = self.items[0]
-        for eventType in (
-            item.categoryAddedEventType(),
-            item.categoryRemovedEventType(),
-        ):
-            self.registerObserver(
-                self.onCategoryChanged, eventType=eventType, eventSource=item
-            )
+        for item in self.items:
+            for eventType in (
+                item.categoryAddedEventType(),
+                item.categoryRemovedEventType(),
+            ):
+                self.registerObserver(
+                    self.onCategoryChanged, eventType=eventType, eventSource=item
+                )
         return LocalCategoryViewer(
             self.items,
             self,
@@ -1316,6 +1347,7 @@ class EditBook(widgets.Notebook):
             "progress",
             "budget",
             "appearance",
+            "categories",
         )
 
     def createPage(self, page_name, task_file, items_are_new):
@@ -1976,6 +2008,7 @@ class Editor(BalloonTipManager, widgets.Dialog):
     EditBookClass = lambda *args: "Subclass responsibility"
     singular_title = "Subclass responsibility %s"
     plural_title = "Subclass responsibility"
+    item_type_plural = "Items"
 
     def __init__(
         self, parent, items, settings, container, task_file, *args, **kwargs
@@ -2150,38 +2183,43 @@ class Editor(BalloonTipManager, widgets.Dialog):
         self.SetTitle(self.__title())
 
     def __title(self):
-        return (
-            self.plural_title
-            if len(self._items) > 1
-            else self.singular_title % self._items[0].subject()
-        )
+        if len(self._items) > 1:
+            # Indicate modal window for multi-item editing
+            return _("Editing Multiple %s - Modal Window") % self.item_type_plural
+        else:
+            return self.singular_title % self._items[0].subject()
 
 
 class TaskEditor(Editor):
     plural_title = _("Multiple tasks")
-    singular_title = _("%s (task)")
+    singular_title = _("%s (Task)")
+    item_type_plural = _("Tasks")
     EditBookClass = TaskEditBook
 
 
 class CategoryEditor(Editor):
     plural_title = _("Multiple categories")
-    singular_title = _("%s (category)")
+    singular_title = _("%s (Category)")
+    item_type_plural = _("Categories")
     EditBookClass = CategoryEditBook
 
 
 class NoteEditor(Editor):
     plural_title = _("Multiple notes")
-    singular_title = _("%s (note)")
+    singular_title = _("%s (Note)")
+    item_type_plural = _("Notes")
     EditBookClass = NoteEditBook
 
 
 class AttachmentEditor(Editor):
     plural_title = _("Multiple attachments")
-    singular_title = _("%s (attachment)")
+    singular_title = _("%s (Attachment)")
+    item_type_plural = _("Attachments")
     EditBookClass = AttachmentEditBook
 
 
 class EffortEditor(Editor):
     plural_title = _("Multiple efforts")
-    singular_title = _("%s (effort)")
+    singular_title = _("%s (Effort)")
+    item_type_plural = _("Efforts")
     EditBookClass = EffortEditBook

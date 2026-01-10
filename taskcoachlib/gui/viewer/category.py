@@ -197,6 +197,18 @@ class BaseCategoryViewer(
             uicommand.NewSubItem(viewer=self),
         )
 
+    def checkAllCategories(self):
+        """Set all categories to filtered (checked) state."""
+        for cat in self.presentation():
+            cat.setFiltered(True)
+        self.refresh()
+
+    def uncheckAllCategories(self):
+        """Set all categories to unfiltered (unchecked) state."""
+        for cat in self.presentation():
+            cat.setFiltered(False)
+        self.refresh()
+
     def createColumnUICommands(self):
         commands = [
             uicommand.ToggleAutoColumnResizing(

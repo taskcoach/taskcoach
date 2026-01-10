@@ -263,7 +263,7 @@ defaults = {
     },
     "categoryviewerintaskeditor": {
         "title": "",
-        "toolbarperspective": "CategoryNew,NewSubItem,Separator,Edit,Delete,Spacer,ResetFilter,Search",
+        "toolbarperspective": "CategoryNew,NewSubItem,Separator,Edit,Delete,Separator,CategoryCheckAll,CategoryUncheckAll,Spacer,ResetFilter,Search",
         "sortby": '["subject"]',
         "sortcasesensitive": "False",
         "searchfilterstring": "",

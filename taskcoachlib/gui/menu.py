@@ -933,19 +933,10 @@ class ToggleCategoryMenu(DynamicMenu):
                 category=category, viewer=self.viewer
             )
             uiCommand.addToMenu(menu, self._window)
-        categoriesWithChildren = [
-            category for category in categories if category.children()
-        ]
-        if categoriesWithChildren:
-            menu.AppendSeparator()
-            for category in categoriesWithChildren:
+            if category.children():
                 subMenu = Menu(self._window)
                 self.addMenuItemsForCategories(category.children(), subMenu)
-                menu.AppendSubMenu(subMenu, self.subMenuLabel(category))
-
-    @staticmethod
-    def subMenuLabel(category):  # pylint: disable=W0621
-        return _("%s (subcategories)") % category.subject()
+                menu.appendMenu(category.subject(), subMenu, "arrow_down_right")
 
     def enabled(self):
         return bool(self.categories)

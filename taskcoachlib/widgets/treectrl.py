@@ -720,13 +720,29 @@ class CheckTreeCtrl(TreeListCtrl):
 
     def _refreshCheckState(self, item, domain_object):
         # Use CheckItem2 so no events get sent:
-        self.CheckItem2(item, self.getIsItemChecked(domain_object))
+        checked = self.getIsItemChecked(domain_object)
+        if checked is None:
+            # Mixed state - enable 3-state and set undetermined
+            item.Set3State(True)
+            item.Set3StateValue(wx.CHK_UNDETERMINED)
+        else:
+            # Normal checked/unchecked state
+            if item.Is3State():
+                item.Set3State(False)
+            self.CheckItem2(item, checked)
         parent = item.GetParent()
         while parent:
             if self.GetItemType(parent) == 2:
                 self.EnableItem(item, self.IsItemChecked(parent))
                 break
             parent = parent.GetParent()
+
+    def refreshAllCheckStates(self):
+        """Refresh the check state of all items without rebuilding the tree."""
+        for item in self.GetItemChildren(recursively=True):
+            domain_object = self.GetItemPyData(item)
+            if domain_object is not None:
+                self._refreshCheckState(item, domain_object)
 
     def onItemChecked(self, event):
         if self.__checking:
