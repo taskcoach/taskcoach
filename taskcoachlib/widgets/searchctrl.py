@@ -93,11 +93,10 @@ class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
         self.SetMenu(menu)
 
     def PopupMenu(self):  # pylint: disable=W0221
-        rect = self.GetClientRect()
-        x, y = rect[0], rect[1] + rect[3] + 3
-        # Hide tooltip first to avoid Wayland popup parent conflict
+        # Hide tooltip first to avoid popup conflicts
         self.HideTip()
-        super().PopupMenu(self.Getmenu(), wx.Point(x, y))
+        # Don't pass position - let wxGTK handle it (required for Wayland compatibility)
+        super().PopupMenu(self.GetMenu())
 
     def bindEventHandlers(self):
         # pylint: disable=W0142,W0612,W0201
