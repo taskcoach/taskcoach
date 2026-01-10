@@ -127,8 +127,7 @@ class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
             for className in perspective.split(","):
                 if className in index:
                     commands.append(index[className])
-        else:
-            commands = list(self.uiCommands(cache=cache))
+        # If perspective is empty, return empty list (allow empty toolbars)
         return commands
 
     def loadPerspective(self, perspective, customizable=True, cache=True):
@@ -175,6 +174,15 @@ class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
 
     def visibleUICommands(self):
         return self.__visibleUICommands[:]
+
+    def getDefaultPerspective(self):
+        """Get the default toolbar perspective from settings."""
+        if hasattr(self.__window, 'settingsSection'):
+            section = self.__window.settingsSection()
+        else:
+            # MainWindow uses "view" section
+            section = "view"
+        return self.__settings.getDefault(section, "toolbarperspective")
 
     def AppendSeparator(self):
         """This little adapter is needed for

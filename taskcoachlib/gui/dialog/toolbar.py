@@ -20,22 +20,7 @@ from taskcoachlib import widgets
 from taskcoachlib.help.balloontips import BalloonTipManager
 from taskcoachlib.gui import uicommand
 from taskcoachlib.i18n import _
-from wx.lib.agw import hypertreelist as htl
 import wx
-
-
-class _AutoWidthTree(
-    widgets.autowidth.AutoColumnWidthMixin, htl.HyperTreeList
-):
-    """Simple tree for toolbar editor with auto-column-resizing enabled."""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.ToggleAutoResizing(True)
-
-    def _get_MainWindow(self):
-        return self.GetMainWindow()
-
-    MainWindow = property(_get_MainWindow)
 
 
 class _ToolBarEditorInterior(wx.Panel):
@@ -68,31 +53,30 @@ class _ToolBarEditorInterior(wx.Panel):
         self.__imgListIndex["nobitmap"] = self.__imgList.Add(
             empty.ConvertToBitmap()
         )
-        for uiCommand in toolbar.uiCommands():
+        for uiCmd in toolbar.uiCommands():
             if (
-                uiCommand is not None
-                and not isinstance(uiCommand, int)
-                and uiCommand.bitmap != "nobitmap"
+                uiCmd is not None
+                and not isinstance(uiCmd, int)
+                and uiCmd.bitmap != "nobitmap"
             ):
-                self.__imgListIndex[uiCommand.bitmap] = self.__imgList.Add(
+                self.__imgListIndex[uiCmd.bitmap] = self.__imgList.Add(
                     wx.ArtProvider.GetBitmap(
-                        uiCommand.bitmap, wx.ART_MENU, (16, 16)
+                        uiCmd.bitmap, wx.ART_MENU, (16, 16)
                     )
                 )
 
+        # Data storage for remaining list items (visible uses self.__visible)
+        self.__remainingData = []
+
         # Remaining commands list
         sb = wx.StaticBox(self, wx.ID_ANY, _("Available tools"))
-        self.__remainingCommands = _AutoWidthTree(
+        self.__remainingCommands = wx.ListCtrl(
             self,
-            agwStyle=htl.TR_NO_BUTTONS
-            | htl.TR_SINGLE
-            | htl.TR_NO_LINES
-            | htl.TR_HIDE_ROOT
-            | htl.TR_NO_HEADER
-            | htl.TR_FULL_ROW_HIGHLIGHT,
+            style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_NO_HEADER
         )
-        self.__remainingCommands.AddColumn("Command")
-        self.__remainingCommands.SetImageList(self.__imgList)
+        self.__remainingCommands.SetImageList(self.__imgList, wx.IMAGE_LIST_SMALL)
+        self.__remainingCommands.InsertColumn(0, "Command", width=300)
+        self.__remainingCommands.Bind(wx.EVT_SIZE, self.__OnListResize)
 
         sbsz = wx.StaticBoxSizer(sb)
         sbsz.Add(self.__remainingCommands, 1, wx.EXPAND)
@@ -126,17 +110,13 @@ class _ToolBarEditorInterior(wx.Panel):
 
         # Visible commands list
         sb = wx.StaticBox(self, wx.ID_ANY, _("Tools"))
-        self.__visibleCommands = _AutoWidthTree(
+        self.__visibleCommands = wx.ListCtrl(
             self,
-            agwStyle=htl.TR_NO_BUTTONS
-            | htl.TR_SINGLE
-            | htl.TR_NO_LINES
-            | htl.TR_HIDE_ROOT
-            | htl.TR_NO_HEADER
-            | htl.TR_FULL_ROW_HIGHLIGHT,
+            style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_NO_HEADER
         )
-        self.__visibleCommands.AddColumn("Command")
-        self.__visibleCommands.SetImageList(self.__imgList)
+        self.__visibleCommands.SetImageList(self.__imgList, wx.IMAGE_LIST_SMALL)
+        self.__visibleCommands.InsertColumn(0, "Command", width=300)
+        self.__visibleCommands.Bind(wx.EVT_SIZE, self.__OnListResize)
 
         sbsz = wx.StaticBoxSizer(sb)
         sbsz.Add(self.__visibleCommands, 1, wx.EXPAND)
@@ -171,25 +151,41 @@ class _ToolBarEditorInterior(wx.Panel):
         vsizer.Add(hsizer, 1, wx.EXPAND | wx.ALL, 3)
         self.SetSizer(vsizer)
 
-        self.__remainingSelection = None
-        self.__visibleSelection = None
-        self.__draggedItem = None
+        self.__remainingSelection = -1
+        self.__visibleSelection = -1
+        self.__draggedIndex = -1
         self.__draggingFromAvailable = False
+        self.__dropLine = None
+
+        # Bind events
         self.__remainingCommands.Bind(
-            wx.EVT_TREE_SEL_CHANGED, self.__OnRemainingSelectionChanged
+            wx.EVT_LIST_ITEM_SELECTED, self.__OnRemainingSelectionChanged
+        )
+        self.__remainingCommands.Bind(
+            wx.EVT_LIST_ITEM_DESELECTED, self.__OnRemainingDeselected
         )
         self.__visibleCommands.Bind(
-            wx.EVT_TREE_SEL_CHANGED, self.__OnVisibleSelectionChanged
+            wx.EVT_LIST_ITEM_SELECTED, self.__OnVisibleSelectionChanged
+        )
+        self.__visibleCommands.Bind(
+            wx.EVT_LIST_ITEM_DESELECTED, self.__OnVisibleDeselected
         )
 
         self.__hideButton.Bind(wx.EVT_BUTTON, self.__OnHide)
         self.__showButton.Bind(wx.EVT_BUTTON, self.__OnShow)
         self.__moveUpButton.Bind(wx.EVT_BUTTON, self.__OnMoveUp)
         self.__moveDownButton.Bind(wx.EVT_BUTTON, self.__OnMoveDown)
-        self.__visibleCommands.Bind(wx.EVT_TREE_BEGIN_DRAG, self.__OnBeginDrag)
-        self.__visibleCommands.Bind(wx.EVT_TREE_END_DRAG, self.__OnEndDrag)
+
+        # DnD events
+        self.__visibleCommands.Bind(wx.EVT_LIST_BEGIN_DRAG, self.__OnBeginDrag)
+        self.__remainingCommands.Bind(wx.EVT_LIST_BEGIN_DRAG, self.__OnBeginDrag2)
+
+        # Double-click events
         self.__remainingCommands.Bind(
-            wx.EVT_TREE_BEGIN_DRAG, self.__OnBeginDrag2
+            wx.EVT_LIST_ITEM_ACTIVATED, self.__OnRemainingDoubleClick
+        )
+        self.__visibleCommands.Bind(
+            wx.EVT_LIST_ITEM_ACTIVATED, self.__OnVisibleDoubleClick
         )
 
         wx.CallAfter(
@@ -204,89 +200,134 @@ class _ToolBarEditorInterior(wx.Panel):
         )
 
     def __OnRemainingSelectionChanged(self, event):
-        self.__remainingSelection = event.GetItem()
-        self.__showButton.Enable(self.__remainingSelection is not None)
+        self.__remainingSelection = event.GetIndex()
+        # Check if item is enabled (not grayed out)
+        uiCmd = self.__remainingData[self.__remainingSelection]
+        if isinstance(uiCmd, uicommand.UICommand):
+            # Check if already in visible list
+            if uiCmd.uniqueName() in self.__GetVisibleNames():
+                self.__showButton.Enable(False)
+            else:
+                self.__showButton.Enable(True)
+        else:
+            self.__showButton.Enable(True)
+        event.Skip()
+
+    def __OnRemainingDeselected(self, event):
+        self.__remainingSelection = -1
+        self.__showButton.Enable(False)
         event.Skip()
 
     def __OnVisibleSelectionChanged(self, event):
-        self.__visibleSelection = event.GetItem()
-        self.__hideButton.Enable(self.__visibleSelection is not None)
-        items = self.__visibleCommands.GetRootItem().GetChildren()
-        idx = items.index(event.GetItem())
-        self.__moveUpButton.Enable(idx != 0)
-        self.__moveDownButton.Enable(idx != len(items) - 1)
+        self.__visibleSelection = event.GetIndex()
+        self.__hideButton.Enable(True)
+        count = self.__visibleCommands.GetItemCount()
+        self.__moveUpButton.Enable(self.__visibleSelection > 0)
+        self.__moveDownButton.Enable(self.__visibleSelection < count - 1)
         event.Skip()
 
-    def __OnHide(self, event):
-        idx = (
-            self.__visibleCommands.GetRootItem()
-            .GetChildren()
-            .index(self.__visibleSelection)
-        )
-        uiCommand = self.__visibleCommands.GetItemPyData(
-            self.__visibleSelection
-        )
-        self.__visibleCommands.Delete(self.__visibleSelection)
-        self.__visibleSelection = None
+    def __OnVisibleDeselected(self, event):
+        self.__visibleSelection = -1
         self.__hideButton.Enable(False)
+        self.__moveUpButton.Enable(False)
+        self.__moveDownButton.Enable(False)
+        event.Skip()
+
+    def __GetVisibleNames(self):
+        """Get set of unique names of commands in visible list."""
+        names = set()
+        for cmd in self.__visible:
+            if isinstance(cmd, uicommand.UICommand):
+                names.add(cmd.uniqueName())
+        return names
+
+    def __OnHide(self, event):
+        if self.__visibleSelection < 0:
+            return
+        idx = self.__visibleSelection
+        uiCmd = self.__visible[idx]
+
+        self.__visibleCommands.DeleteItem(idx)
         del self.__visible[idx]
-        if isinstance(uiCommand, uicommand.UICommand):
-            for child in self.__remainingCommands.GetRootItem().GetChildren()[
-                2:
-            ]:
-                if self.__remainingCommands.GetItemPyData(child) == uiCommand:
-                    self.__remainingCommands.EnableItem(child, True)
-                    break
+
+        self.__visibleSelection = -1
+        self.__hideButton.Enable(False)
+        self.__moveUpButton.Enable(False)
+        self.__moveDownButton.Enable(False)
+
+        # Update remaining list to show this item as available again
+        self.__UpdateRemainingItemState(uiCmd, enabled=True)
         self.__HackPreview()
 
     def __OnShow(self, event):
-        uiCommand = self.__remainingCommands.GetItemPyData(
-            self.__remainingSelection
-        )
-        if uiCommand is None:
-            item = self.__visibleCommands.AppendItem(
-                self.__visibleCommands.GetRootItem(), _("Separator")
-            )
-        elif isinstance(uiCommand, int):
-            item = self.__visibleCommands.AppendItem(
-                self.__visibleCommands.GetRootItem(), _("Spacer")
-            )
+        if self.__remainingSelection < 0:
+            return
+        uiCmd = self.__remainingData[self.__remainingSelection]
+
+        # Determine insert position
+        if self.__visibleSelection >= 0:
+            insertIndex = self.__visibleSelection + 1
         else:
-            item = self.__visibleCommands.AppendItem(
-                self.__visibleCommands.GetRootItem(), uiCommand.getHelpText()
-            )
-            self.__visibleCommands.SetItemImage(
-                item, self.__imgListIndex.get(uiCommand.bitmap, -1)
-            )
-        self.__visibleCommands.SetItemPyData(item, uiCommand)
-        self.__visible.append(uiCommand)
-        if isinstance(uiCommand, uicommand.UICommand):
-            self.__remainingCommands.EnableItem(
-                self.__remainingSelection, False
-            )
-            self.__remainingSelection = None
+            insertIndex = len(self.__visible)
+
+        # Get text and image
+        text, img = self.__GetItemTextAndImage(uiCmd)
+
+        # Insert into visible list
+        self.__visible.insert(insertIndex, uiCmd)
+        self.__visibleCommands.InsertItem(insertIndex, text, img)
+
+        # Mark as used in remaining list
+        if isinstance(uiCmd, uicommand.UICommand):
+            self.__UpdateRemainingItemState(uiCmd, enabled=False)
+            self.__remainingSelection = -1
             self.__showButton.Enable(False)
+
         self.__HackPreview()
 
+    def __GetItemTextAndImage(self, uiCmd):
+        """Get display text and image index for a uiCommand."""
+        if uiCmd is None:
+            return _("Separator"), self.__imgListIndex.get("nobitmap", -1)
+        elif isinstance(uiCmd, int):
+            return _("Spacer"), self.__imgListIndex.get("nobitmap", -1)
+        else:
+            return uiCmd.getHelpText(), self.__imgListIndex.get(uiCmd.bitmap, -1)
+
+    def __UpdateRemainingItemState(self, uiCmd, enabled):
+        """Update the visual state of an item in the remaining list."""
+        if not isinstance(uiCmd, uicommand.UICommand):
+            return
+        targetName = uiCmd.uniqueName()
+        for i, cmd in enumerate(self.__remainingData):
+            if isinstance(cmd, uicommand.UICommand) and cmd.uniqueName() == targetName:
+                if enabled:
+                    # Use system default text color
+                    self.__remainingCommands.SetItemTextColour(
+                        i, wx.SystemSettings.GetColour(wx.SYS_COLOUR_LISTBOXTEXT)
+                    )
+                else:
+                    self.__remainingCommands.SetItemTextColour(i, wx.Colour(150, 150, 150))
+                self.__remainingCommands.RefreshItem(i)
+                break
+
     def __Swap(self, delta):
-        items = self.__visibleCommands.GetRootItem().GetChildren()
-        index = items.index(self.__visibleSelection)
-        text = self.__visibleSelection.GetText()
-        data = self.__visibleSelection.GetData()
-        self.__visibleCommands.Delete(self.__visibleSelection)
-        item = self.__visibleCommands.InsertItem(
-            self.__visibleCommands.GetRootItem(), index + delta, text
-        )
-        self.__visibleCommands.SetItemPyData(item, data)
-        if isinstance(data, uicommand.UICommand):
-            self.__visibleCommands.SetItemImage(
-                item, self.__imgListIndex.get(data.bitmap, -1)
-            )
-        self.__visibleCommands.SelectItem(item)
-        self.__visible[index], self.__visible[index + delta] = (
-            self.__visible[index + delta],
-            self.__visible[index],
-        )
+        if self.__visibleSelection < 0:
+            return
+        idx = self.__visibleSelection
+        newIdx = idx + delta
+
+        if newIdx < 0 or newIdx >= len(self.__visible):
+            return
+
+        # Swap in data
+        self.__visible[idx], self.__visible[newIdx] = self.__visible[newIdx], self.__visible[idx]
+
+        # Refresh display
+        self.__PopulateVisibleCommands()
+        self.__visibleCommands.Select(newIdx)
+        self.__visibleSelection = newIdx
+
         self.__HackPreview()
 
     def __OnMoveUp(self, event):
@@ -295,130 +336,318 @@ class _ToolBarEditorInterior(wx.Panel):
     def __OnMoveDown(self, event):
         self.__Swap(1)
 
+    def __OnRemainingDoubleClick(self, event):
+        """Double-click on available item adds it to visible."""
+        idx = event.GetIndex()
+        if idx >= 0:
+            uiCmd = self.__remainingData[idx]
+            # Check if already in use
+            if isinstance(uiCmd, uicommand.UICommand):
+                if uiCmd.uniqueName() in self.__GetVisibleNames():
+                    return
+            self.__remainingSelection = idx
+            self.__OnShow(event)
+
+    def __OnVisibleDoubleClick(self, event):
+        """Double-click on visible item removes it."""
+        idx = event.GetIndex()
+        if idx >= 0:
+            self.__visibleSelection = idx
+            self.__OnHide(event)
+
+    def resetToDefault(self):
+        """Reset toolbar to default configuration."""
+        defaultPerspective = self.__toolbar.getDefaultPerspective()
+        if not defaultPerspective:
+            return
+
+        # Parse default perspective and rebuild visible list
+        index = dict(
+            [
+                (command.uniqueName(), command)
+                for command in self.createToolBarUICommands()
+                if command is not None and not isinstance(command, int)
+            ]
+        )
+        index["Separator"] = None
+        index["Spacer"] = 1
+
+        self.__visible = []
+        for className in defaultPerspective.split(","):
+            if className in index:
+                self.__visible.append(index[className])
+
+        # Repopulate both panels
+        self.__PopulateVisibleCommands()
+        self.__PopulateRemainingCommands()
+        self.__visibleSelection = -1
+        self.__remainingSelection = -1
+        self.__hideButton.Enable(False)
+        self.__showButton.Enable(False)
+        self.__moveUpButton.Enable(False)
+        self.__moveDownButton.Enable(False)
+        self.__HackPreview()
+
     def __OnBeginDrag2(self, event):
+        """Drag started from Available tools panel."""
+        idx = event.GetIndex()
+        if idx < 0:
+            return
+
+        uiCmd = self.__remainingData[idx]
+        # Check if item is available (not already in toolbar)
+        if isinstance(uiCmd, uicommand.UICommand):
+            if uiCmd.uniqueName() in self.__GetVisibleNames():
+                return  # Can't drag disabled items
+
+        self.__draggedIndex = idx
         self.__draggingFromAvailable = True
-        event.Veto()
+        self.__DoDragDrop(self.__remainingCommands)
 
     def __OnBeginDrag(self, event):
-        if (
-            self.__draggingFromAvailable
-            or event.GetItem() == self.__visibleCommands.GetRootItem()
-        ):
-            event.Veto()
-        else:
-            self.__draggedItem = event.GetItem()
-            event.Allow()
-        self.__draggingFromAvailable = False
+        """Drag started from Tools panel."""
+        idx = event.GetIndex()
+        if idx < 0:
+            return
 
-    def __OnEndDrag(self, event):
-        if (
-            event.GetItem() is not None
-            and event.GetItem() != self.__draggedItem
-        ):
-            targetItem = event.GetItem()
-            sourceIndex = (
-                self.__visibleCommands.GetRootItem()
-                .GetChildren()
-                .index(self.__draggedItem)
-            )
-            uiCommand = self.__visible[sourceIndex]
-            self.__visibleCommands.Delete(self.__draggedItem)
-            del self.__visible[sourceIndex]
-            targetIndex = (
-                self.__visibleCommands.GetRootItem()
-                .GetChildren()
-                .index(targetItem)
-                + 1
-            )
-            if (
-                targetItem.PartialHilight()
-                & wx.wx.TREE_HITTEST_ONITEMUPPERPART
-            ):
-                targetIndex -= 1
-            self.__visible.insert(targetIndex, uiCommand)
-            if uiCommand is None:
-                text = _("Separator")
-                img = -1
-            elif isinstance(uiCommand, int):
-                text = _("Spacer")
-                img = -1
+        self.__draggedIndex = idx
+        self.__draggingFromAvailable = False
+        self.__DoDragDrop(self.__visibleCommands)
+
+    def __OnListResize(self, event):
+        """Resize column to fill available width."""
+        listCtrl = event.GetEventObject()
+        width = listCtrl.GetClientSize().width
+        if width > 0:
+            listCtrl.SetColumnWidth(0, width)
+        event.Skip()
+
+    def __DoDragDrop(self, sourceList):
+        """Perform drag and drop operation."""
+        # TextDataObject is required by wx.DropSource but we track state internally
+        data = wx.TextDataObject("drag")
+        dropSource = wx.DropSource(sourceList)
+        dropSource.SetData(data)
+
+        # Set up drop targets on both lists
+        self.__visibleCommands.SetDropTarget(_ListDropTarget(self, isVisible=True))
+        self.__remainingCommands.SetDropTarget(_ListDropTarget(self, isVisible=False))
+
+        dropSource.DoDragDrop(wx.Drag_DefaultMove)
+
+        # Clean up - clear drop targets first to avoid GTK warnings on cancel
+        self.ClearDropLine()
+        self.__visibleCommands.SetDropTarget(None)
+        self.__remainingCommands.SetDropTarget(None)
+        self.__draggedIndex = -1
+
+    def ClearDropLine(self):
+        """Clear the drop indicator line."""
+        if self.__dropLine:
+            self.__dropLine.Destroy()
+            self.__dropLine = None
+
+    def __ShowDropLine(self, y):
+        """Show insertion line at the given Y position."""
+        if not self.__visibleCommands.IsShownOnScreen():
+            return
+
+        width = self.__visibleCommands.GetClientSize().width
+        if not self.__dropLine:
+            self.__dropLine = wx.Panel(self.__visibleCommands, size=(width, 2))
+            self.__dropLine.SetBackgroundColour(wx.Colour(0, 120, 215))
+        self.__dropLine.SetSize(width, 2)
+        self.__dropLine.SetPosition((0, y))
+        self.__dropLine.Show()
+        self.__dropLine.Raise()
+
+    def HandleDragOver(self, x, y):
+        """Handle drag over visible commands - show insertion line."""
+        # Find which item we're over
+        idx, flags = self.__visibleCommands.HitTest((x, y))
+
+        if idx == wx.NOT_FOUND:
+            # Below all items - show line at bottom
+            count = self.__visibleCommands.GetItemCount()
+            if count > 0:
+                rect = self.__visibleCommands.GetItemRect(count - 1)
+                self.__ShowDropLine(rect.bottom)
             else:
-                text = uiCommand.getHelpText()
-                img = self.__imgListIndex.get(uiCommand.bitmap, -1)
-            item = self.__visibleCommands.InsertItem(
-                self.__visibleCommands.GetRootItem(), targetIndex, text
-            )
-            self.__visibleCommands.SetItemPyData(item, uiCommand)
-            self.__visibleCommands.SetItemImage(item, img)
-            self.__HackPreview()
-        self.__draggedItem = None
+                self.__ShowDropLine(0)
+            return count
+        else:
+            # Show line above or below item based on position
+            rect = self.__visibleCommands.GetItemRect(idx)
+            midY = rect.y + rect.height // 2
+            if y < midY:
+                self.__ShowDropLine(rect.y - 1)
+                return idx
+            else:
+                self.__ShowDropLine(rect.bottom)
+                return idx + 1
+
+    def HandleDrop(self, x, y):
+        """Handle drop on visible commands."""
+        targetIdx = self.HandleDragOver(x, y)
+        self.ClearDropLine()
+
+        if self.__draggedIndex < 0:
+            return False
+
+        if self.__draggingFromAvailable:
+            # Moving from available to visible
+            uiCmd = self.__remainingData[self.__draggedIndex]
+
+            # Check if already in use
+            if isinstance(uiCmd, uicommand.UICommand):
+                if uiCmd.uniqueName() in self.__GetVisibleNames():
+                    return False
+
+            text, img = self.__GetItemTextAndImage(uiCmd)
+
+            # Insert into visible list
+            self.__visible.insert(targetIdx, uiCmd)
+            self.__visibleCommands.InsertItem(targetIdx, text, img)
+
+            # Mark as used
+            if isinstance(uiCmd, uicommand.UICommand):
+                self.__UpdateRemainingItemState(uiCmd, enabled=False)
+        else:
+            # Reordering within visible list
+            if targetIdx == self.__draggedIndex or targetIdx == self.__draggedIndex + 1:
+                return False  # No change needed
+
+            uiCmd = self.__visible[self.__draggedIndex]
+            text, img = self.__GetItemTextAndImage(uiCmd)
+
+            # Remove from old position
+            self.__visibleCommands.DeleteItem(self.__draggedIndex)
+            del self.__visible[self.__draggedIndex]
+
+            # Adjust target index if needed
+            if self.__draggedIndex < targetIdx:
+                targetIdx -= 1
+
+            # Insert at new position
+            self.__visible.insert(targetIdx, uiCmd)
+            self.__visibleCommands.InsertItem(targetIdx, text, img)
+
+        self.__HackPreview()
+        return True
+
+    def HandleDropOnRemaining(self, x, y):
+        """Handle drop on remaining commands (remove from visible)."""
+        self.ClearDropLine()
+
+        if self.__draggedIndex < 0:
+            return False
+
+        # Only handle if dragging FROM visible list
+        if self.__draggingFromAvailable:
+            return False  # Can't drop back to same list
+
+        # Remove from visible list
+        uiCmd = self.__visible[self.__draggedIndex]
+        self.__visibleCommands.DeleteItem(self.__draggedIndex)
+        del self.__visible[self.__draggedIndex]
+
+        # Clear selection state
+        self.__visibleSelection = -1
+        self.__hideButton.Enable(False)
+        self.__moveUpButton.Enable(False)
+        self.__moveDownButton.Enable(False)
+
+        # Re-enable in remaining list
+        self.__UpdateRemainingItemState(uiCmd, enabled=True)
+
+        self.__HackPreview()
+        return True
 
     def __HackPreview(self):
         self.__preview.loadPerspective(
             self.getToolBarPerspective(), customizable=False
         )
-        for uiCommand in self.__preview.visibleUICommands():
-            if uiCommand is not None and not isinstance(uiCommand, int):
-                uiCommand.unbind(self.__preview, uiCommand.id)
-                self.__preview.EnableTool(uiCommand.id, True)
-
-    def __Populate(self, tree, uiCommands, enableCallback):
-        tree.Freeze()
-        try:
-            tree.DeleteAllItems()
-            root = tree.AddRoot("Root")
-
-            for uiCommand in uiCommands:
-                if uiCommand is None:
-                    text = _("Separator")
-                elif isinstance(uiCommand, int):
-                    text = _("Spacer")
-                else:
-                    text = uiCommand.getHelpText()
-
-                item = tree.AppendItem(root, text)
-                if uiCommand is not None and not isinstance(uiCommand, int):
-                    tree.SetItemImage(
-                        item, self.__imgListIndex.get(uiCommand.bitmap, -1)
-                    )
-                    tree.EnableItem(item, enableCallback(uiCommand))
-                tree.SetItemPyData(item, uiCommand)
-        finally:
-            tree.Thaw()
+        for uiCmd in self.__preview.visibleUICommands():
+            if uiCmd is not None and not isinstance(uiCmd, int):
+                uiCmd.unbind(self.__preview, uiCmd.id)
+                self.__preview.EnableTool(uiCmd.id, True)
 
     def __PopulateRemainingCommands(self):
-        def enableCallback(uiCommand):
-            if isinstance(uiCommand, uicommand.UICommand):
-                return uiCommand not in self.__visible
-            return True
+        self.__remainingCommands.DeleteAllItems()
+        self.__remainingData = []
 
-        self.__Populate(
-            self.__remainingCommands,
-            [None, 1]
-            + [
-                uiCommand
-                for uiCommand in self.createToolBarUICommands()
-                if isinstance(uiCommand, uicommand.UICommand)
-            ],
-            enableCallback,
-        )
+        visibleNames = self.__GetVisibleNames()
+
+        # Add separator and spacer first
+        allCommands = [None, 1] + [
+            cmd for cmd in self.createToolBarUICommands()
+            if isinstance(cmd, uicommand.UICommand)
+        ]
+
+        for uiCmd in allCommands:
+            text, img = self.__GetItemTextAndImage(uiCmd)
+            idx = self.__remainingCommands.InsertItem(
+                self.__remainingCommands.GetItemCount(), text, img
+            )
+            self.__remainingData.append(uiCmd)
+
+            # Gray out if already in visible list
+            if isinstance(uiCmd, uicommand.UICommand):
+                if uiCmd.uniqueName() in visibleNames:
+                    self.__remainingCommands.SetItemTextColour(idx, wx.Colour(150, 150, 150))
 
     def __PopulateVisibleCommands(self):
-        self.__Populate(self.__visibleCommands, self.__visible, lambda x: True)
+        self.__visibleCommands.DeleteAllItems()
+
+        for uiCmd in self.__visible:
+            text, img = self.__GetItemTextAndImage(uiCmd)
+            self.__visibleCommands.InsertItem(
+                self.__visibleCommands.GetItemCount(), text, img
+            )
 
     def getToolBarPerspective(self):
         names = list()
-        for uiCommand in self.__visible:
-            if uiCommand is None:
+        for uiCmd in self.__visible:
+            if uiCmd is None:
                 names.append("Separator")
-            elif isinstance(uiCommand, int):
+            elif isinstance(uiCmd, int):
                 names.append("Spacer")
             else:
-                names.append(uiCommand.uniqueName())
+                names.append(uiCmd.uniqueName())
         return ",".join(names)
 
     def createToolBarUICommands(self):
         return self.__toolbar.uiCommands(cache=False)
+
+
+class _ListDropTarget(wx.DropTarget):
+    """Drop target for the command lists."""
+
+    def __init__(self, interior, isVisible=True):
+        super().__init__()
+        self.__interior = interior
+        self.__isVisible = isVisible
+        self.__data = wx.TextDataObject()
+        self.SetDataObject(self.__data)
+
+    def OnDragOver(self, x, y, defResult):
+        if self.__isVisible:
+            self.__interior.HandleDragOver(x, y)
+        return wx.DragMove
+
+    def OnDrop(self, x, y):
+        return True
+
+    def OnData(self, x, y, defResult):
+        if self.GetData():
+            if self.__isVisible:
+                self.__interior.HandleDrop(x, y)
+            else:
+                self.__interior.HandleDropOnRemaining(x, y)
+        return defResult
+
+    def OnLeave(self):
+        self.__interior.ClearDropLine()
 
 
 class ToolBarEditor(BalloonTipManager, widgets.Dialog):
@@ -433,6 +662,34 @@ class ToolBarEditor(BalloonTipManager, widgets.Dialog):
         return _ToolBarEditorInterior(
             self.__toolbar, self.__settings, self._panel
         )
+
+    def createButtons(self):
+        # Create buttons with dialog as parent
+        resetButton = wx.Button(self, wx.ID_ANY, _("Reset to Default"))
+        resetButton.SetToolTip(
+            wx.ToolTip(_("Restore the toolbar to its default configuration"))
+        )
+        resetButton.Bind(wx.EVT_BUTTON, self.__OnReset)
+
+        cancelButton = wx.Button(self, wx.ID_CANCEL, _("Cancel"))
+        cancelButton.Bind(wx.EVT_BUTTON, self.cancel)
+
+        okButton = wx.Button(self, wx.ID_OK, _("OK"))
+        okButton.Bind(wx.EVT_BUTTON, self.ok)
+
+        # Layout: --- stretch --- [Reset] [50px gap] [Cancel] [OK]
+        # All buttons right-aligned, with extra space before Cancel/OK
+        buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
+        buttonSizer.AddStretchSpacer(1)
+        buttonSizer.Add(resetButton, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 50)
+        buttonSizer.Add(cancelButton, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 8)
+        buttonSizer.Add(okButton, 0, wx.ALIGN_CENTER_VERTICAL)
+
+        self.SetButtonSizer(buttonSizer)
+        return buttonSizer
+
+    def __OnReset(self, event):
+        self._interior.resetToDefault()
 
     def ok(self, event=None):
         self.__toolbar.savePerspective(self._interior.getToolBarPerspective())
