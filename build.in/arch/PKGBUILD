@@ -26,6 +26,9 @@ depends=(
     'xdg-utils'
 )
 makedepends=(
+    'python-build'
+    'python-installer'
+    'python-wheel'
     'python-setuptools'
     'python-distro'
     'python-pip'
@@ -54,18 +57,22 @@ prepare() {
 
 build() {
     cd "$srcdir/$pkgname-$pkgver" || cd "$srcdir"/*taskcoach* || return 1
-    python setup.py build
+
+    # Build wheel using PEP 517 (modern Python packaging)
+    python -m build --wheel --no-isolation
 }
 
 package() {
     cd "$srcdir/$pkgname-$pkgver" || cd "$srcdir"/*taskcoach* || return 1
 
-    # Install Python package
-    python setup.py install --root="$pkgdir" --prefix=/usr --optimize=1 --skip-build
+    # Install using python-installer (PEP 517 compliant)
+    # This installs to version-agnostic paths, avoiding Python version mismatch issues
+    python -m installer --destdir="$pkgdir" dist/*.whl
 
     # Install squaremap (not available in Arch repos)
-    local _py3ver=$(python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-    pip install --no-deps --target="$pkgdir/usr/lib/python${_py3ver}/site-packages/" squaremap
+    # Download wheel and install with python-installer for consistent paths
+    pip download --no-deps --dest="$srcdir" squaremap
+    python -m installer --destdir="$pkgdir" "$srcdir"/squaremap*.whl
 
     # Install desktop file
     install -Dm644 build.in/linux_common/taskcoach.desktop \

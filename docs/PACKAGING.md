@@ -555,9 +555,32 @@ espeak-ng           # Spoken reminders
 
 ```
 base-devel
+python-build
+python-installer
+python-wheel
 python-setuptools
 python-distro
 ```
+
+#### Build Method
+
+The PKGBUILD uses the modern PEP 517 build method with `python-build` and `python-installer`:
+
+```bash
+build() {
+    python -m build --wheel --no-isolation
+}
+
+package() {
+    python -m installer --destdir="$pkgdir" dist/*.whl
+}
+```
+
+**Why PEP 517?** The legacy `setup.py install` method installs to Python-version-specific paths (e.g., `/usr/lib/python3.14/site-packages/`). This causes issues when:
+- Pre-built packages are downloaded from GitHub releases
+- The user's Python version differs from the build system's version
+
+The `python-installer` tool installs to version-agnostic paths, ensuring compatibility across Python version differences.
 
 ### AUR Package
 
@@ -1081,6 +1104,7 @@ See `taskcoachlib/powermgt/win32.py` for the implementation.
 ### Arch Linux Packaging
 - [Arch Wiki: Creating packages](https://wiki.archlinux.org/title/Creating_packages)
 - [Arch Wiki: PKGBUILD](https://wiki.archlinux.org/title/PKGBUILD)
+- [Arch Wiki: Python package guidelines](https://wiki.archlinux.org/title/Python_package_guidelines) - PEP 517 build recommendations
 - [Arch Wiki: makepkg](https://wiki.archlinux.org/title/Makepkg)
 - [Arch Wiki: AUR](https://wiki.archlinux.org/title/Arch_User_Repository)
 - [Manjaro Wiki: Package Management](https://wiki.manjaro.org/index.php/Pacman_Overview)

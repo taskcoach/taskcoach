@@ -58,6 +58,9 @@ jobs:
       - name: Install build dependencies
         run: |
           pacman -S --noconfirm --needed \
+            python-build \
+            python-installer \
+            python-wheel \
             python-wxpython \
             python-six \
             python-lxml \
