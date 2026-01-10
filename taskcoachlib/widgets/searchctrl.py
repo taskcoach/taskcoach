@@ -21,12 +21,17 @@ from taskcoachlib.widgets import tooltip
 from taskcoachlib.i18n import _
 
 
-class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
+class _SearchCtrlInner(tooltip.ToolTipMixin, wx.SearchCtrl):
+    """Inner search control with all the search functionality.
+
+    This is wrapped by SearchCtrl (wx.Panel) for Wayland-compatible popup positioning.
+    """
     # Debounce delay in milliseconds - wait this long after user stops typing
     # before triggering the search. This prevents expensive operations on every keystroke.
     SEARCH_DEBOUNCE_DELAY_MS = 500
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, parent, wrapper, *args, **kwargs):
+        self.__wrapper = wrapper  # The wrapping Panel for popup positioning
         self.__callback = kwargs.pop("callback")
         self.__matchCase = kwargs.pop("matchCase", False)
         self.__includeSubItems = kwargs.pop("includeSubItems", False)
@@ -35,7 +40,7 @@ class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
         self.__bitmapSize = kwargs.pop("size", (16, 16))
         self.__debounceDelay = kwargs.pop("debounceDelay", self.SEARCH_DEBOUNCE_DELAY_MS)
         value = kwargs.pop("value", "")
-        super().__init__(*args, **kwargs)
+        super().__init__(parent, *args, **kwargs)
         self.SetSearchMenuBitmap(
             self.getBitmap("magnifier_glass_dropdown_icon")
         )
@@ -96,17 +101,16 @@ class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
         """Handle search dropdown button click with Wayland-compatible positioning.
 
         On Wayland, popup menus must be positioned relative to their transient parent.
-        Calling PopupMenu on the parent with offset coordinates establishes the
-        correct transient parent relationship.
+        We call PopupMenu on the wrapper Panel at (0, height) since the Panel fits
+        tightly around this SearchCtrl.
 
         See bugs/ISSUE_159_SEARCH_DROPDOWN_POSITION.md for details.
         """
         self.HideTip()
         menu = self.GetMenu()
         if menu:
-            pos = self.GetPosition()
-            height = self.GetSize().GetHeight()
-            self.GetParent().PopupMenu(menu, wx.Point(pos.x, pos.y + height))
+            height = self.__wrapper.GetSize().GetHeight()
+            self.__wrapper.PopupMenu(menu, wx.Point(0, height))
         # Don't Skip - we handle the menu ourselves
 
     def bindEventHandlers(self):
@@ -351,3 +355,71 @@ class SearchCtrl(tooltip.ToolTipMixin, wx.SearchCtrl):
 
     def OnBeforeShowToolTip(self, x, y):
         return None
+
+
+class SearchCtrl(wx.Panel):
+    """SearchCtrl wrapped in a tight-fitting Panel for Wayland popup compatibility.
+
+    On Wayland, popup menus must be positioned relative to their transient parent.
+    By wrapping the SearchCtrl in a tight-fitting Panel and calling PopupMenu
+    on the Panel, we establish the correct transient parent relationship.
+
+    This is the modern best practice for Wayland-compatible popup positioning.
+    See bugs/ISSUE_159_SEARCH_DROPDOWN_POSITION.md for details.
+    """
+
+    def __init__(self, parent, *args, **kwargs):
+        # Extract style before passing to Panel
+        kwargs.pop("style", 0)  # style is for the inner SearchCtrl, not Panel
+        super().__init__(parent)
+
+        # Create sizer and inner search control
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.__searchCtrl = _SearchCtrlInner(self, self, *args, **kwargs)
+        sizer.Add(self.__searchCtrl, 1, wx.EXPAND)
+        self.SetSizer(sizer)
+
+    # Delegate methods to inner search control
+    def GetMainWindow(self):
+        return self.__searchCtrl.GetMainWindow()
+
+    def getTextCtrl(self):
+        return self.__searchCtrl.getTextCtrl()
+
+    def cleanup(self):
+        return self.__searchCtrl.cleanup()
+
+    def setMatchCase(self, matchCase):
+        return self.__searchCtrl.setMatchCase(matchCase)
+
+    def setIncludeSubItems(self, includeSubItems):
+        return self.__searchCtrl.setIncludeSubItems(includeSubItems)
+
+    def setSearchDescription(self, searchDescription):
+        return self.__searchCtrl.setSearchDescription(searchDescription)
+
+    def setRegularExpression(self, regularExpression):
+        return self.__searchCtrl.setRegularExpression(regularExpression)
+
+    def GetValue(self):
+        return self.__searchCtrl.GetValue()
+
+    def SetValue(self, value):
+        return self.__searchCtrl.SetValue(value)
+
+    def SetFocus(self):
+        return self.__searchCtrl.SetFocus()
+
+    def Enable(self, enable=True):
+        super().Enable(enable)
+        return self.__searchCtrl.Enable(enable)
+
+    def IsEnabled(self):
+        return self.__searchCtrl.IsEnabled()
+
+    def SetMinSize(self, size):
+        self.__searchCtrl.SetMinSize(size)
+        super().SetMinSize(size)
+
+    def GetMenu(self):
+        return self.__searchCtrl.GetMenu()
