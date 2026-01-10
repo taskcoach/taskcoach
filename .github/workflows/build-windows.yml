@@ -32,12 +32,13 @@ jobs:
             pip_url: "https://bootstrap.pypa.io/get-pip.py"
             suffix: "x64"
           # 32-bit build with Python 3.9 (for older Windows/VM compatibility)
-          - arch: x86
-            python_version: "3.9.13"
-            python_arch: "win32"
-            pth_file: "python39._pth"
-            pip_url: "https://bootstrap.pypa.io/get-pip.py"
-            suffix: "x86-py39"
+          # DISABLED: No current users require 32-bit builds. Uncomment to reactivate.
+          # - arch: x86
+          #   python_version: "3.9.13"
+          #   python_arch: "win32"
+          #   pth_file: "python39._pth"
+          #   pip_url: "https://bootstrap.pypa.io/get-pip.py"
+          #   suffix: "x86-py39"
 
     steps:
       - name: Checkout repository
