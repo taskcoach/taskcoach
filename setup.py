@@ -19,11 +19,57 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from setuptools import setup
-from taskcoachlib import meta
 import platform
-import distro
+import re
 import os
 import sys
+
+
+def _read_metadata():
+    """Read metadata from data.py without importing the module.
+
+    This is necessary for PEP 517 builds where the package isn't installed yet.
+    """
+    data_path = os.path.join(
+        os.path.dirname(__file__), "taskcoachlib", "meta", "data.py"
+    )
+    with open(data_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    def extract(pattern, default=""):
+        match = re.search(pattern, content, re.MULTILINE)
+        return match.group(1) if match else default
+
+    # Extract basic values
+    version = extract(r'^version\s*=\s*["\']([^"\']+)["\']', "0.0.0")
+    patch = extract(r'^patch\s*=\s*["\']([^"\']+)["\']', "0")
+    version_full = f"{version}.{patch}"
+
+    name = extract(r'^name\s*=\s*["\']([^"\']+)["\']', "Task Coach")
+    description = extract(r'^description\s*=\s*["\']([^"\']+)["\']', "")
+    url = extract(r'^url\s*=\s*["\']([^"\']+)["\']', "")
+
+    return {
+        "name": name,
+        "filename": name.replace(" ", ""),
+        "version": version_full,
+        "description": description,
+        # These rarely change, so hardcode them to avoid complex regex
+        "author": "Frank Niessink, Jerome Laheurte, and Aaron Wolf",
+        "author_email": "https://github.com/taskcoach/taskcoach/issues",
+        "url": url,
+        "license": "GPLv3+",
+    }
+
+
+# Read metadata without importing
+_meta = _read_metadata()
+
+# Try to import distro for platform detection, but don't fail if unavailable
+try:
+    import distro
+except ImportError:
+    distro = None
 
 
 def findPackages(base):
@@ -89,23 +135,32 @@ system = platform.system()
 if system == "Windows":
     install_requires.append("WMI")
 
-setup_requires = ["distro"]
-
 tests_requires = []
 
+# Long description for PyPI
+long_description = (
+    "Task Coach is a free open source todo manager. It grew "
+    "out of frustration about other programs not handling composite tasks well. "
+    "In addition to flexible composite tasks, Task Coach has grown to include "
+    "prerequisites, prioritizing, effort tracking, category tags, budgets, "
+    "notes, and many other features. However, users are not forced to use all "
+    "these features; Task Coach can be as simple or complex as you need it to be. "
+    "Task Coach is available for Windows, Mac OS X, and GNU/Linux; and there is a "
+    "companion iOS app."
+)
+
 setupOptions = {
-    "name": meta.filename,
-    "author": meta.author,
-    "author_email": meta.author_email,
-    "description": meta.description,
-    "long_description": meta.long_description,
-    "version": meta.version,
-    "url": meta.url,
-    "license": meta.license,
+    "name": _meta["filename"],
+    "author": _meta["author"],
+    "author_email": _meta["author_email"],
+    "description": _meta["description"],
+    "long_description": long_description,
+    "version": _meta["version"],
+    "url": _meta["url"],
+    "license": _meta["license"],
     "install_requires": install_requires,
     "extras_require": extras_require,
     "tests_require": tests_requires,
-    "setup_requires": setup_requires,
     "packages": findPackages("taskcoachlib") + findPackages("buildlib"),
     "package_data": {
         "taskcoachlib.gui": ["icons/*.png"],
@@ -123,29 +178,25 @@ setupOptions = {
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "Topic :: Office/Business",
+        "Natural Language :: English",
+        "Natural Language :: Dutch",
+        "Natural Language :: French",
+        "Natural Language :: German",
+        "Natural Language :: Italian",
+        "Natural Language :: Polish",
+        "Natural Language :: Portuguese",
+        "Natural Language :: Russian",
+        "Natural Language :: Spanish",
     ],
 }
 
-# Add available translations:
-languages = sorted(
-    [
-        name
-        for name, (code, enabled) in list(meta.data.languages.items())
-        if enabled
-    ]
-)
-for language in languages:
-    setupOptions["classifiers"].append(
-        "Natural Language :: %s" % "English"
-        if languages == "English (US)"
-        else "Natural Language :: %s" % language
-    )
-
 system = platform.system()
-if system == "Linux":
+if system == "Linux" and distro is not None:
     # Add data files for Debian-based systems:
-    current_dist = [dist.lower() for dist in distro.id()]
+    current_dist = distro.id().lower()
     if "debian" in current_dist or "ubuntu" in current_dist:
         setupOptions["data_files"] = [
             (
