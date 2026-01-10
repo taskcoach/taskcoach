@@ -53,7 +53,7 @@ No manual steps required for users installing from packages.
 | Debian Bookworm | Most deps | pyparsing, watchdog (version issues) |
 | Debian Trixie/Ubuntu Noble | All dependencies | None |
 | Arch/Manjaro | All except pypubsub (AUR), squaremap | squaremap |
-| Fedora 39/40 | Most deps | squaremap, pyparsing (version issues) |
+| Fedora | Most deps | squaremap, pyparsing (version issues) |
 
 ### How setup.py Works
 
@@ -107,7 +107,6 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | Ubuntu 24.04 Noble | ubuntu24 | 3.12 | 4.2.1 | `setup_ubuntu2404_noble.sh` | `build-deb.yml` | Distro deps sufficient |
 | Arch Linux | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap; pypubsub from AUR |
 | Manjaro | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap; pypubsub from AUR |
-| Fedora 39 | fedora39 | 3.12 | 4.2.1 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap, pyparsing |
 | Fedora 40 | fedora40 | 3.12 | 4.2.1 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap, pyparsing |
 | **AppImage** | appimage | **3.11** | **4.2.4** | — | `build-appimage.yml` | Bundles Python + all deps |
 | **Windows** | windows | **3.11** | **4.2.x** | — | `build-windows.yml` | Python embed + Inno Setup |
@@ -732,8 +731,9 @@ squaremap           # Hierarchical data visualization
 
 | Distro | Python | Notes |
 |--------|--------|-------|
-| Fedora 39 | 3.12 | Current stable release |
 | Fedora 40 | 3.12 | Current stable release |
+
+**Fedora 39 (disabled):** Fedora 39 and 40 builds are identical (same dependencies, same spec file). The noarch RPM built on Fedora 40 works on both. To reactivate Fedora 39 builds, uncomment the matrix entry in `.github/workflows/build-rpm.yml`.
 
 **Spec file approach:** We use `%py3_build` and `%py3_install` macros. While Fedora's newest guidelines prefer `%pyproject_wheel`/`%pyproject_install`, the older macros provide broader compatibility.
 
@@ -750,7 +750,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - distro: fedora:39
           - distro: fedora:40
     runs-on: ubuntu-latest
     container: ${{ matrix.distro }}
@@ -760,7 +759,7 @@ jobs:
 ```
 
 Features:
-- Builds on Fedora 39 and Fedora 40
+- Builds on Fedora 40 (noarch RPM works on Fedora 39 too)
 - Tests installation on clean containers
 - Uploads packages as artifacts
 - Creates GitHub releases on version tags
@@ -855,7 +854,7 @@ TaskCoach.AppDir/
 
 `.github/workflows/build-appimage.yml`
 
-Triggers on push to main/master, version tags, and PRs. Tests on Debian Bookworm, Ubuntu 22.04/24.04, and Fedora 39.
+Triggers on push to main/master, version tags, and PRs. Tests on Debian Bookworm, Ubuntu 22.04/24.04, and Fedora 40.
 
 #### Local Build
 

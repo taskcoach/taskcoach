@@ -25,10 +25,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - distro: fedora:39
-            name: Fedora 39
-            os: fedora
-            osver: "39"
+          # Fedora 39 and 40 builds are identical (same deps, same spec file).
+          # Building only on Fedora 40; the noarch RPM works on both.
+          # DISABLED: Uncomment to build on Fedora 39 separately if needed.
+          # - distro: fedora:39
+          #   name: Fedora 39
+          #   os: fedora
+          #   osver: "39"
           - distro: fedora:40
             name: Fedora 40
             os: fedora
@@ -158,15 +161,16 @@ jobs:
     name: Test RPM on ${{ matrix.name }}
     needs: build-rpm
     runs-on: ubuntu-latest
-    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
         include:
-          - distro: fedora:39
-            name: Fedora 39
-            os: fedora
-            osver: "39"
+          # Test only on Fedora 40 (matches build matrix)
+          # DISABLED: Uncomment to test on Fedora 39 separately if needed.
+          # - distro: fedora:39
+          #   name: Fedora 39
+          #   os: fedora
+          #   osver: "39"
           - distro: fedora:40
             name: Fedora 40
             os: fedora
