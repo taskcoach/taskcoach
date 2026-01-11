@@ -13,43 +13,50 @@ On Wayland, clicking the search control's magnifier dropdown button causes the m
 
 ## Root Cause
 
-Wayland does not support global coordinates. Popup menus must be positioned relative to their transient parent window. When `PopupMenu()` is called on a widget nested inside containers (panels, sizers with spacers), the transient parent relationship is established incorrectly, causing coordinates to be relative to a parent container rather than the widget itself.
+Wayland does not support global coordinates. Popup menus are positioned by the Wayland compositor relative to a **transient parent window**. When `PopupMenu()` is called on a widget nested inside containers (toolbars, panels with sizers/spacers), Wayland may use the wrong ancestor as the transient parent, causing the popup to appear misaligned.
 
 From [KDE Wayland Porting Notes](https://community.kde.org/Guidelines_and_HOWTOs/Wayland_Porting_Notes):
 > "Popup menus will be misplaced on Wayland because the compositor needs to know how to relate the menu's window with the main window of the application."
 
-## Solution
+## What is a Transient Parent?
 
-Wrap the SearchCtrl in a tight-fitting container panel and call `PopupMenu()` on the container:
+On Wayland, every popup window must declare which window it belongs to (its "transient parent"). The compositor positions the popup relative to this parent. Unlike X11, there are no global screen coordinates - the compositor handles all positioning.
+
+When you call `widget.PopupMenu(menu)`, wxWidgets/GTK tells Wayland "this popup belongs to `widget`". If `widget` is deeply nested in a container hierarchy, Wayland may not establish the relationship correctly.
+
+## Solution: Wrap in a Tight-Fitting Panel
+
+Wrap the SearchCtrl in a `wx.Panel` that fits exactly around it. Call `PopupMenu()` on this Panel wrapper:
 
 ```python
-class SearchCtrlContainer(wx.Panel):
-    """SearchCtrl in tight-fitting panel for correct popup positioning on Wayland."""
+class SearchCtrl(wx.Panel):
+    """SearchCtrl wrapped in tight-fitting Panel for Wayland compatibility."""
 
     def __init__(self, parent, **kwargs):
         super().__init__(parent)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.search = wx.SearchCtrl(self, size=kwargs.get('size', (200, -1)))
-        # ... setup menu ...
-        sizer.Add(self.search, 1, wx.EXPAND)
+        self._inner = wx.SearchCtrl(self, ...)
+        sizer.Add(self._inner, 0, wx.EXPAND)
         self.SetSizer(sizer)
-        self.search.Bind(wx.EVT_SEARCHCTRL_SEARCH_BTN, self._on_menu_btn)
+        self._inner.Bind(wx.EVT_SEARCHCTRL_SEARCH_BTN, self._on_menu_btn)
 
     def _on_menu_btn(self, event):
-        menu = self.search.GetMenu()
+        menu = self._inner.GetMenu()
         if menu:
-            height = self.GetSize().GetHeight()
-            self.PopupMenu(menu, wx.Point(0, height))
+            self.PopupMenu(menu)  # Position argument is optional
 ```
 
 **Why this works:**
-1. Container fits SearchCtrl exactly, so (0,0) of container = (0,0) of SearchCtrl
-2. `container.PopupMenu(menu, (0, height))` establishes correct transient parent
-3. Coordinates are now relative to the container origin, which aligns with the SearchCtrl
+1. The Panel is a distinct window that fits tightly around the SearchCtrl
+2. Calling `panel.PopupMenu(menu)` establishes the Panel as the transient parent
+3. Wayland positions the popup relative to the Panel, which aligns with the SearchCtrl
+4. **Position coordinates are irrelevant** - the compositor handles placement
+
+**Key insight:** The position argument to `PopupMenu()` doesn't matter on Wayland. What matters is WHICH window you call `PopupMenu()` on. That window becomes the transient parent.
 
 ## Code Location
 
-- `taskcoachlib/widgets/searchctrl.py` - SearchCtrl.PopupMenu() method
+- `taskcoachlib/widgets/searchctrl.py` - SearchCtrl is now a `wx.Panel` wrapping `_SearchCtrlInner`
 
 ## Test Script
 
@@ -57,7 +64,7 @@ class SearchCtrlContainer(wx.Panel):
 python3 bugs/issue_159_test_search_dropdown.py
 ```
 
-The "Tight container (0,h)" test demonstrates the working solution.
+Tests confirm: All Panel wrapper variants work (with or without position), all non-Panel approaches fail.
 
 ## References
 
