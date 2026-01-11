@@ -100,19 +100,17 @@ class _SearchCtrlInner(tooltip.ToolTipMixin, wx.SearchCtrl):
     def _onSearchButton(self, event):  # pylint: disable=W0613
         """Handle search dropdown button click with Wayland-compatible positioning.
 
-        On Wayland, popup menus must be positioned relative to their transient parent.
-        We call PopupMenu on the wrapper Panel using our position within the Panel
-        to handle cases where the Panel might be larger than us.
+        On Wayland, popup menus position relative to their transient parent.
+        The wrapper Panel fits tightly around this SearchCtrl, so calling
+        PopupMenu on the Panel at (0, height) positions the menu correctly.
 
         See bugs/ISSUE_159_SEARCH_DROPDOWN_POSITION.md for details.
         """
         self.HideTip()
         menu = self.GetMenu()
         if menu:
-            # Use our position within the wrapper to handle any size differences
-            pos = self.GetPosition()
-            height = self.GetSize().GetHeight()
-            self.__wrapper.PopupMenu(menu, wx.Point(pos.x, pos.y + height))
+            height = self.__wrapper.GetSize().GetHeight()
+            self.__wrapper.PopupMenu(menu, wx.Point(0, height))
         # Don't Skip - we handle the menu ourselves
 
     def bindEventHandlers(self):
