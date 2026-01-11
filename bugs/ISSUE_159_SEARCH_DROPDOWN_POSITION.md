@@ -66,6 +66,10 @@ python3 bugs/issue_159_test_search_dropdown.py
 
 Tests confirm: All Panel wrapper variants work (with or without position), all non-Panel approaches fail.
 
+## Known Limitation
+
+When the search box is near the screen edge, the popup menu may flip to the opposite side instead of sliding minimally to fit. See [Issue #173](https://github.com/taskcoach/taskcoach/issues/173) for details.
+
 ## References
 
 - [KDE Wayland Porting Notes](https://community.kde.org/Guidelines_and_HOWTOs/Wayland_Porting_Notes) - transient parent requirements
