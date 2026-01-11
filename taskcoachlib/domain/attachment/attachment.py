@@ -135,7 +135,10 @@ class Attachment(base.Object, NoteOwner):
         self.setLocation(state["location"])
 
     def __getcopystate__(self):
-        return self.__getstate__()
+        # Don't include id and creationDateTime - copies should get new ones
+        state = super().__getcopystate__()
+        state.update(dict(location=self.location()))
+        return state
 
     def __unicode__(self):
         return self.subject()

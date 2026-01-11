@@ -29,13 +29,14 @@ class BaseEffort(object):
         super().__init__(*args, **kwargs)
 
     def task(self):
+        # Access _task directly to avoid potential attribute shadowing
         return None if self._task is None else self._task()
 
     def parent(self):
         # Efforts don't have real parents since they are not composite.
         # However, we pretend the parent of an effort is its task for the
         # benefit of the search filter.
-        return self.task()
+        return None if self._task is None else self._task()
 
     def getStart(self):
         return self._start
@@ -44,19 +45,24 @@ class BaseEffort(object):
         return self._stop
 
     def subject(self, *args, **kwargs):
-        return self.task().subject(*args, **kwargs)
+        task = self._task() if self._task else None
+        return task.subject(*args, **kwargs) if task else ""
 
     def categories(self, *args, **kwargs):
-        return self.task().categories(*args, **kwargs)
+        task = self._task() if self._task else None
+        return task.categories(*args, **kwargs) if task else set()
 
     def foregroundColor(self, recursive=False):
-        return self.task().foregroundColor(recursive)
+        task = self._task() if self._task else None
+        return task.foregroundColor(recursive) if task else None
 
     def backgroundColor(self, recursive=False):
-        return self.task().backgroundColor(recursive)
+        task = self._task() if self._task else None
+        return task.backgroundColor(recursive) if task else None
 
     def font(self, recursive=False):
-        return self.task().font(recursive)
+        task = self._task() if self._task else None
+        return task.font(recursive) if task else None
 
     def duration(self, recursive=False):
         raise NotImplementedError  # pragma: no cover

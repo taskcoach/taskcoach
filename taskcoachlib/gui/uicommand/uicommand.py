@@ -775,9 +775,9 @@ class EditCopy(mixin_uicommand.NeedsSelectionMixin, ViewerCommand):
             return super().enabled(event)
 
 
-class EditPaste(base_uicommand.UICommand):
+class EditPaste(ViewerCommand):
     """Action for pasting the item(s) in the clipboard into the current
-    taskfile."""
+    viewer's presentation."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(
@@ -794,8 +794,29 @@ class EditPaste(base_uicommand.UICommand):
         if isinstance(windowWithFocus, wx.TextCtrl):
             windowWithFocus.Paste()
         else:
-            pasteCommand = command.PasteCommand()
-            pasteCommand.do()
+            # Use viewer's pasteItemCommand if available
+            viewer = self.viewer
+            # If no viewer set, try to find one from the focused window hierarchy
+            if viewer is None:
+                viewer = self._findViewerFromFocus(windowWithFocus)
+            if viewer is not None:
+                pasteCommand = viewer.pasteItemCommand()
+            else:
+                pasteCommand = command.PasteCommand()
+            if pasteCommand:
+                pasteCommand.do()
+
+    def _findViewerFromFocus(self, window):
+        """Walk up the window hierarchy to find a viewer with pasteItemCommand.
+
+        This is needed when paste is triggered from menus that don't have
+        a viewer reference, but the focused window is inside a viewer.
+        """
+        while window is not None:
+            if hasattr(window, 'pasteItemCommand'):
+                return window
+            window = window.GetParent()
+        return None
 
     def enabled(self, event):
         windowWithFocus = wx.Window.FindFocus()
@@ -821,10 +842,32 @@ class EditPasteAsSubItem(
         )
 
     def doCommand(self, event):
-        pasteCommand = command.PasteAsSubItemCommand(
-            items=self.viewer.curselection()
-        )
-        pasteCommand.do()
+        # Use viewer's pasteAsSubItemCommand if available
+        viewer = self.viewer
+        # If no viewer set, try to find one from the focused window hierarchy
+        if viewer is None:
+            windowWithFocus = wx.Window.FindFocus()
+            viewer = self._findViewerFromFocus(windowWithFocus)
+        if viewer is not None and hasattr(viewer, 'pasteAsSubItemCommand'):
+            pasteCommand = viewer.pasteAsSubItemCommand()
+        else:
+            pasteCommand = command.PasteAsSubItemCommand(
+                items=self.viewer.curselection() if self.viewer else []
+            )
+        if pasteCommand:
+            pasteCommand.do()
+
+    def _findViewerFromFocus(self, window):
+        """Walk up the window hierarchy to find a viewer with pasteAsSubItemCommand.
+
+        This is needed when paste-as-subitem is triggered from menus that don't
+        have a viewer reference, but the focused window is inside a viewer.
+        """
+        while window is not None:
+            if hasattr(window, 'pasteAsSubItemCommand'):
+                return window
+            window = window.GetParent()
+        return None
 
     def enabled(self, event):
         if not (super().enabled(event) and command.Clipboard()):

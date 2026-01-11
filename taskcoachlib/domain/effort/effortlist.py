@@ -121,7 +121,10 @@ class EffortList(
         Since that wouldn't work we remove the efforts from the tasks by
         hand."""
         for effort in efforts:
-            effort.task().removeEffort(effort)
+            # Access _task directly to avoid potential attribute shadowing
+            task = effort._task() if effort._task else None
+            if task:
+                task.removeEffort(effort)
 
     def extend(self, efforts):  # pylint: disable=W0221
         """We override ObservableListObserver.extend because the default
@@ -130,7 +133,11 @@ class EffortList(
         Since that wouldn't work we add the efforts to the tasks by
         hand."""
         for effort in efforts:
-            effort.task().addEffort(effort)
+            # Access _task directly to avoid potential attribute shadowing
+            # that can occur during copy/paste operations
+            task = effort._task() if effort._task else None
+            if task:
+                task.addEffort(effort)
 
     @classmethod
     def sortEventType(class_):

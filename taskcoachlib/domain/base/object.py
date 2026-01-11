@@ -263,7 +263,8 @@ class Object(SynchronizedObject):
         return state
 
     def copy(self):
-        return self.__class__(**self.__getcopystate__())
+        state = self.__getcopystate__()
+        return self.__class__(**state)
 
     @classmethod
     def monitoredAttributes(class_):

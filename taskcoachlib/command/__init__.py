@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from .taskCommands import *
 from .effortCommands import (
     NewEffortCommand,
+    AddEffortCommand,
     DeleteEffortCommand,
     EditTaskCommand,
     EditEffortStartDateTimeCommand,

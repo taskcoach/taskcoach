@@ -69,6 +69,58 @@ class NewEffortCommand(base.BaseCommand):
     redo_command = do_command
 
 
+class AddEffortCommand(base.BaseCommand):
+    """Command to add efforts to a task.
+
+    Used primarily for paste operations where efforts are copied from one
+    task and pasted to another. Updates the effort's task reference and
+    adds it to the target task's effort list.
+    """
+    plural_name = _("Add efforts")
+    singular_name = _('Add effort to "%s"')
+
+    def __init__(self, *args, **kwargs):
+        self.__efforts = kwargs.pop("efforts", [])
+        self.__tasks = []
+        self.__old_task_refs = []
+        super().__init__(*args, **kwargs)
+        self.__tasks = self.items
+        # Store original task references for undo support
+        self.__old_task_refs = [eff.task() for eff in self.__efforts]
+        self.items = self.__efforts
+        self.save_modification_datetimes()
+
+    def modified_items(self):
+        # Filter out None values from old task refs
+        return self.__tasks + [t for t in self.__old_task_refs if t is not None]
+
+    def name_subject(self, anEffort):
+        return self.__tasks[0].subject() if self.__tasks else ""
+
+    def do_command(self):
+        super().do_command()
+        if not self.__tasks:
+            return
+        target_task = self.__tasks[0]
+        for eff in self.__efforts:
+            eff.setTask(target_task)
+            target_task.addEffort(eff)
+
+    def undo_command(self):
+        super().undo_command()
+        if not self.__tasks:
+            return
+        target_task = self.__tasks[0]
+        for eff, old_task in zip(self.__efforts, self.__old_task_refs):
+            target_task.removeEffort(eff)
+            eff.setTask(old_task)
+            if old_task:
+                old_task.addEffort(eff)
+
+    def redo_command(self):
+        self.do_command()
+
+
 class DeleteEffortCommand(base.DeleteCommand):
     plural_name = _("Delete efforts")
     singular_name = _('Delete effort "%s"')

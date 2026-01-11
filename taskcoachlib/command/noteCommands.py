@@ -93,16 +93,28 @@ class DragAndDropNoteCommand(base.OrderingDragAndDropCommand):
 
 
 class AddNoteCommand(base.BaseCommand):
+    """Command to add notes to an owner (task, category, etc.).
+
+    If the 'notes' keyword argument is provided, those notes are added.
+    Otherwise, new empty notes are created. This allows the command to be
+    used both for creating new notes and for paste operations.
+    """
     plural_name = _("Add note")
     singular_name = _('Add note to "%s"')
 
     def __init__(self, *args, **kwargs):
         self.owners = []
+        self.__notes = kwargs.pop(
+            "notes",
+            None
+        )
         super().__init__(*args, **kwargs)
         self.owners = self.items
-        self.items = self.__notes = [
-            note.Note(subject=_("New note")) for dummy in self.items
-        ]
+        if self.__notes is None:
+            self.__notes = [
+                note.Note(subject=_("New note")) for dummy in self.items
+            ]
+        self.items = self.__notes
         self.save_modification_datetimes()
 
     def modified_items(self):

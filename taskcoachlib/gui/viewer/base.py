@@ -627,7 +627,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         """UI commands for manipulating the clipboard (cut, copy, paste)."""
         cutCommand = uicommand.EditCut(viewer=self)
         copyCommand = uicommand.EditCopy(viewer=self)
-        pasteCommand = uicommand.EditPaste()
+        pasteCommand = uicommand.EditPaste(viewer=self)
         cutCommand.bind(self, wx.ID_CUT)
         copyCommand.bind(self, wx.ID_COPY)
         pasteCommand.bind(self, wx.ID_PASTE)
@@ -717,6 +717,14 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
 
     def cutItemCommandClass(self):
         return command.CutCommand
+
+    def pasteItemCommand(self):
+        return self.pasteItemCommandClass()(
+            self.presentation()
+        )
+
+    def pasteItemCommandClass(self):
+        return command.PasteCommand
 
     def onEditSubject(self, item, newValue):
         command.EditSubjectCommand(items=[item], newValue=newValue).do()

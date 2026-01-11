@@ -1112,6 +1112,30 @@ class LocalAttachmentViewer(viewer.AttachmentViewer):  # pylint: disable=W0223
             None, [self.attachmentOwner], attachments=self.curselection()
         )
 
+    def pasteItemCommand(self):
+        """Paste attachments from clipboard to this task's attachments.
+
+        Validates that clipboard contains only attachments and shows an
+        error dialog if a type mismatch is detected.
+        """
+        from taskcoachlib.command.clipboard import Clipboard
+        from taskcoachlib.domain import attachment
+        items, source = Clipboard().get()
+        # Validate clipboard contains only attachments
+        for item in items:
+            if not isinstance(item, attachment.Attachment):
+                import wx
+                wx.MessageBox(
+                    _("Cannot paste: clipboard contains %s but this is an Attachments view. Only Attachments can be pasted here.") % type(item).__name__,
+                    _("Paste Error"),
+                    wx.OK | wx.ICON_ERROR
+                )
+                return None
+        copies = [item.copy() for item in items]
+        return command.AddAttachmentCommand(
+            None, [self.attachmentOwner], attachments=copies
+        )
+
 
 class AttachmentsPage(PageWithViewer):
     pageName = "attachments"
@@ -1162,6 +1186,80 @@ class LocalNoteViewer(viewer.BaseNoteViewer):  # pylint: disable=W0223
     def deleteItemCommand(self):
         return command.RemoveNoteCommand(
             None, [self.__note_owner], notes=self.curselection()
+        )
+
+    def _expandNoteAndChildren(self, aNote):
+        """Recursively expand a note and all its children in this viewer."""
+        context = self.settingsSection()
+        aNote.expand(True, context=context, notify=False)
+        for child in aNote.children():
+            self._expandNoteAndChildren(child)
+
+    def pasteItemCommand(self):
+        """Paste notes from clipboard to this task's notes as top-level notes.
+
+        Validates that clipboard contains only notes and shows an
+        error dialog if a type mismatch is detected. Clears parent reference
+        so notes always become top-level, even if copied from a nested location.
+        """
+        from taskcoachlib.command.clipboard import Clipboard
+        from taskcoachlib.domain import note
+        items, source = Clipboard().get()
+        # Validate clipboard contains only notes
+        for item in items:
+            if not isinstance(item, note.Note):
+                import wx
+                wx.MessageBox(
+                    _("Cannot paste: clipboard contains %s but this is a Notes view. Only Notes can be pasted here.") % type(item).__name__,
+                    _("Paste Error"),
+                    wx.OK | wx.ICON_ERROR
+                )
+                return None
+        copies = [item.copy() for item in items]
+        # Clear parent so notes become top-level (even if source was nested)
+        # and expand all pasted notes so children are visible
+        for n in copies:
+            n.setParent(None)
+            self._expandNoteAndChildren(n)
+        return command.AddNoteCommand(
+            None, [self.__note_owner], notes=copies
+        )
+
+    def pasteAsSubItemCommand(self):
+        """Paste notes as subnotes of the selected note.
+
+        Uses AddSubNoteCommand which properly adds notes as children only,
+        not to the owner's notes list (which would cause duplicates).
+        """
+        selected = self.curselection()
+        if not selected:
+            return None
+        parent_note = selected[0]
+        from taskcoachlib.command.clipboard import Clipboard
+        from taskcoachlib.domain import note
+        items, source = Clipboard().get()
+        # Validate clipboard contains only notes
+        for item in items:
+            if not isinstance(item, note.Note):
+                import wx
+                wx.MessageBox(
+                    _("Cannot paste: clipboard contains %s but this is a Notes view. Only Notes can be pasted here.") % type(item).__name__,
+                    _("Paste Error"),
+                    wx.OK | wx.ICON_ERROR
+                )
+                return None
+        copies = [item.copy() for item in items]
+        # Clear parent references - AddSubNoteCommand will set correct parent via addChild
+        # and expand all pasted notes so children are visible
+        for n in copies:
+            n.setParent(None)
+            self._expandNoteAndChildren(n)
+        # Also expand the parent note so the pasted subnotes are visible
+        parent_note.expand(True, context=self.settingsSection(), notify=False)
+        # Repeat parent_note for each copy so zip in AddSubNoteCommand pairs correctly
+        parents = [parent_note] * len(copies)
+        return command.AddSubNoteCommand(
+            None, parents, owner=self.__note_owner, notes=copies
         )
 
 

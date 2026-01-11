@@ -440,7 +440,7 @@ class EditMenu(Menu):
             None,
             uicommand.EditCut(viewer=viewerContainer, id=wx.ID_CUT),
             uicommand.EditCopy(viewer=viewerContainer, id=wx.ID_COPY),
-            uicommand.EditPaste(),
+            uicommand.EditPaste(viewer=viewerContainer),
             uicommand.EditPasteAsSubItem(viewer=viewerContainer),
             None,
             uicommand.Edit(viewer=viewerContainer, id=wx.ID_EDIT),
@@ -1017,7 +1017,7 @@ class TaskPopupMenu(Menu):
         self.appendUICommands(
             uicommand.EditCut(viewer=taskViewer),
             uicommand.EditCopy(viewer=taskViewer),
-            uicommand.EditPaste(),
+            uicommand.EditPaste(viewer=taskViewer),
             uicommand.EditPasteAsSubItem(viewer=taskViewer),
             None,
             uicommand.Edit(viewer=taskViewer),
@@ -1074,7 +1074,7 @@ class EffortPopupMenu(Menu):
         self.appendUICommands(
             uicommand.EditCut(viewer=effortViewer),
             uicommand.EditCopy(viewer=effortViewer),
-            uicommand.EditPaste(),
+            uicommand.EditPaste(viewer=effortViewer),
             None,
             uicommand.Edit(viewer=effortViewer),
             uicommand.Delete(viewer=effortViewer),
@@ -1105,7 +1105,7 @@ class CategoryPopupMenu(Menu):
         self.appendUICommands(
             uicommand.EditCut(viewer=categoryViewer),
             uicommand.EditCopy(viewer=categoryViewer),
-            uicommand.EditPaste(),
+            uicommand.EditPaste(viewer=categoryViewer),
             uicommand.EditPasteAsSubItem(viewer=categoryViewer),
             None,
             uicommand.Edit(viewer=categoryViewer),
@@ -1148,7 +1148,7 @@ class NotePopupMenu(Menu):
         self.appendUICommands(
             uicommand.EditCut(viewer=noteViewer),
             uicommand.EditCopy(viewer=noteViewer),
-            uicommand.EditPaste(),
+            uicommand.EditPaste(viewer=noteViewer),
             uicommand.EditPasteAsSubItem(viewer=noteViewer),
             None,
             uicommand.Edit(viewer=noteViewer),
@@ -1228,7 +1228,7 @@ class AttachmentPopupMenu(Menu):
         self.appendUICommands(
             uicommand.EditCut(viewer=attachmentViewer),
             uicommand.EditCopy(viewer=attachmentViewer),
-            uicommand.EditPaste(),
+            uicommand.EditPaste(viewer=attachmentViewer),
             None,
             uicommand.Edit(viewer=attachmentViewer),
             uicommand.Delete(viewer=attachmentViewer),

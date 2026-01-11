@@ -298,6 +298,14 @@ class CutCommand(CutCommandMixin, DeleteCommand):
 
 
 class PasteCommand(BaseCommand, SaveStateMixin):
+    """Command to paste items from the clipboard.
+
+    When a destination container is provided via the constructor, items are
+    pasted into that container. Otherwise, items are pasted back into the
+    clipboard's source container. This allows viewers to specify a different
+    destination for paste operations, such as when pasting between tasks
+    in the task editor dialog.
+    """
     plural_name = _("Paste")
     singular_name = _('Paste "%s"')
 
@@ -332,7 +340,9 @@ class PasteCommand(BaseCommand, SaveStateMixin):
 
     def getItemsToPaste(self):
         items, source = Clipboard().get()
-        return [item.copy() for item in items], source
+        # Use provided destination container, or fall back to clipboard's source container
+        target = self.list if self.list is not None else source
+        return [item.copy() for item in items], target
 
 
 class PasteAsSubItemCommand(PasteCommand, CompositeMixin):
