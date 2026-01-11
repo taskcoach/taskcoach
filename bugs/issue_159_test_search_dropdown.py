@@ -83,12 +83,7 @@ class ParentOffsetSearchCtrl(wx.SearchCtrl):
 
 
 class PanelWrappedSearchCtrl(wx.Panel):
-    """SearchCtrl wrapped in tight-fitting Panel - popup on container.
-
-    This is the "modern best practice" approach for Wayland.
-    The container panel fits exactly around the SearchCtrl, so
-    calling PopupMenu on the panel at (0, height) positions correctly.
-    """
+    """SearchCtrl wrapped in tight-fitting Panel - popup on container at (0, height)."""
 
     def __init__(self, parent, **kwargs):
         super().__init__(parent)
@@ -112,16 +107,69 @@ class PanelWrappedSearchCtrl(wx.Panel):
             height = self.GetSize().GetHeight()
             self.PopupMenu(menu, wx.Point(0, height))
 
-    # Delegate common methods to the inner search control
     def SetMinSize(self, size):
         self.search.SetMinSize(size)
         super().SetMinSize(size)
 
-    def GetValue(self):
-        return self.search.GetValue()
 
-    def SetValue(self, value):
-        self.search.SetValue(value)
+class PanelNoPositionSearchCtrl(wx.Panel):
+    """SearchCtrl wrapped in Panel - popup with NO position specified."""
+
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.search = wx.SearchCtrl(self, size=kwargs.get('size', (150, -1)))
+        self._setup_menu()
+        sizer.Add(self.search, 1, wx.EXPAND)
+        self.SetSizer(sizer)
+        self.search.Bind(wx.EVT_SEARCHCTRL_SEARCH_BTN, self._on_menu_btn)
+
+    def _setup_menu(self):
+        menu = wx.Menu()
+        menu.AppendCheckItem(wx.ID_ANY, "Match case")
+        menu.AppendCheckItem(wx.ID_ANY, "Include sub items")
+        menu.AppendCheckItem(wx.ID_ANY, "Search description")
+        self.search.SetMenu(menu)
+
+    def _on_menu_btn(self, event):
+        menu = self.search.GetMenu()
+        if menu:
+            # No position - let system decide
+            self.PopupMenu(menu)
+
+    def SetMinSize(self, size):
+        self.search.SetMinSize(size)
+        super().SetMinSize(size)
+
+
+class PanelZeroPositionSearchCtrl(wx.Panel):
+    """SearchCtrl wrapped in Panel - popup at (0, 0)."""
+
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.search = wx.SearchCtrl(self, size=kwargs.get('size', (150, -1)))
+        self._setup_menu()
+        sizer.Add(self.search, 1, wx.EXPAND)
+        self.SetSizer(sizer)
+        self.search.Bind(wx.EVT_SEARCHCTRL_SEARCH_BTN, self._on_menu_btn)
+
+    def _setup_menu(self):
+        menu = wx.Menu()
+        menu.AppendCheckItem(wx.ID_ANY, "Match case")
+        menu.AppendCheckItem(wx.ID_ANY, "Include sub items")
+        menu.AppendCheckItem(wx.ID_ANY, "Search description")
+        self.search.SetMenu(menu)
+
+    def _on_menu_btn(self, event):
+        menu = self.search.GetMenu()
+        if menu:
+            # Position at origin
+            self.PopupMenu(menu, wx.Point(0, 0))
+
+    def SetMinSize(self, size):
+        self.search.SetMinSize(size)
+        super().SetMinSize(size)
 
 
 # =============================================================================
@@ -189,7 +237,41 @@ class TestFrame(wx.Frame):
         toolbar3.Realize()
 
         main_sizer.Add(toolbar3, 0, wx.EXPAND)
-        main_sizer.Add(wx.StaticText(main_panel, label="  ^ Panel wrapper - SearchCtrl inside tight Panel"), 0, wx.LEFT, 10)
+        main_sizer.Add(wx.StaticText(main_panel, label="  ^ Panel (0, height) - popup at bottom of panel"), 0, wx.LEFT, 10)
+        main_sizer.Add(wx.StaticLine(main_panel), 0, wx.EXPAND | wx.ALL, 5)
+
+        # =================================================================
+        # TOOLBAR 4: Panel wrapper - NO position specified
+        # =================================================================
+        toolbar4 = TaskCoachToolBar(main_panel)
+        toolbar4.SetToolBitmapSize((16, 16))
+        toolbar4.AddStretchSpacer()
+        toolbar4.AddLabel(wx.ID_ANY, "Panel (no pos):", width=90)
+
+        self.no_pos_search = PanelNoPositionSearchCtrl(toolbar4, size=(150, -1))
+        self.no_pos_search.SetMinSize((150, -1))
+        toolbar4.AddControl(self.no_pos_search)
+        toolbar4.Realize()
+
+        main_sizer.Add(toolbar4, 0, wx.EXPAND)
+        main_sizer.Add(wx.StaticText(main_panel, label="  ^ Panel (no position) - let system decide"), 0, wx.LEFT, 10)
+        main_sizer.Add(wx.StaticLine(main_panel), 0, wx.EXPAND | wx.ALL, 5)
+
+        # =================================================================
+        # TOOLBAR 5: Panel wrapper - position (0, 0)
+        # =================================================================
+        toolbar5 = TaskCoachToolBar(main_panel)
+        toolbar5.SetToolBitmapSize((16, 16))
+        toolbar5.AddStretchSpacer()
+        toolbar5.AddLabel(wx.ID_ANY, "Panel (0,0):", width=75)
+
+        self.zero_pos_search = PanelZeroPositionSearchCtrl(toolbar5, size=(150, -1))
+        self.zero_pos_search.SetMinSize((150, -1))
+        toolbar5.AddControl(self.zero_pos_search)
+        toolbar5.Realize()
+
+        main_sizer.Add(toolbar5, 0, wx.EXPAND)
+        main_sizer.Add(wx.StaticText(main_panel, label="  ^ Panel (0, 0) - popup at top-left of panel"), 0, wx.LEFT, 10)
         main_sizer.Add(wx.StaticLine(main_panel), 0, wx.EXPAND | wx.ALL, 5)
 
         # =================================================================
@@ -211,7 +293,7 @@ class TestFrame(wx.Frame):
             0, wx.LEFT, 10)
 
         # Store toolbars for testing
-        self._toolbars = [toolbar1, toolbar2, toolbar3]
+        self._toolbars = [toolbar1, toolbar2, toolbar3, toolbar4, toolbar5]
 
         # =================================================================
         # PLATFORM INFO
