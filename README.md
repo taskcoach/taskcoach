@@ -10,15 +10,15 @@ Download the package for your system from the [latest release](https://github.co
 
 | Platform | Package |
 |----------|---------|
-| Debian 12 (Bookworm) | `taskcoach_2.0.1.7_debian-12-bookworm.deb` |
-| Debian 13 (Trixie) | `taskcoach_2.0.1.7_debian-13-trixie.deb` |
-| Debian Sid | `taskcoach_2.0.1.7_debian-sid.deb` |
-| Ubuntu 22.04 (Jammy) | `taskcoach_2.0.1.7_ubuntu-22.04-jammy.deb` |
-| Ubuntu 24.04 (Noble) | `taskcoach_2.0.1.7_ubuntu-24.04-noble.deb` |
+| Debian 12 (Bookworm) | `taskcoach_2.0.1.8_debian-12-bookworm.deb` |
+| Debian 13 (Trixie) | `taskcoach_2.0.1.8_debian-13-trixie.deb` |
+| Debian Sid | `taskcoach_2.0.1.8_debian-sid.deb` |
+| Ubuntu 22.04 (Jammy) | `taskcoach_2.0.1.8_ubuntu-22.04-jammy.deb` |
+| Ubuntu 24.04 (Noble) | `taskcoach_2.0.1.8_ubuntu-24.04-noble.deb` |
 | Linux Mint | Use Ubuntu `.deb` (Mint is Ubuntu-based) |
-| Arch Linux / Manjaro | `taskcoach-2.0.1.7-arch.pkg.tar.zst` |
-| Fedora 39/40 | `taskcoach-2.0.1.7-fedora40.noarch.rpm` |
-| Any Linux (x86_64) | `TaskCoach-2.0.1.7-x86_64.AppImage` |
+| Arch Linux / Manjaro | `taskcoach-2.0.1.8-arch.pkg.tar.zst` |
+| Fedora 39/40 | `taskcoach-2.0.1.8-fedora40.noarch.rpm` |
+| Any Linux (x86_64) | `TaskCoach-2.0.1.8-x86_64.AppImage` |
 
 After installing, Task Coach should be in normal system launchers (Applications → Office → Task Coach). For CLI, the launch command is `taskcoach.py`.
 
@@ -26,8 +26,8 @@ After installing, Task Coach should be in normal system launchers (Applications 
 
 ```bash
 cd ~/Downloads
-wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach_2.0.1.7_debian-13-trixie.deb
-sudo apt install ./taskcoach_2.0.1.7_debian-13-trixie.deb
+wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach_2.0.1.8_debian-13-trixie.deb
+sudo apt install ./taskcoach_2.0.1.8_debian-13-trixie.deb
 ```
 
 To uninstall:
@@ -40,8 +40,8 @@ sudo apt autoremove  # optional: remove unused dependencies
 
 ```bash
 cd ~/Downloads
-wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach-2.0.1.7-arch.pkg.tar.zst
-sudo pacman -U taskcoach-2.0.1.7-arch.pkg.tar.zst
+wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach-2.0.1.8-arch.pkg.tar.zst
+sudo pacman -U taskcoach-2.0.1.8-arch.pkg.tar.zst
 ```
 
 To uninstall:
@@ -54,8 +54,8 @@ sudo pacman -Qdtq | sudo pacman -Rs -  # optional: remove orphaned dependencies
 
 ```bash
 cd ~/Downloads
-wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach-2.0.1.7-fedora40.noarch.rpm
-sudo dnf install ./taskcoach-2.0.1.7-fedora40.noarch.rpm
+wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach-2.0.1.8-fedora40.noarch.rpm
+sudo dnf install ./taskcoach-2.0.1.8-fedora40.noarch.rpm
 ```
 
 To uninstall:
@@ -68,13 +68,13 @@ sudo dnf autoremove  # optional: remove unused dependencies
 
 ```bash
 cd ~/Downloads
-wget https://github.com/taskcoach/taskcoach/releases/latest/download/TaskCoach-2.0.1.7-x86_64.AppImage
-chmod +x TaskCoach-2.0.1.7-x86_64.AppImage
+wget https://github.com/taskcoach/taskcoach/releases/latest/download/TaskCoach-2.0.1.8-x86_64.AppImage
+chmod +x TaskCoach-2.0.1.8-x86_64.AppImage
 ```
 
 To launch the AppImage, open the file or run:
 ```
-./TaskCoach-2.0.1.7-x86_64.AppImage
+./TaskCoach-2.0.1.8-x86_64.AppImage
 ```
 
 To remove: simply delete the AppImage file.
