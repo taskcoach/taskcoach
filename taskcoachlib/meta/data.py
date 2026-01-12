@@ -26,7 +26,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # IMPORTANT: When releasing a new version:
 #   1. Increment patch below (and version if needed)
 #   2. Update release_day, release_month, release_year below
-#   3. Update changelogs (debian/changelog, build.in/fedora/taskcoach.spec)
+#   3. Update version numbers in README.md
+#   4. Update changelogs (debian/changelog, build.in/fedora/taskcoach.spec)
 #
 # The version is defined HERE in data.py as the single source of truth.
 # This ensures the version is always available since it's embedded in the
@@ -40,7 +41,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # =============================================================================
 
 version = "2.0.1"  # Major.Minor.Milestone
-patch = "9"  # Patch number - INCREMENT THIS for each release
+patch = "10"  # Patch number - INCREMENT THIS for each release
 version_full = f"{version}.{patch}"  # Full version: 2.0.1.9
 
 release_day = "12"  # Day of the release (1-31)

@@ -510,6 +510,35 @@ class DatesPage(Page):
             None if value == date.DateTime() else value
         )
 
+    def __bindDueDateFocus(self, widget):
+        """Bind focus and mouse events to widget and children to update relative choices.
+
+        This ensures the relative time picker uses the current planned start
+        value from the widget, even before commit_on_focus_loss commits.
+        Uses both focus and mouse-down events to catch all interaction paths.
+        """
+        widget.Bind(wx.EVT_SET_FOCUS, self.__onDueDateFocus)
+        widget.Bind(wx.EVT_LEFT_DOWN, self.__onDueDateMouseDown)
+        for child in widget.GetChildren():
+            self.__bindDueDateFocus(child)
+
+    def __onDueDateFocus(self, event):
+        """Update relative choices when due date entry gets focus."""
+        event.Skip()
+        self.__updateDueDateRelativeChoices()
+
+    def __onDueDateMouseDown(self, event):
+        """Update relative choices on mouse down before button click."""
+        event.Skip()
+        self.__updateDueDateRelativeChoices()
+
+    def __updateDueDateRelativeChoices(self):
+        """Update the due date relative choices with current planned start value."""
+        start = self._plannedStartDateTimeEntry.GetValue()
+        self._dueDateTimeEntry.SetRelativeChoicesStart(
+            start=None if start == date.DateTime() else start
+        )
+
     def addEntries(self):
         self.addDateEntries()
         self.addLine()
@@ -535,6 +564,9 @@ class DatesPage(Page):
         self._dueDateTimeEntry.Bind(
             sdtc.EVT_TIME_CHOICES_CHANGE, self.__onTimeChoicesChange
         )
+        # Update relative choices when due date or any child gets focus
+        # This ensures relative picker uses current planned start even before commit
+        self.__bindDueDateFocus(self._dueDateTimeEntry)
 
     def addDateEntry(self, label, taskMethodName):
         TaskMethodName = taskMethodName[0].capitalize() + taskMethodName[1:]
@@ -1813,6 +1845,33 @@ class EffortEditBook(Page):
     def __onChoicesChanged(self, event):
         self._settings.settext("feature", "sdtcspans_effort", event.GetValue())
 
+    def __bindFocusToUpdateRelativeChoices(self, widget):
+        """Bind focus and mouse events to widget and children to update relative choices.
+
+        This ensures the relative time picker uses the current start value
+        from the widget, even before commit_on_focus_loss commits the change.
+        Uses both focus and mouse-down events to catch all interaction paths.
+        """
+        widget.Bind(wx.EVT_SET_FOCUS, self.__onStopDateTimeFocus)
+        widget.Bind(wx.EVT_LEFT_DOWN, self.__onStopDateTimeMouseDown)
+        for child in widget.GetChildren():
+            self.__bindFocusToUpdateRelativeChoices(child)
+
+    def __onStopDateTimeFocus(self, event):
+        """Update relative choices when stop datetime entry gets focus."""
+        event.Skip()
+        self.__updateStopRelativeChoices()
+
+    def __onStopDateTimeMouseDown(self, event):
+        """Update relative choices on mouse down before button click."""
+        event.Skip()
+        self.__updateStopRelativeChoices()
+
+    def __updateStopRelativeChoices(self):
+        """Update the stop datetime relative choices with current start value."""
+        start_value = self._startDateTimeEntry.GetValue()
+        self._stopDateTimeEntry.SetRelativeChoicesStart(start=start_value)
+
     def __add_start_and_stop_entries(self):
         # pylint: disable=W0201,W0142
         # Using 4 columns: Label, Checkbox, DateTime, Button
@@ -1927,6 +1986,9 @@ class EffortEditBook(Page):
         stop_datetime_entry.Bind(
             sdtc.EVT_TIME_CHOICES_CHANGE, self.__onChoicesChanged
         )
+        # Update relative choices when stop datetime entry or any child gets focus
+        # This ensures relative picker uses current start value even before commit
+        self.__bindFocusToUpdateRelativeChoices(stop_datetime_entry)
         # Add warning message spanning full width
         self.addEntry(
             self._invalidPeriodMessage,
@@ -1936,8 +1998,14 @@ class EffortEditBook(Page):
     def __onStopCheckboxToggle(self, event):
         """Handle stop checkbox toggle - enable/disable datetime entry."""
         if self._stopCheckbox.GetValue():
-            # Checkbox checked - enable and set to now
-            new_value = date.DateTime.now()
+            # Checkbox checked - enable and set based on start time
+            # Get current start value from widget (may not be committed yet)
+            start_value = self._startDateTimeEntry.GetValue()
+            # Update relative choices to use current start value
+            self._stopDateTimeEntry.SetRelativeChoicesStart(start=start_value)
+            # Set stop to now, but ensure it's at least as late as start
+            now = date.DateTime.now()
+            new_value = start_value if start_value > now else now
             self._stopDateTimeEntry.SetValue(new_value)
             command.EditEffortStopDateTimeCommand(
                 None, self.items, newValue=new_value
