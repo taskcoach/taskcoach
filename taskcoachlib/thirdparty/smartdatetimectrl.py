@@ -357,9 +357,18 @@ class EntryChoiceSelectedEvent(FieldValueChangeEvent):
 
 
 class Entry(wx.Panel):
+    """Base class for date/time entry widgets with subfield navigation.
+
+    Handles keyboard navigation (Tab, Shift+Tab, arrow keys), popup management,
+    and focus tracking for composite entry fields like DateEntry and TimeEntry.
+    """
     MARGIN = 3
     formats = [AnyFormatCharacter]
     _rx_paste = re.compile(r"(?i)\d+|am|pm")
+
+    # Time thresholds for focus and popup behavior (in seconds)
+    FOCUS_DELAY = 0.05  # Minimum time before showing popup after focus
+    POPUP_TOGGLE_DELAY = 0.2  # Time window to detect click-to-close toggle
 
     def __init__(self, *args, **kwargs):
         fmt = kwargs.pop("format")
@@ -396,6 +405,9 @@ class Entry(wx.Panel):
         self.__namedFields = dict()
         self.__popup = None
         self.__focusStamp = time.time()
+        self.__returningFromPopup = False
+        self.__popupDismissedWidget = None
+        self.__popupDismissedTime = 0
 
         self.__minW = 0
         self.__minH = 0
@@ -489,7 +501,17 @@ class Entry(wx.Panel):
             self.__popup[0].Dismiss()
 
     def OnPopupDismiss(self, event):
+        """Handle popup dismissal, tracking state for toggle behavior.
+
+        Records which widget's popup was dismissed and when, so OnLeftUp can
+        detect click-to-close toggle actions even when the popup closes via
+        deactivate before the click event is processed.
+        """
+        if self.__popup is not None:
+            self.__popupDismissedWidget = self.__popup[1]
+            self.__popupDismissedTime = time.time()
         self.__popup = None
+        self.__returningFromPopup = True
         self.ForceFocus(False)
         event.Skip()
 
@@ -498,7 +520,29 @@ class Entry(wx.Panel):
         event.Skip()
 
     def OnSetFocus(self, event):
+        """Handle focus gain with proper subfield initialization.
+
+        When tabbing into the control:
+        - Tab (forward): Focus first subfield (e.g., year for date, hour for time)
+        - Shift+Tab (backward): Focus last subfield (e.g., day for date, minute for time)
+
+        When returning from a popup (calendar/dropdown), preserve the current
+        subfield focus instead of resetting.
+        """
         self.__focusStamp = time.time()
+        # Don't reset subfield focus when returning from popup
+        if self.__returningFromPopup:
+            self.__returningFromPopup = False
+        else:
+            # Set focus to first or last subfield based on Tab direction
+            fields = self.Fields()
+            if fields:
+                if wx.GetKeyState(wx.WXK_SHIFT):
+                    # Shift+Tab: focus on last subfield
+                    self.__SetFocus(fields[-1])
+                else:
+                    # Tab: focus on first subfield
+                    self.__SetFocus(fields[0])
         self.Refresh()
         event.Skip()
 
@@ -694,16 +738,27 @@ class Entry(wx.Panel):
                 and event.GetY() < y + h
             ):
                 if not isinstance(widget, str):
-                    oldFocus = self.__focus
                     self.__SetFocus(widget)
-                    # the __focusStamp stuff is there so that choices don't show when clicking to set focus to
-                    # the whole control
-                    if (
-                        oldFocus == widget
-                        and time.time() - self.__focusStamp >= 0.05
+                    # Check if clicking on same field with open popup - toggle close
+                    if self.__popup is not None and self.__popup[1] == widget:
+                        self.DismissPopup()
+                    # Check if popup was just dismissed for this widget (toggle case)
+                    # This handles the race condition where popup closes via deactivate
+                    # before OnLeftUp processes the click
+                    elif (
+                        self.__popupDismissedWidget == widget
+                        and time.time() - self.__popupDismissedTime < self.POPUP_TOGGLE_DELAY
                     ):
-                        self.PopupChoices(widget)
-                        self.ForceFocus()
+                        # Popup was just closed by click, don't reopen (toggle off)
+                        self.__popupDismissedWidget = None
+                    else:
+                        # Dismiss any existing popup for different field, then open new one
+                        self.DismissPopup()
+                        # Delay popup to avoid showing it when clicking to focus the control
+                        # from another widget (prevents accidental popup on initial focus)
+                        if time.time() - self.__focusStamp >= self.FOCUS_DELAY:
+                            self.PopupChoices(widget)
+                            self.ForceFocus()
                     widget.OnClick()
                     break
         else:
@@ -1292,18 +1347,22 @@ class TimeEntry(Entry):
         self.ProcessEvent(evt)
         if evt.IsVetoed():
             wx.Bell()
+            return None
         else:
             self.SetTime(evt.GetValue())
+            return evt.GetValue()
 
     def ValidateHourIncrement(self, value):
-        self.__ValidateIncrementDecrement(
+        newTime = self.__ValidateIncrementDecrement(
             datetime.timedelta(hours=1), TimeNextDayEvent
         )
+        return newTime.hour if newTime else None
 
     def ValidateHourDecrement(self, value):
-        self.__ValidateIncrementDecrement(
+        newTime = self.__ValidateIncrementDecrement(
             -datetime.timedelta(hours=1), TimePrevDayEvent
         )
+        return newTime.hour if newTime else None
 
     def ValidateMinuteChange(self, value):
         if value < 0 or value > 59:
@@ -1319,14 +1378,16 @@ class TimeEntry(Entry):
         return None
 
     def ValidateMinuteIncrement(self, value):
-        self.__ValidateIncrementDecrement(
+        newTime = self.__ValidateIncrementDecrement(
             datetime.timedelta(minutes=1), TimeNextDayEvent
         )
+        return newTime.minute if newTime else None
 
     def ValidateMinuteDecrement(self, value):
-        self.__ValidateIncrementDecrement(
+        newTime = self.__ValidateIncrementDecrement(
             -datetime.timedelta(minutes=1), TimePrevDayEvent
         )
+        return newTime.minute if newTime else None
 
     def ValidateSecondChange(self, value):
         if value < 0 or value > 59:
@@ -1342,14 +1403,16 @@ class TimeEntry(Entry):
         return None
 
     def ValidateSecondIncrement(self, value):
-        self.__ValidateIncrementDecrement(
+        newTime = self.__ValidateIncrementDecrement(
             datetime.timedelta(seconds=1), TimeNextDayEvent
         )
+        return newTime.second if newTime else None
 
     def ValidateSecondDecrement(self, value):
-        self.__ValidateIncrementDecrement(
+        newTime = self.__ValidateIncrementDecrement(
             -datetime.timedelta(seconds=1), TimePrevDayEvent
         )
+        return newTime.second if newTime else None
 
     def ValidateAMPMChange(self, value):
         if value not in [0, 1]:
@@ -1568,9 +1631,7 @@ class DateEntry(Entry):
 
         self.__calendar = None
 
-        self.Bind(wx.EVT_LEFT_UP, self.__OnLeftUp)
-        if "__WXMAC__" in wx.PlatformInfo:
-            self.Bind(wx.EVT_KILL_FOCUS, self.__OnKillFocus)
+        self.Bind(wx.EVT_KILL_FOCUS, self.__OnKillFocus)
 
         if self.Field("day") is NullField:
             self.AddField(None, " ")
@@ -1599,13 +1660,58 @@ class DateEntry(Entry):
             self.__calendar.Dismiss()
 
     def __OnKillFocus(self, event):
+        """Handle focus loss, dismissing calendar unless focus goes to it."""
+        window = event.GetWindow()
+        if self.__calendar is not None and window is not None:
+            # Don't dismiss if focus is going to calendar or its children
+            if window == self.__calendar or window.GetParent() == self.__calendar:
+                event.Skip()
+                return
         self.DismissPopup()
         event.Skip()
+
+    def OnLeftUp(self, event):
+        """Handle click to toggle calendar popup.
+
+        Unlike TimeEntry which shows dropdowns per-subfield, DateEntry shows
+        a single calendar popup for any click on the control. Clicking when
+        the calendar is open closes it (toggle behavior).
+        """
+        # Update subfield focus based on click position
+        for widget, x, y, w, h in self._Entry__widgets:
+            if (
+                event.GetX() >= x
+                and event.GetX() < x + w
+                and event.GetY() >= y
+                and event.GetY() < y + h
+            ):
+                if not isinstance(widget, str):
+                    self._Entry__SetFocus(widget)
+                    widget.OnClick()
+                    break
+        # Toggle calendar: close if open, open if closed
+        if self.__calendar is not None:
+            self.DismissPopup()
+        else:
+            self.__ShowCalendar()
+        self.Refresh()
+
+    def __ShowCalendar(self):
+        if self.__calendar is None:
+            w, h = self.GetClientSize()
+            x, y = self.GetPosition()
+            self.__calendar = _CalendarPopup(self, selection=self.GetDate())
+            self.__calendar.Popup(
+                self.GetParent().ClientToScreen(wx.Point(x, y + h))
+            )
+            self.__calendar.Bind(EVT_POPUP_DISMISS, self.OnCalendarDismissed)
 
     def OnChar(self, event):
         if event.GetKeyCode() == ord("/"):
             self.FocusNext()
             event.Skip()
+        elif event.GetKeyCode() == wx.WXK_RETURN:
+            self.__ShowCalendar()
         elif (
             event.GetKeyCode() == wx.WXK_ESCAPE and self.__calendar is not None
         ):
@@ -1671,9 +1777,10 @@ class DateEntry(Entry):
         self.ProcessEvent(evt)
         if evt.IsVetoed():
             wx.Bell()
+            return None
         else:
             self.SetDate(evt.GetValue())
-        return None
+            return evt.GetValue().year
 
     def ValidateIncrement(self, field, value):
         if field == self.Field("year"):
@@ -1710,9 +1817,10 @@ class DateEntry(Entry):
         self.ProcessEvent(evt)
         if evt.IsVetoed():
             wx.Bell()
+            return None
         else:
             self.SetDate(evt.GetValue())
-        return None
+            return evt.GetValue().month
 
     def ValidateMonthIncrement(self, value):
         if value == 13:
@@ -1745,9 +1853,10 @@ class DateEntry(Entry):
         self.ProcessEvent(evt)
         if evt.IsVetoed():
             wx.Bell()
+            return None
         else:
             self.SetDate(evt.GetValue())
-        return None
+            return evt.GetValue().month
 
     def ValidateMonthDecrement(self, value):
         if value == 0:
@@ -1780,9 +1889,10 @@ class DateEntry(Entry):
         self.ProcessEvent(evt)
         if evt.IsVetoed():
             wx.Bell()
+            return None
         else:
             self.SetDate(evt.GetValue())
-        return None
+            return evt.GetValue().month
 
     def ValidateDayChange(self, value):
         if value < 1 or value > MaxDayOfMonth(
@@ -1795,9 +1905,10 @@ class DateEntry(Entry):
         self.ProcessEvent(evt)
         if evt.IsVetoed():
             wx.Bell()
+            return None
         else:
             self.SetDate(evt.GetValue())
-        return None
+            return evt.GetValue().day
 
     def ValidateDayIncrement(self, value):
         if value > MaxDayOfMonth(
@@ -1826,9 +1937,10 @@ class DateEntry(Entry):
         self.ProcessEvent(evt)
         if evt.IsVetoed():
             wx.Bell()
+            return None
         else:
             self.SetDate(evt.GetValue())
-        return None
+            return evt.GetValue().day
 
     def ValidateDayDecrement(self, value):
         if value == 0:
@@ -1863,28 +1975,14 @@ class DateEntry(Entry):
         self.ProcessEvent(evt)
         if evt.IsVetoed():
             wx.Bell()
+            return None
         else:
             self.SetDate(evt.GetValue())
-        return None
-
-    def __OnLeftUp(self, event):
-        if self.__calendar is None:
-            w, h = self.GetClientSize()
-            x, y = self.GetPosition()
-            self.__calendar = _CalendarPopup(self, selection=self.GetDate())
-            self.__calendar.Popup(
-                self.GetParent().ClientToScreen(wx.Point(x, y + h))
-            )
-
-            self.__calendar.Bind(EVT_POPUP_DISMISS, self.OnCalendarDismissed)
-            self.ForceFocus()
-        else:
-            self.__calendar.Dismiss()
-
-        event.Skip()
+            return evt.GetValue().day
 
     def OnCalendarDismissed(self, event):
         self.__calendar = None
+        self._Entry__returningFromPopup = True
         self.ForceFocus(False)
         event.Skip()
 
@@ -2199,6 +2297,66 @@ class _CalendarPopup(_PopupWindow):
         self.__maxDim = None
 
         super().__init__(*args, **kwargs)
+
+    def HandleKey(self, event):
+        """Handle keyboard navigation within the calendar popup.
+
+        Arrow keys move the selection:
+        - Left/Right: Move by 1 day
+        - Up/Down: Move by 1 week (7 days)
+
+        Enter confirms the selection, Escape cancels.
+        """
+        keyCode = event.GetKeyCode()
+
+        if keyCode == wx.WXK_ESCAPE:
+            self.Dismiss()
+            return True
+        elif keyCode == wx.WXK_RETURN:
+            # Confirm current selection and notify parent
+            self.GetParent().SetDate(self.__selection, notify=True)
+            self.Dismiss()
+            return True
+        elif keyCode == wx.WXK_LEFT:
+            self.__MoveSelection(datetime.timedelta(days=-1))
+            return True
+        elif keyCode == wx.WXK_RIGHT:
+            self.__MoveSelection(datetime.timedelta(days=1))
+            return True
+        elif keyCode == wx.WXK_UP:
+            self.__MoveSelection(datetime.timedelta(days=-7))
+            return True
+        elif keyCode == wx.WXK_DOWN:
+            self.__MoveSelection(datetime.timedelta(days=7))
+            return True
+        return False
+
+    def __MoveSelection(self, delta):
+        """Move the calendar selection by the given timedelta.
+
+        Respects min/max date bounds and year limits (1-9999).
+        Automatically scrolls to show the new month if selection crosses
+        month boundaries.
+        """
+        newDate = self.__selection + delta
+        # Check min/max bounds
+        if self.__minDate is not None and newDate < self.__minDate:
+            wx.Bell()
+            return
+        if self.__maxDate is not None and newDate > self.__maxDate:
+            wx.Bell()
+            return
+        # Check year bounds (datetime supports 1-9999)
+        if newDate.year < 1 or newDate.year > 9999:
+            wx.Bell()
+            return
+        self.__selection = newDate
+        # Update displayed month/year if selection moved to different month
+        if self.__selection.year != self.__year or self.__selection.month != self.__month:
+            self.__year = self.__selection.year
+            self.__month = self.__selection.month
+            self.SetClientSize(self.GetExtent(wx.ClientDC(self.interior())))
+        self.Refresh()
 
     def Fill(self, interior):
         interior.Bind(wx.EVT_PAINT, self.OnPaint)
