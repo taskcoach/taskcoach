@@ -110,6 +110,10 @@ class TimeDeltaEntry(widgets.PanelWithBoxSizer):
         )
         if readonly:
             self._entry.Disable()
+            # Set grey background to clearly indicate non-editable
+            self._entry.SetBackgroundColour(
+                wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+            )
         self.add(self._entry, flag=wx.EXPAND | wx.ALL, proportion=1)
         self.fit()
 
@@ -135,6 +139,10 @@ class AmountEntry(widgets.PanelWithBoxSizer):
         self._entry = self.createEntry(amount)
         if readonly:
             self._entry.Disable()
+            # Set grey background to clearly indicate non-editable
+            self._entry.SetBackgroundColour(
+                wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+            )
         self.add(self._entry)
         self.fit()
 
@@ -565,6 +573,30 @@ class RecurrenceEntry(wx.Panel):
         recurrenceFrequencyPanel.SetSizerAndFit(panelSizer)
         self._recurrenceSizer = panelSizer
 
+        # schedulePanel created before maxPanel for correct tab order (top-to-bottom)
+        schedulePanel = wx.Panel(self)
+        panelSizer = wx.BoxSizer(wx.HORIZONTAL)
+        label = wx.StaticText(
+            schedulePanel, label=_("Schedule each next recurrence based on")
+        )
+        panelSizer.Add(label, flag=wx.ALIGN_CENTER_VERTICAL)
+        panelSizer.Add((3, -1))
+        self._scheduleChoice = wx.Choice(
+            schedulePanel,
+            choices=[
+                _("previous planned start and/or due date"),
+                _("last completion date"),
+            ],
+        )
+        self._scheduleChoice.Bind(wx.EVT_CHOICE, self.onRecurrenceEdited)
+        if operating_system.isMac():
+            # On Mac OS X, the wx.Choice gets too little vertical space by
+            # default
+            size = self._scheduleChoice.GetSize()
+            self._scheduleChoice.SetMinSize((size[0], size[1] + 1))
+        panelSizer.Add(self._scheduleChoice, flag=wx.ALIGN_CENTER_VERTICAL)
+        schedulePanel.SetSizerAndFit(panelSizer)
+
         maxPanel = wx.Panel(self)
         panelSizer = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -596,29 +628,6 @@ class RecurrenceEntry(wx.Panel):
             flag=wx.ALIGN_CENTER_VERTICAL,
         )
         maxPanel.SetSizerAndFit(panelSizer)
-
-        schedulePanel = wx.Panel(self)
-        panelSizer = wx.BoxSizer(wx.HORIZONTAL)
-        label = wx.StaticText(
-            schedulePanel, label=_("Schedule each next recurrence based on")
-        )
-        panelSizer.Add(label, flag=wx.ALIGN_CENTER_VERTICAL)
-        panelSizer.Add((3, -1))
-        self._scheduleChoice = wx.Choice(
-            schedulePanel,
-            choices=[
-                _("previous planned start and/or due date"),
-                _("last completion date"),
-            ],
-        )
-        self._scheduleChoice.Bind(wx.EVT_CHOICE, self.onRecurrenceEdited)
-        if operating_system.isMac():
-            # On Mac OS X, the wx.Choice gets too little vertical space by
-            # default
-            size = self._scheduleChoice.GetSize()
-            self._scheduleChoice.SetMinSize((size[0], size[1] + 1))
-        panelSizer.Add(self._scheduleChoice, flag=wx.ALIGN_CENTER_VERTICAL)
-        schedulePanel.SetSizerAndFit(panelSizer)
 
         stopPanel = wx.Panel(self)
         panelSizer = wx.BoxSizer(wx.HORIZONTAL)

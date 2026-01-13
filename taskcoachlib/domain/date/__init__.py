@@ -38,6 +38,5 @@ from .timedelta import (
     parseTimeDelta,
 )
 from .timeclass import Time
-from .scheduler import Scheduler
 from .recurrence import Recurrence
 from .snooze import snoozeChoices

@@ -14,9 +14,17 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+DESIGN NOTE (Scheduler Refactoring - 2024):
+The old Scheduler-based reminder system has been replaced with a polling-based
+system using GlobalTimer + pubsub. See docs/SCHEDULERS.md for details.
+
+Reminders are now checked every second by subscribing to 'timer.second' events
+and polling all tasks to see if their reminder time has passed.
 """
 
-import test, wx, time
+import test
+import wx
 from taskcoachlib import gui, config, persistence
 from taskcoachlib.domain import task, date, effort
 
@@ -75,48 +83,67 @@ class ReminderControllerTest(ReminderControllerTestCase):
         self.task = task.Task("Task")
         self.taskList.append(self.task)
 
-    def testSetTaskReminderSchedulesJob(self):
+    # =========================================================================
+    # Tests for the polling-based reminder system
+    # =========================================================================
+
+    def testTaskWithReminderIsFoundByPolling(self):
+        """With the new system, reminders are checked by polling, not scheduling."""
         self.task.setReminder(self.reminderDateTime)
-        self.assertTrue(date.Scheduler().get_jobs())
+        # Verify the task has a reminder set
+        self.assertIsNotNone(self.task.reminder())
+        self.assertEqual(self.task.reminder(), self.reminderDateTime)
 
-    @test.skipOnTwistedVersions("12.")
-    def testAfterReminderJobIsRemovedFromScheduler(self):
-        self.task.setReminder(date.Now() + date.TimeDelta(seconds=1))
-        self.assertTrue(date.Scheduler().get_jobs())
-        # Process wx events instead of reactor.iterate()
-        # NOTE (Twisted Removal - 2024): Using wx event processing
-        t0 = time.time()
-        while time.time() - t0 < 1.1:
-            wx.GetApp().Yield(True)
-            time.sleep(0.05)
-        self.assertFalse(date.Scheduler().get_jobs())
+    def testReminderShownWhenDue(self):
+        """Verify reminder is shown when due time is reached."""
+        # Set reminder to now (so it's immediately due)
+        self.task.setReminder(date.Now())
+        # Simulate timer tick by calling the check method directly
+        self.reminderController._checkReminders(date.DateTime.now())
+        # Reminder should have been shown
+        self.assertEqual(len(self.reminderController.messages), 1)
 
-    def testAddTaskWithReminderSchedulesJob(self):
-        taskWithReminder = task.Task(
-            "Task with reminder", reminder=self.reminderDateTime
-        )
-        self.taskList.append(taskWithReminder)
-        self.assertTrue(date.Scheduler().get_jobs())
+    def testReminderNotShownTwice(self):
+        """Verify same reminder is not shown twice."""
+        self.task.setReminder(date.Now())
+        # First check - should show
+        self.reminderController._checkReminders(date.DateTime.now())
+        # Second check - should NOT show again
+        self.reminderController._checkReminders(date.DateTime.now())
+        # Only one reminder should have been shown
+        self.assertEqual(len(self.reminderController.messages), 1)
 
-    def testRemoveTaskWithReminderRemovesClockEventFromPublisher(self):
-        self.task.setReminder(self.reminderDateTime)
-        job = date.Scheduler().get_jobs()[0]
-        self.taskList.remove(self.task)
-        self.assertFalse(job in date.Scheduler().get_jobs())
+    def testReminderClearedOnSnooze(self):
+        """Verify reminder tracking is cleared when task is snoozed."""
+        self.task.setReminder(date.Now())
+        self.reminderController._checkReminders(date.DateTime.now())
+        self.assertEqual(len(self.reminderController.messages), 1)
+        # Clear the shown reminder (simulates snooze)
+        self.reminderController._shownReminders.discard(self.task)
+        # Change reminder to new time
+        self.task.setReminder(date.Now())
+        # Should show again
+        self.reminderController._checkReminders(date.DateTime.now())
+        self.assertEqual(len(self.reminderController.messages), 2)
 
-    def testChangeReminderRemovesOldReminder(self):
-        self.task.setReminder(self.reminderDateTime)
-        job = date.Scheduler().get_jobs()[0]
-        self.task.setReminder(self.reminderDateTime + date.ONE_HOUR)
-        jobs = date.Scheduler().get_jobs()
-        self.assertEqual(len(jobs), 1)
-        self.assertFalse(job is jobs[0])
+    def testFutureReminderNotShown(self):
+        """Verify future reminders are not shown until due."""
+        self.task.setReminder(date.Now() + date.ONE_HOUR)
+        self.reminderController._checkReminders(date.DateTime.now())
+        self.assertEqual(len(self.reminderController.messages), 0)
 
-    def testMarkTaskCompletedRemovesReminder(self):
-        self.task.setReminder(self.reminderDateTime)
-        self.assertTrue(date.Scheduler().get_jobs())
-        self.task.setCompletionDateTime(date.Now())
-        self.assertFalse(date.Scheduler().get_jobs())
+    def testMultipleTasksWithReminders(self):
+        """Verify multiple tasks can have reminders checked."""
+        task2 = task.Task("Task 2")
+        self.taskList.append(task2)
+        self.task.setReminder(date.Now())
+        task2.setReminder(date.Now())
+        self.reminderController._checkReminders(date.DateTime.now())
+        self.assertEqual(len(self.reminderController.messages), 2)
+
+    # =========================================================================
+    # Tests that don't depend on timing mechanism - still valid
+    # =========================================================================
 
     def dummyCloseEvent(self, snoozeTimeDelta=None, openAfterClose=False):
         class DummySnoozeOptions(object):

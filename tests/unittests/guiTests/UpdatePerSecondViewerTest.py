@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import gui, config, persistence
-from taskcoachlib.domain import base, task, effort, category, date
+from taskcoachlib.domain import base, task, effort, category
 import test
 
 
@@ -79,11 +79,8 @@ class UpdatePerSecondViewerTestsMixin(object):
 
     def testStopTrackingRemovesViewerFromClockObservers(self):
         self.trackedTask.stopTracking()
-        self.assertFalse(
-            date.Scheduler().is_scheduled(
-                self.updateViewer.secondRefresher.onEverySecond
-            )
-        )
+        # With new architecture, check if the secondRefresher's timer stopped
+        self.assertFalse(self.updateViewer.secondRefresher.isClockStarted())
 
     def testStopTrackingRefreshesTrackedItems(self):
         self.updateViewer.widget = MockWidget()
@@ -95,11 +92,8 @@ class UpdatePerSecondViewerTestsMixin(object):
         self.taskList.append(parent)
         parent.addChild(self.trackedTask)
         self.taskList.remove(parent)
-        self.assertFalse(
-            date.Scheduler().is_scheduled(
-                self.updateViewer.secondRefresher.onEverySecond
-            )
-        )
+        # With new architecture, check if the secondRefresher's timer stopped
+        self.assertFalse(self.updateViewer.secondRefresher.isClockStarted())
 
     def testCreateViewerWithTrackedItemsStartsTheClock(self):
         self.createUpdateViewer()

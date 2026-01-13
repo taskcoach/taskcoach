@@ -32,6 +32,7 @@ from taskcoachlib.gui import (
     artprovider,
     windowdimensionstracker,
     idlecontroller,
+    timer as globaltimer,
 )
 from taskcoachlib.gui.dialog.xfce4warning import XFCE4WarningDialog
 from taskcoachlib.gui.dialog.editor import Editor
@@ -117,6 +118,10 @@ class MainWindow(
         # Freeze to prevent flickering during viewer creation
         self.Freeze()
         try:
+            # Start global timer FIRST - other components subscribe to its events
+            self._globalTimer = globaltimer.GlobalTimer(self)
+            self._globalTimer.start()
+
             self._create_viewer_container()
             viewer.addViewers(self.viewer, self.taskFile, self.settings)
             self._create_status_bar()

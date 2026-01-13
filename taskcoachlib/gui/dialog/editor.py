@@ -688,6 +688,17 @@ class DatesPage(Page):
             recurrence=self._recurrenceEntry,
         )
 
+    def close(self):
+        """Clean up DateTimeEntry widgets to prevent crashes during dialog close."""
+        # Clean up all DateTimeEntry widgets to dismiss any open popups
+        for entry_name in ['_plannedStartDateTimeEntry', '_dueDateTimeEntry',
+                           '_actualStartDateTimeEntry', '_completionDateTimeEntry',
+                           '_reminderDateTimeEntry']:
+            entry = getattr(self, entry_name, None)
+            if entry and hasattr(entry, 'Cleanup'):
+                entry.Cleanup()
+        super().close()
+
 
 class ProgressPage(Page):
     pageName = "progress"
@@ -928,14 +939,26 @@ class BudgetPage(Page):
     def onTrackingChanged(self, newValue, sender):
         if newValue:
             if sender in self.items:
-                date.Scheduler().schedule_interval(
-                    self.onEverySecond, seconds=1
-                )
+                self._startClock()
         else:
             # We might need to keep tracking the clock if the user was tracking this
             # task with multiple effort records simultaneously
             if not self.items[0].isBeingTracked():
-                date.Scheduler().unschedule(self.onEverySecond)
+                self._stopClock()
+
+    def _startClock(self):
+        if not getattr(self, '_clockRunning', False):
+            pub.subscribe(self._onTimerSecond, 'timer.second')
+            self._clockRunning = True
+
+    def _stopClock(self):
+        if getattr(self, '_clockRunning', False):
+            pub.unsubscribe(self._onTimerSecond, 'timer.second')
+            self._clockRunning = False
+
+    def _onTimerSecond(self, timestamp):
+        """Handle second tick from global timer."""
+        self.onEverySecond()
 
     def onEverySecond(self):
         taskDisplayed = self.items[0]
@@ -944,7 +967,7 @@ class BudgetPage(Page):
         self.onRevenueChanged(taskDisplayed.revenue(), taskDisplayed)
 
     def close(self):
-        date.Scheduler().unschedule(self.onEverySecond)
+        self._stopClock()
         super().close()
 
     def entries(self):

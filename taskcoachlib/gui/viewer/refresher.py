@@ -36,12 +36,21 @@ class MinuteRefresher(object):
 
     def __init__(self, viewer):
         self.__viewer = viewer
+        self.__running = False
 
     def startClock(self):
-        date.Scheduler().schedule_interval(self.onEveryMinute, minutes=1)
+        if not self.__running:
+            pub.subscribe(self._onMinuteChanged, 'timer.minute')
+            self.__running = True
 
     def stopClock(self):
-        date.Scheduler().unschedule(self.onEveryMinute)
+        if self.__running:
+            pub.unsubscribe(self._onMinuteChanged, 'timer.minute')
+            self.__running = False
+
+    def _onMinuteChanged(self, timestamp):
+        """Handle minute change from global timer."""
+        self.onEveryMinute()
 
     def onEveryMinute(self):
         if self.__viewer:

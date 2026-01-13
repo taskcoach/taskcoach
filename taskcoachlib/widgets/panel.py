@@ -24,6 +24,31 @@ class PanelWithBoxSizer(wx.Panel):
         orientation = kwargs.pop("orientation", wx.VERTICAL)
         super().__init__(*args, **kwargs)
         self.__panelSizer = wx.BoxSizer(orientation)
+        # Pass focus to first child when panel receives focus via Tab
+        # Use wx.Panel.Bind directly to avoid subclass overrides that may
+        # reference uninitialized attributes
+        wx.Panel.Bind(self, wx.EVT_SET_FOCUS, self.__onSetFocus)
+
+    def __onSetFocus(self, event):
+        """Pass focus to first focusable child when panel receives focus."""
+        event.Skip()
+        # Only pass focus if coming from outside this panel
+        old_focus = event.GetWindow()
+        if old_focus is not None and self.__isDescendant(old_focus):
+            return
+        # Find first focusable child and set focus to it
+        for child in self.GetChildren():
+            if child.AcceptsFocus():
+                child.SetFocus()
+                return
+
+    def __isDescendant(self, window):
+        """Check if window is this panel or a descendant of it."""
+        while window is not None:
+            if window is self:
+                return True
+            window = window.GetParent()
+        return False
 
     def fit(self):
         """Call this method after all controls have been added (via add())."""

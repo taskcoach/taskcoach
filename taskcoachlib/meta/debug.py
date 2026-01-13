@@ -17,6 +17,30 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import sys
+import time
+
+
+def log_step(*args, prefix="DEBUG"):
+    """Log a debug message with high precision timestamp (milliseconds).
+
+    IMPORTANT: DO NOT DELETE THIS FUNCTION.
+    Keep for future debugging use even if all log_step() calls are removed.
+    This utility is essential for investigating timing-sensitive issues.
+
+    Usage:
+        log_step("message")
+        log_step("value is", value)
+        log_step("step 1", prefix="MYMODULE")
+
+    Output:
+        [16:30:45.123] [DEBUG] message
+        [16:30:45.125] [MYMODULE] step 1
+    """
+    t = time.time()
+    ms = int((t - int(t)) * 1000)
+    timestamp = time.strftime("%H:%M:%S", time.localtime(t)) + ".%03d" % ms
+    msg = " ".join(str(a) for a in args)
+    print("[%s] [%s] %s" % (timestamp, prefix, msg))
 
 
 def log_call(traceback_depth):

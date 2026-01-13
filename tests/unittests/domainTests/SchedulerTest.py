@@ -15,74 +15,99 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-DESIGN NOTE (Twisted Removal - 2024):
-Tests updated to use wx event processing instead of reactor.iterate().
-The scheduler now uses wx.CallLater so we process wx events to trigger
-scheduled callbacks.
+DESIGN NOTE (Scheduler Refactoring - 2024):
+The old Scheduler class has been completely removed and replaced with a simpler
+GlobalTimer architecture. See docs/SCHEDULERS.md for details.
+
+All timing is now handled via pubsub events:
+- 'timer.second': Fires every second
+- 'timer.minute': Fires when minute changes
+- 'timer.date': Fires when date changes (including on startup)
 """
 
-import test, time, wx
-from taskcoachlib.domain import date
+import test
+from pubsub import pub
 
 
-def process_wx_events(duration_seconds):
+class GlobalTimerEventTest(test.TestCase):
     """
-    Process wx events for a specified duration.
-
-    This replaces reactor.iterate() calls from when Twisted was used.
-    wx.CallLater callbacks require wx event processing to fire.
+    Tests for the new GlobalTimer pubsub event system.
+    These test the subscription/publication pattern used for timing events.
     """
-    t0 = time.time()
-    while time.time() - t0 < duration_seconds:
-        wx.GetApp().Yield(True)
-        time.sleep(0.05)  # Small sleep to avoid CPU spin
 
-
-class SchedulerTest(test.TestCase):
     def setUp(self):
         super().setUp()
-        self.scheduler = date.Scheduler()
-        self.callCount = 0
+        self.receivedEvents = []
 
-    def callback(self):
-        self.callCount += 1
+    def tearDown(self):
+        # Clean up any subscriptions
+        for topic in ['timer.second', 'timer.minute', 'timer.date']:
+            try:
+                pub.unsubscribe(self._recordEvent, topic)
+            except Exception:
+                pass
+        super().tearDown()
 
-    @test.skipOnTwistedVersions("12.")
-    def testScheduleAtDateTime(self):
-        futureDate = date.Now() + date.TimeDelta(seconds=1)
-        self.scheduler.schedule(self.callback, futureDate)
-        self.assertTrue(self.scheduler.is_scheduled(self.callback))
-        # Process wx events instead of reactor.iterate()
-        process_wx_events(2.1)
-        self.assertFalse(self.scheduler.is_scheduled(self.callback))
-        self.assertEqual(self.callCount, 1)
+    def _recordEvent(self, timestamp):
+        self.receivedEvents.append(timestamp)
 
-    @test.skipOnTwistedVersions("12.")
-    def testUnschedule(self):
-        futureDate = date.Now() + date.TimeDelta(seconds=1)
-        self.scheduler.schedule(self.callback, futureDate)
-        self.scheduler.unschedule(self.callback)
-        self.assertFalse(self.scheduler.is_scheduled(self.callback))
-        # Process wx events instead of reactor.iterate()
-        process_wx_events(1.2)
-        self.assertEqual(self.callCount, 0)
+    def testCanSubscribeToTimerSecond(self):
+        """Verify subscription to timer.second works."""
+        pub.subscribe(self._recordEvent, 'timer.second')
+        # Just verify no errors - actual timer would need to be running
+        pub.unsubscribe(self._recordEvent, 'timer.second')
 
-    @test.skipOnTwistedVersions("12.")
-    def testScheduleAtPastDateTime(self):
-        pastDate = date.Now() - date.TimeDelta(seconds=1)
-        self.scheduler.schedule(self.callback, pastDate)
-        self.assertFalse(self.scheduler.is_scheduled(self.callback))
-        # Process wx events instead of reactor.iterate()
-        process_wx_events(0.1)
-        self.assertFalse(self.scheduler.is_scheduled(self.callback))
-        self.assertEqual(self.callCount, 1)
+    def testCanSubscribeToTimerMinute(self):
+        """Verify subscription to timer.minute works."""
+        pub.subscribe(self._recordEvent, 'timer.minute')
+        pub.unsubscribe(self._recordEvent, 'timer.minute')
 
-    @test.skipOnTwistedVersions("12.")
-    def testScheduleInterval(self):
-        self.scheduler.schedule_interval(self.callback, seconds=1)
-        try:
-            # Process wx events instead of reactor.iterate()
-            process_wx_events(2.1)
-            self.assertEqual(self.callCount, 2)
-        finally:
-            self.scheduler.unschedule(self.callback)
+    def testCanSubscribeToTimerDate(self):
+        """Verify subscription to timer.date works."""
+        pub.subscribe(self._recordEvent, 'timer.date')
+        pub.unsubscribe(self._recordEvent, 'timer.date')
+
+    def testEventDelivery(self):
+        """Verify events are delivered to subscribers."""
+        pub.subscribe(self._recordEvent, 'timer.second')
+        from taskcoachlib.domain import date
+        now = date.DateTime.now()
+        pub.sendMessage('timer.second', timestamp=now)
+        self.assertEqual(len(self.receivedEvents), 1)
+        self.assertEqual(self.receivedEvents[0], now)
+        pub.unsubscribe(self._recordEvent, 'timer.second')
+
+    def testMultipleSubscribers(self):
+        """Verify multiple subscribers all receive events."""
+        events1 = []
+        events2 = []
+
+        def handler1(timestamp):
+            events1.append(timestamp)
+
+        def handler2(timestamp):
+            events2.append(timestamp)
+
+        pub.subscribe(handler1, 'timer.second')
+        pub.subscribe(handler2, 'timer.second')
+
+        from taskcoachlib.domain import date
+        now = date.DateTime.now()
+        pub.sendMessage('timer.second', timestamp=now)
+
+        self.assertEqual(len(events1), 1)
+        self.assertEqual(len(events2), 1)
+
+        pub.unsubscribe(handler1, 'timer.second')
+        pub.unsubscribe(handler2, 'timer.second')
+
+    def testUnsubscribeStopsEvents(self):
+        """Verify unsubscribed handlers don't receive events."""
+        pub.subscribe(self._recordEvent, 'timer.second')
+        pub.unsubscribe(self._recordEvent, 'timer.second')
+
+        from taskcoachlib.domain import date
+        now = date.DateTime.now()
+        pub.sendMessage('timer.second', timestamp=now)
+
+        self.assertEqual(len(self.receivedEvents), 0)

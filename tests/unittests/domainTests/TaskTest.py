@@ -3755,50 +3755,9 @@ class TaskConstructionTest(test.TestCase):
         )
 
 
-class TaskScheduledTest(TaskTestCase):
-    def setUp(self):
-        super().setUp([("behavior", "duesoonhours", 1)])
 
-    def taskCreationKeywordArguments(self):
-        return [
-            {
-                "dueDateTime": date.Now() + date.TWO_HOURS,
-                "plannedStartDateTime": date.Now() + date.ONE_HOUR,
-            }
-        ]
-
-    def testOverDueIsScheduled(self):
-        self.assertTrue(date.Scheduler().is_scheduled(self.task.onOverDue))
-
-    def testStartedIsScheduled(self):
-        self.assertTrue(date.Scheduler().is_scheduled(self.task.onTimeToStart))
-
-    def testDueSoonIsScheduled(self):
-        self.assertTrue(date.Scheduler().is_scheduled(self.task.onDueSoon))
-
-
-class TaskNotScheduledTest(TaskTestCase):
-    def setUp(self):
-        super().setUp([("behavior", "duesoonhours", 1)])
-
-    def taskCreationKeywordArguments(self):
-        return [
-            {"subject": "Task"},
-            {"dueDateTime": date.Now() - date.ONE_HOUR},
-        ]
-
-    def testOverDueIsNotScheduled(self):
-        self.assertFalse(date.Scheduler().is_scheduled(self.task.onOverDue))
-
-    def testOverdueIsNotScheduledBecauseTooLate(self):
-        self.assertFalse(
-            date.Scheduler().is_scheduled(self.tasks[1].onOverDue)
-        )
-
-    def testStartedIsNotScheduled(self):
-        self.assertFalse(
-            date.Scheduler().is_scheduled(self.task.onTimeToStart)
-        )
-
-    def testDueSoonIsNotScheduled(self):
-        self.assertFalse(date.Scheduler().is_scheduled(self.task.onDueSoon))
+# NOTE (Scheduler Refactoring - 2024):
+# TaskScheduledTest and TaskNotScheduledTest were removed because they tested
+# the old scheduler-based status transitions. With the new GlobalTimer architecture,
+# status changes are handled by polling rather than individual scheduled jobs.
+# See docs/SCHEDULERS.md for details.

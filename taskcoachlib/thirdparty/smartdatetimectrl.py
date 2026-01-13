@@ -18,7 +18,6 @@
 import wx, math, time, re, datetime, calendar, io, platform
 import wx.lib.platebtn as pbtn
 
-
 # We expect the user application to inject _ into __builtins__
 try:
     _
@@ -344,6 +343,9 @@ class FieldValueChangeEvent(wx.PyCommandEvent):
 wxEVT_ENTRY_CHOICE_SELECTED = wx.NewEventType()
 EVT_ENTRY_CHOICE_SELECTED = wx.PyEventBinder(wxEVT_ENTRY_CHOICE_SELECTED)
 
+wxEVT_ENTRY_CHOICE_PREVIEW = wx.NewEventType()
+EVT_ENTRY_CHOICE_PREVIEW = wx.PyEventBinder(wxEVT_ENTRY_CHOICE_PREVIEW)
+
 
 class EntryChoiceSelectedEvent(FieldValueChangeEvent):
     type_ = wxEVT_ENTRY_CHOICE_SELECTED
@@ -354,6 +356,11 @@ class EntryChoiceSelectedEvent(FieldValueChangeEvent):
 
     def GetField(self):
         return self.__field
+
+
+class EntryChoicePreviewEvent(FieldValueChangeEvent):
+    """Event fired when arrow keys navigate in popup to preview a value."""
+    type_ = wxEVT_ENTRY_CHOICE_PREVIEW
 
 
 class Entry(wx.Panel):
@@ -400,6 +407,7 @@ class Entry(wx.Panel):
 
         self.__focus = None
         self.__forceFocus = False
+        self.__hasFocus = False  # Tracks whether Entry truly has focus
         self.__fields = list()
         self.__widgets = list()
         self.__namedFields = dict()
@@ -516,8 +524,23 @@ class Entry(wx.Panel):
         event.Skip()
 
     def OnKillFocus(self, event):
+        # Popup dismissal is handled by _PopupWindow.OnActivate - no need to do it here
+        # Just refresh the Entry display and skip the event
+        # Guard against widget destruction (dialog closing)
+        if event.GetWindow() is None:
+            event.Skip()
+            return
+        self.__hasFocus = False
         self.Refresh()
         event.Skip()
+
+    def _safeRefresh(self):
+        """Safely refresh the widget, handling destroyed widget case."""
+        try:
+            if self:
+                self.Refresh()
+        except RuntimeError:
+            pass  # Widget already destroyed
 
     def OnSetFocus(self, event):
         """Handle focus gain with proper subfield initialization.
@@ -529,6 +552,7 @@ class Entry(wx.Panel):
         When returning from a popup (calendar/dropdown), preserve the current
         subfield focus instead of resetting.
         """
+        self.__hasFocus = True
         self.__focusStamp = time.time()
         # Don't reset subfield focus when returning from popup
         if self.__returningFromPopup:
@@ -614,7 +638,7 @@ class Entry(wx.Panel):
                     dc.DrawText(widget, x, y)
                 else:
                     if widget == self.__focus and (
-                        self.FindFocus() == self or self.__forceFocus
+                        self.__hasFocus or self.__forceFocus
                     ):
                         drawFocusRect(dc, x, y, w, h)
                         dc.SetTextForeground(
@@ -646,6 +670,23 @@ class Entry(wx.Panel):
                 event.Skip()
                 return
             self.DismissPopup()
+            # Tab navigates between subfields first, only exits at boundaries
+            fields = self.Fields()
+            if self.__focus is not None and fields:
+                currentIndex = fields.index(self.__focus)
+                if event.ShiftDown():
+                    # Shift+Tab: move to previous field or exit if at first
+                    if currentIndex > 0:
+                        self.__SetFocus(fields[currentIndex - 1])
+                        return
+                else:
+                    # Tab: move to next field or exit if at last
+                    if currentIndex < len(fields) - 1:
+                        self.__SetFocus(fields[currentIndex + 1])
+                        return
+            # At boundary - exit the control
+            self._Entry__hasFocus = False
+            self.Refresh()
             self.Navigate(not event.ShiftDown())
             return
 
@@ -716,7 +757,6 @@ class Entry(wx.Panel):
             and self.__focus is not None
         ):
             self.PopupChoices(self.__focus)
-            self.ForceFocus()
         else:
             if self.__focus is not None and self.__focus.HandleKey(event):
                 self.StartTimer()
@@ -758,7 +798,6 @@ class Entry(wx.Panel):
                         # from another widget (prevents accidental popup on initial focus)
                         if time.time() - self.__focusStamp >= self.FOCUS_DELAY:
                             self.PopupChoices(widget)
-                            self.ForceFocus()
                     widget.OnClick()
                     break
         else:
@@ -779,6 +818,16 @@ class Entry(wx.Panel):
             self.__popup[0].Bind(
                 EVT_ENTRY_CHOICE_SELECTED, self.__OnChoiceSelected
             )
+            self.__popup[0].Bind(
+                EVT_ENTRY_CHOICE_PREVIEW, self.__OnChoicePreview
+            )
+
+    def __OnChoicePreview(self, event):
+        """Handle preview of choice (arrow key navigation) - update field without dismissing."""
+        if self.__popup is not None:
+            popup, field = self.__popup
+            field.SetValue(event.GetValue(), notify=True)
+            self.Refresh()
 
     def __OnChoiceSelected(self, event):
         if self.__popup is not None:  # How can this happen ? It does.
@@ -868,6 +917,8 @@ class NumericField(Field):
                     % int(math.pow(10, self.__width)),
                     notify=True,
                 )
+            # Dismiss popup when user types - they're entering a custom value
+            self.Observer().DismissPopup()
             return True
 
         if event.GetKeyCode() in [
@@ -1630,6 +1681,7 @@ class DateEntry(Entry):
             )
 
         self.__calendar = None
+        self.__calendarDismissedTime = 0  # Track when calendar was dismissed for toggle
 
         self.Bind(wx.EVT_KILL_FOCUS, self.__OnKillFocus)
 
@@ -1690,9 +1742,12 @@ class DateEntry(Entry):
                     widget.OnClick()
                     break
         # Toggle calendar: close if open, open if closed
+        # Check if calendar was recently dismissed (within 200ms) - if so, this click
+        # was the one that closed it, so don't reopen (toggle behavior)
         if self.__calendar is not None:
             self.DismissPopup()
-        else:
+        elif time.time() - self.__calendarDismissedTime > 0.2:
+            # Only open if not recently dismissed
             self.__ShowCalendar()
         self.Refresh()
 
@@ -1982,6 +2037,7 @@ class DateEntry(Entry):
 
     def OnCalendarDismissed(self, event):
         self.__calendar = None
+        self.__calendarDismissedTime = time.time()  # Track for toggle detection
         self._Entry__returningFromPopup = True
         self.ForceFocus(False)
         event.Skip()
@@ -2060,8 +2116,35 @@ class _PopupWindow(wx.Dialog):
             self.SetFocus()
 
     def Dismiss(self):
+        # Guard against double-dismiss which can cause crashes
+        if hasattr(self, '_dismissed') and self._dismissed:
+            return
+        self._dismissed = True
+        # Hide immediately to prevent receiving any more events
+        self.Hide()
+        # Unbind ALL events to prevent any more callbacks
+        self.Unbind(wx.EVT_ACTIVATE)
+        self.Unbind(wx.EVT_CHAR)
+        # Also unbind from interior
+        try:
+            interior = self.interior()
+            if interior:
+                interior.Unbind(wx.EVT_CHAR)
+                interior.Unbind(wx.EVT_PAINT)
+                interior.Unbind(wx.EVT_LEFT_UP)
+        except RuntimeError:
+            pass
         self.ProcessEvent(PopupDismissEvent(self))
-        self.Destroy()
+        # Use CallLater with a delay to ensure all pending events are processed
+        # before destroying the popup window
+        wx.CallLater(100, self._safeDestroy)
+
+    def _safeDestroy(self):
+        try:
+            if self:  # Check if still valid
+                self.Destroy()
+        except RuntimeError:
+            pass
 
     def OnChar(self, event):
         if not self.HandleKey(event):
@@ -2670,6 +2753,9 @@ class _MultipleChoicesPopup(_PopupWindow):
                 % len(self.__choices)
             ][1]
             self.Refresh()
+            # Fire preview event to update the field immediately
+            evt = EntryChoicePreviewEvent(self, self.__value)
+            self.ProcessEvent(evt)
             return True
 
         if event.GetKeyCode() == wx.WXK_DOWN:
@@ -2677,6 +2763,9 @@ class _MultipleChoicesPopup(_PopupWindow):
                 (self.__index() + 1) % len(self.__choices)
             ][1]
             self.Refresh()
+            # Fire preview event to update the field immediately
+            evt = EntryChoicePreviewEvent(self, self.__value)
+            self.ProcessEvent(evt)
             return True
 
         if event.GetKeyCode() == wx.WXK_RETURN:
@@ -2792,6 +2881,30 @@ class SmartDateTimeCtrl(wx.Panel):
         self.__timeCtrl.Bind(EVT_TIME_CHOICES_CHANGE, self.__OnChoicesChange)
         self.Bind(EVT_TIME_NEXT_DAY, self.OnNextDay)
         self.Bind(EVT_TIME_PREV_DAY, self.OnPrevDay)
+        # Pass focus to first child when panel receives focus via Tab
+        self.Bind(wx.EVT_SET_FOCUS, self.__OnSetFocus)
+
+    def __OnSetFocus(self, event):
+        """Pass focus to first focusable child when panel receives focus from outside."""
+        event.Skip()
+        # Only pass focus if it's coming from outside this control
+        # (prevents focus bouncing when tabbing away from child)
+        old_focus = event.GetWindow()
+        if old_focus is not None and self.__isDescendant(old_focus):
+            return
+        # Focus the checkbox if enabled, otherwise the date control
+        if self.__enableNone and self.__checkbox:
+            self.__checkbox.SetFocus()
+        else:
+            self.__dateCtrl.SetFocus()
+
+    def __isDescendant(self, window):
+        """Check if window is this control or a descendant of it."""
+        while window is not None:
+            if window is self:
+                return True
+            window = window.GetParent()
+        return False
 
     def __OnPopupRelativeChoices(self, event):
         self.__timeCtrl.PopupRelativeChoices()

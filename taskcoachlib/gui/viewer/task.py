@@ -869,7 +869,12 @@ class HierarchicalCalendarViewer(
 
         self.reconfig()
 
-        date.Scheduler().schedule_interval(self.atMidnight, days=1)
+        # Subscribe to global timer for midnight processing
+        pub.subscribe(self._onDateChanged, 'timer.date')
+
+    def _onDateChanged(self, timestamp):
+        """Handle date change from global timer."""
+        self.atMidnight()
 
     def reconfig(self):
         self.widget.SetCalendarFormat(
@@ -916,7 +921,7 @@ class HierarchicalCalendarViewer(
 
     def detach(self):
         super().detach()
-        date.Scheduler().unschedule(self.atMidnight)
+        pub.unsubscribe(self._onDateChanged, 'timer.date')
 
     def atMidnight(self):
         self.widget.SetCalendarFormat(self.widget.CalendarFormat())
@@ -1029,11 +1034,16 @@ class CalendarViewer(
                 self.registerObserver(
                     self.onAttributeChanged_Deprecated, eventType
                 )
-        date.Scheduler().schedule_interval(self.atMidnight, days=1)
+        # Subscribe to global timer for midnight processing
+        pub.subscribe(self._onDateChanged, 'timer.date')
+
+    def _onDateChanged(self, timestamp):
+        """Handle date change from global timer."""
+        self.atMidnight()
 
     def detach(self):
         super().detach()
-        date.Scheduler().unschedule(self.atMidnight)
+        pub.unsubscribe(self._onDateChanged, 'timer.date')
 
     def isTreeViewer(self):
         return False

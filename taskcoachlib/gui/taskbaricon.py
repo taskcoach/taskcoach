@@ -189,7 +189,9 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
             self.__setIcon()
 
     def startClock(self):
-        date.Scheduler().schedule_interval(self.onEverySecond, seconds=1)
+        if not getattr(self, '_clockRunning', False):
+            pub.subscribe(self._onTimerSecond, 'timer.second')
+            self._clockRunning = True
 
     def __stopTicking(self):
         if self.__taskList.nrBeingTracked() == 0:
@@ -198,7 +200,13 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
             self.__setIcon()
 
     def stopClock(self):
-        date.Scheduler().unschedule(self.onEverySecond)
+        if getattr(self, '_clockRunning', False):
+            pub.unsubscribe(self._onTimerSecond, 'timer.second')
+            self._clockRunning = False
+
+    def _onTimerSecond(self, timestamp):
+        """Handle second tick from global timer."""
+        self.onEverySecond()
 
     toolTipMessages = [
         (task.status.overdue, _("one task overdue"), _("%d tasks overdue")),

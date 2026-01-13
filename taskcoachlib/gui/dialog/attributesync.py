@@ -114,22 +114,35 @@ class AttributeSync(object):
                 self.__hasChanges = False
                 return
 
+        # If dialog is closing (new_focus is None), we still need to save any pending changes
+        # to the domain model, but skip the callback to avoid UI updates on destroyed widgets.
+        if new_focus is None:
+            self.__stop_observing_attribute()
+            # Still commit pending changes to domain model, but skip callback
+            if self.__hasChanges and self.__editSessionValue is not None:
+                try:
+                    new_value = self.getValue()
+                    if new_value != self.__editSessionValue:
+                        self.__executeCommand(new_value, skip_callback=True)
+                except RuntimeError:
+                    pass  # Widget already destroyed
+            self.__editSessionValue = None
+            self.__hasChanges = False
+            return
+
         # Focus is leaving the widget entirely - commit if there are changes
         if self.__hasChanges and self.__editSessionValue is not None:
             try:
                 new_value = self.getValue()
                 if new_value != self.__editSessionValue:
-                    # Skip callback if focus is going to None (dialog closing)
-                    # The callback updates UI which can queue events that crash
-                    # after the dialog is destroyed
-                    skip_callback = (new_focus is None)
-                    self.__executeCommand(new_value, skip_callback=skip_callback)
+                    self.__executeCommand(new_value, skip_callback=False)
+                    # Only reset edit session after successful commit
+                    self.__editSessionValue = None
+                    self.__hasChanges = False
             except RuntimeError:
                 pass  # Widget deleted, can't get value or execute command
-
-        # Reset edit session
-        self.__editSessionValue = None
-        self.__hasChanges = False
+        # NOTE: Don't reset __editSessionValue if no changes committed.
+        # This preserves the session state when focus goes to popup dropdowns.
 
     def onAttributeEdited(self, event):
         event.Skip()
@@ -175,25 +188,45 @@ class AttributeSync(object):
 
     def onAttributeChanged(self, newValue, sender):
         if sender in self._items:
-            if self._entry:
-                if newValue != self._currentValue:
-                    self._currentValue = newValue
-                    self.__editSessionValue = None  # Cancel any pending edit session
-                    self.__hasChanges = False
+            # Check if widget is still valid (not destroyed)
+            try:
+                if not self._entry:
+                    self.__stop_observing_attribute()
+                    return
+                # Additional check - try to access a property to verify widget is alive
+                # On GTK, accessing a destroyed widget can segfault
+                self._entry.GetId()
+            except RuntimeError:
+                self.__stop_observing_attribute()
+                return
+
+            if newValue != self._currentValue:
+                self._currentValue = newValue
+                self.__editSessionValue = None  # Cancel any pending edit session
+                self.__hasChanges = False
+                try:
                     self.setValue(newValue)
                     self.__invokeCallback(newValue)
-            else:
-                self.__stop_observing_attribute()
+                except RuntimeError:
+                    self.__stop_observing_attribute()
+                    return
 
     def commandKwArgs(self, new_value):
         self.__commandKwArgs["newValue"] = new_value
         return self.__commandKwArgs
 
     def setValue(self, new_value):
-        self._entry.SetValue(new_value)
+        try:
+            if self._entry:
+                self._entry.SetValue(new_value)
+        except RuntimeError:
+            raise
 
     def getValue(self):
-        return self._entry.GetValue()
+        try:
+            return self._entry.GetValue()
+        except RuntimeError:
+            raise
 
     def __invokeCallback(self, value):
         if self.__callback is not None:

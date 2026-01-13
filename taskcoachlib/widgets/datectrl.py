@@ -108,6 +108,25 @@ class DateTimeCtrl(wx.Panel):
         self.SetSizer(sizer)
 
         self.__ctrl.Bind(sdtc.EVT_DATETIME_CHANGE, self.__OnChange)
+        # Pass focus to child when panel receives focus via Tab
+        self.Bind(wx.EVT_SET_FOCUS, self.__OnSetFocus)
+
+    def __OnSetFocus(self, event):
+        """Pass focus to the SmartDateTimeCtrl child if focus comes from outside."""
+        event.Skip()
+        # Only pass focus if it's coming from outside this control
+        # (prevents focus bouncing when tabbing away from child)
+        old_focus = event.GetWindow()
+        if old_focus is None or not self.__isDescendant(old_focus):
+            self.__ctrl.SetFocus()
+
+    def __isDescendant(self, window):
+        """Check if window is this control or a descendant of it."""
+        while window is not None:
+            if window is self:
+                return True
+            window = window.GetParent()
+        return False
 
     def __OnChange(self, event):
         self.__value = event.GetValue()

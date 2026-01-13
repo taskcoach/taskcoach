@@ -118,24 +118,9 @@ class Task(
             "settings.behavior.markparentcompletedwhenallchildrencompleted",
         )
 
-        now = date.Now()
-        if now < self.__dueDateTime < maxDateTime:
-            date.Scheduler().schedule(
-                self.onOverDue, self.__dueDateTime + date.ONE_SECOND
-            )
-            if self.__dueSoonHours:
-                dueSoonDateTime = (
-                    self.__dueDateTime
-                    + date.ONE_SECOND
-                    - date.TimeDelta(hours=self.__dueSoonHours)
-                )
-                if dueSoonDateTime > date.Now():
-                    date.Scheduler().schedule(self.onDueSoon, dueSoonDateTime)
-        if now < self.__plannedStartDateTime < maxDateTime:
-            date.Scheduler().schedule(
-                self.onTimeToStart,
-                self.__plannedStartDateTime + date.ONE_SECOND,
-            )
+        # Note: Status transitions (overdue, due soon, time to start) are now
+        # handled by the global timer's StatusChecker via polling.
+        # See docs/SCHEDULERS.md for architecture documentation.
 
     @patterns.eventSource
     def __setstate__(self, state, event=None):
@@ -332,20 +317,7 @@ class Task(
         if dueDateTime == self.__dueDateTime:
             return
         self.__dueDateTime = dueDateTime
-        date.Scheduler().unschedule(self.onOverDue)
-        date.Scheduler().unschedule(self.onDueSoon)
-        if date.Now() <= dueDateTime < self.maxDateTime:
-            date.Scheduler().schedule(
-                self.onOverDue, dueDateTime + date.ONE_SECOND
-            )
-            if self.__dueSoonHours > 0:
-                dueSoonDateTime = (
-                    dueDateTime
-                    + date.ONE_SECOND
-                    - date.TimeDelta(hours=self.__dueSoonHours)
-                )
-                if dueSoonDateTime > date.Now():
-                    date.Scheduler().schedule(self.onDueSoon, dueSoonDateTime)
+        # Note: Status transitions are handled by global timer's StatusChecker
         self.markDirty()
         self.recomputeAppearance()
         pub.sendMessage(
@@ -399,13 +371,9 @@ class Task(
         if plannedStartDateTime == self.__plannedStartDateTime:
             return
         self.__plannedStartDateTime = plannedStartDateTime
-        date.Scheduler().unschedule(self.onTimeToStart)
+        # Note: Status transitions are handled by global timer's StatusChecker
         self.markDirty()
         self.recomputeAppearance()
-        if plannedStartDateTime < self.maxDateTime:
-            date.Scheduler().schedule(
-                self.onTimeToStart, plannedStartDateTime + date.ONE_SECOND
-            )
         pub.sendMessage(
             self.plannedStartDateTimeChangedEventType(),
             newValue=plannedStartDateTime,
@@ -690,16 +658,8 @@ class Task(
         return self.__status
 
     def onDueSoonHoursChanged(self, value):
-        date.Scheduler().unschedule(self.onDueSoon)
         self.__dueSoonHours = value
-        dueDateTime = self.dueDateTime()
-        if dueDateTime < self.maxDateTime:
-            newDueSoonDateTime = (
-                dueDateTime
-                + date.ONE_SECOND
-                - date.TimeDelta(hours=self.__dueSoonHours)
-            )
-            date.Scheduler().schedule(self.onDueSoon, newDueSoonDateTime)
+        # Note: Status transitions are handled by global timer's StatusChecker
         self.recomputeAppearance()
 
     # effort related methods:

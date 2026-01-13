@@ -21,23 +21,30 @@ from taskcoachlib import (
     patterns,
     command,
     render,
-    operating_system,
     speak,
 )
 from taskcoachlib.domain import date
 from taskcoachlib.i18n import _
 from pubsub import pub
-from wx.lib import sized_controls
-import subprocess
 import wx
 
 
-class ReminderDialog(patterns.Observer, sized_controls.SizedDialog):
-    def __init__(self, task, taskList, effortList, settings, *args, **kwargs):
+class ReminderDialog(patterns.Observer, wx.Dialog):
+    """
+    Reminder dialog with proper tab navigation.
+
+    Uses wx.GridBagSizer for layout to ensure all controls are tabbable.
+    Tab order: OK, then left-to-right, top-to-bottom.
+    """
+    FREEZE_DURATION_MS = 2000  # Freeze duration in milliseconds
+
+    def __init__(self, task, taskList, effortList, settings, parent, *args, **kwargs):
         kwargs["title"] = _("%(name)s reminder - %(task)s") % dict(
             name=meta.name, task=task.subject(recursive=True)
         )
-        super().__init__(*args, **kwargs)
+        kwargs["style"] = kwargs.get("style", wx.DEFAULT_DIALOG_STYLE)
+        super().__init__(parent, *args, **kwargs)
+        self._isFrozen = False
         self.SetIcon(
             wx.ArtProvider.GetIcon("taskcoach", wx.ART_FRAME_ICON, (16, 16))
         )
@@ -56,39 +63,44 @@ class ReminderDialog(patterns.Observer, sized_controls.SizedDialog):
         )
         pub.subscribe(self.onTrackingChanged, task.trackingChangedEventType())
         self.openTaskAfterClose = self.ignoreSnoozeOption = False
-        pane = self.GetContentsPane()
-        pane.SetSizerType("form")
 
-        wx.StaticText(pane, label=_("Task") + ":")
-        panel = wx.Panel(pane)
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.openTask = wx.Button(
-            panel, label=self.task.subject(recursive=True)
-        )
+        # Main sizer
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+
+        # Grid for form layout - all controls directly on dialog for proper tabbing
+        grid = wx.FlexGridSizer(cols=2, vgap=8, hgap=8)
+        grid.AddGrowableCol(1, 1)
+
+        # Row 1: Task label and buttons
+        grid.Add(wx.StaticText(self, label=_("Task") + ":"),
+                 flag=wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT)
+
+        taskButtonSizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.openTask = wx.Button(self, label=self.task.subject(recursive=True))
         self.openTask.Bind(wx.EVT_BUTTON, self.onOpenTask)
-        sizer.Add(self.openTask, flag=wx.ALIGN_CENTER_VERTICAL)
-        self.startTracking = wx.BitmapButton(panel)
+        taskButtonSizer.Add(self.openTask, flag=wx.ALIGN_CENTER_VERTICAL)
+        taskButtonSizer.AddSpacer(3)
+        self.startTracking = wx.BitmapButton(self)
         self.setTrackingIcon()
         self.startTracking.Bind(wx.EVT_BUTTON, self.onStartOrStopTracking)
-        sizer.Add((3, -1), flag=wx.ALIGN_CENTER_VERTICAL)
-        sizer.Add(self.startTracking, flag=wx.ALIGN_CENTER_VERTICAL)
-        panel.SetSizerAndFit(sizer)
+        taskButtonSizer.Add(self.startTracking, flag=wx.ALIGN_CENTER_VERTICAL)
+        grid.Add(taskButtonSizer, flag=wx.EXPAND)
 
-        for label in (
-            _("Reminder date/time") + ":",
-            render.dateTime(self.task.reminder()),
-            _("Snooze") + ":",
-        ):
-            wx.StaticText(pane, label=label)
+        # Row 2: Reminder date/time label and value
+        grid.Add(wx.StaticText(self, label=_("Reminder date/time") + ":"),
+                 flag=wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT)
+        grid.Add(wx.StaticText(self, label=render.dateTime(self.task.reminder())),
+                 flag=wx.ALIGN_CENTER_VERTICAL)
 
-        self.snoozeOptions = wx.ComboBox(pane, style=wx.CB_READONLY)
+        # Row 3: Snooze label and dropdown
+        grid.Add(wx.StaticText(self, label=_("Snooze") + ":"),
+                 flag=wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT)
+        self.snoozeOptions = wx.Choice(self)
         snoozeTimesUserWantsToSee = [0] + self.settings.getlist(
             "view", "snoozetimes"
         )
         defaultSnoozeTime = self.settings.getint("view", "defaultsnoozetime")
-        # Use the 1st non-zero option if we don't find the last snooze time:
         selectionIndex = 1
-        # pylint: disable=E1101
         for minutes, label in date.snoozeChoices:
             if minutes in snoozeTimesUserWantsToSee:
                 self.snoozeOptions.Append(
@@ -99,10 +111,12 @@ class ReminderDialog(patterns.Observer, sized_controls.SizedDialog):
         self.snoozeOptions.SetSelection(
             min(selectionIndex, self.snoozeOptions.Count - 1)
         )
+        grid.Add(self.snoozeOptions, flag=wx.ALIGN_CENTER_VERTICAL)
 
-        wx.StaticText(pane, label="")
+        # Row 4: Empty label and checkbox
+        grid.Add(wx.StaticText(self, label=""), flag=wx.ALIGN_RIGHT)
         self.replaceDefaultSnoozeTime = wx.CheckBox(
-            pane,
+            self,
             label=_(
                 "Also make this the default snooze time for future "
                 "reminders"
@@ -111,33 +125,85 @@ class ReminderDialog(patterns.Observer, sized_controls.SizedDialog):
         self.replaceDefaultSnoozeTime.SetValue(
             self.settings.getboolean("view", "replacedefaultsnoozetime")
         )
+        grid.Add(self.replaceDefaultSnoozeTime, flag=wx.EXPAND)
 
-        buttonSizer = self.CreateStdDialogButtonSizer(wx.OK)
+        mainSizer.Add(grid, proportion=1, flag=wx.ALL | wx.EXPAND, border=10)
+
+        # Button row
+        buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.okButton = wx.Button(self, wx.ID_OK, _("OK"))
+        self.okButton.Bind(wx.EVT_BUTTON, self.onOK)
         self.markCompleted = wx.Button(self, label=_("Mark task completed"))
         self.markCompleted.Bind(wx.EVT_BUTTON, self.onMarkTaskCompleted)
         if self.task.completed():
             self.markCompleted.Disable()
-        buttonSizer.Add(self.markCompleted, flag=wx.ALIGN_CENTER_VERTICAL)
-        self.SetButtonSizer(buttonSizer)
+
+        # Right-align buttons (standard UX)
+        buttonSizer.AddStretchSpacer()
+        buttonSizer.Add(self.okButton, flag=wx.RIGHT, border=5)
+        buttonSizer.Add(self.markCompleted)
+
+        mainSizer.Add(buttonSizer, flag=wx.ALL | wx.EXPAND, border=10)
+
+        self.SetSizer(mainSizer)
         self.Bind(wx.EVT_CLOSE, self.onClose)
-        self.Bind(wx.EVT_BUTTON, self.onOK, id=self.GetAffirmativeId())
+
+        # Set tab order: OK first, then left-to-right, top-to-bottom
+        # This ensures first Tab after unfreeze goes to OK button
+        # Order: okButton -> markCompleted -> openTask -> startTracking ->
+        #        snoozeOptions -> replaceDefaultSnoozeTime
+        self.markCompleted.MoveAfterInTabOrder(self.okButton)
+        self.openTask.MoveAfterInTabOrder(self.markCompleted)
+        self.startTracking.MoveAfterInTabOrder(self.openTask)
+        self.snoozeOptions.MoveAfterInTabOrder(self.startTracking)
+        self.replaceDefaultSnoozeTime.MoveAfterInTabOrder(self.snoozeOptions)
+
         self.Fit()
+        self.Layout()
+        # Ensure minimum size
+        size = self.GetSize()
+        if size.height < 200:
+            self.SetSize(size.width, 200)
+            self.Layout()
+
         self.RequestUserAttention()
+        self._freezeDialog()
         if self.settings.getboolean("feature", "sayreminder"):
             speak.Speaker().say('"%s: %s"' % (_("Reminder"), task.subject()))
 
-    def onOpenTask(self, event):  # pylint: disable=W0613
+    def _freezeDialog(self):
+        """Freeze dialog to prevent accidental actions."""
+        self._isFrozen = True
+        self.Disable()
+        self._freezeTimer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self._onFreezeTimer, self._freezeTimer)
+        self._freezeTimer.StartOnce(self.FREEZE_DURATION_MS)
+
+    def _onFreezeTimer(self, event):
+        """Timer event handler to unfreeze dialog."""
+        self._unfreezeDialog()
+
+    def _unfreezeDialog(self):
+        """Unfreeze dialog and re-enable interaction."""
+        if not self._isFrozen:
+            return
+        self._isFrozen = False
+        self.Enable()
+        # Do NOT set focus on any control - let focus remain on background
+        # This prevents accidental actions from keyboard input
+
+    def onOpenTask(self, event):
         self.openTaskAfterClose = True
         self.Close()
 
-    def onStartOrStopTracking(self, event):  # pylint: disable=W0613
+    def onStartOrStopTracking(self, event):
         if self.task.isBeingTracked():
             command.StopEffortCommand(self.effortList).do()
         else:
             command.StartEffortCommand(self.taskList, [self.task]).do()
         self.setTrackingIcon()
 
-    def onTrackingChanged(self, newValue, sender):  # pylint: disable=W0613
+    def onTrackingChanged(self, newValue, sender):
         self.setTrackingIcon()
 
     def setTrackingIcon(self):
@@ -148,7 +214,7 @@ class ReminderDialog(patterns.Observer, sized_controls.SizedDialog):
             wx.ArtProvider.GetBitmap(icon, wx.ART_TOOLBAR, (16, 16))
         )
 
-    def onMarkTaskCompleted(self, event):  # pylint: disable=W0613
+    def onMarkTaskCompleted(self, event):
         self.ignoreSnoozeOption = True
         self.Close()
         command.MarkCompletedCommand(self.taskList, [self.task]).do()
@@ -157,9 +223,7 @@ class ReminderDialog(patterns.Observer, sized_controls.SizedDialog):
         if self.task in list(event.values()):
             self.Close()
 
-    def onTaskCompletionDateChanged(
-        self, newValue, sender
-    ):  # pylint: disable=W0613
+    def onTaskCompletionDateChanged(self, newValue, sender):
         if sender == self.task:
             if self.task.completed():
                 self.Close()
@@ -167,10 +231,36 @@ class ReminderDialog(patterns.Observer, sized_controls.SizedDialog):
                 self.markCompleted.Enable()
 
     def onClose(self, event):
+        # Block closing during freeze period to prevent accidental dismissal
+        if self._isFrozen:
+            event.Veto()
+            return
+
+        # Stop the freeze timer to prevent callbacks on destroyed dialog
+        if hasattr(self, '_freezeTimer') and self._freezeTimer:
+            self._freezeTimer.Stop()
+            self._freezeTimer = None
+
+        # Unsubscribe from pubsub events to prevent callbacks on destroyed dialog
+        try:
+            pub.unsubscribe(
+                self.onTaskCompletionDateChanged,
+                self.task.completionDateTimeChangedEventType(),
+            )
+        except Exception:
+            pass
+        try:
+            pub.unsubscribe(self.onTrackingChanged, self.task.trackingChangedEventType())
+        except Exception:
+            pass
+
         event.Skip()
+        # Safety check - verify controls exist before accessing
+        if not hasattr(self, 'replaceDefaultSnoozeTime') or self.replaceDefaultSnoozeTime is None:
+            self.removeInstance()
+            return
         replace_default_snooze_time = self.replaceDefaultSnoozeTime.GetValue()
         if replace_default_snooze_time:
-            # pylint: disable=E1101
             selection = self.snoozeOptions.Selection
             minutes = self.snoozeOptions.GetClientData(selection).minutes()
             self.settings.set("view", "defaultsnoozetime", str(int(minutes)))

@@ -915,7 +915,7 @@ Break the lock?"""
             # Check for timer attributes
             for attr_name in ['__timer', '_timer', 'timer', '_sizeTimer', '_refreshTimer',
                               '_dragTimer', '_findTimer', '_editTimer', '__tmr',
-                              'scheduledStatusDisplay']:
+                              'scheduledStatusDisplay', '_globalTimer']:
                 # Try both public and name-mangled private attributes
                 for prefix in ['', '_' + window.__class__.__name__]:
                     full_name = prefix + attr_name
@@ -954,9 +954,6 @@ Break the lock?"""
         # Stop notification timers to prevent crashes during shutdown
         from taskcoachlib.notify.notifier_universal import NotificationCenter
         NotificationCenter().cleanup()
-        from taskcoachlib.domain import date
-
-        date.Scheduler().shutdown()
         wx.EventLoop.GetActive().ProcessIdle()
 
         # For PowerStateMixin

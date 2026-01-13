@@ -57,6 +57,8 @@ class SpinCtrl(wx.Panel):
         self._textCtrl.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
         self._textCtrl.Bind(wx.EVT_KILL_FOCUS, self.onKillFocus)
         self._spinButton.Bind(wx.EVT_SPIN, self.onSpin)
+        # Clear text selection when spin button gets focus (e.g., during backward tab)
+        self._spinButton.Bind(wx.EVT_SET_FOCUS, self.onSpinButtonFocus)
 
     def onText(self, event):
         """Handle text changes. Allow empty field during editing - validation
@@ -103,9 +105,17 @@ class SpinCtrl(wx.Panel):
         self._textCtrl.SelectAll()
         event.Skip()
 
+    def onSpinButtonFocus(self, event):
+        """Clear text selection when spin button gets focus."""
+        event.Skip()
+        # Deselect text to remove visual highlight
+        self._textCtrl.SetSelection(0, 0)
+
     def onKillFocus(self, event):
         """Handle focus loss - validate and fix the value, then notify."""
         event.Skip()
+        # Clear text selection to remove visual highlight when focus leaves
+        self._textCtrl.SetSelection(0, 0)
         text = self._textCtrl.GetValue().strip()
         if not text:
             # Empty field - use closest valid value to 0
