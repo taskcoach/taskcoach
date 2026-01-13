@@ -137,7 +137,6 @@ class SingleLineTextCtrl(BaseTextCtrl):
 
 class _MultiLineTextCtrlInner(BaseTextCtrl):
     """Inner text control for MultiLineTextCtrl with URL handling."""
-    CheckSpelling = True
 
     def __init__(self, parent, text="", *args, **kwargs):
         kwargs["style"] = kwargs.get("style", 0) | wx.TE_MULTILINE | wx.BORDER_NONE
@@ -153,7 +152,6 @@ class _MultiLineTextCtrlInner(BaseTextCtrl):
             self.__webbrowser = webbrowser.get()
         except webbrowser.Error:
             self.__webbrowser = None
-        self.MacCheckSpelling(self.CheckSpelling)
 
     def onURLClicked(self, event):
         mouseEvent = event.GetMouseEvent()
@@ -176,7 +174,6 @@ class MultiLineTextCtrl(wx.Panel):
     padding on all platforms (SetMargins doesn't work on GTK).
     Uses RendererNative to draw native-looking border with focus state.
     """
-    CheckSpelling = True
     _nativePadding = None  # Cached native padding value
 
     @classmethod
@@ -235,7 +232,6 @@ class MultiLineTextCtrl(wx.Panel):
 
         # Create the inner text control
         self._textCtrl = _MultiLineTextCtrlInner(self, text, *args, **kwargs)
-        self._textCtrl.CheckSpelling = self.CheckSpelling
 
         # Match background colors
         self.SetBackgroundColour(self._textCtrl.GetBackgroundColour())
@@ -325,9 +321,6 @@ class MultiLineTextCtrl(wx.Panel):
 
     def SetFocus(self):
         return self._textCtrl.SetFocus()
-
-    def MacCheckSpelling(self, check):
-        return self._textCtrl.MacCheckSpelling(check)
 
     def Bind(self, event, handler, *args, **kwargs):
         # Bind text and focus events to inner control, others to panel

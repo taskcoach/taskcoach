@@ -590,7 +590,6 @@ class Application(object, metaclass=patterns.Singleton):
             self.iocontroller, self.taskFile, self.settings
         )
         self.__wx_app.SetTopWindow(self.mainwindow)
-        self.__init_spell_checking()
         if not self.settings.getboolean("file", "inifileloaded"):
             self.__warn_user_that_ini_file_was_not_loaded()
         if loadTaskFile:
@@ -727,23 +726,6 @@ Break the lock?"""
                 )
             except (ImportError, AttributeError, OSError):
                 pass  # Not on Windows or API not available
-
-    def __init_spell_checking(self):
-        self.on_spell_checking(
-            self.settings.getboolean("editor", "maccheckspelling")
-        )
-        pub.subscribe(
-            self.on_spell_checking, "settings.editor.maccheckspelling"
-        )
-
-    def on_spell_checking(self, value):
-        if (
-            operating_system.isMac()
-            and not operating_system.isMacOsXMountainLion_OrNewer()
-        ):
-            wx.SystemOptions.SetOptionInt(
-                "mac.textcontrol-use-spell-checker", value
-            )
 
     def __register_signal_handlers(self):
         """Register signal handlers for clean shutdown.

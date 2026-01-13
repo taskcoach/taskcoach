@@ -11,6 +11,7 @@ This document tracks planned improvements and known issues to address in future 
 - [Setup/Installation Issues](#setupinstallation-issues)
 - [Monkeypatches and Workarounds](#monkeypatches-and-workarounds)
 - [Datetime and Timezone Refactoring](#datetime-and-timezone-refactoring)
+- [Text-to-Speech Modernization](#text-to-speech-modernization)
 - [Other TODOs](#other-todos)
 
 ---
@@ -282,6 +283,62 @@ display_time = aware_dt.astimezone()  # System local timezone
 - [PEP 495 - Local Time Disambiguation](https://peps.python.org/pep-0495/)
 
 **Status:** Workaround in place. Full refactor is a significant undertaking.
+
+---
+
+## Text-to-Speech Modernization
+
+### Current Status
+
+The "Let the computer say the reminder" feature uses a hand-rolled implementation:
+- Mac: subprocess call to `say` command
+- Linux: subprocess call to `espeak` command
+- Windows: No-op (feature unavailable)
+
+The preference is only shown on Mac/Linux, disabled by default.
+
+### Proposed Change
+
+Replace custom implementation with **pyttsx3** library:
+
+| Aspect | Current | With pyttsx3 |
+|--------|---------|--------------|
+| Windows | Not supported | SAPI5 (native) |
+| macOS | subprocess to `say` | NSSpeechSynthesizer (native) |
+| Linux | subprocess to `espeak` | espeak (same) |
+| Code lines | ~68 | ~15-20 |
+| Dependency | None | pyttsx3 |
+
+### Implementation Details
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `taskcoachlib/speak/speaker.py` | Replace with pyttsx3 implementation |
+| `taskcoachlib/gui/dialog/preferences.py` | Remove OS check, show option on all platforms |
+| `taskcoachlib/gui/dialog/reminder.py` | No change - API stays the same |
+
+**New speaker.py implementation:**
+```python
+import pyttsx3
+from taskcoachlib import patterns
+
+class Speaker(metaclass=patterns.Singleton):
+    def __init__(self):
+        self._engine = pyttsx3.init()
+
+    def say(self, text):
+        self._engine.say(text)
+        self._engine.runAndWait()
+```
+
+**References:**
+- [pyttsx3 on PyPI](https://pypi.org/project/pyttsx3/) - Latest version 2.99 (July 2025)
+- Supports Python 3.9-3.13
+- Works offline, no internet required
+
+**Status:** Ready to implement
 
 ---
 

@@ -630,13 +630,12 @@ class WindowBehaviorPage(SettingsPage):
             _("Minimize main window when closed"),
             flags=[wx.ALIGN_RIGHT, wx.EXPAND],
         )
-        if not operating_system.isMacOsXMavericks_OrNewer():
-            self.addBooleanSetting(
-                "window",
-                "blinktaskbariconwhentrackingeffort",
-                _("Make clock in the task bar tick when tracking effort"),
-                flags=[wx.ALIGN_RIGHT, wx.EXPAND],
-            )
+        self.addBooleanSetting(
+            "window",
+            "blinktaskbariconwhentrackingeffort",
+            _("Make clock in the task bar tick when tracking effort"),
+            flags=[wx.ALIGN_RIGHT, wx.EXPAND],
+        )
         # Dark Theme setting with detection status to the right of dropdown
         is_dark = detect_dark_theme()
         detected = _("Dark") if is_dark else _("Light")
@@ -1167,72 +1166,6 @@ class TaskReminderPage(SettingsPage):
         self.fit()
 
 
-class EditorPage(SettingsPage):
-    pageName = "editor"
-    pageTitle = _("Editor")
-    pageIcon = "edit"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(columns=2, *args, **kwargs)
-        if (
-            operating_system.isMac()
-            and not operating_system.isMacOsXMountainLion_OrNewer()
-        ):
-            self.addBooleanSetting(
-                "editor", "maccheckspelling", _("Check spelling in editors")
-            )
-        self.addFontSetting(
-            "editor",
-            "descriptionfont",
-            _("Font to use in the description field of edit dialogs"),
-        )
-        self.fit()
-
-    def ok(self):
-        super().ok()
-        widgets.MultiLineTextCtrl.CheckSpelling = self.settings.getboolean(
-            "editor", "maccheckspelling"
-        )
-
-
-class OSXPage(SettingsPage):
-    pageName = "os_darwin"
-    pageTitle = _("OS X")
-    pageIcon = "mac"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(columns=3, *args, **kwargs)
-
-        self.addBooleanSetting(
-            "os_darwin",
-            "getmailsubject",
-            _("Get e-mail subject from Mail.app"),
-            helpText=_(
-                "When dropping an e-mail from Mail.app, try to get its subject.\nThis takes up to 20 seconds."
-            ),
-        )
-        self.fit()
-
-
-class LinuxPage(SettingsPage):
-    pageName = "os_linux"
-    pageTitle = _("Linux")
-    pageIcon = "linux"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(columns=3, *args, **kwargs)
-
-        self.addBooleanSetting(
-            "os_linux",
-            "focustextentry",
-            _("Focus task subject in task editor"),
-            helpText=_(
-                "When opening the task editor, select the task subject and focus it.\nThis overwrites the X selection."
-            ),
-        )
-        self.fit()
-
-
 class Preferences(widgets.NotebookDialog):
     allPageNames = [
         "window",
@@ -1242,9 +1175,6 @@ class Preferences(widgets.NotebookDialog):
         "reminder",
         "appearance",
         "features",
-        "editor",
-        "os_darwin",
-        "os_linux",
     ]
     pages = dict(
         window=WindowBehaviorPage,
@@ -1254,9 +1184,6 @@ class Preferences(widgets.NotebookDialog):
         language=LanguagePage,
         appearance=TaskAppearancePage,
         features=FeaturesPage,
-        editor=EditorPage,
-        os_darwin=OSXPage,
-        os_linux=LinuxPage,
     )
 
     def __init__(self, settings=None, *args, **kwargs):
@@ -1268,17 +1195,8 @@ class Preferences(widgets.NotebookDialog):
     def addPages(self):
         self._interior.SetMinSize((950, 550))
         for page_name in self.allPageNames:
-            if self.__should_create_page(page_name):
-                page = self.createPage(page_name)
-                self._interior.AddPage(page, page.pageTitle, page.pageIcon)
-
-    def __should_create_page(self, page_name):
-        if page_name == "os_darwin":
-            return operating_system.isMac()
-        elif page_name == "os_linux":
-            return operating_system.isGTK()
-        else:
-            return True
+            page = self.createPage(page_name)
+            self._interior.AddPage(page, page.pageTitle, page.pageIcon)
 
     def createPage(self, pageName):
         return self.pages[pageName](

@@ -448,34 +448,7 @@ class FocusTest(TaskEditorTestCase):
         )
 
 
-class FocusTestWithGTKSetting(TaskEditorTestCase):
-    extraSettings = [("os_linux", "focustextentry", "False")]
-
-    def createTasks(self):
-        self.task = task.Task("Task to edit")
-        return [self.task]
-
-    def getItems(self):
-        return [self.task]
-
-    def testFocus(self):
-        # pylint: disable=W0212
-        self.assertNotEqual(
-            self.editor._interior[0]._subjectEntry, wx.Window_FindFocus()
-        )
-
-    def testSelection(self):
-        # pylint: disable=W0212
-        self.assertEqual(
-            self.editor._interior[0]._subjectEntry.GetStringSelection(), ""
-        )
-
-
 class FocusTestWithPerspective(FocusTest):
-    editorClass = TaskEditorWithPerspective
-
-
-class FocusTestWithPerspectiveAndGTKSetting(FocusTestWithGTKSetting):
     editorClass = TaskEditorWithPerspective
 
 

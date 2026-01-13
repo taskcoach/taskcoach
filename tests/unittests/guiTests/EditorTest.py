@@ -136,20 +136,3 @@ class EditorTestCase(test.wxTestCase):
         imageNames = sorted(gui.artprovider.chooseableItemImages.keys())
         self.item.setIcon(imageNames[10])
         self.assertEqual(10, self.appearance._iconEntry.GetSelection())
-
-    def testDefaultDescriptionFont(self):
-        default_font = wx.TextCtrl(self.frame).GetFont()
-        self.assertEqual(
-            default_font, self.editor._interior[0]._descriptionEntry.GetFont()
-        )
-
-    def testSetDescriptionFont(self):
-        font = wx.TextCtrl(self.frame).GetFont()
-        font.SetPointSize(font.GetPointSize() + 1)
-        self.settings.settext(
-            "editor", "descriptionfont", font.GetNativeFontInfoDesc()
-        )
-        editor = EditorUnderTest(
-            self.frame, [self.item], self.settings, self.items, self.taskFile
-        )
-        self.assertEqual(font, editor._interior[0]._descriptionEntry.GetFont())

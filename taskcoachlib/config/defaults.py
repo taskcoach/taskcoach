@@ -545,12 +545,6 @@ defaults = {
         "inactivetasks": "led_grey_icon",
         "duesoontasks": "led_orange_icon",
     },
-    "editor": {
-        "descriptionfont": "",  # Font to use in the desciption field of editors
-        "maccheckspelling": "True",
-    },
-    "os_darwin": {"getmailsubject": "False"},
-    "os_linux": {"focustextentry": "True"},
     "version": {
         "python": "",  # Filled in by the Settings class when saving the settings
         "wxpython": "",  # Idem

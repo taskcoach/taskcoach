@@ -138,11 +138,8 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         self.__setTooltipText()
 
     def onEverySecond(self):
-        if (
-            self.__settings.getboolean(
-                "window", "blinktaskbariconwhentrackingeffort"
-            )
-            and not operating_system.isMacOsXMavericks_OrNewer()
+        if self.__settings.getboolean(
+            "window", "blinktaskbariconwhentrackingeffort"
         ):
             self.__toggleTrackingBitmap()
             self.__setIcon()

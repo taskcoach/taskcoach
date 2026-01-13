@@ -59,31 +59,6 @@ def isMacOsXLion_OrNewer():  # pragma: no cover
         return False
 
 
-def isMacOsXTiger_OrOlder():  # pragma no cover
-    if isMac():
-        return _platformVersion() <= (
-            8,
-            11,
-            1,
-        )  # Darwin release number for Tiger
-    else:
-        return False
-
-
-def isMacOsXMountainLion_OrNewer():  # pragma no cover
-    if isMac():
-        return _platformVersion() >= (12,)
-    else:
-        return False
-
-
-def isMacOsXMavericks_OrNewer():  # pragma no cover
-    if isMac():
-        return _platformVersion() >= (13,)
-    else:
-        return False
-
-
 def defaultEncodingName():
     return wx.Locale.GetSystemEncodingName() or "utf-8"
 

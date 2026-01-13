@@ -62,30 +62,25 @@ class Page(patterns.Observer, widgets.BookPage):
 
     def __set_selection_and_focus(self, the_entry):
         """If the entry has selectable text, select the text so that the user
-        can start typing over it immediately, except on Linux because it
-        overwrites the X clipboard."""
-        if self.focusTextControl():
-            the_entry.SetFocus()
-            try:
-                if operating_system.isWindows() and isinstance(
-                    the_entry, wx.TextCtrl
-                ):
-                    # XXXFIXME: See SR #325. Disable this for now.
+        can start typing over it immediately."""
+        the_entry.SetFocus()
+        try:
+            if operating_system.isWindows() and isinstance(
+                the_entry, wx.TextCtrl
+            ):
+                # XXXFIXME: See SR #325. Disable this for now.
 
-                    # This ensures that if the TextCtrl value is more than can
-                    # be displayed, it will display the start instead of the
-                    # end:
-                    """from taskcoachlib.thirdparty import SendKeys  # pylint: disable=W0404
-                    SendKeys.SendKeys('{END}+{HOME}')"""
+                # This ensures that if the TextCtrl value is more than can
+                # be displayed, it will display the start instead of the
+                # end:
+                """from taskcoachlib.thirdparty import SendKeys  # pylint: disable=W0404
+                SendKeys.SendKeys('{END}+{HOME}')"""
 
-                    # Scrol to left...
-                    the_entry.SetInsertionPoint(0)
-                the_entry.SetSelection(-1, -1)  # Select all text
-            except (AttributeError, TypeError):
-                pass  # Not a TextCtrl
-
-    def focusTextControl(self):
-        return True
+                # Scrol to left...
+                the_entry.SetInsertionPoint(0)
+            the_entry.SetSelection(-1, -1)  # Select all text
+        except (AttributeError, TypeError):
+            pass  # Not a TextCtrl
 
     def close(self):
         self.removeInstance()
@@ -99,17 +94,6 @@ class SubjectPage(Page):
     def __init__(self, items, parent, settings, *args, **kwargs):
         self._settings = settings
         super().__init__(items, parent, *args, **kwargs)
-
-    def SetFocus(self):
-        # Skip this on GTK because it selects the control's text, which
-        # overrides the X selection. Simply commenting out the SetFocus() in
-        # __load_perspective is not enough because the aui notebook calls this
-        # when the user selects a tab.
-        if self.focusTextControl():
-            super().SetFocus()
-
-    def focusTextControl(self):
-        return self._settings.getboolean("os_linux", "focustextentry")
 
     def addEntries(self):
         self.addSubjectEntry()
@@ -155,14 +139,6 @@ class SubjectPage(Page):
         self._descriptionEntry = widgets.MultiLineTextCtrl(
             self, current_description
         )
-        native_info_string = self._settings.get("editor", "descriptionfont")
-        font = (
-            wx.FontFromNativeInfoString(native_info_string)
-            if native_info_string
-            else None
-        )
-        if font:
-            self._descriptionEntry.SetFont(font)
         self._descriptionSync = attributesync.AttributeSync(
             "description",
             self._descriptionEntry,
@@ -2105,14 +2081,6 @@ class EffortEditBook(Page):
         self._descriptionEntry = widgets.MultiLineTextCtrl(
             self, current_description
         )
-        native_info_string = self._settings.get("editor", "descriptionfont")
-        font = (
-            wx.FontFromNativeInfoString(native_info_string)
-            if native_info_string
-            else None
-        )
-        if font:
-            self._descriptionEntry.SetFont(font)
         self._descriptionEntry.SetSizeHints(300, 150)
         self._descriptionSync = attributesync.AttributeSync(
             "description",
