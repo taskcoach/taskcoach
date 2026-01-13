@@ -34,7 +34,6 @@ from taskcoachlib.gui import (
     idlecontroller,
     timer as globaltimer,
 )
-from taskcoachlib.gui.dialog.xfce4warning import XFCE4WarningDialog
 from taskcoachlib.gui.dialog.editor import Editor
 from taskcoachlib.i18n import _
 from taskcoachlib.powermgt import PowerStateMixin
@@ -96,20 +95,6 @@ class MainWindow(
         self._idleController = idlecontroller.IdleController(
             self, self.settings, self.taskFile.efforts()
         )
-
-        wx.CallAfter(self.checkXFCE4)
-
-    def checkXFCE4(self):
-        if operating_system.isGTK():
-            mon = application.Application().sessionMonitor
-            if (
-                mon is not None
-                and self.settings.getboolean("feature", "usesm2")
-                and self.settings.getboolean("feature", "showsmwarning")
-                and mon.vendor == "xfce4-session"
-            ):
-                dlg = XFCE4WarningDialog(self, self.settings)
-                dlg.Show()
 
     def setShutdownInProgress(self):
         self.__shutdown = True

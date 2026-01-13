@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import meta, widgets, notify, operating_system, render
+from taskcoachlib.application.application import detect_dark_theme
 from taskcoachlib.domain import date, task
 from taskcoachlib.gui import artprovider
 from taskcoachlib.meta import data
@@ -636,6 +637,35 @@ class WindowBehaviorPage(SettingsPage):
                 _("Make clock in the task bar tick when tracking effort"),
                 flags=[wx.ALIGN_RIGHT, wx.EXPAND],
             )
+        # Dark Theme setting with detection status to the right of dropdown
+        is_dark = detect_dark_theme()
+        detected = _("Dark") if is_dark else _("Light")
+        themeChoices = self.addChoiceSetting(
+            "window",
+            "theme",
+            _("Dark Mode"),
+            "",
+            [
+                ("light", _("Light Theme (Forced)")),
+                ("dark", _("Dark Theme (Forced)")),
+                ("automatic", _("Automatic (detect from system)")),
+            ],
+            flags=[wx.ALIGN_RIGHT, wx.EXPAND],
+        )
+        # Add detection status to the right of the dropdown
+        detectedLabel = wx.StaticText(self, label=_("(Detected: %s)") % detected)
+        detectedLabel.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+        # Find the choice control in the sizer and replace with a horizontal sizer containing both
+        sizer_item = self._sizer.FindItem(themeChoices[0])
+        if sizer_item:
+            pos = sizer_item.GetPos()
+            span = sizer_item.GetSpan()
+            border = sizer_item.GetBorder()
+            self._sizer.Detach(themeChoices[0])
+            hbox = wx.BoxSizer(wx.HORIZONTAL)
+            hbox.Add(themeChoices[0], 0, wx.ALIGN_CENTER_VERTICAL)
+            hbox.Add(detectedLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 10)
+            self._sizer.Add(hbox, pos, span, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, border)
         self.fit()
 
 
@@ -812,13 +842,6 @@ class FeaturesPage(SettingsPage):
             % meta.name,
             flags=(wx.ALIGN_CENTER,),
         )
-        if operating_system.isGTK():
-            self.addBooleanSetting(
-                "feature",
-                "usesm2",
-                _("Use X11 session management"),
-                flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTRE_VERTICAL, wx.EXPAND),
-            )
         self.addChoiceSetting(
             "view",
             "weekstart",

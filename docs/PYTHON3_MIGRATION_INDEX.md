@@ -2,6 +2,20 @@
 
 This index provides navigation to the Python 3 migration documentation, which has been split into multiple parts for easier navigation.
 
+## Contributing Guidelines
+
+**Maximum page size: 700 lines.** When adding new content:
+1. Add to the last page if it has room
+2. If the last page exceeds 700 lines, create a new page (e.g., `PYTHON3_MIGRATION_6.md`)
+3. Update this index with the new page and its sections
+
+Current page sizes:
+- Page 1: 680 lines
+- Page 2: 722 lines (slightly over)
+- Page 3: 591 lines
+- Page 4: 717 lines
+- Page 5: 380 lines
+
 ## Document Overview
 
 | Document | Content |
@@ -9,7 +23,8 @@ This index provides navigation to the Python 3 migration documentation, which ha
 | [PYTHON3_MIGRATION_1.md](PYTHON3_MIGRATION_1.md) | Widget Resizing, wx.Timer Crash, Ctrl+C Crash, wxPython Compatibility |
 | [PYTHON3_MIGRATION_2.md](PYTHON3_MIGRATION_2.md) | Bundled Library Cleanup, Twisted Removal, Window Position Tracking |
 | [PYTHON3_MIGRATION_3.md](PYTHON3_MIGRATION_3.md) | GTK Issues, AUI Issues, Known Issues |
-| [PYTHON3_MIGRATION_4.md](PYTHON3_MIGRATION_4.md) | Logging, Python 3.12+, File Locking, App Icons, i18n, Feature Removals |
+| [PYTHON3_MIGRATION_4.md](PYTHON3_MIGRATION_4.md) | Logging, Python 3.12+, File Locking, App Icons, i18n, SyncML Removal |
+| [PYTHON3_MIGRATION_5.md](PYTHON3_MIGRATION_5.md) | Mobile Sync, Filesystem Monitors, Growl, X11 Session Management Removals |
 
 ---
 
@@ -57,10 +72,18 @@ This index provides navigation to the Python 3 migration documentation, which ha
 - [Future Work](PYTHON3_MIGRATION_4.md#future-work)
 - [Internationalization and Locale Issues](PYTHON3_MIGRATION_4.md#internationalization-and-locale-issues)
 - [SyncML Removal](PYTHON3_MIGRATION_4.md#syncml-removal)
-- [Mobile Sync Features Removal](PYTHON3_MIGRATION_4.md#mobile-sync-features-removal)
-- [Native Filesystem Monitors: Deleted](PYTHON3_MIGRATION_4.md#native-filesystem-monitors-deleted)
-- [Growl Notification Support Removal](PYTHON3_MIGRATION_4.md#growl-notification-support-removal)
-- [Contributing to This Document](PYTHON3_MIGRATION_4.md#contributing-to-this-document)
+
+---
+
+## Part 5: Feature Removals (Continued)
+
+**File:** [PYTHON3_MIGRATION_5.md](PYTHON3_MIGRATION_5.md)
+
+- [Mobile Sync Features Removal](PYTHON3_MIGRATION_5.md#mobile-sync-features-removal)
+- [Native Filesystem Monitors: Deleted](PYTHON3_MIGRATION_5.md#native-filesystem-monitors-deleted)
+- [Growl Notification Support Removal](PYTHON3_MIGRATION_5.md#growl-notification-support-removal)
+- [X11 Session Management Removal](PYTHON3_MIGRATION_5.md#x11-session-management-removal)
+- [Contributing to This Document](PYTHON3_MIGRATION_5.md#contributing-to-this-document)
 
 ---
 

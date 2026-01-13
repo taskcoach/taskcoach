@@ -485,6 +485,8 @@ defaults = {
         "tips": "True",  # Show tips after starting up
         "tipsindex": "0",  # Start at the first tip
         "blinktaskbariconwhentrackingeffort": "True",
+        # Theme: 'automatic' (detect from system), 'light', or 'dark'
+        "theme": "light",
     },
     "effortdialog": {
         "size": "(-1, -1)",  # Size of the dialogs, calculated by default
@@ -564,8 +566,6 @@ defaults = {
     "feature": {
         "notifier": "Task Coach",
         "minidletime": "0",
-        "usesm2": "False",
-        "showsmwarning": "True",
         "sayreminder": "False",
         "sdtcspans": "60,120,1440,2880",
         "sdtcspans_effort": "60,120,180,240",

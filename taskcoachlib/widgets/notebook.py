@@ -200,6 +200,14 @@ class Notebook(BookMixin, aui.AuiNotebook):
         tabCtrl = self.GetActiveTabCtrl()
         if tabCtrl:
             tabCtrl.Bind(wx.EVT_MOUSEWHEEL, self.__onTabMouseWheel)
+        # Disable focus on internal AUI TabFrame to prevent "lost" tab keypress
+        self.__disableTabFrameFocus()
+
+    def __disableTabFrameFocus(self):
+        """Disable focus on internal AUI TabFrame windows."""
+        for child in self.GetChildren():
+            if child.__class__.__name__ == 'TabFrame':
+                child.SetCanFocus(False)
 
     def __onTabMouseWheel(self, event):
         """Handle mouse wheel scrolling on the tab bar to switch tabs."""

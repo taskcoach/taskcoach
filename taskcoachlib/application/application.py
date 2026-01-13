@@ -225,6 +225,27 @@ def _log_linux_environment_early():
     _log_locale_info()
 
 
+def detect_dark_theme():
+    """Detect if system is using dark theme.
+
+    Returns True if dark theme detected, False otherwise.
+    Requires wxApp to be initialized.
+    """
+    try:
+        appearance = wx.SystemSettings.GetAppearance()
+        return appearance.IsDark()
+    except AttributeError:
+        # Older wxPython without GetAppearance()
+        # Fallback: check if window background is dark
+        try:
+            bg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+            # Consider dark if luminance < 128
+            luminance = (0.299 * bg.Red() + 0.587 * bg.Green() + 0.114 * bg.Blue())
+            return luminance < 128
+        except Exception:
+            return False
+
+
 def _log_wx_info():
     """Log wx-specific info after wxApp is created.
 
@@ -279,6 +300,10 @@ def _log_wx_info():
         scale_vars = ['GDK_SCALE', 'GDK_DPI_SCALE', 'QT_SCALE_FACTOR', 'QT_AUTO_SCREEN_SCALE_FACTOR']
         scale_info = [f"{v}={os.environ.get(v, 'not set')}" for v in scale_vars]
         log_message(f"Scaling env: {', '.join(scale_info)}")
+
+    # Log dark theme detection
+    is_dark = detect_dark_theme()
+    log_message(f"Dark theme detected: {is_dark}")
 
     log_message("=" * 60)
 
@@ -441,48 +466,6 @@ class Application(object, metaclass=patterns.Singleton):
 
         # 6. Continue with rest of initialization
         self.init(**kwargs)
-
-        # 7. Initialize session monitor (requires settings)
-        self.__init_session_monitor()
-
-    def __init_session_monitor(self):
-        if operating_system.isGTK():
-            if self.settings.getboolean("feature", "usesm2"):
-                from taskcoachlib.powermgt import xsm
-
-                class LinuxSessionMonitor(xsm.SessionMonitor):
-                    def __init__(self, callback):
-                        super().__init__()
-                        self._callback = callback
-                        self.setProperty(xsm.SmCloneCommand, sys.argv)
-                        self.setProperty(xsm.SmRestartCommand, sys.argv)
-                        self.setProperty(xsm.SmCurrentDirectory, os.getcwd())
-                        self.setProperty(xsm.SmProgram, sys.argv[0])
-                        self.setProperty(
-                            xsm.SmRestartStyleHint, xsm.SmRestartNever
-                        )
-
-                    def saveYourself(
-                        self, saveType, shutdown, interactStyle, fast
-                    ):  # pylint: disable=W0613
-                        if shutdown:
-                            wx.CallAfter(self._callback)
-                        self.saveYourselfDone(True)
-
-                    def die(self):
-                        pass
-
-                    def saveComplete(self):
-                        pass
-
-                    def shutdownCancelled(self):
-                        pass
-
-                self.sessionMonitor = LinuxSessionMonitor(
-                    self.on_end_session
-                )  # pylint: disable=W0201
-            else:
-                self.sessionMonitor = None
 
         calendar.setfirstweekday(
             dict(monday=0, sunday=6)[self.settings.get("view", "weekstart")]
@@ -958,9 +941,6 @@ Break the lock?"""
 
         # For PowerStateMixin
         self.mainwindow.OnQuit()
-
-        if operating_system.isGTK() and self.sessionMonitor is not None:
-            self.sessionMonitor.stop()
 
         # Stop all timers before closing windows to prevent crashes
         # See: https://github.com/wxWidgets/Phoenix/issues/429
