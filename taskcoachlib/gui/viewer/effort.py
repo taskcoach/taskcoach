@@ -167,26 +167,17 @@ class EffortViewer(
     def curselectionIsInstanceOf(self, class_):
         return class_ == effort.Effort
 
+    def getSupportedPasteTypes(self):
+        return (effort.Effort,)
+
     def pasteItemCommand(self):
         """Paste efforts from clipboard to the target task.
 
         When this viewer is showing efforts for a specific task (e.g., in task
-        editor), pasted efforts are added to that task. Validates that clipboard
-        contains only efforts and shows an error dialog if a type mismatch is
-        detected.
+        editor), pasted efforts are added to that task.
         """
-        import wx
         from taskcoachlib.command.clipboard import Clipboard
         items, source = Clipboard().get()
-        # Validate clipboard contains only efforts
-        for item in items:
-            if not isinstance(item, effort.Effort):
-                wx.MessageBox(
-                    _("Cannot paste: clipboard contains %s but this is an Efforts view. Only Efforts can be pasted here.") % type(item).__name__,
-                    _("Paste Error"),
-                    wx.OK | wx.ICON_ERROR
-                )
-                return None
         tasks = self.tasksToShowEffortFor()
         if tasks:
             # Paste to the specific task this viewer is showing efforts for

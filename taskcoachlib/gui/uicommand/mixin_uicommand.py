@@ -46,7 +46,7 @@ class NeedsOneSelectedItemMixin(object):
     """Mixin class for UI commands that need exactly one selected item."""
 
     def enabled(self, event):
-        return super().enabled(event) and len(self.viewer.curselection()) == 1
+        return super().enabled(event) and len(self.viewer.curselection(forceUpdate=True)) == 1
 
 
 class NeedsSelectedCompositeMixin(NeedsSelectionMixin):

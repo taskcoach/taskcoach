@@ -69,33 +69,144 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
     """Popupmenu's on items."""
 
     def __init__(self, *args, **kwargs):
-        self.__popupMenu = kwargs.pop("itemPopupMenu")
+        self._itemPopupMenu = kwargs.pop("itemPopupMenu")
         super().__init__(*args, **kwargs)
-        if self.__popupMenu is not None:
-            self._attachPopupMenu(
-                self,
-                (wx.EVT_TREE_ITEM_RIGHT_CLICK, wx.EVT_CONTEXT_MENU),
-                self.onItemPopupMenu,
-            )
+        if self._itemPopupMenu is not None:
+            # Determine if this is a ListCtrl or tree control
+            # ListCtrl has GetItemRect but not GetRootItem
+            isListCtrl = hasattr(self, 'GetItemRect') and not hasattr(self, 'GetRootItem')
+            if isListCtrl:
+                # For ListCtrl: use EVT_LIST_ITEM_RIGHT_CLICK for item clicks
+                # (provides GetIndex() directly) and EVT_CONTEXT_MENU for empty space
+                self._attachPopupMenu(
+                    self,
+                    (wx.EVT_LIST_ITEM_RIGHT_CLICK,),
+                    self.onListItemRightClick,
+                )
+                self._attachPopupMenu(
+                    self,
+                    (wx.EVT_CONTEXT_MENU,),
+                    self.onListContextMenu,
+                )
+            else:
+                # For tree controls: use EVT_TREE_ITEM_RIGHT_CLICK and EVT_CONTEXT_MENU
+                self._attachPopupMenu(
+                    self,
+                    (wx.EVT_TREE_ITEM_RIGHT_CLICK, wx.EVT_CONTEXT_MENU),
+                    self.onItemPopupMenu,
+                )
+                # Also bind to MainWindow to catch right-clicks on empty space
+                self.GetMainWindow().Bind(
+                    wx.EVT_RIGHT_DOWN, self._onMainWindowRightDown
+                )
+
+    def _onMainWindowRightDown(self, event):
+        """Handle right-click on MainWindow for tree controls.
+
+        This catches clicks on empty space that EVT_TREE_ITEM_RIGHT_CLICK misses.
+        """
+        point = event.GetPosition()
+        item = self.HitTest(point)[0]
+        if not self._itemIsOk(item):
+            # Clicked on empty space - clear selection and show popup
+            self.clear_selection()
+            self._updateMenuUI()
+            self.PopupMenu(self._itemPopupMenu)
+        else:
+            # Clicked on an item - let normal event handling take over
+            event.Skip()
+
+    def _updateMenuUI(self):
+        """Update enabled state of menu items based on current selection.
+
+        Menu items are bound to a window with EVT_UPDATE_UI handlers, but those
+        handlers don't fire automatically for popup menus. We manually process
+        UpdateUIEvent for each menu item to update their enabled state.
+        """
+        menuWindow = getattr(self._itemPopupMenu, '_window', None)
+        if menuWindow and self._itemPopupMenu:
+            for menuItem in self._itemPopupMenu.GetMenuItems():
+                if menuItem.IsSeparator():
+                    continue
+                itemId = menuItem.GetId()
+                event = wx.UpdateUIEvent(itemId)
+                menuWindow.ProcessEvent(event)
+                if event.GetSetEnabled():
+                    menuItem.Enable(event.GetEnabled())
 
     def onItemPopupMenu(self, event):
+        """Handle popup menu for tree controls (EVT_TREE_ITEM_RIGHT_CLICK, EVT_CONTEXT_MENU)."""
         # Make sure the window this control is in has focus:
         try:
             window = event.GetEventObject().MainWindow
         except AttributeError:
             window = event.GetEventObject()
         window.SetFocus()
+        # Get click position - GetPoint() for tree item events, GetPosition() for context menu
+        point = None
         if hasattr(event, "GetPoint"):
+            point = event.GetPoint()
+        elif hasattr(event, "GetPosition"):
+            pos = event.GetPosition()
+            if pos != wx.DefaultPosition:
+                point = self.ScreenToClient(pos)
+        if point is not None:
             # Make sure the item under the mouse is selected because that
             # is what users expect and what is most user-friendly. Not all
             # widgets do this by default, e.g. the TreeListCtrl does not.
-            item = self.HitTest(event.GetPoint())[0]
+            item = self.HitTest(point)[0]
             if not self._itemIsOk(item):
+                # Clicked on empty space - clear selection so menu items
+                # properly reflect no selection
+                self.clear_selection()
+                self._updateMenuUI()
+                self.PopupMenu(self._itemPopupMenu)
                 return
             if not self.IsSelected(item):
-                self.UnselectAll()
+                self.clear_selection()
                 self.SelectItem(item)
-        self.PopupMenu(self.__popupMenu)
+        # Update menu item enabled states and show popup
+        self._updateMenuUI()
+        self.PopupMenu(self._itemPopupMenu)
+
+    def onListItemRightClick(self, event):
+        """Handle EVT_LIST_ITEM_RIGHT_CLICK for ListCtrl controls.
+
+        This event fires when right-clicking on an item and provides
+        GetIndex() to get the clicked item directly - the proper way
+        to handle ListCtrl right-clicks.
+        """
+        self.SetFocus()
+        # Get the clicked item index from the event
+        itemIndex = event.GetIndex()
+        # Select the item if not already selected
+        if not self.IsSelected(itemIndex):
+            self.clear_selection()
+            self.Select(itemIndex, True)
+        # Update menu and show popup
+        self._updateMenuUI()
+        self.PopupMenu(self._itemPopupMenu)
+
+    def onListContextMenu(self, event):
+        """Handle EVT_CONTEXT_MENU for ListCtrl controls.
+
+        This handles right-clicks on empty space (EVT_LIST_ITEM_RIGHT_CLICK
+        only fires for item clicks). Also handles keyboard context menu key.
+        """
+        self.SetFocus()
+        pos = event.GetPosition()
+        if pos != wx.DefaultPosition:
+            # Mouse-triggered context menu - check if on empty space
+            clientPoint = self.ScreenToClient(pos)
+            item = self.HitTest(clientPoint)[0]
+            if self._itemIsOk(item):
+                # Click was on an item - EVT_LIST_ITEM_RIGHT_CLICK already handled it
+                return
+            # Click on empty space - clear selection
+            self.clear_selection()
+        # Update menu and show popup
+        self._updateMenuUI()
+        self.PopupMenu(self._itemPopupMenu)
 
 
 class _CtrlWithColumnPopupMenuMixin(_CtrlWithPopupMenuMixin):

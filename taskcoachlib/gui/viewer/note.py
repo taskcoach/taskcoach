@@ -67,11 +67,15 @@ class BaseNoteViewer(
     def curselectionIsInstanceOf(self, class_):
         return class_ == note.Note
 
+    def getSupportedPasteTypes(self):
+        return (note.Note,)
+
     def createWidget(self):
         imageList = self.createImageList()  # Has side-effects
         self._columns = self._createColumns()
         itemPopupMenu = taskcoachlib.gui.menu.NotePopupMenu(
-            self.parent, self.settings, self.taskFile.categories(), self
+            self.parent, self.settings, self.taskFile.categories(), self,
+            notes=self.taskFile.notes()
         )
         columnPopupMenu = taskcoachlib.gui.menu.ColumnPopupMenu(self)
         self._popupMenus.extend([itemPopupMenu, columnPopupMenu])

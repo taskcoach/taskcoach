@@ -65,6 +65,9 @@ class BaseCategoryViewer(
     def curselectionIsInstanceOf(self, class_):
         return class_ == category.Category
 
+    def getSupportedPasteTypes(self):
+        return (category.Category,)
+
     def createWidget(self):
         imageList = self.createImageList()  # Has side-effects
         self._columns = self._createColumns()

@@ -63,7 +63,7 @@ class Menu(wx.Menu, uicommand.UICommandContainerMixin):
             self._observers.append(uiCommand)
         return cmd
 
-    def appendMenu(self, text, subMenu, bitmap=None):
+    def appendMenu(self, text, subMenu, bitmap=None, viewer=None):
         subMenuItem = wx.MenuItem(
             self, id=IdProvider.get(), text=text, subMenu=subMenu
         )
@@ -73,6 +73,12 @@ class Menu(wx.Menu, uicommand.UICommandContainerMixin):
             )
         self._accels.extend(subMenu.accelerators())
         self.Append(subMenuItem)
+        # If viewer provided, disable submenu when nothing is selected
+        if viewer is not None:
+            menuId = subMenuItem.GetId()
+            def onUpdateUI(event, v=viewer):
+                event.Enable(bool(v.curselection()))
+            self._window.Bind(wx.EVT_UPDATE_UI, onUpdateUI, id=menuId)
 
     def invokeMenuItem(self, menuItem):
         """Programmatically invoke the menuItem. This is mainly for testing
@@ -1038,6 +1044,7 @@ class TaskPopupMenu(Menu):
                 mainwindow, categories=categories, viewer=taskViewer
             ),
             "folder_blue_arrow_icon",
+            viewer=taskViewer,
         )
         self.appendUICommands(
             None,
@@ -1050,6 +1057,7 @@ class TaskPopupMenu(Menu):
             _("&Priority"),
             TaskPriorityMenu(mainwindow, tasks, taskViewer),
             "incpriority",
+            viewer=taskViewer,
         )
         self.appendUICommands(
             None,
@@ -1064,6 +1072,7 @@ class TaskPopupMenu(Menu):
                 viewer=taskViewer, effortList=efforts, taskList=tasks
             ),
             None,
+            uicommand.TaskNew(taskList=tasks, settings=settings),
             uicommand.NewSubItem(viewer=taskViewer),
         )
 
@@ -1138,12 +1147,14 @@ class CategoryPopupMenu(Menu):
                 ),
             )
         self.appendUICommands(
-            None, uicommand.NewSubItem(viewer=categoryViewer)
+            None,
+            uicommand.CategoryNew(categories=categories, settings=settings),
+            uicommand.NewSubItem(viewer=categoryViewer),
         )
 
 
 class NotePopupMenu(Menu):
-    def __init__(self, mainwindow, settings, categories, noteViewer):
+    def __init__(self, mainwindow, settings, categories, noteViewer, notes=None):
         super().__init__(mainwindow)
         self.appendUICommands(
             uicommand.EditCut(viewer=noteViewer),
@@ -1166,8 +1177,14 @@ class NotePopupMenu(Menu):
                 mainwindow, categories=categories, viewer=noteViewer
             ),
             "folder_blue_arrow_icon",
+            viewer=noteViewer,
         )
-        self.appendUICommands(None, uicommand.NewSubItem(viewer=noteViewer))
+        self.appendUICommands(None)
+        if notes is not None:
+            self.appendUICommands(
+                uicommand.NoteNew(notes=notes, settings=settings, viewer=noteViewer),
+            )
+        self.appendUICommands(uicommand.NewSubItem(viewer=noteViewer))
 
 
 class ColumnPopupMenuMixin(object):
@@ -1237,6 +1254,12 @@ class AttachmentPopupMenu(Menu):
             uicommand.OpenAllNotes(viewer=attachmentViewer, settings=settings),
             None,
             uicommand.AttachmentOpen(
+                viewer=attachmentViewer,
+                attachments=attachments,
+                settings=settings,
+            ),
+            None,
+            uicommand.AttachmentNew(
                 viewer=attachmentViewer,
                 attachments=attachments,
                 settings=settings,

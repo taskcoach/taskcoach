@@ -58,6 +58,9 @@ class AttachmentViewer(
     def curselectionIsInstanceOf(self, class_):
         return class_ == attachment.Attachment
 
+    def getSupportedPasteTypes(self):
+        return (attachment.Attachment,)
+
     def createWidget(self):
         imageList = self.createImageList()
         itemPopupMenu = taskcoachlib.gui.menu.AttachmentPopupMenu(

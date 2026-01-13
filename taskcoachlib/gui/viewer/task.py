@@ -307,6 +307,9 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
             shadow=False,  # SyncML removed
         )
 
+    def getSupportedPasteTypes(self):
+        return (task.Task,)
+
     def createTaskPopupMenu(self):
         return taskcoachlib.gui.menu.TaskPopupMenu(
             self.parent,

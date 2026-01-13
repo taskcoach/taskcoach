@@ -726,6 +726,14 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
     def pasteItemCommandClass(self):
         return command.PasteCommand
 
+    def getSupportedPasteTypes(self):
+        """Return tuple of domain object types that can be pasted into this viewer.
+
+        Override in subclasses to restrict paste to specific types.
+        Return None to accept any type (default behavior).
+        """
+        return None
+
     def onEditSubject(self, item, newValue):
         command.EditSubjectCommand(items=[item], newValue=newValue).do()
 

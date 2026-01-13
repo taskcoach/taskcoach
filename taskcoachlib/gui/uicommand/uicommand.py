@@ -823,7 +823,20 @@ class EditPaste(ViewerCommand):
         if isinstance(windowWithFocus, wx.TextCtrl):
             return windowWithFocus.CanPaste()
         else:
-            return command.Clipboard() and super().enabled(event)
+            clipboard = command.Clipboard()
+            if not clipboard:
+                return False
+            if not super().enabled(event):
+                return False
+            # Check if clipboard contents are compatible with viewer
+            if self.viewer and hasattr(self.viewer, 'getSupportedPasteTypes'):
+                supportedTypes = self.viewer.getSupportedPasteTypes()
+                if supportedTypes:
+                    items = clipboard.peek()
+                    for item in items:
+                        if not isinstance(item, supportedTypes):
+                            return False
+            return True
 
 
 class EditPasteAsSubItem(
@@ -1695,6 +1708,9 @@ class NewTaskWithSelectedCategories(TaskNew, ViewerCommand):
             **kwargs
         )
 
+    def enabled(self, event):
+        return super().enabled(event) and bool(self.viewer.curselection(forceUpdate=True))
+
     def categoriesForTheNewTask(self):
         return self.viewer.curselection()
 
@@ -2223,6 +2239,14 @@ class EffortNew(
             **kwargs
         )
 
+    def enabled(self, event):
+        if not super().enabled(event):
+            return False
+        # When viewer is showing tasks, require a task to be selected
+        if self.viewer and self.viewer.isShowingTasks():
+            return bool(self.viewer.curselection(forceUpdate=True))
+        return True
+
     def doCommand(self, event, show=True):
         if (
             self.viewer
@@ -2650,6 +2674,9 @@ class NoteNew(NotesCommand, settings_uicommand.SettingsCommand, ViewerCommand):
 class NewNoteWithSelectedCategories(NoteNew, ViewerCommand):
     menuText = _("New &note with selected categories...")
     helpText = _("Insert a new note with the selected categories checked")
+
+    def enabled(self, event):
+        return super().enabled(event) and bool(self.viewer.curselection(forceUpdate=True))
 
     def categoriesForTheNewNote(self):
         return self.viewer.curselection()
