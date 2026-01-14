@@ -19,6 +19,7 @@ This document describes the packaging setup for Task Coach on Linux (Debian, Ubu
 
 **Appendix**
 - [Dependency Installation Strategy](#dependency-installation-strategy)
+- [Creating a Release](#creating-a-release)
 
 ## Minimum Version Requirements
 
@@ -428,112 +429,20 @@ See `taskcoach.spec` (linked above) for runtime, build, and optional dependencie
 
 ## AppImage Packaging
 
-- **AppImage:** [python-appimage](https://github.com/niess/python-appimage) | [wxPython extras](https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04)
-- **Project files:** [`build-appimage.yml`](../.github/workflows/build-appimage.yml)
+- **AppImage:** [python-appimage](https://github.com/niess/python-appimage) | [wxPython extras](https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04) | [AppImage docs](https://docs.appimage.org/)
+- **Project files:** [APPIMAGE.md](APPIMAGE.md) | [`build-appimage.yml`](../.github/workflows/build-appimage.yml)
 
-The AppImage build system creates a portable, self-contained Linux executable that bundles Python, wxPython, and all dependencies into a single file.
+The AppImage build creates a portable, self-contained Linux executable that bundles Python 3.11, wxPython 4.2.4, and all dependencies into a single file.
 
-### What's Included
+### Available Builds
 
-| Component | Version | Source |
-|-----------|---------|--------|
-| Python | 3.11.14 | python-appimage (manylinux_2_28) |
-| wxPython | 4.2.4 | wxPython extras (Ubuntu 22.04) |
-| wxWidgets | 3.2.8 | Bundled with wxPython |
-| Image libs | libjpeg, libpng, libtiff, libwebp | Copied from build system |
+| Build | Python | Architecture | Target |
+|-------|--------|--------------|--------|
+| `TaskCoach-X.Y.Z-x86_64.AppImage` | 3.11 | x86_64 | Most Linux users |
 
-The resulting AppImage runs on most Linux distributions with glibc 2.28+ (Debian Bookworm, Ubuntu 22.04+, Fedora 40+).
+**Minimum requirements:** glibc 2.28+ (Debian Bookworm, Ubuntu 22.04+, Fedora 40+)
 
-### Design Decisions
-
-#### Why Python 3.11 (not 3.12 or 3.13)?
-
-| Factor | Python 3.11 | Python 3.12/3.13 |
-|--------|-------------|------------------|
-| wxPython wheels | Pre-built available | May require compilation |
-| Stability | Mature, well-tested | Newer, less tested with wx |
-| Compatibility | Broad library support | Some packages may lag |
-
-**Primary reason:** The wxPython extras repository provides pre-built wheels for Python 3.11 on Ubuntu 22.04 (the build platform). Using pre-built wheels:
-- Avoids lengthy compilation during CI builds
-- Ensures consistent, tested binaries
-- Reduces build failures
-
-**Future consideration:** When wxPython wheels are reliably available for Python 3.12+, upgrading is straightforward - just change the URL in `build-appimage.yml`.
-
-#### Why manylinux_2_28?
-
-The Python AppImage is built on a `manylinux_2_28` base (CentOS/RHEL with glibc 2.28). This ensures compatibility with older distributions. The "(Red Hat 14.2.1-7)" in the Python version string refers to the GCC version used to compile Python on the manylinux build system.
-
-#### Bundled vs System Libraries
-
-| Component | Bundled | System |
-|-----------|:-------:|:------:|
-| Python interpreter | ✓ | |
-| wxPython/wxWidgets | ✓ | |
-| Image libraries | ✓ | |
-| GTK 3 | | ✓ |
-| Graphics drivers | | ✓ |
-| Fonts | | ✓ |
-| glibc | | ✓ |
-
-**Note:** GTK is NOT bundled because it's tightly integrated with the display server, themes, and graphics stack. This means GTK-related issues may still be system-specific.
-
-### How It Works
-
-1. **Base Image** - Downloads pre-built Python AppImage from python-appimage project
-2. **Dependencies** - Installs wxPython from extras repository and other deps from PyPI
-3. **Library Bundling** - Copies required shared libraries (libjpeg, libpng, etc.)
-4. **Custom AppRun** - Creates launcher script setting PYTHONHOME, PYTHONPATH, LD_LIBRARY_PATH
-5. **Packaging** - Uses `appimagetool` to create the final `.AppImage` file
-
-### Directory Structure
-
-```
-TaskCoach.AppDir/
-├── AppRun              # Custom launcher script
-├── taskcoach.desktop   # Desktop entry
-├── taskcoach.png       # App icon
-├── opt/
-│   └── python3.11/     # Bundled Python
-│       ├── bin/python3.11
-│       └── lib/python3.11/site-packages/
-└── usr/
-    ├── lib/            # Bundled shared libraries
-    └── share/taskcoach/
-        ├── taskcoach.py
-        └── taskcoachlib/
-```
-
-### Building
-
-#### Local Build
-
-```bash
-./scripts/build-appimage.sh
-```
-
-Requires: `wget`, `file`, `patchelf`, and optionally `libfuse2`
-
-### Creating a Release
-
-1. Update version in `taskcoachlib/meta/data.py`
-2. Commit and push changes
-3. Create and push a tag:
-   ```bash
-   git tag v2.0.0.97
-   git push origin v2.0.0.97
-   ```
-4. GitHub Actions will build the AppImage and create a GitHub Release
-
-### Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| "cannot open shared object file" | Add library to `LIBS_TO_BUNDLE` in workflow |
-| Python path issues | Check PYTHONHOME, PYTHONPATH, LD_LIBRARY_PATH in AppRun |
-| YAML heredoc issues | Use `echo` statements instead of heredocs in workflow |
-| AppRun symlink | Remove original symlink before creating custom AppRun |
+For detailed AppImage documentation including library bundling strategy, design decisions, build process, and troubleshooting, see **[APPIMAGE.md](APPIMAGE.md)**.
 
 ---
 
@@ -596,4 +505,17 @@ All build scripts follow the same simple strategy:
 
 1. **Distro packages first**: Install all available dependencies from distro repos
 2. **Pip fallback**: Only use pip for packages not in distro repos or with version issues
+
+### Creating a Release
+
+This process applies to all build targets (AppImage, Windows, macOS, etc.):
+
+1. Update version in `taskcoachlib/meta/data.py`
+2. Commit and push changes
+3. Create and push a version tag:
+   ```bash
+   git tag v2.0.1.23
+   git push origin v2.0.1.23
+   ```
+4. GitHub Actions will automatically build all packages and create a GitHub Release
 

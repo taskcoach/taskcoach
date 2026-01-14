@@ -136,7 +136,7 @@ sed -i "s|^source=.*|source=(\"taskcoach-\$pkgver.tar.gz\")|" "$BUILD_DIR/PKGBUI
 
 # Simplify prepare() for local build
 cat > "$BUILD_DIR/PKGBUILD.local" << 'PKGBUILD_EOF'
-# Maintainer: Task Coach developers <developers@taskcoach.org>
+# Maintainer: Réal Carbonneau
 # Contributor: Réal Carbonneau <https://github.com/realcarbonneau>
 # Local build from source
 

@@ -123,7 +123,7 @@ install -Dm644 Welcome.tsk \
 %{python3_sitelib}/taskcoachlib/
 %{python3_sitelib}/TaskCoach-*.egg-info/
 %{python3_sitelib}/squaremap/
-%{python3_sitelib}/SquareMap-*.dist-info/
+%{python3_sitelib}/squaremap-*.dist-info/
 %{python3_sitelib}/pyparsing/
 %{python3_sitelib}/pyparsing-*.dist-info/
 %{_datadir}/applications/%{name}.desktop
@@ -132,19 +132,23 @@ install -Dm644 Welcome.tsk \
 %{_datadir}/%{name}/
 
 %changelog
-* Fri Dec 27 2025 Task Coach Developers <developers@taskcoach.org> - 2.0.0.80-1
+* Wed Jan 14 2026 Réal Carbonneau - 2.0.1.22-1
+- Update for Fedora 43 (Python 3.13)
+- Fix RPM build with updated squaremap/pyparsing bundling
+
+* Sat Dec 27 2025 Réal Carbonneau - 2.0.0.80-1
 - Centralize version in single VERSION file
 - Fix Calendar viewer crash on startup when previously opened
 - Fix wxPython 4.2+ compatibility issues with float arguments
 
-* Wed Dec 25 2024 Task Coach Developers <developers@taskcoach.org> - 2.0.0.75-1
+* Thu Dec 25 2025 Réal Carbonneau - 2.0.0.75-1
 - Major version bump to 2.0.0 reflecting Python 3 modernization
 - Merged detached fork with 600+ patches and improvements
 - Full GTK3/wxPython 4.x compatibility
 - New GitHub Actions CI/CD workflows
 - Comprehensive packaging for Debian, Fedora, Arch, AppImage
 
-* Tue Dec 24 2024 Task Coach Developers <developers@taskcoach.org> - 1.6.1.74-1
+* Tue Dec 23 2025 Réal Carbonneau - 1.6.1.74-1
 - Modernized spec file for Fedora 42+
 - Consistent dependency strategy: distro packages first, pip fallback
 - Bundled: squaremap (not in repos), pyparsing>=3.1.3 (version too old)

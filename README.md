@@ -4,6 +4,12 @@ Task Coach is a free/libre/open task manager for keeping track of projects and t
 
 It's over 20 years old, and development was stagnant in recent years. Here, the project is continued again and has been updated to Python3!
 
+## Screenshots
+
+![Task Coach main window with task list and editors](docs/images/App%20Screenshot%201.png)
+
+![Task Coach with Task Edit Tabbed Window](docs/images/App%20Screenshot%202.png)
+
 ## Quick Start
 
 Download the package for your system from the [latest release](https://github.com/taskcoach/taskcoach/releases):

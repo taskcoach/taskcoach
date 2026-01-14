@@ -265,7 +265,7 @@ jobs:
           [void]$lines.Add("; Task Coach Inno Setup Script ($suffix)")
           [void]$lines.Add('#define MyAppName "Task Coach"')
           [void]$lines.Add("#define MyAppVersion `"$version`"")
-          [void]$lines.Add('#define MyAppPublisher "Task Coach developers"')
+          [void]$lines.Add('#define MyAppPublisher "Réal Carbonneau"')
           [void]$lines.Add('#define MyAppURL "https://github.com/taskcoach/taskcoach"')
           [void]$lines.Add('')
           [void]$lines.Add('[Setup]')
