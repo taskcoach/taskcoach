@@ -118,12 +118,13 @@ jobs:
           from setuptools import setup
 
           APP = ['taskcoach.py']
+          import os
+
           DATA_FILES = [
-              ('icons.in', ['icons.in/taskcoach.png', 'icons.in/taskcoach.icns'] if __import__('os').path.exists('icons.in/taskcoach.icns') else ['icons.in/taskcoach.png']),
+              ('icons.in', ['icons.in/taskcoach.png', 'icons.in/taskcoach.icns'] if os.path.exists('icons.in/taskcoach.icns') else ['icons.in/taskcoach.png']),
           ]
 
           # Include Welcome.tsk if it exists
-          import os
           if os.path.exists('Welcome.tsk'):
               DATA_FILES.append(('.', ['Welcome.tsk']))
 

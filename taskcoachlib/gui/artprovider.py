@@ -26,16 +26,12 @@ import sys
 
 def get_resource_path(relative_path):
     """Get absolute path to resource - works for development and frozen apps."""
-    if getattr(sys, 'frozen', False):
-        # Running as frozen executable (PyInstaller, py2exe, etc.)
-        if hasattr(sys, '_MEIPASS'):
-            # PyInstaller
-            base_path = sys._MEIPASS
-        else:
-            # py2exe
-            base_path = os.path.dirname(sys.executable)
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        # PyInstaller stores resources in _MEIPASS
+        base_path = sys._MEIPASS
     else:
-        # Running in normal Python (development)
+        # Development, py2app, py2exe: use module's directory
+        # py2app/py2exe extract packages so __file__ works correctly
         base_path = os.path.dirname(__file__)
     return os.path.join(base_path, relative_path)
 
