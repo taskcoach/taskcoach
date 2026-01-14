@@ -85,8 +85,10 @@ Some antivirus software may flag the installer. This is a false positive common 
 
 ## Why the Security Warning?
 
-Task Coach is open-source software distributed without a paid code signing certificate. Microsoft charges hundreds of dollars per year for Extended Validation (EV) certificates, which is impractical for volunteer-maintained projects. The software is safe - you can verify by:
+Task Coach is open-source software distributed without a paid code signing certificate. Microsoft charges hundreds of dollars per year for Extended Validation (EV) certificates, which is impractical for volunteer-maintained projects.
 
-- Reviewing the [source code on GitHub](https://github.com/taskcoach/taskcoach)
-- Checking the SHA256 hash on the release page matches your download
-- Scanning with [VirusTotal](https://www.virustotal.com)
+If you want to verify your download:
+
+- **Check the SHA256 hash** - Compare the hash on the [release page](https://github.com/taskcoach/taskcoach/releases) with your downloaded file using `certutil -hashfile <filename> SHA256`
+- **Review the source code** - The complete source is available on [GitHub](https://github.com/taskcoach/taskcoach)
+- **Scan the file** - Upload to [VirusTotal](https://www.virustotal.com) or use your antivirus software

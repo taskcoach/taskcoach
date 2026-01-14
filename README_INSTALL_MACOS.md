@@ -102,7 +102,9 @@ Task Coach is open-source software that isn't notarized with Apple. Notarization
 1. A paid Apple Developer account ($99/year)
 2. Submitting the app to Apple's automated security checks
 
-This is impractical for volunteer-maintained open-source projects. The software is safe - you can verify by:
+This is impractical for volunteer-maintained open-source projects.
 
-- Reviewing the [source code on GitHub](https://github.com/taskcoach/taskcoach)
-- Checking the SHA256 hash on the release page matches your download
+If you want to verify your download:
+
+- **Check the SHA256 hash** - Compare the hash on the [release page](https://github.com/taskcoach/taskcoach/releases) with your downloaded file using `shasum -a 256 <filename>` in Terminal
+- **Review the source code** - The complete source is available on [GitHub](https://github.com/taskcoach/taskcoach)
