@@ -10,21 +10,27 @@ Download the package for your system from the [latest release](https://github.co
 
 | Platform | Package |
 |----------|---------|
-| Windows | `TaskCoach-2.0.1.20-windows-x64-setup.exe` |
-| Windows (portable) | `TaskCoach-2.0.1.20-windows-x64-portable.zip` | 
-| Debian 12 (Bookworm) | `taskcoach_2.0.1.20_debian-12-bookworm.deb` |
-| Debian 13 (Trixie) | `taskcoach_2.0.1.20_debian-13-trixie.deb` |
-| Debian Sid | `taskcoach_2.0.1.20_debian-sid.deb` |
-| Ubuntu 22.04 (Jammy) | `taskcoach_2.0.1.20_ubuntu-22.04-jammy.deb` |
-| Ubuntu 24.04 (Noble) | `taskcoach_2.0.1.20_ubuntu-24.04-noble.deb` |
-| Linux Mint | Use Ubuntu `.deb` (Mint is Ubuntu-based) |
-| Arch Linux / Manjaro | `taskcoach-2.0.1.20-arch.pkg.tar.zst` |
-| Fedora 39/40 | `taskcoach-2.0.1.20-fedora40.noarch.rpm` |
-| Any Linux (x86_64) | `TaskCoach-2.0.1.20-x86_64.AppImage` |
+| [Any Linux (x86_64)](#appimage) | `TaskCoach-2.0.1.20-x86_64.AppImage` |
+| [Arch Linux / Manjaro](#arch-linux--manjaro) | `taskcoach-2.0.1.20-arch.pkg.tar.zst` |
+| [Debian 12 (Bookworm)](#debian--ubuntu) | `taskcoach_2.0.1.20_debian-12-bookworm.deb` |
+| [Debian 13 (Trixie)](#debian--ubuntu) | `taskcoach_2.0.1.20_debian-13-trixie.deb` |
+| [Debian Sid](#debian--ubuntu) | `taskcoach_2.0.1.20_debian-sid.deb` |
+| [Fedora 39/40](#fedora) | `taskcoach-2.0.1.20-fedora40.noarch.rpm` |
+| [Linux Mint](#debian--ubuntu) | Use Ubuntu `.deb` (Mint is Ubuntu-based) |
+| [macOS (Apple Silicon)](#macos) | `TaskCoach-2.0.1.20-macos-arm64.dmg` |
+| [macOS (Intel)](#macos) | `TaskCoach-2.0.1.20-macos-intel.dmg` |
+| [Ubuntu 22.04 (Jammy)](#debian--ubuntu) | `taskcoach_2.0.1.20_ubuntu-22.04-jammy.deb` |
+| [Ubuntu 24.04 (Noble)](#debian--ubuntu) | `taskcoach_2.0.1.20_ubuntu-24.04-noble.deb` |
+| [Windows](#windows) | `TaskCoach-2.0.1.20-windows-x64-setup.exe` |
+| [Windows (portable)](#windows) | `TaskCoach-2.0.1.20-windows-x64-portable.zip` |
 
 After installing, Task Coach should be in normal system launchers (Applications → Office → Task Coach). For CLI, the launch command is `taskcoach.py`.
 
-**Example: Install on Debian Trixie** (similar for other Debian/Ubuntu systems, just different .deb file)
+### Linux
+
+#### Debian / Ubuntu
+
+Install instructions for Debian Trixie (similar for other Debian/Ubuntu systems, just use the appropriate .deb file):
 
 ```bash
 cd ~/Downloads
@@ -38,7 +44,7 @@ sudo apt remove taskcoach
 sudo apt autoremove  # optional: remove unused dependencies
 ```
 
-**Example: Install on Arch Linux / Manjaro**
+#### Arch Linux / Manjaro
 
 ```bash
 cd ~/Downloads
@@ -52,7 +58,7 @@ sudo pacman -R taskcoach
 sudo pacman -Qdtq | sudo pacman -Rs -  # optional: remove orphaned dependencies
 ```
 
-**Example: Install on Fedora**
+#### Fedora
 
 ```bash
 cd ~/Downloads
@@ -66,7 +72,9 @@ sudo dnf remove taskcoach
 sudo dnf autoremove  # optional: remove unused dependencies
 ```
 
-**Or run the AppImage (any Linux, no install needed)**
+#### AppImage
+
+Run on any Linux without installation:
 
 ```bash
 cd ~/Downloads
@@ -80,6 +88,22 @@ To launch the AppImage, open the file or run:
 ```
 
 To remove: simply delete the AppImage file.
+
+### macOS
+
+Download the `.dmg` for your Mac (Apple Silicon for M1/M2/M3/M4, Intel for older Macs). Open the DMG and drag Task Coach to Applications.
+
+On first launch, macOS will block the app because it's not notarized. Open **System Settings → Privacy & Security**, scroll down, and click **"Open Anyway"** next to the Task Coach message.
+
+See [README_INSTALL_MACOS.md](README_INSTALL_MACOS.md) for detailed instructions with screenshots.
+
+### Windows
+
+Download the `.exe` installer and run it. Windows will show a security warning because the app is not signed with a Microsoft certificate. Click **"More info"** then **"Run anyway"** to proceed.
+
+For the portable version, extract the `.zip` and run `TaskCoach.exe` from the folder.
+
+See [README_INSTALL_WINDOWS.md](README_INSTALL_WINDOWS.md) for detailed instructions with screenshots.
 
 ## Running from Source
 
@@ -134,6 +158,8 @@ Key packages:
 
 ## Documentation
 
+- [README_INSTALL_MACOS.md](README_INSTALL_MACOS.md) - macOS installation with security bypass
+- [README_INSTALL_WINDOWS.md](README_INSTALL_WINDOWS.md) - Windows installation with SmartScreen bypass
 - [DEBIAN_BOOKWORM_SETUP.md](docs/DEBIAN_BOOKWORM_SETUP.md) - Detailed installation and setup
 - [PACKAGING.md](docs/PACKAGING.md) - Building .deb packages
 - [CRITICAL_WXPYTHON_PATCH.md](docs/CRITICAL_WXPYTHON_PATCH.md) - wxPython compatibility patch details
