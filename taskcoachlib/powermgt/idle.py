@@ -236,34 +236,116 @@ elif operating_system.isWindows():
     IdleQuery = WindowsIdleQuery
 
 elif operating_system.isMac():
-    # When running from source, select the right binary...
+    # macOS idle time detection using IOKit via ctypes
+    # Queries the HIDIdleTime property from IOHIDSystem
 
-    if not hasattr(sys, "frozen"):
-        import struct
-        import os
+    from ctypes import cdll, c_void_p, c_uint32, c_int32, byref
 
-        if struct.calcsize("L") == 8:
-            _subdir = "ia64"
-        else:
-            _subdir = "ia32"
+    class MacIdleQuery:
+        """Query idle time on macOS using IOKit.
 
-        sys.path.insert(
-            0,
-            os.path.join(
-                os.path.split(__file__)[0],
-                "..",
-                "..",
-                "extension",
-                "macos",
-                "bin-%s" % _subdir,
-            ),
-        )
+        Uses IORegistryEntryCreateCFProperty to get HIDIdleTime from IOHIDSystem.
+        This is the standard way to get system idle time on macOS.
+        """
 
-    import _idle
+        def __init__(self):
+            self._warned = False
+            try:
+                # Load IOKit and CoreFoundation frameworks
+                self._iokit = cdll.LoadLibrary(
+                    '/System/Library/Frameworks/IOKit.framework/IOKit'
+                )
+                self._cf = cdll.LoadLibrary(
+                    '/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation'
+                )
 
-    class MacIdleQuery(_idle.Idle):
+                # IOKit functions
+                self._iokit.IOServiceGetMatchingService.restype = c_uint32
+                self._iokit.IOServiceGetMatchingService.argtypes = [c_uint32, c_void_p]
+                self._iokit.IOServiceMatching.restype = c_void_p
+                self._iokit.IOServiceMatching.argtypes = [c_void_p]
+                self._iokit.IORegistryEntryCreateCFProperty.restype = c_void_p
+                self._iokit.IORegistryEntryCreateCFProperty.argtypes = [
+                    c_uint32, c_void_p, c_void_p, c_uint32
+                ]
+                self._iokit.IOObjectRelease.restype = c_int32
+                self._iokit.IOObjectRelease.argtypes = [c_uint32]
+
+                # CoreFoundation functions
+                self._cf.CFStringCreateWithCString.restype = c_void_p
+                self._cf.CFStringCreateWithCString.argtypes = [c_void_p, c_void_p, c_uint32]
+                self._cf.CFNumberGetValue.restype = c_int32
+                self._cf.CFNumberGetValue.argtypes = [c_void_p, c_int32, c_void_p]
+                self._cf.CFRelease.restype = None
+                self._cf.CFRelease.argtypes = [c_void_p]
+
+                # Constants
+                self._kCFStringEncodingUTF8 = 0x08000100
+                self._kCFNumberSInt64Type = 4
+                self._kIOMasterPortDefault = 0
+
+                # Create CFString for "HIDIdleTime"
+                self._idle_key = self._cf.CFStringCreateWithCString(
+                    None, b"HIDIdleTime", self._kCFStringEncodingUTF8
+                )
+
+                self._available = True
+
+            except OSError:
+                self._available = False
+
+        def __del__(self):
+            if hasattr(self, '_idle_key') and self._idle_key:
+                try:
+                    self._cf.CFRelease(self._idle_key)
+                except Exception:
+                    pass
+
         def getIdleSeconds(self):
-            return self.get()
+            if not self._available:
+                if not self._warned:
+                    self._warned = True
+                    logging.warning(
+                        "Idle time detection unavailable on this system. "
+                        "The idle time notification feature will be disabled."
+                    )
+                return 0
+
+            try:
+                # Get IOHIDSystem service
+                hid_service = self._iokit.IOServiceGetMatchingService(
+                    self._kIOMasterPortDefault,
+                    self._iokit.IOServiceMatching(b"IOHIDSystem")
+                )
+
+                if not hid_service:
+                    return 0
+
+                try:
+                    # Get HIDIdleTime property
+                    idle_time_ref = self._iokit.IORegistryEntryCreateCFProperty(
+                        hid_service, self._idle_key, None, 0
+                    )
+
+                    if not idle_time_ref:
+                        return 0
+
+                    try:
+                        # Get the value as int64 (nanoseconds)
+                        from ctypes import c_int64
+                        idle_ns = c_int64()
+                        self._cf.CFNumberGetValue(
+                            idle_time_ref, self._kCFNumberSInt64Type, byref(idle_ns)
+                        )
+                        # Convert nanoseconds to seconds
+                        return idle_ns.value / 1_000_000_000
+                    finally:
+                        self._cf.CFRelease(idle_time_ref)
+                finally:
+                    self._iokit.IOObjectRelease(hid_service)
+
+            except Exception:
+                return 0
 
     IdleQuery = MacIdleQuery
 

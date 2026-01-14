@@ -1,0 +1,287 @@
+name: Build macOS Package
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - 'claude/**'
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    name: Build macOS ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          # Intel Mac build
+          - arch: x86_64
+            runner: macos-15-intel
+            suffix: "intel"
+          # Apple Silicon build
+          - arch: arm64
+            runner: macos-latest
+            suffix: "arm64"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Get version info
+        id: version
+        run: |
+          VERSION=$(python -c "
+          import sys
+          sys.path.insert(0, '.')
+          from taskcoachlib.meta import data
+          print(data.version_full)
+          ")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Install dependencies
+        run: |
+          # Pin setuptools < 71.0.2 due to py2app compatibility issue
+          # See: https://github.com/ronaldoussoren/py2app/issues/531
+          python -m pip install --upgrade pip "setuptools<71.0.2" wheel
+
+          # Install wxPython (pre-built wheel)
+          echo "Installing wxPython..."
+          python -m pip install wxPython
+
+          # Install all TaskCoach dependencies
+          echo "Installing TaskCoach dependencies..."
+          python -m pip install \
+            "six>=1.16.0" \
+            pypubsub \
+            "watchdog>=3.0.0" \
+            "chardet>=5.2.0" \
+            "python-dateutil>=2.9.0" \
+            "pyparsing>=3.1.3" \
+            lxml \
+            keyring \
+            numpy \
+            "fasteners>=0.19" \
+            "squaremap>=1.0.5" \
+            distro
+
+          # Install py2app for building the .app bundle
+          python -m pip install py2app
+
+          echo "All dependencies installed"
+
+      - name: Test imports
+        run: |
+          echo "Testing Python..."
+          python -c "import sys; print(f'Python {sys.version}')"
+
+          echo "Testing wxPython..."
+          python -c "import wx; print(f'wxPython {wx.version()}')"
+
+          echo "Testing taskcoachlib..."
+          python -c "import taskcoachlib; print('taskcoachlib imported successfully')"
+
+          echo "Testing macOS idle detection (ctypes)..."
+          python -c "
+          from taskcoachlib.powermgt.idle import IdleQuery
+          iq = IdleQuery()
+          idle = iq.getIdleSeconds()
+          print(f'Idle time: {idle} seconds')
+          "
+
+          echo "All tests passed!"
+
+      - name: Create setup.py for py2app
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          cat > setup_app.py << 'SETUP_EOF'
+          """
+          Setup script for py2app to build Task Coach.app
+          """
+          from setuptools import setup
+
+          APP = ['taskcoach.py']
+          DATA_FILES = [
+              ('icons.in', ['icons.in/taskcoach.png', 'icons.in/taskcoach.icns'] if __import__('os').path.exists('icons.in/taskcoach.icns') else ['icons.in/taskcoach.png']),
+          ]
+
+          # Include Welcome.tsk if it exists
+          import os
+          if os.path.exists('Welcome.tsk'):
+              DATA_FILES.append(('.', ['Welcome.tsk']))
+
+          OPTIONS = {
+              'argv_emulation': False,
+              'iconfile': 'icons.in/taskcoach.icns' if os.path.exists('icons.in/taskcoach.icns') else None,
+              'plist': {
+                  'CFBundleName': 'Task Coach',
+                  'CFBundleDisplayName': 'Task Coach',
+                  'CFBundleIdentifier': 'org.taskcoach.TaskCoach',
+                  'CFBundleVersion': os.environ.get('APP_VERSION', '2.0.1.13'),
+                  'CFBundleShortVersionString': os.environ.get('APP_VERSION', '2.0.1.13'),
+                  'NSHumanReadableCopyright': 'Copyright (C) 2004-2025 Task Coach developers',
+                  'NSHighResolutionCapable': True,
+                  'LSMinimumSystemVersion': '14.0',  # macOS 14 Sonoma minimum
+                  'CFBundleDocumentTypes': [
+                      {
+                          'CFBundleTypeName': 'Task Coach Task File',
+                          'CFBundleTypeExtensions': ['tsk'],
+                          'CFBundleTypeRole': 'Editor',
+                          'LSHandlerRank': 'Owner',
+                      }
+                  ],
+              },
+              'packages': ['taskcoachlib', 'wx', 'pubsub', 'watchdog', 'lxml', 'keyring', 'numpy', 'dateutil', 'chardet', 'pyparsing', 'fasteners', 'squaremap'],
+              'includes': ['ctypes', 'ctypes.util'],
+              'excludes': ['tkinter', 'test', 'unittest'],
+          }
+
+          setup(
+              name='TaskCoach',
+              app=APP,
+              data_files=DATA_FILES,
+              options={'py2app': OPTIONS},
+              setup_requires=['py2app'],
+          )
+          SETUP_EOF
+
+          echo "setup_app.py created"
+
+      - name: Create icns icon file
+        run: |
+          # Convert PNG to icns format for macOS
+          if [ -f "icons.in/taskcoach.png" ]; then
+            # Create iconset directory
+            mkdir -p icons.in/taskcoach.iconset
+
+            # Create different icon sizes using sips (macOS built-in)
+            sips -z 16 16     icons.in/taskcoach.png --out icons.in/taskcoach.iconset/icon_16x16.png
+            sips -z 32 32     icons.in/taskcoach.png --out icons.in/taskcoach.iconset/icon_16x16@2x.png
+            sips -z 32 32     icons.in/taskcoach.png --out icons.in/taskcoach.iconset/icon_32x32.png
+            sips -z 64 64     icons.in/taskcoach.png --out icons.in/taskcoach.iconset/icon_32x32@2x.png
+            sips -z 128 128   icons.in/taskcoach.png --out icons.in/taskcoach.iconset/icon_128x128.png
+            sips -z 256 256   icons.in/taskcoach.png --out icons.in/taskcoach.iconset/icon_128x128@2x.png
+            sips -z 256 256   icons.in/taskcoach.png --out icons.in/taskcoach.iconset/icon_256x256.png
+            sips -z 512 512   icons.in/taskcoach.png --out icons.in/taskcoach.iconset/icon_256x256@2x.png
+            sips -z 512 512   icons.in/taskcoach.png --out icons.in/taskcoach.iconset/icon_512x512.png
+            sips -z 1024 1024 icons.in/taskcoach.png --out icons.in/taskcoach.iconset/icon_512x512@2x.png 2>/dev/null || \
+              cp icons.in/taskcoach.png icons.in/taskcoach.iconset/icon_512x512@2x.png
+
+            # Convert iconset to icns
+            iconutil -c icns icons.in/taskcoach.iconset -o icons.in/taskcoach.icns
+
+            # Clean up iconset directory
+            rm -rf icons.in/taskcoach.iconset
+
+            echo "Created icons.in/taskcoach.icns"
+            ls -la icons.in/taskcoach.icns
+          else
+            echo "Warning: taskcoach.png not found, skipping icns creation"
+          fi
+
+      - name: Build .app with py2app
+        env:
+          APP_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          python setup_app.py py2app
+
+          echo "Build complete. Contents of dist:"
+          ls -la dist/
+          echo "Contents of Task Coach.app:"
+          ls -la "dist/Task Coach.app/Contents/" || true
+
+      - name: Test the built app
+        run: |
+          # Check that the app bundle was created
+          if [ ! -d "dist/Task Coach.app" ]; then
+            echo "ERROR: Task Coach.app not created"
+            exit 1
+          fi
+
+          # Check basic structure
+          if [ ! -f "dist/Task Coach.app/Contents/Info.plist" ]; then
+            echo "ERROR: Info.plist not found"
+            exit 1
+          fi
+
+          echo "App bundle structure looks correct"
+
+          # Try to run the app briefly (will fail without display, but tests binary)
+          # timeout 5 "dist/Task Coach.app/Contents/MacOS/Task Coach" --help 2>/dev/null || true
+
+      - name: Create DMG
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          SUFFIX="${{ matrix.suffix }}"
+          DMG_NAME="TaskCoach-${VERSION}-macos-${SUFFIX}.dmg"
+
+          # Create a temporary directory for DMG contents
+          mkdir -p dmg_contents
+          cp -R "dist/Task Coach.app" dmg_contents/
+
+          # Create Applications symlink
+          ln -s /Applications dmg_contents/Applications
+
+          # Create DMG
+          hdiutil create -volname "Task Coach ${VERSION}" \
+            -srcfolder dmg_contents \
+            -ov -format UDZO \
+            "$DMG_NAME"
+
+          # Clean up
+          rm -rf dmg_contents
+
+          echo "Created $DMG_NAME"
+          ls -la *.dmg
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TaskCoach-macos-${{ matrix.suffix }}-${{ steps.version.outputs.version }}
+          path: TaskCoach-*.dmg
+          retention-days: 30
+
+  # Create release with macOS packages
+  release:
+    name: Create Release
+    needs: build-macos
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: TaskCoach-macos-*
+          merge-multiple: true
+          path: packages
+
+      - name: List packages
+        run: ls -la packages/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            packages/TaskCoach-*.dmg
+          draft: false
+          prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

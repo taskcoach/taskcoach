@@ -110,7 +110,7 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | Fedora 40 | fedora40 | 3.12 | 4.2.1 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap, pyparsing |
 | **AppImage** | appimage | **3.11** | **4.2.4** | — | `build-appimage.yml` | Bundles Python + all deps |
 | **Windows** | windows | **3.11** | **4.2.x** | — | `build-windows.yml` | Python embed + Inno Setup |
-| macOS | macos | — | — | — | — | Not currently building |
+| **macOS** | macos | **3.11** | **4.2.x** | — | `build-macos.yml` | py2app + DMG (Intel & ARM64) |
 
 **AppImage note:** Uses Python 3.11 (not 3.12) for wxPython wheel availability. See [AppImage Packaging](#appimage-packaging) section for details.
 
@@ -1085,6 +1085,42 @@ See `taskcoachlib/powermgt/win32.py` for the implementation.
 **Common issue:** QEMU/KVM VMs may have 32-bit Windows installed even with 64-bit CPU passthrough. 64-bit apps fail with "not compatible with the version of Windows" error. Solution: reinstall with 64-bit Windows ISO, or reactivate 32-bit builds in the workflow.
 
 **Windows 10 testing:** Installs without product key (watermark only, fully functional).
+
+---
+
+## macOS Packaging
+
+Task Coach builds native macOS .app bundles using py2app for both Intel and Apple Silicon architectures.
+
+For detailed macOS documentation including version support timeline, native features, and troubleshooting, see **[MACOSX.md](MACOSX.md)**.
+
+### Available Builds
+
+| Build | Architecture | Target | Runner |
+|-------|--------------|--------|--------|
+| `TaskCoach-X.Y.Z-macos-intel.dmg` | x86_64 | Intel Macs | `macos-15-intel` |
+| `TaskCoach-X.Y.Z-macos-arm64.dmg` | arm64 | Apple Silicon M1/M2/M3/M4 | `macos-latest` |
+
+**Minimum supported:** macOS 14 (Sonoma)
+
+### Build Workflow
+
+See `.github/workflows/build-macos.yml`
+
+1. Sets up Python 3.11 on macOS runner
+2. Installs wxPython and dependencies via pip
+3. Creates icns icon file using `iconutil`
+4. Builds .app bundle with py2app
+5. Creates DMG with Applications symlink
+
+### Code Signing
+
+**Current status:** Builds are unsigned. Users must clear quarantine:
+```bash
+xattr -cr "/Applications/Task Coach.app"
+```
+
+See [MACOSX.md](MACOSX.md#code-signing-and-notarization) for signing requirements
 
 ---
 

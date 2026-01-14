@@ -7,6 +7,7 @@ This document is part of the Python 3 migration documentation. See [PYTHON3_MIGR
 - [Native Filesystem Monitors: Deleted](#native-filesystem-monitors-deleted)
 - [Growl Notification Support Removal](#growl-notification-support-removal)
 - [X11 Session Management Removal](#x11-session-management-removal)
+- [macOS Native Extensions Cleanup](#macos-native-extensions-cleanup)
 - [Contributing to This Document](#contributing-to-this-document)
 
 ---
@@ -360,6 +361,180 @@ These work reliably on all platforms without platform-specific session managemen
 3. **No thread overhead:** Removed ICE polling thread
 4. **Simpler preferences:** One less checkbox to confuse users
 5. **Cross-platform consistency:** Same shutdown handling on all platforms
+
+---
+
+## macOS Native Extensions Cleanup
+
+**Date Completed:** January 2026
+**Affected Components:** `extension/macos/`, `taskcoachlib/powermgt/`, `taskcoachlib/operating_system.py`
+
+### Background
+
+Task Coach included native C extensions for macOS built for Python 2:
+
+```
+extension/macos/
+├── bin-ia32/          # 32-bit Intel binaries
+│   ├── _idle.so       # Idle time detection
+│   └── _powermgt.so   # Power state notifications
+├── bin-ia64/          # 64-bit Intel binaries
+│   ├── _idle.so
+│   └── _powermgt.so
+└── src/               # C source code
+    ├── idlemgt/       # Uses IOKit HIDIdleTime
+    └── powermgt/      # Uses IOPMLib power notifications
+```
+
+### Why These Extensions Were Removed
+
+**1. Python 2 API - Incompatible with Python 3**
+
+The C code used Python 2 API functions that don't exist in Python 3:
+
+```c
+// BEFORE - Python 2 only (broken in Python 3)
+PyMODINIT_FUNC init_idle(void) {
+    Py_InitModule3("_idle", methods, "idle time");  // ❌ Doesn't exist in Python 3
+}
+
+// Python 3 requires:
+PyMODINIT_FUNC PyInit__idle(void) {
+    return PyModule_Create(&module);  // ✅ Python 3 API
+}
+```
+
+**2. Intel-only - No Apple Silicon Support**
+
+The binaries were compiled only for Intel architectures (ia32/ia64). Apple Silicon Macs (M1/M2/M3/M4) with ARM64 architecture would:
+- Fail to load the extension entirely, or
+- Run through Rosetta 2 emulation with performance penalty
+
+**3. Import Would Crash Task Coach**
+
+Because the extensions used Python 2 API, importing them on Python 3 would crash:
+
+```python
+# This would cause immediate crash on Python 3
+import _idle  # ❌ Fatal error: undefined symbol Py_InitModule3
+```
+
+### Solution: Pure Python Replacements
+
+Both features were reimplemented in pure Python using `ctypes` to call macOS frameworks:
+
+#### Idle Time Detection (IOKit)
+
+```python
+# taskcoachlib/powermgt/idle.py - MacIdleQuery class
+class MacIdleQuery:
+    """Query idle time on macOS using IOKit via ctypes."""
+
+    def __init__(self):
+        # Load IOKit and CoreFoundation frameworks
+        self._iokit = cdll.LoadLibrary(
+            '/System/Library/Frameworks/IOKit.framework/IOKit'
+        )
+        self._cf = cdll.LoadLibrary(
+            '/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation'
+        )
+        # Create CFString for "HIDIdleTime"
+        self._idle_key = self._cf.CFStringCreateWithCString(
+            None, b"HIDIdleTime", kCFStringEncodingUTF8
+        )
+
+    def getIdleSeconds(self):
+        # Get IOHIDSystem service
+        hid_service = self._iokit.IOServiceGetMatchingService(
+            kIOMasterPortDefault,
+            self._iokit.IOServiceMatching(b"IOHIDSystem")
+        )
+        # Get HIDIdleTime property (returns nanoseconds)
+        idle_time_ref = self._iokit.IORegistryEntryCreateCFProperty(
+            hid_service, self._idle_key, None, 0
+        )
+        # Convert nanoseconds to seconds
+        return idle_ns.value / 1_000_000_000
+```
+
+#### Power State Notifications
+
+Power notifications require registering a callback with `IORegisterForSystemPower` and running a `CFRunLoop`, which is complex to implement in pure Python. The macOS implementation now falls back to the base class (no-op):
+
+```python
+# taskcoachlib/powermgt/macos.py
+from taskcoachlib.powermgt.base import PowerStateMixinBase
+
+class PowerStateMixin(PowerStateMixinBase):
+    """macOS power state mixin - uses base implementation."""
+    pass
+```
+
+This is acceptable because:
+- Idle detection is the primary use case (effort tracking)
+- Power notifications were only used for pausing idle detection during sleep
+
+### Removed Files
+
+| File | Lines | Description |
+|------|-------|-------------|
+| `extension/macos/bin-ia32/_idle.so` | — | 32-bit idle detection binary |
+| `extension/macos/bin-ia32/_powermgt.so` | — | 32-bit power management binary |
+| `extension/macos/bin-ia64/_idle.so` | — | 64-bit idle detection binary |
+| `extension/macos/bin-ia64/_powermgt.so` | — | 64-bit power management binary |
+| `extension/macos/src/idlemgt/*` | ~280 | C source for idle detection |
+| `extension/macos/src/powermgt/*` | ~280 | C source for power management |
+
+**Total removed:** ~560 lines of C code + 4 binary files
+
+### Obsolete macOS Version Checks Removed
+
+The minimum supported macOS is now **macOS 14 (Sonoma)**, released 2023. These old version checks were removed:
+
+| Function | Checked For | Why Removed |
+|----------|-------------|-------------|
+| `isMacOsXTiger_OrOlder()` | macOS 10.4 (2005) | 19 years obsolete |
+| `isMacOsXLion_OrNewer()` | macOS 10.7 (2011) | 13 years obsolete |
+| `isMacOsXMountainLion_OrNewer()` | macOS 10.8 (2012) | 12 years obsolete |
+| `isMacOsXMavericks_OrNewer()` | macOS 10.9 (2013) | 11 years obsolete |
+
+**New function added:**
+```python
+def isMacOsSonoma_OrNewer():
+    """Check if running on macOS 14 (Sonoma) or newer."""
+    if isMac():
+        return _platformVersion() >= (23,)  # Darwin 23 = macOS 14
+    return False
+```
+
+### Dead Code Removed
+
+Code paths that only executed on pre-Mountain Lion macOS were removed:
+
+| File | Removed Code |
+|------|-------------|
+| `application.py` | `__init_spell_checking()` method and `on_spell_checking()` |
+| `preferences.py` | `maccheckspelling` setting in EditorPage |
+| `preferences.py` | Simplified taskbar blinking check to `not isMac()` |
+| `taskbaricon.py` | Simplified taskbar blinking to `not isMac()` |
+| `defaults.py` | Removed `maccheckspelling` setting |
+
+### macOS Version Reference
+
+For Darwin kernel to macOS version mapping, see: [macOS version history](https://en.wikipedia.org/wiki/MacOS_version_history#Releases)
+
+| Darwin | macOS | Codename | Year |
+|--------|-------|----------|------|
+| 23 | 14 | Sonoma | 2023 |
+| 24 | 15 | Sequoia | 2024 |
+
+### Benefits of This Change
+
+1. **Python 3 compatible:** No more crashes from Python 2 C extensions
+2. **Apple Silicon support:** Pure Python works on both Intel and ARM64
+3. **Simpler maintenance:** No compiled binaries to maintain
+4. **Smaller codebase:** ~560 lines of C code removed
+5. **Clear minimum version:** macOS 14 (Sonoma) requirement documented
 
 ---
 

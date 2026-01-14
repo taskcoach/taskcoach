@@ -16,58 +16,26 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-# When running from source, select the right binary...
+# macOS power state notifications
+#
+# Note: The original implementation used a native C extension to register
+# for IOKit power notifications. This has been replaced with the base
+# implementation as power notification callbacks require complex CFRunLoop
+# integration that's difficult to implement purely in Python.
+#
+# The idle time detection (which is more important for Task Coach's
+# effort tracking feature) is still fully functional using ctypes.
 
-import sys
-
-if not hasattr(sys, "frozen"):
-    import struct, os
-
-    _subdir = "ia64" if struct.calcsize("L") == 8 else "ia32"
-
-    sys.path.insert(
-        0,
-        os.path.join(
-            os.path.split(__file__)[0],
-            "..",
-            "..",
-            "extension",
-            "macos",
-            "bin-%s" % _subdir,
-        ),
-    )
-
-import _powermgt  # pylint: disable=F0401
-import threading
-import wx
 from taskcoachlib.powermgt.base import PowerStateMixinBase
 
 
 class PowerStateMixin(PowerStateMixinBase):
-    POWERON = _powermgt.POWERON
-    POWEROFF = _powermgt.POWEROFF
+    """macOS power state mixin.
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    Currently uses the base implementation (no-op). Power state notifications
+    on macOS require registering with IORegisterForSystemPower and running
+    a CFRunLoop, which is complex to implement in pure Python.
 
-        class Observer(_powermgt.PowerObserver):
-            def __init__(self, cb):
-                super().__init__()
-
-                self.__callback = cb
-
-            def PowerNotification(self, state):
-                wx.CallAfter(self.__callback, state)
-
-        self.__observer = Observer(self.__OnPowerState)
-        self.__thread = threading.Thread(
-            target=self.__observer.run
-        )  # pylint: disable=E1101
-        self.__thread.start()
-
-    def __OnPowerState(self, state):
-        self.OnPowerState(state)
-
-    def OnQuit(self):
-        self.__observer.stop()  # pylint: disable=E1101
-        self.__thread.join()
+    The related idle time detection feature works correctly via ctypes.
+    """
+    pass
