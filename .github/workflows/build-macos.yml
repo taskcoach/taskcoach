@@ -224,8 +224,65 @@ jobs:
 
           echo "App bundle structure looks correct"
 
-          # Try to run the app briefly (will fail without display, but tests binary)
-          # timeout 5 "dist/Task Coach.app/Contents/MacOS/Task Coach" --help 2>/dev/null || true
+      - name: Test app initialization (catch Cocoa assertions)
+        run: |
+          # Use the bundled Python to test widget creation
+          # This catches wxAssertionError that only occur on macOS Cocoa backend
+          PYTHON_BIN="dist/Task Coach.app/Contents/MacOS/python"
+          RESOURCES="dist/Task Coach.app/Contents/Resources"
+
+          # Set up Python path to use bundled libraries
+          export PYTHONHOME="$RESOURCES"
+          export PYTHONPATH="$RESOURCES/lib/python3.11:$RESOURCES/lib/python3.11/site-packages"
+
+          echo "Testing widget initialization..."
+          "$PYTHON_BIN" << 'TEST_EOF'
+          import sys
+          import os
+
+          # Test basic imports
+          print("Testing imports...")
+          import wx
+          print(f"  wx version: {wx.version()}")
+
+          import taskcoachlib
+          print("  taskcoachlib imported")
+
+          # Create app for widget tests
+          print("Creating wx.App...")
+          app = wx.App(False)
+
+          # Test widgets that have caused macOS-specific crashes
+          print("Testing widget creation...")
+          frame = wx.Frame(None, title="Test")
+
+          # Test SearchCtrl with TE_PROCESS_ENTER (caught style bug)
+          from taskcoachlib.widgets import SearchCtrl
+          search = SearchCtrl(frame, style=wx.TE_PROCESS_ENTER, callback=lambda x: None)
+          print("  SearchCtrl: OK")
+
+          # Test MultiLineTextCtrl
+          from taskcoachlib.widgets.textctrl import MultiLineTextCtrl
+          text = MultiLineTextCtrl(frame, style=wx.TE_MULTILINE)
+          print("  MultiLineTextCtrl: OK")
+
+          # Test art provider (caught icon path bug)
+          from taskcoachlib.gui import artprovider
+          artprovider.init()
+          bitmap = wx.ArtProvider.GetBitmap("task", wx.ART_MENU, (16, 16))
+          print(f"  ArtProvider: OK (bitmap valid: {bitmap.IsOk()})")
+
+          # Clean up
+          frame.Destroy()
+
+          print("All widget tests passed!")
+          TEST_EOF
+
+          if [ $? -ne 0 ]; then
+            echo "ERROR: Widget initialization test failed"
+            exit 1
+          fi
+          echo "macOS Cocoa assertion tests passed"
 
       - name: Create DMG
         run: |

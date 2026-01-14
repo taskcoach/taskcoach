@@ -369,14 +369,14 @@ class SearchCtrl(wx.Panel):
     """
 
     def __init__(self, parent, *args, **kwargs):
-        # Extract style before passing to Panel
-        kwargs.pop("style", 0)  # style is for the inner SearchCtrl, not Panel
+        # Extract style before passing to Panel (style is for inner SearchCtrl)
+        style = kwargs.pop("style", 0)
         super().__init__(parent)
 
         # Create sizer and inner search control
         # Use proportion=0 to prevent Panel from stretching beyond SearchCtrl size
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.__searchCtrl = _SearchCtrlInner(self, self, *args, **kwargs)
+        self.__searchCtrl = _SearchCtrlInner(self, self, *args, style=style, **kwargs)
         sizer.Add(self.__searchCtrl, 0, wx.EXPAND)
         self.SetSizer(sizer)
         # Fit Panel tightly to SearchCtrl for correct popup positioning

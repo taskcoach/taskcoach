@@ -220,8 +220,8 @@ class MultiLineTextCtrl(wx.Panel):
         return cls._nativePadding
 
     def __init__(self, parent, text="", *args, **kwargs):
-        # Extract style for the panel - remove text-specific styles
-        kwargs.pop("style", 0)
+        # Extract style for inner text control (not for panel wrapper)
+        style = kwargs.pop("style", 0)
         super().__init__(parent, style=wx.BORDER_NONE)
 
         # Track focus state for border drawing
@@ -230,8 +230,8 @@ class MultiLineTextCtrl(wx.Panel):
         # Get native padding from theme
         self._padding = self._getNativePadding(parent)
 
-        # Create the inner text control
-        self._textCtrl = _MultiLineTextCtrlInner(self, text, *args, **kwargs)
+        # Create the inner text control with the extracted style
+        self._textCtrl = _MultiLineTextCtrlInner(self, text, *args, style=style, **kwargs)
 
         # Match background colors
         self.SetBackgroundColour(self._textCtrl.GetBackgroundColour())
