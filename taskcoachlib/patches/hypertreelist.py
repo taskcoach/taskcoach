@@ -312,6 +312,15 @@ import six
 # Version Info
 __version__ = "1.4"
 
+
+def _isValidColour(colour):
+    """Check if a colour is valid and can be used for drawing.
+
+    On macOS Cocoa, using invalid colours (None, wx.NullColour, or
+    uninitialized colours) causes wxAssertionError in wxMacCreateCGColor().
+    """
+    return colour is not None and isinstance(colour, wx.Colour) and colour.IsOk()
+
 # --------------------------------------------------------------------------
 # Constants
 # --------------------------------------------------------------------------
@@ -2987,14 +2996,18 @@ class TreeListMainWindow(CustomTreeCtrl):
         # determine background and show it
         if attr and attr.HasBackgroundColour():
             colBg = attr.GetBackgroundColour()
-            drawItemBackground = True
+            drawItemBackground = _isValidColour(colBg)
         else:
             colBg = self._backgroundColour
 
-        dc.SetBrush(wx.Brush(colBg))
+        if _isValidColour(colBg):
+            dc.SetBrush(wx.Brush(colBg))
         if attr and attr.HasBorderColour():
             colBorder = attr.GetBorderColour()
-            dc.SetPen(wx.Pen(colBorder, 1))
+            if _isValidColour(colBorder):
+                dc.SetPen(wx.Pen(colBorder, 1))
+            else:
+                dc.SetPen(wx.TRANSPARENT_PEN)
         else:
             dc.SetPen(wx.TRANSPARENT_PEN)
 
@@ -3177,7 +3190,7 @@ class TreeListMainWindow(CustomTreeCtrl):
                         itemrect = wx.Rect(text_x-2, item.GetY() + off_h, text_w+2*_MARGIN, total_h - off_h)
                         colBgX = item.GetBackgroundColour(i)
 
-                        if colBgX is not None and i != 0:
+                        if _isValidColour(colBgX) and i != 0:
                             dc.SetBrush(wx.Brush(colBgX, wx.SOLID))
                             dc.SetPen(wx.TRANSPARENT_PEN)
                             dc.DrawRectangle(itemrect)
@@ -3194,7 +3207,7 @@ class TreeListMainWindow(CustomTreeCtrl):
                         itemrect = wx.Rect(text_x-2, item.GetY() + off_h, text_w+2*_MARGIN, total_h - off_h)
                         colBgX = item.GetBackgroundColour(i)
 
-                        if colBgX is not None:
+                        if _isValidColour(colBgX):
                             dc.SetBrush(wx.Brush(colBgX, wx.SOLID))
                             dc.SetPen(wx.TRANSPARENT_PEN)
                             dc.DrawRectangle(itemrect)
@@ -3362,13 +3375,14 @@ class TreeListMainWindow(CustomTreeCtrl):
                 attr = item.GetAttributes()
 
                 if attr and attr.HasBackgroundColour():
-                    width = self._owner.GetEventHandler().GetColumn(self._main_column).GetWidth()
                     colBg = attr.GetBackgroundColour()
-                    itemrect = wx.Rect(x_maincol, y-h-1, width, h+1)
+                    if _isValidColour(colBg):
+                        width = self._owner.GetEventHandler().GetColumn(self._main_column).GetWidth()
+                        itemrect = wx.Rect(x_maincol, y-h-1, width, h+1)
 
-                    dc.SetBrush(wx.Brush(colBg, wx.SOLID))
-                    dc.SetPen(wx.TRANSPARENT_PEN)
-                    dc.DrawRectangle(itemrect)
+                        dc.SetBrush(wx.Brush(colBg, wx.SOLID))
+                        dc.SetPen(wx.TRANSPARENT_PEN)
+                        dc.DrawRectangle(itemrect)
 
             # draw item
             self.PaintItem(item, dc)
@@ -3511,7 +3525,9 @@ class TreeListMainWindow(CustomTreeCtrl):
             dc = wx.BufferedPaintDC(self)
             rect = self.GetUpdateRegion().GetBox()
             dc.SetClippingRegion(rect)
-            dc.SetBackground(wx.Brush(self.GetBackgroundColour()))
+            bgColour = self.GetBackgroundColour()
+            if _isValidColour(bgColour):
+                dc.SetBackground(wx.Brush(bgColour))
             if self._backgroundImage:
                 self.TileBackground(dc)
             else:
