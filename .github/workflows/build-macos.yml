@@ -138,7 +138,7 @@ jobs:
                   'CFBundleShortVersionString': os.environ.get('APP_VERSION', '2.0.1.13'),
                   'NSHumanReadableCopyright': 'Copyright (C) 2004-2025 Task Coach developers',
                   'NSHighResolutionCapable': True,
-                  'LSMinimumSystemVersion': '14.0',  # macOS 14 Sonoma minimum
+                  'LSMinimumSystemVersion': '13.0',  # macOS 13 Ventura minimum
                   'CFBundleDocumentTypes': [
                       {
                           'CFBundleTypeName': 'Task Coach Task File',
