@@ -219,76 +219,23 @@ if operating_system.isWindows():
         )
 
 elif operating_system.isMac():
-    import Cocoa, calendar
-
-    # We don't actually respect the 'seconds' parameter; this assumes that the short time format does
-    # not include them, but the medium format does.
-    _shortFormatter = Cocoa.NSDateFormatter.alloc().init()
-    _shortFormatter.setFormatterBehavior_(Cocoa.NSDateFormatterBehavior10_4)
-    _shortFormatter.setTimeStyle_(Cocoa.NSDateFormatterShortStyle)
-    _shortFormatter.setDateStyle_(Cocoa.NSDateFormatterNoStyle)
-    _shortFormatter.setTimeZone_(
-        Cocoa.NSTimeZone.timeZoneForSecondsFromGMT_(0)
-    )
-    _mediumFormatter = Cocoa.NSDateFormatter.alloc().init()
-    _mediumFormatter.setFormatterBehavior_(Cocoa.NSDateFormatterBehavior10_4)
-    _mediumFormatter.setTimeStyle_(Cocoa.NSDateFormatterMediumStyle)
-    _mediumFormatter.setDateStyle_(Cocoa.NSDateFormatterNoStyle)
-    _mediumFormatter.setTimeZone_(
-        Cocoa.NSTimeZone.timeZoneForSecondsFromGMT_(0)
-    )
-    # Special case for hour without minutes or seconds. I don't know if it is possible to get the AM/PM
-    # setting alone, so parse the format string instead.
-    # See http://www.unicode.org/reports/tr35/tr35-25.html#Date_Format_Patterns
-    _state = 0
-    _hourFormat = ""
-    _ampmFormat = ""
-    for c in _mediumFormatter.dateFormat():
-        if _state == 0:
-            if c == "'":
-                _state = 1  # After single quote
-            elif c in ["h", "H", "k", "K", "j"]:
-                _hourFormat += c
-            elif c == "a":
-                _ampmFormat = c
-        elif _state == 1:
-            if c == "'":
-                _state = 0
-            else:
-                _state = 2  # Escaped string
-        elif _state == 2:
-            if c == "'":
-                _state = 0
-    _hourFormatter = Cocoa.NSDateFormatter.alloc().init()
-    _hourFormatter.setFormatterBehavior_(Cocoa.NSDateFormatterBehavior10_4)
-    _hourFormatter.setDateFormat_(
-        _hourFormat + (" %s" % _ampmFormat if _ampmFormat else "")
-    )
-    _hourFormatter.setTimeZone_(Cocoa.NSTimeZone.timeZoneForSecondsFromGMT_(0))
-    _dateFormatter = Cocoa.NSDateFormatter.alloc().init()
-    _dateFormatter.setFormatterBehavior_(Cocoa.NSDateFormatterBehavior10_4)
-    _dateFormatter.setDateStyle_(Cocoa.NSDateFormatterShortStyle)
-    _dateFormatter.setTimeStyle_(Cocoa.NSDateFormatterNoStyle)
-    _dateFormatter.setTimeZone_(Cocoa.NSTimeZone.timeZoneForSecondsFromGMT_(0))
-
-    def _applyFormatter(dt, fmt):
-        dt_native = Cocoa.NSDate.dateWithTimeIntervalSince1970_(
-            (dt - datetime.datetime(1970, 1, 1, 0, 0, 0, 0)).total_seconds()
-        )
-        return fmt.stringFromDate_(dt_native)
-
+    # Use simple strftime formatting on macOS
+    # PyObjC/Cocoa formatting was removed as it adds complexity and
+    # dependency issues without significant benefit for a task manager
     def rawTimeFunc(dt, minutes=True, seconds=False):
-        if minutes:
-            if seconds:
-                return _applyFormatter(dt, _mediumFormatter)
-            return _applyFormatter(dt, _shortFormatter)
-        return _applyFormatter(dt, _hourFormatter)
+        if dt is None:
+            dt = datetime.datetime.now()
+        if seconds:
+            return dt.strftime("%H:%M:%S")
+        elif minutes:
+            return dt.strftime("%H:%M")
+        else:
+            return dt.strftime("%H")
 
     def rawDateFunc(dt):
-        return _applyFormatter(
-            datetime.datetime.combine(dt, datetime.time(0, 0, 0, 0)),
-            _dateFormatter,
-        )
+        if dt is None:
+            dt = datetime.datetime.now()
+        return dt.strftime("%x")
 
 
 timeFunc = lambda dt, minutes=True, seconds=False: operating_system.decodeSystemString(

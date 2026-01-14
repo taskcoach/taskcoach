@@ -430,14 +430,7 @@ class Settings(CachingConfigParser):
                 except Exception:
                     return os.getcwd()  # Last resort fallback
         elif operating_system.isMac():
-            import Carbon.Folder, Carbon.Folders, Carbon.File
-
-            pathRef = Carbon.Folder.FSFindFolder(
-                Carbon.Folders.kUserDomain,
-                Carbon.Folders.kDocumentsFolderType,
-                True,
-            )
-            return Carbon.File.pathname(pathRef)
+            return os.path.expanduser("~/Documents")
         elif operating_system.isGTK():
             try:
                 from PyKDE4.kdeui import KGlobalSettings
@@ -534,15 +527,7 @@ class Settings(CachingConfigParser):
 
                 path = BaseDirectory.save_config_path(meta.name)
             elif operating_system.isMac():
-                import Carbon.Folder, Carbon.Folders, Carbon.File
-
-                pathRef = Carbon.Folder.FSFindFolder(
-                    Carbon.Folders.kUserDomain,
-                    Carbon.Folders.kPreferencesFolderType,
-                    True,
-                )
-                path = Carbon.File.pathname(pathRef)
-                # XXXFIXME: should we release pathRef ? Doesn't seem so since I get a SIGSEGV if I try.
+                path = os.path.expanduser("~/Library/Preferences")
             elif operating_system.isWindows():
                 from win32com.shell import shell, shellcon
 
@@ -565,16 +550,10 @@ class Settings(CachingConfigParser):
 
             path = BaseDirectory.save_data_path(meta.name)
         elif operating_system.isMac():
-            import Carbon.Folder, Carbon.Folders, Carbon.File
-
-            pathRef = Carbon.Folder.FSFindFolder(
-                Carbon.Folders.kUserDomain,
-                Carbon.Folders.kApplicationSupportFolderType,
-                True,
+            path = os.path.join(
+                os.path.expanduser("~/Library/Application Support"),
+                meta.name
             )
-            path = Carbon.File.pathname(pathRef)
-            # XXXFIXME: should we release pathRef ? Doesn't seem so since I get a SIGSEGV if I try.
-            path = os.path.join(path, meta.name)
         elif operating_system.isWindows():
             if self.__iniFileSpecifiedOnCommandLine and not forceGlobal:
                 path = self.pathToIniFileSpecifiedOnCommandLine()
