@@ -172,14 +172,14 @@ elif operating_system.isMac():
                 self.__maxWidth = max(self.__maxWidth, x + width)
                 self.__maxHeight = max(self.__maxHeight, y + height)
 
-            self.MoveXY(self.__maxWidth, self.__maxHeight)
+            self.Move(self.__maxWidth, self.__maxHeight)
             super().Show()
 
         def Show(self, x, y, width, height):  # pylint: disable=W0221
             self.SetSize(x, y, width, height)
 
         def Hide(self):  # pylint: disable=W0221
-            self.MoveXY(self.__maxWidth, self.__maxHeight)
+            self.Move(self.__maxWidth, self.__maxHeight)
 
 else:
 
