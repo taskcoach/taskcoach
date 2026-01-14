@@ -25,17 +25,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Fedora 39 and 40 builds are identical (same deps, same spec file).
-          # Building only on Fedora 40; the noarch RPM works on both.
-          # DISABLED: Uncomment to build on Fedora 39 separately if needed.
-          # - distro: fedora:39
-          #   name: Fedora 39
+          # Fedora 42 and 43 builds are identical (same deps, same spec file).
+          # Building only on Fedora 43; the noarch RPM works on both.
+          # DISABLED: Uncomment to build on Fedora 42 separately if needed.
+          # - distro: fedora:42
+          #   name: Fedora 42
           #   os: fedora
-          #   osver: "39"
-          - distro: fedora:40
-            name: Fedora 40
+          #   osver: "42"
+          - distro: fedora:43
+            name: Fedora 43
             os: fedora
-            osver: "40"
+            osver: "43"
 
     container:
       image: ${{ matrix.distro }}
@@ -142,7 +142,7 @@ jobs:
             if [ -f "$rpm" ]; then
               BASENAME=$(basename "$rpm")
               # Rename to include distro info
-              NEWNAME="taskcoach-${VERSION}-${OS}${OSVER}.noarch.rpm"
+              NEWNAME="taskcoach-${VERSION}-${OS}${OSVER}.rpm"
               cp "$rpm" "artifacts/$NEWNAME"
               echo "Collected: $NEWNAME"
             fi
@@ -165,16 +165,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Test only on Fedora 40 (matches build matrix)
-          # DISABLED: Uncomment to test on Fedora 39 separately if needed.
-          # - distro: fedora:39
-          #   name: Fedora 39
+          # Test only on Fedora 43 (matches build matrix)
+          # DISABLED: Uncomment to test on Fedora 42 separately if needed.
+          # - distro: fedora:42
+          #   name: Fedora 42
           #   os: fedora
-          #   osver: "39"
-          - distro: fedora:40
-            name: Fedora 40
+          #   osver: "42"
+          - distro: fedora:43
+            name: Fedora 43
             os: fedora
-            osver: "40"
+            osver: "43"
 
     steps:
       - name: Download artifact

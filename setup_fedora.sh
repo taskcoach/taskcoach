@@ -1,8 +1,8 @@
 #!/bin/bash
-# TaskCoach Setup Script for Fedora 39/40
+# TaskCoach Setup Script for Fedora 42/43
 # This script automates the setup and testing of TaskCoach on Fedora
 #
-# Fedora 39/40 uses Python 3.12 as default
+# Fedora 42/43 uses Python 3.13 as default
 # All core packages available in repos except squaremap
 #
 
@@ -19,7 +19,7 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}TaskCoach Setup for Fedora 39/40${NC}"
+echo -e "${BLUE}TaskCoach Setup for Fedora 42/43${NC}"
 echo -e "${BLUE}Version 1.0.0${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo
@@ -28,7 +28,7 @@ echo
 if [ -f /etc/os-release ]; then
     . /etc/os-release
     if [ "$ID" != "fedora" ]; then
-        echo -e "${YELLOW}Warning: This script is designed for Fedora 39/40${NC}"
+        echo -e "${YELLOW}Warning: This script is designed for Fedora 42/43${NC}"
         echo -e "${YELLOW}Detected: $PRETTY_NAME${NC}"
         read -p "Continue anyway? (y/n) " -n 1 -r
         echo

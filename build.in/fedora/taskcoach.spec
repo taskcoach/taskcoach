@@ -145,7 +145,7 @@ install -Dm644 Welcome.tsk \
 - Comprehensive packaging for Debian, Fedora, Arch, AppImage
 
 * Tue Dec 24 2024 Task Coach Developers <developers@taskcoach.org> - 1.6.1.74-1
-- Modernized spec file for Fedora 39+
+- Modernized spec file for Fedora 42+
 - Consistent dependency strategy: distro packages first, pip fallback
 - Bundled: squaremap (not in repos), pyparsing>=3.1.3 (version too old)
 - Added AppStream metadata validation
