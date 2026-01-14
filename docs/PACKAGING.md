@@ -1101,7 +1101,7 @@ For detailed macOS documentation including version support timeline, native feat
 | `TaskCoach-X.Y.Z-macos-intel.dmg` | x86_64 | Intel Macs | `macos-15-intel` |
 | `TaskCoach-X.Y.Z-macos-arm64.dmg` | arm64 | Apple Silicon M1/M2/M3/M4 | `macos-latest` |
 
-**Minimum supported:** macOS 14 (Sonoma)
+**Minimum supported:** macOS 13 (Ventura)
 
 ### Build Workflow
 

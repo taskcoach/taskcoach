@@ -41,8 +41,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # =============================================================================
 
 version = "2.0.1"  # Major.Minor.Milestone
-patch = "16"  # Patch number - INCREMENT THIS for each release
-version_full = f"{version}.{patch}"  # Full version: 2.0.1.16
+patch = "17"  # Patch number - INCREMENT THIS for each release
+version_full = f"{version}.{patch}"  # Full version: 2.0.1.17
 
 release_day = "13"  # Day of the release (1-31)
 release_month = "January"  # Month of the release
@@ -52,38 +52,6 @@ release_year = "2026"  # Year of the release
 # END VERSION CONFIGURATION
 # =============================================================================
 
-
-def _get_git_commit_hash():
-    """Dynamically get the current git commit hash at runtime.
-
-    Returns the short (7-char) commit hash, or empty string if not in a git repo
-    or git is not available.
-    """
-    import subprocess
-    import os
-
-    try:
-        # Get the directory where this file is located
-        this_dir = os.path.dirname(os.path.abspath(__file__))
-        # Run git rev-parse to get the short commit hash
-        result = subprocess.run(
-            ["git", "rev-parse", "--short", "HEAD"],
-            cwd=this_dir,
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
-        if result.returncode == 0:
-            return result.stdout.strip()
-    except (subprocess.SubprocessError, FileNotFoundError, OSError):
-        pass  # git not available or not in a git repo
-    return ""
-
-
-# Get git commit hash dynamically (empty string if not available)
-git_commit_hash = _get_git_commit_hash()
-# For display purposes, show "(n/a)" if no commit hash available
-version_commit = git_commit_hash if git_commit_hash else "(n/a)"
 
 tskversion = 37  # Current version number of the task file format, changed to 37 for release 1.3.23.
 release_status = "alpha"  # One of 'alpha', 'beta', 'stable'

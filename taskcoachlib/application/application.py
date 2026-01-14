@@ -77,10 +77,7 @@ def _log_environment():
     log_message(f" {date_str} ".center(60, "="))
 
     # Log version info at startup for debugging
-    if meta.git_commit_hash:
-        log_message(f"Task Coach {meta.version_full} (commit {meta.git_commit_hash})")
-    else:
-        log_message(f"Task Coach {meta.version_full}")
+    log_message(f"Task Coach {meta.version_full}")
     log_message(f"Python {sys.version}")
     log_message(f"wxPython {wx.version()}")
     log_message(f"Platform: {platform.platform()}")

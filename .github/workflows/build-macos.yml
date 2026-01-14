@@ -150,7 +150,7 @@ jobs:
               },
               'packages': ['taskcoachlib', 'wx', 'pubsub', 'watchdog', 'lxml', 'keyring', 'numpy', 'dateutil', 'chardet', 'pyparsing', 'fasteners', 'squaremap'],
               'includes': ['ctypes', 'ctypes.util'],
-              'excludes': ['tkinter', 'test', 'unittest'],
+              'excludes': ['tkinter', 'test', 'unittest', 'pyparsing.testing'],
           }
 
           setup(

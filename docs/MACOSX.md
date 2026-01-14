@@ -21,13 +21,14 @@ This document covers macOS-specific implementation details, version requirements
 
 | macOS Version | Codename | Status |
 |---------------|----------|--------|
-| macOS 14 | Sonoma | **Minimum supported** |
+| macOS 13 | Ventura | **Minimum supported** |
+| macOS 14 | Sonoma | Supported |
 | macOS 15 | Sequoia | Supported |
 | macOS 16 | Tahoe | Supported (expected) |
 
-**Minimum requirement:** macOS 14 (Sonoma), released September 2023.
+**Minimum requirement:** macOS 13 (Ventura), released October 2022.
 
-Older versions (Monterey, Ventura, and earlier) are not supported. The `LSMinimumSystemVersion` in the app bundle is set to `14.0`.
+Older versions (Monterey and earlier) are not supported. The `LSMinimumSystemVersion` in the app bundle is set to `13.0`.
 
 ---
 
@@ -107,7 +108,7 @@ Task Coach uses pure Python implementations for macOS-specific features via `cty
 |---------|----------------|-----------|
 | Idle detection | `ctypes` | IOKit |
 | Power management | Base class (no-op) | — |
-| Date formatting | PyObjC | Cocoa NSDateFormatter |
+| Date formatting | Python `strftime` | — |
 | Text-to-speech | Subprocess | `say` command |
 | Thunderbird paths | Python | `~/Library/Thunderbird` |
 
@@ -261,7 +262,6 @@ To add signing to GitHub Actions:
 | App won't launch on Intel Mac | ARM64-only binary | Use Intel build (`-intel.dmg`) |
 | App slow on Apple Silicon | Running Intel binary via Rosetta | Use ARM64 build (`-arm64.dmg`) |
 | Idle detection returns 0 | IOKit access issue | Check Console.app for errors |
-| PyObjC import error | Missing dependency | Install PyObjC: `pip install pyobjc` |
 
 ---
 

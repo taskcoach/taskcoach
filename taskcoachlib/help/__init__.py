@@ -812,7 +812,7 @@ def _get_splash_path():
 aboutHTML = (
     _(
         """<h4>%(name)s - %(description)s</h4>
-<h5>Version %(version_full)s %(release_status)s (commit %(version_commit)s), %(date)s</h5>
+<h5>Version %(version_full)s %(release_status)s, %(date)s</h5>
 <p>By %(author)s &lt;%(author_email)s&gt;<p>
 <p><a href="%(url)s" target="_blank">%(url)s</a></p>
 <p>%(copyright)s</p>
