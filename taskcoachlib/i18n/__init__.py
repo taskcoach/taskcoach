@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import wx, os, sys, importlib, tempfile, locale, gettext
+import wx, os, locale
 from taskcoachlib import patterns, operating_system
 from . import po2dict
 
@@ -26,60 +26,52 @@ def _log_i18n(msg):
     print(f"[i18n] {msg}")
 
 
+# Directory containing .po files
+_LOCALES_DIR = os.path.join(os.path.dirname(__file__), "locales")
+
+
 class Translator(metaclass=patterns.Singleton):
     def __init__(self, language):
-        self.__locale = None  # Initialize to None for proper lifecycle management
+        self.__locale = None
+        self.__language = {}
+        self.__encoding = "UTF-8"
+        self._locale_ok = True  # Track if locale was set successfully
         _log_i18n(f"Initializing Translator with language: {language!r}")
 
-        load = (
-            self._loadPoFile if language.endswith(".po") else self._loadModule
-        )
-        module, language = load(language)
-        self._installModule(module)
+        self._loadTranslation(language)
         self._setLocale(language)
 
+    @property
+    def locale_ok(self):
+        """Return True if the system locale was set successfully."""
+        return self._locale_ok
+
+    def _loadTranslation(self, language):
+        """Load translation from .po file in locales directory."""
+        # If a full path to .po file is given, load it directly
+        if language.endswith(".po") and os.path.isfile(language):
+            self._loadPoFile(language)
+            return
+
+        # Try to find .po file in locales directory
+        for lang_code in self._localeStrings(language):
+            po_file = os.path.join(_LOCALES_DIR, f"{lang_code}.po")
+            if os.path.isfile(po_file):
+                self._loadPoFile(po_file)
+                _log_i18n(f"Loaded translation: {po_file}")
+                return
+            _log_i18n(f"Translation file not found: {po_file}")
+
+        _log_i18n(f"No translation found for '{language}'. Using English.")
+
     def _loadPoFile(self, poFilename):
-        """Load the translation from a .po file by creating a python
-        module with po2dict and them importing that module."""
-        language = self._languageFromPoFilename(poFilename)
-        pyFilename = self._tmpPyFilename()
-        po2dict.make(poFilename, pyFilename)
-        module = importlib.load_source(language, pyFilename)
-        os.remove(pyFilename)
-        return module, language
-
-    def _tmpPyFilename(self):
-        """Return a filename of a (closed) temporary .py file."""
-        tmpFile = tempfile.NamedTemporaryFile(suffix=".py")
-        pyFilename = tmpFile.name
-        tmpFile.close()
-        return pyFilename
-
-    def _loadModule(self, language):
-        """Load the translation from a python module that has been
-        created from a .po file with po2dict before."""
-        module = None
-        tried_modules = []
-        for moduleName in self._localeStrings(language):
-            tried_modules.append(moduleName)
-            try:
-                module = __import__(moduleName, globals())
-                _log_i18n(f"Loaded translation module: {moduleName}")
-                break
-            except ImportError as e:
-                _log_i18n(f"Could not load translation module '{moduleName}': {e}")
-                module = None
-        if module is None:
-            _log_i18n(f"No translation module found for language '{language}' "
-                      f"(tried: {tried_modules}). Using English.")
-        return module, language
-
-    def _installModule(self, module):
-        """Make the module's translation dictionary and encoding available."""
-        # pylint: disable=W0201
-        if module:
-            self.__language = module.dict
-            self.__encoding = module.encoding
+        """Load translation directly from a .po file."""
+        try:
+            translations, encoding = po2dict.parse(poFilename)
+            self.__language = translations
+            self.__encoding = encoding
+        except Exception as e:
+            _log_i18n(f"Failed to load {poFilename}: {e}")
 
     def _setLocale(self, language):
         """Try to set the locale, trying possibly multiple localeStrings.
@@ -114,8 +106,16 @@ class Translator(metaclass=patterns.Singleton):
                     self.__locale = None
 
                 try:
+                    # Suppress wx warning dialog if locale can't be fully set
+                    log_null = wx.LogNull()
                     self.__locale = wx.Locale(languageInfo.Language)
-                    _log_i18n(f"Created wx.Locale successfully")
+                    del log_null
+                    # Check if locale was properly initialized
+                    if not self.__locale.IsOk():
+                        _log_i18n(f"wx.Locale created but IsOk() returned False")
+                        self._locale_ok = False
+                    else:
+                        _log_i18n(f"Created wx.Locale successfully")
 
                     # Add the wxWidgets message catalog. This is really only for
                     # py2exe'ified versions, but it doesn't seem to hurt on other
@@ -135,6 +135,7 @@ class Translator(metaclass=patterns.Singleton):
 
         if not locale_set:
             _log_i18n(f"WARNING: Could not set wx.Locale for language '{language}'")
+            self._locale_ok = False
 
         if operating_system.isGTK():
             try:
@@ -188,21 +189,59 @@ class Translator(metaclass=patterns.Singleton):
                 localeStrings.append(language.split("_")[0])
         return localeStrings
 
-    def _languageFromPoFilename(self, poFilename):
-        return os.path.splitext(os.path.basename(poFilename))[0]
-
     def translate(self, string):
         """Look up string in the current language dictionary. Return the
         passed string if no language dictionary is available or if the
         dictionary doesn't contain the string."""
-        try:
-            return self.__language[string].decode(self.__encoding)
-        except (AttributeError, KeyError):
-            return string
+        return self.__language.get(string, string)
 
 
 def currentLanguageIsRightToLeft():
     return wx.GetApp().GetLayoutDirection() == wx.Layout_RightToLeft
+
+
+def isCurrentLocaleOk():
+    """Return True if the current locale was set up successfully."""
+    try:
+        return Translator._instance.locale_ok
+    except AttributeError:
+        return True  # Not initialized yet, assume OK
+
+
+def isLocaleAvailable(language_code):
+    """Check if a locale is available on the system for the given language code.
+
+    This tests whether wx.Locale can be created for this language without
+    actually creating one (which would affect the running application).
+    """
+    if not language_code:
+        return True  # Default/empty means system locale
+
+    # Get locale strings to try (e.g., "tr_TR" -> ["tr_TR", "tr"])
+    locale_strings = [language_code]
+    if "_" in language_code:
+        locale_strings.append(language_code.split("_")[0])
+
+    for locale_string in locale_strings:
+        language_info = wx.Locale.FindLanguageInfo(locale_string)
+        if language_info:
+            # wx knows about this language, but is the system locale installed?
+            # Try to check if the locale exists on the system
+            try:
+                # Test if we can set this locale temporarily
+                test_locale_str = language_info.CanonicalName
+                # Try common locale name formats
+                for suffix in ['.UTF-8', '.utf8', '']:
+                    try:
+                        locale.setlocale(locale.LC_ALL, test_locale_str + suffix)
+                        locale.setlocale(locale.LC_ALL, '')  # Reset
+                        return True
+                    except locale.Error:
+                        continue
+            except Exception:
+                pass
+
+    return False
 
 
 def _get_system_language():

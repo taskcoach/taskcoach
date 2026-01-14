@@ -164,6 +164,7 @@ setupOptions = {
     "packages": findPackages("taskcoachlib") + findPackages("buildlib"),
     "package_data": {
         "taskcoachlib.gui": ["icons/*.png"],
+        "taskcoachlib.i18n": ["locales/*.po"],
     },
     "include_package_data": True,
     "scripts": ["taskcoach.py"],

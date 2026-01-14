@@ -675,6 +675,13 @@ class LanguagePage(SettingsPage):
 
     def __init__(self, *args, **kwargs):
         super().__init__(columns=3, *args, **kwargs)
+
+        # Restart warning above the dropdown
+        self._restartWarningBase = _("Changing the language requires a restart of %s.") % meta.name
+        self._restartWarning = wx.StaticText(self, label=self._restartWarningBase)
+        self._restartWarningDefaultColor = self._restartWarning.GetForegroundColour()
+        self.addEntry("", self._restartWarning, flags=(None, wx.ALIGN_LEFT))
+
         languages = [
             ("ar", "الْعَرَبيّة (Arabic)"),
             ("eu_ES", "Euskal Herria (Basque)"),
@@ -751,40 +758,96 @@ class LanguagePage(SettingsPage):
             "view",
             "language_set_by_user",
             _("Language"),
-            "restart",
+            "",
             choices,
             flags=(
                 wx.ALIGN_RIGHT,
-                wx.EXPAND,
                 wx.ALIGN_LEFT,
             ),
             sep="-",
         )
 
+        # Combined panel for locale warning and help text (single row to avoid GridBagSizer collapse issues)
         panel = wx.Panel(self)
         sizer = wx.BoxSizer(wx.VERTICAL)
+
+        # Locale warning - only shown when selected locale is not installed
+        self._localeWarning = wx.StaticText(
+            panel,
+            label=_("WARNING: The selected language's locale is not installed on your system.\n"
+                    "Some date and time formats may appear in your system's format instead.")
+        )
+        self._localeWarning.SetForegroundColour(wx.Colour(180, 0, 0))
+        sizer.Add(self._localeWarning, 0, wx.BOTTOM, 10)
+
+        # Help text
         text = wx.StaticText(
             panel,
             label=_(
-                "If your language is not "
-                "available, or the translation needs improving, please consider "
-                "helping. See:"
+                "Language missing or translation needs improving? Open an issue or pull request:"
             ),
         )
         sizer.Add(text)
-        url = meta.translations_url
+        url = meta.github_url + "/issues"
         urlCtrl = HyperLinkCtrl(panel, -1, label=url, URL=url)
-        sizer.Add(urlCtrl)
-        panel.SetSizerAndFit(sizer)
-        self.addText(
-            _("Language not found?"),
-            panel,
-            flags=(
-                wx.ALIGN_RIGHT,
-                wx.EXPAND,
-            ),
-        )
+        sizer.Add(urlCtrl, 0, wx.TOP, 2)
+        panel.SetSizer(sizer)
+        self.addEntry("", panel, flags=(None, wx.ALIGN_LEFT))
+
+        # Store original language to detect changes
+        self._originalLanguage = self._getSelectedLanguageCode()
+
+        # Check if current language has locale installed and update warning visibility
+        self._updateLocaleWarning()
+
+        # Bind to dropdown change to update warnings dynamically
+        for section, setting, choiceCtrls in self._choiceSettings:
+            if setting == "language_set_by_user":
+                choiceCtrls[0].Bind(wx.EVT_CHOICE, self._onLanguageChange)
+
         self.fit()
+
+    def _getSelectedLanguageCode(self):
+        """Get the currently selected language code from the dropdown."""
+        for section, setting, choiceCtrls in self._choiceSettings:
+            if setting == "language_set_by_user":
+                choice = choiceCtrls[0]
+                return choice.GetClientData(choice.GetSelection())
+        return ""
+
+    def _onLanguageChange(self, event):
+        """Handle language dropdown change."""
+        self._updateLocaleWarning()
+        self._updateRestartWarning()
+        event.Skip()
+
+    def _updateRestartWarning(self):
+        """Update restart warning to show change detected state."""
+        selected_lang = self._getSelectedLanguageCode()
+        if selected_lang != self._originalLanguage:
+            # Change detected - show red warning
+            self._restartWarning.SetLabel(
+                self._restartWarningBase + " " + _("Change detected, restart required!")
+            )
+            self._restartWarning.SetForegroundColour(wx.Colour(180, 0, 0))
+        else:
+            # Reverted to original - restore normal state
+            self._restartWarning.SetLabel(self._restartWarningBase)
+            self._restartWarning.SetForegroundColour(self._restartWarningDefaultColor)
+        self._restartWarning.Refresh()
+
+    def _updateLocaleWarning(self):
+        """Show or hide the locale warning based on selected language's locale availability."""
+        from taskcoachlib import i18n
+        # Check if the selected language's locale is available on the system
+        selected_lang = self._getSelectedLanguageCode()
+        showWarning = not i18n.isLocaleAvailable(selected_lang)
+        self._localeWarning.Show(showWarning)
+        # Re-layout the parent panel
+        parent = self._localeWarning.GetParent()
+        if parent:
+            parent.Layout()
+            parent.Fit()
 
     def ok(self):
         super().ok()

@@ -538,6 +538,81 @@ For Darwin kernel to macOS version mapping, see: [macOS version history](https:/
 
 ---
 
+## Translation System Simplification
+
+**Date Completed:** January 2026
+
+### Previous Implementation (Build Step Required)
+
+The old system required a build step:
+
+1. `.po` files in `i18n.in/` directory
+2. **`i18n.in/make.py`** + **`po2dict.py`** compiled `.po` → `.py` dict modules
+3. Generated `.py` files stored in `taskcoachlib/i18n/` (not in repo)
+4. Custom **`tools/pygettext.py`** for string extraction (Python 2 only, broken in Python 3)
+
+### New Implementation (No Build Step)
+
+The simplified system loads `.po` files directly at runtime:
+
+1. `.po` files stored in `taskcoachlib/i18n/locales/` (53 languages)
+2. **`po2dict.parse()`** loads single `.po` file at startup
+3. No compilation step - translations work immediately
+4. Standard **`xgettext`** for string extraction (GNU gettext)
+
+### Changes Made
+
+| Change | Description |
+|--------|-------------|
+| Moved `.po` files | `i18n.in/*.po` → `taskcoachlib/i18n/locales/*.po` |
+| Added `po2dict.parse()` | Returns dict directly without writing file |
+| Simplified `Translator` | Loads `.po` at startup, no module imports |
+| Removed deprecated API | Deleted `importlib.load_source()` usage |
+| Deleted `i18n.in/make.py` | Build step no longer needed |
+| Deleted `tools/pygettext.py` | Broken in Python 3, use `xgettext` instead |
+| Added `isCurrentLocaleOk()` | Check if wx.Locale was set successfully |
+| Suppress wx warning | Use `wx.LogNull` to suppress locale popup |
+| Preferences UI update | Show locale warning only when needed |
+
+### String Extraction (For Developers)
+
+Use GNU `xgettext` to extract translatable strings:
+
+```bash
+# Extract all _("string") calls from Python files
+find taskcoachlib -name "*.py" -not -path "*/i18n/locales/*" > /tmp/pyfiles.txt
+xgettext --language=Python --keyword=_ --output=i18n.in/messages.pot \
+    --from-code=UTF-8 --files-from=/tmp/pyfiles.txt
+```
+
+The `messages.pot` template is in `.gitignore` (generated file).
+
+### How Translations Work
+
+1. **Startup**: `Translator` determines language from settings/environment
+2. **Load**: `po2dict.parse()` reads single `.po` file into dict
+3. **Translate**: `_("string")` does dict lookup, returns original if not found
+4. **Locale**: `wx.Locale` set separately for date/time formatting (may fail if not installed)
+
+### Missing Translations
+
+If a translation is missing, the original English text is shown:
+```python
+def translate(self, string):
+    return self.__language.get(string, string)  # Fallback to original
+```
+
+### Locale vs Translation
+
+| Aspect | Translation | Locale |
+|--------|-------------|--------|
+| Source | `.po` files | System installed |
+| Failure | Falls back to English | Shows warning in preferences |
+| Affects | UI text | Date/time formats |
+| Required | Always works | Optional |
+
+---
+
 ## Contributing to This Document
 
 When adding new technical notes:
