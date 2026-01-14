@@ -20,25 +20,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
 import sys
+import faulthandler
 
-# Early startup logging for debugging pythonw.exe silent failures
-def _setup_startup_log():
-    """Redirect stderr to a log file for debugging when run without console."""
-    if sys.platform == 'win32' and not sys.stderr.isatty():
-        try:
-            # Log to user's LOCALAPPDATA or temp directory
-            log_dir = os.environ.get('LOCALAPPDATA', os.environ.get('TEMP', '.'))
-            log_path = os.path.join(log_dir, 'TaskCoach', 'startup.log')
-            os.makedirs(os.path.dirname(log_path), exist_ok=True)
-            sys.stderr = open(log_path, 'w', encoding='utf-8')
-            print(f"Task Coach startup log: {log_path}", file=sys.stderr)
-            print(f"Python: {sys.executable}", file=sys.stderr)
-            print(f"Working dir: {os.getcwd()}", file=sys.stderr)
-            print(f"Script: {__file__}", file=sys.stderr)
-        except Exception as e:
-            pass  # Can't log if we can't create the log file
-
-_setup_startup_log()
+# IMPORTANT: DO NOT REMOVE faulthandler even if current bugs are fixed!
+# This provides detailed Python stack traces on crashes (SIGSEGV, SIGBUS, etc.)
+# which are essential for diagnosing future issues. Without it, crashes only show
+# "Fatal Python error: Segmentation fault" with no actionable information.
+faulthandler.enable()
 
 # Fix DLL loading on Windows with Python embeddable package
 # The embeddable package doesn't process .pth files by default.
