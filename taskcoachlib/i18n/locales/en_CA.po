@@ -131,11 +131,11 @@ msgstr "Paste \"%s\""
 
 #: taskcoachlib/command/base.py:313
 msgid "Paste as subitem"
-msgstr "Paste as sub-item"
+msgstr "Paste as subitem"
 
 #: taskcoachlib/command/base.py:314
 msgid "Paste as subitem of \"%s\""
-msgstr "Paste as sub item of \"%s\""
+msgstr "Paste as subitem of \"%s\""
 
 #: taskcoachlib/command/base.py:326 taskcoachlib/gui/dialog/toolbar.py:134
 msgid "Drag and drop"
@@ -286,16 +286,16 @@ msgstr "New note"
 
 #: taskcoachlib/command/noteCommands.py:40
 msgid "New subnotes"
-msgstr "New sub-notes"
+msgstr "New subnotes"
 
 #: taskcoachlib/command/noteCommands.py:41
 msgid "New subnote of \"%s\""
-msgstr "New sub-note of \"%s\""
+msgstr "New subnote of \"%s\""
 
 #: taskcoachlib/command/noteCommands.py:44
 #: taskcoachlib/command/noteCommands.py:118
 msgid "New subnote"
-msgstr "New sub-note"
+msgstr "New subnote"
 
 #: taskcoachlib/command/noteCommands.py:56
 msgid "Delete notes"
@@ -323,11 +323,11 @@ msgstr "Add note to \"%s\""
 
 #: taskcoachlib/command/noteCommands.py:110
 msgid "Add subnote"
-msgstr "Add sub-note"
+msgstr "Add subnote"
 
 #: taskcoachlib/command/noteCommands.py:111
 msgid "Add subnote to \"%s\""
-msgstr "Add sub-note to \"%s\""
+msgstr "Add subnote to \"%s\""
 
 #: taskcoachlib/command/noteCommands.py:153
 msgid "Remove note"
@@ -3182,7 +3182,7 @@ msgstr "&Paste\tCtrl+V"
 
 #: taskcoachlib/gui/uicommand/uicommand.py:652
 msgid "P&aste as subitem\tShift+Ctrl+V"
-msgstr "P&aste as sub-item\tShift+Ctrl+V"
+msgstr "P&aste as subitem\tShift+Ctrl+V"
 
 #: taskcoachlib/gui/uicommand/uicommand.py:692
 msgid "&Preferences...\tAlt+P"
@@ -3360,7 +3360,7 @@ msgstr "Insert a new task with the selected tasks as dependent tasks"
 
 #: taskcoachlib/gui/uicommand/uicommand.py:1289
 msgid "New &subitem..."
-msgstr "New &sub-item..."
+msgstr "New &subitem..."
 
 #: taskcoachlib/gui/uicommand/uicommand.py:1290
 msgid "New &subtask..."
@@ -3368,7 +3368,7 @@ msgstr "New &subtask..."
 
 #: taskcoachlib/gui/uicommand/uicommand.py:1291
 msgid "New &subnote..."
-msgstr "New &sub-note..."
+msgstr "New &subnote..."
 
 #: taskcoachlib/gui/uicommand/uicommand.py:1292
 msgid "New &subcategory..."
@@ -3376,7 +3376,7 @@ msgstr "New &subcategory..."
 
 #: taskcoachlib/gui/uicommand/uicommand.py:1296
 msgid "Insert a new subitem of the selected item"
-msgstr "Insert a new sub-item of the selected item"
+msgstr "Insert a new subitem of the selected item"
 
 #: taskcoachlib/gui/uicommand/uicommand.py:1316
 msgid "Mark task &active\tAlt+RETURN"
@@ -6241,7 +6241,7 @@ msgstr "Shift-Ctrl-N (Linux and Mac OS X)"
 
 #: taskcoachlib/help/__init__.py:819 taskcoachlib/help/__init__.py:847
 msgid "Insert a new subitem"
-msgstr "Insert a new sub-item"
+msgstr "Insert a new subitem"
 
 #: taskcoachlib/help/__init__.py:820
 msgid "Ctrl-O"
@@ -6579,7 +6579,7 @@ msgstr "Paste item(s) from the clipboard"
 
 #: taskcoachlib/help/uicommand.py:32
 msgid "Paste item(s) from the clipboard as subitem of the selected item"
-msgstr "Paste item(s) from the clipboard as sub-item of the selected item"
+msgstr "Paste item(s) from the clipboard as subitem of the selected item"
 
 #: taskcoachlib/help/uicommand.py:33
 msgid "Edit preferences"
@@ -6695,11 +6695,11 @@ msgstr "Insert a new task"
 
 #: taskcoachlib/help/uicommand.py:61
 msgid "Collapse all items with subitems"
-msgstr "Collapse all items with sub-items"
+msgstr "Collapse all items with subitems"
 
 #: taskcoachlib/help/uicommand.py:62
 msgid "Expand all items with subitems"
-msgstr "Expand all items with sub-items"
+msgstr "Expand all items with subitems"
 
 #: taskcoachlib/help/uicommand.py:63
 msgid "Activate the next open viewer"

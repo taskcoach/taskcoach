@@ -664,8 +664,12 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         )
 
     def newSubItemDialog(self, bitmap):
+        parents = self.curselection()
         newSubItemCommand = self.newSubItemCommand()
         newSubItemCommand.do()
+        # Expand parent notes so the newly created subnotes are visible
+        for parent in parents:
+            parent.expand(True, context=self.settingsSection())
         return self.editItemDialog(
             newSubItemCommand.items, bitmap, items_are_new=True
         )

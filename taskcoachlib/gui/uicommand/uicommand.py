@@ -845,14 +845,32 @@ class EditPasteAsSubItem(
     """Action for pasting the item(s) in the clipboard into the current
     taskfile, as a subitem of the currently selected item."""
 
+    shortcut = "\tShift+Ctrl+V"
+    defaultMenuText = _("P&aste as subitem") + shortcut
+    labels = {
+        task.Task: _("P&aste as subtask"),
+        note.Note: _("P&aste as subnote"),
+        category.Category: _("P&aste as subcategory"),
+    }
+
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("P&aste as subitem\tShift+Ctrl+V"),
+            menuText=self.defaultMenuText,
             helpText=help.editPasteAsSubitem,
-            bitmap="pasteintotask",
+            bitmap="paste_subitem",
             *args,
             **kwargs
         )
+
+    def onUpdateUI(self, event):
+        super().onUpdateUI(event)
+        self.updateMenuText(self.__menuText())
+
+    def __menuText(self):
+        for class_ in self.labels:
+            if self.viewer.curselectionIsInstanceOf(class_):
+                return self.labels[class_] + self.shortcut
+        return self.defaultMenuText
 
     def doCommand(self, event):
         # Use viewer's pasteAsSubItemCommand if available
@@ -862,13 +880,17 @@ class EditPasteAsSubItem(
             windowWithFocus = wx.Window.FindFocus()
             viewer = self._findViewerFromFocus(windowWithFocus)
         if viewer is not None and hasattr(viewer, 'pasteAsSubItemCommand'):
+            parents = viewer.curselection()
             pasteCommand = viewer.pasteAsSubItemCommand()
         else:
-            pasteCommand = command.PasteAsSubItemCommand(
-                items=self.viewer.curselection() if self.viewer else []
-            )
+            parents = self.viewer.curselection() if self.viewer else []
+            pasteCommand = command.PasteAsSubItemCommand(items=parents)
         if pasteCommand:
             pasteCommand.do()
+            # Expand parent items so the pasted subitems are visible
+            if viewer is not None and hasattr(viewer, 'settingsSection'):
+                for parent in parents:
+                    parent.expand(True, context=viewer.settingsSection())
 
     def _findViewerFromFocus(self, window):
         """Walk up the window hierarchy to find a viewer with pasteAsSubItemCommand.
