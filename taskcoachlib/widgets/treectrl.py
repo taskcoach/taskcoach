@@ -42,6 +42,32 @@ class BaseHyperTreeList(hypertreelist.HyperTreeList):
         super().__init__(
             parent, id, pos, size, style, agwStyle, validator, name
         )
+        # Bind our own size handler to fix scrollbar issues on Windows.
+        # The base HyperTreeList.OnSize only calls DoHeaderLayout() which
+        # repositions child windows but doesn't recalculate scrollbars.
+        self.Bind(wx.EVT_SIZE, self.__onSize)
+
+    def __onSize(self, event):
+        """Handle size events to ensure scrollbars are recalculated.
+
+        On Windows, side-docked AUI panes don't get scrollbars when the content
+        exceeds the visible area because HyperTreeList's OnSize handler only
+        repositions child windows without recalculating scrollbars. We fix this
+        by calling AdjustMyScrollbars() after the base OnSize handler runs.
+        """
+        event.Skip()  # Let base class handle layout first
+        # Schedule scrollbar adjustment after the layout is complete
+        wx.CallAfter(self.__safeAdjustScrollbars)
+
+    def __safeAdjustScrollbars(self):
+        """Safely adjust scrollbars, guarding against deleted C++ objects."""
+        try:
+            main_win = self.GetMainWindow()
+            if main_win:
+                main_win.AdjustMyScrollbars()
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            pass
 
 
 class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
