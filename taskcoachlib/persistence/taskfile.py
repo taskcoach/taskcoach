@@ -450,7 +450,7 @@ class TaskFile(patterns.Observer):
         return SafeWriteFile(self.__filename + suffix)
 
     def _openForRead(self):
-        return open(self.__filename, "r")
+        return open(self.__filename, "r", encoding="utf-8")
 
     def load(self, filename=None):
         pub.sendMessage("taskfile.aboutToRead", taskFile=self)

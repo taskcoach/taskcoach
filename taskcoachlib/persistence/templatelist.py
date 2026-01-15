@@ -37,7 +37,7 @@ class TemplateList(object):
 
     def _readTemplate(self, filename, TemplateReader, openFile):
         try:
-            fd = openFile(os.path.join(self._path, filename), "r")
+            fd = openFile(os.path.join(self._path, filename), "r", encoding="utf-8")
         except IOError:
             return
         try:
@@ -74,7 +74,7 @@ class TemplateList(object):
         )
 
         for task, name in self._templates:
-            templateFile = open(os.path.join(self._path, name), "w")
+            templateFile = open(os.path.join(self._path, name), "w", encoding="utf-8")
             writer = TemplateXMLWriter(templateFile)
             writer.write(task)
             templateFile.close()
@@ -87,11 +87,11 @@ class TemplateList(object):
     def addTemplate(self, task):
         handle, filename = tempfile.mkstemp(".tsktmpl", dir=self._path)
         os.close(handle)
-        templateFile = open(filename, "w")
+        templateFile = open(filename, "w", encoding="utf-8")
         writer = TemplateXMLWriter(templateFile)
         writer.write(task.copy())
         templateFile.close()
-        theTask = TemplateXMLReader(open(filename, "r")).read()
+        theTask = TemplateXMLReader(open(filename, "r", encoding="utf-8")).read()
         self._templates.append((theTask, os.path.split(filename)[-1]))
         return theTask
 

@@ -235,7 +235,7 @@ class XMLReader(object):
         changesName = self.__fd.name + ".delta"
         if os.path.exists(changesName):
             changes = ChangesXMLReader(
-                open(self.__fd.name + ".delta", "r")
+                open(self.__fd.name + ".delta", "r", encoding="utf-8")
             ).read()
         else:
             changes = dict()

@@ -803,14 +803,14 @@ helpHTML = (
 def _get_splash_url():
     """Get the file:// URL to the splash screen image.
 
-    Returns a properly formatted file:// URL that works on all platforms
-    (Windows needs file:///C:/path, Unix needs file:///path).
+    Returns a properly formatted file:// URL that works on all platforms.
+    Uses pathlib.Path.as_uri() for reliable cross-platform URI generation.
     """
-    from urllib.request import pathname2url
-    splash_path = os.path.join(os.path.dirname(__file__), "..", "gui", "icons", "splash.jpg")
-    splash_path = os.path.normpath(os.path.abspath(splash_path))
-    if os.path.exists(splash_path):
-        return "file://" + pathname2url(splash_path)
+    from pathlib import Path
+    splash_path = Path(__file__).parent / ".." / "gui" / "icons" / "splash.jpg"
+    splash_path = splash_path.resolve()
+    if splash_path.exists():
+        return splash_path.as_uri()
     return None
 
 

@@ -1675,7 +1675,7 @@ class TaskNewFromTemplate(TaskNew):
         )  # pylint: disable=E1103
 
     def __readTemplate(self):
-        return persistence.TemplateXMLReader(open(self.__filename, "r")).read()
+        return persistence.TemplateXMLReader(open(self.__filename, "r", encoding="utf-8")).read()
 
     def doCommand(self, event, show=True):  # pylint: disable=W0221
         # The task template is read every time because it's the
