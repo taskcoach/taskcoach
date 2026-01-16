@@ -889,3 +889,114 @@ class CategoryFilterAndViewFilterInTreeModeTest(
     CategoryFilterAndViewFilterFixtureAndCommonTestsMixin, test.TestCase
 ):
     treeMode = True
+
+
+class ViewFilterWrappingCategoryFilterFixture(CategoryFilterHelpersMixin):
+    """Test the filter order used in the actual application:
+    TaskList -> CategoryFilter -> ViewFilter
+
+    This is the opposite order of CategoryFilterAndViewFilterFixture.
+    The bug occurs when:
+    1. Parent task has no category
+    2. Child task has category A and is completed
+    3. Category A filter is active
+    4. Completed tasks are hidden
+
+    Without the fix, the parent would still show because:
+    - CategoryFilter adds parent as ancestor of categorized child
+    - ViewFilter removes child (completed) but parent passes (not completed)
+
+    With the fix, ViewFilter's recursive cleanup removes orphan ancestors.
+    """
+    treeMode = True
+
+    def setUp(self):
+        task.Task.settings = config.Settings(load=False)
+        # Parent task with no category
+        self.parent = task.Task("parent task")
+        self.parent.setShouldMarkCompletedWhenAllChildrenCompleted(False)
+        # Child task with category, completed
+        self.child = task.Task("child task")
+        self.child.setCompletionDateTime()
+        self.childCategory = category.Category("child category")
+        self.childCategory.addCategorizable(self.child)
+        self.parent.addChild(self.child)
+        self.tasks = task.TaskList([self.parent, self.child])
+        self.categories = category.CategoryList([self.childCategory])
+        # Filter order: TaskList -> CategoryFilter -> ViewFilter (like the app)
+        self.categoryFilter = category.filter.CategoryFilter(
+            self.tasks, categories=self.categories, treeMode=self.treeMode
+        )
+        self.viewFilter = task.filter.ViewFilter(
+            self.categoryFilter, treeMode=self.treeMode
+        )
+
+    def testParentHiddenWhenCategoryFilteredAndChildCompleted(self):
+        """The main bug scenario: parent should be hidden when its only
+        categorized child is hidden due to completion status."""
+        # First, filter by category
+        self.childCategory.setFiltered(True)
+        # At this point, categoryFilter should have parent (as ancestor) and child
+        self.assertEqual(2, len(self.categoryFilter))
+        # viewFilter should also show both
+        self.assertEqual(2, len(self.viewFilter))
+        # Now hide completed tasks
+        self.viewFilter.hideTaskStatus(task.status.completed)
+        # viewFilter should now be empty - parent has no visible categorized children
+        self.assertEqual(0, len(self.viewFilter))
+
+    def testParentShownWhenChildUnhidden(self):
+        """When we unhide completed tasks, parent should reappear."""
+        self.childCategory.setFiltered(True)
+        self.viewFilter.hideTaskStatus(task.status.completed)
+        self.assertEqual(0, len(self.viewFilter))
+        # Unhide completed tasks
+        self.viewFilter.hideTaskStatus(task.status.completed, False)
+        # Both should be visible again
+        self.assertEqual(2, len(self.viewFilter))
+
+    def testParentShownWhenCategoryUnfiltered(self):
+        """When we remove category filter, parent should reappear."""
+        self.childCategory.setFiltered(True)
+        self.viewFilter.hideTaskStatus(task.status.completed)
+        self.assertEqual(0, len(self.viewFilter))
+        # Remove category filter
+        self.childCategory.setFiltered(False)
+        # Explicitly reset viewFilter (in the app, UI refresh triggers this)
+        # This is needed because categoryFilter items don't change when
+        # removing the filter, so no events fire to trigger viewFilter reset
+        self.viewFilter.reset()
+        # Parent should be visible (no category filter active)
+        self.assertEqual(1, len(self.viewFilter))
+
+
+class ViewFilterWrappingCategoryFilterInTreeModeTest(
+    ViewFilterWrappingCategoryFilterFixture, test.TestCase
+):
+    treeMode = True
+
+
+class ViewFilterWrappingCategoryFilterInListModeTest(
+    ViewFilterWrappingCategoryFilterFixture, test.TestCase
+):
+    treeMode = False
+
+    def testParentHiddenWhenCategoryFilteredAndChildCompleted(self):
+        """In list mode, parent is not shown as ancestor, so behavior differs."""
+        self.childCategory.setFiltered(True)
+        # In list mode, only child is shown (no ancestors)
+        self.assertEqual(1, len(self.categoryFilter))
+        self.assertEqual(1, len(self.viewFilter))
+        # Hide completed tasks
+        self.viewFilter.hideTaskStatus(task.status.completed)
+        # Should be empty
+        self.assertEqual(0, len(self.viewFilter))
+
+    def testParentShownWhenChildUnhidden(self):
+        """In list mode, only child is shown when unhidden."""
+        self.childCategory.setFiltered(True)
+        self.viewFilter.hideTaskStatus(task.status.completed)
+        self.assertEqual(0, len(self.viewFilter))
+        self.viewFilter.hideTaskStatus(task.status.completed, False)
+        # Only child visible in list mode
+        self.assertEqual(1, len(self.viewFilter))

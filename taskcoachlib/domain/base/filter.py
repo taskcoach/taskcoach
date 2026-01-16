@@ -23,8 +23,24 @@ from taskcoachlib.domain.base import object as domainobject
 
 
 class Filter(patterns.SetDecorator):
+    """Base class for filters that can operate in tree or list mode.
+
+    In tree mode, when an item matches the filter criteria, its ancestors are
+    automatically included to maintain the tree hierarchy. These ancestor items
+    are tracked as "filter_forced" - they were added to preserve structure, not
+    because they matched the filter criteria themselves.
+
+    This tracking is important for filter chains (e.g., CategoryFilter -> ViewFilter).
+    When an outer filter removes items, it can use getAccumulatedFilterForced() to
+    identify ancestors that may have become orphans (no visible children) and should
+    also be removed. See ViewFilter.reset() for the cleanup implementation.
+    """
+
     def __init__(self, *args, **kwargs):
         self.__treeMode = kwargs.pop("treeMode", False)
+        # Track items added as ancestors to maintain tree hierarchy, not because
+        # they matched filter criteria. Used by outer filters for orphan cleanup.
+        self.__filterForced = set()
         super().__init__(*args, **kwargs)
         self.reset()
 
@@ -46,19 +62,68 @@ class Filter(patterns.SetDecorator):
 
     @patterns.eventSource
     def reset(self, event=None):
+        """Recompute the filtered set based on current filter criteria.
+
+        In tree mode, ancestors of matching items are included to maintain
+        hierarchy. These ancestors are tracked in __filterForced so that
+        outer filters can identify and remove them if they become orphans
+        (i.e., all their matching descendants are later filtered out).
+        """
         if self.isFrozen():
             return
 
-        filteredItems = set(self.filterItems(self.observable()))
+        # Get items that directly match this filter's criteria
+        directMatches = set(self.filterItems(self.observable()))
+        filteredItems = directMatches.copy()
+
+        # Reset and rebuild filter_forced tracking
+        self.__filterForced = set()
         if self.treeMode():
-            for item in filteredItems.copy():
-                filteredItems.update(set(item.ancestors()))
+            # In tree mode, include ancestors of matching items to maintain
+            # tree structure. Track these as "filter_forced" since they don't
+            # match criteria themselves - they're only included for hierarchy.
+            for item in directMatches:
+                for ancestor in item.ancestors():
+                    if ancestor not in directMatches:
+                        self.__filterForced.add(ancestor)
+                        filteredItems.add(ancestor)
+
         self.removeItemsFromSelf(
             [item for item in self if item not in filteredItems], event=event
         )
         self.extendSelf(
             [item for item in filteredItems if item not in self], event=event
         )
+
+    def getFilterForced(self):
+        """Return items that were added as ancestors, not directly matched.
+
+        These items are in the filter only to maintain tree hierarchy, not
+        because they passed the filter criteria.
+        """
+        return self.__filterForced.copy()
+
+    def getAccumulatedFilterForced(self):
+        """Return filter_forced items accumulated from the entire filter chain.
+
+        Walks up the filter chain (via observable()) to collect all items that
+        were added as ancestors by any filter in the chain. This is used by
+        the outermost filter (typically ViewFilter) to identify items that may
+        need cleanup if they've become orphans.
+
+        Example: CategoryFilter adds a parent as ancestor of a categorized child.
+        ViewFilter later hides the child (completed). ViewFilter uses this method
+        to find that the parent was filter_forced, and removes it since it has
+        no visible children.
+        """
+        accumulated = self.__filterForced.copy()
+        try:
+            inner = self.observable()
+            if hasattr(inner, 'getAccumulatedFilterForced'):
+                accumulated |= inner.getAccumulatedFilterForced()
+        except AttributeError:
+            pass
+        return accumulated
 
     def filterItems(self, items):
         """filter returns the items that pass the filter."""
