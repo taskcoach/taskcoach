@@ -20,10 +20,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class AbstractNotifier(object):
     """
     Abstract base class for interfacing with notification systems.
-    Uses native platform notifications via the universal notifier.
+    Uses the universal notifier (Task Coach's own notification popups).
+
+    Note: The notifier selection feature was removed as of January 2026.
+    Only the built-in Task Coach universal notifier is supported.
+    See PYTHON3_MIGRATION_5.md for details.
     """
 
-    notifiers = {}
+    _notifier = None
     _enabled = True
 
     def getName(self):
@@ -37,12 +41,14 @@ class AbstractNotifier(object):
 
     @classmethod
     def register(klass, notifier):
+        """Register the universal notifier."""
         if notifier.isAvailable():
-            klass.notifiers[notifier.getName()] = notifier
+            klass._notifier = notifier
 
     @classmethod
-    def get(klass, name):
-        return klass.notifiers.get(name, None)
+    def get(klass):
+        """Get the universal notifier instance."""
+        return klass._notifier
 
     @classmethod
     def getSimple(klass):
@@ -52,7 +58,7 @@ class AbstractNotifier(object):
         """
 
         if klass._enabled:
-            return klass.get("Task Coach")
+            return klass._notifier
         else:
 
             class DummyNotifier(AbstractNotifier):
@@ -70,9 +76,3 @@ class AbstractNotifier(object):
     @classmethod
     def disableNotifications(klass):
         klass._enabled = False
-
-    @classmethod
-    def names(klass):
-        names = list(klass.notifiers.keys())
-        names.sort()
-        return names

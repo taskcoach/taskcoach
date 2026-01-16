@@ -5,9 +5,10 @@ This document is part of the Python 3 migration documentation. See [PYTHON3_MIGR
 **Contents:**
 - [Mobile Sync Features Removal](#mobile-sync-features-removal)
 - [Native Filesystem Monitors: Deleted](#native-filesystem-monitors-deleted)
-- [Growl Notification Support Removal](#growl-notification-support-removal)
+- [External Notification System Removal (Growl, KNotify)](#external-notification-system-removal-growl-knotify)
 - [X11 Session Management Removal](#x11-session-management-removal)
 - [macOS Native Extensions Cleanup](#macos-native-extensions-cleanup)
+- [Translation System Simplification](#translation-system-simplification)
 - [Contributing to This Document](#contributing-to-this-document)
 
 ---
@@ -191,90 +192,92 @@ Per [PyPI watchdog 6.0.0](https://pypi.org/project/watchdog/) (November 2024):
 
 ---
 
-## Growl Notification Support Removal
+## External Notification System Removal (Growl, KNotify)
 
 **Date Completed:** January 2026
-**Affected Components:** `taskcoachlib/notify/`, setup scripts, build workflows, packaging
+**Affected Components:** `taskcoachlib/notify/`, preferences UI, setup scripts, packaging
 
 ### Background
 
-Growl was a third-party notification system for macOS (and later Windows via "Growl for Windows"), popular in the 2005-2015 era. Task Coach used the `gntp` (Growl Notification Transport Protocol) library to integrate with Growl for desktop notifications.
+Task Coach had a "Notification system to use for reminders" preference that allowed users to choose between multiple notification backends:
+- **Task Coach** (default) - Built-in wxPython notification popups
+- **Growl** (macOS/Windows) - Third-party notification system via `gntp` library
+- **KNotify** (Linux/KDE) - KDE notification daemon via DCOP protocol
 
-### Why It Was Removed
+### Why All External Notifiers Were Removed
 
-**Growl is dead.** This is the primary reason for removal.
+**All external notification systems are obsolete:**
 
-| Aspect | Status |
-|--------|--------|
-| **Growl for macOS** | Replaced by Apple's built-in Notification Center (macOS 10.8+, 2012) |
-| **Growl for Windows** | Project abandoned; website offline |
-| **gntp library** | Last PyPI release: 2016; no Python 3.10+ testing |
-| **User adoption** | Near zero - native notifications are standard on all platforms |
+| System | Status | Why Obsolete |
+|--------|--------|--------------|
+| **Growl (macOS)** | Dead | Replaced by Apple's Notification Center (2012) |
+| **Growl for Windows** | Dead | Project abandoned; website offline |
+| **gntp library** | Unmaintained | Last PyPI release: 2016 |
+| **KNotify/DCOP** | Dead | DCOP replaced by D-Bus in KDE 4 (2008) |
+| **pydcop library** | Unmaintained | No Python 3 support |
 
-Modern operating systems have built-in notification systems:
-- **macOS**: Notification Center (since 2012)
-- **Windows**: Toast notifications (since Windows 8, 2012)
-- **Linux**: libnotify / D-Bus notifications
+### Why Not Add Modern Notification Support?
 
-Task Coach already has a **universal notifier** (`notifier_universal.py`) that provides cross-platform notifications using wxPython, making Growl completely redundant.
+The built-in **Task Coach universal notifier** is actually superior for task reminders:
+
+| Feature | Task Coach Notifier | Native Notifications |
+|---------|---------------------|---------------------|
+| **Snooze options** | Yes - interactive dialog | No |
+| **Task details** | Full task info visible | Limited to title/body |
+| **Open task button** | Yes | No |
+| **Works everywhere** | All platforms | Platform-specific |
+| **No dependencies** | Uses wxPython | Requires platform libs |
+
+Native OS notifications (libnotify, Windows Toast, macOS Notification Center) are designed for simple "fire and forget" alerts. Task reminders benefit from the interactive snooze dialog.
 
 ### Bug Fixed
 
-The Growl code had a latent bug that would crash Task Coach on startup on macOS/Windows if gntp was not installed:
+The Growl code had a latent bug that would crash Task Coach on startup:
 
 ```python
 # BEFORE - Broken (no try/except around import)
 if operating_system.isMac():
     from .notifier_growl import *
-
-# This would crash with ImportError if gntp not installed
+# Would crash with ImportError if gntp not installed
 ```
 
-Rather than fix this bug, the entire Growl support was removed since the feature is obsolete.
+Rather than fix this bug, all obsolete notification support was removed.
 
 ### Removed Files
 
 | File | Description |
 |------|-------------|
-| `taskcoachlib/notify/notifier_growl.py` | GrowlNotifier class (~80 lines) |
+| `taskcoachlib/notify/notifier_growl.py` | Growl notifier (~80 lines) |
+| `taskcoachlib/notify/notifier_knotify.py` | KNotify notifier (~63 lines) |
 
 ### Modified Files
 
 | File | Change |
 |------|--------|
-| `taskcoachlib/notify/__init__.py` | Removed Growl imports, simplified to universal notifier only |
-| `taskcoachlib/notify/notifier.py` | Removed `operating_system` import, simplified `getSimple()` |
+| `taskcoachlib/gui/dialog/preferences.py` | Removed "Notification system" dropdown, removed `notify` import |
+| `taskcoachlib/config/defaults.py` | Removed `notifier` setting from `[feature]` section |
+| `taskcoachlib/notify/notifier.py` | Simplified - single notifier instead of registry |
+| `taskcoachlib/notify/__init__.py` | Simplified - only imports universal notifier |
+| `taskcoachlib/gui/remindercontroller.py` | Simplified - always uses Task Coach dialog |
+| `tests/unittests/ConfigTest.py` | Removed notifier-related test |
 | `taskcoachlib/application/application.py` | Removed gntp from package availability check |
 | `taskcoachlib/help/__init__.py` | Removed Growl/Snarl notification help text |
-| `taskcoachlib/gui/remindercontroller.py` | Updated comment about notification systems |
-| `setup.py` | Removed gntp from extras_require and mac platform installs |
-| `setup.sh` | Removed gntp reference |
-| `setup_arch.sh` | Removed gntp package |
-| `setup_debian12_bookworm.sh` | Removed gntp reference |
-| `setup_debian13_trixie.sh` | Removed gntp reference |
-| `setup_ubuntu2204_jammy.sh` | Removed gntp reference |
-| `setup_ubuntu2404_noble.sh` | Removed gntp reference |
-| `build.in/arch/PKGBUILD` | Removed python-gntp dependency |
-| `build.in/arch/taskcoach.install` | Removed gntp mention |
+| `setup.py` | Removed gntp from extras_require |
+| Various setup scripts | Removed gntp references |
 | `debian/control` | Removed python3-gntp from Suggests |
-| `.github/workflows/build-windows.yml` | Removed gntp from pip install |
-| `.github/workflows/build-appimage.yml` | Removed gntp from pip install |
-| `scripts/build-appimage.sh` | Removed gntp from pip install |
-| `docs/PACKAGING.md` | Removed all gntp references |
-| `docs/DEBIAN_BOOKWORM_SETUP.md` | Removed gntp mention |
-| `docs/DEBIAN_TRIXIE_PLANNING.md` | Removed gntp mention |
+| GitHub workflows | Removed gntp from pip install |
 
 ### Notification System After Removal
 
-All platforms now use the **universal notifier** which provides:
-- Cross-platform notification popups using wxPython
-- Consistent appearance on all platforms
-- No external dependencies (uses built-in wx capabilities)
-- Timeout and click handling
+Only the **Task Coach universal notifier** remains:
+- Cross-platform wxPython popup windows
+- Animated fade-in/fade-out
+- Interactive snooze options
+- Click to open task editor
+- No external dependencies
 
 ```python
 # notify/__init__.py - simplified
-# All platforms now use the universal notifier which provides native notifications.
 from .notifier_universal import *
 from .notifier import *
 ```

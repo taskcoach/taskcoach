@@ -24,7 +24,7 @@ Current page sizes:
 | [PYTHON3_MIGRATION_2.md](PYTHON3_MIGRATION_2.md) | Bundled Library Cleanup, Twisted Removal, Window Position Tracking |
 | [PYTHON3_MIGRATION_3.md](PYTHON3_MIGRATION_3.md) | GTK Issues, AUI Issues, Known Issues |
 | [PYTHON3_MIGRATION_4.md](PYTHON3_MIGRATION_4.md) | Logging, Python 3.12+, File Locking, App Icons, i18n, SyncML Removal |
-| [PYTHON3_MIGRATION_5.md](PYTHON3_MIGRATION_5.md) | Mobile Sync, Filesystem Monitors, Growl, X11 SM, macOS Native Extensions, Translation System |
+| [PYTHON3_MIGRATION_5.md](PYTHON3_MIGRATION_5.md) | Mobile Sync, Filesystem Monitors, Notification Systems (Growl/KNotify), X11 SM, macOS Native Extensions, Translation System |
 
 ---
 
@@ -81,7 +81,7 @@ Current page sizes:
 
 - [Mobile Sync Features Removal](PYTHON3_MIGRATION_5.md#mobile-sync-features-removal)
 - [Native Filesystem Monitors: Deleted](PYTHON3_MIGRATION_5.md#native-filesystem-monitors-deleted)
-- [Growl Notification Support Removal](PYTHON3_MIGRATION_5.md#growl-notification-support-removal)
+- [External Notification System Removal (Growl, KNotify)](PYTHON3_MIGRATION_5.md#external-notification-system-removal-growl-knotify)
 - [X11 Session Management Removal](PYTHON3_MIGRATION_5.md#x11-session-management-removal)
 - [macOS Native Extensions Cleanup](PYTHON3_MIGRATION_5.md#macos-native-extensions-cleanup)
 - [Translation System Simplification](PYTHON3_MIGRATION_5.md#translation-system-simplification)

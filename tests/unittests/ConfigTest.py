@@ -126,16 +126,6 @@ class SettingsTest(SettingsTestCase):
             "%%", self.settings.get("effortviewer", "searchfilterstring")
         )
 
-    def testFixInvalidValuesFromOldIniFile(self):
-        self.settings.set("feature", "notifier", "Native")
-        self.assertEqual(
-            "Task Coach", self.settings.get("feature", "notifier")
-        )
-        self.assertEqual(
-            "Task Coach", self.settings.getRawValue("feature", "notifier")
-        )
-
-
 class SettingsIOTest(SettingsTestCase):
     def setUp(self):
         super().setUp()

@@ -25,10 +25,8 @@ replacing the previous complex per-task scheduling system.
 See docs/SCHEDULERS.md for architecture documentation.
 """
 
-from taskcoachlib import meta, notify
 from taskcoachlib.domain import date, task
 from taskcoachlib.gui.dialog import reminder, editor
-from taskcoachlib.i18n import _
 from taskcoachlib.tools import wxhelper
 from pubsub import pub
 import wx
@@ -40,6 +38,9 @@ class ReminderController(object):
 
     Uses simple polling via global timer instead of per-task scheduling.
     Checks all tasks every second and shows reminders for those that are due.
+
+    Note: As of January 2026, only the built-in Task Coach reminder dialog is used.
+    External notification system support (KNotify, Growl) has been removed.
     """
 
     def __init__(self, mainWindow, taskList, effortList, settings):
@@ -106,23 +107,7 @@ class ReminderController(object):
     def showReminderMessage(
         self, taskWithReminder, ReminderDialog=reminder.ReminderDialog
     ):
-        """Show reminder for a task."""
-        if self._useOwnReminderDialog():
-            self._showReminderDialog(taskWithReminder, ReminderDialog)
-        else:
-            self._showReminderViaNotifier(taskWithReminder)
-            self._snooze(taskWithReminder)
-
-    def _useOwnReminderDialog(self):
-        """Check if we should use Task Coach's own reminder dialog."""
-        notifier = self.settings.get("feature", "notifier")
-        return (
-            notifier == "Task Coach"
-            or notify.AbstractNotifier.get(notifier) is None
-        )
-
-    def _showReminderDialog(self, taskWithReminder, ReminderDialog):
-        """Show Task Coach's reminder dialog."""
+        """Show Task Coach's reminder dialog for a task."""
         # If the dialog has self.__mainWindow as parent, it steals the focus when
         # returning to Task Coach through Alt+Tab; we don't want that for
         # reminders.
@@ -137,25 +122,6 @@ class ReminderController(object):
         wxhelper.centerOnAppMonitor(reminderDialog)
         reminderDialog.Bind(wx.EVT_CLOSE, self.onCloseReminderDialog)
         reminderDialog.Show()
-
-    def _showReminderViaNotifier(self, taskWithReminder):
-        """Show reminder via external notifier."""
-        notifier = notify.AbstractNotifier.get(
-            self.settings.get("feature", "notifier")
-        )
-        notifier.notify(
-            _("%s Reminder") % meta.name,
-            taskWithReminder.subject(),
-            wx.ArtProvider.GetBitmap("taskcoach", size=wx.Size(32, 32)),
-            windowId=self.__mainWindow.GetHandle(),
-        )
-
-    def _snooze(self, taskWithReminder):
-        """Apply default snooze to a task."""
-        minutesToSnooze = self.settings.getint("view", "defaultsnoozetime")
-        taskWithReminder.snoozeReminder(
-            date.TimeDelta(minutes=minutesToSnooze)
-        )
 
     def onCloseReminderDialog(self, event, show=True):
         """Handle reminder dialog close."""
@@ -196,13 +162,6 @@ class ReminderController(object):
 
     def requestUserAttention(self):
         """Request user attention when showing reminders."""
-        notifier = self.settings.get("feature", "notifier")
-        if (
-            notifier != "Task Coach"
-            and notify.AbstractNotifier.get(notifier) is not None
-        ):
-            # When using an external notifier, requesting user attention is not necessary
-            return
         self.__mainWindowWasHidden = not self.__mainWindow.IsShown()
         if self.__mainWindowWasHidden:
             self.__mainWindow.Show()

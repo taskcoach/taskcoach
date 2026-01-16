@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import meta, widgets, notify, operating_system, render
+from taskcoachlib import meta, widgets, operating_system, render
 from taskcoachlib.application.application import detect_dark_theme
 from taskcoachlib.domain import date, task
 from taskcoachlib.gui import artprovider
@@ -1179,20 +1179,6 @@ class TaskReminderPage(SettingsPage):
 
     def __init__(self, *args, **kwargs):
         super().__init__(columns=3, growableColumn=-1, *args, **kwargs)
-        names = []  # There's at least one, the universal one
-        for name in notify.AbstractNotifier.names():
-            names.append((name, name))
-        self.addChoiceSetting(
-            "feature",
-            "notifier",
-            _("Notification system to use for reminders"),
-            "",
-            names,
-            flags=(
-                wx.ALIGN_RIGHT | wx.ALIGN_CENTRE_VERTICAL,
-                wx.ALL | wx.EXPAND,
-            ),
-        )
         if operating_system.isMac() or operating_system.isGTK():
             self.addBooleanSetting(
                 "feature",

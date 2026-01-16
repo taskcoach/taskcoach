@@ -558,7 +558,6 @@ defaults = {
         "duesoonhours": "24",  # When a task is considered to be "due soon"
     },
     "feature": {
-        "notifier": "Task Coach",
         "minidletime": "0",
         "sayreminder": "False",
         "sdtcspans": "60,120,1440,2880",
