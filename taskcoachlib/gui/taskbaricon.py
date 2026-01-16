@@ -23,6 +23,7 @@ import wx
 import os
 import logging
 from taskcoachlib import meta, patterns, operating_system
+from taskcoachlib.meta.debug import log_step
 from taskcoachlib.i18n import _
 from taskcoachlib.domain import date, task
 from pubsub import pub
@@ -30,31 +31,19 @@ import wx.adv
 from . import artprovider
 
 # Check for AppIndicator availability on Linux/GTK
-# AppIndicator is used exclusively on Linux because:
-# - It works on both Wayland (SNI protocol) and X11 (XEmbed fallback)
-# - wx.adv.TaskBarIcon doesn't work on Wayland
-# - Simplifies codebase with single implementation for Linux
-_USE_APPINDICATOR = False
+# AppIndicator is only used when wx.adv.TaskBarIcon is not available (e.g., Wayland).
+# On X11, wx.adv.TaskBarIcon is preferred because it supports left-click events.
 _APPINDICATOR_MODULE = None
+_APPINDICATOR_AVAILABLE = False
 
+# Pre-load AppIndicator module on GTK systems (for potential fallback)
 if operating_system.isGTK():
     try:
         from . import appindicator as _APPINDICATOR_MODULE
-        if _APPINDICATOR_MODULE.APPINDICATOR_AVAILABLE:
-            _USE_APPINDICATOR = True
-            logging.getLogger(__name__).info(
-                "Linux/GTK detected - using AppIndicator for system tray"
-            )
-        else:
-            logging.getLogger(__name__).warning(
-                f"Linux/GTK detected but AppIndicator not available: "
-                f"{_APPINDICATOR_MODULE.APPINDICATOR_ERROR}. "
-                f"Falling back to wx.adv.TaskBarIcon."
-            )
+        _APPINDICATOR_AVAILABLE = _APPINDICATOR_MODULE.APPINDICATOR_AVAILABLE
     except ImportError as e:
-        logging.getLogger(__name__).warning(
-            f"Linux/GTK detected but failed to import appindicator module: {e}. "
-            f"Falling back to wx.adv.TaskBarIcon."
+        logging.getLogger(__name__).debug(
+            f"AppIndicator module not available: {e}"
         )
 
 
@@ -70,6 +59,7 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         *args,
         **kwargs
     ):
+        log_step("TaskBarIcon.__init__ started (wx.adv.TaskBarIcon)", prefix="TRAY")
         super().__init__(*args, **kwargs)
         self.__window = mainwindow
         self.__taskList = taskList
@@ -109,18 +99,23 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         )
         if operating_system.isGTK():
             events = [wx.adv.EVT_TASKBAR_LEFT_DOWN]
+            log_step("GTK: binding EVT_TASKBAR_LEFT_DOWN for left-click", prefix="TRAY")
         elif operating_system.isWindows():
             # See http://msdn.microsoft.com/en-us/library/windows/desktop/aa511448.aspx#interaction
             events = [
                 wx.adv.EVT_TASKBAR_LEFT_DOWN,
                 wx.adv.EVT_TASKBAR_LEFT_DCLICK,
             ]
+            log_step("Windows: binding LEFT_DOWN and LEFT_DCLICK", prefix="TRAY")
         else:
             events = [wx.adv.EVT_TASKBAR_LEFT_DCLICK]
+            log_step("Other OS: binding EVT_TASKBAR_LEFT_DCLICK", prefix="TRAY")
         for event in events:
             self.Bind(event, self.onTaskbarClick)
+            log_step("Bound event", event, "to onTaskbarClick", prefix="TRAY")
         self.__setTooltipText()
         mainwindow.Bind(wx.EVT_IDLE, self.onIdle)
+        log_step("TaskBarIcon.__init__ completed", prefix="TRAY")
 
     # Event handlers:
 
@@ -174,22 +169,31 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
             self.__setIcon()
 
     def onTaskbarClick(self, event):
+        log_step("LEFT-CLICK on taskbar icon, event:", event, prefix="TRAY")
         if self.__window.IsIconized() or not self.__window.IsShown():
+            log_step("Window is iconized/hidden, restoring", prefix="TRAY")
             self.__window.restore(event)
         else:
             if operating_system.isMac():
+                log_step("Mac: raising window", prefix="TRAY")
                 self.__window.Raise()
             else:
+                log_step("Iconizing window", prefix="TRAY")
                 self.__window.Iconize()
 
     # Menu:
 
     def setPopupMenu(self, menu):
+        log_step("setPopupMenu called, binding EVT_TASKBAR_RIGHT_UP", prefix="TRAY")
         self.Bind(wx.adv.EVT_TASKBAR_RIGHT_UP, self.popupTaskBarMenu)
         self.popupmenu = menu  # pylint: disable=W0201
+        log_step("setPopupMenu completed, menu:", menu, prefix="TRAY")
 
     def popupTaskBarMenu(self, event):  # pylint: disable=W0613
+        log_step("RIGHT-CLICK on taskbar icon, showing popup menu", prefix="TRAY")
+        log_step("popupmenu object:", self.popupmenu, prefix="TRAY")
         self.PopupMenu(self.popupmenu)
+        log_step("PopupMenu() returned", prefix="TRAY")
 
     # Getters:
 
@@ -356,6 +360,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
     def onTaskListChanged(self, event):  # pylint: disable=W0613
         self.__setTooltipText()
         self.__startOrStopTicking()
+        self._rebuildGtkMenu()  # Update menu with new task list
 
     def onTrackingChanged(self, newValue, sender):
         if newValue:
@@ -374,9 +379,11 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             self.__startTicking()
         else:
             self.__stopTicking()
+        self._rebuildGtkMenu()  # Update menu with tracking state
 
     def onChangeSubject(self, event):  # pylint: disable=W0613
         self.__setTooltipText()
+        self._rebuildGtkMenu()  # Update menu with new task subject
 
     def onChangeDueDateTime(self, newValue, sender):  # pylint: disable=W0613
         self.__setTooltipText()
@@ -409,9 +416,22 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         self.__popupmenu = menu
         self._buildGtkMenu()
 
+    def _rebuildGtkMenu(self):
+        """Rebuild the GTK menu to reflect current state.
+
+        Called when task list, tracking state, or task subjects change.
+        Uses wx.CallAfter to ensure it runs on the main thread.
+        """
+        if self.__indicator:  # Only rebuild if indicator still exists
+            wx.CallAfter(self._buildGtkMenu)
+
     def _buildGtkMenu(self):
         """Build a GTK menu for the AppIndicator."""
         if not _APPINDICATOR_MODULE:
+            return
+
+        # Check if indicator still exists (may be destroyed during shutdown)
+        if not self.__indicator:
             return
 
         # Import GTK from the appindicator module's cached reference
@@ -433,24 +453,62 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         new_task_item.connect('activate', self._onNewTask)
         menu.append(new_task_item)
 
+        # New task from template submenu
+        template_submenu = self._buildTemplateSubmenu(Gtk)
+        if template_submenu:
+            template_item = Gtk.MenuItem(label=_("New task from template"))
+            template_item.set_submenu(template_submenu)
+            menu.append(template_item)
+
+        menu.append(Gtk.SeparatorMenuItem())
+
         # New Effort
         new_effort_item = Gtk.MenuItem(label=_("New effort..."))
         new_effort_item.connect('activate', self._onNewEffort)
         menu.append(new_effort_item)
 
+        # New Category
+        new_category_item = Gtk.MenuItem(label=_("New category..."))
+        new_category_item.connect('activate', self._onNewCategory)
+        menu.append(new_category_item)
+
+        # New Note
+        new_note_item = Gtk.MenuItem(label=_("New note..."))
+        new_note_item.connect('activate', self._onNewNote)
+        menu.append(new_note_item)
+
         menu.append(Gtk.SeparatorMenuItem())
 
-        # Stop tracking (if any tasks being tracked)
-        stop_item = Gtk.MenuItem(label=_("Stop tracking"))
-        stop_item.connect('activate', self._onStopTracking)
-        menu.append(stop_item)
+        # Start tracking effort submenu
+        tracking_submenu = self._buildStartTrackingSubmenu(Gtk)
+        if tracking_submenu:
+            tracking_item = Gtk.MenuItem(label=_("Start tracking effort"))
+            tracking_item.set_submenu(tracking_submenu)
+            menu.append(tracking_item)
+
+        # Stop/Resume tracking - dynamic based on state
+        trackedTasks = self.__taskList.tasksBeingTracked()
+        if trackedTasks:
+            # Currently tracking - show Stop
+            if len(trackedTasks) == 1:
+                label = _("Stop tracking %s") % trackedTasks[0].subject()
+            else:
+                label = _("Stop tracking %d tasks") % len(trackedTasks)
+            stop_item = Gtk.MenuItem(label=label)
+            stop_item.connect('activate', self._onStopTracking)
+            menu.append(stop_item)
+        else:
+            # Not tracking - check if we can resume
+            mostRecent = self._getMostRecentTrackedTask()
+            if mostRecent:
+                label = _("Resume tracking %s") % mostRecent.subject()
+                stop_item = Gtk.MenuItem(label=label)
+                stop_item.connect('activate',
+                    lambda w, t=mostRecent: wx.CallAfter(self._doStartTracking, t))
+                menu.append(stop_item)
+            # If no recent task, don't show the item at all
 
         menu.append(Gtk.SeparatorMenuItem())
-
-        # Restore window
-        restore_item = Gtk.MenuItem(label=_("Restore"))
-        restore_item.connect('activate', lambda w: wx.CallAfter(self.__window.restore, None))
-        menu.append(restore_item)
 
         # Quit
         quit_item = Gtk.MenuItem(label=_("Quit"))
@@ -459,6 +517,92 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
 
         menu.show_all()
         self.__indicator.set_gtk_menu(menu)
+
+    def _buildTemplateSubmenu(self, Gtk):
+        """Build submenu for task templates."""
+        from taskcoachlib import persistence
+
+        path = self.__settings.pathToTemplatesDir()
+        try:
+            templateList = persistence.TemplateList(path)
+            templates = list(zip(templateList.tasks(), templateList.names()))
+        except Exception:
+            templates = []
+
+        if not templates:
+            return None
+
+        submenu = Gtk.Menu()
+        # Sort by subject (display name) rather than filename
+        templates.sort(key=lambda t: t[0].subject().lower())
+        for task, filename in templates:
+            template_path = os.path.join(path, filename)
+            subject = task.subject() or filename  # Fallback to filename if no subject
+            item = Gtk.MenuItem(label=subject)
+            # Use default argument to capture template_path in closure
+            item.connect('activate',
+                lambda w, p=template_path: wx.CallAfter(self._doNewTaskFromTemplate, p))
+            submenu.append(item)
+
+        return submenu
+
+    def _buildStartTrackingSubmenu(self, Gtk):
+        """Build submenu for starting effort tracking on tasks."""
+        # Get trackable tasks (not completed, not deleted)
+        trackable_tasks = [
+            t for t in self.__taskList
+            if not t.completed() and not getattr(t, 'isDeleted', lambda: False)()
+        ]
+
+        if not trackable_tasks:
+            return None
+
+        submenu = Gtk.Menu()
+        # Get root tasks (tasks without parent or parent not in list)
+        root_tasks = [
+            t for t in trackable_tasks
+            if t.parent() is None or t.parent() not in trackable_tasks
+        ]
+        root_tasks.sort(key=lambda t: t.subject().lower())
+
+        for task_item in root_tasks:
+            self._addTaskToTrackingMenu(Gtk, submenu, task_item, trackable_tasks)
+
+        return submenu
+
+    def _addTaskToTrackingMenu(self, Gtk, menu, task_item, trackable_tasks):
+        """Add a task (and its children) to the tracking submenu."""
+        # Get trackable children
+        trackable_children = [
+            child for child in task_item.children()
+            if child in trackable_tasks
+        ]
+
+        if trackable_children:
+            # Task has children - create a submenu
+            item = Gtk.MenuItem(label=task_item.subject())
+            child_menu = Gtk.Menu()
+
+            # Add item to start tracking this task
+            start_item = Gtk.MenuItem(label=_("Track this task"))
+            start_item.connect('activate',
+                lambda w, t=task_item: wx.CallAfter(self._doStartTracking, t))
+            child_menu.append(start_item)
+            child_menu.append(Gtk.SeparatorMenuItem())
+
+            # Add children
+            trackable_children.sort(key=lambda t: t.subject().lower())
+            for child in trackable_children:
+                self._addTaskToTrackingMenu(Gtk, child_menu, child, trackable_tasks)
+
+            item.set_submenu(child_menu)
+            menu.append(item)
+        else:
+            # No children - simple menu item
+            item = Gtk.MenuItem(label=task_item.subject())
+            item.connect('activate',
+                lambda w, t=task_item: wx.CallAfter(self._doStartTracking, t))
+            menu.append(item)
 
     def _onNewTask(self, widget):
         """Handle New Task menu item."""
@@ -493,6 +637,69 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         """Stop tracking all efforts (called from wx main thread)."""
         for trackedTask in self.__taskList.tasksBeingTracked():
             trackedTask.stopTracking()
+
+    def _onNewCategory(self, widget):
+        """Handle New Category menu item."""
+        wx.CallAfter(self._doNewCategory)
+
+    def _doNewCategory(self):
+        """Create a new category (called from wx main thread)."""
+        from taskcoachlib.gui import uicommand
+        categories = self.__window.taskFile.categories()
+        cmd = uicommand.CategoryNew(categories=categories, settings=self.__settings)
+        cmd.doCommand(None)
+
+    def _onNewNote(self, widget):
+        """Handle New Note menu item."""
+        wx.CallAfter(self._doNewNote)
+
+    def _doNewNote(self):
+        """Create a new note (called from wx main thread)."""
+        from taskcoachlib.gui import uicommand
+        notes = self.__window.taskFile.notes()
+        cmd = uicommand.NoteNew(notes=notes, settings=self.__settings)
+        cmd.doCommand(None)
+
+    def _doNewTaskFromTemplate(self, template_path):
+        """Create a new task from template (called from wx main thread)."""
+        from taskcoachlib.gui import uicommand
+        tasks = self.__window.taskFile.tasks()
+        cmd = uicommand.TaskNewFromTemplate(
+            template_path, taskList=tasks, settings=self.__settings
+        )
+        cmd.doCommand(None)
+
+    def _doStartTracking(self, task_to_track):
+        """Start tracking effort for a task (called from wx main thread)."""
+        from taskcoachlib import command
+        tasks = self.__window.taskFile.tasks()
+        cmd = command.StartEffortCommand(tasks, [task_to_track])
+        cmd.do()
+
+    def _getMostRecentTrackedTask(self):
+        """Get the most recently tracked task for resume functionality.
+
+        Returns:
+            The task that was most recently tracked, or None if no efforts exist.
+        """
+        effortList = self.__window.taskFile.efforts()
+        if not effortList:
+            return None
+
+        # Find the effort with the most recent stop time
+        maxStop = None
+        mostRecentTask = None
+        for effort in effortList:
+            stop = effort.getStop()
+            if stop is not None and (maxStop is None or stop > maxStop):
+                maxStop = stop
+                mostRecentTask = effort.task()
+
+        # Only return if task is not completed and not deleted
+        if mostRecentTask and not mostRecentTask.completed():
+            if not getattr(mostRecentTask, 'isDeleted', lambda: False)():
+                return mostRecentTask
+        return None
 
     # Getters:
 
@@ -631,11 +838,37 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             self.__indicator = None
 
 
+def _get_desktop_environment():
+    """Detect the current desktop environment."""
+    # Check XDG_CURRENT_DESKTOP first (most reliable)
+    xdg_desktop = os.environ.get('XDG_CURRENT_DESKTOP', '').upper()
+    if xdg_desktop:
+        return xdg_desktop
+    # Fall back to DESKTOP_SESSION
+    return os.environ.get('DESKTOP_SESSION', '').upper()
+
+
+def _needs_appindicator():
+    """Check if we need to use AppIndicator instead of wx.adv.TaskBarIcon.
+
+    wx.adv.TaskBarIcon on Linux/GTK doesn't properly receive right-click events
+    on many desktop environments (LXDE, KDE, and possibly others). AppIndicator
+    provides reliable menu functionality across all Linux desktops.
+    """
+    # Use AppIndicator on all Linux/GTK systems when available
+    # because wx.adv.TaskBarIcon right-click is broken on many desktops
+    if operating_system.isGTK():
+        return True
+    return False
+
+
 def create_taskbar_icon(mainwindow, taskList, settings):
     """Factory function to create the appropriate taskbar icon.
 
-    On Linux/GTK with AppIndicator available, returns AppIndicatorTaskBarIcon.
-    On Windows/macOS (or Linux without AppIndicator), returns wx.adv.TaskBarIcon.
+    Uses wx.adv.TaskBarIcon when available (preferred for full click event support).
+    Falls back to AppIndicator on Linux when:
+    - wx.adv.TaskBarIcon is not available (e.g., Wayland)
+    - Desktop environment doesn't properly support right-click (e.g., LXDE)
 
     Args:
         mainwindow: The main application window
@@ -645,9 +878,32 @@ def create_taskbar_icon(mainwindow, taskList, settings):
     Returns:
         TaskBarIcon or AppIndicatorTaskBarIcon instance
     """
-    if _USE_APPINDICATOR:
-        logging.getLogger(__name__).info("Creating AppIndicator-based taskbar icon (Linux)")
+    log_step("create_taskbar_icon called", prefix="TRAY")
+
+    desktop = _get_desktop_environment()
+    needs_appindicator = _needs_appindicator()
+    wx_taskbar_available = wx.adv.TaskBarIcon.IsAvailable()
+
+    log_step("Desktop environment:", desktop, prefix="TRAY")
+    log_step("wx.adv.TaskBarIcon.IsAvailable() =", wx_taskbar_available, prefix="TRAY")
+    log_step("_APPINDICATOR_AVAILABLE =", _APPINDICATOR_AVAILABLE, prefix="TRAY")
+    log_step("needs_appindicator =", needs_appindicator, prefix="TRAY")
+
+    # Use AppIndicator if needed and available
+    if needs_appindicator and _APPINDICATOR_AVAILABLE:
+        log_step("Using AppIndicator (desktop requires it)", prefix="TRAY")
         return AppIndicatorTaskBarIcon(mainwindow, taskList, settings)
-    else:
-        logging.getLogger(__name__).info("Creating wx.adv.TaskBarIcon-based taskbar icon (Windows/macOS)")
+
+    # Use native wx.adv.TaskBarIcon if available
+    if wx_taskbar_available:
+        log_step("Using wx.adv.TaskBarIcon (native)", prefix="TRAY")
         return TaskBarIcon(mainwindow, taskList, settings)
+
+    # Last resort: try AppIndicator on GTK
+    if operating_system.isGTK() and _APPINDICATOR_AVAILABLE:
+        log_step("Using AppIndicator (fallback)", prefix="TRAY")
+        return AppIndicatorTaskBarIcon(mainwindow, taskList, settings)
+
+    # No AppIndicator available, try wx.adv.TaskBarIcon anyway (may not work)
+    log_step("WARNING: No good tray option available, trying wx.adv.TaskBarIcon", prefix="TRAY")
+    return TaskBarIcon(mainwindow, taskList, settings)

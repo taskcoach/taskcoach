@@ -18,12 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx, os, locale
 from taskcoachlib import patterns, operating_system
+from taskcoachlib.meta.debug import log_step
 from . import po2dict
 
 
 def _log_i18n(msg):
     """Log i18n-related messages for debugging."""
-    print(f"[i18n] {msg}")
+    log_step(msg, prefix="i18n")
 
 
 # Directory containing .po files
