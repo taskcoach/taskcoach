@@ -81,6 +81,7 @@ if command -v sudo &> /dev/null; then
         python-pyxdg \
         python-watchdog \
         python-fasteners \
+        libayatana-appindicator \
         libxss \
         xdg-utils
 

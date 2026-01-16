@@ -97,6 +97,25 @@ To launch the AppImage, open the file or run:
 
 To remove: simply delete the AppImage file.
 
+#### Linux System Tray
+
+Task Coach uses libayatana-appindicator for the system tray icon on Linux. This provides consistent behavior across all desktop environments (KDE, XFCE, MATE, LXQt, LXDE, Cinnamon) and works on both X11 and Wayland.
+
+The package is installed automatically with the .deb/.rpm packages. For manual installation:
+
+```bash
+# Debian/Ubuntu
+sudo apt install gir1.2-ayatanaappindicator3-0.1
+
+# Fedora
+sudo dnf install libayatana-appindicator-gtk3
+
+# Arch Linux
+sudo pacman -S libayatana-appindicator
+```
+
+**Note:** GNOME Shell removed built-in system tray support. GNOME users need the [AppIndicator Support](https://extensions.gnome.org/extension/615/appindicator-support/) extension to see tray icons. Ubuntu pre-installs this extension.
+
 ### macOS
 
 Download the `.dmg` for your Mac (Apple Silicon for M1/M2/M3/M4, Intel for older Macs). Open the DMG and drag Task Coach to Applications.

@@ -779,7 +779,9 @@ Break the lock?"""
         if self.__can_create_task_bar_icon():
             from taskcoachlib.gui import taskbaricon, menu
 
-            self.taskBarIcon = taskbaricon.TaskBarIcon(
+            # Use factory function to get the appropriate icon type
+            # (AppIndicator on Wayland, wx.adv.TaskBarIcon otherwise)
+            self.taskBarIcon = taskbaricon.create_taskbar_icon(
                 self.mainwindow,  # pylint: disable=W0201
                 self.taskFile.tasks(),
                 self.settings,

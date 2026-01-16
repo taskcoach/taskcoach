@@ -27,6 +27,7 @@ Depends: ${python3:Depends},
          python3-keyring,
          python3-numpy,
          python3-fasteners,
+         gir1.2-ayatanaappindicator3-0.1,
          libxss1,
          xdg-utils
 Recommends: python3-squaremap

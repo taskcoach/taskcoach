@@ -53,6 +53,7 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | keyring | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
 | pyxdg | distro | distro | distro | distro | distro | distro | bundled | — | — |
 | fasteners | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
+| ayatana-appindicator | distro | distro | distro | distro | distro | distro | host | — | — |
 | hypertreelist | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | bundled | **patch** | **patch** |
 | WMI | — | — | — | — | — | — | — | pip | — |
 
@@ -61,6 +62,7 @@ This table shows how dependencies are handled in **built packages** and **setup 
 - `pip` = Bundled via pip in package build (version too old or not in repos)
 - `patch` = Bundled patch in `taskcoachlib/patches/` (wxPython hypertreelist fix)
 - `bundled` = Bundled in package (thirdparty/ for .deb/.rpm, or inside AppImage)
+- `host` = Uses host system library (AppImage); install on host for Wayland tray support
 - `AUR` = Arch User Repository (rolling release)
 - `—` = Not applicable for this platform
 

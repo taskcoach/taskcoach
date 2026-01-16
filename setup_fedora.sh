@@ -85,6 +85,7 @@ if command -v sudo &> /dev/null; then
         python3-fasteners \
         python3-watchdog \
         python3-pypubsub \
+        libayatana-appindicator-gtk3 \
         libXScrnSaver \
         xdg-utils
     echo -e "${GREEN}✓ System packages installed${NC}"
