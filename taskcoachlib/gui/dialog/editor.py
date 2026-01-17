@@ -1426,6 +1426,421 @@ class PrerequisitesPage(PageWithViewer):
         return dict()
 
 
+class PathPage(Page):
+    """Page that displays the hierarchical path (nesting) of the current object.
+
+    The path is built only when the tab is selected (lazy loading).
+    It subscribes to ALL modification events to catch any change that might
+    affect the path, and rebuilds when the tab is visible.
+    """
+
+    pageName = "path"
+    pageTitle = _("Path")
+    pageIcon = "arrow_down_right"
+    columns = 1
+
+    def __init__(self, items, parent, taskFile, *args, **kwargs):
+        self._taskFile = taskFile
+        self._pathPanel = None
+        self._pathSizer = None
+        self._subscribed = False
+        self._realized = False
+        super().__init__(items, parent, *args, **kwargs)
+
+    def addEntries(self):
+        """Create the container panel (content built lazily in selected())."""
+        self._pathPanel = wx.Panel(self)
+        self._pathSizer = wx.BoxSizer(wx.VERTICAL)
+        self._pathPanel.SetSizer(self._pathSizer)
+        self.addEntry(self._pathPanel, growable=True, flags=[wx.EXPAND])
+
+    def selected(self):
+        """Called when this tab is selected. Build/rebuild the path display."""
+        if not self._realized:
+            self._realized = True
+            self._subscribeToChanges()
+        self._rebuildPathDisplay()
+
+    def _subscribeToChanges(self):
+        """Subscribe to all modification events that could affect the path."""
+        if self._subscribed:
+            return
+        self._subscribed = True
+
+        from taskcoachlib.domain import task, category, note, attachment, effort
+
+        # Subscribe to ALL modification event types from all domain classes
+        # This is comprehensive and catches any change that could affect the path
+        all_event_types = (
+            task.Task.modificationEventTypes()
+            + category.Category.modificationEventTypes()
+            + note.Note.modificationEventTypes()
+            + effort.Effort.modificationEventTypes()
+            + attachment.FileAttachment.modificationEventTypes()
+            + attachment.URIAttachment.modificationEventTypes()
+            + attachment.MailAttachment.modificationEventTypes()
+        )
+
+        for eventType in all_event_types:
+            if eventType.startswith("pubsub"):
+                pub.subscribe(self._onAnyChange, eventType)
+            else:
+                patterns.Publisher().registerObserver(
+                    self._onAnyChange,
+                    eventType=eventType,
+                )
+
+    def _onAnyChange(self, *args, **kwargs):
+        """Called when any domain object changes. Rebuild if visible."""
+        if self._realized and self._pathPanel:
+            try:
+                if self._pathPanel.IsShownOnScreen():
+                    wx.CallAfter(self._rebuildPathDisplay)
+            except RuntimeError:
+                pass  # Window destroyed
+
+    def _rebuildPathDisplay(self):
+        """Rebuild the path display."""
+        if not self._pathPanel or not self._pathSizer:
+            return
+        try:
+            self._pathPanel.GetName()  # Check if still valid
+        except RuntimeError:
+            return
+
+        # Clear existing content
+        self._pathSizer.Clear(True)
+
+        # Only show path for single item
+        if len(self.items) != 1:
+            label = wx.StaticText(self._pathPanel,
+                                  label=_("Path is only shown for single items"))
+            self._pathSizer.Add(label, 0, wx.EXPAND)
+            self._pathPanel.Layout()
+            self._restoreFocus()
+            return
+
+        item = self.items[0]
+        path_objects = self._buildPathObjects(item)
+
+        if not path_objects:
+            label = wx.StaticText(self._pathPanel,
+                                  label=_("This item has no parent objects"))
+            self._pathSizer.Add(label, 0, wx.EXPAND)
+            self._pathPanel.Layout()
+            self._restoreFocus()
+            return
+
+        # Display path from root to current item
+        for index, obj in enumerate(path_objects):
+            obj_type, icon_name = self._getTypeInfo(obj)
+            subject = obj.subject()
+
+            item_panel = wx.Panel(self._pathPanel)
+            item_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+            # Add indentation based on depth
+            if index > 0:
+                indent = wx.Panel(item_panel, size=(index * 20, 1))
+                item_sizer.Add(indent, 0)
+                # Add arrow icon to show hierarchy
+                arrow_bitmap = wx.ArtProvider.GetBitmap(
+                    "arrow_down_right", wx.ART_MENU, (16, 16)
+                )
+                if arrow_bitmap.IsOk():
+                    arrow = wx.StaticBitmap(item_panel, bitmap=arrow_bitmap)
+                    item_sizer.Add(arrow, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+
+            # Add type icon if available
+            if icon_name:
+                bitmap = wx.ArtProvider.GetBitmap(icon_name, wx.ART_MENU, (16, 16))
+                if bitmap.IsOk():
+                    icon = wx.StaticBitmap(item_panel, bitmap=bitmap)
+                    item_sizer.Add(icon, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+
+            # Add type and subject label using [Type] Subject format
+            label_text = "[%s] %s" % (obj_type, subject)
+            label = wx.StaticText(item_panel, label=label_text)
+
+            # Make current item bold
+            if index == len(path_objects) - 1:
+                font = label.GetFont()
+                font.SetWeight(wx.FONTWEIGHT_BOLD)
+                label.SetFont(font)
+
+            item_sizer.Add(label, 1, wx.ALIGN_CENTER_VERTICAL)
+            item_panel.SetSizer(item_sizer)
+            self._pathSizer.Add(item_panel, 0, wx.EXPAND | wx.ALL, 2)
+
+        self._pathPanel.Layout()
+        self.Layout()
+        self._restoreFocus()
+
+    def _restoreFocus(self):
+        """Restore focus to the path panel after rebuild.
+
+        This is critical because rebuilding destroys all child widgets,
+        which destroys focus. Without restoring focus, keyboard shortcuts
+        like Escape to close the dialog won't work.
+        """
+        try:
+            self._pathPanel.SetFocus()
+        except RuntimeError:
+            pass
+
+    def _buildPathObjects(self, item):
+        """Build the path from root to current item.
+
+        Returns a list of actual objects for display.
+        """
+        path = []
+
+        # Find owner for notes and attachments
+        owner = self._findOwner(item)
+        if owner:
+            owner_path = self._buildPathObjects(owner)
+            path.extend(owner_path)
+
+        # Add ancestors for composite objects
+        if hasattr(item, 'ancestors'):
+            path.extend(item.ancestors())
+
+        # Add current item
+        path.append(item)
+        return path
+
+    def close(self):
+        """Clean up observers when the page is closed."""
+        if self._subscribed:
+            from taskcoachlib.domain import task, category, note, attachment, effort
+            all_event_types = (
+                task.Task.modificationEventTypes()
+                + category.Category.modificationEventTypes()
+                + note.Note.modificationEventTypes()
+                + effort.Effort.modificationEventTypes()
+                + attachment.FileAttachment.modificationEventTypes()
+                + attachment.URIAttachment.modificationEventTypes()
+                + attachment.MailAttachment.modificationEventTypes()
+            )
+            for eventType in all_event_types:
+                if eventType.startswith("pubsub"):
+                    try:
+                        pub.unsubscribe(self._onAnyChange, eventType)
+                    except Exception:
+                        pass
+            patterns.Publisher().removeObserver(self._onAnyChange)
+        super().close()
+
+    def _getTypeInfo(self, obj):
+        """Get the type name and icon for an object."""
+        from taskcoachlib.domain import task as task_module
+        from taskcoachlib.domain import category, note, attachment, effort
+
+        if isinstance(obj, task_module.Task):
+            return (_("Task"), obj.icon(recursive=True) or "led_blue_icon")
+        elif isinstance(obj, category.Category):
+            return (_("Category"), obj.icon(recursive=True) or "folder_blue_icon")
+        elif isinstance(obj, note.Note):
+            return (_("Note"), obj.icon(recursive=True) or "note_icon")
+        elif isinstance(obj, attachment.Attachment):
+            return (_("Attachment"), "paperclip_icon")
+        elif isinstance(obj, effort.Effort):
+            return (_("Effort"), "clock_icon")
+        else:
+            return (_("Item"), None)
+
+    def _findOwner(self, item):
+        """Find the immediate owner of a note or attachment.
+
+        Notes can be owned by: tasks, categories, attachments, or other notes (parent)
+        Attachments can be owned by: tasks, categories, or notes
+        Efforts are owned by their task
+
+        For notes with a parent note, returns None (ancestors() handles the hierarchy).
+        For root-level notes, finds the task/category/attachment that owns it.
+        """
+        from taskcoachlib.domain import note, attachment, effort
+
+        # Efforts have a task() method that returns their owner
+        if isinstance(item, effort.Effort):
+            return item.task()
+
+        if not isinstance(item, (note.Note, attachment.Attachment)):
+            return None
+
+        # For notes with a parent note, the parent relationship is handled by ancestors()
+        # But we still need to find the owner of the ROOT note in the hierarchy
+        if isinstance(item, note.Note) and item.parent():
+            # Get the root note (the one without a parent)
+            root_note = item
+            while root_note.parent():
+                root_note = root_note.parent()
+            # Find owner of root note
+            return self._findNoteOwner(root_note)
+
+        # For root-level notes
+        if isinstance(item, note.Note):
+            return self._findNoteOwner(item)
+
+        # For attachments
+        return self._findAttachmentOwner(item)
+
+    def _findNoteOwner(self, target_note):
+        """Find the owner of a root-level note (task, category, or attachment)."""
+        # Check tasks
+        for t in self._taskFile.tasks():
+            if target_note in t.notes(recursive=False):
+                return t
+
+        # Check categories
+        for c in self._taskFile.categories():
+            if target_note in c.notes(recursive=False):
+                return c
+
+        # Check all attachments (they can own notes too)
+        # This requires searching through all attachments in the system
+        owner = self._findNoteOwnerInAttachments(target_note)
+        if owner:
+            return owner
+
+        return None
+
+    def _findNoteOwnerInAttachments(self, target_note):
+        """Search for a note's owner among all attachments in the system."""
+        # We need to search ALL attachments, including deeply nested ones
+        # Attachments can be owned by tasks, categories, notes, and notes owned by attachments...
+
+        visited = set()
+        attachments_to_check = []
+
+        # Collect all "root" attachments from tasks and categories
+        for t in self._taskFile.tasks():
+            attachments_to_check.extend(t.attachments())
+        for c in self._taskFile.categories():
+            attachments_to_check.extend(c.attachments())
+
+        # Also from global notes and their children
+        for n in self._taskFile.notes():
+            attachments_to_check.extend(n.attachments())
+            for child in n.children(recursive=True):
+                attachments_to_check.extend(child.attachments())
+
+        # From task notes
+        for t in self._taskFile.tasks():
+            for n in t.notes(recursive=True):
+                attachments_to_check.extend(n.attachments())
+
+        # From category notes
+        for c in self._taskFile.categories():
+            for n in c.notes(recursive=True):
+                attachments_to_check.extend(n.attachments())
+
+        # Now search through all attachments, including their nested notes' attachments
+        while attachments_to_check:
+            att = attachments_to_check.pop()
+            att_id = att.id()
+            if att_id in visited:
+                continue
+            visited.add(att_id)
+
+            # Check if this attachment owns our target note
+            if hasattr(att, 'notes'):
+                if target_note in att.notes(recursive=False):
+                    return att
+                # Add attachments from this attachment's notes to search
+                for n in att.notes(recursive=True):
+                    attachments_to_check.extend(n.attachments())
+
+        return None
+
+    def _findAttachmentOwner(self, target_attachment):
+        """Find the owner of an attachment (task, category, or note)."""
+        # Check tasks
+        for t in self._taskFile.tasks():
+            if target_attachment in t.attachments():
+                return t
+
+        # Check categories
+        for c in self._taskFile.categories():
+            if target_attachment in c.attachments():
+                return c
+
+        # Check all notes (including deeply nested ones)
+        owner = self._findAttachmentOwnerInNotes(target_attachment)
+        if owner:
+            return owner
+
+        return None
+
+    def _findAttachmentOwnerInNotes(self, target_attachment):
+        """Search for an attachment's owner among all notes in the system."""
+        visited = set()
+        notes_to_check = []
+
+        # Collect all "root" notes from tasks and categories
+        for t in self._taskFile.tasks():
+            notes_to_check.extend(t.notes(recursive=True))
+        for c in self._taskFile.categories():
+            notes_to_check.extend(c.notes(recursive=True))
+
+        # Global notes
+        for n in self._taskFile.notes():
+            notes_to_check.append(n)
+            notes_to_check.extend(n.children(recursive=True))
+
+        # Now we also need to check notes owned by attachments
+        # First, collect all attachments from tasks, categories, and notes
+        attachments_checked = set()
+        attachments_to_check = []
+        for t in self._taskFile.tasks():
+            attachments_to_check.extend(t.attachments())
+        for c in self._taskFile.categories():
+            attachments_to_check.extend(c.attachments())
+        # Also from global notes
+        for n in self._taskFile.notes():
+            attachments_to_check.extend(n.attachments())
+            for child in n.children(recursive=True):
+                attachments_to_check.extend(child.attachments())
+
+        # Search notes, and also add notes from attachments
+        while notes_to_check or attachments_to_check:
+            # Process notes
+            while notes_to_check:
+                n = notes_to_check.pop()
+                note_id = n.id()
+                if note_id in visited:
+                    continue
+                visited.add(note_id)
+
+                # Check if this note owns our target attachment
+                if target_attachment in n.attachments():
+                    return n
+
+                # Add this note's attachments to check for more notes
+                for att in n.attachments():
+                    if att.id() not in attachments_checked:
+                        attachments_to_check.append(att)
+
+            # Process attachments to find more notes
+            while attachments_to_check:
+                att = attachments_to_check.pop()
+                att_id = att.id()
+                if att_id in attachments_checked:
+                    continue
+                attachments_checked.add(att_id)
+
+                # Add notes from this attachment
+                if hasattr(att, 'notes'):
+                    for n in att.notes(recursive=True):
+                        if n.id() not in visited:
+                            notes_to_check.append(n)
+
+        return None
+
+    def entries(self):
+        return dict(firstEntry=self, path=self)
+
+
 class EditBook(widgets.Notebook):
     allPageNames = ["subclass responsibility"]
     domainObject = "subclass responsibility"
@@ -1559,6 +1974,8 @@ class EditBook(widgets.Notebook):
             )
         elif page_name == "appearance":
             return TaskAppearancePage(self.items, self)
+        elif page_name == "path":
+            return PathPage(self.items, self, task_file)
 
     def create_subject_page(self):
         return SubjectPage(self.items, self, self.settings)
@@ -1685,6 +2102,7 @@ class TaskEditBook(EditBook):
         "notes",
         "attachments",
         "appearance",
+        "path",
     ]
     domainObject = "task"
 
@@ -1693,7 +2111,7 @@ class TaskEditBook(EditBook):
 
 
 class CategoryEditBook(EditBook):
-    allPageNames = ["subject", "notes", "attachments", "appearance"]
+    allPageNames = ["subject", "notes", "attachments", "appearance", "path"]
     domainObject = "category"
 
     def create_subject_page(self):
@@ -1701,12 +2119,12 @@ class CategoryEditBook(EditBook):
 
 
 class NoteEditBook(EditBook):
-    allPageNames = ["subject", "categories", "attachments", "appearance"]
+    allPageNames = ["subject", "categories", "attachments", "appearance", "path"]
     domainObject = "note"
 
 
 class AttachmentEditBook(EditBook):
-    allPageNames = ["subject", "notes", "appearance"]
+    allPageNames = ["subject", "notes", "appearance", "path"]
     domainObject = "attachment"
 
     def create_subject_page(self):
