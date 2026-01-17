@@ -80,7 +80,7 @@ defaults = {
     },
     "taskviewer": {
         "title": "",  # User supplied viewer title
-        "toolbarperspective": "TaskNew,NewSubItem,TaskNewFromTemplateButton,Separator,Edit,Delete,Separator,TaskMarkInactive,TaskMarkActive,TaskMarkCompleted,Separator,EffortStart,EffortStop,Separator,Spacer,ViewerHideTasks_completed,ViewerHideTasks_inactive,ResetFilter,TaskViewerTreeOrListChoice,Search",
+        "toolbarperspective": "TaskNew,NewSubItem,TaskNewFromTemplateButton,Separator,Edit,Delete,Separator,TaskMarkInactive,TaskMarkActive,TaskMarkCompleted,Separator,EffortStart,EffortStop,Separator,ViewExpandAll,ViewCollapseAll,Spacer,ViewerHideTasks_completed,ViewerHideTasks_inactive,ResetFilter,TaskViewerTreeOrListChoice,Search",
         "treemode": "True",  # True = tree mode, False = list mode
         "sortby": '["dueDateTime"]',
         "sortbystatusfirst": "True",
@@ -137,7 +137,7 @@ defaults = {
     },
     "prerequisiteviewerintaskeditor": {
         "title": "",  # User supplied viewer title
-        "toolbarperspective": "TaskNew,NewSubItem,TaskNewFromTemplateButton,Separator,Edit,Delete,Separator,TaskMarkInactive,TaskMarkActive,TaskMarkCompleted,Separator,EffortStart,EffortStop,Spacer,ViewerHideTasks_completed,ViewerHideTasks_inactive,ResetFilter,Search",
+        "toolbarperspective": "TaskNew,NewSubItem,TaskNewFromTemplateButton,Separator,Edit,Delete,Separator,TaskMarkInactive,TaskMarkActive,TaskMarkCompleted,Separator,EffortStart,EffortStop,Separator,ViewExpandAll,ViewCollapseAll,Spacer,ViewerHideTasks_completed,ViewerHideTasks_inactive,ResetFilter,Search",
         "treemode": "True",  # True = tree mode, False = list mode
         "sortby": '["subject"]',
         "sortbystatusfirst": "True",
@@ -248,7 +248,7 @@ defaults = {
     },
     "categoryviewer": {
         "title": "",
-        "toolbarperspective": "CategoryNew,NewSubItem,Separator,Edit,Delete,Spacer,ResetFilter,Search",
+        "toolbarperspective": "CategoryNew,NewSubItem,Separator,Edit,Delete,Separator,ViewExpandAll,ViewCollapseAll,Spacer,ResetFilter,Search",
         "sortby": '["subject"]',
         "sortcasesensitive": "False",
         "searchfilterstring": "",
@@ -263,7 +263,7 @@ defaults = {
     },
     "categoryviewerintaskeditor": {
         "title": "",
-        "toolbarperspective": "CategoryNew,NewSubItem,Separator,Edit,Delete,Separator,CategoryCheckAll,CategoryUncheckAll,Spacer,ResetFilter,Search",
+        "toolbarperspective": "CategoryNew,NewSubItem,Separator,Edit,Delete,Separator,CategoryCheckAll,CategoryUncheckAll,Separator,ViewExpandAll,ViewCollapseAll,Spacer,ResetFilter,Search",
         "sortby": '["subject"]',
         "sortcasesensitive": "False",
         "searchfilterstring": "",
@@ -293,7 +293,7 @@ defaults = {
     },
     "noteviewer": {
         "title": "",
-        "toolbarperspective": "NoteNew,NewSubItem,Separator,Edit,Delete,Spacer,ResetFilter,Search",
+        "toolbarperspective": "NoteNew,NewSubItem,Separator,Edit,Delete,Separator,ViewExpandAll,ViewCollapseAll,Spacer,ResetFilter,Search",
         "sortby": '["subject"]',
         "sortcasesensitive": "False",
         "searchfilterstring": "",
@@ -308,7 +308,7 @@ defaults = {
         "columnautoresizing": "False",
     },
     "noteviewerintaskeditor": {
-        "toolbarperspective": "NoteNew,NewSubItem,Separator,Edit,Delete,Spacer,ResetFilter,Search",
+        "toolbarperspective": "NoteNew,NewSubItem,Separator,Edit,Delete,Separator,ViewExpandAll,ViewCollapseAll,Spacer,ResetFilter,Search",
         "sortby": '["subject"]',
         "sortcasesensitive": "False",
         "columns": "['attachments', 'description', 'creationDateTime', \
