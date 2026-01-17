@@ -750,6 +750,7 @@ class AttachmentDropTargetMixin(object):
                     attachmentContainer,
                     self.taskFile,
                     bitmap="edit",
+                    columnName="subject",  # Open on Description tab, not Notes
                 )
                 attachmentEditor.Show()
                 attachmentEditor.Raise()

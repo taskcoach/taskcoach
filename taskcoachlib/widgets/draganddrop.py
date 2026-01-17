@@ -364,6 +364,11 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
         self._dragStartPos = None
         self.GetMainWindow().Bind(wx.EVT_LEFT_DOWN, self._OnLeftDown)
         self._dragItems = []
+        # Hover-expand timer: auto-expand collapsed items after hover delay
+        self._hoverExpandTimerId = wx.NewIdRef()
+        self._hoverExpandTimer = wx.Timer(self, self._hoverExpandTimerId)
+        self._hoverExpandItem = None  # Item currently being hovered for expansion
+        self.Bind(wx.EVT_TIMER, self._onHoverExpandTimer, id=self._hoverExpandTimerId)
 
     def OnDrop(self, dropItem, dragItems, part, column):
         """This function must be overloaded in the derived class. dragItems
@@ -488,13 +493,55 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
         else:
             self.SetCursorToDroppingImpossible()
             self._ClearDropFeedback()
-        if flags & wx.TREE_HITTEST_ONITEMBUTTON:
-            self.Expand(item)
+        # Auto-expand collapsed items on hover (modern UX behavior)
+        self._handleHoverExpand(item, flags)
         if self.GetSelections() != [item]:
             self.UnselectAll()
             if item != self.GetRootItem():
                 self.SelectItem(item)
         event.Skip()
+
+    def _handleHoverExpand(self, item, flags):
+        """Handle auto-expand of collapsed items during drag hover.
+
+        Expands collapsed items after a brief hover delay (500ms) for better UX.
+        Immediate expand when hovering directly on the expand button.
+        """
+        # Immediate expand when on the expand/collapse button
+        if flags & wx.TREE_HITTEST_ONITEMBUTTON:
+            self._hoverExpandTimer.Stop()
+            self._hoverExpandItem = None
+            self.Expand(item)
+            return
+
+        # Check if item is expandable (has children and is collapsed)
+        if item and item != self.GetRootItem():
+            try:
+                isExpandable = self.ItemHasChildren(item) and not self.IsExpanded(item)
+            except RuntimeError:
+                isExpandable = False
+        else:
+            isExpandable = False
+
+        if isExpandable:
+            # Start or continue timer for this item
+            if item != self._hoverExpandItem:
+                self._hoverExpandItem = item
+                self._hoverExpandTimer.Start(500, oneShot=True)
+        else:
+            # Not over an expandable item, cancel any pending expand
+            self._hoverExpandTimer.Stop()
+            self._hoverExpandItem = None
+
+    def _onHoverExpandTimer(self, event):
+        """Timer fired - expand the hovered item."""
+        if self._hoverExpandItem:
+            try:
+                if self.ItemHasChildren(self._hoverExpandItem) and not self.IsExpanded(self._hoverExpandItem):
+                    self.Expand(self._hoverExpandItem)
+            except RuntimeError:
+                pass  # Item may have been deleted
+        self._hoverExpandItem = None
 
     def _UpdateDropFeedback(self, item, flags, column, point):
         """Update visual feedback during drag based on drop position."""
@@ -537,6 +584,9 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
         if headerWin:
             headerWin.Unbind(wx.EVT_MOTION)
             headerWin.Unbind(wx.EVT_LEFT_UP)
+        # Cancel any pending hover-expand
+        self._hoverExpandTimer.Stop()
+        self._hoverExpandItem = None
         # Clean up HyperTreeList's internal drag state
         mainWin = self.GetMainWindow()
         if hasattr(mainWin, '_dragImage') and mainWin._dragImage:

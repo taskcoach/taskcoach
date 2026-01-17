@@ -249,6 +249,10 @@ class _CtrlWithDropTargetMixin(_CtrlWithItemsMixin):
         self.__onDropFilesCallback = kwargs.pop("onDropFiles", None)
         self.__onDropMailCallback = kwargs.pop("onDropMail", None)
         self.__dropHighlightItem = None  # Track highlighted item during drag
+        # Hover-expand timer: auto-expand collapsed items after hover delay
+        self.__hoverExpandTimerId = wx.NewIdRef()
+        self.__hoverExpandTimer = None  # Created lazily when drop target is set
+        self.__hoverExpandItem = None  # Item currently being hovered for expansion
         super().__init__(*args, **kwargs)
         if (
             self.__onDropURLCallback
@@ -262,21 +266,27 @@ class _CtrlWithDropTargetMixin(_CtrlWithItemsMixin):
                 self.onDragOver,
             )
             self.GetMainWindow().SetDropTarget(dropTarget)
+            # Initialize hover-expand timer
+            self.__hoverExpandTimer = wx.Timer(self, self.__hoverExpandTimerId)
+            self.Bind(wx.EVT_TIMER, self.__onHoverExpandTimer, id=self.__hoverExpandTimerId)
 
     def onDropURL(self, x, y, url):
         self._clearDropHighlight()  # Clear highlight on drop
+        self.__stopHoverExpandTimer()  # Cancel any pending expand
         item = self.HitTest((x, y))[0]
         if self.__onDropURLCallback:
             self.__onDropURLCallback(self._objectBelongingTo(item), url)
 
     def onDropFiles(self, x, y, filenames):
         self._clearDropHighlight()  # Clear highlight on drop
+        self.__stopHoverExpandTimer()  # Cancel any pending expand
         item = self.HitTest((x, y))[0]
         if self.__onDropFilesCallback:
             self.__onDropFilesCallback(self._objectBelongingTo(item), filenames)
 
     def onDropMail(self, x, y, mail):
         self._clearDropHighlight()  # Clear highlight on drop
+        self.__stopHoverExpandTimer()  # Cancel any pending expand
         item = self.HitTest((x, y))[0]
         if self.__onDropMailCallback:
             self.__onDropMailCallback(self._objectBelongingTo(item), mail)
@@ -284,13 +294,58 @@ class _CtrlWithDropTargetMixin(_CtrlWithItemsMixin):
     def onDragOver(self, x, y, defaultResult):
         item, flags = self.HitTest((x, y))[:2]
         if self._itemIsOk(item):
-            if flags & wx.TREE_HITTEST_ONITEMBUTTON:
-                self.Expand(item)
+            # Auto-expand collapsed items on hover (modern UX behavior)
+            self.__handleHoverExpand(item, flags)
             # Highlight the row being hovered over
             self._setDropHighlight(item)
         else:
             self._clearDropHighlight()
+            self.__stopHoverExpandTimer()
         return defaultResult
+
+    def __handleHoverExpand(self, item, flags):
+        """Handle auto-expand of collapsed items during drag hover.
+
+        Expands collapsed items after a brief hover delay (500ms) for better UX.
+        Immediate expand when hovering directly on the expand button.
+        """
+        # Immediate expand when on the expand/collapse button
+        if flags & wx.TREE_HITTEST_ONITEMBUTTON:
+            self.__stopHoverExpandTimer()
+            self.Expand(item)
+            return
+
+        # Check if item is expandable (has children and is collapsed)
+        try:
+            isExpandable = self.ItemHasChildren(item) and not self.IsExpanded(item)
+        except (RuntimeError, AttributeError):
+            isExpandable = False
+
+        if isExpandable:
+            # Start or continue timer for this item
+            if item != self.__hoverExpandItem:
+                self.__hoverExpandItem = item
+                if self.__hoverExpandTimer:
+                    self.__hoverExpandTimer.Start(500, oneShot=True)
+        else:
+            # Not over an expandable item, cancel any pending expand
+            self.__stopHoverExpandTimer()
+
+    def __stopHoverExpandTimer(self):
+        """Stop the hover-expand timer and clear state."""
+        if self.__hoverExpandTimer:
+            self.__hoverExpandTimer.Stop()
+        self.__hoverExpandItem = None
+
+    def __onHoverExpandTimer(self, event):
+        """Timer fired - expand the hovered item."""
+        if self.__hoverExpandItem:
+            try:
+                if self.ItemHasChildren(self.__hoverExpandItem) and not self.IsExpanded(self.__hoverExpandItem):
+                    self.Expand(self.__hoverExpandItem)
+            except (RuntimeError, AttributeError):
+                pass  # Item may have been deleted
+        self.__hoverExpandItem = None
 
     def _setDropHighlight(self, item):
         """Set visual highlight on item during drag-over."""
