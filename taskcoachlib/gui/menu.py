@@ -529,7 +529,9 @@ class ViewMenu(Menu):
                 menuText=_("Status&bar"),
                 helpText=_("Show/hide status bar"),
                 setting="statusbar",
-            )
+            ),
+            None,
+            uicommand.ResetWindowLayout(),
         )
 
 

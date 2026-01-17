@@ -3043,6 +3043,22 @@ class MainWindowRestore(base_uicommand.UICommand):
         self.mainWindow().restore(event)
 
 
+class ResetWindowLayout(base_uicommand.UICommand):
+    """Reset the window layout (AUI panes) to default positions."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(
+            menuText=_("Reset &window layout"),
+            helpText=_("Reset all panes to their default positions"),
+            bitmap="reset",
+            *args,
+            **kwargs
+        )
+
+    def doCommand(self, event):
+        self.mainWindow().resetWindowLayout()
+
+
 class Search(ViewerCommand, settings_uicommand.SettingsCommand):
     # Search can only be attached to a real viewer, not to a viewercontainer
     def __init__(self, *args, **kwargs):

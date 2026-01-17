@@ -334,6 +334,67 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         self.Raise()
         self.Refresh()
 
+    def resetWindowLayout(self):
+        """Reset window layout to default as when freshly installed.
+
+        This closes ALL viewers, resets viewer counts to defaults (1 TaskViewer,
+        1 CategoryViewer), clears the saved perspective, and recreates viewers.
+        """
+        import wx.lib.agw.aui as aui
+
+        # Close ALL viewers (not just floating)
+        viewers_to_close = list(self.viewer.viewers)  # Copy the list
+        for v in viewers_to_close:
+            self.viewer.closeViewer(v)
+            self.viewer.viewers.remove(v)
+
+        # Process closures
+        self.manager.Update()
+
+        # Detach and close any remaining non-toolbar panes (e.g., notebook controls)
+        leftover_panes = [
+            pane for pane in self.manager.GetAllPanes()
+            if not pane.IsToolbar()
+        ]
+        for pane in leftover_panes:
+            if pane.window:
+                self.manager.DetachPane(pane.window)
+            self.manager.ClosePane(pane)
+        self.manager.Update()
+
+        # Reset viewer counts to fresh install defaults
+        self.settings.set("view", "taskviewercount", "1")
+        self.settings.set("view", "categoryviewercount", "1")
+        self.settings.set("view", "noteviewercount", "0")
+        self.settings.set("view", "effortviewercount", "0")
+        self.settings.set("view", "effortviewerforselectedtaskscount", "0")
+        self.settings.set("view", "squaretaskviewercount", "0")
+        self.settings.set("view", "timelineviewercount", "0")
+        self.settings.set("view", "calendarviewercount", "0")
+        self.settings.set("view", "hierarchicalcalendarviewercount", "0")
+        self.settings.set("view", "taskstatsviewercount", "0")
+        self.settings.set("view", "taskinterdepsviewercount", "0")
+
+        # Clear saved perspective
+        self.settings.set("view", "perspective", "")
+
+        # Recreate viewers with default counts
+        viewer.addViewers(self.viewer, self.taskFile, self.settings)
+
+        # Explicitly position the first TaskViewer in center (in case auto-positioning failed)
+        for pane in self.manager.GetAllPanes():
+            if pane.IsToolbar():
+                continue
+            name = pane.name
+            if "taskviewer" in name and "stats" not in name and "interdeps" not in name:
+                pane.dock_direction = aui.AUI_DOCK_CENTER
+                pane.dock_layer = 0
+                pane.dock_row = 0
+                pane.dock_pos = 0
+                break  # Only first taskviewer
+
+        self.manager.Update()
+
     def onIconify(self, event):
         if event.IsIconized() and self.settings.getboolean(
             "window", "hidewheniconized"

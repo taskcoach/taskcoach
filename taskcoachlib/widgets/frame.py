@@ -121,6 +121,7 @@ class AuiManagedFrameWithDynamicCenterPane(wx.Frame):
         if floating:
             paneInfo.Float()
         if not self.dockedPanes():
+            # First pane goes to center
             paneInfo = paneInfo.Center()
         self.manager.AddPane(window, paneInfo)
         self.manager.Update()

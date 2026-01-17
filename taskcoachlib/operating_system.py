@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import wx, sys, platform
+import wx, sys, platform, os
 
 # This module is meant to be imported like this:
 #   from taskcoachlib import operating_system
@@ -34,6 +34,16 @@ def isWindows():
 
 def isGTK():
     return isPlatform("GTK")
+
+
+def isWayland():
+    """Detect if running on Wayland display server.
+
+    Note: AUI floating windows are broken on Wayland due to protocol
+    limitations. See docs/AUI_WAYLAND_ISSUES.md for details.
+    """
+    return (os.environ.get('XDG_SESSION_TYPE') == 'wayland' or
+            os.environ.get('WAYLAND_DISPLAY') is not None)
 
 
 def isPlatform(threeLetterPlatformAbbreviation, wxPlatform=wx.Platform):
