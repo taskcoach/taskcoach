@@ -842,6 +842,12 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
     def isAnyItemCollapsable(self):
         return self.widget.isAnyItemCollapsable()
 
+    def createModeToolBarUICommands(self):
+        return super().createModeToolBarUICommands() + (
+            uicommand.ViewExpandAll(viewer=self),
+            uicommand.ViewCollapseAll(viewer=self),
+        )
+
     def isTreeViewer(self):
         return True
 

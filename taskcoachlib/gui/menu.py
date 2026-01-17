@@ -516,13 +516,12 @@ class ViewMenu(Menu):
         self.appendMenu(
             _("&Rounding"), RoundingMenu(mainwindow, self, _("&Rounding"))
         )
-        self.appendUICommands(None)
-        self.appendMenu(
-            _("&Tree options"),
-            ViewTreeOptionsMenu(mainwindow, viewerContainer),
-            "treeview",
+        self.appendUICommands(
+            None,
+            uicommand.ViewExpandAll(viewer=viewerContainer),
+            uicommand.ViewCollapseAll(viewer=viewerContainer),
+            None,
         )
-        self.appendUICommands(None)
         self.appendMenu(_("T&oolbar"), ToolBarMenu(mainwindow, settings))
         self.appendUICommands(
             uicommand.UICheckCommand(
@@ -642,15 +641,6 @@ class ViewViewerMenu(Menu):
                 )
             )
         self.appendUICommands(*viewViewerCommands)
-
-
-class ViewTreeOptionsMenu(Menu):
-    def __init__(self, mainwindow, viewerContainer):
-        super().__init__(mainwindow)
-        self.appendUICommands(
-            uicommand.ViewExpandAll(viewer=viewerContainer),
-            uicommand.ViewCollapseAll(viewer=viewerContainer),
-        )
 
 
 class ModeMenu(DynamicMenuThatGetsUICommandsFromViewer):

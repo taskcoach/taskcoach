@@ -1221,7 +1221,8 @@ class ViewColumns(ViewerCommand, settings_uicommand.UICheckCommand):
 class ViewExpandAll(mixin_uicommand.NeedsTreeViewerMixin, ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Expand all items\tShift+Ctrl+E"),
+            bitmap="tree_expand_all",
+            menuText=_("&Expand all\tShift+Ctrl+E"),
             helpText=help.viewExpandAll,
             *args,
             **kwargs
@@ -1237,7 +1238,8 @@ class ViewExpandAll(mixin_uicommand.NeedsTreeViewerMixin, ViewerCommand):
 class ViewCollapseAll(mixin_uicommand.NeedsTreeViewerMixin, ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Collapse all items\tShift+Ctrl+C"),
+            bitmap="tree_collapse_all",
+            menuText=_("Co&llapse all\tShift+Ctrl+C"),
             helpText=help.viewCollapseAll,
             *args,
             **kwargs
