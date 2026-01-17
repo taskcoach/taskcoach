@@ -194,7 +194,13 @@ class DropTarget(wx.DropTarget):
         if formatId == "text/x-moz-message":
             self.onThunderbirdDrop(x, y)
         elif formatId == "text/uri-list" and formatType == wx.DF_FILENAME:
-            urls = self.__urilistDataObject.GetData().strip().split("\n")
+            # GetData() returns memoryview in wxPython 4, convert to string
+            data = self.__urilistDataObject.GetData()
+            if isinstance(data, memoryview):
+                data = bytes(data).decode("utf-8", errors="replace")
+            elif isinstance(data, bytes):
+                data = data.decode("utf-8", errors="replace")
+            urls = data.strip().split("\n")
             for url in urls:
                 url = url.strip()
                 if url.startswith("#"):
@@ -202,14 +208,23 @@ class DropTarget(wx.DropTarget):
                 if self.__tmp_mail_file_url(url) and self.__onDropMailCallback:
                     filename = urllib.parse.unquote(url[len("file://") :])
                     self.__onDropMailCallback(x, y, filename)
+                elif url.startswith("file://") and self.__onDropFileCallback:
+                    # file:// URLs should be treated as files, not links
+                    filename = urllib.request.url2pathname(
+                        urllib.parse.unquote(url[7:])
+                    )
+                    self.__onDropFileCallback(x, y, [filename])
                 elif self.__onDropURLCallback:
-                    if url.startswith("file://"):
-                        url = urllib.request.url2pathname(url[7:])
                     self.__onDropURLCallback(x, y, url)
         elif formatId == "Object Descriptor":
             self.onOutlookDrop(x, y)
         elif formatId == "public.url":
+            # GetData() returns memoryview in wxPython 4, convert to string
             url = self.__macMailObject.GetData()
+            if isinstance(url, memoryview):
+                url = bytes(url).decode("utf-8", errors="replace")
+            elif isinstance(url, bytes):
+                url = url.decode("utf-8", errors="replace")
             if (
                 url.startswith("imap:") or url.startswith("mailbox:")
             ) and self.__onDropMailCallback:
@@ -284,9 +299,8 @@ class DropTarget(wx.DropTarget):
 
     def onFileDrop(self, x, y):
         if self.__onDropFileCallback:
-            self.__onDropFileCallback(
-                x, y, self.__fileDataObject.GetFilenames()
-            )
+            filenames = self.__fileDataObject.GetFilenames()
+            self.__onDropFileCallback(x, y, filenames)
 
 
 class TreeHelperMixin(object):

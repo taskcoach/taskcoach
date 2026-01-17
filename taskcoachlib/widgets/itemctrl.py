@@ -248,6 +248,7 @@ class _CtrlWithDropTargetMixin(_CtrlWithItemsMixin):
         self.__onDropURLCallback = kwargs.pop("onDropURL", None)
         self.__onDropFilesCallback = kwargs.pop("onDropFiles", None)
         self.__onDropMailCallback = kwargs.pop("onDropMail", None)
+        self.__dropHighlightItem = None  # Track highlighted item during drag
         super().__init__(*args, **kwargs)
         if (
             self.__onDropURLCallback
@@ -263,18 +264,19 @@ class _CtrlWithDropTargetMixin(_CtrlWithItemsMixin):
             self.GetMainWindow().SetDropTarget(dropTarget)
 
     def onDropURL(self, x, y, url):
+        self._clearDropHighlight()  # Clear highlight on drop
         item = self.HitTest((x, y))[0]
         if self.__onDropURLCallback:
             self.__onDropURLCallback(self._objectBelongingTo(item), url)
 
     def onDropFiles(self, x, y, filenames):
+        self._clearDropHighlight()  # Clear highlight on drop
         item = self.HitTest((x, y))[0]
         if self.__onDropFilesCallback:
-            self.__onDropFilesCallback(
-                self._objectBelongingTo(item), filenames
-            )
+            self.__onDropFilesCallback(self._objectBelongingTo(item), filenames)
 
     def onDropMail(self, x, y, mail):
+        self._clearDropHighlight()  # Clear highlight on drop
         item = self.HitTest((x, y))[0]
         if self.__onDropMailCallback:
             self.__onDropMailCallback(self._objectBelongingTo(item), mail)
@@ -284,7 +286,29 @@ class _CtrlWithDropTargetMixin(_CtrlWithItemsMixin):
         if self._itemIsOk(item):
             if flags & wx.TREE_HITTEST_ONITEMBUTTON:
                 self.Expand(item)
+            # Highlight the row being hovered over
+            self._setDropHighlight(item)
+        else:
+            self._clearDropHighlight()
         return defaultResult
+
+    def _setDropHighlight(self, item):
+        """Set visual highlight on item during drag-over."""
+        if item != self.__dropHighlightItem:
+            self.__dropHighlightItem = item
+            # Use SetDragItem which is used by internal DnD for highlighting
+            if hasattr(self, 'SetDragItem'):
+                self.SetDragItem(item)
+
+    def _clearDropHighlight(self):
+        """Clear any existing drop highlight."""
+        if self.__dropHighlightItem is not None:
+            self.__dropHighlightItem = None
+            if hasattr(self, 'SetDragItem'):
+                try:
+                    self.SetDragItem(None)
+                except Exception:
+                    pass  # Item may have been deleted
 
     def GetMainWindow(self):
         try:

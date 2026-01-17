@@ -38,12 +38,55 @@ class AttachmentViewer(
     base.ListViewer,
 ):
     SorterClass = attachment.AttachmentSorter
-    viewerImages = base.ListViewer.viewerImages + ["fileopen", "fileopen_red"]
+    viewerImages = base.ListViewer.viewerImages + [
+        "document_icon", "fileopen_red", "folder_blue_icon"
+    ]
+
+    # Map type_ values to human-readable names
+    TYPE_NAMES = {
+        "file": _("File"),
+        "folder": _("Folder"),
+        "uri": _("Link"),
+        "mail": _("Email"),
+        "unknown": _("Unknown"),
+    }
 
     def __init__(self, *args, **kwargs):
         self.attachments = kwargs.pop("attachmentsToShow")
         kwargs.setdefault("settingssection", "attachmentviewer")
         super().__init__(*args, **kwargs)
+
+    def _isFolderUri(self, anAttachment):
+        """Check if a URI attachment points to a local folder."""
+        if anAttachment.type_ != "uri":
+            return False
+        location = anAttachment.location()
+        if location.startswith("file://"):
+            import urllib.request
+            try:
+                path = urllib.request.url2pathname(location[7:])
+                return os.path.isdir(path)
+            except Exception:
+                return False
+        return False
+
+    def getTypeName(self, anAttachment):
+        """Return human-readable type name for an attachment."""
+        if self._isFolderUri(anAttachment):
+            return self.TYPE_NAMES.get("folder", _("Folder"))
+        return self.TYPE_NAMES.get(anAttachment.type_, anAttachment.type_)
+
+    def getItemTooltipData(self, item):
+        """Return tooltip data showing type and location."""
+        result = [
+            (None, [self.getTypeName(item)]),
+            (None, [item.location()]),
+        ]
+        if item.description():
+            lines = [line.rstrip("\r") for line in item.description().split("\n")]
+            if lines and lines != [""]:
+                result.append((None, lines))
+        return result
 
     def _addAttachments(self, attachments, item, **itemDialogKwargs):
         # Don't try to add attachments to attachments.
@@ -91,7 +134,7 @@ class AttachmentViewer(
                 "",
                 width=self.getColumnWidth("type"),
                 imageIndicesCallback=self.typeImageIndices,
-                renderCallback=lambda item: "",
+                renderCallback=self.getTypeName,
                 resizeCallback=self.onResizeColumn,
             ),
             widgets.Column(
@@ -224,9 +267,12 @@ class AttachmentViewer(
         if anAttachment.type_ == "file":
             attachmentBase = self.settings.get("file", "attachmentbase")
             if exists(anAttachment.normalizedLocation(attachmentBase)):
-                index = self.imageIndex["fileopen"]
+                index = self.imageIndex["document_icon"]
             else:
                 index = self.imageIndex["fileopen_red"]
+        elif self._isFolderUri(anAttachment):
+            # Folder URI - use folder icon
+            index = self.imageIndex["folder_blue_icon"]
         else:
             try:
                 index = self.imageIndex[

@@ -72,6 +72,12 @@ class VirtualListCtrl(
         wx.PostEvent(self, wx.ChildFocusEvent(self))
         event.Skip()
 
+    def GetMainWindow(self):
+        # Override to return self for drop target support.
+        # wx.ListCtrl.GetMainWindow() returns an internal Window that
+        # doesn't properly receive drag/drop events.
+        return self
+
     def getItemWithIndex(self, rowIndex):
         return self.__parent.getItemWithIndex(rowIndex)
 

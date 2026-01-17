@@ -391,15 +391,7 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
                     sorted([note.subject() for note in task.notes()]),
                 )
             )
-        if task.attachments():
-            result.append(
-                (
-                    "paperclip_icon",
-                    sorted(
-                        [str(attachment) for attachment in task.attachments()]
-                    ),
-                )
-            )
+        # Note: attachments are handled by WithAttachmentsViewerMixin
         return result + super().getItemTooltipData(task)
 
     def label(self, task):  # pylint: disable=W0621

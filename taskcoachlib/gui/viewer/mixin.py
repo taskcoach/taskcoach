@@ -671,11 +671,90 @@ class AttachmentDropTargetMixin(object):
                 bitmap="new", attachments=attachments, **itemDialogKwargs
             )
             newItemDialog.Show()
+            # Use CallAfter to ensure proper focus after drop completes
+            wx.CallAfter(newItemDialog.Raise)
+            wx.CallAfter(newItemDialog.SetFocus)
         else:
             addAttachment = command.AddAttachmentCommand(
                 self.presentation(), [item], attachments=attachments
             )
             addAttachment.do()
+            # Open the item's editor on attachments tab, then open attachment editor
+            self._openItemEditorOnAttachmentsTab(item, attachments)
+
+    def _openItemEditorOnAttachmentsTab(self, item, newAttachments=None):
+        """Open the item's editor on the attachments tab.
+
+        If an editor for this item is already open, bring it to front and
+        switch to the attachments tab. Otherwise, create a new editor.
+        If newAttachments is provided, also open the AttachmentEditor for them.
+        """
+        from taskcoachlib.gui.dialog import editor
+        from taskcoachlib.domain import note
+
+        # Determine editor class based on item type
+        if isinstance(item, task.Task):
+            EditorClass = editor.TaskEditor
+            container = self.taskFile.tasks()
+        elif isinstance(item, category.Category):
+            EditorClass = editor.CategoryEditor
+            container = self.taskFile.categories()
+        elif isinstance(item, note.Note):
+            EditorClass = editor.NoteEditor
+            container = self.taskFile.notes()
+        else:
+            return
+
+        # Search for an existing open editor for this item
+        existingEditor = None
+        for window in wx.GetTopLevelWindows():
+            if isinstance(window, EditorClass):
+                # Check if this editor is editing our item
+                if hasattr(window, '_items') and item in window._items:
+                    existingEditor = window
+                    break
+
+        if existingEditor:
+            # Bring to front and switch to attachments tab
+            existingEditor.Raise()
+            existingEditor.SetFocus()
+            if hasattr(existingEditor, '_interior'):
+                existingEditor._interior.setFocus("attachments")
+            itemEditor = existingEditor
+        else:
+            # Create a new editor with columnName="attachments"
+            itemEditor = EditorClass(
+                wx.GetTopLevelParent(self),
+                [item],
+                self.settings,
+                container,
+                self.taskFile,
+                bitmap="edit",
+                columnName="attachments",
+            )
+            itemEditor.Show()
+            wx.CallAfter(itemEditor.Raise)
+            wx.CallAfter(itemEditor.SetFocus)
+
+        # Also open the AttachmentEditor for the new attachments
+        if newAttachments:
+            # Use CallAfter to ensure item editor is fully shown first
+            def openAttachmentEditor():
+                # Wrap attachments in AttachmentList container for Editor
+                # (item.attachments() returns a plain list)
+                attachmentContainer = attachment.AttachmentList(item.attachments())
+                attachmentEditor = editor.AttachmentEditor(
+                    itemEditor,  # Parent to the item editor
+                    newAttachments,
+                    self.settings,
+                    attachmentContainer,
+                    self.taskFile,
+                    bitmap="edit",
+                )
+                attachmentEditor.Show()
+                attachmentEditor.Raise()
+                attachmentEditor.SetFocus()
+            wx.CallAfter(openAttachmentEditor)
 
     def onDropURL(self, item, url, **kwargs):
         """This method is called by the widget when a URL is dropped on an
@@ -686,15 +765,20 @@ class AttachmentDropTargetMixin(object):
     def onDropFiles(self, item, filenames, **kwargs):
         """This method is called by the widget when one or more files
         are dropped on an item."""
+        import os
+        import urllib.request
         attachmentBase = self.settings.get("file", "attachmentbase")
-        if attachmentBase:
-            filenames = [
-                attachment.getRelativePath(filename, attachmentBase)
-                for filename in filenames
-            ]
-        attachments = [
-            attachment.FileAttachment(filename) for filename in filenames
-        ]
+        attachments = []
+        for filename in filenames:
+            if os.path.isdir(filename):
+                # Folders become URI attachments that open in file explorer
+                folder_url = "file://" + urllib.request.pathname2url(filename)
+                attachments.append(attachment.URIAttachment(folder_url))
+            else:
+                # Regular files become file attachments
+                if attachmentBase:
+                    filename = attachment.getRelativePath(filename, attachmentBase)
+                attachments.append(attachment.FileAttachment(filename))
         self._addAttachments(attachments, item, **kwargs)
 
     def onDropMail(self, item, mail, **kwargs):

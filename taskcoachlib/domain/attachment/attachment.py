@@ -72,7 +72,9 @@ class Attachment(base.Object, NoteOwner):
 
     def __init__(self, location, *args, **kwargs):
         if "subject" not in kwargs:
-            kwargs["subject"] = location
+            # Use filename without extension as subject, not full path/URL
+            filename = os.path.basename(location)
+            kwargs["subject"] = os.path.splitext(filename)[0] or location
         super().__init__(*args, **kwargs)
         self.__location = location
 

@@ -311,14 +311,79 @@ class CategorySubjectPage(SubjectPage):
 
 
 class AttachmentSubjectPage(SubjectPage):
+    # Map type_ values to human-readable names and icons
+    TYPE_INFO = {
+        "file": (_("File"), "document_icon"),
+        "folder": (_("Folder"), "folder_blue_icon"),
+        "uri": (_("Link"), "earth_blue_icon"),
+        "mail": (_("Email"), "envelope_icon"),
+        "unknown": (_("Unknown"), None),
+    }
+
+    def _isFolderUri(self, item):
+        """Check if a URI attachment points to a local folder."""
+        if item.type_ != "uri":
+            return False
+        location = item.location()
+        if location.startswith("file://"):
+            import urllib.request
+            import os
+            try:
+                path = urllib.request.url2pathname(location[7:])
+                return os.path.isdir(path)
+            except Exception:
+                return False
+        return False
+
     def addEntries(self):
-        # Override to insert a location entry between the subject and
-        # description entry
+        # Override to insert type and location entries
         self.addSubjectEntry()
+        self.addTypeEntry()
         self.addLocationEntry()
         self.addDescriptionEntry()
         self.addCreationDateTimeEntry()
         self.addModificationDateTimeEntry()
+
+    def addTypeEntry(self):
+        """Add a read-only type field with icon."""
+        import os
+        if len(self.items) == 1:
+            item = self.items[0]
+            if self._isFolderUri(item):
+                type_name, icon_name = self.TYPE_INFO.get("folder")
+            else:
+                item_type = item.type_
+                type_name, icon_name = self.TYPE_INFO.get(
+                    item_type, (item_type, None)
+                )
+                # Check if file exists for file attachments
+                if item_type == "file":
+                    attachmentBase = self._settings.get("file", "attachmentbase")
+                    if not os.path.exists(item.normalizedLocation(attachmentBase)):
+                        icon_name = "fileopen_red"
+        else:
+            # Multiple items - show type if all same, otherwise "Mixed"
+            types = set(item.type_ for item in self.items)
+            if len(types) == 1:
+                item_type = types.pop()
+                type_name, icon_name = self.TYPE_INFO.get(
+                    item_type, (_("Unknown"), None)
+                )
+            else:
+                type_name = _("Mixed")
+                icon_name = None
+
+        panel = wx.Panel(self)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        if icon_name:
+            bitmap = wx.ArtProvider.GetBitmap(icon_name, wx.ART_MENU, (16, 16))
+            if bitmap.IsOk():
+                icon = wx.StaticBitmap(panel, bitmap=bitmap)
+                sizer.Add(icon, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+        type_label = wx.StaticText(panel, label=type_name)
+        sizer.Add(type_label, 0, wx.ALIGN_CENTER_VERTICAL)
+        panel.SetSizer(sizer)
+        self.addEntry(_("Type"), panel, flags=[wx.ALIGN_RIGHT, wx.ALIGN_CENTER_VERTICAL])
 
     def addLocationEntry(self):
         panel = wx.Panel(self)

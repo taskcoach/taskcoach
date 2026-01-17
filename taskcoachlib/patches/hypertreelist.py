@@ -2973,7 +2973,7 @@ class TreeListMainWindow(CustomTreeCtrl):
 
         colText = wx.Colour(*dc.GetTextForeground())
 
-        if item.IsSelected():
+        if item.IsSelected() or item == self._dragItem:
             colTextHilight = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
 
         else:
@@ -3016,10 +3016,14 @@ class TreeListMainWindow(CustomTreeCtrl):
             itemrect = wx.Rect(0, item.GetY() + off_h, total_w-1, total_h - off_h)
 
             if item == self._dragItem:
-                dc.SetBrush(self._hilightBrush)
-                if wx.Platform == "__WXMAC__":
-                    dc.SetPen((item == self._dragItem) and [wx.BLACK_PEN] or [wx.TRANSPARENT_PEN])[0]
-
+                # Draw highlight for drag item (same as selected item)
+                if wx.Platform in ["__WXGTK2__", "__WXMAC__"]:
+                    flags = wx.CONTROL_SELECTED | wx.CONTROL_FOCUSED
+                    wx.RendererNative.Get().DrawItemSelectionRect(self._owner, dc, itemrect, flags)
+                else:
+                    dc.SetBrush(self._hilightBrush)
+                    dc.SetPen(self._borderPen)
+                    dc.DrawRectangle(itemrect)
                 dc.SetTextForeground(colTextHilight)
 
             elif item.IsSelected():
@@ -3137,9 +3141,13 @@ class TreeListMainWindow(CustomTreeCtrl):
                 dc.SetPen((self._hasFocus and [self._borderPen] or [wx.TRANSPARENT_PEN])[0])
                 if i == self.GetMainColumn():
                     if item == self._dragItem:
-                        if wx.Platform == "__WXMAC__":  # don't draw rect outline if we already have the background colour
-                            dc.SetPen((item == self._dragItem and [wx.BLACK_PEN] or [wx.TRANSPARENT_PEN])[0])
-
+                        # Draw highlight for drag item (same as selected item)
+                        itemrect = wx.Rect(text_x-2, item.GetY() + off_h, text_w+2*_MARGIN, total_h - off_h)
+                        if wx.Platform in ["__WXGTK2__", "__WXMAC__"]:
+                            flags = wx.CONTROL_SELECTED | wx.CONTROL_FOCUSED
+                            wx.RendererNative.Get().DrawItemSelectionRect(self._owner, dc, itemrect, flags)
+                        else:
+                            dc.DrawRectangle(itemrect)
                         dc.SetTextForeground(colTextHilight)
 
                     elif item.IsSelected():
