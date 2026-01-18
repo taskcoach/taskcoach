@@ -114,7 +114,21 @@ def recurrence(recurrence):
     else:
         labels = [_("Daily"), _("Weekly"), _("Monthly"), _("Yearly")]
     mapping = dict(list(zip(["daily", "weekly", "monthly", "yearly"], labels)))
-    return mapping.get(recurrence.unit) % dict(frequency=recurrence.amount)
+    result = mapping.get(recurrence.unit) % dict(frequency=recurrence.amount)
+    # Append weekday names for weekly recurrence if specific days are selected
+    if recurrence.unit == "weekly" and recurrence.weekdays:
+        weekday_names = [
+            _("Mon"),
+            _("Tue"),
+            _("Wed"),
+            _("Thu"),
+            _("Fri"),
+            _("Sat"),
+            _("Sun"),
+        ]
+        selected_days = [weekday_names[d] for d in sorted(recurrence.weekdays)]
+        result += " (" + ", ".join(selected_days) + ")"
+    return result
 
 
 def budget(aBudget):

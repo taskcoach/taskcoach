@@ -634,7 +634,19 @@ class Task(
             self.__status = status.completed
         else:
             now = date.Now()
-            if self.dueDateTime() < now:
+            # Don't call prerequisite.completed() because it will lead to infinite
+            # recursion in the case of circular dependencies.
+            # Check prerequisites first - task is inactive if any prereq is uncompleted:
+            if any(
+                [
+                    prerequisite.completionDateTime() == self.maxDateTime
+                    for prerequisite in self.prerequisites(
+                        recursive=True, upwards=True
+                    )
+                ]
+            ):
+                self.__status = status.inactive
+            elif self.dueDateTime() < now:
                 self.__status = status.overdue
             elif 0 <= self.timeLeft().hours() < self.__dueSoonHours:
                 self.__status = status.duesoon
@@ -1398,6 +1410,8 @@ class Task(
         recur = self.recurrence(recursive=True, upwards=True)
 
         currentDueDateTime = self.dueDateTime()
+        currentPlannedStartDateTime = self.plannedStartDateTime()
+
         if currentDueDateTime != date.DateTime():
             basisForRecurrence = (
                 completionDateTime
@@ -1413,7 +1427,6 @@ class Task(
             )
             self.setDueDateTime(nextDueDateTime)
 
-        currentPlannedStartDateTime = self.plannedStartDateTime()
         if currentPlannedStartDateTime != date.DateTime():
             if date.DateTime() not in (
                 currentPlannedStartDateTime,

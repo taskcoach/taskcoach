@@ -212,6 +212,8 @@ class XMLWriter(object):
             attrs["sameWeekday"] = "True"
         if recurrence.recurBasedOnCompletion:
             attrs["recurBasedOnCompletion"] = "True"
+        if recurrence.weekdays:
+            attrs["weekdays"] = ",".join(str(d) for d in recurrence.weekdays)
         return ET.SubElement(parentNode, "recurrence", attrs)
 
     def effortNode(self, parentNode, effort):

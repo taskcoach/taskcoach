@@ -35,6 +35,7 @@ class Recurrence(object):
         count=0,
         stop_datetime=None,
         recurBasedOnCompletion=False,
+        weekdays=None,
     ):
         assert unit in self.units
         assert amount >= 1
@@ -46,6 +47,8 @@ class Recurrence(object):
         self.max = maximum
         self.count = count  # Actual number of recurrences given out so far
         self.recurBasedOnCompletion = recurBasedOnCompletion
+        # Weekdays for weekly recurrence (list of 0-6, where 0=Monday)
+        self.weekdays = weekdays if weekdays is not None else []
 
     def __call__(self, *dateTimes, **kwargs):
         result = [self._nextDateTime(dateTime) for dateTime in dateTimes]
@@ -87,6 +90,21 @@ class Recurrence(object):
             return self._addDays(dateTime)
 
     def _addDays(self, dateTime):
+        if self.unit == "weekly" and self.weekdays:
+            # DateTime.weekday() returns isoweekday (1-7, Mon=1, Sun=7)
+            # self.weekdays uses Python convention (0-6, Mon=0, Sun=6)
+            # Convert stored weekdays to ISO: iso = python + 1
+            current_iso = dateTime.weekday()
+            iso_weekdays = sorted([wd + 1 for wd in self.weekdays])
+            # Find the next weekday in the list after current
+            for wd in iso_weekdays:
+                if wd > current_iso:
+                    days_ahead = wd - current_iso
+                    return dateTime + timedelta.TimeDelta(days=days_ahead)
+            # No weekday found this week, go to first selected day next week
+            first_iso = iso_weekdays[0]
+            days_ahead = 7 - current_iso + first_iso
+            return dateTime + timedelta.TimeDelta(days=days_ahead)
         nrOfDays = dict(daily=1, weekly=7)[self.unit]
         return dateTime + timedelta.TimeDelta(days=nrOfDays)
 
@@ -156,6 +174,7 @@ class Recurrence(object):
             self.max,
             stop_datetime=self.stop_datetime,
             recurBasedOnCompletion=self.recurBasedOnCompletion,
+            weekdays=list(self.weekdays),
         )
 
     def __eq__(self, other):
@@ -167,6 +186,7 @@ class Recurrence(object):
                 and self.max == other.max
                 and self.stop_datetime == other.stop_datetime
                 and self.recurBasedOnCompletion == other.recurBasedOnCompletion
+                and self.weekdays == other.weekdays
             )
         except AttributeError:
             return False

@@ -514,9 +514,16 @@ class XMLReader(object):
             maximum=0,
             stop_datetime=None,
             sameWeekday=False,
+            weekdays=[],
         )
         node = task_node.find("recurrence")
         if node is not None:
+            weekdays_str = node.attrib.get("weekdays", "")
+            weekdays = (
+                [int(d) for d in weekdays_str.split(",") if d]
+                if weekdays_str
+                else []
+            )
             kwargs = dict(
                 unit=node.attrib.get("unit", ""),
                 amount=int(node.attrib.get("amount", "1")),
@@ -531,6 +538,7 @@ class XMLReader(object):
                 recurBasedOnCompletion=self.__parse_boolean(
                     node.attrib.get("recurBasedOnCompletion", "False")
                 ),
+                weekdays=weekdays,
             )
         return kwargs
 

@@ -573,6 +573,35 @@ class RecurrenceEntry(wx.Panel):
         recurrenceFrequencyPanel.SetSizerAndFit(panelSizer)
         self._recurrenceSizer = panelSizer
 
+        # Weekday selector panel for weekly recurrence
+        weekdayPanel = wx.Panel(self)
+        weekdayPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
+        weekdayPanelSizer.Add(
+            wx.StaticText(weekdayPanel, label=_("On days:")),
+            flag=wx.ALIGN_CENTER_VERTICAL,
+        )
+        weekdayPanelSizer.Add((6, -1))
+        # Weekday names starting from Monday (0) to Sunday (6)
+        weekdayNames = [
+            _("Mon"),
+            _("Tue"),
+            _("Wed"),
+            _("Thu"),
+            _("Fri"),
+            _("Sat"),
+            _("Sun"),
+        ]
+        self._weekdayCheckBoxes = []
+        for i, dayName in enumerate(weekdayNames):
+            cb = wx.CheckBox(weekdayPanel, label=dayName)
+            cb.Bind(wx.EVT_CHECKBOX, self.onRecurrenceEdited)
+            self._weekdayCheckBoxes.append(cb)
+            weekdayPanelSizer.Add(cb, flag=wx.ALIGN_CENTER_VERTICAL)
+            if i < len(weekdayNames) - 1:
+                weekdayPanelSizer.Add((6, -1))
+        weekdayPanel.SetSizerAndFit(weekdayPanelSizer)
+        self._weekdayPanel = weekdayPanel
+
         # schedulePanel created before maxPanel for correct tab order (top-to-bottom)
         schedulePanel = wx.Panel(self)
         panelSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -666,6 +695,8 @@ class RecurrenceEntry(wx.Panel):
         panelSizer = wx.BoxSizer(wx.VERTICAL)
         panelSizer.Add(recurrenceFrequencyPanel)
         panelSizer.Add(self.verticalSpace)
+        panelSizer.Add(self._weekdayPanel)
+        panelSizer.Add(self.verticalSpace)
         panelSizer.Add(schedulePanel)
         panelSizer.Add(self.verticalSpace)
         panelSizer.Add(maxPanel)
@@ -686,6 +717,10 @@ class RecurrenceEntry(wx.Panel):
         self._recurrenceSameWeekdayCheckBox.Enable(
             self._recurrencePeriodEntry.Selection in (3, 4)
         )
+        # Enable weekday checkboxes only when weekly is selected (index 2)
+        weeklySelected = self._recurrencePeriodEntry.Selection == 2
+        for cb in self._weekdayCheckBoxes:
+            cb.Enable(weeklySelected)
         self._recurrenceSizer.Layout()
 
     def onRecurrencePeriodEdited(self, event):
@@ -733,6 +768,9 @@ class RecurrenceEntry(wx.Panel):
             if recurrence.unit in ("monthly", "yearly")
             else False
         )
+        # Set weekday checkboxes
+        for i, cb in enumerate(self._weekdayCheckBoxes):
+            cb.SetValue(i in recurrence.weekdays)
         self._scheduleChoice.Selection = (
             1 if recurrence.recurBasedOnCompletion else 0
         )
@@ -767,4 +805,8 @@ class RecurrenceEntry(wx.Panel):
             kwargs["stop_datetime"] = (
                 self._recurrenceStopDateTimeEntry.GetValue()
             )
+        # Get selected weekdays (0-6 for Mon-Sun)
+        kwargs["weekdays"] = [
+            i for i, cb in enumerate(self._weekdayCheckBoxes) if cb.IsChecked()
+        ]
         return date.Recurrence(**kwargs)  # pylint: disable=W0142
