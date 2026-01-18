@@ -108,6 +108,8 @@ class DateTimeCtrl(wx.Panel):
         self.SetSizer(sizer)
 
         self.__ctrl.Bind(sdtc.EVT_DATETIME_CHANGE, self.__OnChange)
+        # Forward choices change events so external bindings work
+        self.__ctrl.Bind(sdtc.EVT_TIME_CHOICES_CHANGE, self.__OnChoicesChange)
         # Pass focus to child when panel receives focus via Tab
         self.Bind(wx.EVT_SET_FOCUS, self.__OnSetFocus)
 
@@ -132,6 +134,12 @@ class DateTimeCtrl(wx.Panel):
         self.__value = event.GetValue()
         if self.__callback is not None:
             self.__callback()
+
+    def __OnChoicesChange(self, event):
+        """Forward choices change event from internal control to this panel."""
+        # Re-emit event from this panel so external bindings receive it
+        new_event = sdtc.TimeChoicesChangedEvent(self, event.GetValue())
+        self.ProcessEvent(new_event)
 
     def EnableChoices(self, enabled=True):
         self.__ctrl.EnableChoices(enabled=enabled)

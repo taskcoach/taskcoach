@@ -670,21 +670,7 @@ class Entry(wx.Panel):
                 event.Skip()
                 return
             self.DismissPopup()
-            # Tab navigates between subfields first, only exits at boundaries
-            fields = self.Fields()
-            if self.__focus is not None and fields:
-                currentIndex = fields.index(self.__focus)
-                if event.ShiftDown():
-                    # Shift+Tab: move to previous field or exit if at first
-                    if currentIndex > 0:
-                        self.__SetFocus(fields[currentIndex - 1])
-                        return
-                else:
-                    # Tab: move to next field or exit if at last
-                    if currentIndex < len(fields) - 1:
-                        self.__SetFocus(fields[currentIndex + 1])
-                        return
-            # At boundary - exit the control
+            # Tab exits the control; use left/right arrows for subfield navigation
             self._Entry__hasFocus = False
             self.Refresh()
             self.Navigate(not event.ShiftDown())
