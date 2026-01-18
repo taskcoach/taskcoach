@@ -271,9 +271,16 @@ class StatusChecker:
                         needsUpdate = True
 
         # Check time to start transition (only once per task)
+        # Check both plannedStartDateTime (for "late" status) and
+        # actualStartDateTime (for "active" status when set in the future)
         if task not in self._startedNotified:
             plannedStart = task.plannedStartDateTime()
-            if plannedStart and plannedStart <= now:
+            actualStart = task.actualStartDateTime()
+            maxDT = task.maxDateTime
+            # Check if either start time has been reached
+            plannedReached = plannedStart and plannedStart != maxDT and plannedStart <= now
+            actualReached = actualStart and actualStart != maxDT and actualStart <= now
+            if plannedReached or actualReached:
                 self._startedNotified.add(task)
                 needsUpdate = True
 

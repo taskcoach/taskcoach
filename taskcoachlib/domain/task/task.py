@@ -640,17 +640,6 @@ class Task(
                 self.__status = status.duesoon
             elif self.actualStartDateTime() <= now:
                 self.__status = status.active
-            # Don't call prerequisite.completed() because it will lead to infinite
-            # recursion in the case of circular dependencies:
-            elif any(
-                [
-                    prerequisite.completionDateTime() == self.maxDateTime
-                    for prerequisite in self.prerequisites(
-                        recursive=True, upwards=True
-                    )
-                ]
-            ):
-                self.__status = status.inactive
             elif self.plannedStartDateTime() < now:
                 self.__status = status.late
             else:
@@ -1489,7 +1478,6 @@ class Task(
         if prerequisites == self.prerequisites():
             return
         self.__prerequisites = WeakSet(prerequisites)
-        self.setActualStartDateTime(self.maxDateTime, recursive=True)
         self.recomputeAppearance(recursive=True)
         pub.sendMessage(
             self.prerequisitesChangedEventType(),
@@ -1502,7 +1490,6 @@ class Task(
         if prerequisites <= self.prerequisites():
             return
         self.__prerequisites = WeakSet(prerequisites | self.prerequisites())
-        self.setActualStartDateTime(self.maxDateTime, recursive=True)
         self.recomputeAppearance(recursive=True)
         pub.sendMessage(
             self.prerequisitesChangedEventType(),

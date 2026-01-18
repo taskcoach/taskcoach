@@ -581,11 +581,75 @@ class DatesPage(Page):
         )
 
     def addEntries(self):
+        self.addStatusEntry()
+        self.addLine()
         self.addDateEntries()
         self.addLine()
         self.addReminderEntry()
         self.addLine()
         self.addRecurrenceEntry()
+
+    def addStatusEntry(self):
+        """Add a read-only status display showing icon, color, and status text."""
+        if len(self.items) != 1:
+            return  # Only show for single task editing
+
+        # Create panel that doesn't accept keyboard focus (skipped in tab order)
+        class NoFocusPanel(wx.Panel):
+            def AcceptsFocusFromKeyboard(self):
+                return False
+        self._statusPanel = NoFocusPanel(self)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self._statusIcon = wx.StaticBitmap(self._statusPanel)
+        sizer.Add(self._statusIcon, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+
+        self._statusLabel = wx.StaticText(self._statusPanel, label="")
+        sizer.Add(self._statusLabel, 0, wx.ALIGN_CENTER_VERTICAL)
+
+        self._statusPanel.SetSizer(sizer)
+        self.addEntry(_("Status"), self._statusPanel,
+                      flags=[wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT,
+                             wx.ALL | wx.ALIGN_CENTER_VERTICAL])
+
+        # Initial display
+        self._updateStatusDisplay()
+
+        # Subscribe to date change events (these affect status)
+        pub.subscribe(self._onStatusMayHaveChanged, self.items[0].actualStartDateTimeChangedEventType())
+        pub.subscribe(self._onStatusMayHaveChanged, self.items[0].plannedStartDateTimeChangedEventType())
+        pub.subscribe(self._onStatusMayHaveChanged, self.items[0].dueDateTimeChangedEventType())
+        pub.subscribe(self._onStatusMayHaveChanged, self.items[0].completionDateTimeChangedEventType())
+
+    def _onStatusMayHaveChanged(self, newValue=None, sender=None):
+        """Called when task appearance or dates change."""
+        if sender == self.items[0] or sender is None:
+            self._updateStatusDisplay()
+
+    def _updateStatusDisplay(self):
+        """Update the status icon, text, and colors."""
+        if not hasattr(self, '_statusLabel'):
+            return
+        theTask = self.items[0]
+        taskStatus = theTask.status()
+
+        # Update icon
+        icon_name = taskStatus.getBitmap(self.__settings)
+        bitmap = wx.ArtProvider.GetBitmap(icon_name, wx.ART_MENU, (16, 16))
+        if bitmap.IsOk():
+            self._statusIcon.SetBitmap(bitmap)
+
+        # Update text and colors
+        statusText = taskStatus.pluralLabel.replace(" tasks", "").replace("tasks", "").strip()
+        self._statusLabel.SetLabel(statusText)
+        self._statusLabel.SetForegroundColour(theTask.statusFgColor())
+        bgColor = theTask.statusBgColor()
+        if bgColor:
+            self._statusLabel.SetBackgroundColour(bgColor)
+        else:
+            self._statusLabel.SetBackgroundColour(wx.NullColour)
+
+        self._statusPanel.Layout()
 
     def addDateEntries(self):
         self.addDateEntry(_("Planned start date"), "plannedStartDateTime")

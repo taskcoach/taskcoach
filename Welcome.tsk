@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<?taskcoach release="1.6.1" tskversion="37"?>
+<?taskcoach release="2.0.1" tskversion="37"?>
 
 <tasks>
-<task id="28ce6440-5463-11e2-a497-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:32:43.764578" modificationDateTime="2025-12-22 22:28:42.077279" subject="This task is dependent" plannedstartdate="2013-01-01 17:32:00" actualstartdate="2025-12-22 22:27:00" priority="3" prerequisites="e9f1cf82-5462-11e2-b0b5-0016cbad0bd0">
+<task id="28ce6440-5463-11e2-a497-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:32:43.764578" modificationDateTime="2025-12-22 22:28:42.077279" subject="This task is dependent" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" plannedstartdate="2013-01-01 17:32:00" priority="3" prerequisites="e9f1cf82-5462-11e2-b0b5-0016cbad0bd0">
 <description>
 It has "Welcome to Task Coach" as a prerequisite.
 Even though this has a planned start time in the past,
@@ -11,104 +11,411 @@ Then, it gets marked "late"
 So, hiding inactive tasks will hide it until the prerequisite is done
 </description>
 </task>
-<task id="41745a54-5466-11e2-a067-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:54:53.607728" modificationDateTime="2025-12-22 22:24:28.162914" subject="Task Coach has many features!" actualstartdate="2013-01-01 18:04:03.077518">
+<task id="41745a54-5466-11e2-a067-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:54:53.607728" modificationDateTime="2025-12-22 22:24:28.162914" subject="Task Coach has many features!" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" actualstartdate="2013-01-01 18:04:03.077518">
 <description>
 • EFFORT TRACKING
 • Notes and attachments
 • Budgeting and fee calculation
 • Calendar view, timeline, and more
 </description>
-<note id="4a55b1de-546a-11e2-b838-0016cbad0bd0" status="1" creationDateTime="2013-01-01 18:23:46.493220" modificationDateTime="2025-12-20 13:18:27.534665" subject="A note!">
+<note id="4a55b1de-546a-11e2-b838-0016cbad0bd0" status="1" creationDateTime="2013-01-01 18:23:46.493220" modificationDateTime="2025-12-20 13:18:27.534665" subject="Development Roadmap">
 <description>
 We are continually improving Task Coach!
 One day we'll get better text formatting.
 </description>
 </note>
 </task>
-<task id="6bb4ceb5-5468-11e2-ab5f-0016cbad0bd0" status="1" creationDateTime="2013-01-01 18:10:23.487902" subject="Appearance is adjustable" fgColor="(47, 47, 111, 255)" bgColor="(203, 243, 179, 255)" font="DejaVu Sans 8">
+<task id="5cc79b72-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:00:00" subject="Sample Project: Website Redesign" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" actualstartdate="2026-01-17 10:00:00" priority="3">
 <description>
-choose your own fonts and colors
+This example shows how to organize a project with multiple phases.
+Each phase can have its own subtasks, deadlines, and budget.
+Use categories to tag tasks by context (work, client, etc.)
+</description>
+<task id="5cc79b73-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:01:00" modificationDateTime="2026-01-17 21:15:04.360949" subject="Phase 1: Research and Planning" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" plannedstartdate="2026-01-17 21:14:00" duedate="2026-01-18 18:00:00" actualstartdate="2026-01-17 21:14:00" priority="3" reminder="2026-01-18 08:00:00">
+<task id="5cc79b74-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:02:00" subject="Gather requirements from stakeholders" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" completiondate="2026-01-15 12:00:00" percentageComplete="100" priority="2">
+<note id="a1b2c307-f412-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:02:00" subject="Stakeholder List">
+<description>
+Key stakeholders:
+- Marketing: Sarah (design preferences)
+- Sales: Mike (feature requests)
+- IT: Dave (technical constraints)
+- CEO: Jane (final approval)
+</description>
+</note>
+<attachment id="a1b2c308-f412-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:02:00" subject="requirements_doc.pdf" type="file" location="requirements_doc.pdf">
+<description>
+Compiled requirements document from stakeholder meetings
+</description>
+</attachment>
+</task>
+<task id="5cc79b75-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:03:00" subject="Analyze competitor websites" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" priority="2" prerequisites="5cc79b74-f40f-11f0-b2c5-24418c661769">
+<note id="a1b2c301-f412-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:03:00" subject="Competitor Analysis">
+<description>
+Key competitors to review:
+- CompetitorA.com: Strong mobile experience
+- CompetitorB.com: Clean navigation
+- CompetitorC.com: Good use of whitespace
+Document strengths and weaknesses of each.
+</description>
+</note>
+<attachment id="a1b2c30c-f412-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:03:00" subject="Competitor Analysis Spreadsheet" type="uri" location="https://docs.google.com/spreadsheets/example">
+<description>
+Shared spreadsheet for tracking competitor features
+</description>
+</attachment>
+</task>
+<task id="5cc79b76-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:04:00" modificationDateTime="2026-01-17 21:16:12.934289" subject="Create project timeline" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" plannedstartdate="2026-01-20 09:00:00" duedate="2026-01-22 17:00:00" completiondate="2026-01-17 21:16:00" percentageComplete="100" priority="1" prerequisites="5cc79b75-f40f-11f0-b2c5-24418c661769" />
+</task>
+<task id="5cc79b77-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:05:00" subject="Phase 2: Design" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" priority="2">
+<task id="5cc79b78-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:06:00" subject="Create wireframes" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" plannedstartdate="2026-01-23 09:00:00" duedate="2026-01-27 17:00:00" priority="2">
+<note id="4eedb9c6-f411-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:06:00" subject="Design Requirements">
+<description>
+- Homepage: Hero section, featured products, testimonials
+- About page: Company history, team section
+- Contact: Form with validation, Google Maps embed
+- Mobile-first responsive design
+</description>
+</note>
+<attachment id="f0109304-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:06:00" subject="wireframes.pdf" type="file" location="wireframes.pdf">
+<description>
+Wireframe document (example attachment)
+</description>
+</attachment>
+</task>
+<task id="5cc79b79-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:07:00" subject="Design mockups" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" plannedstartdate="2026-01-28 09:00:00" duedate="2026-02-03 17:00:00" priority="2" prerequisites="5cc79b78-f40f-11f0-b2c5-24418c661769">
+<note id="a1b2c302-f412-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:07:00" subject="Design Tools">
+<description>
+Primary: Figma (shared workspace)
+Export formats: PNG for preview, SVG for icons
+Color palette: Use brand guidelines doc
+Typography: Inter for headings, Open Sans for body
+</description>
+</note>
+</task>
+<task id="5cc79b7a-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:08:00" subject="Get client approval" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" priority="3" prerequisites="5cc79b79-f40f-11f0-b2c5-24418c661769">
+<note id="a1b2c303-f412-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:08:00" subject="Approval Process">
+<description>
+Send designs to: john@acme.example.com
+Allow 3 business days for review
+Schedule follow-up call if no response
+Document any requested changes
+</description>
+</note>
+</task>
+</task>
+<task id="5cc79b7b-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:09:00" subject="Phase 3: Development" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" priority="1">
+<task id="5cc7a248-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:10:00" subject="Set up development environment" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" plannedstartdate="2026-02-10 09:00:00" duedate="2026-02-11 17:00:00" priority="1" prerequisites="5cc79b7a-f40f-11f0-b2c5-24418c661769">
+<note id="4eedb9c7-f411-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:10:00" subject="Tech Stack">
+<description>
+- Frontend: React 18, TypeScript, Tailwind CSS
+- Backend: Node.js, Express, PostgreSQL
+- Hosting: AWS (EC2, RDS, S3)
+- CI/CD: GitHub Actions
+</description>
+</note>
+</task>
+<task id="5cc7a249-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:11:00" subject="Implement frontend" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" plannedstartdate="2026-02-12 09:00:00" duedate="2026-02-21 17:00:00" priority="1" prerequisites="5cc7a248-f40f-11f0-b2c5-24418c661769">
+<note id="a1b2c304-f412-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:11:00" subject="Frontend Tasks">
+<description>
+Components to build:
+- Navigation header with responsive menu
+- Hero section with animated elements
+- Product grid with filtering
+- Contact form with validation
+- Footer with sitemap links
+</description>
+</note>
+</task>
+<task id="5cc7a24a-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:12:00" subject="Implement backend" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" plannedstartdate="2026-02-12 09:00:00" duedate="2026-02-21 17:00:00" priority="1" prerequisites="5cc7a248-f40f-11f0-b2c5-24418c661769">
+<note id="a1b2c305-f412-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:12:00" subject="Backend Tasks">
+<description>
+API endpoints to implement:
+- GET/POST /api/products
+- GET/POST /api/contact (email integration)
+- Authentication middleware
+- Rate limiting
+- Database migrations
+</description>
+</note>
+</task>
+<task id="5cc7a24b-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:13:00" subject="Testing and QA" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" plannedstartdate="2026-02-22 09:00:00" duedate="2026-02-28 17:00:00" priority="2" prerequisites="5cc7a249-f40f-11f0-b2c5-24418c661769 5cc7a24a-f40f-11f0-b2c5-24418c661769">
+<note id="4eedb9c8-f411-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:13:00" subject="QA Checklist">
+<description>
+- Cross-browser testing (Chrome, Firefox, Safari, Edge)
+- Mobile responsiveness testing
+- Form validation testing
+- Performance testing (Lighthouse score &gt; 90)
+- Security audit
+</description>
+</note>
+</task>
+</task>
+<note id="f0109302-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:00:00" subject="Project Overview">
+<description>
+Client: Acme Corporation
+Budget: $5,000
+Timeline: 6 weeks
+Contact: john@acme.example.com
+</description>
+</note>
+<note id="f0109303-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:00:00" subject="Meeting Notes - Jan 10">
+<description>
+Discussed initial requirements:
+- Mobile-responsive design required
+- Integration with existing CRM
+- Launch by end of February
+</description>
+</note>
+</task>
+<task id="5cc7a24c-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 11:00:00" subject="Personal Goals Example" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" actualstartdate="2026-01-01 00:00:00" priority="2">
+<description>
+Track personal goals and habits with subtasks.
+Use effort tracking to monitor time spent on each goal.
+</description>
+<task id="5cc7a24d-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 11:01:00" subject="Learn a new language" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" actualstartdate="2026-01-01 00:00:00" priority="2">
+<description>
+Practice 30 minutes daily
+Use spaced repetition for vocabulary
+</description>
+<effort id="f0109306-f40f-11f0-b2c5-24418c661769" status="1" start="2026-01-15 08:00:00" stop="2026-01-15 08:30:00" />
+<effort id="f0109307-f40f-11f0-b2c5-24418c661769" status="1" start="2026-01-16 08:00:00" stop="2026-01-16 08:35:00" />
+<note id="f0109305-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 11:01:00" subject="Learning Resources">
+<description>
+Apps: Duolingo, Anki
+Podcasts: LanguagePod101
+Books: Grammar in Use series
+</description>
+</note>
+<attachment id="a1b2c30b-f412-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 11:01:00" subject="vocabulary_flashcards.apkg" type="file" location="vocabulary_flashcards.apkg">
+<description>
+Anki deck with 500 most common words
+</description>
+</attachment>
+</task>
+<task id="5cc7a24e-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 11:02:00" subject="Exercise routine" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" actualstartdate="2026-01-01 00:00:00" priority="3">
+<task id="5cc7a24f-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 11:03:00" subject="Monday: Cardio" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" plannedstartdate="2026-01-20 07:00:00" priority="2" />
+<task id="5cc7a250-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 11:04:00" subject="Wednesday: Strength training" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" plannedstartdate="2026-01-22 07:00:00" priority="2" prerequisites="5cc7a24f-f40f-11f0-b2c5-24418c661769" />
+<task id="5cc7a251-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 11:05:00" subject="Friday: Yoga or stretching" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" plannedstartdate="2026-01-24 07:00:00" priority="1" prerequisites="5cc7a250-f40f-11f0-b2c5-24418c661769" />
+<note id="4eedb9c9-f411-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 11:02:00" subject="Workout Plan">
+<description>
+Goal: Build strength and improve cardiovascular health.
+Schedule: 3x per week minimum.
+Track progress in fitness app.
+</description>
+</note>
+</task>
+<task id="5cc7a252-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 11:06:00" subject="Read 12 books this year" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" actualstartdate="2026-01-01 00:00:00" percentageComplete="8" priority="1">
+<description>
+Track progress: 1 book per month
+Currently reading: "Deep Work" by Cal Newport
+</description>
+<note id="f0109308-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 11:06:00" subject="Reading List">
+<description>
+1. Deep Work - Cal Newport (in progress)
+2. Atomic Habits - James Clear
+3. The Pragmatic Programmer
+4. Thinking, Fast and Slow
+</description>
+</note>
+<note id="f0109309-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 11:06:00" subject="Book Notes: Deep Work">
+<description>
+Key insights:
+- Deep work = focused, distraction-free effort
+- Shallow work erodes our ability to concentrate
+- Schedule deep work blocks in your calendar
+</description>
+</note>
+</task>
+</task>
+<task id="5cc7a253-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 12:00:00" subject="Budget and Fee Tracking Example" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" plannedstartdate="2026-01-15 09:00:00" duedate="2026-01-31 17:00:00" priority="2" hourlyFee="75.0" fixedFee="500.0">
+<description>
+This task demonstrates budget and fee tracking.
+• Budget: 8 hours (shown in seconds: 28800)
+• Hourly fee: $75/hour
+• Fixed fee: $500
+Use effort tracking to log time spent.
+</description>
+<effort id="5cc7a254-f40f-11f0-b2c5-24418c661769" status="1" start="2026-01-15 09:00:00" stop="2026-01-15 11:30:00" />
+<effort id="5cc7a255-f40f-11f0-b2c5-24418c661769" status="1" start="2026-01-16 14:00:00" stop="2026-01-16 16:00:00" />
+<note id="4eedb9cc-f411-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 12:00:00" subject="Client Billing Notes">
+<description>
+Invoice monthly on the 1st.
+Payment terms: Net 30
+Contact: billing@client.example.com
+PO Number: PO-2026-0042
+</description>
+</note>
+<attachment id="a1b2c309-f412-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 12:00:00" subject="invoice_template.xlsx" type="file" location="invoice_template.xlsx">
+<description>
+Excel template for generating monthly invoices
+</description>
+</attachment>
+<attachment id="a1b2c30a-f412-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 12:00:00" subject="contract.pdf" type="file" location="contract.pdf">
+<description>
+Signed service agreement with payment terms
+</description>
+</attachment>
+</task>
+<task id="5cc7a256-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 13:00:00" subject="Shopping and Errands" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')">
+<description>
+Use tasks for shopping lists and errands.
+Check off items as you complete them!
+</description>
+<task id="5cc7a257-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 13:01:00" subject="Grocery shopping" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" plannedstartdate="2026-01-18 10:00:00" priority="1">
+<task id="5cc7a258-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 13:02:00" subject="Milk and eggs" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" completiondate="2026-01-16 10:00:00" percentageComplete="100" />
+<task id="5cc7a259-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 13:03:00" subject="Fresh vegetables" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" />
+<task id="5cc7a25a-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 13:04:00" subject="Bread" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" />
+<note id="4eedb9ca-f411-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 13:01:00" subject="Shopping Tips">
+<description>
+Preferred store: Local farmers market (Saturdays)
+Backup: Whole Foods on Main Street
+Remember reusable bags!
+</description>
+</note>
+</task>
+<task id="5cc7a25b-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 13:05:00" subject="Return library books" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" duedate="2026-01-20 17:00:00" priority="2">
+<note id="a1b2c306-f412-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 13:05:00" subject="Books to Return">
+<description>
+1. "Clean Code" by Robert Martin - due Jan 20
+2. "The Design of Everyday Things" - due Jan 20
+3. "Refactoring" by Martin Fowler - due Jan 22
+Library card #: 12345-67890
+</description>
+</note>
+</task>
+<task id="f0109812-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 13:06:00" subject="Schedule dentist appointment" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" duedate="2026-01-25 17:00:00" priority="1">
+<note id="4eedb9cb-f411-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 13:06:00" subject="Dentist Info">
+<description>
+Dr. Smith's Office: (555) 123-4567
+Address: 123 Health Plaza, Suite 200
+Last checkup: July 2025
+Insurance: Delta Dental
+</description>
+</note>
+</task>
+</task>
+<task id="6bb4ceb5-5468-11e2-ab5f-0016cbad0bd0" status="1" creationDateTime="2013-01-01 18:10:23.487902" subject="Appearance is adjustable" fgColor="(47, 47, 111, 255)" bgColor="(203, 243, 179, 255)" font="DejaVu Sans 8" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')">
+<description>
+Choose your own fonts and colors,
 either per task, per category tag,
-or overall for the whole program
+or overall for the whole program.
 </description>
 </task>
-<task id="e557eb35-5463-11e2-9c94-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:38:00.077533" subject="Task Coach uses hierarchies" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" actualstartdate="2013-01-01 18:15:32.470513" priority="2">
-<task id="1c6acfee-5464-11e2-bd7c-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:39:32.476048" modificationDateTime="2025-12-22 22:25:50.976600" subject="tasks can be subtasks of larger projects" priority="2" />
-<task id="5a5a8573-5464-11e2-83f7-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:41:16.388014" modificationDateTime="2025-12-22 22:29:27.138169" subject="there is no limited to the hierarchy" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" priority="2">
-<task id="7c1e4dbd-5464-11e2-a871-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:42:13.035916" modificationDateTime="2025-12-22 22:29:12.225269" subject="any task can have its own subtasks" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" priority="2">
-<task id="1a253523-5466-11e2-9c94-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:53:47.657904" modificationDateTime="2025-12-20 13:17:50.466476" subject="grey color means &quot;inactive&quot;" priority="2">
+<task id="e557eb35-5463-11e2-9c94-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:38:00.077533" modificationDateTime="2026-01-17 22:18:32.406463" subject="Task Coach uses hierarchies" expandedContexts="('prerequisiteviewerintaskeditor',)" duedate="2026-01-17 08:00:00" actualstartdate="2026-01-17 22:17:00" priority="2">
+<task id="1c6acfee-5464-11e2-bd7c-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:39:32.476048" modificationDateTime="2025-12-22 22:25:50.976600" subject="Tasks can be subtasks of larger projects" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" completiondate="2026-01-17 22:12:00" percentageComplete="100" priority="2" />
+<task id="5a5a8573-5464-11e2-83f7-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:41:16.388014" modificationDateTime="2025-12-22 22:29:27.138169" subject="There is no limit to the hierarchy" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" completiondate="2026-01-17 22:12:00" percentageComplete="100" priority="2">
+<task id="7c1e4dbd-5464-11e2-a871-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:42:13.035916" modificationDateTime="2025-12-22 22:29:12.225269" subject="Any task can have its own subtasks" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" completiondate="2026-01-17 22:12:00" percentageComplete="100" priority="2">
+<task id="1a253523-5466-11e2-9c94-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:53:47.657904" modificationDateTime="2025-12-20 13:17:50.466476" subject="Grey color means &quot;inactive&quot;" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" completiondate="2026-01-17 22:12:00" percentageComplete="100" priority="2">
 <description>
-not started
-no planned start date or planned start is in the future
+Not started.
+No planned start date, or planned start is in the future.
 </description>
 </task>
-<task id="3b68b747-5465-11e2-9118-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:47:33.968405" modificationDateTime="2025-12-22 22:29:05.761860" subject="orange means &quot;due soon&quot;" duedate="2025-12-21 10:00:00" />
-<task id="49b38e17-5465-11e2-998c-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:47:57.946961" modificationDateTime="2025-12-20 13:15:12.616042" subject="purple means &quot;late&quot;" plannedstartdate="2013-01-01 17:48:00" priority="2">
+<task id="3b68b747-5465-11e2-9118-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:47:33.968405" modificationDateTime="2025-12-22 22:29:05.761860" subject="Orange means &quot;due soon&quot;" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" duedate="2025-12-21 10:00:00" completiondate="2026-01-17 22:12:00" percentageComplete="100" />
+<task id="49b38e17-5465-11e2-998c-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:47:57.946961" modificationDateTime="2025-12-20 13:15:12.616042" subject="Purple means &quot;late&quot;" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" plannedstartdate="2013-01-01 17:48:00" completiondate="2026-01-17 22:12:00" percentageComplete="100" priority="2">
 <description>
-planned start time has passed
-but no actual start date
+Planned start time has passed,
+but no actual start date.
 </description>
 </task>
-<task id="8f46a6e8-5467-11e2-98a8-0016cbad0bd0" status="1" creationDateTime="2013-01-01 18:04:13.667241" modificationDateTime="2025-12-20 13:14:52.291717" subject="blue icon, black text is &quot;active&quot;" actualstartdate="2013-01-01 18:04:49.717792" priority="1">
+<task id="8f46a6e8-5467-11e2-98a8-0016cbad0bd0" status="1" creationDateTime="2013-01-01 18:04:13.667241" modificationDateTime="2025-12-20 13:14:52.291717" subject="Blue icon, black text is &quot;active&quot;" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" actualstartdate="2013-01-01 18:04:49.717792" completiondate="2026-01-17 22:12:00" percentageComplete="100" priority="1">
 <description>
-task has an actual start date
+Task has an actual start date.
 </description>
 </task>
-<task id="aea5a88f-5467-11e2-97b4-0016cbad0bd0" status="1" creationDateTime="2013-01-01 18:05:06.299246" modificationDateTime="2025-12-22 22:23:16.462721" subject="red means &quot;overdue&quot;" expandedContexts="('taskviewer',)" duedate="2025-12-04 00:00:00" priority="-3">
+<task id="aea5a88f-5467-11e2-97b4-0016cbad0bd0" status="1" creationDateTime="2013-01-01 18:05:06.299246" modificationDateTime="2025-12-22 22:23:16.462721" subject="Red means &quot;overdue&quot;" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" duedate="2025-12-04 00:00:00" completiondate="2026-01-17 22:12:00" percentageComplete="100" priority="-3">
 <description>
-just because it is overdue, doesn't mean high priority
-priority is separate
+Just because it is overdue doesn't mean high priority.
+Priority is separate.
 </description>
-<task id="7be82e5c-5465-11e2-b8cf-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:49:22.177948" subject="priorities are relative!" expandedContexts="('taskviewer',)" actualstartdate="2013-01-01 17:53:36.214854" priority="-1">
+<task id="7be82e5c-5465-11e2-b8cf-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:49:22.177948" subject="Priorities are relative!" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" actualstartdate="2013-01-01 17:53:36.214854" completiondate="2026-01-17 22:12:00" percentageComplete="100" priority="-1">
 <description>
-You don't need to force priorities into a few strict levels
-neutral is zero
-priorities are relative  positive and negative
-whatever range accommodates sorting your tasks
+You don't need to force priorities into a few strict levels.
+Neutral is zero.
+Priorities are relative - positive and negative.
+Whatever range accommodates sorting your tasks.
 </description>
 </task>
-<task id="e8ee4bf8-5465-11e2-be5f-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:52:25.089681" modificationDateTime="2013-02-06 23:43:16.598195" subject="or use categories if you prefer" actualstartdate="2013-01-01 17:53:33.103233" priority="-2">
+<task id="e8ee4bf8-5465-11e2-be5f-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:52:25.089681" modificationDateTime="2026-01-17 21:19:45.183003" subject="Or use categories if you prefer" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" actualstartdate="2013-01-01 17:53:33.103233" completiondate="2026-01-17 22:12:00" percentageComplete="100" priority="-2">
 <description>
-With category TAGS you can organize your way
+With category tags you can organize your way.
 </description>
+<note id="27bede5e-f414-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 21:19:45.182708" modificationDateTime="2026-01-17 21:19:53.575647" subject="New note">
+<attachment id="2cbf75ee-f414-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 21:19:53.575081" modificationDateTime="2026-01-17 21:19:56.832530" subject="New attachment" type="file" location="">
+<note id="2eb06ab6-f414-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 21:19:56.831929" modificationDateTime="2026-01-17 21:20:00.412617" subject="New note">
+<attachment id="30d2b86c-f414-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 21:20:00.412305" modificationDateTime="2026-01-17 21:20:04.115915" subject="New attachment" type="file" location="">
+<note id="3307cece-f414-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 21:20:04.115733" subject="New note" />
+</attachment>
+</note>
+</attachment>
+</note>
 </task>
 </task>
-<task id="ddcdd028-5464-11e2-a3f1-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:44:56.925130" subject="green indicates completed tasks" completiondate="2013-01-01 17:44:00" percentageComplete="100" priority="1" />
-<task id="fc357e4f-5464-11e2-ae09-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:45:47.936254" subject="it is easy to hide or show any task state" priority="-5" />
+<task id="ddcdd028-5464-11e2-a3f1-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:44:56.925130" subject="Green indicates completed tasks" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" completiondate="2013-01-01 17:44:00" percentageComplete="100" priority="1" />
+<task id="fc357e4f-5464-11e2-ae09-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:45:47.936254" subject="It is easy to hide or show any task state" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" completiondate="2026-01-17 22:12:00" percentageComplete="100" priority="-5" />
 </task>
 </task>
 <effort id="23dfd100-5469-11e2-b0d7-0016cbad0bd0" status="1" start="2013-01-01 18:15:32" stop="2013-01-01 21:00:45" />
 </task>
-<task id="e9f1cf82-5462-11e2-b0b5-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:30:58.300237" modificationDateTime="2013-02-06 23:41:34.713284" subject="Welcome to Task Coach" actualstartdate="2013-01-01 17:30:00" priority="4" />
-<category id="24d473ba-5487-11e2-a71f-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:50:18.975673" subject="category B" expandedContexts="('categoryviewerintaskeditor',)" categorizables="3b68b747-5465-11e2-9118-0016cbad0bd0" />
-<category id="2f476514-5487-11e2-a6ae-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:50:36.506176" subject="*contexts" expandedContexts="('categoryviewer', 'categoryviewerintaskeditor')" categorizables="28ce6440-5463-11e2-a497-0016cbad0bd0 7c1e4dbd-5464-11e2-a871-0016cbad0bd0">
-<category id="3e1eac3a-5487-11e2-8b71-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:51:01.405129" modificationDateTime="2025-12-22 22:24:44.970852" subject="home" bgColor="(143, 240, 164, 255)" icon="house_red_icon" selectedIcon="house_red_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="aea5a88f-5467-11e2-97b4-0016cbad0bd0" />
-<category id="42afb411-5487-11e2-8fc4-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:51:09.066488" modificationDateTime="2025-12-22 22:25:38.517403" subject="work" bgColor="(249, 240, 107, 255)" icon="computer_desktop_icon" selectedIcon="computer_desktop_icon" expandedContexts="('categoryviewer', 'categoryviewerintaskeditor')" categorizables="1c6acfee-5464-11e2-bd7c-0016cbad0bd0">
-<category id="44c04275-5487-11e2-bb73-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:51:12.530430" subject="meeting" expandedContexts="('categoryviewerintaskeditor',)" />
+<task id="e9f1cf82-5462-11e2-b0b5-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:30:58.300237" modificationDateTime="2013-02-06 23:41:34.713284" subject="Welcome to Task Coach" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" actualstartdate="2013-01-01 17:30:00" priority="4" />
+<task id="f0109813-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 14:00:00" subject="Tips and Tricks" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" actualstartdate="2026-01-17 14:00:00" priority="1">
+<description>
+Helpful tips for using Task Coach effectively
+</description>
+<task id="f0109814-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 14:01:00" subject="Use keyboard shortcuts for speed" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" priority="1">
+<description>
+• Ctrl+N: New task
+• Ctrl+E: Edit selected item
+• Ctrl+D: Mark complete
+• F2: Quick edit subject
+• Delete: Remove selected item
+</description>
+</task>
+<task id="f0109815-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 14:02:00" modificationDateTime="2026-01-17 21:55:31.532679" subject="Drag and drop to reorganize" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" plannedstartdate="2026-01-17 21:45:00" actualstartdate="2026-01-17 22:45:00" priority="1">
+<description>
+Drag tasks to reorder or nest them under other tasks.
+Hover over a collapsed parent to auto-expand it.
+</description>
+</task>
+<task id="f0109816-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 14:03:00" subject="Use filters to focus" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" priority="1">
+<description>
+Filter by status, category, or search text.
+Hide completed tasks to see only what's left to do.
+</description>
+</task>
+<task id="f0109817-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 14:04:00" subject="Try different views" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" priority="1">
+<description>
+• Tree view for hierarchies
+• List view for flat display
+• Calendar view for deadlines
+• Timeline for project planning
+• Effort view for time tracking
+</description>
+</task>
+</task>
+<category id="2f476514-5487-11e2-a6ae-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:50:36.506176" subject="@Contexts (GTD-Style)" expandedContexts="('categoryviewer', 'categoryviewerintaskeditor')">
+<category id="3e1eac3a-5487-11e2-8b71-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:51:01.405129" modificationDateTime="2025-12-22 22:24:44.970852" subject="@Home" bgColor="(143, 240, 164, 255)" icon="house_green_icon" selectedIcon="house_green_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc7a24c-f40f-11f0-b2c5-24418c661769 5cc7a256-f40f-11f0-b2c5-24418c661769 aea5a88f-5467-11e2-97b4-0016cbad0bd0" />
+<category id="42afb411-5487-11e2-8fc4-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:51:09.066488" modificationDateTime="2025-12-22 22:25:38.517403" subject="@Work" bgColor="(249, 240, 107, 255)" icon="computer_desktop_icon" selectedIcon="computer_desktop_icon" expandedContexts="('categoryviewer', 'categoryviewerintaskeditor')" categorizables="1c6acfee-5464-11e2-bd7c-0016cbad0bd0 5cc79b72-f40f-11f0-b2c5-24418c661769 5cc7a253-f40f-11f0-b2c5-24418c661769">
+<category id="44c04275-5487-11e2-bb73-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:51:12.530430" subject="@Meeting" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc79b74-f40f-11f0-b2c5-24418c661769 5cc79b7a-f40f-11f0-b2c5-24418c661769" />
 </category>
-<category id="493027fd-5487-11e2-8d2d-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:51:19.974644" subject="errands" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5a5a8573-5464-11e2-83f7-0016cbad0bd0" />
+<category id="493027fd-5487-11e2-8d2d-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:51:19.974644" subject="@Errands" bgColor="(255, 204, 153, 255)" icon="box_icon" selectedIcon="box_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5a5a8573-5464-11e2-83f7-0016cbad0bd0 5cc7a257-f40f-11f0-b2c5-24418c661769 5cc7a25b-f40f-11f0-b2c5-24418c661769 e557eb35-5463-11e2-9c94-0016cbad0bd0" />
+<category id="f010930a-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="@Computer" bgColor="(173, 216, 230, 255)" icon="computer_laptop_icon" selectedIcon="computer_laptop_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc7a24d-f40f-11f0-b2c5-24418c661769 5cc7a252-f40f-11f0-b2c5-24418c661769" />
+<category id="f010930b-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="@Phone" bgColor="(255, 182, 193, 255)" icon="person_talking_icon" selectedIcon="person_talking_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="f0109812-f40f-11f0-b2c5-24418c661769" />
 </category>
-<category id="80f0f933-5487-11e2-ba71-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:52:53.512969" modificationDateTime="2025-12-22 22:27:16.313247" subject="Task Coach does GTD" bgColor="(153, 193, 241, 255)" icon="weather_lightning_icon" selectedIcon="weather_lightning_icon" expandedContexts="('categoryviewer', 'categoryviewerintaskeditor')" categorizables="28ce6440-5463-11e2-a497-0016cbad0bd0">
-<category id="107f6994-5488-11e2-a61b-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:56:54.360656" subject="or other systems!" expandedContexts="('categoryviewerintaskeditor',)" />
+<category id="80f0f933-5487-11e2-ba71-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:52:53.512969" modificationDateTime="2025-12-22 22:27:16.313247" subject="Priority" bgColor="(153, 193, 241, 255)" icon="trafficlight_icon" selectedIcon="trafficlight_icon" expandedContexts="('categoryviewer', 'categoryviewerintaskeditor')">
+<category id="107f6994-5488-11e2-a61b-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:56:54.360656" subject="High Priority" bgColor="(255, 102, 102, 255)" icon="led_red_icon" selectedIcon="led_red_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc79b7a-f40f-11f0-b2c5-24418c661769" />
+<category id="f010980c-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="Medium Priority" bgColor="(255, 204, 0, 255)" icon="led_yellow_icon" selectedIcon="led_yellow_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc79b73-f40f-11f0-b2c5-24418c661769" />
+<category id="f010980d-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="Low Priority" bgColor="(144, 238, 144, 255)" icon="led_green_icon" selectedIcon="led_green_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc7a251-f40f-11f0-b2c5-24418c661769" />
 </category>
-<category id="9f760359-5463-11e2-acc6-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:36:02.834248" modificationDateTime="2025-12-22 22:23:45.534725" subject="category A" bgColor="(220, 138, 221, 255)" icon="charts_icon" selectedIcon="charts_icon" expandedContexts="('categoryviewer', 'categoryviewerinnoteeditor', 'categoryviewerintaskeditor')" categorizables="41745a54-5466-11e2-a067-0016cbad0bd0">
-<category id="ac9c1023-5463-11e2-bb73-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:36:24.893996" subject="subcategory 1" expandedContexts="('categoryviewerinnoteeditor', 'categoryviewerintaskeditor')" />
-<category id="b21a4eb3-5463-11e2-8de1-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:36:34.109957" subject="subcategory 2" expandedContexts="('categoryviewerinnoteeditor', 'categoryviewerintaskeditor')" />
+<category id="9f760359-5463-11e2-acc6-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:36:02.834248" modificationDateTime="2025-12-22 22:23:45.534725" subject="Projects" bgColor="(220, 138, 221, 255)" icon="folder_blue_icon" selectedIcon="folder_blue_icon" expandedContexts="('categoryviewer', 'categoryviewerinnoteeditor', 'categoryviewerintaskeditor')">
+<category id="ac9c1023-5463-11e2-bb73-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:36:24.893996" subject="Website Redesign" bgColor="(135, 206, 250, 255)" icon="earth_blue_icon" selectedIcon="earth_blue_icon" expandedContexts="('categoryviewerinnoteeditor', 'categoryviewerintaskeditor')" categorizables="5cc79b72-f40f-11f0-b2c5-24418c661769 5cc79b73-f40f-11f0-b2c5-24418c661769 5cc79b77-f40f-11f0-b2c5-24418c661769 5cc79b7b-f40f-11f0-b2c5-24418c661769" />
+<category id="b21a4eb3-5463-11e2-8de1-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:36:34.109957" subject="Personal Development" bgColor="(255, 218, 185, 255)" icon="person_icon" selectedIcon="person_icon" expandedContexts="('categoryviewerinnoteeditor', 'categoryviewerintaskeditor')" categorizables="5cc7a24c-f40f-11f0-b2c5-24418c661769 5cc7a24d-f40f-11f0-b2c5-24418c661769 5cc7a24e-f40f-11f0-b2c5-24418c661769 5cc7a252-f40f-11f0-b2c5-24418c661769" />
 </category>
-<syncmlconfig>
-<TaskCoach-0000013bf83c92df060be7b4000a27c5014d766d>
-<spds>
-<sources>
-<TaskCoach-0000013bf83c92df060be7b4000a27c5014d766d.Tasks />
-<TaskCoach-0000013bf83c92df060be7b4000a27c5014d766d.Notes />
-</sources>
-<syncml>
-<Auth />
-<Conn />
-</syncml>
-</spds>
-</TaskCoach-0000013bf83c92df060be7b4000a27c5014d766d>
-</syncmlconfig>
+<category id="f010980e-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="Status Tags" bgColor="(200, 200, 200, 255)" icon="paperclip_icon" selectedIcon="paperclip_icon" expandedContexts="('categoryviewer', 'categoryviewerintaskeditor')">
+<category id="f010980f-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="Waiting For" bgColor="(255, 255, 153, 255)" icon="clock_icon" selectedIcon="clock_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc79b7a-f40f-11f0-b2c5-24418c661769" />
+<category id="f0109810-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="Someday/Maybe" bgColor="(221, 160, 221, 255)" icon="lamp_icon" selectedIcon="lamp_icon" expandedContexts="('categoryviewerintaskeditor',)" />
+<category id="f0109811-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="Next Action" bgColor="(152, 251, 152, 255)" icon="checkmark_green_icon" selectedIcon="checkmark_green_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc79b75-f40f-11f0-b2c5-24418c661769 5cc7a259-f40f-11f0-b2c5-24418c661769" />
+</category>
 <guid>
 0000013bf83c92df060be7b4000a27c5014d766d
 </guid>
