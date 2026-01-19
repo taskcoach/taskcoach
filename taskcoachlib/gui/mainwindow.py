@@ -233,7 +233,11 @@ If this happens again, please make a copy of your TaskCoach.ini file """
 
     def __perspective_and_settings_viewer_count_differ(self, viewer_type):
         perspective = self.settings.get("view", "perspective")
-        perspective_viewer_count = perspective.count("name=%s" % viewer_type)
+        # Use "name=viewer_type;" with trailing semicolon to prevent matching
+        # viewer types that start with the same prefix (e.g., "effortviewer"
+        # was matching "effortviewerforselectedtasks", causing false mismatches
+        # that invalidated the entire saved perspective layout)
+        perspective_viewer_count = perspective.count("name=%s;" % viewer_type)
         settings_viewer_count = self.settings.getint(
             "view", "%scount" % viewer_type
         )
