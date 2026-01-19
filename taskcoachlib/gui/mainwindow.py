@@ -183,15 +183,13 @@ class MainWindow(
 
     def __restore_perspective(self):
         perspective = self.settings.get("view", "perspective")
-        for viewer_type in viewer.viewerTypes():
-            if self.__perspective_and_settings_viewer_count_differ(
-                viewer_type
-            ):
-                # Different viewer counts may happen when the name of a viewer
-                # is changed between versions
-                perspective = ""
-                break
-
+        # Note: We intentionally do NOT validate viewer counts before loading.
+        # AUI's LoadPerspective handles mismatches gracefully:
+        # - Panes in perspective without matching windows are ignored
+        # - Windows without matching perspective entries keep default layout
+        # This allows perspective to work across version changes and with
+        # any combination of viewer types and instance counts.
+        # See docs/AUI.md for details.
         try:
             self.manager.LoadPerspective(perspective)
         except Exception as reason:
@@ -230,18 +228,6 @@ If this happens again, please make a copy of your TaskCoach.ini file """
                 best_size = pane.window.GetBestSize()
                 pane.MinSize((-1, best_size.GetHeight()))
         self.manager.Update()
-
-    def __perspective_and_settings_viewer_count_differ(self, viewer_type):
-        perspective = self.settings.get("view", "perspective")
-        # Use "name=viewer_type;" with trailing semicolon to prevent matching
-        # viewer types that start with the same prefix (e.g., "effortviewer"
-        # was matching "effortviewerforselectedtasks", causing false mismatches
-        # that invalidated the entire saved perspective layout)
-        perspective_viewer_count = perspective.count("name=%s;" % viewer_type)
-        settings_viewer_count = self.settings.getint(
-            "view", "%scount" % viewer_type
-        )
-        return perspective_viewer_count != settings_viewer_count
 
     def __register_for_window_component_changes(self):
         pub.subscribe(self.__onFilenameChanged, "taskfile.filenameChanged")

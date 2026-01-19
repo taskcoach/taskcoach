@@ -877,9 +877,10 @@ class EffortViewerForSelectedTasks(EffortViewer):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("settingsSection", "effortviewerforselectedtasks")
         self.__viewerContainer = kwargs.pop("viewerContainer")
+        activeViewer = self.__viewerContainer.activeViewer()
         self.__currentTaskViewer = (
-            self.__viewerContainer.activeViewer()
-            if self.__viewerContainer.activeViewer().isShowingTasks()
+            activeViewer
+            if activeViewer is not None and activeViewer.isShowingTasks()
             else None
         )
         pub.subscribe(self.onTaskSelectionChanged, "all.viewer.status")

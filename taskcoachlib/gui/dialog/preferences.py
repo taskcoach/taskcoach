@@ -1298,7 +1298,7 @@ class DurationPresetsPage(SettingsPage):
             flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTRE_VERTICAL, wx.ALIGN_LEFT)
         )
 
-        # Preset list with 3 columns: short value, description, delete icon
+        # Preset list with 3 columns: short value, description, delete button
         self.__listCtrl = wx.ListCtrl(
             self, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.BORDER_SUNKEN
         )
@@ -1310,11 +1310,13 @@ class DurationPresetsPage(SettingsPage):
         self.__listCtrl.AssignImageList(self.__imageList, wx.IMAGE_LIST_SMALL)
 
         self.__listCtrl.InsertColumn(0, _("Short"), width=80, format=wx.LIST_FORMAT_RIGHT)
-        self.__listCtrl.InsertColumn(1, _("Description"), width=350)
-        self.__listCtrl.InsertColumn(2, _("Delete"), width=50)
+        self.__listCtrl.InsertColumn(1, _("Description"), width=340)
+        self.__listCtrl.InsertColumn(2, _("x Delete"), width=70)
         # Fixed width 500px, growable height with scrollbars as needed
         self.__listCtrl.SetMinSize((500, 120))
         self.__listCtrl.SetMaxSize((500, -1))  # -1 means no max height
+        # Single click on delete column or double-click anywhere deletes
+        self.__listCtrl.Bind(wx.EVT_LEFT_UP, self.__onListClick)
         self.__listCtrl.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.__onItemActivated)
         self.addEntry(
             _("Current presets:"), self.__listCtrl, growable=True,
@@ -1562,7 +1564,25 @@ class DurationPresetsPage(SettingsPage):
         index = event.GetIndex()
         if index == -1:
             return
+        self.__deletePresetAtIndex(index)
 
+    def __onListClick(self, event):
+        """Handle single click - delete if click is in the delete column."""
+        event.Skip()  # Allow normal selection behavior
+        pos = event.GetPosition()
+        item, flags = self.__listCtrl.HitTest(pos)
+        if item == -1:
+            return
+        # Check if click is in the delete column (column 2)
+        # Calculate column boundaries
+        col0_width = self.__listCtrl.GetColumnWidth(0)
+        col1_width = self.__listCtrl.GetColumnWidth(1)
+        delete_col_start = col0_width + col1_width
+        if pos.x >= delete_col_start:
+            self.__deletePresetAtIndex(item)
+
+    def __deletePresetAtIndex(self, index):
+        """Delete the preset at the given list index."""
         value = self.__listCtrl.GetItemData(index)
         presets = self.__getCurrentPresets()
 
