@@ -50,6 +50,9 @@ class GridCursor:
 class BookPage(wx.Panel):
     """A page in a notebook."""
 
+    # Outer margin around page content (modern UI best practice: 10-12px)
+    _outerMargin = 10
+
     def __init__(self, parent, columns, growableColumn=None, *args, **kwargs):
         super().__init__(parent, style=wx.TAB_TRAVERSAL, *args, **kwargs)
         self._sizer = wx.GridBagSizer(vgap=5, hgap=5)
@@ -62,7 +65,12 @@ class BookPage(wx.Panel):
         self._borderWidth = 5
 
     def fit(self):
-        self.SetSizer(self._sizer)  # Changed from SetSizerAndFit to prevent locking MinSize
+        # Wrap GridBagSizer in outer BoxSizer with margins for proper spacing
+        # Only create the outer sizer once - calling fit() multiple times is safe
+        if not hasattr(self, '_outerSizer') or self._outerSizer is None:
+            self._outerSizer = wx.BoxSizer(wx.VERTICAL)
+            self._outerSizer.Add(self._sizer, 1, wx.EXPAND | wx.ALL, self._outerMargin)
+            self.SetSizer(self._outerSizer)
         self.Layout()  # Force layout recalculation (needed on Windows for lazy-loaded pages)
 
     def __defaultFlags(self, controls):

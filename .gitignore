@@ -31,3 +31,6 @@ __pycache__
 .idea
 .venv
 venv
+Welcome.tsk
+Welcome.tsk.lock
+test screenshots/

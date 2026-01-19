@@ -30,6 +30,7 @@ from wx.lib.agw.hyperlink import HyperLinkCtrl
 from wx.adv import BitmapComboBox
 import ast
 import wx, calendar
+import wx.lib.scrolledpanel
 
 
 class FontColorSyncer(object):
@@ -964,6 +965,25 @@ class FeaturesPage(SettingsPage):
                 wx.ALL | wx.ALIGN_CENTER_VERTICAL,
             ),
         )
+        self.addChoiceSetting(
+            "view",
+            "effortsecondinterval",
+            _("Seconds between suggested times"),
+            _(
+                "In effort dialogs where seconds are shown, %(name)s will \n"
+                "suggest second values using this setting."
+            )
+            % meta.data.metaDict,
+            [
+                (seconds, seconds)
+                for seconds in ("1", "5", "10", "15", "20", "30")
+            ],
+            flags=(
+                wx.ALL | wx.ALIGN_TOP | wx.ALIGN_RIGHT,
+                wx.ALL | wx.ALIGN_TOP,
+                wx.ALL | wx.ALIGN_CENTER_VERTICAL,
+            ),
+        )
         self.addIntegerSetting(
             "feature",
             "minidletime",
@@ -1215,6 +1235,344 @@ class TaskReminderPage(SettingsPage):
         self.fit()
 
 
+class DurationPresetsPage(SettingsPage):
+    """Preferences page for configuring duration presets."""
+
+    pageName = "presets"
+    pageTitle = _("Durations")
+    pageIcon = "clock_icon"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(columns=2, growableColumn=1, *args, **kwargs)
+
+        # Preset field configurations: (setting_key, display_name, help_text)
+        self._preset_fields = [
+            (
+                "sdtcspans",
+                _("Task Due Date"),
+                _("These presets appear when setting the due date relative to the planned start date."),
+            ),
+            (
+                "sdtcspans_effort",
+                _("Effort Stop Time"),
+                _("These presets appear when setting the effort stop time relative to the start time."),
+            ),
+        ]
+
+        self.__currentFieldIndex = 0
+        self.__presets = {}  # Cache for all preset lists
+
+        # Load all presets
+        for setting_key, unused_name, unused_help in self._preset_fields:
+            self.__presets[setting_key] = self.__loadPresets(setting_key)
+
+        # Field selector row
+        self.__fieldChoice = wx.Choice(self)
+        for unused_key, display_name, unused_help in self._preset_fields:
+            self.__fieldChoice.Append(display_name)
+        self.__fieldChoice.SetSelection(0)
+        self.__fieldChoice.Bind(wx.EVT_CHOICE, self.__onFieldChanged)
+        self.addEntry(
+            _("Configure presets for:"), self.__fieldChoice,
+            flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTRE_VERTICAL, wx.ALIGN_LEFT)
+        )
+
+        # Add row: DurationEntry + Add button
+        self.__addPanel = wx.Panel(self)
+        self.__addSizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        # Create duration control - initially without seconds (Task Due Date is default)
+        self.__durationEntry = self.__createDurationCtrl(showSeconds=False)
+        self.__addSizer.Add(self.__durationEntry, 0, wx.RIGHT | wx.ALIGN_CENTRE_VERTICAL, 10)
+
+        self.__addBtn = wx.Button(self.__addPanel, wx.ID_ANY, _("Add"))
+        self.__addBtn.SetBitmap(
+            wx.ArtProvider.GetBitmap("symbol_plus_icon", wx.ART_BUTTON, (16, 16))
+        )
+        self.__addBtn.Bind(wx.EVT_BUTTON, self.__onAdd)
+        self.__addSizer.Add(self.__addBtn, 0, wx.ALIGN_CENTRE_VERTICAL)
+
+        self.__addPanel.SetSizer(self.__addSizer)
+        self.addEntry(
+            _("Add new preset:"), self.__addPanel,
+            flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTRE_VERTICAL, wx.ALIGN_LEFT)
+        )
+
+        # Preset list with 3 columns: short value, description, delete icon
+        self.__listCtrl = wx.ListCtrl(
+            self, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.BORDER_SUNKEN
+        )
+        # Set up image list for delete icon
+        self.__imageList = wx.ImageList(16, 16)
+        self.__deleteIconIdx = self.__imageList.Add(
+            wx.ArtProvider.GetBitmap("cross_red_icon", wx.ART_MENU, (16, 16))
+        )
+        self.__listCtrl.AssignImageList(self.__imageList, wx.IMAGE_LIST_SMALL)
+
+        self.__listCtrl.InsertColumn(0, _("Short"), width=80, format=wx.LIST_FORMAT_RIGHT)
+        self.__listCtrl.InsertColumn(1, _("Description"), width=350)
+        self.__listCtrl.InsertColumn(2, _("Delete"), width=50)
+        # Fixed width 500px, growable height with scrollbars as needed
+        self.__listCtrl.SetMinSize((500, 120))
+        self.__listCtrl.SetMaxSize((500, -1))  # -1 means no max height
+        self.__listCtrl.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.__onItemActivated)
+        self.addEntry(
+            _("Current presets:"), self.__listCtrl, growable=True,
+            flags=(wx.ALIGN_TOP | wx.ALIGN_RIGHT, wx.EXPAND | wx.ALL)
+        )
+
+        # Help text
+        self.__helpText = wx.StaticText(self, label="")
+        self.__helpText.Wrap(500)
+        self.addEntry(
+            "", self.__helpText,
+            flags=(wx.ALIGN_RIGHT, wx.ALIGN_LEFT | wx.EXPAND)
+        )
+
+        # Populate initial list
+        self.__populateList()
+        self.__updateHelpText()
+
+        self.fit()
+
+    def __isEffortPreset(self, setting_key=None):
+        """Check if the setting key is for effort presets (uses seconds)."""
+        if setting_key is None:
+            setting_key = self.__getCurrentSettingKey()
+        return setting_key == "sdtcspans_effort"
+
+    def __loadPresets(self, setting_key):
+        """Load presets from settings.
+
+        Task presets are stored as minutes, effort presets as seconds.
+        """
+        value = self.gettext("feature", setting_key)
+        if not value:
+            return []
+        presets = []
+        for val_str in value.split(","):
+            try:
+                presets.append(int(val_str.strip()))
+            except ValueError:
+                pass
+        return sorted(presets)
+
+    def __savePresets(self, setting_key):
+        """Save presets to settings."""
+        presets = self.__presets[setting_key]
+        value = ",".join(str(m) for m in sorted(presets))
+        self.settext("feature", setting_key, value)
+
+    def __getCurrentSettingKey(self):
+        return self._preset_fields[self.__currentFieldIndex][0]
+
+    def __getCurrentPresets(self):
+        return self.__presets[self.__getCurrentSettingKey()]
+
+    def __createDurationCtrl(self, showSeconds=False):
+        """Create a duration control with or without seconds field."""
+        if showSeconds:
+            return widgets.MaskedDurationCtrl(
+                self.__addPanel, days=0, hours=0, minutes=15, seconds=0,
+                dayChoices=[0, 1, 2, 3, 5, 7, 14, 21, 28, 30, 60, 90],
+                hourChoices=list(range(24)),
+                minuteChoices=[0, 15, 30, 45],
+                showSeconds=True,
+                secondChoices=[0, 5, 10, 15, 20, 30, 45]
+            )
+        else:
+            return widgets.MaskedDurationCtrl(
+                self.__addPanel, days=0, hours=1, minutes=0,
+                dayChoices=[0, 1, 2, 3, 5, 7, 14, 21, 28, 30, 60, 90],
+                hourChoices=list(range(24)),
+                minuteChoices=[0, 15, 30, 45]
+            )
+
+    def __onFieldChanged(self, event):
+        self.__currentFieldIndex = self.__fieldChoice.GetSelection()
+
+        # Recreate duration control with/without seconds based on preset type
+        is_effort = self.__isEffortPreset()
+        self.__addSizer.Detach(self.__durationEntry)
+        self.__durationEntry.Destroy()
+        self.__durationEntry = self.__createDurationCtrl(showSeconds=is_effort)
+        self.__addSizer.Insert(0, self.__durationEntry, 0, wx.RIGHT | wx.ALIGN_CENTRE_VERTICAL, 10)
+        self.__addPanel.Layout()
+
+        self.__populateList()
+        self.__updateHelpText()
+
+    def __updateHelpText(self):
+        unused_key, unused_name, help_text = self._preset_fields[self.__currentFieldIndex]
+        self.__helpText.SetLabel(help_text)
+        self.__helpText.Wrap(500)
+        self.Layout()
+
+    def __populateList(self):
+        """Rebuild the list with 3 columns: short value, description, delete icon."""
+        self.__listCtrl.DeleteAllItems()
+        presets = sorted(self.__getCurrentPresets())
+        is_effort = self.__isEffortPreset()
+
+        for value in presets:
+            if is_effort:
+                compact, description = self.__formatSecondsParts(value)
+            else:
+                compact, description = self.__formatMinutesParts(value)
+            index = self.__listCtrl.InsertItem(self.__listCtrl.GetItemCount(), compact)
+            self.__listCtrl.SetItem(index, 1, description)
+            self.__listCtrl.SetItemColumnImage(index, 2, self.__deleteIconIdx)
+            self.__listCtrl.SetItemData(index, value)
+
+    def __formatMinutesParts(self, total_minutes):
+        """Format minutes as (compact_value, description) tuple."""
+        days = total_minutes // (24 * 60)
+        hours = (total_minutes % (24 * 60)) // 60
+        minutes = total_minutes % 60
+
+        # Compact format with 'd' suffix for days
+        # e.g., "1d 06:30" for 1 day 6 hours 30 min, "2:15" for 2 hours 15 min
+        if days > 0:
+            compact = "%dd %02d:%02d" % (days, hours, minutes)
+        elif hours > 0:
+            compact = "%d:%02d" % (hours, minutes)
+        else:
+            compact = "%d" % minutes
+
+        # Build plain English description
+        parts = []
+        if days > 0:
+            if days == 1:
+                parts.append(_("1 day"))
+            elif days == 7:
+                parts.append(_("1 week"))
+            elif days % 7 == 0:
+                weeks = days // 7
+                parts.append(_("%d weeks") % weeks)
+            else:
+                parts.append(_("%d days") % days)
+        if hours > 0:
+            if hours == 1:
+                parts.append(_("1 hour"))
+            else:
+                parts.append(_("%d hours") % hours)
+        if minutes > 0:
+            if minutes == 1:
+                parts.append(_("1 minute"))
+            else:
+                parts.append(_("%d minutes") % minutes)
+
+        if not parts:
+            description = _("0 minutes")
+        elif len(parts) == 1:
+            description = parts[0]
+        elif len(parts) == 2:
+            description = _("%s and %s") % (parts[0], parts[1])
+        else:
+            description = _("%s, %s and %s") % (parts[0], parts[1], parts[2])
+
+        return compact, description
+
+    def __formatSecondsParts(self, total_seconds):
+        """Format seconds as (compact_value, description) tuple for effort presets."""
+        days = total_seconds // (24 * 60 * 60)
+        hours = (total_seconds % (24 * 60 * 60)) // (60 * 60)
+        minutes = (total_seconds % (60 * 60)) // 60
+        seconds = total_seconds % 60
+
+        # Compact format: "1d 06:30:15" or "2:15:30" or "0:45" or "30s"
+        if days > 0:
+            compact = "%dd %02d:%02d:%02d" % (days, hours, minutes, seconds)
+        elif hours > 0:
+            compact = "%d:%02d:%02d" % (hours, minutes, seconds)
+        elif minutes > 0:
+            compact = "%d:%02d" % (minutes, seconds)
+        else:
+            compact = "%ds" % seconds
+
+        # Build plain English description
+        parts = []
+        if days > 0:
+            if days == 1:
+                parts.append(_("1 day"))
+            elif days == 7:
+                parts.append(_("1 week"))
+            elif days % 7 == 0:
+                weeks = days // 7
+                parts.append(_("%d weeks") % weeks)
+            else:
+                parts.append(_("%d days") % days)
+        if hours > 0:
+            if hours == 1:
+                parts.append(_("1 hour"))
+            else:
+                parts.append(_("%d hours") % hours)
+        if minutes > 0:
+            if minutes == 1:
+                parts.append(_("1 minute"))
+            else:
+                parts.append(_("%d minutes") % minutes)
+        if seconds > 0:
+            if seconds == 1:
+                parts.append(_("1 second"))
+            else:
+                parts.append(_("%d seconds") % seconds)
+
+        if not parts:
+            description = _("0 seconds")
+        elif len(parts) == 1:
+            description = parts[0]
+        elif len(parts) == 2:
+            description = _("%s and %s") % (parts[0], parts[1])
+        elif len(parts) == 3:
+            description = _("%s, %s and %s") % (parts[0], parts[1], parts[2])
+        else:
+            description = _("%s, %s, %s and %s") % (parts[0], parts[1], parts[2], parts[3])
+
+        return compact, description
+
+    def __onAdd(self, event):
+        duration = self.__durationEntry.GetDuration()
+        total_seconds = int(duration.total_seconds())
+
+        # For effort presets, store in seconds; for task presets, store in minutes
+        if self.__isEffortPreset():
+            new_value = total_seconds
+            if new_value <= 0:
+                return
+        else:
+            new_value = total_seconds // 60
+            if new_value <= 0:
+                return
+
+        presets = self.__getCurrentPresets()
+
+        # Check for duplicates
+        if new_value in presets:
+            return
+
+        presets.append(new_value)
+        presets.sort()
+
+        self.__savePresets(self.__getCurrentSettingKey())
+        self.__populateList()
+
+    def __onItemActivated(self, event):
+        """Delete preset when row is double-clicked or activated."""
+        index = event.GetIndex()
+        if index == -1:
+            return
+
+        value = self.__listCtrl.GetItemData(index)
+        presets = self.__getCurrentPresets()
+
+        if value in presets:
+            presets.remove(value)
+
+        self.__savePresets(self.__getCurrentSettingKey())
+        self.__populateList()
+
+
 class Preferences(widgets.NotebookDialog):
     allPageNames = [
         "window",
@@ -1222,6 +1580,7 @@ class Preferences(widgets.NotebookDialog):
         "language",
         "task",
         "reminder",
+        "presets",
         "appearance",
         "features",
     ]
@@ -1229,6 +1588,7 @@ class Preferences(widgets.NotebookDialog):
         window=WindowBehaviorPage,
         task=TaskDatesPage,
         reminder=TaskReminderPage,
+        presets=DurationPresetsPage,
         save=SavePage,
         language=LanguagePage,
         appearance=TaskAppearancePage,

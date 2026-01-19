@@ -461,6 +461,8 @@ class XMLReader(object):
                         task_node, "percentageComplete"
                     ),
                     budget=date.parseTimeDelta(task_node.attrib.get("budget", "")),
+                    plannedDuration=date.parseTimeDelta(task_node.attrib.get("plannedDuration", "")),
+                    plannedDurationMode=task_node.attrib.get("plannedDurationMode", "implicit"),
                     priority=self.__parse_int_attribute(task_node, "priority"),
                     hourlyFee=float(task_node.attrib.get("hourlyFee", "0")),
                     fixedFee=float(task_node.attrib.get("fixedFee", "0")),

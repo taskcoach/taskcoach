@@ -28,6 +28,77 @@ import wx
 import wx.adv
 
 
+# Helper functions to get suggested time choices from preferences
+# These are used by both entry.py and editor.py for datetime controls
+#
+# For dynamic updates when preferences change, pass as lambda:
+#   hourChoices=lambda: get_suggested_hour_choices(settings)
+
+
+def get_suggested_hour_choices(settings, override=None):
+    """Get hour choices list for dropdowns.
+
+    Args:
+        settings: Settings object for reading preferences
+        override: Optional override value:
+            - None (default): Use preferences (efforthourstart to efforthourend)
+            - list: Use that specific list of hours
+            - False: Return None (no dropdown)
+
+    Returns:
+        List of hour choices, or None if disabled
+    """
+    if override is False:
+        return None
+    if override is not None:
+        return override
+    start = settings.getint("view", "efforthourstart")
+    end = settings.getint("view", "efforthourend")
+    return list(range(start, end + 1))
+
+
+def get_suggested_minute_choices(settings, override=None):
+    """Get minute choices list for dropdowns.
+
+    Args:
+        settings: Settings object for reading preferences
+        override: Optional override value:
+            - None (default): Use preferences (based on effortminuteinterval)
+            - list: Use that specific list of minutes
+            - False: Return None (no dropdown)
+
+    Returns:
+        List of minute choices, or None if disabled
+    """
+    if override is False:
+        return None
+    if override is not None:
+        return override
+    interval = settings.getint("view", "effortminuteinterval")
+    return list(range(0, 60, interval))
+
+
+def get_suggested_second_choices(settings, override=None):
+    """Get second choices list for dropdowns.
+
+    Args:
+        settings: Settings object for reading preferences
+        override: Optional override value:
+            - None (default): Use preferences (based on effortsecondinterval)
+            - list: Use that specific list of seconds
+            - False: Return None (no dropdown)
+
+    Returns:
+        List of second choices, or None if disabled
+    """
+    if override is False:
+        return None
+    if override is not None:
+        return override
+    interval = settings.getint("view", "effortsecondinterval")
+    return list(range(0, 60, interval))
+
+
 DateTimeEntryEvent, EVT_DATETIMEENTRY = newevent.NewEvent()
 
 
@@ -517,6 +588,7 @@ class RecurrenceEntry(wx.Panel):
 
     def __init__(self, parent, recurrence, settings, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
+        self._settings = settings  # Store for later use
         recurrenceFrequencyPanel = wx.Panel(self)
         self._recurrencePeriodEntry = wx.Choice(
             recurrenceFrequencyPanel,
@@ -658,27 +730,28 @@ class RecurrenceEntry(wx.Panel):
         )
         maxPanel.SetSizerAndFit(panelSizer)
 
+        # Stop after date using new DateTimeCombo control
         stopPanel = wx.Panel(self)
         panelSizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self._stopDateTimeCheckBox = wx.CheckBox(stopPanel)
-        self._stopDateTimeCheckBox.Bind(
+        # value=None means unchecked (no stop date); when user checks it, defaults to "now"
+        self._recurrenceStopDateTimeCombo = widgets.DateTimeCombo(
+            stopPanel,
+            value=None,  # unchecked by default
+            hourChoices=lambda: get_suggested_hour_choices(self._settings),
+            minuteChoices=lambda: get_suggested_minute_choices(self._settings),
+        )
+        # Bind checkbox toggle
+        self._recurrenceStopDateTimeCombo.GetCheckBox().Bind(
             wx.EVT_CHECKBOX, self.onRecurrenceStopDateTimeChecked
         )
-        # Since None is not allowed, we need an initial value...
-        self._recurrenceStopDateTimeEntry = DateTimeEntry(
-            stopPanel,
-            settings,
-            noneAllowed=False,
-            initialDateTime=datetime.datetime.combine(
-                date.LastDayOfCurrentMonth(), datetime.time(0, 0, 0)
-            ),
-        )
-        self._recurrenceStopDateTimeEntry.Bind(
-            EVT_DATETIMEENTRY, self.onRecurrenceEdited
+        # Bind value change
+        self._recurrenceStopDateTimeCombo.Bind(
+            widgets.EVT_VALUE_CHANGED, self.onRecurrenceEdited
         )
         panelSizer.Add(
-            self._stopDateTimeCheckBox, flag=wx.ALIGN_CENTER_VERTICAL
+            self._recurrenceStopDateTimeCombo.GetCheckBox(),
+            flag=wx.ALIGN_CENTER_VERTICAL,
         )
         panelSizer.Add(self.horizontalSpace)
         panelSizer.Add(
@@ -687,9 +760,14 @@ class RecurrenceEntry(wx.Panel):
         )
         panelSizer.Add(self.horizontalSpace)
         panelSizer.Add(
-            self._recurrenceStopDateTimeEntry, flag=wx.ALIGN_CENTER_VERTICAL
+            self._recurrenceStopDateTimeCombo.GetDateCtrl(),
+            flag=wx.ALIGN_CENTER_VERTICAL,
         )
         panelSizer.Add(self.horizontalSpace)
+        panelSizer.Add(
+            self._recurrenceStopDateTimeCombo.GetTimeCtrl(),
+            flag=wx.ALIGN_CENTER_VERTICAL,
+        )
         stopPanel.SetSizerAndFit(panelSizer)
 
         panelSizer = wx.BoxSizer(wx.VERTICAL)
@@ -726,14 +804,11 @@ class RecurrenceEntry(wx.Panel):
     def onRecurrencePeriodEdited(self, event):
         recurrenceOn = event.String != _("None")
         self._maxRecurrenceCheckBox.Enable(recurrenceOn)
-        self._stopDateTimeCheckBox.Enable(recurrenceOn)
+        self._recurrenceStopDateTimeCombo.Enable(recurrenceOn)
         self._recurrenceFrequencyEntry.Enable(recurrenceOn)
         self._scheduleChoice.Enable(recurrenceOn)
         self._maxRecurrenceCountEntry.Enable(
             recurrenceOn and self._maxRecurrenceCheckBox.IsChecked()
-        )
-        self._recurrenceStopDateTimeEntry.Enable(
-            recurrenceOn and self._stopDateTimeCheckBox.IsChecked()
         )
         self.updateRecurrenceLabel()
         self.onRecurrenceEdited()
@@ -744,9 +819,8 @@ class RecurrenceEntry(wx.Panel):
         self.onRecurrenceEdited()
 
     def onRecurrenceStopDateTimeChecked(self, event):
-        stopRecurrenceOn = event.IsChecked()
-        self._recurrenceStopDateTimeEntry.Enable(stopRecurrenceOn)
         self.onRecurrenceEdited()
+        event.Skip()  # Allow checkbox to update visual state
 
     def onRecurrenceEdited(self, event=None):  # pylint: disable=W0613
         wx.PostEvent(self, RecurrenceEntryEvent())
@@ -775,14 +849,11 @@ class RecurrenceEntry(wx.Panel):
             1 if recurrence.recurBasedOnCompletion else 0
         )
         self._scheduleChoice.Enable(bool(recurrence))
-        self._stopDateTimeCheckBox.Enable(bool(recurrence))
+        self._recurrenceStopDateTimeCombo.Enable(bool(recurrence))
         has_stop_datetime = recurrence.stop_datetime != date.DateTime()
-        self._stopDateTimeCheckBox.SetValue(has_stop_datetime)
-        self._recurrenceStopDateTimeEntry.Enable(has_stop_datetime)
+        self._recurrenceStopDateTimeCombo.SetChecked(has_stop_datetime)
         if has_stop_datetime:
-            self._recurrenceStopDateTimeEntry.SetValue(
-                recurrence.stop_datetime
-            )
+            self._recurrenceStopDateTimeCombo.SetValue(recurrence.stop_datetime)
         self.updateRecurrenceLabel()
 
     def GetValue(self):
@@ -801,12 +872,70 @@ class RecurrenceEntry(wx.Panel):
         kwargs["amount"] = self._recurrenceFrequencyEntry.Value
         kwargs["sameWeekday"] = self._recurrenceSameWeekdayCheckBox.IsChecked()
         kwargs["recurBasedOnCompletion"] = bool(self._scheduleChoice.Selection)
-        if self._stopDateTimeCheckBox.IsChecked():
-            kwargs["stop_datetime"] = (
-                self._recurrenceStopDateTimeEntry.GetValue()
-            )
+        if self._recurrenceStopDateTimeCombo.IsChecked():
+            kwargs["stop_datetime"] = self._recurrenceStopDateTimeCombo.GetValue()
         # Get selected weekdays (0-6 for Mon-Sun)
         kwargs["weekdays"] = [
             i for i, cb in enumerate(self._weekdayCheckBoxes) if cb.IsChecked()
         ]
         return date.Recurrence(**kwargs)  # pylint: disable=W0142
+
+
+PlannedDurationEntryEvent, EVT_PLANNEDDURATIONENTRY = newevent.NewEvent()
+
+
+class PlannedDurationEntry(widgets.PanelWithBoxSizer):
+    """Entry for planned duration with DD:HH:MM format."""
+
+    defaultTimeDelta = date.TimeDelta()
+
+    def __init__(
+        self,
+        parent,
+        timeDelta=None,
+        readonly=False,
+        *args,
+        **kwargs
+    ):
+        super().__init__(parent, *args, **kwargs)
+        if timeDelta is None:
+            timeDelta = self.defaultTimeDelta
+
+        # Convert TimeDelta to days/hours/minutes
+        total_seconds = int(timeDelta.total_seconds())
+        days = total_seconds // 86400
+        remaining = total_seconds % 86400
+        hours = remaining // 3600
+        minutes = (remaining % 3600) // 60
+
+        self._entry = widgets.DurationEntry(
+            self, days=days, hours=hours, minutes=minutes, readonly=readonly
+        )
+        if readonly:
+            self._entry.SetBackgroundColour(
+                wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+            )
+        self._entry.Bind(widgets.EVT_DURATION_CHANGE, self._onDurationChanged)
+        self.add(self._entry, flag=wx.EXPAND | wx.ALL, proportion=1)
+        self.fit()
+
+    def _onDurationChanged(self, event):
+        wx.PostEvent(self, PlannedDurationEntryEvent())
+
+    def GetValue(self):
+        duration = self._entry.GetDuration()
+        return date.TimeDelta(
+            days=duration.days,
+            seconds=duration.seconds
+        )
+
+    def SetValue(self, newTimeDelta):
+        if newTimeDelta is None:
+            newTimeDelta = self.defaultTimeDelta
+        total_seconds = int(newTimeDelta.total_seconds())
+        days = total_seconds // 86400
+        remaining = total_seconds % 86400
+        hours = remaining // 3600
+        minutes = (remaining % 3600) // 60
+        import datetime
+        self._entry.SetDuration(datetime.timedelta(days=days, hours=hours, minutes=minutes))

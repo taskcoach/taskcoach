@@ -163,6 +163,10 @@ class XMLWriter(object):
             self.recurrenceNode(node, task.recurrence())
         if task.budget() != date.TimeDelta():
             node.attrib["budget"] = self.budgetAsAttribute(task.budget())
+        if task.plannedDuration() != date.TimeDelta():
+            node.attrib["plannedDuration"] = self.budgetAsAttribute(task.plannedDuration())
+        if task.plannedDurationMode() != "implicit":
+            node.attrib["plannedDurationMode"] = task.plannedDurationMode()
         if task.priority():
             node.attrib["priority"] = str(task.priority())
         if task.hourlyFee():

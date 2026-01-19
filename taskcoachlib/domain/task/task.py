@@ -47,6 +47,8 @@ class Task(
         actualStartDateTime=None,
         completionDateTime=None,
         budget=None,
+        plannedDuration=None,
+        plannedDurationMode="implicit",  # implicit, adjdue, adjstart
         priority=0,
         id=None,
         hourlyFee=0,  # pylint: disable=W0622
@@ -86,6 +88,10 @@ class Task(
         )
         self.__percentageComplete = percentageComplete
         self.__budget = budget or date.TimeDelta()
+        self.__plannedDuration = plannedDuration or date.TimeDelta()
+        # Normalize old mode values to new keys: implicit, adjdue, adjstart
+        mode_map = {"todue": "adjdue", "fromstart": "adjstart"}
+        self.__plannedDurationMode = mode_map.get(plannedDurationMode, plannedDurationMode) or "implicit"
         self._efforts = efforts or []
         self.__priority = priority
         self.__hourlyFee = hourlyFee
@@ -134,6 +140,8 @@ class Task(
         self.setReminder(state["reminder"])
         self.setEfforts(state["efforts"])
         self.setBudget(state["budget"])
+        self.setPlannedDuration(state.get("plannedDuration", date.TimeDelta()))
+        self.setPlannedDurationMode(state.get("plannedDurationMode", "implicit"))
         self.setPriority(state["priority"])
         self.setHourlyFee(state["hourlyFee"])
         self.setFixedFee(state["fixedFee"])
@@ -156,6 +164,8 @@ class Task(
                 parent=self.parent(),
                 efforts=self._efforts,
                 budget=self.__budget,
+                plannedDuration=self.__plannedDuration,
+                plannedDurationMode=self.__plannedDurationMode,
                 priority=self.__priority,
                 hourlyFee=self.__hourlyFee,
                 fixedFee=self.__fixedFee,
@@ -179,6 +189,8 @@ class Task(
                 percentageComplete=self.__percentageComplete,
                 efforts=[effort.copy() for effort in self._efforts],
                 budget=self.__budget,
+                plannedDuration=self.__plannedDuration,
+                plannedDurationMode=self.__plannedDurationMode,
                 priority=self.__priority,
                 hourlyFee=self.__hourlyFee,
                 fixedFee=self.__fixedFee,
@@ -201,6 +213,8 @@ class Task(
                 "recurrence",
                 "reminder",
                 "budget",
+                "plannedDuration",
+                "plannedDurationMode",
                 "priority",
                 "hourlyFee",
                 "fixedFee",
@@ -861,6 +875,66 @@ class Task(
     def budgetLeftSortEventTypes(class_):
         """The event types that influence the budget left sort order."""
         return (class_.budgetLeftChangedEventType(),)
+
+    # Planned duration
+
+    def plannedDuration(self):
+        """Return the planned duration for this task."""
+        return self.__plannedDuration
+
+    def setPlannedDuration(self, plannedDuration):
+        """Set the planned duration for this task."""
+        if plannedDuration == self.__plannedDuration:
+            return
+        self.__plannedDuration = plannedDuration
+        self.sendPlannedDurationChangedMessage()
+
+    def sendPlannedDurationChangedMessage(self):
+        pub.sendMessage(
+            self.plannedDurationChangedEventType(),
+            newValue=self.plannedDuration(),
+            sender=self,
+        )
+
+    @classmethod
+    def plannedDurationChangedEventType(class_):
+        return "pubsub.task.plannedDuration"
+
+    @staticmethod
+    def plannedDurationSortFunction(**kwargs):
+        return lambda task: task.plannedDuration()
+
+    @classmethod
+    def plannedDurationSortEventTypes(class_):
+        """The event types that influence the planned duration sort order."""
+        return (class_.plannedDurationChangedEventType(),)
+
+    # Planned duration mode
+
+    def plannedDurationMode(self):
+        """Return the planned duration mode: 'implicit', 'adjdue', or 'adjstart'."""
+        return self.__plannedDurationMode
+
+    def setPlannedDurationMode(self, mode):
+        """Set the planned duration mode. Normalizes old values to new keys."""
+        # Normalize old mode values to new keys
+        mode_map = {"todue": "adjdue", "fromstart": "adjstart"}
+        mode = mode_map.get(mode, mode) or "implicit"
+        if mode == self.__plannedDurationMode:
+            return
+        self.__plannedDurationMode = mode
+        self.sendPlannedDurationModeChangedMessage()
+
+    def sendPlannedDurationModeChangedMessage(self):
+        pub.sendMessage(
+            self.plannedDurationModeChangedEventType(),
+            newValue=self.plannedDurationMode(),
+            sender=self,
+        )
+
+    @classmethod
+    def plannedDurationModeChangedEventType(class_):
+        return "pubsub.task.plannedDurationMode"
 
     # Foreground color
 

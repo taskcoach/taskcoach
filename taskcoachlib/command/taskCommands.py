@@ -894,6 +894,52 @@ class EditFixedFeeCommand(base.BaseCommand):
         self.do_command()
 
 
+class EditPlannedDurationCommand(base.BaseCommand):
+    plural_name = _("Change planned durations")
+    singular_name = _('Change planned duration of "%s"')
+
+    def __init__(self, *args, **kwargs):
+        self.__newPlannedDuration = kwargs.pop("newValue")
+        super().__init__(*args, **kwargs)
+        self.__oldPlannedDurations = [item.plannedDuration() for item in self.items]
+
+    def do_command(self):
+        super().do_command()
+        for item in self.items:
+            item.setPlannedDuration(self.__newPlannedDuration)
+
+    def undo_command(self):
+        super().undo_command()
+        for item, oldPlannedDuration in zip(self.items, self.__oldPlannedDurations):
+            item.setPlannedDuration(oldPlannedDuration)
+
+    def redo_command(self):
+        self.do_command()
+
+
+class EditPlannedDurationModeCommand(base.BaseCommand):
+    plural_name = _("Change planned duration modes")
+    singular_name = _('Change planned duration mode of "%s"')
+
+    def __init__(self, *args, **kwargs):
+        self.__newMode = kwargs.pop("newValue")
+        super().__init__(*args, **kwargs)
+        self.__oldModes = [item.plannedDurationMode() for item in self.items]
+
+    def do_command(self):
+        super().do_command()
+        for item in self.items:
+            item.setPlannedDurationMode(self.__newMode)
+
+    def undo_command(self):
+        super().undo_command()
+        for item, oldMode in zip(self.items, self.__oldModes):
+            item.setPlannedDurationMode(oldMode)
+
+    def redo_command(self):
+        self.do_command()
+
+
 class TogglePrerequisiteCommand(base.BaseCommand):
     plural_name = _("Toggle prerequisite")
     singular_name = _('Toggle prerequisite of "%s"')

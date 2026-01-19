@@ -59,7 +59,8 @@ defaults = {
         # drop down menu with start and stop times.
         "efforthourstart": "8",  # Earliest time, i.e. start of working day
         "efforthourend": "18",  # Last time, i.e. end of working day
-        "effortminuteinterval": "15",  # Generate times with this interval
+        "effortminuteinterval": "15",  # Generate minute choices with this interval
+        "effortsecondinterval": "15",  # Generate second choices with this interval
         "snoozetimes": "[5, 10, 15, 30, 60, 120, 1440]",
         "defaultsnoozetime": "5",  # Default snooze time
         "replacedefaultsnoozetime": "True",  # Make chosen snooze time the default?
@@ -562,7 +563,7 @@ defaults = {
         "minidletime": "0",
         "sayreminder": "False",
         "sdtcspans": "60,120,1440,2880",
-        "sdtcspans_effort": "60,120,180,240",
+        "sdtcspans_effort": "300,900,1800,3600,7200",  # In seconds: 5m, 15m, 30m, 1h, 2h
         "decimaltime": "False",
         # New settings should use snake_case naming convention (PEP 8)
     },

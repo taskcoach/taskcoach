@@ -29,6 +29,16 @@ except ImportError:
     TcSquareMap = None  # squaremap not installed
 from .timeline import Timeline
 from .datectrl import DateTimeCtrl, TimeEntry
+from .durationctrl import DurationCtrl, DurationEntry, EVT_DURATION_CHANGE, EVT_DURATION_CHOICES_CHANGE
+from .maskedtimectrl import (
+    DurationCtrl as MaskedDurationCtrl,
+    DurationCtrlVerbose as MaskedDurationCtrlVerbose,
+    TimeCtrl as MaskedTimeCtrl,
+    TimeWithSecondsCtrl as MaskedTimeWithSecondsCtrl,
+    DateCtrl as MaskedDateCtrl,
+    DateTimeCombo,
+    EVT_VALUE_CHANGED,
+)
 from .textctrl import (
     SingleLineTextCtrl,
     MultiLineTextCtrl,
