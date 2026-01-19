@@ -31,6 +31,7 @@ from wx.adv import BitmapComboBox
 import ast
 import wx, calendar
 import wx.lib.scrolledpanel
+from wx.lib.agw import ultimatelistctrl as ULC
 
 
 class FontColorSyncer(object):
@@ -1298,24 +1299,20 @@ class DurationPresetsPage(SettingsPage):
             flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTRE_VERTICAL, wx.ALIGN_LEFT)
         )
 
-        # Preset list with 3 columns: short value, description, delete icon
-        self.__listCtrl = wx.ListCtrl(
-            self, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.BORDER_SUNKEN
+        # Preset list with 3 columns: short value, description, delete button
+        # Using UltimateListCtrl to support embedded Delete buttons
+        self.__listCtrl = ULC.UltimateListCtrl(
+            self,
+            agwStyle=wx.LC_REPORT | wx.LC_SINGLE_SEL | ULC.ULC_HAS_VARIABLE_ROW_HEIGHT
         )
-        # Set up image list for delete icon
-        self.__imageList = wx.ImageList(16, 16)
-        self.__deleteIconIdx = self.__imageList.Add(
-            wx.ArtProvider.GetBitmap("cross_red_icon", wx.ART_MENU, (16, 16))
-        )
-        self.__listCtrl.AssignImageList(self.__imageList, wx.IMAGE_LIST_SMALL)
-
         self.__listCtrl.InsertColumn(0, _("Short"), width=80, format=wx.LIST_FORMAT_RIGHT)
-        self.__listCtrl.InsertColumn(1, _("Description"), width=350)
-        self.__listCtrl.InsertColumn(2, _("Delete"), width=50)
+        self.__listCtrl.InsertColumn(1, _("Description"), width=310)
+        self.__listCtrl.InsertColumn(2, _("Delete"), width=110)
         # Fixed width 500px, growable height with scrollbars as needed
         self.__listCtrl.SetMinSize((500, 120))
         self.__listCtrl.SetMaxSize((500, -1))  # -1 means no max height
-        self.__listCtrl.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.__onItemActivated)
+        # Track delete buttons for cleanup
+        self.__deleteButtons = []
         self.addEntry(
             _("Current presets:"), self.__listCtrl, growable=True,
             flags=(wx.ALIGN_TOP | wx.ALIGN_RIGHT, wx.EXPAND | wx.ALL)
@@ -1409,7 +1406,12 @@ class DurationPresetsPage(SettingsPage):
         self.Layout()
 
     def __populateList(self):
-        """Rebuild the list with 3 columns: short value, description, delete icon."""
+        """Rebuild the list with 3 columns: short value, description, delete button."""
+        # Clean up existing buttons
+        for btn in self.__deleteButtons:
+            btn.Destroy()
+        self.__deleteButtons = []
+
         self.__listCtrl.DeleteAllItems()
         presets = sorted(self.__getCurrentPresets())
         is_effort = self.__isEffortPreset()
@@ -1419,10 +1421,24 @@ class DurationPresetsPage(SettingsPage):
                 compact, description = self.__formatSecondsParts(value)
             else:
                 compact, description = self.__formatMinutesParts(value)
-            index = self.__listCtrl.InsertItem(self.__listCtrl.GetItemCount(), compact)
-            self.__listCtrl.SetItem(index, 1, description)
-            self.__listCtrl.SetItemColumnImage(index, 2, self.__deleteIconIdx)
+            # UltimateListCtrl uses InsertStringItem instead of InsertItem
+            index = self.__listCtrl.InsertStringItem(self.__listCtrl.GetItemCount(), compact)
+            self.__listCtrl.SetStringItem(index, 1, description)
             self.__listCtrl.SetItemData(index, value)
+
+            # Create a real Delete button for this row (same style as Add button)
+            # Use wx.BU_EXACTFIT to reduce padding and make button smaller
+            deleteBtn = wx.Button(
+                self.__listCtrl, wx.ID_ANY, " " + _("Delete"),
+                style=wx.BU_EXACTFIT
+            )
+            deleteBtn.SetBitmap(
+                wx.ArtProvider.GetBitmap("cross_red_icon", wx.ART_BUTTON, (16, 16))
+            )
+            deleteBtn.presetValue = value  # Store preset value on button
+            deleteBtn.Bind(wx.EVT_BUTTON, self.__onDeleteButton)
+            self.__deleteButtons.append(deleteBtn)
+            self.__listCtrl.SetItemWindow(index, 2, deleteBtn, expand=True)
 
     def __formatMinutesParts(self, total_minutes):
         """Format minutes as (compact_value, description) tuple."""
@@ -1557,13 +1573,10 @@ class DurationPresetsPage(SettingsPage):
         self.__savePresets(self.__getCurrentSettingKey())
         self.__populateList()
 
-    def __onItemActivated(self, event):
-        """Delete preset when row is double-clicked or activated."""
-        index = event.GetIndex()
-        if index == -1:
-            return
-
-        value = self.__listCtrl.GetItemData(index)
+    def __onDeleteButton(self, event):
+        """Handle Delete button click - remove the preset."""
+        btn = event.GetEventObject()
+        value = btn.presetValue
         presets = self.__getCurrentPresets()
 
         if value in presets:
