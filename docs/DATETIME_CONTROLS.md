@@ -385,33 +385,66 @@ ctrl.SetDuration(datetime.timedelta(hours=1, minutes=30))
 ```
 
 ### TimeCtrl
-Hours and minutes: `14:30`
+Hours and minutes: `14:30` (24-hour) or `2:30 PM` (12-hour)
+
+Supports both 24-hour and 12-hour time formats based on settings.
+
+**Default Dropdowns:** TimeCtrl has built-in defaults from settings:
+- **Hours**: Working hours from settings (24h mode) or 1-12 (12h mode)
+- **Minutes**: Based on `effortminuteinterval` setting
 
 ```python
-# No dropdowns
-ctrl = TimeCtrl(parent, hours=0, minutes=0)
+# With default dropdowns from settings (recommended)
+ctrl = TimeCtrl(parent, hours=14, minutes=30)
 
-# With dropdowns
+# With custom dropdowns
 ctrl = TimeCtrl(parent, hours=9, minutes=0,
     hourChoices=[9, 10, 11, 12, 13, 14, 15, 16, 17],
     minuteChoices=[0, 15, 30, 45])
 
-time = ctrl.GetTime()  # datetime.time
+# Explicitly no dropdowns
+ctrl = TimeCtrl(parent, hours=14, minutes=30,
+    hourChoices=False, minuteChoices=False)
+
+# Explicit 12-hour format
+ctrl = TimeCtrl(parent, hours=14, minutes=30, timeFormat="12")
+
+time = ctrl.GetTime()  # datetime.time (always 24-hour internally)
 ctrl.SetTime(datetime.time(14, 30))
 ```
 
+**Dropdown Choices Parameters:**
+- `None` (default): Use defaults from settings
+- `[list]`: Use that specific list
+- `False`: No dropdown
+
 ### TimeWithSecondsCtrl
-Hours, minutes, seconds: `14:30:00`
+Hours, minutes, seconds: `14:30:00` (24-hour) or `2:30:00 PM` (12-hour)
+
+Same default behavior as TimeCtrl, plus seconds from `effortsecondinterval` setting.
 
 ```python
+# With default dropdowns from settings
+ctrl = TimeWithSecondsCtrl(parent, hours=14, minutes=30, seconds=0)
+
+# With custom dropdowns
 ctrl = TimeWithSecondsCtrl(parent, hours=0, minutes=0, seconds=0,
     hourChoices=list(range(24)),
     minuteChoices=list(range(60)),
     secondChoices=[0, 15, 30, 45])
+
+# Explicitly no dropdowns
+ctrl = TimeWithSecondsCtrl(parent, hours=14, minutes=30, seconds=0,
+    hourChoices=False, minuteChoices=False, secondChoices=False)
 ```
 
 ### DateCtrl
-Date with year, month, day: `2026-01-18`
+Locale-aware date control with automatic field ordering and separators.
+
+The control automatically detects the system locale's date format using `strftime("%x")` and arranges the year/month/day fields accordingly:
+- **US locale**: `01/18/2026` (month/day/year with `/`)
+- **European locales**: `18/01/2026` (day/month/year with `/`)
+- **ISO/Canadian locale**: `2026-01-18` (year-month-day with `-`)
 
 Click or Enter opens a calendar popup for date selection. Arrow keys in the calendar navigate by day (left/right) or week (up/down). Navigation buttons allow month changes and jumping to today.
 
@@ -424,6 +457,20 @@ ctrl.SetDate(datetime.date(2026, 6, 15))
 ```
 
 Individual date fields can still be edited with Up/Down arrows and typed digits.
+
+**Locale Detection:** The `getLocaleDateFormat()` helper function parses `strftime("%x")` output to determine field order and separator, matching the behavior of the old `smartdatetimectrl.py`.
+
+**User Override:** Users can override the automatic locale detection in **Preferences → Regional**:
+- **Date format**: Automatic, YYYY-MM-DD (ISO), YYYY/MM/DD (East Asian), MM/DD/YYYY (US), DD/MM/YYYY (European), DD.MM.YYYY (German)
+- **Time format**: Automatic, 24-hour, 12-hour with AM/PM
+
+**Note:** When "Automatic" time format is selected, the default is 24-hour format (matching the old `smartdatetimectrl` behavior, which was hardcoded to 24-hour). Users can explicitly select "12-hour" to enable AM/PM display.
+
+The settings are stored in `TaskCoach.ini` under `[view]` as `dateformat` and `timeformat`. Helper functions:
+- `getEffectiveDateFormat()` - Returns format tuple respecting user settings
+- `getEffectiveTimeFormat()` - Returns "24" or "12" respecting user settings (defaults to "24" when automatic)
+- `getDateFormatFromSettings()` - Raw setting value
+- `getDateFormatFunctionForOldControl()` - Format function for legacy smartdatetimectrl
 
 ### DateTimeCombo
 Flexible combo providing checkbox, DateCtrl, and TimeCtrl as separate widgets for table layout alignment.

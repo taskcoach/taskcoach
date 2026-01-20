@@ -53,6 +53,11 @@ defaults = {
         "language": "",
         # Language and locale as set by user via preferences, overrides language:
         "language_set_by_user": "",
+        # Date format override: "" = automatic (detect from locale), or explicit format
+        # Possible values: "", "YMD-", "MDY/", "DMY/", "DMY.", "YMD/"
+        "dateformat": "",
+        # Time format override: "24" = 24-hour (default), "12" = 12-hour with AM/PM, "" = automatic
+        "timeformat": "24",
         "categoryfiltermatchall": "False",
         "weekstart": "monday",  # Start of work week, 'monday' or 'sunday'
         # The next three options are used in the effort dialog to populate the

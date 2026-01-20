@@ -47,11 +47,19 @@ def get_suggested_hour_choices(settings, override=None):
 
     Returns:
         List of hour choices, or None if disabled
+
+    Note: In 12-hour time format mode, returns 1-12 instead of working hours,
+    since the AM/PM is controlled separately by the period field.
     """
     if override is False:
         return None
     if override is not None:
         return override
+    # Check time format - in 12-hour mode, return 1-12
+    from taskcoachlib.widgets.maskedtimectrl import getEffectiveTimeFormat
+    if getEffectiveTimeFormat() == "12":
+        return list(range(1, 13))
+    # 24-hour mode: use working hours from preferences
     start = settings.getint("view", "efforthourstart")
     end = settings.getint("view", "efforthourend")
     return list(range(start, end + 1))

@@ -31,6 +31,7 @@ from wx.adv import BitmapComboBox
 import ast
 import wx, calendar
 import wx.lib.scrolledpanel
+from wx.lib.agw import ultimatelistctrl as ULC
 
 
 class FontColorSyncer(object):
@@ -671,14 +672,15 @@ class WindowBehaviorPage(SettingsPage):
 
 class LanguagePage(SettingsPage):
     pageName = "language"
-    pageTitle = _("Language")
+    pageTitle = _("Regional")
     pageIcon = "person_talking_icon"
 
     def __init__(self, *args, **kwargs):
         super().__init__(columns=3, *args, **kwargs)
 
-        # Restart warning above the dropdown
-        self._restartWarningBase = _("Changing the language requires a restart of %s.") % meta.name
+        # === LANGUAGE SECTION ===
+        # Restart warning above the dropdown (covers language and format changes)
+        self._restartWarningBase = _("Changing the language or date/time format requires a restart of %s.") % meta.name
         self._restartWarning = wx.StaticText(self, label=self._restartWarningBase)
         self._restartWarningDefaultColor = self._restartWarning.GetForegroundColour()
         self.addEntry("", self._restartWarning, flags=(None, wx.ALIGN_LEFT))
@@ -806,7 +808,143 @@ class LanguagePage(SettingsPage):
             if setting == "language_set_by_user":
                 choiceCtrls[0].Bind(wx.EVT_CHOICE, self._onLanguageChange)
 
+        # Separator line between language and date/time format sections
+        self.addLine()
+
+        # === DATE FORMAT SECTION ===
+        # Date format dropdown with detected format label
+        dateFormatPanel = wx.Panel(self)
+        dateFormatSizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        # Date format choices: value is the format string (e.g., "YMD-", "MDY/")
+        self._dateFormatChoice = wx.Choice(dateFormatPanel)
+        dateFormats = [
+            ("", _("Automatic (detect from system)")),
+            ("YMD-", _("YYYY-MM-DD (ISO format)")),
+            ("YMD/", _("YYYY/MM/DD (East Asian)")),
+            ("MDY/", _("MM/DD/YYYY (US)")),
+            ("DMY/", _("DD/MM/YYYY (European)")),
+            ("DMY.", _("DD.MM.YYYY (German)")),
+        ]
+        currentFormat = self.gettext("view", "dateformat")
+        selectedIdx = 0
+        for i, (value, label) in enumerate(dateFormats):
+            self._dateFormatChoice.Append(label, value)
+            if value == currentFormat:
+                selectedIdx = i
+        self._dateFormatChoice.SetSelection(selectedIdx)
+        self._dateFormatChoice.Bind(wx.EVT_CHOICE, self._onDateFormatChange)
+        dateFormatSizer.Add(self._dateFormatChoice, 0, wx.ALIGN_CENTER_VERTICAL)
+
+        # Detected format label
+        from taskcoachlib.widgets.maskedtimectrl import getDetectedLocaleDateFormat
+        detectedOrder, detectedSep = getDetectedLocaleDateFormat()
+        detectedStr = self._formatOrderToString(detectedOrder, detectedSep)
+        self._detectedFormatLabel = wx.StaticText(
+            dateFormatPanel,
+            label=_("Detected: %s") % detectedStr
+        )
+        self._detectedFormatLabel.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
+        dateFormatSizer.Add(self._detectedFormatLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 15)
+
+        dateFormatPanel.SetSizer(dateFormatSizer)
+        self.addEntry(_("Date format:"), dateFormatPanel,
+                      flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, wx.ALIGN_LEFT))
+
+        # Demo DateCtrl showing the selected format (interactive, starts with today)
+        from taskcoachlib.widgets.maskedtimectrl import DateCtrl
+        import datetime
+        today = datetime.date.today()
+        demoPanel = wx.Panel(self)
+        demoSizer = wx.BoxSizer(wx.HORIZONTAL)
+        demoLabel = wx.StaticText(demoPanel, label=_("Preview:"))
+        demoSizer.Add(demoLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
+        self._demoDateCtrl = DateCtrl(
+            demoPanel,
+            year=today.year, month=today.month, day=today.day,
+            dateFormat=currentFormat or None
+        )
+        demoSizer.Add(self._demoDateCtrl, 0, wx.ALIGN_CENTER_VERTICAL)
+        demoPanel.SetSizer(demoSizer)
+        self.addEntry("", demoPanel, flags=(None, wx.ALIGN_LEFT))
+
+        # === TIME FORMAT SECTION ===
+        # Time format dropdown with detected format label
+        timeFormatPanel = wx.Panel(self)
+        timeFormatSizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self._timeFormatChoice = wx.Choice(timeFormatPanel)
+        timeFormats = [
+            ("", _("Automatic (detect from system)")),
+            ("24", _("24-hour (14:30)")),
+            ("12", _("12-hour (2:30 PM)")),
+        ]
+        currentTimeFormat = self.gettext("view", "timeformat")
+        selectedTimeIdx = 0
+        for i, (value, label) in enumerate(timeFormats):
+            self._timeFormatChoice.Append(label, value)
+            if value == currentTimeFormat:
+                selectedTimeIdx = i
+        self._timeFormatChoice.SetSelection(selectedTimeIdx)
+        timeFormatSizer.Add(self._timeFormatChoice, 0, wx.ALIGN_CENTER_VERTICAL)
+
+        # Detected time format label
+        from taskcoachlib.widgets.maskedtimectrl import getDetectedLocaleTimeFormat
+        detectedTimeFormat = getDetectedLocaleTimeFormat()
+        detectedTimeStr = "24-hour" if detectedTimeFormat == "24" else "12-hour"
+        self._detectedTimeFormatLabel = wx.StaticText(
+            timeFormatPanel,
+            label=_("Detected: %s") % detectedTimeStr
+        )
+        self._detectedTimeFormatLabel.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
+        timeFormatSizer.Add(self._detectedTimeFormatLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 15)
+
+        timeFormatPanel.SetSizer(timeFormatSizer)
+        self._timeFormatChoice.Bind(wx.EVT_CHOICE, self._onTimeFormatChange)
+        self.addEntry(_("Time format:"), timeFormatPanel,
+                      flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, wx.ALIGN_LEFT))
+
+        # Demo TimeCtrl showing the selected format (interactive, starts with current time)
+        # TimeCtrl now has built-in defaults from settings, so no need to pass choices
+        from taskcoachlib.widgets.maskedtimectrl import TimeCtrl
+        timeDemoPanel = wx.Panel(self)
+        timeDemoSizer = wx.BoxSizer(wx.HORIZONTAL)
+        timeDemoLabel = wx.StaticText(timeDemoPanel, label=_("Preview:"))
+        timeDemoSizer.Add(timeDemoLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
+        now = datetime.datetime.now()
+        # Pass explicit timeFormat to preview the selected format (not yet saved to settings)
+        effectiveFormat = currentTimeFormat if currentTimeFormat else "24"
+        self._demoTimeCtrl = TimeCtrl(
+            timeDemoPanel,
+            hours=now.hour, minutes=now.minute,
+            timeFormat=effectiveFormat
+        )
+        timeDemoSizer.Add(self._demoTimeCtrl, 0, wx.ALIGN_CENTER_VERTICAL)
+        timeDemoPanel.SetSizer(timeDemoSizer)
+        self.addEntry("", timeDemoPanel, flags=(None, wx.ALIGN_LEFT))
+
+        # Note about 12-hour mode and working hours
+        timeFormatNote = wx.StaticText(
+            self,
+            label=_("Note: In 12-hour mode, working hours (set in Features tab) are not used for hour suggestions.")
+        )
+        self.addEntry("", timeFormatNote, flags=(None, wx.ALIGN_LEFT))
+
+        # Store original formats to detect changes
+        self._originalDateFormat = currentFormat
+        self._originalTimeFormat = currentTimeFormat
+
         self.fit()
+
+    def _formatOrderToString(self, field_order, separator):
+        """Convert field order and separator to a human-readable format string."""
+        field_map = {'year': 'YYYY', 'month': 'MM', 'date_day': 'DD'}
+        parts = [field_map.get(f, '??') for f in field_order]
+        return separator.join(parts)
 
     def _getSelectedLanguageCode(self):
         """Get the currently selected language code from the dropdown."""
@@ -815,6 +953,68 @@ class LanguagePage(SettingsPage):
                 choice = choiceCtrls[0]
                 return choice.GetClientData(choice.GetSelection())
         return ""
+
+    def _onDateFormatChange(self, event):
+        """Handle date format dropdown change - update demo control and restart warning."""
+        choice = event.GetEventObject()
+        newFormat = choice.GetClientData(choice.GetSelection())
+
+        # Recreate the demo DateCtrl with new format, using today's date
+        from taskcoachlib.widgets.maskedtimectrl import DateCtrl
+        import datetime
+        today = datetime.date.today()
+        parent = self._demoDateCtrl.GetParent()
+        sizer = parent.GetSizer()
+
+        # Destroy old and create new with today's date
+        self._demoDateCtrl.Destroy()
+        self._demoDateCtrl = DateCtrl(
+            parent,
+            year=today.year,
+            month=today.month,
+            day=today.day,
+            dateFormat=newFormat or None
+        )
+        sizer.Add(self._demoDateCtrl, 0, wx.ALIGN_CENTER_VERTICAL)
+        parent.Layout()
+        parent.Fit()
+
+        # Update restart warning
+        self._updateRestartWarning()
+
+        event.Skip()
+
+    def _onTimeFormatChange(self, event):
+        """Handle time format dropdown change - update demo control and restart warning."""
+        choice = event.GetEventObject()
+        newFormat = choice.GetClientData(choice.GetSelection())
+
+        # Recreate the demo TimeCtrl with new format, using current time
+        # TimeCtrl has built-in defaults, just pass the format to preview
+        from taskcoachlib.widgets.maskedtimectrl import TimeCtrl
+        import datetime
+        now = datetime.datetime.now()
+        parent = self._demoTimeCtrl.GetParent()
+        sizer = parent.GetSizer()
+
+        # Determine effective format for preview
+        effectiveFormat = newFormat if newFormat else "24"
+
+        # Destroy old and create new with current time
+        self._demoTimeCtrl.Destroy()
+        self._demoTimeCtrl = TimeCtrl(
+            parent,
+            hours=now.hour, minutes=now.minute,
+            timeFormat=effectiveFormat
+        )
+        sizer.Add(self._demoTimeCtrl, 0, wx.ALIGN_CENTER_VERTICAL)
+        parent.Layout()
+        parent.Fit()
+
+        # Update restart warning
+        self._updateRestartWarning()
+
+        event.Skip()
 
     def _onLanguageChange(self, event):
         """Handle language dropdown change."""
@@ -825,7 +1025,19 @@ class LanguagePage(SettingsPage):
     def _updateRestartWarning(self):
         """Update restart warning to show change detected state."""
         selected_lang = self._getSelectedLanguageCode()
-        if selected_lang != self._originalLanguage:
+        selected_date_format = self._dateFormatChoice.GetClientData(
+            self._dateFormatChoice.GetSelection()
+        )
+        selected_time_format = self._timeFormatChoice.GetClientData(
+            self._timeFormatChoice.GetSelection()
+        )
+
+        # Check if any regional setting has changed
+        language_changed = selected_lang != self._originalLanguage
+        date_format_changed = selected_date_format != self._originalDateFormat
+        time_format_changed = selected_time_format != self._originalTimeFormat
+
+        if language_changed or date_format_changed or time_format_changed:
             # Change detected - show red warning
             self._restartWarning.SetLabel(
                 self._restartWarningBase + " " + _("Change detected, restart required!")
@@ -853,6 +1065,16 @@ class LanguagePage(SettingsPage):
     def ok(self):
         super().ok()
         self.set("view", "language", self.get("view", "language_set_by_user"))
+        # Save date format setting
+        selectedFormat = self._dateFormatChoice.GetClientData(
+            self._dateFormatChoice.GetSelection()
+        )
+        self.set("view", "dateformat", selectedFormat)
+        # Save time format setting
+        selectedTimeFormat = self._timeFormatChoice.GetClientData(
+            self._timeFormatChoice.GetSelection()
+        )
+        self.set("view", "timeformat", selectedTimeFormat)
 
 
 class TaskAppearancePage(SettingsPage):
@@ -934,6 +1156,14 @@ class FeaturesPage(SettingsPage):
             disabledValue=24,
             defaultValue=23,
         )
+        # Note about working hours and 12-hour mode
+        workingHoursNote = wx.StaticText(
+            self,
+            label=_("Note: Working hours are not used for hour suggestions when 12-hour (AM/PM) time format is selected in Regional settings.")
+        )
+        workingHoursNote.Wrap(400)
+        self.addEntry("", workingHoursNote, flags=(None, wx.ALIGN_LEFT))
+
         self.addBooleanSetting(
             "calendarviewer",
             "gradient",
@@ -1299,25 +1529,19 @@ class DurationPresetsPage(SettingsPage):
         )
 
         # Preset list with 3 columns: short value, description, delete button
-        self.__listCtrl = wx.ListCtrl(
-            self, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.BORDER_SUNKEN
+        # Using UltimateListCtrl to support embedded Delete buttons
+        self.__listCtrl = ULC.UltimateListCtrl(
+            self,
+            agwStyle=wx.LC_REPORT | wx.LC_SINGLE_SEL | ULC.ULC_HAS_VARIABLE_ROW_HEIGHT
         )
-        # Set up image list for delete icon
-        self.__imageList = wx.ImageList(16, 16)
-        self.__deleteIconIdx = self.__imageList.Add(
-            wx.ArtProvider.GetBitmap("cross_red_icon", wx.ART_MENU, (16, 16))
-        )
-        self.__listCtrl.AssignImageList(self.__imageList, wx.IMAGE_LIST_SMALL)
-
         self.__listCtrl.InsertColumn(0, _("Short"), width=80, format=wx.LIST_FORMAT_RIGHT)
-        self.__listCtrl.InsertColumn(1, _("Description"), width=340)
-        self.__listCtrl.InsertColumn(2, _("x Delete"), width=70)
+        self.__listCtrl.InsertColumn(1, _("Description"), width=310)
+        self.__listCtrl.InsertColumn(2, _("Delete"), width=110)
         # Fixed width 500px, growable height with scrollbars as needed
         self.__listCtrl.SetMinSize((500, 120))
         self.__listCtrl.SetMaxSize((500, -1))  # -1 means no max height
-        # Single click on delete column or double-click anywhere deletes
-        self.__listCtrl.Bind(wx.EVT_LEFT_UP, self.__onListClick)
-        self.__listCtrl.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.__onItemActivated)
+        # Track delete buttons for cleanup
+        self.__deleteButtons = []
         self.addEntry(
             _("Current presets:"), self.__listCtrl, growable=True,
             flags=(wx.ALIGN_TOP | wx.ALIGN_RIGHT, wx.EXPAND | wx.ALL)
@@ -1411,7 +1635,12 @@ class DurationPresetsPage(SettingsPage):
         self.Layout()
 
     def __populateList(self):
-        """Rebuild the list with 3 columns: short value, description, delete icon."""
+        """Rebuild the list with 3 columns: short value, description, delete button."""
+        # Clean up existing buttons
+        for btn in self.__deleteButtons:
+            btn.Destroy()
+        self.__deleteButtons = []
+
         self.__listCtrl.DeleteAllItems()
         presets = sorted(self.__getCurrentPresets())
         is_effort = self.__isEffortPreset()
@@ -1421,10 +1650,24 @@ class DurationPresetsPage(SettingsPage):
                 compact, description = self.__formatSecondsParts(value)
             else:
                 compact, description = self.__formatMinutesParts(value)
-            index = self.__listCtrl.InsertItem(self.__listCtrl.GetItemCount(), compact)
-            self.__listCtrl.SetItem(index, 1, description)
-            self.__listCtrl.SetItemColumnImage(index, 2, self.__deleteIconIdx)
+            # UltimateListCtrl uses InsertStringItem instead of InsertItem
+            index = self.__listCtrl.InsertStringItem(self.__listCtrl.GetItemCount(), compact)
+            self.__listCtrl.SetStringItem(index, 1, description)
             self.__listCtrl.SetItemData(index, value)
+
+            # Create a real Delete button for this row (same style as Add button)
+            # Use wx.BU_EXACTFIT to reduce padding and make button smaller
+            deleteBtn = wx.Button(
+                self.__listCtrl, wx.ID_ANY, " " + _("Delete"),
+                style=wx.BU_EXACTFIT
+            )
+            deleteBtn.SetBitmap(
+                wx.ArtProvider.GetBitmap("cross_red_icon", wx.ART_BUTTON, (16, 16))
+            )
+            deleteBtn.presetValue = value  # Store preset value on button
+            deleteBtn.Bind(wx.EVT_BUTTON, self.__onDeleteButton)
+            self.__deleteButtons.append(deleteBtn)
+            self.__listCtrl.SetItemWindow(index, 2, deleteBtn, expand=True)
 
     def __formatMinutesParts(self, total_minutes):
         """Format minutes as (compact_value, description) tuple."""
@@ -1559,31 +1802,10 @@ class DurationPresetsPage(SettingsPage):
         self.__savePresets(self.__getCurrentSettingKey())
         self.__populateList()
 
-    def __onItemActivated(self, event):
-        """Delete preset when row is double-clicked or activated."""
-        index = event.GetIndex()
-        if index == -1:
-            return
-        self.__deletePresetAtIndex(index)
-
-    def __onListClick(self, event):
-        """Handle single click - delete if click is in the delete column."""
-        event.Skip()  # Allow normal selection behavior
-        pos = event.GetPosition()
-        item, flags = self.__listCtrl.HitTest(pos)
-        if item == -1:
-            return
-        # Check if click is in the delete column (column 2)
-        # Calculate column boundaries
-        col0_width = self.__listCtrl.GetColumnWidth(0)
-        col1_width = self.__listCtrl.GetColumnWidth(1)
-        delete_col_start = col0_width + col1_width
-        if pos.x >= delete_col_start:
-            self.__deletePresetAtIndex(item)
-
-    def __deletePresetAtIndex(self, index):
-        """Delete the preset at the given list index."""
-        value = self.__listCtrl.GetItemData(index)
+    def __onDeleteButton(self, event):
+        """Handle Delete button click - remove the preset."""
+        btn = event.GetEventObject()
+        value = btn.presetValue
         presets = self.__getCurrentPresets()
 
         if value in presets:

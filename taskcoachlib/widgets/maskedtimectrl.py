@@ -115,6 +115,248 @@ def getTextCtrlContentOffset():
     return (borderPadX + innerGapX, borderPadY + innerGapY)
 
 
+def getLocaleDateFormat(override=None):
+    """Detect or return the date format based on locale or override setting.
+
+    Args:
+        override: Optional format string to override locale detection.
+                  Format: "XYZ?" where XYZ is field order (Y=year, M=month, D=day)
+                  and ? is separator. E.g., "YMD-", "MDY/", "DMY.", "DMY/"
+
+    Returns a tuple: (field_order, separator)
+    - field_order: list of field names in display order, e.g., ['month', 'date_day', 'year']
+    - separator: the separator character used between fields, e.g., '/' or '-' or '.'
+
+    This mimics the approach from smartdatetimectrl.py to ensure the same
+    locale-aware date formatting.
+    """
+    # Check for override setting
+    if override:
+        field_map = {'Y': 'year', 'M': 'month', 'D': 'date_day'}
+        if len(override) >= 4:
+            order_str = override[:3].upper()
+            separator = override[3]
+            field_order = [field_map.get(c, 'year') for c in order_str]
+            return (field_order, separator)
+
+    # Use a test date with unique values that are easy to identify:
+    # year=3333, month=11, day=22 - these won't be confused with each other
+    test_date = datetime.date(year=3333, month=11, day=22)
+    formatted = test_date.strftime("%x")
+
+    # Find positions of each component in the formatted string
+    # Year could appear as "3333" (4-digit) or "33" (2-digit)
+    year_pos = formatted.find("3333")
+    if year_pos == -1:
+        year_pos = formatted.find("33")
+
+    month_pos = formatted.find("11")
+    day_pos = formatted.find("22")
+
+    # If we can't find all components, fall back to ISO format
+    if year_pos == -1 or month_pos == -1 or day_pos == -1:
+        return (['year', 'month', 'date_day'], '-')
+
+    # Sort by position to get the order
+    components = [
+        (year_pos, 'year'),
+        (month_pos, 'month'),
+        (day_pos, 'date_day'),
+    ]
+    components.sort(key=lambda x: x[0])
+    field_order = [comp[1] for comp in components]
+
+    # Detect the separator by finding the first non-digit character after the first field
+    # Common separators: '/', '-', '.'
+    separator = '-'  # Default to ISO style
+    for char in formatted:
+        if char in '/-. ':
+            separator = char
+            break
+
+    return (field_order, separator)
+
+
+def getDetectedLocaleDateFormat():
+    """Get the auto-detected locale date format (ignoring any override).
+
+    Returns a tuple: (field_order, separator) detected from strftime("%x").
+    """
+    return getLocaleDateFormat(override=None)
+
+
+def getDateFormatFromSettings():
+    """Get the date format override from user settings.
+
+    Returns the format string (e.g., "YMD-", "MDY/") or empty string for automatic.
+    """
+    try:
+        from taskcoachlib.config import settings
+        return settings.Settings().get("view", "dateformat")
+    except Exception:
+        return ""
+
+
+def getEffectiveDateFormat():
+    """Get the effective date format, respecting user settings.
+
+    Returns a tuple: (field_order, separator) based on settings or locale detection.
+    """
+    override = getDateFormatFromSettings()
+    return getLocaleDateFormat(override=override if override else None)
+
+
+def getDateFormatFunctionForOldControl():
+    """Get a format function suitable for the old smartdatetimectrl DateEntry.
+
+    Returns a function that takes a date and returns a formatted string,
+    which DateEntry parses to understand field order.
+
+    If no override is set, returns None (use default locale detection).
+    """
+    override = getDateFormatFromSettings()
+    if not override or len(override) < 4:
+        return None  # Use default
+
+    # Build format string from override (e.g., "YMD-" -> "%Y-%m-%d")
+    order_str = override[:3].upper()
+    separator = override[3]
+
+    format_map = {'Y': '%Y', 'M': '%m', 'D': '%d'}
+    format_parts = [format_map.get(c, '%Y') for c in order_str]
+    strftime_format = separator.join(format_parts)
+
+    def format_func(d):
+        return d.strftime(strftime_format)
+
+    return format_func
+
+
+def getDetectedLocaleTimeFormat():
+    """Detect locale time format (12-hour vs 24-hour).
+
+    Returns "12" if locale uses 12-hour format with AM/PM, "24" otherwise.
+    """
+    # Test with a time that would show AM/PM indicator
+    test_time = datetime.time(hour=14, minute=30)
+    formatted = test_time.strftime("%X")  # Locale's time format
+
+    # Check for AM/PM indicators
+    am_indicator = datetime.time(hour=1).strftime("%p")
+    pm_indicator = datetime.time(hour=13).strftime("%p")
+
+    if am_indicator or pm_indicator:
+        # Locale has AM/PM, check if it's used in the format
+        if "PM" in formatted.upper() or "AM" in formatted.upper():
+            return "12"
+        # Check for localized AM/PM
+        if pm_indicator and pm_indicator in formatted:
+            return "12"
+
+    return "24"
+
+
+def getTimeFormatFromSettings():
+    """Get the time format override from user settings.
+
+    Returns "24", "12", or "" for automatic.
+    """
+    try:
+        from taskcoachlib.config import settings
+        return settings.Settings().get("view", "timeformat")
+    except Exception:
+        return ""
+
+
+def getEffectiveTimeFormat():
+    """Get the effective time format, respecting user settings.
+
+    Returns "24" or "12".
+
+    When set to automatic (empty string), detects from system locale.
+    Default setting is "24" to match original design.
+    """
+    override = getTimeFormatFromSettings()
+    if override in ("24", "12"):
+        return override
+    # Automatic: detect from system locale
+    return getDetectedLocaleTimeFormat()
+
+
+def getHourRangeForTimeFormat(timeFormat=None):
+    """Get the appropriate hour range for dropdown choices based on time format.
+
+    Args:
+        timeFormat: "24", "12", or None to use effective format from settings
+
+    Returns:
+        list: [0, 1, ..., 23] for 24-hour mode, [1, 2, ..., 12] for 12-hour mode
+    """
+    if timeFormat is None:
+        timeFormat = getEffectiveTimeFormat()
+    if timeFormat == "12":
+        return list(range(1, 13))
+    return list(range(24))
+
+
+def getDefaultHourChoices(timeFormat=None):
+    """Get default hour choices for TimeCtrl dropdowns.
+
+    In 24-hour mode: returns working hours from settings (efforthourstart to efforthourend)
+    In 12-hour mode: returns 1-12
+
+    Args:
+        timeFormat: "24", "12", or None to use effective format from settings
+
+    Returns:
+        list of hour values for dropdown
+    """
+    if timeFormat is None:
+        timeFormat = getEffectiveTimeFormat()
+    if timeFormat == "12":
+        return list(range(1, 13))
+    # 24-hour mode: use working hours from settings
+    try:
+        from taskcoachlib.config import settings
+        start = settings.Settings().getint("view", "efforthourstart")
+        end = settings.Settings().getint("view", "efforthourend")
+        return list(range(start, end + 1))
+    except Exception:
+        return list(range(8, 18))  # Fallback: 8 AM to 5 PM
+
+
+def getDefaultMinuteChoices():
+    """Get default minute choices for TimeCtrl dropdowns from settings.
+
+    Returns minutes based on effortminuteinterval setting.
+
+    Returns:
+        list of minute values for dropdown
+    """
+    try:
+        from taskcoachlib.config import settings
+        interval = settings.Settings().getint("view", "effortminuteinterval")
+        return list(range(0, 60, interval))
+    except Exception:
+        return [0, 15, 30, 45]  # Fallback: 15-minute intervals
+
+
+def getDefaultSecondChoices():
+    """Get default second choices for TimeCtrl dropdowns from settings.
+
+    Returns seconds based on effortsecondinterval setting.
+
+    Returns:
+        list of second values for dropdown
+    """
+    try:
+        from taskcoachlib.config import settings
+        interval = settings.Settings().getint("view", "effortsecondinterval")
+        return list(range(0, 60, interval))
+    except Exception:
+        return [0, 15, 30, 45]  # Fallback: 15-second intervals
+
+
 def monthcalendarex(year, month, weeks=0):
     """Return a matrix of (year, month, day) tuples for a calendar month display.
 
@@ -152,8 +394,10 @@ FIELD_TYPES = {
     # Duration/time fields
     "day": (3, 0, 999, False),
     "hour": (2, 0, 23, True),
+    "hour12": (2, 1, 12, False),  # 12-hour format: 1-12, no leading zero
     "minute": (2, 0, 59, True),
     "second": (2, 0, 59, True),
+    "period": (2, 0, 1, False),  # AM=0, PM=1 (special display handling)
     # Date fields - calendar popup instead of dropdowns
     "year": (4, 1, 9999, True),
     "month": (2, 1, 12, True),
@@ -310,6 +554,7 @@ class _ChoicesPopup(_PopupWindow):
     def __init__(self, choices, value, minWidth, font, *args, **kwargs):
         self.__choices = choices
         self.__value = value
+        self.__hoverValue = None  # Track mouse hover for highlighting
         self.__minWidth = minWidth  # Minimum width to match field
         self.__font = font  # Font from parent control
         super().__init__(*args, **kwargs)
@@ -317,6 +562,8 @@ class _ChoicesPopup(_PopupWindow):
     def Fill(self, interior):
         interior.Bind(wx.EVT_PAINT, self._onPaint)
         interior.Bind(wx.EVT_LEFT_UP, self._onLeftUp)
+        interior.Bind(wx.EVT_MOTION, self._onMotion)
+        interior.Bind(wx.EVT_LEAVE_WINDOW, self._onLeaveWindow)
         self.SetClientSize(self._getExtent(wx.ClientDC(interior)))
 
     def _getExtent(self, dc):
@@ -356,17 +603,26 @@ class _ChoicesPopup(_PopupWindow):
             itemH = th + vPad * 2
             itemRect = wx.Rect(contentOffsetX, y, w - contentOffsetX * 2, itemH)
 
-            if value == self.__value:
-                # Use native selection rectangle rendering
+            isSelected = (value == self.__value)
+            isHovered = (value == self.__hoverValue and not isSelected)
+
+            if isSelected:
+                # Use native selection rectangle rendering (fully highlighted)
                 renderer.DrawItemSelectionRect(
                     win, dc, itemRect,
                     wx.CONTROL_SELECTED | wx.CONTROL_FOCUSED
+                )
+            elif isHovered:
+                # Use native hover rectangle rendering (lighter highlight)
+                renderer.DrawItemSelectionRect(
+                    win, dc, itemRect,
+                    wx.CONTROL_CURRENT
                 )
 
             # Draw text right-aligned with padding, vertically centered
             textY = y + vPad
             textX = w - contentOffsetX - hPad - tw
-            if value == self.__value:
+            if isSelected:
                 dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
             else:
                 dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_LISTBOXTEXT))
@@ -419,6 +675,31 @@ class _ChoicesPopup(_PopupWindow):
                 break
             y += itemH
 
+    def _onMotion(self, event):
+        """Track mouse movement to highlight item under cursor."""
+        vPad = 2
+        _, contentOffsetY = getTextCtrlContentOffset()
+        y = contentOffsetY
+        dc = wx.ClientDC(event.GetEventObject())
+        dc.SetFont(self.__font)
+        newHoverValue = None
+        for label, value in self.__choices:
+            tw, th = dc.GetTextExtent(label)
+            itemH = th + vPad * 2
+            if event.GetY() >= y and event.GetY() < y + itemH:
+                newHoverValue = value
+                break
+            y += itemH
+        if newHoverValue != self.__hoverValue:
+            self.__hoverValue = newHoverValue
+            self.interior().Refresh()
+
+    def _onLeaveWindow(self, event):
+        """Clear hover highlight when mouse leaves popup."""
+        if self.__hoverValue is not None:
+            self.__hoverValue = None
+            self.interior().Refresh()
+
 
 class _CalendarPopup(_PopupWindow):
     """Calendar popup for date selection."""
@@ -432,6 +713,7 @@ class _CalendarPopup(_PopupWindow):
         self.__maxDim = None
         self.__font = font
         self.__days = []
+        self.__hoverDate = None  # Track mouse hover for day highlighting
         super().__init__(*args, **kwargs)
 
     def HandleKey(self, event):
@@ -492,6 +774,8 @@ class _CalendarPopup(_PopupWindow):
     def Fill(self, interior):
         interior.Bind(wx.EVT_PAINT, self._onPaint)
         interior.Bind(wx.EVT_LEFT_UP, self._onLeftUp)
+        interior.Bind(wx.EVT_MOTION, self._onMotion)
+        interior.Bind(wx.EVT_LEAVE_WINDOW, self._onLeaveWindow)
         self.SetClientSize(self._getExtent(wx.ClientDC(interior)))
 
     def _getExtent(self, dc):
@@ -627,10 +911,21 @@ class _CalendarPopup(_PopupWindow):
                     wx.RED if (dayIndex + calendar.firstweekday()) % 7 in [5, 6] else wx.BLACK
                 )
 
-                if dt == self.__selection:
+                isSelected = (dt == self.__selection)
+                isHovered = (dt == self.__hoverDate and not isSelected and active)
+
+                if isSelected:
                     drawFocusRect(self.__win, dc, x, y, self.__maxDim, self.__maxDim)
                     dc.SetTextForeground(
                         wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
+                    )
+                elif isHovered:
+                    # Draw hover highlight (lighter than selection)
+                    renderer = wx.RendererNative.Get()
+                    renderer.DrawItemSelectionRect(
+                        self.__win, dc,
+                        wx.Rect(x, y, self.__maxDim, self.__maxDim),
+                        wx.CONTROL_CURRENT
                     )
 
                 if not active:
@@ -711,6 +1006,28 @@ class _CalendarPopup(_PopupWindow):
                 )
                 self.Dismiss()
                 break
+
+    def _onMotion(self, event):
+        """Track mouse movement to highlight day under cursor."""
+        newHoverDate = None
+        for x, y, (year, month, day) in self.__days:
+            if (
+                event.GetX() >= x
+                and event.GetX() < x + self.__maxDim
+                and event.GetY() >= y
+                and event.GetY() < y + self.__maxDim
+            ):
+                newHoverDate = datetime.date(year=year, month=month, day=day)
+                break
+        if newHoverDate != self.__hoverDate:
+            self.__hoverDate = newHoverDate
+            self.interior().Refresh()
+
+    def _onLeaveWindow(self, event):
+        """Clear hover highlight when mouse leaves popup."""
+        if self.__hoverDate is not None:
+            self.__hoverDate = None
+            self.interior().Refresh()
 
 
 # =============================================================================
@@ -802,6 +1119,12 @@ class NumericField:
         # Use observer's font if available, otherwise system default
         font = self.__observer.GetFont() if self.__observer else wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         dc.SetFont(font)
+        # Special handling for AM/PM period field
+        if self.__name == "period":
+            # Use the wider of AM/PM for consistent sizing
+            amW, amH = dc.GetTextExtent("AM")
+            pmW, pmH = dc.GetTextExtent("PM")
+            return (max(amW, pmW), max(amH, pmH))
         return dc.GetTextExtent("0" * max(self.__width, 1))
 
     def PaintValue(self, dc, x, y, w, h):
@@ -809,10 +1132,17 @@ class NumericField:
 
         Zero-padded fields (hours, minutes): centered
         Space-padded fields (days): right-aligned so digit touches following literal
+        Period field (AM/PM): displays text instead of number
         """
         # Use observer's font if available, otherwise system default
         font = self.__observer.GetFont() if self.__observer else wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         dc.SetFont(font)
+        # Special handling for AM/PM period field
+        if self.__name == "period":
+            txt = "PM" if self.__value else "AM"
+            tw, th = dc.GetTextExtent(txt)
+            dc.DrawText(txt, int(x + (w - tw) / 2), int(y + (h - th) / 2))
+            return
         if self.__padZeros:
             txt = ("%%0%dd" % max(self.__width, 1)) % self.__value
             tw, th = dc.GetTextExtent(txt)
@@ -845,6 +1175,20 @@ class NumericField:
                 newVal = self.__maxVal
             self.SetValue(newVal)
             return True
+
+        # Special handling for AM/PM period field
+        if self.__name == "period":
+            if keyCode in (ord('A'), ord('a')):
+                self.SetValue(0)  # AM
+                return True
+            if keyCode in (ord('P'), ord('p')):
+                self.SetValue(1)  # PM
+                return True
+            # Space bar toggles AM/PM
+            if keyCode == wx.WXK_SPACE:
+                self.SetValue(1 - self.__value)
+                return True
+            return False  # Don't allow numeric input for period field
 
         # Handle numeric input
         if wx.WXK_NUMPAD0 <= keyCode <= wx.WXK_NUMPAD9:
@@ -1465,30 +1809,94 @@ class DurationCtrlVerbose(FieldsCtrl):
 
 
 class TimeCtrl(FieldsCtrl):
-    """Simple time control: HH:MM.
+    """Simple time control: HH:MM (24-hour) or HH:MM AM/PM (12-hour).
+
+    Supports both 24-hour and 12-hour time formats. The format can be
+    specified explicitly or determined from settings.
 
     Args:
         parent: Parent window
-        hours, minutes: Initial values
-        hourChoices: List of hour values for dropdown (None = no dropdown)
-        minuteChoices: List of minute values for dropdown (None = no dropdown)
+        hours, minutes: Initial values (always in 24-hour format internally)
+        hourChoices: Dropdown choices for hours:
+            - None (default): Use defaults from settings (working hours for 24h, 1-12 for 12h)
+            - list: Use that specific list
+            - False: No dropdown
+        minuteChoices: Dropdown choices for minutes:
+            - None (default): Use defaults from settings (based on effortminuteinterval)
+            - list: Use that specific list
+            - False: No dropdown
+        timeFormat: "24" for 24-hour, "12" for 12-hour with AM/PM, None to use settings
     """
 
     def __init__(self, parent, hours=0, minutes=0,
-                 hourChoices=None, minuteChoices=None):
-        elements = [
-            ("hour", hours, hourChoices),
-            ("literal", ":"),
-            ("minute", minutes, minuteChoices),
-        ]
+                 hourChoices=None, minuteChoices=None, timeFormat=None):
+        # Determine time format from parameter or settings
+        if timeFormat is not None:
+            self._timeFormat = timeFormat if timeFormat in ("24", "12") else "24"
+        else:
+            self._timeFormat = getEffectiveTimeFormat()
+
+        # Resolve hour choices: None=defaults, False=no dropdown, list=use as-is
+        if hourChoices is None:
+            hourChoices = getDefaultHourChoices(self._timeFormat)
+        elif hourChoices is False:
+            hourChoices = None
+
+        # Resolve minute choices: None=defaults, False=no dropdown, list=use as-is
+        if minuteChoices is None:
+            minuteChoices = getDefaultMinuteChoices()
+        elif minuteChoices is False:
+            minuteChoices = None
+
+        if self._timeFormat == "12":
+            # 12-hour format: convert 24h to 12h display
+            hour12, period = self._to12Hour(hours)
+            elements = [
+                ("hour12", hour12, hourChoices),
+                ("literal", ":"),
+                ("minute", minutes, minuteChoices),
+                ("literal", " "),
+                ("period", period, [("AM", 0), ("PM", 1)]),
+            ]
+        else:
+            # 24-hour format (default)
+            elements = [
+                ("hour", hours, hourChoices),
+                ("literal", ":"),
+                ("minute", minutes, minuteChoices),
+            ]
 
         super().__init__(parent, elements)
 
+    def _to12Hour(self, hour24):
+        """Convert 24-hour to 12-hour format. Returns (hour12, period)."""
+        if hour24 == 0:
+            return (12, 0)  # 12 AM
+        elif hour24 < 12:
+            return (hour24, 0)  # AM
+        elif hour24 == 12:
+            return (12, 1)  # 12 PM
+        else:
+            return (hour24 - 12, 1)  # PM
+
+    def _to24Hour(self, hour12, period):
+        """Convert 12-hour to 24-hour format."""
+        if hour12 == 12:
+            return 0 if period == 0 else 12  # 12 AM = 0, 12 PM = 12
+        else:
+            return hour12 if period == 0 else hour12 + 12
+
     def GetTime(self):
-        return datetime.time(
-            hour=self.GetFieldValue('hour'),
-            minute=self.GetFieldValue('minute')
-        )
+        if self._timeFormat == "12":
+            hour12 = self.GetFieldValue('hour12')
+            period = self.GetFieldValue('period')
+            hour24 = self._to24Hour(hour12, period)
+            return datetime.time(hour=hour24, minute=self.GetFieldValue('minute'))
+        else:
+            return datetime.time(
+                hour=self.GetFieldValue('hour'),
+                minute=self.GetFieldValue('minute')
+            )
 
     def SetTime(self, t):
         """Set the time value.
@@ -1498,39 +1906,124 @@ class TimeCtrl(FieldsCtrl):
         """
         if t is None:
             t = datetime.time()
-        self.SetFieldValue('hour', t.hour)
+        if self._timeFormat == "12":
+            hour12, period = self._to12Hour(t.hour)
+            self.SetFieldValue('hour12', hour12)
+            self.SetFieldValue('period', period)
+        else:
+            self.SetFieldValue('hour', t.hour)
         self.SetFieldValue('minute', t.minute)
 
 
 class TimeWithSecondsCtrl(FieldsCtrl):
-    """Time control with seconds: HH:MM:SS.
+    """Time control with seconds: HH:MM:SS (24-hour) or HH:MM:SS AM/PM (12-hour).
+
+    Supports both 24-hour and 12-hour time formats. The format can be
+    specified explicitly or determined from settings.
 
     Args:
         parent: Parent window
-        hours, minutes, seconds: Initial values
-        hourChoices: List of hour values for dropdown (None = no dropdown)
-        minuteChoices: List of minute values for dropdown (None = no dropdown)
-        secondChoices: List of second values for dropdown (None = no dropdown)
+        hours, minutes, seconds: Initial values (always in 24-hour format internally)
+        hourChoices: Dropdown choices for hours:
+            - None (default): Use defaults from settings (working hours for 24h, 1-12 for 12h)
+            - list: Use that specific list
+            - False: No dropdown
+        minuteChoices: Dropdown choices for minutes:
+            - None (default): Use defaults from settings (based on effortminuteinterval)
+            - list: Use that specific list
+            - False: No dropdown
+        secondChoices: Dropdown choices for seconds:
+            - None (default): Use defaults from settings (based on effortsecondinterval)
+            - list: Use that specific list
+            - False: No dropdown
+        timeFormat: "24" for 24-hour, "12" for 12-hour with AM/PM, None to use settings
     """
 
     def __init__(self, parent, hours=0, minutes=0, seconds=0,
-                 hourChoices=None, minuteChoices=None, secondChoices=None):
-        elements = [
-            ("hour", hours, hourChoices),
-            ("literal", ":"),
-            ("minute", minutes, minuteChoices),
-            ("literal", ":"),
-            ("second", seconds, secondChoices),
-        ]
+                 hourChoices=None, minuteChoices=None, secondChoices=None,
+                 timeFormat=None):
+        # Determine time format from parameter or settings
+        if timeFormat is not None:
+            self._timeFormat = timeFormat if timeFormat in ("24", "12") else "24"
+        else:
+            self._timeFormat = getEffectiveTimeFormat()
+
+        # Resolve hour choices: None=defaults, False=no dropdown, list=use as-is
+        if hourChoices is None:
+            hourChoices = getDefaultHourChoices(self._timeFormat)
+        elif hourChoices is False:
+            hourChoices = None
+
+        # Resolve minute choices: None=defaults, False=no dropdown, list=use as-is
+        if minuteChoices is None:
+            minuteChoices = getDefaultMinuteChoices()
+        elif minuteChoices is False:
+            minuteChoices = None
+
+        # Resolve second choices: None=defaults, False=no dropdown, list=use as-is
+        if secondChoices is None:
+            secondChoices = getDefaultSecondChoices()
+        elif secondChoices is False:
+            secondChoices = None
+
+        if self._timeFormat == "12":
+            # 12-hour format: convert 24h to 12h display
+            hour12, period = self._to12Hour(hours)
+            elements = [
+                ("hour12", hour12, hourChoices),
+                ("literal", ":"),
+                ("minute", minutes, minuteChoices),
+                ("literal", ":"),
+                ("second", seconds, secondChoices),
+                ("literal", " "),
+                ("period", period, [("AM", 0), ("PM", 1)]),
+            ]
+        else:
+            # 24-hour format (default)
+            elements = [
+                ("hour", hours, hourChoices),
+                ("literal", ":"),
+                ("minute", minutes, minuteChoices),
+                ("literal", ":"),
+                ("second", seconds, secondChoices),
+            ]
 
         super().__init__(parent, elements)
 
+    def _to12Hour(self, hour24):
+        """Convert 24-hour to 12-hour format. Returns (hour12, period)."""
+        if hour24 == 0:
+            return (12, 0)  # 12 AM
+        elif hour24 < 12:
+            return (hour24, 0)  # AM
+        elif hour24 == 12:
+            return (12, 1)  # 12 PM
+        else:
+            return (hour24 - 12, 1)  # PM
+
+    def _to24Hour(self, hour12, period):
+        """Convert 12-hour to 24-hour format."""
+        if hour12 == 12:
+            return 0 if period == 0 else 12  # 12 AM = 0, 12 PM = 12
+        else:
+            return hour12 if period == 0 else hour12 + 12
+
     def GetTime(self):
-        return datetime.time(
-            hour=self.GetFieldValue('hour'),
-            minute=self.GetFieldValue('minute'),
-            second=self.GetFieldValue('second')
-        )
+        if self._timeFormat == "12":
+            hour12 = self.GetFieldValue('hour12')
+            period = self.GetFieldValue('period')
+            hour24 = self._to24Hour(hour12, period)
+            return datetime.time(
+                hour=hour24,
+                minute=self.GetFieldValue('minute'),
+                second=self.GetFieldValue('second')
+            )
+        else:
+            return datetime.time(
+                hour=self.GetFieldValue('hour'),
+                minute=self.GetFieldValue('minute'),
+                second=self.GetFieldValue('second')
+            )
 
     def SetTime(self, t):
         """Set the time value.
@@ -1540,16 +2033,35 @@ class TimeWithSecondsCtrl(FieldsCtrl):
         """
         if t is None:
             t = datetime.time()
-        self.SetFieldValue('hour', t.hour)
+        if self._timeFormat == "12":
+            hour12, period = self._to12Hour(t.hour)
+            self.SetFieldValue('hour12', hour12)
+            self.SetFieldValue('period', period)
+        else:
+            self.SetFieldValue('hour', t.hour)
         self.SetFieldValue('minute', t.minute)
         self.SetFieldValue('second', t.second)
 
 
 class DateCtrl(FieldsCtrl):
-    """Date control: YYYY-MM-DD with navigable subfields and calendar popup."""
+    """Date control with locale-aware field order and separators.
+
+    Automatically detects the system locale's date format using strftime("%x")
+    and arranges year/month/day fields accordingly:
+    - US: MM/DD/YYYY
+    - Europe: DD/MM/YYYY
+    - ISO/Canada: YYYY-MM-DD
+
+    The dateFormat parameter can override the automatic detection:
+    - None or "": Use automatic locale detection
+    - "YMD-": Year-Month-Day with hyphen (ISO format)
+    - "MDY/": Month/Day/Year with slash (US format)
+    - "DMY/": Day/Month/Year with slash (European format)
+    - "DMY.": Day.Month.Year with dot (German format)
+    """
 
     def __init__(self, parent, year=None, month=None, day=None,
-                 minDate=None, maxDate=None):
+                 minDate=None, maxDate=None, dateFormat=None):
         # Default to today's date
         today = datetime.date.today()
         if year is None:
@@ -1563,13 +2075,27 @@ class DateCtrl(FieldsCtrl):
         self._maxDate = maxDate
         self._calendarPopup = None
 
-        elements = [
-            ("year", year),
-            ("literal", "-"),
-            ("month", month),
-            ("literal", "-"),
-            ("date_day", day),
-        ]
+        # Get date format: use explicit override, or read from settings, or detect from locale
+        if dateFormat is not None:
+            # Explicit format passed - use it directly
+            field_order, separator = getLocaleDateFormat(override=dateFormat if dateFormat else None)
+        else:
+            # No explicit format - use effective format from settings
+            field_order, separator = getEffectiveDateFormat()
+
+        # Map field names to their values
+        field_values = {
+            'year': year,
+            'month': month,
+            'date_day': day,
+        }
+
+        # Build elements list based on locale order
+        elements = []
+        for i, field_name in enumerate(field_order):
+            if i > 0:
+                elements.append(("literal", separator))
+            elements.append((field_name, field_values[field_name]))
 
         super().__init__(parent, elements)
 
