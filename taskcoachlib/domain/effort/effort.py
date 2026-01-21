@@ -28,10 +28,11 @@ import weakref
 @functools.total_ordering
 class Effort(baseeffort.BaseEffort, base.Object):
 
-    def __init__(self, task=None, start=None, stop=None, *args, **kwargs):
+    def __init__(self, task=None, start=None, stop=None, entryMode="standard", *args, **kwargs):
         super().__init__(
             task, start or date.DateTime.now(), stop, *args, **kwargs
         )
+        self.__entryMode = entryMode if entryMode in ("standard", "retroactive") else "standard"
         self.__updateDurationCache()
 
     def __getattribute__(self, name):
@@ -123,7 +124,7 @@ class Effort(baseeffort.BaseEffort, base.Object):
         state = super().__getstate__()
         task = self._task() if self._task else None
         state.update(
-            dict(task=task, start=self._start, stop=self._stop)
+            dict(task=task, start=self._start, stop=self._stop, entryMode=self.__entryMode)
         )
         return state
 
@@ -133,12 +134,13 @@ class Effort(baseeffort.BaseEffort, base.Object):
         self.setTask(state["task"])
         self.setStart(state["start"])
         self.setStop(state["stop"])
+        self.setEntryMode(state.get("entryMode", "standard"))
 
     def __getcopystate__(self):
         state = super().__getcopystate__()
         task = self._task() if self._task else None
         state.update(
-            dict(task=task, start=self._start, stop=self._stop)
+            dict(task=task, start=self._start, stop=self._stop, entryMode=self.__entryMode)
         )
         return state
 
@@ -243,4 +245,27 @@ class Effort(baseeffort.BaseEffort, base.Object):
             class_.taskChangedEventType(),
             class_.startChangedEventType(),
             class_.stopChangedEventType(),
+            class_.entryModeChangedEventType(),
         ]
+
+    # Entry mode (standard or retroactive)
+
+    def entryMode(self):
+        """Return the entry mode: 'standard' or 'retroactive'."""
+        return self.__entryMode
+
+    def setEntryMode(self, mode):
+        """Set the entry mode."""
+        mode = mode if mode in ("standard", "retroactive") else "standard"
+        if mode == self.__entryMode:
+            return
+        self.__entryMode = mode
+        pub.sendMessage(
+            self.entryModeChangedEventType(),
+            newValue=mode,
+            sender=self,
+        )
+
+    @classmethod
+    def entryModeChangedEventType(class_):
+        return "pubsub.effort.entryMode"

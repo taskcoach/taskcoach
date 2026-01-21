@@ -553,8 +553,8 @@ class _ChoicesPopup(_PopupWindow):
 
     def __init__(self, choices, value, minWidth, font, *args, **kwargs):
         self.__choices = choices
-        self.__value = value
-        self.__hoverValue = None  # Track mouse hover for highlighting
+        self.__originalValue = value  # Value when popup opened
+        self.__highlightedValue = value  # Currently highlighted (mouse or keys)
         self.__minWidth = minWidth  # Minimum width to match field
         self.__font = font  # Font from parent control
         super().__init__(*args, **kwargs)
@@ -603,26 +603,19 @@ class _ChoicesPopup(_PopupWindow):
             itemH = th + vPad * 2
             itemRect = wx.Rect(contentOffsetX, y, w - contentOffsetX * 2, itemH)
 
-            isSelected = (value == self.__value)
-            isHovered = (value == self.__hoverValue and not isSelected)
+            isHighlighted = (value == self.__highlightedValue)
 
-            if isSelected:
+            if isHighlighted:
                 # Use native selection rectangle rendering (fully highlighted)
                 renderer.DrawItemSelectionRect(
                     win, dc, itemRect,
                     wx.CONTROL_SELECTED | wx.CONTROL_FOCUSED
                 )
-            elif isHovered:
-                # Use native hover rectangle rendering (lighter highlight)
-                renderer.DrawItemSelectionRect(
-                    win, dc, itemRect,
-                    wx.CONTROL_CURRENT
-                )
 
             # Draw text right-aligned with padding, vertically centered
             textY = y + vPad
             textX = w - contentOffsetX - hPad - tw
-            if isSelected:
+            if isHighlighted:
                 dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
             else:
                 dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_LISTBOXTEXT))
@@ -632,31 +625,34 @@ class _ChoicesPopup(_PopupWindow):
 
         self.__itemHeight = itemH if self.__choices else 0
 
-    def __index(self):
+    def __highlightedIndex(self):
         for idx, (label, value) in enumerate(self.__choices):
-            if value == self.__value:
+            if value == self.__highlightedValue:
                 return idx
         return 0
 
     def HandleKey(self, event):
-        if event.GetKeyCode() == wx.WXK_UP:
-            self.__value = self.__choices[
-                (self.__index() + len(self.__choices) - 1) % len(self.__choices)
+        keyCode = event.GetKeyCode()
+        if keyCode == wx.WXK_UP:
+            self.__highlightedValue = self.__choices[
+                (self.__highlightedIndex() + len(self.__choices) - 1) % len(self.__choices)
             ][1]
             self.Refresh()
-            self.ProcessEvent(ChoicePreviewEvent(self, self.__value))
             return True
 
-        if event.GetKeyCode() == wx.WXK_DOWN:
-            self.__value = self.__choices[
-                (self.__index() + 1) % len(self.__choices)
+        if keyCode == wx.WXK_DOWN:
+            self.__highlightedValue = self.__choices[
+                (self.__highlightedIndex() + 1) % len(self.__choices)
             ][1]
             self.Refresh()
-            self.ProcessEvent(ChoicePreviewEvent(self, self.__value))
             return True
 
-        if event.GetKeyCode() == wx.WXK_RETURN:
-            self.ProcessEvent(ChoiceSelectedEvent(self, self.__value))
+        if keyCode == wx.WXK_RETURN:
+            self.ProcessEvent(ChoiceSelectedEvent(self, self.__highlightedValue))
+            return True
+
+        if keyCode == wx.WXK_ESCAPE:
+            self.Dismiss()
             return True
 
         return False
@@ -682,30 +678,29 @@ class _ChoicesPopup(_PopupWindow):
         y = contentOffsetY
         dc = wx.ClientDC(event.GetEventObject())
         dc.SetFont(self.__font)
-        newHoverValue = None
+        newHighlight = None
         for label, value in self.__choices:
             tw, th = dc.GetTextExtent(label)
             itemH = th + vPad * 2
             if event.GetY() >= y and event.GetY() < y + itemH:
-                newHoverValue = value
+                newHighlight = value
                 break
             y += itemH
-        if newHoverValue != self.__hoverValue:
-            self.__hoverValue = newHoverValue
-            self.interior().Refresh()
+        if newHighlight is not None and newHighlight != self.__highlightedValue:
+            self.__highlightedValue = newHighlight
+            self.Refresh()
 
     def _onLeaveWindow(self, event):
-        """Clear hover highlight when mouse leaves popup."""
-        if self.__hoverValue is not None:
-            self.__hoverValue = None
-            self.interior().Refresh()
+        """Mouse left popup - keep current highlight (don't clear it)."""
+        # Don't clear highlight when mouse leaves - standard dropdown behavior
 
 
 class _CalendarPopup(_PopupWindow):
     """Calendar popup for date selection."""
 
     def __init__(self, selection, font, minDate=None, maxDate=None, *args, **kwargs):
-        self.__selection = selection
+        self.__originalDate = selection  # Value when popup opened
+        self.__highlightedDate = selection  # Currently highlighted (mouse or keys)
         self.__year = selection.year
         self.__month = selection.month
         self.__minDate = minDate
@@ -713,7 +708,6 @@ class _CalendarPopup(_PopupWindow):
         self.__maxDim = None
         self.__font = font
         self.__days = []
-        self.__hoverDate = None  # Track mouse hover for day highlighting
         super().__init__(*args, **kwargs)
 
     def HandleKey(self, event):
@@ -731,27 +725,26 @@ class _CalendarPopup(_PopupWindow):
             self.Dismiss()
             return True
         elif keyCode == wx.WXK_RETURN:
-            # Confirm current selection and notify parent
-            self.GetParent()._setDateFromCalendar(self.__selection)
+            self.GetParent()._setDateFromCalendar(self.__highlightedDate)
             self.Dismiss()
             return True
         elif keyCode == wx.WXK_LEFT:
-            self.__MoveSelection(datetime.timedelta(days=-1))
+            self.__MoveHighlight(datetime.timedelta(days=-1))
             return True
         elif keyCode == wx.WXK_RIGHT:
-            self.__MoveSelection(datetime.timedelta(days=1))
+            self.__MoveHighlight(datetime.timedelta(days=1))
             return True
         elif keyCode == wx.WXK_UP:
-            self.__MoveSelection(datetime.timedelta(days=-7))
+            self.__MoveHighlight(datetime.timedelta(days=-7))
             return True
         elif keyCode == wx.WXK_DOWN:
-            self.__MoveSelection(datetime.timedelta(days=7))
+            self.__MoveHighlight(datetime.timedelta(days=7))
             return True
         return False
 
-    def __MoveSelection(self, delta):
-        """Move the calendar selection by the given timedelta."""
-        newDate = self.__selection + delta
+    def __MoveHighlight(self, delta):
+        """Move the calendar highlight by the given timedelta."""
+        newDate = self.__highlightedDate + delta
         # Check min/max bounds
         if self.__minDate is not None and newDate < self.__minDate:
             wx.Bell()
@@ -763,11 +756,11 @@ class _CalendarPopup(_PopupWindow):
         if newDate.year < 1 or newDate.year > 9999:
             wx.Bell()
             return
-        self.__selection = newDate
-        # Update displayed month/year if selection moved to different month
-        if self.__selection.year != self.__year or self.__selection.month != self.__month:
-            self.__year = self.__selection.year
-            self.__month = self.__selection.month
+        self.__highlightedDate = newDate
+        # Update displayed month/year if highlight moved to different month
+        if self.__highlightedDate.year != self.__year or self.__highlightedDate.month != self.__month:
+            self.__year = self.__highlightedDate.year
+            self.__month = self.__highlightedDate.month
             self.SetClientSize(self._getExtent(wx.ClientDC(self.interior())))
         self.Refresh()
 
@@ -911,21 +904,13 @@ class _CalendarPopup(_PopupWindow):
                     wx.RED if (dayIndex + calendar.firstweekday()) % 7 in [5, 6] else wx.BLACK
                 )
 
-                isSelected = (dt == self.__selection)
-                isHovered = (dt == self.__hoverDate and not isSelected and active)
+                isHighlighted = (dt == self.__highlightedDate and active)
 
-                if isSelected:
+                if isHighlighted:
+                    # Single highlight style for both mouse hover and keyboard navigation
                     drawFocusRect(self.__win, dc, x, y, self.__maxDim, self.__maxDim)
                     dc.SetTextForeground(
                         wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
-                    )
-                elif isHovered:
-                    # Draw hover highlight (lighter than selection)
-                    renderer = wx.RendererNative.Get()
-                    renderer.DrawItemSelectionRect(
-                        self.__win, dc,
-                        wx.Rect(x, y, self.__maxDim, self.__maxDim),
-                        wx.CONTROL_CURRENT
                     )
 
                 if not active:
@@ -1009,7 +994,7 @@ class _CalendarPopup(_PopupWindow):
 
     def _onMotion(self, event):
         """Track mouse movement to highlight day under cursor."""
-        newHoverDate = None
+        newHighlight = None
         for x, y, (year, month, day) in self.__days:
             if (
                 event.GetX() >= x
@@ -1017,17 +1002,16 @@ class _CalendarPopup(_PopupWindow):
                 and event.GetY() >= y
                 and event.GetY() < y + self.__maxDim
             ):
-                newHoverDate = datetime.date(year=year, month=month, day=day)
+                newHighlight = datetime.date(year=year, month=month, day=day)
                 break
-        if newHoverDate != self.__hoverDate:
-            self.__hoverDate = newHoverDate
-            self.interior().Refresh()
+        if newHighlight is not None and newHighlight != self.__highlightedDate:
+            self.__highlightedDate = newHighlight
+            self.Refresh()
 
     def _onLeaveWindow(self, event):
-        """Clear hover highlight when mouse leaves popup."""
-        if self.__hoverDate is not None:
-            self.__hoverDate = None
-            self.interior().Refresh()
+        """Keep highlight when mouse leaves popup - standard dropdown behavior."""
+        # Don't clear highlight when mouse leaves - standard dropdown behavior
+        pass
 
 
 # =============================================================================

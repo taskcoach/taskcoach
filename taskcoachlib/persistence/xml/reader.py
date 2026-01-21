@@ -676,11 +676,13 @@ class XMLReader(object):
         # task by the task itself. This way no events are sent for changing the
         # effort owner, which is good.
         # pylint: disable=W0142
+        entryMode = node.attrib.get("entryMode", "standard")
         return effort.Effort(
             task=None,
             start=date.parseDateTime(start),
             stop=date.parseDateTime(stop),
             description=description,
+            entryMode=entryMode,
             **kwargs
         )
 

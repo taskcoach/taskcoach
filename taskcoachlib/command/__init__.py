@@ -24,6 +24,7 @@ from .effortCommands import (
     EditTaskCommand,
     EditEffortStartDateTimeCommand,
     EditEffortStopDateTimeCommand,
+    EditEffortEntryModeCommand,
 )
 from .categoryCommands import *
 from .categorizableCommands import *

@@ -234,6 +234,9 @@ class XMLWriter(object):
                 # Make sure the effort duration is at least one second
                 formattedStop = self.formatDateTime(stop + date.ONE_SECOND)
             attrs["stop"] = formattedStop
+        entryMode = effort.entryMode()
+        if entryMode and entryMode != "standard":
+            attrs["entryMode"] = entryMode
         node = ET.SubElement(parentNode, "effort", attrs)
         if effort.description():
             ET.SubElement(node, "description").text = effort.description()

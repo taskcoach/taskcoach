@@ -225,3 +225,26 @@ class EditEffortStopDateTimeCommand(base.BaseCommand):
 
     def redo_command(self):
         self.do_command()
+
+
+class EditEffortEntryModeCommand(base.BaseCommand):
+    plural_name = _("Change effort entry modes")
+    singular_name = _('Change effort entry mode of "%s"')
+
+    def __init__(self, *args, **kwargs):
+        self.__newMode = kwargs.pop("newValue")
+        super().__init__(*args, **kwargs)
+        self.__oldModes = [item.entryMode() for item in self.items]
+
+    def do_command(self):
+        super().do_command()
+        for item in self.items:
+            item.setEntryMode(self.__newMode)
+
+    def undo_command(self):
+        super().undo_command()
+        for item, oldMode in zip(self.items, self.__oldModes):
+            item.setEntryMode(oldMode)
+
+    def redo_command(self):
+        self.do_command()
