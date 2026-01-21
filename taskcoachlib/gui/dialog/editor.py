@@ -3193,8 +3193,55 @@ class EffortEditBook(Page):
             flags=[None, None, wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL | wx.ALL],
         )
 
-        # --- Duration row ---
+        # --- Time Spent row (display only) ---
+        # Get stop time early - needed for timer decision and duration calculation
         current_stop_date_time = self.items[0].getStop()
+
+        # Calculate initial time spent
+        if current_stop_date_time is not None:
+            time_spent_duration = current_stop_date_time - current_start_date_time
+            time_spent_seconds = max(0, int(time_spent_duration.total_seconds()))
+        else:
+            # Tracking - calculate from start to now
+            now = date.DateTime.now()
+            if current_start_date_time and now > current_start_date_time:
+                time_spent_duration = now - current_start_date_time
+                time_spent_seconds = int(time_spent_duration.total_seconds())
+            else:
+                time_spent_seconds = 0
+
+        ts_hours = time_spent_seconds // 3600
+        ts_minutes = (time_spent_seconds % 3600) // 60
+        ts_seconds = time_spent_seconds % 60
+
+        self._timeSpentCtrl = widgets.MaskedDurationCtrl(
+            self,
+            days=0, hours=ts_hours, minutes=ts_minutes, seconds=ts_seconds,
+            showSeconds=True
+        )
+        # Deactivate when stop time exists, read-only (but not disabled) when tracking
+        if current_stop_date_time is not None:
+            self._timeSpentCtrl.Enable(False)
+        else:
+            self._timeSpentCtrl.SetReadOnly(True)
+
+        self._timeSpentLabel = wx.StaticText(self, label=_("Calculated time spent until now"))
+
+        self._timeSpentTimer = None
+        # Start timer only if effort is being tracked (no stop time)
+        if current_stop_date_time is None:
+            self._timeSpentTimer = wx.Timer(self)
+            self.Bind(wx.EVT_TIMER, self.__onTimeSpentTimer, self._timeSpentTimer)
+            self._timeSpentTimer.Start(1000)  # Update every second
+
+        self.addEntry(
+            _("Time spent"),
+            self._timeSpentCtrl,
+            self._timeSpentLabel,
+            flags=[None, None, wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL | wx.ALL],
+        )
+
+        # --- Duration row ---
         if current_stop_date_time is not None:
             duration = current_stop_date_time - current_start_date_time
             total_seconds = int(duration.total_seconds())
@@ -3387,12 +3434,22 @@ class EffortEditBook(Page):
                 command.EditEffortStopDateTimeCommand(
                     None, self.items, newValue=self._stopDateTimeCombo.GetValue()
                 ).do()
+                # Stop timer - effort is no longer being tracked
+                self.__stopTimeSpentTimer()
+                # Deactivate time spent control
+                self._timeSpentCtrl.Enable(False)
             else:
                 # Disabling stop - duration stays enabled
                 for item in self.items:
                     item.setStop(date.DateTime.max)
                 self.__updateEffortPresetSelection()
                 self.__update_invalid_period_message()
+                self.__updateTimeSpentDisplay()
+                # Start timer - effort is now being tracked
+                self.__startTimeSpentTimer()
+                # Enable time spent control but make it read-only (not editable)
+                self._timeSpentCtrl.Enable(True)
+                self._timeSpentCtrl.SetReadOnly(True)
         finally:
             self._updatingControls = False
         event.Skip()
@@ -3542,6 +3599,7 @@ class EffortEditBook(Page):
 
         self.__updateEffortPresetSelection()
         self.__update_invalid_period_message()
+        self.__updateTimeSpentDisplay()
 
     def __populateEffortDurationPresets(self):
         """Populate the effort duration presets dropdown from settings."""
@@ -3603,13 +3661,14 @@ class EffortEditBook(Page):
         duration = self._effortDurationCtrl.GetDuration()
         current_seconds = int(duration.total_seconds())
 
-        # Search for matching preset (start at 1 to skip placeholder, include "Reset to zero")
-        for i in range(1, self._effortDurationPresetsChoice.GetCount()):
+        # Search for matching preset (start at 1 to skip placeholder, stop before last "Reset to zero")
+        for i in range(1, self._effortDurationPresetsChoice.GetCount() - 1):
             preset_seconds = self._effortDurationPresetsChoice.GetClientData(i)
             if preset_seconds == current_seconds:
                 self._effortDurationPresetsChoice.SetSelection(i)
                 return
 
+        # No match - reset to placeholder "Presets..."
         self._effortDurationPresetsChoice.SetSelection(0)
 
     def __onEffortDurationPresetSelected(self, event):
@@ -3636,6 +3695,8 @@ class EffortEditBook(Page):
                 for item in self.items:
                     item.setStop(date.DateTime.max)
                 self.__update_invalid_period_message()
+                # Reset dropdown back to "Presets..." (don't show "Reset to zero" as selected)
+                self._effortDurationPresetsChoice.SetSelection(0)
                 return
 
             if self._effortEntryMode == 1:  # Retroactive mode
@@ -3671,6 +3732,54 @@ class EffortEditBook(Page):
     def __onEffortPresetsConfigChanged(self):
         """Handle changes to effort preset configuration."""
         self.__populateEffortDurationPresets()
+
+    def __updateTimeSpentDisplay(self):
+        """Update the Time Spent display control based on current start/stop times."""
+        if not hasattr(self, '_timeSpentCtrl'):
+            return
+        if not hasattr(self, '_stopDateTimeCombo'):
+            return
+
+        start = self._startDateTimeCombo.GetDateTime()
+        if start is None:
+            self._timeSpentCtrl.SetDuration(datetime.timedelta(seconds=0), quiet=True)
+            return
+
+        # Get stop time, or use current time if effort is being tracked
+        if self._stopDateTimeCombo.IsChecked():
+            stop = self._stopDateTimeCombo.GetDateTime()
+        else:
+            stop = date.DateTime.now()
+
+        if stop is None or start is None:
+            self._timeSpentCtrl.SetDuration(datetime.timedelta(seconds=0), quiet=True)
+            return
+
+        # Calculate duration
+        if stop > start:
+            duration = stop - start
+            total_seconds = int(duration.total_seconds())
+        else:
+            total_seconds = 0
+
+        self._timeSpentCtrl.SetDuration(datetime.timedelta(seconds=total_seconds), quiet=True)
+
+    def __onTimeSpentTimer(self, event):
+        """Timer handler to update time spent display for tracking efforts."""
+        self.__updateTimeSpentDisplay()
+
+    def __startTimeSpentTimer(self):
+        """Start the timer for updating time spent display."""
+        if self._timeSpentTimer is None:
+            self._timeSpentTimer = wx.Timer(self)
+            self.Bind(wx.EVT_TIMER, self.__onTimeSpentTimer, self._timeSpentTimer)
+            self._timeSpentTimer.Start(1000)
+
+    def __stopTimeSpentTimer(self):
+        """Stop the timer for updating time spent display."""
+        if self._timeSpentTimer is not None:
+            self._timeSpentTimer.Stop()
+            self._timeSpentTimer = None
 
     def __create_start_from_last_effort_button(self, parent=None):
         if parent is None:
@@ -3832,6 +3941,8 @@ class EffortEditBook(Page):
             pub.unsubscribe(self.__onEffortPresetsConfigChanged, "settings.feature.sdtcspans_effort")
         except Exception:
             pass
+        # Stop the time spent timer
+        self.__stopTimeSpentTimer()
 
 
 class Editor(BalloonTipManager, widgets.Dialog):
