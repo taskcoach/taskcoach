@@ -74,6 +74,18 @@ class Dialog(sized_controls.SizedDialog):
         if not operating_system.isGTK():
             wx.CallAfter(self.__safeRaise)
         wx.CallAfter(self.__safePanelSetFocus)
+        # Wayland needs a size event to trigger proper initial layout
+        if operating_system.isWayland():
+            wx.CallAfter(self.__safeLayoutRefresh)
+
+    def __safeLayoutRefresh(self):
+        """Force layout refresh on Wayland where initial render may be incomplete."""
+        try:
+            if self and self._panel:
+                self._panel.Layout()
+                self.SendSizeEvent()
+        except RuntimeError:
+            pass
 
     def __safeRaise(self):
         """Safely raise window, guarding against deleted C++ objects."""

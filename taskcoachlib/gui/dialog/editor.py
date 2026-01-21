@@ -858,10 +858,7 @@ class DatesPage(Page):
         minutes = (total_seconds % 3600) // 60
 
         self._plannedDurationCtrl = widgets.MaskedDurationCtrl(
-            self, days=days, hours=hours, minutes=minutes,
-            dayChoices=[0, 1, 2, 3, 5, 7, 14, 21, 28, 30, 60, 90],
-            hourChoices=list(range(24)),  # Duration uses full 0-23 range (not workday)
-            minuteChoices=lambda: get_suggested_minute_choices(self._DatesPage__settings)
+            self, days=days, hours=hours, minutes=minutes
         )
         # Duration is always enabled - mode is auto-determined by which date is activated first
         self._plannedDurationCtrl.Bind(
@@ -3211,11 +3208,7 @@ class EffortEditBook(Page):
         self._effortDurationCtrl = widgets.MaskedDurationCtrl(
             self,
             days=0, hours=hours, minutes=minutes, seconds=seconds,
-            dayChoices=None,
-            hourChoices=list(range(24)),
-            minuteChoices=lambda: get_suggested_minute_choices(self._settings),
-            showSeconds=True,
-            secondChoices=lambda: get_suggested_second_choices(self._settings),
+            showSeconds=True
         )
         # Standard mode: duration always active (start always exists)
         # Retroactive mode: duration inactive only if stop is inactive
@@ -3294,90 +3287,58 @@ class EffortEditBook(Page):
         self.__applyEffortEntryMode()
 
     def __onEffortStartChanged(self, value):
-        """Called when start datetime is committed - update duration."""
+        """Called when start datetime is committed."""
         if self._updatingControls:
             return
         self._updatingControls = True
         try:
-            self.__syncDurationFromStartStop()
+            self.__syncEffortState('start')
         finally:
             self._updatingControls = False
 
     def __onEffortStopChanged(self, value):
-        """Called when stop datetime is committed - update duration."""
+        """Called when stop datetime is committed."""
         if self._updatingControls:
             return
         self._updatingControls = True
         try:
-            self.__syncDurationFromStartStop()
+            self.__syncEffortState('stop')
         finally:
             self._updatingControls = False
 
     def __onStartValueChanged(self, event):
-        """Called when start value changes (live) - update duration display."""
+        """Called when start value changes (live)."""
         if self._updatingControls:
             event.Skip()
             return
         self._updatingControls = True
         try:
-            self.__syncDurationFromStartStop()
-            self.__update_invalid_period_message()
+            self.__syncEffortState('start')
         finally:
             self._updatingControls = False
         event.Skip()
 
     def __onStopValueChanged(self, event):
-        """Called when stop value changes (live) - update duration or start based on mode."""
+        """Called when stop value changes (live)."""
         if self._updatingControls:
             event.Skip()
             return
         self._updatingControls = True
         try:
-            if self._effortEntryMode == 1:  # Retroactive mode
-                # Calculate Start = Stop - Duration
-                self.__syncStartFromStopDuration()
-            else:  # Standard mode
-                # Calculate Duration = Stop - Start
-                self.__syncDurationFromStartStop()
-            self.__update_invalid_period_message()
+            self.__syncEffortState('stop')
         finally:
             self._updatingControls = False
         event.Skip()
 
     def __onDurationValueChanged(self, event):
-        """Called when duration is edited - update stop or start time based on mode."""
+        """Called when duration is edited."""
         if self._updatingControls:
             event.Skip()
             return
 
         self._updatingControls = True
         try:
-            duration = self._effortDurationCtrl.GetTimeDelta()
-
-            if self._effortEntryMode == 1:  # Retroactive mode
-                # In retroactive mode, duration requires stop to be active
-                if not self._stopDateTimeCombo.IsChecked():
-                    return
-                # Calculate Start = Stop - Duration
-                stop = self._stopDateTimeCombo.GetDateTime()
-                if stop and duration:
-                    new_start = stop - duration
-                    self._startDateTimeCombo.SetDateTime(new_start)
-                    command.EditEffortStartDateTimeCommand(
-                        None, self.items, newValue=date.DateTime.fromDateTime(new_start)
-                    ).do()
-            else:  # Standard mode
-                # Calculate Stop = Start + Duration
-                start = self._startDateTimeCombo.GetDateTime()
-                if start and duration:
-                    new_stop = start + duration
-                    # Auto-enable stop if not already checked
-                    if not self._stopDateTimeCombo.IsChecked():
-                        self._stopDateTimeCombo.SetChecked(True)
-                    self._stopDateTimeCombo.SetDateTime(new_stop)
-
-            self.__updateEffortPresetSelection()
-            self.__update_invalid_period_message()
+            self.__syncEffortState('duration')
         finally:
             self._updatingControls = False
         event.Skip()
@@ -3415,38 +3376,23 @@ class EffortEditBook(Page):
         self._updatingControls = True
         try:
             if self._stopDateTimeCombo.IsChecked():
-                # Enabling stop - set to now and enable duration
+                # Enabling stop - set to now
                 now = date.DateTime.now()
                 start = self._startDateTimeCombo.GetDateTime()
                 new_stop = start if start > now else now
                 self._stopDateTimeCombo.SetDateTime(new_stop)
-
-                # Duration is always enabled when stop is active
-                self._effortDurationCtrl.Enable(True)
-                self._effortDurationPresetsChoice.Enable(True)
-
-                if self._effortEntryMode == 1:  # Retroactive mode
-                    # Calculate start from stop - duration
-                    self.__syncStartFromStopDuration()
-                else:
-                    # Standard mode - sync duration
-                    self.__syncDurationFromStartStop()
-
+                # Sync based on mode
+                self.__syncEffortState('stop')
                 # Commit the change
                 command.EditEffortStopDateTimeCommand(
                     None, self.items, newValue=self._stopDateTimeCombo.GetValue()
                 ).do()
             else:
-                # Disabling stop - resume tracking
-                # In retroactive mode, disable duration; in standard mode, keep enabled
-                if self._effortEntryMode == 1:  # Retroactive mode
-                    self._effortDurationCtrl.Enable(False)
-                    self._effortDurationPresetsChoice.Enable(False)
-                # Standard mode: duration stays enabled (start always exists)
-                self._effortDurationCtrl.SetDuration(date.TimeDelta(), quiet=True)
+                # Disabling stop - duration stays enabled
                 for item in self.items:
                     item.setStop(date.DateTime.max)
-            self.__update_invalid_period_message()
+                self.__updateEffortPresetSelection()
+                self.__update_invalid_period_message()
         finally:
             self._updatingControls = False
         event.Skip()
@@ -3468,73 +3414,134 @@ class EffortEditBook(Page):
             self._updatingControls = False
 
     def __applyEffortEntryMode(self):
-        """Apply the current entry mode to control states and recalculate values.
+        """Apply the current entry mode to control states and recalculate values."""
+        self.__syncEffortState('mode')
 
-        Standard mode: Start is editable, Duration always active (start always exists),
-                       entering duration auto-enables and sets stop
-        Retroactive mode: Start is read-only (calculated from Stop - Duration),
-                         Duration inactive only if stop is inactive
+    def __syncEffortState(self, changed_field):
+        """Central sync function implementing the Logic Flow.
+
+        Called on every change of Start-Date, Stop-Date, Duration, or Mode.
+
+        Args:
+            changed_field: 'start', 'duration', 'stop', or 'mode'
         """
+        is_standard = self._effortEntryMode == 0
         is_retroactive = self._effortEntryMode == 1
-        stop_is_active = self._stopDateTimeCombo.IsChecked()
+        stop_enabled = self._stopDateTimeCombo.IsChecked()
 
-        if is_retroactive:
-            # Retroactive mode: Start is calculated (read-only)
-            self._startDateTimeCombo.SetEditable(False)
-            self._startFromLastEffortButton.Enable(False)
+        start = self._startDateTimeCombo.GetDateTime()
+        stop = self._stopDateTimeCombo.GetDateTime()
+        duration = self._effortDurationCtrl.GetTimeDelta()
+        total_seconds = int(duration.total_seconds()) if duration else 0
 
-            # Duration is inactive only if stop is inactive
-            self._effortDurationCtrl.Enable(stop_is_active)
-            self._effortDurationPresetsChoice.Enable(stop_is_active)
-
-            # Calculate start only if stop is active
-            if stop_is_active:
-                self.__syncStartFromStopDuration()
-        else:
-            # Standard mode: Start is editable
+        if is_standard:
+            # 1.2 Set Start-Date editable
             self._startDateTimeCombo.SetEditable(True)
             self._startFromLastEffortButton.Enable(
                 self._effortList.maxDateTime() is not None
             )
 
-            # Duration is always active in standard mode (start always exists)
-            self._effortDurationCtrl.Enable(True)
-            self._effortDurationPresetsChoice.Enable(True)
+            # 1.3 If Start-Date changed
+            if changed_field == 'start':
+                # 1.3.1 If Duration > 0, Then adj Stop-Date
+                if total_seconds > 0 and start:
+                    new_stop = start + duration
+                    self._stopDateTimeCombo.SetDateTime(new_stop)
+                    if stop_enabled:
+                        command.EditEffortStopDateTimeCommand(
+                            None, self.items, newValue=date.DateTime.fromDateTime(new_stop)
+                        ).do()
 
-            # Sync duration from start/stop
-            self.__syncDurationFromStartStop()
+            # 1.4 If Duration changed
+            elif changed_field == 'duration':
+                # 1.4.1 If Duration > 0
+                if total_seconds > 0:
+                    # 1.4.1.1 Enable Stop-Date
+                    if not stop_enabled:
+                        self._stopDateTimeCombo.SetChecked(True)
+                        self._stopDateTimeCombo.SetDateTime(date.DateTime.now())
+                    # 1.4.1.2 Adj Stop-Date
+                    if start:
+                        new_stop = start + duration
+                        self._stopDateTimeCombo.SetDateTime(new_stop)
+                        command.EditEffortStopDateTimeCommand(
+                            None, self.items, newValue=date.DateTime.fromDateTime(new_stop)
+                        ).do()
+                # 1.4.2 If Duration = 0, Then disable Stop-Date
+                elif total_seconds == 0:
+                    self._stopDateTimeCombo.SetChecked(False)
+                    for item in self.items:
+                        item.setStop(date.DateTime.max)
 
-    def __syncStartFromStopDuration(self):
-        """In Retroactive mode: Calculate Start = Stop - Duration."""
-        if self._effortEntryMode != 1:  # Only in retroactive mode
-            return
+            # 1.5 If Stop-Date changed
+            elif changed_field == 'stop':
+                if stop and start:
+                    # 1.5.1 If Stop-Date <= Start-Date
+                    if stop <= start:
+                        # 1.5.1.1 Set Stop-Date = Start-Date + 1s
+                        new_stop = start + datetime.timedelta(seconds=1)
+                        self._stopDateTimeCombo.SetDateTime(new_stop)
+                        # 1.5.1.2 Adj Duration to 1s
+                        self._effortDurationCtrl.SetDuration(datetime.timedelta(seconds=1), quiet=True)
+                        command.EditEffortStopDateTimeCommand(
+                            None, self.items, newValue=date.DateTime.fromDateTime(new_stop)
+                        ).do()
+                    # 1.5.2 If Stop-Date > Start-Date, Then adj Duration
+                    else:
+                        calc_duration = stop - start
+                        calc_seconds = max(0, int(calc_duration.total_seconds()))
+                        self._effortDurationCtrl.SetDuration(datetime.timedelta(seconds=calc_seconds), quiet=True)
 
-        stop = self._stopDateTimeCombo.GetDateTime()
-        duration = self._effortDurationCtrl.GetTimeDelta()
+        elif is_retroactive:
+            # 2.2 Set Start-Date read-only
+            self._startDateTimeCombo.SetEditable(False)
+            self._startFromLastEffortButton.Enable(False)
 
-        if stop and duration:
-            new_start = stop - duration
-            self._startDateTimeCombo.SetDateTime(new_start)
-            # Commit the start change
-            command.EditEffortStartDateTimeCommand(
-                None, self.items, newValue=date.DateTime.fromDateTime(new_start)
-            ).do()
-            self.__updateEffortPresetSelection()
-            self.__update_invalid_period_message()
+            # 2.3 If Duration changed
+            if changed_field == 'duration':
+                # 2.3.1 If Duration > 0
+                if total_seconds > 0:
+                    # 2.3.1.1 Enable Stop-Date
+                    if not stop_enabled:
+                        self._stopDateTimeCombo.SetChecked(True)
+                        self._stopDateTimeCombo.SetDateTime(date.DateTime.now())
+                        stop = self._stopDateTimeCombo.GetDateTime()
+                    # 2.3.1.2 Adj Start-Date
+                    if stop:
+                        new_start = stop - duration
+                        self._startDateTimeCombo.SetDateTime(new_start)
+                        command.EditEffortStartDateTimeCommand(
+                            None, self.items, newValue=date.DateTime.fromDateTime(new_start)
+                        ).do()
+                # 2.3.2 If Duration = 0, Then disable Stop-Date
+                elif total_seconds == 0:
+                    self._stopDateTimeCombo.SetChecked(False)
+                    for item in self.items:
+                        item.setStop(date.DateTime.max)
 
-    def __syncDurationFromStartStop(self):
-        """Sync duration display from current start and stop values (no event firing)."""
-        if not self._stopDateTimeCombo.IsChecked():
-            return
+            # 2.4 If Stop-Date changed
+            elif changed_field == 'stop':
+                # 2.4.1 If Duration <= 0
+                if total_seconds <= 0:
+                    # 2.4.1.1 Set Duration to 1s
+                    self._effortDurationCtrl.SetDuration(datetime.timedelta(seconds=1), quiet=True)
+                    # 2.4.1.2 Set Start-Date = Stop-Date - 1s
+                    if stop:
+                        new_start = stop - datetime.timedelta(seconds=1)
+                        self._startDateTimeCombo.SetDateTime(new_start)
+                        command.EditEffortStartDateTimeCommand(
+                            None, self.items, newValue=date.DateTime.fromDateTime(new_start)
+                        ).do()
+                # 2.4.2 If Duration > 0, Then adj Start-Date
+                elif total_seconds > 0 and stop:
+                    new_start = stop - duration
+                    self._startDateTimeCombo.SetDateTime(new_start)
+                    command.EditEffortStartDateTimeCommand(
+                        None, self.items, newValue=date.DateTime.fromDateTime(new_start)
+                    ).do()
 
-        start = self._startDateTimeCombo.GetDateTime()
-        stop = self._stopDateTimeCombo.GetDateTime()
-
-        if start and stop:
-            duration = stop - start
-            total_seconds = max(0, int(duration.total_seconds()))
-            self._effortDurationCtrl.SetDuration(datetime.timedelta(seconds=total_seconds), quiet=True)
-            self.__updateEffortPresetSelection()
+        self.__updateEffortPresetSelection()
+        self.__update_invalid_period_message()
 
     def __populateEffortDurationPresets(self):
         """Populate the effort duration presets dropdown from settings."""
@@ -3596,8 +3603,8 @@ class EffortEditBook(Page):
         duration = self._effortDurationCtrl.GetDuration()
         current_seconds = int(duration.total_seconds())
 
-        # Search for matching preset (start at 1 to skip placeholder, stop before last "Reset to zero")
-        for i in range(1, self._effortDurationPresetsChoice.GetCount() - 1):
+        # Search for matching preset (start at 1 to skip placeholder, include "Reset to zero")
+        for i in range(1, self._effortDurationPresetsChoice.GetCount()):
             preset_seconds = self._effortDurationPresetsChoice.GetClientData(i)
             if preset_seconds == current_seconds:
                 self._effortDurationPresetsChoice.SetSelection(i)
@@ -3625,10 +3632,6 @@ class EffortEditBook(Page):
             # Reset to zero: clear stop time for both modes
             if total_seconds == 0:
                 self._stopDateTimeCombo.SetChecked(False)
-                # In retroactive mode, disable duration when stop is unchecked
-                if self._effortEntryMode == 1:
-                    self._effortDurationCtrl.Enable(False)
-                    self._effortDurationPresetsChoice.Enable(False)
                 # Commit stop cleared (set to max to indicate no stop)
                 for item in self.items:
                     item.setStop(date.DateTime.max)
@@ -3636,6 +3639,10 @@ class EffortEditBook(Page):
                 return
 
             if self._effortEntryMode == 1:  # Retroactive mode
+                # Auto-enable stop if not already checked (set to now)
+                if not self._stopDateTimeCombo.IsChecked():
+                    self._stopDateTimeCombo.SetChecked(True)
+                    self._stopDateTimeCombo.SetDateTime(date.DateTime.now())
                 # Calculate Start = Stop - Duration
                 stop = self._stopDateTimeCombo.GetDateTime()
                 if stop:
@@ -3653,8 +3660,6 @@ class EffortEditBook(Page):
                     new_stop = start + datetime.timedelta(seconds=total_seconds)
                     self._stopDateTimeCombo.SetDateTime(new_stop)
                     self._stopDateTimeCombo.SetChecked(True)
-                    self._effortDurationCtrl.Enable(True)
-                    self._effortDurationPresetsChoice.Enable(True)
                     # Commit the stop change
                     command.EditEffortStopDateTimeCommand(
                         None, self.items, newValue=date.DateTime.fromDateTime(new_stop)
@@ -3697,7 +3702,7 @@ class EffortEditBook(Page):
             if self._startDateTimeCombo.GetValue() != maxDateTime:
                 self._startDateTimeCombo.SetDateTime(maxDateTime)
                 self._startDateTimeSync.onAttributeEdited(event)
-            self.__syncDurationFromStartStop()
+            self.__syncEffortState('start')
             self.__update_invalid_period_message()
         finally:
             self._updatingControls = False
@@ -3711,7 +3716,7 @@ class EffortEditBook(Page):
             self._stopDateTimeCombo.SetDateTime(new_value)
             self._effortDurationCtrl.Enable(True)
             self._effortDurationPresetsChoice.Enable(True)
-            self.__syncDurationFromStartStop()
+            self.__syncEffortState('stop')
             command.EditEffortStopDateTimeCommand(
                 None, self.items, newValue=new_value
             ).do()

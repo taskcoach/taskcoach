@@ -357,6 +357,26 @@ def getDefaultSecondChoices():
         return [0, 15, 30, 45]  # Fallback: 15-second intervals
 
 
+def getDefaultDayChoices():
+    """Get default day choices for DurationCtrl dropdowns.
+
+    Returns:
+        list of day values for dropdown
+    """
+    return [0, 1, 2, 3, 5, 7, 14, 21, 28, 30, 60, 90]
+
+
+def getDefaultDurationHourChoices():
+    """Get default hour choices for DurationCtrl dropdowns.
+
+    Returns a pattern suitable for duration entry (not time-of-day).
+
+    Returns:
+        list of hour values for dropdown
+    """
+    return [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20]
+
+
 def monthcalendarex(year, month, weeks=0):
     """Return a matrix of (year, month, day) tuples for a calendar month display.
 
@@ -1642,17 +1662,53 @@ class DurationCtrl(FieldsCtrl):
     Args:
         parent: Parent window
         days, hours, minutes, seconds: Initial values
-        dayChoices: List of day values for dropdown (None = no dropdown)
-        hourChoices: List of hour values for dropdown (None = no dropdown)
-        minuteChoices: List of minute values for dropdown (None = no dropdown)
+        dayChoices: Dropdown choices for days:
+            - None (default): Use defaults [0, 1, 2, 3, 5, 7, 14, 21, 28, 30, 60, 90]
+            - list: Use that specific list
+            - False: No dropdown
+        hourChoices: Dropdown choices for hours:
+            - None (default): Use defaults [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20]
+            - list: Use that specific list
+            - False: No dropdown
+        minuteChoices: Dropdown choices for minutes:
+            - None (default): Use defaults from settings (based on effortminuteinterval)
+            - list: Use that specific list
+            - False: No dropdown
         showSeconds: If True, include seconds field (default False)
-        secondChoices: List of second values for dropdown (None = no dropdown)
+        secondChoices: Dropdown choices for seconds:
+            - None (default): Use defaults from settings (based on effortsecondinterval)
+            - list: Use that specific list
+            - False: No dropdown
     """
 
     def __init__(self, parent, days=0, hours=0, minutes=0, seconds=0,
                  dayChoices=None, hourChoices=None, minuteChoices=None,
                  showSeconds=False, secondChoices=None):
         self._showSeconds = showSeconds
+
+        # Resolve day choices: None=defaults, False=no dropdown, list=use as-is
+        if dayChoices is None:
+            dayChoices = getDefaultDayChoices()
+        elif dayChoices is False:
+            dayChoices = None
+
+        # Resolve hour choices: None=defaults, False=no dropdown, list=use as-is
+        if hourChoices is None:
+            hourChoices = getDefaultDurationHourChoices()
+        elif hourChoices is False:
+            hourChoices = None
+
+        # Resolve minute choices: None=defaults, False=no dropdown, list=use as-is
+        if minuteChoices is None:
+            minuteChoices = getDefaultMinuteChoices()
+        elif minuteChoices is False:
+            minuteChoices = None
+
+        # Resolve second choices: None=defaults, False=no dropdown, list=use as-is
+        if secondChoices is None:
+            secondChoices = getDefaultSecondChoices()
+        elif secondChoices is False:
+            secondChoices = None
 
         elements = [
             ("day", days, dayChoices),
@@ -1719,17 +1775,53 @@ class DurationCtrlVerbose(FieldsCtrl):
     Args:
         parent: Parent window
         days, hours, minutes, seconds: Initial values
-        dayChoices: List of day values for dropdown (None = no dropdown)
-        hourChoices: List of hour values for dropdown (None = no dropdown)
-        minuteChoices: List of minute values for dropdown (None = no dropdown)
+        dayChoices: Dropdown choices for days:
+            - None (default): Use defaults [0, 1, 2, 3, 5, 7, 14, 21, 28, 30, 60, 90]
+            - list: Use that specific list
+            - False: No dropdown
+        hourChoices: Dropdown choices for hours:
+            - None (default): Use defaults [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20]
+            - list: Use that specific list
+            - False: No dropdown
+        minuteChoices: Dropdown choices for minutes:
+            - None (default): Use defaults from settings (based on effortminuteinterval)
+            - list: Use that specific list
+            - False: No dropdown
         showSeconds: If True, include seconds field (default False)
-        secondChoices: List of second values for dropdown (None = no dropdown)
+        secondChoices: Dropdown choices for seconds:
+            - None (default): Use defaults from settings (based on effortsecondinterval)
+            - list: Use that specific list
+            - False: No dropdown
     """
 
     def __init__(self, parent, days=0, hours=0, minutes=0, seconds=0,
                  dayChoices=None, hourChoices=None, minuteChoices=None,
                  showSeconds=False, secondChoices=None):
         self._showSeconds = showSeconds
+
+        # Resolve day choices: None=defaults, False=no dropdown, list=use as-is
+        if dayChoices is None:
+            dayChoices = getDefaultDayChoices()
+        elif dayChoices is False:
+            dayChoices = None
+
+        # Resolve hour choices: None=defaults, False=no dropdown, list=use as-is
+        if hourChoices is None:
+            hourChoices = getDefaultDurationHourChoices()
+        elif hourChoices is False:
+            hourChoices = None
+
+        # Resolve minute choices: None=defaults, False=no dropdown, list=use as-is
+        if minuteChoices is None:
+            minuteChoices = getDefaultMinuteChoices()
+        elif minuteChoices is False:
+            minuteChoices = None
+
+        # Resolve second choices: None=defaults, False=no dropdown, list=use as-is
+        if secondChoices is None:
+            secondChoices = getDefaultSecondChoices()
+        elif secondChoices is False:
+            secondChoices = None
 
         elements = [
             ("day", days, dayChoices),

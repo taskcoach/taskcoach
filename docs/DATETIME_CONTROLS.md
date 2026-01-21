@@ -1,6 +1,52 @@
 # DateTime Controls
 
 Simple time and duration input controls with explicit subfields and translatable labels.
+
+## Index
+
+- [Location](#location)
+- [Old Control Behavior Reference](#old-control-behavior-reference)
+  - [N/A Display When Unchecked](#na-display-when-unchecked)
+  - [SetNone: Unchecking the Checkbox](#setnone-unchecking-the-checkbox)
+  - [Checkbox Checked: Values Appear from Sub-Controls](#checkbox-checked-values-appear-from-sub-controls)
+  - [Suggested DateTime Feature](#suggested-datetime-feature)
+  - [Built-in Default to "Now"](#built-in-default-to-now)
+  - [Complete Flow Examples](#complete-flow-examples)
+  - [External Update Mechanism (AttributeSync)](#external-update-mechanism-attributesync)
+  - [Sync on Focus Loss (Same as Subject Field)](#sync-on-focus-loss-same-as-subject-field)
+- [Design](#design)
+  - [Element Format](#element-format)
+  - [Dropdown Choices](#dropdown-choices)
+  - [Built-in Field Types](#built-in-field-types)
+  - [No Automatic Spacing](#no-automatic-spacing)
+- [Navigation](#navigation)
+  - [Keyboard Navigation](#keyboard-navigation)
+  - [Dropdown Behavior](#dropdown-behavior)
+- [Controls](#controls)
+  - [DurationCtrl](#durationctrl)
+  - [DurationCtrlVerbose](#durationctrlverbose)
+  - [TimeCtrl](#timectrl)
+  - [TimeWithSecondsCtrl](#timewithsecondsctrl)
+  - [DateCtrl](#datectrl)
+  - [DateTimeCombo](#datetimecombo)
+- [Events](#events)
+- [Creating Custom Controls](#creating-custom-controls)
+- [Translation](#translation)
+- [Demo](#demo)
+- [Technical Notes](#technical-notes)
+  - [Module Structure](#module-structure)
+  - [Font Customization](#font-customization)
+  - [Custom Painting](#custom-painting)
+  - [Native Theme Border](#native-theme-border)
+  - [System Metrics for Cross-Platform Compatibility](#system-metrics-for-cross-platform-compatibility)
+  - [Read-Only Mode](#read-only-mode)
+  - [Focus Management](#focus-management)
+  - [Popup Toggle Logic](#popup-toggle-logic)
+  - [Dropdown Width and Position](#dropdown-width-and-position)
+  - [Events from Popup](#events-from-popup)
+  - [Sync Pattern: Standard wx.EVT_KILL_FOCUS](#sync-pattern-standard-wxevt_kill_focus)
+
+---
 Self-contained module with custom-painted single field and navigable subfields.
 
 ## Location
@@ -328,23 +374,35 @@ DurationCtrl(parent, days=0, hours=0, minutes=0, seconds=0,
 
 **Parameters:**
 - `days, hours, minutes, seconds`: Initial values
-- `dayChoices, hourChoices, minuteChoices, secondChoices`: Dropdown choices (None = no dropdown)
+- `dayChoices`: Dropdown choices for days:
+  - `None` (default): Use defaults `[0, 1, 2, 3, 5, 7, 14, 21, 28, 30, 60, 90]`
+  - `list`: Use that specific list
+  - `False`: No dropdown
+- `hourChoices`: Dropdown choices for hours:
+  - `None` (default): Use defaults `[0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20]`
+  - `list`: Use that specific list
+  - `False`: No dropdown
+- `minuteChoices`: Dropdown choices for minutes:
+  - `None` (default): Use defaults from settings (based on `effortminuteinterval`)
+  - `list`: Use that specific list
+  - `False`: No dropdown
 - `showSeconds`: If True, include seconds field (default False)
+- `secondChoices`: Dropdown choices for seconds:
+  - `None` (default): Use defaults from settings (based on `effortsecondinterval`)
+  - `list`: Use that specific list
+  - `False`: No dropdown
 
 ```python
-# Without seconds (default)
-ctrl = DurationCtrl(parent, days=1, hours=8, minutes=30,
-    dayChoices=[0, 1, 2, 3, 5, 7, 14, 30],
-    hourChoices=list(range(24)),
-    minuteChoices=[0, 15, 30, 45])
+# With default dropdowns (recommended)
+ctrl = DurationCtrl(parent, days=1, hours=8, minutes=30)
 
 # With seconds (for effort tracking)
 ctrl = DurationCtrl(parent, days=0, hours=2, minutes=30, seconds=15,
-    dayChoices=None,
-    hourChoices=list(range(24)),
-    minuteChoices=[0, 15, 30, 45],
-    showSeconds=True,
-    secondChoices=[0, 15, 30, 45])
+    showSeconds=True)
+
+# Explicitly no dropdowns
+ctrl = DurationCtrl(parent, days=1, hours=2, minutes=30,
+    dayChoices=False, hourChoices=False, minuteChoices=False)
 
 duration = ctrl.GetDuration()  # timedelta
 ctrl.SetDuration(timedelta(days=1, hours=2))
@@ -362,23 +420,35 @@ DurationCtrlVerbose(parent, days=0, hours=0, minutes=0, seconds=0,
 
 **Parameters:**
 - `days, hours, minutes, seconds`: Initial values
-- `dayChoices, hourChoices, minuteChoices, secondChoices`: Dropdown choices (None = no dropdown)
+- `dayChoices`: Dropdown choices for days:
+  - `None` (default): Use defaults `[0, 1, 2, 3, 5, 7, 14, 21, 28, 30, 60, 90]`
+  - `list`: Use that specific list
+  - `False`: No dropdown
+- `hourChoices`: Dropdown choices for hours:
+  - `None` (default): Use defaults `[0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20]`
+  - `list`: Use that specific list
+  - `False`: No dropdown
+- `minuteChoices`: Dropdown choices for minutes:
+  - `None` (default): Use defaults from settings (based on `effortminuteinterval`)
+  - `list`: Use that specific list
+  - `False`: No dropdown
 - `showSeconds`: If True, include seconds field (default False)
+- `secondChoices`: Dropdown choices for seconds:
+  - `None` (default): Use defaults from settings (based on `effortsecondinterval`)
+  - `list`: Use that specific list
+  - `False`: No dropdown
 
 ```python
-# Without seconds (default)
-ctrl = DurationCtrlVerbose(parent, days=0, hours=0, minutes=0,
-    dayChoices=[0, 1, 2, 3, 5, 7],
-    hourChoices=list(range(24)),
-    minuteChoices=[0, 15, 30, 45])
+# With default dropdowns (recommended)
+ctrl = DurationCtrlVerbose(parent, days=0, hours=0, minutes=0)
 
 # With seconds (for effort tracking)
 ctrl = DurationCtrlVerbose(parent, days=0, hours=2, minutes=30, seconds=15,
-    dayChoices=None,  # Hide days dropdown
-    hourChoices=list(range(24)),
-    minuteChoices=[0, 15, 30, 45],
-    showSeconds=True,
-    secondChoices=[0, 15, 30, 45])
+    showSeconds=True)
+
+# Explicitly no dropdowns
+ctrl = DurationCtrlVerbose(parent, days=0, hours=0, minutes=0,
+    dayChoices=False, hourChoices=False, minuteChoices=False)
 
 duration = ctrl.GetDuration()  # datetime.timedelta
 ctrl.SetDuration(datetime.timedelta(hours=1, minutes=30))

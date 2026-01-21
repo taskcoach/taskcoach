@@ -1600,18 +1600,11 @@ class DurationPresetsPage(SettingsPage):
         if showSeconds:
             return widgets.MaskedDurationCtrl(
                 self.__addPanel, days=0, hours=0, minutes=15, seconds=0,
-                dayChoices=[0, 1, 2, 3, 5, 7, 14, 21, 28, 30, 60, 90],
-                hourChoices=list(range(24)),
-                minuteChoices=[0, 15, 30, 45],
-                showSeconds=True,
-                secondChoices=[0, 5, 10, 15, 20, 30, 45]
+                showSeconds=True
             )
         else:
             return widgets.MaskedDurationCtrl(
-                self.__addPanel, days=0, hours=1, minutes=0,
-                dayChoices=[0, 1, 2, 3, 5, 7, 14, 21, 28, 30, 60, 90],
-                hourChoices=list(range(24)),
-                minuteChoices=[0, 15, 30, 45]
+                self.__addPanel, days=0, hours=1, minutes=0
             )
 
     def __onFieldChanged(self, event):

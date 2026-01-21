@@ -85,8 +85,8 @@ Start: Automatic, all fields empty
 Glossary:
    Adj-Due    = Adjust Due Date mode
    Adj-Start  = Adjust Planned Start Date mode
-   Start-Date = Planned Start Date
-   Due-Date   = Due Date
+   Start-Date = Planned Start Date-Time Combo Control with Checkbox
+   Due-Date   = Due Date-Time Combo Control with Checkbox
 ```
 
 ```
@@ -171,15 +171,62 @@ Called on: Every change of Start-Date, Due-Date, Duration, or Presets fields (af
 | **Standard** | Set Start, Set Duration | Stop | None |
 | **Retroactive** | Set Stop, Set Duration | Start | Start |
 
+### Logic Flow
+
+```
+Start: Standard mode, Stop-Date disabled
+
+1. If Mode Standard
+   1.1 If Retroactive mode chosen, Loop
+   1.2 Set Start-Date editable
+   1.3 If Start-Date changed, Then
+       1.3.1 If Duration > 0, Then adj Stop-Date
+   1.4 If Duration changed, Then
+       1.4.1 If Duration > 0, Then
+           1.4.1.1 Enable Stop-Date
+           1.4.1.2 Adj Stop-Date
+       1.4.2 If Duration = 0, Then disable Stop-Date
+   1.5 If Stop-Date changed, Then
+       1.5.1 If Stop-Date <= Start-Date, Then
+           1.5.1.1 Set Stop-Date = Start-Date + 1s
+           1.5.1.2 Adj Duration to 1s
+       1.5.2 If Stop-Date > Start-Date, Then adj Duration
+
+2. If Mode Retroactive
+   2.1 If Standard mode chosen, Loop
+   2.2 Set Start-Date read-only
+   2.3 If Duration changed, Then
+       2.3.1 If Duration > 0, Then
+           2.3.1.1 Enable Stop-Date
+           2.3.1.2 Adj Start-Date
+       2.3.2 If Duration = 0, Then disable Stop-Date
+   2.4 If Stop-Date changed, Then
+       2.4.1 If Duration <= 0, Then
+           2.4.1.1 Set Duration to 1s
+           2.4.1.2 Set Start-Date = Stop-Date - 1s
+       2.4.2 If Duration > 0, Then adj Start-Date
+
+Glossary:
+   adj        = recalculate/adjust
+   Start-Date = Start Date-Time Combo Control with Checkbox
+   Stop-Date  = Stop Date-Time Combo Control with Checkbox
+   Duration   = Effort Duration Control
+```
+
+```
+Implements: __syncEffortState()
+Called on: Every change of Start-Date, Stop-Date, Duration, or Mode dropdown.
+```
+
 ### Field Change Effects
 
-| Calc Mode | User Changes | Duration | Start | Stop |
-|-----------|--------------|----------|-------|------|
-| Standard | Start | Recalculated | - | Unchanged |
-| Standard | Duration | - | Unchanged | Recalculated |
-| Standard | Stop | Recalculated | Unchanged | - |
-| Retroactive | Duration | - | Recalculated | Unchanged |
-| Retroactive | Stop | Unchanged | Recalculated | - |
+| Calc Mode | User Changes | Start | Duration | Stop |
+|-----------|--------------|-------|----------|------|
+| Standard | Start | - | Unchanged | Recalculated |
+| Standard | Duration | Unchanged | - | Recalculated |
+| Standard | Stop | Unchanged | Recalculated | - |
+| Retroactive | Duration | Recalculated | - | Unchanged |
+| Retroactive | Stop | Recalculated | Unchanged | - |
 
 ### Action Sequence
 
@@ -188,21 +235,21 @@ Called on: Every change of Start-Date, Due-Date, Duration, or Presets fields (af
 | Standard | ❌ | Enter Duration | Stop auto-enabled, Stop = Start + Duration |
 | Standard | ❌ | Change Start | No effect (no Stop to calculate from) |
 | Standard | ❌ | Check Stop | Duration = Stop - Start |
-| Standard | ❌ | Set Retroactive | Duration disabled, Start read-only |
+| Standard | ❌ | Set Retroactive | Start read-only |
 | Standard | ✅ | Change Duration | Stop recalculated |
-| Standard | ✅ | Change Start | Duration recalculated, Stop unchanged |
+| Standard | ✅ | Change Start | Stop recalculated, Duration unchanged |
 | Standard | ✅ | Change Stop | Duration recalculated, Start unchanged |
-| Standard | ✅ | Uncheck Stop | Duration shows 0, still editable |
-| Standard | ✅ | Reset to zero | Stop cleared, Duration = 0 |
+| Standard | ✅ | Uncheck Stop | Stop disabled |
+| Standard | ✅ | Set Duration to zero | Stop disabled, Duration = 0 |
 | Standard | ✅ | Set Retroactive | Start read-only, Start = Stop - Duration |
-| Retroactive | ❌ | Check Stop | Duration enabled, Start = Stop - Duration |
-| Retroactive | ❌ | Set Standard | Start editable, Duration enabled |
-| Retroactive | ✅ | Enter Duration | Start = Stop - Duration |
+| Retroactive | ❌ | Enter Duration | Stop auto-enabled, Start = Stop - Duration |
+| Retroactive | ❌ | Check Stop | Start = Stop - Duration |
+| Retroactive | ❌ | Set Standard | Start editable |
 | Retroactive | ✅ | Change Duration | Start recalculated, Stop unchanged |
 | Retroactive | ✅ | Change Stop | Start recalculated, Duration unchanged |
-| Retroactive | ✅ | Uncheck Stop | Duration disabled, Start unchanged |
-| Retroactive | ✅ | Reset to zero | Stop cleared, Duration disabled |
-| Retroactive | ✅ | Set Standard | Start editable, Duration enabled |
+| Retroactive | ✅ | Uncheck Stop | Stop disabled |
+| Retroactive | ✅ | Set Duration to zero | Stop disabled, Duration = 0 |
+| Retroactive | ✅ | Set Standard | Start editable |
 
 ---
 
