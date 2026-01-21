@@ -79,11 +79,28 @@ class Dialog(sized_controls.SizedDialog):
             wx.CallAfter(self.__safeLayoutRefresh)
 
     def __safeLayoutRefresh(self):
-        """Force layout refresh on Wayland where initial render may be incomplete."""
+        """Force layout refresh on Wayland where initial render may be incomplete.
+
+        GTK3 caches widget best sizes, and when windows are laid out while hidden
+        (as dialogs are during construction), the cached sizes may be wrong.
+        We must invalidate all cached sizes recursively, then re-layout.
+        See: https://github.com/wxWidgets/wxWidgets/issues/19053
+        """
         try:
             if self and self._panel:
+                self.__invalidateBestSizeRecursively(self)
                 self._panel.Layout()
-                self.SendSizeEvent()
+                self.Layout()
+                self.Refresh()
+        except RuntimeError:
+            pass
+
+    def __invalidateBestSizeRecursively(self, window):
+        """Recursively invalidate best size cache for window and all children."""
+        try:
+            window.InvalidateBestSize()
+            for child in window.GetChildren():
+                self.__invalidateBestSizeRecursively(child)
         except RuntimeError:
             pass
 
