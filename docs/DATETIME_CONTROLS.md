@@ -334,7 +334,8 @@ elements = [
 | **Right arrow** | Next subfield (wraps from last to first) |
 | **Up arrow** | Increment value by 1 (wraps at limits) |
 | **Down arrow** | Decrement value by 1 (wraps at limits) |
-| **Enter** | Open dropdown for current field (if choices provided) |
+| **Enter** | Toggle dropdown/calendar for current field (if choices provided) |
+| **F4** | Toggle dropdown/calendar for current field (alternative to Enter) |
 | **Escape** | Close dropdown without changing value |
 | **0-9** | Type digits directly into field |
 | **Backspace/Delete** | Remove last digit from field |
@@ -345,8 +346,9 @@ The dropdown popup is self-contained (`_ChoicesPopup` class).
 
 **Opening the dropdown** (only if choices were provided):
 - Click on a subfield to open its dropdown
-- Press Enter when a subfield is focused
+- Press Enter or F4 when a subfield is focused
 - Clicking the same field with dropdown open closes it (toggle behavior)
+- F4 is useful in inline editors where Enter confirms the edit
 
 **Navigating within dropdown:**
 - Up/Down arrows move selection through choices (wraps at ends)

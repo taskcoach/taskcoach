@@ -137,21 +137,42 @@ def budget(aBudget):
     return timeSpent(aBudget)
 
 
-# Default time formatting
-language_and_country = locale.getlocale(locale.LC_TIME)[0]
-if language_and_country and (
-    "_US" in language_and_country or "_United States" in language_and_country
-):
-    timeFormat = "%I %p"
-    timeWithMinutesFormat = "%I:%M %p"
-    timeWithSecondsFormat = "%I:%M:%S %p"
-else:
-    timeFormat = "%H"
-    timeWithMinutesFormat = "%H:%M"
-    timeWithSecondsFormat = "%H:%M:%S"  # Changed from %X to match 24h format
+# Dynamic format helpers - read from settings each time for live updates
+def _getTimeFormats():
+    """Get time format strings based on user settings.
+
+    Returns tuple: (timeFormat, timeWithMinutesFormat, timeWithSecondsFormat)
+    """
+    try:
+        from taskcoachlib.widgets.maskedtimectrl import getEffectiveTimeFormat
+        timeFormat = getEffectiveTimeFormat()
+    except Exception:
+        timeFormat = "24"
+
+    if timeFormat == "12":
+        return ("%I %p", "%I:%M %p", "%I:%M:%S %p")
+    else:
+        return ("%H", "%H:%M", "%H:%M:%S")
+
+
+def _getDateFormat():
+    """Get date format string based on user settings.
+
+    Returns strftime format string.
+    """
+    try:
+        from taskcoachlib.widgets.maskedtimectrl import getEffectiveDateFormat
+        field_order, separator = getEffectiveDateFormat()
+        # Convert field order to strftime format
+        format_map = {'year': '%Y', 'month': '%m', 'date_day': '%d'}
+        parts = [format_map.get(f, '%Y') for f in field_order]
+        return separator.join(parts)
+    except Exception:
+        return "%x"  # Fallback to locale default
 
 
 def rawTimeFunc(dt, minutes=True, seconds=False):
+    timeFormat, timeWithMinutesFormat, timeWithSecondsFormat = _getTimeFormats()
     if seconds:
         fmt = timeWithSecondsFormat
     elif minutes:
@@ -161,10 +182,8 @@ def rawTimeFunc(dt, minutes=True, seconds=False):
     return dt.strftime(fmt)
 
 
-dateFormat = "%x"
-
-
 def rawDateFunc(dt=None):
+    dateFormat = _getDateFormat()
     return operating_system.decodeSystemString(
         datetime.datetime.strftime(dt, dateFormat)
     )
@@ -194,6 +213,7 @@ if operating_system.isWindows():
         # Use strftime directly to avoid pywintypes.Time() timezone issues.
         # pywintypes.Time() interprets naive datetimes as UTC and converts to
         # local time, causing times like 07:00 to display as 06:00 in UTC+1.
+        timeFormat, timeWithMinutesFormat, timeWithSecondsFormat = _getTimeFormats()
         if seconds:
             fmt = timeWithSecondsFormat
         elif minutes:
@@ -210,7 +230,8 @@ if operating_system.isWindows():
         # Use strftime directly to avoid pywintypes.Time() timezone issues.
         # pywintypes.Time() interprets naive datetimes as UTC and converts to
         # local time, which can shift dates when times are near midnight.
-        return operating_system.decodeSystemString(dt.strftime("%x"))
+        dateFormat = _getDateFormat()
+        return operating_system.decodeSystemString(dt.strftime(dateFormat))
 
 elif operating_system.isMac():
     # Use simple strftime formatting on macOS
@@ -219,17 +240,19 @@ elif operating_system.isMac():
     def rawTimeFunc(dt, minutes=True, seconds=False):
         if dt is None:
             dt = datetime.datetime.now()
+        timeFormat, timeWithMinutesFormat, timeWithSecondsFormat = _getTimeFormats()
         if seconds:
-            return dt.strftime("%H:%M:%S")
+            return dt.strftime(timeWithSecondsFormat)
         elif minutes:
-            return dt.strftime("%H:%M")
+            return dt.strftime(timeWithMinutesFormat)
         else:
-            return dt.strftime("%H")
+            return dt.strftime(timeFormat)
 
     def rawDateFunc(dt):
         if dt is None:
             dt = datetime.datetime.now()
-        return dt.strftime("%x")
+        dateFormat = _getDateFormat()
+        return dt.strftime(dateFormat)
 
 
 timeFunc = lambda dt, minutes=True, seconds=False: operating_system.decodeSystemString(

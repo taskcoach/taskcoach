@@ -3,7 +3,7 @@
 This directory contains third-party libraries that are bundled with Task Coach
 for compatibility or because they require modifications for Task Coach.
 
-Last Updated: 2025-12
+Last Updated: 2026-01
 
 ---
 
@@ -30,20 +30,6 @@ Changes for Task Coach:
   - Made __init__.py non-empty for packaging
   - Removed HTTPNtlmAuthHandler.py (unused Python 2 code using urllib2)
 Note: Only IMAPNtlmAuthHandler.py is used (for IMAP/NTLM authentication in thunderbird.py)
-
----
-
-Component: smartdatetimectrl.py
-Name: SmartDateTimeCtrl
-Author: Jerome Laheurte <fraca7@free.fr>, Frank Niessink <frank@niessink.com>
-Version: 1.0
-Date: 2012-11-03
-License: GPL v3
-Source: https://bitbucket.org/fraca7/smartdatetimectrl
-Copied on: 2012-11-03
-Changes for Task Coach:
-  - Timer cleanup fix for wx.Timer crash on window destroy
-  - 2025-12: Fixed dark theme issue - set explicit text foreground color for month header in calendar popup (issue #43)
 
 ---
 
@@ -79,6 +65,8 @@ The following libraries were previously bundled but have been removed:
 - **customtreectrl.py**: Now using wx.lib.agw.customtreectrl from wxPython directly
 - **hypertreelist.py**: Now using wx.lib.agw.hypertreelist from wxPython directly
   (with patch applied via apply-wxpython-patch.sh for Debian Bookworm)
+- **smartdatetimectrl.py**: Replaced with new MaskedDateTimeCtrl in widgets/maskedtimectrl.py
+  (2026-01: Original control by Jerome Laheurte/Frank Niessink, replaced during date control refactor)
 - **squaremap/**: Replaced with squaremap package from PyPI
 - **snarl.py**: Removed (Windows Snarl notifications - superseded by built-in notifier)
 - **guid.py**: Removed (no longer used)

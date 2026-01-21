@@ -411,12 +411,15 @@ class FileExportCommand(IOCommand, settings_uicommand.SettingsCommand):
         exportDialog = self.getExportDialogClass()(
             self.mainWindow(), settings=self.settings
         )  # pylint: disable=E1101
-        if wx.ID_OK == exportDialog.ShowModal():
-            exportOptions = exportDialog.options()
-            selectedViewer = exportOptions.pop("selectedViewer")
-            # pylint: disable=W0142
-            self.exportFunction()(selectedViewer, **exportOptions)
-        exportDialog.Destroy()
+        try:
+            if wx.ID_OK == exportDialog.ShowModal():
+                exportOptions = exportDialog.options()
+                selectedViewer = exportOptions.pop("selectedViewer")
+                # pylint: disable=W0142
+                self.exportFunction()(selectedViewer, **exportOptions)
+        finally:
+            if exportDialog:
+                exportDialog.Destroy()
 
     @staticmethod
     def getExportDialogClass():

@@ -34,8 +34,8 @@ from taskcoachlib.gui.dialog.entry import (
 from taskcoachlib.gui.newid import IdProvider
 from taskcoachlib.i18n import _
 from pubsub import pub
-from taskcoachlib.thirdparty import smartdatetimectrl as sdtc
 from taskcoachlib.help.balloontips import BalloonTipManager
+from taskcoachlib.meta.debug import log_step
 import datetime
 import os.path
 import wx
@@ -878,7 +878,7 @@ class DatesPage(Page):
         # Rebuild mode dropdown when focus leaves preset dropdown
         self._durationPresetsChoice.Bind(wx.EVT_KILL_FOCUS, self.__onDurationFieldKillFocus)
 
-        pub.subscribe(self.__onPresetsConfigChanged, "settings.feature.sdtcspans")
+        pub.subscribe(self.__onPresetsConfigChanged, "settings.feature.task_duration_presets")
 
         # Mode dropdown: Automatic, Implicit, Adjust Due Date, Adjust Start Date
         self._durationModeChoices = [
@@ -1095,7 +1095,7 @@ class DatesPage(Page):
         self._durationPresetsChoice.Clear()
         self._durationPresetsChoice.Append(_("Presets..."), None)  # Placeholder
 
-        presets_str = self.__settings.get("feature", "sdtcspans")
+        presets_str = self.__settings.get("feature", "task_duration_presets")
         if presets_str:
             presets = []
             for minutes_str in presets_str.split(","):
@@ -1227,12 +1227,16 @@ class DatesPage(Page):
 
     def __onPlannedStartCheckboxChanged(self, event):
         """Handle planned start checkbox toggle."""
-        self.__syncDurationState()
+        # 0.1 User unchecked Start-Date
+        userAction = "start_unchecked" if not self._plannedStartDateTimeCombo.IsChecked() else None
+        self.__syncDurationState(userAction=userAction)
         event.Skip()
 
     def __onDueDateCheckboxChanged(self, event):
         """Handle due date checkbox toggle."""
-        self.__syncDurationState()
+        # 0.2 User unchecked Due-Date
+        userAction = "due_unchecked" if not self._dueDateTimeCombo.IsChecked() else None
+        self.__syncDurationState(userAction=userAction)
         event.Skip()
 
     def __onDurationFieldKillFocus(self, event):
@@ -1247,12 +1251,16 @@ class DatesPage(Page):
         self._durationPresetsChoice.Enable(self._currentPlannedDurationMode != "implicit")
         event.Skip()
 
-    def __syncDurationState(self, liveUpdate=False):
+    def __syncDurationState(self, userAction=None, liveUpdate=False):
         """Sync duration state based on Logic Flow.
 
         See docs/DURATION_CALCULATIONS.md "Logic Flow" section.
 
         Args:
+            userAction: The user action that triggered this sync (step 0):
+                       - "start_unchecked": User unchecked Start-Date (0.1)
+                       - "due_unchecked": User unchecked Due-Date (0.2)
+                       - None: Other action (mode selected, value changed, etc.)
             liveUpdate: If True, only update display (no commands executed).
                        If False, execute commands to persist changes.
         """
@@ -1266,22 +1274,26 @@ class DatesPage(Page):
             # 1.1 If Start-Date set, Then set Adj-Due mode, Loop
             if startChecked:
                 self.__setDurationMode("adjdue")
-                return self.__syncDurationState(liveUpdate)  # Loop
+                return self.__syncDurationState(userAction, liveUpdate)  # Loop
             # 1.2 If Due-Date set, Then set Adj-Start mode, Loop
             if dueChecked:
                 self.__setDurationMode("adjstart")
-                return self.__syncDurationState(liveUpdate)  # Loop
+                return self.__syncDurationState(userAction, liveUpdate)  # Loop
 
         elif mode == "adjdue":
+            # 2.1 Activate Start-Date, If not unchecked by user [Ref2, 0.1]
+            if userAction != "start_unchecked" and not startChecked:
+                self._plannedStartDateTimeCombo.SetChecked(True)
+                startChecked = True
+            # 2.2 Activate Due-Date (Read-Only) [Ref2]
+            if not dueChecked:
+                self._dueDateTimeCombo.SetChecked(True)
+                dueChecked = True
             # 2.6 If Start-Date disabled, Then deactivate Due-Date, set Automatic mode, Loop
             if not startChecked:
                 self._dueDateTimeCombo.SetChecked(False)
                 self.__setDurationMode("automatic")
-                return self.__syncDurationState(liveUpdate)  # Loop
-            # 2.1 Activate Start-Date (already checked per above)
-            # 2.2 Activate Due-Date (Read-Only handled by __updateFieldStates)
-            if not dueChecked:
-                self._dueDateTimeCombo.SetChecked(True)
+                return self.__syncDurationState(userAction, liveUpdate)  # Loop
             # 2.4/2.5 Adj Due-Date (on Duration or Start-Date change)
             if liveUpdate:
                 self.__updateDueDateLive()
@@ -1289,15 +1301,19 @@ class DatesPage(Page):
                 self.__updateDueDateFromDuration()
 
         elif mode == "adjstart":
+            # 3.1 Activate Due-Date, If not unchecked by user [Ref2, 0.2]
+            if userAction != "due_unchecked" and not dueChecked:
+                self._dueDateTimeCombo.SetChecked(True)
+                dueChecked = True
+            # 3.2 Activate Start-Date (Read-Only) [Ref2]
+            if not startChecked:
+                self._plannedStartDateTimeCombo.SetChecked(True)
+                startChecked = True
             # 3.6 If Due-Date disabled, Then deactivate Start-Date, set Automatic mode, Loop
             if not dueChecked:
                 self._plannedStartDateTimeCombo.SetChecked(False)
                 self.__setDurationMode("automatic")
-                return self.__syncDurationState(liveUpdate)  # Loop
-            # 3.1 Activate Due-Date (already checked per above)
-            # 3.2 Activate Start-Date (Read-Only handled by __updateFieldStates)
-            if not startChecked:
-                self._plannedStartDateTimeCombo.SetChecked(True)
+                return self.__syncDurationState(userAction, liveUpdate)  # Loop
             # 3.4/3.5 Adj Start-Date (on Duration or Due-Date change)
             if liveUpdate:
                 self.__updatePlannedStartLive()
@@ -1311,10 +1327,7 @@ class DatesPage(Page):
             if startChecked and dueChecked:
                 # 4.2.1 Both enabled - adj Duration
                 self.__updateImplicitDuration()
-            elif not startChecked and not dueChecked:
-                # 4.3.2 Both disabled - set Automatic mode, Loop
-                self.__setDurationMode("automatic")
-                return self.__syncDurationState(liveUpdate)  # Loop
+            # 4.3 If Start-Date disabled (or Due-Date disabled), Duration handled by __updateFieldStates
 
         # 5. Update Field States (See: UI Field States section)
         self.__updateFieldStates()
@@ -1339,20 +1352,32 @@ class DatesPage(Page):
             self._dueDateTimeCombo.SetEditable(True)
 
         elif mode == "adjdue":
-            # Adjust Due | ✅ | ✅ | Editable | Editable | Read-only
+            # Adjust Due | ✅ | ✅ | Editable + Check | Editable | Read-only + Check
+            if not startChecked:
+                log_step("WARNING: adjdue mode but Start not checked - logic flow should have set this", prefix="DURATION")
+            if not dueChecked:
+                log_step("WARNING: adjdue mode but Due not checked - logic flow should have set this", prefix="DURATION")
+            self._plannedStartDateTimeCombo.SetChecked(True)
             self._plannedStartDateTimeCombo.Enable(True)
             self._plannedStartDateTimeCombo.SetEditable(True)
             self._plannedDurationCtrl.Enable(True)
             self._plannedDurationCtrl.SetReadOnly(False)
+            self._dueDateTimeCombo.SetChecked(True)
             self._dueDateTimeCombo.Enable(True)
             self._dueDateTimeCombo.SetEditable(False)  # Read-only
 
         elif mode == "adjstart":
-            # Adjust Start | ✅ | ✅ | Read-only | Editable | Editable
+            # Adjust Start | ✅ | ✅ | Read-only + Check | Editable | Editable + Check
+            if not startChecked:
+                log_step("WARNING: adjstart mode but Start not checked - logic flow should have set this", prefix="DURATION")
+            if not dueChecked:
+                log_step("WARNING: adjstart mode but Due not checked - logic flow should have set this", prefix="DURATION")
+            self._plannedStartDateTimeCombo.SetChecked(True)
             self._plannedStartDateTimeCombo.Enable(True)
             self._plannedStartDateTimeCombo.SetEditable(False)  # Read-only
             self._plannedDurationCtrl.Enable(True)
             self._plannedDurationCtrl.SetReadOnly(False)
+            self._dueDateTimeCombo.SetChecked(True)
             self._dueDateTimeCombo.Enable(True)
             self._dueDateTimeCombo.SetEditable(True)
 
@@ -1603,7 +1628,7 @@ class DatesPage(Page):
         """Clean up resources when dialog closes."""
         # Unsubscribe from pubsub topics
         try:
-            pub.unsubscribe(self.__onPresetsConfigChanged, "settings.feature.sdtcspans")
+            pub.unsubscribe(self.__onPresetsConfigChanged, "settings.feature.task_duration_presets")
         except Exception:
             pass
         super().close()
@@ -3267,7 +3292,7 @@ class EffortEditBook(Page):
         self.__populateEffortDurationPresets()
         self._effortDurationPresetsChoice.Bind(wx.EVT_CHOICE, self.__onEffortDurationPresetSelected)
 
-        pub.subscribe(self.__onEffortPresetsConfigChanged, "settings.feature.sdtcspans_effort")
+        pub.subscribe(self.__onEffortPresetsConfigChanged, "settings.feature.effort_duration_presets")
 
         # Entry mode dropdown (Standard / Retroactive) - placed next to presets
         self._effortEntryModeChoice = wx.Choice(self, choices=[_("Standard"), _("Retroactive")])
@@ -3606,7 +3631,7 @@ class EffortEditBook(Page):
         self._effortDurationPresetsChoice.Clear()
         self._effortDurationPresetsChoice.Append(_("Presets..."), None)  # Placeholder
 
-        presets_str = self._settings.get("feature", "sdtcspans_effort")
+        presets_str = self._settings.get("feature", "effort_duration_presets")
         if presets_str:
             presets = []
             for seconds_str in presets_str.split(","):
@@ -3938,7 +3963,7 @@ class EffortEditBook(Page):
     def close_edit_book(self):
         """Cleanup method called when dialog closes."""
         try:
-            pub.unsubscribe(self.__onEffortPresetsConfigChanged, "settings.feature.sdtcspans_effort")
+            pub.unsubscribe(self.__onEffortPresetsConfigChanged, "settings.feature.effort_duration_presets")
         except Exception:
             pass
         # Stop the time spent timer

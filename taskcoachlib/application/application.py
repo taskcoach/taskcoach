@@ -927,12 +927,30 @@ Break the lock?"""
         # See: https://github.com/wxWidgets/Phoenix/issues/429
         self._stopAllTimers()
 
+        # End any modal dialogs before closing - modal dialogs have their own
+        # nested event loops that prevent ExitMainLoop() from working
+        has_modal_dialogs = False
+        for window in wx.GetTopLevelWindows():
+            if isinstance(window, wx.Dialog) and window.IsModal():
+                has_modal_dialogs = True
+                window.EndModal(wx.ID_CANCEL)
+
         # Explicitly close the main window to trigger exit.
         # Set shutdown flag so onClose() won't veto or recurse into quitApplication.
         self.mainwindow.setShutdownInProgress()
         self.mainwindow.Close()
 
-        # Force MainLoop to exit in case something is keeping it alive
-        # See: https://discuss.wxpython.org/t/wxpython-app-hanging-not-ending-mainloop/29797
-        wx.GetApp().ExitMainLoop()
+        if has_modal_dialogs:
+            # Modal dialogs have nested event loops. Use ScheduleExit on the
+            # main loop - it will exit when the nested modal loop terminates.
+            # See: https://docs.wxpython.org/wx.EventLoopBase.html
+            main_loop = wx.GetApp().GetMainLoop()
+            if main_loop:
+                main_loop.ScheduleExit(0)
+            else:
+                wx.GetApp().ExitMainLoop()
+        else:
+            # Force MainLoop to exit in case something is keeping it alive
+            # See: https://discuss.wxpython.org/t/wxpython-app-hanging-not-ending-mainloop/29797
+            wx.GetApp().ExitMainLoop()
         return True

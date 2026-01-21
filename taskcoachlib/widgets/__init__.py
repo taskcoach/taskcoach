@@ -28,7 +28,6 @@ try:
 except ImportError:
     TcSquareMap = None  # squaremap not installed
 from .timeline import Timeline
-from .datectrl import DateTimeCtrl, TimeEntry
 from .maskedtimectrl import (
     DurationCtrl as MaskedDurationCtrl,
     DurationCtrlVerbose as MaskedDurationCtrlVerbose,

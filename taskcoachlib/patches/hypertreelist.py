@@ -708,6 +708,7 @@ class TreeListHeaderWindow(wx.Window):
         self._owner = owner
         self._currentCursor = wx.Cursor(wx.CURSOR_DEFAULT)
         self._resizeCursor = wx.Cursor(wx.CURSOR_SIZEWE)
+        self._noEntryCursor = wx.Cursor(wx.CURSOR_NO_ENTRY)
         self._isDragging = False
         self._dirty = False
         self._total_col_width = 0
@@ -1154,26 +1155,32 @@ class TreeListHeaderWindow(wx.Window):
                 self._minX = xpos
 
             if event.LeftDown() or event.RightUp():
-                if hit_border and event.LeftDown():
+                if hit_border and event.LeftDown() and self.IsColumnResizable(self._column):
                     self._isDragging = True
                     if not self.HasCapture():
                         self.CaptureMouse()
                     self._currentX = x
                     self.DrawCurrent()
                     self.SendListEvent(wx.wxEVT_COMMAND_LIST_COL_BEGIN_DRAG, event.GetPosition())
-                else: # click on a column
+                elif not hit_border or event.RightUp():  # click on a column (not on non-resizable border)
                     evt = (event.LeftDown() and [wx.wxEVT_COMMAND_LIST_COL_CLICK] or [wx.wxEVT_COMMAND_LIST_COL_RIGHT_CLICK])[0]
                     self.SendListEvent(evt, event.GetPosition())
 
-            elif event.LeftDClick() and hit_border:
+            elif event.LeftDClick() and hit_border and self.IsColumnResizable(self._column):
                 self.SetColumnWidth(self._column, self._owner.GetBestColumnWidth(self._column))
                 self.Refresh()
 
             elif event.Moving():
 
                 if hit_border:
-                    setCursor = self._currentCursor == wx.STANDARD_CURSOR
-                    self._currentCursor = self._resizeCursor
+                    # Check if column can be resized (not blocked by auto-resize mode)
+                    if self.IsColumnResizable(self._column):
+                        setCursor = self._currentCursor != self._resizeCursor
+                        self._currentCursor = self._resizeCursor
+                    else:
+                        # Show no-entry cursor for non-resizable columns
+                        setCursor = self._currentCursor != self._noEntryCursor
+                        self._currentCursor = self._noEntryCursor
                 else:
                     setCursor = self._currentCursor != wx.STANDARD_CURSOR
                     self._currentCursor = wx.STANDARD_CURSOR
@@ -1181,6 +1188,25 @@ class TreeListHeaderWindow(wx.Window):
                 if setCursor:
                     self.SetCursor(self._currentCursor)
 
+
+    def IsColumnResizable(self, column):
+        """
+        Returns whether a column can be manually resized.
+
+        In auto-resize mode, the ResizeColumn (auto-fill column) cannot be
+        manually resized as it automatically fills remaining space.
+
+        :param `column`: the column index to check.
+        :return: ``True`` if the column can be resized, ``False`` otherwise.
+        """
+
+        parent = self.GetParent()
+        # Check if parent has auto-resize capability and if it's enabled
+        if hasattr(parent, 'IsAutoResizing') and parent.IsAutoResizing():
+            # In auto-resize mode, the ResizeColumn cannot be manually resized
+            if hasattr(parent, 'ResizeColumn') and column == parent.ResizeColumn:
+                return False
+        return True
 
     def OnSetFocus(self, event):
         """

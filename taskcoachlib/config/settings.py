@@ -83,6 +83,7 @@ class Settings(CachingConfigParser):
                 ):
                     self.read(self.filename(), encoding="utf-8")
                 errorMessage = ""
+                self._migrateOldSettingNames()
             except configparser.ParsingError as errorMessage:
                 # Ignore exceptions and simply use default values.
                 # Also record the failure in the settings:
@@ -211,6 +212,23 @@ class Settings(CachingConfigParser):
         if section in defaults.minimum and option in defaults.minimum[section]:
             result = max(result, defaults.minimum[section][option])
         return result
+
+    def _migrateOldSettingNames(self):
+        """Migrate old setting names to new names for backward compatibility."""
+        # Mapping of (section, old_name) -> new_name
+        migrations = [
+            ("feature", "sdtcspans", "task_duration_presets"),
+            ("feature", "sdtcspans_effort", "effort_duration_presets"),
+        ]
+        for section, old_name, new_name in migrations:
+            try:
+                if self.has_option(section, old_name):
+                    old_value = super().get(section, old_name)
+                    if not self.has_option(section, new_name):
+                        self.set(section, new_name, old_value)
+                    self.remove_option(section, old_name)
+            except (configparser.NoSectionError, configparser.NoOptionError):
+                pass
 
     def _fixValuesFromOldIniFiles(self, section, option, result):
         """Try to fix settings from old TaskCoach.ini files that are no longer

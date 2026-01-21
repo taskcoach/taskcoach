@@ -62,7 +62,8 @@ def get_suggested_hour_choices(settings, override=None):
     # 24-hour mode: use working hours from preferences
     start = settings.getint("view", "efforthourstart")
     end = settings.getint("view", "efforthourend")
-    return list(range(start, end + 1))
+    # Cap at 23 to handle legacy settings that may have sentinel value 24
+    return list(range(start, min(end + 1, 24)))
 
 
 def get_suggested_minute_choices(settings, override=None):
@@ -105,62 +106,6 @@ def get_suggested_second_choices(settings, override=None):
         return override
     interval = settings.getint("view", "effortsecondinterval")
     return list(range(0, 60, interval))
-
-
-DateTimeEntryEvent, EVT_DATETIMEENTRY = newevent.NewEvent()
-
-
-class DateTimeEntry(widgets.DateTimeCtrl):
-    defaultDateTime = date.DateTime()
-
-    def __init__(
-        self,
-        parent,
-        settings,
-        initialDateTime=defaultDateTime,
-        readonly=False,
-        noneAllowed=True,
-        showSeconds=False,
-        suggestedDateTime=None,
-        showRelative=False,
-        adjustEndOfDay=False,
-        units=None,
-        *args,
-        **kwargs
-    ):
-        starthour = settings.getint("view", "efforthourstart")
-        endhour = settings.getint("view", "efforthourend")
-        interval = settings.getint("view", "effortminuteinterval")
-        super().__init__(
-            parent,
-            noneAllowed=noneAllowed,
-            starthour=starthour,
-            endhour=endhour,
-            interval=interval,
-            showSeconds=showSeconds,
-            showRelative=showRelative,
-            adjustEndOfDay=adjustEndOfDay,
-            units=units,
-        )
-        if readonly:
-            self.Disable()
-        # First set the initial value and then set the callback so that the
-        # callback is not triggered for the initial value
-        if initialDateTime == date.DateTime() and suggestedDateTime:
-            self.setSuggested(suggestedDateTime)
-        else:
-            self.SetValue(initialDateTime)
-        self.setCallback(self.onDateTimeCtrlEdited)
-
-    def SetValue(self, newValue=None):
-        super().SetValue(newValue or self.defaultDateTime)
-
-    def setSuggested(self, suggestedDateTime):
-        super().SetValue(suggestedDateTime)
-        super().SetNone()
-
-    def onDateTimeCtrlEdited(self, *args, **kwargs):  # pylint: disable=W0613
-        wx.PostEvent(self, DateTimeEntryEvent())
 
 
 class TimeDeltaEntry(widgets.PanelWithBoxSizer):

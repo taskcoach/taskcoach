@@ -1813,10 +1813,10 @@ class Task(
         elif defaultTime == "currenttime":
             return dateTime
         elif defaultTime == "endofworkingday":
-            endHour = cls.settings.getint("view", "efforthourend")
-            if endHour >= 24:
+            if cls.settings.getboolean("view", "efforthourend_endofday"):
                 endHour, minute, second = 23, 59, 59
             else:
+                endHour = cls.settings.getint("view", "efforthourend")
                 minute, second = 0, 0
             return dateTime.replace(
                 hour=endHour, minute=minute, second=second, microsecond=0

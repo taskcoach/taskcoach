@@ -33,7 +33,12 @@ class ExportDialog(sized_controls.SizedDialog):
     def __init__(self, *args, **kwargs):
         self.window = args[0]
         self.settings = kwargs.pop("settings")
-        super().__init__(title=self.title, *args, **kwargs)
+        super().__init__(
+            title=self.title,
+            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
+            *args,
+            **kwargs
+        )
         pane = self.GetContentsPane()
         pane.SetSizerType("vertical")
         self.components = self.createInterior(pane)
@@ -43,6 +48,9 @@ class ExportDialog(sized_controls.SizedDialog):
             wx.EVT_BUTTON, self.onOk
         )
         self.Fit()
+        # Set starting size to 500x700 for better usability
+        self.SetSize(500, 700)
+        self.SetMinSize((400, 400))
         self.CentreOnParent()
 
     def createInterior(self, pane):
@@ -222,11 +230,12 @@ class SeparateCSSCheckBox(sized_controls.SizedPanel):
 
     def __init__(self, parent, settings, section, setting):
         super().__init__(parent)
+        self.SetSizerProps(expand=True)
         self.settings = settings
         self.section = section
         self.setting = setting
         self.createCheckBox()
-        self.createHelpInformation(parent)
+        self.createHelpInformation()
 
     def createCheckBox(self):
         self.separateCSSCheckBox = wx.CheckBox(
@@ -236,23 +245,25 @@ class SeparateCSSCheckBox(sized_controls.SizedPanel):
         separateCSS = self.settings.getboolean(self.section, self.setting)
         self.separateCSSCheckBox.SetValue(separateCSS)
 
-    def createHelpInformation(self, parent):
-        width = max(
-            [
-                child.GetSize()[0]
-                for child in [self.separateCSSCheckBox]
-                + list(parent.GetChildren())
-            ]
+    def createHelpInformation(self):
+        self._helpText = (
+            _("If a CSS file exists for the exported file, %(name)s will not overwrite it. "
+              "This allows you to change the style information without losing your changes on the next export.")
+            % meta.metaDict
         )
-        info = wx.StaticText(
-            self,
-            label=_(
-                "If a CSS file exists for the exported file, %(name)s will not overwrite it. "
-                "This allows you to change the style information without losing your changes on the next export."
-            )
-            % meta.metaDict,
-        )
-        info.Wrap(width)
+        self.infoText = wx.StaticText(self, label=self._helpText)
+        self.infoText.SetSizerProps(expand=True)
+        self.infoText.Wrap(380)
+        self.Bind(wx.EVT_SIZE, self.onSize)
+
+    def onSize(self, event):
+        event.Skip()
+        if hasattr(self, 'infoText') and hasattr(self, '_helpText'):
+            width = self.GetClientSize().GetWidth()
+            if width > 50:
+                self.infoText.SetLabel(self._helpText)
+                self.infoText.Wrap(width - 10)
+                self.Layout()
 
     def options(self):
         return dict(separateCSS=self.separateCSSCheckBox.GetValue())

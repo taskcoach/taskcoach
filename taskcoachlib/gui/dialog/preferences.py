@@ -71,7 +71,6 @@ class SettingsPageBase(widgets.BookPage):
         self._choiceSettings = []
         self._multipleChoiceSettings = []
         self._integerSettings = []
-        self._timeSettings = []
         self._colorSettings = []
         self._fontSettings = []
         self._iconSettings = []
@@ -164,27 +163,51 @@ class SettingsPageBase(widgets.BookPage):
         self.addEntry(text, spin, helpText=helpText, flags=flags)
         self._integerSettings.append((section, setting, spin))
 
-    def addTimeSetting(
-        self,
-        section,
-        setting,
-        text,
-        helpText="",
-        disabledMessage=None,
-        disabledValue=None,
-        defaultValue=0,
-    ):
-        hourValue = self.getint(section, setting)
-        timeCtrl = widgets.TimeEntry(
-            self,
-            hourValue,
-            defaultValue=defaultValue,
-            disabledValue=disabledValue,
-            disabledMessage=disabledMessage,
+    def addWorkingHoursSetting(self, text, helpText=""):
+        """Add a working hours setting with start/end spinners and end-of-day checkbox."""
+        startHour = self.getint("view", "efforthourstart")
+        endHour = self.getint("view", "efforthourend")
+        endOfDay = self.getboolean("view", "efforthourend_endofday")
+
+        # Migrate old sentinel value: if endHour >= 24, convert to new format
+        if endHour >= 24:
+            endHour = 23
+            endOfDay = True
+
+        # Create panel to hold the controls
+        panel = wx.Panel(self)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        # Start hour spinner (0-23)
+        self._workingHourStartSpin = widgets.SpinCtrl(
+            panel, min=0, max=23, size=(50, -1), value=startHour
         )
+        sizer.Add(self._workingHourStartSpin, 0, wx.ALIGN_CENTER_VERTICAL)
+        sizer.Add(wx.StaticText(panel, label=_(" to ")), 0, wx.ALIGN_CENTER_VERTICAL)
+
+        # End hour spinner (0-23)
+        self._workingHourEndSpin = widgets.SpinCtrl(
+            panel, min=0, max=23, size=(50, -1), value=endHour
+        )
+        sizer.Add(self._workingHourEndSpin, 0, wx.ALIGN_CENTER_VERTICAL)
+        sizer.Add((10, -1))  # Spacer
+
+        # End of day checkbox
+        self._workingHourEndOfDayCheck = wx.CheckBox(panel, label=_("End of day"))
+        self._workingHourEndOfDayCheck.SetValue(endOfDay)
+        self._workingHourEndOfDayCheck.Bind(wx.EVT_CHECKBOX, self._onEndOfDayChecked)
+        sizer.Add(self._workingHourEndOfDayCheck, 0, wx.ALIGN_CENTER_VERTICAL)
+
+        panel.SetSizer(sizer)
+
+        # Apply initial state
+        if endOfDay:
+            self._workingHourEndSpin.SetValue(23)
+            self._workingHourEndSpin.Enable(False)
+
         self.addEntry(
             text,
-            timeCtrl,
+            panel,
             helpText=helpText,
             flags=(
                 wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT,
@@ -192,7 +215,21 @@ class SettingsPageBase(widgets.BookPage):
                 wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,
             ),
         )
-        self._timeSettings.append((section, setting, timeCtrl))
+
+    def _onEndOfDayChecked(self, event):
+        """Handle end of day checkbox toggle."""
+        if event.IsChecked():
+            self._workingHourEndSpin.SetValue(23)
+            self._workingHourEndSpin.Enable(False)
+        else:
+            self._workingHourEndSpin.Enable(True)
+
+    def _saveWorkingHoursSettings(self):
+        """Save working hours settings. Called from ok()."""
+        if hasattr(self, '_workingHourStartSpin'):
+            self.setint("view", "efforthourstart", self._workingHourStartSpin.GetValue())
+            self.setint("view", "efforthourend", self._workingHourEndSpin.GetValue())
+            self.setboolean("view", "efforthourend_endofday", self._workingHourEndOfDayCheck.IsChecked())
 
     def addFontSetting(self, section, setting, text):
         default_font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
@@ -358,8 +395,6 @@ class SettingsPageBase(widgets.BookPage):
             )
         for section, setting, spin in self._integerSettings:
             self.setint(section, setting, spin.GetValue())
-        for section, setting, timeCtrl in self._timeSettings:
-            self.setint(section, setting, timeCtrl.GetValue())
         for section, setting, colorButton in self._colorSettings:
             self.setvalue(section, setting, colorButton.GetColour())
         for section, setting, fontButton in self._fontSettings:
@@ -1141,21 +1176,7 @@ class FeaturesPage(SettingsPage):
                 wx.ALIGN_LEFT,
             ),
         )
-        self.addTimeSetting(
-            "view",
-            "efforthourstart",
-            _("Hour of start of work day"),
-            helpText=" ",
-        )
-        self.addTimeSetting(
-            "view",
-            "efforthourend",
-            _("Hour of end of work day"),
-            helpText=" ",
-            disabledMessage=_("End of day"),
-            disabledValue=24,
-            defaultValue=23,
-        )
+        self.addWorkingHoursSetting(_("Working hours"), helpText=" ")
         # Note about working hours and 12-hour mode
         workingHoursNote = wx.StaticText(
             self,
@@ -1187,7 +1208,7 @@ class FeaturesPage(SettingsPage):
             % meta.data.metaDict,
             [
                 (minutes, minutes)
-                for minutes in ("5", "6", "10", "15", "20", "30")
+                for minutes in ("1", "2", "3", "4", "5", "6", "10", "12", "15", "20", "30")
             ],
             flags=(
                 wx.ALL | wx.ALIGN_TOP | wx.ALIGN_RIGHT,
@@ -1206,7 +1227,7 @@ class FeaturesPage(SettingsPage):
             % meta.data.metaDict,
             [
                 (seconds, seconds)
-                for seconds in ("1", "5", "10", "15", "20", "30")
+                for seconds in ("1", "2", "3", "4", "5", "6", "10", "12", "15", "20", "30")
             ],
             flags=(
                 wx.ALL | wx.ALIGN_TOP | wx.ALIGN_RIGHT,
@@ -1259,6 +1280,7 @@ class FeaturesPage(SettingsPage):
 
     def ok(self):
         super().ok()
+        self._saveWorkingHoursSettings()
         calendar.setfirstweekday(
             dict(monday=0, sunday=6)[self.get("view", "weekstart")]
         )
@@ -1478,14 +1500,14 @@ class DurationPresetsPage(SettingsPage):
         # Preset field configurations: (setting_key, display_name, help_text)
         self._preset_fields = [
             (
-                "sdtcspans",
-                _("Task Due Date"),
-                _("These presets appear when setting the due date relative to the planned start date."),
+                "task_duration_presets",
+                _("Task Duration"),
+                _("These presets appear when setting task duration in the task editor."),
             ),
             (
-                "sdtcspans_effort",
-                _("Effort Stop Time"),
-                _("These presets appear when setting the effort stop time relative to the start time."),
+                "effort_duration_presets",
+                _("Effort Duration"),
+                _("These presets appear when setting effort duration in the effort editor."),
             ),
         ]
 
@@ -1565,7 +1587,7 @@ class DurationPresetsPage(SettingsPage):
         """Check if the setting key is for effort presets (uses seconds)."""
         if setting_key is None:
             setting_key = self.__getCurrentSettingKey()
-        return setting_key == "sdtcspans_effort"
+        return setting_key == "effort_duration_presets"
 
     def __loadPresets(self, setting_key):
         """Load presets from settings.

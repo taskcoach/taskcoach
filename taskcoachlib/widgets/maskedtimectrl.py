@@ -320,7 +320,8 @@ def getDefaultHourChoices(timeFormat=None):
         from taskcoachlib.config import settings
         start = settings.Settings().getint("view", "efforthourstart")
         end = settings.Settings().getint("view", "efforthourend")
-        return list(range(start, end + 1))
+        # Cap at 23 to handle legacy settings that may have sentinel value 24
+        return list(range(start, min(end + 1, 24)))
     except Exception:
         return list(range(8, 18))  # Fallback: 8 AM to 5 PM
 
@@ -1402,8 +1403,8 @@ class FieldsCtrl(wx.Panel):
             event.Skip()
             return
 
-        # Enter opens popup for current field
-        if keyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
+        # Enter or F4 toggles popup for current field
+        if keyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER, wx.WXK_F4):
             if self._popup:
                 self.DismissPopup()
             else:
@@ -2201,8 +2202,8 @@ class DateCtrl(FieldsCtrl):
             event.Skip()
             return
 
-        # Enter opens calendar popup (not field dropdown)
-        if keyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
+        # Enter or F4 toggles calendar popup
+        if keyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER, wx.WXK_F4):
             if self._calendarPopup:
                 self.DismissPopup()
             else:
@@ -2489,6 +2490,22 @@ class DateTimeCombo:
     def ContainsControl(self, ctrl):
         """Return True if ctrl is one of our child controls (checkbox, dateCtrl, timeCtrl)."""
         return ctrl in (self._checkbox, self._dateCtrl, self._timeCtrl)
+
+    def HasOpenPopup(self):
+        """Return True if any child control has an open popup (calendar or dropdown).
+
+        Used by inline editors to prevent closing while user interacts with popups.
+        """
+        # Check dateCtrl for calendar popup
+        if hasattr(self._dateCtrl, '_calendarPopup') and self._dateCtrl._calendarPopup is not None:
+            return True
+        # Check dateCtrl for field dropdown
+        if hasattr(self._dateCtrl, '_popup') and self._dateCtrl._popup is not None:
+            return True
+        # Check timeCtrl for field dropdown
+        if hasattr(self._timeCtrl, '_popup') and self._timeCtrl._popup is not None:
+            return True
+        return False
 
     def Bind(self, eventType, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
         """Bind event handler to child controls.

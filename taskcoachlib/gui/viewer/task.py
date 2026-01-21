@@ -33,7 +33,6 @@ from taskcoachlib.thirdparty.wxScheduler import (
     wxSCHEDULER_TODAY,
     wxFancyDrawer,
 )
-from taskcoachlib.thirdparty import smartdatetimectrl as sdtc
 from taskcoachlib.widgets import (
     CalendarConfigDialog,
     HierarchicalCalendarConfigDialog,
@@ -53,19 +52,20 @@ import struct
 
 
 class DueDateTimeCtrl(inplace_editor.DateTimeCtrl):
+    """Inline due date editor.
+
+    TODO: The old smartdatetimectrl had a "relative preset" dropdown that showed
+    duration offsets like "+1 day", "+1 week" relative to the planned start date.
+    This feature would need to be reimplemented as a separate duration field with
+    duration presets in DateTimeCombo. The settings key "feature.task_duration_presets"
+    stores the user's custom duration choices. For now, due dates are edited as
+    absolute datetime values only.
+    """
     def __init__(self, parent, wxId, item, column, owner, value, **kwargs):
+        # Pass relative info for future implementation
         kwargs["relative"] = True
         kwargs["startDateTime"] = item.GetData().plannedStartDateTime()
         super().__init__(parent, wxId, item, column, owner, value, **kwargs)
-        sdtc.EVT_TIME_CHOICES_CHANGE(self._dateTimeCtrl, self.OnChoicesChange)
-        self._dateTimeCtrl.LoadChoices(
-            item.GetData().settings.get("feature", "sdtcspans")
-        )
-
-    def OnChoicesChange(self, event):
-        self.item().GetData().settings.settext(
-            "feature", "sdtcspans", event.GetValue()
-        )
 
 
 class TaskViewerStatusMessages(object):

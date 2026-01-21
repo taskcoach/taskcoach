@@ -33,8 +33,17 @@ Duration calculations for Edit Task Dates and Edit Effort windows.
 
 ### Logic Flow
 
+The logic flow is triggered by ONE user-initiated change at a time. The user makes
+a single change (checkbox, field value, or dropdown), then the logic processes
+(including loops) until it stabilizes and exits. Only then is the system ready
+for the next user change.
+
 ```
 Start: Automatic, all fields empty
+
+0. Store last user action and skip any step that changes the user's explicitly set value.
+   0.1 User unchecked Start-Date
+   0.2 User unchecked Due-Date
 
 1. If Mode Automatic
    1.1 If Start-Date set, Then set Adj-Due mode, Loop
@@ -44,9 +53,9 @@ Start: Automatic, all fields empty
    1.5 If Adj-Start chosen, Then set Adj-Start mode, Loop
 
 2. If Mode Adj-Due
-   2.1 Activate Start-Date
-   2.2 Activate Due-Date (Read-Only)
-   2.3 Disable Automatic mode option in dropdown
+   2.1 Activate Start-Date, If not unchecked by user [Ref2, 0.1]
+   2.2 Activate Due-Date (Read-Only) [Ref2]
+   2.3 Disable Automatic mode option in dropdown [Ref1]
    2.4 If Duration changed, Then adj Due-Date
    2.5 If Start-Date changed, Then adj Due-Date
    2.6 If Start-Date disabled, Then
@@ -55,9 +64,9 @@ Start: Automatic, all fields empty
        2.6.3 Set Automatic mode, Loop
 
 3. If Mode Adj-Start
-   3.1 Activate Due-Date
-   3.2 Activate Start-Date (Read-Only)
-   3.3 Disable Automatic mode option in dropdown
+   3.1 Activate Due-Date, If not unchecked by user [Ref2, 0.2]
+   3.2 Activate Start-Date (Read-Only) [Ref2]
+   3.3 Disable Automatic mode option in dropdown [Ref1]
    3.4 If Duration changed, Then adj Start-Date
    3.5 If Due-Date changed, Then adj Start-Date
    3.6 If Due-Date disabled, Then
@@ -66,7 +75,7 @@ Start: Automatic, all fields empty
        3.6.3 Set Automatic mode, Loop
 
 4. If Mode Implicit
-   4.1 Disable Automatic mode option in dropdown
+   4.1 Disable Automatic mode option in dropdown [Ref1]
    4.2 If Start-Date enabled
        4.2.1 If Due-Date enabled
            4.2.1.1 Enable Duration (Read-Only)
@@ -74,11 +83,7 @@ Start: Automatic, all fields empty
            4.2.1.3 If Start-Date changed, Then adj Duration
            4.2.1.4 If Due-Date changed, Then adj Duration
        4.2.2 If Due-Date disabled, Then disable Duration
-   4.3 If Start-Date disabled
-       4.3.1 If Due-Date enabled, Then disable Duration
-       4.3.2 If Due-Date disabled, Then
-           4.3.2.1 Reactivate Automatic mode option in dropdown
-           4.3.2.2 Set Automatic mode, Loop
+   4.3 If Start-Date disabled, Then disable Duration
 
 5. Update Field States (See: UI Field States section)
 
@@ -87,6 +92,10 @@ Glossary:
    Adj-Start  = Adjust Planned Start Date mode
    Start-Date = Planned Start Date-Time Combo Control with Checkbox
    Due-Date   = Due Date-Time Combo Control with Checkbox
+
+References:
+   [Ref1] Covered by "Calculation Mode Dropdown Build Logic" section
+   [Ref2] Covered by "UI Field States" section
 ```
 
 ```
@@ -114,13 +123,14 @@ Called on: Lost focus of Start-Date, Due-Date, Duration, or Presets fields.
 | Calc Mode | Start | Due | Start Field | Duration Field | Due Field |
 |-----------|-------|-----|-------------|----------------|-----------|
 | Automatic | ❌ | ❌ | Editable | Editable | Editable |
-| Adjust Due | ✅ | ✅ | Editable | Editable | Read-only |
-| Adjust Start | ✅ | ✅ | Read-only | Editable | Editable |
+| Adjust Due | ✅ | ✅ | Editable + Check | Editable | Read-only + Check |
+| Adjust Start | ✅ | ✅ | Read-only + Check | Editable | Editable + Check |
 | Implicit | ✅ | ✅ | Editable | Read-only | Editable |
 | Implicit | ✅ | ❌ | Editable | Disabled | Editable |
 | Implicit | ❌ | ✅ | Editable | Disabled | Editable |
 
 Key: Disabled = Field is disabled and unchecked
+     + Check = Ensure checkbox is checked when setting this field state
 
 ```
 Implements: __updateFieldStates()

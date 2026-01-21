@@ -61,7 +61,7 @@ class AttributeSync(object):
         entry.Bind(editedEventType, self.onAttributeEdited)
 
         if commit_on_focus_loss:
-            # For composite widgets like DateTimeEntry, we need to track focus
+            # For composite widgets like DateTimeCombo, we need to track focus
             # on the widget and all its children
             self.__bindFocusEvents(entry)
 

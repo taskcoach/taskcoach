@@ -204,6 +204,36 @@ The following obsolete workarounds were removed from `taskcoach.py`:
 |----------|-------|---------|
 | `apply-wxpython-patch.sh` | `hypertreelist.py` patch | Fixes category row background coloring |
 
+### HyperTreeList Text Truncation Bug (Standard wxPython Issue)
+
+**Problem:** When column text is too wide and needs truncation, right-aligned and center-aligned columns display incorrectly. The text is truncated with "..." at the end (right side) regardless of alignment, then positioned per alignment, resulting in text being clipped on both sides.
+
+**Expected behavior:**
+- LEFT-aligned: Truncate from right, "..." at end (current behavior - correct)
+- CENTER-aligned: Truncate from middle, "..." in middle
+- RIGHT-aligned: Truncate from left, "..." at start
+
+**Affected columns:** Due Date, completion dates, and other right-aligned date/time columns in task lists.
+
+**Root cause:** `ChopText()` function in `wx.lib.agw.customtreectrl` (standard wxPython, not our patch) always truncates from the right. Both standard and patched HyperTreeList use this function without considering column alignment.
+
+**Note:** This is a **standard wxPython bug**, not related to our local background-coloring patch. The local patch (`taskcoachlib/patches/hypertreelist.py`) is for Issue #2081/#1898 (row background colors), which is a separate issue.
+
+**Fix options:**
+1. Report upstream to wxPython/AGW and wait for fix
+2. Modify local `hypertreelist.py` patch to use `wx.Control.Ellipsize(text, dc, wx.ELLIPSIZE_START, maxWidth)` for RIGHT-aligned columns
+3. Create alignment-aware `ChopText` wrapper function in local patch
+
+**References:**
+- `wx.Control.Ellipsize()` supports `wx.ELLIPSIZE_START`, `wx.ELLIPSIZE_MIDDLE`, `wx.ELLIPSIZE_END`
+- [wx.lib.agw.customtreectrl documentation](https://docs.wxpython.org/wx.lib.agw.customtreectrl.html) - ChopText function
+- [wxWidgets/Phoenix GitHub Issues](https://github.com/wxWidgets/Phoenix/issues) - Searched January 2026: no existing issue for alignment-aware truncation
+- Related issues found: #1898 (background coloring), #1880 (dark themes), #1901 (column resizing), #1395 (label editing with ellipsize)
+
+**TODO:** Consider filing a new issue at [wxWidgets/Phoenix](https://github.com/wxWidgets/Phoenix/issues/new) with reproduction steps demonstrating the alignment-aware truncation bug.
+
+**Status:** No upstream issue exists - consider filing new issue, or implement local workaround
+
 ### Recommendations
 
 1. **Empty workarounds module:** The `import workarounds` at `application.py:21` can be removed along with the empty `workarounds.py` module.
