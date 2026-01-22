@@ -152,11 +152,6 @@ class MainWindow(
         self.__filename = self.taskFile.filename()
         self.__setTitle()
         self.SetIcons(artprovider.iconBundle("taskcoach"))
-        self.displayMessage(
-            _("Welcome to %(name)s version %(version)s")
-            % {"name": meta.name, "version": meta.version},
-            pane=1,
-        )
 
     def __init_window_components(self):
         # Freeze to prevent flickering during AUI layout restoration

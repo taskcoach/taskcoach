@@ -17,22 +17,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import persistence, patterns, operating_system
+from taskcoachlib import persistence, patterns
 from taskcoachlib.i18n import _
 import wx
-
-
-# Prepare for printing. On Jolicloud, printing crashes unless we do this:
-
-# BUT on Fedora, if we do this, TaskCoach doesn't even start. My opinion is that
-# Fedora is more widely used than Jolicloud.
-
-## if operating_system.isGTK():
-##     try:
-##         import gtk  # pylint: disable=F0401
-##         gtk.remove_log_handlers()
-##     except ImportError:
-##         pass
 
 
 class PrinterSettings(object, metaclass=patterns.Singleton):

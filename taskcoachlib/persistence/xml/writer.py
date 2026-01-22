@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from xml.etree import ElementTree as ET
 from taskcoachlib import meta
 from taskcoachlib.domain import date, task, note, category
-from xml.etree import ElementTree as ET
 import os
 import sys
 
@@ -73,27 +72,24 @@ class PIElementTree(ET.ElementTree):
     def write(self, file, encoding, *args, **kwargs):
         if encoding is None:
             encoding = "utf-8"
-        if sys.version_info >= (2, 7):
-            # Check if file is in binary mode or text mode
-            # Default to binary if mode cannot be determined (for wrapped file objects)
-            is_binary = not (hasattr(file, 'mode') and 'b' not in file.mode)
+        # Check if file is in binary mode or text mode
+        # Default to binary if mode cannot be determined (for wrapped file objects)
+        is_binary = not (hasattr(file, 'mode') and 'b' not in file.mode)
 
-            # Write XML declaration and processing instruction
-            if is_binary:
-                # Binary mode: write bytes
-                file.write(('<?xml version="1.0" encoding="%s"?>\n' % encoding).encode(encoding))
-                file.write((self.__pi + "\n").encode(encoding))
-                kwargs["xml_declaration"] = False
-                ET.ElementTree.write(self, file, encoding, *args, **kwargs)
-            else:
-                # Text mode: write strings
-                file.write('<?xml version="1.0" encoding="%s"?>\n' % encoding)
-                file.write(self.__pi + "\n")
-                kwargs["xml_declaration"] = False
-                # Use 'unicode' encoding to write strings instead of bytes
-                ET.ElementTree.write(self, file, 'unicode', *args, **kwargs)
-        else:
+        # Write XML declaration and processing instruction
+        if is_binary:
+            # Binary mode: write bytes
+            file.write(('<?xml version="1.0" encoding="%s"?>\n' % encoding).encode(encoding))
+            file.write((self.__pi + "\n").encode(encoding))
+            kwargs["xml_declaration"] = False
             ET.ElementTree.write(self, file, encoding, *args, **kwargs)
+        else:
+            # Text mode: write strings
+            file.write('<?xml version="1.0" encoding="%s"?>\n' % encoding)
+            file.write(self.__pi + "\n")
+            kwargs["xml_declaration"] = False
+            # Use 'unicode' encoding to write strings instead of bytes
+            ET.ElementTree.write(self, file, 'unicode', *args, **kwargs)
 
 
 def sortedById(objects):

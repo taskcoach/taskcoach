@@ -17,4 +17,3 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from . import display, font, encodings
-from .exception import ExceptionAsUnicode

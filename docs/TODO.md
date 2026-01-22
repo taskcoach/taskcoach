@@ -8,10 +8,9 @@ This document tracks planned improvements and known issues to address in future 
 - [Configuration Naming Convention](#configuration-naming-convention)
 - [Refactoring Save Patterns](#refactoring-save-patterns)
 - [Backup Feature Review](#backup-feature-review)
-- [Setup/Installation Issues](#setupinstallation-issues)
 - [Monkeypatches and Workarounds](#monkeypatches-and-workarounds)
-- [Datetime and Timezone Refactoring](#datetime-and-timezone-refactoring)
 - [Text-to-Speech Modernization](#text-to-speech-modernization)
+- [GTK3 Widget Sizing Inconsistency](#gtk3-widget-sizing-inconsistency)
 - [Other TODOs](#other-todos)
 
 ---
@@ -140,35 +139,6 @@ The backup/restore feature needs review - testing showed unexpected restore beha
 
 ---
 
-## Setup/Installation Issues
-
-### setup.py Does Not Install Prerequisites
-
-**Problem:** Running `python3 setup.py` on a fresh system fails because required dependencies (setuptools, pip, wxPython) are not installed and setup.py does not handle this.
-
-**Current behavior:**
-- `python3 setup.py develop` fails with `ModuleNotFoundError: No module named 'setuptools'`
-- Even if setuptools is present, wxPython must be installed separately
-- No clear error message guiding users to install prerequisites
-
-**Expected behavior:**
-- setup.py should either install prerequisites automatically, or
-- Provide clear error messages with installation instructions, or
-- README should have complete "from scratch" installation instructions
-
-**Workaround:** Users must manually install system packages:
-```bash
-# Ubuntu/Debian
-sudo apt install python3-pip python3-setuptools python3-wxgtk4.0
-```
-
-**TODO:**
-- [ ] Add prerequisite checks to setup.py with helpful error messages
-- [ ] Update README with complete fresh-install instructions
-- [ ] Consider using pyproject.toml for modern Python packaging
-
----
-
 ## Monkeypatches and Workarounds
 
 **Status:** Review periodically to determine if still needed
@@ -180,10 +150,22 @@ This section documents workarounds and patches in the codebase that should be re
 | Location | Workaround | Purpose | Review Notes |
 |----------|------------|---------|--------------|
 | `taskcoach.py:43-71` | `_set_wayland_app_id()` | Sets GLib program name for Wayland app ID matching | Required for proper Wayland dock integration |
-| `taskcoach.py:73-74` | `import workarounds.monkeypatches` | Runtime patches for hypertreelist, inspect.getargspec | Required for wxPython compatibility |
+| `taskcoach.py:73-74` | `import workarounds.monkeypatches` | Runtime patches for hypertreelist, inspect.getargspec, Window.SetSize | Required for wxPython compatibility |
+
+### Python 3.10 Support (Ubuntu 22.04)
+
+The `inspect.getargspec` shim in `monkeypatches.py` is required for Python 3.10 (Ubuntu 22.04 Jammy). Python 3.11+ removed `getargspec()`.
+
+**Remove after:** April 2027 (Ubuntu 22.04 LTS end of standard support)
+
+Once Ubuntu 22.04 is out of LTS:
+- Remove the `getargspec` shim from `monkeypatches.py`
+- Update `setup.py` classifiers to remove Python 3.8, 3.9, 3.10
+- Update `build.in/fedora/taskcoach.spec` to require Python >= 3.11
+- Remove Ubuntu 22.04 .deb from README and CI workflows
 | `taskcoach.py:24-30` | TEE module disabled | Stdout/stderr redirection to log file | Disabled pending further testing |
 | `application.py:511-516` | `SetActiveTarget` disabled | wx log redirection to stderr | Disabled pending further testing |
-| `application.py:21` | `import workarounds` | Workarounds module | **Now empty** - can be removed |
+| `application.py:21` | `import workarounds` | Imports display, font, encodings | Required |
 
 ### Removed Legacy Hacks (January 2026)
 
@@ -236,83 +218,7 @@ The following obsolete workarounds were removed from `taskcoach.py`:
 
 ### Recommendations
 
-1. **Empty workarounds module:** The `import workarounds` at `application.py:21` can be removed along with the empty `workarounds.py` module.
-
-2. **Regular review:** Check this section every 6-12 months to clean up obsolete workarounds.
-
----
-
-## Datetime and Timezone Refactoring
-
-### Current Status
-
-TaskCoach uses **naive (timezone-unaware) datetime objects** throughout the codebase. This was common practice in Python 2 era but is now deprecated - Python 3.12+ emits warnings about naive datetime usage.
-
-### The Problem
-
-The naive datetime approach causes issues on Windows with `pywintypes.Time()`:
-
-1. **pywin32 timezone confusion** ([issue #1760](https://github.com/mhammond/pywin32/issues/1760)): When converting datetime objects, pywin32 has inconsistent timezone handling. Windows FILETIME is always UTC, but the conversion to/from Python datetime uses `mktime` which expects local time.
-
-2. **Symptom**: When passing a naive datetime like `datetime(2026, 1, 8, 11, 33, 0)` to `pywintypes.Time()`, it may interpret it as UTC and convert to local time, causing 11:33 AM to display as 7:33 PM (e.g., 8-hour PST offset).
-
-3. **Python 2 vs 3 differences**: The behavior changed between pywin32 versions ([issue #1355](https://github.com/mhammond/pywin32/issues/1355)), which is why this worked before the Python 3 migration.
-
-### Current Workaround
-
-In `taskcoachlib/render.py`, we bypass `pywintypes.Time()` for time-only formatting on Windows:
-
-```python
-# For time-only values on Windows, use Python's strftime directly
-# to avoid pywintypes.Time() timezone conversion issues
-if is_time_only and operating_system.isWindows():
-    return dateTime.strftime("%H:%M")
-```
-
-This is a pragmatic fix that avoids a major refactor.
-
-### Proper Long-Term Solution
-
-Migrate TaskCoach to use **timezone-aware datetime objects** throughout:
-
-```python
-from datetime import datetime, timezone
-from zoneinfo import ZoneInfo  # Python 3.9+
-
-# Modern approach - always use timezone-aware datetimes
-aware_dt = datetime.now(timezone.utc)  # UTC
-local_dt = datetime.now(ZoneInfo("America/New_York"))  # Local with zone
-
-# Convert to local for display
-display_time = aware_dt.astimezone()  # System local timezone
-```
-
-### Refactoring Scope
-
-| Component | Location | Effort |
-|-----------|----------|--------|
-| `DateTime` class | `taskcoachlib/domain/date/dateandtime.py` | High - Core class used everywhere |
-| `Date` class | `taskcoachlib/domain/date/date.py` | Medium |
-| `TimeDelta` class | `taskcoachlib/domain/date/timedelta.py` | Low |
-| Task file I/O | `taskcoachlib/persistence/` | High - Must handle legacy files |
-| Rendering | `taskcoachlib/render.py` | Medium |
-| UI controls | `taskcoachlib/widgets/datectrl.py` | Medium |
-
-### Migration Strategy
-
-1. **Add timezone support to DateTime class** - Make it timezone-aware while maintaining backward compatibility
-2. **Update file I/O** - Store times in UTC, convert to local for display
-3. **Update rendering** - Remove Windows-specific workarounds once datetimes are timezone-aware
-4. **Legacy file support** - Assume naive datetimes in old files are local time
-
-### References
-
-- [pywin32 issue #1760 - Datetime timezone issues](https://github.com/mhammond/pywin32/issues/1760)
-- [pywin32 issue #1355 - DST differences Python 2 vs 3](https://github.com/mhammond/pywin32/issues/1355)
-- [Python datetime documentation](https://docs.python.org/3/library/datetime.html)
-- [PEP 495 - Local Time Disambiguation](https://peps.python.org/pep-0495/)
-
-**Status:** Workaround in place. Full refactor is a significant undertaking.
+1. **Regular review:** Check this section every 6-12 months to clean up obsolete workarounds.
 
 ---
 
@@ -369,6 +275,58 @@ class Speaker(metaclass=patterns.Singleton):
 - Works offline, no internet required
 
 **Status:** Ready to implement
+
+---
+
+## GTK3 Widget Sizing Inconsistency
+
+### TODO: Test App
+
+Create a small wxPython test app with buttons, dropdowns, and text inputs. Experiment with:
+- Less padding on buttons/dropdowns
+- More padding on text entries/spin controls
+
+Test on Linux (GTK3), Windows, and macOS to see if consistent sizing can be achieved.
+
+### The Problem
+
+On Linux/GTK3, there is a noticeable visual inconsistency between widget types:
+- **Large widgets:** Buttons, dropdowns (ComboBox), SpinButton arrows - all have consistent large size
+- **Small widgets:** Text entries, number input fields - all have consistent small size
+
+The two groups don't match each other, making the UI look incoherent. The obvious fix would be to increase padding on inputs and decrease padding on buttons/dropdowns to meet in the middle.
+
+### Has This Been Addressed?
+
+**Yes, extensively discussed but never successfully fixed:**
+
+1. **[Numix Theme Issue #452](https://github.com/numixproject/numix-gtk-theme/issues/452)** - Explicitly states "The goal should be that entry and button have a similar height." They tried:
+   - Remove min-height from buttons → some buttons became too small
+   - Remove padding from buttons, add to entries → "changes too much"
+   - **Result:** "were not able to get a consistent size of buttons and entries"
+
+2. **[Mozilla Bug #1257811](https://bugzilla.mozilla.org/show_bug.cgi?id=1257811)** - Documents that GTK 3.20 changed to CSS min-height instead of padding. Adwaita theme sets `min-height: 32px` on entries but they remain visually smaller than buttons.
+
+3. **[Inkscape GTK+3 Issues](https://wiki.inkscape.org/wiki/index.php?title=GTK%2B_3_issues)** - Notes "too many ways of creating buttons with icons which leads to inconsistency of behavior"
+
+### Why It's Hard to Fix
+
+- GTK 3.20 moved from pixel-based to CSS-based theming
+- Different widgets calculate size differently (some use padding, some use min-height, some use icon size)
+- Fixing one widget type often breaks another
+- GNOME prioritized touch-friendly button sizes over visual consistency
+
+### Impact on Task Coach
+
+The custom `SpinCtrl` in `taskcoachlib/widgets/spinctrl.py` uses a `TextCtrl` + native `SpinButton` composition. The SpinButton arrows are GTK-sized (large) while the TextCtrl is standard entry-sized (small), creating a visually unbalanced control.
+
+### Possible Solutions
+
+1. **Accept it** - This is "platform native" behavior; GTK users see it everywhere
+2. **Custom-drawn spin buttons** - Replace native `SpinButton` with custom arrow images (see [wxPython forum solution](https://discuss.wxpython.org/t/my-personal-crusade-against-gtk-3-spinctrls-size/30506))
+3. **GTK CSS override** - Force widget sizes via `~/.config/gtk-3.0/gtk.css` (user-side, not app-side)
+
+**Status:** Known GTK3 limitation. No action planned - accepting platform behavior.
 
 ---
 

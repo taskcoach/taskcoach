@@ -139,10 +139,7 @@ class SynchronizedObject(object):
 class Object(SynchronizedObject):
     rx_attributes = re.compile(r"\[(\w+):(.+)\]")
 
-    if sys.version_info.major == 2:
-        _long_zero = int(0)
-    else:
-        _long_zero = 0
+    _long_zero = 0
 
     def __init__(self, *args, **kwargs):
         Attribute = attribute.Attribute

@@ -494,7 +494,6 @@ defaults = {
         "blinktaskbariconwhentrackingeffort": "True",
         # Theme: 'automatic' (detect from system), 'light', or 'dark'
         "theme": "light",
-        "splash": "False",  # Show splash screen on startup
     },
     "effortdialog": {
         "size": "(-1, -1)",  # Size of the dialogs, calculated by default

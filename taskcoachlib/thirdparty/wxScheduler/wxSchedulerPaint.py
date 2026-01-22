@@ -10,10 +10,6 @@ import sys
 import wx
 from . import wxScheduleUtils as utils
 
-if sys.version.startswith("2.3"):
-    from sets import Set as set
-
-
 # Events
 wxEVT_COMMAND_SCHEDULE_ACTIVATED = wx.NewEventType()
 EVT_SCHEDULE_ACTIVATED = wx.PyEventBinder(wxEVT_COMMAND_SCHEDULE_ACTIVATED)

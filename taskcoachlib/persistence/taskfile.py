@@ -225,10 +225,6 @@ class TaskFile(patterns.Observer):
     def changes(self):
         return self.__changes
 
-    def setSyncMLConfig(self, config):
-        # SyncML removed - method kept for backwards compatibility
-        pass
-
     def isEmpty(self):
         return (
             0

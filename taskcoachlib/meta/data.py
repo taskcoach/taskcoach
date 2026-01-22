@@ -183,8 +183,8 @@ license_notice_html = re.sub(
 )
 
 platform = "Any"
-pythonversion = "2.6"
-wxpythonversionnumber = "3.0.0.0"
+pythonversion = "3.8"
+wxpythonversionnumber = "4.2.0"
 wxpythonversion = "%s-unicode" % wxpythonversionnumber
 # NOTE (Twisted Removal - 2024): Twisted is no longer required.
 # Replaced with native wxPython event handling, watchdog, and socketserver.

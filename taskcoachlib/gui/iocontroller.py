@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import meta, persistence, patterns, operating_system
 from taskcoachlib.i18n import _
 from taskcoachlib.widgets import GetPassword
-from taskcoachlib.workarounds import ExceptionAsUnicode
 from taskcoachlib.gui.dialog import BackupManagerDialog
 import wx
 import os
@@ -316,7 +315,7 @@ class IOController(object):
         except (OSError, IOError, persistence.LockFailed) as reason:
             errorMessage = _("Cannot save %s\n%s") % (
                 filename,
-                ExceptionAsUnicode(reason),
+                str(reason),
             )
             showerror(errorMessage, **self.__errorMessageOptions)
             return False
@@ -346,7 +345,7 @@ class IOController(object):
             except Exception as reason:  # pylint: disable=W0703
                 errorMessage = _("Cannot import template %s\n%s") % (
                     filename,
-                    ExceptionAsUnicode(reason),
+                    str(reason),
                 )
                 showerror(errorMessage, **self.__errorMessageOptions)
 
@@ -490,7 +489,7 @@ class IOController(object):
         except IOError as reason:
             errorMessage = _("Cannot open %s\n%s") % (
                 filename,
-                ExceptionAsUnicode(reason),
+                str(reason),
             )
             showerror(errorMessage, **self.__errorMessageOptions)
             return None

@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import meta, patterns, operating_system
 from taskcoachlib.i18n import _
 from pubsub import pub
-from taskcoachlib.workarounds import ExceptionAsUnicode
 import ast
 import configparser
 import os
@@ -88,7 +87,7 @@ class Settings(CachingConfigParser):
                 # Ignore exceptions and simply use default values.
                 # Also record the failure in the settings:
                 self.initializeWithDefaults()
-                self.setLoadStatus(ExceptionAsUnicode(errorMessage))
+                self.setLoadStatus(str(errorMessage))
             # On first run, set up Welcome.tsk in user's Documents folder
             if isFirstRun:
                 self._setupFirstRunWelcomeFile()
@@ -164,7 +163,6 @@ class Settings(CachingConfigParser):
 
     def __beQuiet(self):
         noisySettings = [
-            ("window", "splash", "False"),
             ("window", "tips", "False"),
             ("window", "starticonized", "Always"),
         ]
