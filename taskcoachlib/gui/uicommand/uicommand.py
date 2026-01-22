@@ -496,7 +496,10 @@ class FileExportAsCSV(FileExportCommand):
 
 
 class FileExportAsICalendar(FileExportCommand):
-    """Action for exporting the contents of a viewer to iCalendar format."""
+    """Action for exporting the contents of a viewer to iCalendar format.
+
+    Uses a non-modal dialog to allow users to change selections while
+    the export dialog is open."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(
@@ -506,15 +509,39 @@ class FileExportAsICalendar(FileExportCommand):
             *args,
             **kwargs
         )
+        self._exportDialog = None
+
+    def doCommand(self, event):
+        """Show non-modal export dialog."""
+        # If dialog already open, just raise it
+        if self._exportDialog:
+            self._exportDialog.Raise()
+            return
+
+        self._exportDialog = self.getExportDialogClass()(
+            self.mainWindow(),
+            settings=self.settings,
+            exportCallback=self.exportFunction()
+        )
+        # Use Show() for non-modal dialog
+        self._exportDialog.Show()
+        # Clear reference when dialog is destroyed
+        self._exportDialog.Bind(
+            wx.EVT_WINDOW_DESTROY,
+            self._onDialogDestroyed
+        )
+
+    def _onDialogDestroyed(self, event):
+        """Clear dialog reference when destroyed."""
+        self._exportDialog = None
+        event.Skip()
 
     def exportFunction(self):
         return self.iocontroller.exportAsICalendar
 
     def enabled(self, event):
-        return any(
-            self.exportableViewer(viewer)
-            for viewer in self.mainWindow().viewer
-        )
+        # Always enabled since we have "Tasks (All)" and "Efforts (All)" options
+        return True
 
     @staticmethod
     def getExportDialogClass():

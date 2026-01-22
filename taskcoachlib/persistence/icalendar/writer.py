@@ -31,31 +31,65 @@ def extendedWithAncestors(selection):
 
 
 class iCalendarWriter(object):
+    # Constants for "All" export options (must match export.py)
+    ALL_TASKS = "ALL_TASKS"
+    ALL_EFFORTS = "ALL_EFFORTS"
+
     def __init__(self, fd, filename=None):
         self.__fd = fd
 
     def write(
-        self, viewer, settings, selectionOnly=False
+        self, viewer, settings, selectionOnly=False, selectedFields=None,
+        taskFile=None
     ):  # pylint: disable=W0613
-        items = viewer.visibleItems()
-        if selectionOnly:
-            selection = viewer.curselection()
-            if viewer.isTreeViewer():
-                selection = extendedWithAncestors(selection)
-            items = [item for item in items if item in selection]
-        return self.writeItems(items)
+        """Write items to iCalendar format.
 
-    def writeItems(self, items):
+        Args:
+            viewer: The viewer to export from, or ALL_TASKS/ALL_EFFORTS constant
+            settings: Application settings
+            selectionOnly: If True, only export selected items (ignored for ALL_*)
+            selectedFields: Set of field keys to export
+            taskFile: The task file (required for ALL_* export)
+        """
+        # Handle "All" export options
+        if viewer == self.ALL_TASKS:
+            if taskFile is None:
+                return 0
+            items = list(taskFile.tasks())
+        elif viewer == self.ALL_EFFORTS:
+            if taskFile is None:
+                return 0
+            items = list(taskFile.efforts())
+        else:
+            # Normal viewer-based export
+            items = viewer.visibleItems()
+            if selectionOnly:
+                selection = viewer.curselection()
+                if viewer.isTreeViewer():
+                    selection = extendedWithAncestors(selection)
+                items = [item for item in items if item in selection]
+
+        return self.writeItems(items, selectedFields=selectedFields)
+
+    def writeItems(self, items, selectedFields=None):
+        """Write a list of items to iCalendar format.
+
+        Args:
+            items: List of tasks or efforts to export
+            selectedFields: Set of field keys to export
+        """
         self.__fd.write("BEGIN:VCALENDAR\r\n")
         self._writeMetaData()
         count = 0
         for item in items:
-            transform = (
-                ical.VCalFromTask
-                if isinstance(item, task.Task)
-                else ical.VCalFromEffort
-            )
-            self.__fd.write(transform(item, encoding=False))
+            if isinstance(item, task.Task):
+                self.__fd.write(
+                    ical.VCalFromTask(item, encoding=False, selectedFields=selectedFields)
+                )
+            else:
+                self.__fd.write(
+                    ical.VCalFromEffort(item, encoding=False, selectedFields=selectedFields)
+                )
             count += 1
         self.__fd.write("END:VCALENDAR\r\n")
         return count

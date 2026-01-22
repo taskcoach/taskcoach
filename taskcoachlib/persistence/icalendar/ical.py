@@ -369,79 +369,132 @@ class VNoteParser(VCalendarParser):
 # { Generating iCalendar files.
 
 
-def VCalFromTask(task, encoding=True, doFold=True):
+def VCalFromTask(task, encoding=True, doFold=True, selectedFields=None):
     """This function returns a string representing the task in
-    iCalendar format."""
+    iCalendar format.
 
-    encoding = ";ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8" if encoding else ""
+    Args:
+        task: The task to export
+        encoding: Whether to use quoted-printable encoding
+        doFold: Whether to fold long lines
+        selectedFields: Set of field keys to export. If None, export all fields.
+                       Required fields (uid, dtstamp) are always exported.
+    """
+    # Default to all fields if not specified
+    if selectedFields is None:
+        selectedFields = {
+            "uid", "dtstamp", "summary", "description", "dtstart", "due",
+            "completed", "categories", "status", "priority", "percent",
+            "created", "lastmod"
+        }
+
+    encoding_str = ";ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8" if encoding else ""
     quote = quoteString if encoding else lambda s: s
 
     components = []
     components.append("BEGIN:VTODO")  # pylint: disable=W0511
-    components.append("UID:%s" % task.id().encode("UTF-8"))
 
-    if task.creationDateTime() > date.DateTime.min:
+    # Required fields (always exported)
+    components.append("UID:%s" % task.id().encode("UTF-8"))
+    components.append("DTSTAMP:%s" % fmtDateTime(date.Now()))
+
+    if "created" in selectedFields and task.creationDateTime() > date.DateTime.min:
         components.append("CREATED:%s" % fmtDateTime(task.creationDateTime()))
 
-    if task.modificationDateTime() > date.DateTime.min:
+    if "lastmod" in selectedFields and task.modificationDateTime() > date.DateTime.min:
         components.append(
             "LAST-MODIFIED:%s" % fmtDateTime(task.modificationDateTime())
         )
 
-    if task.plannedStartDateTime() != date.DateTime():
+    if "dtstart" in selectedFields and task.plannedStartDateTime() != date.DateTime():
         components.append(
             "DTSTART:%s" % fmtDateTime(task.plannedStartDateTime())
         )
 
-    if task.dueDateTime() != date.DateTime():
+    if "due" in selectedFields and task.dueDateTime() != date.DateTime():
         components.append("DUE:%s" % fmtDateTime(task.dueDateTime()))
 
-    if task.completionDateTime() != date.DateTime():
+    if "completed" in selectedFields and task.completionDateTime() != date.DateTime():
         components.append(
             "COMPLETED:%s" % fmtDateTime(task.completionDateTime())
         )
 
-    if task.categories(recursive=True, upwards=True):
+    if "categories" in selectedFields and task.categories(recursive=True, upwards=True):
         categories = ",".join(
             [
                 quote(str(c))
                 for c in task.categories(recursive=True, upwards=True)
             ]
         )
-        components.append("CATEGORIES%s:%s" % (encoding, categories))
+        components.append("CATEGORIES%s:%s" % (encoding_str, categories))
 
-    if task.completed():
-        components.append("STATUS:COMPLETED")
-    elif task.active():
-        components.append("STATUS:NEEDS-ACTION")
-    else:
-        components.append("STATUS:CANCELLED")  # Hum...
+    if "status" in selectedFields:
+        if task.completed():
+            components.append("STATUS:COMPLETED")
+        elif task.active():
+            components.append("STATUS:NEEDS-ACTION")
+        else:
+            components.append("STATUS:CANCELLED")  # Hum...
 
-    components.append(
-        "DESCRIPTION%s:%s" % (encoding, quote(task.description()))
-    )
-    components.append("PRIORITY:%d" % min(3, task.priority() + 1))
-    components.append("PERCENT-COMPLETE:%d" % task.percentageComplete())
-    components.append("SUMMARY%s:%s" % (encoding, quote(task.subject())))
+    if "description" in selectedFields:
+        components.append(
+            "DESCRIPTION%s:%s" % (encoding_str, quote(task.description()))
+        )
+
+    if "priority" in selectedFields:
+        components.append("PRIORITY:%d" % min(3, task.priority() + 1))
+
+    if "percent" in selectedFields:
+        components.append("PERCENT-COMPLETE:%d" % task.percentageComplete())
+
+    if "summary" in selectedFields:
+        components.append("SUMMARY%s:%s" % (encoding_str, quote(task.subject())))
+
     components.append("END:VTODO")  # pylint: disable=W0511
     if doFold:
         return fold(components)
     return "\r\n".join(components) + "\r\n"
 
 
-def VCalFromEffort(effort, encoding=True, doFold=True):
-    encoding = ";ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8" if encoding else ""
+def VCalFromEffort(effort, encoding=True, doFold=True, selectedFields=None):
+    """This function returns a string representing the effort in
+    iCalendar VEVENT format.
+
+    Args:
+        effort: The effort to export
+        encoding: Whether to use quoted-printable encoding
+        doFold: Whether to fold long lines
+        selectedFields: Set of field keys to export. If None, export all fields.
+                       Required fields (uid, dtstamp) are always exported.
+    """
+    # Default to all fields if not specified
+    if selectedFields is None:
+        selectedFields = {"uid", "dtstamp", "summary", "description", "dtstart", "dtend"}
+
+    encoding_str = ";ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8" if encoding else ""
     quote = quoteString if encoding else lambda s: s
+
     components = []
     components.append("BEGIN:VEVENT")
+
+    # Required fields (always exported)
     components.append("UID:%s" % effort.id().encode("UTF-8"))
-    components.append("SUMMARY%s:%s" % (encoding, quote(effort.subject())))
-    components.append(
-        "DESCRIPTION%s:%s" % (encoding, quote(effort.description()))
-    )
-    components.append("DTSTART:%s" % fmtDateTime(effort.getStart()))
-    if effort.getStop():
+    components.append("DTSTAMP:%s" % fmtDateTime(date.Now()))
+
+    if "summary" in selectedFields:
+        components.append("SUMMARY%s:%s" % (encoding_str, quote(effort.subject())))
+
+    if "description" in selectedFields:
+        components.append(
+            "DESCRIPTION%s:%s" % (encoding_str, quote(effort.description()))
+        )
+
+    if "dtstart" in selectedFields:
+        components.append("DTSTART:%s" % fmtDateTime(effort.getStart()))
+
+    if "dtend" in selectedFields and effort.getStop():
         components.append("DTEND:%s" % fmtDateTime(effort.getStop()))
+
     components.append("END:VEVENT")
     if doFold:
         return fold(components)

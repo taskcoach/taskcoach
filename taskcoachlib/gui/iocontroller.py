@@ -445,15 +445,22 @@ class IOController(object):
         )
 
     def exportAsICalendar(
-        self, viewer, selectionOnly=False, fileExists=os.path.exists
+        self, viewer, selectionOnly=False, selectedFields=None,
+        defaultFilename=None, fileExists=os.path.exists
     ):
+        # Use default filename if provided
+        fileOpts = self.__icsFileDialogOpts.copy()
+        if defaultFilename:
+            fileOpts["default_filename"] = defaultFilename
         return self.export(
             _("Export as iCalendar"),
-            self.__icsFileDialogOpts,
+            fileOpts,
             persistence.iCalendarWriter,
             viewer,
             selectionOnly,
             fileExists=fileExists,
+            selectedFields=selectedFields,
+            taskFile=self.__taskFile,
         )
 
     def exportAsTodoTxt(
