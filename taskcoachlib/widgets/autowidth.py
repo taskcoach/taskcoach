@@ -41,6 +41,10 @@ class AutoColumnWidthMixin(object):
 
     def __init__(self, *args, **kwargs):
         self.__is_auto_resizing = False
+        self.__header_window = None
+        self.__resize_cursor = wx.Cursor(wx.CURSOR_SIZEWE)
+        self.__no_entry_cursor = wx.Cursor(wx.CURSOR_NO_ENTRY)
+        self.__current_cursor = wx.STANDARD_CURSOR
         self.ResizeColumn = kwargs.pop("resizeableColumn", -1)
         self.ResizeColumnMinWidth = kwargs.pop("resizeableColumnMinWidth", 50)
         super().__init__(*args, **kwargs)
@@ -56,11 +60,13 @@ class AutoColumnWidthMixin(object):
             self.Bind(wx.EVT_SIZE, self.OnResize)
             self.Bind(wx.EVT_LIST_COL_BEGIN_DRAG, self.OnBeginColumnDrag)
             self.Bind(wx.EVT_LIST_COL_END_DRAG, self.OnEndColumnDrag)
+            self._bindHeaderMotion()
             wx.CallAfter(self.DoResize)
         else:
             self.Unbind(wx.EVT_SIZE)
             self.Unbind(wx.EVT_LIST_COL_BEGIN_DRAG)
             self.Unbind(wx.EVT_LIST_COL_END_DRAG)
+            self._unbindHeaderMotion()
 
     def IsAutoResizing(self):
         return self.__is_auto_resizing
@@ -82,6 +88,82 @@ class AutoColumnWidthMixin(object):
         self.Bind(wx.EVT_SIZE, self.OnResize)
         wx.CallAfter(self.DoResize)
         event.Skip()
+
+    def _getHeaderWindow(self):
+        """Get the header window of the list control (if it exists).
+
+        For wx.ListCtrl, the header is a child window named 'wxlistctrlcolumntitles'.
+        For HyperTreeList, header cursor is handled by TreeListHeaderWindow.
+        """
+        if self.__header_window is not None:
+            return self.__header_window
+        # Only look for header in wx.ListCtrl, not HyperTreeList
+        if isinstance(self, hypertreelist.HyperTreeList):
+            return None
+        for child in self.GetChildren():
+            if child.GetName() == 'wxlistctrlcolumntitles':
+                self.__header_window = child
+                return child
+        return None
+
+    def _bindHeaderMotion(self):
+        """Bind motion event to header window for cursor feedback."""
+        header = self._getHeaderWindow()
+        if header:
+            header.Bind(wx.EVT_MOTION, self._onHeaderMotion)
+
+    def _unbindHeaderMotion(self):
+        """Unbind motion event from header window."""
+        header = self._getHeaderWindow()
+        if header:
+            header.Unbind(wx.EVT_MOTION)
+            # Reset cursor to default
+            header.SetCursor(wx.STANDARD_CURSOR)
+
+    def _onHeaderMotion(self, event):
+        """Handle mouse motion over header to show appropriate cursor.
+
+        Shows 'no entry' cursor when hovering over the resize border of
+        the auto-fill column (ResizeColumn), since it cannot be manually resized.
+
+        When on a non-resizable border, we don't call Skip() to prevent the
+        native wx.ListCtrl header from overriding our cursor.
+        """
+        header = self._getHeaderWindow()
+        if not header:
+            event.Skip()
+            return
+
+        x = event.GetX()
+        # Determine which column border (if any) the mouse is near
+        column_at_border = self._getColumnBorderAtX(x)
+
+        if column_at_border is not None and column_at_border == self.ResizeColumn:
+            # This is the auto-fill column border - show no-entry cursor
+            # Don't call Skip() to prevent native cursor override
+            if self.__current_cursor != self.__no_entry_cursor:
+                self.__current_cursor = self.__no_entry_cursor
+                header.SetCursor(self.__no_entry_cursor)
+        else:
+            # Reset to standard cursor if we were showing no-entry
+            if self.__current_cursor == self.__no_entry_cursor:
+                self.__current_cursor = wx.STANDARD_CURSOR
+                header.SetCursor(wx.STANDARD_CURSOR)
+            # Let native handling take over for other cases
+            event.Skip()
+
+    def _getColumnBorderAtX(self, x, tolerance=3):
+        """Get the column index whose right border is at x position.
+
+        Returns column index if x is within tolerance of a column's right edge,
+        or None if not near any border.
+        """
+        cumulative_width = 0
+        for col_index in range(self.GetColumnCount()):
+            cumulative_width += self.GetColumnWidth(col_index)
+            if abs(x - cumulative_width) <= tolerance:
+                return col_index
+        return None
 
     def OnResize(self, event):
         event.Skip()
