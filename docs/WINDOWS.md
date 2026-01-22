@@ -196,3 +196,46 @@ See `taskcoachlib/powermgt/win32.py` for the implementation.
 **Common issue:** QEMU/KVM VMs may have 32-bit Windows installed even with 64-bit CPU passthrough. 64-bit apps fail with "not compatible with the version of Windows" error. Solution: reinstall with 64-bit Windows ISO, or reactivate 32-bit builds in the workflow.
 
 **Windows 10 testing:** Installs without product key (watermark only, fully functional).
+
+## Spell Check Dictionaries
+
+Task Coach uses [pyenchant](https://pyenchant.github.io/pyenchant/) for spell checking in subject and description fields. On Windows, pyenchant uses Hunspell dictionaries.
+
+### Bundled Dictionaries
+
+The Windows build automatically downloads and bundles the `en_US` dictionary from [LibreOffice dictionaries](https://github.com/LibreOffice/dictionaries). This ensures English spell checking works out of the box.
+
+Dictionary location in installed app:
+```
+TaskCoach\python\Lib\site-packages\enchant\data\mingw64\share\enchant\hunspell\
+```
+
+### Adding Additional Languages
+
+Users can add dictionaries for other languages:
+
+1. **Download dictionary files** from [LibreOffice dictionaries](https://github.com/LibreOffice/dictionaries)
+   - Each language needs both `.dic` and `.aff` files (e.g., `fr_FR.dic` and `fr_FR.aff`)
+
+2. **Copy to the hunspell folder:**
+   - Installed: `C:\Program Files\Task Coach\python\Lib\site-packages\enchant\data\mingw64\share\enchant\hunspell\`
+   - Portable: `TaskCoach\python\Lib\site-packages\enchant\data\mingw64\share\enchant\hunspell\`
+
+3. **Restart Task Coach** - new languages appear in Edit > Preferences > Regional > Spell check language
+
+### Common Dictionaries
+
+| Language | Files | LibreOffice Path |
+|----------|-------|------------------|
+| English (US) | `en_US.dic`, `en_US.aff` | `/en/` (bundled) |
+| English (GB) | `en_GB.dic`, `en_GB.aff` | `/en/` |
+| French | `fr_FR.dic`, `fr_FR.aff` | `/fr_FR/` |
+| German | `de_DE.dic`, `de_DE.aff` | `/de/` |
+| Spanish | `es_ES.dic`, `es_ES.aff` | `/es/` |
+
+### Graceful Fallback
+
+If pyenchant is not installed or no dictionaries are found:
+- Spell checking is silently disabled
+- No errors or crashes occur
+- Users see "No dictionaries found" in preferences

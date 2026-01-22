@@ -589,6 +589,13 @@ defaults = {
         "ical_selectiononly": "False",
         "todotxt_selectiononly": "False",
     },
+    "spellcheck": {
+        # Enable spell checking for subject and description fields
+        "enabled": "True",
+        # Language code for spell checking (empty = auto-detect from system locale)
+        # Examples: "en_US", "en_GB", "de_DE", "fr_FR", "es_ES"
+        "language": "",
+    },
 }
 
 minimum = {"view": {"taskviewercount": "1"}}

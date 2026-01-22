@@ -115,6 +115,7 @@ jobs:
             numpy \
             "fasteners>=0.19" \
             "squaremap>=1.0.5" \
+            "pyenchant>=3.2.0" \
             distro
 
           # Clean up pip cache to reduce AppImage size

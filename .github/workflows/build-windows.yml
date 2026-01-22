@@ -175,12 +175,40 @@ jobs:
             numpy `
             "fasteners>=0.19" `
             "squaremap>=1.0.5" `
+            "pyenchant>=3.2.0" `
             distro `
             WMI `
             pywin32 `
             --no-warn-script-location
 
           Write-Host "All dependencies installed"
+
+          # Verify pyenchant has dictionaries, download if missing
+          Write-Host "Checking spell check dictionaries..."
+          $enchantPath = "build\TaskCoach\python\Lib\site-packages\enchant\data\mingw64\share\enchant\hunspell"
+          if (-not (Test-Path $enchantPath)) {
+            # Try alternative path structure
+            $enchantPath = "build\TaskCoach\python\Lib\site-packages\enchant\data\mingw32\share\enchant\hunspell"
+          }
+          if (Test-Path $enchantPath) {
+            Write-Host "Enchant hunspell path: $enchantPath"
+            Get-ChildItem $enchantPath -ErrorAction SilentlyContinue
+          } else {
+            Write-Host "Creating enchant dictionary directory..."
+            New-Item -ItemType Directory -Force -Path "build\TaskCoach\python\Lib\site-packages\enchant\data\mingw64\share\enchant\hunspell"
+          }
+
+          # Download en_US dictionary if not present (from LibreOffice)
+          $dictPath = "build\TaskCoach\python\Lib\site-packages\enchant\data\mingw64\share\enchant\hunspell"
+          if (-not (Test-Path "$dictPath\en_US.dic")) {
+            Write-Host "Downloading en_US dictionary..."
+            $baseUrl = "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en"
+            Invoke-WebRequest -Uri "$baseUrl/en_US.dic" -OutFile "$dictPath/en_US.dic" -ErrorAction SilentlyContinue
+            Invoke-WebRequest -Uri "$baseUrl/en_US.aff" -OutFile "$dictPath/en_US.aff" -ErrorAction SilentlyContinue
+            if (Test-Path "$dictPath\en_US.dic") {
+              Write-Host "en_US dictionary installed"
+            }
+          }
 
           # Copy pywin32 DLLs to Python directory for reliable loading
           # The pywin32_bootstrap mechanism doesn't always work with embeddable Python

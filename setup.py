@@ -123,6 +123,7 @@ install_requires = [
     "keyring",
     "numpy",
     "fasteners>=0.19",  # File locking
+    "pyenchant>=3.2.0",  # Spell checking for text fields
 ]
 
 # Optional/platform-specific dependencies

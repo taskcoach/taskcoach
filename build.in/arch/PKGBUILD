@@ -22,6 +22,7 @@ depends=(
     'python-keyring'
     'python-numpy'
     'python-fasteners>=0.19'
+    'python-pyenchant'
     'libayatana-appindicator'
     'libxss'
     'xdg-utils'
@@ -36,6 +37,8 @@ makedepends=(
 )
 optdepends=(
     'espeak-ng: Spoken reminders'
+    'hunspell-en_us: English spell checking'
+    'hunspell-en_gb: British English spell checking'
 )
 # Note: squaremap is not in Arch repos, installed via pip at build time
 provides=('taskcoach')

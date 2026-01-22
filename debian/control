@@ -27,10 +27,12 @@ Depends: ${python3:Depends},
          python3-keyring,
          python3-numpy,
          python3-fasteners,
+         python3-enchant,
          gir1.2-ayatanaappindicator3-0.1,
          libxss1,
          xdg-utils
-Recommends: python3-squaremap
+Recommends: python3-squaremap,
+            hunspell-en-us | hunspell-dictionary
 Description: Personal task manager with support for composite tasks
  Task Coach is a free open source todo manager. It grew out of frustration
  about other programs not handling composite tasks well. In addition to

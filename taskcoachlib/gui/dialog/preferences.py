@@ -717,7 +717,8 @@ class LanguagePage(SettingsPage):
         # Restart warning above the dropdown (covers language and format changes)
         self._restartWarningBase = _("Changing the language or date/time format requires a restart of %s.") % meta.name
         self._restartWarning = wx.StaticText(self, label=self._restartWarningBase)
-        self._restartWarningDefaultColor = self._restartWarning.GetForegroundColour()
+        self._restartWarningDefaultColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        self._restartWarning.SetForegroundColour(self._restartWarningDefaultColor)
         self.addEntry("", self._restartWarning, flags=(None, wx.ALIGN_LEFT))
 
         languages = [
@@ -825,6 +826,7 @@ class LanguagePage(SettingsPage):
                 "Language missing or translation needs improving? Open an issue or pull request:"
             ),
         )
+        text.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
         sizer.Add(text)
         url = meta.github_url + "/issues"
         urlCtrl = HyperLinkCtrl(panel, -1, label=url, URL=url)
@@ -967,13 +969,121 @@ class LanguagePage(SettingsPage):
             self,
             label=_("Note: In 12-hour mode, working hours (set in Features tab) are not used for hour suggestions.")
         )
+        timeFormatNote.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
         self.addEntry("", timeFormatNote, flags=(None, wx.ALIGN_LEFT))
+
+        # Separator line between time format and spell check sections
+        self.addLine()
+
+        # === SPELL CHECK SECTION ===
+        self._setupSpellCheckSection()
 
         # Store original formats to detect changes
         self._originalDateFormat = currentFormat
         self._originalTimeFormat = currentTimeFormat
 
         self.fit()
+
+    def _setupSpellCheckSection(self):
+        """Set up the spell check configuration section."""
+        from taskcoachlib.widgets.textctrl import SpellCheckMixin, ENCHANT_AVAILABLE
+
+        # Spell check enabled checkbox
+        self._spellCheckEnabled = self.getboolean("spellcheck", "enabled")
+        self._spellCheckEnabledCheck = wx.CheckBox(self, label=_("Enable spell checking"))
+        self._spellCheckEnabledCheck.SetValue(self._spellCheckEnabled)
+        self._spellCheckEnabledCheck.Bind(wx.EVT_CHECKBOX, self._onSpellCheckEnabledChange)
+        self.addEntry(
+            _("Spell check:"), self._spellCheckEnabledCheck,
+            flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, wx.ALIGN_LEFT)
+        )
+
+        # Show warning if enchant is not available
+        if not ENCHANT_AVAILABLE:
+            warningText = wx.StaticText(
+                self,
+                label=_("Warning: Spell checking is not available. Install pyenchant to enable this feature.")
+            )
+            warningText.SetForegroundColour(wx.Colour(180, 0, 0))
+            self.addEntry("", warningText, flags=(None, wx.ALIGN_LEFT))
+            self._spellCheckEnabledCheck.Enable(False)
+
+        # Language dropdown for spell check
+        spellLangPanel = wx.Panel(self)
+        spellLangSizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self._spellCheckLangChoice = wx.Choice(spellLangPanel)
+
+        # Add automatic option first
+        self._spellCheckLangChoice.Append(_("Automatic (detect from system)"), "")
+
+        # Get available languages
+        availableLangs = SpellCheckMixin.getAvailableLanguages() if ENCHANT_AVAILABLE else []
+        currentSpellLang = self.gettext("spellcheck", "language")
+        selectedIdx = 0
+
+        for i, lang in enumerate(sorted(availableLangs)):
+            self._spellCheckLangChoice.Append(lang, lang)
+            if lang == currentSpellLang:
+                selectedIdx = i + 1  # +1 because of "Automatic" option
+
+        self._spellCheckLangChoice.SetSelection(selectedIdx)
+        self._spellCheckLangChoice.Enable(self._spellCheckEnabled and ENCHANT_AVAILABLE)
+        spellLangSizer.Add(self._spellCheckLangChoice, 0, wx.ALIGN_CENTER_VERTICAL)
+
+        # Show detected language
+        if ENCHANT_AVAILABLE:
+            detectedLang = SpellCheckMixin._detectLanguage()
+            detectedLabel = wx.StaticText(
+                spellLangPanel,
+                label=_("Detected: %s") % detectedLang
+            )
+            detectedLabel.SetForegroundColour(
+                wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+            )
+            spellLangSizer.Add(detectedLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 15)
+
+        spellLangPanel.SetSizer(spellLangSizer)
+        self.addEntry(
+            _("Spell check language:"), spellLangPanel,
+            flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, wx.ALIGN_LEFT)
+        )
+
+        # Note about dropdown and how to install more dictionaries
+        if ENCHANT_AVAILABLE:
+            import platform
+            system = platform.system()
+
+            if not availableLangs:
+                # No dictionaries found - show note
+                helpText = wx.StaticText(
+                    self,
+                    label=_("Language missing? Install hunspell packages for your language.")
+                )
+                helpText.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+                self.addEntry("", helpText, flags=(None, wx.ALIGN_LEFT))
+
+            # Platform-specific note combining dropdown info and install instructions
+            if system == "Linux":
+                noteText = _("Dropdown shows installed dictionaries. Install via: apt install hunspell-en-us")
+            elif system == "Darwin":
+                noteText = _("Dropdown shows installed dictionaries. Install via: brew install hunspell")
+            else:  # Windows
+                noteText = _("Dropdown shows installed dictionaries. Additional languages must be prepackaged.")
+
+            dictNote = wx.StaticText(self, label=noteText)
+            dictNote.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+            dictNote.Wrap(500)
+            self.addEntry("", dictNote, flags=(None, wx.ALIGN_LEFT))
+
+    def _onSpellCheckEnabledChange(self, event):
+        """Handle spell check enabled checkbox change."""
+        from taskcoachlib.widgets.textctrl import ENCHANT_AVAILABLE
+        enabled = event.IsChecked()
+        self._spellCheckLangChoice.Enable(enabled and ENCHANT_AVAILABLE)
+        event.Skip()
 
     def _formatOrderToString(self, field_order, separator):
         """Convert field order and separator to a human-readable format string."""
@@ -1110,6 +1220,12 @@ class LanguagePage(SettingsPage):
             self._timeFormatChoice.GetSelection()
         )
         self.set("view", "timeformat", selectedTimeFormat)
+        # Save spell check settings
+        self.setboolean("spellcheck", "enabled", self._spellCheckEnabledCheck.IsChecked())
+        selectedSpellLang = self._spellCheckLangChoice.GetClientData(
+            self._spellCheckLangChoice.GetSelection()
+        )
+        self.set("spellcheck", "language", selectedSpellLang)
 
 
 class TaskAppearancePage(SettingsPage):

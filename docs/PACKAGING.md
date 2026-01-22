@@ -53,6 +53,8 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | keyring | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
 | pyxdg | distro | distro | distro | distro | distro | distro | bundled | — | — |
 | fasteners | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
+| pyenchant | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
+| hunspell-en-us | optional | optional | optional | optional | optional | optional | optional | — | — |
 | ayatana-appindicator | distro | distro | distro | distro | distro | distro | host | — | — |
 | hypertreelist | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | bundled | **patch** | **patch** |
 | WMI | — | — | — | — | — | — | — | pip | — |

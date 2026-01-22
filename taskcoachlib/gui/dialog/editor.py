@@ -115,7 +115,9 @@ class SubjectPage(Page):
             if len(self.items) == 1
             else _("Edit to change all subjects")
         )
-        self._subjectEntry = widgets.SingleLineTextCtrl(self, current_subject)
+        self._subjectEntry = widgets.SingleLineTextCtrl(
+            self, current_subject, settings=self._settings
+        )
         self._subjectSync = attributesync.AttributeSync(
             "subject",
             self._subjectEntry,
@@ -144,7 +146,7 @@ class SubjectPage(Page):
             else combined_description(self.items)
         )
         self._descriptionEntry = widgets.MultiLineTextCtrl(
-            self, current_description
+            self, current_description, settings=self._settings
         )
         self._descriptionSync = attributesync.AttributeSync(
             "description",
@@ -402,7 +404,7 @@ class AttachmentSubjectPage(SubjectPage):
             else _("Edit to change location of all attachments")
         )
         self._locationEntry = widgets.SingleLineTextCtrl(
-            panel, current_location
+            panel, current_location, spellCheck=False  # File paths/URLs shouldn't be spell checked
         )
         self._locationSync = attributesync.AttributeSync(
             "location",
@@ -3922,7 +3924,7 @@ class EffortEditBook(Page):
             else combined_description(self.items)
         )
         self._descriptionEntry = widgets.MultiLineTextCtrl(
-            self, current_description
+            self, current_description, settings=self._settings
         )
         self._descriptionEntry.SetSizeHints(300, 150)
         self._descriptionSync = attributesync.AttributeSync(
