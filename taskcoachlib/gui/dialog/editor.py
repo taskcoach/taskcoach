@@ -513,7 +513,15 @@ class TaskAppearancePage(Page):
     def addIconEntry(self):
         # pylint: disable=W0201,E1101
         currentIcon = self.items[0].icon() if len(self.items) == 1 else ""
-        self._iconEntry = entry.IconEntry(self, currentIcon)
+        settings = self.GetParent().settings
+        status_keys = ["activetasks", "latetasks", "completedtasks",
+                       "overduetasks", "inactivetasks", "duesoontasks"]
+        excluded = set()
+        for key in status_keys:
+            excluded.add(settings.gettext("icon", key))
+            excluded.add(settings.gettext("icon_dark", key))
+        excluded.discard("")
+        self._iconEntry = entry.IconEntry(self, currentIcon, excluded_icons=excluded)
         self._iconSync = attributesync.AttributeSync(
             "icon",
             self._iconEntry,
@@ -599,8 +607,7 @@ class DatesPage(Page):
         self.addEntry(
             _("Status"),
             self._statusPanel,
-            flags=[wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL,
-                   wx.ALIGN_CENTER_VERTICAL | wx.EXPAND]
+            flags=[None, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT | wx.EXPAND],
         )
 
         # Initial display
@@ -1629,7 +1636,7 @@ class DatesPage(Page):
         self.addEntry(
             _("Recurrence"),
             self._recurrenceEntry,
-            flags=[wx.ALIGN_RIGHT, wx.EXPAND],
+            flags=[None, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT | wx.EXPAND],
         )
 
     def entries(self):

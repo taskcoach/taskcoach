@@ -1050,6 +1050,7 @@ class EditPreferences(settings_uicommand.SettingsCommand):
             parent=self.mainWindow(),
             title=_("Preferences"),
             settings=self.settings,
+            taskFile=self.mainWindow().taskFile,
         )
         editor.Show(show=show)
 
@@ -1082,7 +1083,7 @@ class SelectAll(mixin_uicommand.NeedsItemsMixin, ViewerCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&All\tCtrl+A"),
+            menuText=_("Select &All\tCtrl+A"),
             helpText=help.editSelectAll,
             bitmap="selectall",
             id=wx.ID_SELECTALL,
@@ -1106,12 +1107,12 @@ class SelectAll(mixin_uicommand.NeedsItemsMixin, ViewerCommand):
 
 
 class ClearSelection(mixin_uicommand.NeedsSelectionMixin, ViewerCommand):
-    """Action for unselecting all items in a viewer."""
+    """Action for deselecting all items in a viewer."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Clear selection"),
-            helpText=_("Unselect all items"),
+            menuText=_("&Deselect All\tCtrl+Shift+A"),
+            helpText=_("Deselect all items"),
             *args,
             **kwargs
         )

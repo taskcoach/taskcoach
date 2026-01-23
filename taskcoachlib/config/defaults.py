@@ -493,7 +493,7 @@ defaults = {
         "tipsindex": "0",  # Start at the first tip
         "blinktaskbariconwhentrackingeffort": "True",
         # Theme: 'automatic' (detect from system), 'light', or 'dark'
-        "theme": "light",
+        "theme": "automatic",
     },
     "effortdialog": {
         "size": "(-1, -1)",  # Size of the dialogs, calculated by default

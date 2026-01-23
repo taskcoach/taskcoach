@@ -10,6 +10,11 @@ it is inactive until the prerequisite is completed,
 Then, it gets marked "late"
 So, hiding inactive tasks will hide it until the prerequisite is done
 </description>
+<attachment id="cef510b6-7b1e-4a7b-abe0-4745517110f2" status="1" creationDateTime="2026-01-17 10:00:00" subject="dependency_diagram.png" type="file" location="dependency_diagram.png">
+<description>
+Visual diagram showing task prerequisite relationships
+</description>
+</attachment>
 </task>
 <task id="41745a54-5466-11e2-a067-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:54:53.607728" modificationDateTime="2025-12-22 22:24:28.162914" subject="Task Coach has many features!" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" actualstartdate="2013-01-01 18:04:03.077518">
 <description>
@@ -24,6 +29,11 @@ We are continually improving Task Coach!
 One day we'll get better text formatting.
 </description>
 </note>
+<attachment id="3cd623ac-e766-4ac3-9e62-842d764cd0e2" status="1" creationDateTime="2026-01-17 10:01:00" subject="feature_comparison_matrix.xlsx" type="file" location="feature_comparison_matrix.xlsx">
+<description>
+Spreadsheet comparing Task Coach features with alternatives
+</description>
+</attachment>
 </task>
 <task id="5cc79b72-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:00:00" subject="Sample Project: Website Redesign" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" actualstartdate="2026-01-17 10:00:00" priority="3">
 <description>
@@ -64,7 +74,13 @@ Shared spreadsheet for tracking competitor features
 </description>
 </attachment>
 </task>
-<task id="5cc79b76-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:04:00" modificationDateTime="2026-01-17 21:16:12.934289" subject="Create project timeline" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" plannedstartdate="2026-01-20 09:00:00" duedate="2026-01-22 17:00:00" completiondate="2026-01-17 21:16:00" percentageComplete="100" priority="1" prerequisites="5cc79b75-f40f-11f0-b2c5-24418c661769" />
+<task id="5cc79b76-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:04:00" modificationDateTime="2026-01-17 21:16:12.934289" subject="Create project timeline" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" plannedstartdate="2026-01-20 09:00:00" duedate="2026-01-22 17:00:00" completiondate="2026-01-17 21:16:00" percentageComplete="100" priority="1" prerequisites="5cc79b75-f40f-11f0-b2c5-24418c661769">
+<attachment id="ea2baf9a-61a8-4a0d-90cc-476941009ab8" status="1" creationDateTime="2026-01-17 10:04:00" subject="gantt_chart.xlsx" type="file" location="gantt_chart.xlsx">
+<description>
+Project Gantt chart with milestones and dependencies
+</description>
+</attachment>
+</task>
 </task>
 <task id="5cc79b77-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:05:00" subject="Phase 2: Design" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" priority="2">
 <task id="5cc79b78-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:06:00" subject="Create wireframes" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" plannedstartdate="2026-01-23 09:00:00" duedate="2026-01-27 17:00:00" priority="2">
@@ -91,6 +107,11 @@ Color palette: Use brand guidelines doc
 Typography: Inter for headings, Open Sans for body
 </description>
 </note>
+<attachment id="815ea7d0-df1b-4458-8530-d3508992cf15" status="1" creationDateTime="2026-01-17 10:03:00" subject="homepage_mockup_v2.fig" type="file" location="homepage_mockup_v2.fig">
+<description>
+Figma design file with latest homepage mockup revisions
+</description>
+</attachment>
 </task>
 <task id="5cc79b7a-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:08:00" subject="Get client approval" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" priority="3" prerequisites="5cc79b79-f40f-11f0-b2c5-24418c661769">
 <note id="a1b2c303-f412-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:08:00" subject="Approval Process">
@@ -101,6 +122,11 @@ Schedule follow-up call if no response
 Document any requested changes
 </description>
 </note>
+<attachment id="e6abe66c-3a85-47b7-9dba-91ee7c99c427" status="1" creationDateTime="2026-01-17 10:04:00" subject="client_signoff_form.pdf" type="file" location="client_signoff_form.pdf">
+<description>
+Formal design approval document requiring client signature
+</description>
+</attachment>
 </task>
 </task>
 <task id="5cc79b7b-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:09:00" subject="Phase 3: Development" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" priority="1">
@@ -125,6 +151,11 @@ Components to build:
 - Footer with sitemap links
 </description>
 </note>
+<attachment id="dafc72bb-6897-46c0-9ddd-a54010ef2959" status="1" creationDateTime="2026-01-17 10:05:00" subject="component_architecture.svg" type="file" location="component_architecture.svg">
+<description>
+React component tree diagram showing data flow
+</description>
+</attachment>
 </task>
 <task id="5cc7a24a-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:12:00" subject="Implement backend" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" plannedstartdate="2026-02-12 09:00:00" duedate="2026-02-21 17:00:00" priority="1" prerequisites="5cc7a248-f40f-11f0-b2c5-24418c661769">
 <note id="a1b2c305-f412-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:12:00" subject="Backend Tasks">
@@ -137,6 +168,11 @@ API endpoints to implement:
 - Database migrations
 </description>
 </note>
+<attachment id="3b198926-7164-4cc2-b0b8-e4291c9b505b" status="1" creationDateTime="2026-01-17 10:06:00" subject="api_spec_openapi.yaml" type="file" location="api_spec_openapi.yaml">
+<description>
+OpenAPI 3.0 specification for all REST endpoints
+</description>
+</attachment>
 </task>
 <task id="5cc7a24b-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:13:00" subject="Testing and QA" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" plannedstartdate="2026-02-22 09:00:00" duedate="2026-02-28 17:00:00" priority="2" prerequisites="5cc7a249-f40f-11f0-b2c5-24418c661769 5cc7a24a-f40f-11f0-b2c5-24418c661769">
 <note id="4eedb9c8-f411-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:13:00" subject="QA Checklist">
@@ -148,6 +184,11 @@ API endpoints to implement:
 - Security audit
 </description>
 </note>
+<attachment id="479b002e-8499-463d-a0e7-2cc063581763" status="1" creationDateTime="2026-01-17 10:07:00" subject="test_coverage_report.html" type="file" location="test_coverage_report.html">
+<description>
+Latest test coverage report from CI pipeline
+</description>
+</attachment>
 </task>
 </task>
 <note id="f0109302-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 10:00:00" subject="Project Overview">
@@ -203,6 +244,11 @@ Schedule: 3x per week minimum.
 Track progress in fitness app.
 </description>
 </note>
+<attachment id="3b817b78-6033-4d96-ad60-171b4725d587" status="1" creationDateTime="2026-01-17 10:09:00" subject="workout_log_january.csv" type="file" location="workout_log_january.csv">
+<description>
+CSV export of workout data from fitness tracker
+</description>
+</attachment>
 </task>
 <task id="5cc7a252-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 11:06:00" subject="Read 12 books this year" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" actualstartdate="2026-01-01 00:00:00" percentageComplete="8" priority="1">
 <description>
@@ -226,6 +272,11 @@ Key insights:
 </description>
 </note>
 </task>
+<attachment id="4d78aeb8-1abb-4294-844b-f646204a6806" status="1" creationDateTime="2026-01-17 10:08:00" subject="vision_board_2026.png" type="file" location="vision_board_2026.png">
+<description>
+Personal vision board for goal visualization
+</description>
+</attachment>
 </task>
 <task id="5cc7a253-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 12:00:00" subject="Budget and Fee Tracking Example" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" plannedstartdate="2026-01-15 09:00:00" duedate="2026-01-31 17:00:00" priority="2" hourlyFee="75.0" fixedFee="500.0">
 <description>
@@ -282,6 +333,11 @@ Remember reusable bags!
 Library card #: 12345-67890
 </description>
 </note>
+<attachment id="34c54dae-d94d-40df-aeba-a32ecd3f196e" status="1" creationDateTime="2026-01-17 10:10:00" subject="library_catalog_search.pdf" type="uri" location="https://library.example.org/catalog">
+<description>
+Link to online library catalog for renewals
+</description>
+</attachment>
 </task>
 <task id="f0109812-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 13:06:00" subject="Schedule dentist appointment" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" duedate="2026-01-25 17:00:00" priority="1">
 <note id="4eedb9cb-f411-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 13:06:00" subject="Dentist Info">
@@ -292,6 +348,11 @@ Last checkup: July 2025
 Insurance: Delta Dental
 </description>
 </note>
+<attachment id="ff2cdab7-5a2f-4078-91ec-ba22e4d4409f" status="1" creationDateTime="2026-01-17 10:11:00" subject="dental_insurance_card.pdf" type="file" location="dental_insurance_card.pdf">
+<description>
+Scanned copy of dental insurance card for reference
+</description>
+</attachment>
 </task>
 </task>
 <task id="6bb4ceb5-5468-11e2-ab5f-0016cbad0bd0" status="1" creationDateTime="2013-01-01 18:10:23.487902" subject="Appearance is adjustable" fgColor="(47, 47, 111, 255)" bgColor="(203, 243, 179, 255)" font="DejaVu Sans 8" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')">
@@ -300,6 +361,11 @@ Choose your own fonts and colors,
 either per task, per category tag,
 or overall for the whole program.
 </description>
+<attachment id="16ba8de9-dd77-4587-8cb8-c82df19a33bb" status="1" creationDateTime="2026-01-17 10:12:00" subject="custom_theme_example.css" type="file" location="custom_theme_example.css">
+<description>
+Example CSS theme file for Task Coach customization
+</description>
+</attachment>
 </task>
 <task id="e557eb35-5463-11e2-9c94-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:38:00.077533" modificationDateTime="2026-01-17 22:18:32.406463" subject="Task Coach uses hierarchies" expandedContexts="('prerequisiteviewerintaskeditor',)" duedate="2026-01-17 08:00:00" actualstartdate="2026-01-17 22:17:00" priority="2">
 <task id="1c6acfee-5464-11e2-bd7c-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:39:32.476048" modificationDateTime="2025-12-22 22:25:50.976600" subject="Tasks can be subtasks of larger projects" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" completiondate="2026-01-17 22:12:00" percentageComplete="100" priority="2" />
@@ -357,7 +423,9 @@ With category tags you can organize your way.
 </task>
 <effort id="23dfd100-5469-11e2-b0d7-0016cbad0bd0" status="1" start="2013-01-01 18:15:32" stop="2013-01-01 21:00:45" />
 </task>
-<task id="e9f1cf82-5462-11e2-b0b5-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:30:58.300237" modificationDateTime="2013-02-06 23:41:34.713284" subject="Welcome to Task Coach" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" actualstartdate="2013-01-01 17:30:00" priority="4" />
+<task id="e9f1cf82-5462-11e2-b0b5-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:30:58.300237" modificationDateTime="2013-02-06 23:41:34.713284" subject="Welcome to Task Coach" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" actualstartdate="2013-01-01 17:30:00" priority="4">
+<attachment id="e1f8905d-aa74-46e2-baef-c3447b102eb6" status="1" creationDateTime="2026-01-23 10:00:00" modificationDateTime="2026-01-23 10:00:00" subject="getting_started_guide.pdf" type="file" location="getting_started_guide.pdf" />
+</task>
 <task id="f0109813-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 14:00:00" subject="Tips and Tricks" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" actualstartdate="2026-01-17 14:00:00" priority="1">
 <description>
 Helpful tips for using Task Coach effectively
@@ -392,30 +460,247 @@ Hide completed tasks to see only what's left to do.
 • Effort view for time tracking
 </description>
 </task>
+<attachment id="19dcbac7-65cb-4da7-b499-fd9576ed61c1" status="1" creationDateTime="2026-01-17 10:13:00" subject="keyboard_shortcuts_cheatsheet.pdf" type="file" location="keyboard_shortcuts_cheatsheet.pdf">
+<description>
+Printable quick-reference card for keyboard shortcuts
+</description>
+</attachment>
 </task>
 <category id="2f476514-5487-11e2-a6ae-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:50:36.506176" subject="@Contexts (GTD-Style)" expandedContexts="('categoryviewer', 'categoryviewerintaskeditor')">
 <category id="3e1eac3a-5487-11e2-8b71-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:51:01.405129" modificationDateTime="2025-12-22 22:24:44.970852" subject="@Home" bgColor="(143, 240, 164, 255)" icon="house_green_icon" selectedIcon="house_green_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc7a24c-f40f-11f0-b2c5-24418c661769 5cc7a256-f40f-11f0-b2c5-24418c661769 aea5a88f-5467-11e2-97b4-0016cbad0bd0" />
-<category id="42afb411-5487-11e2-8fc4-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:51:09.066488" modificationDateTime="2025-12-22 22:25:38.517403" subject="@Work" bgColor="(249, 240, 107, 255)" icon="computer_desktop_icon" selectedIcon="computer_desktop_icon" expandedContexts="('categoryviewer', 'categoryviewerintaskeditor')" categorizables="1c6acfee-5464-11e2-bd7c-0016cbad0bd0 5cc79b72-f40f-11f0-b2c5-24418c661769 5cc7a253-f40f-11f0-b2c5-24418c661769">
-<category id="44c04275-5487-11e2-bb73-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:51:12.530430" subject="@Meeting" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc79b74-f40f-11f0-b2c5-24418c661769 5cc79b7a-f40f-11f0-b2c5-24418c661769" />
+<category id="42afb411-5487-11e2-8fc4-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:51:09.066488" modificationDateTime="2025-12-22 22:25:38.517403" subject="@Work" bgColor="(249, 240, 107, 255)" icon="computer_desktop_icon" selectedIcon="computer_desktop_icon" expandedContexts="('categoryviewer', 'categoryviewerintaskeditor')" categorizables="1c6acfee-5464-11e2-bd7c-0016cbad0bd0 5cc79b72-f40f-11f0-b2c5-24418c661769 5cc7a253-f40f-11f0-b2c5-24418c661769 098b2f1e-5567-4a73-9055-839d4f361c04 0b0d69a0-1731-4dba-9ef2-424add510daf 219d4064-2b6d-457d-a535-97957a6a918c 40785ee2-048c-44b5-bdc5-5ce7a9775e2d 459811a9-d35a-4838-b8a8-da1a8da66032 4d8a4161-4880-4e41-a08c-749915b82530 55b8a81d-af9e-48d8-89b2-656f9242d275 7f0ff34a-0dd2-4db9-8166-88296e1db0f8 9b37b774-4f45-4c81-b9ac-5f1048bad92a 9dec0141-e228-4097-b8cd-0b4f48a96637 e130de32-125c-455e-806d-8f90a72db17a fe4b9c77-24ae-4f71-854a-4815ff1e2d60">
+<category id="44c04275-5487-11e2-bb73-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:51:12.530430" subject="@Meeting" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc79b74-f40f-11f0-b2c5-24418c661769 5cc79b7a-f40f-11f0-b2c5-24418c661769 219d4064-2b6d-457d-a535-97957a6a918c 40785ee2-048c-44b5-bdc5-5ce7a9775e2d e130de32-125c-455e-806d-8f90a72db17a fe4b9c77-24ae-4f71-854a-4815ff1e2d60" />
 </category>
 <category id="493027fd-5487-11e2-8d2d-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:51:19.974644" subject="@Errands" bgColor="(255, 204, 153, 255)" icon="box_icon" selectedIcon="box_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5a5a8573-5464-11e2-83f7-0016cbad0bd0 5cc7a257-f40f-11f0-b2c5-24418c661769 5cc7a25b-f40f-11f0-b2c5-24418c661769 e557eb35-5463-11e2-9c94-0016cbad0bd0" />
-<category id="f010930a-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="@Computer" bgColor="(173, 216, 230, 255)" icon="computer_laptop_icon" selectedIcon="computer_laptop_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc7a24d-f40f-11f0-b2c5-24418c661769 5cc7a252-f40f-11f0-b2c5-24418c661769" />
+<category id="f010930a-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="@Computer" bgColor="(173, 216, 230, 255)" icon="computer_laptop_icon" selectedIcon="computer_laptop_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc7a24d-f40f-11f0-b2c5-24418c661769 5cc7a252-f40f-11f0-b2c5-24418c661769 098b2f1e-5567-4a73-9055-839d4f361c04 0b0d69a0-1731-4dba-9ef2-424add510daf 2278ed33-4370-4526-8645-38de611d0efa 459811a9-d35a-4838-b8a8-da1a8da66032 55b8a81d-af9e-48d8-89b2-656f9242d275 7f0ff34a-0dd2-4db9-8166-88296e1db0f8 9dec0141-e228-4097-b8cd-0b4f48a96637 e5b07193-435a-47f0-987e-dea0cf4c32f2" />
 <category id="f010930b-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="@Phone" bgColor="(255, 182, 193, 255)" icon="person_talking_icon" selectedIcon="person_talking_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="f0109812-f40f-11f0-b2c5-24418c661769" />
 </category>
 <category id="80f0f933-5487-11e2-ba71-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:52:53.512969" modificationDateTime="2025-12-22 22:27:16.313247" subject="Priority" bgColor="(153, 193, 241, 255)" icon="trafficlight_icon" selectedIcon="trafficlight_icon" expandedContexts="('categoryviewer', 'categoryviewerintaskeditor')">
-<category id="107f6994-5488-11e2-a61b-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:56:54.360656" subject="High Priority" bgColor="(255, 102, 102, 255)" icon="led_red_icon" selectedIcon="led_red_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc79b7a-f40f-11f0-b2c5-24418c661769" />
-<category id="f010980c-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="Medium Priority" bgColor="(255, 204, 0, 255)" icon="led_yellow_icon" selectedIcon="led_yellow_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc79b73-f40f-11f0-b2c5-24418c661769" />
+<category id="107f6994-5488-11e2-a61b-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:56:54.360656" subject="High Priority" bgColor="(255, 102, 102, 255)" icon="sign_important_icon" selectedIcon="sign_important_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc79b7a-f40f-11f0-b2c5-24418c661769 4d8a4161-4880-4e41-a08c-749915b82530" />
+<category id="f010980c-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="Medium Priority" bgColor="(255, 204, 0, 255)" icon="led_yellow_icon" selectedIcon="led_yellow_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc79b73-f40f-11f0-b2c5-24418c661769 459811a9-d35a-4838-b8a8-da1a8da66032" />
 <category id="f010980d-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="Low Priority" bgColor="(144, 238, 144, 255)" icon="led_green_icon" selectedIcon="led_green_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc7a251-f40f-11f0-b2c5-24418c661769" />
 </category>
 <category id="9f760359-5463-11e2-acc6-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:36:02.834248" modificationDateTime="2025-12-22 22:23:45.534725" subject="Projects" bgColor="(220, 138, 221, 255)" icon="folder_blue_icon" selectedIcon="folder_blue_icon" expandedContexts="('categoryviewer', 'categoryviewerinnoteeditor', 'categoryviewerintaskeditor')">
-<category id="ac9c1023-5463-11e2-bb73-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:36:24.893996" subject="Website Redesign" bgColor="(135, 206, 250, 255)" icon="earth_blue_icon" selectedIcon="earth_blue_icon" expandedContexts="('categoryviewerinnoteeditor', 'categoryviewerintaskeditor')" categorizables="5cc79b72-f40f-11f0-b2c5-24418c661769 5cc79b73-f40f-11f0-b2c5-24418c661769 5cc79b77-f40f-11f0-b2c5-24418c661769 5cc79b7b-f40f-11f0-b2c5-24418c661769" />
-<category id="b21a4eb3-5463-11e2-8de1-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:36:34.109957" subject="Personal Development" bgColor="(255, 218, 185, 255)" icon="person_icon" selectedIcon="person_icon" expandedContexts="('categoryviewerinnoteeditor', 'categoryviewerintaskeditor')" categorizables="5cc7a24c-f40f-11f0-b2c5-24418c661769 5cc7a24d-f40f-11f0-b2c5-24418c661769 5cc7a24e-f40f-11f0-b2c5-24418c661769 5cc7a252-f40f-11f0-b2c5-24418c661769" />
+<category id="ac9c1023-5463-11e2-bb73-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:36:24.893996" subject="Website Redesign" bgColor="(135, 206, 250, 255)" icon="earth_blue_icon" selectedIcon="earth_blue_icon" expandedContexts="('categoryviewerinnoteeditor', 'categoryviewerintaskeditor')" categorizables="5cc79b72-f40f-11f0-b2c5-24418c661769 5cc79b73-f40f-11f0-b2c5-24418c661769 5cc79b77-f40f-11f0-b2c5-24418c661769 5cc79b7b-f40f-11f0-b2c5-24418c661769 e6e9bf3d-ea36-447b-93f8-7c8ff4820fd3 219d4064-2b6d-457d-a535-97957a6a918c" />
+<category id="b21a4eb3-5463-11e2-8de1-0016cbad0bd0" status="1" creationDateTime="2013-01-01 17:36:34.109957" subject="Personal Development" bgColor="(255, 218, 185, 255)" icon="person_icon" selectedIcon="person_icon" expandedContexts="('categoryviewerinnoteeditor', 'categoryviewerintaskeditor')" categorizables="5cc7a24c-f40f-11f0-b2c5-24418c661769 5cc7a24d-f40f-11f0-b2c5-24418c661769 5cc7a24e-f40f-11f0-b2c5-24418c661769 5cc7a252-f40f-11f0-b2c5-24418c661769 2278ed33-4370-4526-8645-38de611d0efa 9b37b774-4f45-4c81-b9ac-5f1048bad92a" />
 </category>
 <category id="f010980e-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="Status Tags" bgColor="(200, 200, 200, 255)" icon="paperclip_icon" selectedIcon="paperclip_icon" expandedContexts="('categoryviewer', 'categoryviewerintaskeditor')">
 <category id="f010980f-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="Waiting For" bgColor="(255, 255, 153, 255)" icon="clock_icon" selectedIcon="clock_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc79b7a-f40f-11f0-b2c5-24418c661769" />
-<category id="f0109810-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="Someday/Maybe" bgColor="(221, 160, 221, 255)" icon="lamp_icon" selectedIcon="lamp_icon" expandedContexts="('categoryviewerintaskeditor',)" />
-<category id="f0109811-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="Next Action" bgColor="(152, 251, 152, 255)" icon="checkmark_green_icon" selectedIcon="checkmark_green_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc79b75-f40f-11f0-b2c5-24418c661769 5cc7a259-f40f-11f0-b2c5-24418c661769" />
+<category id="f0109810-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="Someday/Maybe" bgColor="(221, 160, 221, 255)" icon="lamp_icon" selectedIcon="lamp_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="e5b07193-435a-47f0-987e-dea0cf4c32f2" />
+<category id="f0109811-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="Next Action" bgColor="(152, 251, 152, 255)" icon="arrow_forward_icon" selectedIcon="arrow_forward_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc79b75-f40f-11f0-b2c5-24418c661769 5cc7a259-f40f-11f0-b2c5-24418c661769" />
 </category>
+<note id="098b2f1e-5567-4a73-9055-839d4f361c04" status="1" creationDateTime="2026-01-16 13:00:00" modificationDateTime="2026-01-18 09:45:12" subject="Code Review Guidelines">
+<description>
+Review checklist:
+- Does it solve the stated problem?
+- Are there adequate tests?
+- Is error handling appropriate?
+- Are there potential security issues?
+- Is the code readable without excessive comments?
+- Does it follow existing patterns in the codebase?
+
+Response time SLA: Review within 24 business hours
+Max PR size: 400 lines (excluding generated files)
+</description>
+</note>
+<note id="0b0d69a0-1731-4dba-9ef2-424add510daf" status="1" creationDateTime="2026-01-13 10:00:00" modificationDateTime="2026-01-15 14:22:33" subject="Database Migration Checklist">
+<description>
+Pre-migration:
+- Backup all production data
+- Test migration script on staging
+- Notify users of maintenance window
+- Prepare rollback plan
+
+During migration:
+- Enable maintenance mode
+- Run migration scripts
+- Verify data integrity
+- Run smoke tests
+
+Post-migration:
+- Monitor error rates for 24 hours
+- Check query performance metrics
+</description>
+</note>
+<note id="219d4064-2b6d-457d-a535-97957a6a918c" status="1" creationDateTime="2026-01-11 14:30:00" modificationDateTime="2026-01-12 10:05:00" subject="Client Feedback - Sprint Review">
+<description>
+Client likes the new dashboard layout.
+Requested changes:
+- Add export to PDF button on reports page
+- Make sidebar collapsible on mobile
+- Increase font size in data tables
+- Add dark mode toggle (low priority)
+Next review: February 5th
+</description>
+</note>
+<note id="2278ed33-4370-4526-8645-38de611d0efa" status="1" creationDateTime="2026-01-14 11:00:00" modificationDateTime="2026-01-20 16:10:44" subject="Useful Git Commands">
+<description>
+Frequently used commands:
+- git log --oneline --graph --all
+- git stash push -m "description"
+- git rebase -i HEAD~3
+- git bisect start/bad/good
+- git reflog (recover lost commits)
+- git cherry-pick commit-hash
+
+Branch naming: feature/TICKET-123-short-description
+Commit format: type(scope): description
+</description>
+</note>
+<note id="40785ee2-048c-44b5-bdc5-5ce7a9775e2d" status="1" creationDateTime="2026-01-10 09:00:00" modificationDateTime="2026-01-10 09:35:21" subject="Weekly Team Standup Notes">
+<description>
+Monday standup summary:
+- Frontend team blocked on API endpoint documentation
+- Backend migration to PostgreSQL 16 on track
+- QA found 3 critical bugs in checkout flow
+- Design review scheduled for Wednesday 2pm
+Action items: Update API docs by Tuesday EOD
+</description>
+</note>
+<note id="459811a9-d35a-4838-b8a8-da1a8da66032" status="1" creationDateTime="2026-01-19 11:00:00" modificationDateTime="2026-01-21 15:30:18" subject="Performance Optimization Notes">
+<description>
+Bottlenecks identified (Jan profiling):
+1. N+1 queries on /api/projects endpoint (fix: eager loading)
+2. Unindexed search on user_sessions table
+3. Large JSON serialization for activity feed
+4. Synchronous email sending in request cycle
+
+Quick wins implemented:
+- Added composite index on (user_id, created_at)
+- Moved email sending to background queue
+- Added response compression (gzip)
+Result: p95 latency reduced from 1.2s to 340ms
+</description>
+</note>
+<note id="4d8a4161-4880-4e41-a08c-749915b82530" status="1" creationDateTime="2026-01-20 14:00:00" modificationDateTime="2026-01-22 11:20:05" subject="Incident Postmortem - Jan 19 Outage">
+<description>
+Duration: 45 minutes (14:15 - 15:00 UTC)
+Impact: 100% of users unable to log in
+Root cause: Expired TLS certificate on auth service
+
+Timeline:
+- 14:15 Monitoring alert fired
+- 14:20 On-call engineer acknowledged
+- 14:35 Root cause identified
+- 14:45 Certificate renewed and deployed
+- 15:00 Service fully restored
+
+Action items:
+- Set up certificate expiry monitoring (30-day warning)
+- Add TLS cert renewal to automated pipeline
+</description>
+</note>
+<note id="55b8a81d-af9e-48d8-89b2-656f9242d275" status="1" creationDateTime="2026-01-22 10:00:00" modificationDateTime="2026-01-23 08:15:47" subject="Deployment Runbook - Production">
+<description>
+Pre-deploy:
+1. Ensure all CI checks pass on main
+2. Check for pending database migrations
+3. Notify #deployments Slack channel
+
+Deploy steps:
+1. Tag release: git tag v1.x.x
+2. Push tag to trigger deploy pipeline
+3. Monitor deploy progress in ArgoCD
+4. Watch error rates in Datadog (5 min)
+
+Rollback:
+1. kubectl rollout undo deployment/app
+2. Notify team in Slack
+3. Create incident ticket if user-impacting
+</description>
+</note>
+<note id="7f0ff34a-0dd2-4db9-8166-88296e1db0f8" status="1" creationDateTime="2026-01-17 10:00:00" modificationDateTime="2026-01-19 13:40:29" subject="API Versioning Strategy">
+<description>
+Current: v1 (stable, no breaking changes planned)
+Next: v2 (breaking changes for user endpoints)
+
+Versioning approach: URL path prefix (/api/v1/, /api/v2/)
+Deprecation policy: 6 months notice before removal
+Migration guide required for all breaking changes
+</description>
+</note>
+<note id="9b37b774-4f45-4c81-b9ac-5f1048bad92a" status="1" creationDateTime="2026-01-18 08:00:00" modificationDateTime="2026-01-22 14:55:33" subject="Onboarding Checklist - New Developers">
+<description>
+Day 1:
+- Set up development environment
+- Clone repositories and run build
+- Read architecture overview doc
+- Meet with team lead
+
+Week 1:
+- Complete codebase walkthrough
+- Fix a good-first-issue bug
+- Set up monitoring access
+- Join relevant Slack channels
+</description>
+</note>
+<note id="9dec0141-e228-4097-b8cd-0b4f48a96637" status="1" creationDateTime="2026-01-14 16:00:00" modificationDateTime="2026-01-17 11:08:12" subject="Server Monitoring Thresholds">
+<description>
+Alert thresholds (PagerDuty):
+- CPU over 80% for 5 minutes: Warning
+- CPU over 95% for 2 minutes: Critical
+- Memory over 85%: Warning
+- Disk over 90%: Critical
+- Response time over 2s (p95): Warning
+- Error rate over 5%: Critical
+
+Dashboard: grafana.internal/dashboards
+</description>
+</note>
+<note id="e130de32-125c-455e-806d-8f90a72db17a" status="1" creationDateTime="2026-01-21 09:00:00" modificationDateTime="2026-01-21 10:45:00" subject="Sprint Retrospective - Sprint 14">
+<description>
+What went well:
+- Shipped auth feature on time
+- Good collaboration between frontend and backend
+- Zero production incidents
+
+What to improve:
+- PRs sitting too long in review queue
+- Flaky integration tests causing CI delays
+
+Actions:
+- Implement review lottery system
+- Quarantine flaky tests, fix in dedicated sprint
+- Break stories into max 3-day chunks
+</description>
+</note>
+<note id="e5b07193-435a-47f0-987e-dea0cf4c32f2" status="1" creationDateTime="2026-01-12 08:15:00" modificationDateTime="2026-01-14 09:30:55" subject="Architecture Decision: Caching Strategy">
+<description>
+Options considered:
+1. Redis (distributed, fast, but extra infrastructure)
+2. In-memory LRU cache (simple, per-instance only)
+3. CDN-level caching (good for static assets)
+
+Decision: Redis for session data and API responses.
+In-memory LRU for computed values within request lifecycle.
+CDN for all static assets with 24h TTL.
+</description>
+</note>
+<note id="e6e9bf3d-ea36-447b-93f8-7c8ff4820fd3" status="1" creationDateTime="2026-01-20 16:30:00" modificationDateTime="2026-01-21 17:05:22" subject="Design System Color Tokens">
+<description>
+Primary: #2563EB (blue-600)
+Secondary: #7C3AED (violet-600)
+Success: #059669 (emerald-600)
+Warning: #D97706 (amber-600)
+Error: #DC2626 (red-600)
+
+Neutral scale: gray-50 through gray-900
+Font stack: Inter, system-ui, sans-serif
+Base size: 16px, scale: 1.25 (major third)
+</description>
+</note>
+<note id="fe4b9c77-24ae-4f71-854a-4815ff1e2d60" status="1" creationDateTime="2026-01-15 09:30:00" modificationDateTime="2026-01-15 11:20:08" subject="Meeting Notes - Product Roadmap Q1">
+<description>
+Q1 priorities:
+1. User authentication overhaul (OAuth 2.0 + MFA)
+2. Performance improvements (target: sub-200ms API responses)
+3. Mobile app beta launch (iOS first, Android Q2)
+4. Analytics dashboard v2
+
+Staffing: Need 1 additional frontend developer
+Budget approved for cloud infrastructure upgrade
+</description>
+</note>
 <guid>
 0000013bf83c92df060be7b4000a27c5014d766d
 </guid>

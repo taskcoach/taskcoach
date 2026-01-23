@@ -133,6 +133,6 @@ class EditorTestCase(test.wxTestCase):
         self.assertEqual("bomb_icon", self.item.icon())
 
     def testThatChangingTheItemIconAffectsTheIconEntry(self):
-        imageNames = sorted(gui.artprovider.chooseableItemImages.keys())
+        imageNames = sorted(gui.artprovider.chooseableItemImages, key=gui.artprovider.chooseableItemImages.get)
         self.item.setIcon(imageNames[10])
         self.assertEqual(10, self.appearance._iconEntry.GetSelection())

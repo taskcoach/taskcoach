@@ -22,7 +22,6 @@ from taskcoachlib.domain.task import Task
 from taskcoachlib.i18n import _
 from dateutil import parser as dparser
 import csv
-import tempfile
 import io
 import re
 import math
@@ -40,14 +39,7 @@ class CSVReader(object):
         return reader
 
     def read(self, **kwargs):
-        fp = tempfile.TemporaryFile()
-        fp.write(
-            open(kwargs["filename"], "r")
-            .read()
-            .decode(kwargs["encoding"])
-            .encode("UTF-8")
-        )
-        fp.seek(0)
+        fp = open(kwargs["filename"], "r", encoding=kwargs["encoding"])
 
         rx1 = re.compile(r"^(\d+):(\d+)$")
         rx2 = re.compile(r"^(\d+):(\d+):(\d+)$")
@@ -80,14 +72,14 @@ class CSVReader(object):
 
             for idx, fieldValue in enumerate(line):
                 if kwargs["mappings"][idx] == _("ID"):
-                    id_ = fieldValue.decode("UTF-8")
+                    id_ = fieldValue
                 elif kwargs["mappings"][idx] == _("Subject"):
-                    subject = fieldValue.decode("UTF-8")
+                    subject = fieldValue
                 elif kwargs["mappings"][idx] == _("Description"):
-                    description.write(fieldValue.decode("UTF-8"))
+                    description.write(fieldValue)
                     description.write("\n")
                 elif kwargs["mappings"][idx] == _("Category") and fieldValue:
-                    name = fieldValue.decode("UTF-8")
+                    name = fieldValue
                     if name.startswith("(") and name.endswith(")"):
                         continue  # Skip categories of subitems
                     cat = self.categoryList.findCategoryByName(name)
@@ -233,7 +225,7 @@ class CSVReader(object):
             return None
         try:
             dateTime = dparser.parse(
-                fieldValue.decode("UTF-8"), dayfirst=dayfirst, fuzzy=True
+                fieldValue, dayfirst=dayfirst, fuzzy=True
             ).replace(tzinfo=None)
             hour, minute, second = (
                 dateTime.hour,

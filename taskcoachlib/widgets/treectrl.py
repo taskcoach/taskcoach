@@ -412,6 +412,7 @@ class TreeListCtrl(
 
     def _refreshColors(self, item, domain_object, check=False):
         bg_color = domain_object.backgroundColor(recursive=True)
+        fg_color = domain_object.foregroundColor(recursive=True)
         if bg_color is None:
             # wx.NullColour doesn't work correctly on Windows - it renders as
             # black instead of transparent. Use system listbox color to match
@@ -424,7 +425,6 @@ class TreeListCtrl(
             check and bg_color != self.GetItemBackgroundColour(item)
         ):
             self.SetItemBackgroundColour(item, bg_color)
-        fg_color = domain_object.foregroundColor(recursive=True)
         if fg_color is None:
             if operating_system.isWindows():
                 fg_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)

@@ -375,18 +375,27 @@ class ColorEntry(widgets.PanelWithBoxSizer):
 IconEntryEvent, EVT_ICONENTRY = newevent.NewEvent()
 
 
+def _strikethrough(text):
+    """Apply Unicode strikethrough using combining character U+0336."""
+    return ''.join(char + '\u0336' for char in text)
+
+
 class IconEntry(wx.adv.BitmapComboBox):
-    def __init__(self, parent, currentIcon, *args, **kwargs):
+    def __init__(self, parent, currentIcon, excluded_icons=None, *args, **kwargs):
         kwargs["style"] = wx.CB_READONLY
+        self._excluded_icons = excluded_icons or set()
         super().__init__(parent, *args, **kwargs)
-        imageNames = sorted(artprovider.chooseableItemImages.keys())
+        imageNames = sorted(artprovider.chooseableItemImages, key=artprovider.chooseableItemImages.get)
         size = (16, 16)
         for imageName in imageNames:
             label = artprovider.chooseableItemImages[imageName]
+            if imageName in self._excluded_icons:
+                label = _strikethrough(label)
             bitmap = wx.ArtProvider.GetBitmap(imageName, wx.ART_MENU, size)
             item = self.Append(label, bitmap)
             self.SetClientData(item, imageName)
         self.SetSelection(imageNames.index(currentIcon))
+        self._previousSelection = self.GetSelection()
         # GTK's native BitmapComboBox clips icons in the closed state.
         # Oversizing the control gives the renderer more space to work with.
         if operating_system.isGTK():
@@ -401,6 +410,11 @@ class IconEntry(wx.adv.BitmapComboBox):
         self.Bind(wx.EVT_COMBOBOX, self.onIconPicked)
 
     def onIconPicked(self, event):
+        selected = self.GetClientData(self.GetSelection())
+        if selected in self._excluded_icons:
+            self.SetSelection(self._previousSelection)
+            return
+        self._previousSelection = self.GetSelection()
         event.Skip()
         wx.PostEvent(self, IconEntryEvent())
 

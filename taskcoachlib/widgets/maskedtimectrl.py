@@ -1112,7 +1112,8 @@ class NumericField:
         self.__choices = None  # Will be set by SetChoices
         self.__observer = observer
         self.__padZeros = padZeros
-        self.__state = 0  # For digit entry accumulation
+        self.__digitCount = 0  # Number of digits typed in current entry
+        self.__lastKeyTime = 0  # Timestamp of last digit keystroke
         self.SetChoices(choices)  # Use SetChoices for proper handling
 
     @property
@@ -1214,7 +1215,8 @@ class NumericField:
 
     def ResetState(self):
         """Reset digit entry state."""
-        self.__state = 0
+        self.__digitCount = 0
+        self.__lastKeyTime = 0
 
     def HandleKey(self, event):
         """Handle keyboard input. Returns True if handled."""
@@ -1257,13 +1259,28 @@ class NumericField:
             number = -1
 
         if 0 <= number <= 9:
-            if self.__state == 0:
-                self.__state = 1
+            now = time.time()
+            # Reset if timeout elapsed since last keystroke (750ms)
+            if now - self.__lastKeyTime > 0.75:
+                self.__digitCount = 0
+            self.__lastKeyTime = now
+
+            if self.__digitCount == 0:
+                # First digit: replace value entirely
                 self.SetValue(number)
             else:
                 newVal = (self.__value * 10 + number) % int(math.pow(10, self.__width))
                 self.SetValue(newVal)
+            self.__digitCount += 1
             self.__observer.DismissPopup()
+            # Auto-advance to next field after all digits typed
+            if self.__digitCount >= self.__width:
+                self.__digitCount = 0
+                self.__lastKeyTime = 0
+                # Advance unless this is the last field
+                fieldList = self.__observer._fieldList
+                if fieldList and fieldList.index(self) < len(fieldList) - 1:
+                    self.__observer._focusNextField()
             return True
 
         if keyCode in (wx.WXK_BACK, wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):

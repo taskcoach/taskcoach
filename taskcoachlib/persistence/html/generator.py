@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import wx, html, io
-from taskcoachlib.domain import task
 
 # pylint: disable=W0142
 
@@ -154,12 +153,6 @@ class Viewer2HTMLConverter(object):
                 ".%s {text-align: %s}" % (column.name(), alignment), level + 1
             )
             styleContent.append(columnStyle)
-        if self.viewer.isShowingTasks():
-            for status in task.Task.possibleStatuses():
-                statusColor = task.Task.fgColorForStatus(status)
-                statusColor = self.cssColorSyntax(statusColor)
-                statusStyle = ".%s {color: %s}" % (status, statusColor)
-                styleContent.append(self.indent(statusStyle, level + 1))
         if includeAllCSS:
             styleContent.extend(
                 [self.indent(line, level + 1) for line in css.split("\n")]
@@ -239,52 +232,34 @@ class Viewer2HTMLConverter(object):
     def bodyRow(self, item, columns, tree, printing, level):
         """Returns a <tr> containing the values of item for the
         visibleColumns."""
+        fgColor = item.foregroundColor(recursive=True)
+        bgColor = item.backgroundColor(recursive=True)
+        if bgColor and bgColor == wx.WHITE:
+            bgColor = None
         bodyRowContent = []
-        attributes = dict()
         for column in columns:
             renderedItem = self.render(
                 item, column, indent=not bodyRowContent and tree
             )
-            if printing:
-                itemColor = item.foregroundColor(recursive=True)
-                if itemColor:
-                    itemColor = self.cssColorSyntax(itemColor)
-                    renderedItem = self.wrap(
-                        renderedItem,
-                        "font",
-                        level + 1,
-                        color=itemColor,
-                        oneLine=True,
-                    )
             bodyRowContent.append(
                 self.bodyCell(renderedItem, column, printing, level + 1)
             )
-        attributes.update(self.bodyRowBgColor(item, printing))
-        if not printing:
-            attributes.update(self.bodyRowFgColor(item))
+        styles = []
+        if fgColor:
+            styles.append("color: %s" % self.cssColor(fgColor))
+        if bgColor:
+            styles.append("background: %s" % self.cssColor(bgColor))
+        attributes = dict()
+        if styles:
+            attributes["style"] = "; ".join(styles)
         return self.wrap(bodyRowContent, "tr", level, **attributes)
 
-    def bodyRowBgColor(self, item, printing):
-        """Determine the background color for the item. Returns a CSS style
-        specification or a HTML style specification when printing."""
-        bgColor = item.backgroundColor(recursive=True)
-        if bgColor and bgColor != wx.WHITE:
-            bgColor = self.cssColorSyntax(bgColor)
-        else:
-            return dict()
-        return (
-            dict(bgcolor=bgColor)
-            if printing
-            else dict(style="background: %s" % bgColor)
-        )
-
-    def bodyRowFgColor(self, item):
-        """Determine the foreground color for the item. Returns a CSS style
-        specification."""
-        if self.viewer.isShowingTasks():
-            return {"class": item.status().statusString}
-        else:
-            return dict()
+    @staticmethod
+    def cssColor(wxColor):
+        """Convert a wx.Colour to hex (#RRGGBB) format for HTML attributes."""
+        if isinstance(wxColor, tuple):
+            wxColor = wx.Colour(*wxColor)
+        return "#%02x%02x%02x" % (wxColor.Red(), wxColor.Green(), wxColor.Blue())
 
     def bodyCell(self, item, column, printing, level):
         """Return a <td> for the item/column combination."""
@@ -322,15 +297,6 @@ class Viewer2HTMLConverter(object):
         """Indent the htmlText with spaces according to the level, so that
         the resulting HTML looks nicely indented."""
         return "  " * level + htmlText
-
-    @classmethod
-    def cssColorSyntax(class_, wxColor):
-        """Translate the wx-color, either a wx.Colour instance or a tuple,
-        into CSS syntax."""
-        try:
-            return wxColor.GetAsString(wx.C2S_CSS_SYNTAX)
-        except AttributeError:  # color is a tuple
-            return class_.cssColorSyntax(wx.Colour(*wxColor))
 
     @staticmethod
     def render(item, column, indent=False):

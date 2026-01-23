@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import operating_system
 from taskcoachlib import patterns, persistence, help  # pylint: disable=W0622
-from taskcoachlib.domain import task, base, category
+from taskcoachlib.domain import task, note, base, category
 from taskcoachlib.i18n import _
 from pubsub import pub
 from taskcoachlib.gui.newid import IdProvider
@@ -63,7 +63,8 @@ class Menu(wx.Menu, uicommand.UICommandContainerMixin):
             self._observers.append(uiCommand)
         return cmd
 
-    def appendMenu(self, text, subMenu, bitmap=None, viewer=None):
+    def appendMenu(self, text, subMenu, bitmap=None, viewer=None,
+                   enableCondition=None):
         subMenuItem = wx.MenuItem(
             self, id=IdProvider.get(), text=text, subMenu=subMenu
         )
@@ -73,8 +74,13 @@ class Menu(wx.Menu, uicommand.UICommandContainerMixin):
             )
         self._accels.extend(subMenu.accelerators())
         self.Append(subMenuItem)
-        # If viewer provided, disable submenu when nothing is selected
-        if viewer is not None:
+        # If custom condition provided, use it; otherwise check selection
+        if enableCondition is not None:
+            menuId = subMenuItem.GetId()
+            def onUpdateUI(event, cond=enableCondition):
+                event.Enable(cond())
+            self._window.Bind(wx.EVT_UPDATE_UI, onUpdateUI, id=menuId)
+        elif viewer is not None:
             menuId = subMenuItem.GetId()
             def onUpdateUI(event, v=viewer):
                 event.Enable(bool(v.curselection()))
@@ -452,23 +458,13 @@ class EditMenu(Menu):
             uicommand.Edit(viewer=viewerContainer, id=wx.ID_EDIT),
             uicommand.Delete(viewer=viewerContainer, id=wx.ID_DELETE),
             None,
+            uicommand.SelectAll(viewer=viewerContainer),
+            uicommand.ClearSelection(viewer=viewerContainer),
+            None,
+            uicommand.EditPreferences(settings),
         )
-        # Leave sufficient room for command names in the Undo and Redo menu
-        # items:
-        self.appendMenu(
-            _("&Select") + " " * 50, SelectMenu(mainwindow, viewerContainer)
-        )
-        self.appendUICommands(None, uicommand.EditPreferences(settings))
 
 
-class SelectMenu(Menu):
-    def __init__(self, mainwindow, viewerContainer):
-        super().__init__(mainwindow)
-        kwargs = dict(viewer=viewerContainer)
-        # pylint: disable=W0142
-        self.appendUICommands(
-            uicommand.SelectAll(**kwargs), uicommand.ClearSelection(**kwargs)
-        )
 
 
 activateNextViewerId = wx.NewId()
@@ -784,6 +780,14 @@ class ActionMenu(Menu):
                 mainwindow, categories=categories, viewer=viewerContainer
             ),
             "folder_blue_arrow_icon",
+            enableCondition=lambda: (
+                bool(viewerContainer.curselection())
+                and not viewerContainer.isShowingCategories()
+                and not viewerContainer.containerWidget.manager.GetPane(
+                    viewerContainer.activeViewer()).IsFloating()
+                and (viewerContainer.curselectionIsInstanceOf(task.Task)
+                     or viewerContainer.curselectionIsInstanceOf(note.Note))
+            ),
         )
         # Start of task specific actions:
         self.appendUICommands(
@@ -803,6 +807,12 @@ class ActionMenu(Menu):
             _("Change task &priority"),
             TaskPriorityMenu(mainwindow, tasks, viewerContainer),
             "incpriority",
+            enableCondition=lambda: (
+                bool(viewerContainer.curselection())
+                and not viewerContainer.containerWidget.manager.GetPane(
+                    viewerContainer.activeViewer()).IsFloating()
+                and viewerContainer.curselectionIsInstanceOf(task.Task)
+            ),
         )
         self.appendUICommands(
             None,

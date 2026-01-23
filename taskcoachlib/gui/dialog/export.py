@@ -188,7 +188,7 @@ class ColumnPicker(sized_controls.SizedPanel):
     # These columns only show icons (e.g. paperclip, note icon) and render
     # as empty strings — they have no meaningful data to export.
     EXCLUDED_EXPORT_COLUMNS = {
-        "tasks": {"ordering", "notes", "attachments", "status", "statusIcon", "statusIconText"},
+        "tasks": {"ordering", "notes", "attachments", "statusIcon", "statusIconText"},
         "efforts": set(),
         "categories": {"ordering", "notes", "attachments"},
         "notes": {"ordering", "attachments"},

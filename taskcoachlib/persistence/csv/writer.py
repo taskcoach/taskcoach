@@ -16,32 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import csv, io
+import csv
 from . import generator
-
-
-class UnicodeCSVWriter:
-    """A CSV writer that writes rows to a CSV file encoded in utf-8.
-    Based on http://docs.python.org/lib/csv-examples.html.
-    """
-
-    def __init__(self, fd, *args, **kwargs):
-        # Redirect output to a queue
-        self.queue = io.StringIO()
-        self.writer = csv.writer(self.queue, *args, **kwargs)
-        self.fd = fd
-
-    def writerow(self, row):
-        self.writer.writerow([cell.encode("utf-8") for cell in row])
-        # Fetch UTF-8 output from the queue
-        data = self.queue.getvalue()
-        data = data.decode("utf-8")
-        self.fd.write(data)
-        self.queue.truncate(0)
-
-    def writerows(self, rows):
-        for row in rows:
-            self.writerow(row)
 
 
 class CSVWriter(object):
@@ -75,7 +51,7 @@ class CSVWriter(object):
             csvRows = generator.viewer2csv(
                 viewer, selectionOnly, separateDateAndTimeColumns, columns
             )
-        UnicodeCSVWriter(self.__fd).writerows(csvRows)
+        csv.writer(self.__fd).writerows(csvRows)
         return len(csvRows) - 1  # Don't count header row
 
     def _getAllItems(self, viewerType, taskFile):

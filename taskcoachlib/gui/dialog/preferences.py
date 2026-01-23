@@ -317,12 +317,15 @@ class SettingsPageBase(widgets.BookPage):
             flags=[wx.ALL | wx.ALIGN_CENTER] * 10,
         )
 
-    def _createIconEntry(self):
+    def _createIconEntry(self, excluded_icons=None):
         """Create an icon BitmapComboBox sized to its longest label."""
+        excluded = excluded_icons or set()
         iconEntry = BitmapComboBox(self, style=wx.CB_READONLY)
-        imageNames = sorted(artprovider.chooseableItemImages.keys())
+        imageNames = sorted(artprovider.chooseableItemImages, key=artprovider.chooseableItemImages.get)
         for imageName in imageNames:
             label = artprovider.chooseableItemImages[imageName]
+            if imageName in excluded:
+                label = ''.join(c + '\u0336' for c in label)
             bitmap = wx.ArtProvider.GetBitmap(imageName, wx.ART_MENU, (16, 16))
             item = iconEntry.Append(label, bitmap)
             iconEntry.SetClientData(item, imageName)
@@ -334,6 +337,8 @@ class SettingsPageBase(widgets.BookPage):
         # icon (16) + text + padding (16) + dropdown button (30)
         targetWidth = 16 + maxTextWidth + 16 + 30
         iconEntry.SetInitialSize(wx.Size(targetWidth, -1))
+        iconEntry._excluded_icons = excluded
+        iconEntry._previousSelection = 0
         return iconEntry, imageNames
 
     def _createAppearanceControls(self, fgColorSection, fgColorSetting,
@@ -356,10 +361,12 @@ class SettingsPageBase(widgets.BookPage):
             self, font=currentFont or defaultFont, colour=currentFgColor
         )
         fontButton.SetBackgroundColour(currentBgColor)
-        iconEntry, imageNames = self._createIconEntry()
+        excluded = getattr(self, '_objectIcons', None)
+        iconEntry, imageNames = self._createIconEntry(excluded_icons=excluded)
         currentIcon = self.gettext(iconSection, iconSetting)
         currentSelectionIndex = imageNames.index(currentIcon)
         iconEntry.SetSelection(currentSelectionIndex)
+        iconEntry._previousSelection = currentSelectionIndex
 
         self._colorSettings.append((fgColorSection, fgColorSetting, fgColorButton))
         self._colorSettings.append((bgColorSection, bgColorSetting, bgColorButton))
@@ -439,7 +446,7 @@ class SettingsPageBase(widgets.BookPage):
         lightFont.SetSelectedColour(lfgColor)
         lightFont.SetForegroundColour(lfgColor)
         lightFont.SetBackgroundColour(lbgColor)
-        iconNames = sorted(artprovider.chooseableItemImages.keys())
+        iconNames = sorted(artprovider.chooseableItemImages, key=artprovider.chooseableItemImages.get)
         lightIcon.SetSelection(iconNames.index(defs["icon"][setting]))
 
         # Reset dark theme
@@ -565,8 +572,9 @@ class SettingsPageBase(widgets.BookPage):
 
 
 class SettingsPage(SettingsPageBase):
-    def __init__(self, settings=None, *args, **kwargs):
+    def __init__(self, settings=None, taskFile=None, *args, **kwargs):
         self.settings = settings
+        self.taskFile = taskFile
         super().__init__(*args, **kwargs)
 
     def addEntry(self, text, *controls, **kwargs):  # pylint: disable=W0221
@@ -1435,6 +1443,7 @@ class TaskAppearancePage(SettingsPage):
 
     def __init__(self, *args, **kwargs):
         super().__init__(columns=10, growableColumn=-1, *args, **kwargs)
+        self._objectIcons = self._collectObjectIcons()
         self.addAppearanceHeader()
         for status in task.Task.possibleStatuses():
             setting = "%stasks" % status
@@ -1449,6 +1458,10 @@ class TaskAppearancePage(SettingsPage):
                 setting,
                 status.pluralLabel,
             )
+        # Bind validation to prevent selecting object-used icons
+        for section, setting, iconEntry in self._iconSettings:
+            iconEntry.Bind(wx.EVT_COMBOBOX,
+                           lambda evt, ie=iconEntry: self._onStatusIconChanged(evt, ie))
         noteText = wx.StaticText(self, label=_(
             "These appearance settings can be overridden "
             "for individual tasks in the task edit dialog."
@@ -1456,6 +1469,33 @@ class TaskAppearancePage(SettingsPage):
         noteText.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
         self.addEntry("", noteText, flags=(wx.ALL | wx.ALIGN_LEFT, wx.ALL | wx.EXPAND))
         self.fit()
+
+    def _collectObjectIcons(self):
+        """Collect all icons currently used by tasks, categories, and notes."""
+        icons = set()
+        if self.taskFile is None:
+            return icons
+        for obj in self.taskFile.tasks():
+            icon = obj.icon()
+            if icon:
+                icons.add(icon)
+        for obj in self.taskFile.categories():
+            icon = obj.icon()
+            if icon:
+                icons.add(icon)
+        for obj in self.taskFile.notes():
+            icon = obj.icon()
+            if icon:
+                icons.add(icon)
+        return icons
+
+    def _onStatusIconChanged(self, event, iconEntry):
+        """Prevent selecting an icon already used by an object."""
+        newIcon = iconEntry.GetClientData(iconEntry.GetSelection())
+        if newIcon in iconEntry._excluded_icons:
+            iconEntry.SetSelection(iconEntry._previousSelection)
+            return
+        iconEntry._previousSelection = iconEntry.GetSelection()
 
 
 class FeaturesPage(SettingsPage):
@@ -2166,8 +2206,9 @@ class Preferences(widgets.NotebookDialog):
         features=FeaturesPage,
     )
 
-    def __init__(self, settings=None, *args, **kwargs):
+    def __init__(self, settings=None, taskFile=None, *args, **kwargs):
         self.settings = settings
+        self.taskFile = taskFile
         kwargs.setdefault("buttonTypes", wx.OK | wx.CANCEL | wx.APPLY)
         super().__init__(bitmap="wrench_icon", *args, **kwargs)
         if operating_system.isMac():
@@ -2181,5 +2222,6 @@ class Preferences(widgets.NotebookDialog):
 
     def createPage(self, pageName):
         return self.pages[pageName](
-            parent=self._interior, settings=self.settings
+            parent=self._interior, settings=self.settings,
+            taskFile=self.taskFile
         )
