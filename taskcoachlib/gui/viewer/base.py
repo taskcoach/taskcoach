@@ -40,6 +40,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
 
     defaultTitle = "Subclass responsibility"
     defaultBitmap = "Subclass responsibility"
+    coreObjectType = None
     viewerImages = artprovider.itemImages
 
     def __init__(self, parent, taskFile, settings, *args, **kwargs):

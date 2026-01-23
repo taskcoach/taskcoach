@@ -1005,12 +1005,20 @@ class DatesPage(Page):
         )
         # Bind value change for live status preview
         self._actualStartDateTimeCombo.Bind(widgets.EVT_VALUE_CHANGED, self._onLocalValueChanged)
+        # Commit on checkbox toggle (same as focus loss)
+        self._actualStartDateTimeCombo.GetCheckBox().Bind(wx.EVT_CHECKBOX, self.__onActualStartCheckboxChanged)
 
         self.addEntry(
             _("Actual start date"),
             self._actualStartDateTimeCombo.CreateRowPanel(self),
             wx.StaticText(self, label=""),
         )
+
+    def __onActualStartCheckboxChanged(self, event):
+        """Handle actual start checkbox toggle."""
+        # Commit value to model immediately (checkbox toggle = focus loss)
+        self._actualStartDateTimeSync.commit()
+        event.Skip()
 
     def __onActualStartChanged(self, value):
         """AttributeSync callback for actual start date changes."""
@@ -1046,12 +1054,20 @@ class DatesPage(Page):
         )
         # Bind value change for live status preview
         self._completionDateTimeCombo.Bind(widgets.EVT_VALUE_CHANGED, self._onLocalValueChanged)
+        # Commit on checkbox toggle (same as focus loss)
+        self._completionDateTimeCombo.GetCheckBox().Bind(wx.EVT_CHECKBOX, self.__onCompletionCheckboxChanged)
 
         self.addEntry(
             _("Completion date"),
             self._completionDateTimeCombo.CreateRowPanel(self),
             wx.StaticText(self, label=""),
         )
+
+    def __onCompletionCheckboxChanged(self, event):
+        """Handle completion checkbox toggle."""
+        # Commit value to model immediately (checkbox toggle = focus loss)
+        self._completionDateTimeSync.commit()
+        event.Skip()
 
     def addDateEntry(self, label, taskMethodName):
         """Add a date entry using the old DateTimeEntry control (for comparison)."""
@@ -1229,6 +1245,8 @@ class DatesPage(Page):
 
     def __onPlannedStartCheckboxChanged(self, event):
         """Handle planned start checkbox toggle."""
+        # Commit value to model immediately (checkbox toggle = focus loss)
+        self._plannedStartDateTimeSync.commit()
         # 0.1 User unchecked Start-Date
         userAction = "start_unchecked" if not self._plannedStartDateTimeCombo.IsChecked() else None
         self.__syncDurationState(userAction=userAction)
@@ -1236,6 +1254,8 @@ class DatesPage(Page):
 
     def __onDueDateCheckboxChanged(self, event):
         """Handle due date checkbox toggle."""
+        # Commit value to model immediately (checkbox toggle = focus loss)
+        self._dueDateTimeSync.commit()
         # 0.2 User unchecked Due-Date
         userAction = "due_unchecked" if not self._dueDateTimeCombo.IsChecked() else None
         self.__syncDurationState(userAction=userAction)

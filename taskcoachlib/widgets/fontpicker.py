@@ -17,13 +17,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import wx
+import wx.lib.buttons as buttons
 
 
-class FontPickerCtrl(wx.Button):
+class FontPickerCtrl(buttons.GenButton):
+    """A button that displays the selected font and opens a font dialog on click.
+    Uses GenButton to avoid native GTK hover/press rendering artifacts."""
+
     def __init__(self, *args, **kwargs):
         self.__font = kwargs.pop("font")
         self.__colour = kwargs.pop("colour")
         super().__init__(*args, **kwargs)
+        self.SetBezelWidth(0)
+        self.SetUseFocusIndicator(False)
         self.__updateButton()
         self.Bind(wx.EVT_BUTTON, self.onClick)
 

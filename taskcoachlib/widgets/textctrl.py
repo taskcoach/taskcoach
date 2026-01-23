@@ -178,11 +178,15 @@ class BaseTextCtrl(wx.TextCtrl):
         self.__undone_value = None
 
 
-class _MultiLineTextCtrlInner(stc.StyledTextCtrl):
-    """Inner text control for MultiLineTextCtrl with URL handling and spell check.
+class _StyledTextCtrl(stc.StyledTextCtrl):
+    """Inner StyledTextCtrl with theme colours, URL handling, and spell check.
 
-    Uses StyledTextCtrl (Scintilla) for cross-platform spell check highlighting
-    with squiggly red underlines, and manual URL detection with clickable links.
+    Uses Scintilla for spell check highlighting (squiggly underlines) and
+    manual URL detection with clickable links. Theme colours (foreground,
+    background, caret, selection) are applied from system settings.
+
+    Use MultiLineTextCtrl (wrapper panel) in application code — it provides
+    the native border, padding, focus indication, and highlight.
 
     Args:
         singleLine: If True, prevents Enter key from creating newlines.
@@ -245,9 +249,6 @@ class _MultiLineTextCtrlInner(stc.StyledTextCtrl):
             self.CmdKeyClear(stc.STC_KEY_RETURN, stc.STC_SCMOD_SHIFT)
             # Intercept Ctrl+V to strip newlines from pasted text
             self.Bind(wx.EVT_KEY_DOWN, self._onKeyDown)
-            # Reset scroll width on text changes (SetScrollWidthTracking never shrinks)
-            # See: https://groups.google.com/g/scintilla-interest/c/ly8u7mVDgyQ
-            self.Bind(stc.EVT_STC_MODIFIED, self._onSingleLineTextModified)
 
     def _onKeyDown(self, event):
         """Intercept Ctrl+V to strip newlines from pasted text."""
@@ -257,17 +258,6 @@ class _MultiLineTextCtrlInner(stc.StyledTextCtrl):
             # Don't Skip() - prevents default paste
             return
         event.Skip()
-
-    def _onSingleLineTextModified(self, event):
-        """Reset scroll width when text changes in single-line mode.
-
-        SetScrollWidthTracking only grows, never shrinks. We reset to 1
-        and let tracking rebuild based on actual content.
-        """
-        event.Skip()
-        if event.GetModificationType() & (stc.STC_MOD_INSERTTEXT | stc.STC_MOD_DELETETEXT):
-            # Reset scroll width to minimum, tracking will expand as needed
-            self.SetScrollWidth(1)
 
     def _pasteWithoutNewlines(self):
         """Paste clipboard text with newlines replaced by spaces."""
@@ -295,19 +285,20 @@ class _MultiLineTextCtrlInner(stc.StyledTextCtrl):
         if self._singleLine:
             self.SetWrapMode(stc.STC_WRAP_NONE)
             self.SetUseVerticalScrollBar(False)
-            # Set scroll width to track content - prevents long scrollbar with no text
-            self.SetScrollWidth(1)
-            self.SetScrollWidthTracking(True)
+            self.SetUseHorizontalScrollBar(False)
         else:
             self.SetWrapMode(stc.STC_WRAP_WORD)
 
-        # Match system font
+        self._applyThemeColours()
+
+    def _applyThemeColours(self):
+        """Apply system theme colours to the control."""
         font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         self.StyleSetFont(stc.STC_STYLE_DEFAULT, font)
+        self.StyleSetForeground(stc.STC_STYLE_DEFAULT, wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.StyleSetBackground(stc.STC_STYLE_DEFAULT, wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
         self.StyleClearAll()
-
-        # Set caret and selection colors
-        self.SetCaretForeground(wx.BLACK)
+        self.SetCaretForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
         self.SetSelBackground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT))
         self.SetSelForeground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
 
@@ -621,12 +612,13 @@ class _MultiLineTextCtrlInner(stc.StyledTextCtrl):
 
 
 class MultiLineTextCtrl(wx.Panel):
-    """Multiline text control with internal padding.
+    """Text control with native border, focus indication, and spell check.
 
-    Wraps the text control in a panel with a sizer to provide consistent
-    padding on all platforms (SetMargins doesn't work on GTK).
-    Uses RendererNative to draw native-looking border with focus state.
+    Wraps _StyledTextCtrl in a panel that draws the native text control border
+    using RendererNative, providing proper focus indication on GTK3.
+    StyledTextCtrl (Scintilla) cannot display native focus borders on its own.
     """
+
     _nativePadding = None  # Cached native padding value
 
     @classmethod
@@ -641,15 +633,8 @@ class MultiLineTextCtrl(wx.Panel):
                 import gi
                 gi.require_version('Gtk', '3.0')
                 from gi.repository import Gtk
-
-                # Create a temporary GtkEntry to get its style context
                 entry = Gtk.Entry()
-                style_context = entry.get_style_context()
-
-                # Get the padding from the style context
-                padding = style_context.get_padding(Gtk.StateFlags.NORMAL)
-
-                # Use horizontal padding (left)
+                padding = entry.get_style_context().get_padding(Gtk.StateFlags.NORMAL)
                 if padding.left > 0:
                     cls._nativePadding = padding.left
                     return cls._nativePadding
@@ -661,53 +646,45 @@ class MultiLineTextCtrl(wx.Panel):
             temp = wx.TextCtrl(parent, -1, "X", style=wx.TE_MULTILINE | wx.BORDER_DEFAULT)
             margins = temp.GetMargins()
             temp.Destroy()
-
             if margins.x > 0:
                 cls._nativePadding = margins.x
                 return cls._nativePadding
         except Exception:
             pass
 
-        # Last fallback: use a reasonable default
+        # Last fallback
         cls._nativePadding = 6
         return cls._nativePadding
 
     def __init__(self, parent, text="", *args, settings=None, singleLine=False, spellCheck=True, **kwargs):
-        # Extract style for inner text control (not for panel wrapper)
         style = kwargs.pop("style", 0)
         super().__init__(parent, style=wx.BORDER_NONE)
 
         self._singleLine = singleLine
-
-        # Track focus state for border drawing
         self._hasFocus = False
-
-        # Get native padding from theme
         self._padding = self._getNativePadding(parent)
 
-        # Create the inner text control with the extracted style
-        self._textCtrl = _MultiLineTextCtrlInner(
-            self, text, *args, settings=settings, singleLine=singleLine, spellCheck=spellCheck, style=style, **kwargs
+        # Create the inner text control
+        self._textCtrl = _StyledTextCtrl(
+            self, text, *args, settings=settings, singleLine=singleLine,
+            spellCheck=spellCheck, style=style, **kwargs
         )
 
-        # Match background colors
-        self.SetBackgroundColour(self._textCtrl.GetBackgroundColour())
+        # Don't set explicit bg — inherit from parent so corners
+        # auto-update on theme change (explicit bg prevents inheritance)
 
         # Use sizer to add padding
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self._textCtrl, 1, wx.EXPAND | wx.ALL, self._padding)
         self.SetSizer(sizer)
 
-        # For single-line mode, constrain height to one line (with room for scrollbar)
+        # For single-line mode, constrain height to one line
         if singleLine:
             font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
             dc = wx.ScreenDC()
             dc.SetFont(font)
             textHeight = dc.GetTextExtent("Ay")[1]
-            # Height = text + inner padding (top+bottom) + border (approx 2px each side)
-            # Add 50% extra height to accommodate horizontal scrollbar
-            baseHeight = textHeight + (self._padding * 2) + 4
-            totalHeight = int(baseHeight * 1.5)
+            totalHeight = textHeight + (self._padding * 2) + 4
             self.SetMinSize((-1, totalHeight))
             self.SetMaxSize((-1, totalHeight))
 
@@ -717,6 +694,7 @@ class MultiLineTextCtrl(wx.Panel):
 
         # Bind paint event to draw native border
         self.Bind(wx.EVT_PAINT, self._onPaint)
+        self._lastWindowBg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
 
     def _onFocus(self, event):
         """Update focus state and repaint."""
@@ -737,6 +715,11 @@ class MultiLineTextCtrl(wx.Panel):
         rect = self.GetClientRect()
         flags = wx.CONTROL_FOCUSED if self._hasFocus else 0
         renderer.DrawTextCtrl(self, dc, rect, flags)
+        # Detect theme change (EVT_SYS_COLOUR_CHANGED doesn't reach children on GTK)
+        windowBg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+        if self._lastWindowBg != windowBg:
+            self._lastWindowBg = windowBg
+            wx.CallAfter(self._textCtrl._applyThemeColours)
 
     # Proxy common TextCtrl methods to the inner control
     def GetValue(self, *args, **kwargs):
@@ -793,23 +776,18 @@ class MultiLineTextCtrl(wx.Panel):
         return self._textCtrl.SetFocus()
 
     def Bind(self, event, handler, *args, **kwargs):
-        # Bind text and focus events to inner control, others to panel
-        # Focus events must go to inner control since it receives focus, not the panel
-        # Note: StyledTextCtrl uses stc.EVT_STC_CHANGE instead of wx.EVT_TEXT
+        # Text and focus events go to inner control; others to panel
         if event in (wx.EVT_TEXT, wx.EVT_TEXT_URL, wx.EVT_TEXT_ENTER,
                      wx.EVT_SET_FOCUS, wx.EVT_KILL_FOCUS):
-            # For EVT_TEXT, bind to STC equivalent
             if event == wx.EVT_TEXT:
                 return self._textCtrl.Bind(stc.EVT_STC_CHANGE, handler, *args, **kwargs)
             return self._textCtrl.Bind(event, handler, *args, **kwargs)
         return super().Bind(event, handler, *args, **kwargs)
 
     def setSpellCheckEnabled(self, enabled):
-        """Enable or disable spell checking."""
         return self._textCtrl.setSpellCheckEnabled(enabled)
 
     def setSpellCheckLanguage(self, language):
-        """Set spell check language."""
         return self._textCtrl.setSpellCheckLanguage(language)
 
 

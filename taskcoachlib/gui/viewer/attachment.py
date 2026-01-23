@@ -38,6 +38,8 @@ class AttachmentViewer(
     base.ListViewer,
 ):
     SorterClass = attachment.AttachmentSorter
+    defaultTitle = _("Attachments")
+    coreObjectType = "attachments"
     viewerImages = base.ListViewer.viewerImages + [
         "document_icon", "fileopen_red", "folder_blue_icon"
     ]
@@ -53,7 +55,7 @@ class AttachmentViewer(
 
     def __init__(self, *args, **kwargs):
         self.attachments = kwargs.pop("attachmentsToShow")
-        kwargs.setdefault("settingssection", "attachmentviewer")
+        kwargs.setdefault("settingsSection", "attachmentviewer")
         super().__init__(*args, **kwargs)
 
     def _isFolderUri(self, anAttachment):
@@ -171,7 +173,7 @@ class AttachmentViewer(
             ),
             widgets.Column(
                 "notes",
-                "",
+                _("Notes"),
                 attachment.FileAttachment.notesChangedEventType(),  # pylint: disable=E1101
                 attachment.URIAttachment.notesChangedEventType(),  # pylint: disable=E1101
                 attachment.MailAttachment.notesChangedEventType(),  # pylint: disable=E1101
@@ -209,6 +211,19 @@ class AttachmentViewer(
                 resizeCallback=self.onResizeColumn,
                 *attachment.Attachment.modificationEventTypes()
             ),
+            widgets.Column(
+                "id",
+                _("ID"),
+                width=self.getColumnWidth("id"),
+                renderCallback=lambda item: item.id(),
+                sortCallback=uicommand.ViewerSortByCommand(
+                    viewer=self,
+                    value="id",
+                    menuText=_("&ID"),
+                    helpText=_("Sort by ID"),
+                ),
+                resizeCallback=self.onResizeColumn,
+            ),
         ]
 
     def createColumnUICommands(self):
@@ -239,6 +254,12 @@ class AttachmentViewer(
                 menuText=_("&Modification date"),
                 helpText=_("Show/hide last modification date column"),
                 setting="modificationDateTime",
+                viewer=self,
+            ),
+            uicommand.ViewColumn(
+                menuText=_("&ID"),
+                helpText=_("Show/hide ID column"),
+                setting="id",
                 viewer=self,
             ),
         ]

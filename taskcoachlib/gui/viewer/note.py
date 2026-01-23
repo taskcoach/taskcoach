@@ -44,6 +44,7 @@ class BaseNoteViewer(
     SorterClass = note.NoteSorter
     defaultTitle = _("Notes")
     defaultBitmap = "note_icon"
+    coreObjectType = "notes"
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("settingsSection", "noteviewer")
@@ -150,6 +151,12 @@ class BaseNoteViewer(
                 setting="modificationDateTime",
                 viewer=self,
             ),
+            uicommand.ViewColumn(
+                menuText=_("&ID"),
+                helpText=_("Show/hide ID column"),
+                setting="id",
+                viewer=self,
+            ),
         ]
 
     def _createColumns(self):
@@ -202,7 +209,7 @@ class BaseNoteViewer(
         )
         attachmentsColumn = widgets.Column(
             "attachments",
-            "",
+            _("Attachments"),
             note.Note.attachmentsChangedEventType(),  # pylint: disable=E1101
             width=self.getColumnWidth("attachments"),
             alignment=wx.LIST_FORMAT_LEFT,
@@ -254,6 +261,19 @@ class BaseNoteViewer(
             ),
             *note.Note.modificationEventTypes()
         )
+        idColumn = widgets.Column(
+            "id",
+            _("ID"),
+            width=self.getColumnWidth("id"),
+            resizeCallback=self.onResizeColumn,
+            renderCallback=lambda note: note.id(),
+            sortCallback=uicommand.ViewerSortByCommand(
+                viewer=self,
+                value="id",
+                menuText=_("&ID"),
+                helpText=_("Sort notes by ID"),
+            ),
+        )
         return [
             orderingColumn,
             subjectColumn,
@@ -262,6 +282,7 @@ class BaseNoteViewer(
             categoriesColumn,
             creationDateTimeColumn,
             modificationDateTimeColumn,
+            idColumn,
         ]
 
     def isShowingNotes(self):

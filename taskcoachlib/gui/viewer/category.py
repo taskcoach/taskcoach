@@ -45,6 +45,7 @@ class BaseCategoryViewer(
     SorterClass = category.CategorySorter
     defaultTitle = _("Categories")
     defaultBitmap = "folder_blue_arrow_icon"
+    coreObjectType = "categories"
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("settingsSection", "categoryviewer")
@@ -142,7 +143,7 @@ class BaseCategoryViewer(
             ),
             widgets.Column(
                 "attachments",
-                "",
+                _("Attachments"),
                 category.Category.attachmentsChangedEventType(),  # pylint: disable=E1101
                 width=self.getColumnWidth("attachments"),
                 alignment=wx.LIST_FORMAT_LEFT,
@@ -155,7 +156,7 @@ class BaseCategoryViewer(
         columns.append(
             widgets.Column(
                 "notes",
-                "",
+                _("Notes"),
                 category.Category.notesChangedEventType(),  # pylint: disable=E1101
                 width=self.getColumnWidth("notes"),
                 alignment=wx.LIST_FORMAT_LEFT,
@@ -187,6 +188,18 @@ class BaseCategoryViewer(
                     viewer=self, value="modificationDateTime"
                 ),
                 *category.Category.modificationEventTypes(),
+                **kwargs
+            )
+        )
+        columns.append(
+            widgets.Column(
+                "id",
+                _("ID"),
+                width=self.getColumnWidth("id"),
+                renderCallback=lambda category: category.id(),
+                sortCallback=uicommand.ViewerSortByCommand(
+                    viewer=self, value="id"
+                ),
                 **kwargs
             )
         )
@@ -258,6 +271,14 @@ class BaseCategoryViewer(
                 menuText=_("&Modification date"),
                 helpText=_("Show/hide last modification date column"),
                 setting="modificationDateTime",
+                viewer=self,
+            )
+        )
+        commands.append(
+            uicommand.ViewColumn(
+                menuText=_("&ID"),
+                helpText=_("Show/hide ID column"),
+                setting="id",
                 viewer=self,
             )
         )

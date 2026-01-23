@@ -45,6 +45,12 @@ class UnicodeCSVWriter:
 
 
 class CSVWriter(object):
+    # Constants for "All" export options
+    ALL_TASKS = "ALL_TASKS"
+    ALL_EFFORTS = "ALL_EFFORTS"
+    ALL_CATEGORIES = "ALL_CATEGORIES"
+    ALL_NOTES = "ALL_NOTES"
+
     def __init__(self, fd, filename=None):
         self.__fd = fd
 
@@ -55,9 +61,33 @@ class CSVWriter(object):
         selectionOnly=False,
         separateDateAndTimeColumns=False,
         columns=None,
+        taskFile=None,
     ):  # pylint: disable=W0613
-        csvRows = generator.viewer2csv(
-            viewer, selectionOnly, separateDateAndTimeColumns, columns
-        )
+        if isinstance(viewer, str) and viewer.startswith("ALL_"):
+            items = self._getAllItems(viewer, taskFile)
+            if not columns:
+                return 0
+            rowBuilder = generator.RowBuilder(
+                columns, False, separateDateAndTimeColumns
+            )
+            csvRows = rowBuilder.rows(items)
+        else:
+            csvRows = generator.viewer2csv(
+                viewer, selectionOnly, separateDateAndTimeColumns, columns
+            )
         UnicodeCSVWriter(self.__fd).writerows(csvRows)
         return len(csvRows) - 1  # Don't count header row
+
+    def _getAllItems(self, viewerType, taskFile):
+        """Get all items from taskFile based on type constant."""
+        if taskFile is None:
+            return []
+        if viewerType == self.ALL_TASKS:
+            return list(taskFile.tasks())
+        elif viewerType == self.ALL_EFFORTS:
+            return list(taskFile.efforts())
+        elif viewerType == self.ALL_CATEGORIES:
+            return list(taskFile.categories())
+        elif viewerType == self.ALL_NOTES:
+            return list(taskFile.notes())
+        return []

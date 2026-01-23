@@ -453,7 +453,10 @@ class FileManageBackups(IOCommand, settings_uicommand.SettingsCommand):
 
 
 class FileExportAsHTML(FileExportCommand):
-    """Action for exporting the contents of a viewer to HTML."""
+    """Action for exporting the contents of a viewer to HTML.
+
+    Uses a non-modal dialog to allow users to change selections while
+    the export dialog is open."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(
@@ -463,6 +466,28 @@ class FileExportAsHTML(FileExportCommand):
             *args,
             **kwargs
         )
+        self._exportDialog = None
+
+    def doCommand(self, event):
+        """Show non-modal export dialog."""
+        if self._exportDialog:
+            self._exportDialog.Raise()
+            return
+        self._exportDialog = self.getExportDialogClass()(
+            self.mainWindow(),
+            settings=self.settings,
+            exportCallback=self.exportFunction()
+        )
+        self._exportDialog.Show()
+        self._exportDialog.Bind(
+            wx.EVT_WINDOW_DESTROY,
+            self._onDialogDestroyed
+        )
+
+    def _onDialogDestroyed(self, event):
+        """Clear dialog reference when destroyed."""
+        self._exportDialog = None
+        event.Skip()
 
     @staticmethod
     def getExportDialogClass():
@@ -471,9 +496,15 @@ class FileExportAsHTML(FileExportCommand):
     def exportFunction(self):
         return self.iocontroller.exportAsHTML
 
+    def enabled(self, event):
+        return True
+
 
 class FileExportAsCSV(FileExportCommand):
-    """Action for exporting the contents of a viewer to CSV."""
+    """Action for exporting the contents of a viewer to CSV.
+
+    Uses a non-modal dialog to allow users to change selections while
+    the export dialog is open."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(
@@ -486,6 +517,28 @@ class FileExportAsCSV(FileExportCommand):
             *args,
             **kwargs
         )
+        self._exportDialog = None
+
+    def doCommand(self, event):
+        """Show non-modal export dialog."""
+        if self._exportDialog:
+            self._exportDialog.Raise()
+            return
+        self._exportDialog = self.getExportDialogClass()(
+            self.mainWindow(),
+            settings=self.settings,
+            exportCallback=self.exportFunction()
+        )
+        self._exportDialog.Show()
+        self._exportDialog.Bind(
+            wx.EVT_WINDOW_DESTROY,
+            self._onDialogDestroyed
+        )
+
+    def _onDialogDestroyed(self, event):
+        """Clear dialog reference when destroyed."""
+        self._exportDialog = None
+        event.Skip()
 
     @staticmethod
     def getExportDialogClass():
@@ -493,6 +546,9 @@ class FileExportAsCSV(FileExportCommand):
 
     def exportFunction(self):
         return self.iocontroller.exportAsCSV
+
+    def enabled(self, event):
+        return True
 
 
 class FileExportAsICalendar(FileExportCommand):
@@ -557,7 +613,10 @@ class FileExportAsICalendar(FileExportCommand):
 
 
 class FileExportAsTodoTxt(FileExportCommand):
-    """Action for exporting the contents of a viewer to Todo.txt format."""
+    """Action for exporting the contents of a viewer to Todo.txt format.
+
+    Uses a non-modal dialog to allow users to change selections while
+    the export dialog is open."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(
@@ -570,24 +629,38 @@ class FileExportAsTodoTxt(FileExportCommand):
             *args,
             **kwargs
         )
+        self._exportDialog = None
+
+    def doCommand(self, event):
+        """Show non-modal export dialog."""
+        if self._exportDialog:
+            self._exportDialog.Raise()
+            return
+        self._exportDialog = self.getExportDialogClass()(
+            self.mainWindow(),
+            settings=self.settings,
+            exportCallback=self.exportFunction()
+        )
+        self._exportDialog.Show()
+        self._exportDialog.Bind(
+            wx.EVT_WINDOW_DESTROY,
+            self._onDialogDestroyed
+        )
+
+    def _onDialogDestroyed(self, event):
+        """Clear dialog reference when destroyed."""
+        self._exportDialog = None
+        event.Skip()
 
     def exportFunction(self):
         return self.iocontroller.exportAsTodoTxt
 
     def enabled(self, event):
-        return any(
-            self.exportableViewer(viewer)
-            for viewer in self.mainWindow().viewer
-        )
+        return True
 
     @staticmethod
     def getExportDialogClass():
         return dialog.export.ExportAsTodoTxtDialog
-
-    @staticmethod
-    def exportableViewer(aViewer):
-        """Return whether the viewer can be exported to Todo.txt format."""
-        return aViewer.isShowingTasks()
 
 
 class FileImportCSV(IOCommand):

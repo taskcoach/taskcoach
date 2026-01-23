@@ -144,6 +144,21 @@ class AttributeSync(object):
         # NOTE: Don't reset __editSessionValue if no changes committed.
         # This preserves the session state when focus goes to popup dropdowns.
 
+    def commit(self):
+        """Force-commit current widget value to domain model.
+
+        Use when the value changes without focus loss, e.g., checkbox toggle
+        on a DateTimeCombo field. Equivalent to focus-loss commit behavior.
+        """
+        try:
+            new_value = self.getValue()
+        except RuntimeError:
+            return  # Widget destroyed
+        if new_value != self._currentValue:
+            self.__executeCommand(new_value)
+            self.__editSessionValue = None
+            self.__hasChanges = False
+
     def onAttributeEdited(self, event):
         event.Skip()
         new_value = self.getValue()

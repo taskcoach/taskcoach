@@ -70,7 +70,11 @@ class Task(
         kwargs["description"] = description
         kwargs["categories"] = categories
         super().__init__(*args, **kwargs)
-        self.__status = None  # status cache
+        self.__status = None  # status cache (legacy)
+        # New single-source-of-truth fields (updated by computeStatus)
+        self.__computed_status = None
+        self.__status_text = ""
+        self.__status_icon = ""
         self.__dueSoonHours = self.settings.getint(
             "behavior", "duesoonhours"
         )  # pylint: disable=E1101
@@ -112,10 +116,19 @@ class Task(
             self.__computeRecursiveForegroundColor, "settings.fgcolor"
         )
         pub.subscribe(
+            self.__computeRecursiveForegroundColor, "settings.fgcolor_dark"
+        )
+        pub.subscribe(
             self.__computeRecursiveBackgroundColor, "settings.bgcolor"
         )
+        pub.subscribe(
+            self.__computeRecursiveBackgroundColor, "settings.bgcolor_dark"
+        )
         pub.subscribe(self.__computeRecursiveIcon, "settings.icon")
+        pub.subscribe(self.__computeRecursiveIcon, "settings.icon_dark")
         pub.subscribe(self.__computeRecursiveSelectedIcon, "settings.icon")
+        pub.subscribe(self.__computeRecursiveSelectedIcon, "settings.icon_dark")
+        pub.subscribe(self.__onThemeChanged, "settings.window.theme")
         pub.subscribe(
             self.onDueSoonHoursChanged, "settings.behavior.duesoonhours"
         )
@@ -124,6 +137,7 @@ class Task(
             "settings.behavior.markparentcompletedwhenallchildrencompleted",
         )
 
+        self.computeStatus()
         # Note: Status transitions (overdue, due soon, time to start) are now
         # handled by the global timer's StatusChecker via polling.
         # See docs/SCHEDULERS.md for architecture documentation.
@@ -672,6 +686,66 @@ class Task(
                 self.__status = status.inactive
         return self.__status
 
+    @classmethod
+    def statusChangedEventType(class_):
+        return "pubsub.task.status"
+
+    def computeStatus(self):
+        """Compute and store status fields. Single source of truth for status.
+
+        Called from:
+        - Task.__init__() — initial population on load
+        - recomputeAppearance() — immediate update on date changes
+        - StatusChecker._onSecond() — periodic safety net for time-based transitions
+
+        Independent calculation — does not touch the legacy __status cache.
+        Updates __computed_status, __status_text, and __status_icon.
+        Fires statusChangedEventType if status actually changed.
+        """
+        # Determine current status from task dates
+        if self.completionDateTime() != self.maxDateTime:
+            newStatus = status.completed
+        else:
+            now = date.Now()
+            if any(
+                prerequisite.completionDateTime() == self.maxDateTime
+                for prerequisite in self.prerequisites(
+                    recursive=True, upwards=True
+                )
+            ):
+                newStatus = status.inactive
+            elif self.dueDateTime() < now:
+                newStatus = status.overdue
+            elif 0 <= self.timeLeft().hours() < self.__dueSoonHours:
+                newStatus = status.duesoon
+            elif self.actualStartDateTime() <= now:
+                newStatus = status.active
+            elif self.plannedStartDateTime() < now:
+                newStatus = status.late
+            else:
+                newStatus = status.inactive
+        # Update stored fields
+        oldStatus = self.__computed_status
+        self.__computed_status = newStatus
+        self.__status_text = newStatus.pluralLabel.replace(
+            " tasks", "").replace("tasks", "").strip()
+        self.__status_icon = newStatus.getBitmap(self.settings)
+        # Fire event if status changed
+        if oldStatus is not None and newStatus != oldStatus:
+            pub.sendMessage(
+                self.statusChangedEventType(),
+                newValue=newStatus,
+                sender=self,
+            )
+
+    def statusText(self):
+        """Return the computed status display text (e.g. 'Active')."""
+        return self.__status_text
+
+    def statusIconName(self):
+        """Return the computed status icon name (e.g. 'led_blue_icon')."""
+        return self.__status_icon
+
     def onDueSoonHoursChanged(self, value):
         self.__dueSoonHours = value
         # Note: Status transitions are handled by global timer's StatusChecker
@@ -973,9 +1047,24 @@ class Task(
         return self.fgColorForStatus(self.status())
 
     @classmethod
+    def _themedSection(class_, section):
+        """Return the theme-appropriate settings section name."""
+        try:
+            theme = class_.settings.get("window", "theme")
+            if theme == "automatic":
+                from taskcoachlib.application.application import detect_dark_theme
+                is_dark = detect_dark_theme()
+            else:
+                is_dark = (theme == "dark")
+            return section + "_dark" if is_dark else section
+        except Exception:
+            return section
+
+    @classmethod
     def fgColorForStatus(class_, taskStatus):
+        section = class_._themedSection("fgcolor")
         return wx.Colour(
-            *ast.literal_eval(class_.settings.get("fgcolor", "%stasks" % taskStatus))
+            *ast.literal_eval(class_.settings.get(section, "%stasks" % taskStatus))
         )  # pylint: disable=E1101
 
     def appearanceChangedEvent(self, event):
@@ -1034,8 +1123,9 @@ class Task(
 
     @classmethod
     def bgColorForStatus(class_, taskStatus):
+        section = class_._themedSection("bgcolor")
         return wx.Colour(
-            *ast.literal_eval(class_.settings.get("bgcolor", "%stasks" % taskStatus))
+            *ast.literal_eval(class_.settings.get(section, "%stasks" % taskStatus))
         )  # pylint: disable=E1101
 
     # Font
@@ -1058,8 +1148,9 @@ class Task(
 
     @classmethod
     def fontForStatus(class_, taskStatus):
+        section = class_._themedSection("font")
         nativeInfoString = class_.settings.get(
-            "font", "%stasks" % taskStatus
+            section, "%stasks" % taskStatus
         )  # pylint: disable=E1101
         return (
             wx.FontFromNativeInfoString(nativeInfoString)
@@ -1107,13 +1198,21 @@ class Task(
         )
         return self.__recursiveSelectedIcon
 
+    def __onThemeChanged(self, value=None):
+        """Recompute all cached appearance when the theme changes."""
+        self.__computeRecursiveForegroundColor()
+        self.__computeRecursiveBackgroundColor()
+        self.__computeRecursiveIcon()
+        self.__computeRecursiveSelectedIcon()
+
     def statusIcon(self, selected=False):
         """Return the current icon of the task, based on its status."""
         return self.iconForStatus(self.status(), selected)
 
     def iconForStatus(self, taskStatus, selected=False):
+        section = self._themedSection("icon")
         iconName = self.settings.get(
-            "icon", "%stasks" % taskStatus
+            section, "%stasks" % taskStatus
         )  # pylint: disable=E1101
         iconName = self.pluralOrSingularIcon(iconName)
         if selected and iconName.startswith("folder"):
@@ -1122,6 +1221,7 @@ class Task(
 
     @patterns.eventSource
     def recomputeAppearance(self, recursive=False, event=None):
+        self.computeStatus()
         self.__status = None
         # Need to prepare for AttributeError because the cached recursive values
         # are not set in __init__ for performance reasons

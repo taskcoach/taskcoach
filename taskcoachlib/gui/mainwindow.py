@@ -106,6 +106,9 @@ class MainWindow(
             # Start global timer FIRST - other components subscribe to its events
             self._globalTimer = globaltimer.GlobalTimer(self)
             self._globalTimer.start()
+            self._statusChecker = globaltimer.StatusChecker(
+                self.taskFile.tasks()
+            )
 
             self._create_viewer_container()
             viewer.addViewers(self.viewer, self.taskFile, self.settings)

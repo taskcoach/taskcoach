@@ -410,10 +410,14 @@ class IOController(object):
         showerror=wx.MessageBox,
         filename=None,
         fileExists=os.path.exists,
+        defaultFilename=None,
     ):
+        fileOpts = self.__htmlFileDialogOpts.copy()
+        if defaultFilename:
+            fileOpts["default_filename"] = defaultFilename
         return self.export(
             _("Export as HTML"),
-            self.__htmlFileDialogOpts,
+            fileOpts,
             persistence.HTMLWriter,
             viewer,
             selectionOnly,
@@ -423,6 +427,7 @@ class IOController(object):
             fileExists,
             separateCSS=separateCSS,
             columns=columns,
+            taskFile=self.__taskFile,
         )
 
     def exportAsCSV(
@@ -432,16 +437,21 @@ class IOController(object):
         separateDateAndTimeColumns=False,
         columns=None,
         fileExists=os.path.exists,
+        defaultFilename=None,
     ):
+        fileOpts = self.__csvFileDialogOpts.copy()
+        if defaultFilename:
+            fileOpts["default_filename"] = defaultFilename
         return self.export(
             _("Export as CSV"),
-            self.__csvFileDialogOpts,
+            fileOpts,
             persistence.CSVWriter,
             viewer,
             selectionOnly,
             separateDateAndTimeColumns=separateDateAndTimeColumns,
             columns=columns,
             fileExists=fileExists,
+            taskFile=self.__taskFile,
         )
 
     def exportAsICalendar(
@@ -464,15 +474,20 @@ class IOController(object):
         )
 
     def exportAsTodoTxt(
-        self, viewer, selectionOnly=False, fileExists=os.path.exists
+        self, viewer, selectionOnly=False, fileExists=os.path.exists,
+        defaultFilename=None,
     ):
+        fileOpts = self.__todotxtFileDialogOpts.copy()
+        if defaultFilename:
+            fileOpts["default_filename"] = defaultFilename
         return self.export(
             _("Export as Todo.txt"),
-            self.__todotxtFileDialogOpts,
+            fileOpts,
             persistence.TodoTxtWriter,
             viewer,
             selectionOnly,
             fileExists=fileExists,
+            taskFile=self.__taskFile,
         )
 
     def importCSV(self, **kwargs):

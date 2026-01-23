@@ -100,6 +100,8 @@ class BaseTaskViewer(
     base.WithAttachmentsViewerMixin,
     base.TreeViewer,
 ):
+    coreObjectType = "tasks"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.statusMessages = TaskViewerStatusMessages(self)
@@ -136,7 +138,8 @@ class BaseTaskViewer(
             )
 
     def __registerForAppearanceChanges(self):
-        for appearance in ("font", "fgcolor", "bgcolor", "icon"):
+        for appearance in ("font", "fgcolor", "bgcolor", "icon",
+                           "font_dark", "fgcolor_dark", "bgcolor_dark", "icon_dark"):
             appearanceSettings = [
                 "settings.%s.%s" % (appearance, setting)
                 for setting in (
@@ -152,6 +155,7 @@ class BaseTaskViewer(
                 pub.subscribe(
                     self.onAppearanceSettingChange, appearanceSetting
                 )
+        pub.subscribe(self.onAppearanceSettingChange, "settings.window.theme")
         self.registerObserver(
             self.onAttributeChanged_Deprecated,
             eventType=task.Task.appearanceChangedEventType(),
@@ -1490,6 +1494,47 @@ class TaskViewer(
                 )
             )
 
+        # Status columns (derived from dates, updated by scheduler)
+        columns.append(
+            widgets.Column(
+                "status",
+                _("Status"),
+                task.Task.statusChangedEventType(),
+                sortCallback=uicommand.ViewerSortByCommand(
+                    viewer=self, value="status"
+                ),
+                renderCallback=lambda task: task.statusText(),
+                width=self.getColumnWidth("status"),
+                **kwargs
+            )
+        )
+        columns.append(
+            widgets.Column(
+                "statusIcon",
+                _("Status icon"),
+                task.Task.statusChangedEventType(),
+                width=self.getColumnWidth("statusIcon"),
+                alignment=wx.LIST_FORMAT_LEFT,
+                imageIndicesCallback=self.statusImageIndices,
+                renderCallback=lambda task: "",
+                **kwargs
+            )
+        )
+        columns.append(
+            widgets.Column(
+                "statusIconText",
+                _("Status combo"),
+                task.Task.statusChangedEventType(),
+                sortCallback=uicommand.ViewerSortByCommand(
+                    viewer=self, value="status"
+                ),
+                renderCallback=lambda task: task.statusText(),
+                width=self.getColumnWidth("statusIconText"),
+                imageIndicesCallback=self.statusImageIndices,
+                **kwargs
+            )
+        )
+
         dependsOnEffortFeature = [
             "budget",
             "timeSpent",
@@ -1663,6 +1708,18 @@ class TaskViewer(
                 **kwargs
             )
         )
+        columns.append(
+            widgets.Column(
+                "id",
+                _("ID"),
+                width=self.getColumnWidth("id"),
+                renderCallback=lambda task: task.id(),
+                sortCallback=uicommand.ViewerSortByCommand(
+                    viewer=self, value="id"
+                ),
+                **kwargs
+            )
+        )
         return columns
 
     def createColumnUICommands(self):
@@ -1683,6 +1740,9 @@ class TaskViewer(
                         "actualStartDateTime",
                         "completionDateTime",
                         "recurrence",
+                        "status",
+                        "statusIcon",
+                        "statusIconText",
                     ],
                     viewer=self,
                 ),
@@ -1721,6 +1781,25 @@ class TaskViewer(
                     menuText=_("&Recurrence"),
                     helpText=_("Show/hide recurrence column"),
                     setting="recurrence",
+                    viewer=self,
+                ),
+                None,
+                uicommand.ViewColumn(
+                    menuText=_("&Status"),
+                    helpText=_("Show/hide status text column"),
+                    setting="status",
+                    viewer=self,
+                ),
+                uicommand.ViewColumn(
+                    menuText=_("Status &icon"),
+                    helpText=_("Show/hide status icon column"),
+                    setting="statusIcon",
+                    viewer=self,
+                ),
+                uicommand.ViewColumn(
+                    menuText=_("Status &combo"),
+                    helpText=_("Show/hide status combo column (icon and text)"),
+                    setting="statusIconText",
                     viewer=self,
                 ),
             ),
@@ -1865,6 +1944,12 @@ class TaskViewer(
                     setting="modificationDateTime",
                     viewer=self,
                 ),
+                uicommand.ViewColumn(
+                    menuText=_("&ID"),
+                    helpText=_("Show/hide ID column"),
+                    setting="id",
+                    viewer=self,
+                ),
             ]
         )
         return commands
@@ -2007,6 +2092,12 @@ class TaskViewer(
                 value = recursiveValue
                 template = "(%s)"
         return template % renderValue(value, *extraRenderArgs)
+
+    def statusImageIndices(self, task):
+        """Return image index for the task's current status icon."""
+        iconName = task.statusIconName()
+        index = self.imageIndex.get(iconName, -1)
+        return {wx.TreeItemIcon_Normal: index}
 
     def onEditPlannedStartDateTime(self, item, newValue):
         keep_delta = self.settings.get("view", "datestied") == "startdue"
@@ -2202,8 +2293,18 @@ class TaskStatsViewer(BaseTaskViewer):  # pylint: disable=W0223
             series[0].SetValue(1)
 
     def getFgColor(self, status):
+        try:
+            theme = self.settings.get("window", "theme")
+            if theme == "automatic":
+                from taskcoachlib.application.application import detect_dark_theme
+                is_dark = detect_dark_theme()
+            else:
+                is_dark = (theme == "dark")
+            section = "fgcolor_dark" if is_dark else "fgcolor"
+        except Exception:
+            section = "fgcolor"
         color = wx.Colour(
-            *ast.literal_eval(self.settings.get("fgcolor", "%stasks" % status))
+            *ast.literal_eval(self.settings.get(section, "%stasks" % status))
         )
         if status == task.status.active and color == wx.BLACK:
             color = wx.BLUE
@@ -2367,8 +2468,18 @@ else:
             return graph, visual_style
 
         def getFgColor(self, status):
+            try:
+                theme = self.settings.get("window", "theme")
+                if theme == "automatic":
+                    from taskcoachlib.application.application import detect_dark_theme
+                    is_dark = detect_dark_theme()
+                else:
+                    is_dark = (theme == "dark")
+                section = "fgcolor_dark" if is_dark else "fgcolor"
+            except Exception:
+                section = "fgcolor"
             color = wx.Colour(
-                *ast.literal_eval(self.settings.get("fgcolor", "%stasks" % status))
+                *ast.literal_eval(self.settings.get(section, "%stasks" % status))
             )
             if status == task.status.active and color == wx.BLACK:
                 color = wx.BLUE

@@ -429,12 +429,15 @@ def VCalFromTask(task, encoding=True, doFold=True, selectedFields=None):
         components.append("CATEGORIES%s:%s" % (encoding_str, categories))
 
     if "status" in selectedFields:
+        # RFC 5545 VTODO STATUS: NEEDS-ACTION, IN-PROCESS, COMPLETED, CANCELLED
+        # Fixes: https://sourceforge.net/p/taskcoach/bugs/1560/
+        #         https://github.com/taskcoach/taskcoach/issues/281
         if task.completed():
             components.append("STATUS:COMPLETED")
         elif task.active():
-            components.append("STATUS:NEEDS-ACTION")
+            components.append("STATUS:IN-PROCESS")
         else:
-            components.append("STATUS:CANCELLED")  # Hum...
+            components.append("STATUS:NEEDS-ACTION")
 
     if "description" in selectedFields:
         components.append(

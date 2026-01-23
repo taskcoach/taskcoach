@@ -241,6 +241,7 @@ chooseableItemImages = dict(
     folder_red_icon=_("Red folder"),
     folder_yellow_icon=_("Yellow folder"),
     folder_blue_arrow_icon=_("Blue folder with arrow"),
+    fsview_icon=_("Color swatches"),
     heart_icon=_("Heart"),
     hearts_icon=_("Hearts"),
     house_green_icon=_("Green house"),

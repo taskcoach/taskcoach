@@ -52,7 +52,47 @@ You can edit this file, it will not be overwritten by %(name)s.
 )
 
 
+class _ViewerProxy(object):
+    """Lightweight viewer proxy for 'All' exports when no real viewer is available."""
+
+    def __init__(self, items, columns, title, isShowingTasks=False):
+        self._items = items
+        self._columns = columns
+        self._title = title
+        self._isShowingTasks = isShowingTasks
+
+    def title(self):
+        return self._title
+
+    def visibleColumns(self):
+        return self._columns
+
+    def isTreeViewer(self):
+        return False
+
+    def visibleItems(self):
+        return self._items
+
+    def isselected(self, item):
+        return True
+
+    def isSortable(self):
+        return False
+
+    def isSortedBy(self, name):
+        return False
+
+    def isShowingTasks(self):
+        return self._isShowingTasks
+
+
 class HTMLWriter(object):
+    # Constants for "All" export options
+    ALL_TASKS = "ALL_TASKS"
+    ALL_EFFORTS = "ALL_EFFORTS"
+    ALL_CATEGORIES = "ALL_CATEGORIES"
+    ALL_NOTES = "ALL_NOTES"
+
     def __init__(self, fd, filename=None):
         self.__fd = fd
         self.__filename = filename
@@ -67,7 +107,12 @@ class HTMLWriter(object):
         selectionOnly=False,
         separateCSS=False,
         columns=None,
+        taskFile=None,
     ):
+        if isinstance(viewer, str) and viewer.startswith("ALL_"):
+            viewer = self._createProxy(viewer, columns, taskFile)
+            selectionOnly = False
+
         cssFilename = (
             os.path.basename(self.__cssFilename) if separateCSS else ""
         )
@@ -78,6 +123,27 @@ class HTMLWriter(object):
         if separateCSS:
             self._writeCSS()
         return count
+
+    def _createProxy(self, viewerType, columns, taskFile):
+        """Create a viewer proxy for 'All' exports."""
+        items = []
+        title = "Export"
+        isShowingTasks = False
+        if taskFile:
+            if viewerType == self.ALL_TASKS:
+                items = list(taskFile.tasks())
+                title = "Tasks"
+                isShowingTasks = True
+            elif viewerType == self.ALL_EFFORTS:
+                items = list(taskFile.efforts())
+                title = "Efforts"
+            elif viewerType == self.ALL_CATEGORIES:
+                items = list(taskFile.categories())
+                title = "Categories"
+            elif viewerType == self.ALL_NOTES:
+                items = list(taskFile.notes())
+                title = "Notes"
+        return _ViewerProxy(items, columns or [], title, isShowingTasks)
 
     def _writeCSS(self, open=open):  # pylint: disable=W0622
         if not self.__cssFilename or os.path.exists(self.__cssFilename):

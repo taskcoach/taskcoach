@@ -48,6 +48,7 @@ Every 1 second (_onTick):
 | `timer.date` | `TaskFilter` | Re-filter tasks at midnight |
 | `timer.date` | `CalendarViewer` | Redraw calendar at midnight |
 | `timer.minute` | `MinuteRefresher` | Update "time left" displays |
+| `timer.second` | `StatusChecker` | Detect task status transitions (overdue, due soon, start) |
 | `timer.second` | `ReminderController` | Check for due reminders |
 | `timer.second` | `TaskbarIcon` | Update tracking tooltip |
 | `timer.second` | `Editor` | Update budget/revenue while tracking |
@@ -56,6 +57,7 @@ Every 1 second (_onTick):
 
 | Component | File | How It Uses Timer |
 |-----------|------|-------------------|
+| Status Checker | `gui/timer.py` (instantiated in `gui/mainwindow.py`) | Subscribes to `timer.second`, detects status transitions. See `docs/TASK_STATUS.md` |
 | Reminder Controller | `gui/remindercontroller.py` | Subscribes to `timer.second`, polls all tasks |
 | Task Filter | `domain/task/filter.py` | Subscribes to `timer.date`, calls `reset()` |
 | Calendar Viewer | `gui/viewer/task.py` | Subscribes to `timer.date`, calls refresh |
@@ -176,3 +178,5 @@ The old system used a custom `Scheduler` class (`domain/date/scheduler.py`) that
 | 2026-01-12 | Completed migration of all components |
 | 2026-01-12 | Removed old `scheduler.py` entirely (no stub) |
 | 2026-01-12 | Updated all tests to use new architecture |
+| 2026-01-22 | StatusChecker instantiated in mainwindow.py (was dead code) |
+| 2026-01-22 | computeStatus() called from recomputeAppearance() for immediate updates |

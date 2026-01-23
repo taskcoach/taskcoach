@@ -149,6 +149,10 @@ class Dialog(sized_controls.SizedDialog):
             wxhelper.getButtonFromStdDialogButtonSizer(
                 buttonSizer, wx.ID_CANCEL
             ).Bind(wx.EVT_BUTTON, self.cancel)
+        if self._buttonTypes & wx.APPLY:
+            wxhelper.getButtonFromStdDialogButtonSizer(
+                buttonSizer, wx.ID_APPLY
+            ).Bind(wx.EVT_BUTTON, self.apply)
         if self._buttonTypes == wx.ID_CLOSE:
             wxhelper.getButtonFromStdDialogButtonSizer(
                 buttonSizer, wx.ID_OK
@@ -161,6 +165,9 @@ class Dialog(sized_controls.SizedDialog):
             event.Skip()
         self.Close(True)
         self.Destroy()
+
+    def apply(self, event=None):
+        pass
 
     def cancel(self, event=None):
         if event:
@@ -198,6 +205,9 @@ class NotebookDialog(Dialog):
     def ok(self, *args, **kwargs):
         self.okPages()
         super().ok(*args, **kwargs)
+
+    def apply(self, event=None):
+        self.okPages()
 
     def okPages(self, *args, **kwargs):
         for page in self._interior:

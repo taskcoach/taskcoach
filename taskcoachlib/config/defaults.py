@@ -552,6 +552,38 @@ defaults = {
         "inactivetasks": "led_grey_icon",
         "duesoontasks": "led_orange_icon",
     },
+    "fgcolor_dark": {
+        "activetasks": "(255, 255, 255, 255)",
+        "latetasks": "(200, 160, 255, 255)",
+        "completedtasks": "(100, 255, 100, 255)",
+        "overduetasks": "(255, 100, 100, 255)",
+        "inactivetasks": "(140, 140, 140, 255)",
+        "duesoontasks": "(255, 180, 80, 255)",
+    },
+    "bgcolor_dark": {
+        "activetasks": "(40, 40, 40, 255)",
+        "latetasks": "(40, 40, 40, 255)",
+        "completedtasks": "(40, 40, 40, 255)",
+        "overduetasks": "(40, 40, 40, 255)",
+        "inactivetasks": "(40, 40, 40, 255)",
+        "duesoontasks": "(40, 40, 40, 255)",
+    },
+    "font_dark": {
+        "activetasks": "",
+        "latetasks": "",
+        "completedtasks": "",
+        "overduetasks": "",
+        "inactivetasks": "",
+        "duesoontasks": "",
+    },
+    "icon_dark": {
+        "activetasks": "led_blue_icon",
+        "latetasks": "led_purple_icon",
+        "completedtasks": "checkmark_green_icon",
+        "overduetasks": "led_red_icon",
+        "inactivetasks": "led_grey_icon",
+        "duesoontasks": "led_orange_icon",
+    },
     "version": {
         "python": "",  # Filled in by the Settings class when saving the settings
         "wxpython": "",  # Idem
@@ -594,6 +626,18 @@ defaults = {
         # Language code for spell checking (empty = auto-detect from system locale)
         # Examples: "en_US", "en_GB", "de_DE", "fr_FR", "es_ES"
         "language": "",
+    },
+    "calendar_light": {
+        "weekday_header_bg": "(192, 192, 192, 255)",
+        "weekday_header_fg": "(0, 0, 255, 255)",
+        "weekend_day_fg": "(255, 0, 0, 255)",
+        "today_border": "(255, 0, 0, 255)",
+    },
+    "calendar_dark": {
+        "weekday_header_bg": "(60, 60, 60, 255)",
+        "weekday_header_fg": "(100, 160, 255, 255)",
+        "weekend_day_fg": "(255, 100, 100, 255)",
+        "today_border": "(255, 100, 100, 255)",
     },
 }
 

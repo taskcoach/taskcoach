@@ -710,6 +710,47 @@ ctrl.SetFont(wx.Font(12, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGH
 
 The control uses `wx.EVT_PAINT` with `wx.PaintDC` for custom rendering. Each subfield and literal is positioned during `__init__` and stored in `_widgets` as `(item, x, y, w, h)` tuples.
 
+### Theme Colours
+
+Most colours are queried from `wx.SystemSettings` at paint time for live theme switching. Calendar-specific colours are configurable via **Edit > Preferences > Theme** with separate settings for light and dark modes.
+
+**FieldsCtrl (date/time entry fields):**
+
+| Element | Colour Source | Notes |
+|---------|--------------|-------|
+| Normal text | `SYS_COLOUR_WINDOWTEXT` | Both field values and literal separators |
+| Focused field background | `DrawItemSelectionRect` | Native selection rendering |
+| Focused field text | `SYS_COLOUR_HIGHLIGHTTEXT` | |
+| Disabled "N/A" text | `SYS_COLOUR_GRAYTEXT` | Shown when checkbox unchecked |
+| Read-only text | `SYS_COLOUR_GRAYTEXT` | Shown when `SetEditable(False)` |
+| Border | `DrawTextCtrl` | Native border with focus/disabled flags |
+
+**Calendar Popup (`_CalendarPopup`):**
+
+| Element | Colour Source | Notes |
+|---------|--------------|-------|
+| Header text (month/year) | `SYS_COLOUR_WINDOWTEXT` | |
+| Navigation arrows | `SYS_COLOUR_WINDOWTEXT` | Prev/next month, today button |
+| Weekday header background | `calendar_light/dark.weekday_header_bg` | Configurable in Theme preferences |
+| Weekday header foreground | `calendar_light/dark.weekday_header_fg` | Configurable in Theme preferences |
+| Weekday day numbers | `SYS_COLOUR_WINDOWTEXT` | Mon-Fri |
+| Weekend day numbers | `calendar_light/dark.weekend_day_fg` | Configurable in Theme preferences |
+| Inactive days background | `SYS_COLOUR_BTNFACE` | Days outside min/max range (not hoverable) |
+| Other month days background | `SYS_COLOUR_BTNFACE` | Days not in current month |
+| Highlighted day background | `DrawItemSelectionRect` | Native selection (hover/keyboard), drawn on top of backgrounds |
+| Highlighted day text | `SYS_COLOUR_HIGHLIGHTTEXT` | Works for both current and other-month days |
+| Today border | `calendar_light/dark.today_border` | Configurable in Theme preferences |
+| Popup border | `DrawTextCtrl` | With `CONTROL_FOCUSED` flag |
+
+**Calendar Colour Defaults:**
+
+| Setting | Light Mode | Dark Mode |
+|---------|-----------|-----------|
+| `weekday_header_bg` | (192, 192, 192) grey | (60, 60, 60) dark grey |
+| `weekday_header_fg` | (0, 0, 255) blue | (100, 160, 255) soft blue |
+| `weekend_day_fg` | (255, 0, 0) red | (255, 100, 100) soft red |
+| `today_border` | (255, 0, 0) red | (255, 100, 100) soft red |
+
 ### Native Theme Border
 
 Controls use `wx.RendererNative.Get().DrawTextCtrl()` to draw borders matching the system theme:

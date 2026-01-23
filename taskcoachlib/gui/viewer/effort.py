@@ -42,6 +42,7 @@ class EffortViewer(
 ):
     defaultTitle = _("Effort")
     defaultBitmap = "clock_icon"
+    coreObjectType = "efforts"
     SorterClass = effort.EffortSorter
 
     def __init__(self, parent, taskFile, settings, *args, **kwargs):
@@ -429,6 +430,18 @@ class EffortViewer(
                     ),
                 ]
             ]
+            + [
+                widgets.Column(
+                    "id",
+                    _("ID"),
+                    width=self.getColumnWidth("id"),
+                    renderCallback=lambda effort: effort.id(),
+                    sortCallback=uicommand.ViewerSortByCommand(
+                        viewer=self, value="id"
+                    ),
+                    **kwargs
+                )
+            ]
         )
 
     def _showWeekdayColumns(self, show=True):
@@ -535,6 +548,14 @@ class EffortViewer(
                     viewer=self,
                 )
             )
+        columnUICommands.append(
+            uicommand.ViewColumn(
+                menuText=_("&ID"),
+                helpText=_("Show/hide ID column"),
+                setting="id",
+                viewer=self,
+            )
+        )
         return columnUICommands
 
     def createCreationToolBarUICommands(self):

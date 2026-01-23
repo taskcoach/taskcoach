@@ -72,6 +72,7 @@ import math
 import datetime
 import time
 import calendar
+from pubsub import pub
 
 from taskcoachlib.i18n import _
 from taskcoachlib.domain import date
@@ -376,6 +377,44 @@ def getDefaultDurationHourChoices():
         list of hour values for dropdown
     """
     return [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20]
+
+
+def getCalendarColours():
+    """Get the active calendar colour set based on current theme mode.
+
+    Returns a dict with keys: 'weekday_header_bg', 'weekday_header_fg',
+    'weekend_day_fg', 'today_border'. Each value is a wx.Colour.
+    """
+    try:
+        import ast
+        app = wx.GetApp()
+        s = getattr(app, 'settings', None)
+        if s is None:
+            from taskcoachlib.config import settings as settings_mod
+            s = settings_mod.Settings()
+        theme = s.get("window", "theme")
+
+        if theme == "automatic":
+            from taskcoachlib.application.application import detect_dark_theme
+            is_dark = detect_dark_theme()
+        else:
+            is_dark = (theme == "dark")
+
+        section = "calendar_dark" if is_dark else "calendar_light"
+
+        return {
+            'weekday_header_bg': wx.Colour(*ast.literal_eval(s.get(section, "weekday_header_bg"))),
+            'weekday_header_fg': wx.Colour(*ast.literal_eval(s.get(section, "weekday_header_fg"))),
+            'weekend_day_fg': wx.Colour(*ast.literal_eval(s.get(section, "weekend_day_fg"))),
+            'today_border': wx.Colour(*ast.literal_eval(s.get(section, "today_border"))),
+        }
+    except Exception:
+        return {
+            'weekday_header_bg': wx.LIGHT_GREY,
+            'weekday_header_fg': wx.BLUE,
+            'weekend_day_fg': wx.RED,
+            'today_border': wx.RED,
+        }
 
 
 def monthcalendarex(year, month, weeks=0):
@@ -730,6 +769,14 @@ class _CalendarPopup(_PopupWindow):
         self.__font = font
         self.__days = []
         super().__init__(*args, **kwargs)
+        pub.subscribe(self._onColoursChanged, 'calendar.colours.changed')
+
+    def _onColoursChanged(self):
+        self.Refresh()
+
+    def Dismiss(self):
+        pub.unsubscribe(self._onColoursChanged, 'calendar.colours.changed')
+        super().Dismiss()
 
     def HandleKey(self, event):
         """Handle keyboard navigation within the calendar popup.
@@ -838,10 +885,14 @@ class _CalendarPopup(_PopupWindow):
         self.__contentOffsetX = contentOffsetX  # Store for content positioning
         self.__contentOffsetY = contentOffsetY
 
+        # Get theme-aware calendar colours
+        colours = getCalendarColours()
+
         # Header: current month/year
-        dc.SetPen(wx.BLACK_PEN)
-        dc.SetBrush(wx.BLACK_BRUSH)
-        dc.SetTextForeground(wx.BLACK)
+        textColour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+        dc.SetPen(wx.Pen(textColour))
+        dc.SetBrush(wx.Brush(textColour))
+        dc.SetTextForeground(textColour)
 
         header = datetime.date(year=self.__year, month=self.__month, day=1).strftime("%B %Y")
         tw, th = dc.GetTextExtent(header)
@@ -853,8 +904,8 @@ class _CalendarPopup(_PopupWindow):
         cy = contentOffsetY + th // 2 + 1
 
         gc = wx.GraphicsContext.Create(dc)
-        gc.SetPen(wx.BLACK_PEN)
-        gc.SetBrush(wx.BLACK_BRUSH)
+        gc.SetPen(gc.CreatePen(wx.Pen(textColour)))
+        gc.SetBrush(gc.CreateBrush(wx.Brush(textColour)))
 
         # Prev month button (left arrow)
         if self.__month != 1 or self.__year != 1:
@@ -895,10 +946,11 @@ class _CalendarPopup(_PopupWindow):
         y = contentOffsetY + th + 2
 
         # Weekday headers
-        dc.SetPen(wx.LIGHT_GREY_PEN)
-        dc.SetBrush(wx.LIGHT_GREY_BRUSH)
+        hdrBg = colours['weekday_header_bg']
+        dc.SetPen(wx.Pen(hdrBg))
+        dc.SetBrush(wx.Brush(hdrBg))
         dc.DrawRectangle(contentOffsetX, y, self.__maxDim * 7, self.__maxDim)
-        dc.SetTextForeground(wx.BLUE)
+        dc.SetTextForeground(colours['weekday_header_fg'])
         for idx, hdr in enumerate(calendar.weekheader(2).split()):
             tw, th_hdr = dc.GetTextExtent(hdr)
             dc.DrawText(
@@ -920,10 +972,22 @@ class _CalendarPopup(_PopupWindow):
                 )
                 thisMonth = year == self.__year and month == self.__month
 
-                dc.SetPen(wx.BLACK_PEN)
+                dc.SetPen(wx.Pen(textColour))
                 dc.SetTextForeground(
-                    wx.RED if (dayIndex + calendar.firstweekday()) % 7 in [5, 6] else wx.BLACK
+                    colours['weekend_day_fg'] if (dayIndex + calendar.firstweekday()) % 7 in [5, 6] else textColour
                 )
+
+                # Draw backgrounds first so highlight can paint on top
+                if not active:
+                    inactiveBg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+                    dc.SetPen(wx.Pen(inactiveBg))
+                    dc.SetBrush(wx.Brush(inactiveBg))
+                    dc.DrawRectangle(x, y, self.__maxDim, self.__maxDim)
+                elif not thisMonth:
+                    otherMonthBg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+                    dc.SetPen(wx.Pen(otherMonthBg))
+                    dc.SetBrush(wx.Brush(otherMonthBg))
+                    dc.DrawRectangle(x, y, self.__maxDim, self.__maxDim)
 
                 isHighlighted = (dt == self.__highlightedDate and active)
 
@@ -934,21 +998,10 @@ class _CalendarPopup(_PopupWindow):
                         wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
                     )
 
-                if not active:
-                    dc.SetPen(wx.LIGHT_GREY_PEN)
-                    dc.SetBrush(wx.LIGHT_GREY_BRUSH)
-                    dc.DrawRectangle(x, y, self.__maxDim, self.__maxDim)
-                elif not thisMonth:
-                    # Light grey for days outside current month
-                    color = wx.Colour(230, 230, 230)
-                    dc.SetPen(wx.Pen(color))
-                    dc.SetBrush(wx.Brush(color))
-                    dc.DrawRectangle(x, y, self.__maxDim, self.__maxDim)
-
-                # Highlight today with red border
+                # Highlight today with border
                 now = datetime.datetime.now()
                 if (dt.year, dt.month, dt.day) == (now.year, now.month, now.day):
-                    dc.SetPen(wx.RED_PEN)
+                    dc.SetPen(wx.Pen(colours['today_border']))
                     dc.SetBrush(wx.TRANSPARENT_BRUSH)
                     dc.DrawRectangle(x, y, self.__maxDim, self.__maxDim)
 
@@ -1344,9 +1397,10 @@ class FieldsCtrl(wx.Panel):
 
         if self.IsEnabled() and not self._readOnly:
             # Normal editable mode - show values
+            textColour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
             for widget, x, y, ww, hh in self._widgets:
                 if isinstance(widget, str):
-                    dc.SetTextForeground(wx.BLACK)
+                    dc.SetTextForeground(textColour)
                     dc.DrawText(widget, int(x), int(y))
                 else:
                     # NumericField - draw focus highlight only if focused
@@ -1356,7 +1410,7 @@ class FieldsCtrl(wx.Panel):
                             wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
                         )
                     else:
-                        dc.SetTextForeground(wx.BLACK)
+                        dc.SetTextForeground(textColour)
                     widget.PaintValue(dc, x, y, ww, hh)
         elif not self.IsEnabled():
             # Disabled mode (unchecked checkbox) - show "N/A" centered
@@ -1364,7 +1418,7 @@ class FieldsCtrl(wx.Panel):
             # Matches old SmartDateTimeCtrl behavior (smartdatetimectrl.py:667-671)
             text = "N/A"
             tw, th = dc.GetTextExtent(text)
-            dc.SetTextForeground(wx.LIGHT_GREY)
+            dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
             dc.DrawText(text, (w - tw) // 2, (h - th) // 2)
         else:
             # Read-only mode (inactive) - show values greyed but visible

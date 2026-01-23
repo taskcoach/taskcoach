@@ -22,16 +22,20 @@ from taskcoachlib.domain import date
 
 class TodoTxtWriter(object):
     VERSION = 1
+    ALL_TASKS = "ALL_TASKS"
 
     def __init__(self, fd, filename):
         self.__fd = fd
         self.__filename = filename
         self.__maxDateTime = date.DateTime()
 
-    def write(self, viewer, settings, selectionOnly, **kwargs):
-        tasks = viewer.visibleItems()
-        if selectionOnly:
-            tasks = [task for task in tasks if viewer.isselected(task)]
+    def write(self, viewer, settings, selectionOnly, taskFile=None, **kwargs):
+        if isinstance(viewer, str) and viewer == self.ALL_TASKS:
+            tasks = list(taskFile.tasks()) if taskFile else []
+        else:
+            tasks = viewer.visibleItems()
+            if selectionOnly:
+                tasks = [task for task in tasks if viewer.isselected(task)]
         return self.writeTasks(tasks)
 
     def writeTasks(self, tasks):

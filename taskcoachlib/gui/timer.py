@@ -228,6 +228,10 @@ class StatusChecker:
         for task in tasksToUpdate:
             task.recomputeAppearance()
 
+        # Update computed status fields for all tasks
+        for task in self._taskList:
+            task.computeStatus()
+
     def _shouldCheckTask(self, task):
         """
         Optimization: Skip tasks that can't change status.

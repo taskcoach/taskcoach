@@ -12,6 +12,7 @@ This document tracks planned improvements and known issues to address in future 
 - [Text-to-Speech Modernization](#text-to-speech-modernization)
 - [GTK3 Widget Sizing Inconsistency](#gtk3-widget-sizing-inconsistency)
 - [Other TODOs](#other-todos)
+  - [EVT_TEXT Compatibility Shim](#evt_text-compatibility-shim-in-multilinetextctrl)
 
 ---
 
@@ -332,7 +333,9 @@ The custom `SpinCtrl` in `taskcoachlib/widgets/spinctrl.py` uses a `TextCtrl` + 
 
 ## Other TODOs
 
-*Add future TODO items here as they are identified.*
+### EVT_TEXT Compatibility Shim in MultiLineTextCtrl
+
+`MultiLineTextCtrl` (StyledTextCtrl/Scintilla) overrides `Bind()` to remap `wx.EVT_TEXT` to `stc.EVT_STC_CHANGE` for compatibility with code written for `wx.TextCtrl`. If we keep Scintilla long-term, refactor all callers to use `EVT_STC_CHANGE` directly and remove the shim. File: `taskcoachlib/widgets/textctrl.py`.
 
 ---
 

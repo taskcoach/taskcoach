@@ -111,6 +111,59 @@ Spell checking is configured in **Edit > Preferences > Regional**:
 - **Enable spell checking**: Toggle on/off
 - **Language**: Dropdown shows installed dictionaries (auto-detects system language if not set)
 
+## Planned: Theme-Aware STC Improvements
+
+The following improvements are planned to be added incrementally to the inner `_StyledTextCtrl` class. They make the Scintilla control respond to system theme colours (light/dark) instead of using hardcoded values.
+
+### 1. Theme Colours (`_applyThemeColours` method)
+
+Replace the hardcoded font/colour setup in `_setupTextMode` with a reusable method:
+
+```python
+def _applyThemeColours(self):
+    """Apply system theme colours to the control."""
+    font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+    self.StyleSetFont(stc.STC_STYLE_DEFAULT, font)
+    self.StyleSetForeground(stc.STC_STYLE_DEFAULT, wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+    self.StyleSetBackground(stc.STC_STYLE_DEFAULT, wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+    self.StyleClearAll()
+    self.SetCaretForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+    self.SetSelBackground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT))
+    self.SetSelForeground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
+```
+
+**Note:** `StyleSetBackground` sets Scintilla's internal rendering background, which may affect `GetBackgroundColour()` on GTK. The wrapper panel's background must be set from the parent (not the STC) to avoid white corners at the rounded border.
+
+### 2. System Link Colour for URLs
+
+Replace hardcoded `wx.BLUE` in `_setupIndicators` with system link colour:
+
+```python
+linkColour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HOTLIGHT)
+self.IndicatorSetForeground(self.URL_INDICATOR, linkColour)
+self.IndicatorSetHoverForeground(self.URL_INDICATOR, linkColour)
+self.SetHotspotActiveForeground(True, linkColour)
+```
+
+### 3. Live Theme Switching (on wrapper panel)
+
+Add `EVT_SYS_COLOUR_CHANGED` handler on the `MultiLineTextCtrl` wrapper:
+
+```python
+self.Bind(wx.EVT_SYS_COLOUR_CHANGED, self._onSysColourChanged)
+
+def _onSysColourChanged(self, event):
+    event.Skip()
+    self._textCtrl._applyThemeColours()
+    self._textCtrl._setupIndicators()
+    self.SetBackgroundColour(self.GetParent().GetBackgroundColour())
+    self.Refresh()
+```
+
+**Important:** Panel bg must come from `self.GetParent().GetBackgroundColour()` (not the STC) so rounded corners blend with the dialog background.
+
+---
+
 ## References
 
 - [pyenchant documentation](https://pyenchant.github.io/pyenchant/)

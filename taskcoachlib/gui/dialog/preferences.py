@@ -28,6 +28,7 @@ from taskcoachlib.meta import data
 from taskcoachlib.i18n import _
 from wx.lib.agw.hyperlink import HyperLinkCtrl
 from wx.adv import BitmapComboBox
+from pubsub import pub
 import ast
 import wx, calendar
 import wx.lib.scrolledpanel
@@ -164,7 +165,7 @@ class SettingsPageBase(widgets.BookPage):
         self._integerSettings.append((section, setting, spin))
 
     def addWorkingHoursSetting(self, text, helpText=""):
-        """Add a working hours setting with start/end spinners and end-of-day checkbox."""
+        """Add a working hours setting with start/end dropdowns and end-of-day checkbox."""
         startHour = self.getint("view", "efforthourstart")
         endHour = self.getint("view", "efforthourend")
         endOfDay = self.getboolean("view", "efforthourend_endofday")
@@ -178,18 +179,20 @@ class SettingsPageBase(widgets.BookPage):
         panel = wx.Panel(self)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        # Start hour spinner (0-23)
-        self._workingHourStartSpin = widgets.SpinCtrl(
-            panel, min=0, max=23, size=(50, -1), value=startHour
-        )
-        sizer.Add(self._workingHourStartSpin, 0, wx.ALIGN_CENTER_VERTICAL)
+        hours = [str(h) for h in range(24)]
+
+        # Start hour dropdown (0-23)
+        self._workingHourStartChoice = wx.Choice(panel, choices=hours)
+        self._workingHourStartChoice.SetSelection(startHour)
+        self._workingHourStartChoice.Bind(wx.EVT_CHOICE, self._onWorkingHourStartChanged)
+        sizer.Add(self._workingHourStartChoice, 0, wx.ALIGN_CENTER_VERTICAL)
         sizer.Add(wx.StaticText(panel, label=_(" to ")), 0, wx.ALIGN_CENTER_VERTICAL)
 
-        # End hour spinner (0-23)
-        self._workingHourEndSpin = widgets.SpinCtrl(
-            panel, min=0, max=23, size=(50, -1), value=endHour
-        )
-        sizer.Add(self._workingHourEndSpin, 0, wx.ALIGN_CENTER_VERTICAL)
+        # End hour dropdown (0-23)
+        self._workingHourEndChoice = wx.Choice(panel, choices=hours)
+        self._workingHourEndChoice.SetSelection(endHour)
+        self._workingHourEndChoice.Bind(wx.EVT_CHOICE, self._onWorkingHourEndChanged)
+        sizer.Add(self._workingHourEndChoice, 0, wx.ALIGN_CENTER_VERTICAL)
         sizer.Add((10, -1))  # Spacer
 
         # End of day checkbox
@@ -202,8 +205,8 @@ class SettingsPageBase(widgets.BookPage):
 
         # Apply initial state
         if endOfDay:
-            self._workingHourEndSpin.SetValue(23)
-            self._workingHourEndSpin.Enable(False)
+            self._workingHourEndChoice.SetSelection(23)
+            self._workingHourEndChoice.Enable(False)
 
         self.addEntry(
             text,
@@ -216,19 +219,35 @@ class SettingsPageBase(widgets.BookPage):
             ),
         )
 
+    def _onWorkingHourStartChanged(self, event):
+        """Ensure at least 1 hour gap when start hour changes."""
+        if self._workingHourEndOfDayCheck.IsChecked():
+            return  # End of day means midnight, any start hour is valid
+        startHour = self._workingHourStartChoice.GetSelection()
+        endHour = self._workingHourEndChoice.GetSelection()
+        if startHour >= endHour:
+            self._workingHourEndChoice.SetSelection(min(startHour + 1, 23))
+
+    def _onWorkingHourEndChanged(self, event):
+        """Ensure at least 1 hour gap when end hour changes."""
+        startHour = self._workingHourStartChoice.GetSelection()
+        endHour = self._workingHourEndChoice.GetSelection()
+        if endHour <= startHour:
+            self._workingHourStartChoice.SetSelection(max(endHour - 1, 0))
+
     def _onEndOfDayChecked(self, event):
         """Handle end of day checkbox toggle."""
         if event.IsChecked():
-            self._workingHourEndSpin.SetValue(23)
-            self._workingHourEndSpin.Enable(False)
+            self._workingHourEndChoice.SetSelection(23)
+            self._workingHourEndChoice.Enable(False)
         else:
-            self._workingHourEndSpin.Enable(True)
+            self._workingHourEndChoice.Enable(True)
 
     def _saveWorkingHoursSettings(self):
         """Save working hours settings. Called from ok()."""
-        if hasattr(self, '_workingHourStartSpin'):
-            self.setint("view", "efforthourstart", self._workingHourStartSpin.GetValue())
-            self.setint("view", "efforthourend", self._workingHourEndSpin.GetValue())
+        if hasattr(self, '_workingHourStartChoice'):
+            self.setint("view", "efforthourstart", self._workingHourStartChoice.GetSelection())
+            self.setint("view", "efforthourend", self._workingHourEndChoice.GetSelection())
             self.setboolean("view", "efforthourend_endofday", self._workingHourEndOfDayCheck.IsChecked())
 
     def addFontSetting(self, section, setting, text):
@@ -255,27 +274,73 @@ class SettingsPageBase(widgets.BookPage):
         self._fontSettings.append((section, setting, font_button))
 
     def addAppearanceHeader(self):
+        # Row 0: Group headers - "" | Light (spanning 4) | Dark (spanning 4) | ""
+        emptyLabel = wx.StaticText(self, label="")
+        lightLabel = wx.StaticText(self, label=_("Light Theme"))
+        darkLabel = wx.StaticText(self, label=_("Dark Theme"))
+        boldFont = lightLabel.GetFont().Bold()
+        lightLabel.SetFont(boldFont)
+        darkLabel.SetFont(boldFont)
+
+        pos = self._position.next(1)
+        self._sizer.Add(emptyLabel, pos, span=(1, 1),
+                        flag=wx.ALL | wx.ALIGN_CENTER, border=self._borderWidth)
+        pos = self._position.next(4)
+        self._sizer.Add(lightLabel, pos, span=(1, 4),
+                        flag=wx.ALL | wx.ALIGN_CENTER, border=self._borderWidth)
+        pos = self._position.next(4)
+        self._sizer.Add(darkLabel, pos, span=(1, 4),
+                        flag=wx.ALL | wx.ALIGN_CENTER, border=self._borderWidth)
+        # Empty cell for reset column
+        self._position.next(1)
+
+        # Row 1: Partial horizontal lines under Light and Dark headers
+        self._sizer.Add(wx.StaticLine(self), (1, 1), span=(1, 4),
+                        flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=self._borderWidth)
+        self._sizer.Add(wx.StaticLine(self), (1, 5), span=(1, 4),
+                        flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=self._borderWidth)
+        # Advance cursor past the line row
+        self._position.next(10)
+
+        # Row 2: Sub-headers
         self.addEntry(
             "",
-            _("Foreground color"),
-            _("Background color"),
+            _("Foreground"),
+            _("Background"),
             _("Font"),
             _("Icon"),
-            flags=[wx.ALL | wx.ALIGN_CENTER] * 5,
+            _("Foreground"),
+            _("Background"),
+            _("Font"),
+            _("Icon"),
+            "",
+            flags=[wx.ALL | wx.ALIGN_CENTER] * 10,
         )
 
-    def addAppearanceSetting(
-        self,
-        fgColorSection,
-        fgColorSetting,
-        bgColorSection,
-        bgColorSetting,
-        fontSection,
-        fontSetting,
-        iconSection,
-        iconSetting,
-        text,
-    ):
+    def _createIconEntry(self):
+        """Create an icon BitmapComboBox sized to its longest label."""
+        iconEntry = BitmapComboBox(self, style=wx.CB_READONLY)
+        imageNames = sorted(artprovider.chooseableItemImages.keys())
+        for imageName in imageNames:
+            label = artprovider.chooseableItemImages[imageName]
+            bitmap = wx.ArtProvider.GetBitmap(imageName, wx.ART_MENU, (16, 16))
+            item = iconEntry.Append(label, bitmap)
+            iconEntry.SetClientData(item, imageName)
+        # Size to longest label by pixel width
+        maxTextWidth = max(
+            iconEntry.GetTextExtent(artprovider.chooseableItemImages[name])[0]
+            for name in imageNames
+        )
+        # icon (16) + text + padding (16) + dropdown button (30)
+        targetWidth = 16 + maxTextWidth + 16 + 30
+        iconEntry.SetInitialSize(wx.Size(targetWidth, -1))
+        return iconEntry, imageNames
+
+    def _createAppearanceControls(self, fgColorSection, fgColorSetting,
+                                   bgColorSection, bgColorSetting,
+                                   fontSection, fontSetting,
+                                   iconSection, iconSetting):
+        """Create a set of appearance controls (fg, bg, font, icon) for one theme."""
         currentFgColor = self.getvalue(fgColorSection, fgColorSetting)
         fgColorButton = wx.ColourPickerCtrl(self, colour=currentFgColor)
         currentBgColor = self.getvalue(bgColorSection, bgColorSetting)
@@ -291,54 +356,102 @@ class SettingsPageBase(widgets.BookPage):
             self, font=currentFont or defaultFont, colour=currentFgColor
         )
         fontButton.SetBackgroundColour(currentBgColor)
-        iconEntry = BitmapComboBox(self, style=wx.CB_READONLY)
-        imageNames = sorted(artprovider.chooseableItemImages.keys())
-        for imageName in imageNames:
-            label = artprovider.chooseableItemImages[imageName]
-            bitmap = wx.ArtProvider.GetBitmap(imageName, wx.ART_MENU, (16, 16))
-            item = iconEntry.Append(label, bitmap)
-            iconEntry.SetClientData(item, imageName)
+        iconEntry, imageNames = self._createIconEntry()
         currentIcon = self.gettext(iconSection, iconSetting)
         currentSelectionIndex = imageNames.index(currentIcon)
-        iconEntry.SetSelection(currentSelectionIndex)  # pylint: disable=E1101
-        # GTK's native BitmapComboBox clips icons in the closed state.
-        # Oversizing the control gives the renderer more space to work with.
-        if operating_system.isGTK():
-            longestLabel = max(
-                (artprovider.chooseableItemImages[name] for name in imageNames),
-                key=len
-            )
-            textWidth, _ = iconEntry.GetTextExtent(longestLabel)
-            # icon (16) + text + extra padding (16) + dropdown button (30)
-            minWidth = 16 + textWidth + 16 + 30
-            iconEntry.SetMinSize(wx.Size(minWidth, -1))
+        iconEntry.SetSelection(currentSelectionIndex)
+
+        self._colorSettings.append((fgColorSection, fgColorSetting, fgColorButton))
+        self._colorSettings.append((bgColorSection, bgColorSetting, bgColorButton))
+        self._iconSettings.append((iconSection, iconSetting, iconEntry))
+        self._fontSettings.append((fontSection, fontSetting, fontButton))
+        self._syncers.append(FontColorSyncer(fgColorButton, bgColorButton, fontButton))
+
+        return fgColorButton, bgColorButton, fontButton, iconEntry
+
+    def addAppearanceSetting(
+        self,
+        fgColorSection,
+        fgColorSetting,
+        bgColorSection,
+        bgColorSetting,
+        fontSection,
+        fontSetting,
+        iconSection,
+        iconSetting,
+        text,
+    ):
+        # Light controls
+        lightFg, lightBg, lightFont, lightIcon = self._createAppearanceControls(
+            fgColorSection, fgColorSetting,
+            bgColorSection, bgColorSetting,
+            fontSection, fontSetting,
+            iconSection, iconSetting,
+        )
+        # Dark controls
+        darkFg, darkBg, darkFont, darkIcon = self._createAppearanceControls(
+            fgColorSection + "_dark", fgColorSetting,
+            bgColorSection + "_dark", bgColorSetting,
+            fontSection + "_dark", fontSetting,
+            iconSection + "_dark", iconSetting,
+        )
+
+        # Reset button
+        resetBtn = wx.Button(self, label=_("Reset"), size=(60, -1))
+        resetBtn.Bind(wx.EVT_BUTTON, lambda evt, s=fgColorSetting,
+                      lf=lightFg, lb=lightBg, lfn=lightFont, li=lightIcon,
+                      df=darkFg, db=darkBg, dfn=darkFont, di=darkIcon:
+                      self._onResetAppearanceRow(s, lf, lb, lfn, li, df, db, dfn, di))
 
         self.addEntry(
             text,
-            fgColorButton,
-            bgColorButton,
-            fontButton,
-            iconEntry,
+            lightFg, lightBg, lightFont, lightIcon,
+            darkFg, darkBg, darkFont, darkIcon,
+            resetBtn,
             flags=(
                 wx.ALIGN_RIGHT | wx.ALIGN_CENTRE_VERTICAL,
                 wx.ALL | wx.EXPAND | wx.ALIGN_CENTER_VERTICAL,
                 wx.ALL | wx.EXPAND | wx.ALIGN_CENTER_VERTICAL,
-                wx.ALL
-                | wx.ALIGN_CENTER_VERTICAL,  # wx.EXPAND causes the button to be top aligned on Mac OS X
                 wx.ALL | wx.EXPAND | wx.ALIGN_CENTER_VERTICAL,
+                wx.ALL | wx.ALIGN_CENTER_VERTICAL,
+                wx.ALL | wx.EXPAND | wx.ALIGN_CENTER_VERTICAL,
+                wx.ALL | wx.EXPAND | wx.ALIGN_CENTER_VERTICAL,
+                wx.ALL | wx.EXPAND | wx.ALIGN_CENTER_VERTICAL,
+                wx.ALL | wx.ALIGN_CENTER_VERTICAL,
+                wx.ALL | wx.ALIGN_CENTER_VERTICAL,
             ),
         )
-        self._colorSettings.append(
-            (fgColorSection, fgColorSetting, fgColorButton)
-        )
-        self._colorSettings.append(
-            (bgColorSection, bgColorSetting, bgColorButton)
-        )
-        self._iconSettings.append((iconSection, iconSetting, iconEntry))
-        self._fontSettings.append((fontSection, fontSetting, fontButton))
-        self._syncers.append(
-            FontColorSyncer(fgColorButton, bgColorButton, fontButton)
-        )
+
+    def _onResetAppearanceRow(self, setting, lightFg, lightBg, lightFont, lightIcon,
+                              darkFg, darkBg, darkFont, darkIcon):
+        """Reset all appearance controls in a row to their defaults."""
+        import ast
+        from taskcoachlib.config import defaults as defaults_mod
+        defs = defaults_mod.defaults
+        defaultSysFont = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+
+        # Reset light theme
+        lfgColor = wx.Colour(*ast.literal_eval(defs["fgcolor"][setting]))
+        lbgColor = wx.Colour(*ast.literal_eval(defs["bgcolor"][setting]))
+        lightFg.SetColour(lfgColor)
+        lightBg.SetColour(lbgColor)
+        lightFont.SetSelectedFont(defaultSysFont)
+        lightFont.SetSelectedColour(lfgColor)
+        lightFont.SetForegroundColour(lfgColor)
+        lightFont.SetBackgroundColour(lbgColor)
+        iconNames = sorted(artprovider.chooseableItemImages.keys())
+        lightIcon.SetSelection(iconNames.index(defs["icon"][setting]))
+
+        # Reset dark theme
+        dfgColor = wx.Colour(*ast.literal_eval(defs["fgcolor_dark"][setting]))
+        dbgColor = wx.Colour(*ast.literal_eval(defs["bgcolor_dark"][setting]))
+        darkFg.SetColour(dfgColor)
+        darkBg.SetColour(dbgColor)
+        darkFont.SetSelectedFont(defaultSysFont)
+        darkFont.SetSelectedColour(dfgColor)
+        darkFont.SetForegroundColour(dfgColor)
+        darkFont.SetBackgroundColour(dbgColor)
+        darkIcon.SetSelection(iconNames.index(defs["icon_dark"][setting]))
 
     def addPathSetting(self, section, setting, text, helpText="", **kwargs):
         pathChooser = widgets.DirectoryChooser(self, wx.ID_ANY)
@@ -673,7 +786,18 @@ class WindowBehaviorPage(SettingsPage):
             _("Make clock in the task bar tick when tracking effort"),
             flags=[wx.ALIGN_RIGHT, wx.EXPAND],
         )
-        # Dark Theme setting with detection status to the right of dropdown
+        self.fit()
+
+
+class ThemePage(SettingsPage):
+    pageName = "theme"
+    pageTitle = _("Theme")
+    pageIcon = "fsview_icon"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(columns=4, growableColumn=-1, *args, **kwargs)
+
+        # --- Dark Mode Dropdown ---
         is_dark = detect_dark_theme()
         detected = _("Dark") if is_dark else _("Light")
         themeChoices = self.addChoiceSetting(
@@ -686,12 +810,11 @@ class WindowBehaviorPage(SettingsPage):
                 ("dark", _("Dark Theme (Forced)")),
                 ("automatic", _("Automatic (detect from system)")),
             ],
-            flags=[wx.ALIGN_RIGHT, wx.EXPAND],
+            flags=[wx.ALIGN_RIGHT | wx.ALIGN_CENTRE_VERTICAL, wx.EXPAND],
         )
         # Add detection status to the right of the dropdown
         detectedLabel = wx.StaticText(self, label=_("(Detected: %s)") % detected)
         detectedLabel.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-        # Find the choice control in the sizer and replace with a horizontal sizer containing both
         sizer_item = self._sizer.FindItem(themeChoices[0])
         if sizer_item:
             pos = sizer_item.GetPos()
@@ -702,7 +825,84 @@ class WindowBehaviorPage(SettingsPage):
             hbox.Add(themeChoices[0], 0, wx.ALIGN_CENTER_VERTICAL)
             hbox.Add(detectedLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 10)
             self._sizer.Add(hbox, pos, span, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, border)
+
+        self.addLine()
+
+        # --- Section: Calendar ---
+        self.addEntry(
+            _("Calendar"),
+            _("Light"),
+            _("Dark"),
+            "",
+            flags=[
+                wx.ALL | wx.ALIGN_LEFT,
+                wx.ALL | wx.ALIGN_CENTER,
+                wx.ALL | wx.ALIGN_CENTER,
+                wx.ALL,
+            ],
+        )
+
+        from taskcoachlib.config import defaults as defaults_mod
+
+        calendarRows = [
+            ("weekday_header_bg", _("Weekday Header Background")),
+            ("weekday_header_fg", _("Weekday Header Foreground")),
+            ("weekend_day_fg", _("Weekend Day Foreground")),
+            ("today_border", _("Today Border")),
+        ]
+
+        for settingKey, labelText in calendarRows:
+            lightColor = self.getvalue("calendar_light", settingKey)
+            darkColor = self.getvalue("calendar_dark", settingKey)
+
+            lightPicker = wx.ColourPickerCtrl(self, colour=wx.Colour(*lightColor))
+            darkPicker = wx.ColourPickerCtrl(self, colour=wx.Colour(*darkColor))
+
+            # Live update: save immediately on colour change and notify
+            lightPicker.Bind(wx.EVT_COLOURPICKER_CHANGED,
+                lambda evt, s="calendar_light", k=settingKey, p=lightPicker:
+                    self._onColourChanged(s, k, p))
+            darkPicker.Bind(wx.EVT_COLOURPICKER_CHANGED,
+                lambda evt, s="calendar_dark", k=settingKey, p=darkPicker:
+                    self._onColourChanged(s, k, p))
+
+            # Reset button
+            resetBtn = wx.Button(self, label=_("Reset"), size=(60, -1))
+            lightDefault = ast.literal_eval(defaults_mod.defaults["calendar_light"][settingKey])
+            darkDefault = ast.literal_eval(defaults_mod.defaults["calendar_dark"][settingKey])
+            resetBtn.Bind(wx.EVT_BUTTON,
+                lambda evt, lp=lightPicker, dp=darkPicker, ld=lightDefault, dd=darkDefault, k=settingKey:
+                    self._onReset(lp, dp, ld, dd, k))
+
+            self.addEntry(
+                labelText,
+                lightPicker,
+                darkPicker,
+                resetBtn,
+                flags=[
+                    wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_CENTRE_VERTICAL,
+                    wx.ALL | wx.ALIGN_CENTER | wx.ALIGN_CENTRE_VERTICAL,
+                    wx.ALL | wx.ALIGN_CENTER | wx.ALIGN_CENTRE_VERTICAL,
+                    wx.ALL | wx.ALIGN_CENTER | wx.ALIGN_CENTRE_VERTICAL,
+                ],
+            )
+
+            self._colorSettings.append(("calendar_light", settingKey, lightPicker))
+            self._colorSettings.append(("calendar_dark", settingKey, darkPicker))
+
         self.fit()
+
+    def _onColourChanged(self, section, key, picker):
+        colour = picker.GetColour()
+        self.setvalue(section, key, colour)
+        pub.sendMessage('calendar.colours.changed')
+
+    def _onReset(self, lightPicker, darkPicker, lightDefault, darkDefault, key):
+        lightPicker.SetColour(wx.Colour(*lightDefault))
+        darkPicker.SetColour(wx.Colour(*darkDefault))
+        self.setvalue("calendar_light", key, lightPicker.GetColour())
+        self.setvalue("calendar_dark", key, darkPicker.GetColour())
+        pub.sendMessage('calendar.colours.changed')
 
 
 class LanguagePage(SettingsPage):
@@ -1234,7 +1434,7 @@ class TaskAppearancePage(SettingsPage):
     pageIcon = "palette_icon"
 
     def __init__(self, *args, **kwargs):
-        super().__init__(columns=9, growableColumn=-1, *args, **kwargs)
+        super().__init__(columns=10, growableColumn=-1, *args, **kwargs)
         self.addAppearanceHeader()
         for status in task.Task.possibleStatuses():
             setting = "%stasks" % status
@@ -1249,17 +1449,12 @@ class TaskAppearancePage(SettingsPage):
                 setting,
                 status.pluralLabel,
             )
-        self.addText(
-            "",
-            _(
-                "These appearance settings can be overridden "
-                "for individual tasks in the task edit dialog."
-            ),
-            flags=(
-                wx.ALIGN_LEFT,
-                wx.EXPAND,
-            ),
-        )
+        noteText = wx.StaticText(self, label=_(
+            "These appearance settings can be overridden "
+            "for individual tasks in the task edit dialog."
+        ))
+        noteText.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+        self.addEntry("", noteText, flags=(wx.ALL | wx.ALIGN_LEFT, wx.ALL | wx.EXPAND))
         self.fit()
 
 
@@ -1292,14 +1487,15 @@ class FeaturesPage(SettingsPage):
                 wx.ALIGN_LEFT,
             ),
         )
-        self.addWorkingHoursSetting(_("Working hours"), helpText=" ")
+        self.addWorkingHoursSetting(_("Working hours"))
         # Note about working hours and 12-hour mode
         workingHoursNote = wx.StaticText(
             self,
             label=_("Note: Working hours are not used for hour suggestions when 12-hour (AM/PM) time format is selected in Regional settings.")
         )
-        workingHoursNote.Wrap(400)
-        self.addEntry("", workingHoursNote, flags=(None, wx.ALIGN_LEFT))
+        workingHoursNote.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+        workingHoursNote.Wrap(600)
+        self.addEntry("", workingHoursNote, flags=(wx.ALIGN_LEFT, wx.EXPAND))
 
         self.addBooleanSetting(
             "calendarviewer",
@@ -1954,11 +2150,13 @@ class Preferences(widgets.NotebookDialog):
         "task",
         "reminder",
         "presets",
+        "theme",
         "appearance",
         "features",
     ]
     pages = dict(
         window=WindowBehaviorPage,
+        theme=ThemePage,
         task=TaskDatesPage,
         reminder=TaskReminderPage,
         presets=DurationPresetsPage,
@@ -1970,12 +2168,13 @@ class Preferences(widgets.NotebookDialog):
 
     def __init__(self, settings=None, *args, **kwargs):
         self.settings = settings
+        kwargs.setdefault("buttonTypes", wx.OK | wx.CANCEL | wx.APPLY)
         super().__init__(bitmap="wrench_icon", *args, **kwargs)
         if operating_system.isMac():
             self.CentreOnParent()
 
     def addPages(self):
-        self._interior.SetMinSize((950, 550))
+        self._interior.SetMinSize((1250, 550))
         for page_name in self.allPageNames:
             page = self.createPage(page_name)
             self._interior.AddPage(page, page.pageTitle, page.pageIcon)

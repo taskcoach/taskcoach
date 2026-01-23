@@ -454,6 +454,8 @@ class Application(object, metaclass=patterns.Singleton):
         self.__wx_app = wxApp(
             self.on_end_session, self.on_reopen_app, redirect=False
         )
+        # Expose settings on wxApp so wx.GetApp().settings works everywhere
+        self.__wx_app.settings = self.settings
 
         # 4. Log wx-specific info (needs wxApp)
         _log_wx_info()
