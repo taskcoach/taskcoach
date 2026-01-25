@@ -383,7 +383,9 @@ def getCalendarColours():
     """Get the active calendar colour set based on current theme mode.
 
     Returns a dict with keys: 'weekday_header_bg', 'weekday_header_fg',
-    'weekend_day_fg', 'today_border'. Each value is a wx.Colour.
+    'weekend_day_fg', 'today_border', 'other_month_bg'.
+    Each value is a wx.Colour, except 'other_month_bg' which is
+    wx.Colour or None (None means use system default).
     """
     try:
         import ast
@@ -402,11 +404,18 @@ def getCalendarColours():
 
         section = "calendar_dark" if is_dark else "calendar_light"
 
+        use_system = s.get(section, "other_month_bg_system") == "True"
+        if use_system:
+            other_month_bg = None
+        else:
+            other_month_bg = wx.Colour(*ast.literal_eval(s.get(section, "other_month_bg")))
+
         return {
             'weekday_header_bg': wx.Colour(*ast.literal_eval(s.get(section, "weekday_header_bg"))),
             'weekday_header_fg': wx.Colour(*ast.literal_eval(s.get(section, "weekday_header_fg"))),
             'weekend_day_fg': wx.Colour(*ast.literal_eval(s.get(section, "weekend_day_fg"))),
             'today_border': wx.Colour(*ast.literal_eval(s.get(section, "today_border"))),
+            'other_month_bg': other_month_bg,
         }
     except Exception:
         return {
@@ -414,6 +423,7 @@ def getCalendarColours():
             'weekday_header_fg': wx.BLUE,
             'weekend_day_fg': wx.RED,
             'today_border': wx.RED,
+            'other_month_bg': None,
         }
 
 
@@ -984,7 +994,7 @@ class _CalendarPopup(_PopupWindow):
                     dc.SetBrush(wx.Brush(inactiveBg))
                     dc.DrawRectangle(x, y, self.__maxDim, self.__maxDim)
                 elif not thisMonth:
-                    otherMonthBg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+                    otherMonthBg = colours['other_month_bg'] if colours['other_month_bg'] is not None else wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
                     dc.SetPen(wx.Pen(otherMonthBg))
                     dc.SetBrush(wx.Brush(otherMonthBg))
                     dc.DrawRectangle(x, y, self.__maxDim, self.__maxDim)

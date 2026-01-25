@@ -69,9 +69,11 @@ Each task stores three computed status fields:
 - `__status` — Cached TaskStatus object (used internally by `status()`)
 
 Accessor methods:
-- `task.statusText()` — Returns display text
-- `task.statusIconName()` — Returns icon name
-- `task.status()` — Returns TaskStatus object (cached)
+- `task.computedStatus()` — Returns TaskStatus object (single source of truth) ✓
+- `task.statusText()` — Returns display text ✓
+- `task.statusIconName()` — Returns icon name ✓
+- `task.statusIcon()` — Returns icon name (same as statusIconName, kept for compatibility) ✓
+- `task.status()` — Returns TaskStatus object (legacy cached method, to be removed)
 
 ### computeStatus() — Single Update Function
 
@@ -288,12 +290,24 @@ every consumer to potentially trigger computation. The new pattern separates wri
    New columns read `statusText()` / `statusIconName()`. Legacy consumers still
    use `status()` / `statusFgColor()` / etc.
 
-2. **After verification:** Migrate legacy consumers one by one to read from
-   `__computed_status` instead of calling `status()`:
-   - `statusFgColor()` → use `self.__computed_status` instead of `self.status()`
-   - `completed()` → use `self.__computed_status == status.completed`
-   - ViewFilter → use stored status instead of calling `task.status()`
-   - Editor display → use `task.statusText()` / `task.statusIconName()`
+2. **In progress:** Public accessor `computedStatus()` added. Migrating legacy
+   consumers one by one to use `computedStatus()` instead of `status()`:
+
+   | Consumer | File:Line | Status |
+   |----------|-----------|--------|
+   | ViewFilter.filterTask() | filter.py:153 | ✓ Done |
+   | completed() | task.py:615 | ✓ Done |
+   | overdue() | task.py:621 | ✓ Done |
+   | inactive() | task.py:627 | ✓ Done |
+   | active() | task.py:635 | ✓ Done |
+   | dueSoon() | task.py:640 | ✓ Done |
+   | late() | task.py:645 | ✓ Done |
+   | statusFgColor() | task.py:1060 | Pending |
+   | statusBgColor() | task.py:1134 | Pending |
+   | statusFont() | task.py:1160 | Pending |
+   | statusIcon() | task.py:1223 | ✓ Done (now accessor) |
+   | nrOfTasksPerStatus() | tasklist.py:31 | Pending |
+   | Editor display | editor.py:632 | Pending |
 
 3. **Final cleanup:** Remove legacy `status()` cache, `__status` field, and the
    scattered `__status = None` invalidations. Remove duplicated logic from
@@ -327,6 +341,229 @@ For each status `X` (inactive, late, active, duesoon, overdue, completed):
 ### Per-Viewer Filter Settings
 
 Each viewer that shows tasks has `hideXtasks` boolean settings (all default to `False`).
+
+---
+
+## Task Icon Decision Sequence
+
+The task icon displayed in the task list is determined by the following priority sequence.
+The first match wins, and the final result is transformed based on whether the task has children.
+
+### Priority Order
+
+```
+1. Effort Tracking
+   └── If task.isBeingTracked() is True → "clock_icon"
+   └── Shown when user is actively tracking time on this task
+
+2. Own Icon Override
+   └── task.icon() (non-recursive) - icon set directly on the task
+   └── User can set this in the Appearance tab of the task editor
+
+3. Category Icon
+   └── categoryIcon() checks:
+       a) Each category the task belongs to → category.icon(recursive=True)
+       b) If not found, parent task's categoryIcon() (recursive up task tree)
+   └── First category with an icon wins
+
+4. Status Icon
+   └── statusIcon() returns __status_icon (single source of truth)
+   └── Determined by task status: active, inactive, late, duesoon, overdue, completed
+   └── Configured in Preferences > Theme > Status Icons
+```
+
+### Plural/Singular Transformation
+
+After determining the icon from the priority sequence above, `pluralOrSingularIcon()` is applied.
+The transformation depends on whether the task has children AND whether an override is set:
+
+| Has Children | Has Override | Transformation |
+|--------------|--------------|----------------|
+| Yes | No | Pluralize: `led_blue_icon` → `folder_blue_icon` |
+| Yes | Yes | Pluralize: even override icons are transformed |
+| No | No | Singularize: `folder_blue_icon` → `led_blue_icon` |
+| No | Yes | None: override icon kept as-is |
+
+**Key insight:** Tasks with children ALWAYS show folder icons (even if you set an LED override).
+Tasks without children and without override will have folder icons converted back to LEDs.
+
+**Plural mapping (LED → Folder):**
+
+| Input | Output |
+|-------|--------|
+| `led_blue_icon` | `folder_blue_icon` |
+| `led_grey_icon` | `folder_grey_icon` |
+| `led_green_icon` | `folder_green_icon` |
+| `led_orange_icon` | `folder_orange_icon` |
+| `led_purple_icon` | `folder_purple_icon` |
+| `led_red_icon` | `folder_red_icon` |
+| `led_yellow_icon` | `folder_yellow_icon` |
+| `checkmark_green_icon` | `checkmark_green_icon_multiple` |
+
+**Singular mapping (Folder → LED):** The reverse of the above.
+
+### Computed vs Final Icon
+
+| Term | Definition | Storage |
+|------|------------|---------|
+| **Status Icon** | Icon based on task status alone | `__status_icon` (single source of truth) |
+| **Computed Icon** | `categoryIcon() or statusIcon()` (before override) | `__recursiveIcon` |
+| **Final Icon** | Full cascade result including override + plural/singular | Computed on-the-fly by `icon(recursive=True)` |
+
+**Note:** The final icon is currently computed on-the-fly, not stored. This could be refactored to use a single source of truth pattern.
+
+---
+
+## Appearance Inheritance
+
+Both Tasks and Categories support appearance inheritance (icon, foreground color, background color, font).
+The Appearance tab in the editor shows two sections: **Derived values** and **Override values**.
+
+### Task Appearance
+
+Tasks **always** have derived values because they always have a status. The inheritance cascade is:
+
+```
+Derived values (read-only display):
+├── Icon: categoryIcon() or statusIcon()
+├── Foreground: categoryForegroundColor() or statusFgColor()
+└── Background: categoryBackgroundColor() or statusBgColor()
+
+Override values (editable):
+├── Icon: own icon set directly on task
+├── Foreground: own foreground color
+├── Background: own background color
+└── Font: own font
+```
+
+The status always provides a fallback, so derived values are never empty for tasks.
+
+### Category Appearance
+
+Categories inherit appearance from their **parent category**. If no parent exists or the parent has no value, "N/A" is displayed.
+
+```
+Derived values (read-only display):
+├── Icon: parent.icon(recursive=True) or "N/A"
+├── Foreground: parent.foregroundColor(recursive=True) or "N/A"
+└── Background: parent.backgroundColor(recursive=True) or "N/A"
+
+Override values (editable):
+├── Icon: own icon set directly on category
+├── Foreground: own foreground color
+├── Background: own background color
+└── Font: own font
+```
+
+#### Effective Appearance Fields (Single Source of Truth)
+
+**File:** `taskcoachlib/domain/category/category.py`
+
+Categories now have **effective appearance fields** that store the final computed value:
+
+| Field | Accessor | Value |
+|-------|----------|-------|
+| `__effective_fg_color` | `effectiveFgColor()` | Own override OR parent's effective |
+| `__effective_bg_color` | `effectiveBgColor()` | Own override OR parent's effective |
+| `__effective_icon` | `effectiveIcon()` | Own override OR parent's effective |
+| `__effective_font` | `effectiveFont()` | Own override OR parent's effective |
+
+**How it works:**
+
+1. **Computation:** `_computeEffectiveAppearance()` computes effective values from:
+   - Own override if set (via `foregroundColor(recursive=False)`, etc.)
+   - Otherwise, parent's effective value (via `parent.effectiveFgColor()`, etc.)
+
+2. **Update triggers:**
+   - On category creation (`__init__`)
+   - When appearance changes (`appearanceChangedEvent`)
+
+3. **Automatic propagation:** When a parent's appearance changes, `appearanceChangedEvent` cascades to all children (via `CompositeObject.appearanceChangedEvent`), causing each child to recompute its effective values.
+
+```
+Parent category appearance changes
+    └── appearanceChangedEvent(event)
+        ├── _computeEffectiveAppearance()  ← Recompute own effective values
+        ├── super().appearanceChangedEvent(event)
+        │   └── for child in children():
+        │       └── child.appearanceChangedEvent(event)  ← Children recompute
+        └── for categorizable in categorizables():
+            └── categorizable.appearanceChangedEvent(event)  ← Tasks notified
+```
+
+**Benefits:**
+- Single source of truth: `effectiveXxx()` returns the final value directly
+- No recursive lookup at query time: value is pre-computed
+- Automatic updates: pub/sub propagation ensures children stay in sync
+- Parent is authoritative: children derive from parent's effective value
+
+#### Legacy Code Compatibility
+
+**IMPORTANT:** The legacy `recursive=True` parameter on `foregroundColor()`, `backgroundColor()`, `icon()`, and `font()` is **preserved for backward compatibility**. Do not modify the legacy methods in `CompositeObject`.
+
+| Method | Behavior |
+|--------|----------|
+| `foregroundColor(recursive=True)` | **Legacy** — walks up parent chain at query time |
+| `effectiveFgColor()` | **New** — returns pre-computed effective value |
+
+New code should use the `effectiveXxx()` methods. Legacy code continues to work unchanged.
+
+#### TODO: Implement for Tasks
+
+**Status:** Pending
+
+Tasks also need effective appearance fields following the same pattern as Categories.
+
+**Task Appearance Cascade (priority order):**
+
+```
+1. Own override (task's own icon/fg/bg/font)
+   └── If set, use it
+
+2. Task's direct categories
+   └── Use category.effectiveIcon() / effectiveFgColor() / etc.
+   └── No recursion needed - category already has pre-computed effective value
+   └── If multiple categories: mix colors, first icon wins
+
+3. Parent task's category (if child task has NO direct categories)
+   └── Child task asks parent._categoryForegroundColor()
+   └── Parent returns its category's effective value
+   └── This is how category appearance flows from parent task to child task
+
+4. Status appearance (fallback - task always has a status)
+   └── statusIcon(), statusFgColor(), statusBgColor()
+```
+
+**Key simplification:** Since categories now have `effectiveXxx()` methods, the task code can call those directly instead of `category.foregroundColor(recursive=True)`. The category has already computed its effective value from its own parent chain.
+
+**Task-to-task inheritance:** When a child task has no categories but its parent task does, the child inherits the category appearance via the parent task (not directly from the category). The parent task returns its category's effective value.
+
+**Implementation steps:**
+- Add `__effective_fg_color`, `__effective_bg_color`, `__effective_icon`, `__effective_font` fields to Task
+- Add `effectiveFgColor()`, `effectiveBgColor()`, `effectiveIcon()`, `effectiveFont()` accessors
+- Add `_computeEffectiveAppearance()` method implementing the cascade above
+- Update `_categoryForegroundColor()` etc. to use `category.effectiveXxx()` instead of `recursive=True`
+- Call from `__init__`, `recomputeAppearance()`, and when categories change
+- Update Appearance tab to show Effective section for tasks
+
+### Inheritance Methods
+
+**File:** `taskcoachlib/domain/base/object.py`
+
+| Method | Behavior |
+|--------|----------|
+| `foregroundColor(recursive=False)` | Own color only |
+| `foregroundColor(recursive=True)` | Own color, or parent's recursive color |
+| `backgroundColor(recursive=False)` | Own color only |
+| `backgroundColor(recursive=True)` | Own color, or parent's recursive color |
+| `icon(recursive=False)` | Own icon only |
+| `icon(recursive=True)` | Own icon, or parent's recursive icon, then plural/singular transform |
+| `font(recursive=False)` | Own font only |
+| `font(recursive=True)` | Own font, or parent's recursive font |
+
+### Notes and Attachments
+
+Notes and Attachments do not show derived/override sections in the Appearance tab because they have no status and no category inheritance chain. They only have their own appearance settings.
 
 ---
 

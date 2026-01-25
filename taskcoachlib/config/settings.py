@@ -393,7 +393,7 @@ class Settings(CachingConfigParser):
         try:
             path = self.path()
             if not os.path.exists(path):
-                os.mkdir(path)
+                os.makedirs(path, exist_ok=True)
             tmpFile = file(self.filename() + ".tmp", "w", encoding="utf-8")
             self.write(tmpFile)
             tmpFile.close()
@@ -531,7 +531,7 @@ class Settings(CachingConfigParser):
             pass  # Silently fail if we can't copy
 
     def pathToProgramDir(self):
-        path = sys.argv[0]
+        path = os.path.abspath(sys.argv[0])
         if not os.path.isdir(path):
             path = os.path.dirname(path)
         return path

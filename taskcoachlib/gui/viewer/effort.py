@@ -81,9 +81,6 @@ class EffortViewer(
             self.on_aggregation_changed,
             "settings.%s.aggregation" % self.settingsSection(),
         )
-        pub.subscribe(
-            self.onHourDisplayChanged, "settings.feature.decimaltime"
-        )
 
     def selectableColumns(self):
         columns = list()
@@ -115,9 +112,6 @@ class EffortViewer(
 
     def onRoundingChanged(self, value):  # pylint: disable=W0613
         self.__initRoundingToolBarUICommands()
-        self.refresh()
-
-    def onHourDisplayChanged(self, value):
         self.refresh()
 
     def __initModeToolBarUICommands(self):
@@ -679,13 +673,10 @@ class EffortViewer(
         sumTimeSpent = render.timeSpent(
             td,
             showSeconds=self.__show_seconds(),
-            decimal=self.settings.getboolean("feature", "decimaltime"),
         )
 
         if sumTimeSpent == "":
-            if self.settings.getboolean("feature", "decimaltime"):
-                sumTimeSpent = "0.0"
-            elif self.__show_seconds():
+            if self.__show_seconds():
                 sumTimeSpent = "0:00:00"
             else:
                 sumTimeSpent = "0:00"
@@ -795,7 +786,6 @@ class EffortViewer(
         return render.timeSpent(
             duration,
             showSeconds=showSeconds,
-            decimal=self.settings.getboolean("feature", "decimaltime"),
         )
 
     def __renderTotalTimeSpent(self, anEffort):
@@ -812,7 +802,6 @@ class EffortViewer(
         return render.timeSpent(
             total_duration,
             showSeconds=self.__show_seconds(),
-            decimal=self.settings.getboolean("feature", "decimaltime"),
         )
 
     def __renderTimeSpentOnDay(self, anEffort, dayOffset):
@@ -831,7 +820,6 @@ class EffortViewer(
         return render.timeSpent(
             self.__round_duration(duration),
             showSeconds=self.__show_seconds(),
-            decimal=self.settings.getboolean("feature", "decimaltime"),
         )
 
     def getItemTooltipData(self, item):

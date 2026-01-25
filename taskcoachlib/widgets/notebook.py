@@ -52,17 +52,20 @@ class BookPage(wx.Panel):
 
     # Outer margin around page content (modern UI best practice: 10-12px)
     _outerMargin = 10
+    # Grid spacing - subclasses can override
+    _vgap = 5
+    _hgap = 5
+    _borderWidth = 5
 
     def __init__(self, parent, columns, growableColumn=None, *args, **kwargs):
         super().__init__(parent, style=wx.TAB_TRAVERSAL, *args, **kwargs)
-        self._sizer = wx.GridBagSizer(vgap=5, hgap=5)
+        self._sizer = wx.GridBagSizer(vgap=self._vgap, hgap=self._hgap)
         self._columns = columns
         self._position = GridCursor(columns)
         if growableColumn is None:
             self._growableColumn = columns - 1
         else:
             self._growableColumn = growableColumn
-        self._borderWidth = 5
 
     def fit(self):
         # Wrap GridBagSizer in outer BoxSizer with margins for proper spacing
@@ -139,8 +142,14 @@ class BookPage(wx.Panel):
 
     def addLine(self):
         line = wx.StaticLine(self)
-        self.__addControl(
-            0, line, flag=wx.GROW | wx.ALIGN_CENTER_VERTICAL, lastColumn=True
+        # No spacing above, regular spacing (10px) below
+        colspan = max(self._columns, 1)
+        self._sizer.Add(
+            line,
+            self._position.next(colspan),
+            span=(1, colspan),
+            flag=wx.GROW | wx.ALIGN_CENTER_VERTICAL | wx.BOTTOM,
+            border=10,
         )
 
     def __addControl(self, columnIndex, control, flag, lastColumn):

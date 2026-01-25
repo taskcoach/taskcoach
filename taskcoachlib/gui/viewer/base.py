@@ -1141,9 +1141,9 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
     def subjectImageIndices(self, item):
         normalIcon = item.icon(recursive=True)
         selectedIcon = item.selectedIcon(recursive=True) or normalIcon
-        normalImageIndex = self.imageIndex[normalIcon] if normalIcon else -1
+        normalImageIndex = self.imageIndex.get(normalIcon, -1) if normalIcon else -1
         selectedImageIndex = (
-            self.imageIndex[selectedIcon] if selectedIcon else -1
+            self.imageIndex.get(selectedIcon, -1) if selectedIcon else -1
         )
         return {
             wx.TreeItemIcon_Normal: normalImageIndex,

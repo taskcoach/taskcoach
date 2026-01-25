@@ -17,10 +17,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import i18n, operating_system
+import ast
 import wx
 import wx.stc as stc
 import webbrowser
 import re
+from pubsub import pub
 
 # Try to import enchant for spell checking
 try:
@@ -250,6 +252,21 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
             # Intercept Ctrl+V to strip newlines from pasted text
             self.Bind(wx.EVT_KEY_DOWN, self._onKeyDown)
 
+        # Live update squiggle color from preferences
+        pub.subscribe(self._onSquiggleColourChanged, 'spellcheck.colours.changed')
+        self.Bind(wx.EVT_WINDOW_DESTROY, self._onDestroy)
+
+    def _onSquiggleColourChanged(self):
+        self.IndicatorSetForeground(SPELLCHECK_INDICATOR, self._getSquiggleColor())
+        self.Refresh()
+
+    def _onDestroy(self, event):
+        try:
+            pub.unsubscribe(self._onSquiggleColourChanged, 'spellcheck.colours.changed')
+        except Exception:
+            pass
+        event.Skip()
+
     def _onKeyDown(self, event):
         """Intercept Ctrl+V to strip newlines from pasted text."""
         # Check for Ctrl+V (paste)
@@ -301,12 +318,30 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         self.SetCaretForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
         self.SetSelBackground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT))
         self.SetSelForeground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
+        self.IndicatorSetForeground(SPELLCHECK_INDICATOR, self._getSquiggleColor())
+
+    def _getSquiggleColor(self):
+        """Get the squiggle color from settings, respecting light/dark theme."""
+        if self._settings is None:
+            return wx.RED
+        try:
+            theme = self._settings.get("window", "theme")
+            if theme == "automatic":
+                from taskcoachlib.application.application import detect_dark_theme
+                is_dark = detect_dark_theme()
+            else:
+                is_dark = (theme == "dark")
+            section = "spellcheck_dark" if is_dark else "spellcheck_light"
+            color_tuple = self._settings.getvalue(section, "squiggle_color")
+            return wx.Colour(*color_tuple)
+        except Exception:
+            return wx.RED
 
     def _setupIndicators(self):
         """Set up indicators for spell check and URLs."""
-        # Spell check: red squiggly underline
+        # Spell check: squiggly underline with configurable color
         self.IndicatorSetStyle(SPELLCHECK_INDICATOR, stc.STC_INDIC_SQUIGGLE)
-        self.IndicatorSetForeground(SPELLCHECK_INDICATOR, wx.RED)
+        self.IndicatorSetForeground(SPELLCHECK_INDICATOR, self._getSquiggleColor())
 
         # URLs: blue underline with hotspot
         self.IndicatorSetStyle(self.URL_INDICATOR, stc.STC_INDIC_PLAIN)

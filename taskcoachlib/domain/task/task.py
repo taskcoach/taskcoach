@@ -612,19 +612,19 @@ class Task(
 
     def completed(self):
         """A task is completed if it has a completion date/time."""
-        return self.status() == status.completed
+        return self.computedStatus() == status.completed
 
     def overdue(self):
         """A task is over due if its due date/time is in the past and it is
         not completed. Note that an over due task is also either active
         or inactive."""
-        return self.status() == status.overdue
+        return self.computedStatus() == status.overdue
 
     def inactive(self):
         """A task is inactive if it is not completed and either has no planned
         start date/time or a planned start date/time in the future, and/or
         its prerequisites are not completed."""
-        return self.status() == status.inactive
+        return self.computedStatus() == status.inactive
 
     def active(self):
         """A task is active if it has a planned start date/time in the past and
@@ -632,17 +632,17 @@ class Task(
         considered to be active. So the statuses active, inactive and
         completed are disjunct, but the statuses active, due soon and over
         due are not."""
-        return self.status() == status.active
+        return self.computedStatus() == status.active
 
     def dueSoon(self):
         """A task is due soon if it is not completed and there is still time
         left (i.e. it is not over due)."""
-        return self.status() == status.duesoon
+        return self.computedStatus() == status.duesoon
 
     def late(self):
         """A task is late if it is not active and its planned start date time
         is in the past."""
-        return self.status() == status.late
+        return self.computedStatus() == status.late
 
     @classmethod
     def possibleStatuses(class_):
@@ -729,7 +729,8 @@ class Task(
         self.__computed_status = newStatus
         self.__status_text = newStatus.pluralLabel.replace(
             " tasks", "").replace("tasks", "").strip()
-        self.__status_icon = newStatus.getBitmap(self.settings)
+        iconSection = self._themedSection("icon")
+        self.__status_icon = self.settings.get(iconSection, "%stasks" % newStatus)
         # Fire event if status changed
         if oldStatus is not None and newStatus != oldStatus:
             pub.sendMessage(
@@ -745,6 +746,19 @@ class Task(
     def statusIconName(self):
         """Return the computed status icon name (e.g. 'led_blue_icon')."""
         return self.__status_icon
+
+    def computedStatus(self):
+        """Return the computed TaskStatus object (single source of truth).
+
+        This is the preferred accessor for status. It returns the cached
+        TaskStatus object populated by computeStatus(), which is called:
+        - On task creation/load (Task.__init__)
+        - On date changes (recomputeAppearance)
+        - Every second (StatusChecker safety net)
+
+        Use this instead of the legacy status() method.
+        """
+        return self.__computed_status
 
     def onDueSoonHoursChanged(self, value):
         self.__dueSoonHours = value
@@ -1206,8 +1220,8 @@ class Task(
         self.__computeRecursiveSelectedIcon()
 
     def statusIcon(self, selected=False):
-        """Return the current icon of the task, based on its status."""
-        return self.iconForStatus(self.status(), selected)
+        """Return the status icon (single source of truth from computeStatus)."""
+        return self.__status_icon
 
     def iconForStatus(self, taskStatus, selected=False):
         section = self._themedSection("icon")

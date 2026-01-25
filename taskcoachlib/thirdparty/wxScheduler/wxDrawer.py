@@ -81,7 +81,8 @@ class wxDrawer(object):
         raise NotImplementedError
 
     def DrawSchedulesCompact(
-        self, day, schedules, x, y, width, height, highlightColor
+        self, day, schedules, x, y, width, height, highlightColor,
+        otherMonthColor=None,
     ):
         """
         Draws a set of schedules in compact form (vertical
@@ -610,10 +611,14 @@ class HeaderDrawerDCMixin(object):
         return w, int(textH * 1.5)
 
     def DrawSchedulesCompact(
-        self, day, schedules, x, y, width, height, highlightColor
+        self, day, schedules, x, y, width, height, highlightColor,
+        otherMonthColor=None,
     ):
         if day is None:
-            self.context.SetBrush(wx.LIGHT_GREY_BRUSH)
+            if otherMonthColor is not None:
+                self.context.SetBrush(wx.Brush(otherMonthColor))
+            else:
+                self.context.SetBrush(wx.LIGHT_GREY_BRUSH)
         else:
             self.context.SetBrush(wx.Brush(DAY_BACKGROUND_BRUSH()))
 
@@ -783,16 +788,18 @@ class HeaderDrawerGCMixin(object):
             font.SetWeight(fweight)
 
     def DrawSchedulesCompact(
-        self, day, schedules, x, y, width, height, highlightColor
+        self, day, schedules, x, y, width, height, highlightColor,
+        otherMonthColor=None,
     ):
         if day is None:
+            gradientEnd = otherMonthColor if otherMonthColor is not None else SCHEDULER_BACKGROUND_BRUSH()
             brush = self.context.CreateLinearGradientBrush(
                 x,
                 y,
                 x + width,
                 y + height,
                 wx.BLACK,
-                SCHEDULER_BACKGROUND_BRUSH(),
+                gradientEnd,
             )
         else:
             brush = self.context.CreateLinearGradientBrush(

@@ -162,24 +162,6 @@ class RenderTimeSpentTest(test.TestCase):
             "-0:00:01", render.timeSpent(date.TimeDelta(seconds=-1))
         )
 
-    def testDecimalNegative(self):
-        self.assertEqual(
-            "-1.25",
-            render.timeSpent(
-                date.TimeDelta(hours=-1, minutes=-15), decimal=True
-            ),
-        )
-
-    def testDecimalNul(self):
-        self.assertEqual(
-            "", render.timeSpent(date.TimeDelta(hours=0), decimal=True)
-        )
-
-    def testDecimal(self):
-        self.assertEqual(
-            "0.50", render.timeSpent(date.TimeDelta(minutes=30), decimal=True)
-        )
-
 
 class RenderWeekNumberTest(test.TestCase):
     def testWeek1(self):

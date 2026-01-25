@@ -34,6 +34,8 @@ class HierarchicalCalendarConfigDialog(sized_controls.SizedDialog):
     def __init__(self, settings, settingsSection, *args, **kwargs):
         self._settings = settings
         self._settingsSection = settingsSection
+        kwargs.setdefault(
+            "style", wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         super().__init__(*args, **kwargs)
         pane = self.GetContentsPane()
         pane.SetSizerType("form")
@@ -41,6 +43,7 @@ class HierarchicalCalendarConfigDialog(sized_controls.SizedDialog):
         buttonSizer = self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL)
         self.SetButtonSizer(buttonSizer)
         self.Fit()
+        self.SetMinSize(self.GetSize())
         wxhelper.getButtonFromStdDialogButtonSizer(buttonSizer, wx.ID_OK).Bind(
             wx.EVT_BUTTON, self.ok
         )
@@ -108,7 +111,7 @@ class HierarchicalCalendarConfigDialog(sized_controls.SizedDialog):
                 *tuple(map(int, hcolor.split(",")))
             )  # pylint: disable=W0141
         self._highlight = csel.ColourSelect(
-            pane, size=(100, 20)
+            pane, size=(44, 24)
         )  # pylint: disable=W0201
         label.SetSizerProps(valign="center")
         self._highlight.SetColour(color)

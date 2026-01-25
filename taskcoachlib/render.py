@@ -59,13 +59,10 @@ def timeLeft(time_left, completed_task):
 
 
 def timeSpent(
-    timeSpent: datemodule.TimeDelta, showSeconds=True, decimal=False
+    timeSpent: datemodule.TimeDelta, showSeconds=True
 ):
     """Render time spent (of type date.TimeDelta) as
     "<hours>:<minutes>:<seconds>" or "<hours>:<minutes>" """
-    if decimal:
-        return timeSpentDecimal(timeSpent)
-
     zero = datemodule.TimeDelta()
     if timeSpent == zero:
         return ""
@@ -78,18 +75,6 @@ def timeSpent(
             + (":%02d" % seconds if showSeconds else "")
         )
 
-
-def timeSpentDecimal(timeSpent: datemodule.TimeDelta):
-    """Render time spent (of type date.TimeDelta) as
-    "<hours>.<fractional hours>"""
-    zero = datemodule.TimeDelta()
-    if timeSpent == zero:
-        return ""
-    else:
-        sign = "-" if timeSpent < zero else ""
-        hours, minutes, seconds = timeSpent.hoursMinutesSeconds()
-        decimalHours = hours + minutes / 60.0 + seconds / 3600.0
-        return sign + "%.2f" % (decimalHours)
 
 
 def recurrence(recurrence):
@@ -137,42 +122,33 @@ def budget(aBudget):
     return timeSpent(aBudget)
 
 
-# Dynamic format helpers - read from settings each time for live updates
-def _getTimeFormats():
-    """Get time format strings based on user settings.
+# Date/time format constants - computed once at startup.
+# Changing date/time format in preferences requires a restart.
+try:
+    from taskcoachlib.widgets.maskedtimectrl import getEffectiveTimeFormat
+    _timeFormatSetting = getEffectiveTimeFormat()
+except Exception:
+    _timeFormatSetting = "24"
 
-    Returns tuple: (timeFormat, timeWithMinutesFormat, timeWithSecondsFormat)
-    """
-    try:
-        from taskcoachlib.widgets.maskedtimectrl import getEffectiveTimeFormat
-        timeFormat = getEffectiveTimeFormat()
-    except Exception:
-        timeFormat = "24"
+if _timeFormatSetting == "12":
+    timeFormat = "%I %p"
+    timeWithMinutesFormat = "%I:%M %p"
+    timeWithSecondsFormat = "%I:%M:%S %p"
+else:
+    timeFormat = "%H"
+    timeWithMinutesFormat = "%H:%M"
+    timeWithSecondsFormat = "%H:%M:%S"
 
-    if timeFormat == "12":
-        return ("%I %p", "%I:%M %p", "%I:%M:%S %p")
-    else:
-        return ("%H", "%H:%M", "%H:%M:%S")
-
-
-def _getDateFormat():
-    """Get date format string based on user settings.
-
-    Returns strftime format string.
-    """
-    try:
-        from taskcoachlib.widgets.maskedtimectrl import getEffectiveDateFormat
-        field_order, separator = getEffectiveDateFormat()
-        # Convert field order to strftime format
-        format_map = {'year': '%Y', 'month': '%m', 'date_day': '%d'}
-        parts = [format_map.get(f, '%Y') for f in field_order]
-        return separator.join(parts)
-    except Exception:
-        return "%x"  # Fallback to locale default
+try:
+    from taskcoachlib.widgets.maskedtimectrl import getEffectiveDateFormat
+    _field_order, _separator = getEffectiveDateFormat()
+    _format_map = {'year': '%Y', 'month': '%m', 'date_day': '%d'}
+    dateFormat = _separator.join(_format_map.get(f, '%Y') for f in _field_order)
+except Exception:
+    dateFormat = "%x"
 
 
 def rawTimeFunc(dt, minutes=True, seconds=False):
-    timeFormat, timeWithMinutesFormat, timeWithSecondsFormat = _getTimeFormats()
     if seconds:
         fmt = timeWithSecondsFormat
     elif minutes:
@@ -183,7 +159,6 @@ def rawTimeFunc(dt, minutes=True, seconds=False):
 
 
 def rawDateFunc(dt=None):
-    dateFormat = _getDateFormat()
     return operating_system.decodeSystemString(
         datetime.datetime.strftime(dt, dateFormat)
     )
@@ -213,7 +188,6 @@ if operating_system.isWindows():
         # Use strftime directly to avoid pywintypes.Time() timezone issues.
         # pywintypes.Time() interprets naive datetimes as UTC and converts to
         # local time, causing times like 07:00 to display as 06:00 in UTC+1.
-        timeFormat, timeWithMinutesFormat, timeWithSecondsFormat = _getTimeFormats()
         if seconds:
             fmt = timeWithSecondsFormat
         elif minutes:
@@ -230,7 +204,6 @@ if operating_system.isWindows():
         # Use strftime directly to avoid pywintypes.Time() timezone issues.
         # pywintypes.Time() interprets naive datetimes as UTC and converts to
         # local time, which can shift dates when times are near midnight.
-        dateFormat = _getDateFormat()
         return operating_system.decodeSystemString(dt.strftime(dateFormat))
 
 elif operating_system.isMac():
@@ -240,7 +213,6 @@ elif operating_system.isMac():
     def rawTimeFunc(dt, minutes=True, seconds=False):
         if dt is None:
             dt = datetime.datetime.now()
-        timeFormat, timeWithMinutesFormat, timeWithSecondsFormat = _getTimeFormats()
         if seconds:
             return dt.strftime(timeWithSecondsFormat)
         elif minutes:
@@ -251,7 +223,6 @@ elif operating_system.isMac():
     def rawDateFunc(dt):
         if dt is None:
             dt = datetime.datetime.now()
-        dateFormat = _getDateFormat()
         return dt.strftime(dateFormat)
 
 

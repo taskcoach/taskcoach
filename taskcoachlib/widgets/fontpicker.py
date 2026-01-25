@@ -27,6 +27,8 @@ class FontPickerCtrl(buttons.GenButton):
     def __init__(self, *args, **kwargs):
         self.__font = kwargs.pop("font")
         self.__colour = kwargs.pop("colour")
+        self.__bgColour = kwargs.pop("bgColour", None)
+        self.__readOnly = kwargs.pop("readOnly", False)
         super().__init__(*args, **kwargs)
         self.SetBezelWidth(0)
         self.SetUseFocusIndicator(False)
@@ -47,8 +49,17 @@ class FontPickerCtrl(buttons.GenButton):
         self.__colour = colour
         self.__updateButton()
 
+    def GetSelectedBgColour(self):
+        return self.__bgColour
+
+    def SetSelectedBgColour(self, colour):
+        self.__bgColour = colour
+        self.__updateButton()
+
     def onClick(self, event):
         event.Skip(False)
+        if self.__readOnly:
+            return
         dialog = wx.FontDialog(self, self.__newFontData())
         if wx.ID_OK == dialog.ShowModal():
             self.__readFontData(dialog.GetFontData())
@@ -69,6 +80,20 @@ class FontPickerCtrl(buttons.GenButton):
         self.SetLabel(self.__font.GetNativeFontInfoUserDesc())
         self.SetFont(self.__font)
         self.SetForegroundColour(self.__colour)
+        if self.__bgColour:
+            self.SetBackgroundColour(self.__bgColour)
+        else:
+            self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
+        # Force visual repaint on GTK
+        self.InvalidateBestSize()
+        self.GetParent().Layout()
+        self.Refresh(eraseBackground=True)
+        self.Update()
+
+    def GetBackgroundBrush(self, dc):
+        """Override to ensure correct background color is used for painting."""
+        bgColor = self.__bgColour if self.__bgColour else wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+        return wx.Brush(bgColor, wx.BRUSHSTYLE_SOLID)
 
     def __sendPickerEvent(self):
         event = wx.FontPickerEvent(self, self.GetId(), self.__font)

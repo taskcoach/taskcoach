@@ -11,6 +11,7 @@ This document tracks planned improvements and known issues to address in future 
 - [Monkeypatches and Workarounds](#monkeypatches-and-workarounds)
 - [Text-to-Speech Modernization](#text-to-speech-modernization)
 - [GTK3 Widget Sizing Inconsistency](#gtk3-widget-sizing-inconsistency)
+- [BookPage Default Alignment Inconsistency](#bookpage-default-alignment-inconsistency)
 - [Other TODOs](#other-todos)
   - [EVT_TEXT Compatibility Shim](#evt_text-compatibility-shim-in-multilinetextctrl)
 
@@ -328,6 +329,35 @@ The custom `SpinCtrl` in `taskcoachlib/widgets/spinctrl.py` uses a `TextCtrl` + 
 3. **GTK CSS override** - Force widget sizes via `~/.config/gtk-3.0/gtk.css` (user-side, not app-side)
 
 **Status:** Known GTK3 limitation. No action planned - accepting platform behavior.
+
+---
+
+## BookPage Default Alignment Inconsistency
+
+The `BookPage.__defaultFlags()` method in `taskcoachlib/widgets/notebook.py` has inconsistent default alignment:
+
+```python
+for columnIndex in range(len(controls)):
+    flag = wx.ALL | wx.ALIGN_CENTER_VERTICAL
+    if columnIndex == 0 and labelInFirstColumn:
+        flag |= wx.ALIGN_LEFT      # Column 0 with string label
+    else:
+        flag |= wx.ALIGN_RIGHT | wx.EXPAND   # All other columns
+```
+
+**Default behavior:**
+- Column 0 (if it's a string): LEFT aligned
+- All other columns: RIGHT aligned + EXPAND
+
+So when you call `addEntry(_("Label"), someControl)`:
+- "Label" → left-aligned
+- someControl → right-aligned, expands to fill cell
+
+**Problem:** This creates visual inconsistency - some controls align left, some right, depending on column position.
+
+**TODO:** Clean up to use consistent alignment. Either:
+1. Leave everything as default (remove custom alignment overrides throughout codebase)
+2. Change default to all LEFT-aligned (update `__defaultFlags` to use `wx.ALIGN_LEFT` for all columns)
 
 ---
 

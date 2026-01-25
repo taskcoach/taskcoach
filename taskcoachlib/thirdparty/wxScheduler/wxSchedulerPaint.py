@@ -88,6 +88,7 @@ class wxSchedulerPaint(object):
             int((color.Green() + 255) / 2),
             int((color.Blue() + 255) / 2),
         )
+        self._otherMonthColor = None
 
         self.pageNumber = None
         self.pageCount = 1
@@ -1053,6 +1054,7 @@ class wxSchedulerPaint(object):
                         cellW,
                         cellH,
                         self._highlightColor,
+                        self._otherMonthColor,
                     )
                     self._schedulesCoords.extend(displayed)
 
@@ -1324,6 +1326,16 @@ class wxSchedulerPaint(object):
         """
 
         return self._highlightColor
+
+    def SetOtherMonthColor(self, color):
+        """Sets the background color for 'other month' day cells.
+        None means use system default."""
+        self._otherMonthColor = color
+        self.Refresh()
+
+    def GetOtherMonthColor(self):
+        """Returns the current other-month background color (or None)."""
+        return self._otherMonthColor
 
     def SetDrawer(self, drawerClass):
         """

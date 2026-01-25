@@ -601,7 +601,6 @@ defaults = {
         "sayreminder": "False",
         "task_duration_presets": "60,120,1440,2880",  # Minutes: 1h, 2h, 1 day, 2 days
         "effort_duration_presets": "300,900,1800,3600,7200",  # Seconds: 5m, 15m, 30m, 1h, 2h
-        "decimaltime": "False",
         # New settings should use snake_case naming convention (PEP 8)
     },
     "printer": {
@@ -632,12 +631,22 @@ defaults = {
         "weekday_header_fg": "(0, 0, 255, 255)",
         "weekend_day_fg": "(255, 0, 0, 255)",
         "today_border": "(255, 0, 0, 255)",
+        "other_month_bg": "(211, 211, 211, 255)",
+        "other_month_bg_system": "True",
     },
     "calendar_dark": {
-        "weekday_header_bg": "(60, 60, 60, 255)",
+        "weekday_header_bg": "(75, 75, 75, 255)",
         "weekday_header_fg": "(100, 160, 255, 255)",
         "weekend_day_fg": "(255, 100, 100, 255)",
         "today_border": "(255, 100, 100, 255)",
+        "other_month_bg": "(55, 55, 55, 255)",
+        "other_month_bg_system": "False",
+    },
+    "spellcheck_light": {
+        "squiggle_color": "(255, 0, 0, 255)",
+    },
+    "spellcheck_dark": {
+        "squiggle_color": "(255, 80, 80, 255)",
     },
 }
 

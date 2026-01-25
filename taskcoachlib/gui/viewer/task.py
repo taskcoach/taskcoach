@@ -170,8 +170,6 @@ class BaseTaskViewer(
         self.statusMessages = None  # Break cycle
 
     def _renderTimeSpent(self, *args, **kwargs):
-        if self.settings.getboolean("feature", "decimaltime"):
-            return render.timeSpentDecimal(*args, **kwargs)
         return render.timeSpent(*args, **kwargs)
 
     def onAppearanceSettingChange(self, value):  # pylint: disable=W0613
@@ -1035,14 +1033,19 @@ class CalendarViewer(
                 )
         # Subscribe to global timer for midnight processing
         pub.subscribe(self._onDateChanged, 'timer.date')
+        pub.subscribe(self._onCalendarColoursChanged, 'calendar.colours.changed')
 
     def _onDateChanged(self, timestamp):
         """Handle date change from global timer."""
         self.atMidnight()
 
+    def _onCalendarColoursChanged(self):
+        self.reconfig()
+
     def detach(self):
         super().detach()
         pub.unsubscribe(self._onDateChanged, 'timer.date')
+        pub.unsubscribe(self._onCalendarColoursChanged, 'calendar.colours.changed')
 
     def isTreeViewer(self):
         return False
@@ -1196,6 +1199,22 @@ class CalendarViewer(
                     *tuple([int(c) for c in hcolor.split(",")])
                 )
                 self.widget.SetHighlightColor(highlightColor)
+
+            # Other month days background color
+            theme = self.settings.get("window", "theme")
+            if theme == "automatic":
+                from taskcoachlib.application.application import detect_dark_theme
+                is_dark = detect_dark_theme()
+            else:
+                is_dark = (theme == "dark")
+            section = "calendar_dark" if is_dark else "calendar_light"
+            use_system = self.settings.getboolean(section, "other_month_bg_system")
+            if use_system:
+                self.widget.SetOtherMonthColor(None)
+            else:
+                color_tuple = self.settings.getvalue(section, "other_month_bg")
+                self.widget.SetOtherMonthColor(wx.Colour(*color_tuple))
+
             self.widget.RefreshAllItems(0)
         finally:
             self.widget.Thaw()

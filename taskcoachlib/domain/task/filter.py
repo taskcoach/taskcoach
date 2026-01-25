@@ -150,7 +150,7 @@ class ViewFilter(tasklist.TaskListQueryMixin, base.Filter):
 
     def filterTask(self, task):  # pylint: disable=W0621
         result = True
-        if task.status() in self.__statusesToHide:
+        if task.computedStatus() in self.__statusesToHide:
             result = False
         elif (
             self.__hideCompositeTasks

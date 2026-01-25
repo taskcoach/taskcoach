@@ -797,11 +797,16 @@ class XMLReader(object):
                 return font
         return default_value
 
+    # Mapping of removed/renamed icon names to their replacements
+    _deprecated_icons = {
+        "clock_alarm": "clock_alarm_icon",
+        "sign_warning_icon": "sign_important_icon",
+    }
+
     @staticmethod
     def __parse_icon(text):
-        """Parse an icon name from the text."""
-        # Parse is a big word, we just need to fix one particular icon
-        return "clock_alarm_icon" if text == "clock_alarm" else text
+        """Parse an icon name from the text, migrating deprecated names."""
+        return XMLReader._deprecated_icons.get(text, text)
 
     @classmethod
     def __parse_boolean(cls, text, default_value=None):

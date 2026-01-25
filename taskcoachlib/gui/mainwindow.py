@@ -24,6 +24,7 @@ from taskcoachlib import (
     widgets,
     operating_system,
 )  # pylint: disable=W0622
+from taskcoachlib.application.application import detect_dark_theme
 from taskcoachlib.gui import (
     viewer,
     toolbar,
@@ -95,6 +96,10 @@ class MainWindow(
         self._idleController = idlecontroller.IdleController(
             self, self.settings, self.taskFile.efforts()
         )
+
+        # System theme change monitor (Windows/macOS)
+        self._lastDetectedDark = detect_dark_theme()
+        self.Bind(wx.EVT_SYS_COLOUR_CHANGED, self._onSysColourChanged)
 
     def setShutdownInProgress(self):
         self.__shutdown = True
@@ -290,6 +295,16 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         for child in self.GetChildren():
             if isinstance(child, Editor):
                 child.Close()
+
+    def _onSysColourChanged(self, event):
+        """Handle system theme/colour change event (Windows/macOS)."""
+        currentDark = detect_dark_theme()
+        if currentDark != self._lastDetectedDark:
+            self._lastDetectedDark = currentDark
+            pub.sendMessage('system.appearance.changed')
+            if self.settings.get("window", "theme") == "automatic":
+                pub.sendMessage('settings.window.theme')
+        event.Skip()
 
     def onClose(self, event):
         self.closeEditors()
