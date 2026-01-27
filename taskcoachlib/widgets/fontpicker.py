@@ -24,6 +24,9 @@ class FontPickerCtrl(buttons.GenButton):
     """A button that displays the selected font and opens a font dialog on click.
     Uses GenButton to avoid native GTK hover/press rendering artifacts."""
 
+    # Fixed width for the button to match color picker width
+    FIXED_WIDTH = 75
+
     def __init__(self, *args, **kwargs):
         self.__font = kwargs.pop("font")
         self.__colour = kwargs.pop("colour")
@@ -34,6 +37,28 @@ class FontPickerCtrl(buttons.GenButton):
         self.SetUseFocusIndicator(False)
         self.__updateButton()
         self.Bind(wx.EVT_BUTTON, self.onClick)
+
+    def DoGetBestSize(self):
+        """Override to return a fixed width, preventing expansion from long labels."""
+        # Calculate height based on font, but use fixed width
+        dc = wx.ClientDC(self)
+        dc.SetFont(self.GetFont())
+        _, textHeight = dc.GetTextExtent("Ay")
+        # Add padding for button appearance
+        height = textHeight + 10
+        return wx.Size(self.FIXED_WIDTH, height)
+
+    def DrawLabel(self, dc, width, height, dx=0, dy=0):
+        """Override to draw text left-aligned with ellipsis if needed."""
+        dc.SetFont(self.GetFont())
+        label = self.GetLabel()
+        # Calculate available width (with padding)
+        padding = 8
+        availableWidth = width - (padding * 2)
+        # Ellipsize the label if it's too long
+        ellipsizedLabel = wx.Control.Ellipsize(label, dc, wx.ELLIPSIZE_END, availableWidth)
+        # Draw left-aligned
+        dc.DrawText(ellipsizedLabel, padding, (height - dc.GetTextExtent(ellipsizedLabel)[1]) // 2)
 
     def GetSelectedFont(self):
         return self.__font
@@ -84,9 +109,7 @@ class FontPickerCtrl(buttons.GenButton):
             self.SetBackgroundColour(self.__bgColour)
         else:
             self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
-        # Force visual repaint on GTK
-        self.InvalidateBestSize()
-        self.GetParent().Layout()
+        # Force visual repaint
         self.Refresh(eraseBackground=True)
         self.Update()
 

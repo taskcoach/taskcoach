@@ -66,7 +66,12 @@ def getRelativePath(path, basePath=os.getcwd()):
 
 @total_ordering
 class Attachment(base.Object, NoteOwner):
-    """Abstract base class for attachments."""
+    """Abstract base class for attachments.
+
+    Appearance (derived and effective values) is handled by the base class
+    and ComputeStyles polling. Attachments have no inheritance - always
+    use system theme.
+    """
 
     type_ = "unknown"
 
@@ -77,6 +82,7 @@ class Attachment(base.Object, NoteOwner):
             kwargs["subject"] = os.path.splitext(filename)[0] or location
         super().__init__(*args, **kwargs)
         self.__location = location
+        # Note: Effective appearance is computed by ComputeStyles polling
 
     def data(self):
         return None

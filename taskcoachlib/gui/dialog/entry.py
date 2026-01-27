@@ -324,10 +324,17 @@ ColorEntryEvent, EVT_COLORENTRY = newevent.NewEvent()
 
 
 class ColorEntry(widgets.PanelWithBoxSizer):
+    """Color entry with checkbox for override colors.
+
+    When unchecked: shows derived color (set via setDerivedColor).
+    When checked: user can pick a custom color.
+    Editor provides derived color (inherited value or system theme fallback).
+    """
     def __init__(self, parent, currentColor, defaultColor, *args, **kwargs):
         kwargs["orientation"] = wx.HORIZONTAL
         super().__init__(parent, *args, **kwargs)
         self._defaultColor = defaultColor
+        self._derivedColor = None  # Set via setDerivedColor() after construction
         self._colorCheckBox = self._createCheckBox(currentColor)
         self._colorPicker = self._createColorPicker(currentColor, defaultColor)
         self.add(
@@ -353,26 +360,41 @@ class ColorEntry(widgets.PanelWithBoxSizer):
     def _createColorPicker(self, currentColor, defaultColor):
         # ColourPickerCtrl on Mac OS X expects a wx.Colour and fails on tuples
         # so convert the tuples to a wx.Colour:
-        currentColor = (
-            wx.Colour(*currentColor) if currentColor else defaultColor
-        )  # pylint: disable=W0142
-        picker = widgets.ColourPickerCtrl(self, colour=currentColor)
+        if currentColor:
+            displayColor = wx.Colour(*currentColor)
+        else:
+            # No override - show system theme initially (derived color set later)
+            if defaultColor == wx.BLACK:
+                displayColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+            elif defaultColor == wx.WHITE:
+                displayColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+            else:
+                displayColor = defaultColor
+        picker = widgets.ColourPickerCtrl(self, colour=displayColor)
         picker.Bind(wx.EVT_COLOURPICKER_CHANGED, self.onColorPicked)
         return picker
+
+    def setDerivedColor(self, color):
+        """Set the derived/fallback color to display when unchecked.
+
+        This is the inherited value from parent, or system theme if no parent.
+        Editor is responsible for providing a valid color (never None).
+        """
+        if color is None or (isinstance(color, wx.Colour) and not color.IsOk()):
+            return  # Ignore invalid colors
+        if not isinstance(color, wx.Colour):
+            color = wx.Colour(*color)
+        self._derivedColor = color
+        # Update picker if currently unchecked
+        if not self._colorCheckBox.IsChecked():
+            self._colorPicker.SetColour(self._derivedColor)
 
     def onChecked(self, event):
         event.Skip()
         checked = self._colorCheckBox.IsChecked()
-        if not checked:
-            # Reset picker to current theme color on uncheck
-            # Read live from system settings in case theme changed
-            if self._defaultColor == wx.BLACK:
-                themeColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
-            elif self._defaultColor == wx.WHITE:
-                themeColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
-            else:
-                themeColor = self._defaultColor
-            self._colorPicker.SetColour(themeColor)
+        if not checked and self._derivedColor:
+            # Reset picker to derived/fallback color
+            self._colorPicker.SetColour(self._derivedColor)
         wx.PostEvent(self, ColorEntryEvent())
 
     def onColorPicked(self, event):
@@ -395,64 +417,6 @@ class ColorEntry(widgets.PanelWithBoxSizer):
 
 
 IconEntryEvent, EVT_ICONENTRY = newevent.NewEvent()
-
-
-def _strikethrough(text):
-    """Apply Unicode strikethrough using combining character U+0336."""
-    return ''.join(char + '\u0336' for char in text)
-
-
-class IconPicker(wx.adv.BitmapComboBox):
-    """BitmapComboBox for selecting icons."""
-    def __init__(self, parent, currentIcon, excluded_icons=None, *args, **kwargs):
-        kwargs["style"] = wx.CB_READONLY
-        self._excluded_icons = excluded_icons or set()
-        super().__init__(parent, *args, **kwargs)
-        imageNames = sorted(artprovider.chooseableItemImages, key=artprovider.chooseableItemImages.get)
-        size = (16, 16)
-        for imageName in imageNames:
-            label = artprovider.chooseableItemImages[imageName]
-            if imageName in self._excluded_icons:
-                label = _strikethrough(label)
-            bitmap = wx.ArtProvider.GetBitmap(imageName, wx.ART_MENU, size)
-            item = self.Append(label, bitmap)
-            self.SetClientData(item, imageName)
-        self._setSelectionByValue(currentIcon)
-        self._previousSelection = self.GetSelection()
-        # GTK's native BitmapComboBox clips icons in the closed state.
-        # Oversizing the control gives the renderer more space to work with.
-        if operating_system.isGTK():
-            longestLabel = max(
-                (artprovider.chooseableItemImages[name] for name in imageNames),
-                key=len
-            )
-            textWidth, _ = self.GetTextExtent(longestLabel)
-            # icon (16) + text + extra padding (16) + dropdown button (30)
-            minWidth = 16 + textWidth + 16 + 30
-            self.SetMinSize(wx.Size(minWidth, -1))
-        self.Bind(wx.EVT_COMBOBOX, self.onIconPicked)
-
-    def onIconPicked(self, event):
-        selected = self.GetClientData(self.GetSelection())
-        if selected in self._excluded_icons:
-            self.SetSelection(self._previousSelection)
-            return
-        self._previousSelection = self.GetSelection()
-        event.Skip()
-
-    def GetValue(self):
-        return self.GetClientData(self.GetSelection())
-
-    def _setSelectionByValue(self, newValue):
-        for index in range(self.GetCount()):
-            if newValue == self.GetClientData(index):
-                self.SetSelection(index)
-                return
-        # Default to first item if not found
-        self.SetSelection(0)
-
-    def SetValue(self, newValue):
-        self._setSelectionByValue(newValue)
 
 
 class IconEntry(widgets.PanelWithBoxSizer):
@@ -483,13 +447,12 @@ class IconEntry(widgets.PanelWithBoxSizer):
         return checkBox
 
     def _createIconPicker(self, parent, currentIcon, excluded_icons):
-        picker = IconPicker(self, currentIcon or "", excluded_icons)
+        picker = widgets.IconPicker(self, currentIcon or "", excluded_icons)
         picker.Bind(wx.EVT_COMBOBOX, self.onIconPicked)
         return picker
 
     def onChecked(self, event):
         event.Skip()
-        # When unchecked, set picker to "No icon"
         if not self._iconCheckBox.IsChecked():
             self._iconPicker.SetValue("")
         wx.PostEvent(self, IconEntryEvent())
@@ -509,7 +472,7 @@ class IconEntry(widgets.PanelWithBoxSizer):
     def SetValue(self, newValue):
         checked = newValue != ""
         self._iconCheckBox.SetValue(checked)
-        self._iconPicker.SetValue(newValue if newValue else "")
+        self._iconPicker.SetValue(newValue)
 
 
 ChoiceEntryEvent, EVT_CHOICEENTRY = newevent.NewEvent()

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from .notebook import Notebook, BookPage
+from .notebook import Notebook, BookPage, ScrolledBookPage
 from .frame import AuiManagedFrameWithDynamicCenterPane
 from .dialog import Dialog, NotebookDialog, HTMLDialog, AttachmentSelector
 from .itemctrl import Column
@@ -49,6 +49,7 @@ from .tooltip import ToolTipMixin, SimpleToolTip
 from .dirchooser import DirectoryChooser
 from .fontpicker import FontPickerCtrl
 from .colourpicker import ColourPickerCtrl
+from .iconpicker import IconPicker
 from .calendarwidget import Calendar
 from .calendarconfig import CalendarConfigDialog
 from .password import GetPassword

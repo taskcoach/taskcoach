@@ -115,6 +115,10 @@ class MainWindow(
                 self.taskFile.tasks()
             )
 
+            # ComputeStyles handles per-second polling for appearance SSOT updates
+            from taskcoachlib.domain.base.appearance import ComputeStyles
+            self._computeStyles = ComputeStyles(self.taskFile)
+
             self._create_viewer_container()
             viewer.addViewers(self.viewer, self.taskFile, self.settings)
             self._create_status_bar()
@@ -328,6 +332,8 @@ If this happens again, please make a copy of your TaskCoach.ini file """
                 event.Skip()
                 self.taskFile.stop()
                 self._idleController.stop()
+                if hasattr(self, '_computeStyles'):
+                    self._computeStyles.shutdown()
 
     def restore(self, event):  # pylint: disable=W0613
         if self.settings.getboolean("window", "maximized"):

@@ -174,6 +174,30 @@ class Object(SynchronizedObject):
             self.orderingChangedEvent,
         )
         self.__id = kwargs.pop("id", None) or str(uuid.uuid1())
+
+        # Derived SSOT fields (value + source for each appearance type)
+        self.__derivedFgColorValue = Attribute(None, self, self._onDerivedFgColorChanged)
+        self.__derivedFgColorSource = Attribute(None, self, self._onDerivedFgColorChanged)
+        self.__derivedBgColorValue = Attribute(None, self, self._onDerivedBgColorChanged)
+        self.__derivedBgColorSource = Attribute(None, self, self._onDerivedBgColorChanged)
+        self.__derivedIconValue = Attribute(None, self, self._onDerivedIconChanged)
+        self.__derivedIconSource = Attribute(None, self, self._onDerivedIconChanged)
+        self.__derivedFontValue = Attribute(None, self, self._onDerivedFontChanged)
+        self.__derivedFontSource = Attribute(None, self, self._onDerivedFontChanged)
+
+        # Effective SSOT fields (value + source + default for colors/font, value + source for icon)
+        self.__effectiveFgColorValue = Attribute(None, self, self._onEffectiveFgColorChanged)
+        self.__effectiveFgColorSource = Attribute(None, self, self._onEffectiveFgColorChanged)
+        self.__effectiveFgColorDefault = Attribute(None, self, self._onEffectiveFgColorChanged)
+        self.__effectiveBgColorValue = Attribute(None, self, self._onEffectiveBgColorChanged)
+        self.__effectiveBgColorSource = Attribute(None, self, self._onEffectiveBgColorChanged)
+        self.__effectiveBgColorDefault = Attribute(None, self, self._onEffectiveBgColorChanged)
+        self.__effectiveIconValue = Attribute(None, self, self._onEffectiveIconChanged)
+        self.__effectiveIconSource = Attribute(None, self, self._onEffectiveIconChanged)
+        self.__effectiveFontValue = Attribute(None, self, self._onEffectiveFontChanged)
+        self.__effectiveFontSource = Attribute(None, self, self._onEffectiveFontChanged)
+        self.__effectiveFontDefault = Attribute(None, self, self._onEffectiveFontChanged)
+
         super().__init__(*args, **kwargs)
 
     def __repr__(self):
@@ -389,6 +413,9 @@ class Object(SynchronizedObject):
 
     def setForegroundColor(self, color, event=None):
         self.__fgColor.set(color, event=event)
+        # Trigger computeEffective after SSOT update
+        from . import appearance
+        appearance.computeEffective(self, 'fgColor')
 
     def foregroundColor(self, recursive=False):  # pylint: disable=W0613
         # The 'recursive' argument isn't actually used here, but some
@@ -398,6 +425,9 @@ class Object(SynchronizedObject):
 
     def setBackgroundColor(self, color, event=None):
         self.__bgColor.set(color, event=event)
+        # Trigger computeEffective after SSOT update
+        from . import appearance
+        appearance.computeEffective(self, 'bgColor')
 
     def backgroundColor(self, recursive=False):  # pylint: disable=W0613
         # The 'recursive' argument isn't actually used here, but some
@@ -415,6 +445,9 @@ class Object(SynchronizedObject):
 
     def setFont(self, font, event=None):
         self.__font.set(font, event=event)
+        # Trigger computeEffective after SSOT update
+        from . import appearance
+        appearance.computeEffective(self, 'font')
 
     # Icons:
 
@@ -423,6 +456,9 @@ class Object(SynchronizedObject):
 
     def setIcon(self, icon, event=None):
         self.__icon.set(icon, event=event)
+        # Trigger computeEffective after SSOT update
+        from . import appearance
+        appearance.computeEffective(self, 'icon')
 
     def selectedIcon(self):
         return self.__selectedIcon.get()
@@ -438,6 +474,171 @@ class Object(SynchronizedObject):
 
     def appearanceChangedEvent(self, event):
         event.addSource(self, type=self.appearanceChangedEventType())
+
+    # --- Derived SSOT Getters ---
+
+    def derivedFgColor(self):
+        return self.__derivedFgColorValue.get()
+
+    def derivedFgColorSource(self):
+        return self.__derivedFgColorSource.get()
+
+    def derivedBgColor(self):
+        return self.__derivedBgColorValue.get()
+
+    def derivedBgColorSource(self):
+        return self.__derivedBgColorSource.get()
+
+    def derivedIcon(self):
+        return self.__derivedIconValue.get()
+
+    def derivedIconSource(self):
+        return self.__derivedIconSource.get()
+
+    def derivedFont(self):
+        return self.__derivedFontValue.get()
+
+    def derivedFontSource(self):
+        return self.__derivedFontSource.get()
+
+    # --- Derived SSOT Setters (for use by computeDerived) ---
+
+    def setDerivedFgColor(self, value, source, event=None):
+        self.__derivedFgColorValue.set(value, event=event)
+        self.__derivedFgColorSource.set(source, event=event)
+
+    def setDerivedBgColor(self, value, source, event=None):
+        self.__derivedBgColorValue.set(value, event=event)
+        self.__derivedBgColorSource.set(source, event=event)
+
+    def setDerivedIcon(self, value, source, event=None):
+        self.__derivedIconValue.set(value, event=event)
+        self.__derivedIconSource.set(source, event=event)
+
+    def setDerivedFont(self, value, source, event=None):
+        self.__derivedFontValue.set(value, event=event)
+        self.__derivedFontSource.set(source, event=event)
+
+    # --- Derived Event Handlers ---
+
+    def _onDerivedFgColorChanged(self, event):
+        event.addSource(self, type=self.derivedFgColorChangedEventType())
+
+    def _onDerivedBgColorChanged(self, event):
+        event.addSource(self, type=self.derivedBgColorChangedEventType())
+
+    def _onDerivedIconChanged(self, event):
+        event.addSource(self, type=self.derivedIconChangedEventType())
+
+    def _onDerivedFontChanged(self, event):
+        event.addSource(self, type=self.derivedFontChangedEventType())
+
+    # --- Derived Event Types ---
+
+    @classmethod
+    def derivedFgColorChangedEventType(class_):
+        return "pubsub.derived.fgColor"
+
+    @classmethod
+    def derivedBgColorChangedEventType(class_):
+        return "pubsub.derived.bgColor"
+
+    @classmethod
+    def derivedIconChangedEventType(class_):
+        return "pubsub.derived.icon"
+
+    @classmethod
+    def derivedFontChangedEventType(class_):
+        return "pubsub.derived.font"
+
+    # --- Effective SSOT Getters ---
+
+    def effectiveFgColor(self):
+        return self.__effectiveFgColorValue.get()
+
+    def effectiveFgColorSource(self):
+        return self.__effectiveFgColorSource.get()
+
+    def effectiveFgColorDefault(self):
+        return self.__effectiveFgColorDefault.get()
+
+    def effectiveBgColor(self):
+        return self.__effectiveBgColorValue.get()
+
+    def effectiveBgColorSource(self):
+        return self.__effectiveBgColorSource.get()
+
+    def effectiveBgColorDefault(self):
+        return self.__effectiveBgColorDefault.get()
+
+    def effectiveIcon(self):
+        return self.__effectiveIconValue.get()
+
+    def effectiveIconSource(self):
+        return self.__effectiveIconSource.get()
+
+    def effectiveFont(self):
+        return self.__effectiveFontValue.get()
+
+    def effectiveFontSource(self):
+        return self.__effectiveFontSource.get()
+
+    def effectiveFontDefault(self):
+        return self.__effectiveFontDefault.get()
+
+    # --- Effective SSOT Setters (for use by computeEffective) ---
+
+    def setEffectiveFgColor(self, value, default, source, event=None):
+        self.__effectiveFgColorValue.set(value, event=event)
+        self.__effectiveFgColorDefault.set(default, event=event)
+        self.__effectiveFgColorSource.set(source, event=event)
+
+    def setEffectiveBgColor(self, value, default, source, event=None):
+        self.__effectiveBgColorValue.set(value, event=event)
+        self.__effectiveBgColorDefault.set(default, event=event)
+        self.__effectiveBgColorSource.set(source, event=event)
+
+    def setEffectiveIcon(self, value, source, event=None):
+        # Icon has no default
+        self.__effectiveIconValue.set(value, event=event)
+        self.__effectiveIconSource.set(source, event=event)
+
+    def setEffectiveFont(self, value, default, source, event=None):
+        self.__effectiveFontValue.set(value, event=event)
+        self.__effectiveFontDefault.set(default, event=event)
+        self.__effectiveFontSource.set(source, event=event)
+
+    # --- Effective Event Handlers ---
+
+    def _onEffectiveFgColorChanged(self, event):
+        event.addSource(self, type=self.effectiveFgColorChangedEventType())
+
+    def _onEffectiveBgColorChanged(self, event):
+        event.addSource(self, type=self.effectiveBgColorChangedEventType())
+
+    def _onEffectiveIconChanged(self, event):
+        event.addSource(self, type=self.effectiveIconChangedEventType())
+
+    def _onEffectiveFontChanged(self, event):
+        event.addSource(self, type=self.effectiveFontChangedEventType())
+
+    # --- Effective Event Types ---
+
+    @classmethod
+    def effectiveFgColorChangedEventType(class_):
+        return "pubsub.effective.fgColor"
+
+    @classmethod
+    def effectiveBgColorChangedEventType(class_):
+        return "pubsub.effective.bgColor"
+
+    @classmethod
+    def effectiveIconChangedEventType(class_):
+        return "pubsub.effective.icon"
+
+    @classmethod
+    def effectiveFontChangedEventType(class_):
+        return "pubsub.effective.font"
 
     @classmethod
     def modificationEventTypes(class_):

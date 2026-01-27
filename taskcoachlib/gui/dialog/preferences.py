@@ -27,12 +27,76 @@ from taskcoachlib.gui import artprovider
 from taskcoachlib.meta import data
 from taskcoachlib.i18n import _
 from wx.lib.agw.hyperlink import HyperLinkCtrl
-from wx.adv import BitmapComboBox
 from pubsub import pub
 import ast
 import wx, calendar
 import wx.lib.scrolledpanel
 from wx.lib.agw import ultimatelistctrl as ULC
+
+
+class BitmapOwnerDrawnComboBox(wx.adv.OwnerDrawnComboBox):
+    """A ComboBox that displays bitmaps with text, supporting SetPopupMinWidth.
+
+    Unlike wx.adv.BitmapComboBox, this inherits from OwnerDrawnComboBox which
+    provides SetPopupMinWidth for making the dropdown wider than the control.
+    """
+
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent, **kwargs)
+        self._bitmaps = []  # Store bitmaps for each item
+        self._clientData = []  # Store client data for each item
+
+    def Append(self, label, bitmap=None):
+        """Add an item with optional bitmap."""
+        index = super().Append(label)
+        # Ensure lists are long enough
+        while len(self._bitmaps) <= index:
+            self._bitmaps.append(None)
+        while len(self._clientData) <= index:
+            self._clientData.append(None)
+        self._bitmaps[index] = bitmap
+        return index
+
+    def SetClientData(self, index, data):
+        """Store client data for an item."""
+        while len(self._clientData) <= index:
+            self._clientData.append(None)
+        self._clientData[index] = data
+
+    def GetClientData(self, index):
+        """Get client data for an item."""
+        if 0 <= index < len(self._clientData):
+            return self._clientData[index]
+        return None
+
+    def OnDrawItem(self, dc, rect, item, flags):
+        """Draw an item with bitmap and text."""
+        if item == wx.NOT_FOUND:
+            return
+
+        r = wx.Rect(*rect)
+        r.Deflate(2, 2)
+
+        # Draw bitmap if available
+        x_offset = r.x + 2
+        if item < len(self._bitmaps) and self._bitmaps[item]:
+            bitmap = self._bitmaps[item]
+            y_pos = r.y + (r.height - bitmap.GetHeight()) // 2
+            dc.DrawBitmap(bitmap, x_offset, y_pos, True)
+            x_offset += bitmap.GetWidth() + 4
+
+        # Draw text
+        text = self.GetString(item)
+        y_pos = r.y + (r.height - dc.GetCharHeight()) // 2
+        dc.DrawText(text, x_offset, y_pos)
+
+    def OnMeasureItem(self, item):
+        """Return height of an item."""
+        return 22
+
+    def OnMeasureItemWidth(self, item):
+        """Return width of an item (use -1 for default)."""
+        return -1
 
 
 class FontColorSyncer(object):
@@ -52,7 +116,7 @@ class FontColorSyncer(object):
         self._fontButton.SetSelectedColour(self._fgColorButton.GetColour())
 
     def onBgColorPicked(self, event):  # pylint: disable=W0613
-        self._fontButton.SetBackgroundColour(self._bgColorButton.GetColour())
+        self._fontButton.SetSelectedBgColour(self._bgColorButton.GetColour())
 
     def onFontPicked(self, event):  # pylint: disable=W0613
         fontColor = self._fontButton.GetSelectedColour()
@@ -318,27 +382,13 @@ class SettingsPageBase(widgets.BookPage):
         )
 
     def _createIconEntry(self, excluded_icons=None):
-        """Create an icon BitmapComboBox sized to its longest label."""
+        """Create a searchable icon picker with fixed 120px width."""
         excluded = excluded_icons or set()
-        iconEntry = BitmapComboBox(self, style=wx.CB_READONLY)
-        imageNames = sorted(artprovider.chooseableItemImages, key=artprovider.chooseableItemImages.get)
-        for imageName in imageNames:
-            label = artprovider.chooseableItemImages[imageName]
-            if imageName in excluded:
-                label = ''.join(c + '\u0336' for c in label)
-            bitmap = wx.ArtProvider.GetBitmap(imageName, wx.ART_MENU, (16, 16))
-            item = iconEntry.Append(label, bitmap)
-            iconEntry.SetClientData(item, imageName)
-        # Size to longest label by pixel width
-        maxTextWidth = max(
-            iconEntry.GetTextExtent(artprovider.chooseableItemImages[name])[0]
-            for name in imageNames
-        )
-        # icon (16) + text + padding (16) + dropdown button (30)
-        targetWidth = 16 + maxTextWidth + 16 + 30
-        iconEntry.SetInitialSize(wx.Size(targetWidth, -1))
-        iconEntry._excluded_icons = excluded
-        iconEntry._previousSelection = 0
+        iconEntry = widgets.IconPicker(self, "", excluded_icons=excluded)
+        iconEntry.SetMinSize(wx.Size(120, -1))
+        iconEntry.SetMaxSize(wx.Size(120, -1))
+        # imageNames returned for backward compatibility (unused)
+        imageNames = sorted(artprovider.chooseableItems.keys(), key=lambda k: artprovider.chooseableItems[k]["name"])
         return iconEntry, imageNames
 
     def _createAppearanceControls(self, fgColorSection, fgColorSetting,
@@ -358,15 +408,13 @@ class SettingsPageBase(widgets.BookPage):
             else None
         )
         fontButton = widgets.FontPickerCtrl(
-            self, font=currentFont or defaultFont, colour=currentFgColor
+            self, font=currentFont or defaultFont, colour=currentFgColor,
+            bgColour=currentBgColor
         )
-        fontButton.SetBackgroundColour(currentBgColor)
         excluded = getattr(self, '_objectIcons', None)
         iconEntry, imageNames = self._createIconEntry(excluded_icons=excluded)
         currentIcon = self.gettext(iconSection, iconSetting)
-        currentSelectionIndex = imageNames.index(currentIcon)
-        iconEntry.SetSelection(currentSelectionIndex)
-        iconEntry._previousSelection = currentSelectionIndex
+        iconEntry.SetValue(currentIcon)
 
         self._colorSettings.append((fgColorSection, fgColorSetting, fgColorButton))
         self._colorSettings.append((bgColorSection, bgColorSetting, bgColorButton))
@@ -444,10 +492,8 @@ class SettingsPageBase(widgets.BookPage):
         lightBg.SetColour(lbgColor)
         lightFont.SetSelectedFont(defaultSysFont)
         lightFont.SetSelectedColour(lfgColor)
-        lightFont.SetForegroundColour(lfgColor)
-        lightFont.SetBackgroundColour(lbgColor)
-        iconNames = sorted(artprovider.chooseableItemImages, key=artprovider.chooseableItemImages.get)
-        lightIcon.SetSelection(iconNames.index(defs["icon"][setting]))
+        lightFont.SetSelectedBgColour(lbgColor)
+        lightIcon.SetValue(defs["icon"][setting])
 
         # Reset dark theme
         dfgColor = wx.Colour(*ast.literal_eval(defs["fgcolor_dark"][setting]))
@@ -456,9 +502,8 @@ class SettingsPageBase(widgets.BookPage):
         darkBg.SetColour(dbgColor)
         darkFont.SetSelectedFont(defaultSysFont)
         darkFont.SetSelectedColour(dfgColor)
-        darkFont.SetForegroundColour(dfgColor)
-        darkFont.SetBackgroundColour(dbgColor)
-        darkIcon.SetSelection(iconNames.index(defs["icon_dark"][setting]))
+        darkFont.SetSelectedBgColour(dbgColor)
+        darkIcon.SetValue(defs["icon_dark"][setting])
 
     def addPathSetting(self, section, setting, text, helpText="", **kwargs):
         pathChooser = widgets.DirectoryChooser(self, wx.ID_ANY)
@@ -527,7 +572,7 @@ class SettingsPageBase(widgets.BookPage):
             )
             self.settext(section, setting, fontInfoDesc)
         for section, setting, iconEntry in self._iconSettings:
-            iconName = iconEntry.GetClientData(iconEntry.GetSelection())
+            iconName = iconEntry.GetValue()
             self.settext(section, setting, iconName)
         for section, setting, btn in self._pathSettings:
             self.settext(section, setting, btn.GetPath())
@@ -1813,12 +1858,9 @@ class TaskAppearancePage(SettingsPage):
         return icons
 
     def _onStatusIconChanged(self, event, iconEntry):
-        """Prevent selecting an icon already used by an object."""
-        newIcon = iconEntry.GetClientData(iconEntry.GetSelection())
-        if newIcon in iconEntry._excluded_icons:
-            iconEntry.SetSelection(iconEntry._previousSelection)
-            return
-        iconEntry._previousSelection = iconEntry.GetSelection()
+        """Handle icon selection change. Excluded icons are handled by IconPicker."""
+        # The new IconPicker prevents selection of excluded icons internally
+        event.Skip()
 
 
 class FeaturesPage(SettingsPage):

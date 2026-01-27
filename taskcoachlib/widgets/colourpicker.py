@@ -26,14 +26,12 @@ class ColourPickerCtrl(wx.ColourPickerCtrl):
 
     def __init__(self, *args, readOnly=False, **kwargs):
         self._readOnly = readOnly
-        self._dialog = None
         super().__init__(*args, **kwargs)
         target = self.GetPickerCtrl() or self
         target.Bind(wx.EVT_LEFT_DOWN, self._onIntercept)
         target.Bind(wx.EVT_LEFT_DCLICK, self._onIntercept)
         target.Bind(wx.EVT_KEY_DOWN, self._onKeyIntercept)
         target.Bind(wx.EVT_BUTTON, self._onButtonIntercept)
-        self.Bind(wx.EVT_WINDOW_DESTROY, self._onDestroy)
 
     def _onIntercept(self, event):
         if self._readOnly:
@@ -64,47 +62,16 @@ class ColourPickerCtrl(wx.ColourPickerCtrl):
             event.Skip()  # Let native handle it
 
     def _showColourDialog(self):
-        # Don't open another if one is already open
-        if self._dialog:
-            self._dialog.Raise()
-            return
         data = wx.ColourData()
         data.SetChooseFull(True)
         data.SetColour(self.GetColour())
-        self._dialog = wx.ColourDialog(self.GetTopLevelParent(), data)
-        self._dialog.Bind(wx.EVT_CLOSE, self._onDialogClose)
-        self._dialog.Bind(wx.EVT_BUTTON, self._onDialogButton)
-        self._dialog.Show()
-
-    def _onDialogButton(self, event):
-        """Handle OK/Cancel button clicks in the dialog."""
-        dlg = self._dialog
-        if event.GetId() == wx.ID_OK and dlg and self:
-            try:
-                newColour = dlg.GetColourData().GetColour()
-                self.SetColour(newColour)
-                evt = wx.ColourPickerEvent(self, self.GetId(), newColour)
-                wx.PostEvent(self, evt)
-            except RuntimeError:
-                pass
-        if dlg:
-            self._dialog = None  # Clear before Destroy to avoid re-entry
-            dlg.Destroy()
-
-    def _onDialogClose(self, event):
-        """Handle dialog close (X button or Escape)."""
-        self._dialog = None
-        event.Skip()  # Let default close handling proceed
-
-    def _onDestroy(self, event):
-        """Clean up dialog if picker is destroyed while dialog is open."""
-        if self._dialog:
-            try:
-                self._dialog.Destroy()
-            except RuntimeError:
-                pass
-            self._dialog = None
-        event.Skip()
+        dlg = wx.ColourDialog(self.GetTopLevelParent(), data)
+        if dlg.ShowModal() == wx.ID_OK:
+            newColour = dlg.GetColourData().GetColour()
+            self.SetColour(newColour)
+            evt = wx.ColourPickerEvent(self, self.GetId(), newColour)
+            wx.PostEvent(self, evt)
+        dlg.Destroy()
 
     def SetReadOnly(self, readOnly):
         """Set whether this picker is read-only."""

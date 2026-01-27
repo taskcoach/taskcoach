@@ -196,104 +196,483 @@ def init():
         wx.ArtProvider.Push(ArtProvider())
 
 
-chooseableItemImages = dict(
-    arrow_down_icon=_("Arrow - Down"),
-    arrow_down_with_status_icon=_("Arrow - Down with status"),
-    arrow_forward_icon=_("Arrow - Forward"),
-    arrows_looped_blue_icon=_("Arrows looped - Blue"),
-    arrows_looped_green_icon=_("Arrows looped - Green"),
-    arrow_up_icon=_("Arrow - Up"),
-    arrow_up_with_status_icon=_("Arrow - Up with status"),
-    bell_icon=_("Bell"),
-    bomb_icon=_("Bomb"),
-    book_icon=_("Book"),
-    books_icon=_("Books"),
-    box_icon=_("Box"),
-    bug_icon=_("Ladybug"),
-    cake_icon=_("Cake"),
-    calculator_icon=_("Calculator"),
-    calendar_icon=_("Calendar"),
-    camera_icon=_("Camera"),
-    cat_icon=_("Cat"),
-    cd_icon=_("Compact disc (CD)"),
-    charts_icon=_("Charts"),
-    chat_icon=_("Chat"),
-    checkmark_green_icon=_("Check mark"),
-    checkmark_green_icon_multiple=_("Check marks"),
-    clock_icon=_("Clock"),
-    clock_alarm_icon=_("Clock - Alarm"),
-    clock_stopwatch_icon=_("Clock - Stopwatch"),
-    cogwheel_icon=_("Cogwheel"),
-    cogwheels_icon=_("Cogwheels"),
-    computer_desktop_icon=_("Computer - Desktop"),
-    computer_laptop_icon=_("Computer - Laptop"),
-    computer_handheld_icon=_("Computer - Handheld"),
-    cross_red_icon=_("Cross - Red"),
-    die_icon=_("Die"),
-    document_icon=_("Document"),
-    earth_blue_icon=_("Earth - Blue"),
-    earth_green_icon=_("Earth - Green"),
-    envelope_icon=_("Envelope"),
-    envelopes_icon=_("Envelopes"),
-    folder_blue_icon=_("Folder - Blue"),
-    folder_blue_light_icon=_("Folder - Light blue"),
-    folder_green_icon=_("Folder - Green"),
-    folder_grey_icon=_("Folder - Grey"),
-    folder_orange_icon=_("Folder - Orange"),
-    folder_purple_icon=_("Folder - Purple"),
-    folder_red_icon=_("Folder - Red"),
-    folder_yellow_icon=_("Folder - Yellow"),
-    folder_blue_arrow_icon=_("Folder - Blue with arrow"),
-    fsview_icon=_("Color swatches"),
-    heart_icon=_("Heart"),
-    hearts_icon=_("Hearts"),
-    house_green_icon=_("House - Green"),
-    house_red_icon=_("House - Red"),
-    key_icon=_("Key"),
-    keys_icon=_("Keys"),
-    lamp_icon=_("Lamp"),
-    led_blue_questionmark_icon=_("Question mark"),
-    led_blue_information_icon=_("Information"),
-    led_blue_icon=_("LED - Blue"),
-    led_blue_light_icon=_("LED - Light blue"),
-    led_grey_icon=_("LED - Grey"),
-    led_green_icon=_("LED - Green"),
-    led_green_light_icon=_("LED - Light green"),
-    led_orange_icon=_("LED - Orange"),
-    led_purple_icon=_("LED - Purple"),
-    led_red_icon=_("LED - Red"),
-    led_yellow_icon=_("LED - Yellow"),
-    life_ring_icon=_("Life ring"),
-    lock_locked_icon=_("Lock - Locked"),
-    lock_unlocked_icon=_("Lock - Unlocked"),
-    magnifier_glass_icon=_("Magnifier glass"),
-    music_piano_icon=_("Music - Piano"),
-    music_note_icon=_("Music - Note"),
-    note_icon=_("Note"),
-    palette_icon=_("Palette"),
-    paperclip_icon=_("Paperclip"),
-    pencil_icon=_("Pencil"),
-    person_icon=_("Person"),
-    persons_icon=_("People"),
-    person_id_icon=_("Person - ID"),
-    person_talking_icon=_("Person - Talking"),
-    science_icon=_("Science"),
-    sign_important_icon=_("Sign - Important"),
-    symbol_minus_icon=_("Symbol - Minus"),
-    symbol_plus_icon=_("Symbol - Plus"),
-    star_red_icon=_("Star - Red"),
-    star_yellow_icon=_("Star - Yellow"),
-    terminal_icon=_("Terminal"),
-    trafficlight_icon=_("Traffic light"),
-    trashcan_icon=_("Trashcan"),
-    weather_lightning_icon=_("Weather - Lightning"),
-    weather_umbrella_icon=_("Weather - Umbrella"),
-    weather_sunny_icon=_("Weather - Partly sunny"),
-    wizard_icon=_("Wizard"),
-    wrench_icon=_("Wrench"),
-)
+# Combined icon data: name and hints in a single structure
+# Hints are arrays of translatable terms for search functionality
+# "No icon" is handled by IconPicker widget via noIcon parameter
+chooseableItems = {
+    # Arrows and navigation
+    "arrow_down_icon": {
+        "name": _("Arrow - Down"),
+        "hints": [_("download"), _("below"), _("descend"), _("lower"), _("next")],
+    },
+    "arrow_down_with_status_icon": {
+        "name": _("Arrow - Down with status"),
+        "hints": [_("download"), _("below"), _("descend"), _("lower"), _("next"), _("status")],
+    },
+    "arrow_forward_icon": {
+        "name": _("Arrow - Forward"),
+        "hints": [_("next"), _("continue"), _("proceed"), _("right"), _("go")],
+    },
+    "arrows_looped_blue_icon": {
+        "name": _("Arrows looped - Blue"),
+        "hints": [_("sync"), _("refresh"), _("cycle"), _("repeat"), _("reload"), _("recurrence"), _("recurring")],
+    },
+    "arrows_looped_green_icon": {
+        "name": _("Arrows looped - Green"),
+        "hints": [_("sync"), _("refresh"), _("cycle"), _("repeat"), _("reload"), _("recurrence"), _("recurring")],
+    },
+    "arrow_up_icon": {
+        "name": _("Arrow - Up"),
+        "hints": [_("upload"), _("above"), _("ascend"), _("raise"), _("previous")],
+    },
+    "arrow_up_with_status_icon": {
+        "name": _("Arrow - Up with status"),
+        "hints": [_("upload"), _("above"), _("ascend"), _("raise"), _("previous"), _("status")],
+    },
 
-itemImages = list(chooseableItemImages.keys()) + [
+    # Attachments and files
+    "attach_icon": {
+        "name": _("Attachment"),
+        "hints": [_("attachment"), _("paperclip"), _("file"), _("document"), _("clip"), _("fasten")],
+    },
+
+    # Time and scheduling
+    "bell_icon": {
+        "name": _("Bell"),
+        "hints": [_("alarm"), _("notification"), _("alert"), _("reminder"), _("ring"), _("wake")],
+    },
+    "bomb_icon": {
+        "name": _("Bomb"),
+        "hints": [_("danger"), _("urgent"), _("explosive"), _("critical"), _("warning"), _("deadline")],
+    },
+    "book_icon": {
+        "name": _("Book"),
+        "hints": [_("read"), _("document"), _("manual"), _("guide"), _("reference"), _("study"), _("learn")],
+    },
+    "bookmark_icon": {
+        "name": _("Bookmark"),
+        "hints": [_("favorite"), _("save"), _("mark"), _("remember"), _("reference"), _("link")],
+    },
+    "books_icon": {
+        "name": _("Books"),
+        "hints": [_("read"), _("documents"), _("manuals"), _("guides"), _("library"), _("collection")],
+    },
+    "box_icon": {
+        "name": _("Box"),
+        "hints": [_("package"), _("container"), _("storage"), _("shipping"), _("delivery")],
+    },
+    "briefcase_icon": {
+        "name": _("Briefcase"),
+        "hints": [_("work"), _("business"), _("professional"), _("portfolio"), _("job"), _("office")],
+    },
+    "bug_icon": {
+        "name": _("Ladybug"),
+        "hints": [_("ladybug"), _("insect"), _("debug"), _("error"), _("problem"), _("issue")],
+    },
+    "cake_icon": {
+        "name": _("Cake"),
+        "hints": [_("birthday"), _("celebration"), _("party"), _("anniversary"), _("event")],
+    },
+    "calculator_icon": {
+        "name": _("Calculator"),
+        "hints": [_("math"), _("calculate"), _("compute"), _("numbers"), _("finance"), _("accounting")],
+    },
+    "calendar_icon": {
+        "name": _("Calendar"),
+        "hints": [_("date"), _("schedule"), _("appointment"), _("event"), _("planner"), _("day"), _("month"), _("year"), _("deadline"), _("due")],
+    },
+    "camera_icon": {
+        "name": _("Camera"),
+        "hints": [_("photo"), _("picture"), _("image"), _("capture"), _("screenshot"), _("media")],
+    },
+    "cat_icon": {
+        "name": _("Cat"),
+        "hints": [_("pet"), _("animal"), _("feline"), _("meow"), _("kitty")],
+    },
+    "cd_icon": {
+        "name": _("Compact disc (CD)"),
+        "hints": [_("disc"), _("music"), _("media"), _("backup"), _("storage")],
+    },
+    "charts_icon": {
+        "name": _("Charts"),
+        "hints": [_("graph"), _("statistics"), _("data"), _("analytics"), _("report"), _("metrics")],
+    },
+    "chat_icon": {
+        "name": _("Chat"),
+        "hints": [_("message"), _("talk"), _("conversation"), _("discuss"), _("communicate")],
+    },
+    "checkmark_green_icon": {
+        "name": _("Check mark"),
+        "hints": [_("done"), _("complete"), _("finished"), _("success"), _("yes"), _("approve"), _("accept")],
+    },
+    "checkmark_green_icon_multiple": {
+        "name": _("Check marks"),
+        "hints": [_("done"), _("complete"), _("finished"), _("success"), _("batch"), _("multiple")],
+    },
+    "clock_icon": {
+        "name": _("Clock"),
+        "hints": [_("time"), _("hour"), _("minute"), _("watch"), _("schedule"), _("duration")],
+    },
+    "clock_alarm_icon": {
+        "name": _("Clock - Alarm"),
+        "hints": [_("time"), _("alarm"), _("reminder"), _("wake"), _("alert"), _("notification"), _("deadline")],
+    },
+    "clock_stopwatch_icon": {
+        "name": _("Clock - Stopwatch"),
+        "hints": [_("time"), _("timer"), _("countdown"), _("measure"), _("track"), _("duration")],
+    },
+    "cogwheel_icon": {
+        "name": _("Cogwheel"),
+        "hints": [_("settings"), _("config"), _("gear"), _("preferences"), _("options"), _("setup")],
+    },
+    "cogwheels_icon": {
+        "name": _("Cogwheels"),
+        "hints": [_("settings"), _("config"), _("gears"), _("preferences"), _("options"), _("setup"), _("system")],
+    },
+    "contact_card_icon": {
+        "name": _("Contact card"),
+        "hints": [_("vcard"), _("address"), _("business card"), _("profile"), _("person")],
+    },
+    "cookie_icon": {
+        "name": _("Cookie"),
+        "hints": [_("treat"), _("reward"), _("snack"), _("food"), _("biscuit"), _("sweet")],
+    },
+    "computer_desktop_icon": {
+        "name": _("Computer - Desktop"),
+        "hints": [_("pc"), _("workstation"), _("monitor"), _("screen")],
+    },
+    "computer_laptop_icon": {
+        "name": _("Computer - Laptop"),
+        "hints": [_("notebook"), _("portable"), _("pc"), _("mobile")],
+    },
+    "computer_handheld_icon": {
+        "name": _("Computer - Handheld"),
+        "hints": [_("mobile"), _("phone"), _("pda"), _("tablet"), _("device")],
+    },
+    "cross_red_icon": {
+        "name": _("Cross - Red"),
+        "hints": [_("error"), _("cancel"), _("close"), _("delete"), _("stop"), _("reject"), _("no"), _("remove")],
+    },
+    "die_icon": {
+        "name": _("Die"),
+        "hints": [_("dice"), _("random"), _("game"), _("luck"), _("chance")],
+    },
+    "document_icon": {
+        "name": _("Document"),
+        "hints": [_("file"), _("paper"), _("text"), _("note"), _("write"), _("report")],
+    },
+    "earth_blue_icon": {
+        "name": _("Earth - Blue"),
+        "hints": [_("world"), _("globe"), _("planet"), _("international"), _("global"), _("web")],
+    },
+    "earth_green_icon": {
+        "name": _("Earth - Green"),
+        "hints": [_("world"), _("globe"), _("planet"), _("environment"), _("nature"), _("eco")],
+    },
+    "energy_icon": {
+        "name": _("Energy"),
+        "hints": [_("power"), _("electricity"), _("lightning"), _("bolt"), _("charge"), _("battery")],
+    },
+    "envelope_icon": {
+        "name": _("Envelope"),
+        "hints": [_("mail"), _("email"), _("message"), _("letter"), _("send"), _("receive"), _("inbox")],
+    },
+    "error_icon": {
+        "name": _("Error"),
+        "hints": [_("warning"), _("problem"), _("issue"), _("fail"), _("failure"), _("bug"), _("mistake")],
+    },
+    "exclamation_icon": {
+        "name": _("Exclamation"),
+        "hints": [_("warning"), _("alert"), _("attention"), _("urgent"), _("important"), _("notice")],
+    },
+    "envelopes_icon": {
+        "name": _("Envelopes"),
+        "hints": [_("mail"), _("email"), _("messages"), _("letters"), _("inbox"), _("batch")],
+    },
+    "file_important_icon": {
+        "name": _("File - Important"),
+        "hints": [_("document"), _("priority"), _("urgent"), _("attention"), _("critical"), _("star")],
+    },
+    "file_locked_icon": {
+        "name": _("File - Locked"),
+        "hints": [_("document"), _("secure"), _("protected"), _("private"), _("locked"), _("secret")],
+    },
+    "folder_blue_icon": {
+        "name": _("Folder - Blue"),
+        "hints": [_("directory"), _("storage"), _("files"), _("container"), _("organize")],
+    },
+    "folder_blue_light_icon": {
+        "name": _("Folder - Light blue"),
+        "hints": [_("directory"), _("storage"), _("files"), _("container"), _("organize")],
+    },
+    "folder_green_icon": {
+        "name": _("Folder - Green"),
+        "hints": [_("directory"), _("storage"), _("files"), _("container"), _("organize")],
+    },
+    "folder_grey_icon": {
+        "name": _("Folder - Grey"),
+        "hints": [_("directory"), _("storage"), _("files"), _("container"), _("organize"), _("archive")],
+    },
+    "folder_orange_icon": {
+        "name": _("Folder - Orange"),
+        "hints": [_("directory"), _("storage"), _("files"), _("container"), _("organize")],
+    },
+    "folder_purple_icon": {
+        "name": _("Folder - Purple"),
+        "hints": [_("directory"), _("storage"), _("files"), _("container"), _("organize")],
+    },
+    "folder_red_icon": {
+        "name": _("Folder - Red"),
+        "hints": [_("directory"), _("storage"), _("files"), _("container"), _("organize"), _("important"), _("urgent")],
+    },
+    "folder_yellow_icon": {
+        "name": _("Folder - Yellow"),
+        "hints": [_("directory"), _("storage"), _("files"), _("container"), _("organize")],
+    },
+    "folder_blue_arrow_icon": {
+        "name": _("Folder - Blue with arrow"),
+        "hints": [_("directory"), _("storage"), _("files"), _("move"), _("transfer")],
+    },
+    "folder_favorite_icon": {
+        "name": _("Folder - Favorite"),
+        "hints": [_("directory"), _("storage"), _("star"), _("bookmark"), _("best"), _("preferred")],
+    },
+    "folder_important_icon": {
+        "name": _("Folder - Important"),
+        "hints": [_("directory"), _("storage"), _("priority"), _("urgent"), _("attention"), _("critical")],
+    },
+    "fsview_icon": {
+        "name": _("Color swatches"),
+        "hints": [_("color"), _("swatches"), _("palette"), _("design"), _("theme")],
+    },
+    "graph_icon": {
+        "name": _("Graph"),
+        "hints": [_("chart"), _("statistics"), _("data"), _("analytics"), _("plot"), _("diagram")],
+    },
+    "heart_icon": {
+        "name": _("Heart"),
+        "hints": [_("love"), _("favorite"), _("like"), _("health"), _("wellness")],
+    },
+    "hearts_icon": {
+        "name": _("Hearts"),
+        "hints": [_("love"), _("favorites"), _("likes"), _("health"), _("wellness")],
+    },
+    "house_green_icon": {
+        "name": _("House - Green"),
+        "hints": [_("home"), _("residence"), _("building"), _("dwelling"), _("personal")],
+    },
+    "house_red_icon": {
+        "name": _("House - Red"),
+        "hints": [_("home"), _("residence"), _("building"), _("dwelling"), _("urgent")],
+    },
+    "key_icon": {
+        "name": _("Key"),
+        "hints": [_("lock"), _("security"), _("password"), _("access"), _("unlock"), _("credential")],
+    },
+    "keys_icon": {
+        "name": _("Keys"),
+        "hints": [_("locks"), _("security"), _("passwords"), _("access"), _("unlock"), _("credentials")],
+    },
+    "lamp_icon": {
+        "name": _("Lamp"),
+        "hints": [_("light"), _("idea"), _("bulb"), _("bright"), _("illuminate"), _("thought")],
+    },
+    "led_blue_questionmark_icon": {
+        "name": _("Question mark"),
+        "hints": [_("question"), _("help"), _("unknown"), _("ask"), _("uncertain")],
+    },
+    "led_blue_information_icon": {
+        "name": _("Information"),
+        "hints": [_("info"), _("information"), _("details"), _("about"), _("help")],
+    },
+    "led_blue_icon": {
+        "name": _("LED - Blue"),
+        "hints": [_("status"), _("indicator"), _("light"), _("signal"), _("online"), _("active")],
+    },
+    "led_blue_light_icon": {
+        "name": _("LED - Light blue"),
+        "hints": [_("status"), _("indicator"), _("light"), _("signal"), _("online"), _("active")],
+    },
+    "led_grey_icon": {
+        "name": _("LED - Grey"),
+        "hints": [_("status"), _("indicator"), _("light"), _("signal"), _("inactive"), _("disabled"), _("off")],
+    },
+    "led_green_icon": {
+        "name": _("LED - Green"),
+        "hints": [_("status"), _("indicator"), _("light"), _("signal"), _("ok"), _("active"), _("go"), _("done")],
+    },
+    "led_green_light_icon": {
+        "name": _("LED - Light green"),
+        "hints": [_("status"), _("indicator"), _("light"), _("signal"), _("ok"), _("active"), _("go"), _("done")],
+    },
+    "led_orange_icon": {
+        "name": _("LED - Orange"),
+        "hints": [_("status"), _("indicator"), _("light"), _("signal"), _("warning"), _("caution")],
+    },
+    "led_purple_icon": {
+        "name": _("LED - Purple"),
+        "hints": [_("status"), _("indicator"), _("light"), _("signal"), _("special"), _("custom")],
+    },
+    "led_red_icon": {
+        "name": _("LED - Red"),
+        "hints": [_("status"), _("indicator"), _("light"), _("signal"), _("error"), _("stop"), _("offline"), _("failed")],
+    },
+    "led_yellow_icon": {
+        "name": _("LED - Yellow"),
+        "hints": [_("status"), _("indicator"), _("light"), _("signal"), _("warning"), _("pause"), _("attention")],
+    },
+    "life_ring_icon": {
+        "name": _("Life ring"),
+        "hints": [_("help"), _("support"), _("rescue"), _("assist"), _("safety"), _("emergency")],
+    },
+    "lock_locked_icon": {
+        "name": _("Lock - Locked"),
+        "hints": [_("secure"), _("private"), _("protected"), _("closed"), _("secret")],
+    },
+    "lock_unlocked_icon": {
+        "name": _("Lock - Unlocked"),
+        "hints": [_("open"), _("access"), _("public"), _("unlocked"), _("available")],
+    },
+    "magnifier_glass_icon": {
+        "name": _("Magnifier glass"),
+        "hints": [_("search"), _("find"), _("zoom"), _("look"), _("inspect"), _("explore")],
+    },
+    "music_piano_icon": {
+        "name": _("Music - Piano"),
+        "hints": [_("piano"), _("keyboard"), _("music"), _("instrument"), _("play")],
+    },
+    "music_note_icon": {
+        "name": _("Music - Note"),
+        "hints": [_("music"), _("sound"), _("audio"), _("melody"), _("song"), _("tune")],
+    },
+    "note_icon": {
+        "name": _("Note"),
+        "hints": [_("sticky"), _("memo"), _("reminder"), _("post-it"), _("write")],
+    },
+    "palette_icon": {
+        "name": _("Palette"),
+        "hints": [_("color"), _("art"), _("design"), _("paint"), _("creative")],
+    },
+    "paperclip_icon": {
+        "name": _("Paperclip"),
+        "hints": [_("attach"), _("attachment"), _("file"), _("document"), _("clip")],
+    },
+    "password_icon": {
+        "name": _("Password"),
+        "hints": [_("security"), _("credential"), _("secret"), _("key"), _("login"), _("authenticate")],
+    },
+    "pencil_icon": {
+        "name": _("Pencil"),
+        "hints": [_("edit"), _("write"), _("draw"), _("modify"), _("change"), _("update")],
+    },
+    "person_icon": {
+        "name": _("Person"),
+        "hints": [_("user"), _("account"), _("profile"), _("member"), _("contact"), _("individual")],
+    },
+    "persons_icon": {
+        "name": _("People"),
+        "hints": [_("users"), _("people"), _("team"), _("group"), _("members"), _("contacts")],
+    },
+    "person_id_icon": {
+        "name": _("Person - ID"),
+        "hints": [_("user"), _("identity"), _("card"), _("profile"), _("badge"), _("employee")],
+    },
+    "person_talking_icon": {
+        "name": _("Person - Talking"),
+        "hints": [_("speak"), _("talk"), _("discuss"), _("communicate"), _("voice"), _("call")],
+    },
+    "printer_icon": {
+        "name": _("Printer"),
+        "hints": [_("print"), _("output"), _("paper"), _("document"), _("hardcopy")],
+    },
+    "reload_icon": {
+        "name": _("Reload"),
+        "hints": [_("refresh"), _("update"), _("sync"), _("repeat"), _("restart"), _("renew")],
+    },
+    "remote_icon": {
+        "name": _("Remote"),
+        "hints": [_("control"), _("wireless"), _("distance"), _("network"), _("access")],
+    },
+    "run_icon": {
+        "name": _("Run"),
+        "hints": [_("execute"), _("start"), _("play"), _("begin"), _("go"), _("launch"), _("sprint")],
+    },
+    "science_icon": {
+        "name": _("Science"),
+        "hints": [_("lab"), _("experiment"), _("research"), _("chemistry"), _("biology")],
+    },
+    "sign_important_icon": {
+        "name": _("Sign - Important"),
+        "hints": [_("warning"), _("attention"), _("urgent"), _("priority"), _("exclamation"), _("alert")],
+    },
+    "symbol_minus_icon": {
+        "name": _("Symbol - Minus"),
+        "hints": [_("subtract"), _("remove"), _("decrease"), _("less"), _("reduce")],
+    },
+    "symbol_plus_icon": {
+        "name": _("Symbol - Plus"),
+        "hints": [_("add"), _("create"), _("increase"), _("more"), _("expand")],
+    },
+    "star_red_icon": {
+        "name": _("Star - Red"),
+        "hints": [_("favorite"), _("important"), _("priority"), _("rating"), _("bookmark"), _("urgent"), _("critical")],
+    },
+    "star_yellow_icon": {
+        "name": _("Star - Yellow"),
+        "hints": [_("favorite"), _("important"), _("priority"), _("rating"), _("bookmark"), _("best")],
+    },
+    "sticky_note_icon": {
+        "name": _("Sticky note"),
+        "hints": [_("memo"), _("reminder"), _("post-it"), _("note"), _("yellow"), _("paper")],
+    },
+    "tea_icon": {
+        "name": _("Tea"),
+        "hints": [_("break"), _("rest"), _("relax"), _("pause"), _("coffee"), _("drink"), _("beverage")],
+    },
+    "terminal_icon": {
+        "name": _("Terminal"),
+        "hints": [_("command"), _("console"), _("shell"), _("code"), _("developer")],
+    },
+    "timer_icon": {
+        "name": _("Timer"),
+        "hints": [_("countdown"), _("time"), _("limit"), _("duration"), _("stopwatch"), _("deadline")],
+    },
+    "trafficlight_icon": {
+        "name": _("Traffic light"),
+        "hints": [_("status"), _("priority"), _("waiting"), _("proceed"), _("stop")],
+    },
+    "traffic_go_icon": {
+        "name": _("Traffic - Go"),
+        "hints": [_("proceed"), _("start"), _("green light"), _("continue"), _("execute")],
+    },
+    "trashcan_icon": {
+        "name": _("Trashcan"),
+        "hints": [_("delete"), _("remove"), _("garbage"), _("bin"), _("recycle"), _("discard")],
+    },
+    "weather_lightning_icon": {
+        "name": _("Weather - Lightning"),
+        "hints": [_("storm"), _("thunder"), _("electric"), _("power"), _("urgent"), _("fast")],
+    },
+    "weather_umbrella_icon": {
+        "name": _("Weather - Umbrella"),
+        "hints": [_("rain"), _("protection"), _("shelter"), _("weather")],
+    },
+    "weather_sunny_icon": {
+        "name": _("Weather - Partly sunny"),
+        "hints": [_("sun"), _("bright"), _("day"), _("clear"), _("good"), _("positive")],
+    },
+    "wizard_icon": {
+        "name": _("Wizard"),
+        "hints": [_("magic"), _("helper"), _("assistant"), _("guide"), _("setup")],
+    },
+    "wrench_icon": {
+        "name": _("Wrench"),
+        "hints": [_("tool"), _("settings"), _("config"), _("repair"), _("fix"), _("maintenance"), _("service")],
+    },
+}
+
+
+itemImages = list(chooseableItems.keys()) + [
     "folder_blue_open_icon",
     "folder_green_open_icon",
     "folder_grey_open_icon",
@@ -303,5 +682,3 @@ itemImages = list(chooseableItemImages.keys()) + [
     "folder_yellow_open_icon",
     "folder_blue_light_open_icon",
 ]
-
-chooseableItemImages[""] = _("No icon")

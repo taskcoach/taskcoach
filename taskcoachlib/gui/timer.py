@@ -230,7 +230,7 @@ class StatusChecker:
 
         # Update computed status fields for all tasks
         for task in self._taskList:
-            task.computeStatus()
+            task._updateStoredStatus()
 
     def _shouldCheckTask(self, task):
         """

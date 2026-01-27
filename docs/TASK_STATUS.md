@@ -1,5 +1,159 @@
 # Task Status System
 
+## Index
+
+1. [Overview](#overview)
+2. [Status Values](#status-values)
+   - [Encoding](#encoding)
+   - [Identity and Comparison](#identity-and-comparison)
+3. [State Transitions](#state-transitions)
+4. [Architecture](#architecture)
+   - [Stored Fields](#stored-fields)
+   - [computeStatus() — Single Source of Truth](#computestatus--single-source-of-truth-class-method)
+   - [_updateStoredStatus() — Instance Update Method](#_updatestoredstatus--instance-update-method)
+   - [Editor Live Preview](#editor-live-preview)
+   - [Event: statusChangedEventType](#event-statuschangedeventtype)
+   - [Update Triggers](#update-triggers)
+   - [Timer-Driven Updates (StatusChecker)](#timer-driven-updates-statuschecker)
+   - [Immediate Updates (Date Setters)](#immediate-updates-date-setters)
+   - [Viewer Columns](#viewer-columns)
+5. [Usage Locations](#usage-locations)
+   - [Sources of Truth](#sources-of-truth)
+   - [Consumers](#consumers-read-taskstatus-cache)
+   - [Filtering](#filtering)
+   - [Event Types That Affect Status](#event-types-that-affect-status)
+6. [Architectural Issues (Legacy)](#architectural-issues-legacy)
+7. [Refactor: Single Source of Truth](#refactor-single-source-of-truth)
+   - [Why the Legacy Cache Existed](#why-the-legacy-cache-existed)
+   - [Why the New Approach Eliminates the Cache](#why-the-new-approach-eliminates-the-cache)
+   - [Migration Path](#migration-path)
+   - [Staleness Tradeoff — RESOLVED](#staleness-tradeoff--resolved)
+8. [Configuration](#configuration)
+   - [Settings Keys](#settings-keys)
+   - [Per-Viewer Filter Settings](#per-viewer-filter-settings)
+9. [Task Icon Decision Sequence](#task-icon-decision-sequence)
+   - [Priority Order](#priority-order)
+   - [Plural/Singular Transformation](#pluralsingular-transformation)
+   - [Computed vs Final Icon](#computed-vs-final-icon)
+10. [Appearance Inheritance](#appearance-inheritance)
+    - [Appearance Tab Layout (3-Column Grid)](#appearance-tab-layout-3-column-grid)
+    - [Task Appearance](#task-appearance)
+    - [Category Appearance](#category-appearance)
+    - [Inheritance Methods](#inheritance-methods)
+    - [Notes and Attachments](#notes-and-attachments)
+11. [File Reference](#file-reference)
+
+---
+
+## Appearance Inheritance Overview
+
+### ComputeStyles Polling (New Architecture)
+
+The appearance SSOT system now uses **per-second polling** via `ComputeStyles` class instead of
+trigger-based updates. This provides:
+
+1. **Eventual consistency** - All changes detected within 1-2 seconds
+2. **Simplified architecture** - No need to track all possible triggers
+3. **Catches time-based changes** - Status changes from time passing are automatically detected
+
+**Processing order:** Categories → Tasks → Notes → Attachments
+
+**Key classes:**
+- `ComputeStyles` in `appearance.py` - Polls every second via `timer.second` pubsub
+- `computeDerived(obj, field_type)` - Computes derived value from sources
+- `computeEffective(obj, field_type)` - Computes effective from override + derived
+
+**Category stylePriority:**
+Tasks with multiple categories use `stylePriority` to determine which category's style wins.
+Higher priority wins. Default is 0.
+
+### Object Type Summary
+
+| Object Type | Derived From | SSOT Methods | Appearance Tab |
+|-------------|--------------|--------------|----------------|
+| **Task** | Categories → Parent task → Status | `effectiveXxx()` | Yes |
+| **Category** | Parent category → System Theme | `effectiveXxx()` | Yes |
+| **Note** | Parent note → System Theme | `effectiveXxx()` | Yes |
+| **Attachment** | System Theme only (no inheritance) | `effectiveXxx()` | Yes |
+| **Effort** | Task (always) | None | **No** - uses task's appearance |
+
+**Key points:**
+- All object types with appearance tabs have SSOT `effectiveXxx()` and `derivedXxx()` methods
+- Complexity varies: Tasks have most sources, Attachments have fewest (just override or system theme)
+- Notes inherit from parent notes only (do NOT inherit from attached task)
+- Efforts have no appearance tab; they always display using their task's appearance
+
+**"Nothing Set" Convention:**
+- Colors/Fonts: `None` = nothing set (default in `object.py`)
+- Icons: `""` (empty string) = nothing set (default in `object.py`)
+- Both are **falsy** in Python, so `if value:` works for both
+- Do NOT interchange — icon code uses explicit `== ""` checks for plural/singular logic
+
+**System Theme Constants:**
+- `base.SYSTEM_FG_COLOR` = "SYS_COLOUR_WINDOWTEXT"
+- `base.SYSTEM_BG_COLOR` = "SYS_COLOUR_WINDOW"
+- `base.SYSTEM_FONT` = "SYS_DEFAULT_GUI_FONT"
+- `base.SYSTEM_THEME_SOURCE` = "System Theme"
+- **Icons have no system theme** — use `""` when no value, UI shows "N/A"
+
+**SSOT Method Contract:**
+
+**Effective accessors** use separate methods:
+
+| Call | Returns | Purpose |
+|------|---------|---------|
+| `effectiveXxx()` | value | Actual value (None/"" if nothing set) |
+| `effectiveXxxDefault()` | default | System theme constant to use when value is empty |
+| `effectiveXxxSource()` | source | "Override", "[Category] Name", etc. |
+
+**Derived accessors** use separate methods:
+
+| Call | Returns | Purpose |
+|------|---------|---------|
+| `derivedXxx()` | value | The computed value (None/"" if nothing set) |
+| `derivedXxxSource()` | source | "[Category] Name", "[Status]", etc. |
+
+All accessors are simple getters that read from Attribute fields in the base `Object` class.
+
+```python
+# All accessors are simple getters from Attribute fields in base Object class
+
+# EFFECTIVE accessors (in object.py)
+def effectiveFgColor(self):
+    """Return effective foreground color value."""
+    return self.__effectiveFgColorValue.get()
+
+def effectiveFgColorDefault(self):
+    """Return effective foreground color default (system theme constant)."""
+    return self.__effectiveFgColorDefault.get()
+
+def effectiveFgColorSource(self):
+    """Return effective foreground color source ("Override", "[Category] Name", etc)."""
+    return self.__effectiveFgColorSource.get()
+
+# DERIVED accessors (in object.py)
+def derivedFgColor(self):
+    """Return derived foreground color value."""
+    return self.__derivedFgColorValue.get()
+
+def derivedFgColorSource(self):
+    """Return derived foreground color source."""
+    return self.__derivedFgColorSource.get()
+```
+
+- **All accessors** are simple Attribute getters in `object.py`
+- **computeDerived()** in `appearance.py` computes and writes to SSOT
+- **computeEffective()** in `appearance.py` computes effective from derived + override
+- UI resolves: `color = resolve_color(actual if actual else default)`
+
+**TODO — Refactor plural/singular icon logic:**
+- Current code in `object.py:581,590` and `task.py:1247,1264` uses brittle `native=super().icon() == ""`
+- This checks if icon is "native" (not user-overridden) for folder/LED transformation
+- Should be refactored to use a cleaner API (e.g., `hasIconOverride()` method)
+- Blocked on: completing SSOT 3-tuple refactor first
+
+---
+
 ## Overview
 
 Task status is a dynamically computed property of each task, derived from the task's date fields and the current time. It determines the task's visual appearance (color, icon, font) and is used for filtering, status bar counts, system tray tooltips, and HTML export styling.
@@ -75,36 +229,45 @@ Accessor methods:
 - `task.statusIcon()` — Returns icon name (same as statusIconName, kept for compatibility) ✓
 - `task.status()` — Returns TaskStatus object (legacy cached method, to be removed)
 
-### computeStatus() — Single Update Function
+### computeStatus() — Single Source of Truth (Class Method)
 
-Independent calculation that does NOT touch the legacy `__status` cache.
-Has its own duplicated status logic, populates the new stored fields.
+**File:** `taskcoachlib/domain/task/task.py`
+
+The `Task.computeStatus()` class method is the **single source of truth** for status calculation.
+It takes date values as parameters and returns `(TaskStatus, source_string)` tuple.
 
 ```python
-def computeStatus(self):
-    # Independent calculation from task dates (duplicated logic)
-    if completionDateTime set: newStatus = completed
-    elif prerequisites incomplete: newStatus = inactive
-    elif dueDateTime < now: newStatus = overdue
-    elif due soon: newStatus = duesoon
-    elif actualStart <= now: newStatus = active
-    elif plannedStart < now: newStatus = late
-    else: newStatus = inactive
-
-    # Update stored fields
-    self.__computed_status = newStatus
-    self.__status_text = ...      # Derive display text
-    self.__status_icon = ...      # Derive icon name from settings
-
-    # Fire event only on actual change
-    if oldStatus and newStatus != oldStatus:
-        pub.sendMessage('pubsub.task.status', ...)
+@classmethod
+def computeStatus(cls, completionDT, dueDT, actualStartDT, plannedStartDT,
+                  dueSoonHours, hasIncompletePrerequisites, now=None,
+                  maxDateTime=None):
+    """Compute task status from date values. SINGLE SOURCE OF TRUTH."""
+    # Priority order: completed > inactive(prereqs) > overdue > duesoon > active > late > inactive
+    if completionDT != maxDateTime:
+        return status.completed, _("Completion date is set")
+    if hasIncompletePrerequisites:
+        return status.inactive, _("Has incomplete prerequisites")
+    if dueDT != maxDateTime and dueDT < now:
+        return status.overdue, _("Due date has passed")
+    # ... etc
+    return status.inactive, _("No actual start date")
 ```
+
+### _updateStoredStatus() — Instance Update Method
+
+The `task._updateStoredStatus()` instance method calls `computeStatus()` with the task's
+actual values and stores the results in the task's fields.
 
 Called from:
 - `Task.__init__()` — Initial population on task creation/load
 - `recomputeAppearance()` — Immediate update on date changes (called by all date setters)
 - `StatusChecker._onSecond()` — Periodic safety net, called on ALL tasks every second
+
+### Editor Live Preview
+
+The editor's `_computeLocalStatus()` method also calls `Task.computeStatus()`, but passes
+form field values instead of the task's stored values. This enables live preview as the
+user edits dates before committing changes.
 
 ### Event: statusChangedEventType
 
@@ -226,16 +389,20 @@ The status has no dedicated event type. Changes propagate via:
 
 ## Architectural Issues (Legacy)
 
-### 1. Duplicated Calculation Logic
+### 1. Duplicated Calculation Logic — RESOLVED
 
-The status calculation exists in **four places** (including the new `computeStatus()`):
+**Status:** Complete. Single source of truth implemented.
 
-1. **`task.status()`** — legacy cached calculation
-2. **`task.computeStatus()`** — new single-source-of-truth (intentional duplication during migration)
-3. **`StatusChecker._checkStatusTransitions()`** — reimplements date comparisons to detect transitions
-4. **`DatesPage._computeLocalStatus()`** — reimplements for live editor preview using form values
+The status calculation now exists in **one place only**:
 
-After migration, #1, #3, and #4 will be removed, leaving `computeStatus()` as the sole calculation site.
+- **`Task.computeStatus()`** — class method, single source of truth
+
+All other code calls this method:
+- **`task._updateStoredStatus()`** — instance method that calls `computeStatus()` and stores results
+- **`DatesPage._computeLocalStatus()`** — calls `Task.computeStatus()` with form field values for live preview
+- **`StatusChecker`** — calls `task._updateStoredStatus()` for periodic updates
+
+The `computeStatus()` method returns `(TaskStatus, source_string)` tuple, providing both the status and an explanation of why the task has that status.
 
 ### 2. No Dedicated Status Event — RESOLVED
 
@@ -307,7 +474,20 @@ every consumer to potentially trigger computation. The new pattern separates wri
    | statusFont() | task.py:1160 | Pending |
    | statusIcon() | task.py:1223 | ✓ Done (now accessor) |
    | nrOfTasksPerStatus() | tasklist.py:31 | Pending |
-   | Editor display | editor.py:632 | Pending |
+   | Editor display | editor.py:632 | ✓ Done (uses derivedXxx/effectiveXxx) |
+   | Appearance tab 3-col layout | editor.py | ✓ Done |
+   | Task derivedXxx(explain) | task.py | ✓ Done |
+   | Task effectiveXxx(explain) | task.py | ✓ Done |
+   | Category derivedXxx(explain) | category.py | ✓ Done |
+   | Category effectiveXxx(explain) | category.py | ✓ Done |
+   | computeStatus() centralized | task.py | ✓ Done (class method, no duplication) |
+   | computedStatus(explain) | task.py | ✓ Done |
+   | Dates tab status source | editor.py | ✓ Done (uses Task.computeStatus) |
+   | Font picker preview colors | editor.py | ✓ Done (uses effectiveFgColor/effectiveBgColor) |
+   | Path tab icons | editor.py | ✓ Done (uses effectiveIcon) |
+   | Category cascade on load | category.py | ✓ Done (centralized in _computeEffectiveAppearance) |
+   | Note effectiveXxx(explain) | note.py | ✓ Done |
+   | Attachment effectiveXxx(explain) | attachment.py | ✓ Done |
 
 3. **Final cleanup:** Remove legacy `status()` cache, `__status` field, and the
    scattered `__status = None` invalidations. Remove duplicated logic from
@@ -417,7 +597,49 @@ Tasks without children and without override will have folder icons converted bac
 ## Appearance Inheritance
 
 Both Tasks and Categories support appearance inheritance (icon, foreground color, background color, font).
-The Appearance tab in the editor shows two sections: **Derived values** and **Override values**.
+The Appearance tab in the editor shows three sections: **Derived values**, **Override values**, and **Effective values**.
+
+### Appearance Tab Layout (3-Column Grid)
+
+```
+APPEARANCE TAB (3-column grid: Label, Control, Source)
+═══════════════════════════════════════════════════════════════
+
+Derived values            Source                   ←── title spans 2 cols, Source in col 2
+Icon          [bitmap]           [Category] Work
+Foreground    [picker]           [Status] Inactive
+Background    [picker]           [Task] ParentTask
+Font          [picker]           [Category] Work
+
+───────────────────────────────────────────────── ←── spans 3 cols
+Override values                                   ←── title spans 2 cols, col 2 empty
+Icon          [icon selector─────────────────────] ←── spans 2 cols
+Foreground    [checkbox + picker─────────────────] ←── spans 2 cols
+Background    [checkbox + picker─────────────────] ←── spans 2 cols
+Font          [font picker───────────────────────] ←── spans 2 cols
+
+───────────────────────────────────────────────── ←── spans 3 cols
+Effective values          Source                   ←── title spans 2 cols, Source in col 2
+Icon          [bitmap]           Override
+Foreground    [picker]           [Category] Work
+Background    [picker]           [Status] Active
+Font          [picker]           System Theme
+```
+
+**Column spanning:**
+- Section headers: title spans columns 0-1, optional "Source" label in column 2
+- Separator lines: explicitly span all 3 columns
+- Derived/Effective rows: 3 controls (label, control, source) → 1 col each
+- Override rows: 2 controls (label, control) → label=1 col, control=2 cols
+
+**Source column** (gray text) shows where each value comes from:
+- `[Category] Name` — from a category
+- `[Task] Name` — from parent task
+- `[Note] Name` — from parent note
+- `[Status] StatusName` — from task status (e.g., Inactive, Active, Overdue)
+- `Override` — user set this value
+- `System Theme` — no value set, using system default (colors/fonts only)
+- `N/A` — no derived value (icons only - there is no "system theme" for icons)
 
 ### Task Appearance
 
@@ -440,62 +662,267 @@ The status always provides a fallback, so derived values are never empty for tas
 
 ### Category Appearance
 
-Categories inherit appearance from their **parent category**. If no parent exists or the parent has no value, "N/A" is displayed.
+Categories inherit appearance from their **parent category**.
+
+Derived values are computed by `computeDerived()` and stored as SSOT Attribute fields.
+Value and source are separate accessors:
 
 ```
-Derived values (read-only display):
-├── Icon: parent.icon(recursive=True) or "N/A"
-├── Foreground: parent.foregroundColor(recursive=True) or "N/A"
-└── Background: parent.backgroundColor(recursive=True) or "N/A"
-
-Override values (editable):
-├── Icon: own icon set directly on category
-├── Foreground: own foreground color
-├── Background: own background color
-└── Font: own font
+derivedFgColor()       → value (parent's effective color, or None)
+derivedFgColorSource() → source string ("[Category] ParentName" or "System Theme")
+derivedIcon()          → value (parent's effective icon, or "")
+derivedIconSource()    → source string ("[Category] ParentName" or "N/A")
 ```
+
+**UI usage:** `color = resolve_color(item.derivedFgColor() or SYSTEM_FG_COLOR)`
+Icons have no default - UI displays "N/A" when source is empty.
 
 #### Effective Appearance Fields (Single Source of Truth)
 
-**File:** `taskcoachlib/domain/category/category.py`
+**File:** `taskcoachlib/domain/base/object.py`
 
-Categories now have **effective appearance fields** that store the final computed value:
+All domain objects have SSOT appearance fields as `Attribute` objects defined in base `Object`.
+These are written by `computeDerived()` and `computeEffective()` stored procedures, called
+by the `ComputeStyles` per-second poller.
 
-| Field | Accessor | Value |
-|-------|----------|-------|
-| `__effective_fg_color` | `effectiveFgColor()` | Own override OR parent's effective |
-| `__effective_bg_color` | `effectiveBgColor()` | Own override OR parent's effective |
-| `__effective_icon` | `effectiveIcon()` | Own override OR parent's effective |
-| `__effective_font` | `effectiveFont()` | Own override OR parent's effective |
+**Derived accessors** (value and source are separate methods):
 
-**How it works:**
+| Value Method | Source Method |
+|--------------|---------------|
+| `derivedFgColor()` | `derivedFgColorSource()` |
+| `derivedBgColor()` | `derivedBgColorSource()` |
+| `derivedIcon()` | `derivedIconSource()` |
+| `derivedFont()` | `derivedFontSource()` |
 
-1. **Computation:** `_computeEffectiveAppearance()` computes effective values from:
-   - Own override if set (via `foregroundColor(recursive=False)`, etc.)
-   - Otherwise, parent's effective value (via `parent.effectiveFgColor()`, etc.)
+**Effective accessors** (value, default, and source are separate methods):
 
-2. **Update triggers:**
-   - On category creation (`__init__`)
-   - When appearance changes (`appearanceChangedEvent`)
+| Value Method | Default Method | Source Method |
+|--------------|----------------|---------------|
+| `effectiveFgColor()` | `effectiveFgColorDefault()` | `effectiveFgColorSource()` |
+| `effectiveBgColor()` | `effectiveBgColorDefault()` | `effectiveBgColorSource()` |
+| `effectiveIcon()` | — (no default for icons) | `effectiveIconSource()` |
+| `effectiveFont()` | `effectiveFontDefault()` | `effectiveFontSource()` |
 
-3. **Automatic propagation:** When a parent's appearance changes, `appearanceChangedEvent` cascades to all children (via `CompositeObject.appearanceChangedEvent`), causing each child to recompute its effective values.
+**UI usage:**
+```python
+# Effective values - use separate accessor methods
+actual = item.effectiveFgColor()
+default = item.effectiveFgColorDefault()
+source = item.effectiveFgColorSource()
+color = resolve_color(actual if actual else default)
+source_label.SetLabel(source)
+
+# Derived values - use separate accessor methods
+value = item.derivedFgColor()
+source = item.derivedFgColorSource()
+```
+
+**SSOT Principle — Stored Procedure Pattern:**
+
+**Location:** `taskcoachlib/domain/base/appearance.py`
+
+Two stored procedures handle appearance calculations:
+
+---
+
+#### Stored Procedure: computeDerived
 
 ```
-Parent category appearance changes
-    └── appearanceChangedEvent(event)
-        ├── _computeEffectiveAppearance()  ← Recompute own effective values
-        ├── super().appearanceChangedEvent(event)
-        │   └── for child in children():
-        │       └── child.appearanceChangedEvent(event)  ← Children recompute
-        └── for categorizable in categorizables():
-            └── categorizable.appearanceChangedEvent(event)  ← Tasks notified
+computeDerived(object_ref, field_type)
+
+INPUTS:  object_ref (domain object), field_type ('fgColor', 'bgColor', 'font', 'icon')
+OUTPUTS: calls object's setDerivedXxx(value, source) Attribute setter
 ```
+
+**Behavior:**
+1. Determine object type (Task, Category, Note, Attachment)
+2. For Tasks: check categories → parent task → status (in priority order)
+3. For Categories/Notes: check parent's effective value
+4. Write via object's Attribute-based setter (fires change event automatically)
+
+**Called by:** `ComputeStyles` per-second poller
+
+---
+
+#### Stored Procedure: computeEffective
+
+```
+computeEffective(object_ref, field_type)
+
+INPUTS:  _derived_{field}_value, _derived_{field}_source, override value
+OUTPUTS: _effective_{field}_value, _effective_{field}_default, _effective_{field}_source
+```
+
+**Behavior:**
+1. Read derived value/source from object's Attribute getters
+2. Read override value from object's override getter
+3. Compute: `effective = override if override else derived`
+4. Write via object's Attribute-based setter (fires change event automatically)
+
+**Called by:** `ComputeStyles` per-second poller
+
+---
+
+#### Pattern
+
+ComputeStyles polling pattern (eventual consistency):
+1. User changes override value (or category assignment, status, etc.)
+2. ComputeStyles poller runs every second
+3. For each object: `computeDerived()` then `computeEffective()` for each field type
+4. Attribute.set() fires change events only when value actually changes
+5. UI subscribers (editor Appearance tab) update on per-field change events
+
+---
+
+#### Field Types
+
+`'fgColor'`, `'bgColor'`, `'font'`, `'icon'`
+
+#### SSOT Fields
+
+| Prefix | Fields | Example |
+|--------|--------|---------|
+| `_derived_` | value, source | `derivedFgColor()`, `derivedFgColorSource()` |
+| `_effective_` | value, default (except icon), source | `effectiveFgColor()`, `effectiveFgColorDefault()`, `effectiveFgColorSource()` |
+
+---
+
+#### Update Mechanism: ComputeStyles Polling
+
+**No triggers or explicit cascade needed.** The `ComputeStyles` class polls every second:
+
+```
+ComputeStyles (per-second polling)
+  └── For each object in taskFile (tasks, categories, notes, attachments):
+      └── For each field_type in ('fgColor', 'bgColor', 'font', 'icon'):
+          1. computeDerived(object, field_type)
+          2. computeEffective(object, field_type)
+```
+
+This catches ALL changes without explicit triggers:
+- Category assignment/removal
+- Parent relationship changes
+- Status changes (time-based transitions)
+- Override value changes
+- File load (volatile fields populated within 1 second)
+
+**No post-load initialization needed** — ComputeStyles polling handles it.
+
+#### SSOT Readers (for UI)
+
+**Effective values** — use object accessor methods directly:
+
+```python
+actual = item.effectiveFgColor()        # value
+default = item.effectiveFgColorDefault() # system theme constant
+source = item.effectiveFgColorSource()   # source label
+```
+
+**Derived values** — use object accessor methods:
+
+```python
+value = item.derivedFgColor()        # value
+source = item.derivedFgColorSource() # source label
+```
+
+UI components should:
+1. Read from SSOT via object accessor methods
+2. Subscribe to per-field change events (e.g., `derivedFgColorChangedEventType()`, `effectiveFgColorChangedEventType()`)
+3. When event fires, re-read from SSOT to update display
+
+---
+
+#### Rules
+
+1. Trigger fires ONLY when INPUT field in SSOT changes
+2. Write to OUTPUT fields ONLY if value changed
+3. Fire pubsub ONLY if output changed (for UI refresh)
+
+---
+
+#### Volatile Fields
+
+**SSOT fields are volatile** — they are NOT persisted to the task file.
+
+The derived and effective Attribute fields are:
+- **Not in `__getstate__()`** — excluded from serialization
+- **Initialized to None/""** after file load
+- **Populated by ComputeStyles polling** within 1 second of app start
+
+**Why volatile?**
+- Effective values are computed from persisted data (overrides, parent relationships)
+- No need to persist what can be recomputed
+- Reduces file size and avoids stale value problems
+
+**No post-load initialization needed** — `ComputeStyles` polling replaces all
+post-load handlers. The poller runs every second and populates all volatile
+fields automatically.
+
+---
+
+#### Data Flow (SSOT Principle)
+
+**Attribute fields defined in object.py** — derived and effective values are Attribute objects
+with automatic change event firing via `Attribute.set()`.
+
+**Application startup / file load sequence:**
+
+```
+1. App starts, loads data file
+   └── Objects created with override values, parent relationships
+
+2. ComputeStyles poller starts (timer.second)
+   └── Within 1 second, all objects get derived + effective values computed
+
+3. Ongoing: poller runs every second
+   └── Any data change (override, category, status, parent) is picked up
+   └── Attribute.set() fires per-field change events when values change
+   └── UI subscribers update automatically
+```
+
+**Key insight:** No explicit triggers needed. The per-second poll catches all changes
+with eventual consistency (1-2 second latency).
+
+---
+
+**Data Model Storage:**
+
+Appearance values stored as `Attribute` objects on base `Object` class in `object.py`.
+Each Attribute fires a change event when its value is set via `Attribute.set()`.
+
+```
+Derived (Attribute fields, written by computeDerived):
+  _derived_fgColor       (value)    _derived_fgColor_source
+  _derived_bgColor       (value)    _derived_bgColor_source
+  _derived_font          (value)    _derived_font_source
+  _derived_icon          (value)    _derived_icon_source
+
+Effective (Attribute fields, written by computeEffective):
+  _effective_fgColor     (value)    _effective_fgColor_default    _effective_fgColor_source
+  _effective_bgColor     (value)    _effective_bgColor_default    _effective_bgColor_source
+  _effective_font        (value)    _effective_font_default       _effective_font_source
+  _effective_icon        (value)    — (no default for icons)      _effective_icon_source
+```
+
+Accessor methods are generated by Attribute fields and return stored values directly.
+
+---
+
+**Change Detection:**
+
+1. ComputeStyles poller runs every second
+2. Calls `computeDerived()` and `computeEffective()` for all objects
+3. `Attribute.set()` compares new vs prior value
+4. If changed: fires per-field change event (e.g., `derivedFgColorChangedEventType()`)
+5. UI subscribers update display
+
+**Self-limiting:** Attribute.set() only fires events when value actually changes.
 
 **Benefits:**
-- Single source of truth: `effectiveXxx()` returns the final value directly
-- No recursive lookup at query time: value is pre-computed
-- Automatic updates: pub/sub propagation ensures children stay in sync
-- Parent is authoritative: children derive from parent's effective value
+- **Universal:** One poller handles all object types and all change sources
+- **No triggers needed:** Catches time-based transitions, category changes, parent changes, etc.
+- **Eventual consistency:** 1-2 second latency, acceptable for appearance updates
+- **Simple:** No complex trigger/cascade logic to maintain
 
 #### Legacy Code Compatibility
 
@@ -508,43 +935,58 @@ Parent category appearance changes
 
 New code should use the `effectiveXxx()` methods. Legacy code continues to work unchanged.
 
-#### TODO: Implement for Tasks
+#### Task Effective Appearance
 
-**Status:** Pending
+Tasks have `derivedXxx()` / `derivedXxxSource()` and `effectiveXxx()` / `effectiveXxxSource()` accessor methods.
 
-Tasks also need effective appearance fields following the same pattern as Categories.
-
-**Task Appearance Cascade (priority order):**
+**Task Appearance Cascade (priority order) — computed by `computeDerived()`:**
 
 ```
-1. Own override (task's own icon/fg/bg/font)
-   └── If set, use it
+1. Task's direct categories
+   └── Use category.effectiveFgColor() etc.
+   └── Source: "[Category] CategoryName"
 
-2. Task's direct categories
-   └── Use category.effectiveIcon() / effectiveFgColor() / etc.
-   └── No recursion needed - category already has pre-computed effective value
-   └── If multiple categories: mix colors, first icon wins
+2. Parent task's effective value (if child task has NO direct categories)
+   └── Child task asks parent.effectiveFgColor() etc.
+   └── Source: "[Task] ParentTaskName"
 
-3. Parent task's category (if child task has NO direct categories)
-   └── Child task asks parent._categoryForegroundColor()
-   └── Parent returns its category's effective value
-   └── This is how category appearance flows from parent task to child task
-
-4. Status appearance (fallback - task always has a status)
+3. Status appearance (fallback - task always has a status)
    └── statusIcon(), statusFgColor(), statusBgColor()
+   └── Source: "[Status] StatusName" (e.g., "[Status] Inactive", "[Status] Active")
 ```
 
-**Key simplification:** Since categories now have `effectiveXxx()` methods, the task code can call those directly instead of `category.foregroundColor(recursive=True)`. The category has already computed its effective value from its own parent chain.
+**`effectiveXxx()` is simple:** own override OR derivedXxx()
+- If own override set → Source: "Override"
+- Else → delegates to `derivedXxx()`
 
-**Task-to-task inheritance:** When a child task has no categories but its parent task does, the child inherits the category appearance via the parent task (not directly from the category). The parent task returns its category's effective value.
+**SSOT accessors** (defined as Attribute fields in base `Object`, written by `computeDerived()` and `computeEffective()`):
 
-**Implementation steps:**
-- Add `__effective_fg_color`, `__effective_bg_color`, `__effective_icon`, `__effective_font` fields to Task
-- Add `effectiveFgColor()`, `effectiveBgColor()`, `effectiveIcon()`, `effectiveFont()` accessors
-- Add `_computeEffectiveAppearance()` method implementing the cascade above
-- Update `_categoryForegroundColor()` etc. to use `category.effectiveXxx()` instead of `recursive=True`
-- Call from `__init__`, `recomputeAppearance()`, and when categories change
-- Update Appearance tab to show Effective section for tasks
+**Derived** (value and source are separate methods):
+
+| Value Method | Source Method |
+|--------------|---------------|
+| `derivedFgColor()` | `derivedFgColorSource()` |
+| `derivedBgColor()` | `derivedBgColorSource()` |
+| `derivedIcon()` | `derivedIconSource()` |
+| `derivedFont()` | `derivedFontSource()` |
+
+**Effective** (value, default, and source are separate methods):
+
+| Value Method | Default Method | Source Method |
+|--------------|----------------|---------------|
+| `effectiveFgColor()` | `effectiveFgColorDefault()` | `effectiveFgColorSource()` |
+| `effectiveBgColor()` | `effectiveBgColorDefault()` | `effectiveBgColorSource()` |
+| `effectiveIcon()` | — (no default) | `effectiveIconSource()` |
+| `effectiveFont()` | `effectiveFontDefault()` | `effectiveFontSource()` |
+
+**Note:** Tasks always have status fallback, so derived values are never empty for Tasks.
+
+**Source label patterns:**
+- `"Override"` — user set this value directly
+- `"[Category] WorkCategory"` — from a category's effective value
+- `"[Task] ParentTaskName"` — from parent task's effective value
+- `"[Status] Inactive"` — from task status (includes status name)
+- `"System Theme"` — (Categories/Notes/Attachments only, not Tasks)
 
 ### Inheritance Methods
 
@@ -561,9 +1003,23 @@ Tasks also need effective appearance fields following the same pattern as Catego
 | `font(recursive=False)` | Own font only |
 | `font(recursive=True)` | Own font, or parent's recursive font |
 
-### Notes and Attachments
+### Notes, Efforts, and Attachments
 
-Notes and Attachments do not show derived/override sections in the Appearance tab because they have no status and no category inheritance chain. They only have their own appearance settings.
+**Notes:**
+- Inherit appearance from parent notes only (do NOT inherit from attached task)
+- SSOT `effectiveXxx()` methods follow same pattern as Tasks/Categories
+- Fewer sources than Tasks: only parent note or own override (no categories, no status)
+- Appearance tab shows Derived/Override/Effective sections
+
+**Efforts:**
+- NO appearance tab — simple editor without tabs
+- Efforts implicitly use the appearance of the task they belong to
+- No inheritance model — appearance comes directly from task
+
+**Attachments:**
+- SSOT `effectiveXxx()` methods (simplest form - override or system theme)
+- No inheritance chain - derived is always system theme
+- Appearance tab shows Derived/Override/Effective sections
 
 ---
 

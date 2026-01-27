@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 import wx.lib.agw.aui as aui
+import wx.lib.scrolledpanel as scrolledpanel
 
 
 class GridCursor:
@@ -143,6 +144,107 @@ class BookPage(wx.Panel):
     def addLine(self):
         line = wx.StaticLine(self)
         # No spacing above, regular spacing (10px) below
+        colspan = max(self._columns, 1)
+        self._sizer.Add(
+            line,
+            self._position.next(colspan),
+            span=(1, colspan),
+            flag=wx.GROW | wx.ALIGN_CENTER_VERTICAL | wx.BOTTOM,
+            border=10,
+        )
+
+    def __addControl(self, columnIndex, control, flag, lastColumn):
+        colspan = max(self._columns - columnIndex, 1) if lastColumn else 1
+        self._sizer.Add(
+            control,
+            self._position.next(colspan),
+            span=(1, colspan),
+            flag=flag,
+            border=self._borderWidth,
+        )
+
+    def __createStaticTextControlIfNeeded(self, control):
+        if type(control) in [type(""), type("")]:
+            control = wx.StaticText(self, label=control)
+        return control
+
+
+class ScrolledBookPage(scrolledpanel.ScrolledPanel):
+    """A scrollable page in a notebook. Use for pages with lots of content."""
+
+    # Outer margin around page content
+    _outerMargin = 10
+    # Grid spacing - subclasses can override
+    _vgap = 5
+    _hgap = 5
+    _borderWidth = 5
+
+    def __init__(self, parent, columns, growableColumn=None, *args, **kwargs):
+        super().__init__(parent, style=wx.TAB_TRAVERSAL, *args, **kwargs)
+        self._sizer = wx.GridBagSizer(vgap=self._vgap, hgap=self._hgap)
+        self._columns = columns
+        self._position = GridCursor(columns)
+        if growableColumn is None:
+            self._growableColumn = columns - 1
+        else:
+            self._growableColumn = growableColumn
+
+    def fit(self):
+        # Wrap GridBagSizer in outer BoxSizer with margins for proper spacing
+        if not hasattr(self, '_outerSizer') or self._outerSizer is None:
+            self._outerSizer = wx.BoxSizer(wx.VERTICAL)
+            self._outerSizer.Add(self._sizer, 1, wx.EXPAND | wx.ALL, self._outerMargin)
+            self.SetSizer(self._outerSizer)
+        self.SetupScrolling(scroll_x=False, scroll_y=True)
+        self.Layout()
+
+    def __defaultFlags(self, controls):
+        """Return the default flags for placing a list of controls."""
+        labelInFirstColumn = type(controls[0]) in [type(""), type("")]
+        flags = []
+        for columnIndex in range(len(controls)):
+            flag = wx.ALL | wx.ALIGN_CENTER_VERTICAL
+            if columnIndex == 0 and labelInFirstColumn:
+                flag |= wx.ALIGN_LEFT
+            else:
+                flag |= wx.ALIGN_RIGHT | wx.EXPAND
+            flags.append(flag)
+        return flags
+
+    def __determineFlags(self, controls, flagsPassed):
+        """Return a merged list of flags by overriding the default
+        flags with flags passed by the caller."""
+        flagsPassed = flagsPassed or [None] * len(controls)
+        defaultFlags = self.__defaultFlags(controls)
+        return [
+            defaultFlag if flagPassed is None else flagPassed
+            for flagPassed, defaultFlag in zip(flagsPassed, defaultFlags)
+        ]
+
+    def addEntry(self, *controls, **kwargs):
+        """Add controls to the page on one row."""
+        flags = self.__determineFlags(controls, kwargs.get("flags", None))
+        controls = [
+            self._ScrolledBookPage__createStaticTextControlIfNeeded(control)
+            for control in controls
+            if control is not None
+        ]
+        lastColumnIndex = len(controls) - 1
+        for columnIndex, control in enumerate(controls):
+            self._ScrolledBookPage__addControl(
+                columnIndex, control, flags[columnIndex],
+                columnIndex == lastColumnIndex
+            )
+        # Add growable column once, when first entry has been added
+        if (
+            self._growableColumn >= 0
+            and self._sizer.GetItemCount() >= self._columns
+        ):
+            self._sizer.AddGrowableCol(self._growableColumn)
+            self._growableColumn = -1
+
+    def addLine(self):
+        line = wx.StaticLine(self)
         colspan = max(self._columns, 1)
         self._sizer.Add(
             line,

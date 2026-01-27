@@ -81,7 +81,7 @@ def randomFont():
 
 def randomIcon():
     return randomThing(
-        lambda: random.choice(list(artprovider.chooseableItemImages.keys()))
+        lambda: random.choice(list(artprovider.chooseableItems.keys()))
     )
 
 

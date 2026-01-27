@@ -704,10 +704,12 @@ Break the lock?"""
 
     def __init_domain_objects(self):
         """Provide relevant domain objects with access to the settings."""
-        from taskcoachlib.domain import task, attachment
+        from taskcoachlib.domain import task, attachment, base
 
         task.Task.settings = self.settings
         attachment.Attachment.settings = self.settings
+
+
 
     def __init_application(self):
         from taskcoachlib import meta

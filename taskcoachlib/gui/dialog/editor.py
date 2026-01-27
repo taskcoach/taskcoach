@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import widgets, patterns, command, operating_system, render
-from taskcoachlib.domain import task, category, date, note, attachment
+from taskcoachlib.domain import task, category, date, note, attachment, effort, base
 from taskcoachlib.domain.task import status
 from taskcoachlib.gui import viewer, uicommand, windowdimensionstracker
 from taskcoachlib.gui.dialog import entry, attributesync
@@ -41,7 +41,104 @@ import os.path
 import wx
 
 
+# --- System Theme Resolution Helpers ---
+# Single point for converting domain symbolic constants to wx values.
+# Domain SSOT methods return these constants; UI uses these helpers to resolve.
+
+def resolve_color(value):
+    """Convert domain color value to wx.Colour.
+
+    Args:
+        value: Color tuple (r,g,b), symbolic constant, or wx.Colour
+
+    Returns:
+        wx.Colour instance
+    """
+    if value == base.SYSTEM_FG_COLOR:
+        return wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+    elif value == base.SYSTEM_BG_COLOR:
+        return wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+    elif isinstance(value, (tuple, list)):
+        return wx.Colour(*value)
+    elif isinstance(value, wx.Colour):
+        return value
+    else:
+        return wx.NullColour
+
+
+def resolve_font(value):
+    """Convert domain font value to wx.Font.
+
+    Args:
+        value: wx.Font, symbolic constant, or None
+
+    Returns:
+        wx.Font instance
+    """
+    if value == base.SYSTEM_FONT:
+        return wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+    elif isinstance(value, wx.Font):
+        return value
+    elif value is None:
+        return wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+    else:
+        return value
+
+
+def is_system_theme(value):
+    """Check if value is a system theme symbolic constant."""
+    return value in (base.SYSTEM_FG_COLOR, base.SYSTEM_BG_COLOR, base.SYSTEM_FONT)
+
+
 class Page(patterns.Observer, widgets.BookPage):
+    columns = 2
+
+    def __init__(self, items, *args, **kwargs):
+        self.items = items
+        super().__init__(columns=self.columns, *args, **kwargs)
+        self.addEntries()
+        self.fit()
+
+    def selected(self):
+        """Called when this page is selected. Override in subclasses for lazy initialization."""
+        pass
+
+    def addEntries(self):
+        raise NotImplementedError
+
+    def entries(self):
+        """A mapping of names of columns to entries on this editor page."""
+        return dict()
+
+    def setFocusOnEntry(self, column_name):
+        try:
+            the_entry = self.entries()[column_name]
+        except KeyError:
+            the_entry = self.entries().get("firstEntry")
+            if the_entry is None:
+                return
+        self.__set_selection_and_focus(the_entry)
+
+    def __set_selection_and_focus(self, the_entry):
+        """If the entry has selectable text, select the text so that the user
+        can start typing over it immediately."""
+        the_entry.SetFocus()
+        try:
+            if operating_system.isWindows() and isinstance(
+                the_entry, wx.TextCtrl
+            ):
+                # Scroll to left...
+                the_entry.SetInsertionPoint(0)
+            the_entry.SetSelection(-1, -1)  # Select all text
+        except (AttributeError, TypeError):
+            pass  # Not a TextCtrl
+
+    def close(self):
+        self.removeInstance()
+
+
+class ScrolledPage(patterns.Observer, widgets.ScrolledBookPage):
+    """A scrollable page for dialogs with lots of content (e.g., Appearance tab)."""
     columns = 2
 
     def __init__(self, items, *args, **kwargs):
@@ -64,7 +161,9 @@ class Page(patterns.Observer, widgets.BookPage):
         try:
             the_entry = self.entries()[column_name]
         except KeyError:
-            the_entry = self.entries()["firstEntry"]
+            the_entry = self.entries().get("firstEntry")
+            if the_entry is None:
+                return
         self.__set_selection_and_focus(the_entry)
 
     def __set_selection_and_focus(self, the_entry):
@@ -75,15 +174,7 @@ class Page(patterns.Observer, widgets.BookPage):
             if operating_system.isWindows() and isinstance(
                 the_entry, wx.TextCtrl
             ):
-                # XXXFIXME: See SR #325. Disable this for now.
-
-                # This ensures that if the TextCtrl value is more than can
-                # be displayed, it will display the start instead of the
-                # end:
-                """from taskcoachlib.thirdparty import SendKeys  # pylint: disable=W0404
-                SendKeys.SendKeys('{END}+{HOME}')"""
-
-                # Scrol to left...
+                # Scroll to left...
                 the_entry.SetInsertionPoint(0)
             the_entry.SetSelection(-1, -1)  # Select all text
         except (AttributeError, TypeError):
@@ -289,6 +380,7 @@ class CategorySubjectPage(SubjectPage):
         self.addSubjectEntry()
         self.addDescriptionEntry()
         self.addExclusiveSubcategoriesEntry()
+        self.addStylePriorityEntry()
         self.addCreationDateTimeEntry()
         self.addModificationDateTimeEntry()
 
@@ -316,6 +408,29 @@ class CategorySubjectPage(SubjectPage):
             _("Subcategories"),
             self._exclusiveSubcategoriesCheckBox,
             flags=[None, wx.ALL],
+        )
+
+    def addStylePriorityEntry(self):
+        # pylint: disable=W0201
+        currentPriority = (
+            self.items[0].stylePriority() if len(self.items) == 1 else 0
+        )
+        self._stylePriorityEntry = widgets.SpinCtrl(
+            self, size=(100, -1), value=currentPriority, min=0, max=99
+        )
+        self._stylePrioritySync = attributesync.AttributeSync(
+            "stylePriority",
+            self._stylePriorityEntry,
+            currentPriority,
+            self.items,
+            command.EditStylePriorityCommand,
+            wx.EVT_SPINCTRL,
+            self.items[0].stylePriorityChangedEventType(),
+        )
+        self.addEntry(
+            _("Style priority"),
+            self._stylePriorityEntry,
+            flags=[wx.ALIGN_RIGHT, wx.EXPAND],
         )
 
 
@@ -445,205 +560,233 @@ class AttachmentSubjectPage(SubjectPage):
             self._locationSync.onAttributeEdited(event)
 
 
-class TaskAppearancePage(Page):
+class TaskAppearancePage(ScrolledPage):
+    """Appearance tab with scrollbar support for all domain object types."""
     pageName = "appearance"
     pageTitle = _("Appearance")
     pageIcon = "palette_icon"
-    columns = 5
+    columns = 3  # Label, Control, Source
     _vgap = 2
     _hgap = 5
     _borderWidth = 2
 
     def addEntries(self):
         self.addCalculatedSection()
-        # Show "Override values" header for Tasks and Categories (which have derived values)
-        if len(self.items) == 1 and isinstance(self.items[0], (task.Task, category.Category)):
+        # Show "Override values" header for all single-item edits
+        if len(self.items) == 1:
             self.addLine()
-            self.addBoldHeader(_("Override values"))
+            self.addSectionHeader(_("Override values"))
         self.addIconEntry()
         self.addColorEntries()
         self.addFontEntry()
         self.addEffectiveSection()
+        # Update derived values now that all widgets exist
+        if len(self.items) == 1:
+            self._updateDerivedValues()
 
-    def addBoldHeader(self, text):
-        """Add a bold section header."""
-        header = wx.StaticText(self, label=text)
-        font = header.GetFont()
-        font.SetWeight(wx.FONTWEIGHT_BOLD)
-        header.SetFont(font)
-        self.addEntry(header, flags=[wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT])
+    def addSectionHeader(self, title, sourceLabel=None):
+        """Add a bold section header spanning columns 0-1, optional label in column 2."""
+        header = wx.StaticText(self, label=title)
+        header.SetFont(header.GetFont().Bold())
+        flag = wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT
+        self._sizer.Add(header, self._position.next(2), span=(1, 2),
+                        flag=flag, border=self._borderWidth)
+        if sourceLabel:
+            source = wx.StaticText(self, label=sourceLabel)
+            source.SetFont(source.GetFont().Bold())
+            self._sizer.Add(source, self._position.next(1), span=(1, 1),
+                            flag=flag, border=self._borderWidth)
+        else:
+            self._sizer.Add((0, 0), self._position.next(1), span=(1, 1))
 
     def addCalculatedSection(self):
-        """Add read-only display of derived appearance values (Task and Category)."""
+        """Add read-only display of derived appearance values.
+
+        Layout: 3 columns - Label, Control, Source
+        - Tasks: derived from category/parent/status
+        - Categories: derived from parent category
+        - Notes: derived from parent note (or System Theme)
+        - Efforts/Attachments: always System Theme (no inheritance)
+        """
         if len(self.items) != 1:
             return
         item = self.items[0]
-        # Only show derived values for Task and Category objects
-        if not isinstance(item, (task.Task, category.Category)):
-            return
-        self.addBoldHeader(_("Derived values"))
-        entryFlags = [None, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT]
 
-        # Icon - use panel with StaticBitmap and label
-        iconPanel = wx.Panel(self)
+        self.addSectionHeader(_("Derived values"), _("Source"))
+        entryFlags = [
+            wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,  # Label
+            wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,  # Control
+            wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,  # Source
+        ]
+
+        # Icon - panel with both bitmap and "N/A" text (show one or the other)
+        self._derivedIconPanel = wx.Panel(self)
         iconSizer = wx.BoxSizer(wx.HORIZONTAL)
-        self._computedIconDisplay = wx.StaticBitmap(iconPanel)
-        self._computedIconLabel = wx.StaticText(iconPanel, label="")
-        iconSizer.Add(self._computedIconDisplay, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-        iconSizer.Add(self._computedIconLabel, 0, wx.ALIGN_CENTER_VERTICAL)
-        iconPanel.SetSizer(iconSizer)
-        self.addEntry(_("Icon"), iconPanel, flags=entryFlags)
+        self._derivedIconDisplay = wx.StaticBitmap(self._derivedIconPanel)
+        self._derivedIconNA = wx.StaticText(self._derivedIconPanel, label=_("N/A"))
+        self._derivedIconNA.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+        iconSizer.Add(self._derivedIconDisplay, 0, wx.ALIGN_CENTER_VERTICAL)
+        iconSizer.Add(self._derivedIconNA, 0, wx.ALIGN_CENTER_VERTICAL)
+        self._derivedIconPanel.SetSizer(iconSizer)
+        self._derivedIconSource = wx.StaticText(self, label="")
+        self._derivedIconSource.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+        self.addEntry(_("Icon"), self._derivedIconPanel, self._derivedIconSource, flags=entryFlags)
 
-        # Foreground - use panel with color picker and label
-        fgPanel = wx.Panel(self)
-        fgSizer = wx.BoxSizer(wx.HORIZONTAL)
-        self._computedFgPicker = widgets.ColourPickerCtrl(
-            fgPanel, colour=wx.BLACK, readOnly=True
-        )
-        self._computedFgLabel = wx.StaticText(fgPanel, label="")
-        fgSizer.Add(self._computedFgPicker, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-        fgSizer.Add(self._computedFgLabel, 0, wx.ALIGN_CENTER_VERTICAL)
-        fgPanel.SetSizer(fgSizer)
-        self.addEntry(_("Foreground"), fgPanel, flags=entryFlags)
+        # Foreground
+        self._derivedFgPicker = widgets.ColourPickerCtrl(self, colour=wx.BLACK, readOnly=True)
+        self._derivedFgSource = wx.StaticText(self, label="")
+        self._derivedFgSource.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+        self.addEntry(_("Foreground"), self._derivedFgPicker, self._derivedFgSource, flags=entryFlags)
 
-        # Background - use panel with color picker and label
-        bgPanel = wx.Panel(self)
-        bgSizer = wx.BoxSizer(wx.HORIZONTAL)
-        self._computedBgPicker = widgets.ColourPickerCtrl(
-            bgPanel, colour=wx.WHITE, readOnly=True
-        )
-        self._computedBgLabel = wx.StaticText(bgPanel, label="")
-        bgSizer.Add(self._computedBgPicker, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-        bgSizer.Add(self._computedBgLabel, 0, wx.ALIGN_CENTER_VERTICAL)
-        bgPanel.SetSizer(bgSizer)
-        self.addEntry(_("Background"), bgPanel, flags=entryFlags)
+        # Background
+        self._derivedBgPicker = widgets.ColourPickerCtrl(self, colour=wx.WHITE, readOnly=True)
+        self._derivedBgSource = wx.StaticText(self, label="")
+        self._derivedBgSource.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+        self.addEntry(_("Background"), self._derivedBgPicker, self._derivedBgSource, flags=entryFlags)
 
-        # Initial update
-        self._updateComputedValues()
+        # Font
+        defaultFont = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        self._derivedFontPicker = widgets.FontPickerCtrl(
+            self, font=defaultFont, colour=(0, 0, 0, 255), readOnly=True)
+        self._derivedFontSource = wx.StaticText(self, label="")
+        self._derivedFontSource.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+        self.addEntry(_("Font"), self._derivedFontPicker, self._derivedFontSource, flags=entryFlags)
 
-        # Subscribe to changes that affect derived icon/colors
-        if isinstance(item, task.Task):
-            # Status changes use pubsub
-            pub.subscribe(self._onStatusChanged, task.Task.statusChangedEventType())
-            # Category changes use the internal observer pattern
+        # Note: _updateDerivedValues() is called at end of addEntries() after all widgets exist
+
+        # Subscribe to SSOT derived change events for automatic updates
+        for eventType in (item.derivedFgColorChangedEventType(),
+                          item.derivedBgColorChangedEventType(),
+                          item.derivedIconChangedEventType(),
+                          item.derivedFontChangedEventType()):
             self.registerObserver(
-                self._onCategoryChanged,
-                eventType=item.categoryAddedEventType(),
+                self._onDerivedAppearanceChanged,
+                eventType=eventType,
                 eventSource=item
             )
-            self.registerObserver(
-                self._onCategoryChanged,
-                eventType=item.categoryRemovedEventType(),
-                eventSource=item
-            )
-        elif isinstance(item, category.Category):
-            # Subscribe to parent's appearance changes
-            parent = item.parent()
-            if parent:
-                self.registerObserver(
-                    self._onParentAppearanceChanged,
-                    eventType=parent.appearanceChangedEventType(),
-                    eventSource=parent
-                )
 
-    def _onStatusChanged(self, newValue=None, sender=None):
-        """Update derived values when task status changes."""
-        if sender == self.items[0] or sender is None:
-            self._updateComputedValues()
+    def _onDerivedAppearanceChanged(self, event):
+        """Update derived display when SSOT appearance changes."""
+        self._updateDerivedValues()
 
-    def _onCategoryChanged(self, event):
-        """Update derived values when task categories change."""
-        self._updateComputedValues()
+    def _updateDerivedValues(self):
+        """Refresh the derived icon and color displays (pre-override values).
 
-    def _onParentAppearanceChanged(self, event):
-        """Update derived values when parent category appearance changes."""
-        self._updateComputedValues()
-
-    def _updateComputedValues(self):
-        """Refresh the derived icon and color displays (pre-override values)."""
+        Unified display logic for all item types. Always shows pickers with
+        system theme colors as fallback. No N/A, no hiding.
+        """
         if len(self.items) != 1:
             return
-        # Guard: only update if computed display widgets exist
-        if not hasattr(self, "_computedIconDisplay"):
+        # Guard: only update if derived display widgets exist
+        if not hasattr(self, "_derivedIconDisplay"):
             return
-        item = self.items[0]
 
-        if isinstance(item, task.Task):
-            self._updateComputedValuesForTask(item)
-        elif isinstance(item, category.Category):
-            self._updateComputedValuesForCategory(item)
+        # Get derived values based on item type
+        iconValue, iconSource, fgValue, fgSource, bgValue, bgSource, fontValue, fontSource = \
+            self._getDerivedValuesForItem(self.items[0])
 
-    def _updateComputedValuesForTask(self, theTask):
-        """Update derived values for a Task (from category + status)."""
-        # Update icon (category icon or status icon, NOT own override)
-        iconName = theTask.categoryIcon() or theTask.statusIcon()
-        if iconName:
-            bitmap = wx.ArtProvider.GetBitmap(iconName, wx.ART_MENU, (16, 16))
-            self._computedIconDisplay.SetBitmap(bitmap)
-            self._computedIconLabel.SetLabel("")
+        # Display derived values (unified for all item types)
+        self._displayDerivedValues(iconValue, iconSource, fgValue, fgSource,
+                                   bgValue, bgSource, fontValue, fontSource)
+
+    def _getDerivedValuesForItem(self, item):
+        """Get derived appearance values from SSOT accessors.
+
+        Returns: (iconValue, iconSource, fgValue, fgSource, bgValue, bgSource, fontValue, fontSource)
+
+        Uses separate derivedXxx() and derivedXxxSource() accessors.
+        """
+        # Get derived values and sources using separate accessors
+        iconActual = item.derivedIcon()
+        iconSource = item.derivedIconSource()
+        fgActual = item.derivedFgColor()
+        fgSource = item.derivedFgColorSource()
+        bgActual = item.derivedBgColor()
+        bgSource = item.derivedBgColorSource()
+        fontActual = item.derivedFont()
+        fontSource = item.derivedFontSource()
+
+        # Get defaults for fallback
+        iconDefault = item.effectiveIconDefault() if hasattr(item, 'effectiveIconDefault') else ""
+        fgDefault = item.effectiveFgColorDefault() if hasattr(item, 'effectiveFgColorDefault') else base.SYSTEM_FG_COLOR
+        bgDefault = item.effectiveBgColorDefault() if hasattr(item, 'effectiveBgColorDefault') else base.SYSTEM_BG_COLOR
+        fontDefault = item.effectiveFontDefault() if hasattr(item, 'effectiveFontDefault') else base.SYSTEM_FONT
+
+        # Resolve to wx values: use actual if set, otherwise default
+        iconValue = iconActual if iconActual else iconDefault
+        fgValue = resolve_color(fgActual if fgActual else fgDefault)
+        bgValue = resolve_color(bgActual if bgActual else bgDefault)
+        fontValue = resolve_font(fontActual if fontActual else fontDefault)
+
+        return (iconValue, iconSource, fgValue, fgSource, bgValue, bgSource, fontValue, fontSource)
+
+    def _displayDerivedValues(self, iconValue, iconSource, fgValue, fgSource,
+                              bgValue, bgSource, fontValue, fontSource):
+        """Display derived values in the UI.
+
+        Domain SSOT methods (derivedXxx) return:
+        - Actual value + source when inherited from parent
+        - Symbolic constant (e.g., base.SYSTEM_FG_COLOR) + "System Theme" when no parent
+
+        This method uses resolve_color/resolve_font helpers to convert
+        symbolic constants to actual wx values. No fallback logic here -
+        domain is the single source of truth.
+
+        Icons are special: no system theme exists, so empty icon shows "N/A".
+        """
+        # --- Icon ---
+        # Icons have no system theme - show "N/A" when no inherited value
+        if iconValue:
+            bitmap = wx.ArtProvider.GetBitmap(iconValue, wx.ART_MENU, (16, 16))
+            self._derivedIconDisplay.SetBitmap(bitmap)
+            self._derivedIconDisplay.Show()
+            self._derivedIconNA.Hide()
+            self._derivedIconSource.SetLabel(iconSource)
         else:
-            self._computedIconDisplay.SetBitmap(wx.NullBitmap)
-            self._computedIconLabel.SetLabel("")
+            self._derivedIconDisplay.Hide()
+            self._derivedIconNA.Show()
+            self._derivedIconSource.SetLabel(_("N/A"))
+        self._derivedIconPanel.Layout()
 
-        # Update foreground color (category color or status color, NOT own override)
-        fgColor = theTask._categoryForegroundColor() or theTask.statusFgColor()
-        self._computedFgPicker.SetColour(wx.Colour(*fgColor) if fgColor else wx.BLACK)
-        self._computedFgPicker.Show()
-        self._computedFgLabel.SetLabel("")
+        # --- Foreground Color ---
+        # fgValue is either a color tuple or base.SYSTEM_FG_COLOR constant
+        # fgSource is either "[Category] Name" or "System Theme"
+        derivedFgColour = resolve_color(fgValue)
+        self._derivedFgPicker.SetColour(derivedFgColour)
+        self._derivedFgPicker.Show()
+        self._derivedFgSource.SetLabel(fgSource)
 
-        # Update background color (category color or status color, NOT own override)
-        bgColor = theTask._categoryBackgroundColor() or theTask.statusBgColor()
-        self._computedBgPicker.SetColour(wx.Colour(*bgColor) if bgColor else wx.WHITE)
-        self._computedBgPicker.Show()
-        self._computedBgLabel.SetLabel("")
+        # --- Background Color ---
+        # bgValue is either a color tuple or base.SYSTEM_BG_COLOR constant
+        # bgSource is either "[Category] Name" or "System Theme"
+        derivedBgColour = resolve_color(bgValue)
+        self._derivedBgPicker.SetColour(derivedBgColour)
+        self._derivedBgPicker.Show()
+        self._derivedBgSource.SetLabel(bgSource)
 
-    def _updateComputedValuesForCategory(self, theCategory):
-        """Update derived values for a Category (from parent category)."""
-        parent = theCategory.parent()
-        naLabel = _("N/A")
+        # --- Font ---
+        # fontValue is either a wx.Font or base.SYSTEM_FONT constant
+        # fontSource is either "[Category] Name" or "System Theme"
+        derivedFont = resolve_font(fontValue)
+        self._derivedFontPicker.SetSelectedFont(derivedFont)
+        self._derivedFontPicker.Show()
+        self._derivedFontSource.SetLabel(fontSource)
 
-        # Update icon from parent
-        if parent:
-            iconName = parent.icon(recursive=True)
-            if iconName:
-                bitmap = wx.ArtProvider.GetBitmap(iconName, wx.ART_MENU, (16, 16))
-                self._computedIconDisplay.SetBitmap(bitmap)
-                self._computedIconDisplay.Show()
-                self._computedIconLabel.SetLabel("")
-            else:
-                self._computedIconDisplay.Hide()
-                self._computedIconLabel.SetLabel(naLabel)
-        else:
-            self._computedIconDisplay.Hide()
-            self._computedIconLabel.SetLabel(naLabel)
+        # Update font picker demo colors to match derived colors
+        self._derivedFontPicker.SetSelectedColour(derivedFgColour)
+        self._derivedFontPicker.SetSelectedBgColour(derivedBgColour)
 
-        # Update foreground color from parent
-        if parent:
-            fgColor = parent.foregroundColor(recursive=True)
-            if fgColor:
-                self._computedFgPicker.SetColour(wx.Colour(*fgColor))
-                self._computedFgPicker.Show()
-                self._computedFgLabel.SetLabel("")
-            else:
-                self._computedFgPicker.Hide()
-                self._computedFgLabel.SetLabel(naLabel)
-        else:
-            self._computedFgPicker.Hide()
-            self._computedFgLabel.SetLabel(naLabel)
-
-        # Update background color from parent
-        if parent:
-            bgColor = parent.backgroundColor(recursive=True)
-            if bgColor:
-                self._computedBgPicker.SetColour(wx.Colour(*bgColor))
-                self._computedBgPicker.Show()
-                self._computedBgLabel.SetLabel("")
-            else:
-                self._computedBgPicker.Hide()
-                self._computedBgLabel.SetLabel(naLabel)
-        else:
-            self._computedBgPicker.Hide()
-            self._computedBgLabel.SetLabel(naLabel)
+        # Update Override ColorEntry widgets with resolved derived colors
+        # (shown when override checkbox is unchecked)
+        if hasattr(self, '_foregroundColorEntry'):
+            self._foregroundColorEntry.setDerivedColor(derivedFgColour)
+        if hasattr(self, '_backgroundColorEntry'):
+            self._backgroundColorEntry.setDerivedColor(derivedBgColour)
 
     def addColorEntries(self):
         self.addColorEntry(_("Foreground"), "foreground", wx.BLACK)
@@ -675,21 +818,27 @@ class TaskAppearancePage(Page):
     def addFontEntry(self):
         # pylint: disable=W0201,E1101
         currentFont = self.items[0].font() if len(self.items) == 1 else None
-        # Use override color if set, otherwise use computed (recursive) color
+        # Use override color if set, otherwise use effective/inherited color
+        # Tasks and Categories have effectiveFgColor() (SSOT)
+        # Notes/Efforts/Attachments use foregroundColor(recursive=True)
         overrideFgColor = self._foregroundColorEntry.GetValue()
         overrideBgColor = self._backgroundColorEntry.GetValue()
         if len(self.items) == 1:
-            task = self.items[0]
-            currentColor = overrideFgColor if overrideFgColor else task.foregroundColor(recursive=True)
-            currentBgColor = overrideBgColor if overrideBgColor else task.backgroundColor(recursive=True)
+            item = self.items[0]
+            if hasattr(item, 'effectiveFgColor'):
+                # Tasks and Categories use SSOT effective methods
+                currentColor = overrideFgColor if overrideFgColor else item.effectiveFgColor()
+                currentBgColor = overrideBgColor if overrideBgColor else item.effectiveBgColor()
+            else:
+                # Notes inherit from parent notes, Efforts/Attachments have no inheritance
+                currentColor = overrideFgColor if overrideFgColor else item.foregroundColor(recursive=True)
+                currentBgColor = overrideBgColor if overrideBgColor else item.backgroundColor(recursive=True)
         else:
             currentColor = overrideFgColor
             currentBgColor = overrideBgColor
-        # Convert tuple to wx.Colour if needed
-        if currentColor and not isinstance(currentColor, wx.Colour):
-            currentColor = wx.Colour(*currentColor)
-        if currentBgColor and not isinstance(currentBgColor, wx.Colour):
-            currentBgColor = wx.Colour(*currentBgColor)
+        # Convert to wx.Colour using generic resolve helper (handles tuples and symbolic constants)
+        currentColor = resolve_color(currentColor) if currentColor else None
+        currentBgColor = resolve_color(currentBgColor) if currentBgColor else None
         self._fontEntry = entry.FontEntry(self, currentFont, currentColor, currentBgColor)
         self._fontSync = attributesync.AttributeSync(
             "font",
@@ -712,46 +861,61 @@ class TaskAppearancePage(Page):
         self.addEntry(
             _("Font"), self._fontEntry, flags=[None, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT]
         )
-        # Bind directly to color entry checkboxes and pickers to update font demo
-        self._foregroundColorEntry._colorCheckBox.Bind(wx.EVT_CHECKBOX, self._onColorEntryChanged)
-        self._foregroundColorEntry._colorPicker.Bind(wx.EVT_COLOURPICKER_CHANGED, self._onColorEntryChanged)
-        self._backgroundColorEntry._colorCheckBox.Bind(wx.EVT_CHECKBOX, self._onColorEntryChanged)
-        self._backgroundColorEntry._colorPicker.Bind(wx.EVT_COLOURPICKER_CHANGED, self._onColorEntryChanged)
 
     def addEffectiveSection(self):
-        """Add read-only display of effective/final appearance values (Category only)."""
+        """Add read-only display of effective/final appearance values.
+
+        Layout: 3 columns - Label, Control, Source
+        - Tasks/Categories: have effectiveXxx() SSOT methods
+        - Notes: effective = override or parent (recursive lookup)
+        - Attachments: effective = override or System Theme
+        """
         if len(self.items) != 1:
             return
         item = self.items[0]
-        # Only show effective values for Category objects (which have effectiveXxx methods)
-        if not isinstance(item, category.Category):
-            return
 
         self.addLine()
-        self.addBoldHeader(_("Effective values"))
-        entryFlags = [None, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT]
+        self.addSectionHeader(_("Effective values"), _("Source"))
+        entryFlags = [
+            wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,  # Label
+            wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,  # Control
+            wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,  # Source
+        ]
 
-        # Icon - read-only display
-        iconPanel = wx.Panel(self)
+        # Icon - panel with bitmap and "N/A" text (show one or the other)
+        self._effectiveIconPanel = wx.Panel(self)
         iconSizer = wx.BoxSizer(wx.HORIZONTAL)
-        self._effectiveIconDisplay = wx.StaticBitmap(iconPanel)
+        self._effectiveIconDisplay = wx.StaticBitmap(self._effectiveIconPanel)
+        self._effectiveIconNA = wx.StaticText(self._effectiveIconPanel, label=_("N/A"))
+        self._effectiveIconNA.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
         iconSizer.Add(self._effectiveIconDisplay, 0, wx.ALIGN_CENTER_VERTICAL)
-        iconPanel.SetSizer(iconSizer)
-        self.addEntry(_("Icon"), iconPanel, flags=entryFlags)
+        iconSizer.Add(self._effectiveIconNA, 0, wx.ALIGN_CENTER_VERTICAL)
+        self._effectiveIconPanel.SetSizer(iconSizer)
+        self._effectiveIconSource = wx.StaticText(self, label="")
+        self._effectiveIconSource.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+        self.addEntry(_("Icon"), self._effectiveIconPanel, self._effectiveIconSource, flags=entryFlags)
 
-        # Foreground - read-only color picker
+        # Foreground - read-only color picker with source
         self._effectiveFgPicker = widgets.ColourPickerCtrl(
             self, colour=wx.BLACK, readOnly=True
         )
-        self.addEntry(_("Foreground"), self._effectiveFgPicker, flags=entryFlags)
+        self._effectiveFgSource = wx.StaticText(self, label="")
+        self._effectiveFgSource.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+        self.addEntry(_("Foreground"), self._effectiveFgPicker, self._effectiveFgSource, flags=entryFlags)
 
-        # Background - read-only color picker
+        # Background - read-only color picker with source
         self._effectiveBgPicker = widgets.ColourPickerCtrl(
             self, colour=wx.WHITE, readOnly=True
         )
-        self.addEntry(_("Background"), self._effectiveBgPicker, flags=entryFlags)
+        self._effectiveBgSource = wx.StaticText(self, label="")
+        self._effectiveBgSource.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+        self.addEntry(_("Background"), self._effectiveBgPicker, self._effectiveBgSource, flags=entryFlags)
 
-        # Font - read-only font picker
+        # Font - read-only font picker with source
         defaultFont = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         self._effectiveFontPicker = widgets.FontPickerCtrl(
             self, font=defaultFont,
@@ -759,99 +923,102 @@ class TaskAppearancePage(Page):
             bgColour=wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW),
             readOnly=True
         )
-        self.addEntry(_("Font"), self._effectiveFontPicker, flags=entryFlags)
+        self._effectiveFontSource = wx.StaticText(self, label="")
+        self._effectiveFontSource.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+        self.addEntry(_("Font"), self._effectiveFontPicker, self._effectiveFontSource, flags=entryFlags)
 
         # Initial update
         self._updateEffectiveValues()
 
-        # Subscribe to appearance changes to update effective display
-        self.registerObserver(
-            self._onEffectiveAppearanceChanged,
-            eventType=item.appearanceChangedEventType(),
-            eventSource=item
-        )
+        # Subscribe to SSOT effective change events for automatic updates
+        for eventType in (item.effectiveFgColorChangedEventType(),
+                          item.effectiveBgColorChangedEventType(),
+                          item.effectiveIconChangedEventType(),
+                          item.effectiveFontChangedEventType()):
+            self.registerObserver(
+                self._onEffectiveAppearanceChanged,
+                eventType=eventType,
+                eventSource=item
+            )
 
     def _onEffectiveAppearanceChanged(self, event):
         """Update effective display when appearance changes."""
         self._updateEffectiveValues()
+        self._updateFontDemoColors()
 
     def _updateEffectiveValues(self):
-        """Refresh the effective appearance display from category's effective fields."""
+        """Refresh the effective appearance display from item's effective fields.
+
+        All domain objects (Task, Category, Note, Attachment) use the same SSOT
+        accessor pattern: effectiveXxx(), effectiveXxxSource(), and effectiveXxxDefault()
+        (except icon which has no default).
+        """
         if len(self.items) != 1:
             return
         if not hasattr(self, '_effectiveIconDisplay'):
             return
         item = self.items[0]
-        if not isinstance(item, category.Category):
-            return
 
-        # Update effective icon
-        effectiveIcon = item.effectiveIcon()
-        if effectiveIcon:
-            bitmap = wx.ArtProvider.GetBitmap(effectiveIcon, wx.ART_MENU, (16, 16))
+        # --- Icon ---
+        iconActual = item.effectiveIcon()
+        iconSource = item.effectiveIconSource()
+        # Icons have no system default - use empty string if no value
+        iconValue = iconActual if iconActual else ""
+        if iconValue:
+            bitmap = wx.ArtProvider.GetBitmap(iconValue, wx.ART_MENU, (16, 16))
             self._effectiveIconDisplay.SetBitmap(bitmap)
+            self._effectiveIconDisplay.Show()
+            self._effectiveIconNA.Hide()
+            self._effectiveIconSource.SetLabel(iconSource)
         else:
-            self._effectiveIconDisplay.SetBitmap(wx.NullBitmap)
+            self._effectiveIconDisplay.Hide()
+            self._effectiveIconNA.Show()
+            self._effectiveIconSource.SetLabel(_("N/A"))
+        self._effectiveIconPanel.Layout()
 
-        # Update effective foreground color
-        effectiveFg = item.effectiveFgColor()
-        if effectiveFg:
-            self._effectiveFgPicker.SetColour(wx.Colour(*effectiveFg))
-        else:
-            self._effectiveFgPicker.SetColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        # --- Foreground Color ---
+        fgActual = item.effectiveFgColor()
+        fgDefault = item.effectiveFgColorDefault()
+        fgSource = item.effectiveFgColorSource()
+        effectiveFgColour = resolve_color(fgActual if fgActual else fgDefault)
+        self._effectiveFgPicker.SetColour(effectiveFgColour)
+        self._effectiveFgSource.SetLabel(fgSource)
 
-        # Update effective background color
-        effectiveBg = item.effectiveBgColor()
-        if effectiveBg:
-            self._effectiveBgPicker.SetColour(wx.Colour(*effectiveBg))
-        else:
-            self._effectiveBgPicker.SetColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        # --- Background Color ---
+        bgActual = item.effectiveBgColor()
+        bgDefault = item.effectiveBgColorDefault()
+        bgSource = item.effectiveBgColorSource()
+        effectiveBgColour = resolve_color(bgActual if bgActual else bgDefault)
+        self._effectiveBgPicker.SetColour(effectiveBgColour)
+        self._effectiveBgSource.SetLabel(bgSource)
 
-        # Update effective font
-        effectiveFont = item.effectiveFont()
-        if effectiveFont:
-            self._effectiveFontPicker.SetSelectedFont(effectiveFont)
-        else:
-            defaultFont = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-            self._effectiveFontPicker.SetSelectedFont(defaultFont)
-        # Update font picker colors to match effective colors
-        self._effectiveFontPicker.SetSelectedColour(
-            wx.Colour(*effectiveFg) if effectiveFg else wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
-        )
-        self._effectiveFontPicker.SetSelectedBgColour(
-            wx.Colour(*effectiveBg) if effectiveBg else wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
-        )
+        # --- Font ---
+        fontActual = item.effectiveFont()
+        fontDefault = item.effectiveFontDefault()
+        fontSource = item.effectiveFontSource()
+        self._effectiveFontPicker.SetSelectedFont(resolve_font(fontActual if fontActual else fontDefault))
+        self._effectiveFontSource.SetLabel(fontSource)
 
-    def _onColorEntryChanged(self, event):
-        """Update font demo when color entries change."""
-        event.Skip()
-        self._updateFontDemoColors()
+        # Update font picker demo colors
+        self._effectiveFontPicker.SetSelectedColour(effectiveFgColour)
+        self._effectiveFontPicker.SetSelectedBgColour(effectiveBgColour)
 
     def _updateFontDemoColors(self):
-        """Refresh font demo colors based on current color entry values."""
+        """Refresh font demo colors from effective SSOT values."""
         if len(self.items) != 1:
             return
-        # Use override color if checked, otherwise use system theme defaults
-        overrideFgColor = self._foregroundColorEntry.GetValue()
-        overrideBgColor = self._backgroundColorEntry.GetValue()
-
-        # When unchecked, use system theme defaults
-        if overrideFgColor:
-            fgColor = wx.Colour(*overrideFgColor) if not isinstance(overrideFgColor, wx.Colour) else overrideFgColor
-        else:
-            fgColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
-
-        if overrideBgColor:
-            bgColor = wx.Colour(*overrideBgColor) if not isinstance(overrideBgColor, wx.Colour) else overrideBgColor
-        else:
-            bgColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
-
-        self._fontEntry.SetColor(fgColor)
-        self._fontEntry.SetBgColor(bgColor)
+        item = self.items[0]
+        self._fontEntry.SetColor(resolve_color(
+            item.effectiveFgColor() or item.effectiveFgColorDefault()))
+        self._fontEntry.SetBgColor(resolve_color(
+            item.effectiveBgColor() or item.effectiveBgColorDefault()))
 
     def addIconEntry(self):
         # pylint: disable=W0201,E1101
         currentIcon = self.items[0].icon() if len(self.items) == 1 else ""
+
+        # Debug logging for Priority categories
         settings = self.GetParent().settings
         status_keys = ["activetasks", "latetasks", "completedtasks",
                        "overduetasks", "inactivetasks", "duesoontasks"]
@@ -880,12 +1047,10 @@ class TaskAppearancePage(Page):
         )  # pylint: disable=E1101
 
     def close(self):
-        if len(self.items) == 1 and hasattr(self, '_computedIconDisplay'):
+        if len(self.items) == 1 and hasattr(self, '_derivedIconDisplay'):
             theTask = self.items[0]
             try:
-                pub.unsubscribe(self._onAppearanceChanged, theTask.statusChangedEventType())
-                pub.unsubscribe(self._onCategoryChanged, theTask.categoryAddedEventType())
-                pub.unsubscribe(self._onCategoryChanged, theTask.categoryRemovedEventType())
+                pub.unsubscribe(self._onStatusChanged, theTask.statusChangedEventType())
             except Exception:
                 pass  # Already unsubscribed
         super().close()
@@ -953,11 +1118,19 @@ class DatesPage(Page):
         sizer.Add(self._statusLabel, 0, wx.ALIGN_CENTER_VERTICAL)
 
         self._statusPanel.SetSizer(sizer)
-        # 2 controls: label + panel (panel auto-spans columns 1-4 in 5-column grid)
+
+        # Source explanation (gray text)
+        self._statusSource = wx.StaticText(self, label="")
+        self._statusSource.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+
+        # 3 controls: label + panel + source
         self.addEntry(
             _("Status"),
             self._statusPanel,
-            flags=[None, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT | wx.EXPAND],
+            self._statusSource,
+            flags=[None, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,
+                   wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT],
         )
 
         # Initial display
@@ -979,7 +1152,8 @@ class DatesPage(Page):
         if not hasattr(self, '_statusLabel'):
             return
         theTask = self.items[0]
-        taskStatus = theTask.status()
+        # Use centralized computedStatus(explain=True) for status and source
+        taskStatus, statusSource = theTask.computedStatus(explain=True)
 
         # Update icon
         icon_name = taskStatus.getBitmap(self.__settings)
@@ -987,22 +1161,25 @@ class DatesPage(Page):
         if bitmap.IsOk():
             self._statusIcon.SetBitmap(bitmap)
 
-        # Update text and colors
+        # Update text and foreground color only (no background painting)
         statusText = taskStatus.pluralLabel.replace(" tasks", "").replace("tasks", "").strip()
         self._statusLabel.SetLabel(statusText)
         self._statusLabel.SetForegroundColour(theTask.statusFgColor())
-        bgColor = theTask.statusBgColor()
-        if bgColor:
-            self._statusLabel.SetBackgroundColour(bgColor)
-        else:
-            self._statusLabel.SetBackgroundColour(wx.NullColour)
 
+        # Update source explanation
+        if hasattr(self, '_statusSource'):
+            self._statusSource.SetLabel(statusSource)
+            self._statusSource.InvalidateBestSize()
+
+        # Relayout panel and parent to accommodate new text sizes
+        self._statusLabel.InvalidateBestSize()
         self._statusPanel.Layout()
+        self._statusPanel.Fit()
+        self.Layout()
 
     def _onLocalValueChanged(self, event):
-        """Handle live value changes in date fields for local status preview."""
+        """Handle live value changes in date fields."""
         source = event.GetEventObject()
-        self._updateLocalStatusDisplay()
 
         # Check if source belongs to planned start or due date combos
         isPlannedStartSource = self._plannedStartDateTimeCombo.ContainsControl(source)
@@ -1029,7 +1206,6 @@ class DatesPage(Page):
 
     def _onDurationValueChanged(self, event):
         """Handle live value changes in duration control."""
-        self._updateLocalStatusDisplay()
         self.__updatePresetSelection()  # Match preset dropdown to current value
 
         # In implicit mode, duration is output not input (don't process as input)
@@ -1061,85 +1237,6 @@ class DatesPage(Page):
 
         # Update display only, don't commit to domain
         self._plannedStartDateTimeCombo.SetDateTime(new_start)
-
-    def _computeLocalStatus(self):
-        """Compute task status based on current field values (not domain object).
-
-        This provides live preview as user edits, before focus loss commits changes.
-        """
-        theTask = self.items[0]
-        now = date.Now()
-        dueSoonHours = self.__settings.getint("behavior", "duesoonhours")
-
-        # Get values from fields (not from task object)
-        completionDT = self._completionDateTimeCombo.GetDateTime() if hasattr(self, '_completionDateTimeCombo') else None
-        actualStartDT = self._actualStartDateTimeCombo.GetDateTime() if hasattr(self, '_actualStartDateTimeCombo') else None
-        plannedStartDT = self._plannedStartDateTimeCombo.GetDateTime() if hasattr(self, '_plannedStartDateTimeCombo') else None
-        dueDT = self._dueDateTimeCombo.GetDateTime() if hasattr(self, '_dueDateTimeCombo') else None
-
-        # Convert None to sentinel for comparison
-        maxDT = date.DateTime.max
-
-        # Completion check
-        if completionDT is not None:
-            return status.completed
-
-        # Prerequisites check (use task object since we can't edit these here)
-        if any(
-            prerequisite.completionDateTime() == theTask.maxDateTime
-            for prerequisite in theTask.prerequisites(recursive=True, upwards=True)
-        ):
-            return status.inactive
-
-        # Due date checks
-        if dueDT is not None:
-            dueDT = date.DateTime.fromDateTime(dueDT) if not isinstance(dueDT, date.DateTime) else dueDT
-            if dueDT < now:
-                return status.overdue
-            timeLeft = dueDT - now
-            if 0 <= timeLeft.hours() < dueSoonHours:
-                return status.duesoon
-
-        # Actual start check
-        if actualStartDT is not None:
-            actualStartDT = date.DateTime.fromDateTime(actualStartDT) if not isinstance(actualStartDT, date.DateTime) else actualStartDT
-            if actualStartDT <= now:
-                return status.active
-
-        # Planned start check
-        if plannedStartDT is not None:
-            plannedStartDT = date.DateTime.fromDateTime(plannedStartDT) if not isinstance(plannedStartDT, date.DateTime) else plannedStartDT
-            if plannedStartDT < now:
-                return status.late
-
-        return status.inactive
-
-    def _updateLocalStatusDisplay(self):
-        """Update status display based on current field values (live preview)."""
-        if not hasattr(self, '_statusLabel'):
-            return
-        taskStatus = self._computeLocalStatus()
-
-        # Update icon
-        icon_name = taskStatus.getBitmap(self.__settings)
-        bitmap = wx.ArtProvider.GetBitmap(icon_name, wx.ART_MENU, (16, 16))
-        if bitmap.IsOk():
-            self._statusIcon.SetBitmap(bitmap)
-
-        # Update text and colors - use task class methods to get colors for status
-        statusText = taskStatus.pluralLabel.replace(" tasks", "").replace("tasks", "").strip()
-        self._statusLabel.SetLabel(statusText)
-
-        # Get colors for this status from settings via task class methods
-        fgColor = task.Task.fgColorForStatus(taskStatus)
-        bgColor = task.Task.bgColorForStatus(taskStatus)
-        self._statusLabel.SetForegroundColour(fgColor)
-        if bgColor and bgColor != wx.WHITE:
-            self._statusLabel.SetBackgroundColour(bgColor)
-        else:
-            self._statusLabel.SetBackgroundColour(wx.NullColour)
-
-        self._statusPanel.Layout()
 
     def addDateEntries(self):
         # Create panel for planned date section with table layout
@@ -2741,8 +2838,19 @@ class PathPage(Page):
 
         from taskcoachlib.domain import task, category, note, attachment, effort
 
-        # Subscribe to ALL modification event types from all domain classes
-        # This is comprehensive and catches any change that could affect the path
+        # Subscribe to parent pubsub topics (pubsub uses hierarchical topics)
+        # This catches all child topic messages (e.g., pubsub.task covers
+        # pubsub.task.subject, pubsub.task.dependencies, etc.)
+        pubsub_parent_topics = [
+            "pubsub.task",
+            "pubsub.category",
+            "pubsub.note",
+            "pubsub.attachment",
+        ]
+        for topic in pubsub_parent_topics:
+            pub.subscribe(self._onAnyChange, topic)
+
+        # Subscribe to deprecated event types via patterns.Publisher
         all_event_types = (
             task.Task.modificationEventTypes()
             + category.Category.modificationEventTypes()
@@ -2754,15 +2862,13 @@ class PathPage(Page):
         )
 
         for eventType in all_event_types:
-            if eventType.startswith("pubsub"):
-                pub.subscribe(self._onAnyChange, eventType)
-            else:
+            if not eventType.startswith("pubsub"):
                 patterns.Publisher().registerObserver(
                     self._onAnyChange,
                     eventType=eventType,
                 )
 
-    def _onAnyChange(self, newValue=None, sender=None, *args, **kwargs):
+    def _onAnyChange(self, event=None, **kwargs):
         """Called when any domain object changes. Rebuild if visible."""
         if self._realized and self._pathPanel:
             try:
@@ -2909,13 +3015,15 @@ class PathPage(Page):
         from taskcoachlib.domain import category, note, attachment, effort
 
         if isinstance(obj, task_module.Task):
-            return (_("Task"), obj.icon(recursive=True) or "led_blue_icon")
+            return (_("Task"), obj.effectiveIcon() or "led_blue_icon")
         elif isinstance(obj, category.Category):
-            return (_("Category"), obj.icon(recursive=True) or "folder_blue_icon")
+            return (_("Category"), obj.effectiveIcon() or "folder_blue_icon")
         elif isinstance(obj, note.Note):
+            # Notes use icon(recursive=True) - no effectiveIcon() SSOT
             return (_("Note"), obj.icon(recursive=True) or "note_icon")
         elif isinstance(obj, attachment.Attachment):
-            return (_("Attachment"), "paperclip_icon")
+            # Attachments have no inheritance
+            return (_("Attachment"), obj.icon() or "paperclip_icon")
         elif isinstance(obj, effort.Effort):
             return (_("Effort"), "clock_icon")
         else:

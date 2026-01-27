@@ -83,6 +83,33 @@ class EditExclusiveSubcategoriesCommand(base.BaseCommand):
         self.do_command()
 
 
+class EditStylePriorityCommand(base.BaseCommand):
+    plural_name = _("Edit style priority")
+    singular_name = _('Edit style priority of "%s"')
+
+    def __init__(self, *args, **kwargs):
+        self.__newPriority = kwargs.pop("newValue")
+        super().__init__(*args, **kwargs)
+        self.__oldPriorities = [
+            item.stylePriority() for item in self.items
+        ]
+
+    @patterns.eventSource
+    def do_command(self, event=None):
+        super().do_command()
+        for item in self.items:
+            item.setStylePriority(self.__newPriority, event=event)
+
+    @patterns.eventSource
+    def undo_command(self, event=None):
+        super().undo_command()
+        for item, oldPriority in zip(self.items, self.__oldPriorities):
+            item.setStylePriority(oldPriority, event=event)
+
+    def redo_command(self):
+        self.do_command()
+
+
 class DeleteCategoryCommand(base.DeleteCommand):
     plural_name = _("Delete categories")
     singular_name = _('Delete category "%s"')

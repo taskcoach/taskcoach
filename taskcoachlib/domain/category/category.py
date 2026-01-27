@@ -23,6 +23,12 @@ from taskcoachlib.domain import base, note, attachment
 class Category(
     attachment.AttachmentOwner, note.NoteOwner, base.CompositeObject
 ):
+    """Category class for organizing tasks and notes.
+
+    Appearance (derived and effective values) is handled by the base class
+    and ComputeStyles polling. No explicit calls needed.
+    """
+
     def __init__(
         self,
         subject,
@@ -32,6 +38,7 @@ class Category(
         parent=None,
         description="",
         exclusiveSubcategories=False,
+        stylePriority=0,
         *args,
         **kwargs
     ):
@@ -52,18 +59,14 @@ class Category(
         )
         self.__filtered = filtered
         self.__exclusiveSubcategories = exclusiveSubcategories
-        # Effective appearance fields (single source of truth)
-        # These are derived from own override OR parent's effective value
-        self.__effective_fg_color = None
-        self.__effective_bg_color = None
-        self.__effective_icon = ""
-        self.__effective_font = None
-        self._computeEffectiveAppearance()
+        self.__stylePriority = stylePriority
+        # Note: Effective appearance is computed by ComputeStyles polling
 
     @classmethod
     def monitoredAttributes(class_):
         return base.CompositeObject.monitoredAttributes() + [
-            "exclusiveSubcategories"
+            "exclusiveSubcategories",
+            "stylePriority"
         ]
 
     @classmethod
@@ -91,6 +94,11 @@ class Category(
         return "category.exclusiveSubcategories"
 
     @classmethod
+    def stylePriorityChangedEventType(class_):
+        """Event type to notify observers that style priority has changed."""
+        return "category.stylePriority"
+
+    @classmethod
     def modificationEventTypes(class_):
         eventTypes = super(Category, class_).modificationEventTypes()
         return eventTypes + [
@@ -98,6 +106,7 @@ class Category(
             class_.categorizableAddedEventType(),
             class_.categorizableRemovedEventType(),
             class_.exclusiveSubcategoriesChangedEventType(),
+            class_.stylePriorityChangedEventType(),
         ]
 
     def __getstate__(self):
@@ -106,6 +115,7 @@ class Category(
             dict(
                 categorizables=self.__categorizables.get(),
                 filtered=self.__filtered,
+                stylePriority=self.__stylePriority,
             ),
             exclusiveSubcategories=self.__exclusiveSubcategories,
         )
@@ -119,6 +129,7 @@ class Category(
         self.makeSubcategoriesExclusive(
             state["exclusiveSubcategories"], event=event
         )
+        self.setStylePriority(state.get("stylePriority", 0), event=event)
 
     def __getcopystate__(self):
         state = super().__getcopystate__()
@@ -126,6 +137,7 @@ class Category(
             dict(
                 categorizables=self.__categorizables.get(),
                 filtered=self.__filtered,
+                stylePriority=self.__stylePriority,
             )
         )
         return state
@@ -189,96 +201,14 @@ class Category(
         )
 
     def appearanceChangedEvent(self, event):
-        """Override to include all categorizables in the event
-        that belong to this category since their appearance (may)
-        have changed too."""
-        # Recompute effective values before propagating
-        self._computeEffectiveAppearance()
+        """Handle appearance change event.
+
+        Notifies categorizables (tasks/notes) that belong to this category.
+        Note: Effective appearance is computed by ComputeStyles polling.
+        """
         super().appearanceChangedEvent(event)
         for categorizable in self.categorizables():
             categorizable.appearanceChangedEvent(event)
-
-    # --- Effective Appearance (Single Source of Truth) ---
-    #
-    # These fields store the final/effective appearance value for this category.
-    # The effective value is: own override if set, otherwise parent's effective value.
-    # This eliminates the need for recursive lookups at query time.
-    #
-    # IMPORTANT: Legacy code using recursive=True parameter is preserved for
-    # backward compatibility. New code should use effectiveXxx() methods.
-
-    def _computeEffectiveAppearance(self):
-        """Compute effective appearance from own override or parent's effective value.
-
-        Called on init and when appearance changes (via appearanceChangedEvent).
-        Parent changes propagate automatically since appearanceChangedEvent
-        cascades to children.
-        """
-        parent = self.parent()
-
-        # Foreground color: own override or parent's effective
-        own_fg = super().foregroundColor(recursive=False)
-        if own_fg:
-            self.__effective_fg_color = own_fg
-        elif parent and hasattr(parent, 'effectiveFgColor'):
-            self.__effective_fg_color = parent.effectiveFgColor()
-        else:
-            self.__effective_fg_color = None
-
-        # Background color: own override or parent's effective
-        own_bg = super().backgroundColor(recursive=False)
-        if own_bg:
-            self.__effective_bg_color = own_bg
-        elif parent and hasattr(parent, 'effectiveBgColor'):
-            self.__effective_bg_color = parent.effectiveBgColor()
-        else:
-            self.__effective_bg_color = None
-
-        # Icon: own override or parent's effective
-        own_icon = super().icon(recursive=False)
-        if own_icon:
-            self.__effective_icon = own_icon
-        elif parent and hasattr(parent, 'effectiveIcon'):
-            self.__effective_icon = parent.effectiveIcon()
-        else:
-            self.__effective_icon = ""
-
-        # Font: own override or parent's effective
-        own_font = super().font(recursive=False)
-        if own_font:
-            self.__effective_font = own_font
-        elif parent and hasattr(parent, 'effectiveFont'):
-            self.__effective_font = parent.effectiveFont()
-        else:
-            self.__effective_font = None
-
-    def effectiveFgColor(self):
-        """Return effective foreground color (single source of truth).
-
-        This is either the own override or the parent's effective color.
-        """
-        return self.__effective_fg_color
-
-    def effectiveBgColor(self):
-        """Return effective background color (single source of truth).
-
-        This is either the own override or the parent's effective color.
-        """
-        return self.__effective_bg_color
-
-    def effectiveIcon(self):
-        """Return effective icon (single source of truth).
-
-        This is either the own override or the parent's effective icon.
-        """
-        return self.__effective_icon
-
-    def effectiveFont(self):
-        """Return effective font (single source of truth).
-
-        This is either the own override or the parent's effective font.
-        """
-        return self.__effective_font
 
     def hasExclusiveSubcategories(self):
         return self.__exclusiveSubcategories
@@ -309,4 +239,26 @@ class Category(
             self,
             self.hasExclusiveSubcategories(),
             type=self.exclusiveSubcategoriesChangedEventType(),
+        )
+
+    # Style Priority - determines which category's style wins when a task has multiple categories
+    # Higher priority wins. Default is 0.
+
+    def stylePriority(self):
+        """Return the style priority for this category."""
+        return self.__stylePriority
+
+    @patterns.eventSource
+    def setStylePriority(self, priority, event=None):
+        """Set the style priority for this category."""
+        if priority == self.__stylePriority:
+            return
+        self.__stylePriority = priority
+        self.stylePriorityChangedEvent(event)
+
+    def stylePriorityChangedEvent(self, event):
+        event.addSource(
+            self,
+            self.__stylePriority,
+            type=self.stylePriorityChangedEventType(),
         )

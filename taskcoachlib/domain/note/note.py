@@ -24,6 +24,13 @@ class Note(
     attachment.AttachmentOwner, categorizable.CategorizableCompositeObject
 ):
     """This class represents notes. Notes consist of a subject, description,
-    and attachments. In addition, a note may be assigned to categories."""
+    and attachments. In addition, a note may be assigned to categories.
 
-    pass
+    Appearance (derived and effective values) is handled by the base class
+    and ComputeStyles polling. No explicit calls needed.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Note: Effective appearance is computed by ComputeStyles polling
+

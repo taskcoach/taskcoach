@@ -75,6 +75,7 @@ class Task(
         self.__computed_status = None
         self.__status_text = ""
         self.__status_icon = ""
+        self.__status_source = ""  # Explanation of why task has this status
         self.__dueSoonHours = self.settings.getint(
             "behavior", "duesoonhours"
         )  # pylint: disable=E1101
@@ -137,9 +138,10 @@ class Task(
             "settings.behavior.markparentcompletedwhenallchildrencompleted",
         )
 
-        self.computeStatus()
-        # Note: Status transitions (overdue, due soon, time to start) are now
-        # handled by the global timer's StatusChecker via polling.
+        self._updateStoredStatus()
+        # Note: Effective appearance is computed by ComputeStyles polling.
+        # Status transitions (overdue, due soon, time to start) are handled
+        # by the global timer's StatusChecker via polling.
         # See docs/SCHEDULERS.md for architecture documentation.
 
     @patterns.eventSource
@@ -250,6 +252,13 @@ class Task(
     def setCategories(self, *categories, **kwargs):
         if super().setCategories(*categories, **kwargs):
             self.recomputeAppearance(True, event=kwargs.pop("event"))
+
+    def setParent(self, parent):
+        """Override to handle parent change.
+
+        Note: Effective appearance is computed by ComputeStyles polling.
+        """
+        super().setParent(parent)
 
     def allChildrenCompleted(self):
         """Return whether all children (non-recursively) are completed."""
@@ -690,40 +699,85 @@ class Task(
     def statusChangedEventType(class_):
         return "pubsub.task.status"
 
-    def computeStatus(self):
-        """Compute and store status fields. Single source of truth for status.
+    @classmethod
+    def computeStatus(cls, completionDT, dueDT, actualStartDT, plannedStartDT,
+                      dueSoonHours, hasIncompletePrerequisites, now=None,
+                      maxDateTime=None):
+        """Compute task status from date values. SINGLE SOURCE OF TRUTH.
+
+        This is the only function that computes status. All status calculations
+        must go through this method.
+
+        Args:
+            completionDT: Completion datetime (or maxDateTime if not set)
+            dueDT: Due datetime (or maxDateTime if not set)
+            actualStartDT: Actual start datetime (or maxDateTime if not set)
+            plannedStartDT: Planned start datetime (or maxDateTime if not set)
+            dueSoonHours: Hours threshold for "due soon" status
+            hasIncompletePrerequisites: True if task has incomplete prerequisites
+            now: Current datetime (defaults to date.Now())
+            maxDateTime: Sentinel for unset dates (defaults to date.DateTime.max)
+
+        Returns:
+            (TaskStatus, source_string) tuple.
+        """
+        if now is None:
+            now = date.Now()
+        if maxDateTime is None:
+            maxDateTime = date.DateTime.max
+
+        # Priority order: completed > inactive(prereqs) > overdue > duesoon > active > late > inactive
+        if completionDT != maxDateTime:
+            return status.completed, _("Completion date is set")
+
+        if hasIncompletePrerequisites:
+            return status.inactive, _("Has incomplete prerequisites")
+
+        if dueDT != maxDateTime and dueDT < now:
+            return status.overdue, _("Due date has passed")
+
+        if dueDT != maxDateTime:
+            timeLeft = dueDT - now
+            timeLeftHours = timeLeft.total_seconds() / 3600
+            if 0 <= timeLeftHours < dueSoonHours:
+                return status.duesoon, _("Due within %d hours") % dueSoonHours
+
+        if actualStartDT != maxDateTime and actualStartDT <= now:
+            return status.active, _("Actual start date has passed")
+
+        if plannedStartDT != maxDateTime and plannedStartDT < now:
+            return status.late, _("Planned start date has passed")
+
+        return status.inactive, _("No actual start date")
+
+    def _updateStoredStatus(self):
+        """Compute and store status fields for this task instance.
 
         Called from:
         - Task.__init__() — initial population on load
         - recomputeAppearance() — immediate update on date changes
         - StatusChecker._onSecond() — periodic safety net for time-based transitions
 
-        Independent calculation — does not touch the legacy __status cache.
-        Updates __computed_status, __status_text, and __status_icon.
+        Updates __computed_status, __status_text, __status_icon, and __status_source.
         Fires statusChangedEventType if status actually changed.
         """
-        # Determine current status from task dates
-        if self.completionDateTime() != self.maxDateTime:
-            newStatus = status.completed
-        else:
-            now = date.Now()
-            if any(
-                prerequisite.completionDateTime() == self.maxDateTime
-                for prerequisite in self.prerequisites(
-                    recursive=True, upwards=True
-                )
-            ):
-                newStatus = status.inactive
-            elif self.dueDateTime() < now:
-                newStatus = status.overdue
-            elif 0 <= self.timeLeft().hours() < self.__dueSoonHours:
-                newStatus = status.duesoon
-            elif self.actualStartDateTime() <= now:
-                newStatus = status.active
-            elif self.plannedStartDateTime() < now:
-                newStatus = status.late
-            else:
-                newStatus = status.inactive
+        # Check prerequisites
+        hasIncompletePrereqs = any(
+            prerequisite.completionDateTime() == self.maxDateTime
+            for prerequisite in self.prerequisites(recursive=True, upwards=True)
+        )
+
+        # Call the single source of truth
+        newStatus, newSource = self.computeStatus(
+            completionDT=self.completionDateTime(),
+            dueDT=self.dueDateTime(),
+            actualStartDT=self.actualStartDateTime(),
+            plannedStartDT=self.plannedStartDateTime(),
+            dueSoonHours=self.__dueSoonHours,
+            hasIncompletePrerequisites=hasIncompletePrereqs,
+            maxDateTime=self.maxDateTime
+        )
+
         # Update stored fields
         oldStatus = self.__computed_status
         self.__computed_status = newStatus
@@ -731,6 +785,8 @@ class Task(
             " tasks", "").replace("tasks", "").strip()
         iconSection = self._themedSection("icon")
         self.__status_icon = self.settings.get(iconSection, "%stasks" % newStatus)
+        self.__status_source = newSource
+
         # Fire event if status changed
         if oldStatus is not None and newStatus != oldStatus:
             pub.sendMessage(
@@ -747,7 +803,7 @@ class Task(
         """Return the computed status icon name (e.g. 'led_blue_icon')."""
         return self.__status_icon
 
-    def computedStatus(self):
+    def computedStatus(self, explain=False):
         """Return the computed TaskStatus object (single source of truth).
 
         This is the preferred accessor for status. It returns the cached
@@ -757,8 +813,21 @@ class Task(
         - Every second (StatusChecker safety net)
 
         Use this instead of the legacy status() method.
+
+        Args:
+            explain: If True, return (status, source) tuple where source
+                     explains why the task has this status.
+
+        Returns:
+            TaskStatus object, or (TaskStatus, source_string) if explain=True.
         """
+        if explain:
+            return self.__computed_status, self.__status_source
         return self.__computed_status
+
+    def statusSource(self):
+        """Return the explanation of why task has its current status."""
+        return self.__status_source
 
     def onDueSoonHoursChanged(self, value):
         self.__dueSoonHours = value
@@ -1132,8 +1201,7 @@ class Task(
     def statusBgColor(self):
         """Return the current color of task, based on its status (completed,
         overdue, duesoon, inactive, or active)."""
-        color = self.bgColorForStatus(self.status())
-        return None if color == wx.WHITE else color
+        return self.bgColorForStatus(self.status())
 
     @classmethod
     def bgColorForStatus(class_, taskStatus):
@@ -1233,12 +1301,17 @@ class Task(
             iconName = getImageOpen(iconName)
         return iconName
 
+    # Note: Derived and effective appearance is now handled by the base class
+    # (object.py) and ComputeStyles polling in appearance.py. The base class
+    # provides: derivedFgColor(), derivedFgColorSource(), effectiveFgColor(),
+    # effectiveFgColorSource(), effectiveFgColorDefault(), etc. for all field types.
+
     @patterns.eventSource
     def recomputeAppearance(self, recursive=False, event=None):
-        self.computeStatus()
+        self._updateStoredStatus()
         self.__status = None
-        # Need to prepare for AttributeError because the cached recursive values
-        # are not set in __init__ for performance reasons
+        # Note: SSOT updates are handled by ComputeStyles polling
+        # Legacy: compute recursive values for backward compatibility
         try:
             previousForegroundColor = self.__recursiveForegroundColor
             previousBackgroundColor = self.__recursiveBackgroundColor
