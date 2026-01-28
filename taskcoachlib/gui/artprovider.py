@@ -104,9 +104,19 @@ class ArtProvider(wx.ArtProvider):
         if not artId:
             return wx.Bitmap(*size)
 
-        # Construct icon filename: "copy" + "16x16" -> "copy16x16.png"
-        icon_filename = "%s%dx%d.png" % (artId, size[0], size[1])
-        icon_path = get_resource_path(os.path.join('icons', icon_filename))
+        # Try new format first: "16x16/iconname.png" (size-based directories)
+        size_dir = "%dx%d" % (size[0], size[1])
+        new_icon_path = get_resource_path(
+            os.path.join('icons', size_dir, artId + '.png')
+        )
+
+        # Fall back to legacy format: "iconname16x16.png" (flat with size suffix)
+        legacy_icon_path = get_resource_path(
+            os.path.join('icons', "%s%dx%d.png" % (artId, size[0], size[1]))
+        )
+
+        # Use new format if exists, otherwise legacy
+        icon_path = new_icon_path if os.path.exists(new_icon_path) else legacy_icon_path
 
         if os.path.exists(icon_path):
             image = wx.Image(icon_path)
@@ -339,11 +349,11 @@ chooseableItems = {
     },
     "computer_desktop_icon": {
         "name": _("Computer - Desktop"),
-        "hints": [_("pc"), _("workstation"), _("monitor"), _("screen")],
+        "hints": [_("pc"), _("workstation"), _("monitor"), _("screen"), _("computer"), _("desktop")],
     },
     "computer_laptop_icon": {
         "name": _("Computer - Laptop"),
-        "hints": [_("notebook"), _("portable"), _("pc"), _("mobile")],
+        "hints": [_("notebook"), _("portable"), _("pc"), _("mobile"), _("computer"), _("laptop")],
     },
     "computer_handheld_icon": {
         "name": _("Computer - Handheld"),
@@ -380,10 +390,6 @@ chooseableItems = {
     "error_icon": {
         "name": _("Error"),
         "hints": [_("warning"), _("problem"), _("issue"), _("fail"), _("failure"), _("bug"), _("mistake")],
-    },
-    "exclamation_icon": {
-        "name": _("Exclamation"),
-        "hints": [_("warning"), _("alert"), _("attention"), _("urgent"), _("important"), _("notice")],
     },
     "envelopes_icon": {
         "name": _("Envelopes"),
@@ -655,7 +661,7 @@ chooseableItems = {
     },
     "weather_umbrella_icon": {
         "name": _("Weather - Umbrella"),
-        "hints": [_("rain"), _("protection"), _("shelter"), _("weather")],
+        "hints": [_("rain"), _("protection"), _("shelter"), _("weather"), _("umbrella"), _("wet")],
     },
     "weather_sunny_icon": {
         "name": _("Weather - Partly sunny"),
@@ -668,6 +674,109 @@ chooseableItems = {
     "wrench_icon": {
         "name": _("Wrench"),
         "hints": [_("tool"), _("settings"), _("config"), _("repair"), _("fix"), _("maintenance"), _("service")],
+    },
+    # Bank/Accounting icons (Papirus) - new format without _icon suffix
+    "bank_account": {
+        "name": _("Bank Account"),
+        "hints": [_("bank"), _("account"), _("checking"), _("savings"), _("finance"), _("institution")],
+    },
+    "money_budget": {
+        "name": _("Money Budget"),
+        "hints": [_("money"), _("budget"), _("finance"), _("coins"), _("piggybank"), _("savings"), _("personal")],
+    },
+    "taxes": {
+        "name": _("Taxes"),
+        "hints": [_("tax"), _("taxes"), _("money"), _("dollar"), _("cash"), _("government"), _("irs"), _("percent"), _("form")],
+    },
+    "currency_dollar": {
+        "name": _("Currency"),
+        "hints": [_("currency"), _("dollar"), _("money"), _("symbol"), _("usd"), _("format"), _("price")],
+    },
+    "calculator_flat": {
+        "name": _("Calculator (Flat)"),
+        "hints": [_("calculator"), _("math"), _("compute"), _("calculate"), _("numbers"), _("flat"), _("modern")],
+    },
+    "uno_calculator": {
+        "name": _("Calculator (Uno)"),
+        "hints": [_("calculator"), _("math"), _("uno"), _("compute"), _("blue"), _("numbers"), _("arithmetic")],
+    },
+    "gnome_calculator": {
+        "name": _("Calculator (GNOME)"),
+        "hints": [_("calculator"), _("math"), _("gnome"), _("compute"), _("colorful"), _("numbers"), _("arithmetic")],
+    },
+    "safe_vault": {
+        "name": _("Safe"),
+        "hints": [_("safe"), _("vault"), _("secure"), _("lock"), _("storage"), _("protect"), _("valuables")],
+    },
+    "bitcoin": {
+        "name": _("Bitcoin"),
+        "hints": [_("bitcoin"), _("crypto"), _("cryptocurrency"), _("digital"), _("btc"), _("blockchain")],
+    },
+    "wallet_flat": {
+        "name": _("Wallet (Flat)"),
+        "hints": [_("wallet"), _("billfold"), _("money"), _("cash"), _("flat"), _("modern")],
+    },
+    "money_expense": {
+        "name": _("Money Expense"),
+        "hints": [_("expense"), _("money"), _("spending"), _("budget"), _("track"), _("manager"), _("receipt")],
+    },
+    # Bank/Accounting apps (Papirus)
+    "homebank": {
+        "name": _("HomeBank"),
+        "hints": [_("home"), _("bank"), _("finance"), _("budget"), _("personal"), _("accounting")],
+    },
+    "cointop": {
+        "name": _("CoinTop"),
+        "hints": [_("crypto"), _("cryptocurrency"), _("terminal"), _("bitcoin"), _("portfolio"), _("tracker")],
+    },
+    "cryptomator": {
+        "name": _("Cryptomator"),
+        "hints": [_("encrypt"), _("security"), _("vault"), _("cloud"), _("privacy"), _("lock")],
+    },
+    "banking": {
+        "name": _("Banking"),
+        "hints": [_("bank"), _("credit"), _("card"), _("finance"), _("payment"), _("account")],
+    },
+    "safeeyes": {
+        "name": _("Safe Eyes"),
+        "hints": [_("break"), _("rest"), _("health"), _("eye"), _("reminder"), _("timer")],
+    },
+    "kmymoney": {
+        "name": _("KMyMoney"),
+        "hints": [_("money"), _("finance"), _("personal"), _("budget"), _("accounting"), _("kde")],
+    },
+    "money_manager": {
+        "name": _("Money Manager"),
+        "hints": [_("money"), _("expense"), _("manager"), _("budget"), _("track"), _("finance")],
+    },
+    "moneydance": {
+        "name": _("Moneydance"),
+        "hints": [_("money"), _("finance"), _("personal"), _("budget"), _("banking"), _("investment")],
+    },
+    # Bank/Accounting icons (Oxygen) - new format without _icon suffix
+    "bank_building": {
+        "name": _("Bank Building"),
+        "hints": [_("bank"), _("building"), _("institution"), _("columns"), _("finance"), _("classic")],
+    },
+    "wallet_closed": {
+        "name": _("Wallet (Closed)"),
+        "hints": [_("wallet"), _("closed"), _("locked"), _("secure"), _("billfold"), _("leather")],
+    },
+    "wallet_open": {
+        "name": _("Wallet (Open)"),
+        "hints": [_("wallet"), _("open"), _("money"), _("cash"), _("billfold"), _("spend")],
+    },
+    "calculator_3d": {
+        "name": _("Calculator (3D)"),
+        "hints": [_("calculator"), _("math"), _("compute"), _("calculate"), _("classic"), _("3d")],
+    },
+    "wallet_keys": {
+        "name": _("Wallet Keys"),
+        "hints": [_("wallet"), _("keys"), _("password"), _("secure"), _("manager"), _("keyring")],
+    },
+    "cactus": {
+        "name": _("Cactus"),
+        "hints": [_("cactus"), _("plant"), _("desert"), _("green"), _("nature"), _("succulent")],
     },
 }
 

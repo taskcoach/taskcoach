@@ -40,6 +40,10 @@ class _IconVListBox(wx.VListBox):
         self.Bind(wx.EVT_LEFT_DCLICK, self._on_left_dclick)
         self.Bind(wx.EVT_KEY_DOWN, self._on_key_down)
         self.Bind(wx.EVT_MOTION, self._on_motion)
+        # Debounce timer for search filtering
+        self._filter_timer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self._on_filter_timer, self._filter_timer)
+        self._pending_filter = ""
 
     def SetItems(self, items):
         """Set items: list of (key, label, bitmap, hints, enabled) tuples."""
@@ -69,13 +73,22 @@ class _IconVListBox(wx.VListBox):
         return self._total_width
 
     def FilterItems(self, filter_text):
+        """Start debounced filter - waits 300ms after last keystroke."""
+        self._pending_filter = filter_text
+        self._filter_timer.Stop()
+        self._filter_timer.Start(300, oneShot=True)
+
+    def _on_filter_timer(self, event):
+        """Execute the actual filter after debounce delay."""
+        filter_text = self._pending_filter
         if not filter_text:
             self._items = list(self._all_items)
         else:
-            lower = filter_text.lower()
+            # Split into terms - ANY term matches (OR search)
+            terms = filter_text.lower().split()
             self._items = [
                 item for item in self._all_items
-                if lower in item[1].lower() or lower in item[3].lower()
+                if self._matches_any_term(item, terms)
             ]
         self.SetItemCount(len(self._items))
         for i, item in enumerate(self._items):
@@ -85,6 +98,13 @@ class _IconVListBox(wx.VListBox):
         else:
             self.SetSelection(wx.NOT_FOUND)
         self.RefreshAll()
+
+    def _matches_any_term(self, item, terms):
+        """Return True if ANY term is found in item's label or hints (OR search)."""
+        label = item[1].lower()
+        hints = item[3].lower()
+        searchable = label + " " + hints
+        return any(term in searchable for term in terms)
 
     def GetSelectedItem(self):
         sel = self.GetSelection()

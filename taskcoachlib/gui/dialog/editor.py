@@ -25,7 +25,7 @@ from taskcoachlib import widgets, patterns, command, operating_system, render
 from taskcoachlib.meta.debug import log_step
 from taskcoachlib.domain import task, category, date, note, attachment, effort, base
 from taskcoachlib.domain.task import status
-from taskcoachlib.gui import viewer, uicommand, windowdimensionstracker
+from taskcoachlib.gui import viewer, uicommand, windowdimensionstracker, artprovider
 from taskcoachlib.gui.dialog import entry, attributesync
 from taskcoachlib.gui.dialog.entry import (
     get_suggested_hour_choices,
@@ -632,12 +632,16 @@ class TaskAppearancePage(ScrolledPage):
         self._derivedIconDisplay = wx.StaticBitmap(self._derivedIconPanel)
         self._derivedIconDisplay.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
         self._derivedIconDisplay.Bind(wx.EVT_SET_FOCUS, rejectFocus)
+        self._derivedIconName = wx.StaticText(self._derivedIconPanel, label="")
+        self._derivedIconName.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
+        self._derivedIconName.Bind(wx.EVT_SET_FOCUS, rejectFocus)
         self._derivedIconNA = wx.StaticText(self._derivedIconPanel, label=_("N/A"))
         self._derivedIconNA.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
         self._derivedIconNA.Bind(wx.EVT_SET_FOCUS, rejectFocus)
         self._derivedIconNA.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
         iconSizer.Add(self._derivedIconDisplay, 0, wx.ALIGN_CENTER_VERTICAL)
+        iconSizer.Add(self._derivedIconName, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         iconSizer.Add(self._derivedIconNA, 0, wx.ALIGN_CENTER_VERTICAL)
         self._derivedIconPanel.SetSizer(iconSizer)
         self._derivedIconSource = wx.StaticText(self, label="")
@@ -756,10 +760,16 @@ class TaskAppearancePage(ScrolledPage):
             bitmap = wx.ArtProvider.GetBitmap(iconValue, wx.ART_MENU, (16, 16))
             self._derivedIconDisplay.SetBitmap(bitmap)
             self._derivedIconDisplay.Show()
+            # Look up icon name from artprovider metadata
+            iconData = artprovider.chooseableItems.get(iconValue, {})
+            iconName = iconData.get("name", iconValue)
+            self._derivedIconName.SetLabel(iconName)
+            self._derivedIconName.Show()
             self._derivedIconNA.Hide()
             self._derivedIconSource.SetLabel(iconSource)
         else:
             self._derivedIconDisplay.Hide()
+            self._derivedIconName.Hide()
             self._derivedIconNA.Show()
             self._derivedIconSource.SetLabel(_("N/A"))
         self._derivedIconPanel.Layout()
@@ -902,12 +912,16 @@ class TaskAppearancePage(ScrolledPage):
         self._effectiveIconDisplay = wx.StaticBitmap(self._effectiveIconPanel)
         self._effectiveIconDisplay.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
         self._effectiveIconDisplay.Bind(wx.EVT_SET_FOCUS, rejectFocus)
+        self._effectiveIconName = wx.StaticText(self._effectiveIconPanel, label="")
+        self._effectiveIconName.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
+        self._effectiveIconName.Bind(wx.EVT_SET_FOCUS, rejectFocus)
         self._effectiveIconNA = wx.StaticText(self._effectiveIconPanel, label=_("N/A"))
         self._effectiveIconNA.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
         self._effectiveIconNA.Bind(wx.EVT_SET_FOCUS, rejectFocus)
         self._effectiveIconNA.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
         iconSizer.Add(self._effectiveIconDisplay, 0, wx.ALIGN_CENTER_VERTICAL)
+        iconSizer.Add(self._effectiveIconName, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         iconSizer.Add(self._effectiveIconNA, 0, wx.ALIGN_CENTER_VERTICAL)
         self._effectiveIconPanel.SetSizer(iconSizer)
         self._effectiveIconSource = wx.StaticText(self, label="")
@@ -986,10 +1000,16 @@ class TaskAppearancePage(ScrolledPage):
             bitmap = wx.ArtProvider.GetBitmap(iconValue, wx.ART_MENU, (16, 16))
             self._effectiveIconDisplay.SetBitmap(bitmap)
             self._effectiveIconDisplay.Show()
+            # Look up icon name from artprovider metadata
+            iconData = artprovider.chooseableItems.get(iconValue, {})
+            iconName = iconData.get("name", iconValue)
+            self._effectiveIconName.SetLabel(iconName)
+            self._effectiveIconName.Show()
             self._effectiveIconNA.Hide()
             self._effectiveIconSource.SetLabel(iconSource)
         else:
             self._effectiveIconDisplay.Hide()
+            self._effectiveIconName.Hide()
             self._effectiveIconNA.Show()
             self._effectiveIconSource.SetLabel(_("N/A"))
         self._effectiveIconPanel.Layout()
@@ -2838,6 +2858,8 @@ class PathPage(Page):
         self._pathSizer = None
         self._subscribed = False
         self._realized = False
+        self._iconWidgets = {}  # Dict of object -> StaticBitmap for icon updates
+        self._iconSubscribed = False
         super().__init__(items, parent, *args, **kwargs)
 
     def addEntries(self):
@@ -2859,6 +2881,9 @@ class PathPage(Page):
         if self._subscribed:
             return
         self._subscribed = True
+
+        # Subscribe to effective icon changes for individual icon updates
+        self._ensureIconSubscription()
 
         from taskcoachlib.domain import task, category, note, attachment, effort
 
@@ -2910,6 +2935,9 @@ class PathPage(Page):
         except RuntimeError:
             return
 
+        # Unsubscribe existing icon handlers before clearing
+        self._unsubscribeIconUpdates()
+
         # Clear existing content
         self._pathSizer.Clear(True)
 
@@ -2919,7 +2947,6 @@ class PathPage(Page):
                                   label=_("Path is only shown for single items"))
             self._pathSizer.Add(label, 0, wx.EXPAND)
             self._pathPanel.Layout()
-            self._restoreFocus()
             return
 
         item = self.items[0]
@@ -2930,7 +2957,6 @@ class PathPage(Page):
                                   label=_("This item has no parent objects"))
             self._pathSizer.Add(label, 0, wx.EXPAND)
             self._pathPanel.Layout()
-            self._restoreFocus()
             return
 
         # Display path from root to current item
@@ -2959,6 +2985,8 @@ class PathPage(Page):
                 if bitmap.IsOk():
                     icon = wx.StaticBitmap(item_panel, bitmap=bitmap)
                     item_sizer.Add(icon, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+                    # Subscribe this icon to the object's effective icon changes
+                    self._subscribeIconToObject(obj, icon)
 
             # Add type and subject label using [Type] Subject format
             label_text = "[%s] %s" % (obj_type, subject)
@@ -2976,19 +3004,42 @@ class PathPage(Page):
 
         self._pathPanel.Layout()
         self.Layout()
-        self._restoreFocus()
 
-    def _restoreFocus(self):
-        """Restore focus to the path panel after rebuild.
+    def _subscribeIconToObject(self, obj, bitmap):
+        """Register a StaticBitmap for updates when object's effective icon changes."""
+        if not hasattr(obj, 'effectiveIconChangedEventType'):
+            return
+        self._iconWidgets[id(obj)] = (obj, bitmap)
 
-        This is critical because rebuilding destroys all child widgets,
-        which destroys focus. Without restoring focus, keyboard shortcuts
-        like Escape to close the dialog won't work.
-        """
-        try:
-            self._pathPanel.SetFocus()
-        except RuntimeError:
-            pass
+    def _ensureIconSubscription(self):
+        """Subscribe to effective icon changes (once per rebuild)."""
+        if self._iconSubscribed:
+            return
+        self._iconSubscribed = True
+        self.registerObserver(
+            self._onEffectiveIconChanged,
+            eventType="pubsub.effective.icon"
+        )
+
+    def _onEffectiveIconChanged(self, event):
+        """Handle effective icon changes - update only the matching icon widget."""
+        for source in event.sources():
+            obj_id = id(source)
+            if obj_id in self._iconWidgets:
+                obj, bitmap = self._iconWidgets[obj_id]
+                try:
+                    _, icon_name = self._getTypeInfo(obj)
+                    if icon_name:
+                        new_bitmap = wx.ArtProvider.GetBitmap(icon_name, wx.ART_MENU, (16, 16))
+                        if new_bitmap.IsOk():
+                            bitmap.SetBitmap(new_bitmap)
+                            bitmap.Refresh()
+                except RuntimeError:
+                    pass  # Widget destroyed
+
+    def _unsubscribeIconUpdates(self):
+        """Clear icon widget tracking (subscription cleaned up on page close)."""
+        self._iconWidgets = {}
 
     def _buildPathObjects(self, item):
         """Build the path from root to current item.
@@ -3013,6 +3064,9 @@ class PathPage(Page):
 
     def close(self):
         """Clean up observers when the page is closed."""
+        # Unsubscribe icon-specific handlers
+        self._unsubscribeIconUpdates()
+
         if self._subscribed:
             from taskcoachlib.domain import task, category, note, attachment, effort
             all_event_types = (

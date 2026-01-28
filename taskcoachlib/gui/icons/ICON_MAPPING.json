@@ -1,0 +1,98 @@
+{
+  "_comment": "Maps TaskCoach icon names to source library, category, and original filename.",
+  "_format": "source=library, category=subfolder, file=original filename, source_sizes=sizes available in source library",
+  "_naming": "Icons use clean names without _icon suffix.",
+  "_note": "source_sizes tracks what's available in the SOURCE library. Imported sizes are derived from 16x16/, 22x22/, etc. directories.",
+
+  "homebank": {
+    "source": "papirus",
+    "category": "apps",
+    "file": "homebank.svg",
+    "source_sizes": "16,22,24,32,48,64",
+    "duplicates": [
+      {"source": "papirus", "category": "apps", "file": "fr.free.Homebank.svg"}
+    ]
+  },
+  "cointop": {
+    "source": "papirus",
+    "category": "apps",
+    "file": "cointop.svg",
+    "source_sizes": "16,22,24,32,48,64",
+    "duplicates": [
+      {"source": "papirus", "category": "apps", "file": "com.github.miguelmota.Cointop.svg"}
+    ]
+  },
+  "cryptomator": {
+    "source": "papirus",
+    "category": "apps",
+    "file": "cryptomator.svg",
+    "source_sizes": "16,22,24,32,48,64",
+    "duplicates": [
+      {"source": "papirus", "category": "apps", "file": "org.cryptomator.Cryptomator.svg"},
+      {"source": "papirus", "category": "apps", "file": "appimagekit-org.cryptomator.Cryptomator.svg"}
+    ]
+  },
+
+  "banking": {"source": "papirus", "category": "apps", "file": "org.tabos.banking.svg", "source_sizes": "16,22,24,32,48,64"},
+  "kmymoney": {"source": "papirus", "category": "apps", "file": "kmymoney.svg", "source_sizes": "16,22,24,32,48,64"},
+  "money_manager": {"source": "papirus", "category": "apps", "file": "money-manager-ex.svg", "source_sizes": "16,22,24,32,48,64"},
+  "moneydance": {"source": "papirus", "category": "apps", "file": "moneydance.svg", "source_sizes": "16,22,24,32,48,64"},
+  "safeeyes": {
+    "source": "papirus",
+    "category": "apps",
+    "file": "safeeyes.svg",
+    "source_sizes": "16,22,24,32,48,64",
+    "duplicates": [
+      {"source": "papirus", "category": "apps", "file": "io.github.slgobinath.SafeEyes.svg"}
+    ]
+  },
+
+  "bank_account": {"source": "papirus", "category": "actions", "file": "view-bank-account-checking.svg", "source_sizes": "16,22,24"},
+  "money_budget": {"source": "papirus", "category": "actions", "file": "view-financial-budget.svg", "source_sizes": "16,22,24"},
+  "money_expense": {"source": "papirus", "category": "actions", "file": "view-financial-expense.svg", "source_sizes": "16,22,24"},
+  "taxes": {"source": "papirus", "category": "actions", "file": "taxes-finances.svg", "source_sizes": "16,22,24"},
+  "currency_dollar": {"source": "papirus", "category": "actions", "file": "format-currency.svg", "source_sizes": "16,22,24"},
+  "calculator_flat": {
+    "source": "papirus",
+    "category": "apps",
+    "file": "accessories-calculator.svg",
+    "source_sizes": "16,22,24,32,48,64",
+    "duplicates": [
+      {"source": "papirus", "category": "apps", "file": "io.liri.Calculator.svg"},
+      {"source": "papirus", "category": "apps", "file": "deepin-calculator.svg"},
+      {"source": "papirus", "category": "apps", "file": "xfce4-calculator-plugin.svg"},
+      {"source": "papirus", "category": "apps", "file": "io.elementary.calculator.svg"}
+    ]
+  },
+  "uno_calculator": {"source": "papirus", "category": "apps", "file": "uno-calculator.svg", "source_sizes": "16,22,24,32,48,64"},
+  "gnome_calculator": {
+    "source": "papirus",
+    "category": "apps",
+    "file": "gnome-calculator.svg",
+    "source_sizes": "16,22,24,32,48,64",
+    "duplicates": [
+      {"source": "papirus", "category": "apps", "file": "org.gnome.Calculator.svg"}
+    ]
+  },
+  "safe_vault": {"source": "papirus", "category": "apps", "file": "accessories-safe.svg", "source_sizes": "16,22,24,32,48,64"},
+  "bitcoin": {
+    "source": "papirus",
+    "category": "apps",
+    "file": "bitcoin.svg",
+    "source_sizes": "16,22,24,32,48,64",
+    "duplicates": [
+      {"source": "papirus", "category": "apps", "file": "org.bitcoincore.bitcoin-qt.svg"},
+      {"source": "papirus", "category": "apps", "file": "bitcoin-qt.svg"},
+      {"source": "papirus", "category": "apps", "file": "bitcoin128.svg"}
+    ]
+  },
+  "wallet_flat": {"source": "papirus", "category": "apps", "file": "kwalletmanager.svg", "source_sizes": "16,22,24,32,48,64"},
+
+  "bank_building": {"source": "oxygen", "category": "actions", "file": "view-bank.png", "source_sizes": "16,22,32,48"},
+  "wallet_closed": {"source": "oxygen", "category": "status", "file": "wallet-closed.png", "source_sizes": "16,22,32,48"},
+  "wallet_open": {"source": "oxygen", "category": "status", "file": "wallet-open.png", "source_sizes": "16,22,32,48"},
+  "calculator_3d": {"source": "oxygen", "category": "apps", "file": "accessories-calculator.png", "source_sizes": "16,22,32,48,64,128"},
+  "wallet_keys": {"source": "oxygen", "category": "apps", "file": "kwalletmanager.png", "source_sizes": "16,22,32,48,64,128"},
+
+  "cactus": {"source": "nuvola", "category": "apps", "file": "khangman.png", "source_sizes": "16,22,32,48,64,128"}
+}

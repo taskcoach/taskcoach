@@ -801,6 +801,7 @@ class XMLReader(object):
     _deprecated_icons = {
         "clock_alarm": "clock_alarm_icon",
         "sign_warning_icon": "sign_important_icon",
+        "exclamation_icon": "sign_important_icon",
     }
 
     @staticmethod

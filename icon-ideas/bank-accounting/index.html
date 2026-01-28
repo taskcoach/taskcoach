@@ -1,0 +1,2122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank/Accounting Icon Ideas - Analysis</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+            font-size: 13px;
+        }
+        h1, h2 { color: #333; }
+        .controls {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            z-index: 100;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+        .controls label { margin-right: 15px; cursor: pointer; }
+        .search-box input {
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            width: 250px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        th, td {
+            border: 1px solid #e0e0e0;
+            padding: 4px 6px;
+            text-align: left;
+            font-size: 12px;
+        }
+        th {
+            background: #4a90d9;
+            color: white;
+            position: sticky;
+            top: 55px;
+        }
+        th.size-col { text-align: center; width: 40px; }
+        tr:nth-child(even) { background: #fafafa; }
+        tr:hover { background: #e8f4ff; }
+        tr.in-new { background: #e8f5e9; }
+        tr.filtered { display: none; }
+        tr.in-new:hover { background: #c8e6c9; }
+        .icon-cell {
+            text-align: center;
+            background: #fff;
+            padding: 2px;
+            min-width: 24px;
+        }
+        .icon-cell.dark { background: #2d2d2d; }
+        .icon-cell img {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            vertical-align: middle;
+            max-width: 64px;
+            max-height: 64px;
+        }
+        .icon-cell.missing { background: #f5f5f5; color: #ccc; font-size: 10px; }
+        .colors { text-align: center; font-weight: bold; }
+        .colors-1, .colors-2 { color: #666; }
+        .colors-3, .colors-4 { color: #1565c0; }
+        .colors-5 { color: #2e7d32; }
+        .status-yes { color: #2e7d32; font-weight: bold; }
+        .status-dup { color: #1565c0; font-weight: bold; }
+        .status-no { color: #999; }
+        .status-maybe { color: #f57c00; }
+        .tc-name { font-family: monospace; font-size: 10px; color: #666; }
+        .hint-tag {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 1px 4px;
+            border-radius: 8px;
+            margin: 1px;
+            font-size: 10px;
+        }
+        .section-header {
+            background: #333;
+            color: white;
+            padding: 8px 12px;
+            margin-top: 20px;
+        }
+        .note { font-size: 11px; color: #666; margin-bottom: 10px; }
+        .legend {
+            background: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 11px;
+        }
+        .legend span { margin-right: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Bank/Accounting Icon Ideas - Analysis</h1>
+
+    <div class="legend">
+        <strong>Legend:</strong>
+        <span style="background:#e8f5e9;padding:2px 6px;">Green row = Already in TaskCoach</span>
+        <span><strong class="status-yes">Yes</strong> = imported</span>
+        <span><strong class="status-dup">Dup</strong> = duplicate of imported</span>
+        <span><strong class="status-maybe">Maybe</strong> = similar legacy exists</span>
+        <span><strong>Colors</strong> = unique hex colors</span>
+    </div>
+
+    <div class="controls">
+        <div class="search-box">
+            <input type="text" id="search" placeholder="Search icons..." autofocus>
+        </div>
+        <label><input type="checkbox" id="darkBg"> Dark background</label>
+        <label><input type="checkbox" id="hideExisting"> Hide already imported</label>
+    </div>
+
+    <h2 class="section-header">Papirus (GPL-3.0) - 101 icons</h2>
+    <table>
+        <thead>
+            <tr>
+                <th class="size-col">16</th>
+                <th class="size-col">22</th>
+                <th class="size-col">24</th>
+                <th class="size-col">32</th>
+                <th class="size-col">48</th>
+                <th class="size-col">64</th>
+                <th>Colors</th>
+                <th>In New</th>
+                <th>In Legacy</th>
+                <th>Original File</th>
+                <th>Cat</th>
+            </tr>
+        </thead>
+        <tbody>
+<tr class="in-new" data-search="taxes-finances actions taxes" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/taxes-finances.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/taxes-finances.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/taxes-finances.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-yes">Yes<br><span class="tc-name">taxes</span></td>
+<td class="status-no">No</td>
+<td>taxes-finances.svg</td>
+<td>actions</td>
+</tr>
+<tr class="in-new" data-search="view-bank-account-checking actions bank_account" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-bank-account-checking.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-bank-account-checking.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-bank-account-checking.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-yes">Yes<br><span class="tc-name">bank_account</span></td>
+<td class="status-maybe">Maybe</td>
+<td>view-bank-account-checking.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-transfer-reconciled actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-transfer-reconciled.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-transfer-reconciled.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-transfer-reconciled.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-transfer-reconciled.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-bank-account-savings actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-bank-account-savings.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-bank-account-savings.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-bank-account-savings.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-bank-account-savings.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-credit-card actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-credit-card.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-credit-card.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-credit-card.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-credit-card.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-edit actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-edit.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-edit.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-edit.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-edit.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-asset actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-asset.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-asset.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-asset.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-asset.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-credit-card-closed actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-credit-card-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-credit-card-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-credit-card-closed.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-credit-card-closed.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-liability-closed actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-liability-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-liability-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-liability-closed.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-liability-closed.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-investment-security-closed actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-investment-security-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-investment-security-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-investment-security-closed.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-investment-security-closed.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-add actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-add.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-add.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-add.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-add.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-category-expense actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-category-expense.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-category-expense.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-category-expense.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-category-expense.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-loan actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-loan.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-loan.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-loan.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-loan.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-savings actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-savings.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-savings.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-savings.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-savings.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-category-income actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-category-income.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-category-income.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-category-income.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-category-income.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-reopen actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-reopen.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-reopen.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-reopen.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-reopen.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-loan-closed actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-loan-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-loan-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-loan-closed.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-loan-closed.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-investment actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-investment.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-investment.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-investment.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-investment.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-delete actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-delete.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-delete.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-delete.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-delete.svg</td>
+<td>actions</td>
+</tr>
+<tr class="in-new" data-search="format-currency actions currency_dollar" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/format-currency.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/format-currency.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/format-currency.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-yes">Yes<br><span class="tc-name">currency_dollar</span></td>
+<td class="status-maybe">Maybe</td>
+<td>format-currency.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-closed actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-closed.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-closed.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-transfer-reconcile actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-transfer-reconcile.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-transfer-reconcile.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-transfer-reconcile.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-transfer-reconcile.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-close actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-close.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-close.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-close.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-close.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-bank-account actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-bank-account.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-bank-account.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-bank-account.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-bank-account.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-savings-closed actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-savings-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-savings-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-savings-closed.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-savings-closed.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-transfer-unreconciled actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-transfer-unreconciled.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-transfer-unreconciled.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-transfer-unreconciled.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-transfer-unreconciled.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-list actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-list.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-list.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-list.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/actions/view-financial-list.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-list.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-bank actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-bank.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-bank.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-bank.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-bank.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-category-edit actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-category-edit.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-category-edit.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-category-edit.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-category-edit.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-checking-closed actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-checking-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-checking-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-checking-closed.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-checking-closed.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-checking actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-checking.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-checking.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-checking.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-checking.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-investment-security actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-investment-security.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-investment-security.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-investment-security.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-investment-security.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-category-add actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-category-add.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-category-add.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-category-add.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-category-add.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-category-delete actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-category-delete.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-category-delete.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-category-delete.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-category-delete.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-budget actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-budget.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-budget.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-budget.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/actions/view-financial-budget.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-budget.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-asset-closed actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-asset-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-asset-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-asset-closed.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-asset-closed.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-liability actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-liability.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-liability.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-liability.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-liability.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-investment-closed actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-investment-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-investment-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-investment-closed.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-investment-closed.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-currency-list actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-currency-list.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-currency-list.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-currency-list.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-currency-list.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-cash-closed actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-cash-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-cash-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-cash-closed.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-cash-closed.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-cash actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/actions/view-financial-account-cash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/actions/view-financial-account-cash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/actions/view-financial-account-cash.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-cash.svg</td>
+<td>actions</td>
+</tr>
+<tr class="in-new" data-search="org.cryptomator.cryptomator apps cryptomator" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/org.cryptomator.Cryptomator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/org.cryptomator.Cryptomator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/org.cryptomator.Cryptomator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/org.cryptomator.Cryptomator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/org.cryptomator.Cryptomator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/org.cryptomator.Cryptomator.svg"></td>
+<td class="colors colors-5">5</td>
+<td class="status-dup">Dup<br><span class="tc-name">cryptomator</span></td>
+<td class="status-no">No</td>
+<td>org.cryptomator.Cryptomator.svg</td>
+<td>apps</td>
+</tr>
+<tr class="in-new" data-search="org.tabos.banking apps banking" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/org.tabos.banking.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/org.tabos.banking.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/org.tabos.banking.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/org.tabos.banking.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/org.tabos.banking.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/org.tabos.banking.svg"></td>
+<td class="colors colors-5">9</td>
+<td class="status-yes">Yes<br><span class="tc-name">banking</span></td>
+<td class="status-no">No</td>
+<td>org.tabos.banking.svg</td>
+<td>apps</td>
+</tr>
+<tr class="in-new" data-search="money-manager-ex apps money_manager" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/money-manager-ex.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/money-manager-ex.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/money-manager-ex.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/money-manager-ex.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/money-manager-ex.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/money-manager-ex.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-yes">Yes<br><span class="tc-name">money_manager</span></td>
+<td class="status-no">No</td>
+<td>money-manager-ex.svg</td>
+<td>apps</td>
+</tr>
+<tr class="in-new" data-search="com.github.miguelmota.cointop apps cointop" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/com.github.miguelmota.Cointop.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/com.github.miguelmota.Cointop.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/com.github.miguelmota.Cointop.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/com.github.miguelmota.Cointop.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/com.github.miguelmota.Cointop.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/com.github.miguelmota.Cointop.svg"></td>
+<td class="colors colors-5">7</td>
+<td class="status-dup">Dup<br><span class="tc-name">cointop</span></td>
+<td class="status-no">No</td>
+<td>com.github.miguelmota.Cointop.svg</td>
+<td>apps</td>
+</tr>
+<tr class="in-new" data-search="org.bitcoincore.bitcoin-qt apps bitcoin" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/org.bitcoincore.bitcoin-qt.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/org.bitcoincore.bitcoin-qt.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/org.bitcoincore.bitcoin-qt.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/org.bitcoincore.bitcoin-qt.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/org.bitcoincore.bitcoin-qt.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/org.bitcoincore.bitcoin-qt.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-dup">Dup<br><span class="tc-name">bitcoin</span></td>
+<td class="status-no">No</td>
+<td>org.bitcoincore.bitcoin-qt.svg</td>
+<td>apps</td>
+</tr>
+<tr class="in-new" data-search="cointop apps cointop" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/cointop.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/cointop.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/cointop.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/cointop.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/cointop.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/cointop.svg"></td>
+<td class="colors colors-5">7</td>
+<td class="status-yes">Yes<br><span class="tc-name">cointop</span></td>
+<td class="status-no">No</td>
+<td>cointop.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="com.github.cryptowyrm.copypastegrab apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/com.github.cryptowyrm.copypastegrab.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/com.github.cryptowyrm.copypastegrab.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/com.github.cryptowyrm.copypastegrab.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/com.github.cryptowyrm.copypastegrab.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/com.github.cryptowyrm.copypastegrab.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/com.github.cryptowyrm.copypastegrab.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>com.github.cryptowyrm.copypastegrab.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="appimagekit-electron-cash apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/appimagekit-electron-cash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/appimagekit-electron-cash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/appimagekit-electron-cash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/appimagekit-electron-cash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/appimagekit-electron-cash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/appimagekit-electron-cash.svg"></td>
+<td class="colors colors-3">3</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>appimagekit-electron-cash.svg</td>
+<td>apps</td>
+</tr>
+<tr class="in-new" data-search="io.github.slgobinath.safeeyes apps safeeyes" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/io.github.slgobinath.SafeEyes.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/io.github.slgobinath.SafeEyes.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/io.github.slgobinath.SafeEyes.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/io.github.slgobinath.SafeEyes.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/io.github.slgobinath.SafeEyes.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/io.github.slgobinath.SafeEyes.svg"></td>
+<td class="colors colors-4">4</td>
+<td class="status-dup">Dup<br><span class="tc-name">safeeyes</span></td>
+<td class="status-no">No</td>
+<td>io.github.slgobinath.SafeEyes.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="gnucash apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/gnucash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/gnucash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/gnucash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/gnucash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/gnucash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/gnucash.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>gnucash.svg</td>
+<td>apps</td>
+</tr>
+<tr class="in-new" data-search="accessories-calculator apps calculator_flat" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/accessories-calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/accessories-calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/accessories-calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/accessories-calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/accessories-calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/accessories-calculator.svg"></td>
+<td class="colors colors-5">5</td>
+<td class="status-yes">Yes<br><span class="tc-name">calculator_flat</span></td>
+<td class="status-maybe">Maybe</td>
+<td>accessories-calculator.svg</td>
+<td>apps</td>
+</tr>
+<tr class="in-new" data-search="kmymoney apps kmymoney" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/kmymoney.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/kmymoney.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/kmymoney.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/kmymoney.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/kmymoney.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/kmymoney.svg"></td>
+<td class="colors colors-3">3</td>
+<td class="status-yes">Yes<br><span class="tc-name">kmymoney</span></td>
+<td class="status-no">No</td>
+<td>kmymoney.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="appimagekit-ledger-live-desktop apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/appimagekit-ledger-live-desktop.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/appimagekit-ledger-live-desktop.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/appimagekit-ledger-live-desktop.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/appimagekit-ledger-live-desktop.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/appimagekit-ledger-live-desktop.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/appimagekit-ledger-live-desktop.svg"></td>
+<td class="colors colors-3">3</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>appimagekit-ledger-live-desktop.svg</td>
+<td>apps</td>
+</tr>
+<tr class="in-new" data-search="cryptomator apps cryptomator" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/cryptomator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/cryptomator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/cryptomator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/cryptomator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/cryptomator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/cryptomator.svg"></td>
+<td class="colors colors-5">5</td>
+<td class="status-yes">Yes<br><span class="tc-name">cryptomator</span></td>
+<td class="status-no">No</td>
+<td>cryptomator.svg</td>
+<td>apps</td>
+</tr>
+<tr class="in-new" data-search="moneydance apps moneydance" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/moneydance.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/moneydance.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/moneydance.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/moneydance.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/moneydance.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/moneydance.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-yes">Yes<br><span class="tc-name">moneydance</span></td>
+<td class="status-no">No</td>
+<td>moneydance.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="tdewalletmanager apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/tdewalletmanager.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/tdewalletmanager.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/tdewalletmanager.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/tdewalletmanager.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/tdewalletmanager.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/tdewalletmanager.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>tdewalletmanager.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="monero apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/monero.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/monero.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/monero.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/monero.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/monero.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/monero.svg"></td>
+<td class="colors colors-3">3</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>monero.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="org.kde.kwalletmanager5 apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/org.kde.kwalletmanager5.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/org.kde.kwalletmanager5.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/org.kde.kwalletmanager5.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/org.kde.kwalletmanager5.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/org.kde.kwalletmanager5.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/org.kde.kwalletmanager5.svg"></td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>org.kde.kwalletmanager5.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="org.kde.kmymoney apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/org.kde.kmymoney.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/org.kde.kmymoney.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/org.kde.kmymoney.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/org.kde.kmymoney.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/org.kde.kmymoney.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/org.kde.kmymoney.svg"></td>
+<td class="colors colors-3">3</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>org.kde.kmymoney.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="appimagekit-ark-desktop-wallet apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/appimagekit-ark-desktop-wallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/appimagekit-ark-desktop-wallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/appimagekit-ark-desktop-wallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/appimagekit-ark-desktop-wallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/appimagekit-ark-desktop-wallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/appimagekit-ark-desktop-wallet.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>appimagekit-ark-desktop-wallet.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="ark-desktop-wallet apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/ark-desktop-wallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/ark-desktop-wallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/ark-desktop-wallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/ark-desktop-wallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/ark-desktop-wallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/ark-desktop-wallet.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>ark-desktop-wallet.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="org.kde.skrooge apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/org.kde.skrooge.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/org.kde.skrooge.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/org.kde.skrooge.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/org.kde.skrooge.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/org.kde.skrooge.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/org.kde.skrooge.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>org.kde.skrooge.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="io.elementary.calculator apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/io.elementary.calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/io.elementary.calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/io.elementary.calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/io.elementary.calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/io.elementary.calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/io.elementary.calculator.svg"></td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>io.elementary.calculator.svg</td>
+<td>apps</td>
+</tr>
+<tr class="in-new" data-search="fr.free.homebank apps homebank" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/fr.free.Homebank.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/fr.free.Homebank.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/fr.free.Homebank.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/fr.free.Homebank.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/fr.free.Homebank.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/fr.free.Homebank.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-dup">Dup<br><span class="tc-name">homebank</span></td>
+<td class="status-no">No</td>
+<td>fr.free.Homebank.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="org.gnome.calculator apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/org.gnome.Calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/org.gnome.Calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/org.gnome.Calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/org.gnome.Calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/org.gnome.Calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/org.gnome.Calculator.svg"></td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>org.gnome.Calculator.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="monero-gui apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/monero-gui.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/monero-gui.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/monero-gui.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/monero-gui.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/monero-gui.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/monero-gui.svg"></td>
+<td class="colors colors-3">3</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>monero-gui.svg</td>
+<td>apps</td>
+</tr>
+<tr class="in-new" data-search="bitcoin-qt apps bitcoin" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/bitcoin-qt.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/bitcoin-qt.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/bitcoin-qt.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/bitcoin-qt.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/bitcoin-qt.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/bitcoin-qt.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-dup">Dup<br><span class="tc-name">bitcoin</span></td>
+<td class="status-no">No</td>
+<td>bitcoin-qt.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="uno-calculator apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/uno-calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/uno-calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/uno-calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/uno-calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/uno-calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/uno-calculator.svg"></td>
+<td class="colors colors-3">3</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>uno-calculator.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="org.moneymanagerex.mmex apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/org.moneymanagerex.MMEX.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/org.moneymanagerex.MMEX.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/org.moneymanagerex.MMEX.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/org.moneymanagerex.MMEX.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/org.moneymanagerex.MMEX.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/org.moneymanagerex.MMEX.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>org.moneymanagerex.MMEX.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="org.electrum.electrum apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/org.electrum.electrum.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/org.electrum.electrum.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/org.electrum.electrum.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/org.electrum.electrum.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/org.electrum.electrum.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/org.electrum.electrum.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>org.electrum.electrum.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="electrum apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/electrum.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/electrum.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/electrum.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/electrum.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/electrum.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/electrum.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>electrum.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="gnucash-icon apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/gnucash-icon.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/gnucash-icon.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/gnucash-icon.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/gnucash-icon.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/gnucash-icon.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/gnucash-icon.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>gnucash-icon.svg</td>
+<td>apps</td>
+</tr>
+<tr class="in-new" data-search="accessories-safe apps safe" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/accessories-safe.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/accessories-safe.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/accessories-safe.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/accessories-safe.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/accessories-safe.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/accessories-safe.svg"></td>
+<td class="colors colors-3">3</td>
+<td class="status-yes">Yes<br><span class="tc-name">safe</span></td>
+<td class="status-no">No</td>
+<td>accessories-safe.svg</td>
+<td>apps</td>
+</tr>
+<tr class="in-new" data-search="safeeyes apps safeeyes" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/safeeyes.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/safeeyes.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/safeeyes.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/safeeyes.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/safeeyes.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/safeeyes.svg"></td>
+<td class="colors colors-4">4</td>
+<td class="status-yes">Yes<br><span class="tc-name">safeeyes</span></td>
+<td class="status-no">No</td>
+<td>safeeyes.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="electrum-ltc apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/electrum-ltc.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/electrum-ltc.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/electrum-ltc.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/electrum-ltc.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/electrum-ltc.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/electrum-ltc.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>electrum-ltc.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="org.gnucash.gnucash apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/org.gnucash.GnuCash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/org.gnucash.GnuCash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/org.gnucash.GnuCash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/org.gnucash.GnuCash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/org.gnucash.GnuCash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/org.gnucash.GnuCash.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>org.gnucash.GnuCash.svg</td>
+<td>apps</td>
+</tr>
+<tr class="in-new" data-search="bitcoin apps bitcoin" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/bitcoin.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/bitcoin.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/bitcoin.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/bitcoin.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/bitcoin.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/bitcoin.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-yes">Yes<br><span class="tc-name">bitcoin</span></td>
+<td class="status-no">No</td>
+<td>bitcoin.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="org.featherwallet.feather apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/org.featherwallet.Feather.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/org.featherwallet.Feather.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/org.featherwallet.Feather.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/org.featherwallet.Feather.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/org.featherwallet.Feather.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/org.featherwallet.Feather.svg"></td>
+<td class="colors colors-5">8</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>org.featherwallet.Feather.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="ethereumwallet apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/ethereumwallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/ethereumwallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/ethereumwallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/ethereumwallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/ethereumwallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/ethereumwallet.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>ethereumwallet.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="gnome-calculator apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/gnome-calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/gnome-calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/gnome-calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/gnome-calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/gnome-calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/gnome-calculator.svg"></td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>gnome-calculator.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="gramwallet apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/gramwallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/gramwallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/gramwallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/gramwallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/gramwallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/gramwallet.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>gramwallet.svg</td>
+<td>apps</td>
+</tr>
+<tr class="in-new" data-search="kwalletmanager apps wallet_flat" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/kwalletmanager.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/kwalletmanager.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/kwalletmanager.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/kwalletmanager.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/kwalletmanager.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/kwalletmanager.svg"></td>
+<td class="colors colors-5">5</td>
+<td class="status-yes">Yes<br><span class="tc-name">wallet_flat</span></td>
+<td class="status-no">No</td>
+<td>kwalletmanager.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="com.github.lainsce.coin apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/com.github.lainsce.coin.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/com.github.lainsce.coin.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/com.github.lainsce.coin.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/com.github.lainsce.coin.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/com.github.lainsce.coin.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/com.github.lainsce.coin.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>com.github.lainsce.coin.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="xfce4-calculator-plugin apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/xfce4-calculator-plugin.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/xfce4-calculator-plugin.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/xfce4-calculator-plugin.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/xfce4-calculator-plugin.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/xfce4-calculator-plugin.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/xfce4-calculator-plugin.svg"></td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>xfce4-calculator-plugin.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="electrum-axe apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/electrum-axe.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/electrum-axe.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/electrum-axe.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/electrum-axe.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/electrum-axe.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/electrum-axe.svg"></td>
+<td class="colors colors-3">3</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>electrum-axe.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="deepin-calculator apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/deepin-calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/deepin-calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/deepin-calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/deepin-calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/deepin-calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/deepin-calculator.svg"></td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>deepin-calculator.svg</td>
+<td>apps</td>
+</tr>
+<tr class="in-new" data-search="homebank apps homebank" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/homebank.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/homebank.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/homebank.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/homebank.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/homebank.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/homebank.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-yes">Yes<br><span class="tc-name">homebank</span></td>
+<td class="status-no">No</td>
+<td>homebank.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="org.getmonero.monero apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/org.getmonero.Monero.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/org.getmonero.Monero.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/org.getmonero.Monero.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/org.getmonero.Monero.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/org.getmonero.Monero.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/org.getmonero.Monero.svg"></td>
+<td class="colors colors-3">3</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>org.getmonero.Monero.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="appimagekit-electrum-axe apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/appimagekit-electrum-axe.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/appimagekit-electrum-axe.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/appimagekit-electrum-axe.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/appimagekit-electrum-axe.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/appimagekit-electrum-axe.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/appimagekit-electrum-axe.svg"></td>
+<td class="colors colors-3">3</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>appimagekit-electrum-axe.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="litecoin-qt apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/litecoin-qt.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/litecoin-qt.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/litecoin-qt.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/litecoin-qt.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/litecoin-qt.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/litecoin-qt.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>litecoin-qt.svg</td>
+<td>apps</td>
+</tr>
+<tr class="in-new" data-search="bitcoin128 apps bitcoin" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/bitcoin128.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/bitcoin128.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/bitcoin128.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/bitcoin128.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/bitcoin128.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/bitcoin128.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-dup">Dup<br><span class="tc-name">bitcoin</span></td>
+<td class="status-no">No</td>
+<td>bitcoin128.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="io.wasabiwallet.wasabiwallet apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/io.wasabiwallet.WasabiWallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/io.wasabiwallet.WasabiWallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/io.wasabiwallet.WasabiWallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/io.wasabiwallet.WasabiWallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/io.wasabiwallet.WasabiWallet.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/io.wasabiwallet.WasabiWallet.svg"></td>
+<td class="colors colors-3">3</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>io.wasabiwallet.WasabiWallet.svg</td>
+<td>apps</td>
+</tr>
+<tr class="in-new" data-search="appimagekit-org.cryptomator.cryptomator apps cryptomator" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/appimagekit-org.cryptomator.Cryptomator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/appimagekit-org.cryptomator.Cryptomator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/appimagekit-org.cryptomator.Cryptomator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/appimagekit-org.cryptomator.Cryptomator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/appimagekit-org.cryptomator.Cryptomator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/appimagekit-org.cryptomator.Cryptomator.svg"></td>
+<td class="colors colors-5">5</td>
+<td class="status-dup">Dup<br><span class="tc-name">cryptomator</span></td>
+<td class="status-no">No</td>
+<td>appimagekit-org.cryptomator.Cryptomator.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="ledger-live-desktop apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/ledger-live-desktop.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/ledger-live-desktop.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/ledger-live-desktop.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/ledger-live-desktop.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/ledger-live-desktop.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/ledger-live-desktop.svg"></td>
+<td class="colors colors-3">3</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>ledger-live-desktop.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="io.liri.calculator apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/io.liri.Calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/io.liri.Calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/io.liri.Calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/io.liri.Calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/io.liri.Calculator.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/io.liri.Calculator.svg"></td>
+<td class="colors colors-5">5</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>io.liri.Calculator.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="skrooge apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/skrooge.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/skrooge.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/skrooge.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/skrooge.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/skrooge.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/skrooge.svg"></td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>skrooge.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="electron-cash apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/electron-cash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/electron-cash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/electron-cash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/electron-cash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/electron-cash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/electron-cash.svg"></td>
+<td class="colors colors-3">3</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>electron-cash.svg</td>
+<td>apps</td>
+</tr>
+<tr class="" data-search="org.gnome.passwordsafe apps " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/apps/org.gnome.PasswordSafe.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/apps/org.gnome.PasswordSafe.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/apps/org.gnome.PasswordSafe.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/32x32/apps/org.gnome.PasswordSafe.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/48x48/apps/org.gnome.PasswordSafe.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/64x64/apps/org.gnome.PasswordSafe.svg"></td>
+<td class="colors colors-4">4</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>org.gnome.PasswordSafe.svg</td>
+<td>apps</td>
+</tr>
+
+<tr class="" data-search="network-wired-offline panel offline disconnected" data-imported="false">
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/16x16/panel/network-wired-offline.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/22x22/panel/network-wired-offline.svg"></td>
+<td class="icon-cell"><img src="../../../icons/papirus-icon-theme-master/Papirus/24x24/panel/network-wired-offline.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-no">No</td>
+<td>network-wired-offline.svg</td>
+<td>panel</td>
+</tr>
+
+        </tbody>
+    </table>
+
+    <h2 class="section-header">Breeze (LGPL-2.1) - 39 icons</h2>
+    <table>
+        <thead>
+            <tr>
+                <th class="size-col">16</th>
+                <th class="size-col">22</th>
+                <th class="size-col">24</th>
+                <th class="size-col">32</th>
+                <th class="size-col">48</th>
+                <th class="size-col">64</th>
+                <th>Colors</th>
+                <th>In New</th>
+                <th>In Legacy</th>
+                <th>Original File</th>
+                <th>Cat</th>
+            </tr>
+        </thead>
+        <tbody>
+<tr class="" data-search="view-financial-transfer-reconciled actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-transfer-reconciled.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-transfer-reconciled.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-transfer-reconciled.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-edit actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account-edit.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account-edit.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-edit.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-asset actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account-asset.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account-asset.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-1">1</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-asset.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-category actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-category.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-category.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-1">1</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-category.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-liability-closed actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account-liability-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account-liability-closed.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-liability-closed.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-bank-edit actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-bank-edit.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-bank-edit.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-1">1</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-bank-edit.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-investment-security-closed actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account-investment-security-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account-investment-security-closed.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-investment-security-closed.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-add actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account-add.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account-add.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-add.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-category-expense actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-category-expense.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-category-expense.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-category-expense.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-loan actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account-loan.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account-loan.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-1">1</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-loan.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-savings actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account-savings.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account-savings.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-1">1</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-savings.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-category-income actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-category-income.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-category-income.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-category-income.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-reopen actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account-reopen.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account-reopen.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-1">1</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-reopen.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-loan-closed actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account-loan-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account-loan-closed.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-loan-closed.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-investment actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account-investment.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account-investment.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-investment.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-delete actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account-delete.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account-delete.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-delete.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-bank-delete actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-bank-delete.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-bank-delete.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-bank-delete.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-closed actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account-closed.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-closed.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-transfer-reconcile actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-transfer-reconcile.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-transfer-reconcile.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-transfer-reconcile.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-close actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account-close.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account-close.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-1">1</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-close.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-bank-add actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-bank-add.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-bank-add.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-1">1</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-bank-add.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-savings-closed actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account-savings-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account-savings-closed.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-savings-closed.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-transfer-unreconciled actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-transfer-unreconciled.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-transfer-unreconciled.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-transfer-unreconciled.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-list actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-list.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-list.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-3">3</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-list.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-bank actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-bank.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-bank.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-1">1</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-bank.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-category-edit actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-category-edit.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-category-edit.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-1">1</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-category-edit.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-checking-closed actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account-checking-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account-checking-closed.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-checking-closed.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-checking actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account-checking.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account-checking.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-checking.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-investment-security actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account-investment-security.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account-investment-security.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-investment-security.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-category-add actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-category-add.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-category-add.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-1">1</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-category-add.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-category-delete actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-category-delete.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-category-delete.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-category-delete.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-budget actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-budget.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-budget.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-budget.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-asset-closed actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account-asset-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account-asset-closed.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-asset-closed.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-liability actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account-liability.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account-liability.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-1">1</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-liability.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-investment-closed actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account-investment-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account-investment-closed.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-investment-closed.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-currency-list actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-currency-list.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-currency-list.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-1">1</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-currency-list.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-cash-closed actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account-cash-closed.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account-cash-closed.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-2">2</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-cash-closed.svg</td>
+<td>actions</td>
+</tr>
+<tr class="" data-search="view-financial-account-cash actions " data-imported="false">
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/16/view-financial-account-cash.svg"></td>
+<td class="icon-cell"><img src="../../../icons/breeze-icons-master/icons/actions/22/view-financial-account-cash.svg"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-1">1</td>
+<td class="status-no">No</td>
+<td class="status-maybe">Maybe</td>
+<td>view-financial-account-cash.svg</td>
+<td>actions</td>
+</tr>
+
+        </tbody>
+    </table>
+
+    <h2 class="section-header">Oxygen (LGPL-2.1) - 5 icons</h2>
+    <table>
+        <thead>
+            <tr>
+                <th class="size-col">16</th>
+                <th class="size-col">22</th>
+                <th class="size-col">24</th>
+                <th class="size-col">32</th>
+                <th class="size-col">48</th>
+                <th class="size-col">64</th>
+                <th>Colors</th>
+                <th>In New</th>
+                <th>In Legacy</th>
+                <th>Original File</th>
+                <th>Cat</th>
+            </tr>
+        </thead>
+        <tbody>
+<tr class="in-new" data-search="view-bank actions bank_building" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/oxygen-icons-master/16x16/actions/view-bank.png"></td>
+<td class="icon-cell"><img src="../../../icons/oxygen-icons-master/22x22/actions/view-bank.png"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell"><img src="../../../icons/oxygen-icons-master/32x32/actions/view-bank.png"></td>
+<td class="icon-cell"><img src="../../../icons/oxygen-icons-master/48x48/actions/view-bank.png"></td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">95</td>
+<td class="status-yes">Yes<br><span class="tc-name">bank_building</span></td>
+<td class="status-maybe">Maybe</td>
+<td>view-bank.png</td>
+<td>actions</td>
+</tr>
+<tr class="in-new" data-search="kwalletmanager apps wallet_keys" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/oxygen-icons-master/16x16/apps/kwalletmanager.png"></td>
+<td class="icon-cell"><img src="../../../icons/oxygen-icons-master/22x22/apps/kwalletmanager.png"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell"><img src="../../../icons/oxygen-icons-master/32x32/apps/kwalletmanager.png"></td>
+<td class="icon-cell"><img src="../../../icons/oxygen-icons-master/48x48/apps/kwalletmanager.png"></td>
+<td class="icon-cell"><img src="../../../icons/oxygen-icons-master/64x64/apps/kwalletmanager.png"></td>
+<td class="colors colors-5">201</td>
+<td class="status-yes">Yes<br><span class="tc-name">wallet_keys</span></td>
+<td class="status-no">No</td>
+<td>kwalletmanager.png</td>
+<td>apps</td>
+</tr>
+<tr class="in-new" data-search="accessories-calculator apps calculator_3d" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/oxygen-icons-master/16x16/apps/accessories-calculator.png"></td>
+<td class="icon-cell"><img src="../../../icons/oxygen-icons-master/22x22/apps/accessories-calculator.png"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell"><img src="../../../icons/oxygen-icons-master/32x32/apps/accessories-calculator.png"></td>
+<td class="icon-cell"><img src="../../../icons/oxygen-icons-master/48x48/apps/accessories-calculator.png"></td>
+<td class="icon-cell"><img src="../../../icons/oxygen-icons-master/64x64/apps/accessories-calculator.png"></td>
+<td class="colors colors-5">98</td>
+<td class="status-yes">Yes<br><span class="tc-name">calculator_3d</span></td>
+<td class="status-maybe">Maybe</td>
+<td>accessories-calculator.png</td>
+<td>apps</td>
+</tr>
+<tr class="in-new" data-search="wallet-closed status wallet_closed" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/oxygen-icons-master/16x16/status/wallet-closed.png"></td>
+<td class="icon-cell"><img src="../../../icons/oxygen-icons-master/22x22/status/wallet-closed.png"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell"><img src="../../../icons/oxygen-icons-master/32x32/status/wallet-closed.png"></td>
+<td class="icon-cell"><img src="../../../icons/oxygen-icons-master/48x48/status/wallet-closed.png"></td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">135</td>
+<td class="status-yes">Yes<br><span class="tc-name">wallet_closed</span></td>
+<td class="status-no">No</td>
+<td>wallet-closed.png</td>
+<td>status</td>
+</tr>
+<tr class="in-new" data-search="wallet-open status wallet_open" data-imported="true">
+<td class="icon-cell"><img src="../../../icons/oxygen-icons-master/16x16/status/wallet-open.png"></td>
+<td class="icon-cell"><img src="../../../icons/oxygen-icons-master/22x22/status/wallet-open.png"></td>
+<td class="icon-cell missing">-</td>
+<td class="icon-cell"><img src="../../../icons/oxygen-icons-master/32x32/status/wallet-open.png"></td>
+<td class="icon-cell"><img src="../../../icons/oxygen-icons-master/48x48/status/wallet-open.png"></td>
+<td class="icon-cell missing">-</td>
+<td class="colors colors-5">190</td>
+<td class="status-yes">Yes<br><span class="tc-name">wallet_open</span></td>
+<td class="status-maybe">Maybe</td>
+<td>wallet-open.png</td>
+<td>status</td>
+</tr>
+
+        </tbody>
+    </table>
+
+    <script>
+        const tables = document.querySelectorAll('table');
+        const searchInput = document.getElementById('search');
+        const darkBgCheckbox = document.getElementById('darkBg');
+        const hideExistingCheckbox = document.getElementById('hideExisting');
+
+        function updateVisibility() {
+            requestAnimationFrame(() => {
+                const searchTerms = searchInput.value.toLowerCase().split(/\s+/).filter(t => t);
+                const hideExisting = hideExistingCheckbox.checked;
+
+                tables.forEach(table => {
+                    table.querySelectorAll('tbody tr').forEach(row => {
+                        const searchText = row.dataset.search || '';
+                        const isImported = row.dataset.imported === 'true';
+
+                        const matchesSearch = searchTerms.length === 0 ||
+                            searchTerms.every(term => searchText.includes(term));
+                        const matchesFilter = !hideExisting || !isImported;
+
+                        row.classList.toggle('filtered', !(matchesSearch && matchesFilter));
+                    });
+                });
+            });
+        }
+
+        function updateDarkBg() {
+            document.querySelectorAll('.icon-cell:not(.missing)').forEach(cell => {
+                cell.classList.toggle('dark', darkBgCheckbox.checked);
+            });
+        }
+
+        searchInput.addEventListener('input', updateVisibility);
+        hideExistingCheckbox.addEventListener('change', updateVisibility);
+        darkBgCheckbox.addEventListener('change', updateDarkBg);
+    </script>
+</body>
+</html>

@@ -85,6 +85,10 @@ of whether it was user-set or inherited.
 | `task.py:1260` | `Task.selectedIcon(recursive=True)` — task selected icon |
 | `task.py:1288` | `Task.iconForStatus()` — status LED icons (always native=True) |
 
+## See Also
+
+- [ICON_LIBRARY.md](ICON_LIBRARY.md) - Icon sources, structure, and adding new icons
+
 ## Known Issue: Category Icon Pluralization
 
 When a user sets `person_icon` on a parent category:

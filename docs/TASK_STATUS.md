@@ -160,6 +160,8 @@ Task status is a dynamically computed property of each task, derived from the ta
 
 **See also:**
 - `docs/SCHEDULERS.md` — GlobalTimer architecture (the single main loop that drives status updates)
+- `docs/ICON_LIBRARY.md` — Icon sources, structure, and adding new icons
+- `docs/ICON_PLURALIZE.md` — Plural/singular icon mapping
 - `docs/legacy/task_states.dot` / `docs/legacy/task_states.png` — Original 2012 state transition diagram (approximate, missing prerequisites and reverse transitions)
 
 ---
