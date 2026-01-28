@@ -15,10 +15,121 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 import wx
 app = wx.App()
 
+from taskcoachlib.widgets import maskedtimectrl
 from taskcoachlib.widgets.maskedtimectrl import (
     DurationCtrl, DurationCtrlVerbose, TimeCtrl, TimeWithSecondsCtrl,
-    DateCtrl, DateTimeCombo
+    DateCtrl, DateTimeCombo, _PopupWindow, PopupDismissEvent
 )
+
+# =============================================================================
+# Wayland test patch: Replace _PopupWindow base class with wx.PopupWindow
+# on Wayland so dropdowns use xdg_popup (compositor-positioned) instead of
+# wx.Dialog (xdg_toplevel, which ignores Move()/SetPosition()).
+# =============================================================================
+def _is_wayland():
+    return os.environ.get("XDG_SESSION_TYPE", "").lower() == "wayland"
+
+if _is_wayland():
+    print("[Wayland] Patching _PopupWindow to use wx.PopupWindow (xdg_popup)")
+
+    # wx.PopupWindow is a real C++ type — we can't just swap __bases__ on
+    # _PopupWindow(wx.Dialog) because the C++ object type is fixed at
+    # construction. Instead, create a proper wx.PopupWindow subclass with
+    # the same interface and swap it as the base of the popup subclasses.
+
+    class _WaylandPopupWindow(wx.PopupWindow):
+        """wx.PopupWindow-based replacement for _PopupWindow on Wayland."""
+
+        def __init__(self, *args, **kwargs):
+            # Accept and ignore style/title kwargs from wx.Dialog interface
+            kwargs.pop('style', None)
+            kwargs.pop('title', None)
+            parent = args[0] if args else kwargs.pop('parent', None)
+            wx.PopupWindow.__init__(self, parent, style=wx.BORDER_NONE)
+
+            style = wx.BORDER_NONE
+            if "__WXMSW__" in wx.PlatformInfo:
+                style |= wx.WANTS_CHARS
+            self.__interior = wx.Panel(self, style=style)
+            self._dismissed = False
+
+            self.__interior.Bind(wx.EVT_CHAR, self._onChar)
+
+            self.Fill(self.__interior)
+
+            sizer = wx.BoxSizer()
+            sizer.Add(self.__interior, 1, wx.EXPAND)
+            self.SetSizer(sizer)
+
+        def interior(self):
+            return self.__interior
+
+        def Fill(self, interior):
+            pass
+
+        def Popup(self, position):
+            self.Position(position, (0, 0))
+            self.Show()
+
+        def Dismiss(self):
+            if self._dismissed:
+                return
+            self._dismissed = True
+            self.Hide()
+            try:
+                interior = self.interior()
+                if interior:
+                    interior.Unbind(wx.EVT_CHAR)
+                    interior.Unbind(wx.EVT_PAINT)
+                    interior.Unbind(wx.EVT_LEFT_UP)
+            except RuntimeError:
+                pass
+            self.ProcessEvent(PopupDismissEvent(self))
+            wx.CallLater(100, self._safeDestroy)
+
+        def _safeDestroy(self):
+            try:
+                if self:
+                    self.Destroy()
+            except RuntimeError:
+                pass
+
+        def _onChar(self, event):
+            if not self.HandleKey(event):
+                self.GetParent().OnChar(event)
+
+        def HandleKey(self, event):
+            return False
+
+    # wxPython bakes C++ type info into class objects at creation time, so
+    # __bases__ swap doesn't work. We must create entirely new classes using
+    # type() that inherit from _WaylandPopupWindow and copy all methods from
+    # the original subclasses.
+
+    _OrigChoicesPopup = maskedtimectrl._ChoicesPopup
+    _OrigCalendarPopup = maskedtimectrl._CalendarPopup
+
+    # Collect all methods/attrs defined directly on each original class
+    def _get_class_attrs(cls):
+        attrs = {}
+        for name in cls.__dict__:
+            if name != '__dict__' and name != '__weakref__':
+                attrs[name] = cls.__dict__[name]
+        return attrs
+
+    maskedtimectrl._ChoicesPopup = type(
+        '_ChoicesPopup',
+        (_WaylandPopupWindow,),
+        _get_class_attrs(_OrigChoicesPopup)
+    )
+
+    maskedtimectrl._CalendarPopup = type(
+        '_CalendarPopup',
+        (_WaylandPopupWindow,),
+        _get_class_attrs(_OrigCalendarPopup)
+    )
+
+    print("[Wayland] Patch applied. Test dropdown positioning below.")
 
 
 class DemoFrame(wx.Frame):

@@ -48,7 +48,6 @@ Every 1 second (_onTick):
 | `timer.date` | `TaskFilter` | Re-filter tasks at midnight |
 | `timer.date` | `CalendarViewer` | Redraw calendar at midnight |
 | `timer.minute` | `MinuteRefresher` | Update "time left" displays |
-| `timer.second` | `StatusChecker` | Detect task status transitions (overdue, due soon, start) |
 | `timer.second` | `ReminderController` | Check for due reminders |
 | `timer.second` | `TaskbarIcon` | Update tracking tooltip |
 | `timer.second` | `Editor` | Update budget/revenue while tracking |
@@ -57,7 +56,7 @@ Every 1 second (_onTick):
 
 | Component | File | How It Uses Timer |
 |-----------|------|-------------------|
-| Status Checker | `gui/timer.py` (instantiated in `gui/mainwindow.py`) | Subscribes to `timer.second`, detects status transitions. See `docs/TASK_STATUS.md` |
+| ComputeStyles | `gui/timer.py` (instantiated in `gui/mainwindow.py`) | Subscribes to `timer.second`, computes task status transitions and recomputes derived/effective appearance for all domain objects. See `docs/TASK_STATUS.md` |
 | Reminder Controller | `gui/remindercontroller.py` | Subscribes to `timer.second`, polls all tasks |
 | Task Filter | `domain/task/filter.py` | Subscribes to `timer.date`, calls `reset()` |
 | Calendar Viewer | `gui/viewer/task.py` | Subscribes to `timer.date`, calls refresh |
@@ -65,6 +64,38 @@ Every 1 second (_onTick):
 | Second Refresher | `gui/viewer/refresher.py` | Uses own `wx.Timer` (per-viewer tracking) |
 | Taskbar Icon | `gui/taskbaricon.py` | Subscribes to `timer.second` |
 | Task Editor | `gui/dialog/editor.py` | Subscribes to `timer.second` when tracking |
+
+---
+
+## ComputeStyles Processing Flow
+
+```
+Every second:
+  Skip if no task file loaded
+
+  For each category (one at a time):
+    Compute derived (source: parent category's effective values)
+    Compute effective (override or derived, with system default)
+
+  For each task (one at a time):
+    Compute status (from dates + current time → fires statusChanged if changed)
+    Compute derived (sources: categories → parent task → status colors/font/icon)
+    Compute effective (override or derived, with system default)
+
+  For each note (one at a time):
+    Compute derived (source: parent note's effective values)
+    Compute effective (override or derived, with system default)
+
+  For each task's attachments (one at a time):
+    Compute derived (no sources → always empty)
+    Compute effective (override or system default)
+
+  For each note's attachments (one at a time):
+    Compute derived (no sources → always empty)
+    Compute effective (override or system default)
+```
+
+> **Note:** Categories are processed first because tasks read category.effectiveXxx() during their derived step. Each individual object completes all its phases before the next object starts.
 
 ---
 
@@ -180,3 +211,4 @@ The old system used a custom `Scheduler` class (`domain/date/scheduler.py`) that
 | 2026-01-12 | Updated all tests to use new architecture |
 | 2026-01-22 | StatusChecker instantiated in mainwindow.py (was dead code) |
 | 2026-01-22 | computeStatus() called from recomputeAppearance() for immediate updates |
+| 2026-01-27 | StatusChecker merged into ComputeStyles; status computed per-task before derived/effective |

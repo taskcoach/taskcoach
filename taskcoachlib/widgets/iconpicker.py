@@ -214,20 +214,13 @@ class _IconVListBox(wx.VListBox):
         event.Skip()
 
 
-class _IconPopup(wx.MiniFrame):
-    """MiniFrame-based popup with searchable icon list.
+class _IconDialog(wx.Dialog):
+    """Modal dialog with searchable icon list."""
 
-    Uses wx.MiniFrame instead of PopupTransientWindow to fix GTK3 caret visibility.
-    """
-
-    def __init__(self, parent, items, current_key, on_select_callback):
-        style = (wx.FRAME_FLOAT_ON_PARENT | wx.FRAME_NO_TASKBAR |
-                 wx.BORDER_SIMPLE | wx.FRAME_TOOL_WINDOW)
-        super().__init__(parent, title="", style=style)
-        self._parent_ctrl = parent
-        self._items = items
-        self._on_select_callback = on_select_callback
-        self._current_key = current_key
+    def __init__(self, parent, items, current_key):
+        style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
+        super().__init__(parent, title=_("Choose Icon"), style=style)
+        self._selected_item = None
 
         panel = wx.Panel(self, style=wx.BORDER_NONE | wx.TAB_TRAVERSAL)
         panel.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
@@ -245,11 +238,21 @@ class _IconPopup(wx.MiniFrame):
 
         panel.SetSizer(sizer)
 
-        # Calculate popup size - show all items, limited by screen height
+        # Dialog layout: panel (search + list) + button bar
+        dlgSizer = wx.BoxSizer(wx.VERTICAL)
+        dlgSizer.Add(panel, 1, wx.EXPAND)
+        btnSizer = self.CreateButtonSizer(wx.OK | wx.CANCEL)
+        if btnSizer:
+            dlgSizer.Add(btnSizer, 0, wx.EXPAND | wx.ALL, 5)
+        self.SetSizer(dlgSizer)
+        self.Bind(wx.EVT_BUTTON, self._on_ok, id=wx.ID_OK)
+
+        # Calculate dialog size - show all items, limited by screen height
         list_height = len(items) * _IconVListBox.ITEM_HEIGHT
         search_height = self._search.GetBestSize().GetHeight() + 12
+        btn_height = 40  # OK/Cancel button bar + padding
         content_width = self._listbox.GetPreferredWidth() + 24
-        total_height = search_height + list_height + 16
+        total_height = search_height + list_height + btn_height + 16
 
         # Limit to 75% of screen height
         display = wx.Display(wx.Display.GetFromWindow(parent))
@@ -257,20 +260,21 @@ class _IconPopup(wx.MiniFrame):
         max_height = int(screen_height * 0.75)
         total_height = min(total_height, max_height)
 
-        min_width = max(parent.GetSize().GetWidth(), content_width)
-        self.SetSize(wx.Size(min_width, total_height))
+        self._desired_size = wx.Size(content_width, total_height)
+
+        def _on_shown(evt):
+            self.SetSize(self._desired_size)
+            self.CentreOnParent()
+            evt.Skip()
+        self.Bind(wx.EVT_SHOW, _on_shown)
+
+        self._listbox.SelectByKey(current_key)
 
         self._search.Bind(wx.EVT_TEXT, lambda e: self._listbox.FilterItems(self._search.GetValue()))
         self._search.Bind(wx.EVT_TEXT_ENTER, self._on_enter)
         self._search.Bind(wx.EVT_KEY_DOWN, self._on_key)
         self._search.Bind(wx.EVT_SEARCHCTRL_CANCEL_BTN, self._on_cancel)
-        self.Bind(wx.EVT_ACTIVATE, self._on_activate)
-        # Intercept Escape at frame level to prevent propagation to parent dialog
-        self.Bind(wx.EVT_CHAR_HOOK, self._on_char_hook)
 
-    def Popup(self):
-        self._listbox.SelectByKey(self._current_key)
-        self.Show()
         wx.CallAfter(self._focus_search)
 
     def _focus_search(self):
@@ -278,20 +282,8 @@ class _IconPopup(wx.MiniFrame):
             self._search.SetFocus()
             self._search.SetInsertionPoint(0)
 
-    def _on_activate(self, event):
-        if not event.GetActive():
-            self._dismiss()
-        event.Skip()
-
-    def _dismiss(self):
-        if self._parent_ctrl:
-            self._parent_ctrl._reset_popup_state()
-            parent_frame = self._parent_ctrl.GetTopLevelParent()
-            if parent_frame:
-                parent_frame.Refresh()
-                parent_frame.Update()
-        self.Hide()
-        wx.CallAfter(self.Destroy)
+    def GetSelectedItem(self):
+        return self._selected_item
 
     def _on_cancel(self, event):
         self._search.SetValue("")
@@ -302,37 +294,34 @@ class _IconPopup(wx.MiniFrame):
         if item and item[4]:  # enabled
             self._on_item_selected(*item)
 
-    def _on_char_hook(self, event):
-        """Intercept Escape at frame level to prevent propagation to parent."""
-        if event.GetKeyCode() == wx.WXK_ESCAPE:
-            self._dismiss()
-            # Do NOT call event.Skip() - consume the event completely
-        else:
-            event.Skip()
-
     def _on_key(self, event):
         key = event.GetKeyCode()
         if key in (wx.WXK_DOWN, wx.WXK_UP):
             self._listbox._on_key_down(event)
         elif key == wx.WXK_ESCAPE:
-            self._dismiss()
-            # Do NOT call event.Skip() - consume the event
+            self.EndModal(wx.ID_CANCEL)
         else:
             event.Skip()
 
+    def _on_ok(self, event):
+        """OK button — confirm the currently highlighted item."""
+        item = self._listbox.GetSelectedItem()
+        if item and item[4]:  # enabled
+            self._selected_item = item
+            self.EndModal(wx.ID_OK)
+        # If nothing valid selected, don't close
+
     def _on_item_selected(self, key, label, bmp, hints, enabled):
         if enabled:
-            self._on_select_callback(key, label, bmp, hints, enabled)
-            wx.CallAfter(self._dismiss)
+            self._selected_item = (key, label, bmp, hints, enabled)
+            self.EndModal(wx.ID_OK)
 
 
 class IconPicker(buttons.ThemedGenBitmapTextButton):
     """Searchable icon picker button.
 
-    A themed button that displays the selected icon and label, with a dropdown
-    arrow. Clicking opens a searchable popup with all available icons.
-
-    Uses MiniFrame popup for proper caret visibility on GTK3.
+    A themed button that displays the selected icon and label. Clicking opens
+    a modal dialog with a searchable list of all available icons.
 
     The button always displays with active/enabled appearance, even when
     "No icon" is selected. A transparent placeholder bitmap is required because
@@ -347,19 +336,18 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
     """
 
     PADDING = 8
-    ARROW_WIDTH = 16
     ICON_SIZE = 16  # Standard icon size for layout consistency
     NO_ICON_LABEL = _("No icon")
 
-    def __init__(self, parent, currentIcon, excluded_icons=None, noIcon=True, *args, **kwargs):
+    def __init__(self, parent, currentIcon, excluded_icons=None, noIcon=True, fixedWidth=None, *args, **kwargs):
         self._excluded_icons = excluded_icons or set()
         self._noIcon = noIcon
+        self._fixedWidth = fixedWidth
         self._items = []
         self._items_dict = {}
         self._current_key = ""
         self._current_label = ""
         self._current_bmp = None
-        self._popup_open = False
         self._previous_key = ""
 
         # Create transparent placeholder bitmap for "No icon" state.
@@ -439,6 +427,13 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
         else:
             # Use placeholder bitmap for "No icon" - required by GenBitmapButton
             self.SetBitmapLabel(self._empty_bmp)
+        if not self._fixedWidth:
+            self.InvalidateBestSize()
+            self.SetInitialSize()
+            parent = self.GetParent()
+            while parent and not isinstance(parent, wx.TopLevelWindow):
+                parent.Layout()
+                parent = parent.GetParent()
         self.Refresh()
 
     def DrawLabel(self, dc, width, height, dx=0, dy=0):
@@ -470,8 +465,7 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
             dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
 
         label = self.GetLabel()
-        arrow_space = self.ARROW_WIDTH + self.PADDING
-        available_width = width - bw - self.PADDING * 3 - arrow_space
+        available_width = width - bw - self.PADDING * 3
         if available_width > 0:
             label = wx.Control.Ellipsize(label, dc, wx.ELLIPSIZE_END, available_width)
 
@@ -486,12 +480,6 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
 
         dc.DrawText(label, pos_x, (height - th) // 2 + dy)
 
-        arrow_rect = wx.Rect(width - self.ARROW_WIDTH - self.PADDING + dx, 0, self.ARROW_WIDTH, height)
-        flags = 0
-        if not self.IsEnabled():
-            flags |= wx.CONTROL_DISABLED
-        wx.RendererNative.Get().DrawDropArrow(self, dc, arrow_rect, flags)
-
     def DoGetBestSize(self):
         dc = wx.ClientDC(self)
         dc.SetFont(self.GetFont())
@@ -501,33 +489,24 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
         bw, bh = self.ICON_SIZE, self.ICON_SIZE
         if self.bmpLabel and self.bmpLabel.IsOk():
             bw, bh = self.bmpLabel.GetWidth(), self.bmpLabel.GetHeight()
-        width = self.PADDING + bw + self.PADDING + tw + self.PADDING + self.ARROW_WIDTH + self.PADDING
         height = max(th, bh) + self.PADDING * 2
+        if self._fixedWidth:
+            return wx.Size(self._fixedWidth, height)
+        width = self.PADDING + bw + self.PADDING + tw + self.PADDING
         return wx.Size(width, height)
 
     def _on_click(self, event):
-        if self._popup_open:
-            return
-        self._popup_open = True
-        popup = _IconPopup(self, self._items, self._current_key, self._on_item_selected)
-        pos = self.ClientToScreen(wx.Point(0, self.GetSize().GetHeight()))
-        popup.SetPosition(pos)
-        popup.Popup()
-
-    def _on_item_selected(self, key, label, bmp, hints, enabled):
-        if enabled:
-            if key in self._excluded_icons:
-                return
-            self._previous_key = self._current_key
-            item = (key, label, bmp, hints, enabled)
-            self._set_current(item)
-            evt = wx.CommandEvent(wx.wxEVT_COMBOBOX, self.GetId())
-            evt.SetEventObject(self)
-            evt.SetString(label)
-            self.GetEventHandler().ProcessEvent(evt)
-
-    def _reset_popup_state(self):
-        self._popup_open = False
+        dialog = _IconDialog(self.GetTopLevelParent(), self._items, self._current_key)
+        if dialog.ShowModal() == wx.ID_OK:
+            item = dialog.GetSelectedItem()
+            if item and item[4]:  # enabled
+                self._previous_key = self._current_key
+                self._set_current(item)
+                evt = wx.CommandEvent(wx.wxEVT_COMBOBOX, self.GetId())
+                evt.SetEventObject(self)
+                evt.SetString(item[1])
+                self.GetEventHandler().ProcessEvent(evt)
+        dialog.Destroy()
 
     def GetValue(self):
         """Return the selected icon key."""

@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import widgets, patterns, command, operating_system, render
+from taskcoachlib.meta.debug import log_step
 from taskcoachlib.domain import task, category, date, note, attachment, effort, base
 from taskcoachlib.domain.task import status
 from taskcoachlib.gui import viewer, uicommand, windowdimensionstracker
@@ -35,7 +36,6 @@ from taskcoachlib.gui.newid import IdProvider
 from taskcoachlib.i18n import _
 from pubsub import pub
 from taskcoachlib.help.balloontips import BalloonTipManager
-from taskcoachlib.meta.debug import log_step
 import datetime
 import os.path
 import wx
@@ -620,10 +620,21 @@ class TaskAppearancePage(ScrolledPage):
         ]
 
         # Icon - panel with both bitmap and "N/A" text (show one or the other)
-        self._derivedIconPanel = wx.Panel(self)
+        def rejectNav(evt):
+            evt.GetEventObject().Navigate(evt.GetDirection())
+        def rejectFocus(evt):
+            forward = not wx.GetKeyState(wx.WXK_SHIFT)
+            wx.CallAfter(evt.GetEventObject().Navigate, forward)
+        self._derivedIconPanel = wx.Panel(self, style=0)
+        self._derivedIconPanel.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
+        self._derivedIconPanel.Bind(wx.EVT_SET_FOCUS, rejectFocus)
         iconSizer = wx.BoxSizer(wx.HORIZONTAL)
         self._derivedIconDisplay = wx.StaticBitmap(self._derivedIconPanel)
+        self._derivedIconDisplay.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
+        self._derivedIconDisplay.Bind(wx.EVT_SET_FOCUS, rejectFocus)
         self._derivedIconNA = wx.StaticText(self._derivedIconPanel, label=_("N/A"))
+        self._derivedIconNA.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
+        self._derivedIconNA.Bind(wx.EVT_SET_FOCUS, rejectFocus)
         self._derivedIconNA.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
         iconSizer.Add(self._derivedIconDisplay, 0, wx.ALIGN_CENTER_VERTICAL)
@@ -781,12 +792,8 @@ class TaskAppearancePage(ScrolledPage):
         self._derivedFontPicker.SetSelectedColour(derivedFgColour)
         self._derivedFontPicker.SetSelectedBgColour(derivedBgColour)
 
-        # Update Override ColorEntry widgets with resolved derived colors
-        # (shown when override checkbox is unchecked)
-        if hasattr(self, '_foregroundColorEntry'):
-            self._foregroundColorEntry.setDerivedColor(derivedFgColour)
-        if hasattr(self, '_backgroundColorEntry'):
-            self._backgroundColorEntry.setDerivedColor(derivedBgColour)
+        # Note: override entries now track effective values, not derived
+        # (updated in _updateEffectiveValues)
 
     def addColorEntries(self):
         self.addColorEntry(_("Foreground"), "foreground", wx.BLACK)
@@ -883,10 +890,21 @@ class TaskAppearancePage(ScrolledPage):
         ]
 
         # Icon - panel with bitmap and "N/A" text (show one or the other)
-        self._effectiveIconPanel = wx.Panel(self)
+        def rejectNav(evt):
+            evt.GetEventObject().Navigate(evt.GetDirection())
+        def rejectFocus(evt):
+            forward = not wx.GetKeyState(wx.WXK_SHIFT)
+            wx.CallAfter(evt.GetEventObject().Navigate, forward)
+        self._effectiveIconPanel = wx.Panel(self, style=0)
+        self._effectiveIconPanel.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
+        self._effectiveIconPanel.Bind(wx.EVT_SET_FOCUS, rejectFocus)
         iconSizer = wx.BoxSizer(wx.HORIZONTAL)
         self._effectiveIconDisplay = wx.StaticBitmap(self._effectiveIconPanel)
+        self._effectiveIconDisplay.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
+        self._effectiveIconDisplay.Bind(wx.EVT_SET_FOCUS, rejectFocus)
         self._effectiveIconNA = wx.StaticText(self._effectiveIconPanel, label=_("N/A"))
+        self._effectiveIconNA.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
+        self._effectiveIconNA.Bind(wx.EVT_SET_FOCUS, rejectFocus)
         self._effectiveIconNA.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
         iconSizer.Add(self._effectiveIconDisplay, 0, wx.ALIGN_CENTER_VERTICAL)
@@ -943,7 +961,6 @@ class TaskAppearancePage(ScrolledPage):
             )
 
     def _onEffectiveAppearanceChanged(self, event):
-        """Update effective display when appearance changes."""
         self._updateEffectiveValues()
         self._updateFontDemoColors()
 
@@ -1004,8 +1021,17 @@ class TaskAppearancePage(ScrolledPage):
         self._effectiveFontPicker.SetSelectedColour(effectiveFgColour)
         self._effectiveFontPicker.SetSelectedBgColour(effectiveBgColour)
 
+        # Update override entries to track effective values
+        # (shown when override checkbox is unchecked; always for colors on font picker)
+        effectiveFont = resolve_font(fontActual if fontActual else fontDefault)
+        if hasattr(self, '_foregroundColorEntry'):
+            self._foregroundColorEntry.setEffectiveColor(effectiveFgColour)
+        if hasattr(self, '_backgroundColorEntry'):
+            self._backgroundColorEntry.setEffectiveColor(effectiveBgColour)
+        if hasattr(self, '_fontEntry'):
+            self._fontEntry.setEffectiveFont(effectiveFont)
+
     def _updateFontDemoColors(self):
-        """Refresh font demo colors from effective SSOT values."""
         if len(self.items) != 1:
             return
         item = self.items[0]
@@ -1047,12 +1073,6 @@ class TaskAppearancePage(ScrolledPage):
         )  # pylint: disable=E1101
 
     def close(self):
-        if len(self.items) == 1 and hasattr(self, '_derivedIconDisplay'):
-            theTask = self.items[0]
-            try:
-                pub.unsubscribe(self._onStatusChanged, theTask.statusChangedEventType())
-            except Exception:
-                pass  # Already unsubscribed
         super().close()
 
 
@@ -1069,6 +1089,15 @@ class DatesPage(Page):
         self._duration = None
         self.__items_are_new = items_are_new
         super().__init__(theTask, parent, *args, **kwargs)
+
+    def close(self):
+        if len(self.items) == 1 and hasattr(self, '_statusLabel'):
+            try:
+                pub.unsubscribe(self._onStatusMayHaveChanged,
+                                self.items[0].statusChangedEventType())
+            except Exception:
+                pass
+        super().close()
 
     def __onPlannedStartChanged(self, value):
         """AttributeSync callback for planned start date changes."""
@@ -1136,19 +1165,14 @@ class DatesPage(Page):
         # Initial display
         self._updateStatusDisplay()
 
-        # Subscribe to date change events (these affect status)
-        pub.subscribe(self._onStatusMayHaveChanged, self.items[0].actualStartDateTimeChangedEventType())
-        pub.subscribe(self._onStatusMayHaveChanged, self.items[0].plannedStartDateTimeChangedEventType())
-        pub.subscribe(self._onStatusMayHaveChanged, self.items[0].dueDateTimeChangedEventType())
-        pub.subscribe(self._onStatusMayHaveChanged, self.items[0].completionDateTimeChangedEventType())
+        # Subscribe to status change event (fired by computeStoredStatus when status changes)
+        pub.subscribe(self._onStatusMayHaveChanged, self.items[0].statusChangedEventType())
 
-    def _onStatusMayHaveChanged(self, newValue=None, sender=None):
-        """Called when task appearance or dates change."""
+    def _onStatusMayHaveChanged(self, newValue, sender):
         if sender == self.items[0] or sender is None:
             self._updateStatusDisplay()
 
     def _updateStatusDisplay(self):
-        """Update the status icon, text, and colors."""
         if not hasattr(self, '_statusLabel'):
             return
         theTask = self.items[0]
@@ -3669,7 +3693,7 @@ class EffortEditBook(Page):
         # Entry mode tracking (dropdown created in Duration row)
         # Load from effort object, default to standard
         storedMode = self.items[0].entryMode() if len(self.items) == 1 else "standard"
-        self._effortEntryMode = 1 if storedMode == "retroactive" else 0
+        self._effortEntryMode = {"standard": 0, "retroactive": 1, "implicit": 2}.get(storedMode, 0)
 
         # --- Start row: Label, DateTime row (checkbox hidden), Button ---
         current_start_date_time = self.items[0].getStart()
@@ -3738,6 +3762,8 @@ class EffortEditBook(Page):
             self._timeSpentCtrl.SetReadOnly(True)
 
         self._timeSpentLabel = wx.StaticText(self, label=_("Calculated time spent until now"))
+        self._timeSpentLabel.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
 
         self._timeSpentTimer = None
         # Start timer only if effort is being tracked (no stop time)
@@ -3782,7 +3808,7 @@ class EffortEditBook(Page):
         pub.subscribe(self.__onEffortPresetsConfigChanged, "settings.feature.effort_duration_presets")
 
         # Entry mode dropdown (Standard / Retroactive) - placed next to presets
-        self._effortEntryModeChoice = wx.Choice(self, choices=[_("Standard"), _("Retroactive")])
+        self._effortEntryModeChoice = wx.Choice(self, choices=[_("Standard"), _("Retroactive"), _("Implicit")])
         self._effortEntryModeChoice.SetSelection(self._effortEntryMode)
         self._effortEntryModeChoice.Bind(wx.EVT_CHOICE, self.__onEffortEntryModeChanged)
 
@@ -3974,7 +4000,7 @@ class EffortEditBook(Page):
         try:
             self._effortEntryMode = self._effortEntryModeChoice.GetSelection()
             # Save mode to effort object
-            newMode = "retroactive" if self._effortEntryMode == 1 else "standard"
+            newMode = {0: "standard", 1: "retroactive", 2: "implicit"}.get(self._effortEntryMode, "standard")
             command.EditEffortEntryModeCommand(
                 items=self.items, newValue=newMode
             ).do()
@@ -4004,11 +4030,20 @@ class EffortEditBook(Page):
         total_seconds = int(duration.total_seconds()) if duration else 0
 
         if is_standard:
-            # 1.2 Set Start-Date editable
+            # Auto-switch: if stop is active and duration is 0, switch to Implicit
+            if stop_enabled and total_seconds == 0:
+                self._effortEntryMode = 2
+                self._effortEntryModeChoice.SetSelection(2)
+                # Fall through to Implicit branch by re-calling
+                self.__syncEffortState(changed_field)
+                return
+
+            # 1.2 Set Start-Date editable, Duration editable
             self._startDateTimeCombo.SetEditable(True)
             self._startFromLastEffortButton.Enable(
                 self._effortList.maxDateTime() is not None
             )
+            self._effortDurationCtrl.SetReadOnly(False)
 
             # 1.3 If Start-Date changed
             if changed_field == 'start':
@@ -4016,10 +4051,6 @@ class EffortEditBook(Page):
                 if total_seconds > 0 and start:
                     new_stop = start + duration
                     self._stopDateTimeCombo.SetDateTime(new_stop)
-                    if stop_enabled:
-                        command.EditEffortStopDateTimeCommand(
-                            None, self.items, newValue=date.DateTime.fromDateTime(new_stop)
-                        ).do()
 
             # 1.4 If Duration changed
             elif changed_field == 'duration':
@@ -4033,14 +4064,9 @@ class EffortEditBook(Page):
                     if start:
                         new_stop = start + duration
                         self._stopDateTimeCombo.SetDateTime(new_stop)
-                        command.EditEffortStopDateTimeCommand(
-                            None, self.items, newValue=date.DateTime.fromDateTime(new_stop)
-                        ).do()
                 # 1.4.2 If Duration = 0, Then disable Stop-Date
                 elif total_seconds == 0:
                     self._stopDateTimeCombo.SetChecked(False)
-                    for item in self.items:
-                        item.setStop(date.DateTime.max)
 
             # 1.5 If Stop-Date changed
             elif changed_field == 'stop':
@@ -4052,9 +4078,6 @@ class EffortEditBook(Page):
                         self._stopDateTimeCombo.SetDateTime(new_stop)
                         # 1.5.1.2 Adj Duration to 1s
                         self._effortDurationCtrl.SetDuration(datetime.timedelta(seconds=1), quiet=True)
-                        command.EditEffortStopDateTimeCommand(
-                            None, self.items, newValue=date.DateTime.fromDateTime(new_stop)
-                        ).do()
                     # 1.5.2 If Stop-Date > Start-Date, Then adj Duration
                     else:
                         calc_duration = stop - start
@@ -4062,9 +4085,10 @@ class EffortEditBook(Page):
                         self._effortDurationCtrl.SetDuration(datetime.timedelta(seconds=calc_seconds), quiet=True)
 
         elif is_retroactive:
-            # 2.2 Set Start-Date read-only
+            # 2.2 Set Start-Date read-only, Duration editable
             self._startDateTimeCombo.SetEditable(False)
             self._startFromLastEffortButton.Enable(False)
+            self._effortDurationCtrl.SetReadOnly(False)
 
             # 2.3 If Duration changed
             if changed_field == 'duration':
@@ -4079,14 +4103,9 @@ class EffortEditBook(Page):
                     if stop:
                         new_start = stop - duration
                         self._startDateTimeCombo.SetDateTime(new_start)
-                        command.EditEffortStartDateTimeCommand(
-                            None, self.items, newValue=date.DateTime.fromDateTime(new_start)
-                        ).do()
                 # 2.3.2 If Duration = 0, Then disable Stop-Date
                 elif total_seconds == 0:
                     self._stopDateTimeCombo.SetChecked(False)
-                    for item in self.items:
-                        item.setStop(date.DateTime.max)
 
             # 2.4 If Stop-Date changed
             elif changed_field == 'stop':
@@ -4098,16 +4117,34 @@ class EffortEditBook(Page):
                     if stop:
                         new_start = stop - datetime.timedelta(seconds=1)
                         self._startDateTimeCombo.SetDateTime(new_start)
-                        command.EditEffortStartDateTimeCommand(
-                            None, self.items, newValue=date.DateTime.fromDateTime(new_start)
-                        ).do()
                 # 2.4.2 If Duration > 0, Then adj Start-Date
                 elif total_seconds > 0 and stop:
                     new_start = stop - duration
                     self._startDateTimeCombo.SetDateTime(new_start)
-                    command.EditEffortStartDateTimeCommand(
-                        None, self.items, newValue=date.DateTime.fromDateTime(new_start)
-                    ).do()
+
+        else:  # Implicit mode (mode == 2)
+            # 3.2 Set Start-Date editable
+            self._startDateTimeCombo.SetEditable(True)
+            self._startFromLastEffortButton.Enable(
+                self._effortList.maxDateTime() is not None
+            )
+            # 3.3 Set Duration read-only
+            self._effortDurationCtrl.SetReadOnly(True)
+
+            # 3.4 If Start-Date or Stop-Date changed (or mode switched)
+            if changed_field in ('start', 'stop', 'mode'):
+                if stop_enabled and stop and start:
+                    if stop > start:
+                        calc_duration = stop - start
+                        calc_seconds = max(0, int(calc_duration.total_seconds()))
+                        self._effortDurationCtrl.SetDuration(
+                            datetime.timedelta(seconds=calc_seconds), quiet=True
+                        )
+                    else:
+                        # Stop <= Start: set duration to 0
+                        self._effortDurationCtrl.SetDuration(
+                            datetime.timedelta(seconds=0), quiet=True
+                        )
 
         self.__updateEffortPresetSelection()
         self.__update_invalid_period_message()
@@ -4197,6 +4234,16 @@ class EffortEditBook(Page):
 
         self._updatingControls = True
         try:
+            # Auto-switch from Implicit to Standard when a preset is selected
+            if self._effortEntryMode == 2 and total_seconds > 0:
+                self._effortEntryMode = 0
+                self._effortEntryModeChoice.SetSelection(0)
+                command.EditEffortEntryModeCommand(
+                    items=self.items, newValue="standard"
+                ).do()
+                self._effortDurationCtrl.SetReadOnly(False)
+                self._effortDurationPresetsChoice.Enable(True)
+
             # Update duration control
             self._effortDurationCtrl.SetDuration(datetime.timedelta(seconds=total_seconds), quiet=True)
 
@@ -4335,8 +4382,6 @@ class EffortEditBook(Page):
             new_value = date.DateTime.now()
             self._stopDateTimeCombo.SetChecked(True)
             self._stopDateTimeCombo.SetDateTime(new_value)
-            self._effortDurationCtrl.Enable(True)
-            self._effortDurationPresetsChoice.Enable(True)
             self.__syncEffortState('stop')
             command.EditEffortStopDateTimeCommand(
                 None, self.items, newValue=new_value

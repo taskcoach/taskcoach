@@ -138,10 +138,10 @@ class Task(
             "settings.behavior.markparentcompletedwhenallchildrencompleted",
         )
 
-        self._updateStoredStatus()
+        self.computeStoredStatus()
         # Note: Effective appearance is computed by ComputeStyles polling.
         # Status transitions (overdue, due soon, time to start) are handled
-        # by the global timer's StatusChecker via polling.
+        # by ComputeStyles per-second polling.
         # See docs/SCHEDULERS.md for architecture documentation.
 
     @patterns.eventSource
@@ -354,7 +354,7 @@ class Task(
         if dueDateTime == self.__dueDateTime:
             return
         self.__dueDateTime = dueDateTime
-        # Note: Status transitions are handled by global timer's StatusChecker
+        # Note: Status transitions are handled by ComputeStyles per-second polling
         self.markDirty()
         self.recomputeAppearance()
         pub.sendMessage(
@@ -408,7 +408,7 @@ class Task(
         if plannedStartDateTime == self.__plannedStartDateTime:
             return
         self.__plannedStartDateTime = plannedStartDateTime
-        # Note: Status transitions are handled by global timer's StatusChecker
+        # Note: Status transitions are handled by ComputeStyles per-second polling
         self.markDirty()
         self.recomputeAppearance()
         pub.sendMessage(
@@ -750,13 +750,13 @@ class Task(
 
         return status.inactive, _("No actual start date")
 
-    def _updateStoredStatus(self):
+    def computeStoredStatus(self):
         """Compute and store status fields for this task instance.
 
         Called from:
         - Task.__init__() — initial population on load
         - recomputeAppearance() — immediate update on date changes
-        - StatusChecker._onSecond() — periodic safety net for time-based transitions
+        - ComputeStyles._computeForObject() — per-second polling for time-based transitions
 
         Updates __computed_status, __status_text, __status_icon, and __status_source.
         Fires statusChangedEventType if status actually changed.
@@ -796,11 +796,9 @@ class Task(
             )
 
     def statusText(self):
-        """Return the computed status display text (e.g. 'Active')."""
         return self.__status_text
 
     def statusIconName(self):
-        """Return the computed status icon name (e.g. 'led_blue_icon')."""
         return self.__status_icon
 
     def computedStatus(self, explain=False):
@@ -810,7 +808,7 @@ class Task(
         TaskStatus object populated by computeStatus(), which is called:
         - On task creation/load (Task.__init__)
         - On date changes (recomputeAppearance)
-        - Every second (StatusChecker safety net)
+        - Every second (ComputeStyles polling)
 
         Use this instead of the legacy status() method.
 
@@ -826,12 +824,11 @@ class Task(
         return self.__computed_status
 
     def statusSource(self):
-        """Return the explanation of why task has its current status."""
         return self.__status_source
 
     def onDueSoonHoursChanged(self, value):
         self.__dueSoonHours = value
-        # Note: Status transitions are handled by global timer's StatusChecker
+        # Note: Status transitions are handled by ComputeStyles per-second polling
         self.recomputeAppearance()
 
     # effort related methods:
@@ -1125,13 +1122,10 @@ class Task(
         return recursiveColor
 
     def statusFgColor(self):
-        """Return the current color of task, based on its status (completed,
-        overdue, duesoon, inactive, or active)."""
         return self.fgColorForStatus(self.status())
 
     @classmethod
     def _themedSection(class_, section):
-        """Return the theme-appropriate settings section name."""
         try:
             theme = class_.settings.get("window", "theme")
             if theme == "automatic":
@@ -1199,8 +1193,6 @@ class Task(
         return recursiveColor
 
     def statusBgColor(self):
-        """Return the current color of task, based on its status (completed,
-        overdue, duesoon, inactive, or active)."""
         return self.bgColorForStatus(self.status())
 
     @classmethod
@@ -1224,8 +1216,6 @@ class Task(
                 return self.statusFont()
 
     def statusFont(self):
-        """Return the current font of task, based on its status (completed,
-        overdue, duesoon, inactive, or active)."""
         return self.fontForStatus(self.status())
 
     @classmethod
@@ -1288,7 +1278,6 @@ class Task(
         self.__computeRecursiveSelectedIcon()
 
     def statusIcon(self, selected=False):
-        """Return the status icon (single source of truth from computeStatus)."""
         return self.__status_icon
 
     def iconForStatus(self, taskStatus, selected=False):
@@ -1308,7 +1297,7 @@ class Task(
 
     @patterns.eventSource
     def recomputeAppearance(self, recursive=False, event=None):
-        self._updateStoredStatus()
+        self.computeStoredStatus()
         self.__status = None
         # Note: SSOT updates are handled by ComputeStyles polling
         # Legacy: compute recursive values for backward compatibility

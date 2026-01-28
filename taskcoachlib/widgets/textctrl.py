@@ -243,14 +243,16 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         self.Bind(wx.EVT_LEFT_DOWN, self._onLeftClick)
         self.Bind(stc.EVT_STC_UPDATEUI, self._onUpdateUI)
 
-        # Single line mode: additional configuration
+        # Clear Scintilla's default Tab binding so Tab navigates focus.
+        # See: https://proton-ce.sourceforge.net/rc/scintilla/pyframe/www.pyframe.com/stc/keymap.html
+        self.CmdKeyClear(stc.STC_KEY_TAB, 0)
+        self.CmdKeyClear(stc.STC_KEY_TAB, stc.STC_SCMOD_SHIFT)
+        self.Bind(wx.EVT_KEY_DOWN, self._onKeyDown)
+
+        # Single line mode: also block Enter from inserting newlines
         if self._singleLine:
-            # Clear the newline command from Enter and Shift+Enter
-            # See: https://proton-ce.sourceforge.net/rc/scintilla/pyframe/www.pyframe.com/stc/keymap.html
             self.CmdKeyClear(stc.STC_KEY_RETURN, 0)
             self.CmdKeyClear(stc.STC_KEY_RETURN, stc.STC_SCMOD_SHIFT)
-            # Intercept Ctrl+V to strip newlines from pasted text
-            self.Bind(wx.EVT_KEY_DOWN, self._onKeyDown)
 
         # Live update squiggle color from preferences
         pub.subscribe(self._onSquiggleColourChanged, 'spellcheck.colours.changed')
@@ -268,12 +270,31 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         event.Skip()
 
     def _onKeyDown(self, event):
-        """Intercept Ctrl+V to strip newlines from pasted text."""
-        # Check for Ctrl+V (paste)
-        if event.ControlDown() and event.GetKeyCode() == ord('V'):
-            self._pasteWithoutNewlines()
-            # Don't Skip() - prevents default paste
+        """Intercept keys for text controls.
+
+        All modes:
+          Tab/Shift+Tab → navigate focus (no literal tabs)
+
+        Single-line only:
+          Enter → navigate focus forward
+          Ctrl+V → paste with newlines stripped
+
+        Multiline:
+          Enter → insert newline (normal behavior)
+        """
+        keyCode = event.GetKeyCode()
+        # Tab/Shift+Tab: always navigate focus (no literal tabs)
+        if keyCode == wx.WXK_TAB:
+            self.Navigate(not event.ShiftDown())
             return
+        # Single-line: Enter navigates, Ctrl+V strips newlines
+        if self._singleLine:
+            if keyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
+                self.Navigate(True)
+                return
+            if event.ControlDown() and keyCode == ord('V'):
+                self._pasteWithoutNewlines()
+                return
         event.Skip()
 
     def _pasteWithoutNewlines(self):

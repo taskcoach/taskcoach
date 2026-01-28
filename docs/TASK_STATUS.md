@@ -10,11 +10,11 @@
 4. [Architecture](#architecture)
    - [Stored Fields](#stored-fields)
    - [computeStatus() — Single Source of Truth](#computestatus--single-source-of-truth-class-method)
-   - [_updateStoredStatus() — Instance Update Method](#_updatestoredstatus--instance-update-method)
+   - [computeStoredStatus() — Instance Update Method](#computestoredstatus--instance-update-method)
    - [Editor Live Preview](#editor-live-preview)
    - [Event: statusChangedEventType](#event-statuschangedeventtype)
    - [Update Triggers](#update-triggers)
-   - [Timer-Driven Updates (StatusChecker)](#timer-driven-updates-statuschecker)
+   - [Timer-Driven Updates (ComputeStyles)](#timer-driven-updates-computestyles)
    - [Immediate Updates (Date Setters)](#immediate-updates-date-setters)
    - [Viewer Columns](#viewer-columns)
 5. [Usage Locations](#usage-locations)
@@ -147,7 +147,7 @@ def derivedFgColorSource(self):
 - UI resolves: `color = resolve_color(actual if actual else default)`
 
 **TODO — Refactor plural/singular icon logic:**
-- Current code in `object.py:581,590` and `task.py:1247,1264` uses brittle `native=super().icon() == ""`
+- Current code in `object.py` and `task.py` uses brittle `native=super().icon() == ""`
 - This checks if icon is "native" (not user-overridden) for folder/LED transformation
 - Should be refactored to use a cleaner API (e.g., `hasIconOverride()` method)
 - Blocked on: completing SSOT 3-tuple refactor first
@@ -253,15 +253,15 @@ def computeStatus(cls, completionDT, dueDT, actualStartDT, plannedStartDT,
     return status.inactive, _("No actual start date")
 ```
 
-### _updateStoredStatus() — Instance Update Method
+### computeStoredStatus() — Instance Update Method
 
-The `task._updateStoredStatus()` instance method calls `computeStatus()` with the task's
+The `task.computeStoredStatus()` instance method calls `computeStatus()` with the task's
 actual values and stores the results in the task's fields.
 
 Called from:
 - `Task.__init__()` — Initial population on task creation/load
 - `recomputeAppearance()` — Immediate update on date changes (called by all date setters)
-- `StatusChecker._onSecond()` — Periodic safety net, called on ALL tasks every second
+- `ComputeStyles._computeForObject()` — Called per-task before `computeDerived()` and `computeEffective()`, ensuring status is fresh before appearance computation
 
 ### Editor Live Preview
 
@@ -282,31 +282,35 @@ Status is recomputed in three scenarios:
 
 1. **On load** — `Task.__init__()` calls `computeStatus()` once
 2. **On date change** — Date setters (e.g., `setDueDateTime()`) call `recomputeAppearance()` which calls `computeStatus()` at its start. This provides immediate status updates.
-3. **Every second** — `StatusChecker._onSecond()` calls `computeStatus()` for all tasks as a periodic safety net for time-based transitions (e.g., task becomes overdue at midnight).
+3. **Every second** — `ComputeStyles._computeForObject()` calls `computeStoredStatus()` for each task as part of its per-object processing pass, ensuring status is fresh before computing derived and effective appearance values.
 
-### Timer-Driven Updates (StatusChecker)
+### Timer-Driven Updates (ComputeStyles)
 
-**File:** `taskcoachlib/gui/timer.py`
+**File:** `taskcoachlib/domain/base/appearance.py`
 **Instantiated in:** `taskcoachlib/gui/mainwindow.py:_create_window_components()`
 
-The `StatusChecker` subscribes to `timer.second` (the GlobalTimer's 1-second tick) and polls all tasks for time-based transitions:
+StatusChecker was merged into `ComputeStyles` so that each task's status is computed
+immediately before its derived and effective appearance values, guaranteeing correct
+ordering within a single per-object processing pass.
+
+`ComputeStyles` subscribes to `timer.second` (the GlobalTimer's 1-second tick) and
+processes all objects. For each task, the per-object flow is:
 
 ```
 GlobalTimer._onTick() (every 1 second)
     └── pub.sendMessage('timer.second', timestamp=now)
-        └── StatusChecker._onSecond(timestamp)
-            ├── Transition detection (set-based, fires once per transition):
-            │   ├── For each non-completed task: check if dates crossed thresholds
-            │   └── Call task.recomputeAppearance() for newly transitioned tasks
-            │       ├── Calls computeStatus() → updates status + fires event
-            │       └── Updates foreground/background colors based on new status
-            │
-            └── Safety net:
-                └── For ALL tasks: call task.computeStatus()
-                    ├── Independent status calculation from dates
-                    ├── Updates __computed_status, __status_text, __status_icon
-                    └── Fires statusChangedEventType if changed
+        └── ComputeStyles._onSecond(timestamp)
+            └── For each task:
+                └── _computeForObject(task)
+                    1. task.computeStoredStatus()
+                    │   ├── Calls Task.computeStatus() with task's dates
+                    │   ├── Updates __computed_status, __status_text, __status_icon
+                    │   └── Fires statusChangedEventType if changed
+                    2. computeDerived(task, field_type) for each field
+                    3. computeEffective(task, field_type) for each field
 ```
+
+See docs/SCHEDULERS.md for the complete ComputeStyles processing flow.
 
 ### Immediate Updates (Date Setters)
 
@@ -337,27 +341,27 @@ All subscribe to `statusChangedEventType` for refresh.
 
 ### Sources of Truth
 
-| Location | File:Line | Source of Truth | What It Does |
-|----------|-----------|-----------------|--------------|
-| Core calculation | `domain/task/task.py:644-673` | Dates + now + dueSoonHours | Computes and caches status |
-| StatusChecker | `gui/timer.py:244-287` | **Duplicates date logic** | Detects transitions by comparing dates to now |
-| Editor live preview | `gui/dialog/editor.py:708-758` | **Duplicates date logic** | Computes status from form field values |
+| Location | File | Source of Truth | What It Does |
+|----------|------|-----------------|--------------|
+| Core calculation | `domain/task/task.py` | Dates + now + dueSoonHours | Computes and caches status |
+| ComputeStyles | `domain/base/appearance.py` | Calls `computeStoredStatus()` per task | Computes status then derived/effective appearance per object |
+| Editor live preview | `gui/dialog/editor.py` | **Duplicates date logic** | Computes status from form field values |
 
 ### Consumers (read task.status() cache)
 
-| Consumer | File:Line | Purpose |
-|----------|-----------|---------|
-| Status helper methods | `domain/task/task.py:599-631` | `completed()`, `overdue()`, `active()`, etc. |
-| Color cascade | `domain/task/task.py:953-968` | Foreground color fallback (own > category > status) |
-| Background cascade | `domain/task/task.py:1004-1027` | Background color fallback |
-| Font cascade | `domain/task/task.py:1043-1052` | Font fallback |
-| Icon cascade | `domain/task/task.py:1072-1121` | Icon fallback |
-| ViewFilter | `domain/task/filter.py:151-153` | Hide tasks by status |
-| Status bar | `gui/viewer/task.py:89-92` | Task count per status |
-| Task list counts | `domain/task/tasklist.py:29-36` | `nrOfTasksPerStatus()` |
-| Taskbar tooltip | `gui/taskbaricon.py:242-262` | System tray overdue/duesoon counts |
-| Editor display | `gui/dialog/editor.py:620-643` | Shows icon + colored text in Dates tab |
-| HTML export | `persistence/html/generator.py:158,285` | CSS class per status |
+| Consumer | File | Purpose |
+|----------|------|---------|
+| Status helper methods | `domain/task/task.py` | `completed()`, `overdue()`, `active()`, etc. |
+| Color cascade | `domain/task/task.py` | Foreground color fallback (own > category > status) |
+| Background cascade | `domain/task/task.py` | Background color fallback |
+| Font cascade | `domain/task/task.py` | Font fallback |
+| Icon cascade | `domain/task/task.py` | Icon fallback |
+| ViewFilter | `domain/task/filter.py` | Hide tasks by status |
+| Status bar | `gui/viewer/task.py` | Task count per status |
+| Task list counts | `domain/task/tasklist.py` | `nrOfTasksPerStatus()` |
+| Taskbar tooltip | `gui/taskbaricon.py` | System tray overdue/duesoon counts |
+| Editor display | `gui/dialog/editor.py` | Shows icon + colored text in Dates tab |
+| HTML export | `persistence/html/generator.py` | CSS class per status |
 
 ### Filtering
 
@@ -398,9 +402,9 @@ The status calculation now exists in **one place only**:
 - **`Task.computeStatus()`** — class method, single source of truth
 
 All other code calls this method:
-- **`task._updateStoredStatus()`** — instance method that calls `computeStatus()` and stores results
+- **`task.computeStoredStatus()`** — instance method that calls `computeStatus()` and stores results
 - **`DatesPage._computeLocalStatus()`** — calls `Task.computeStatus()` with form field values for live preview
-- **`StatusChecker`** — calls `task._updateStoredStatus()` for periodic updates
+- **`ComputeStyles._computeForObject()`** — calls `task.computeStoredStatus()` for each task during per-object processing
 
 The `computeStatus()` method returns `(TaskStatus, source_string)` tuple, providing both the status and an explanation of why the task has that status.
 
@@ -409,10 +413,12 @@ The `computeStatus()` method returns `(TaskStatus, source_string)` tuple, provid
 `statusChangedEventType` (`"pubsub.task.status"`) now exists, fired by `computeStatus()` only on actual transitions. The new status columns subscribe to it.
 Legacy consumers still use `appearanceChangedEventType()` as a proxy.
 
-### 3. StatusChecker Duplicates Logic
+### 3. StatusChecker Duplicates Logic — RESOLVED
 
-The legacy `StatusChecker._checkStatusTransitions()` still does its own date comparisons.
-To be removed after migration — `computeStatus()` handles change detection directly.
+StatusChecker has been merged into ComputeStyles. Each task's `computeStoredStatus()` is
+now called directly within `ComputeStyles._computeForObject()`, immediately before
+`computeDerived()` and `computeEffective()`. This eliminates the duplicated date logic
+and guarantees correct ordering: status is always fresh when appearance values are computed.
 
 ### 4. Cache Invalidation is Implicit
 
@@ -460,21 +466,21 @@ every consumer to potentially trigger computation. The new pattern separates wri
 2. **In progress:** Public accessor `computedStatus()` added. Migrating legacy
    consumers one by one to use `computedStatus()` instead of `status()`:
 
-   | Consumer | File:Line | Status |
-   |----------|-----------|--------|
-   | ViewFilter.filterTask() | filter.py:153 | ✓ Done |
-   | completed() | task.py:615 | ✓ Done |
-   | overdue() | task.py:621 | ✓ Done |
-   | inactive() | task.py:627 | ✓ Done |
-   | active() | task.py:635 | ✓ Done |
-   | dueSoon() | task.py:640 | ✓ Done |
-   | late() | task.py:645 | ✓ Done |
-   | statusFgColor() | task.py:1060 | Pending |
-   | statusBgColor() | task.py:1134 | Pending |
-   | statusFont() | task.py:1160 | Pending |
-   | statusIcon() | task.py:1223 | ✓ Done (now accessor) |
-   | nrOfTasksPerStatus() | tasklist.py:31 | Pending |
-   | Editor display | editor.py:632 | ✓ Done (uses derivedXxx/effectiveXxx) |
+   | Consumer | File | Status |
+   |----------|------|--------|
+   | ViewFilter.filterTask() | filter.py | ✓ Done |
+   | completed() | task.py | ✓ Done |
+   | overdue() | task.py | ✓ Done |
+   | inactive() | task.py | ✓ Done |
+   | active() | task.py | ✓ Done |
+   | dueSoon() | task.py | ✓ Done |
+   | late() | task.py | ✓ Done |
+   | statusFgColor() | task.py | Pending |
+   | statusBgColor() | task.py | Pending |
+   | statusFont() | task.py | Pending |
+   | statusIcon() | task.py | ✓ Done (now accessor) |
+   | nrOfTasksPerStatus() | tasklist.py | Pending |
+   | Editor display | editor.py | ✓ Done (uses derivedXxx/effectiveXxx) |
    | Appearance tab 3-col layout | editor.py | ✓ Done |
    | Task derivedXxx(explain) | task.py | ✓ Done |
    | Task effectiveXxx(explain) | task.py | ✓ Done |
@@ -491,14 +497,14 @@ every consumer to potentially trigger computation. The new pattern separates wri
 
 3. **Final cleanup:** Remove legacy `status()` cache, `__status` field, and the
    scattered `__status = None` invalidations. Remove duplicated logic from
-   `StatusChecker._checkStatusTransitions()` and `DatesPage._computeLocalStatus()`.
+   `DatesPage._computeLocalStatus()`.
 
 ### Staleness Tradeoff — RESOLVED
 
 Immediate updates are now implemented: `recomputeAppearance()` (called by all date
 setters) invokes `computeStatus()` at its start. This means:
 - User-driven date changes → instant status update (no 1-second delay)
-- Time-based transitions → detected within 1 second by StatusChecker
+- Time-based transitions → detected within 1 second by ComputeStyles
 - The only remaining "stale" window is for time-based transitions (up to 1 second),
   which is imperceptible to users.
 
@@ -1031,7 +1037,7 @@ Tasks have `derivedXxx()` / `derivedXxxSource()` and `effectiveXxx()` / `effecti
 | `taskcoachlib/domain/task/task.py` | `status()`, color/icon/font methods, `recomputeAppearance()` |
 | `taskcoachlib/domain/task/filter.py` | ViewFilter with status-based hiding |
 | `taskcoachlib/domain/task/tasklist.py` | `nrOfTasksPerStatus()` count method |
-| `taskcoachlib/gui/timer.py` | GlobalTimer + StatusChecker |
+| `taskcoachlib/gui/timer.py` | GlobalTimer + ReminderChecker |
 | `taskcoachlib/gui/dialog/editor.py` | Status display in Edit Task Dates tab |
 | `taskcoachlib/gui/viewer/task.py` | Status bar counts, filter UI commands |
 | `taskcoachlib/gui/taskbaricon.py` | System tray status counts |

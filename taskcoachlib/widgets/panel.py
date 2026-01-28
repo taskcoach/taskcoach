@@ -54,6 +54,12 @@ class PanelWithBoxSizer(wx.Panel):
         """Call this method after all controls have been added (via add())."""
         self.SetSizerAndFit(self.__panelSizer)
 
+    def fitNoMinSize(self):
+        """Like fit(), but does not lock the panel's min size.
+        Use when child controls may resize dynamically."""
+        self.SetSizer(self.__panelSizer)
+        self.Layout()
+
     def add(self, *args, **kwargs):
         defaultKwArgs = dict(flag=wx.EXPAND | wx.ALL, proportion=1)
         defaultKwArgs.update(kwargs)

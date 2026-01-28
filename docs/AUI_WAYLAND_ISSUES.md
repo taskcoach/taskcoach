@@ -92,7 +92,20 @@ The explicit CENTER positioning is critical: without a center pane, AUI docking 
 - Menu option to toggle a window between docked and floating state
 - This provides explicit control since drag-based docking is unusable on Wayland
 
-## Workaround: Run Under XWayland
+## GDK_BACKEND=x11 Is Not a Viable Solution
+
+While `GDK_BACKEND=x11` forces the application onto XWayland where positioning works, this is **NOT** a viable or sustainable solution:
+
+- **User intervention required** — users must set an environment variable or use a wrapper script, with no in-app guidance when popups appear misplaced
+- **Loses Wayland-native benefits** — fractional scaling, touchpad gestures, improved security model, better multi-monitor handling
+- **XWayland is a compatibility shim** — relying on it means the app never actually works on Wayland
+- **Not future-proof** — distributions are moving toward Wayland-only; XWayland may not always be available or fully functional
+
+Each Wayland positioning issue must be solved with a proper Wayland-compatible approach (modal dialogs, xdg_popup windows, compositor-managed positioning).
+
+## Workaround: Run Under XWayland (AUI Docking Only)
+
+> **Note:** This workaround only addresses AUI docking hints. It is not a general solution for Wayland positioning issues — see section above.
 
 XWayland is a compatibility layer that runs an X11 server inside Wayland, allowing legacy X11 applications to run on Wayland systems. Most Wayland compositors (GNOME, KDE Plasma, etc.) include XWayland by default. When an application runs under XWayland, it has access to the X11 APIs that AUI docking requires, including global screen coordinates and window positioning.
 

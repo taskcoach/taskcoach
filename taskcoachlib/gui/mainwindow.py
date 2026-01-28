@@ -111,11 +111,7 @@ class MainWindow(
             # Start global timer FIRST - other components subscribe to its events
             self._globalTimer = globaltimer.GlobalTimer(self)
             self._globalTimer.start()
-            self._statusChecker = globaltimer.StatusChecker(
-                self.taskFile.tasks()
-            )
-
-            # ComputeStyles handles per-second polling for appearance SSOT updates
+            # ComputeStyles handles per-second polling for status + appearance SSOT updates
             from taskcoachlib.domain.base.appearance import ComputeStyles
             self._computeStyles = ComputeStyles(self.taskFile)
 

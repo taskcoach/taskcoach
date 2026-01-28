@@ -76,22 +76,35 @@ self.IndicatorFillRange(byte_start, byte_length)
 
 This approach is used by other wxPython applications like [WikidPad](https://github.com/WikidPad/WikidPad).
 
+### Keyboard Navigation (Spreadsheet Convention)
+
+Using `StyledTextCtrl` means Scintilla captures Tab and Enter by default. Task Coach uses the spreadsheet convention (like Excel / LibreOffice Calc) so plain Tab and Enter navigate instead of inserting characters. Modified keys insert the character:
+
+| Key              | Single-line (Subject)     | Multiline (Description)    |
+|------------------|---------------------------|----------------------------|
+| Tab              | Navigate to next control  | Navigate to next control   |
+| Shift+Tab        | Navigate to prev control  | Navigate to prev control   |
+| Ctrl+Tab         | Switch notebook tab (OS)  | Switch notebook tab (OS)   |
+| Enter            | Navigate to next control  | Insert newline (normal)    |
+| Ctrl+V           | Paste (newlines stripped) | Paste (normal)             |
+
+**Implementation:** `CmdKeyClear` removes Scintilla's default Tab binding in all modes, and Enter binding in single-line mode. `EVT_KEY_DOWN` in `_onKeyDown` handles Tab navigation and single-line Enter navigation. Tab always navigates — no literal tab insertion (Ctrl+Tab is reserved for notebook tab switching). In multiline mode, Enter inserts newlines normally (Scintilla default). Tab navigation uses `Navigate()` which preserves forward/backward direction.
+
 ### Single-Line Text Box Patches
 
 Using `StyledTextCtrl` for a single-line field (like Subject) requires several patches to make it behave like a standard single-line text entry:
 
 | #  | Problem                      | Solution                                         | Status     |
 |----|------------------------------|--------------------------------------------------|------------|
-| 1  | Enter key creates newlines   | `CmdKeyClear(STC_KEY_RETURN, 0)`                 | Done       |
-| 2  | Height too small for scrollbar| 50% extra height: `int(baseHeight * 1.5)`       | Done       |
-| 3  | Paste can include newlines   | `EVT_KEY_DOWN` intercepts Ctrl+V, strips newlines| Done       |
-| 4  | Word wrap enabled            | `SetWrapMode(STC_WRAP_NONE)`                     | Done       |
-| 5  | Vertical scrollbar           | `SetUseVerticalScrollBar(False)`                 | Done       |
-| 6  | H-scrollbar with no text     | `SetScrollWidth(1)` + `SetScrollWidthTracking(True)` | Done   |
-| 7  | Scrollbar stays after delete | Reset `SetScrollWidth(1)` on text change        | Done       |
-| 8  | Rich text paste (fonts)      | STC is plain text by default                     | N/A        |
-| 9  | Tables/images                | STC doesn't render these                         | N/A        |
-| 10 | Hyperlinks                   | Acceptable per requirements                      | Keep as-is |
+| 1  | Enter key creates newlines   | `CmdKeyClear(STC_KEY_RETURN, 0)` + navigate focus| Done       |
+| 2  | Tab key inserts tab char     | `CmdKeyClear(STC_KEY_TAB, 0)` + navigate focus   | Done (all modes) |
+| 3  | Height too small for scrollbar| 50% extra height: `int(baseHeight * 1.5)`       | Done       |
+| 4  | Paste can include newlines   | `EVT_KEY_DOWN` intercepts Ctrl+V, strips newlines| Done       |
+| 5  | Word wrap enabled            | `SetWrapMode(STC_WRAP_NONE)`                     | Done       |
+| 6  | Scrollbars visible           | `SetUseVerticalScrollBar(False)` + `SetUseHorizontalScrollBar(False)` | Done |
+| 7  | Rich text paste (fonts)      | STC is plain text by default                     | N/A        |
+| 8  | Tables/images                | STC doesn't render these                         | N/A        |
+| 9  | Hyperlinks                   | Acceptable per requirements                      | Keep as-is |
 
 ### Fallback Option
 
@@ -111,17 +124,16 @@ Spell checking is configured in **Edit > Preferences > Regional**:
 - **Enable spell checking**: Toggle on/off
 - **Language**: Dropdown shows installed dictionaries (auto-detects system language if not set)
 
-## Planned: Theme-Aware STC Improvements
+## Theme-Aware STC Improvements
 
-The following improvements are planned to be added incrementally to the inner `_StyledTextCtrl` class. They make the Scintilla control respond to system theme colours (light/dark) instead of using hardcoded values.
+The `_StyledTextCtrl` class responds to system theme colours (light/dark) instead of using hardcoded values.
 
-### 1. Theme Colours (`_applyThemeColours` method)
+### 1. Theme Colours (`_applyThemeColours` method) — Done
 
-Replace the hardcoded font/colour setup in `_setupTextMode` with a reusable method:
+Uses system colours for text, background, caret, and selection:
 
 ```python
 def _applyThemeColours(self):
-    """Apply system theme colours to the control."""
     font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
     self.StyleSetFont(stc.STC_STYLE_DEFAULT, font)
     self.StyleSetForeground(stc.STC_STYLE_DEFAULT, wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
@@ -134,9 +146,9 @@ def _applyThemeColours(self):
 
 **Note:** `StyleSetBackground` sets Scintilla's internal rendering background, which may affect `GetBackgroundColour()` on GTK. The wrapper panel's background must be set from the parent (not the STC) to avoid white corners at the rounded border.
 
-### 2. System Link Colour for URLs
+### 2. System Link Colour for URLs — Planned
 
-Replace hardcoded `wx.BLUE` in `_setupIndicators` with system link colour:
+URL indicators currently use hardcoded `wx.BLUE`. Replace with system link colour:
 
 ```python
 linkColour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HOTLIGHT)
@@ -145,20 +157,9 @@ self.IndicatorSetHoverForeground(self.URL_INDICATOR, linkColour)
 self.SetHotspotActiveForeground(True, linkColour)
 ```
 
-### 3. Live Theme Switching (on wrapper panel)
+### 3. Live Theme Switching — Done
 
-Add `EVT_SYS_COLOUR_CHANGED` handler on the `MultiLineTextCtrl` wrapper:
-
-```python
-self.Bind(wx.EVT_SYS_COLOUR_CHANGED, self._onSysColourChanged)
-
-def _onSysColourChanged(self, event):
-    event.Skip()
-    self._textCtrl._applyThemeColours()
-    self._textCtrl._setupIndicators()
-    self.SetBackgroundColour(self.GetParent().GetBackgroundColour())
-    self.Refresh()
-```
+The `MultiLineTextCtrl` wrapper detects theme changes and re-applies colours. On GTK, `EVT_SYS_COLOUR_CHANGED` doesn't reliably reach children, so the wrapper polls via `EVT_PAINT` and calls `_applyThemeColours` when a change is detected.
 
 **Important:** Panel bg must come from `self.GetParent().GetBackgroundColour()` (not the STC) so rounded corners blend with the dialog background.
 

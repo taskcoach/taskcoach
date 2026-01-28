@@ -81,22 +81,18 @@ OVERRIDE_METHOD = {
 # =============================================================================
 
 def effectiveFgColorChangedEventType():
-    """Event type for effective foreground color changes."""
     return "pubsub.effective.fgColor"
 
 
 def effectiveBgColorChangedEventType():
-    """Event type for effective background color changes."""
     return "pubsub.effective.bgColor"
 
 
 def effectiveIconChangedEventType():
-    """Event type for effective icon changes."""
     return "pubsub.effective.icon"
 
 
 def effectiveFontChangedEventType():
-    """Event type for effective font changes."""
     return "pubsub.effective.font"
 
 
@@ -113,23 +109,19 @@ EFFECTIVE_EVENT_TYPES = {
 # =============================================================================
 
 def setEffectiveFgColor(obj, value, default, source):
-    """Set effective foreground color via object's Attribute-based setter."""
     obj.setEffectiveFgColor(value, default, source)
 
 
 def setEffectiveBgColor(obj, value, default, source):
-    """Set effective background color via object's Attribute-based setter."""
     obj.setEffectiveBgColor(value, default, source)
 
 
 def setEffectiveIcon(obj, value, default, source):
-    """Set effective icon via object's Attribute-based setter."""
     # Icon setter doesn't take default
     obj.setEffectiveIcon(value, source)
 
 
 def setEffectiveFont(obj, value, default, source):
-    """Set effective font via object's Attribute-based setter."""
     obj.setEffectiveFont(value, default, source)
 
 
@@ -171,7 +163,6 @@ DERIVED_SETTERS = {
 
 
 def _getObjectType(obj):
-    """Return object type string for source resolution."""
     class_name = obj.__class__.__name__
     if class_name == 'Task':
         return 'Task'
@@ -183,7 +174,6 @@ def _getObjectType(obj):
 
 
 def _isSystemThemeValue(value):
-    """Check if value is a system theme constant (should be skipped)."""
     if value is None:
         return True
     if isinstance(value, str):
@@ -370,7 +360,9 @@ class ComputeStyles:
                     self._computeForObject(attachment)
 
     def _computeForObject(self, obj):
-        """Compute derived then effective for all field types."""
+        """Per-object processing: status (tasks only) → derived → effective."""
+        if hasattr(obj, 'computeStoredStatus'):
+            obj.computeStoredStatus()
         for field_type in FIELD_TYPES:
             computeDerived(obj, field_type)
             computeEffective(obj, field_type)

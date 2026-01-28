@@ -45,6 +45,12 @@ Simple time and duration input controls with explicit subfields and translatable
   - [Dropdown Width and Position](#dropdown-width-and-position)
   - [Events from Popup](#events-from-popup)
   - [Sync Pattern: Standard wx.EVT_KILL_FOCUS](#sync-pattern-standard-wxevt_kill_focus)
+- [Wayland](#wayland)
+  - [Problem](#problem)
+  - [Why GDK_BACKEND=x11 Is Not Viable](#why-gdk_backendx11-is-not-viable)
+  - [Solution: wx.PopupWindow on Wayland](#solution-wxpopupwindow-on-wayland)
+
+**Demo:** `docs/scripts/datetime_controls_demo.py`
 
 ---
 Self-contained module with custom-painted single field and navigable subfields.
@@ -681,7 +687,7 @@ msgstr "T"  # German: Tag
 ## Demo
 
 ```bash
-python3 docs/scripts/demo_maskedtimectrl.py
+python3 docs/scripts/datetime_controls_demo.py
 ```
 
 ## Technical Notes
@@ -932,3 +938,40 @@ self.__observer.Update()   # Force immediate repaint
 ```
 
 `Update()` is necessary because `Refresh()` only schedules a repaint for the next event loop iteration. During synchronous pubsub callbacks, this may not happen quickly enough, causing visual lag. `Update()` forces immediate processing of pending paint events.
+
+## Wayland
+
+### Problem
+
+On Wayland, the dropdown popups (`_ChoicesPopup`, `_CalendarPopup`) appear at screen center instead of below their parent control. This is because:
+
+- `_PopupWindow` uses `wx.Dialog` which maps to **xdg_toplevel** on Wayland
+- Wayland does not allow apps to position xdg_toplevel windows
+- `ClientToScreen()` returns wrong coordinates (often 0,0)
+- `Move()` / `SetPosition()` is silently ignored by the compositor
+
+Works correctly on X11 because X11 allows absolute screen positioning.
+
+### Why GDK_BACKEND=x11 Is Not Viable
+
+Forcing `GDK_BACKEND=x11` to run under XWayland is **NOT** a viable or sustainable solution:
+
+- Requires user intervention (environment variable or wrapper script)
+- Loses Wayland-native benefits (fractional scaling, gesture support, security)
+- XWayland is a compatibility shim, not a target platform
+- Not discoverable — users won't know why popups are misplaced
+- Doesn't fix the root cause
+
+### Solution: wx.PopupWindow on Wayland
+
+`wx.PopupWindow` maps to **xdg_popup** on Wayland, which compositors DO position relative to their parent window. On Wayland, `_PopupWindow` uses `wx.PopupWindow` as its base class instead of `wx.Dialog`.
+
+The GTK3 caret visibility bug (wxWidgets #18261) that affects `wx.PopupTransientWindow` does not apply here because:
+
+- `_ChoicesPopup` uses a custom-painted list (no text input)
+- `_CalendarPopup` is fully custom-painted (no text input)
+- Only the icon picker had a SearchCtrl, and that was converted to a modal dialog
+
+Platform-conditional base class:
+- **Wayland**: `wx.PopupWindow` (xdg_popup, compositor-positioned)
+- **X11/macOS**: `wx.Dialog` (proven cross-platform, absolute positioning works)

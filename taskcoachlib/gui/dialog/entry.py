@@ -269,7 +269,7 @@ class FontEntry(widgets.PanelWithBoxSizer):
             border=0,
             proportion=1,
         )
-        self.fit()
+        self.fitNoMinSize()
 
     def _createCheckBox(self, currentFont):
         checkBox = wx.CheckBox(self, label="")
@@ -285,8 +285,19 @@ class FontEntry(widgets.PanelWithBoxSizer):
         picker.Bind(wx.EVT_FONTPICKER_CHANGED, self.onFontPicked)
         return picker
 
+    def setEffectiveFont(self, font):
+        """Set the effective font to display when unchecked."""
+        if font is None:
+            return
+        self._effectiveFont = font
+        if not self._fontCheckBox.IsChecked():
+            self._fontPicker.SetSelectedFont(self._effectiveFont)
+
     def onChecked(self, event):
         event.Skip()
+        checked = self._fontCheckBox.IsChecked()
+        if not checked and hasattr(self, '_effectiveFont') and self._effectiveFont:
+            self._fontPicker.SetSelectedFont(self._effectiveFont)
         wx.PostEvent(self, FontEntryEvent())
 
     def onFontPicked(self, event):
@@ -326,7 +337,7 @@ ColorEntryEvent, EVT_COLORENTRY = newevent.NewEvent()
 class ColorEntry(widgets.PanelWithBoxSizer):
     """Color entry with checkbox for override colors.
 
-    When unchecked: shows derived color (set via setDerivedColor).
+    When unchecked: shows effective color (set via setEffectiveColor).
     When checked: user can pick a custom color.
     Editor provides derived color (inherited value or system theme fallback).
     """
@@ -334,7 +345,7 @@ class ColorEntry(widgets.PanelWithBoxSizer):
         kwargs["orientation"] = wx.HORIZONTAL
         super().__init__(parent, *args, **kwargs)
         self._defaultColor = defaultColor
-        self._derivedColor = None  # Set via setDerivedColor() after construction
+        self._effectiveColor = None  # Set via setEffectiveColor() after construction
         self._colorCheckBox = self._createCheckBox(currentColor)
         self._colorPicker = self._createColorPicker(currentColor, defaultColor)
         self.add(
@@ -374,27 +385,24 @@ class ColorEntry(widgets.PanelWithBoxSizer):
         picker.Bind(wx.EVT_COLOURPICKER_CHANGED, self.onColorPicked)
         return picker
 
-    def setDerivedColor(self, color):
-        """Set the derived/fallback color to display when unchecked.
+    def setEffectiveColor(self, color):
+        """Set the effective color to display when unchecked.
 
-        This is the inherited value from parent, or system theme if no parent.
-        Editor is responsible for providing a valid color (never None).
+        Editor provides the effective color from the SSOT model.
         """
         if color is None or (isinstance(color, wx.Colour) and not color.IsOk()):
-            return  # Ignore invalid colors
+            return
         if not isinstance(color, wx.Colour):
             color = wx.Colour(*color)
-        self._derivedColor = color
-        # Update picker if currently unchecked
+        self._effectiveColor = color
         if not self._colorCheckBox.IsChecked():
-            self._colorPicker.SetColour(self._derivedColor)
+            self._colorPicker.SetColour(self._effectiveColor)
 
     def onChecked(self, event):
         event.Skip()
         checked = self._colorCheckBox.IsChecked()
-        if not checked and self._derivedColor:
-            # Reset picker to derived/fallback color
-            self._colorPicker.SetColour(self._derivedColor)
+        if not checked and self._effectiveColor:
+            self._colorPicker.SetColour(self._effectiveColor)
         wx.PostEvent(self, ColorEntryEvent())
 
     def onColorPicked(self, event):
@@ -438,7 +446,7 @@ class IconEntry(widgets.PanelWithBoxSizer):
             border=0,
             proportion=1,
         )
-        self.fit()
+        self.fitNoMinSize()
 
     def _createCheckBox(self, currentIcon):
         checkBox = wx.CheckBox(self, label="")

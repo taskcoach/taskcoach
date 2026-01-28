@@ -39,7 +39,7 @@ Run from the taskcoach root:
 import sys
 import os
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 import wx
 import wx.adv
@@ -75,7 +75,7 @@ DISABLED_ICONS = {"led_grey_icon", "cross_red_icon", "lock_locked_icon"}
 
 def get_icons_dir():
     return os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
         "taskcoachlib", "gui", "icons"
     )
 

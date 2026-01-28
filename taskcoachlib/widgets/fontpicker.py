@@ -22,43 +22,58 @@ import wx.lib.buttons as buttons
 
 class FontPickerCtrl(buttons.GenButton):
     """A button that displays the selected font and opens a font dialog on click.
-    Uses GenButton to avoid native GTK hover/press rendering artifacts."""
+    Uses GenButton to avoid native GTK hover/press rendering artifacts.
 
-    # Fixed width for the button to match color picker width
-    FIXED_WIDTH = 75
+    Two modes:
+    - fixedWidth=None (default): button grows to fit the font description text.
+    - fixedWidth=N: button constrained to N pixels, label ellipsized to fit."""
+
+    PADDING = 8
 
     def __init__(self, *args, **kwargs):
         self.__font = kwargs.pop("font")
         self.__colour = kwargs.pop("colour")
         self.__bgColour = kwargs.pop("bgColour", None)
         self.__readOnly = kwargs.pop("readOnly", False)
+        self.__fixedWidth = kwargs.pop("fixedWidth", None)
         super().__init__(*args, **kwargs)
         self.SetBezelWidth(0)
         self.SetUseFocusIndicator(False)
+        if self.__readOnly:
+            self.Bind(wx.EVT_NAVIGATION_KEY, self.__onNavKey)
+            self.Bind(wx.EVT_SET_FOCUS, self.__onRejectFocus)
         self.__updateButton()
         self.Bind(wx.EVT_BUTTON, self.onClick)
 
+    def __onNavKey(self, event):
+        """Skip this control during tab traversal, preserving direction."""
+        self.Navigate(event.GetDirection())
+
+    def __onRejectFocus(self, event):
+        """Reject focus by navigating away, preserving Shift+Tab direction."""
+        forward = not wx.GetKeyState(wx.WXK_SHIFT)
+        wx.CallAfter(self.Navigate, forward)
+
     def DoGetBestSize(self):
-        """Override to return a fixed width, preventing expansion from long labels."""
-        # Calculate height based on font, but use fixed width
         dc = wx.ClientDC(self)
         dc.SetFont(self.GetFont())
-        _, textHeight = dc.GetTextExtent("Ay")
-        # Add padding for button appearance
-        height = textHeight + 10
-        return wx.Size(self.FIXED_WIDTH, height)
+        tw, th = dc.GetTextExtent(self.GetLabel())
+        height = th + 10
+        if self.__fixedWidth:
+            return wx.Size(self.__fixedWidth, height)
+        return wx.Size(self.PADDING * 2 + tw, height)
 
     def DrawLabel(self, dc, width, height, dx=0, dy=0):
         """Override to draw text left-aligned with ellipsis if needed."""
+        if self.hasFocus:
+            focusRect = wx.Rect(2, 2, width - 4, height - 4)
+            wx.RendererNative.Get().DrawFocusRect(self, dc, focusRect)
         dc.SetFont(self.GetFont())
         label = self.GetLabel()
-        # Calculate available width (with padding)
-        padding = 8
-        availableWidth = width - (padding * 2)
-        # Ellipsize the label if it's too long
-        ellipsizedLabel = wx.Control.Ellipsize(label, dc, wx.ELLIPSIZE_END, availableWidth)
-        # Draw left-aligned
-        dc.DrawText(ellipsizedLabel, padding, (height - dc.GetTextExtent(ellipsizedLabel)[1]) // 2)
+        availableWidth = width - (self.PADDING * 2)
+        if availableWidth > 0:
+            label = wx.Control.Ellipsize(label, dc, wx.ELLIPSIZE_END, availableWidth)
+        dc.DrawText(label, self.PADDING, (height - dc.GetTextExtent(label)[1]) // 2)
 
     def GetSelectedFont(self):
         return self.__font
@@ -109,7 +124,13 @@ class FontPickerCtrl(buttons.GenButton):
             self.SetBackgroundColour(self.__bgColour)
         else:
             self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
-        # Force visual repaint
+        self.InvalidateBestSize()
+        if not self.__fixedWidth:
+            self.SetInitialSize()
+            parent = self.GetParent()
+            while parent and not isinstance(parent, wx.TopLevelWindow):
+                parent.Layout()
+                parent = parent.GetParent()
         self.Refresh(eraseBackground=True)
         self.Update()
 

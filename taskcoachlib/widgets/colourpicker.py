@@ -28,10 +28,24 @@ class ColourPickerCtrl(wx.ColourPickerCtrl):
         self._readOnly = readOnly
         super().__init__(*args, **kwargs)
         target = self.GetPickerCtrl() or self
+        if self._readOnly:
+            self.Bind(wx.EVT_NAVIGATION_KEY, self._onNavKey)
+            self.Bind(wx.EVT_SET_FOCUS, self._onRejectFocus)
+            target.Bind(wx.EVT_NAVIGATION_KEY, self._onNavKey)
+            target.Bind(wx.EVT_SET_FOCUS, self._onRejectFocus)
         target.Bind(wx.EVT_LEFT_DOWN, self._onIntercept)
         target.Bind(wx.EVT_LEFT_DCLICK, self._onIntercept)
         target.Bind(wx.EVT_KEY_DOWN, self._onKeyIntercept)
         target.Bind(wx.EVT_BUTTON, self._onButtonIntercept)
+
+    def _onNavKey(self, event):
+        """Skip this control during tab traversal, preserving direction."""
+        self.Navigate(event.GetDirection())
+
+    def _onRejectFocus(self, event):
+        """Reject focus by navigating away, preserving Shift+Tab direction."""
+        forward = not wx.GetKeyState(wx.WXK_SHIFT)
+        wx.CallAfter(self.Navigate, forward)
 
     def _onIntercept(self, event):
         if self._readOnly:

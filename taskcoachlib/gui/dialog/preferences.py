@@ -323,9 +323,9 @@ class SettingsPageBase(widgets.BookPage):
             else None
         )
         font_button = widgets.FontPickerCtrl(
-            self, font=current_font or default_font, colour=(0, 0, 0, 255)
+            self, font=current_font or default_font, colour=(0, 0, 0, 255),
+            bgColour=(255, 255, 255, 255), fixedWidth=75
         )
-        font_button.SetBackgroundColour((255, 255, 255, 255))
         self.addEntry(
             text,
             font_button,
@@ -384,9 +384,7 @@ class SettingsPageBase(widgets.BookPage):
     def _createIconEntry(self, excluded_icons=None):
         """Create a searchable icon picker with fixed 120px width."""
         excluded = excluded_icons or set()
-        iconEntry = widgets.IconPicker(self, "", excluded_icons=excluded)
-        iconEntry.SetMinSize(wx.Size(120, -1))
-        iconEntry.SetMaxSize(wx.Size(120, -1))
+        iconEntry = widgets.IconPicker(self, "", excluded_icons=excluded, fixedWidth=120)
         # imageNames returned for backward compatibility (unused)
         imageNames = sorted(artprovider.chooseableItems.keys(), key=lambda k: artprovider.chooseableItems[k]["name"])
         return iconEntry, imageNames
@@ -409,7 +407,7 @@ class SettingsPageBase(widgets.BookPage):
         )
         fontButton = widgets.FontPickerCtrl(
             self, font=currentFont or defaultFont, colour=currentFgColor,
-            bgColour=currentBgColor
+            bgColour=currentBgColor, fixedWidth=75
         )
         excluded = getattr(self, '_objectIcons', None)
         iconEntry, imageNames = self._createIconEntry(excluded_icons=excluded)

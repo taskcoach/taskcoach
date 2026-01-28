@@ -180,6 +180,7 @@ Called on: Every change of Start-Date, Due-Date, Duration, or Presets fields (af
 |------|--------|---------------------|-----------------|
 | **Standard** | Set Start, Set Duration | Stop | None |
 | **Retroactive** | Set Stop, Set Duration | Start | Start |
+| **Implicit** | Set Start, Set Stop | Duration | Duration |
 
 ### Logic Flow
 
@@ -216,6 +217,17 @@ Start: Standard mode, Stop-Date disabled
            2.4.1.2 Set Start-Date = Stop-Date - 1s
        2.4.2 If Duration > 0, Then adj Start-Date
 
+3. If Mode Implicit
+   3.1 Set Start-Date editable
+   3.2 Set Duration read-only
+   3.3 If Start-Date changed or Stop-Date changed or Mode changed, Then
+       3.3.1 If Stop-Date enabled and Stop > Start, Then adj Duration = Stop - Start
+       3.3.2 If Stop-Date enabled and Stop <= Start, Then Duration = 0
+
+Auto-Switch Logic (in __syncEffortState, same pattern as Time Spent state check):
+   A1. If Mode = Standard AND Stop-Date active (IsChecked) AND Duration = 0, Then switch to Implicit
+   A2. If Duration preset selected AND Mode = Implicit, Then switch to Standard
+
 Glossary:
    adj        = recalculate/adjust
    Start-Date = Start Date-Time Combo Control with Checkbox
@@ -226,6 +238,8 @@ Glossary:
 ```
 Implements: __syncEffortState()
 Called on: Every change of Start-Date, Stop-Date, Duration, or Mode dropdown.
+Note: UI-only — updates control values (SetDateTime, SetDuration, SetChecked).
+      No persistence commands. Saving happens when the dialog is closed/saved.
 ```
 
 ### Field Change Effects
@@ -237,33 +251,45 @@ Called on: Every change of Start-Date, Stop-Date, Duration, or Mode dropdown.
 | Standard | Stop | Unchanged | Recalculated | - |
 | Retroactive | Duration | Recalculated | - | Unchanged |
 | Retroactive | Stop | Recalculated | Unchanged | - |
+| Implicit | Start | - | Recalculated | Unchanged |
+| Implicit | Stop | Unchanged | Recalculated | - |
 
 ### Action Sequence
 
-| Calc Mode | Stop | Action | Result |
-|-----------|------|--------|--------|
-| Standard | ❌ | Enter Duration | Stop auto-enabled, Stop = Start + Duration |
-| Standard | ❌ | Change Start | No effect (no Stop to calculate from) |
-| Standard | ❌ | Check Stop | Duration = Stop - Start |
-| Standard | ❌ | Set Retroactive | Start read-only |
-| Standard | ✅ | Change Duration | Stop recalculated |
-| Standard | ✅ | Change Start | Stop recalculated, Duration unchanged |
-| Standard | ✅ | Change Stop | Duration recalculated, Start unchanged |
-| Standard | ✅ | Uncheck Stop | Stop disabled |
-| Standard | ✅ | Set Duration to zero | Stop disabled, Duration = 0 |
-| Standard | ✅ | Set Retroactive | Start read-only, Start = Stop - Duration |
-| Retroactive | ❌ | Enter Duration | Stop auto-enabled, Start = Stop - Duration |
-| Retroactive | ❌ | Check Stop | Start = Stop - Duration |
-| Retroactive | ❌ | Set Standard | Start editable |
-| Retroactive | ✅ | Change Duration | Start recalculated, Stop unchanged |
-| Retroactive | ✅ | Change Stop | Start recalculated, Duration unchanged |
-| Retroactive | ✅ | Uncheck Stop | Stop disabled |
-| Retroactive | ✅ | Set Duration to zero | Stop disabled, Duration = 0 |
-| Retroactive | ✅ | Set Standard | Start editable |
+| Calc Mode | Duration | Stop | Action | Result |
+|-----------|----------|------|--------|--------|
+| Standard | ❌ | ❌ | Enter Duration | Stop auto-enabled, Stop = Start + Duration |
+| Standard | ❌ | ❌ | Change Start | No effect (no Stop to calculate from) |
+| Standard | ❌ | ❌ | Check Stop | Auto-switch → Implicit, Duration = Stop - Start (read-only) |
+| Standard | ❌ | ❌ | Set Retroactive | Start read-only |
+| Standard | ✅ | ✅ | Change Duration | Stop recalculated |
+| Standard | ✅ | ✅ | Change Start | Stop recalculated, Duration unchanged |
+| Standard | ✅ | ✅ | Change Stop | Duration recalculated, Start unchanged |
+| Standard | ✅ | ✅ | Uncheck Stop | Stop disabled |
+| Standard | ✅ | ✅ | Set Duration to zero | Stop disabled, Duration = 0 |
+| Standard | ✅ | ✅ | Set Retroactive | Start read-only, Start = Stop - Duration |
+| Standard | ✅ | ✅ | Set Implicit | Duration read-only, Duration = Stop - Start |
+| Standard | ❌ | ❌ | Set Implicit | Duration read-only |
+| Retroactive | ❌ | ❌ | Enter Duration | Stop auto-enabled, Start = Stop - Duration |
+| Retroactive | ❌ | ❌ | Check Stop | Start = Stop - Duration |
+| Retroactive | ❌ | ❌ | Set Standard | Start editable |
+| Retroactive | ✅ | ✅ | Change Duration | Start recalculated, Stop unchanged |
+| Retroactive | ✅ | ✅ | Change Stop | Start recalculated, Duration unchanged |
+| Retroactive | ✅ | ✅ | Uncheck Stop | Stop disabled |
+| Retroactive | ✅ | ✅ | Set Duration to zero | Stop disabled, Duration = 0 |
+| Retroactive | ✅ | ✅ | Set Standard | Start editable |
+| Retroactive | ✅ | ✅ | Set Implicit | Duration read-only, Duration = Stop - Start |
+| Retroactive | ❌ | ❌ | Set Implicit | Duration read-only |
+| Implicit | ✅ | ✅ | Change Start | Duration recalculated, Stop unchanged |
+| Implicit | ✅ | ✅ | Change Stop | Duration recalculated, Start unchanged |
+| Implicit | ✅ | ✅ | Select duration preset | Auto-switch → Standard, Stop = Start + Duration |
+| Implicit | ✅ | ✅ | Uncheck Stop | Duration disabled |
+| Implicit | ✅ | ✅ | Set Standard | Duration editable |
+| Implicit | ✅ | ✅ | Set Retroactive | Start read-only, Duration editable |
 
 ---
 
 ## Persistence
 
 - **Task Dates**: Mode stored in task's `plannedDurationMode` attribute
-- **Effort**: Mode stored in effort's `entryMode` attribute
+- **Effort**: Mode stored in effort's `entryMode` attribute (values: `"standard"`, `"retroactive"`, `"implicit"`)

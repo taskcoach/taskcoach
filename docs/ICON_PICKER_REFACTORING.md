@@ -16,24 +16,29 @@ This document describes the custom `IconPicker` widget used in Task Coach for se
   - [Escape Key Handling](#escape-key-handling)
 - [Appendix: wxWidgets Reference](#appendix-wxwidgets-reference)
 
+**Demo:** `docs/scripts/icon_picker_refactoring_demo.py`
+
 ## Final Implementation
 
-The `IconPicker` widget (`taskcoachlib/widgets/iconpicker.py`) is a custom searchable icon picker built on `wx.lib.buttons.ThemedGenBitmapTextButton` with a `wx.MiniFrame` popup.
+The `IconPicker` widget (`taskcoachlib/widgets/iconpicker.py`) is a custom searchable icon picker built on `wx.lib.buttons.ThemedGenBitmapTextButton` with a `wx.Dialog` modal.
 
 **Architecture:**
 ```
 IconPicker (ThemedGenBitmapTextButton)
-├── Button: icon + label + dropdown arrow
+├── Button: icon + label
 ├── Custom painting via DrawLabel/DrawBezel
-└── _IconPopup (wx.MiniFrame)
+└── _IconDialog (wx.Dialog) — modal, ShowModal()
     ├── wx.SearchCtrl (filter input)
-    └── _IconListBox (wx.VListBox)
+    └── _IconVListBox (wx.VListBox)
         └── Items: [icon] [label] [hints in grey]
 ```
 
-**Why MiniFrame instead of PopupTransientWindow:**
-- `wx.PopupTransientWindow` has caret visibility bugs on GTK3 (wxWidgets issue #18261)
-- `wx.MiniFrame` with `wx.FRAME_NO_TASKBAR | wx.FRAME_FLOAT_ON_PARENT` provides proper focus and caret visibility on all platforms
+**Why Modal Dialog:**
+- Modal dialog (`ShowModal()`) is positioned by the window manager, working correctly on all platforms including Wayland
+- The previous `wx.MiniFrame` popup required `ClientToScreen()` + `SetPosition()` which fails on Wayland (coordinates ignored for xdg_toplevel windows)
+- `wx.PopupTransientWindow` was avoided due to caret visibility bugs on GTK3 (wxWidgets issue #18261) — but since the modal dialog approach works cleanly, this is no longer relevant
+
+**Font Picker:** The `FontPickerCtrl` in `taskcoachlib/widgets/fontpicker.py` is a separate widget for font selection. See `docs/FONT_PICKER.md` for details.
 
 **Key Features:**
 - Searchable dropdown with hints column
@@ -42,6 +47,7 @@ IconPicker (ThemedGenBitmapTextButton)
 - Disabled item support (strikethrough, unselectable)
 - Fixed-width option with text ellipsis
 - "No icon" option via `noIcon` parameter
+- Button grows/shrinks to fit selected icon label
 
 ## Features
 
@@ -60,7 +66,7 @@ All planned features have been implemented:
 | Theme-aware styling | Done |
 | Keyboard navigation | Done |
 | "No icon" option | Done |
-| Escape closes dropdown only | Done |
+| Escape cancels dialog | Done |
 
 ### Search
 
@@ -134,6 +140,9 @@ picker = widgets.IconPicker(parent, currentIcon, excluded_icons={"led_red_icon"}
 # Without "No icon" option - user must select an icon
 picker = widgets.IconPicker(parent, currentIcon, noIcon=False)
 
+# Fixed width (no grow/shrink, text truncated with ellipsis)
+picker = widgets.IconPicker(parent, currentIcon, fixedWidth=120)
+
 # Get/set the selected icon
 icon_key = picker.GetValue()  # Returns "" for "No icon", or icon key
 picker.SetValue("calendar_icon")
@@ -164,19 +173,34 @@ The `IconPicker` widget has a built-in `noIcon` parameter (default: `True`) that
 | `taskcoachlib/gui/dialog/entry.py` | `IconEntry` uses `IconPicker` (auto-width) |
 | `taskcoachlib/gui/dialog/preferences.py` | Status icon pickers (120px fixed width) |
 | `taskcoachlib/gui/artprovider.py` | Icon definitions and hints |
-| `dev_demos/icon_chooser_demo.py` | Demo/test script |
+| `docs/scripts/icon_picker_refactoring_demo.py` | Demo/test script |
 
 ## Demo Script
 
 Run the demo to test the icon picker:
 
 ```bash
-python3 dev_demos/icon_chooser_demo.py
+python3 docs/scripts/icon_picker_refactoring_demo.py
 ```
 
 The demo shows multiple icon picker variants for comparison and testing.
 
 ## Technical Details
+
+### Dynamic Sizing (Grow/Shrink)
+
+Two sizing modes:
+
+- **Grow** (`fixedWidth=None`, default): button grows and shrinks to fit the selected icon label.
+- **Fixed width** (`fixedWidth=N`): button constrained to N pixels. Does not grow or shrink. Label text is ellipsized via `wx.Control.Ellipsize()` in `DrawLabel`. Used in Preferences dialog (`fixedWidth=120`).
+
+In grow mode, after selection changes, `_update_button()` calls:
+
+1. `InvalidateBestSize()` — clears cached size so `DoGetBestSize()` is recalculated
+2. `SetInitialSize()` — applies the new best size to the control
+3. Walks `Layout()` up the parent chain to the top-level window — propagates the size change through all parent sizers
+
+The wrapping `IconEntry` panel uses `fitNoMinSize()` (which calls `SetSizer` only) instead of `fit()` (which calls `SetSizerAndFit`). `SetSizerAndFit` locks the panel's minimum size at initial layout, preventing the button from shrinking when a shorter label is selected. This is the same fix used for `FontEntry` — see `FONT_PICKER.md` Variation 3 vs 5.
 
 ### Button Active Appearance
 
@@ -209,16 +233,18 @@ def DrawFocusIndicator(self, dc, w, h):
 
 ### Escape Key Handling
 
-Pressing Escape in the dropdown closes **only the dropdown**, not the parent dialog. This is handled via `EVT_CHAR_HOOK` on the MiniFrame:
+Pressing Escape in the modal dialog cancels the selection and closes the dialog. Since `_IconDialog` uses `ShowModal()`, Escape calls `EndModal(wx.ID_CANCEL)`:
 
 ```python
-def _on_char_hook(self, event):
-    if event.GetKeyCode() == wx.WXK_ESCAPE:
-        self._dismiss()
-        # Do NOT call event.Skip() - consume the event
+def _on_key(self, event):
+    key = event.GetKeyCode()
+    if key == wx.WXK_ESCAPE:
+        self.EndModal(wx.ID_CANCEL)
     else:
         event.Skip()
 ```
+
+No `EVT_CHAR_HOOK` interception is needed — the modal dialog handles Escape natively.
 
 ---
 
@@ -242,14 +268,13 @@ The following reference material was used during development.
 | Method | Usage |
 |--------|-------|
 | `DrawPushButton(win, dc, rect, flags)` | Button bezel |
-| `DrawDropArrow(win, dc, rect, flags)` | Dropdown arrow |
 | `DrawFocusRect(win, dc, rect, flags)` | Focus indicator |
 
 ### Control Flags
 
 | Flag | Usage |
 |------|-------|
-| `CONTROL_PRESSED` | Button pressed / popup shown |
+| `CONTROL_PRESSED` | Button pressed |
 | `CONTROL_CURRENT` | Mouse hover |
 | `CONTROL_DISABLED` | Disabled state |
 
@@ -573,7 +598,7 @@ SearchableIconCombo (wx.Control)
 Run the demo to compare approaches:
 
 ```bash
-python3 dev_demos/icon_chooser_demo.py
+python3 docs/scripts/icon_picker_refactoring_demo.py
 ```
 
 The demo shows:
@@ -603,7 +628,7 @@ These icons are disabled in the demo to test disabled item rendering:
 
 ## Files Involved
 
-- `dev_demos/icon_chooser_demo.py` - Demo/test script with all icon picker variants
+- `docs/scripts/icon_picker_refactoring_demo.py` - Demo/test script with all icon picker variants
 - `taskcoachlib/widgets/iconpicker.py` - Reusable `IconPicker` widget with hints column
 - `taskcoachlib/widgets/__init__.py` - Exports `IconPicker` class
 - `taskcoachlib/gui/dialog/preferences.py` - Uses `widgets.IconPicker` (120px fixed width)
