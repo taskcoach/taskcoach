@@ -560,6 +560,8 @@ The first match wins, and the final result is transformed based on whether the t
 
 ### Plural/Singular Transformation
 
+> Full mapping tables and all callers: [ICON_PLURALIZE.md](ICON_PLURALIZE.md)
+
 After determining the icon from the priority sequence above, `pluralOrSingularIcon()` is applied.
 The transformation depends on whether the task has children AND whether an override is set:
 
