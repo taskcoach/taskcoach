@@ -250,7 +250,7 @@ jobs:
         shell: pwsh
         run: |
           # Create a simple batch launcher (for command-line use with console output)
-          $launcherContent = "@echo off`r`ncd /d `"%~dp0`"`r`nstart `"`" `"python\pythonw.exe`" `"launcher.pyw`" %*"
+          $launcherContent = "@echo off`r`ncd /d `"%~dp0`"`r`npython\python.exe launcher.pyw %*"
           Set-Content -Path "build\TaskCoach\TaskCoach.bat" -Value $launcherContent -Encoding ASCII
 
           # Also create a VBS launcher for silent execution (no console window)

@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns, operating_system
 from taskcoachlib.i18n import _
+from taskcoachlib.meta.debug import log_step
 from taskcoachlib.tools import wxhelper
 import wx
 import os
@@ -121,12 +122,14 @@ class ArtProvider(wx.ArtProvider):
         if os.path.exists(icon_path):
             image = wx.Image(icon_path)
             if not image.IsOk():
+                log_step("ERROR! Icon file exists but failed to load:", icon_path, prefix="ICON")
                 return wx.NullBitmap
             bitmap = image.ConvertToBitmap()
             if artClient == wx.ART_FRAME_ICON:
                 bitmap = self.convertAlphaToMask(bitmap)
             return bitmap
         else:
+            log_step("ERROR! Icon not found:", repr(artId), "(tried", new_icon_path, "and", legacy_icon_path + ")", prefix="ICON")
             return wx.NullBitmap
 
     @staticmethod

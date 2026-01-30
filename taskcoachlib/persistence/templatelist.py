@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os, pickle, tempfile, shutil
 from pubsub import pub
+from taskcoachlib.meta.debug import log_step
 from .xml import TemplateXMLWriter, TemplateXMLReader
 
 
@@ -43,8 +44,7 @@ class TemplateList(object):
         try:
             return TemplateReader(fd).read()
         except Exception as e:
-            import sys
-            print(f"Error reading template {filename}: {e}", file=sys.stderr)
+            log_step(f"ERROR! Reading template {filename}: {e}", prefix="TEMPLATE")
             import traceback
             traceback.print_exc()
         finally:

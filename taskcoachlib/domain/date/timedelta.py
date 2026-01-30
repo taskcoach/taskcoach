@@ -96,6 +96,12 @@ class TimeDelta(datetime.timedelta):
             timeDelta.days, timeDelta.seconds, timeDelta.microseconds
         )
 
+    def __neg__(self):
+        timeDelta = super().__neg__()
+        return self.__class__(
+            timeDelta.days, timeDelta.seconds, timeDelta.microseconds
+        )
+
 
 ONE_SECOND = TimeDelta(seconds=1)
 ONE_MINUTE = TimeDelta(minutes=1)

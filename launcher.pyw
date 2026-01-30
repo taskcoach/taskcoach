@@ -31,16 +31,22 @@ def get_log_path():
     return os.path.join(log_dir, 'TaskCoach', 'startup.log')
 
 def log_message(msg, log_file=None):
-    """Write a message to the log file."""
+    """Write a message to the log file and stdout if available."""
     if log_file is None:
         log_file = get_log_path()
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    formatted = f"[{timestamp}] {msg}"
     try:
         os.makedirs(os.path.dirname(log_file), exist_ok=True)
         with open(log_file, 'a', encoding='utf-8') as f:
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            f.write(f"[{timestamp}] {msg}\n")
+            f.write(formatted + "\n")
     except Exception:
         pass  # Can't log if we can't write
+    try:
+        if sys.stdout and sys.stdout.name != os.devnull:
+            print(formatted)
+    except Exception:
+        pass
 
 def show_error_dialog(title, message):
     """Show a Windows message box with error details."""

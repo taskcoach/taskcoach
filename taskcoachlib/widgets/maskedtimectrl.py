@@ -1124,6 +1124,7 @@ class NumericField:
         self.__padZeros = padZeros
         self.__digitCount = 0  # Number of digits typed in current entry
         self.__lastKeyTime = 0  # Timestamp of last digit keystroke
+        self._negativePrefix = False  # If True, paint "-" before value
         self.SetChoices(choices)  # Use SetChoices for proper handling
 
     @property
@@ -1194,7 +1195,10 @@ class NumericField:
             amW, amH = dc.GetTextExtent("AM")
             pmW, pmH = dc.GetTextExtent("PM")
             return (max(amW, pmW), max(amH, pmH))
-        return dc.GetTextExtent("0" * max(self.__width, 1))
+        w = max(self.__width, 1)
+        if self._negativePrefix:
+            w += 1  # Extra char for "-" prefix
+        return dc.GetTextExtent("0" * w)
 
     def PaintValue(self, dc, x, y, w, h):
         """Paint the field value in its area.
@@ -1220,6 +1224,8 @@ class NumericField:
         else:
             # Right-align space-padded values so rightmost digit touches next element
             txt = str(self.__value)
+            if self._negativePrefix:
+                txt = "-" + txt
             tw, th = dc.GetTextExtent(txt)
             dc.DrawText(txt, int(x + w - tw), int(y + (h - th) / 2))
 
@@ -1804,16 +1810,19 @@ class DurationCtrl(FieldsCtrl):
             elements.append(("literal", ":"))
             elements.append(("second", seconds, secondChoices))
 
+        self._negative = False
         super().__init__(parent, elements)
 
     def GetDuration(self):
-        result = datetime.timedelta(
+        result = date.TimeDelta(
             days=self.GetFieldValue('day'),
             hours=self.GetFieldValue('hour'),
             minutes=self.GetFieldValue('minute')
         )
         if self._showSeconds:
-            result += datetime.timedelta(seconds=self.GetFieldValue('second'))
+            result += date.TimeDelta(seconds=self.GetFieldValue('second'))
+        if self._negative:
+            result = -result
         return result
 
     def GetTimeDelta(self):
@@ -1828,8 +1837,10 @@ class DurationCtrl(FieldsCtrl):
             quiet: If True, don't fire value changed events
         """
         if duration is None:
-            duration = datetime.timedelta()
+            duration = date.TimeDelta()
         total = int(duration.total_seconds())
+        negative = total < 0
+        total = abs(total)
         days, remainder = divmod(total, 86400)
         hours, remainder = divmod(remainder, 3600)
         minutes, seconds = divmod(remainder, 60)
@@ -1837,6 +1848,10 @@ class DurationCtrl(FieldsCtrl):
         if quiet:
             self._suppressEvents = True
         try:
+            self._negative = negative
+            dayField = self._fields.get('day')
+            if dayField:
+                dayField._negativePrefix = negative
             self.SetFieldValue('day', days)
             self.SetFieldValue('hour', hours)
             self.SetFieldValue('minute', minutes)
@@ -1848,6 +1863,14 @@ class DurationCtrl(FieldsCtrl):
 
     def SetTimeDelta(self, duration, quiet=False):
         """Alias for SetDuration for consistency with other controls."""
+        self.SetDuration(duration, quiet=quiet)
+
+    def GetValue(self):
+        """Alias for GetDuration for AttributeSync compatibility."""
+        return self.GetDuration()
+
+    def SetValue(self, duration, quiet=False):
+        """Alias for SetDuration for AttributeSync compatibility."""
         self.SetDuration(duration, quiet=quiet)
 
 
@@ -1919,16 +1942,19 @@ class DurationCtrlVerbose(FieldsCtrl):
             elements.append(("second", seconds, secondChoices))
             elements.append(("literal", " " + _("secs")))
 
+        self._negative = False
         super().__init__(parent, elements)
 
     def GetDuration(self):
-        result = datetime.timedelta(
+        result = date.TimeDelta(
             days=self.GetFieldValue('day'),
             hours=self.GetFieldValue('hour'),
             minutes=self.GetFieldValue('minute')
         )
         if self._showSeconds:
-            result += datetime.timedelta(seconds=self.GetFieldValue('second'))
+            result += date.TimeDelta(seconds=self.GetFieldValue('second'))
+        if self._negative:
+            result = -result
         return result
 
     def GetTimeDelta(self):
@@ -1943,8 +1969,10 @@ class DurationCtrlVerbose(FieldsCtrl):
             quiet: If True, don't fire value changed events
         """
         if duration is None:
-            duration = datetime.timedelta()
+            duration = date.TimeDelta()
         total = int(duration.total_seconds())
+        negative = total < 0
+        total = abs(total)
         days, remainder = divmod(total, 86400)
         hours, remainder = divmod(remainder, 3600)
         minutes, seconds = divmod(remainder, 60)
@@ -1952,6 +1980,10 @@ class DurationCtrlVerbose(FieldsCtrl):
         if quiet:
             self._suppressEvents = True
         try:
+            self._negative = negative
+            dayField = self._fields.get('day')
+            if dayField:
+                dayField._negativePrefix = negative
             self.SetFieldValue('day', days)
             self.SetFieldValue('hour', hours)
             self.SetFieldValue('minute', minutes)
@@ -1963,6 +1995,14 @@ class DurationCtrlVerbose(FieldsCtrl):
 
     def SetTimeDelta(self, duration, quiet=False):
         """Alias for SetDuration for consistency with other controls."""
+        self.SetDuration(duration, quiet=quiet)
+
+    def GetValue(self):
+        """Alias for GetDuration for AttributeSync compatibility."""
+        return self.GetDuration()
+
+    def SetValue(self, duration, quiet=False):
+        """Alias for SetDuration for AttributeSync compatibility."""
         self.SetDuration(duration, quiet=quiet)
 
 

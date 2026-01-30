@@ -416,7 +416,7 @@ class CategorySubjectPage(SubjectPage):
             self.items[0].stylePriority() if len(self.items) == 1 else 0
         )
         self._stylePriorityEntry = widgets.SpinCtrl(
-            self, size=(100, -1), value=currentPriority, min=0, max=99
+            self, size=(100, -1), value=currentPriority, min=-999, max=999
         )
         self._stylePrioritySync = attributesync.AttributeSync(
             "stylePriority",
@@ -1745,7 +1745,7 @@ class DatesPage(Page):
         """Handle planned start checkbox toggle."""
         # Commit value to model immediately (checkbox toggle = focus loss)
         self._plannedStartDateTimeSync.commit()
-        # 0.1 User unchecked Start-Date
+        # 0.1 User Unset-Action Start-Date
         userAction = "start_unchecked" if not self._plannedStartDateTimeCombo.IsChecked() else None
         self.__syncDurationState(userAction=userAction)
         event.Skip()
@@ -1754,7 +1754,7 @@ class DatesPage(Page):
         """Handle due date checkbox toggle."""
         # Commit value to model immediately (checkbox toggle = focus loss)
         self._dueDateTimeSync.commit()
-        # 0.2 User unchecked Due-Date
+        # 0.2 User Unset-Action Due-Date
         userAction = "due_unchecked" if not self._dueDateTimeCombo.IsChecked() else None
         self.__syncDurationState(userAction=userAction)
         event.Skip()
@@ -1777,9 +1777,9 @@ class DatesPage(Page):
         See docs/DURATION_CALCULATIONS.md "Logic Flow" section.
 
         Args:
-            userAction: The user action that triggered this sync (step 0):
-                       - "start_unchecked": User unchecked Start-Date (0.1)
-                       - "due_unchecked": User unchecked Due-Date (0.2)
+            userAction: The user action that triggered this sync (section 0):
+                       - "start_unchecked": User Unset-Action Start-Date (0.1)
+                       - "due_unchecked": User Unset-Action Due-Date (0.2)
                        - None: Other action (mode selected, value changed, etc.)
             liveUpdate: If True, only update display (no commands executed).
                        If False, execute commands to persist changes.
@@ -1791,17 +1791,17 @@ class DatesPage(Page):
         # === Logic Flow: Mode Transitions and Calculations ===
 
         if mode == "automatic":
-            # 1.1 If Start-Date set, Then set Adj-Due mode, Loop
+            # 1.1 If Start-Date exists, Then set Adj-Due mode, Loop
             if startChecked:
                 self.__setDurationMode("adjdue")
                 return self.__syncDurationState(userAction, liveUpdate)  # Loop
-            # 1.2 If Due-Date set, Then set Adj-Start mode, Loop
+            # 1.2 If Due-Date exists, Then set Adj-Start mode, Loop
             if dueChecked:
                 self.__setDurationMode("adjstart")
                 return self.__syncDurationState(userAction, liveUpdate)  # Loop
 
         elif mode == "adjdue":
-            # 2.1 Activate Start-Date, If not unchecked by user [Ref2, 0.1]
+            # 2.1 Activate Start-Date, If not Unset-Action [Ref2, 0.1]
             if userAction != "start_unchecked" and not startChecked:
                 self._plannedStartDateTimeCombo.SetChecked(True)
                 startChecked = True
@@ -1809,19 +1809,19 @@ class DatesPage(Page):
             if not dueChecked:
                 self._dueDateTimeCombo.SetChecked(True)
                 dueChecked = True
-            # 2.6 If Start-Date disabled, Then deactivate Due-Date, set Automatic mode, Loop
+            # 2.5 If Start-Date Unset-Action, Then deactivate Due-Date, set Automatic mode, Loop
             if not startChecked:
                 self._dueDateTimeCombo.SetChecked(False)
                 self.__setDurationMode("automatic")
                 return self.__syncDurationState(userAction, liveUpdate)  # Loop
-            # 2.4/2.5 Adj Due-Date (on Duration or Start-Date change)
+            # 2.4/2.6 Adj Due-Date (on Duration or Start-Date change)
             if liveUpdate:
                 self.__updateDueDateLive()
             else:
                 self.__updateDueDateFromDuration()
 
         elif mode == "adjstart":
-            # 3.1 Activate Due-Date, If not unchecked by user [Ref2, 0.2]
+            # 3.1 Activate Due-Date, If not Unset-Action [Ref2, 0.2]
             if userAction != "due_unchecked" and not dueChecked:
                 self._dueDateTimeCombo.SetChecked(True)
                 dueChecked = True
@@ -1829,25 +1829,26 @@ class DatesPage(Page):
             if not startChecked:
                 self._plannedStartDateTimeCombo.SetChecked(True)
                 startChecked = True
-            # 3.6 If Due-Date disabled, Then deactivate Start-Date, set Automatic mode, Loop
+            # 3.5 If Due-Date Unset-Action, Then deactivate Start-Date, set Automatic mode, Loop
             if not dueChecked:
                 self._plannedStartDateTimeCombo.SetChecked(False)
                 self.__setDurationMode("automatic")
                 return self.__syncDurationState(userAction, liveUpdate)  # Loop
-            # 3.4/3.5 Adj Start-Date (on Duration or Due-Date change)
+            # 3.4/3.6 Adj Start-Date (on Duration or Due-Date change)
             if liveUpdate:
                 self.__updatePlannedStartLive()
             else:
                 self.__updatePlannedStartFromDuration()
 
         elif mode == "implicit":
-            # 4.2/4.3 Based on which dates are enabled
+            # 4.1 Disable Automatic mode option in dropdown [Ref1]
+            # 4.2/4.3 Based on which dates exist
             startChecked = self._plannedStartDateTimeCombo.IsChecked()
             dueChecked = self._dueDateTimeCombo.IsChecked()
             if startChecked and dueChecked:
                 # 4.2.1 Both enabled - adj Duration
                 self.__updateImplicitDuration()
-            # 4.3 If Start-Date disabled (or Due-Date disabled), Duration handled by __updateFieldStates
+            # 4.2.2 If Due-Date Unset-Action / 4.3 If Start-Date Unset-Action → Duration handled by __updateFieldStates
 
         # 5. Update Field States (See: UI Field States section)
         self.__updateFieldStates()
@@ -1992,10 +1993,7 @@ class DatesPage(Page):
             # Both dates present - show calculated duration (read-only)
             self._plannedDurationCtrl.Enable(True)
             self._plannedDurationCtrl.SetReadOnly(True)
-            if due > start:
-                duration = due - start
-            else:
-                duration = dt.timedelta()  # Zero or negative = show 0
+            duration = due - start  # 4.2.1.3 Negative Durations permitted
             self._plannedDurationCtrl.SetDuration(duration)
             self.__updatePresetSelection()
         else:
@@ -2261,7 +2259,10 @@ class BudgetPage(Page):
             if len(self.items) == 1
             else date.TimeDelta()
         )
-        self._budgetEntry = entry.TimeDeltaEntry(self, currentBudget)
+        self._budgetEntry = widgets.MaskedDurationCtrl(
+            self, showSeconds=True
+        )
+        self._budgetEntry.SetDuration(currentBudget)
         self._budgetSync = attributesync.AttributeSync(
             "budget",
             self._budgetEntry,
@@ -2272,19 +2273,21 @@ class BudgetPage(Page):
             self.items[0].budgetChangedEventType(),
         )
         self.addEntry(
-            _("Budget"), self._budgetEntry, flags=[wx.ALIGN_RIGHT, wx.ALL]
+            _("Budget"), self._budgetEntry, flags=[None, wx.ALL]
         )
 
     def addTimeSpentEntry(self):
         assert len(self.items) == 1
         # pylint: disable=W0201
-        self._timeSpentEntry = entry.TimeDeltaEntry(
-            self, self.items[0].timeSpent(), readonly=True
+        self._timeSpentEntry = widgets.MaskedDurationCtrl(
+            self, showSeconds=True
         )
+        self._timeSpentEntry.SetDuration(self.items[0].timeSpent(), quiet=True)
+        self._timeSpentEntry.SetReadOnly(True)
         self.addEntry(
             _("Time spent"),
             self._timeSpentEntry,
-            flags=[wx.ALIGN_RIGHT, wx.ALL],
+            flags=[None, wx.ALL],
         )
         pub.subscribe(
             self.onTimeSpentChanged, self.items[0].timeSpentChangedEventType()
@@ -2292,20 +2295,20 @@ class BudgetPage(Page):
 
     def onTimeSpentChanged(self, newValue, sender):
         if sender == self.items[0]:
-            time_spent = sender.timeSpent()
-            if time_spent != self._timeSpentEntry.GetValue():
-                self._timeSpentEntry.SetValue(time_spent)
+            self._timeSpentEntry.SetDuration(sender.timeSpent(), quiet=True)
 
     def addBudgetLeftEntry(self):
         assert len(self.items) == 1
         # pylint: disable=W0201
-        self._budgetLeftEntry = entry.TimeDeltaEntry(
-            self, self.items[0].budgetLeft(), readonly=True
+        self._budgetLeftEntry = widgets.MaskedDurationCtrl(
+            self, showSeconds=True
         )
+        self._budgetLeftEntry.SetDuration(self.items[0].budgetLeft(), quiet=True)
+        self._budgetLeftEntry.SetReadOnly(True)
         self.addEntry(
             _("Budget left"),
             self._budgetLeftEntry,
-            flags=[wx.ALIGN_RIGHT, wx.ALL],
+            flags=[None, wx.ALL],
         )
         pub.subscribe(
             self.onBudgetLeftChanged,
@@ -2314,9 +2317,7 @@ class BudgetPage(Page):
 
     def onBudgetLeftChanged(self, newValue, sender):  # pylint: disable=W0613
         if sender == self.items[0]:
-            budget_left = sender.budgetLeft()
-            if budget_left != self._budgetLeftEntry.GetValue():
-                self._budgetLeftEntry.SetValue(budget_left)
+            self._budgetLeftEntry.SetDuration(sender.budgetLeft(), quiet=True)
 
     def addRevenueEntries(self):
         self.addHourlyFeeEntry()
@@ -2425,14 +2426,16 @@ class BudgetPage(Page):
         super().close()
 
     def entries(self):
-        return dict(
+        result = dict(
             firstEntry=self._budgetEntry,
             budget=self._budgetEntry,
-            budgetLeft=self._budgetEntry,
             hourlyFee=self._hourlyFeeEntry,
             fixedFee=self._fixedFeeEntry,
-            revenue=self._hourlyFeeEntry,
         )
+        if len(self.items) == 1:
+            result["budgetLeft"] = self._budgetLeftEntry
+            result["revenue"] = self._revenueEntry
+        return result
 
 
 class PageWithViewer(Page):
@@ -3931,7 +3934,7 @@ class EffortEditBook(Page):
             return
         self._updatingControls = True
         try:
-            self.__syncEffortState('start')
+            self.__syncEffortState(source_field='start')
         finally:
             self._updatingControls = False
 
@@ -3941,7 +3944,7 @@ class EffortEditBook(Page):
             return
         self._updatingControls = True
         try:
-            self.__syncEffortState('stop')
+            self.__syncEffortState(source_field='stop')
         finally:
             self._updatingControls = False
 
@@ -3952,7 +3955,7 @@ class EffortEditBook(Page):
             return
         self._updatingControls = True
         try:
-            self.__syncEffortState('start')
+            self.__syncEffortState(source_field='start')
         finally:
             self._updatingControls = False
         event.Skip()
@@ -3964,7 +3967,7 @@ class EffortEditBook(Page):
             return
         self._updatingControls = True
         try:
-            self.__syncEffortState('stop')
+            self.__syncEffortState(source_field='stop')
         finally:
             self._updatingControls = False
         event.Skip()
@@ -3977,7 +3980,7 @@ class EffortEditBook(Page):
 
         self._updatingControls = True
         try:
-            self.__syncEffortState('duration')
+            self.__syncEffortState(source_field='duration')
         finally:
             self._updatingControls = False
         event.Skip()
@@ -4021,7 +4024,7 @@ class EffortEditBook(Page):
                 new_stop = start if start > now else now
                 self._stopDateTimeCombo.SetDateTime(new_stop)
                 # Sync based on mode
-                self.__syncEffortState('stop')
+                self.__syncEffortState(source_field='stop')
                 # Commit the change
                 command.EditEffortStopDateTimeCommand(
                     None, self.items, newValue=self._stopDateTimeCombo.GetValue()
@@ -4064,16 +4067,37 @@ class EffortEditBook(Page):
 
     def __applyEffortEntryMode(self):
         """Apply the current entry mode to control states and recalculate values."""
-        self.__syncEffortState('mode')
+        self.__syncEffortState(source_field='mode')
 
-    def __syncEffortState(self, changed_field):
-        """Central sync function implementing the Logic Flow.
+    def __syncEffortState(self, source_field=None, depth=0):
+        """Central sync function implementing the Effort Logic Flow.
 
-        Called on every change of Start-Date, Stop-Date, Duration, or Mode.
+        The logic flow is triggered by ONE user-initiated change at a time.
+        The flow processes (including explicit loops) until it stabilizes.
+
+        See docs/DURATION_CALCULATIONS.md "Edit Effort Window" section.
+        Implements: __syncEffortState()
+        Called on: Every change of Start-Date, Stop-Date, Duration, or Mode dropdown.
 
         Args:
-            changed_field: 'start', 'duration', 'stop', or 'mode'
+            source_field: Which field triggered this sync:
+                         'start', 'stop', 'duration', 'mode', or None (depth>0 loop).
+                         Proxy for user-action — cannot differentiate user clicks from
+                         system-triggered changes. See TODO item 4 in doc.
+            depth: Recursive depth counter (doc 0.3).
+                   0 = initial call from handler (default).
+                   1 = explicit Loop call (source_field=None, reads widget state).
+                   >1 = error, exit immediately.
         """
+        # 0.3 Recursive safety
+        if depth > 1:
+            # 0.3.3 Depth > 1 should never occur, log error, exit
+            log_step("ERROR: __syncEffortState depth > 1 (%d), exiting" % depth, prefix="EFFORT")
+            return
+        if depth == 1 and source_field is not None:
+            # 0.3.2 depth==1 should never receive a source_field, log error, continue
+            log_step("ERROR: __syncEffortState depth==1 received source_field=%s, expected None" % source_field, prefix="EFFORT")
+
         is_standard = self._effortEntryMode == 0
         is_retroactive = self._effortEntryMode == 1
         stop_enabled = self._stopDateTimeCombo.IsChecked()
@@ -4084,125 +4108,216 @@ class EffortEditBook(Page):
         total_seconds = int(duration.total_seconds()) if duration else 0
 
         if is_standard:
-            # Auto-switch: if stop is active and duration is 0, switch to Implicit
-            if stop_enabled and total_seconds == 0:
-                self._effortEntryMode = 2
-                self._effortEntryModeChoice.SetSelection(2)
-                # Fall through to Implicit branch by re-calling
-                self.__syncEffortState(changed_field)
-                return
-
-            # 1.2 Set Start-Date editable, Duration editable
+            # 1.3 Set Start-Date editable
             self._startDateTimeCombo.SetEditable(True)
             self._startFromLastEffortButton.Enable(
                 self._effortList.maxDateTime() is not None
             )
+            # 1.4 Set Duration editable
+            self._effortDurationCtrl.Enable(True)
             self._effortDurationCtrl.SetReadOnly(False)
 
-            # 1.3 If Start-Date changed
-            if changed_field == 'start':
-                # 1.3.1 If Duration > 0, Then adj Stop-Date
+            # 1.5 If Start-Date changed
+            if source_field == 'start':
+                # 1.5.1 If Duration > 0, Then adj Stop-Date [0.2]
                 if total_seconds > 0 and start:
                     new_stop = start + duration
-                    self._stopDateTimeCombo.SetDateTime(new_stop)
+                    if self._stopDateTimeCombo.GetDateTime() != new_stop:
+                        self._stopDateTimeCombo.SetDateTime(new_stop)
+                # 1.5.2 If Duration = 0, Then do nothing
 
-            # 1.4 If Duration changed
-            elif changed_field == 'duration':
-                # 1.4.1 If Duration > 0
+            # 1.6 If Duration changed
+            elif source_field == 'duration':
+                # 1.6.1 If Duration > 0
                 if total_seconds > 0:
-                    # 1.4.1.1 Enable Stop-Date
-                    if not stop_enabled:
+                    # 1.6.1.1 Enable Stop-Date [0.2]
+                    if not self._stopDateTimeCombo.IsChecked():
                         self._stopDateTimeCombo.SetChecked(True)
                         self._stopDateTimeCombo.SetDateTime(date.DateTime.now())
-                    # 1.4.1.2 Adj Stop-Date
+                    # 1.6.1.2 Adj Stop-Date [0.2]
                     if start:
                         new_stop = start + duration
-                        self._stopDateTimeCombo.SetDateTime(new_stop)
-                # 1.4.2 If Duration = 0, Then disable Stop-Date
+                        if self._stopDateTimeCombo.GetDateTime() != new_stop:
+                            self._stopDateTimeCombo.SetDateTime(new_stop)
+                # 1.6.2 If Duration = 0, Then disable Stop-Date [0.2]
                 elif total_seconds == 0:
-                    self._stopDateTimeCombo.SetChecked(False)
+                    if self._stopDateTimeCombo.IsChecked():
+                        self._stopDateTimeCombo.SetChecked(False)
 
-            # 1.5 If Stop-Date changed
-            elif changed_field == 'stop':
-                if stop and start:
-                    # 1.5.1 If Stop-Date <= Start-Date
+            # 1.7 If Stop-Date changed
+            elif source_field == 'stop':
+                # 1.7.1 If Stop-Date Set-Action (stop enabled + duration = 0)
+                if stop_enabled and total_seconds == 0:
+                    # 1.7.1.1 Set Implicit mode, Loop
+                    self._effortEntryMode = 2
+                    self._effortEntryModeChoice.SetSelection(2)
+                    command.EditEffortEntryModeCommand(
+                        items=self.items, newValue="implicit"
+                    ).do()
+                    return self.__syncEffortState(depth=depth+1)  # Loop
+                # 1.7.1.2 If Duration > 0, Then adj Duration [0.2]
+                elif total_seconds > 0 and stop and start:
+                    calc_duration = stop - start
+                    calc_seconds = max(0, int(calc_duration.total_seconds()))
+                    new_dur = datetime.timedelta(seconds=calc_seconds)
+                    if self._effortDurationCtrl.GetTimeDelta() != new_dur:
+                        self._effortDurationCtrl.SetDuration(new_dur, quiet=True)
+                elif stop and start:
+                    # 1.7.2 If Stop-Date <= Start-Date
                     if stop <= start:
-                        # 1.5.1.1 Set Stop-Date = Start-Date + 1s
+                        # 1.7.2.1 Incoherent state, Autoheal, Thus
+                        # 1.7.2.2 Set Stop-Date = Start-Date + 1s [0.2]
                         new_stop = start + datetime.timedelta(seconds=1)
-                        self._stopDateTimeCombo.SetDateTime(new_stop)
-                        # 1.5.1.2 Adj Duration to 1s
-                        self._effortDurationCtrl.SetDuration(datetime.timedelta(seconds=1), quiet=True)
-                    # 1.5.2 If Stop-Date > Start-Date, Then adj Duration
+                        if self._stopDateTimeCombo.GetDateTime() != new_stop:
+                            self._stopDateTimeCombo.SetDateTime(new_stop)
+                        # 1.7.2.3 Adj Duration to 1s [0.2]
+                        new_dur = datetime.timedelta(seconds=1)
+                        if self._effortDurationCtrl.GetTimeDelta() != new_dur:
+                            self._effortDurationCtrl.SetDuration(new_dur, quiet=True)
+                    # 1.7.3 If Stop-Date > Start-Date, Then adj Duration [0.2]
                     else:
                         calc_duration = stop - start
                         calc_seconds = max(0, int(calc_duration.total_seconds()))
-                        self._effortDurationCtrl.SetDuration(datetime.timedelta(seconds=calc_seconds), quiet=True)
+                        new_dur = datetime.timedelta(seconds=calc_seconds)
+                        if self._effortDurationCtrl.GetTimeDelta() != new_dur:
+                            self._effortDurationCtrl.SetDuration(new_dur, quiet=True)
+
+            # Re-read duration after steps may have changed it
+            duration = self._effortDurationCtrl.GetTimeDelta()
+            total_seconds = int(duration.total_seconds()) if duration else 0
+
+            # 1.9 If Duration <= 0, Then Autoheal, Thus
+            if total_seconds <= 0:
+                # 1.9.1 Set Duration to 0 [0.1, 0.2]
+                if source_field != 'duration' and total_seconds < 0:
+                    self._effortDurationCtrl.SetDuration(datetime.timedelta(seconds=0), quiet=True)
+                # 1.9.2 Disable Stop-Date [0.1, 0.2]
+                if source_field != 'stop' and self._stopDateTimeCombo.IsChecked():
+                    self._stopDateTimeCombo.SetChecked(False)
+            # 1.10 If Duration > 0, Then Autoheal, Thus
+            else:
+                # 1.10.1 Enable Stop-Date [0.1, 0.2]
+                if source_field != 'stop' and not self._stopDateTimeCombo.IsChecked():
+                    self._stopDateTimeCombo.SetChecked(True)
+                    self._stopDateTimeCombo.SetDateTime(date.DateTime.now())
+                # 1.10.2 Adj Stop-Date [0.1, 0.2]
+                if source_field != 'stop':
+                    start = self._startDateTimeCombo.GetDateTime()
+                    if start:
+                        new_stop = start + duration
+                        if self._stopDateTimeCombo.GetDateTime() != new_stop:
+                            self._stopDateTimeCombo.SetDateTime(new_stop)
 
         elif is_retroactive:
-            # 2.2 Set Start-Date read-only, Duration editable
+            # 2.3 Set Start-Date read-only
             self._startDateTimeCombo.SetEditable(False)
             self._startFromLastEffortButton.Enable(False)
+            # 2.4 Set Duration editable
+            self._effortDurationCtrl.Enable(True)
             self._effortDurationCtrl.SetReadOnly(False)
 
-            # 2.3 If Duration changed
-            if changed_field == 'duration':
-                # 2.3.1 If Duration > 0
+            # 2.5 If Stop-Date changed
+            if source_field == 'stop':
+                # 2.5.1 If Duration <= 0
+                if total_seconds <= 0:
+                    # 2.5.1.1 Incoherent state, Autoheal, Thus
+                    # 2.5.1.2 Set Duration to 1s [0.2]
+                    new_dur = datetime.timedelta(seconds=1)
+                    if self._effortDurationCtrl.GetTimeDelta() != new_dur:
+                        self._effortDurationCtrl.SetDuration(new_dur, quiet=True)
+                    # 2.5.1.3 Set Start-Date = Stop-Date - 1s [0.2]
+                    if stop:
+                        new_start = stop - datetime.timedelta(seconds=1)
+                        if self._startDateTimeCombo.GetDateTime() != new_start:
+                            self._startDateTimeCombo.SetDateTime(new_start)
+                # 2.5.2 If Duration > 0, Then adj Start-Date [0.2]
+                elif total_seconds > 0 and stop:
+                    new_start = stop - duration
+                    if self._startDateTimeCombo.GetDateTime() != new_start:
+                        self._startDateTimeCombo.SetDateTime(new_start)
+
+            # 2.6 If Duration changed
+            elif source_field == 'duration':
+                # 2.6.1 If Duration > 0
                 if total_seconds > 0:
-                    # 2.3.1.1 Enable Stop-Date
-                    if not stop_enabled:
+                    # 2.6.1.1 Enable Stop-Date [0.2]
+                    if not self._stopDateTimeCombo.IsChecked():
                         self._stopDateTimeCombo.SetChecked(True)
                         self._stopDateTimeCombo.SetDateTime(date.DateTime.now())
                         stop = self._stopDateTimeCombo.GetDateTime()
-                    # 2.3.1.2 Adj Start-Date
+                    # 2.6.1.2 Adj Start-Date [0.2]
                     if stop:
                         new_start = stop - duration
-                        self._startDateTimeCombo.SetDateTime(new_start)
-                # 2.3.2 If Duration = 0, Then disable Stop-Date
+                        if self._startDateTimeCombo.GetDateTime() != new_start:
+                            self._startDateTimeCombo.SetDateTime(new_start)
+                # 2.6.2 If Duration = 0, Then disable Stop-Date [0.2]
                 elif total_seconds == 0:
-                    self._stopDateTimeCombo.SetChecked(False)
+                    if self._stopDateTimeCombo.IsChecked():
+                        self._stopDateTimeCombo.SetChecked(False)
 
-            # 2.4 If Stop-Date changed
-            elif changed_field == 'stop':
-                # 2.4.1 If Duration <= 0
-                if total_seconds <= 0:
-                    # 2.4.1.1 Set Duration to 1s
-                    self._effortDurationCtrl.SetDuration(datetime.timedelta(seconds=1), quiet=True)
-                    # 2.4.1.2 Set Start-Date = Stop-Date - 1s
+            # Re-read duration after steps may have changed it
+            duration = self._effortDurationCtrl.GetTimeDelta()
+            total_seconds = int(duration.total_seconds()) if duration else 0
+
+            # 2.8 If Duration <= 0, Then Autoheal, Thus
+            if total_seconds <= 0:
+                # 2.8.1 Set Duration to 0 [0.1, 0.2]
+                if source_field != 'duration' and total_seconds < 0:
+                    self._effortDurationCtrl.SetDuration(datetime.timedelta(seconds=0), quiet=True)
+                # 2.8.2 Disable Stop-Date [0.1, 0.2]
+                if source_field != 'stop' and self._stopDateTimeCombo.IsChecked():
+                    self._stopDateTimeCombo.SetChecked(False)
+            # 2.9 If Duration > 0, Then Autoheal, Thus
+            else:
+                # 2.9.1 Enable Stop-Date [0.1, 0.2]
+                if source_field != 'stop' and not self._stopDateTimeCombo.IsChecked():
+                    self._stopDateTimeCombo.SetChecked(True)
+                    self._stopDateTimeCombo.SetDateTime(date.DateTime.now())
+                # 2.9.2 Adj Start-Date [0.1, 0.2]
+                if source_field != 'start':
+                    stop = self._stopDateTimeCombo.GetDateTime()
                     if stop:
-                        new_start = stop - datetime.timedelta(seconds=1)
-                        self._startDateTimeCombo.SetDateTime(new_start)
-                # 2.4.2 If Duration > 0, Then adj Start-Date
-                elif total_seconds > 0 and stop:
-                    new_start = stop - duration
-                    self._startDateTimeCombo.SetDateTime(new_start)
+                        new_start = stop - duration
+                        if self._startDateTimeCombo.GetDateTime() != new_start:
+                            self._startDateTimeCombo.SetDateTime(new_start)
 
         else:  # Implicit mode (mode == 2)
-            # 3.2 Set Start-Date editable
+            # 3.3 If Duration changed (only possible via Presets change)
+            if source_field == 'duration':
+                # 3.3.1 Only possible via Presets change
+                # 3.3.2 Leave Duration as set by preset, do NOT adj
+                # 3.3.3 Set Standard Mode, Loop
+                self._effortEntryMode = 0
+                self._effortEntryModeChoice.SetSelection(0)
+                command.EditEffortEntryModeCommand(
+                    items=self.items, newValue="standard"
+                ).do()
+                return self.__syncEffortState(depth=depth+1)  # Loop
+
+            # 3.4 Set Start-Date editable
             self._startDateTimeCombo.SetEditable(True)
             self._startFromLastEffortButton.Enable(
                 self._effortList.maxDateTime() is not None
             )
-            # 3.3 Set Duration read-only
-            self._effortDurationCtrl.SetReadOnly(True)
 
-            # 3.4 If Start-Date or Stop-Date changed (or mode switched)
-            if changed_field in ('start', 'stop', 'mode'):
-                if stop_enabled and stop and start:
-                    if stop > start:
-                        calc_duration = stop - start
-                        calc_seconds = max(0, int(calc_duration.total_seconds()))
-                        self._effortDurationCtrl.SetDuration(
-                            datetime.timedelta(seconds=calc_seconds), quiet=True
-                        )
-                    else:
-                        # Stop <= Start: set duration to 0
-                        self._effortDurationCtrl.SetDuration(
-                            datetime.timedelta(seconds=0), quiet=True
-                        )
+            # 3.5 If Stop-Date does not exist, Disable Duration
+            if not stop_enabled:
+                self._effortDurationCtrl.Enable(False)
+                self._effortDurationCtrl.SetDuration(datetime.timedelta(seconds=0), quiet=True)
+            # 3.6 If Stop-Date exists
+            elif stop_enabled and stop and start:
+                # 3.6.1 Enable Duration (Read-Only)
+                self._effortDurationCtrl.Enable(True)
+                self._effortDurationCtrl.SetReadOnly(True)
+                # 3.6.2 Adj Duration
+                # 3.6.3 Negative Durations permitted
+                calc_duration = stop - start
+                self._effortDurationCtrl.SetDuration(calc_duration, quiet=True)
 
         self.__updateEffortPresetSelection()
         self.__update_invalid_period_message()
         self.__updateTimeSpentDisplay()
+
 
     def __populateEffortDurationPresets(self):
         """Populate the effort duration presets dropdown from settings."""
@@ -4288,15 +4403,13 @@ class EffortEditBook(Page):
 
         self._updatingControls = True
         try:
-            # Auto-switch from Implicit to Standard when a preset is selected
-            if self._effortEntryMode == 2 and total_seconds > 0:
-                self._effortEntryMode = 0
-                self._effortEntryModeChoice.SetSelection(0)
-                command.EditEffortEntryModeCommand(
-                    items=self.items, newValue="standard"
-                ).do()
-                self._effortDurationCtrl.SetReadOnly(False)
-                self._effortDurationPresetsChoice.Enable(True)
+            # For Implicit mode: set duration and let __syncEffortState handle
+            # mode switch via flow step 3.6 (Duration changed → Set Standard Mode, Loop)
+            if self._effortEntryMode == 2:
+                self._effortDurationCtrl.SetDuration(datetime.timedelta(seconds=total_seconds), quiet=True)
+                self._updatingControls = False
+                self.__syncEffortState(source_field='duration')
+                return
 
             # Update duration control
             self._effortDurationCtrl.SetDuration(datetime.timedelta(seconds=total_seconds), quiet=True)
@@ -4424,7 +4537,7 @@ class EffortEditBook(Page):
             if self._startDateTimeCombo.GetValue() != maxDateTime:
                 self._startDateTimeCombo.SetDateTime(maxDateTime)
                 self._startDateTimeSync.onAttributeEdited(event)
-            self.__syncEffortState('start')
+            self.__syncEffortState(source_field='start')
             self.__update_invalid_period_message()
         finally:
             self._updatingControls = False
@@ -4436,7 +4549,7 @@ class EffortEditBook(Page):
             new_value = date.DateTime.now()
             self._stopDateTimeCombo.SetChecked(True)
             self._stopDateTimeCombo.SetDateTime(new_value)
-            self.__syncEffortState('stop')
+            self.__syncEffortState(source_field='stop')
             command.EditEffortStopDateTimeCommand(
                 None, self.items, newValue=new_value
             ).do()

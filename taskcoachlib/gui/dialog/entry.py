@@ -171,7 +171,7 @@ class AmountEntry(widgets.PanelWithBoxSizer):
         self.fit()
 
     def createEntry(self, amount):
-        return widgets.masked.AmountCtrl(self, amount)
+        return widgets.CurrencyCtrl(self, amount)
 
     def NavigateBook(self, event):
         self.GetParent().NavigateBook(not event.ShiftDown())

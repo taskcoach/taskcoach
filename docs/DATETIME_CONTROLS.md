@@ -412,8 +412,17 @@ ctrl = DurationCtrl(parent, days=0, hours=2, minutes=30, seconds=15,
 ctrl = DurationCtrl(parent, days=1, hours=2, minutes=30,
     dayChoices=False, hourChoices=False, minuteChoices=False)
 
-duration = ctrl.GetDuration()  # timedelta
-ctrl.SetDuration(timedelta(days=1, hours=2))
+duration = ctrl.GetDuration()  # date.TimeDelta
+ctrl.SetDuration(date.TimeDelta(days=1, hours=2))
+
+# AttributeSync compatibility aliases
+value = ctrl.GetValue()         # same as GetDuration()
+ctrl.SetValue(duration)         # same as SetDuration()
+ctrl.SetValue(duration, quiet=True)  # suppress events
+
+# Negative durations (display only, e.g. budget left = -1:30:00)
+ctrl.SetDuration(date.TimeDelta(hours=-1, minutes=-30))
+# Day field shows "-" prefix, GetDuration() returns negative TimeDelta
 ```
 
 ### DurationCtrlVerbose
@@ -458,8 +467,8 @@ ctrl = DurationCtrlVerbose(parent, days=0, hours=2, minutes=30, seconds=15,
 ctrl = DurationCtrlVerbose(parent, days=0, hours=0, minutes=0,
     dayChoices=False, hourChoices=False, minuteChoices=False)
 
-duration = ctrl.GetDuration()  # datetime.timedelta
-ctrl.SetDuration(datetime.timedelta(hours=1, minutes=30))
+duration = ctrl.GetDuration()  # date.TimeDelta
+ctrl.SetDuration(date.TimeDelta(hours=1, minutes=30))
 ```
 
 ### TimeCtrl
@@ -651,7 +660,7 @@ class MyDurationCtrl(FieldsCtrl):
         super().__init__(parent, elements)
 
     def GetDuration(self):
-        return datetime.timedelta(
+        return date.TimeDelta(
             days=self.GetFieldValue('day'),
             hours=self.GetFieldValue('hour'),
             minutes=self.GetFieldValue('minute')
@@ -659,7 +668,7 @@ class MyDurationCtrl(FieldsCtrl):
 
     def SetDuration(self, duration):
         if duration is None:
-            duration = datetime.timedelta()
+            duration = date.TimeDelta()
         total = int(duration.total_seconds())
         days, remainder = divmod(total, 86400)
         hours, remainder = divmod(remainder, 3600)

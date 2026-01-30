@@ -1001,7 +1001,7 @@ class Task(
 
     def budgetLeft(self, recursive=False):
         budget = self.budget(recursive)
-        return budget - self.timeSpent(recursive) if budget else budget
+        return budget - self.timeSpent(recursive)
 
     def sendBudgetLeftChangedMessage(self):
         pub.sendMessage(
