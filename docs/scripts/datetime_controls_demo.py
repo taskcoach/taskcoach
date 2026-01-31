@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 # Import wx first and create App before importing controls
 import wx
+import wx.adv
 app = wx.App()
 
 from taskcoachlib.widgets import maskedtimectrl
@@ -132,11 +133,87 @@ if _is_wayland():
     print("[Wayland] Patch applied. Test dropdown positioning below.")
 
 
+# =============================================================================
+# Custom date picker with configurable week start day.
+# Uses PopupTransientWindow + GenericCalendarCtrl to bypass the
+# CAL_MONDAY_FIRST / DP_SPIN flag collision (both are 0x1).
+# PopupTransientWindow is Wayland-safe (compositor-positioned xdg_popup).
+# =============================================================================
+
+class _CalendarPopupTransient(wx.PopupTransientWindow):
+    """Popup containing a GenericCalendarCtrl."""
+
+    def __init__(self, parent, dt, cal_style):
+        super().__init__(parent, wx.BORDER_SIMPLE)
+        panel = wx.Panel(self)
+        self._calendar = wx.adv.GenericCalendarCtrl(
+            panel, date=dt, style=cal_style)
+        self._calendar.Bind(wx.adv.EVT_CALENDAR, self._onDateSelected)
+        sizer = wx.BoxSizer()
+        sizer.Add(self._calendar, 1, wx.EXPAND)
+        panel.SetSizer(sizer)
+        sizer.Fit(panel)
+        self.SetSize(panel.GetBestSize())
+
+    def _onDateSelected(self, event):
+        parent = self.GetParent()
+        if isinstance(parent, _CalendarDatePicker):
+            parent._setDate(self._calendar.GetDate())
+        self.Dismiss()
+
+
+class _CalendarDatePicker(wx.Panel):
+    """Date field with a dropdown button that opens a GenericCalendarCtrl popup.
+
+    Accepts cal_style to pass CAL_MONDAY_FIRST or CAL_SUNDAY_FIRST directly
+    to the calendar, avoiding the flag collision with DP_SPIN.
+    """
+
+    def __init__(self, parent, cal_style=0):
+        super().__init__(parent)
+        self._cal_style = cal_style
+        self._date = wx.DateTime.Now()
+
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self._text = wx.TextCtrl(self, style=wx.TE_READONLY, size=(120, -1))
+        self._btn = wx.Button(self, label="\u25BC", size=(24, -1))
+        sizer.Add(self._text, 1, wx.ALIGN_CENTER_VERTICAL)
+        sizer.Add(self._btn, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 2)
+        self.SetSizer(sizer)
+
+        self._btn.Bind(wx.EVT_BUTTON, self._onDropdown)
+        self._text.Bind(wx.EVT_LEFT_DOWN, self._onDropdown)
+        self._updateDisplay()
+
+    def _updateDisplay(self):
+        self._text.SetValue(self._date.Format("%Y-%m-%d"))
+
+    def _setDate(self, dt):
+        self._date = dt
+        self._updateDisplay()
+
+    def _onDropdown(self, event):
+        popup = _CalendarPopupTransient(self, self._date, self._cal_style)
+        pos = self.ClientToScreen(wx.Point(0, self.GetSize().height))
+        popup.SetPosition(pos)
+        popup.Popup()
+
+    def GetValue(self):
+        return self._date
+
+    def SetValue(self, dt):
+        self._date = dt
+        self._updateDisplay()
+
+
 class DemoFrame(wx.Frame):
     def __init__(self):
-        super().__init__(None, title="DateTime Controls Demo", size=(900, 950))
+        super().__init__(None, title="DateTime Controls Demo", size=(900, 1100))
 
-        panel = wx.Panel(self)
+        scrolled = wx.ScrolledWindow(self)
+        scrolled.SetScrollRate(0, 10)
+
+        panel = scrolled
         mainSizer = wx.BoxSizer(wx.VERTICAL)
 
         # Title
@@ -317,6 +394,74 @@ class DemoFrame(wx.Frame):
         toggleBtn.Bind(wx.EVT_BUTTON, self._onToggleCompleted)
         mainSizer.Add(toggleBtn, 0, wx.ALL | wx.ALIGN_CENTER, 10)
 
+        # Separator
+        mainSizer.Add(wx.StaticLine(panel), 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 20)
+
+        # =====================================================================
+        # Section 3: Standard wxPython Date/Calendar Controls
+        # =====================================================================
+        stdTitle = wx.StaticText(panel, label="Standard wxPython Date/Calendar Controls")
+        stdTitle.SetFont(stdTitle.GetFont().Bold().Scaled(1.3))
+        mainSizer.Add(stdTitle, 0, wx.ALL | wx.ALIGN_CENTER, 10)
+
+        stdGrid = wx.FlexGridSizer(cols=3, hgap=15, vgap=10)
+        stdGrid.AddGrowableCol(2)
+
+        # 1. DatePickerCtrl - Native dropdown (week start from locale)
+        stdGrid.Add(wx.StaticText(panel, label="DatePickerCtrl:"), 0,
+                     wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT)
+        self.stdDatePickerDD = wx.adv.DatePickerCtrl(panel, style=wx.adv.DP_DROPDOWN)
+        stdGrid.Add(self.stdDatePickerDD, 0, wx.ALIGN_CENTER_VERTICAL)
+        stdGrid.Add(wx.StaticText(panel, label="DP_DROPDOWN — native popup, week start from locale"), 0,
+                     wx.ALIGN_CENTER_VERTICAL)
+
+        # 2. DatePickerCtrlGeneric - locale week start
+        stdGrid.Add(wx.StaticText(panel, label="DatePickerCtrlGeneric:"), 0,
+                     wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT)
+        self.stdDatePickerGen = wx.adv.DatePickerCtrlGeneric(
+            panel, style=wx.adv.DP_DROPDOWN)
+        stdGrid.Add(self.stdDatePickerGen, 0, wx.ALIGN_CENTER_VERTICAL)
+        stdGrid.Add(wx.StaticText(panel, label="Generic popup, week start from locale"), 0,
+                     wx.ALIGN_CENTER_VERTICAL)
+
+        # 3. DatePickerCtrlGeneric - Sunday first
+        stdGrid.Add(wx.StaticText(panel, label="DatePickerCtrlGeneric:"), 0,
+                     wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT)
+        self.stdDatePickerGenSun = wx.adv.DatePickerCtrlGeneric(
+            panel, style=wx.adv.DP_DROPDOWN | wx.adv.CAL_SUNDAY_FIRST)
+        stdGrid.Add(self.stdDatePickerGenSun, 0, wx.ALIGN_CENTER_VERTICAL)
+        lbl_dpg_sun = wx.StaticText(panel, label="CAL_SUNDAY_FIRST — generic popup, Sunday start")
+        lbl_dpg_sun.SetForegroundColour(wx.Colour(0, 128, 0))
+        stdGrid.Add(lbl_dpg_sun, 0, wx.ALIGN_CENTER_VERTICAL)
+
+        # 4. Custom Monday-first date picker
+        # CAL_MONDAY_FIRST (0x1) == DP_SPIN (0x1) — flag collision prevents
+        # passing it to DatePickerCtrlGeneric. Workaround: custom widget using
+        # PopupTransientWindow + GenericCalendarCtrl(CAL_MONDAY_FIRST).
+        # PopupTransientWindow is Wayland-safe (compositor-positioned xdg_popup).
+        stdGrid.Add(wx.StaticText(panel, label="Custom (Monday):"), 0,
+                     wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT)
+        self.stdDatePickerMon = _CalendarDatePicker(
+            panel, cal_style=wx.adv.CAL_MONDAY_FIRST | wx.adv.CAL_SHOW_HOLIDAYS)
+        stdGrid.Add(self.stdDatePickerMon, 0, wx.ALIGN_CENTER_VERTICAL)
+        lbl_mon = wx.StaticText(
+            panel, label="CAL_MONDAY_FIRST — custom PopupTransientWindow (Wayland-safe)")
+        lbl_mon.SetForegroundColour(wx.Colour(0, 128, 0))
+        stdGrid.Add(lbl_mon, 0, wx.ALIGN_CENTER_VERTICAL)
+
+        # 5. Custom Sunday-first date picker (same technique)
+        stdGrid.Add(wx.StaticText(panel, label="Custom (Sunday):"), 0,
+                     wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT)
+        self.stdDatePickerSun = _CalendarDatePicker(
+            panel, cal_style=wx.adv.CAL_SUNDAY_FIRST | wx.adv.CAL_SHOW_HOLIDAYS)
+        stdGrid.Add(self.stdDatePickerSun, 0, wx.ALIGN_CENTER_VERTICAL)
+        lbl_sun = wx.StaticText(
+            panel, label="CAL_SUNDAY_FIRST — custom PopupTransientWindow (Wayland-safe)")
+        lbl_sun.SetForegroundColour(wx.Colour(0, 128, 0))
+        stdGrid.Add(lbl_sun, 0, wx.ALIGN_CENTER_VERTICAL)
+
+        mainSizer.Add(stdGrid, 0, wx.ALL | wx.EXPAND, 20)
+
         # Instructions
         instructions = wx.StaticText(panel, label=(
             "Dropdown List Behavior:\n"
@@ -326,10 +471,12 @@ class DemoFrame(wx.Frame):
             "- value=datetime -> checkbox ON, fields editable\n"
             "- value=None -> checkbox OFF, fields disabled\n"
             "- SetEditable(False) -> checkbox ON but disabled, fields greyed (read-only)\n\n"
-            "Constructor: DateTimeCombo(parent, value=None, hourChoices=None, minuteChoices=None)\n"
-            "- value: datetime.datetime (checked) or None (unchecked)\n"
-            "- When unchecked and user checks it, defaults to 'now'\n\n"
-            "Layout: GetCheckBox(), GetDateCtrl(), GetTimeCtrl() for flexible table"
+            "Standard wxPython Date Pickers (all with calendar dropdown):\n"
+            "- DatePickerCtrl (DP_DROPDOWN): Native popup, week start from locale only\n"
+            "- DatePickerCtrlGeneric: Generic popup, supports CAL_SUNDAY_FIRST\n"
+            "  CAL_MONDAY_FIRST (0x1) collides with DP_SPIN (0x1) — can't be passed\n"
+            "- Custom picker: PopupTransientWindow + GenericCalendarCtrl\n"
+            "  Supports CAL_MONDAY_FIRST / CAL_SUNDAY_FIRST, Wayland-safe (xdg_popup)"
         ))
         mainSizer.Add(instructions, 0, wx.ALL | wx.EXPAND, 20)
 
