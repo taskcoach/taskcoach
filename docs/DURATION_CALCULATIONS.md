@@ -22,18 +22,35 @@ Duration calculations for Edit Task Dates and Edit Effort windows.
 
 ## TODO
 
-1. Task logic: Add explicit autoheal logic for switching from Implicit to
-   other modes when duration is negative.
-2. Task logic: Clean up to NOT rely on Presets as a separate trigger, as
-   Presets is a proxy for Duration. Efforts is cleaned up already — presets
-   route through duration change. Task section should do the same.
-3. Effort: Add Presets to "Called on" line in Implements block.
-4. User-action detection: Currently using source_field as a proxy for
-   user-action since we cannot technically differentiate user actions
-   (clicks/keypresses) from system-triggered changes. If change-only
-   rule (0.2) is insufficient to prevent loops, add global logic to
-   track physical user clicks/keypresses to segregate user actions
-   versus system actions.
+5. Add cross-references to ATTRIBUTE_PATTERN.md:
+   - Section 0.2 change-only rule is the UI-level equivalent of
+     Attribute.set()'s equality check (Layer 3 in ATTRIBUTE_PATTERN.md).
+   - No-mode safety relates to ATTRIBUTE_PATTERN.md §Value Normalization.
+6. Add section 0.5: No-mode safety. If mode is None or invalid, sync
+   functions must return immediately without entering any mode branch.
+   No silent fallback to a default mode.
+   - 0.5.1 __syncTaskState: if mode not in valid set → return.
+   - 0.5.2 __syncEffortState: if mode not in valid set → return.
+     Current gap: else branch catches None mode incorrectly.
+7. Add section 0.6: Calculation mode is always explicitly required.
+   If no mode explicitly set, never default to a calculation mode.
+   In logic flow, add final item (e.g. item 5 for Task, item 4 for
+   Effort): "If no calculation mode specified, do nothing."
+   OPEN QUESTION: How to differentiate between loading in process
+   (mode not yet set, should wait) and invalid value requiring reset
+   to automatic?
+9. DateTimeCombo Checkbox toggle does NOT trigger EVT_KILL_FOCUS (blur),
+   so AttributeSync does not commit the value change. The editor may
+   need a checkbox handler to trigger a blur or immediate commit when
+   the checkbox is toggled, so the attribute pattern picks up the
+   checked/unchecked state change and runs the sync calc.
+   See [DATETIME_CONTROLS.md](DATETIME_CONTROLS.md) TODO item 3.
+
+## Notes
+
+1. Negative durations are permitted to avoid silent errors and unexpected
+   behaviour for the user. The user should see that their inputs are giving
+   negative durations.
 
 ---
 
@@ -60,9 +77,19 @@ for the next user change.
    0.3 Recursive safety.
        0.3.1 Any recursive call assumes starting at depth 0 if no depth
              received and passes depth+1 to the next call.
-       0.3.2 depth == 1 should never receive a user action, log error,
+       0.3.2 Loop calls must pass sourceField=None (or omit it).
+       0.3.3 depth == 1 should never receive a user action, log error,
              continue.
-       0.3.3 Depth > 1 should never occur, log error, exit.
+       0.3.4 Depth > 1 should never occur, log error, exit.
+   0.4 Sync-mode guard. If sync is already in progress, early exit.
+       Flag lives on the domain SSOT instance (task or effort), shared
+       across all editor windows editing the same object. Prevents
+       re-entry from synchronous pubsub callbacks triggered by commands
+       within the sync function. The loop (direct recursion) is the
+       guaranteed path for processing mode changes — suppressed
+       callbacks are harmless because the loop completes the state
+       transition. Any deferred callback that arrives after sync-mode
+       clears will run against the correct final state.
 ```
 
 ---
@@ -86,6 +113,8 @@ for the next user change.
 Start: Automatic mode, all fields empty
 
 0. See Preconditions and Global Logic section above.
+   0.4 Sync-mode guard... See section above.
+       0.4.1 Flag: task._durationSyncInProgress on domain Task instance.
 
 1. If Mode Automatic
    1.1 If Start-Date exists, Then set Adj-Due mode, Loop
@@ -100,9 +129,12 @@ Start: Automatic mode, all fields empty
    2.3 Disable Automatic mode option in dropdown [Ref1]
    2.4 If Duration changed, Then adj Due-Date
    2.5 If Start-Date Unset-Action, Then
-       2.5.1 Deactivate Due-Date
-       2.5.2 Reactivate Automatic mode option in dropdown
-       2.5.3 Set Automatic mode, Loop
+       2.5.1 Set Sync-Mode [0.4]
+       2.5.2 Deactivate Due-Date
+       2.5.3 Reactivate Automatic mode option in dropdown
+       2.5.4 Set Automatic mode
+       2.5.5 Unset Sync-Mode
+       2.5.6 Loop
    2.6 If Start-Date changed, Then adj Due-Date
 
 3. If Mode Adj-Start
@@ -111,9 +143,12 @@ Start: Automatic mode, all fields empty
    3.3 Disable Automatic mode option in dropdown [Ref1]
    3.4 If Duration changed, Then adj Start-Date
    3.5 If Due-Date Unset-Action, Then
-       3.5.1 Deactivate Start-Date
-       3.5.2 Reactivate Automatic mode option in dropdown
-       3.5.3 Set Automatic mode, Loop
+       3.5.1 Set Sync-Mode [0.4]
+       3.5.2 Deactivate Start-Date
+       3.5.3 Reactivate Automatic mode option in dropdown
+       3.5.4 Set Automatic mode
+       3.5.5 Unset Sync-Mode
+       3.5.6 Loop
    3.6 If Due-Date changed, Then adj Start-Date
 
 4. If Mode Implicit
@@ -136,6 +171,7 @@ Glossary:
    Unset-Action = explicit user change from a value to no value or zero value
    Start-Date   = Planned Start Date-Time Combo Control with Checkbox
    Due-Date     = Due Date-Time Combo Control with Checkbox
+   Sync-Mode    = Re-entry guard flag [0.4]
 
 References:
    [Ref1] Covered by "Calculation Mode Dropdown Build Logic" section
@@ -143,10 +179,11 @@ References:
 ```
 
 ```
-Implements: __syncDurationState()
-Called on: Every change of Start-Date, Due-Date, Duration, Presets, or Mode dropdown.
-Note: UI-only — updates control values (SetDateTime, SetDuration, SetChecked).
-      No persistence commands. Saving happens when the dialog is closed/saved.
+Implements: __syncTaskState()
+Called on: Every change of Start-Date, Due-Date, Duration, or Mode dropdown.
+Note: Business logic — reads/sets domain values through commands.
+      The attribute pattern (Layer 2) updates widgets automatically.
+      All sync goes through EVT_KILL_FOCUS → AttributeSync → command.
 ```
 
 ### Calculation Mode Dropdown Build Logic
@@ -161,26 +198,26 @@ Note: UI-only — updates control values (SetDateTime, SetDuration, SetChecked).
 ```
 Rule: If current mode is Automatic, enable Automatic option; otherwise disable it.
 Implements: __updateDurationModeDropdown()
-Called on: Lost focus of Start-Date, Due-Date, Duration, or Presets fields.
+Called on: Lost focus of Start-Date, Due-Date, or Duration fields.
 ```
 
 ### UI Field States
 
-| Calc Mode | Start | Due | Start Field | Duration Field | Due Field |
-|-----------|-------|-----|-------------|----------------|-----------|
-| Automatic | ❌ | ❌ | Editable | Editable | Editable |
-| Adjust Due | ✅ | ✅ | Editable + Check | Editable | Read-only + Check |
-| Adjust Start | ✅ | ✅ | Read-only + Check | Editable | Editable + Check |
-| Implicit | ✅ | ✅ | Editable | Read-only | Editable |
-| Implicit | ✅ | ❌ | Editable | Disabled | Editable |
-| Implicit | ❌ | ✅ | Editable | Disabled | Editable |
+| Calc Mode | Start | Due | Start Field | Duration Field | Presets | Due Field |
+|-----------|-------|-----|-------------|----------------|---------|-----------|
+| Automatic | ❌ | ❌ | Editable | Editable | Enabled | Editable |
+| Adjust Due | ✅ | ✅ | Editable + Check | Editable | Enabled | Read-only + Check |
+| Adjust Start | ✅ | ✅ | Read-only + Check | Editable | Enabled | Editable + Check |
+| Implicit | ✅ | ✅ | Editable | Read-only | Disabled | Editable |
+| Implicit | ✅ | ❌ | Editable | Disabled | Disabled | Editable |
+| Implicit | ❌ | ✅ | Editable | Disabled | Disabled | Editable |
 
 Key: Disabled = Field is disabled and unchecked
      + Check = Ensure checkbox is checked when setting this field state
 
 ```
 Implements: __updateFieldStates()
-Called on: Every change of Start-Date, Due-Date, Duration, or Presets fields (after main calc logic).
+Called on: Every change of Start-Date, Due-Date, or Duration (after main calc logic).
 ```
 
 ### Action Sequence
@@ -222,11 +259,11 @@ Called on: Every change of Start-Date, Due-Date, Duration, or Presets fields (af
 
 ### Entry Modes
 
-| Mode | Inputs | Output (Calculated) | Read-Only Field |
-|------|--------|---------------------|-----------------|
-| **Standard** | Set Start, Set Duration | Stop | None |
-| **Retroactive** | Set Stop, Set Duration | Start | Start |
-| **Implicit** | Set Start, Set Stop | Duration | Duration |
+| Mode | Inputs | Output (Calculated) | Read-Only Field | Presets |
+|------|--------|---------------------|-----------------|---------|
+| **Standard** | Set Start, Set Duration | Stop | None | Enabled |
+| **Retroactive** | Set Stop, Set Duration | Start | Start | Enabled |
+| **Implicit** | Set Start, Set Stop | Duration | Duration | Disabled |
 
 ### Logic Flow
 
@@ -234,68 +271,65 @@ Called on: Every change of Start-Date, Due-Date, Duration, or Presets fields (af
 Start: Standard mode, Duration 0, Stop-Date disabled
 
 0. See Preconditions and Global Logic section above.
+   0.4 Sync-mode guard... See section above.
+       0.4.1 Flag: effort._effortSyncInProgress on domain Effort instance.
 
 1. If Mode Standard
    1.1 If Retroactive mode chosen, Loop
    1.2 If Implicit mode chosen, Loop
    1.3 Set Start-Date editable
    1.4 Set Duration editable
-   1.5 If Duration Unset-Action, Then disable Stop-Date
-   1.6 If Start-Date changed, Then
-       1.6.1 If Duration > 0, Then adj Stop-Date
-       1.6.2 If Duration = 0, Then do nothing
-   1.7 If Duration changed, Then
-       1.7.1 If Duration > 0, Then
-           1.7.1.1 Enable Stop-Date
-           1.7.1.2 Adj Stop-Date
-       1.7.2 If Duration = 0, Then disable Stop-Date
-   1.8 If Stop-Date changed, Then
-       1.8.1 If Stop-Date Set-Action, Then
-           1.8.1.1 If Duration = 0, Then set Implicit mode, Loop
-           1.8.1.2 If Duration > 0, Then adj Duration
-       1.8.2 If Stop-Date <= Start-Date, Then
-           1.8.2.1 Incoherent state, Autoheal, Thus
-           1.8.2.2 Set Stop-Date = Start-Date + 1s
-           1.8.2.3 Adj Duration to 1s
-       1.8.3 If Stop-Date > Start-Date, Then adj Duration
-   1.9 If Duration <= 0, Then Autoheal, Thus
-       1.9.1 Set Duration to 0
-       1.9.2 Disable Stop-Date
-   1.10 If Duration > 0, Then Autoheal, Thus
-       1.10.1 Enable Stop-Date
-       1.10.2 Adj Stop-Date
+   1.5 Set Presets dropdown enabled [Ref1]
+   1.6 If Duration Unset-Action, Then disable Stop-Date
+   1.7 If Stop-Date Unset-Action, Then set Duration = 0
+   1.8 If Stop-Date Set-Action, Then
+       1.8.1 If Duration = 0, Then set Implicit mode, Loop
+       1.8.2 If Duration > 0, Then adj Duration
+   1.9 If Start-Date changed, Then
+       1.9.1 If Duration > 0, Then
+           1.9.1.1 Set Sync-Mode [0.4]
+           1.9.1.2 Adj Stop-Date
+           1.9.1.3 Adj Duration
+           1.9.1.4 Unset Sync-Mode
+       1.9.2 If Duration = 0, Then do nothing
+   1.10 If Duration changed and exists, Then
+       1.10.1 If Duration > 0, Then
+           1.10.1.1 Enable Stop-Date
+           1.10.1.2 Adj Stop-Date
+       1.10.2 If Duration = 0, Then disable Stop-Date
+   1.11 If Stop-Date changed and exists, Then adj Duration
+   1.12 If Duration = 0, Then Autoheal, Thus
+       1.12.1 Disable Stop-Date
+   1.13 If Duration > 0, Then Autoheal, Thus
+       1.13.1 Enable Stop-Date
+       1.13.2 Adj Stop-Date
+   1.14 If Duration < 0, Then Negative Durations permitted
 
 2. If Mode Retroactive
    2.1 If Standard mode chosen, Loop
    2.2 If Implicit mode chosen, Loop
    2.3 Set Start-Date read-only
    2.4 Set Duration editable
-   2.5 If Duration Unset-Action, Then disable Stop-Date
-   2.6 If Stop-Date changed, Then
-       2.6.1 If Duration <= 0, Then
-           2.6.1.1 Incoherent state, Autoheal, Thus
-           2.6.1.2 Set Duration to 1s
-           2.6.1.3 Set Start-Date = Stop-Date - 1s
-       2.6.2 If Duration > 0, Then adj Start-Date
-   2.7 If Duration changed, Then
-       2.7.1 If Duration > 0, Then
-           2.7.1.1 Enable Stop-Date
-           2.7.1.2 Adj Start-Date
-       2.7.2 If Duration = 0, Then disable Stop-Date
-   2.8 If Duration <= 0, Then Autoheal, Thus
-       2.8.1 Set Duration to 0
-       2.8.2 Disable Stop-Date
-   2.9 If Duration > 0, Then Autoheal, Thus
-       2.9.1 Enable Stop-Date
-       2.9.2 Adj Start-Date
+   2.5 Set Presets dropdown enabled [Ref1]
+   2.6 If Duration Unset-Action, Then disable Stop-Date
+   2.7 If Stop-Date Unset-Action, Then set Duration = 0
+   2.8 If Stop-Date changed and exists, Then adj Start-Date
+   2.9 If Duration changed and exists, Then
+       2.9.1 If Duration > 0, Then
+           2.9.1.1 Enable Stop-Date
+           2.9.1.2 Adj Start-Date
+       2.9.2 If Duration = 0, Then disable Stop-Date
+   2.10 If Duration = 0, Then Autoheal, Thus
+       2.10.1 Disable Stop-Date
+   2.11 If Duration > 0, Then Autoheal, Thus
+       2.11.1 Enable Stop-Date
+       2.11.2 Adj Start-Date
+   2.12 If Duration < 0, Then Negative Durations permitted
 
 3. If Mode Implicit
    3.1 If Standard mode chosen, Loop
    3.2 If Retroactive mode chosen, Loop
-   3.3 If Duration changed, Then
-       3.3.1 Only possible via Presets change
-       3.3.2 Leave Duration as set by preset, do NOT adj
-       3.3.3 Set Standard Mode, Loop
+   3.3 Set Presets dropdown disabled [Ref1]
    3.4 Set Start-Date editable
    3.5 If Stop-Date does not exist, Disable Duration
    3.6 If Stop-Date exists, Then
@@ -310,19 +344,51 @@ Glossary:
    Start-Date   = Start Date-Time Combo Control with Checkbox
    Stop-Date    = Stop Date-Time Combo Control with Checkbox
    Duration     = Effort Duration Control
+
+References:
+   [Ref1] Covered by "UI Field States" section
 ```
 
 ```
 Implements: __syncEffortState()
 Called on: Every change of Start-Date, Stop-Date, Duration, or Mode dropdown.
-Note: UI-only — updates control values (SetDateTime, SetDuration, SetChecked).
-      No persistence commands. Saving happens when the dialog is closed/saved.
+Note: Business logic — reads/sets domain values through commands.
+      The attribute pattern (Layer 2) updates widgets automatically.
+      All sync goes through EVT_KILL_FOCUS → AttributeSync → command.
 ```
 
 ### Time Spent
 
-Display-only field showing Now - Start, activated when tracking (no Stop-Date).
-Deactivated when Stop-Date exists.
+Display-only field showing Now - Start. Value refreshes on a 1-second timer.
+See UI Field States table for Active/Hidden display rules.
+
+```
+Implements: __updateTimeSpentDisplay()
+Called on: After main calc logic; value refreshed every 1s by timer while active.
+```
+
+### UI Field States
+
+| Entry Mode | Stop | Start Field | Duration Field | Presets | Stop Field | Time Spent |
+|------------|------|-------------|----------------|---------|------------|------------|
+| Standard | ❌ | Editable | Editable | Enabled | Editable | Active |
+| Standard | ✅ | Editable | Editable | Enabled | Editable | Hidden |
+| Retroactive | ❌ | Read-only | Editable | Enabled | Editable | Active |
+| Retroactive | ✅ | Read-only | Editable | Enabled | Editable | Hidden |
+| Implicit | ❌ | Editable | Disabled | Disabled | Editable | Active |
+| Implicit | ✅ | Editable | Read-only | Disabled | Editable | Hidden |
+
+Key: Disabled = Field is disabled (and unchecked for Stop)
+     Read-only = Field is enabled but not user-editable
+     Active = Display-only, showing Now - Start (tracking)
+     Hidden = Not displayed (Stop-Date exists, not tracking)
+
+```
+Note: Currently only implements Time Spent and Presets dropdown fields.
+      Other field states are set inline in the logic flow.
+Implements: __updateFieldStates()
+Called on: After main calc logic, every change of Start-Date, Stop-Date, Duration, or Mode dropdown.
+```
 
 ---
 

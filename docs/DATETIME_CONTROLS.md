@@ -4,6 +4,7 @@ Simple time and duration input controls with explicit subfields and translatable
 
 ## Index
 
+- [TODO](#todo)
 - [Location](#location)
 - [Old Control Behavior Reference](#old-control-behavior-reference)
   - [N/A Display When Unchecked](#na-display-when-unchecked)
@@ -54,6 +55,24 @@ Simple time and duration input controls with explicit subfields and translatable
 
 ---
 Self-contained module with custom-painted single field and navigable subfields.
+
+## TODO
+
+1. Add `Activate()` method to DateTimeCombo — programmatically checks the
+   checkbox and enables fields, using the internally stored value (typically
+   `now()` from construction). Used by duration calc logic (steps 2.1, 3.1)
+   to activate a missing date without specifying a value.
+2. Add `Deactivate()` / `Unset()` method to DateTimeCombo — programmatically
+   unchecks the checkbox and disables fields. Review integration with the
+   existing `SetNone` pattern from the old smartdatetimectrl (see
+   [SetNone: Unchecking the Checkbox](#setnone-unchecking-the-checkbox)).
+   Used by duration calc logic (steps 2.5.1, 3.5.1) to deactivate a date.
+3. Checkbox toggle does NOT trigger EVT_KILL_FOCUS (blur) because focus
+   stays on the checkbox. AttributeSync relies on EVT_KILL_FOCUS to
+   commit the value change. The checkbox toggle needs to either trigger
+   a blur/focus-change or fire an immediate commit so the attribute
+   pattern can pick up the checked/unchecked state change.
+   See [DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md) TODO item 9.
 
 ## Location
 
@@ -203,7 +222,7 @@ The `suggestedDateTime` parameter in `entry.py` is for when a **different** sugg
 
 ### External Update Mechanism (AttributeSync)
 
-Controls must update automatically when the underlying data changes from external sources (background tasks, other windows, other processes). This is handled by `AttributeSync`.
+Controls must update automatically when the underlying data changes from external sources (background tasks, other windows, other processes). This is handled by `AttributeSync` (see ATTRIBUTE_PATTERN.md §Three-Layer Relationship, Layer 2).
 
 **Code reference:** `taskcoachlib/gui/dialog/attributesync.py`
 
@@ -418,7 +437,6 @@ ctrl.SetDuration(date.TimeDelta(days=1, hours=2))
 # AttributeSync compatibility aliases
 value = ctrl.GetValue()         # same as GetDuration()
 ctrl.SetValue(duration)         # same as SetDuration()
-ctrl.SetValue(duration, quiet=True)  # suppress events
 
 # Negative durations (display only, e.g. budget left = -1:30:00)
 ctrl.SetDuration(date.TimeDelta(hours=-1, minutes=-30))

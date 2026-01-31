@@ -327,6 +327,7 @@ class EffortTest(test.TestCase, asserts.Mixin):
                 self.effort.taskChangedEventType(),
                 self.effort.startChangedEventType(),
                 self.effort.stopChangedEventType(),
+                self.effort.entryModeChangedEventType(),
             ],
             self.effort.modificationEventTypes(),
         )

@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns
 from taskcoachlib.domain import date, base, task
+from taskcoachlib.domain.base.attribute import Attribute
 from pubsub import pub
 from . import base as baseeffort
 import functools
@@ -32,8 +33,10 @@ class Effort(baseeffort.BaseEffort, base.Object):
         super().__init__(
             task, start or date.DateTime.now(), stop, *args, **kwargs
         )
-        self.__entryMode = entryMode if entryMode in ("standard", "retroactive") else "standard"
-        self.__updateDurationCache()
+        self.__entryMode = Attribute(
+            entryMode, self, self._onEntryModeChanged
+        )
+        self.__duration = Attribute(self._computeDuration(), self, self._onDurationChanged)
 
     def __getattribute__(self, name):
         """Override to prevent methods from being shadowed by instance attributes.
@@ -99,7 +102,7 @@ class Effort(baseeffort.BaseEffort, base.Object):
 
     def __str__(self):
         task = self._task() if self._task else None
-        return "Effort(%s, %s, %s)" % (task, self._start, self._stop)
+        return "Effort(%s, %s, %s)" % (task, self._start.get(), self._stop.get())
 
     __repr__ = __str__
 
@@ -113,9 +116,9 @@ class Effort(baseeffort.BaseEffort, base.Object):
         if not isinstance(other, Effort):
             return NotImplemented
         # Compare by start time first, then stop time, then id for total ordering
-        self_stop = self._stop if self._stop is not None else date.DateTime.max
-        other_stop = other._stop if other._stop is not None else date.DateTime.max
-        return (self._start, self_stop, self._Object__id) < (other._start, other_stop, other._Object__id)
+        self_stop = self._stop.get() if self._stop.get() is not None else date.DateTime.max
+        other_stop = other._stop.get() if other._stop.get() is not None else date.DateTime.max
+        return (self._start.get(), self_stop, self._Object__id) < (other._start.get(), other_stop, other._Object__id)
 
     def __hash__(self):
         return hash(self._Object__id)
@@ -124,7 +127,8 @@ class Effort(baseeffort.BaseEffort, base.Object):
         state = super().__getstate__()
         task = self._task() if self._task else None
         state.update(
-            dict(task=task, start=self._start, stop=self._stop, entryMode=self.__entryMode)
+            dict(task=task, start=self._start.get(), stop=self._stop.get(),
+                 entryMode=self.__entryMode.get(), duration=self.__duration.get())
         )
         return state
 
@@ -132,62 +136,90 @@ class Effort(baseeffort.BaseEffort, base.Object):
     def __setstate__(self, state, event=None):
         super().__setstate__(state, event=event)
         self.setTask(state["task"])
-        self.setStart(state["start"])
-        self.setStop(state["stop"])
-        self.setEntryMode(state.get("entryMode", "standard"))
+        self.setStart(state["start"], event=event)
+        self.setStop(state["stop"], event=event)
+        self.setEntryMode(state.get("entryMode", "standard"), event=event)
+        self.setDuration(state.get("duration"), event=event)
 
     def __getcopystate__(self):
         state = super().__getcopystate__()
         task = self._task() if self._task else None
         state.update(
-            dict(task=task, start=self._start, stop=self._stop, entryMode=self.__entryMode)
+            dict(task=task, start=self._start.get(), stop=self._stop.get(),
+                 entryMode=self.__entryMode.get(), duration=self.__duration.get())
         )
         return state
 
-    def duration(self, now=date.DateTime.now):
-        return (
-            now() - self._start
-            if self.__cachedDuration is None
-            else self.__cachedDuration
+    def _computeDuration(self):
+        stop = self._stop.get()
+        return stop - self._start.get() if stop else None
+
+    def _onDurationChanged(self, event):
+        self.sendDurationChangedMessage()
+        task = self._task() if self._task else None
+        if task and task.hourlyFee():
+            self.sendRevenueChangedMessage()
+
+    def sendDurationChangedMessage(self):
+        """Override to send stored value, not live-computed value.
+
+        BaseEffort.sendDurationChangedMessage sends self.duration() which
+        returns now()-start when duration is None (tracking). We send
+        self.__duration.get() (the stored value) to match how start/stop
+        send their stored values via getters.
+        """
+        stored = self.__duration.get()
+        from pubsub import pub
+        pub.sendMessage(
+            self.durationChangedEventType(),
+            newValue=stored,
+            sender=self,
         )
 
-    def setStart(self, startDateTime):
-        if startDateTime == self._start:
-            return
-        self._start = startDateTime
-        self.__updateDurationCache()
+    def duration(self, now=date.DateTime.now):
+        cached = self.__duration.get()
+        return (now() - self._start.get()) if cached is None else cached
+
+    def setDuration(self, newDuration, event=None):
+        """Setter — normalizes and delegates to Attribute."""
+        if newDuration is not None and newDuration == date.TimeDelta():
+            newDuration = None
+        self.__duration.set(newDuration, event=event)
+
+    def setStart(self, startDateTime, event=None):
+        self._start.set(startDateTime, event=event)
+
+    def _onStartChanged(self, event):
         pub.sendMessage(
-            self.startChangedEventType(), newValue=startDateTime, sender=self
+            self.startChangedEventType(), newValue=self.getStart(), sender=self
         )
         task = self._task() if self._task else None
         if task:
             task.sendTimeSpentChangedMessage()
-        self.sendDurationChangedMessage()
-        if task and task.hourlyFee():
-            self.sendRevenueChangedMessage()
 
     @classmethod
     def startChangedEventType(class_):
         return "pubsub.effort.start"
 
-    def setStop(self, newStop=None):
+    def setStop(self, newStop=None, event=None):
         if newStop is None:
             newStop = date.DateTime.now()
-        elif newStop == date.DateTime.max:
+        elif newStop == date.DateTime.max or newStop == date.DateTime():
             newStop = None
-        if newStop == self._stop:
-            return
-        previousStop = self._stop
-        self._stop = newStop
-        self.__updateDurationCache()
+        self._previousStop = self._stop.get()
+        self._stop.set(newStop, event=event)
+
+    def _onStopChanged(self, event):
+        previousStop = getattr(self, '_previousStop', None)
+        newStop = self._stop.get()
         task = self._task() if self._task else None
-        if newStop == None:
+        if newStop is None:
             pub.sendMessage(
                 self.trackingChangedEventType(), newValue=True, sender=self
             )
             if task:
                 task.sendTrackingChangedMessage(tracking=True)
-        elif previousStop == None:
+        elif previousStop is None:
             pub.sendMessage(
                 self.trackingChangedEventType(), newValue=False, sender=self
             )
@@ -196,23 +228,15 @@ class Effort(baseeffort.BaseEffort, base.Object):
         if task:
             task.sendTimeSpentChangedMessage()
         pub.sendMessage(
-            self.stopChangedEventType(), newValue=self._stop, sender=self
+            self.stopChangedEventType(), newValue=newStop, sender=self
         )
-        self.sendDurationChangedMessage()
-        if task and task.hourlyFee():
-            self.sendRevenueChangedMessage()
 
     @classmethod
     def stopChangedEventType(class_):
         return "pubsub.effort.stop"
 
-    def __updateDurationCache(self):
-        self.__cachedDuration = (
-            self._stop - self._start if self._stop else None
-        )
-
     def isBeingTracked(self, recursive=False):  # pylint: disable=W0613
-        return self._stop is None
+        return self._stop.get() is None
 
     def revenue(self):
         task = self._task() if self._task else None
@@ -248,21 +272,19 @@ class Effort(baseeffort.BaseEffort, base.Object):
             class_.entryModeChangedEventType(),
         ]
 
-    # Entry mode (standard or retroactive)
+    # Entry mode (standard, retroactive, or implicit)
 
     def entryMode(self):
-        """Return the entry mode: 'standard' or 'retroactive'."""
-        return self.__entryMode
+        """Return the entry mode: 'standard', 'retroactive', or 'implicit'."""
+        return self.__entryMode.get()
 
-    def setEntryMode(self, mode):
-        """Set the entry mode."""
-        mode = mode if mode in ("standard", "retroactive") else "standard"
-        if mode == self.__entryMode:
-            return
-        self.__entryMode = mode
+    def setEntryMode(self, mode, event=None):
+        self.__entryMode.set(mode, event=event)
+
+    def _onEntryModeChanged(self, event):
         pub.sendMessage(
             self.entryModeChangedEventType(),
-            newValue=mode,
+            newValue=self.entryMode(),
             sender=self,
         )
 

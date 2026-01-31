@@ -2,7 +2,15 @@
 
 from typing import Union, List
 import wx
-import numpy as np
+
+# Guard numpy import — may crash with SIGILL on old CPUs (see _numpy_probe.py)
+try:
+    from taskcoachlib.tools._numpy_probe import numpy_usable
+    if not numpy_usable:
+        raise ImportError("numpy probe failed")
+    import numpy as np
+except Exception:
+    np = None
 
 
 def centerOnAppMonitor(window):
@@ -67,16 +75,15 @@ def getButtonFromStdDialogButtonSizer(
 
 
 def getAlphaDataFromImage(image: wx.Image, as_numpy=True):
-    """Get image alpha data, supports returning NumPy array"""
+    """Get image alpha data, supports returning NumPy array."""
     alpha_data = image.GetAlpha()
-    if as_numpy:
+    if np is not None and as_numpy:
         return np.frombuffer(alpha_data, dtype=np.uint8)
-    else:
-        return alpha_data
+    return alpha_data
 
 
 def setAlphaDataToImage(image: wx.Image, data):
-    """Enhanced setAlphaDataToImage that directly supports NumPy arrays"""
+    """Set alpha data on image. Supports NumPy arrays, bytes, lists."""
     if not image.HasAlpha():
         image.InitAlpha()
 
@@ -84,52 +91,68 @@ def setAlphaDataToImage(image: wx.Image, data):
     height = image.GetHeight()
     expected_size = width * height
 
-    # Unified handling of various input types
-    if isinstance(data, np.ndarray):
-        # Directly use NumPy array
-        data_array = data.astype(np.uint8).flatten()
-    elif isinstance(data, (list, tuple)):
-        # Convert list/tuple to NumPy array
-        data_array = np.array(data, dtype=np.uint8)
-    elif isinstance(data, (bytes, bytearray)):
-        # Directly use byte data
-        data_array = np.frombuffer(data, dtype=np.uint8)
-    else:
-        raise TypeError(f"Unsupported data type: {type(data)}")
-
-    # Validate and adjust data size
-    if data_array.size != expected_size:
-        if data_array.size > expected_size:
-            data_array = data_array[:expected_size]
+    if np is not None:
+        # NumPy path
+        if isinstance(data, np.ndarray):
+            data_array = data.astype(np.uint8).flatten()
+        elif isinstance(data, (list, tuple)):
+            data_array = np.array(data, dtype=np.uint8)
+        elif isinstance(data, (bytes, bytearray)):
+            data_array = np.frombuffer(data, dtype=np.uint8)
         else:
-            # Pad with zeros if data is insufficient
-            padded_data = np.zeros(expected_size, dtype=np.uint8)
-            padded_data[: data_array.size] = data_array
-            data_array = padded_data
+            raise TypeError(f"Unsupported data type: {type(data)}")
 
-    # Ensure data is within valid range
-    data_array = np.clip(data_array, 0, 255)
+        if data_array.size != expected_size:
+            if data_array.size > expected_size:
+                data_array = data_array[:expected_size]
+            else:
+                padded_data = np.zeros(expected_size, dtype=np.uint8)
+                padded_data[: data_array.size] = data_array
+                data_array = padded_data
 
-    # Set all alpha data at once
-    image.SetAlpha(data_array.tobytes())
+        data_array = np.clip(data_array, 0, 255)
+        image.SetAlpha(data_array.tobytes())
+    else:
+        # Pure-Python fallback
+        if isinstance(data, (bytes, bytearray)):
+            raw = bytearray(data)
+        elif isinstance(data, (list, tuple)):
+            raw = bytearray(max(0, min(255, b)) for b in data)
+        else:
+            raise TypeError(f"Unsupported data type: {type(data)}")
+
+        if len(raw) > expected_size:
+            raw = raw[:expected_size]
+        elif len(raw) < expected_size:
+            raw.extend(b'\x00' * (expected_size - len(raw)))
+
+        # Clip to 0-255 range
+        for i in range(len(raw)):
+            if raw[i] > 255:
+                raw[i] = 255
+
+        image.SetAlpha(bytes(raw))
 
 
 def clearAlphaDataOfImage(image: wx.Image, value: int):
+    """Fill image alpha channel with a uniform value."""
     if not image.HasAlpha():
         image.InitAlpha()
 
     width = image.GetWidth()
     height = image.GetHeight()
+    size = width * height
 
-    # Create a writable array filled with the value
-    alpha_array = np.full(width * height, value, dtype=np.uint8)
-    image.SetAlpha(alpha_array.tobytes())
+    if np is not None:
+        alpha_array = np.full(size, value, dtype=np.uint8)
+        image.SetAlpha(alpha_array.tobytes())
+    else:
+        clamped = max(0, min(255, value))
+        image.SetAlpha(bytes([clamped]) * size)
 
 
 def mergeImagesWithAlpha(main_image, overlay_image, overlay_position):
-    """
-    Efficiently merge alpha channels of two images using NumPy
-    """
+    """Merge alpha channels of two images."""
     main_width, main_height = main_image.GetWidth(), main_image.GetHeight()
     overlay_width, overlay_height = (
         overlay_image.GetWidth(),
@@ -137,38 +160,50 @@ def mergeImagesWithAlpha(main_image, overlay_image, overlay_position):
     )
     overlay_x, overlay_y = overlay_position
 
-    # Directly get NumPy arrays
-    main_alpha = getAlphaDataFromImage(main_image).reshape(
-        main_height, main_width
-    )
-    overlay_alpha = np.frombuffer(
-        overlay_image.GetAlphaBuffer(), dtype=np.uint8
-    ).reshape(overlay_height, overlay_width)
-
-    # Calculate overlay region
     y_start, y_end = overlay_y, min(overlay_y + overlay_height, main_height)
     x_start, x_end = overlay_x, min(overlay_x + overlay_width, main_width)
-
-    # Adjust overlay alpha dimensions
     actual_overlay_height = y_end - y_start
     actual_overlay_width = x_end - x_start
 
-    if (
-        actual_overlay_height < overlay_height
-        or actual_overlay_width < overlay_width
-    ):
-        overlay_alpha = overlay_alpha[
-            :actual_overlay_height, :actual_overlay_width
-        ]
+    if np is not None:
+        # NumPy path
+        main_alpha = getAlphaDataFromImage(main_image).reshape(
+            main_height, main_width
+        )
+        overlay_alpha = np.frombuffer(
+            overlay_image.GetAlphaBuffer(), dtype=np.uint8
+        ).reshape(overlay_height, overlay_width)
 
-    # Merge alpha channels
-    result_alpha = main_alpha.copy()
-    result_alpha[y_start:y_end, x_start:x_end] = np.maximum(
-        result_alpha[y_start:y_end, x_start:x_end], overlay_alpha
-    )
+        if (actual_overlay_height < overlay_height
+                or actual_overlay_width < overlay_width):
+            overlay_alpha = overlay_alpha[
+                :actual_overlay_height, :actual_overlay_width
+            ]
 
-    # Create result image
-    result_image = main_image.Copy()
-    setAlphaDataToImage(result_image, result_alpha)
+        result_alpha = main_alpha.copy()
+        result_alpha[y_start:y_end, x_start:x_end] = np.maximum(
+            result_alpha[y_start:y_end, x_start:x_end], overlay_alpha
+        )
+
+        result_image = main_image.Copy()
+        setAlphaDataToImage(result_image, result_alpha)
+    else:
+        # Pure-Python fallback
+        main_alpha_bytes = main_image.GetAlpha()
+        main_alpha = bytearray(main_alpha_bytes)
+        overlay_alpha_bytes = overlay_image.GetAlpha()
+        overlay_alpha = bytearray(overlay_alpha_bytes)
+
+        for y in range(actual_overlay_height):
+            for x in range(actual_overlay_width):
+                mi = (y_start + y) * main_width + (x_start + x)
+                oi = y * overlay_width + x
+                if main_alpha[mi] < overlay_alpha[oi]:
+                    main_alpha[mi] = overlay_alpha[oi]
+
+        result_image = main_image.Copy()
+        if not result_image.HasAlpha():
+            result_image.InitAlpha()
+        result_image.SetAlpha(bytes(main_alpha))
 
     return result_image

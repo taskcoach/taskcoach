@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from taskcoachlib.domain.base.attribute import Attribute
 from pubsub import pub
 import weakref
 
@@ -24,9 +25,15 @@ import weakref
 class BaseEffort(object):
     def __init__(self, task, start, stop, *args, **kwargs):
         self._task = None if task is None else weakref.ref(task)
-        self._start = start
-        self._stop = stop
+        self._start = Attribute(start, self, self._onStartChanged)
+        self._stop = Attribute(stop, self, self._onStopChanged)
         super().__init__(*args, **kwargs)
+
+    def _onStartChanged(self, event):
+        pass
+
+    def _onStopChanged(self, event):
+        pass
 
     def task(self):
         # Access _task directly to avoid potential attribute shadowing
@@ -39,10 +46,10 @@ class BaseEffort(object):
         return None if self._task is None else self._task()
 
     def getStart(self):
-        return self._start
+        return self._start.get()
 
     def getStop(self):
-        return self._stop
+        return self._stop.get()
 
     def subject(self, *args, **kwargs):
         task = self._task() if self._task else None

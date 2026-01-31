@@ -1,5 +1,41 @@
 # Icon Library
 
+## Table of Contents
+
+- [TODO](#todo)
+- [IMPORTANT: Complete Import Cycle](#important-complete-import-cycle)
+- [Current Architecture](#current-architecture)
+- [Required Sizes](#required-sizes)
+- [Directory Structure](#directory-structure)
+- [Icon Format](#icon-format)
+- [Icon Categories](#icon-categories)
+- [Icon Sources](#icon-sources)
+- [Mixing Icons from Different Sources](#mixing-icons-from-different-sources)
+- [Icon Set Comparison](#icon-set-comparison)
+- [Notes on Icon Sets](#notes-on-icon-sets)
+- [Adding New Icons](#adding-new-icons)
+- [Migration from Legacy Icons](#migration-from-legacy-icons)
+- [Recently Added Icons](#recently-added-icons)
+- [See Also](#see-also)
+
+## TODO
+
+### Monochrome Icon Support
+- [ ] Add support for monochrome (symbolic) icons from Breeze, Adwaita
+- [ ] Implement icon recoloring: monochrome icons can be tinted to match theme
+- [ ] Add icon color options to the icon picker:
+  - Primary color picker for monochrome icons
+  - Preview of tinted icon before selection
+- [ ] Document which icon sets have monochrome variants
+
+**Note:** Currently only pre-colored icons are used. Breeze icons have colors (#232629 dark gray + accent colors like #da4453 red, #27ae60 green) - they are NOT monochrome. The `-symbolic` variants ARE monochrome. Only the `-symbolic` versions should be excluded until recoloring support is implemented.
+
+### Duplicate Icon Review
+- [x] Document duplicates in ICON_MAPPING.json to prevent re-importing
+- [ ] Audit new icons against existing legacy icons for visual duplicates
+
+See `ICON_MAPPING.json` for documented duplicates (in the `duplicates` field of each icon entry).
+
 ## IMPORTANT: Complete Import Cycle
 
 **When adding a new icon, ALL THREE steps are required:**
@@ -535,24 +571,6 @@ This auto-migrates saved task files using old icon names.
 ## Recently Added Icons
 
 See `ICON_MAPPING.json` for the full list of imported icons with provenance.
-
-## TODO
-
-### Monochrome Icon Support
-- [ ] Add support for monochrome (symbolic) icons from Breeze, Adwaita
-- [ ] Implement icon recoloring: monochrome icons can be tinted to match theme
-- [ ] Add icon color options to the icon picker:
-  - Primary color picker for monochrome icons
-  - Preview of tinted icon before selection
-- [ ] Document which icon sets have monochrome variants
-
-**Note:** Currently only pre-colored icons are used. Breeze icons have colors (#232629 dark gray + accent colors like #da4453 red, #27ae60 green) - they are NOT monochrome. The `-symbolic` variants ARE monochrome. Only the `-symbolic` versions should be excluded until recoloring support is implemented.
-
-### Duplicate Icon Review
-- [x] Document duplicates in ICON_MAPPING.json to prevent re-importing
-- [ ] Audit new icons against existing legacy icons for visual duplicates
-
-See `ICON_MAPPING.json` for documented duplicates (in the `duplicates` field of each icon entry).
 
 ## See Also
 

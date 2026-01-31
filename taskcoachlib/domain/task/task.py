@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns
 from taskcoachlib.domain import date, categorizable, note, attachment, base
+from taskcoachlib.domain.base.attribute import Attribute
 from taskcoachlib.domain.attribute.icon import getImageOpen
 from pubsub import pub
 from weakref import WeakSet
@@ -80,23 +81,23 @@ class Task(
             "behavior", "duesoonhours"
         )  # pylint: disable=E1101
         maxDateTime = self.maxDateTime
-        self.__dueDateTime = dueDateTime or maxDateTime
-        self.__plannedStartDateTime = plannedStartDateTime or maxDateTime
-        self.__actualStartDateTime = actualStartDateTime or maxDateTime
+        self.__dueDateTime = Attribute(dueDateTime or maxDateTime, self, self._onDueDateTimeChanged)
+        self.__plannedStartDateTime = Attribute(plannedStartDateTime or maxDateTime, self, self._onPlannedStartDateTimeChanged)
+        self.__actualStartDateTime = Attribute(actualStartDateTime or maxDateTime, self, self._onActualStartDateTimeChanged)
         if completionDateTime is None and percentageComplete == 100:
             completionDateTime = date.Now()
-        self.__completionDateTime = completionDateTime or maxDateTime
+        self.__completionDateTime = Attribute(completionDateTime or maxDateTime, self, self._onCompletionDateTimeChanged)
         percentageComplete = (
             100
-            if self.__completionDateTime != maxDateTime
+            if self.__completionDateTime.get() != maxDateTime
             else percentageComplete
         )
-        self.__percentageComplete = percentageComplete
+        self.__percentageComplete = Attribute(percentageComplete, self, self._onPercentageCompleteChanged)
         self.__budget = budget or date.TimeDelta()
-        self.__plannedDuration = plannedDuration or date.TimeDelta()
+        self.__plannedDuration = Attribute(plannedDuration or date.TimeDelta(), self, self._onPlannedDurationChanged)
         # Normalize old mode values to new keys: implicit, adjdue, adjstart
         mode_map = {"todue": "adjdue", "fromstart": "adjstart"}
-        self.__plannedDurationMode = mode_map.get(plannedDurationMode, plannedDurationMode) or "implicit"
+        self.__plannedDurationMode = Attribute(mode_map.get(plannedDurationMode, plannedDurationMode) or "implicit", self, self._onPlannedDurationModeChanged)
         self._efforts = efforts or []
         self.__priority = priority
         self.__hourlyFee = hourlyFee
@@ -147,17 +148,17 @@ class Task(
     @patterns.eventSource
     def __setstate__(self, state, event=None):
         super().__setstate__(state, event=event)
-        self.setPlannedStartDateTime(state["plannedStartDateTime"])
-        self.setActualStartDateTime(state["actualStartDateTime"])
-        self.setDueDateTime(state["dueDateTime"])
-        self.setCompletionDateTime(state["completionDateTime"])
-        self.setPercentageComplete(state["percentageComplete"])
+        self.setPlannedStartDateTime(state["plannedStartDateTime"], event=event)
+        self.setActualStartDateTime(state["actualStartDateTime"], event=event)
+        self.setDueDateTime(state["dueDateTime"], event=event)
+        self.setCompletionDateTime(state["completionDateTime"], event=event)
+        self.setPercentageComplete(state["percentageComplete"], event=event)
         self.setRecurrence(state["recurrence"])
         self.setReminder(state["reminder"])
         self.setEfforts(state["efforts"])
         self.setBudget(state["budget"])
-        self.setPlannedDuration(state.get("plannedDuration", date.TimeDelta()))
-        self.setPlannedDurationMode(state.get("plannedDurationMode", "implicit"))
+        self.setPlannedDuration(state.get("plannedDuration", date.TimeDelta()), event=event)
+        self.setPlannedDurationMode(state.get("plannedDurationMode", "implicit"), event=event)
         self.setPriority(state["priority"])
         self.setHourlyFee(state["hourlyFee"])
         self.setFixedFee(state["fixedFee"])
@@ -171,17 +172,17 @@ class Task(
         state = super().__getstate__()
         state.update(
             dict(
-                dueDateTime=self.__dueDateTime,
-                plannedStartDateTime=self.__plannedStartDateTime,
-                actualStartDateTime=self.__actualStartDateTime,
-                completionDateTime=self.__completionDateTime,
-                percentageComplete=self.__percentageComplete,
+                dueDateTime=self.__dueDateTime.get(),
+                plannedStartDateTime=self.__plannedStartDateTime.get(),
+                actualStartDateTime=self.__actualStartDateTime.get(),
+                completionDateTime=self.__completionDateTime.get(),
+                percentageComplete=self.__percentageComplete.get(),
                 children=self.children(),
                 parent=self.parent(),
                 efforts=self._efforts,
                 budget=self.__budget,
-                plannedDuration=self.__plannedDuration,
-                plannedDurationMode=self.__plannedDurationMode,
+                plannedDuration=self.__plannedDuration.get(),
+                plannedDurationMode=self.__plannedDurationMode.get(),
                 priority=self.__priority,
                 hourlyFee=self.__hourlyFee,
                 fixedFee=self.__fixedFee,
@@ -198,15 +199,15 @@ class Task(
         state = super().__getcopystate__()
         state.update(
             dict(
-                plannedStartDateTime=self.__plannedStartDateTime,
-                dueDateTime=self.__dueDateTime,
-                actualStartDateTime=self.__actualStartDateTime,
-                completionDateTime=self.__completionDateTime,
-                percentageComplete=self.__percentageComplete,
+                plannedStartDateTime=self.__plannedStartDateTime.get(),
+                dueDateTime=self.__dueDateTime.get(),
+                actualStartDateTime=self.__actualStartDateTime.get(),
+                completionDateTime=self.__completionDateTime.get(),
+                percentageComplete=self.__percentageComplete.get(),
                 efforts=[effort.copy() for effort in self._efforts],
                 budget=self.__budget,
-                plannedDuration=self.__plannedDuration,
-                plannedDurationMode=self.__plannedDurationMode,
+                plannedDuration=self.__plannedDuration.get(),
+                plannedDurationMode=self.__plannedDurationMode.get(),
                 priority=self.__priority,
                 hourlyFee=self.__hourlyFee,
                 fixedFee=self.__fixedFee,
@@ -346,26 +347,25 @@ class Task(
                 for child in self.children()
                 if not child.completed()
             ]
-            return min(childrenDueDateTimes + [self.__dueDateTime])
+            return min(childrenDueDateTimes + [self.__dueDateTime.get()])
         else:
-            return self.__dueDateTime
+            return self.__dueDateTime.get()
 
-    def setDueDateTime(self, dueDateTime):
-        if dueDateTime == self.__dueDateTime:
-            return
-        self.__dueDateTime = dueDateTime
-        # Note: Status transitions are handled by ComputeStyles per-second polling
+    def setDueDateTime(self, dueDateTime, event=None):
+        self.__dueDateTime.set(dueDateTime, event=event)
+
+    def _onDueDateTimeChanged(self, event):
         self.markDirty()
         self.recomputeAppearance()
         pub.sendMessage(
             self.dueDateTimeChangedEventType(),
-            newValue=dueDateTime,
+            newValue=self.dueDateTime(),
             sender=self,
         )
         for ancestor in self.ancestors():
             pub.sendMessage(
                 ancestor.dueDateTimeChangedEventType(),
-                newValue=dueDateTime,
+                newValue=self.dueDateTime(),
                 sender=ancestor,
             )
 
@@ -399,27 +399,26 @@ class Task(
                 if not child.completed()
             ]
             return min(
-                childrenPlannedStartDateTimes + [self.__plannedStartDateTime]
+                childrenPlannedStartDateTimes + [self.__plannedStartDateTime.get()]
             )
         else:
-            return self.__plannedStartDateTime
+            return self.__plannedStartDateTime.get()
 
-    def setPlannedStartDateTime(self, plannedStartDateTime):
-        if plannedStartDateTime == self.__plannedStartDateTime:
-            return
-        self.__plannedStartDateTime = plannedStartDateTime
-        # Note: Status transitions are handled by ComputeStyles per-second polling
+    def setPlannedStartDateTime(self, plannedStartDateTime, event=None):
+        self.__plannedStartDateTime.set(plannedStartDateTime, event=event)
+
+    def _onPlannedStartDateTimeChanged(self, event):
         self.markDirty()
         self.recomputeAppearance()
         pub.sendMessage(
             self.plannedStartDateTimeChangedEventType(),
-            newValue=plannedStartDateTime,
+            newValue=self.plannedStartDateTime(),
             sender=self,
         )
         for ancestor in self.ancestors():
             pub.sendMessage(
                 ancestor.plannedStartDateTimeChangedEventType(),
-                newValue=plannedStartDateTime,
+                newValue=self.plannedStartDateTime(),
                 sender=ancestor,
             )
 
@@ -464,29 +463,29 @@ class Task(
                 if not child.completed()
             ]
             return min(
-                childrenActualStartDateTimes + [self.__actualStartDateTime]
+                childrenActualStartDateTimes + [self.__actualStartDateTime.get()]
             )
         else:
-            return self.__actualStartDateTime
+            return self.__actualStartDateTime.get()
 
-    def setActualStartDateTime(self, actualStartDateTime, recursive=False):
-        if actualStartDateTime == self.__actualStartDateTime:
-            return
-        self.__actualStartDateTime = actualStartDateTime
+    def setActualStartDateTime(self, actualStartDateTime, recursive=False, event=None):
         if recursive:
             for child in self.children(recursive=True):
                 child.setActualStartDateTime(actualStartDateTime)
+        self.__actualStartDateTime.set(actualStartDateTime, event=event)
+
+    def _onActualStartDateTimeChanged(self, event):
         self.markDirty()
         self.recomputeAppearance()
         pub.sendMessage(
             self.actualStartDateTimeChangedEventType(),
-            newValue=actualStartDateTime,
+            newValue=self.actualStartDateTime(),
             sender=self,
         )
         for ancestor in self.ancestors():
             pub.sendMessage(
                 ancestor.actualStartDateTimeChangedEventType(),
-                newValue=actualStartDateTime,
+                newValue=self.actualStartDateTime(),
                 sender=ancestor,
             )
 
@@ -514,58 +513,53 @@ class Task(
                 if child.completed()
             ]
             return max(
-                childrenCompletionDateTimes + [self.__completionDateTime]
+                childrenCompletionDateTimes + [self.__completionDateTime.get()]
             )
         else:
-            return self.__completionDateTime
+            return self.__completionDateTime.get()
 
-    def setCompletionDateTime(self, completionDateTime=None):
-        completionDateTime = completionDateTime or date.Now()
-        if completionDateTime == self.__completionDateTime:
-            return
-        if completionDateTime != self.maxDateTime and self.recurrence():
-            self.recur(completionDateTime)
-        else:
-            parent = self.parent()
-            if parent:
-                oldParentPriority = parent.priority(recursive=True)
-            self.__status = None
-            self.__completionDateTime = completionDateTime
-            if parent and parent.priority(recursive=True) != oldParentPriority:
-                parent.sendPriorityChangedMessage()
-            if completionDateTime != self.maxDateTime:
-                self.setReminder(None)
-                self.setPercentageComplete(100)
-            elif self.percentageComplete() == 100:
-                self.setPercentageComplete(0)
-            if parent:
-                if self.completed():
-                    if parent.shouldBeMarkedCompleted():
-                        parent.setCompletionDateTime(completionDateTime)
-                else:
-                    if parent.completed():
-                        parent.setCompletionDateTime(self.maxDateTime)
+    def setCompletionDateTime(self, completionDateTime=None, event=None):
+        self.__completionDateTime.set(completionDateTime or date.Now(), event=event)
+
+    def _onCompletionDateTimeChanged(self, event):
+        self.__status = None
+        if self.completed() and self.recurrence():
+            self.recur(self.completionDateTime())
+            return  # recur resets completionDateTime, triggering this callback again
+        parent = self.parent()
+        if self.completed():
+            self.setReminder(None)
+            self.setPercentageComplete(100)
+            for child in self.children():
+                if not child.completed():
+                    child.setRecurrence()
+                    child.setCompletionDateTime(self.completionDateTime())
+            if self.isBeingTracked():
+                self.stopTracking()
+        elif self.percentageComplete() == 100:
+            self.setPercentageComplete(0)
+        if parent:
             if self.completed():
-                for child in self.children():
-                    if not child.completed():
-                        child.setRecurrence()
-                        child.setCompletionDateTime(completionDateTime)
-                if self.isBeingTracked():
-                    self.stopTracking()
-            self.recomputeAppearance()
-            for dependency in self.dependencies():
-                dependency.recomputeAppearance(recursive=True)
+                if parent.shouldBeMarkedCompleted():
+                    parent.setCompletionDateTime(self.completionDateTime())
+            elif parent.completed():
+                parent.setCompletionDateTime(self.maxDateTime)
+            parent.sendPriorityChangedMessage()
+        self.markDirty()
+        self.recomputeAppearance()
+        for dependency in self.dependencies():
+            dependency.recomputeAppearance(recursive=True)
+        pub.sendMessage(
+            self.completionDateTimeChangedEventType(),
+            newValue=self.completionDateTime(),
+            sender=self,
+        )
+        for ancestor in self.ancestors():
             pub.sendMessage(
-                self.completionDateTimeChangedEventType(),
-                newValue=completionDateTime,
-                sender=self,
+                ancestor.completionDateTimeChangedEventType(),
+                newValue=self.completionDateTime(),
+                sender=ancestor,
             )
-            for ancestor in self.ancestors():
-                pub.sendMessage(
-                    ancestor.completionDateTimeChangedEventType(),
-                    newValue=completionDateTime,
-                    sender=ancestor,
-                )
 
     @classmethod
     def completionDateTimeChangedEventType(class_):
@@ -1034,13 +1028,12 @@ class Task(
 
     def plannedDuration(self):
         """Return the planned duration for this task."""
-        return self.__plannedDuration
+        return self.__plannedDuration.get()
 
-    def setPlannedDuration(self, plannedDuration):
-        """Set the planned duration for this task."""
-        if plannedDuration == self.__plannedDuration:
-            return
-        self.__plannedDuration = plannedDuration
+    def setPlannedDuration(self, plannedDuration, event=None):
+        self.__plannedDuration.set(plannedDuration, event=event)
+
+    def _onPlannedDurationChanged(self, event):
         self.sendPlannedDurationChangedMessage()
 
     def sendPlannedDurationChangedMessage(self):
@@ -1067,16 +1060,14 @@ class Task(
 
     def plannedDurationMode(self):
         """Return the planned duration mode: 'implicit', 'adjdue', or 'adjstart'."""
-        return self.__plannedDurationMode
+        return self.__plannedDurationMode.get()
 
-    def setPlannedDurationMode(self, mode):
-        """Set the planned duration mode. Normalizes old values to new keys."""
-        # Normalize old mode values to new keys
+    def setPlannedDurationMode(self, mode, event=None):
         mode_map = {"todue": "adjdue", "fromstart": "adjstart"}
         mode = mode_map.get(mode, mode) or "implicit"
-        if mode == self.__plannedDurationMode:
-            return
-        self.__plannedDurationMode = mode
+        self.__plannedDurationMode.set(mode, event=event)
+
+    def _onPlannedDurationModeChanged(self, event):
         self.sendPlannedDurationModeChangedMessage()
 
     def sendPlannedDurationModeChangedMessage(self):
@@ -1338,8 +1329,8 @@ class Task(
             else:
                 ignore_me = self.shouldMarkCompletedWhenAllChildrenCompleted()
             percentages = []
-            if self.__percentageComplete > 0 or not ignore_me:
-                percentages.append(self.__percentageComplete)
+            if self.__percentageComplete.get() > 0 or not ignore_me:
+                percentages.append(self.__percentageComplete.get())
             percentages.extend(
                 [
                     child.percentageComplete(recursive)
@@ -1348,24 +1339,16 @@ class Task(
             )
             return sum(percentages) // len(percentages) if percentages else 0
         else:
-            return self.__percentageComplete
+            return self.__percentageComplete.get()
 
-    def setPercentageComplete(self, percentage):
-        if percentage == self.__percentageComplete:
-            return
-        oldPercentage = self.__percentageComplete
-        self.__percentageComplete = percentage
-        if (
-            percentage == 100
-            and oldPercentage != 100
-            and self.completionDateTime() == self.maxDateTime
-        ):
+    def setPercentageComplete(self, percentage, event=None):
+        self.__percentageComplete.set(percentage, event=event)
+
+    def _onPercentageCompleteChanged(self, event):
+        percentage = self.__percentageComplete.get()
+        if percentage == 100 and self.completionDateTime() == self.maxDateTime:
             self.setCompletionDateTime(date.Now())
-        elif (
-            oldPercentage == 100
-            and percentage != 100
-            and self.completionDateTime() != self.maxDateTime
-        ):
+        elif percentage != 100 and self.completionDateTime() != self.maxDateTime:
             self.setCompletionDateTime(self.maxDateTime)
         if (
             0 < percentage < 100

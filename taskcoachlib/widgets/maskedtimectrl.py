@@ -1829,12 +1829,11 @@ class DurationCtrl(FieldsCtrl):
         """Alias for GetDuration for consistency with other controls."""
         return self.GetDuration()
 
-    def SetDuration(self, duration, quiet=False):
+    def SetDuration(self, duration):
         """Set the duration value.
 
         Args:
             duration: timedelta or None (defaults to zero)
-            quiet: If True, don't fire value changed events
         """
         if duration is None:
             duration = date.TimeDelta()
@@ -1845,33 +1844,27 @@ class DurationCtrl(FieldsCtrl):
         hours, remainder = divmod(remainder, 3600)
         minutes, seconds = divmod(remainder, 60)
 
-        if quiet:
-            self._suppressEvents = True
-        try:
-            self._negative = negative
-            dayField = self._fields.get('day')
-            if dayField:
-                dayField._negativePrefix = negative
-            self.SetFieldValue('day', days)
-            self.SetFieldValue('hour', hours)
-            self.SetFieldValue('minute', minutes)
-            if self._showSeconds:
-                self.SetFieldValue('second', seconds)
-        finally:
-            if quiet:
-                self._suppressEvents = False
+        self._negative = negative
+        dayField = self._fields.get('day')
+        if dayField:
+            dayField._negativePrefix = negative
+        self.SetFieldValue('day', days)
+        self.SetFieldValue('hour', hours)
+        self.SetFieldValue('minute', minutes)
+        if self._showSeconds:
+            self.SetFieldValue('second', seconds)
 
-    def SetTimeDelta(self, duration, quiet=False):
+    def SetTimeDelta(self, duration):
         """Alias for SetDuration for consistency with other controls."""
-        self.SetDuration(duration, quiet=quiet)
+        self.SetDuration(duration)
 
     def GetValue(self):
         """Alias for GetDuration for AttributeSync compatibility."""
         return self.GetDuration()
 
-    def SetValue(self, duration, quiet=False):
+    def SetValue(self, duration):
         """Alias for SetDuration for AttributeSync compatibility."""
-        self.SetDuration(duration, quiet=quiet)
+        self.SetDuration(duration)
 
 
 class DurationCtrlVerbose(FieldsCtrl):
@@ -1961,12 +1954,11 @@ class DurationCtrlVerbose(FieldsCtrl):
         """Alias for GetDuration for consistency with other controls."""
         return self.GetDuration()
 
-    def SetDuration(self, duration, quiet=False):
+    def SetDuration(self, duration):
         """Set the duration value.
 
         Args:
             duration: timedelta or None (defaults to zero)
-            quiet: If True, don't fire value changed events
         """
         if duration is None:
             duration = date.TimeDelta()
@@ -1977,33 +1969,27 @@ class DurationCtrlVerbose(FieldsCtrl):
         hours, remainder = divmod(remainder, 3600)
         minutes, seconds = divmod(remainder, 60)
 
-        if quiet:
-            self._suppressEvents = True
-        try:
-            self._negative = negative
-            dayField = self._fields.get('day')
-            if dayField:
-                dayField._negativePrefix = negative
-            self.SetFieldValue('day', days)
-            self.SetFieldValue('hour', hours)
-            self.SetFieldValue('minute', minutes)
-            if self._showSeconds:
-                self.SetFieldValue('second', seconds)
-        finally:
-            if quiet:
-                self._suppressEvents = False
+        self._negative = negative
+        dayField = self._fields.get('day')
+        if dayField:
+            dayField._negativePrefix = negative
+        self.SetFieldValue('day', days)
+        self.SetFieldValue('hour', hours)
+        self.SetFieldValue('minute', minutes)
+        if self._showSeconds:
+            self.SetFieldValue('second', seconds)
 
-    def SetTimeDelta(self, duration, quiet=False):
+    def SetTimeDelta(self, duration):
         """Alias for SetDuration for consistency with other controls."""
-        self.SetDuration(duration, quiet=quiet)
+        self.SetDuration(duration)
 
     def GetValue(self):
         """Alias for GetDuration for AttributeSync compatibility."""
         return self.GetDuration()
 
-    def SetValue(self, duration, quiet=False):
+    def SetValue(self, duration):
         """Alias for SetDuration for AttributeSync compatibility."""
-        self.SetDuration(duration, quiet=quiet)
+        self.SetDuration(duration)
 
 
 class TimeCtrl(FieldsCtrl):

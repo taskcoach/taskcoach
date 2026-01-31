@@ -110,6 +110,11 @@ def _log_environment():
     # Log required package versions
     _log_required_packages()
 
+    # Probe numpy usability early (before any module imports wxhelper).
+    # On old CPUs, numpy import triggers a fatal SIGILL — the subprocess
+    # probe detects this safely. Result is logged and cached for wxhelper.
+    from taskcoachlib.tools._numpy_probe import numpy_usable  # noqa: F401
+
     # Platform-specific environment info (no wx needed)
     log_message("=" * 60)
     if sys.platform == 'linux':

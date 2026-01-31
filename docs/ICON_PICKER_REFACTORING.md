@@ -4,6 +4,7 @@ This document describes the custom `IconPicker` widget used in Task Coach for se
 
 ## Table of Contents
 
+- [TODO Items](#todo-items)
 - [Final Implementation](#final-implementation)
 - [Features](#features)
 - [Usage](#usage)
@@ -17,6 +18,79 @@ This document describes the custom `IconPicker` widget used in Task Coach for se
 - [Appendix: wxWidgets Reference](#appendix-wxwidgets-reference)
 
 **Demo:** `docs/scripts/icon_picker_refactoring_demo.py`
+
+## TODO Items
+
+### Demo Control Issues
+
+| # | Issue | Status | Notes |
+|---|-------|--------|-------|
+| 1 | Tab navigation not working for controls 2, 3, 4 | Coded/Testing | Removed CB_READONLY, EVT_CHAR_HOOK, MoveAfterInTabOrder |
+| 2 | Auto-size control smaller than content | Coded/Testing | Auto-width from longest label |
+| 3 | Icon not displayed in closed control | Coded/Testing | Custom EVT_PAINT with BufferedPaintDC |
+| 4 | Text selection highlight on popup cancel | Coded/Testing | Custom painting, no text control value |
+| 5 | Disabled items greyed-inactive | Coded/Testing | Greyscale icon + grey text |
+| 6 | Label column too wide in popup | Tests Confirmed | Calculate column widths from content |
+| 7 | Scrollbars not appearing | Tests Confirmed | Added wx.VSCROLL style to VListBox |
+
+### Closed Control Issues
+
+| # | Issue | Status | Notes |
+|---|-------|--------|-------|
+| 8 | Hover only on button, not full control | Coded/Testing | DrawPushButton for entire control with CONTROL_CURRENT |
+| 9 | Black corners from rounded edges | Tests Confirmed | Clear with parent bg first |
+| 10 | Whole control pressed when popup open | Coded/Testing | DrawPushButton with CONTROL_PRESSED |
+| 11 | Textbox should be grey/inactive | Coded/Testing | DrawPushButton gives button-like grey appearance |
+| 12 | Cursor should not appear | Coded/Testing | SetCursor(wx.CURSOR_ARROW), hide caret |
+| 13 | Cursor stuck in textbox when using search | Coded/Testing | Redirect focus, CallAfter+CallLater for search focus |
+| 14 | Heavy blue focus, should be dotted line | Coded/Testing | DrawFocusRect inside control |
+| 15 | Focus around full combo, not just textbox | Coded/Testing | DrawFocusRect on full control rect |
+| 16 | Hover incorrectly blue border | Coded/Testing | Use DrawPushButton not custom border |
+| 17 | Border doesn't follow theme | Coded/Testing | DrawPushButton handles native borders |
+
+### Search Box Issues
+
+| # | Issue | Status | Notes |
+|---|-------|--------|-------|
+| 18 | Not getting focus | Coded/Testing | Multiple CallAfter + CallLater to force focus |
+| 19 | Cursor stuck in main textbox | Coded/Testing | Text control redirects focus events |
+
+### Dropdown List Issues
+
+| # | Issue | Status | Notes |
+|---|-------|--------|-------|
+| 20 | Hover should move selection | Coded/Testing | _on_motion now sets selection, not separate hover |
+| 21 | Single click should select and close | Coded/Testing | _on_left_down calls callback to dismiss |
+| 22 | Dropdown border not matching | Coded/Testing | BORDER_SIMPLE on popup panel |
+
+### Feature Implementation
+
+| # | Feature | Status | Notes |
+|---|---------|--------|-------|
+| 23 | Visible SearchCtrl in popup | Coded/Testing | SearchCtrl at top of popup |
+| 24 | Search by label AND hints | Coded/Testing | FilterItems checks both fields |
+| 25 | Hints column (grey, after label) | Coded/Testing | Calculated width, right of label |
+| 26 | Disabled items unselectable | Coded/Testing | Skip in keyboard nav, ignore clicks |
+| 27 | Ellipsis for long text | Coded/Testing | wx.Control.Ellipsize used |
+| 28 | Fixed width with wide popup | Coded/Testing | fixed_width param, auto popup width |
+| 29 | Popup width based on content | Coded/Testing | GetPreferredWidth from VListBox |
+
+### Integration Tasks
+
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| 30 | Create reusable widget in taskcoachlib/widgets/iconpicker.py | Done | `IconPicker` class with hints support |
+| 31 | Integrate into preferences.py | Done | Replaced BitmapOwnerDrawnComboBox, 120px fixed width |
+| 32 | Integrate into entry.py IconPicker | Done | Uses widgets.IconPicker, auto-width |
+| 33 | Add icon hints to artprovider.py | Done | `chooseableItems` dict with translatable hints arrays |
+| 34 | Test on Windows/macOS | Not Started | Cross-platform verification |
+
+### Status Legend
+
+- **Done**: Completed and integrated
+- **Not Started**: Work has not begun
+
+</details>
 
 ## Final Implementation
 
@@ -641,75 +715,3 @@ These icons are disabled in the demo to test disabled item rendering:
 - Color picker buttons in preferences
 - Consistent control sizing across preferences dialog
 
-## TODO Items
-
-### Demo Control Issues
-
-| # | Issue | Status | Notes |
-|---|-------|--------|-------|
-| 1 | Tab navigation not working for controls 2, 3, 4 | Coded/Testing | Removed CB_READONLY, EVT_CHAR_HOOK, MoveAfterInTabOrder |
-| 2 | Auto-size control smaller than content | Coded/Testing | Auto-width from longest label |
-| 3 | Icon not displayed in closed control | Coded/Testing | Custom EVT_PAINT with BufferedPaintDC |
-| 4 | Text selection highlight on popup cancel | Coded/Testing | Custom painting, no text control value |
-| 5 | Disabled items greyed-inactive | Coded/Testing | Greyscale icon + grey text |
-| 6 | Label column too wide in popup | Tests Confirmed | Calculate column widths from content |
-| 7 | Scrollbars not appearing | Tests Confirmed | Added wx.VSCROLL style to VListBox |
-
-### Closed Control Issues
-
-| # | Issue | Status | Notes |
-|---|-------|--------|-------|
-| 8 | Hover only on button, not full control | Coded/Testing | DrawPushButton for entire control with CONTROL_CURRENT |
-| 9 | Black corners from rounded edges | Tests Confirmed | Clear with parent bg first |
-| 10 | Whole control pressed when popup open | Coded/Testing | DrawPushButton with CONTROL_PRESSED |
-| 11 | Textbox should be grey/inactive | Coded/Testing | DrawPushButton gives button-like grey appearance |
-| 12 | Cursor should not appear | Coded/Testing | SetCursor(wx.CURSOR_ARROW), hide caret |
-| 13 | Cursor stuck in textbox when using search | Coded/Testing | Redirect focus, CallAfter+CallLater for search focus |
-| 14 | Heavy blue focus, should be dotted line | Coded/Testing | DrawFocusRect inside control |
-| 15 | Focus around full combo, not just textbox | Coded/Testing | DrawFocusRect on full control rect |
-| 16 | Hover incorrectly blue border | Coded/Testing | Use DrawPushButton not custom border |
-| 17 | Border doesn't follow theme | Coded/Testing | DrawPushButton handles native borders |
-
-### Search Box Issues
-
-| # | Issue | Status | Notes |
-|---|-------|--------|-------|
-| 18 | Not getting focus | Coded/Testing | Multiple CallAfter + CallLater to force focus |
-| 19 | Cursor stuck in main textbox | Coded/Testing | Text control redirects focus events |
-
-### Dropdown List Issues
-
-| # | Issue | Status | Notes |
-|---|-------|--------|-------|
-| 20 | Hover should move selection | Coded/Testing | _on_motion now sets selection, not separate hover |
-| 21 | Single click should select and close | Coded/Testing | _on_left_down calls callback to dismiss |
-| 22 | Dropdown border not matching | Coded/Testing | BORDER_SIMPLE on popup panel |
-
-### Feature Implementation
-
-| # | Feature | Status | Notes |
-|---|---------|--------|-------|
-| 23 | Visible SearchCtrl in popup | Coded/Testing | SearchCtrl at top of popup |
-| 24 | Search by label AND hints | Coded/Testing | FilterItems checks both fields |
-| 25 | Hints column (grey, after label) | Coded/Testing | Calculated width, right of label |
-| 26 | Disabled items unselectable | Coded/Testing | Skip in keyboard nav, ignore clicks |
-| 27 | Ellipsis for long text | Coded/Testing | wx.Control.Ellipsize used |
-| 28 | Fixed width with wide popup | Coded/Testing | fixed_width param, auto popup width |
-| 29 | Popup width based on content | Coded/Testing | GetPreferredWidth from VListBox |
-
-### Integration Tasks
-
-| # | Task | Status | Notes |
-|---|------|--------|-------|
-| 30 | Create reusable widget in taskcoachlib/widgets/iconpicker.py | Done | `IconPicker` class with hints support |
-| 31 | Integrate into preferences.py | Done | Replaced BitmapOwnerDrawnComboBox, 120px fixed width |
-| 32 | Integrate into entry.py IconPicker | Done | Uses widgets.IconPicker, auto-width |
-| 33 | Add icon hints to artprovider.py | Done | `chooseableItems` dict with translatable hints arrays |
-| 34 | Test on Windows/macOS | Not Started | Cross-platform verification |
-
-### Status Legend
-
-- **Done**: Completed and integrated
-- **Not Started**: Work has not begun
-
-</details>

@@ -168,11 +168,7 @@ class EditEffortStartDateTimeCommand(base.BaseCommand):
         self.__oldActualStartDateTimes = {}
 
     def canDo(self):
-        maxDateTime = date.DateTime()
-        return super().canDo() and all(
-            self.__datetime < (item.getStop() or maxDateTime)
-            for item in self.items
-        )
+        return super().canDo()
 
     def do_command(self):
         for item in self.items:
@@ -211,9 +207,7 @@ class EditEffortStopDateTimeCommand(base.BaseCommand):
         self.__oldDateTimes = [item.getStop() for item in self.items]
 
     def canDo(self):
-        return super().canDo() and all(
-            self.__datetime > item.getStart() for item in self.items
-        )
+        return super().canDo()
 
     def do_command(self):
         for item in self.items:
@@ -222,6 +216,29 @@ class EditEffortStopDateTimeCommand(base.BaseCommand):
     def undo_command(self):
         for item, oldDateTime in zip(self.items, self.__oldDateTimes):
             item.setStop(oldDateTime)
+
+    def redo_command(self):
+        self.do_command()
+
+
+class EditEffortDurationCommand(base.BaseCommand):
+    plural_name = _("Change effort durations")
+    singular_name = _('Change effort duration of "%s"')
+
+    def __init__(self, *args, **kwargs):
+        self.__newDuration = kwargs.pop("newValue")
+        super().__init__(*args, **kwargs)
+        self.__oldDurations = [item.duration() for item in self.items]
+
+    def do_command(self):
+        super().do_command()
+        for item in self.items:
+            item.setDuration(self.__newDuration)
+
+    def undo_command(self):
+        super().undo_command()
+        for item, oldDuration in zip(self.items, self.__oldDurations):
+            item.setDuration(oldDuration)
 
     def redo_command(self):
         self.do_command()
