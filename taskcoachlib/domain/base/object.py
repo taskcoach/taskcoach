@@ -23,6 +23,7 @@ from taskcoachlib.domain.attribute import icon
 from taskcoachlib.domain.date import DateTime, Now
 from pubsub import pub
 from . import attribute
+from .appearance import FIELD_DEFAULTS, FIELD_NO_VALUE_SOURCE
 import functools
 import sys
 import uuid
@@ -478,28 +479,28 @@ class Object(SynchronizedObject):
     # --- Derived SSOT Getters ---
 
     def derivedFgColor(self):
-        return self.__derivedFgColorValue.get()
+        return self.__derivedFgColorValue.get() or FIELD_DEFAULTS['fgColor']
 
     def derivedFgColorSource(self):
-        return self.__derivedFgColorSource.get()
+        return self.__derivedFgColorSource.get() or FIELD_NO_VALUE_SOURCE['fgColor']
 
     def derivedBgColor(self):
-        return self.__derivedBgColorValue.get()
+        return self.__derivedBgColorValue.get() or FIELD_DEFAULTS['bgColor']
 
     def derivedBgColorSource(self):
-        return self.__derivedBgColorSource.get()
+        return self.__derivedBgColorSource.get() or FIELD_NO_VALUE_SOURCE['bgColor']
 
     def derivedIcon(self):
-        return self.__derivedIconValue.get()
+        return self.__derivedIconValue.get() or FIELD_DEFAULTS['icon']
 
     def derivedIconSource(self):
-        return self.__derivedIconSource.get()
+        return self.__derivedIconSource.get() or FIELD_NO_VALUE_SOURCE['icon']
 
     def derivedFont(self):
-        return self.__derivedFontValue.get()
+        return self.__derivedFontValue.get() or FIELD_DEFAULTS['font']
 
     def derivedFontSource(self):
-        return self.__derivedFontSource.get()
+        return self.__derivedFontSource.get() or FIELD_NO_VALUE_SOURCE['font']
 
     # --- Derived SSOT Setters (for use by computeDerived) ---
 
@@ -554,37 +555,37 @@ class Object(SynchronizedObject):
     # --- Effective SSOT Getters ---
 
     def effectiveFgColor(self):
-        return self.__effectiveFgColorValue.get()
+        return self.__effectiveFgColorValue.get() or FIELD_DEFAULTS['fgColor']
 
     def effectiveFgColorSource(self):
-        return self.__effectiveFgColorSource.get()
+        return self.__effectiveFgColorSource.get() or FIELD_NO_VALUE_SOURCE['fgColor']
 
     def effectiveFgColorDefault(self):
-        return self.__effectiveFgColorDefault.get()
+        return self.__effectiveFgColorDefault.get() or FIELD_DEFAULTS['fgColor']
 
     def effectiveBgColor(self):
-        return self.__effectiveBgColorValue.get()
+        return self.__effectiveBgColorValue.get() or FIELD_DEFAULTS['bgColor']
 
     def effectiveBgColorSource(self):
-        return self.__effectiveBgColorSource.get()
+        return self.__effectiveBgColorSource.get() or FIELD_NO_VALUE_SOURCE['bgColor']
 
     def effectiveBgColorDefault(self):
-        return self.__effectiveBgColorDefault.get()
+        return self.__effectiveBgColorDefault.get() or FIELD_DEFAULTS['bgColor']
 
     def effectiveIcon(self):
-        return self.__effectiveIconValue.get()
+        return self.__effectiveIconValue.get() or FIELD_DEFAULTS['icon']
 
     def effectiveIconSource(self):
-        return self.__effectiveIconSource.get()
+        return self.__effectiveIconSource.get() or FIELD_NO_VALUE_SOURCE['icon']
 
     def effectiveFont(self):
-        return self.__effectiveFontValue.get()
+        return self.__effectiveFontValue.get() or FIELD_DEFAULTS['font']
 
     def effectiveFontSource(self):
-        return self.__effectiveFontSource.get()
+        return self.__effectiveFontSource.get() or FIELD_NO_VALUE_SOURCE['font']
 
     def effectiveFontDefault(self):
-        return self.__effectiveFontDefault.get()
+        return self.__effectiveFontDefault.get() or FIELD_DEFAULTS['font']
 
     # --- Effective SSOT Setters (for use by computeEffective) ---
 

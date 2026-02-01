@@ -63,6 +63,11 @@ def resolve_color(value):
     elif isinstance(value, wx.Colour):
         return value
     else:
+        import inspect
+        caller = inspect.stack()[1]
+        log_step("resolve_color: unhandled value", repr(value),
+                 "from %s:%d in %s" % (caller[1], caller[2], caller[3]),
+                 prefix="APPEARANCE-BUG")
         return wx.NullColour
 
 
@@ -70,19 +75,22 @@ def resolve_font(value):
     """Convert domain font value to wx.Font.
 
     Args:
-        value: wx.Font, symbolic constant, or None
+        value: wx.Font or symbolic constant (SYSTEM_FONT)
 
     Returns:
-        wx.Font instance
+        wx.Font instance, or wx.NullFont if value is unhandled (bug)
     """
     if value == base.SYSTEM_FONT:
         return wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
     elif isinstance(value, wx.Font):
         return value
-    elif value is None:
-        return wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
     else:
-        return value
+        import inspect
+        caller = inspect.stack()[1]
+        log_step("resolve_font: unhandled value", repr(value),
+                 "from %s:%d in %s" % (caller[1], caller[2], caller[3]),
+                 prefix="APPEARANCE-BUG")
+        return wx.NullFont
 
 
 def is_system_theme(value):
@@ -1275,6 +1283,7 @@ class DatesPage(Page):
 
         self._plannedStartDateTimeCombo = widgets.DateTimeCombo(
             self, value=value,
+            suggestedValue=task.Task.suggestedPlannedStartDateTime(),
             hourChoices=lambda: get_suggested_hour_choices(self._DatesPage__settings),
             minuteChoices=lambda: get_suggested_minute_choices(self._DatesPage__settings)
         )
@@ -1404,6 +1413,7 @@ class DatesPage(Page):
 
         self._dueDateTimeCombo = widgets.DateTimeCombo(
             self, value=value,
+            suggestedValue=task.Task.suggestedDueDateTime(),
             hourChoices=lambda: get_suggested_hour_choices(self._DatesPage__settings),
             minuteChoices=lambda: get_suggested_minute_choices(self._DatesPage__settings)
         )
@@ -1448,6 +1458,7 @@ class DatesPage(Page):
 
         self._actualStartDateTimeCombo = widgets.DateTimeCombo(
             self, value=value,
+            suggestedValue=task.Task.suggestedActualStartDateTime(),
             hourChoices=lambda: get_suggested_hour_choices(self._DatesPage__settings),
             minuteChoices=lambda: get_suggested_minute_choices(self._DatesPage__settings)
         )
@@ -1487,6 +1498,7 @@ class DatesPage(Page):
 
         self._completionDateTimeCombo = widgets.DateTimeCombo(
             self, value=value,
+            suggestedValue=task.Task.suggestedCompletionDateTime(),
             hourChoices=lambda: get_suggested_hour_choices(self._DatesPage__settings),
             minuteChoices=lambda: get_suggested_minute_choices(self._DatesPage__settings)
         )
@@ -1695,11 +1707,11 @@ class DatesPage(Page):
         ).do()
 
     def __activateStartDate(self):
-        """Activate Start-Date combo (step 2.1). Uses internally stored value."""
+        """Activate Start-Date combo (step 2.2). Uses internally stored value."""
         self._plannedStartDateTimeCombo.ActivateValue()
 
     def __activateDueDate(self):
-        """Activate Due-Date combo (step 3.1). Uses internally stored value."""
+        """Activate Due-Date combo (step 3.2). Uses internally stored value."""
         self._dueDateTimeCombo.ActivateValue()
 
     def __adjStartDate(self):
@@ -1748,89 +1760,91 @@ class DatesPage(Page):
         mode = self._currentPlannedDurationMode
 
         if mode == "automatic":
-            # 1.1 If Start-Date exists, Then set Adj-Due mode, Loop
+            # 1.1 Note: Mode changes away never come back here
+            # 1.2 If Start-Date exists, Then set Adj-Due mode, Loop
             if self.__startDateExists():
                 self.__setDurationMode("adjdue")
                 return self.__syncTaskStateImpl(None, depth=depth + 1)  # 0.3.2
-            # 1.2 If Due-Date exists, Then set Adj-Start mode, Loop
+            # 1.3 If Due-Date exists, Then set Adj-Start mode, Loop
             if self.__dueDateExists():
                 self.__setDurationMode("adjstart")
                 return self.__syncTaskStateImpl(None, depth=depth + 1)  # 0.3.2
-            # 1.3-1.5: Mode chosen by user — callers set mode before calling sync,
-            #          so sync enters the target branch directly.
 
         elif mode == "adjdue":
-            # 2.1 Activate Start-Date, If not Unset-Action [Ref2, 0.1.1]
+            # 2.1 Note: Mode changes away never come back here
+            # 2.2 Activate Start-Date, If not Unset-Action [Ref2, 0.1.1]
             if sourceField != 'start' and not self.__startDateExists():
                 self.__activateStartDate()
-            # 2.2 Activate Due-Date (Read-Only) [Ref2]
+            # 2.3 Activate Due-Date (Read-Only) [Ref2]
             #     On first entry (sourceField=None), adj if due doesn't exist yet.
             if not self.__dueDateExists():
                 self.__adjDueDate()
-            # 2.3 Disable Automatic mode option in dropdown [Ref1]
+            # 2.4 Disable Automatic mode option in dropdown [Ref1]
             #     (handled by __updateDurationModeDropdown on focus loss)
-            # 2.4 If Duration changed, Then adj Due-Date
+            # 2.5 If Duration changed, Then adj Due-Date
             if sourceField == 'duration':
                 self.__adjDueDate()
-            # 2.5 If Start-Date Unset-Action, Then
+            # 2.6 If Start-Date Unset-Action, Then
             if sourceField == 'start' and not self.__startDateExists():
-                # 2.5.1 Set Sync-Mode [0.4] — handled by outer guard
-                # 2.5.2 Deactivate Due-Date
+                # 2.6.1 Set Sync-Mode [0.4] — handled by outer guard
+                # 2.6.2 Deactivate Due-Date
                 self.__deactivateDueDate()
-                # 2.5.3 Reactivate Automatic mode option in dropdown
+                # 2.6.3 Reactivate Automatic mode option in dropdown
                 #        (handled by __updateDurationModeDropdown on focus loss)
-                # 2.5.4 Set Automatic mode
+                # 2.6.4 Set Automatic mode
                 self.__setDurationMode("automatic")
-                # 2.5.5 Unset Sync-Mode — handled by outer guard
-                # 2.5.6 Loop
+                # 2.6.5 Unset Sync-Mode — handled by outer guard
+                # 2.6.6 Loop
                 return self.__syncTaskStateImpl(None, depth=depth + 1)  # 0.3.2
-            # 2.6 If Start-Date changed, Then adj Due-Date
+            # 2.7 If Start-Date changed, Then adj Due-Date
             if sourceField == 'start':
                 self.__adjDueDate()
 
         elif mode == "adjstart":
-            # 3.1 Activate Due-Date, If not Unset-Action [Ref2, 0.1.2]
+            # 3.1 Note: Mode changes away never come back here
+            # 3.2 Activate Due-Date, If not Unset-Action [Ref2, 0.1.2]
             if sourceField != 'due' and not self.__dueDateExists():
                 self.__activateDueDate()
-            # 3.2 Activate Start-Date (Read-Only) [Ref2]
+            # 3.3 Activate Start-Date (Read-Only) [Ref2]
             #     On first entry (sourceField=None), adj if start doesn't exist.
             if not self.__startDateExists():
                 self.__adjStartDate()
-            # 3.3 Disable Automatic mode option in dropdown [Ref1]
+            # 3.4 Disable Automatic mode option in dropdown [Ref1]
             #     (handled by __updateDurationModeDropdown on focus loss)
-            # 3.4 If Duration changed, Then adj Start-Date
+            # 3.5 If Duration changed, Then adj Start-Date
             if sourceField == 'duration':
                 self.__adjStartDate()
-            # 3.5 If Due-Date Unset-Action, Then
+            # 3.6 If Due-Date Unset-Action, Then
             if sourceField == 'due' and not self.__dueDateExists():
-                # 3.5.1 Set Sync-Mode [0.4] — handled by outer guard
-                # 3.5.2 Deactivate Start-Date
+                # 3.6.1 Set Sync-Mode [0.4] — handled by outer guard
+                # 3.6.2 Deactivate Start-Date
                 self.__deactivateStartDate()
-                # 3.5.3 Reactivate Automatic mode option in dropdown
+                # 3.6.3 Reactivate Automatic mode option in dropdown
                 #        (handled by __updateDurationModeDropdown on focus loss)
-                # 3.5.4 Set Automatic mode
+                # 3.6.4 Set Automatic mode
                 self.__setDurationMode("automatic")
-                # 3.5.5 Unset Sync-Mode — handled by outer guard
-                # 3.5.6 Loop
+                # 3.6.5 Unset Sync-Mode — handled by outer guard
+                # 3.6.6 Loop
                 return self.__syncTaskStateImpl(None, depth=depth + 1)  # 0.3.2
-            # 3.6 If Due-Date changed, Then adj Start-Date
+            # 3.7 If Due-Date changed, Then adj Start-Date
             if sourceField == 'due':
                 self.__adjStartDate()
 
         elif mode == "implicit":
-            # 4.1 Disable Automatic mode option in dropdown [Ref1]
+            # 4.1 Note: Mode changes away never come back here
+            # 4.2 Disable Automatic mode option in dropdown [Ref1]
             #     (handled by __updateDurationModeDropdown on focus loss)
-            # 4.2 If Start-Date exists
+            # 4.3 If Start-Date exists
             if self.__startDateExists():
-                # 4.2.1 If Due-Date exists
+                # 4.3.1 If Due-Date exists
                 if self.__dueDateExists():
-                    # 4.2.1.1 Enable Duration (Read-Only)
-                    # 4.2.1.2 Adj Duration
+                    # 4.3.1.1 Enable Duration (Read-Only)
+                    # 4.3.1.2 Adj Duration
                     self.__adjDuration()
-                    # 4.2.1.3 Negative Durations permitted
-                # 4.2.2 If Due-Date Unset-Action, Then disable Duration
+                    # 4.3.1.3 Negative Durations permitted
+                # 4.3.2 If Due-Date Unset-Action, Then disable Duration
                 #        -- handled by __updateFieldStates
-            # 4.3 If Start-Date Unset-Action, Then disable Duration
+            # 4.4 If Start-Date Unset-Action, Then disable Duration
             #     -- handled by __updateFieldStates
 
         # 5. Update Field States (See: UI Field States section)
@@ -1955,7 +1969,7 @@ class DatesPage(Page):
         due = self._dueDateTimeCombo.GetDateTime()
 
         if start is not None and due is not None:
-            new_duration = due - start  # 4.2.1.3 Negative Durations permitted
+            new_duration = due - start  # 4.3.1.3 Negative Durations permitted
             new_timedelta = date.TimeDelta(days=new_duration.days, seconds=new_duration.seconds)
             command.EditPlannedDurationCommand(
                 items=self.items, newValue=new_timedelta
@@ -2010,6 +2024,7 @@ class DatesPage(Page):
 
         self._reminderDateTimeCombo = widgets.DateTimeCombo(
             self, value=value,
+            suggestedValue=task.Task.suggestedReminderDateTime(),
             hourChoices=lambda: get_suggested_hour_choices(self._DatesPage__settings),
             minuteChoices=lambda: get_suggested_minute_choices(self._DatesPage__settings)
         )

@@ -47,6 +47,20 @@ Duration calculations for Edit Task Dates and Edit Effort windows.
    which fires on checkbox toggle AND date/time edits. External
    EVT_CHECKBOX handlers and `sync.commit()` hacks removed.
    See [DATETIME_CONTROLS.md](DATETIME_CONTROLS.md) TODO item 3.
+10. **Reconcile legacy "datestied" preference with duration mode.**
+   The `view.datestied` setting (`preferences.py:2029`) is a legacy
+   predecessor to duration mode. It has three options: nothing, "changing
+   start shifts due" (`startdue`), or "changing due shifts start"
+   (`duestart`). It only applies to **inline edits in the task list
+   viewer** (`gui/viewer/task.py:2121-2131`) via `keep_delta=True` on
+   `EditPlannedStartDateTimeCommand` / `EditDueDateTimeCommand`. It is
+   not wired into the editor dialog at all. Duration mode does the same
+   thing bidirectionally with explicit UI in the editor. These two
+   mechanisms should be unified or the legacy setting should be removed
+   in favor of duration mode.
+11. Effort Logic Flow: Renumber sections 1, 2, 3 to match the task
+    section pattern — consolidate x.1/x.2 mode-change rules into
+    a single x.1 note, renumber remaining items.
 
 ## Notes
 
@@ -112,56 +126,70 @@ for the next user change.
 ### Logic Flow
 
 ```
-Start: Automatic mode, all fields empty
+Start: Implicit mode, all fields empty (see note below)
+
+Note: New tasks always start in Implicit mode, not Automatic. This is
+intentional for two reasons:
+  (a) Legacy compatibility — the original code had no explicit calc
+      modes; it only saved planned start and due dates, so the duration
+      was always implied. The explicit calc mode system defaults to
+      Implicit to preserve this behavior.
+  (b) Preset/propose support — Automatic mode immediately resolves to
+      adjdue or adjstart when a date is checked, which would make the
+      calculated field read-only and override any preset/propose value
+      for that field. Implicit mode keeps both fields independently
+      editable, allowing preset and propose values to be applied without
+      conflict. See DATETIME_PRESETS.md "Duration Mode Interaction".
 
 0. See Preconditions and Global Logic section above.
    0.4 Sync-mode guard... See section above.
        0.4.1 Flag: task._durationSyncInProgress on domain Task instance.
 
 1. If Mode Automatic
-   1.1 If Start-Date exists, Then set Adj-Due mode, Loop
-   1.2 If Due-Date exists, Then set Adj-Start mode, Loop
-   1.3 If Implicit chosen, Then set Implicit mode, Loop
-   1.4 If Adj-Due chosen, Then set Adj-Due mode, Loop
-   1.5 If Adj-Start chosen, Then set Adj-Start mode, Loop
+   1.1 Note: Mode changes away never come back here
+   1.2 If Start-Date exists, Then set Adj-Due mode, Loop
+   1.3 If Due-Date exists, Then set Adj-Start mode, Loop
 
 2. If Mode Adj-Due
-   2.1 Activate Start-Date, If not Unset-Action [Ref2, 0.1.1]
-   2.2 Activate Due-Date (Read-Only) [Ref2]
-   2.3 Disable Automatic mode option in dropdown [Ref1]
-   2.4 If Duration changed, Then adj Due-Date
-   2.5 If Start-Date Unset-Action, Then
-       2.5.1 Set Sync-Mode [0.4]
-       2.5.2 Deactivate Due-Date
-       2.5.3 Reactivate Automatic mode option in dropdown
-       2.5.4 Set Automatic mode
-       2.5.5 Unset Sync-Mode
-       2.5.6 Loop
-   2.6 If Start-Date changed, Then adj Due-Date
+   2.1 Note: Mode changes away never come back here
+   2.2 Activate Start-Date, If not Unset-Action [Ref2, 0.1.1]
+   2.3 Activate Due-Date (Read-Only) [Ref2]
+   2.4 Disable Automatic mode option in dropdown [Ref1]
+   2.5 If Duration changed, Then adj Due-Date
+   2.6 If Start-Date Unset-Action, Then
+       2.6.1 Set Sync-Mode [0.4]
+       2.6.2 Deactivate Due-Date
+       2.6.3 Reactivate Automatic mode option in dropdown
+       2.6.4 Set Automatic mode
+       2.6.5 Unset Sync-Mode
+       2.6.6 Loop
+   2.7 If Start-Date changed, Then adj Due-Date
 
 3. If Mode Adj-Start
-   3.1 Activate Due-Date, If not Unset-Action [Ref2, 0.1.2]
-   3.2 Activate Start-Date (Read-Only) [Ref2]
-   3.3 Disable Automatic mode option in dropdown [Ref1]
-   3.4 If Duration changed, Then adj Start-Date
-   3.5 If Due-Date Unset-Action, Then
-       3.5.1 Set Sync-Mode [0.4]
-       3.5.2 Deactivate Start-Date
-       3.5.3 Reactivate Automatic mode option in dropdown
-       3.5.4 Set Automatic mode
-       3.5.5 Unset Sync-Mode
-       3.5.6 Loop
-   3.6 If Due-Date changed, Then adj Start-Date
+   3.1 Note: Mode changes away never come back here
+   3.2 Activate Due-Date, If not Unset-Action [Ref2, 0.1.2]
+   3.3 Activate Start-Date (Read-Only) [Ref2]
+   3.4 Disable Automatic mode option in dropdown [Ref1]
+   3.5 If Duration changed, Then adj Start-Date
+   3.6 If Due-Date Unset-Action, Then
+       3.6.1 Set Sync-Mode [0.4]
+       3.6.2 Deactivate Start-Date
+       3.6.3 Reactivate Automatic mode option in dropdown
+       3.6.4 Set Automatic mode
+       3.6.5 Unset Sync-Mode
+       3.6.6 Loop
+   3.7 If Due-Date changed, Then adj Start-Date
 
 4. If Mode Implicit
-   4.1 Disable Automatic mode option in dropdown [Ref1]
-   4.2 If Start-Date exists
-       4.2.1 If Due-Date exists
-           4.2.1.1 Enable Duration (Read-Only)
-           4.2.1.2 Adj Duration
-           4.2.1.3 Negative Durations permitted
-       4.2.2 If Due-Date Unset-Action, Then disable Duration
-   4.3 If Start-Date Unset-Action, Then disable Duration
+   4.1 Note: Mode changes away never come back here
+   4.2 Disable Automatic mode option in dropdown [Ref1]
+   4.3 If Start-Date exists
+       4.3.1 If Due-Date exists
+           4.3.1.1 Enable Duration (Read-Only)
+           4.3.1.2 Adj Duration
+           4.3.1.3 Negative Durations permitted
+       4.3.2 If Due-Date Unset-Action, Then disable Duration
+   4.4 If Start-Date Unset-Action, Then disable Duration
 
 5. Update Field States (See: UI Field States section)
 
@@ -277,8 +305,8 @@ Start: Standard mode, Duration 0, Stop-Date disabled
        0.4.1 Flag: effort._effortSyncInProgress on domain Effort instance.
 
 1. If Mode Standard
-   1.1 If Retroactive mode chosen, Loop
-   1.2 If Implicit mode chosen, Loop
+   1.1 Note: Mode changes away never come back here
+   1.2 See 1.1 and TODO item 11
    1.3 Set Start-Date editable
    1.4 Set Duration editable
    1.5 Set Presets dropdown enabled [Ref1]
@@ -308,8 +336,8 @@ Start: Standard mode, Duration 0, Stop-Date disabled
    1.14 If Duration < 0, Then Negative Durations permitted
 
 2. If Mode Retroactive
-   2.1 If Standard mode chosen, Loop
-   2.2 If Implicit mode chosen, Loop
+   2.1 Note: Mode changes away never come back here
+   2.2 See 2.1 and TODO item 11
    2.3 Set Start-Date read-only
    2.4 Set Duration editable
    2.5 Set Presets dropdown enabled [Ref1]
@@ -329,8 +357,8 @@ Start: Standard mode, Duration 0, Stop-Date disabled
    2.12 If Duration < 0, Then Negative Durations permitted
 
 3. If Mode Implicit
-   3.1 If Standard mode chosen, Loop
-   3.2 If Retroactive mode chosen, Loop
+   3.1 Note: Mode changes away never come back here
+   3.2 See 3.1 and TODO item 11
    3.3 Set Presets dropdown disabled [Ref1]
    3.4 Set Start-Date editable
    3.5 If Stop-Date does not exist, Disable Duration

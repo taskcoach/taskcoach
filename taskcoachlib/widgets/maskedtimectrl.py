@@ -3585,14 +3585,15 @@ class DateTimeCombo2:
         secondChoices: Dropdown choices for seconds field
     """
 
-    def __init__(self, parent, value=None,
+    def __init__(self, parent, value=None, suggestedValue=None,
                  hourChoices=None, minuteChoices=None,
                  showSeconds=False, secondChoices=None):
         self._parent = parent
         self._showSeconds = showSeconds
+        self._suggestedValue = suggestedValue
 
         checked = value is not None
-        display_value = value if value is not None else datetime.datetime.now()
+        display_value = value if value is not None else (suggestedValue or datetime.datetime.now())
 
         self._checkbox = wx.CheckBox(parent)
         self._checkbox.SetValue(checked)
@@ -3749,10 +3750,19 @@ class DateTimeCombo2:
         Used by duration calc logic (steps 2.1, 3.1) to activate a missing
         date without specifying a value. Also used by SetValue() to set a
         specific datetime and activate in one call.
+
+        On first activation with no explicit value, uses the suggestedValue
+        from preferences (if provided at construction). After first use the
+        suggestedValue is cleared so subsequent activations keep the last
+        user-set value.
         """
         if value is not None:
             self._dateCtrl.SetDate(value.date())
             self._timeCtrl.SetTime(value.time())
+        elif self._suggestedValue is not None:
+            self._dateCtrl.SetDate(self._suggestedValue.date())
+            self._timeCtrl.SetTime(self._suggestedValue.time())
+            self._suggestedValue = None
         self._setCheckboxState(True)
         self._updateEnabled()
 

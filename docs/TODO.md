@@ -12,6 +12,7 @@ This document tracks planned improvements and known issues to address in future 
 - [Text-to-Speech Modernization](#text-to-speech-modernization)
 - [GTK3 Widget Sizing Inconsistency](#gtk3-widget-sizing-inconsistency)
 - [BookPage Default Alignment Inconsistency](#bookpage-default-alignment-inconsistency)
+- [Preferences Dialog: Dirty-Check and Button State](#preferences-dialog-dirty-check-and-button-state)
 - [Other TODOs](#other-todos)
   - [EVT_TEXT Compatibility Shim](#evt_text-compatibility-shim-in-multilinetextctrl)
 
@@ -361,6 +362,56 @@ So when you call `addEntry(_("Label"), someControl)`:
 
 ---
 
+## Preferences Dialog: Dirty-Check and Button State
+
+### Goal
+
+Grey out Apply and OK buttons until the user has actually changed a setting.
+
+### Approach
+
+Use `EVT_CHILD_FOCUS` on each page to detect when the user leaves a control
+(blur = confirmed change, not intermediary keystrokes). On each blur, compare
+all tracked controls against the live `Settings` object (the INI file values).
+No need to store "original values" — the settings object is the baseline.
+
+**`SettingsPageBase`:**
+- Bind `EVT_CHILD_FOCUS` → `_onChildFocus`
+- Add `hasChanges()` that iterates `_booleanSettings`, `_choiceSettings`,
+  `_integerSettings`, `_pathSettings`, `_textSettings`,
+  `_multipleChoiceSettings` and compares each control's current value against
+  `self.settings.get(section, setting)`
+- Pages with custom controls (Theme, Task Appearance, working hours) override
+  `hasChanges()` to add their own comparisons
+
+**Parent dialog:**
+- On child focus event (bubbled up or polled), check
+  `any(page.hasChanges() for page in self)` and enable/disable Apply/OK
+- After Apply saves, button state is re-evaluated (settings now match controls,
+  so buttons grey out again automatically)
+
+### Comparison per control type
+
+| Method | Compare |
+|--------|---------|
+| `addBooleanSetting` | `checkBox.IsChecked() != self.getboolean(section, setting)` |
+| `addChoiceSetting` | reconstructed value != `self.gettext(section, setting)` |
+| `addIntegerSetting` | `spin.GetValue() != self.getint(section, setting)` |
+| `addPathSetting` | `pathChooser.GetPath() != self.gettext(section, setting)` |
+| `addTextSetting` | `textCtrl.GetValue() != self.gettext(section, setting)` |
+| `addMultipleChoiceSettings` | checked items != `self.getlist(section, setting)` |
+
+### Notes
+
+- One binding per page, one `hasChanges()` scan per blur — no per-control wiring
+- Custom pages override `hasChanges()` for non-standard controls
+- `EVT_CHILD_FOCUS` fires on focus transfer between any child controls,
+  which is the right granularity for confirmed-value checking
+
+**Status:** Planned
+
+---
+
 ## Other TODOs
 
 ### EVT_TEXT Compatibility Shim in MultiLineTextCtrl
@@ -369,4 +420,4 @@ So when you call `addEntry(_("Label"), someControl)`:
 
 ---
 
-**Last Updated:** January 2026
+**Last Updated:** February 2026

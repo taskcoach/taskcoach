@@ -79,14 +79,9 @@ class BookPage(wx.Panel):
 
     def __defaultFlags(self, controls):
         """Return the default flags for placing a list of controls."""
-        labelInFirstColumn = type(controls[0]) in [type(""), type("")]
         flags = []
         for columnIndex in range(len(controls)):
-            flag = wx.ALL | wx.ALIGN_CENTER_VERTICAL
-            if columnIndex == 0 and labelInFirstColumn:
-                flag |= wx.ALIGN_LEFT
-            else:
-                flag |= wx.ALIGN_RIGHT | wx.EXPAND
+            flag = wx.ALL | wx.ALIGN_TOP | wx.ALIGN_LEFT
             flags.append(flag)
         return flags
 
@@ -194,19 +189,14 @@ class ScrolledBookPage(scrolledpanel.ScrolledPanel):
             self._outerSizer = wx.BoxSizer(wx.VERTICAL)
             self._outerSizer.Add(self._sizer, 1, wx.EXPAND | wx.ALL, self._outerMargin)
             self.SetSizer(self._outerSizer)
-        self.SetupScrolling(scroll_x=False, scroll_y=True)
+        self.SetupScrolling(scroll_x=True, scroll_y=True)
         self.Layout()
 
     def __defaultFlags(self, controls):
         """Return the default flags for placing a list of controls."""
-        labelInFirstColumn = type(controls[0]) in [type(""), type("")]
         flags = []
         for columnIndex in range(len(controls)):
-            flag = wx.ALL | wx.ALIGN_CENTER_VERTICAL
-            if columnIndex == 0 and labelInFirstColumn:
-                flag |= wx.ALIGN_LEFT
-            else:
-                flag |= wx.ALIGN_RIGHT | wx.EXPAND
+            flag = wx.ALL | wx.ALIGN_TOP | wx.ALIGN_LEFT
             flags.append(flag)
         return flags
 
@@ -234,6 +224,8 @@ class ScrolledBookPage(scrolledpanel.ScrolledPanel):
                 columnIndex, control, flags[columnIndex],
                 columnIndex == lastColumnIndex
             )
+        if kwargs.get("growable", False):
+            self._sizer.AddGrowableRow(self._position.maxRow())
         # Add growable column once, when first entry has been added
         if (
             self._growableColumn >= 0

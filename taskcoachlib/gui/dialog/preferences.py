@@ -129,7 +129,7 @@ class FontColorSyncer(object):
             self._fontButton.SetSelectedColour(self._fgColorButton.GetColour())
 
 
-class SettingsPageBase(widgets.BookPage):
+class SettingsPageBase(widgets.ScrolledBookPage):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._booleanSettings = []
@@ -199,7 +199,7 @@ class SettingsPageBase(widgets.BookPage):
             text,
             multipleChoice,
             helpText=helpText,
-            growable=True,
+            growable=kwargs.get("growable", True),
             flags=kwargs.get("flags", None),
         )
         self._multipleChoiceSettings.append(
@@ -276,11 +276,6 @@ class SettingsPageBase(widgets.BookPage):
             text,
             panel,
             helpText=helpText,
-            flags=(
-                wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT,
-                wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,
-                wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,
-            ),
         )
 
     def _onWorkingHourStartChanged(self, event):
@@ -615,10 +610,23 @@ class SettingsPageBase(widgets.BookPage):
 
 
 class SettingsPage(SettingsPageBase):
+    _labelWidth = 300
+    _helpWidth = None  # Subclasses can set to wrap help text at fixed width
+
     def __init__(self, settings=None, taskFile=None, *args, **kwargs):
         self.settings = settings
         self.taskFile = taskFile
         super().__init__(*args, **kwargs)
+
+    def fit(self):
+        """Wrap column 0 labels at fixed width before layout."""
+        for item in self._sizer.GetChildren():
+            pos = item.GetPos()
+            if pos.GetCol() == 0 and item.GetSpan().GetColspan() == 1:
+                window = item.GetWindow()
+                if window and isinstance(window, wx.StaticText):
+                    window.Wrap(self._labelWidth)
+        super().fit()
 
     def addEntry(self, text, *controls, **kwargs):  # pylint: disable=W0221
         helpText = kwargs.pop("helpText", "")
@@ -629,13 +637,15 @@ class SettingsPage(SettingsPageBase):
             )
         elif helpText == "override":
             helpText = _(
-                "This setting can be overridden for individual tasks\n"
+                "This setting can be overridden for individual tasks "
                 "in the task edit dialog."
             )
         if helpText:
             helpCtrl = wx.StaticText(self, label=helpText)
             helpCtrl.SetForegroundColour(
                 wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+            if self._helpWidth:
+                helpCtrl.Wrap(self._helpWidth)
             controls = controls + (helpCtrl,)
         super().addEntry(text, *controls, **kwargs)
 
@@ -682,6 +692,7 @@ class SavePage(SettingsPage):
     pageName = "save"
     pageTitle = _("Files")
     pageIcon = "save"
+    _helpWidth = 500
 
     def __init__(self, *args, **kwargs):
         super().__init__(columns=3, *args, **kwargs)
@@ -689,57 +700,38 @@ class SavePage(SettingsPage):
             "file",
             "autosave",
             _("Auto save after every change"),
-            flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTRE_VERTICAL, wx.ALIGN_LEFT),
         )
         self.addBooleanSetting(
             "file",
             "autoload",
             _("Auto load when the file changes on disk"),
-            flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTRE_VERTICAL, wx.ALIGN_LEFT),
         )
         self.addBooleanSetting(
             "file",
             "fspoll",
             _("Use polling for file monitoring"),
             _(
-                "Use slow polling (every 10s) instead of efficient OS notifications.\nEnable this if your task file is on a network share.\nYou must restart %s after changing this."
+                "Use slow polling (every 10s) instead of efficient OS notifications. Enable this if your task file is on a network share. You must restart %s after changing this."
             )
             % meta.name,
-            flags=(
-                wx.ALIGN_RIGHT | wx.ALIGN_TOP,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-            ),
         )
         self.addBooleanSetting(
             "file",
             "saveinifileinprogramdir",
             _(
-                "Save settings (%s.ini) in the same\n"
+                "Save settings (%s.ini) in the same "
                 "directory as the program"
             )
             % meta.filename,
             _("For running %s from a removable medium") % meta.name,
-            flags=(
-                wx.ALIGN_RIGHT | wx.ALIGN_CENTRE_VERTICAL,
-                wx.ALIGN_LEFT | wx.ALIGN_CENTRE_VERTICAL,
-                wx.ALIGN_LEFT,
-            ),
         )
         self.addPathSetting(
             "file",
             "attachmentbase",
             _("Attachment base directory"),
             _(
-                "When adding an attachment, try to make\n"
+                "When adding an attachment, try to make "
                 "its path relative to this one."
-            ),
-            flags=(
-                wx.ALIGN_RIGHT | wx.ALIGN_TOP,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
             ),
         )
         self.addMultipleChoiceSettings(
@@ -748,18 +740,12 @@ class SavePage(SettingsPage):
             _("Before saving, automatically import from"),
             [("Todo.txt", _("Todo.txt format"))],
             helpText=_(
-                "Before saving, %s automatically imports tasks\n"
-                "from a Todo.txt file with the same name as the task file,\n"
+                "Before saving, %s automatically imports tasks "
+                "from a Todo.txt file with the same name as the task file, "
                 "but with extension .txt"
             )
             % meta.name,
-            flags=(
-                wx.ALIGN_RIGHT | wx.ALIGN_TOP,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-            ),
+            growable=False,
         )
         self.addMultipleChoiceSettings(
             "file",
@@ -767,25 +753,19 @@ class SavePage(SettingsPage):
             _("When saving, automatically export to"),
             [("Todo.txt", _("Todo.txt format"))],
             helpText=_(
-                "When saving, %s automatically exports tasks\n"
-                "to a Todo.txt file with the same name as the task file,\n"
+                "When saving, %s automatically exports tasks "
+                "to a Todo.txt file with the same name as the task file, "
                 "but with extension .txt"
             )
             % meta.name,
-            flags=(
-                wx.ALIGN_RIGHT | wx.ALIGN_TOP,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-            ),
+            growable=False,
         )
         self.fit()
 
 
 class WindowBehaviorPage(SettingsPage):
     pageName = "window"
-    pageTitle = _("Window behavior")
+    pageTitle = _("Windows")
     pageIcon = "windows"
 
     def __init__(self, *args, **kwargs):
@@ -794,7 +774,6 @@ class WindowBehaviorPage(SettingsPage):
             "window",
             "tips",
             _("Show tips window on startup"),
-            flags=[wx.ALIGN_RIGHT, wx.EXPAND],
         )
         self.addChoiceSetting(
             "window",
@@ -806,39 +785,33 @@ class WindowBehaviorPage(SettingsPage):
                 ("Always", _("Always")),
                 ("WhenClosedIconized", _("If it was iconized last session")),
             ],
-            flags=[wx.ALIGN_RIGHT, wx.EXPAND],
         )
         self.addBooleanSetting(
             "version",
             "notify",
-            _("Check for new version " "of %(name)s on startup")
+            _("Check for new version of %(name)s on startup")
             % meta.data.metaDict,
-            flags=[wx.ALIGN_RIGHT, wx.EXPAND],
         )
         self.addBooleanSetting(
             "view",
             "developermessages",
-            _("Check for " "messages from the %(name)s developers on startup")
+            _("Check for messages from the %(name)s developers on startup")
             % meta.data.metaDict,
-            flags=[wx.ALIGN_RIGHT, wx.EXPAND],
         )
         self.addBooleanSetting(
             "window",
             "hidewheniconized",
             _("Hide main window when iconized"),
-            flags=[wx.ALIGN_RIGHT, wx.EXPAND],
         )
         self.addBooleanSetting(
             "window",
             "hidewhenclosed",
             _("Minimize main window when closed"),
-            flags=[wx.ALIGN_RIGHT, wx.EXPAND],
         )
         self.addBooleanSetting(
             "window",
             "blinktaskbariconwhentrackingeffort",
             _("Make clock in the task bar tick when tracking effort"),
-            flags=[wx.ALIGN_RIGHT, wx.EXPAND],
         )
         self.fit()
 
@@ -1292,7 +1265,7 @@ class LanguagePage(SettingsPage):
         self._restartWarning = wx.StaticText(self, label=self._restartWarningBase)
         self._restartWarningDefaultColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         self._restartWarning.SetForegroundColour(self._restartWarningDefaultColor)
-        self.addEntry("", self._restartWarning, flags=(None, wx.ALIGN_LEFT))
+        self.addEntry("", self._restartWarning)
 
         languages = [
             ("ar", "الْعَرَبيّة (Arabic)"),
@@ -1372,10 +1345,6 @@ class LanguagePage(SettingsPage):
             _("Language"),
             "",
             choices,
-            flags=(
-                wx.ALIGN_RIGHT,
-                wx.ALIGN_LEFT,
-            ),
             sep="-",
         )
 
@@ -1386,7 +1355,7 @@ class LanguagePage(SettingsPage):
         # Locale warning - only shown when selected locale is not installed
         self._localeWarning = wx.StaticText(
             panel,
-            label=_("WARNING: The selected language's locale is not installed on your system.\n"
+            label=_("WARNING: The selected language's locale is not installed on your system. "
                     "Some date and time formats may appear in your system's format instead.")
         )
         self._localeWarning.SetForegroundColour(wx.Colour(180, 0, 0))
@@ -1405,7 +1374,7 @@ class LanguagePage(SettingsPage):
         urlCtrl = HyperLinkCtrl(panel, -1, label=url, URL=url)
         sizer.Add(urlCtrl, 0, wx.TOP, 2)
         panel.SetSizer(sizer)
-        self.addEntry("", panel, flags=(None, wx.ALIGN_LEFT))
+        self.addEntry("", panel)
 
         # Store original language to detect changes
         self._originalLanguage = self._getSelectedLanguageCode()
@@ -1460,8 +1429,7 @@ class LanguagePage(SettingsPage):
         dateFormatSizer.Add(self._detectedFormatLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 15)
 
         dateFormatPanel.SetSizer(dateFormatSizer)
-        self.addEntry(_("Date format:"), dateFormatPanel,
-                      flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, wx.ALIGN_LEFT))
+        self.addEntry(_("Date format"), dateFormatPanel)
 
         # Demo DateCtrl4 showing the selected format (interactive, starts with today)
         from taskcoachlib.widgets.maskedtimectrl import DateCtrl4
@@ -1478,7 +1446,7 @@ class LanguagePage(SettingsPage):
         )
         demoSizer.Add(self._demoDateCtrl, 0, wx.ALIGN_CENTER_VERTICAL)
         demoPanel.SetSizer(demoSizer)
-        self.addEntry("", demoPanel, flags=(None, wx.ALIGN_LEFT))
+        self.addEntry("", demoPanel)
 
         # === TIME FORMAT SECTION ===
         # Time format dropdown with detected format label
@@ -1515,8 +1483,7 @@ class LanguagePage(SettingsPage):
 
         timeFormatPanel.SetSizer(timeFormatSizer)
         self._timeFormatChoice.Bind(wx.EVT_CHOICE, self._onTimeFormatChange)
-        self.addEntry(_("Time format:"), timeFormatPanel,
-                      flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, wx.ALIGN_LEFT))
+        self.addEntry(_("Time format"), timeFormatPanel)
 
         # Demo TimeCtrl showing the selected format (interactive, starts with current time)
         # TimeCtrl now has built-in defaults from settings, so no need to pass choices
@@ -1535,7 +1502,7 @@ class LanguagePage(SettingsPage):
         )
         timeDemoSizer.Add(self._demoTimeCtrl, 0, wx.ALIGN_CENTER_VERTICAL)
         timeDemoPanel.SetSizer(timeDemoSizer)
-        self.addEntry("", timeDemoPanel, flags=(None, wx.ALIGN_LEFT))
+        self.addEntry("", timeDemoPanel)
 
         # Note about 12-hour mode and working hours
         timeFormatNote = wx.StaticText(
@@ -1545,7 +1512,7 @@ class LanguagePage(SettingsPage):
         timeFormatNote.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
-        self.addEntry("", timeFormatNote, flags=(None, wx.ALIGN_LEFT))
+        self.addEntry("", timeFormatNote)
 
         # Separator line between time format and spell check sections
         self.addLine()
@@ -1568,10 +1535,7 @@ class LanguagePage(SettingsPage):
         self._spellCheckEnabledCheck = wx.CheckBox(self, label=_("Enable spell checking"))
         self._spellCheckEnabledCheck.SetValue(self._spellCheckEnabled)
         self._spellCheckEnabledCheck.Bind(wx.EVT_CHECKBOX, self._onSpellCheckEnabledChange)
-        self.addEntry(
-            _("Spell check:"), self._spellCheckEnabledCheck,
-            flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, wx.ALIGN_LEFT)
-        )
+        self.addEntry(_("Spell check"), self._spellCheckEnabledCheck)
 
         # Show warning if enchant is not available
         if not ENCHANT_AVAILABLE:
@@ -1580,7 +1544,7 @@ class LanguagePage(SettingsPage):
                 label=_("Warning: Spell checking is not available. Install pyenchant to enable this feature.")
             )
             warningText.SetForegroundColour(wx.Colour(180, 0, 0))
-            self.addEntry("", warningText, flags=(None, wx.ALIGN_LEFT))
+            self.addEntry("", warningText)
             self._spellCheckEnabledCheck.Enable(False)
 
         # Language dropdown for spell check
@@ -1619,10 +1583,7 @@ class LanguagePage(SettingsPage):
             spellLangSizer.Add(detectedLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 15)
 
         spellLangPanel.SetSizer(spellLangSizer)
-        self.addEntry(
-            _("Spell check language:"), spellLangPanel,
-            flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, wx.ALIGN_LEFT)
-        )
+        self.addEntry(_("Spell check language"), spellLangPanel)
 
         # Note about dropdown and how to install more dictionaries
         if ENCHANT_AVAILABLE:
@@ -1636,7 +1597,7 @@ class LanguagePage(SettingsPage):
                     label=_("Language missing? Install hunspell packages for your language.")
                 )
                 helpText.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-                self.addEntry("", helpText, flags=(None, wx.ALIGN_LEFT))
+                self.addEntry("", helpText)
 
             # Platform-specific note combining dropdown info and install instructions
             if system == "Linux":
@@ -1649,7 +1610,7 @@ class LanguagePage(SettingsPage):
             dictNote = wx.StaticText(self, label=noteText)
             dictNote.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
             dictNote.Wrap(500)
-            self.addEntry("", dictNote, flags=(None, wx.ALIGN_LEFT))
+            self.addEntry("", dictNote)
 
     def _onSpellCheckEnabledChange(self, event):
         """Handle spell check enabled checkbox change."""
@@ -1865,59 +1826,46 @@ class FeaturesPage(SettingsPage):
     pageName = "features"
     pageTitle = _("Features")
     pageIcon = "cogwheel_icon"
+    _helpWidth = 500
 
     def __init__(self, *args, **kwargs):
         super().__init__(columns=3, growableColumn=-1, *args, **kwargs)
-        self.addEntry(
-            _(
-                "All settings on this tab require a restart of %s "
-                "to take effect"
-            )
-            % meta.name,
-            flags=(wx.ALIGN_CENTER,),
-        )
+        self._restartWarningBase = _("All settings on this tab require a restart of %s to take effect.") % meta.name
+        self._restartWarning = wx.StaticText(self, label=self._restartWarningBase)
+        self._restartWarningDefaultColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        self._restartWarning.SetForegroundColour(self._restartWarningDefaultColor)
+        self.addEntry("", self._restartWarning)
         self.addChoiceSetting(
             "view",
             "weekstart",
             _("Start of work week"),
             " ",
             [("monday", _("Monday")), ("sunday", _("Sunday"))],
-            flags=(
-                wx.ALIGN_RIGHT | wx.ALIGN_CENTRE_VERTICAL,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-            ),
         )
         self.addWorkingHoursSetting(_("Working hours"))
-        # Note about working hours and 12-hour mode
         workingHoursNote = wx.StaticText(
             self,
             label=_("Note: Working hours are not used for hour suggestions when 12-hour (AM/PM) time format is selected in Regional settings.")
         )
         workingHoursNote.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-        workingHoursNote.Wrap(600)
-        self.addEntry("", workingHoursNote, flags=(wx.ALIGN_LEFT, wx.EXPAND))
+        workingHoursNote.Wrap(700)
+        self.addEntry("", workingHoursNote)
 
         self.addBooleanSetting(
             "calendarviewer",
             "gradient",
-            _(
-                "Use gradients in calendar views.\n"
-                "This may slow down Task Coach."
-            ),
-            flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTRE_VERTICAL, wx.EXPAND),
+            _("Gradients in calendar views"),
+            _("Using gradients in calendar views may slow down Task Coach"),
         )
         self.addChoiceSetting(
             "view",
             "effortminuteinterval",
             _("Minutes between suggested times"),
             _(
-                "In popup-menus for time selection (e.g. for setting the start \n"
-                "time of an effort) %(name)s will suggest times using this \n"
-                "setting. The smaller the number of minutes, the more times \n"
-                "are suggested. Of course, you can also enter any time you \n"
+                "In popup-menus for time selection (e.g. for setting the start "
+                "time of an effort) %(name)s will suggest times using this "
+                "setting. The smaller the number of minutes, the more times "
+                "are suggested. Of course, you can also enter any time you "
                 "want beside the suggested times."
             )
             % meta.data.metaDict,
@@ -1925,18 +1873,13 @@ class FeaturesPage(SettingsPage):
                 (minutes, minutes)
                 for minutes in ("1", "2", "3", "4", "5", "6", "10", "12", "15", "20", "30")
             ],
-            flags=(
-                wx.ALL | wx.ALIGN_TOP | wx.ALIGN_RIGHT,
-                wx.ALL | wx.ALIGN_TOP,
-                wx.ALL | wx.ALIGN_CENTER_VERTICAL,
-            ),
         )
         self.addChoiceSetting(
             "view",
             "effortsecondinterval",
             _("Seconds between suggested times"),
             _(
-                "In effort dialogs where seconds are shown, %(name)s will \n"
+                "In effort dialogs where seconds are shown, %(name)s will "
                 "suggest second values using this setting."
             )
             % meta.data.metaDict,
@@ -1944,40 +1887,85 @@ class FeaturesPage(SettingsPage):
                 (seconds, seconds)
                 for seconds in ("1", "2", "3", "4", "5", "6", "10", "12", "15", "20", "30")
             ],
-            flags=(
-                wx.ALL | wx.ALIGN_TOP | wx.ALIGN_RIGHT,
-                wx.ALL | wx.ALIGN_TOP,
-                wx.ALL | wx.ALIGN_CENTER_VERTICAL,
-            ),
         )
         self.addIntegerSetting(
             "feature",
             "minidletime",
             _("Idle time notice"),
             helpText=_(
-                "If there is no user input for this amount of time\n"
+                "If there is no user input for this amount of time "
                 "(in minutes), %(name)s will ask what to do about current "
                 "efforts."
             )
             % meta.data.metaDict,
-            flags=(
-                wx.ALL | wx.ALIGN_CENTRE_VERTICAL | wx.ALIGN_RIGHT,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-            ),
         )
         self.addBooleanSetting(
             "view",
             "descriptionpopups",
-            _(
-                "Show a popup with the description of an item\n"
-                "when hovering over it"
-            ),
-            flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTRE_VERTICAL, wx.EXPAND),
+            _("Hoverover popups"),
+            _("Show a popup with the description of an item when hovering over it"),
         )
+
+        # Store original values to detect changes
+        self._originalValues = {}
+        for section, setting, checkBox in self._booleanSettings:
+            self._originalValues[(section, setting)] = checkBox.IsChecked()
+            checkBox.Bind(wx.EVT_CHECKBOX, self._onSettingChange)
+        for section, setting, choiceCtrls in self._choiceSettings:
+            self._originalValues[(section, setting)] = tuple(
+                c.GetSelection() for c in choiceCtrls
+            )
+            for c in choiceCtrls:
+                c.Bind(wx.EVT_CHOICE, self._onSettingChange)
+        for section, setting, spinCtrl in self._integerSettings:
+            self._originalValues[(section, setting)] = spinCtrl.GetValue()
+            spinCtrl.Bind(wx.EVT_SPINCTRL, self._onSettingChange)
+        # Working hours
+        self._originalValues[("view", "efforthourstart")] = self._workingHourStartChoice.GetSelection()
+        self._originalValues[("view", "efforthourend")] = self._workingHourEndChoice.GetSelection()
+        self._originalValues[("view", "efforthourend_endofday")] = self._workingHourEndOfDayCheck.IsChecked()
+        self._workingHourStartChoice.Bind(wx.EVT_CHOICE, self._onSettingChange)
+        self._workingHourEndChoice.Bind(wx.EVT_CHOICE, self._onSettingChange)
+        self._workingHourEndOfDayCheck.Bind(wx.EVT_CHECKBOX, self._onSettingChange)
+
         self.fit()
+
+    def _onSettingChange(self, event):
+        self._updateRestartWarning()
+        event.Skip()
+
+    def _updateRestartWarning(self):
+        changed = False
+        for section, setting, checkBox in self._booleanSettings:
+            if checkBox.IsChecked() != self._originalValues.get((section, setting)):
+                changed = True
+                break
+        if not changed:
+            for section, setting, choiceCtrls in self._choiceSettings:
+                current = tuple(c.GetSelection() for c in choiceCtrls)
+                if current != self._originalValues.get((section, setting)):
+                    changed = True
+                    break
+        if not changed:
+            for section, setting, spinCtrl in self._integerSettings:
+                if spinCtrl.GetValue() != self._originalValues.get((section, setting)):
+                    changed = True
+                    break
+        if not changed:
+            if (self._workingHourStartChoice.GetSelection() != self._originalValues[("view", "efforthourstart")]
+                or self._workingHourEndChoice.GetSelection() != self._originalValues[("view", "efforthourend")]
+                or self._workingHourEndOfDayCheck.IsChecked() != self._originalValues[("view", "efforthourend_endofday")]):
+                changed = True
+
+        if changed:
+            self._restartWarning.SetLabel(
+                self._restartWarningBase + " " + _("Change detected, restart required!")
+            )
+            self._restartWarning.SetForegroundColour(wx.Colour(180, 0, 0))
+        else:
+            self._restartWarning.SetLabel(self._restartWarningBase)
+            self._restartWarning.SetForegroundColour(self._restartWarningDefaultColor)
+        self._restartWarning.Refresh()
 
     def ok(self):
         super().ok()
@@ -1991,6 +1979,7 @@ class TaskDatesPage(SettingsPage):
     pageName = "task"
     pageTitle = _("Task dates")
     pageIcon = "calendar_icon"
+    _helpWidth = 700
 
     def __init__(self, *args, **kwargs):
         super().__init__(columns=4, growableColumn=-1, *args, **kwargs)
@@ -1999,11 +1988,6 @@ class TaskDatesPage(SettingsPage):
             "markparentcompletedwhenallchildrencompleted",
             _("Mark parent task completed when all children are completed"),
             helpText="override",
-            flags=(
-                wx.ALIGN_RIGHT,
-                wx.ALIGN_LEFT,
-                wx.EXPAND,
-            ),
         )
         self.addIntegerSetting(
             "behavior",
@@ -2011,7 +1995,6 @@ class TaskDatesPage(SettingsPage):
             _("Number of hours that tasks are considered to be 'due soon'"),
             minimum=0,
             maximum=9999,
-            flags=(wx.ALIGN_RIGHT, wx.ALL | wx.ALIGN_LEFT),
         )
         choices = [
             ("", _("Nothing")),
@@ -2032,8 +2015,18 @@ class TaskDatesPage(SettingsPage):
             ),
             "",
             choices,
-            flags=(wx.ALIGN_RIGHT, wx.ALL | wx.ALIGN_LEFT),
         )
+        datestied_hint = wx.StaticText(
+            self,
+            label=_(
+                'Deprecated: replaced by the duration mode in the task editor. '
+                'Inline editing in the task list has not yet been refactored '
+                'and still uses this legacy option. It will be removed eventually.'
+            ),
+        )
+        datestied_hint.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+        datestied_hint.Wrap(700)
+        self.addText("", datestied_hint)
 
         check_choices = [("preset", _("Preset")), ("propose", _("Propose"))]
         day_choices = [
@@ -2058,12 +2051,6 @@ class TaskDatesPage(SettingsPage):
             check_choices,
             day_choices,
             time_choices,
-            flags=(
-                wx.ALIGN_RIGHT,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-            ),
         )
         self.addChoiceSetting(
             "view",
@@ -2073,12 +2060,6 @@ class TaskDatesPage(SettingsPage):
             check_choices,
             day_choices,
             time_choices,
-            flags=(
-                wx.ALIGN_RIGHT,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-            ),
         )
         self.addChoiceSetting(
             "view",
@@ -2088,12 +2069,6 @@ class TaskDatesPage(SettingsPage):
             check_choices,
             day_choices,
             time_choices,
-            flags=(
-                wx.ALIGN_RIGHT,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-            ),
         )
         self.addChoiceSetting(
             "view",
@@ -2103,12 +2078,6 @@ class TaskDatesPage(SettingsPage):
             [check_choices[1]],
             day_choices,
             time_choices,
-            flags=(
-                wx.ALIGN_RIGHT,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-            ),
         )
         self.addChoiceSetting(
             "view",
@@ -2118,12 +2087,6 @@ class TaskDatesPage(SettingsPage):
             check_choices,
             day_choices,
             time_choices,
-            flags=(
-                wx.ALIGN_RIGHT,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-                wx.ALIGN_LEFT,
-            ),
         )
         self.__add_help_text()
         self.fit()
@@ -2141,13 +2104,14 @@ class TaskDatesPage(SettingsPage):
             )
             % meta.data.metaDict,
         )
-        help_text.Wrap(460)
+        help_text.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+        help_text.Wrap(700)
         self.addText("", help_text)
 
 
 class TaskReminderPage(SettingsPage):
     pageName = "reminder"
-    pageTitle = _("Task reminders")
+    pageTitle = _("Reminders")
     pageIcon = "clock_alarm_icon"
 
     def __init__(self, *args, **kwargs):
@@ -2158,11 +2122,6 @@ class TaskReminderPage(SettingsPage):
                 "sayreminder",
                 _("Let the computer say the reminder"),
                 _("(Needs espeak)") if operating_system.isGTK() else "",
-                flags=(
-                    wx.ALIGN_RIGHT | wx.ALIGN_CENTRE_VERTICAL,
-                    wx.ALL | wx.ALIGN_LEFT,
-                    wx.ALL | wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL,
-                ),
             )
         snoozeChoices = [
             (str(choice[0]), choice[1]) for choice in date.snoozeChoices
@@ -2173,17 +2132,13 @@ class TaskReminderPage(SettingsPage):
             _("Default snooze time to use after reminder"),
             "",
             snoozeChoices,
-            flags=(
-                wx.ALIGN_RIGHT | wx.ALIGN_CENTRE_VERTICAL,
-                wx.ALL | wx.ALIGN_LEFT,
-            ),
         )
         self.addMultipleChoiceSettings(
             "view",
             "snoozetimes",
             _("Snooze times to offer in task reminder dialog"),
             date.snoozeChoices[1:],
-            flags=(wx.ALIGN_TOP | wx.ALIGN_RIGHT, wx.ALL | wx.EXPAND),
+            flags=(None, wx.ALL | wx.EXPAND),
         )  # Don't offer "Don't snooze" as a choice
         self.fit()
 
@@ -2225,10 +2180,7 @@ class DurationPresetsPage(SettingsPage):
             self.__fieldChoice.Append(display_name)
         self.__fieldChoice.SetSelection(0)
         self.__fieldChoice.Bind(wx.EVT_CHOICE, self.__onFieldChanged)
-        self.addEntry(
-            _("Configure presets for:"), self.__fieldChoice,
-            flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTRE_VERTICAL, wx.ALIGN_LEFT)
-        )
+        self.addEntry(_("Configure presets for"), self.__fieldChoice)
 
         # Add row: DurationEntry + Add button
         self.__addPanel = wx.Panel(self)
@@ -2236,7 +2188,7 @@ class DurationPresetsPage(SettingsPage):
 
         # Create duration control - initially without seconds (Task Due Date is default)
         self.__durationEntry = self.__createDurationCtrl(showSeconds=False)
-        self.__addSizer.Add(self.__durationEntry, 0, wx.RIGHT | wx.ALIGN_CENTRE_VERTICAL, 10)
+        self.__addSizer.Add(self.__durationEntry, 0, wx.RIGHT | wx.ALIGN_CENTRE_VERTICAL, 5)
 
         self.__addBtn = wx.Button(self.__addPanel, wx.ID_ANY, _("Add"))
         self.__addBtn.SetBitmap(
@@ -2246,10 +2198,7 @@ class DurationPresetsPage(SettingsPage):
         self.__addSizer.Add(self.__addBtn, 0, wx.ALIGN_CENTRE_VERTICAL)
 
         self.__addPanel.SetSizer(self.__addSizer)
-        self.addEntry(
-            _("Add new preset:"), self.__addPanel,
-            flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTRE_VERTICAL, wx.ALIGN_LEFT)
-        )
+        self.addEntry(_("Add new preset"), self.__addPanel)
 
         # Preset list with 3 columns: short value, description, delete button
         # Using UltimateListCtrl to support embedded Delete buttons
@@ -2260,23 +2209,20 @@ class DurationPresetsPage(SettingsPage):
         self.__listCtrl.InsertColumn(0, _("Short"), width=80, format=wx.LIST_FORMAT_RIGHT)
         self.__listCtrl.InsertColumn(1, _("Description"), width=310)
         self.__listCtrl.InsertColumn(2, _("Delete"), width=110)
-        # Fixed width 500px, growable height with scrollbars as needed
         self.__listCtrl.SetMinSize((500, 120))
-        self.__listCtrl.SetMaxSize((500, -1))  # -1 means no max height
+        self.__listCtrl.SetMaxSize((500, -1))
         # Track delete buttons for cleanup
         self.__deleteButtons = []
         self.addEntry(
-            _("Current presets:"), self.__listCtrl, growable=True,
-            flags=(wx.ALIGN_TOP | wx.ALIGN_RIGHT, wx.EXPAND | wx.ALL)
+            _("Current presets"), self.__listCtrl, growable=True,
+            flags=(None, wx.EXPAND | wx.ALL)
         )
 
         # Help text
         self.__helpText = wx.StaticText(self, label="")
+        self.__helpText.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
         self.__helpText.Wrap(500)
-        self.addEntry(
-            "", self.__helpText,
-            flags=(wx.ALIGN_RIGHT, wx.ALIGN_LEFT | wx.EXPAND)
-        )
+        self.addEntry("", self.__helpText)
 
         # Populate initial list
         self.__populateList()
