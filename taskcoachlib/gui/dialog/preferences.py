@@ -1463,15 +1463,15 @@ class LanguagePage(SettingsPage):
         self.addEntry(_("Date format:"), dateFormatPanel,
                       flags=(wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, wx.ALIGN_LEFT))
 
-        # Demo DateCtrl showing the selected format (interactive, starts with today)
-        from taskcoachlib.widgets.maskedtimectrl import DateCtrl
+        # Demo DateCtrl4 showing the selected format (interactive, starts with today)
+        from taskcoachlib.widgets.maskedtimectrl import DateCtrl4
         import datetime
         today = datetime.date.today()
         demoPanel = wx.Panel(self)
         demoSizer = wx.BoxSizer(wx.HORIZONTAL)
         demoLabel = wx.StaticText(demoPanel, label=_("Preview:"))
         demoSizer.Add(demoLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
-        self._demoDateCtrl = DateCtrl(
+        self._demoDateCtrl = DateCtrl4(
             demoPanel,
             year=today.year, month=today.month, day=today.day,
             dateFormat=currentFormat or None
@@ -1677,8 +1677,8 @@ class LanguagePage(SettingsPage):
         choice = event.GetEventObject()
         newFormat = choice.GetClientData(choice.GetSelection())
 
-        # Recreate the demo DateCtrl with new format, using today's date
-        from taskcoachlib.widgets.maskedtimectrl import DateCtrl
+        # Recreate the demo DateCtrl4 with new format, using today's date
+        from taskcoachlib.widgets.maskedtimectrl import DateCtrl4
         import datetime
         today = datetime.date.today()
         parent = self._demoDateCtrl.GetParent()
@@ -1686,7 +1686,7 @@ class LanguagePage(SettingsPage):
 
         # Destroy old and create new with today's date
         self._demoDateCtrl.Destroy()
-        self._demoDateCtrl = DateCtrl(
+        self._demoDateCtrl = DateCtrl4(
             parent,
             year=today.year,
             month=today.month,

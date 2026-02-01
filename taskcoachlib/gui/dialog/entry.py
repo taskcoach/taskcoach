@@ -763,11 +763,7 @@ class RecurrenceEntry(wx.Panel):
             hourChoices=lambda: get_suggested_hour_choices(self._settings),
             minuteChoices=lambda: get_suggested_minute_choices(self._settings),
         )
-        # Bind checkbox toggle
-        self._recurrenceStopDateTimeCombo.GetCheckBox().Bind(
-            wx.EVT_CHECKBOX, self.onRecurrenceStopDateTimeChecked
-        )
-        # Bind value change
+        # Bind value change — fires on checkbox toggle AND date/time edits
         self._recurrenceStopDateTimeCombo.Bind(
             widgets.EVT_VALUE_CHANGED, self.onRecurrenceEdited
         )
@@ -792,17 +788,21 @@ class RecurrenceEntry(wx.Panel):
         )
         stopPanel.SetSizerAndFit(panelSizer)
 
-        panelSizer = wx.BoxSizer(wx.VERTICAL)
-        panelSizer.Add(recurrenceFrequencyPanel)
-        panelSizer.Add(self.verticalSpace)
-        panelSizer.Add(self._weekdayPanel)
-        panelSizer.Add(self.verticalSpace)
-        panelSizer.Add(schedulePanel)
-        panelSizer.Add(self.verticalSpace)
-        panelSizer.Add(maxPanel)
-        panelSizer.Add(stopPanel)
-        self.SetSizerAndFit(panelSizer)
+        # Store sub-panels for external layout (DatesPage places them as
+        # separate grid rows so they get the same spacing as other entries).
+        self._subPanels = [
+            recurrenceFrequencyPanel,
+            self._weekdayPanel,
+            schedulePanel,
+            maxPanel,
+            stopPanel,
+        ]
+        self.Hide()  # RecurrenceEntry itself is invisible; sub-panels are reparented
         self.SetValue(recurrence)
+
+    def getSubPanels(self):
+        """Return the list of sub-panels for external layout."""
+        return list(self._subPanels)
 
     def updateRecurrenceLabel(self):
         recurrenceDict = {
@@ -826,7 +826,11 @@ class RecurrenceEntry(wx.Panel):
     def onRecurrencePeriodEdited(self, event):
         recurrenceOn = event.String != _("None")
         self._maxRecurrenceCheckBox.Enable(recurrenceOn)
-        self._recurrenceStopDateTimeCombo.Enable(recurrenceOn)
+        if recurrenceOn:
+            self._recurrenceStopDateTimeCombo.SetEditable()
+        else:
+            self._recurrenceStopDateTimeCombo.DeactivateValue()
+            self._recurrenceStopDateTimeCombo.SetReadOnly()
         self._recurrenceFrequencyEntry.Enable(recurrenceOn)
         self._scheduleChoice.Enable(recurrenceOn)
         self._maxRecurrenceCountEntry.Enable(
@@ -839,10 +843,6 @@ class RecurrenceEntry(wx.Panel):
         maxRecurrenceOn = event.IsChecked()
         self._maxRecurrenceCountEntry.Enable(maxRecurrenceOn)
         self.onRecurrenceEdited()
-
-    def onRecurrenceStopDateTimeChecked(self, event):
-        self.onRecurrenceEdited()
-        event.Skip()  # Allow checkbox to update visual state
 
     def onRecurrenceEdited(self, event=None):  # pylint: disable=W0613
         wx.PostEvent(self, RecurrenceEntryEvent())
@@ -871,11 +871,16 @@ class RecurrenceEntry(wx.Panel):
             1 if recurrence.recurBasedOnCompletion else 0
         )
         self._scheduleChoice.Enable(bool(recurrence))
-        self._recurrenceStopDateTimeCombo.Enable(bool(recurrence))
-        has_stop_datetime = recurrence.stop_datetime != date.DateTime()
-        self._recurrenceStopDateTimeCombo.SetChecked(has_stop_datetime)
-        if has_stop_datetime:
-            self._recurrenceStopDateTimeCombo.SetValue(recurrence.stop_datetime)
+        if bool(recurrence):
+            self._recurrenceStopDateTimeCombo.SetEditable()
+            has_stop_datetime = recurrence.stop_datetime != date.DateTime()
+            if has_stop_datetime:
+                self._recurrenceStopDateTimeCombo.SetValue(recurrence.stop_datetime)
+            else:
+                self._recurrenceStopDateTimeCombo.DeactivateValue()
+        else:
+            self._recurrenceStopDateTimeCombo.DeactivateValue()
+            self._recurrenceStopDateTimeCombo.SetReadOnly()
         self.updateRecurrenceLabel()
 
     def GetValue(self):
@@ -894,7 +899,7 @@ class RecurrenceEntry(wx.Panel):
         kwargs["amount"] = self._recurrenceFrequencyEntry.Value
         kwargs["sameWeekday"] = self._recurrenceSameWeekdayCheckBox.IsChecked()
         kwargs["recurBasedOnCompletion"] = bool(self._scheduleChoice.Selection)
-        if self._recurrenceStopDateTimeCombo.IsChecked():
+        if self._recurrenceStopDateTimeCombo.IsActive():
             kwargs["stop_datetime"] = self._recurrenceStopDateTimeCombo.GetValue()
         # Get selected weekdays (0-6 for Mon-Sun)
         kwargs["weekdays"] = [

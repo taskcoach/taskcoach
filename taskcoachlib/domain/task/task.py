@@ -523,26 +523,30 @@ class Task(
 
     def _onCompletionDateTimeChanged(self, event):
         self.__status = None
-        if self.completed() and self.recurrence():
-            self.recur(self.completionDateTime())
+        # Use direct datetime comparison instead of self.completed() because
+        # computedStatus() cache is stale at this point (not yet recomputed).
+        completionDateTime = self.completionDateTime()
+        isCompleted = completionDateTime != self.maxDateTime
+        if isCompleted and self.recurrence():
+            self.recur(completionDateTime)
             return  # recur resets completionDateTime, triggering this callback again
         parent = self.parent()
-        if self.completed():
+        if isCompleted:
             self.setReminder(None)
             self.setPercentageComplete(100)
             for child in self.children():
-                if not child.completed():
+                if child.completionDateTime() == self.maxDateTime:
                     child.setRecurrence()
-                    child.setCompletionDateTime(self.completionDateTime())
+                    child.setCompletionDateTime(completionDateTime)
             if self.isBeingTracked():
                 self.stopTracking()
         elif self.percentageComplete() == 100:
             self.setPercentageComplete(0)
         if parent:
-            if self.completed():
+            if isCompleted:
                 if parent.shouldBeMarkedCompleted():
-                    parent.setCompletionDateTime(self.completionDateTime())
-            elif parent.completed():
+                    parent.setCompletionDateTime(completionDateTime)
+            elif parent.completionDateTime() != self.maxDateTime:
                 parent.setCompletionDateTime(self.maxDateTime)
             parent.sendPriorityChangedMessage()
         self.markDirty()

@@ -54,7 +54,7 @@ class BookPage(wx.Panel):
     # Outer margin around page content (modern UI best practice: 10-12px)
     _outerMargin = 10
     # Grid spacing - subclasses can override
-    _vgap = 5
+    _vgap = 0
     _hgap = 5
     _borderWidth = 5
 
@@ -143,14 +143,13 @@ class BookPage(wx.Panel):
 
     def addLine(self):
         line = wx.StaticLine(self)
-        # No spacing above, regular spacing (10px) below
         colspan = max(self._columns, 1)
         self._sizer.Add(
             line,
             self._position.next(colspan),
             span=(1, colspan),
-            flag=wx.GROW | wx.ALIGN_CENTER_VERTICAL | wx.BOTTOM,
-            border=10,
+            flag=wx.GROW | wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.BOTTOM,
+            border=5,
         )
 
     def __addControl(self, columnIndex, control, flag, lastColumn):
@@ -175,7 +174,7 @@ class ScrolledBookPage(scrolledpanel.ScrolledPanel):
     # Outer margin around page content
     _outerMargin = 10
     # Grid spacing - subclasses can override
-    _vgap = 5
+    _vgap = 0
     _hgap = 5
     _borderWidth = 5
 
@@ -250,8 +249,8 @@ class ScrolledBookPage(scrolledpanel.ScrolledPanel):
             line,
             self._position.next(colspan),
             span=(1, colspan),
-            flag=wx.GROW | wx.ALIGN_CENTER_VERTICAL | wx.BOTTOM,
-            border=10,
+            flag=wx.GROW | wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.BOTTOM,
+            border=5,
         )
 
     def __addControl(self, columnIndex, control, flag, lastColumn):

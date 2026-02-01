@@ -76,6 +76,7 @@ from pubsub import pub
 
 from taskcoachlib.i18n import _
 from taskcoachlib.domain import date
+from taskcoachlib.meta.debug import log_step
 
 
 # =============================================================================
@@ -1337,6 +1338,7 @@ class FieldsCtrl(wx.Panel):
         # Get margin from system metrics for native look
         self.MARGIN, _ = getTextCtrlContentOffset()
 
+        self._drawFrame = True  # Draw own frame; False when inside ComboCtrl
         self._fields = {}  # name -> NumericField
         self._fieldList = []  # All NumericField objects in order
         self._widgets = []  # (item, x, y, w, h) - item is Field or string
@@ -1395,11 +1397,9 @@ class FieldsCtrl(wx.Panel):
                 minH = max(minH, h)
                 curX += w
 
-        # Set minimum size
-        self.SetMinSize(wx.Size(
-            curX + self.MARGIN,
-            minH + 2 * self.MARGIN
-        ))
+        # Set minimum size and remember the natural content size for centering
+        self._naturalSize = wx.Size(curX + self.MARGIN, minH + 2 * self.MARGIN)
+        self.SetMinSize(self._naturalSize)
 
         # Focus first field
         if self._fieldList:
@@ -1418,15 +1418,19 @@ class FieldsCtrl(wx.Panel):
         hasFocus = self._hasFocus
 
         # Draw native text control border using system theme
-        flags = 0
-        if hasFocus and not self._readOnly:
-            flags |= wx.CONTROL_FOCUSED
-        if not self.IsEnabled() or self._readOnly:
-            flags |= wx.CONTROL_DISABLED
-
-        wx.RendererNative.Get().DrawTextCtrl(self, dc, wx.Rect(0, 0, w, h), flags)
+        # (skip when embedded inside ComboCtrl which provides its own frame)
+        if self._drawFrame:
+            flags = 0
+            if hasFocus and not self._readOnly:
+                flags |= wx.CONTROL_FOCUSED
+            if not self.IsEnabled() or self._readOnly:
+                flags |= wx.CONTROL_DISABLED
+            wx.RendererNative.Get().DrawTextCtrl(self, dc, wx.Rect(0, 0, w, h), flags)
 
         dc.SetFont(self.GetFont())
+
+        # Offset to center content when control is larger than minimum
+        xOff, yOff = self._getContentOffset()
 
         if self.IsEnabled() and not self._readOnly:
             # Normal editable mode - show values
@@ -1434,17 +1438,17 @@ class FieldsCtrl(wx.Panel):
             for widget, x, y, ww, hh in self._widgets:
                 if isinstance(widget, str):
                     dc.SetTextForeground(textColour)
-                    dc.DrawText(widget, int(x), int(y))
+                    dc.DrawText(widget, int(x + xOff), int(y + yOff))
                 else:
                     # NumericField - draw focus highlight only if focused
                     if widget == self._focus and hasFocus:
-                        drawFocusRect(self, dc, x, y, ww, hh)
+                        drawFocusRect(self, dc, x + xOff, y + yOff, ww, hh)
                         dc.SetTextForeground(
                             wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
                         )
                     else:
                         dc.SetTextForeground(textColour)
-                    widget.PaintValue(dc, x, y, ww, hh)
+                    widget.PaintValue(dc, x + xOff, y + yOff, ww, hh)
         elif not self.IsEnabled():
             # Disabled mode (unchecked checkbox) - show "N/A" centered
             # Values are preserved internally but hidden behind "N/A"
@@ -1459,9 +1463,9 @@ class FieldsCtrl(wx.Panel):
             dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
             for widget, x, y, ww, hh in self._widgets:
                 if isinstance(widget, str):
-                    dc.DrawText(widget, int(x), int(y))
+                    dc.DrawText(widget, int(x + xOff), int(y + yOff))
                 else:
-                    widget.PaintValue(dc, x, y, ww, hh)
+                    widget.PaintValue(dc, x + xOff, y + yOff, ww, hh)
 
     def _onChar(self, event):
         keyCode = event.GetKeyCode()
@@ -1546,17 +1550,26 @@ class FieldsCtrl(wx.Panel):
         """Open dropdown popup for currently focused field."""
         if not self._focus:
             return
+        xOff, yOff = self._getContentOffset()
         # Find the widget entry for the focused field
         for widget, x, y, w, h in self._widgets:
             if widget == self._focus:
                 choices = self._focus.GetChoices()
                 if choices:
-                    self._showPopup(self._focus, choices, x, y, w, h)
+                    self._showPopup(self._focus, choices, x + xOff, y + yOff, w, h)
                 break
 
     # Time thresholds for focus and popup behavior (in seconds)
     FOCUS_DELAY = 0.05  # Minimum time before showing popup after focus
     POPUP_TOGGLE_DELAY = 0.2  # Time window to detect click-to-close toggle
+
+    def _getContentOffset(self):
+        """Offset to center content when control is larger than natural size."""
+        cw, ch = self.GetClientSize()
+        mw, mh = self._naturalSize
+        xOff = max(0, (cw - mw) // 2) if cw > mw else 0
+        yOff = max(0, (ch - mh) // 2) if ch > mh else 0
+        return xOff, yOff
 
     def _onLeftUp(self, event):
         pt = event.GetPosition()
@@ -1566,10 +1579,11 @@ class FieldsCtrl(wx.Panel):
             event.Skip()
             return
 
+        xOff, yOff = self._getContentOffset()
         # Find which widget was clicked
         for widget, x, y, w, h in self._widgets:
             if isinstance(widget, NumericField):
-                if x <= pt.x <= x + w and y <= pt.y <= y + h:
+                if (x + xOff) <= pt.x <= (x + xOff) + w and (y + yOff) <= pt.y <= (y + yOff) + h:
                     # Set focus to this field
                     self._focus = widget
                     self._focus.ResetState()
@@ -1592,7 +1606,7 @@ class FieldsCtrl(wx.Panel):
                         if time.time() - self._focusStamp >= self.FOCUS_DELAY:
                             choices = widget.GetChoices()
                             if choices:
-                                self._showPopup(widget, choices, x, y, w, h)
+                                self._showPopup(widget, choices, x + xOff, y + yOff, w, h)
 
                     self.Refresh()
                     return
@@ -2451,6 +2465,757 @@ class DateCtrl(FieldsCtrl):
         self.SetFieldValue('date_day', d.day)
 
 
+class _CalendarComboPopup(wx.ComboPopup):
+    """ComboPopup adapter for the custom-painted calendar.
+
+    Wraps the same calendar painting/interaction logic from _CalendarPopup
+    into the wx.ComboPopup interface, so it can be used with wx.ComboCtrl.
+    The ComboCtrl provides the native dropdown button and manages the popup
+    window (including Wayland-safe positioning).
+    """
+
+    def __init__(self, minDate=None, maxDate=None):
+        super().__init__()
+        self._minDate = minDate
+        self._maxDate = maxDate
+        self._panel = None
+        self._selection = datetime.date.today()
+        self._highlightedDate = self._selection
+        self._originalDate = self._selection
+        self._year = self._selection.year
+        self._month = self._selection.month
+        self._maxDim = None
+        self._font = None
+        self._days = []
+        self._win = None
+        self._contentOffsetX = 0
+        self._contentOffsetY = 0
+
+    def Create(self, parent):
+        self._panel = wx.Panel(parent, style=wx.BORDER_NONE)
+        self._panel.Bind(wx.EVT_PAINT, self._onPaint)
+        self._panel.Bind(wx.EVT_LEFT_UP, self._onLeftUp)
+        self._panel.Bind(wx.EVT_MOTION, self._onMotion)
+        self._panel.Bind(wx.EVT_LEAVE_WINDOW, self._onLeaveWindow)
+        self._panel.Bind(wx.EVT_CHAR, self._onChar)
+        pub.subscribe(self._onColoursChanged, 'calendar.colours.changed')
+        return True
+
+    def GetControl(self):
+        return self._panel
+
+    def SetStringValue(self, val):
+        """Parse date string from ComboCtrl text field."""
+        pass  # We don't use the text field for date parsing
+
+    def GetStringValue(self):
+        """Return selected date as string."""
+        return str(self._highlightedDate) if self._highlightedDate else ''
+
+    def GetAdjustedSize(self, minWidth, prefHeight, maxHeight):
+        if self._panel is None:
+            return wx.Size(minWidth, prefHeight)
+        dc = wx.ClientDC(self._panel)
+        size = self._getExtent(dc)
+        return size
+
+    def _getDateCtrl2(self):
+        """Get the DateCtrl4 (ComboCtrl) that owns this popup."""
+        combo = self.GetComboCtrl()
+        if combo:
+            if hasattr(combo, '_dateCtrl') and hasattr(combo, '_setDateFromCalendar'):
+                return combo
+        return None
+
+    def OnPopup(self):
+        """Called when popup is shown — sync selection from parent or text."""
+        dc2 = self._getDateCtrl2()
+        if dc2:
+            self._selection = dc2._dateCtrl.GetDate()
+            self._font = dc2._dateCtrl.GetFont()
+        else:
+            # Standalone ComboCtrl — try to parse date from text field
+            combo = self.GetComboCtrl()
+            if combo:
+                self._font = combo.GetFont()
+                text = combo.GetValue().strip()
+                if text:
+                    try:
+                        self._selection = datetime.date.fromisoformat(text)
+                    except (ValueError, AttributeError):
+                        pass
+        self._originalDate = self._selection
+        self._highlightedDate = self._selection
+        self._year = self._selection.year
+        self._month = self._selection.month
+        if self._panel:
+            dc = wx.ClientDC(self._panel)
+            self._panel.SetMinSize(self._getExtent(dc))
+
+    def OnDismiss(self):
+        """Called when popup is hidden."""
+        pass
+
+    def DestroyPopup(self):
+        pub.unsubscribe(self._onColoursChanged, 'calendar.colours.changed')
+
+    def _onColoursChanged(self):
+        if self._panel:
+            self._panel.Refresh()
+
+    def _onChar(self, event):
+        keyCode = event.GetKeyCode()
+        if keyCode in (wx.WXK_ESCAPE, wx.WXK_F4):
+            self.Dismiss()
+        elif keyCode == wx.WXK_RETURN:
+            dc2 = self._getDateCtrl2()
+            if dc2:
+                dc2._setDateFromCalendar(self._highlightedDate)
+            self.Dismiss()
+        elif keyCode == wx.WXK_LEFT:
+            self._moveHighlight(datetime.timedelta(days=-1))
+        elif keyCode == wx.WXK_RIGHT:
+            self._moveHighlight(datetime.timedelta(days=1))
+        elif keyCode == wx.WXK_UP:
+            self._moveHighlight(datetime.timedelta(days=-7))
+        elif keyCode == wx.WXK_DOWN:
+            self._moveHighlight(datetime.timedelta(days=7))
+        else:
+            event.Skip()
+
+    def _moveHighlight(self, delta):
+        newDate = self._highlightedDate + delta
+        if self._minDate is not None and newDate < self._minDate:
+            wx.Bell()
+            return
+        if self._maxDate is not None and newDate > self._maxDate:
+            wx.Bell()
+            return
+        if newDate.year < 1 or newDate.year > 9999:
+            wx.Bell()
+            return
+        self._highlightedDate = newDate
+        if self._highlightedDate.year != self._year or self._highlightedDate.month != self._month:
+            self._year = self._highlightedDate.year
+            self._month = self._highlightedDate.month
+            dc = wx.ClientDC(self._panel)
+            self._panel.SetMinSize(self._getExtent(dc))
+            self._panel.GetParent().Layout()
+        self._panel.Refresh()
+
+    # --- Calendar painting and interaction (same logic as _CalendarPopup) ---
+
+    def _getExtent(self, dc):
+        if self._font:
+            dc.SetFont(self._font)
+        W, H = 0, 0
+        for month in range(1, 13):
+            header = datetime.date(year=self._year, month=month, day=11).strftime("%B %Y")
+            tw, th = dc.GetTextExtent(header)
+            W = max(W, tw)
+            H = max(H, th)
+
+        lines = monthcalendarex(self._year, self._month, weeks=1)
+        self._maxDim = 0
+        for line in lines:
+            for year, month, day in line:
+                tw, th = dc.GetTextExtent("%d" % day)
+                self._maxDim = max(self._maxDim, tw, th)
+
+        for hdr in calendar.weekheader(2).split():
+            tw, th = dc.GetTextExtent(hdr)
+            self._maxDim = max(self._maxDim, tw, th)
+
+        self._maxDim += 4
+        contentOffsetX, contentOffsetY = getTextCtrlContentOffset()
+        return wx.Size(
+            max(W + 48 + 4, self._maxDim * len(lines[0])) + contentOffsetX * 2,
+            H + 2 + self._maxDim * (len(lines) + 1) + contentOffsetY * 2,
+        )
+
+    def _onPaint(self, event):
+        win = event.GetEventObject()
+        dc = wx.PaintDC(win)
+        w, h = win.GetClientSize()
+        renderer = wx.RendererNative.Get()
+
+        renderer.DrawTextCtrl(win, dc, wx.Rect(0, 0, w, h), wx.CONTROL_FOCUSED)
+
+        contentOffsetX, contentOffsetY = getTextCtrlContentOffset()
+        contentW = w - contentOffsetX * 2
+
+        if self._font:
+            dc.SetFont(self._font)
+        self._win = win
+        self._contentOffsetX = contentOffsetX
+        self._contentOffsetY = contentOffsetY
+
+        colours = getCalendarColours()
+
+        textColour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+        dc.SetPen(wx.Pen(textColour))
+        dc.SetBrush(wx.Brush(textColour))
+        dc.SetTextForeground(textColour)
+
+        header = datetime.date(year=self._year, month=self._month, day=1).strftime("%B %Y")
+        tw, th = dc.GetTextExtent(header)
+        dc.DrawText(header, contentOffsetX + (contentW - 48 - tw) // 2, contentOffsetY)
+
+        buttonDim = min(th, 10)
+
+        cx = w - contentOffsetX - 24
+        cy = contentOffsetY + th // 2 + 1
+
+        gc = wx.GraphicsContext.Create(dc)
+        gc.SetPen(gc.CreatePen(wx.Pen(textColour)))
+        gc.SetBrush(gc.CreateBrush(wx.Brush(textColour)))
+
+        # Prev month button (left arrow)
+        if self._month != 1 or self._year != 1:
+            gp = gc.CreatePath()
+            xinf = w - contentOffsetX - 48 + 16 - buttonDim
+            xsup = w - contentOffsetX - 48 + 16
+            yinf = contentOffsetY + th / 2 + 1 - buttonDim / 2
+            ysup = contentOffsetY + th / 2 + 1 + buttonDim / 2
+
+            gp.MoveToPoint(xinf, contentOffsetY + th // 2 + 1)
+            gp.AddArc(
+                cx, cy,
+                math.sqrt((xsup - cx) * (xsup - cx) + (yinf - cy) * (yinf - cy)),
+                math.pi * 3 / 4, math.pi * 5 / 4, True,
+            )
+            gc.DrawPath(gp)
+
+        # Next month button (right arrow)
+        if self._month != 12 or self._year != 9999:
+            gp = gc.CreatePath()
+            xinf = w - contentOffsetX - 16
+            xsup = w - contentOffsetX - 16 + buttonDim
+            yinf = contentOffsetY + th / 2 + 1 - buttonDim / 2
+
+            gp.MoveToPoint(xsup, contentOffsetY + th // 2 + 1)
+            gp.AddArc(
+                cx, cy,
+                math.sqrt((xinf - cx) * (xinf - cx) + (yinf - cy) * (yinf - cy)),
+                math.pi / 4, -math.pi / 4, False,
+            )
+            gc.DrawPath(gp)
+
+        # Today button (circle)
+        gp = gc.CreatePath()
+        gp.AddArc(cx, cy, buttonDim * 3 / 4, 0, math.pi * 2, True)
+        gc.DrawPath(gp)
+
+        y = contentOffsetY + th + 2
+
+        # Weekday headers
+        hdrBg = colours['weekday_header_bg']
+        dc.SetPen(wx.Pen(hdrBg))
+        dc.SetBrush(wx.Brush(hdrBg))
+        dc.DrawRectangle(contentOffsetX, y, self._maxDim * 7, self._maxDim)
+        dc.SetTextForeground(colours['weekday_header_fg'])
+        for idx, hdr in enumerate(calendar.weekheader(2).split()):
+            tw, th_hdr = dc.GetTextExtent(hdr)
+            dc.DrawText(
+                hdr,
+                contentOffsetX + self._maxDim * idx + int((self._maxDim - tw) // 2),
+                y + int((self._maxDim - th_hdr) // 2),
+            )
+
+        y += self._maxDim
+
+        # Days
+        self._days = []
+        for line in monthcalendarex(self._year, self._month, weeks=1):
+            x = contentOffsetX
+            for dayIndex, (year, month, day) in enumerate(line):
+                dt = datetime.date(year=year, month=month, day=day)
+                active = (self._minDate is None or dt >= self._minDate) and (
+                    self._maxDate is None or dt <= self._maxDate
+                )
+                thisMonth = year == self._year and month == self._month
+
+                dc.SetPen(wx.Pen(textColour))
+                dc.SetTextForeground(
+                    colours['weekend_day_fg'] if (dayIndex + calendar.firstweekday()) % 7 in [5, 6] else textColour
+                )
+
+                if not active:
+                    inactiveBg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+                    dc.SetPen(wx.Pen(inactiveBg))
+                    dc.SetBrush(wx.Brush(inactiveBg))
+                    dc.DrawRectangle(x, y, self._maxDim, self._maxDim)
+                elif not thisMonth:
+                    otherMonthBg = colours['other_month_bg'] if colours['other_month_bg'] is not None else wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+                    dc.SetPen(wx.Pen(otherMonthBg))
+                    dc.SetBrush(wx.Brush(otherMonthBg))
+                    dc.DrawRectangle(x, y, self._maxDim, self._maxDim)
+
+                isHighlighted = (dt == self._highlightedDate and active)
+
+                if isHighlighted:
+                    drawFocusRect(self._win, dc, x, y, self._maxDim, self._maxDim)
+                    dc.SetTextForeground(
+                        wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
+                    )
+
+                now = datetime.datetime.now()
+                if (dt.year, dt.month, dt.day) == (now.year, now.month, now.day):
+                    dc.SetPen(wx.Pen(colours['today_border']))
+                    dc.SetBrush(wx.TRANSPARENT_BRUSH)
+                    dc.DrawRectangle(x, y, self._maxDim, self._maxDim)
+
+                label = "%d" % day
+                tw, th_day = dc.GetTextExtent(label)
+                dc.DrawText(
+                    label,
+                    x + (self._maxDim - tw) // 2,
+                    y + (self._maxDim - th_day) // 2,
+                )
+
+                if active:
+                    self._days.append((x, y, (year, month, day)))
+                x += self._maxDim
+            y += self._maxDim
+
+    def _onLeftUp(self, event):
+        w, h = self._panel.GetClientSize()
+        contentOffsetX, contentOffsetY = getTextCtrlContentOffset()
+
+        dc = wx.ClientDC(self._panel)
+        if self._font:
+            dc.SetFont(self._font)
+        header = datetime.date(year=self._year, month=self._month, day=1).strftime("%B %Y")
+        tw, th = dc.GetTextExtent(header)
+
+        # Buttons area (top right)
+        if event.GetY() < contentOffsetY + th + 2 and event.GetX() > w - contentOffsetX - 48:
+            if event.GetX() < w - contentOffsetX - 48 + 16 and (self._month != 1 or self._year != 1):
+                if self._month == 1:
+                    self._year -= 1
+                    self._month = 12
+                else:
+                    self._month -= 1
+            elif event.GetX() < w - contentOffsetX - 48 + 32:
+                today = datetime.datetime.now()
+                self._year = today.year
+                self._month = today.month
+            elif self._month != 12 or self._year != 9999:
+                if self._month == 12:
+                    self._year += 1
+                    self._month = 1
+                else:
+                    self._month += 1
+            dc2 = wx.ClientDC(self._panel)
+            self._panel.SetMinSize(self._getExtent(dc2))
+            self._panel.GetParent().Layout()
+            self._panel.Refresh()
+            return
+
+        # Day selection
+        for x, y, (year, month, day) in self._days:
+            if (
+                event.GetX() >= x
+                and event.GetX() < x + self._maxDim
+                and event.GetY() >= y
+                and event.GetY() < y + self._maxDim
+            ):
+                dc2 = self._getDateCtrl2()
+                if dc2:
+                    dc2._setDateFromCalendar(
+                        datetime.date(year=year, month=month, day=day)
+                    )
+                self.Dismiss()
+                break
+
+    def _onMotion(self, event):
+        newHighlight = None
+        for x, y, (year, month, day) in self._days:
+            if (
+                event.GetX() >= x
+                and event.GetX() < x + self._maxDim
+                and event.GetY() >= y
+                and event.GetY() < y + self._maxDim
+            ):
+                newHighlight = datetime.date(year=year, month=month, day=day)
+                break
+        if newHighlight is not None and newHighlight != self._highlightedDate:
+            self._highlightedDate = newHighlight
+            self._panel.Refresh()
+
+    def _onLeaveWindow(self, event):
+        pass
+
+
+class _EmbeddedDateCtrl(FieldsCtrl):
+    """Date control designed for embedding inside a ComboCtrl.
+
+    A clean copy of DateCtrl with all popup/frame/calendar logic removed.
+    The parent ComboCtrl owns the dropdown — this control only handles
+    subfield editing, keyboard navigation, and date validation.
+
+    - No calendar popup (_showCalendarPopup, _onCalendarDismiss removed)
+    - No frame drawing (_drawFrame = False)
+    - No field dropdown popups (_openPopupForFocusedField = no-op)
+    - F4/Enter delegates to parent ComboCtrl.Popup()
+    - Click only changes subfield focus (no popup toggle)
+    """
+
+    def __init__(self, parent, comboCtrl, year=None, month=None, day=None,
+                 minDate=None, maxDate=None, dateFormat=None):
+        # Default to today's date
+        today = datetime.date.today()
+        if year is None:
+            year = today.year
+        if month is None:
+            month = today.month
+        if day is None:
+            day = today.day
+
+        self._minDate = minDate
+        self._maxDate = maxDate
+        self._comboCtrl = comboCtrl
+
+        # Get date format: use explicit override, or read from settings, or detect from locale
+        if dateFormat is not None:
+            field_order, separator = getLocaleDateFormat(override=dateFormat if dateFormat else None)
+        else:
+            field_order, separator = getEffectiveDateFormat()
+
+        # Map field names to their values
+        field_values = {
+            'year': year,
+            'month': month,
+            'date_day': day,
+        }
+
+        # Build elements list based on locale order
+        elements = []
+        for i, field_name in enumerate(field_order):
+            if i > 0:
+                elements.append(("literal", separator))
+            elements.append((field_name, field_values[field_name]))
+
+        super().__init__(parent, elements)
+        self._drawFrame = False
+
+    def _onPaint(self, event):
+        """Paint override for embedded context.
+
+        Uses IsThisEnabled() (own state) instead of IsEnabled() (parent chain)
+        so that disabling the parent ComboCtrl for read-only visuals doesn't
+        trigger the "N/A" branch. Only a direct Enable(False) on DateCtrl4
+        (which propagates to this control's own state) shows "N/A".
+
+        No frame drawing — the parent ComboCtrl provides the frame.
+        """
+        dc = wx.PaintDC(self)
+        w, h = self.GetClientSize()
+        dc.SetFont(self.GetFont())
+        xOff, yOff = self._getContentOffset()
+
+        if self._readOnly:
+            # Read-only: greyed values (standalone or inside disabled ComboCtrl)
+            dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+            for widget, x, y, ww, hh in self._widgets:
+                if isinstance(widget, str):
+                    dc.DrawText(widget, int(x + xOff), int(y + yOff))
+                else:
+                    widget.PaintValue(dc, x + xOff, y + yOff, ww, hh)
+        elif not self.IsThisEnabled():
+            # Disabled (checkbox unchecked): show "N/A" centered
+            text = "N/A"
+            tw, th = dc.GetTextExtent(text)
+            dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+            dc.DrawText(text, (w - tw) // 2, (h - th) // 2)
+        else:
+            # Normal editable
+            hasFocus = self._hasFocus
+            textColour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+            for widget, x, y, ww, hh in self._widgets:
+                if isinstance(widget, str):
+                    dc.SetTextForeground(textColour)
+                    dc.DrawText(widget, int(x + xOff), int(y + yOff))
+                else:
+                    if widget == self._focus and hasFocus:
+                        drawFocusRect(self, dc, x + xOff, y + yOff, ww, hh)
+                        dc.SetTextForeground(
+                            wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
+                        )
+                    else:
+                        dc.SetTextForeground(textColour)
+                    widget.PaintValue(dc, x + xOff, y + yOff, ww, hh)
+
+    def _onChar(self, event):
+        """Handle keyboard input — F4/Enter open parent ComboCtrl popup."""
+        if not self._focus:
+            event.Skip()
+            return
+
+        keyCode = event.GetKeyCode()
+
+        # Tab exits control (always allowed, even in read-only mode)
+        if keyCode == wx.WXK_TAB:
+            self.Navigate(not event.ShiftDown())
+            return
+
+        # Block all other input in read-only mode
+        if self._readOnly:
+            return
+
+        # Escape — nothing to dismiss, let parent handle it
+        if keyCode == wx.WXK_ESCAPE:
+            event.Skip()
+            return
+
+        # F4/Enter open the parent ComboCtrl popup
+        if keyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER, wx.WXK_F4):
+            self._comboCtrl.Popup()
+            return
+
+        # Left/Right arrows navigate between subfields
+        if keyCode == wx.WXK_LEFT:
+            self._focusPrevField()
+            return
+        if keyCode == wx.WXK_RIGHT:
+            self._focusNextField()
+            return
+
+        # Let the focused field handle the key (Up/Down for increment/decrement)
+        if self._focus.HandleKey(event):
+            return
+
+        event.Skip()
+
+    def _onLeftUp(self, event):
+        """Click changes subfield focus only — no popup."""
+        if self._readOnly:
+            event.Skip()
+            return
+
+        pt = event.GetPosition()
+        xOff, yOff = self._getContentOffset()
+
+        for widget, x, y, w, h in self._widgets:
+            if isinstance(widget, NumericField):
+                if (x + xOff) <= pt.x <= (x + xOff) + w and (y + yOff) <= pt.y <= (y + yOff) + h:
+                    self._focus = widget
+                    self._focus.ResetState()
+                    self.SetFocus()
+                    self.Refresh()
+                    return
+
+        event.Skip()
+
+    def _openPopupForFocusedField(self):
+        """No-op — embedded control has no field dropdown popups."""
+        pass
+
+    def DismissPopup(self):
+        """No-op — embedded control owns no popups."""
+        pass
+
+    def ValidateChange(self, field, value):
+        """Validate date changes, adjusting day if needed for month/year changes."""
+        year = self.GetFieldValue('year')
+        month = self.GetFieldValue('month')
+        day = self.GetFieldValue('date_day')
+
+        max_day = calendar.monthrange(year, month)[1]
+        if day > max_day:
+            day = max_day
+            self.SetFieldValue('date_day', day)
+
+        return value
+
+    def GetDate(self):
+        """Get the current date value."""
+        return datetime.date(
+            year=self.GetFieldValue('year'),
+            month=self.GetFieldValue('month'),
+            day=self.GetFieldValue('date_day')
+        )
+
+    def SetDate(self, d):
+        """Set the date value.
+
+        Args:
+            d: datetime.date or None (defaults to today)
+        """
+        if d is None:
+            d = datetime.date.today()
+        self.SetFieldValue('year', d.year)
+        self.SetFieldValue('month', d.month)
+        self.SetFieldValue('date_day', d.day)
+
+
+class DateCtrl4(wx.ComboCtrl):
+    """Date control: _EmbeddedDateCtrl inside a ComboCtrl.
+
+    Uses _EmbeddedDateCtrl which has all popup/frame logic removed at the
+    class level. The ComboCtrl provides the native dropdown button and
+    manages popup positioning.
+    """
+
+    def __init__(self, parent, year=None, month=None, day=None,
+                 minDate=None, maxDate=None, dateFormat=None):
+        super().__init__(parent)
+
+        # Calendar popup via ComboPopup interface
+        self._calendarPopup = _CalendarComboPopup(
+            minDate=minDate, maxDate=maxDate
+        )
+        self.SetPopupControl(self._calendarPopup)
+
+        # Clean embedded DateCtrl — no monkey-patches needed
+        self._dateCtrl = _EmbeddedDateCtrl(
+            self, comboCtrl=self, year=year, month=month, day=day,
+            minDate=minDate, maxDate=maxDate, dateFormat=dateFormat
+        )
+
+        # Derive horizontal padding from the vertical padding the ComboCtrl
+        # naturally adds around the text area (theme-dependent).
+        dateW, dateH = self._dateCtrl._naturalSize
+        stdH = self.GetBestSize().height
+        self._padding = max(0, (stdH - dateH) // 2)
+        comboW = dateW + 2 * self._padding + self.GetButtonSize().width
+        self.SetMinSize(wx.Size(comboW, stdH))
+
+        # Redirect focus from ComboCtrl's text control to inner DateCtrl
+        # so the caret never appears in the hidden text field.
+        self._redirectingFocus = False
+        self._tabbingOut = False
+        self._popupWasShown = False
+        textCtrl = self.GetTextCtrl()
+        if textCtrl:
+            textCtrl.Bind(wx.EVT_SET_FOCUS, self._onTextCtrlFocus)
+
+        # Intercept Shift+Tab from inner DateCtrl: set _tabbingOut flag
+        # so _onTextCtrlFocus knows to pass focus through instead of
+        # redirecting back to DateCtrl.
+        origNavigate = self._dateCtrl.Navigate
+        def _navigateWithFlag(forward=True):
+            if not forward:
+                self._tabbingOut = True
+            return origNavigate(forward)
+        self._dateCtrl.Navigate = _navigateWithFlag
+
+        # Intercept any text the ComboCtrl auto-inserts (e.g. on popup dismiss)
+        self.Bind(wx.EVT_TEXT, self._onComboText)
+
+        # Track when popup opens (covers both F4/Enter and button click)
+        self.Bind(wx.EVT_COMBOBOX_DROPDOWN, self._onPopupOpen)
+
+        # Position the DateCtrl on resize
+        self.Bind(wx.EVT_SIZE, self._onSize)
+        # Also do initial positioning after layout settles
+        wx.CallAfter(self._positionDateCtrl)
+
+    def _onTextCtrlFocus(self, event):
+        """Redirect focus from ComboCtrl's text control to inner DateCtrl."""
+        if self._redirectingFocus:
+            return
+        if self._tabbingOut:
+            self._tabbingOut = False
+            wx.CallAfter(self.GetTextCtrl().Navigate, False)
+            return
+        if self._popupWasShown:
+            self._dateCtrl._returningFromPopup = True
+            self._popupWasShown = False
+        self._redirectingFocus = True
+        self._dateCtrl.SetFocus()
+        self._redirectingFocus = False
+
+    def _onComboText(self, event):
+        """Clear any text the ComboCtrl auto-inserts on popup dismiss."""
+        if self.GetValue():
+            self.ChangeValue('')
+
+    def _positionDateCtrl(self):
+        """Center the DateCtrl over the ComboCtrl's text area."""
+        if not self:
+            return
+        comboW, comboH = self.GetClientSize()
+        btnW = self.GetButtonSize().width
+        textAreaW = comboW - btnW
+        dateW, dateH = self._dateCtrl._naturalSize
+        x = (textAreaW - dateW) // 2
+        y = (comboH - dateH) // 2
+        self._dateCtrl.SetPosition(wx.Point(max(0, x), max(0, y)))
+        self._dateCtrl.SetSize(wx.Size(dateW, dateH))
+
+    def _onSize(self, event):
+        self._positionDateCtrl()
+        event.Skip()
+
+    def _onPopupOpen(self, event):
+        """Track that popup was shown, so we can restore subfield on dismiss."""
+        self._popupWasShown = True
+        event.Skip()
+
+    def _setDateFromCalendar(self, date):
+        """Called by _CalendarComboPopup when user selects a date."""
+        self._dateCtrl.SetDate(date)
+        self.ChangeValue('')
+        self._dateCtrl._returningFromPopup = True
+        wx.CallAfter(self._dateCtrl.SetFocus)
+
+    def DismissPopup(self):
+        """Dismiss any open popup."""
+        self.Dismiss()
+
+    # --- Delegate public API to inner DateCtrl ---
+
+    def GetDate(self):
+        return self._dateCtrl.GetDate()
+
+    def SetDate(self, d):
+        self._dateCtrl.SetDate(d)
+
+    def SetReadOnly(self, readOnly=True):
+        """Set read-only mode: values greyed but visible, dropdown disabled.
+
+        Disables the ComboCtrl (greys the dropdown button) and sets inner
+        _EmbeddedDateCtrl to read-only. The inner control's _onPaint uses
+        IsThisEnabled() so it shows greyed values, not "N/A", even though
+        the parent ComboCtrl is disabled.
+        """
+        self._dateCtrl.SetReadOnly(readOnly)
+        super().Enable(not readOnly)
+
+    def IsReadOnly(self):
+        return self._dateCtrl.IsReadOnly()
+
+    def HasOpenPopup(self):
+        """Return True if the calendar popup is currently shown."""
+        return self.IsPopupShown()
+
+    def _fireValueChanged(self):
+        """Delegate to inner _EmbeddedDateCtrl."""
+        self._dateCtrl._fireValueChanged()
+
+    def Bind(self, eventType, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
+        """Forward UI events to inner _EmbeddedDateCtrl.
+
+        Events like EVT_VALUE_CHANGED, EVT_KEY_DOWN, EVT_KILL_FOCUS, and
+        EVT_SET_FOCUS fire on the inner control, not the ComboCtrl wrapper.
+        Other events (e.g. EVT_SIZE) go to the ComboCtrl itself.
+        """
+        if eventType in (EVT_VALUE_CHANGED, wx.EVT_KEY_DOWN,
+                         wx.EVT_KILL_FOCUS, wx.EVT_SET_FOCUS):
+            self._dateCtrl.Bind(eventType, handler, source, id, id2)
+        else:
+            super().Bind(eventType, handler, source, id, id2)
+
+    def Enable(self, enable=True):
+        """Enable or disable the control (shows N/A when disabled)."""
+        super().Enable(enable)
+        self._dateCtrl.Enable(enable)
+
+    def SetFocus(self):
+        self._dateCtrl.SetFocus()
+
+
 class DateTimeCombo:
     """Flexible date/time combo providing separate widgets for table layout.
 
@@ -2787,5 +3552,334 @@ class DateTimeCombo:
             self._checkbox.Bind(eventType, handler)
             self._dateCtrl.Bind(eventType, handler)
             self._timeCtrl.Bind(eventType, handler)
+
+
+class DateTimeCombo2:
+    """Date/time combo using DateCtrl4 (ComboCtrl-based date control).
+
+    Clean replacement for DateTimeCombo. Same API and behavior, but uses
+    DateCtrl4 instead of DateCtrl for the date field, giving native dropdown
+    button and Wayland-safe popup positioning.
+
+    Creates a checkbox, DateCtrl4, and TimeCtrl that are linked together.
+    The checkbox state is determined by the value:
+    - value=None -> checkbox unchecked, fields disabled (show "N/A")
+    - value=datetime -> checkbox checked, fields show that datetime
+
+    Three states:
+    1. Checked (normal): checkbox ON, fields enabled and editable
+    2. Unchecked: checkbox OFF, fields disabled, GetDateTime() returns None
+    3. Inactive (SetEditable(False)): checkbox ON but disabled, fields show
+       values greyed out (read-only), not editable
+
+    For flexible table layouts, get individual widgets with:
+    - GetCheckBox() - wx.CheckBox (no label)
+    - GetDateCtrl() - DateCtrl4
+    - GetTimeCtrl() - TimeCtrl or TimeWithSecondsCtrl
+
+    Args:
+        parent: Parent window for the widgets
+        value: datetime.datetime object, or None for unchecked state
+        hourChoices, minuteChoices: Dropdown choices for time fields
+        showSeconds: If True, use TimeWithSecondsCtrl (default False)
+        secondChoices: Dropdown choices for seconds field
+    """
+
+    def __init__(self, parent, value=None,
+                 hourChoices=None, minuteChoices=None,
+                 showSeconds=False, secondChoices=None):
+        self._parent = parent
+        self._showSeconds = showSeconds
+
+        checked = value is not None
+        display_value = value if value is not None else datetime.datetime.now()
+
+        self._checkbox = wx.CheckBox(parent)
+        self._checkbox.SetValue(checked)
+        self._checkbox.Bind(wx.EVT_CHECKBOX, self._onCheckboxChanged)
+
+        self._dateCtrl = DateCtrl4(parent, year=display_value.year,
+                                   month=display_value.month, day=display_value.day)
+
+        if showSeconds:
+            self._timeCtrl = TimeWithSecondsCtrl(
+                parent, hours=display_value.hour, minutes=display_value.minute,
+                seconds=display_value.second,
+                hourChoices=hourChoices, minuteChoices=minuteChoices,
+                secondChoices=secondChoices
+            )
+        else:
+            self._timeCtrl = TimeCtrl(
+                parent, hours=display_value.hour, minutes=display_value.minute,
+                hourChoices=hourChoices, minuteChoices=minuteChoices
+            )
+
+        self._readOnly = False
+        self._updateEnabled()
+
+    def _onCheckboxChanged(self, event):
+        """Handle checkbox state change — route through abstraction."""
+        if self._checkbox.GetValue():
+            self.ActivateValue()
+        else:
+            self.DeactivateValue()
+        self._dateCtrl._fireValueChanged()
+        event.Skip()
+
+    def _updateEnabled(self):
+        """Apply visual state based on checkbox + _readOnly flags.
+
+        This is the single authority for the visual state of all sub-controls.
+        SetEditable/SetReadOnly set flags and call this method.
+        """
+        checked = self._checkbox.GetValue()
+        self._checkbox.Enable(not self._readOnly)
+
+        if not checked:
+            # Unchecked: show "N/A". Clear read-only first so inner control
+            # paints "N/A" (not greyed values), then disable.
+            self._dateCtrl.SetReadOnly(False)
+            self._dateCtrl.Enable(False)
+            self._timeCtrl.SetReadOnly(False)
+            self._timeCtrl.Enable(False)
+        elif self._readOnly:
+            # Checked + read-only: re-enable from unchecked, then grey
+            self._dateCtrl.Enable(True)
+            self._dateCtrl.SetReadOnly(True)
+            self._timeCtrl.Enable(True)
+            self._timeCtrl.SetReadOnly(True)
+        else:
+            # Checked + editable: re-enable from unchecked
+            self._dateCtrl.Enable(True)
+            self._dateCtrl.SetReadOnly(False)
+            self._timeCtrl.Enable(True)
+            self._timeCtrl.SetReadOnly(False)
+
+    # Widget accessors (for layout only — use state methods for logic)
+    def GetCheckBox(self):
+        return self._checkbox
+
+    def GetDateCtrl(self):
+        return self._dateCtrl
+
+    def GetTimeCtrl(self):
+        return self._timeCtrl
+
+    def GetWidgets(self):
+        return (self._checkbox, self._dateCtrl, self._timeCtrl)
+
+    def HideCheckBox(self):
+        """Hide the checkbox for always-active controls (e.g. effort start)."""
+        self._checkbox.Hide()
+
+    def CreateRowPanel(self, parent=None):
+        """Create a panel containing checkbox + date + time in a horizontal row."""
+        if parent is None:
+            parent = self._parent
+
+        panel = wx.Panel(parent)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self._checkbox.Reparent(panel)
+        self._dateCtrl.Reparent(panel)
+        self._timeCtrl.Reparent(panel)
+
+        sizer.Add(self._checkbox, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+        sizer.Add(self._dateCtrl, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+        sizer.Add(self._timeCtrl, 0, wx.ALIGN_CENTER_VERTICAL)
+
+        panel.SetSizer(sizer)
+
+        # Re-apply enabled state after reparenting. wx.ComboCtrl (DateCtrl4)
+        # loses its native visual state (button greying, background color)
+        # when reparented, because the platform re-creates theme state for
+        # the new parent hierarchy. FieldsCtrl-based controls don't have
+        # this issue since they paint everything in _onPaint.
+        self._updateEnabled()
+
+        return panel
+
+    def ContainsControl(self, ctrl):
+        return ctrl in (self._checkbox, self._dateCtrl, self._timeCtrl)
+
+    def HasOpenPopup(self):
+        """Return True if any child control has an open popup."""
+        # DateCtrl4 provides public HasOpenPopup()
+        if self._dateCtrl.HasOpenPopup():
+            return True
+        # TimeCtrl uses FieldsCtrl._popup (same module, acceptable)
+        if hasattr(self._timeCtrl, '_popup') and self._timeCtrl._popup is not None:
+            return True
+        return False
+
+    def Bind(self, eventType, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
+        """Bind event handler to child controls.
+
+        Routing:
+        - EVT_VALUE_CHANGED: date + time, wrapped so event object is this combo
+        - Other events: all three widgets
+
+        Note: EVT_CHECKBOX is NOT exposed — the checkbox is an internal
+        implementation detail. All value changes (checkbox toggle, date edit,
+        time edit) fire EVT_VALUE_CHANGED.
+        """
+        if eventType == EVT_VALUE_CHANGED:
+            self._dateCtrl.Bind(eventType, handler)
+            self._timeCtrl.Bind(eventType, handler)
+        else:
+            self._checkbox.Bind(eventType, handler, source, id, id2)
+            self._dateCtrl.Bind(eventType, handler, source, id, id2)
+            self._timeCtrl.Bind(eventType, handler, source, id, id2)
+
+    # --- State transitions ---
+
+    def _setCheckboxState(self, checked):
+        """Set checkbox only if state differs (prevents recursive EVT_CHECKBOX)."""
+        if self._checkbox.GetValue() != checked:
+            self._checkbox.SetValue(checked)
+
+    def ActivateValue(self, value=None):
+        """Set the control to have a value (non-null).
+
+        Args:
+            value: datetime.datetime to set, or None to keep the internally
+                   stored value (typically now() from construction, or the
+                   last value before DeactivateValue was called).
+
+        Used by duration calc logic (steps 2.1, 3.1) to activate a missing
+        date without specifying a value. Also used by SetValue() to set a
+        specific datetime and activate in one call.
+        """
+        if value is not None:
+            self._dateCtrl.SetDate(value.date())
+            self._timeCtrl.SetTime(value.time())
+        self._setCheckboxState(True)
+        self._updateEnabled()
+
+    def DeactivateValue(self):
+        """Set the control to no value (null/cleared).
+
+        Values are preserved internally — ActivateValue restores the
+        previous value. Used by duration calc logic (steps 2.5.2, 3.5.2)
+        to deactivate a date.
+        """
+        self._setCheckboxState(False)
+        self._updateEnabled()
+
+    def IsActive(self):
+        """Return True if the control has an active value (non-null)."""
+        return self._checkbox.GetValue()
+
+    # Deprecated — log warning and delegate to new methods
+    def IsChecked(self):
+        log_step("DEPRECATED: IsChecked() — use IsActive()", prefix="DateTimeCombo2")
+        return self.IsActive()
+
+    def SetChecked(self, checked):
+        log_step("DEPRECATED: SetChecked() — use ActivateValue()/DeactivateValue()", prefix="DateTimeCombo2")
+        if checked:
+            self.ActivateValue()
+        else:
+            self.DeactivateValue()
+
+    def Activate(self):
+        log_step("DEPRECATED: Activate() — use ActivateValue()", prefix="DateTimeCombo2")
+        self.ActivateValue()
+
+    def Deactivate(self):
+        log_step("DEPRECATED: Deactivate() — use DeactivateValue()", prefix="DateTimeCombo2")
+        self.DeactivateValue()
+
+    def GetDateTime(self):
+        if not self._checkbox.GetValue():
+            return None
+        d = self._dateCtrl.GetDate()
+        t = self._timeCtrl.GetTime()
+        return datetime.datetime.combine(d, t)
+
+    def SetDateTime(self, dt):
+        log_step(
+            "DEPRECATED: SetDateTime() should not be called. "
+            "Use ActivateValue(datetime) to set a value, or "
+            "DeactivateValue() to clear it.",
+            prefix="DateTimeCombo2"
+        )
+
+    # Domain-compatible GetValue/SetValue for AttributeSync
+    def GetValue(self):
+        if not self._checkbox.GetValue():
+            return date.DateTime()
+        d = self._dateCtrl.GetDate()
+        t = self._timeCtrl.GetTime()
+        dt = datetime.datetime.combine(d, t)
+        return date.DateTime.fromDateTime(dt)
+
+    def SetValue(self, newValue):
+        if newValue is None or newValue == date.DateTime():
+            self.DeactivateValue()
+        else:
+            self.ActivateValue(datetime.datetime(
+                newValue.year, newValue.month, newValue.day,
+                newValue.hour, newValue.minute, newValue.second))
+
+    def GetDate(self):
+        return self._dateCtrl.GetDate()
+
+    def SetDate(self, d):
+        log_step(
+            "DEPRECATED: SetDate() should not be called. "
+            "Use ActivateValue(datetime) to set a value.",
+            prefix="DateTimeCombo2"
+        )
+
+    def GetTime(self):
+        return self._timeCtrl.GetTime()
+
+    def SetTime(self, t):
+        log_step(
+            "DEPRECATED: SetTime() should not be called. "
+            "Use ActivateValue(datetime) to set a value.",
+            prefix="DateTimeCombo2"
+        )
+
+    def GetChildren(self):
+        return [self._checkbox, self._dateCtrl, self._timeCtrl]
+
+    def GetId(self):
+        return self._checkbox.GetId()
+
+    def SetEditable(self):
+        """Make the combo editable.
+
+        - Checkbox enabled (user can toggle)
+        - Date/time fields editable with normal colors
+        - Dropdown button active
+        """
+        self._readOnly = False
+        self._updateEnabled()
+
+    def SetReadOnly(self):
+        """Make the combo read-only.
+
+        - Checkbox disabled (shows checked state, not clickable)
+        - Date/time fields show greyed values, not editable
+        - Dropdown button disabled
+        """
+        self._readOnly = True
+        self._updateEnabled()
+
+    def IsEditable(self):
+        """Return True if the combo is editable (not read-only)."""
+        return not self._readOnly
+
+    def IsReadOnly(self):
+        """Return True if the combo is read-only."""
+        return self._readOnly
+
+    def SetFocus(self):
+        if self._dateCtrl.IsEnabled():
+            self._dateCtrl.SetFocus()
+        else:
+            self._checkbox.SetFocus()
 
 

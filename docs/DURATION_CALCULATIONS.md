@@ -39,11 +39,13 @@ Duration calculations for Edit Task Dates and Edit Effort windows.
    OPEN QUESTION: How to differentiate between loading in process
    (mode not yet set, should wait) and invalid value requiring reset
    to automatic?
-9. DateTimeCombo Checkbox toggle does NOT trigger EVT_KILL_FOCUS (blur),
-   so AttributeSync does not commit the value change. The editor may
-   need a checkbox handler to trigger a blur or immediate commit when
-   the checkbox is toggled, so the attribute pattern picks up the
-   checked/unchecked state change and runs the sync calc.
+9. ~~DateTimeCombo Checkbox toggle EVT_KILL_FOCUS gap~~ — **Resolved.**
+   ~~Editor binds `EVT_CHECKBOX` via `combo.Bind(wx.EVT_CHECKBOX, handler)`
+   and calls `sync.commit()` explicitly.~~
+   **Update:** EVT_CHECKBOX is no longer exposed by DateTimeCombo2. All
+   AttributeSync instances use `EVT_VALUE_CHANGED` as `editedEventType`,
+   which fires on checkbox toggle AND date/time edits. External
+   EVT_CHECKBOX handlers and `sync.commit()` hacks removed.
    See [DATETIME_CONTROLS.md](DATETIME_CONTROLS.md) TODO item 3.
 
 ## Notes
@@ -183,7 +185,7 @@ Implements: __syncTaskState()
 Called on: Every change of Start-Date, Due-Date, Duration, or Mode dropdown.
 Note: Business logic — reads/sets domain values through commands.
       The attribute pattern (Layer 2) updates widgets automatically.
-      All sync goes through EVT_KILL_FOCUS → AttributeSync → command.
+      All sync goes through EVT_VALUE_CHANGED → AttributeSync → command.
 ```
 
 ### Calculation Mode Dropdown Build Logic
@@ -354,7 +356,7 @@ Implements: __syncEffortState()
 Called on: Every change of Start-Date, Stop-Date, Duration, or Mode dropdown.
 Note: Business logic — reads/sets domain values through commands.
       The attribute pattern (Layer 2) updates widgets automatically.
-      All sync goes through EVT_KILL_FOCUS → AttributeSync → command.
+      All sync goes through EVT_VALUE_CHANGED → AttributeSync → command.
 ```
 
 ### Time Spent

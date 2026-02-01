@@ -1279,19 +1279,17 @@ class DatesPage(Page):
             minuteChoices=lambda: get_suggested_minute_choices(self._DatesPage__settings)
         )
         # Use AttributeSync for automatic external update handling
-        # Use EVT_KILL_FOCUS to sync on focus loss (same pattern as subject field)
+        # Sync on EVT_VALUE_CHANGED — fires on checkbox toggle AND date/time edits
         self._plannedStartDateTimeSync = attributesync.AttributeSync(
             "plannedStartDateTime",
             self._plannedStartDateTimeCombo,
             plannedStartDateTime,
             self.items,
             command.EditPlannedStartDateTimeCommand,
-            wx.EVT_KILL_FOCUS,
+            widgets.EVT_VALUE_CHANGED,
             self.items[0].plannedStartDateTimeChangedEventType(),
             callback=self.__onPlannedStartChanged,
         )
-        # Bind checkbox to track which date is activated first for auto mode detection
-        self._plannedStartDateTimeCombo.GetCheckBox().Bind(wx.EVT_CHECKBOX, self.__onPlannedStartCheckboxChanged)
         # Rebuild dropdown when focus leaves this field
         self._plannedStartDateTimeCombo.Bind(wx.EVT_KILL_FOCUS, self.__onDurationFieldKillFocus)
 
@@ -1410,19 +1408,17 @@ class DatesPage(Page):
             minuteChoices=lambda: get_suggested_minute_choices(self._DatesPage__settings)
         )
         # Use AttributeSync for automatic external update handling
-        # Use EVT_KILL_FOCUS to sync on focus loss (same pattern as subject field)
+        # Sync on EVT_VALUE_CHANGED — fires on checkbox toggle AND date/time edits
         self._dueDateTimeSync = attributesync.AttributeSync(
             "dueDateTime",
             self._dueDateTimeCombo,
             dueDateTime,
             self.items,
             command.EditDueDateTimeCommand,
-            wx.EVT_KILL_FOCUS,
+            widgets.EVT_VALUE_CHANGED,
             self.items[0].dueDateTimeChangedEventType(),
             callback=self.__onDueDateChanged,
         )
-        # Bind checkbox to track which date is activated first for auto mode detection
-        self._dueDateTimeCombo.GetCheckBox().Bind(wx.EVT_CHECKBOX, self.__onDueDateCheckboxChanged)
         # Rebuild dropdown when focus leaves this field
         self._dueDateTimeCombo.Bind(wx.EVT_KILL_FOCUS, self.__onDurationFieldKillFocus)
 
@@ -1456,31 +1452,23 @@ class DatesPage(Page):
             minuteChoices=lambda: get_suggested_minute_choices(self._DatesPage__settings)
         )
         # Use AttributeSync for automatic external update handling
-        # Use EVT_KILL_FOCUS to sync on focus loss (same pattern as subject field)
+        # Sync on EVT_VALUE_CHANGED — fires on checkbox toggle AND date/time edits
         self._actualStartDateTimeSync = attributesync.AttributeSync(
             "actualStartDateTime",
             self._actualStartDateTimeCombo,
             actualStartDateTime,
             self.items,
             command.EditActualStartDateTimeCommand,
-            wx.EVT_KILL_FOCUS,
+            widgets.EVT_VALUE_CHANGED,
             self.items[0].actualStartDateTimeChangedEventType(),
             callback=self.__onActualStartChanged,
         )
-        # Commit on checkbox toggle (same as focus loss)
-        self._actualStartDateTimeCombo.GetCheckBox().Bind(wx.EVT_CHECKBOX, self.__onActualStartCheckboxChanged)
 
         self.addEntry(
             _("Actual start date"),
             self._actualStartDateTimeCombo.CreateRowPanel(self),
             wx.StaticText(self, label=""),
         )
-
-    def __onActualStartCheckboxChanged(self, event):
-        """Handle actual start checkbox toggle."""
-        # Commit value to model immediately (checkbox toggle = focus loss)
-        self._actualStartDateTimeSync.commit()
-        event.Skip()
 
     def __onActualStartChanged(self, value):
         """AttributeSync callback for actual start date changes."""
@@ -1504,30 +1492,22 @@ class DatesPage(Page):
         )
 
         # Use AttributeSync for automatic external update handling
-        # Use EVT_KILL_FOCUS to sync on focus loss (same pattern as other date fields)
+        # Sync on EVT_VALUE_CHANGED — fires on checkbox toggle AND date/time edits
         self._completionDateTimeSync = attributesync.AttributeSync(
             "completionDateTime",
             self._completionDateTimeCombo,
             completionDateTime,
             self.items,
             command.EditCompletionDateTimeCommand,
-            wx.EVT_KILL_FOCUS,
+            widgets.EVT_VALUE_CHANGED,
             self.items[0].completionDateTimeChangedEventType(),
         )
-        # Commit on checkbox toggle (same as focus loss)
-        self._completionDateTimeCombo.GetCheckBox().Bind(wx.EVT_CHECKBOX, self.__onCompletionCheckboxChanged)
 
         self.addEntry(
             _("Completion date"),
             self._completionDateTimeCombo.CreateRowPanel(self),
             wx.StaticText(self, label=""),
         )
-
-    def __onCompletionCheckboxChanged(self, event):
-        """Handle completion checkbox toggle."""
-        # Commit value to model immediately (checkbox toggle = focus loss)
-        self._completionDateTimeSync.commit()
-        event.Skip()
 
     def addDateEntry(self, label, taskMethodName):
         """Add a date entry using the old DateTimeEntry control (for comparison)."""
@@ -1674,15 +1654,7 @@ class DatesPage(Page):
         )
         cmd.do()
 
-    def __onPlannedStartCheckboxChanged(self, event):
-        """Checkbox toggle does NOT trigger EVT_KILL_FOCUS — force commit."""
-        self._plannedStartDateTimeSync.commit()
-        event.Skip()
 
-    def __onDueDateCheckboxChanged(self, event):
-        """Checkbox toggle does NOT trigger EVT_KILL_FOCUS — force commit."""
-        self._dueDateTimeSync.commit()
-        event.Skip()
 
     def __onDurationFieldKillFocus(self, event):
         """Rebuild mode dropdown on focus loss."""
@@ -1724,11 +1696,11 @@ class DatesPage(Page):
 
     def __activateStartDate(self):
         """Activate Start-Date combo (step 2.1). Uses internally stored value."""
-        self._plannedStartDateTimeCombo.SetChecked(True)
+        self._plannedStartDateTimeCombo.ActivateValue()
 
     def __activateDueDate(self):
         """Activate Due-Date combo (step 3.1). Uses internally stored value."""
-        self._dueDateTimeCombo.SetChecked(True)
+        self._dueDateTimeCombo.ActivateValue()
 
     def __adjStartDate(self):
         """start = due - duration. Reads widgets, writes through command."""
@@ -1870,12 +1842,10 @@ class DatesPage(Page):
 
         if mode == "automatic":
             # Automatic | Editable | Editable | Editable
-            self._plannedStartDateTimeCombo.Enable(True)
-            self._plannedStartDateTimeCombo.SetEditable(True)
+            self._plannedStartDateTimeCombo.SetEditable()
             self._plannedDurationCtrl.Enable(True)
             self._plannedDurationCtrl.SetReadOnly(False)
-            self._dueDateTimeCombo.Enable(True)
-            self._dueDateTimeCombo.SetEditable(True)
+            self._dueDateTimeCombo.SetEditable()
 
         elif mode == "adjdue":
             # Adjust Due | Editable | Editable | Read-only
@@ -1883,12 +1853,10 @@ class DatesPage(Page):
                 log_step("WARNING: adjdue mode but Start-Date does not exist", prefix="DURATION")
             if not self.__dueDateExists():
                 log_step("WARNING: adjdue mode but Due-Date does not exist", prefix="DURATION")
-            self._plannedStartDateTimeCombo.Enable(True)
-            self._plannedStartDateTimeCombo.SetEditable(True)
+            self._plannedStartDateTimeCombo.SetEditable()
             self._plannedDurationCtrl.Enable(True)
             self._plannedDurationCtrl.SetReadOnly(False)
-            self._dueDateTimeCombo.Enable(True)
-            self._dueDateTimeCombo.SetEditable(False)  # Read-only
+            self._dueDateTimeCombo.SetReadOnly()
 
         elif mode == "adjstart":
             # Adjust Start | Read-only | Editable | Editable
@@ -1896,19 +1864,15 @@ class DatesPage(Page):
                 log_step("WARNING: adjstart mode but Start-Date does not exist", prefix="DURATION")
             if not self.__dueDateExists():
                 log_step("WARNING: adjstart mode but Due-Date does not exist", prefix="DURATION")
-            self._plannedStartDateTimeCombo.Enable(True)
-            self._plannedStartDateTimeCombo.SetEditable(False)  # Read-only
+            self._plannedStartDateTimeCombo.SetReadOnly()
             self._plannedDurationCtrl.Enable(True)
             self._plannedDurationCtrl.SetReadOnly(False)
-            self._dueDateTimeCombo.Enable(True)
-            self._dueDateTimeCombo.SetEditable(True)
+            self._dueDateTimeCombo.SetEditable()
 
         elif mode == "implicit":
             # Start and Due always Editable
-            self._plannedStartDateTimeCombo.Enable(True)
-            self._plannedStartDateTimeCombo.SetEditable(True)
-            self._dueDateTimeCombo.Enable(True)
-            self._dueDateTimeCombo.SetEditable(True)
+            self._plannedStartDateTimeCombo.SetEditable()
+            self._dueDateTimeCombo.SetEditable()
             if self.__startDateExists() and self.__dueDateExists():
                 # Both dates exist: Duration Read-only
                 self._plannedDurationCtrl.Enable(True)
@@ -2050,14 +2014,14 @@ class DatesPage(Page):
             minuteChoices=lambda: get_suggested_minute_choices(self._DatesPage__settings)
         )
         # Use AttributeSync for automatic external update handling
-        # Use EVT_KILL_FOCUS to sync on focus loss (same pattern as subject field)
+        # Sync on EVT_VALUE_CHANGED — fires on checkbox toggle AND date/time edits
         self._reminderDateTimeSync = attributesync.AttributeSync(
             "reminder",
             self._reminderDateTimeCombo,
             reminderDateTime,
             self.items,
             command.EditReminderDateTimeCommand,
-            wx.EVT_KILL_FOCUS,
+            widgets.EVT_VALUE_CHANGED,
             self.items[0].reminderChangedEventType(),
             callback=self.__onReminderChanged,
         )
@@ -2091,11 +2055,17 @@ class DatesPage(Page):
             entry.EVT_RECURRENCEENTRY,
             self.items[0].recurrenceChangedEventType(),
         )
-        self.addEntry(
-            _("Recurrence"),
-            self._recurrenceEntry,
-            flags=[None, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT | wx.EXPAND],
-        )
+        # Place each recurrence sub-panel as its own grid row.
+        # "Recurrence" label on the first row; empty label on the rest.
+        recurrenceFlags = [None, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT | wx.EXPAND]
+        panels = self._recurrenceEntry.getSubPanels()
+        for i, panel in enumerate(panels):
+            panel.Reparent(self)
+            self.addEntry(
+                _("Recurrence") if i == 0 else "",
+                panel,
+                flags=recurrenceFlags,
+            )
 
     def entries(self):
         # pylint: disable=E1101
@@ -3731,7 +3701,7 @@ class EffortEditBook(Page):
             secondChoices=lambda: get_suggested_second_choices(self._settings),
         )
         # Hide checkbox - start is always required
-        self._startDateTimeCombo.GetCheckBox().Hide()
+        self._startDateTimeCombo.HideCheckBox()
 
         self._startDateTimeSync = attributesync.AttributeSync(
             "getStart",
@@ -3739,7 +3709,7 @@ class EffortEditBook(Page):
             current_start_date_time,
             self.items,
             command.EditEffortStartDateTimeCommand,
-            wx.EVT_KILL_FOCUS,
+            widgets.EVT_VALUE_CHANGED,
             self.items[0].startChangedEventType(),
             callback=self.__onEffortStartChanged,
         )
@@ -3869,11 +3839,10 @@ class EffortEditBook(Page):
             current_stop_date_time,
             self.items,
             command.EditEffortStopDateTimeCommand,
-            wx.EVT_KILL_FOCUS,
+            widgets.EVT_VALUE_CHANGED,
             self.items[0].stopChangedEventType(),
             callback=self.__onEffortStopChanged,
         )
-        self._stopDateTimeCombo.GetCheckBox().Bind(wx.EVT_CHECKBOX, self.__onStopCheckboxChanged)
         self._stopNowButton = self.__create_stop_now_button()
 
         self.addEntry(
@@ -3919,11 +3888,6 @@ class EffortEditBook(Page):
         """Called when stop datetime is committed."""
         self.__syncEffortState(sourceField='stop')
 
-    def __onStopCheckboxChanged(self, event):
-        """Checkbox toggle does NOT trigger EVT_KILL_FOCUS — force commit."""
-        self._stopDateTimeSync.commit()
-        event.Skip()
-
     def __onEffortEntryModeChanged(self, event):
         """Handle switching between Standard and Retroactive entry modes."""
         self._effortEntryMode = self._effortEntryModeChoice.GetSelection()
@@ -3941,7 +3905,7 @@ class EffortEditBook(Page):
 
     def __stopDateExists(self):
         """Check if stop date is active."""
-        return self._stopDateTimeCombo.IsChecked()
+        return self._stopDateTimeCombo.IsActive()
 
     def __setEffortEntryMode(self, newMode):
         """Set entry mode, update dropdown, write through command.
@@ -4067,7 +4031,7 @@ class EffortEditBook(Page):
 
         if self._effortEntryMode == 0:  # 1. If Mode Standard
             # 1.3 Set Start-Date editable
-            self._startDateTimeCombo.SetEditable(True)
+            self._startDateTimeCombo.SetEditable()
             self._startFromLastEffortButton.Enable(
                 self._effortList.maxDateTime() is not None
             )
@@ -4144,7 +4108,7 @@ class EffortEditBook(Page):
 
         elif self._effortEntryMode == 1:  # 2. If Mode Retroactive
             # 2.3 Set Start-Date read-only
-            self._startDateTimeCombo.SetEditable(False)
+            self._startDateTimeCombo.SetReadOnly()
             self._startFromLastEffortButton.Enable(False)
             # 2.4 Set Duration editable
             self._effortDurationCtrl.Enable(True)
@@ -4197,7 +4161,7 @@ class EffortEditBook(Page):
         elif self._effortEntryMode == 2:  # 3. If Mode Implicit
             # 3.3 Set Presets dropdown disabled [Ref1]
             # 3.4 Set Start-Date editable
-            self._startDateTimeCombo.SetEditable(True)
+            self._startDateTimeCombo.SetEditable()
             self._startFromLastEffortButton.Enable(
                 self._effortList.maxDateTime() is not None
             )
@@ -4442,7 +4406,7 @@ class EffortEditBook(Page):
             now = date.DateTime.now()
             start_value = self._startDateTimeCombo.GetValue()
             stop_value = None
-            if self._stopDateTimeCombo.IsChecked():
+            if self._stopDateTimeCombo.IsActive():
                 stop_value = self._stopDateTimeCombo.GetValue()
             if stop_value is not None and start_value is not None and start_value >= stop_value:
                 warnings.append(_("Warning: start date-time is after the stop date-time!"))
