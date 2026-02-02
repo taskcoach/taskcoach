@@ -14,7 +14,7 @@ Default date/time values for new tasks, configured in Preferences.
   - [Reminder Preset](#reminder-preset)
 - [Propose Mode](#propose-mode)
   - [Old Behavior (DateTimeEntry)](#old-behavior-datetimeentry)
-  - [Current Bug (DateTimeCombo2)](#current-bug-datetimecombo2)
+  - [Initial Bug (DateTimeCombo)](#initial-bug-datetimecombo2)
   - [Fix](#fix)
 - [Duration Mode Interaction](#duration-mode-interaction)
 - [Suggested DateTime Computation](#suggested-datetime-computation)
@@ -26,7 +26,7 @@ Default date/time values for new tasks, configured in Preferences.
 ## TODO
 
 1. **Unify preset and propose paths through the Attribute model or
-   DateTimeCombo2 public API.** Currently, preset mode writes directly to
+   DateTimeCombo public API.** Currently, preset mode writes directly to
    the Task constructor kwargs (`uicommand.py:1693-1708`), bypassing both
    the Attribute setter/callback chain and the editor widget API. Propose
    mode relies on the editor widget to pre-fill a display value. These two
@@ -34,7 +34,7 @@ Default date/time values for new tasks, configured in Preferences.
    public interface — either:
    - The Attribute model (setter + callback), so all domain invariants
      (recurrence, reminder clearing, child completion) fire correctly; or
-   - A new `DateTimeCombo2` method such as
+   - A new `DateTimeCombo` method such as
      `ActivateValue(value, proposed=True)` + `DeactivateValue()`, where
      `proposed=True` means: set the internal display value and mark the
      checkbox checked, but flag the value as "proposed" so the editor
@@ -50,8 +50,9 @@ Default date/time values for new tasks, configured in Preferences.
    completion cascade does not happen. The task is born in an inconsistent
    state. See [Constructor Bypass Problem](#constructor-bypass-problem).
 
-3. **Fix propose mode for DateTimeCombo2** — the immediate minimal fix.
-   See [Fix](#fix) section.
+3. ~~**Fix propose mode for DateTimeCombo**~~ — **Done.** `suggestedValue`
+   parameter added to `DateTimeCombo.__init__()`. Editor passes preference-
+   computed datetime at construction. See [Fix](#fix) section.
 
 4. **Duration mode interaction with presets needs resolution.** New tasks
    start in Implicit mode for legacy and preset/propose compatibility
@@ -137,7 +138,7 @@ When the preference starts with `"preset"`:
    in the Attribute via `Attribute.__init__()`, NOT via `.set()`.
 
 3. **Editor opens**: Reads from domain object. Value is non-None, so
-   `DateTimeCombo2` is constructed with `value=datetime`, checkbox starts
+   `DateTimeCombo` is constructed with `value=datetime`, checkbox starts
    checked, fields show the preset datetime.
 
 ### Constructor Bypass Problem
@@ -191,7 +192,7 @@ its "already shown" set when a reminder is snoozed.
 
 ### Old Behavior (DateTimeEntry)
 
-The old `DateTimeEntry` control (removed in the DateTimeCombo2 refactor)
+The old `DateTimeEntry` control (removed in the DateTimeCombo refactor)
 accepted a `suggestedDateTime` parameter:
 
 ```python
@@ -220,28 +221,16 @@ Result: The display fields showed the suggested datetime (hidden behind
 The value was **never persisted** until the user checked the box and the
 editor committed it through a command.
 
-### Current Bug (DateTimeCombo2)
+### Initial Bug (DateTimeCombo)
 
-`DateTimeCombo2` was never given suggested datetime support. When
-`value=None` (propose mode), the constructor defaults to `datetime.now()`:
-
-```python
-# maskedtimectrl.py:3594-3595
-checked = value is not None
-display_value = value if value is not None else datetime.datetime.now()
-```
-
-When the user checks the checkbox, `ActivateValue()` (no args) reveals the
-internally stored `datetime.now()` from construction time, ignoring the
-user's preference setting entirely.
+`DateTimeCombo` was originally created without suggested datetime support.
+When `value=None` (propose mode), the constructor defaulted to
+`datetime.now()`, ignoring the user's preference setting entirely.
 
 ### Fix
 
-Minimal one-line change in `DateTimeCombo2.__init__()`:
-
-**File:** `taskcoachlib/widgets/maskedtimectrl.py:3588`
-
-Add `suggestedValue=None` parameter:
+**Done.** `suggestedValue` parameter added to `DateTimeCombo.__init__()`.
+The editor passes the preference-computed datetime at construction time:
 
 ```python
 def __init__(self, parent, value=None, suggestedValue=None, ...):
@@ -249,19 +238,23 @@ def __init__(self, parent, value=None, suggestedValue=None, ...):
     display_value = value if value is not None else (suggestedValue or datetime.datetime.now())
 ```
 
-Pass `suggestedValue` at each `DateTimeCombo2(...)` construction in the editor:
+The sub-controls are initialized with the suggested datetime and hold it
+while the checkbox is unchecked. In preset mode, `value` is already
+non-None, so `suggestedValue` is ignored.
 
-**File:** `taskcoachlib/gui/dialog/editor.py`
+For how the sub-controls serve as the stash for DateTimeCombo (retaining
+the proposed value through activate/deactivate cycles), see
+[DATETIME_CONTROLS.md — Sub-Control Stash Model](DATETIME_CONTROLS.md#sub-control-stash-model).
 
-| Date Field | Line | suggestedValue |
-|-----------|------|---------------|
-| Planned start | ~1276 | `task.Task.suggestedPlannedStartDateTime()` |
-| Due date | ~1405 | `task.Task.suggestedDueDateTime()` |
-| Actual start | ~1449 | `task.Task.suggestedActualStartDateTime()` |
-| Completion | ~1488 | `task.Task.suggestedCompletionDateTime()` |
-| Reminder | ~2011 | `task.Task.suggestedReminderDateTime()` |
+**Editor construction sites** (`taskcoachlib/gui/dialog/editor.py`):
 
-In preset mode, `value` is already non-None, so `suggestedValue` is ignored.
+| Date Field | suggestedValue |
+|-----------|---------------|
+| Planned start | `task.Task.suggestedPlannedStartDateTime()` |
+| Due date | `task.Task.suggestedDueDateTime()` |
+| Actual start | `task.Task.suggestedActualStartDateTime()` |
+| Completion | `task.Task.suggestedCompletionDateTime()` |
+| Reminder | `task.Task.suggestedReminderDateTime()` |
 
 ---
 
@@ -348,7 +341,7 @@ new snooze time.
 
 ## Related Documentation
 
-- [DATETIME_CONTROLS.md](DATETIME_CONTROLS.md) — DateTimeCombo2 widget API,
+- [DATETIME_CONTROLS.md](DATETIME_CONTROLS.md) — DateTimeCombo widget API,
   ActivateValue/DeactivateValue, suggested datetime old behavior reference
 - [ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md) — Attribute model, setter/callback
   pattern, constructor vs `.set()` behavior, three-layer relationship

@@ -1132,7 +1132,7 @@ class DatesPage(Page):
             except Exception:
                 pass
             try:
-                pub.unsubscribe(self._onDomainPlannedDurationChanged,
+                pub.unsubscribe(self.__onTaskDurationDomainChanged,
                                 self.items[0].plannedDurationChangedEventType())
             except Exception:
                 pass
@@ -1166,14 +1166,14 @@ class DatesPage(Page):
         self.__updateDurationModeDropdown()
         self.__syncTaskState()
 
-    def _onDomainPlannedDurationChanged(self, newValue, sender):
-        """Layer 2: Domain plannedDuration changed."""
-        if sender not in self.items:
-            return
-        self._currentPlannedDuration = newValue
-        self._plannedDurationCtrl.SetDuration(newValue)
-        self.__updatePresetSelection()
+    def __onPlannedDurationSyncCallback(self, value):
+        """AttributeSync callback: duration committed or changed externally."""
         self.__syncTaskState(sourceField='duration')
+
+    def __onTaskDurationDomainChanged(self, newValue, sender):
+        """Domain duration changed — update preset dropdown to match."""
+        if sender in self.items:
+            self.__updatePresetSelection()
 
     def addEntries(self):
         self.addStatusEntry()
@@ -1332,19 +1332,28 @@ class DatesPage(Page):
         self._plannedDurationCtrl = widgets.MaskedDurationCtrl(
             self, days=days, hours=hours, minutes=minutes
         )
-        # Duration is always enabled - mode is auto-determined by which date is activated first
-        self._plannedDurationCtrl.Bind(
-            wx.EVT_KILL_FOCUS, self.__onPlannedDurationChanged
-        )
         # Rebuild dropdown when focus leaves this field
         self._plannedDurationCtrl.Bind(wx.EVT_KILL_FOCUS, self.__onDurationFieldKillFocus)
 
-        # Layer 2: Subscribe to domain changes BEFORE __syncTaskState()
-        # so that duration changes during init sync trigger UI updates.
+        # Layer 2: AttributeSync for duration (user edits → command,
+        # domain changes → widget update). Callback triggers sync cascade.
+        self._plannedDurationSync = attributesync.AttributeSync(
+            "plannedDuration",
+            self._plannedDurationCtrl,
+            plannedDuration,
+            self.items,
+            command.EditPlannedDurationCommand,
+            widgets.EVT_VALUE_CHANGED,
+            self.items[0].plannedDurationChangedEventType(),
+            callback=self.__onPlannedDurationSyncCallback,
+        )
+
+        # Subscribe to domain changes BEFORE __syncTaskState()
+        # so that changes during init sync trigger UI updates.
         if len(self.items) == 1:
             pub.subscribe(self._onDomainPlannedDurationModeChanged,
                           self.items[0].plannedDurationModeChangedEventType())
-            pub.subscribe(self._onDomainPlannedDurationChanged,
+            pub.subscribe(self.__onTaskDurationDomainChanged,
                           self.items[0].plannedDurationChangedEventType())
 
         # Presets dropdown
@@ -1369,7 +1378,6 @@ class DatesPage(Page):
             self._durationModeChoice.Append(label, key)
         self._durationModeChoice.Bind(wx.EVT_CHOICE, self.__onDurationModeChanged)
 
-        self._currentPlannedDuration = plannedDuration
         # Get stored mode from task, default to "automatic"
         storedMode = (
             self.items[0].plannedDurationMode()
@@ -1403,7 +1411,7 @@ class DatesPage(Page):
             _("Planned duration"),
             self._plannedDurationCtrl,
             durationRestPanel,
-            flags=[None, None, wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL | wx.ALL],
+            flags=[None, wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL | wx.ALL],
         )
 
         # Row 3: Due date (value already retrieved above)
@@ -1521,45 +1529,6 @@ class DatesPage(Page):
             wx.StaticText(self, label=""),
         )
 
-    def addDateEntry(self, label, taskMethodName):
-        """Add a date entry using the old DateTimeEntry control (for comparison)."""
-        TaskMethodName = taskMethodName[0].capitalize() + taskMethodName[1:]
-        dateTime = (
-            getattr(self.items[0], taskMethodName)()
-            if len(self.items) == 1
-            else date.DateTime()
-        )
-        setattr(self, "_current%s" % TaskMethodName, dateTime)
-        suggestedDateTimeMethodName = "suggested" + TaskMethodName
-        suggestedDateTime = getattr(
-            self.items[0], suggestedDateTimeMethodName
-        )()
-        dateTimeEntry = entry.DateTimeEntry(
-            self,
-            self.__settings,
-            dateTime,
-            suggestedDateTime=suggestedDateTime,
-            showRelative=taskMethodName == "dueDateTime",
-            adjustEndOfDay=taskMethodName == "dueDateTime",
-        )
-        setattr(self, "_%sEntry" % taskMethodName, dateTimeEntry)
-        commandClass = getattr(command, "Edit%sCommand" % TaskMethodName)
-        eventType = getattr(
-            self.items[0], "%sChangedEventType" % taskMethodName
-        )()
-        datetimeSync = attributesync.AttributeSync(
-            taskMethodName,
-            dateTimeEntry,
-            dateTime,
-            self.items,
-            commandClass,
-            entry.EVT_DATETIMEENTRY,
-            eventType,
-            commit_on_focus_loss=True,
-        )
-        setattr(self, "_%sSync" % taskMethodName, datetimeSync)
-        self.addEntry(label, dateTimeEntry, flags=[wx.ALIGN_RIGHT, wx.EXPAND])
-
     def __populateDurationPresets(self):
         """Populate the duration presets dropdown from settings."""
         self._durationPresetsChoice.Clear()
@@ -1660,11 +1629,8 @@ class DatesPage(Page):
 
         new_duration = date.TimeDelta(minutes=total_minutes)
 
-        # Command → pubsub → _onDomainPlannedDurationChanged → sync
-        cmd = command.EditPlannedDurationCommand(
-            items=self.items, newValue=new_duration
-        )
-        cmd.do()
+        # SetDuration → EVT_VALUE_CHANGED → AttributeSync → command → pubsub → preset update
+        self._plannedDurationCtrl.SetDuration(new_duration)
 
 
 
@@ -1674,56 +1640,6 @@ class DatesPage(Page):
         event.Skip()
 
     # --- Existence checks: read from widgets (domain-synced by Layer 2) ---
-
-    def __startDateExists(self):
-        return self._plannedStartDateTimeCombo.GetDateTime() is not None
-
-    def __dueDateExists(self):
-        return self._dueDateTimeCombo.GetDateTime() is not None
-
-    # --- Domain writes: through commands (same pattern as subject/icon) ---
-
-    def __deactivateStartDate(self):
-        """Clear start date. Command -> domain -> pubsub -> Layer 2 unchecks widget."""
-        command.EditPlannedStartDateTimeCommand(
-            None, self.items, newValue=date.DateTime()
-        ).do()
-
-    def __deactivateDueDate(self):
-        """Clear due date. Command -> domain -> pubsub -> Layer 2 unchecks widget."""
-        command.EditDueDateTimeCommand(
-            None, self.items, newValue=date.DateTime()
-        ).do()
-
-    def __adjDueDate(self):
-        """due = start + duration. Reads widgets, writes through command."""
-        start = self._plannedStartDateTimeCombo.GetDateTime()
-        duration = self._plannedDurationCtrl.GetDuration()
-        if start is None or duration is None:
-            return
-        new_due = date.DateTime.fromDateTime(start + duration)
-        command.EditDueDateTimeCommand(
-            None, self.items, newValue=new_due
-        ).do()
-
-    def __activateStartDate(self):
-        """Activate Start-Date combo (step 2.2). Uses internally stored value."""
-        self._plannedStartDateTimeCombo.ActivateValue()
-
-    def __activateDueDate(self):
-        """Activate Due-Date combo (step 3.2). Uses internally stored value."""
-        self._dueDateTimeCombo.ActivateValue()
-
-    def __adjStartDate(self):
-        """start = due - duration. Reads widgets, writes through command."""
-        due = self._dueDateTimeCombo.GetDateTime()
-        duration = self._plannedDurationCtrl.GetDuration()
-        if due is None or duration is None:
-            return
-        new_start = date.DateTime.fromDateTime(due - duration)
-        command.EditPlannedStartDateTimeCommand(
-            None, self.items, newValue=new_start
-        ).do()
 
     def __syncTaskState(self, sourceField=None, depth=0):
         """Sync duration state based on Logic Flow.
@@ -1742,106 +1658,115 @@ class DatesPage(Page):
         task = self.items[0]
         if getattr(task, '_durationSyncInProgress', False):
             return
-        task._durationSyncInProgress = True
-        try:
-            self.__syncTaskStateImpl(sourceField, depth)
-        finally:
-            task._durationSyncInProgress = False
 
-    def __syncTaskStateImpl(self, sourceField, depth):
+        # 0.3 Recursive safety
         # 0.3.4 Depth > 1 should never occur, log error, exit
         if depth > 1:
-            log_step("ERROR: __syncTaskState depth > 1 (%d), exiting" % depth, prefix="DURATION")
+            log_step("ERROR: __syncTaskState depth > 1 (%d), exiting" % depth, prefix="SYNC")
             return
         # 0.3.3 depth == 1 should never receive a user action, log error, continue
         if depth == 1 and sourceField is not None:
-            log_step("ERROR: __syncTaskState depth==1 received sourceField=%s, expected None" % sourceField, prefix="DURATION")
+            log_step("ERROR: __syncTaskState depth==1 received sourceField=%s, expected None" % sourceField, prefix="SYNC")
 
+        # Read current widget state once — no step in a single pass
+        # depends on values changed by a prior step in the same pass.
         mode = self._currentPlannedDurationMode
+        start = self._plannedStartDateTimeCombo.GetDateTime()
+        due = self._dueDateTimeCombo.GetDateTime()
+        duration = self._plannedDurationCtrl.GetDuration()
 
         if mode == "automatic":
             # 1.1 Note: Mode changes away never come back here
             # 1.2 If Start-Date exists, Then set Adj-Due mode, Loop
-            if self.__startDateExists():
+            if start is not None:
                 self.__setDurationMode("adjdue")
-                return self.__syncTaskStateImpl(None, depth=depth + 1)  # 0.3.2
+                return self.__syncTaskState(None, depth=depth + 1)  # 0.3.2
             # 1.3 If Due-Date exists, Then set Adj-Start mode, Loop
-            if self.__dueDateExists():
+            if due is not None:
                 self.__setDurationMode("adjstart")
-                return self.__syncTaskStateImpl(None, depth=depth + 1)  # 0.3.2
+                return self.__syncTaskState(None, depth=depth + 1)  # 0.3.2
 
         elif mode == "adjdue":
             # 2.1 Note: Mode changes away never come back here
             # 2.2 Activate Start-Date, If not Unset-Action [Ref2, 0.1.1]
-            if sourceField != 'start' and not self.__startDateExists():
-                self.__activateStartDate()
+            if sourceField != 'start' and start is None:
+                self._plannedStartDateTimeCombo.ActivateValue()
             # 2.3 Activate Due-Date (Read-Only) [Ref2]
             #     On first entry (sourceField=None), adj if due doesn't exist yet.
-            if not self.__dueDateExists():
-                self.__adjDueDate()
+            if due is None and start is not None and duration is not None:
+                self._dueDateTimeCombo.ActivateValue(start + duration)
             # 2.4 Disable Automatic mode option in dropdown [Ref1]
             #     (handled by __updateDurationModeDropdown on focus loss)
             # 2.5 If Duration changed, Then adj Due-Date
-            if sourceField == 'duration':
-                self.__adjDueDate()
+            if sourceField == 'duration' and start is not None and duration is not None:
+                self._dueDateTimeCombo.ActivateValue(start + duration)
             # 2.6 If Start-Date Unset-Action, Then
-            if sourceField == 'start' and not self.__startDateExists():
-                # 2.6.1 Set Sync-Mode [0.4] — handled by outer guard
-                # 2.6.2 Deactivate Due-Date
-                self.__deactivateDueDate()
-                # 2.6.3 Reactivate Automatic mode option in dropdown
-                #        (handled by __updateDurationModeDropdown on focus loss)
-                # 2.6.4 Set Automatic mode
-                self.__setDurationMode("automatic")
-                # 2.6.5 Unset Sync-Mode — handled by outer guard
+            if sourceField == 'start' and start is None:
+                # 2.6.1 Set Sync-Mode [0.4]
+                task._durationSyncInProgress = True
+                try:
+                    # 2.6.2 Deactivate Due-Date
+                    self._dueDateTimeCombo.DeactivateValue()
+                    # 2.6.3 Reactivate Automatic mode option in dropdown
+                    #        (handled by __updateDurationModeDropdown on focus loss)
+                    # 2.6.4 Set Automatic mode
+                    self.__setDurationMode("automatic")
+                finally:
+                    # 2.6.5 Unset Sync-Mode
+                    task._durationSyncInProgress = False
                 # 2.6.6 Loop
-                return self.__syncTaskStateImpl(None, depth=depth + 1)  # 0.3.2
+                return self.__syncTaskState(None, depth=depth + 1)  # 0.3.2
             # 2.7 If Start-Date changed, Then adj Due-Date
-            if sourceField == 'start':
-                self.__adjDueDate()
+            if sourceField == 'start' and start is not None and duration is not None:
+                self._dueDateTimeCombo.ActivateValue(start + duration)
 
         elif mode == "adjstart":
             # 3.1 Note: Mode changes away never come back here
             # 3.2 Activate Due-Date, If not Unset-Action [Ref2, 0.1.2]
-            if sourceField != 'due' and not self.__dueDateExists():
-                self.__activateDueDate()
+            if sourceField != 'due' and due is None:
+                self._dueDateTimeCombo.ActivateValue()
             # 3.3 Activate Start-Date (Read-Only) [Ref2]
             #     On first entry (sourceField=None), adj if start doesn't exist.
-            if not self.__startDateExists():
-                self.__adjStartDate()
+            if start is None and due is not None and duration is not None:
+                self._plannedStartDateTimeCombo.ActivateValue(due - duration)
             # 3.4 Disable Automatic mode option in dropdown [Ref1]
             #     (handled by __updateDurationModeDropdown on focus loss)
             # 3.5 If Duration changed, Then adj Start-Date
-            if sourceField == 'duration':
-                self.__adjStartDate()
+            if sourceField == 'duration' and due is not None and duration is not None:
+                self._plannedStartDateTimeCombo.ActivateValue(due - duration)
             # 3.6 If Due-Date Unset-Action, Then
-            if sourceField == 'due' and not self.__dueDateExists():
-                # 3.6.1 Set Sync-Mode [0.4] — handled by outer guard
-                # 3.6.2 Deactivate Start-Date
-                self.__deactivateStartDate()
-                # 3.6.3 Reactivate Automatic mode option in dropdown
-                #        (handled by __updateDurationModeDropdown on focus loss)
-                # 3.6.4 Set Automatic mode
-                self.__setDurationMode("automatic")
-                # 3.6.5 Unset Sync-Mode — handled by outer guard
+            if sourceField == 'due' and due is None:
+                # 3.6.1 Set Sync-Mode [0.4]
+                task._durationSyncInProgress = True
+                try:
+                    # 3.6.2 Deactivate Start-Date
+                    self._plannedStartDateTimeCombo.DeactivateValue()
+                    # 3.6.3 Reactivate Automatic mode option in dropdown
+                    #        (handled by __updateDurationModeDropdown on focus loss)
+                    # 3.6.4 Set Automatic mode
+                    self.__setDurationMode("automatic")
+                finally:
+                    # 3.6.5 Unset Sync-Mode
+                    task._durationSyncInProgress = False
                 # 3.6.6 Loop
-                return self.__syncTaskStateImpl(None, depth=depth + 1)  # 0.3.2
+                return self.__syncTaskState(None, depth=depth + 1)  # 0.3.2
             # 3.7 If Due-Date changed, Then adj Start-Date
-            if sourceField == 'due':
-                self.__adjStartDate()
+            if sourceField == 'due' and due is not None and duration is not None:
+                self._plannedStartDateTimeCombo.ActivateValue(due - duration)
 
         elif mode == "implicit":
             # 4.1 Note: Mode changes away never come back here
             # 4.2 Disable Automatic mode option in dropdown [Ref1]
             #     (handled by __updateDurationModeDropdown on focus loss)
             # 4.3 If Start-Date exists
-            if self.__startDateExists():
+            if start is not None:
                 # 4.3.1 If Due-Date exists
-                if self.__dueDateExists():
+                if due is not None:
                     # 4.3.1.1 Enable Duration (Read-Only)
-                    # 4.3.1.2 Adj Duration
-                    self.__adjDuration()
-                    # 4.3.1.3 Negative Durations permitted
+                    # 4.3.1.2 Adj Duration (duration = due - start)
+                    new_duration = due - start  # 4.3.1.3 Negative Durations permitted
+                    self._plannedDurationCtrl.SetDuration(
+                        date.TimeDelta(days=new_duration.days, seconds=new_duration.seconds))
                 # 4.3.2 If Due-Date Unset-Action, Then disable Duration
                 #        -- handled by __updateFieldStates
             # 4.4 If Start-Date Unset-Action, Then disable Duration
@@ -1853,6 +1778,8 @@ class DatesPage(Page):
     def __updateFieldStates(self):
         """Set field states per UI Field States table in DURATION_CALCULATIONS.md."""
         mode = self._currentPlannedDurationMode
+        start = self._plannedStartDateTimeCombo.GetDateTime()
+        due = self._dueDateTimeCombo.GetDateTime()
 
         if mode == "automatic":
             # Automatic | Editable | Editable | Editable
@@ -1863,9 +1790,9 @@ class DatesPage(Page):
 
         elif mode == "adjdue":
             # Adjust Due | Editable | Editable | Read-only
-            if not self.__startDateExists():
+            if start is None:
                 log_step("WARNING: adjdue mode but Start-Date does not exist", prefix="DURATION")
-            if not self.__dueDateExists():
+            if due is None:
                 log_step("WARNING: adjdue mode but Due-Date does not exist", prefix="DURATION")
             self._plannedStartDateTimeCombo.SetEditable()
             self._plannedDurationCtrl.Enable(True)
@@ -1874,9 +1801,9 @@ class DatesPage(Page):
 
         elif mode == "adjstart":
             # Adjust Start | Read-only | Editable | Editable
-            if not self.__startDateExists():
+            if start is None:
                 log_step("WARNING: adjstart mode but Start-Date does not exist", prefix="DURATION")
-            if not self.__dueDateExists():
+            if due is None:
                 log_step("WARNING: adjstart mode but Due-Date does not exist", prefix="DURATION")
             self._plannedStartDateTimeCombo.SetReadOnly()
             self._plannedDurationCtrl.Enable(True)
@@ -1887,7 +1814,7 @@ class DatesPage(Page):
             # Start and Due always Editable
             self._plannedStartDateTimeCombo.SetEditable()
             self._dueDateTimeCombo.SetEditable()
-            if self.__startDateExists() and self.__dueDateExists():
+            if start is not None and due is not None:
                 # Both dates exist: Duration Read-only
                 self._plannedDurationCtrl.Enable(True)
                 self._plannedDurationCtrl.SetReadOnly(True)
@@ -1962,53 +1889,6 @@ class DatesPage(Page):
 
         # Always update dropdown to show actual mode (may differ from selection)
         self.__updateDurationModeDropdown()
-
-    def __adjDuration(self):
-        """Adj Duration: duration = due - start. Writes through command (Attribute pattern)."""
-        start = self._plannedStartDateTimeCombo.GetDateTime()
-        due = self._dueDateTimeCombo.GetDateTime()
-
-        if start is not None and due is not None:
-            new_duration = due - start  # 4.3.1.3 Negative Durations permitted
-            new_timedelta = date.TimeDelta(days=new_duration.days, seconds=new_duration.seconds)
-            command.EditPlannedDurationCommand(
-                items=self.items, newValue=new_timedelta
-            ).do()
-            self._currentPlannedDuration = new_timedelta
-        else:
-            command.EditPlannedDurationCommand(
-                items=self.items, newValue=date.TimeDelta()
-            ).do()
-            self._currentPlannedDuration = date.TimeDelta()
-
-    def __onPlannedDurationChanged(self, event):
-        """Handle duration value change from the duration control."""
-        self.__onPlannedDurationChangedInternal()
-        event.Skip()  # Allow event to propagate to control's _onKillFocus
-
-    def __onPlannedDurationChangedInternal(self):
-        """Handle duration value change (called from event or preset selection).
-
-        Fires command only — pubsub callback (_onDomainPlannedDurationChanged)
-        handles widget update, preset alignment, and sync."""
-        # In implicit mode, duration is calculated, not edited
-        if self._currentPlannedDurationMode == "implicit":
-            return
-
-        new_duration = self._plannedDurationCtrl.GetDuration()
-        new_timedelta = date.TimeDelta(
-            days=new_duration.days,
-            seconds=new_duration.seconds
-        )
-
-        if new_timedelta == self._currentPlannedDuration:
-            return
-
-        # Command → pubsub → _onDomainPlannedDurationChanged → sync
-        cmd = command.EditPlannedDurationCommand(
-            items=self.items, newValue=new_timedelta
-        )
-        cmd.do()
 
     def addReminderEntry(self):
         """Add reminder entry using DateTimeCombo."""
@@ -3735,7 +3615,7 @@ class EffortEditBook(Page):
             _("Start"),
             self._startDateTimeCombo.CreateRowPanel(self),
             self._startFromLastEffortButton,
-            flags=[None, None, wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL | wx.ALL],
+            flags=[wx.ALL | wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL, wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, wx.ALL | wx.ALIGN_CENTER_VERTICAL],
         )
 
         # --- Time Spent row (display only) ---
@@ -3776,7 +3656,7 @@ class EffortEditBook(Page):
             _("Time spent"),
             self._timeSpentCtrl,
             self._timeSpentLabel,
-            flags=[None, None, wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL | wx.ALL],
+            flags=[wx.ALL | wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL, wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, wx.ALL | wx.ALIGN_CENTER_VERTICAL],
         )
 
         # --- Duration row ---
@@ -3805,7 +3685,7 @@ class EffortEditBook(Page):
             current_duration,
             self.items,
             command.EditEffortDurationCommand,
-            wx.EVT_KILL_FOCUS,
+            widgets.EVT_VALUE_CHANGED,
             self.items[0].durationChangedEventType(),
             callback=self.__onEffortDurationChanged,
         )
@@ -3815,6 +3695,9 @@ class EffortEditBook(Page):
         self._effortDurationPresetsChoice.Bind(wx.EVT_CHOICE, self.__onEffortDurationPresetSelected)
 
         pub.subscribe(self.__onEffortPresetsConfigChanged, "settings.feature.effort_duration_presets")
+        if len(self.items) == 1:
+            pub.subscribe(self.__onEffortDurationDomainChanged,
+                          self.items[0].durationChangedEventType())
 
         # Entry mode dropdown (Standard / Retroactive) - placed next to presets
         self._effortEntryModeChoice = wx.Choice(self, choices=[_("Standard"), _("Retroactive"), _("Implicit")])
@@ -3830,12 +3713,12 @@ class EffortEditBook(Page):
         presetsAndModeSizer.Add(self._effortEntryModeChoice, 0, wx.ALIGN_CENTER_VERTICAL)
         presetsAndModePanel.SetSizer(presetsAndModeSizer)
 
-        # Duration row: label, duration, presets+mode (left-aligned)
+        # Duration row: label, duration (right-aligned), presets+mode (left-aligned)
         self.addEntry(
             _("Duration"),
             self._effortDurationCtrl,
             presetsAndModePanel,
-            flags=[None, None, wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL | wx.ALL],
+            flags=[wx.ALL | wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL, wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, wx.ALL | wx.ALIGN_CENTER_VERTICAL],
         )
 
         # --- Stop row: Label, DateTime row (with checkbox), Button ---
@@ -3864,7 +3747,7 @@ class EffortEditBook(Page):
             _("Stop"),
             self._stopDateTimeCombo.CreateRowPanel(self),
             self._stopNowButton,
-            flags=[None, None, wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL | wx.ALL],
+            flags=[wx.ALL | wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL, wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, wx.ALL | wx.ALIGN_CENTER_VERTICAL],
         )
 
         # --- Warning message ---
@@ -3918,9 +3801,6 @@ class EffortEditBook(Page):
 
     # --- Effort helpers (mirroring task pattern) ---
 
-    def __stopDateExists(self):
-        """Check if stop date is active."""
-        return self._stopDateTimeCombo.IsActive()
 
     def __setEffortEntryMode(self, newMode):
         """Set entry mode, update dropdown, write through command.
@@ -3932,72 +3812,6 @@ class EffortEditBook(Page):
         self._effortEntryModeChoice.SetSelection(modeIndex)
         command.EditEffortEntryModeCommand(
             items=self.items, newValue=newMode
-        ).do()
-
-    # --- Effort domain writes: through commands (same pattern as task) ---
-
-    def __activateStopDate(self):
-        """Enable Stop-Date. Command → domain → pubsub → Layer 2 checks widget."""
-        command.EditEffortStopDateTimeCommand(
-            None, self.items, newValue=date.DateTime.now()
-        ).do()
-
-    def __deactivateStopDate(self):
-        """Disable Stop-Date. Command → domain → pubsub → Layer 2 unchecks widget."""
-        command.EditEffortStopDateTimeCommand(
-            None, self.items, newValue=date.DateTime()
-        ).do()
-
-    def __adjStopDate(self):
-        """Stop = Start + Duration. Reads widgets, writes through command."""
-        start = self._startDateTimeCombo.GetDateTime()
-        duration = self._effortDurationCtrl.GetTimeDelta()
-        if start is None or duration is None:
-            return
-        new_stop = date.DateTime.fromDateTime(start + duration)
-        command.EditEffortStopDateTimeCommand(
-            None, self.items, newValue=new_stop
-        ).do()
-
-    def __adjStartDate(self):
-        """Start = Stop - Duration. Reads widgets, writes through command."""
-        stop = self._stopDateTimeCombo.GetDateTime()
-        duration = self._effortDurationCtrl.GetTimeDelta()
-        if stop is None or duration is None:
-            return
-        new_start = date.DateTime.fromDateTime(stop - duration)
-        command.EditEffortStartDateTimeCommand(
-            None, self.items, newValue=new_start
-        ).do()
-
-    def __adjEffortDuration(self):
-        """Duration = Stop - Start. Writes through command."""
-        start = self._startDateTimeCombo.GetDateTime()
-        stop = self._stopDateTimeCombo.GetDateTime()
-        if start is None or stop is None:
-            return
-        td = stop - start
-        calc_duration = date.TimeDelta(days=td.days, seconds=td.seconds)
-        command.EditEffortDurationCommand(
-            items=self.items, newValue=calc_duration
-        ).do()
-
-    def __setEffortDuration(self, value):
-        """Set Duration to explicit value. Writes through command."""
-        command.EditEffortDurationCommand(
-            items=self.items, newValue=value
-        ).do()
-
-    def __setEffortStop(self, value):
-        """Set Stop to explicit value. Writes through command."""
-        command.EditEffortStopDateTimeCommand(
-            None, self.items, newValue=value
-        ).do()
-
-    def __setEffortStart(self, value):
-        """Set Start to explicit value. Writes through command."""
-        command.EditEffortStartDateTimeCommand(
-            None, self.items, newValue=value
         ).do()
 
     def __syncEffortState(self, sourceField=None, depth=0):
@@ -4028,9 +3842,7 @@ class EffortEditBook(Page):
         effort = self.items[0]
         if getattr(effort, '_effortSyncInProgress', False):
             return
-        self.__syncEffortStateImpl(sourceField, depth)
 
-    def __syncEffortStateImpl(self, sourceField, depth):
         # 0.3 Recursive safety
         if depth > 1:
             # 0.3.4 Depth > 1 should never occur, log error, exit
@@ -4040,7 +3852,10 @@ class EffortEditBook(Page):
             # 0.3.3 depth==1 should never receive a sourceField, log error, continue
             log_step("ERROR: __syncEffortState depth==1 received sourceField=%s, expected None" % sourceField, prefix="EFFORT")
 
-        # Read current widget state
+        # Read current widget state once — no step in a single pass
+        # depends on values changed by a prior step in the same pass.
+        start = self._startDateTimeCombo.GetDateTime()
+        stop = self._stopDateTimeCombo.GetDateTime()
         duration = self._effortDurationCtrl.GetTimeDelta()
         total_seconds = int(duration.total_seconds()) if duration else 0
 
@@ -4057,30 +3872,29 @@ class EffortEditBook(Page):
 
             # 1.6 If Duration Unset-Action, Then disable Stop-Date
             if sourceField == 'duration' and total_seconds == 0:
-                self.__deactivateStopDate()
+                self._stopDateTimeCombo.DeactivateValue()
 
             # 1.7 If Stop-Date Unset-Action, Then set Duration = 0
-            elif sourceField == 'stop' and not self.__stopDateExists():
-                self.__setEffortDuration(date.TimeDelta())
+            elif sourceField == 'stop' and stop is None:
+                self._effortDurationCtrl.SetDuration(date.TimeDelta())
 
             # 1.8 If Stop-Date Set-Action
-            elif sourceField == 'stop' and self.__stopDateExists() and total_seconds == 0:
+            elif sourceField == 'stop' and stop is not None and total_seconds == 0:
                 # 1.8.1 If Duration = 0, Then set Implicit mode, Loop
                 self.__setEffortEntryMode("implicit")
-                return self.__syncEffortStateImpl(None, depth=depth + 1)
+                return self.__syncEffortState(None, depth=depth + 1)
 
             # 1.9 If Start-Date changed
             elif sourceField == 'start':
                 # 1.9.1 If Duration > 0
                 if total_seconds > 0:
                     # 1.9.1.1 Set Sync-Mode [0.4]
-                    effort = self.items[0]
                     effort._effortSyncInProgress = True
                     try:
-                        # 1.9.1.2 Adj Stop-Date
-                        self.__adjStopDate()
-                        # 1.9.1.3 Adj Duration
-                        self.__adjEffortDuration()
+                        # 1.9.1.2 Adj Stop-Date (stop = start + duration)
+                        if start is not None and duration is not None:
+                            self._stopDateTimeCombo.ActivateValue(start + duration)
+                        # 1.9.1.3 Adj Duration *Impossible* — see spec TODO
                     finally:
                         # 1.9.1.4 Unset Sync-Mode
                         effort._effortSyncInProgress = False
@@ -4091,34 +3905,31 @@ class EffortEditBook(Page):
                 # 1.10.1 If Duration > 0
                 if total_seconds > 0:
                     # 1.10.1.1 Enable Stop-Date
-                    if not self.__stopDateExists():
-                        self.__activateStopDate()
-                    # 1.10.1.2 Adj Stop-Date
-                    self.__adjStopDate()
+                    if stop is None:
+                        self._stopDateTimeCombo.ActivateValue()
+                    # 1.10.1.2 Adj Stop-Date (stop = start + duration)
+                    if start is not None and duration is not None:
+                        self._stopDateTimeCombo.ActivateValue(start + duration)
                 # 1.10.2 If Duration = 0, Then disable Stop-Date
                 # (already handled in 1.6 above)
 
-            # 1.11 If Stop-Date changed and exists, Then adj Duration
+            # 1.11 If Stop-Date changed and exists, Then adj Duration (duration = stop - start)
             elif sourceField == 'stop':
-                self.__adjEffortDuration()
-
-            # Re-read duration after steps may have changed it
-            duration = self._effortDurationCtrl.GetTimeDelta()
-            total_seconds = int(duration.total_seconds()) if duration else 0
+                if start is not None and stop is not None:
+                    self._effortDurationCtrl.SetDuration(stop - start)
 
             # 1.12 If Duration = 0, Then Autoheal, Thus
             if total_seconds == 0:
-                # 1.12.1 Disable Stop-Date [0.1, 0.2]
-                if sourceField != 'stop' and self.__stopDateExists():
-                    self.__deactivateStopDate()
+                # 1.12.1 Not possible: Disable Stop-Date Conflicts [Ref3]
+                pass
             # 1.13 If Duration > 0, Then Autoheal, Thus
             elif total_seconds > 0:
                 # 1.13.1 Enable Stop-Date [0.1, 0.2]
-                if sourceField != 'stop' and not self.__stopDateExists():
-                    self.__activateStopDate()
-                # 1.13.2 Adj Stop-Date [0.1, 0.2]
-                if sourceField != 'stop':
-                    self.__adjStopDate()
+                if sourceField != 'stop' and stop is None:
+                    self._stopDateTimeCombo.ActivateValue()
+                # 1.13.2 Adj Stop-Date [0.1, 0.2] (stop = start + duration)
+                if sourceField != 'stop' and start is not None and duration is not None:
+                    self._stopDateTimeCombo.ActivateValue(start + duration)
             # 1.14 If Duration < 0, Then Negative Durations permitted
 
         elif self._effortEntryMode == 1:  # 2. If Mode Retroactive
@@ -4132,45 +3943,42 @@ class EffortEditBook(Page):
 
             # 2.6 If Duration Unset-Action, Then disable Stop-Date
             if sourceField == 'duration' and total_seconds == 0:
-                self.__deactivateStopDate()
+                self._stopDateTimeCombo.DeactivateValue()
 
             # 2.7 If Stop-Date Unset-Action, Then set Duration = 0
-            elif sourceField == 'stop' and not self.__stopDateExists():
-                self.__setEffortDuration(date.TimeDelta())
+            elif sourceField == 'stop' and stop is None:
+                self._effortDurationCtrl.SetDuration(date.TimeDelta())
 
-            # 2.8 If Stop-Date changed and exists, Then adj Start-Date
+            # 2.8 If Stop-Date changed and exists, Then adj Start-Date (start = stop - duration)
             elif sourceField == 'stop':
-                self.__adjStartDate()
+                if stop is not None and duration is not None:
+                    self._startDateTimeCombo.ActivateValue(stop - duration)
 
             # 2.9 If Duration changed and exists
             elif sourceField == 'duration':
                 # 2.9.1 If Duration > 0
                 if total_seconds > 0:
                     # 2.9.1.1 Enable Stop-Date
-                    if not self.__stopDateExists():
-                        self.__activateStopDate()
-                    # 2.9.1.2 Adj Start-Date
-                    self.__adjStartDate()
+                    if stop is None:
+                        self._stopDateTimeCombo.ActivateValue()
+                    # 2.9.1.2 Adj Start-Date (start = stop - duration)
+                    if stop is not None and duration is not None:
+                        self._startDateTimeCombo.ActivateValue(stop - duration)
                 # 2.9.2 If Duration = 0, Then disable Stop-Date
                 # (already handled in 2.6 above)
 
-            # Re-read duration after steps may have changed it
-            duration = self._effortDurationCtrl.GetTimeDelta()
-            total_seconds = int(duration.total_seconds()) if duration else 0
-
             # 2.10 If Duration = 0, Then Autoheal, Thus
             if total_seconds == 0:
-                # 2.10.1 Disable Stop-Date [0.1, 0.2]
-                if sourceField != 'stop' and self.__stopDateExists():
-                    self.__deactivateStopDate()
+                # 2.10.1 Not possible: Disable Stop-Date Conflicts [Ref2]
+                pass
             # 2.11 If Duration > 0, Then Autoheal, Thus
             elif total_seconds > 0:
                 # 2.11.1 Enable Stop-Date [0.1, 0.2]
-                if sourceField != 'stop' and not self.__stopDateExists():
-                    self.__activateStopDate()
-                # 2.11.2 Adj Start-Date [0.1, 0.2]
-                if sourceField != 'start':
-                    self.__adjStartDate()
+                if sourceField != 'stop' and stop is None:
+                    self._stopDateTimeCombo.ActivateValue()
+                # 2.11.2 Adj Start-Date [0.1, 0.2] (start = stop - duration)
+                if sourceField != 'start' and stop is not None and duration is not None:
+                    self._startDateTimeCombo.ActivateValue(stop - duration)
             # 2.12 If Duration < 0, Then Negative Durations permitted
 
         elif self._effortEntryMode == 2:  # 3. If Mode Implicit
@@ -4182,17 +3990,20 @@ class EffortEditBook(Page):
             )
 
             # 3.5 If Stop-Date does not exist, Disable Duration
-            if not self.__stopDateExists():
+            if stop is None:
                 self._effortDurationCtrl.Enable(False)
-                self.__setEffortDuration(date.TimeDelta())
+                self._effortDurationCtrl.SetDuration(date.TimeDelta())
+
             # 3.6 If Stop-Date exists
-            elif self.__stopDateExists():
+            elif stop is not None:
                 # 3.6.1 Enable Duration (Read-Only)
                 self._effortDurationCtrl.Enable(True)
                 self._effortDurationCtrl.SetReadOnly(True)
-                # 3.6.2 Adj Duration
+                # 3.6.2 Adj Duration (duration = stop - start)
                 # 3.6.3 Negative Durations permitted
-                self.__adjEffortDuration()
+                if start is not None and stop is not None:
+                    self._effortDurationCtrl.SetDuration(stop - start)
+    
 
         self.__update_invalid_period_message()
         self.__updateFieldStates()
@@ -4261,6 +4072,11 @@ class EffortEditBook(Page):
             return _("0 secs")
         return " ".join(parts)
 
+    def __onEffortDurationDomainChanged(self, newValue, sender):
+        """Domain duration changed — update preset dropdown to match."""
+        if sender in self.items:
+            self.__updateEffortPresetSelection()
+
     def __updateEffortPresetSelection(self):
         """Update preset dropdown to match current duration value."""
         if not hasattr(self, '_effortDurationCtrl'):
@@ -4293,12 +4109,8 @@ class EffortEditBook(Page):
         if total_seconds is None:
             return
 
-        # Wrapper fires command → pubsub → callback → sync
-        self.__setEffortDuration(date.TimeDelta(seconds=total_seconds))
-        self.__updateEffortPresetSelection()
-        # Reset-to-zero: show "Presets..." not "Reset to zero"
-        if total_seconds == 0:
-            self._effortDurationPresetsChoice.SetSelection(0)
+        # SetDuration → EVT_VALUE_CHANGED → AttributeSync → command → pubsub → preset update
+        self._effortDurationCtrl.SetDuration(date.TimeDelta(seconds=total_seconds))
 
     def __onEffortPresetsConfigChanged(self):
         """Handle changes to effort preset configuration."""
@@ -4313,7 +4125,8 @@ class EffortEditBook(Page):
         if not hasattr(self, '_timeSpentCtrl'):
             return
 
-        if self.__stopDateExists():
+        stop = self._stopDateTimeCombo.GetDateTime()
+        if stop is not None:
             # Stop exists — deactivate time spent
             self._timeSpentCtrl.Enable(False)
             self.__stopTimeSpentTimer()
@@ -4338,14 +4151,9 @@ class EffortEditBook(Page):
             self._timeSpentCtrl.SetDuration(datetime.timedelta(seconds=0))
             return
 
-        if self.__stopDateExists():
-            stop = self._stopDateTimeCombo.GetDateTime()
-        else:
-            stop = date.DateTime.now()
-
+        stop = self._stopDateTimeCombo.GetDateTime()
         if stop is None:
-            self._timeSpentCtrl.SetDuration(datetime.timedelta(seconds=0))
-            return
+            stop = date.DateTime.now()
 
         total_seconds = int((stop - start).total_seconds())
         self._timeSpentCtrl.SetDuration(datetime.timedelta(seconds=total_seconds))
@@ -4394,11 +4202,11 @@ class EffortEditBook(Page):
     def onStartFromLastEffort(self, event):  # pylint: disable=W0613
         maxDateTime = self._effortList.maxDateTime()
         if maxDateTime is not None:
-            self.__setEffortStart(maxDateTime)
+            self._startDateTimeCombo.ActivateValue(maxDateTime)
 
     def onStopNow(self, event):
         # Stop only the specific effort(s) being edited, not all efforts for the task
-        self.__activateStopDate()
+        self._stopDateTimeCombo.ActivateValue(datetime.datetime.now())
 
     def onStopDateTimeChanged(self, *args, **kwargs):
         self.onDateTimeChanged(*args, **kwargs)
@@ -4507,6 +4315,11 @@ class EffortEditBook(Page):
             pass
         if len(self.items) == 1:
             try:
+                pub.unsubscribe(self.__onEffortDurationDomainChanged,
+                                self.items[0].durationChangedEventType())
+            except Exception:
+                pass
+            try:
                 pub.unsubscribe(self._onDomainEntryModeChanged,
                                 self.items[0].entryModeChangedEventType())
             except Exception:
@@ -4560,8 +4373,8 @@ class Editor(BalloonTipManager, widgets.Dialog):
 
         # Note: We intentionally do NOT freeze viewers while the dialog is open.
         # Updates should propagate immediately so other windows stay in sync.
-        # The commit_on_focus_loss option on AttributeSync handles batching
-        # rapid edits into single commands.
+        # Controls fire EVT_VALUE_CHANGED on blur (user edits) and from
+        # programmatic setters — AttributeSync commits immediately.
 
         if operating_system.isMac():
             # Sigh. On OS X, if you open an editor, switch back to the main window, open

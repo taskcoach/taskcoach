@@ -28,8 +28,7 @@ Simple time and duration input controls with explicit subfields and translatable
   - [DurationCtrlVerbose](#durationctrlverbose)
   - [TimeCtrl](#timectrl)
   - [TimeWithSecondsCtrl](#timewithsecondsctrl)
-  - [DateCtrl](#datectrl)
-  - [DateTimeCombo](#datetimecombo)
+  - [Locale and Date Format Settings](#locale-and-date-format-settings)
 - [Events](#events)
 - [Creating Custom Controls](#creating-custom-controls)
 - [Translation](#translation)
@@ -45,7 +44,8 @@ Simple time and duration input controls with explicit subfields and translatable
   - [Popup Toggle Logic](#popup-toggle-logic)
   - [Dropdown Width and Position](#dropdown-width-and-position)
   - [Events from Popup](#events-from-popup)
-  - [Sync Pattern: EVT_VALUE_CHANGED (DateTimeCombo2)](#sync-pattern-evt_value_changed-datetimecombo2)
+  - [Sync Pattern: EVT_VALUE_CHANGED (DateTimeCombo)](#sync-pattern-evt_value_changed-datetimecombo2)
+  - [Sub-Control Stash Model](#sub-control-stash-model)
 - [Wayland](#wayland)
   - [Problem](#problem)
   - [Why GDK_BACKEND=x11 Is Not Viable](#why-gdk_backendx11-is-not-viable)
@@ -65,26 +65,45 @@ Self-contained module with custom-painted single field and navigable subfields.
 ## TODO
 
 1. ~~Add `Activate()` method to DateTimeCombo~~ — **Done.** `ActivateValue()` on
-   DateTimeCombo2. Editor uses it in `__activateStartDate()` / `__activateDueDate()`.
+   DateTimeCombo. Editor uses it in `__activateStartDate()` / `__activateDueDate()`.
 2. ~~Add `Deactivate()` method to DateTimeCombo~~ — **Done.** `DeactivateValue()` on
-   DateTimeCombo2. Editor deactivation goes through commands (domain write →
-   pubsub → SetValue(sentinel) → unchecks). `DeactivateValue()` available for
-   direct UI use (e.g. entry.py recurrence stop date).
+   DateTimeCombo. Editor deactivation goes through `DeactivateValue()` →
+   widget fires event → AttributeSync → command → domain. ~~Previously went
+   through commands directly (domain write → pubsub → SetValue(sentinel) →
+   unchecks), violating widget-as-UI-SSOT principle.~~ Fixed: all editor
+   helpers now go through the widget API.
 3. ~~Checkbox toggle EVT_KILL_FOCUS gap~~ — **Resolved.** ~~Editor binds
    `EVT_CHECKBOX` via `combo.Bind(wx.EVT_CHECKBOX, handler)` and calls
    `sync.commit()` explicitly.~~
-   **Update:** EVT_CHECKBOX is no longer exposed by DateTimeCombo2. The
+   **Update:** EVT_CHECKBOX is no longer exposed by DateTimeCombo. The
    checkbox is an internal implementation detail. All AttributeSync instances
    now use `EVT_VALUE_CHANGED` as `editedEventType`, which fires on checkbox
    toggle AND date/time edits — no external EVT_CHECKBOX handlers needed.
    See [DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md) TODO item 9.
-   **Bug found & fixed:** `_onCheckboxChanged` was posting `EVT_VALUE_CHANGED`
-   to `DateCtrl4` via `wx.PostEvent()`, but `DateCtrl4.Bind()` forwards
-   `EVT_VALUE_CHANGED` to the inner `_EmbeddedDateCtrl`. Event posted on
-   parent, handler on child — command events propagate up, not down — event
-   lost. Fix: `DateCtrl4._fireValueChanged()` delegates to inner control.
-   `_onCheckboxChanged` now calls `self._dateCtrl._fireValueChanged()` instead
-   of `wx.PostEvent()`.
+   **Superseded:** DateTimeCombo now inherits `wx.EvtHandler` and posts
+   `EVT_VALUE_CHANGED` on itself. See
+   [DateTimeCombo Event Ownership](#datetimecombo-event-ownership).
+4. **Sub-control stash model and event contract** — The sub-controls are the
+   stash for DateTimeCombo. `ActivateValue()` and `DeactivateValue()` must
+   each fire `EVT_VALUE_CHANGED` when they change the control's
+   externally-visible state. Sub-control events alone are not sufficient —
+   they don't fire when only the checkbox changes. See
+   [Sub-Control Stash Model](#sub-control-stash-model).
+6. ~~**Editor helpers must go through widget API**~~ — **Done.** All task
+   calc helpers (`__deactivateStartDate`, `__deactivateDueDate`,
+   `__adjDueDate`, `__adjStartDate`, `__adjDuration`, etc.) have been
+   inlined into `__syncTaskState` using `ActivateValue()`/`DeactivateValue()`
+   /`SetDuration()` on the widget. The effort calc was already inline.
+7. **Migrate remaining `EVT_KILL_FOCUS` AttributeSync sites to
+   `EVT_VALUE_CHANGED`.** DurationCtrl (both task and effort) and all
+   DateTimeCombo fields are done — they use plain `EVT_VALUE_CHANGED` with
+   immediate commit (no `commit_on_focus_loss`). The control fires only on
+   blur or programmatic complete-value write, so every event is a final
+   value. Remaining `EVT_KILL_FOCUS` sites: budget, hourly fee, fixed fee
+   (FieldsCtrl-based monetary controls). Subject, description, and
+   attachment location use `wx.TextCtrl` (per-keystroke `EVT_TEXT`) — a
+   different migration. See
+   [ATTRIBUTE_PATTERN.md TODO #1](ATTRIBUTE_PATTERN.md#todo).
 
 ## Location
 
@@ -248,57 +267,34 @@ Controls must update automatically when the underlying data changes from externa
 - `SetValue(newValue)` - sets value from domain type
 - `Bind(eventType, handler)` - binds to control's change event
 
-### Sync on Focus Loss (Same as Subject Field)
+### Sync via EVT_VALUE_CHANGED
 
-DateTimeCombo uses `wx.EVT_KILL_FOCUS` for synchronization, matching the subject field pattern. This prevents sorted lists from jumping around during edits - changes only sync when focus leaves the control.
+Controls fire `EVT_VALUE_CHANGED` when a value changes. AttributeSync listens
+to this event, calls `GetValue()`, and commits immediately.
 
-**Code reference:** `taskcoachlib/gui/dialog/editor.py` (example usage)
-```python
-self._plannedStartDateTimeSync = attributesync.AttributeSync(
-    "plannedStartDateTime",           # Attribute getter name on domain object
-    self._plannedStartDateTimeCombo,  # Control with GetValue/SetValue
-    plannedStartDateTime,             # Current value
-    self.items,                       # Domain objects being edited
-    command.EditPlannedStartDateTimeCommand,  # Command class
-    wx.EVT_KILL_FOCUS,                # Sync when focus leaves (same as subject)
-    self.items[0].plannedStartDateTimeChangedEventType(),  # Domain change event
-    callback=self.__onPlannedStartChanged,
-)
-```
+Controls provide `GetValue()` / `SetValue()` that work with domain types
+(`date.DateTime`, `date.TimeDelta`), making them compatible with AttributeSync.
 
-**Why EVT_KILL_FOCUS:**
-- Standard wx event that fires when focus leaves the control
-- List reorders only when edit is complete, not during typing
-- Same pattern as subject field (SingleLineTextCtrl)
+See ATTRIBUTE_PATTERN.md for the full three-layer relationship.
 
-DateTimeCombo's `Bind()` method forwards `EVT_KILL_FOCUS` to all three sub-widgets (checkbox, date, time), so focus moving between them triggers sync - which is acceptable since each field change is a complete edit.
+### DateTimeCombo Event Ownership
 
-**Domain-compatible GetValue/SetValue:**
+`DateTimeCombo` is the composite control and **owns** the change event. It
+inherits from `wx.EvtHandler` so it can host event handlers directly —
+external code binds `EVT_VALUE_CHANGED` on the DTC itself, not on sub-controls.
 
-DateTimeCombo provides `GetValue()` and `SetValue()` that work with `date.DateTime` domain objects:
+**DTC fires `EVT_VALUE_CHANGED` in two cases:**
 
-**Code reference:** `taskcoachlib/widgets/maskedtimectrl.py:1687-1717`
-```python
-def GetValue(self):
-    """Returns date.DateTime() (sentinel) when unchecked, or
-    date.DateTime.fromDateTime(dt) when checked."""
-    if not self._checkbox.GetValue():
-        return date.DateTime()  # Sentinel for "no value"
-    dt = datetime.datetime.combine(self._dateCtrl.GetDate(), self._timeCtrl.GetTime())
-    return date.DateTime.fromDateTime(dt)
+1. **Sub-control blur** — user edits date or time, leaves focus. DTC listens
+   to `EVT_KILL_FOCUS` on sub-controls and fires its own `EVT_VALUE_CHANGED`.
+2. **State transitions** — `ActivateValue()`, `DeactivateValue()`, checkbox
+   click. These call `NotifyValueChanged()` at the end.
 
-def SetValue(self, newValue):
-    """If newValue == date.DateTime() (sentinel), unchecks.
-    Otherwise sets the value and checks."""
-    if newValue == date.DateTime():
-        self._checkbox.SetValue(False)
-        self._updateEnabled()
-    else:
-        self._checkbox.SetValue(True)
-        self._dateCtrl.SetDate(newValue.date())
-        self._timeCtrl.SetTime(datetime.time(newValue.hour, newValue.minute, newValue.second))
-        self._updateEnabled()
-```
+**Sub-control `EVT_VALUE_CHANGED` is trapped and dropped.** DTC binds a handler
+on sub-control `EVT_VALUE_CHANGED` that explicitly consumes the event without
+propagating. Sub-control change events are an implementation detail. This trap
+also serves as a debug log point: if it fires, something is writing directly
+to sub-controls instead of going through DTC's public API, which is a bug.
 
 ## Design
 
@@ -555,112 +551,23 @@ ctrl = TimeWithSecondsCtrl(parent, hours=14, minutes=30, seconds=0,
     hourChoices=False, minuteChoices=False, secondChoices=False)
 ```
 
-### DateCtrl
-Locale-aware date control with automatic field ordering and separators.
+### Locale and Date Format Settings
 
-The control automatically detects the system locale's date format using `strftime("%x")` and arranges the year/month/day fields accordingly:
+All date controls detect the system locale's date format using `strftime("%x")` and arrange year/month/day fields accordingly:
 - **US locale**: `01/18/2026` (month/day/year with `/`)
 - **European locales**: `18/01/2026` (day/month/year with `/`)
 - **ISO/Canadian locale**: `2026-01-18` (year-month-day with `-`)
-
-Click or Enter opens a calendar popup for date selection. Arrow keys in the calendar navigate by day (left/right) or week (up/down). Navigation buttons allow month changes and jumping to today.
-
-```python
-ctrl = DateCtrl(parent, year=2026, month=1, day=18)
-ctrl = DateCtrl(parent)  # Defaults to today's date
-ctrl = DateCtrl(parent, minDate=datetime.date(2020, 1, 1), maxDate=datetime.date(2030, 12, 31))
-date = ctrl.GetDate()  # datetime.date
-ctrl.SetDate(datetime.date(2026, 6, 15))
-```
-
-Individual date fields can still be edited with Up/Down arrows and typed digits.
-
-**Locale Detection:** The `getLocaleDateFormat()` helper function parses `strftime("%x")` output to determine field order and separator, matching the behavior of the old `smartdatetimectrl.py`.
 
 **User Override:** Users can override the automatic locale detection in **Preferences → Regional**:
 - **Date format**: Automatic, YYYY-MM-DD (ISO), YYYY/MM/DD (East Asian), MM/DD/YYYY (US), DD/MM/YYYY (European), DD.MM.YYYY (German)
 - **Time format**: Automatic, 24-hour, 12-hour with AM/PM
 
-**Note:** When "Automatic" time format is selected, the default is 24-hour format (matching the old `smartdatetimectrl` behavior, which was hardcoded to 24-hour). Users can explicitly select "12-hour" to enable AM/PM display.
+**Note:** When "Automatic" time format is selected, the default is 24-hour format. Users can explicitly select "12-hour" to enable AM/PM display.
 
 The settings are stored in `TaskCoach.ini` under `[view]` as `dateformat` and `timeformat`. Helper functions:
 - `getEffectiveDateFormat()` - Returns format tuple respecting user settings
 - `getEffectiveTimeFormat()` - Returns "24" or "12" respecting user settings (defaults to "24" when automatic)
 - `getDateFormatFromSettings()` - Raw setting value
-- `getDateFormatFunctionForOldControl()` - Format function for legacy smartdatetimectrl
-
-### DateTimeCombo
-Flexible combo providing checkbox, DateCtrl, and TimeCtrl as separate widgets for table layout alignment.
-
-**Constructor:**
-```python
-DateTimeCombo(parent, value=None, hourChoices=None, minuteChoices=None, showSeconds=False, secondChoices=None)
-```
-
-**Parameters:**
-- `parent`: Parent window
-- `value`: `datetime.datetime` object (checked) or `None` (unchecked)
-- `hourChoices`: List of hour values for dropdown, or `None` for no dropdown
-- `minuteChoices`: List of minute values for dropdown, or `None` for no dropdown
-- `showSeconds`: If `True`, use TimeWithSecondsCtrl instead of TimeCtrl
-- `secondChoices`: List of second values for dropdown (only used if `showSeconds=True`)
-
-**Checkbox State Determined by Value:**
-- `value=datetime` → checkbox checked, fields show that datetime
-- `value=None` → checkbox unchecked, fields disabled
-
-**Three States:**
-1. **Active + Editable** (normal): checkbox ON, fields enabled and editable
-2. **Inactive** (unchecked): checkbox OFF, fields show "N/A", `GetDateTime()` returns `None`
-3. **Active + Read-only** (`SetReadOnly()`): checkbox ON but disabled, fields greyed
-
-**Default to "Now":** When unchecked and user checks the checkbox, "now" is used as the initial value.
-
-```python
-import datetime
-
-# Checked combo with specific datetime (value=datetime means checked)
-combo = DateTimeCombo(panel,
-    value=datetime.datetime(2026, 1, 20, 9, 0),
-    hourChoices=[8, 9, 10, 11, 12],
-    minuteChoices=[0, 15, 30, 45])
-
-# Unchecked combo (value=None means unchecked)
-combo = DateTimeCombo(panel, value=None)  # Check to see "now"
-
-# Initialization pattern for domain objects:
-# The value alone determines the checked state
-# Note: date.DateTime is a datetime.datetime subclass
-value = existingValue if existingValue != date.DateTime() else None
-
-combo = DateTimeCombo(panel, value=value,
-    hourChoices=list(range(8, 18)),
-    minuteChoices=[0, 15, 30, 45])
-
-# Get individual widgets for flexible table layout
-grid.Add(wx.StaticText(panel, label="Due date:"))  # Column 1: label
-grid.Add(combo.GetCheckBox())   # Column 2: checkbox only
-grid.Add(combo.GetDateCtrl())   # Column 3: date
-grid.Add(combo.GetTimeCtrl())   # Column 4: time
-
-# Or get all widgets as tuple
-checkbox, dateCtrl, timeCtrl = combo.GetWidgets()
-
-# Value access
-dt = combo.GetDateTime()  # datetime or None if unchecked
-combo.SetDateTime(datetime.datetime(2026, 1, 18, 14, 30))
-combo.SetDateTime(None)  # Unchecks the checkbox
-
-# State control
-combo.SetReadOnly()       # Values visible but greyed, not editable
-combo.SetEditable()       # Normal editable mode
-combo.IsEditable()        # Check if editable
-combo.IsActive()          # Check if has a value (non-null)
-
-# Value activation
-combo.ActivateValue()     # Activate (uses internally stored value)
-combo.DeactivateValue()   # Deactivate (values preserved internally)
-```
 
 ## Events
 
@@ -927,9 +834,9 @@ The popup fires three events:
 - `EVT_CHOICE_SELECTED`: Enter key or click selection (confirms value)
 - `EVT_POPUP_DISMISS`: Popup closed for any reason (Escape, click outside, selection)
 
-### Sync Pattern: EVT_VALUE_CHANGED (DateTimeCombo2)
+### Sync Pattern: EVT_VALUE_CHANGED (DateTimeCombo)
 
-DateTimeCombo2 uses `EVT_VALUE_CHANGED` for AttributeSync synchronization.
+DateTimeCombo uses `EVT_VALUE_CHANGED` for AttributeSync synchronization.
 This single event fires on all value changes: checkbox toggle, date edit,
 and time edit. The checkbox is an internal implementation detail — external
 code never binds to `EVT_CHECKBOX`.
@@ -982,6 +889,58 @@ self.__observer.Update()   # Force immediate repaint
 ```
 
 `Update()` is necessary because `Refresh()` only schedules a repaint for the next event loop iteration. During synchronous pubsub callbacks, this may not happen quickly enough, causing visual lag. `Update()` forces immediate processing of pending paint events.
+
+### Sub-Control Stash Model
+
+The sub-controls (DateCtrl, TimeCtrl) are the stash for DateTimeCombo. They
+always hold a datetime value — they cannot be empty. When the checkbox is
+unchecked, the sub-controls are hidden behind the "N/A" overlay but retain
+their values. When the checkbox is checked, those same values become visible
+and are returned by `GetValue()`. The checkbox is the gate; the sub-controls
+are the stash.
+
+At construction, the sub-controls are initialized with either:
+- The domain value (`value` parameter), if the field is active (preset mode), or
+- The preference-suggested datetime (`suggestedValue` parameter), if the field
+  is inactive (propose mode), or
+- `datetime.now()` as a fallback
+
+See [DATETIME_PRESETS.md](DATETIME_PRESETS.md) for how `suggestedValue` is
+computed from user preferences and passed at editor construction time
+([Propose Mode](DATETIME_PRESETS.md#propose-mode),
+[Suggested DateTime Computation](DATETIME_PRESETS.md#suggested-datetime-computation)).
+
+The `_suggestedValue` constructor parameter is a one-time injection point.
+Once the sub-controls are initialized, they are the single holder of the
+datetime value regardless of checked/unchecked state. No separate stash
+variable is needed for activate/deactivate cycles — the sub-controls
+survive naturally.
+
+**State Transition Event Contract:**
+
+`ActivateValue()` and `DeactivateValue()` toggle the checkbox, which changes
+the widget's externally-visible value (`GetValue()` returns real datetime vs
+domain sentinel). Every such toggle must fire `EVT_VALUE_CHANGED` — this is
+the contract that keeps AttributeSync in sync with the widget.
+
+- **`ActivateValue(value=None)`**: If `value` provided, write to sub-controls
+  via `SetDate`/`SetTime`. Check checkbox. Fire `EVT_VALUE_CHANGED`.
+- **`DeactivateValue()`**: Uncheck checkbox. Fire `EVT_VALUE_CHANGED`.
+  Sub-controls retain their values (they are the stash).
+
+**Why explicit event firing is needed:**
+
+Sub-controls fire their own events via `NotifyValueChanged()` when
+`SetDate`/`SetTime` are called. But a checkbox toggle alone — without writing
+to sub-controls — produces no sub-control event. The state transition methods
+must fire explicitly to cover this case. Redundant events from sub-control
+writes are harmless — AttributeSync's same-value guard deduplicates.
+
+**User click path:** `_onCheckboxChanged` → `ActivateValue()`/`DeactivateValue()`
+→ event fires from within the method.
+
+**Programmatic path:** Editor calls `ActivateValue()`/`DeactivateValue()`
+directly. Same event contract — the widget is self-contained.
 
 ## Wayland
 
@@ -1039,23 +998,24 @@ Use `wx.ComboCtrl` which provides a **native dropdown button** and manages popup
 - Custom `_onPaint` using `IsThisEnabled()` (own state) so parent ComboCtrl's disabled state for read-only mode shows greyed values, not "N/A"
 - Same date validation, GetDate/SetDate, locale-aware format as DateCtrl
 
-**`DateCtrl4(wx.ComboCtrl)`** — ComboCtrl wrapper around `_EmbeddedDateCtrl`:
+**`DateCtrl(wx.ComboCtrl)`** — ComboCtrl wrapper around `_EmbeddedDateCtrl`:
 - Native dropdown button and popup management
 - `_CalendarComboPopup` for the calendar dropdown
 - `SetReadOnly(True)` disables the ComboCtrl (greys button) + sets inner control read-only
 - `Enable(False)` disables both ComboCtrl and inner control (shows "N/A")
 - `HasOpenPopup()` — public API using `IsPopupShown()`
-- `Bind()` override forwards UI events (EVT_VALUE_CHANGED, EVT_KEY_DOWN, EVT_KILL_FOCUS, EVT_SET_FOCUS) to inner control
-- `_fireValueChanged()` delegates to inner `_EmbeddedDateCtrl._fireValueChanged()` — needed because `wx.PostEvent()` to the ComboCtrl won't reach handlers bound on the inner control (command events propagate up, not down)
+- `Bind()` override forwards UI events (EVT_KEY_DOWN, EVT_KILL_FOCUS, EVT_SET_FOCUS) to inner control
 - Focus redirection from ComboCtrl's text control to inner DateCtrl
 
-**`DateTimeCombo2`** — Clean replacement for `DateTimeCombo`, using `DateCtrl4`:
-- Uses `DateCtrl4` instead of `DateCtrl` for the date field
-- Clean `HasOpenPopup()` using DateCtrl4's public API
-- Single `Bind()` method (DateTimeCombo had two shadowing definitions)
-- EVT_VALUE_CHANGED wrapping sets event object to the combo (for AttributeSync)
+**`DateTimeCombo(wx.EvtHandler)`** — Composite date/time control:
+- Inherits from `wx.EvtHandler` so it can host event handlers directly
+- Composes checkbox + `DateCtrl` + `TimeCtrl`
+- Owns the change event: fires `EVT_VALUE_CHANGED` on sub-control blur
+  and from `ActivateValue()`/`DeactivateValue()`
+- Traps and drops sub-control `EVT_VALUE_CHANGED` (debug log point)
+- See [DateTimeCombo Event Ownership](#datetimecombo-event-ownership)
 
-**DateTimeCombo2 States:**
+**DateTimeCombo States:**
 
 | State | Visual | Entered Via |
 |-------|--------|------------|
@@ -1063,17 +1023,17 @@ Use `wx.ComboCtrl` which provides a **native dropdown button** and manages popup
 | **Inactive** | Checkbox unchecked/enabled, fields show "N/A" | `DeactivateValue()`, construct with `value=None` |
 | **Active + Read-only** | Checkbox checked/disabled, fields greyed | `SetReadOnly()` |
 
-**DateTimeCombo2 State Transition Methods:**
+**DateTimeCombo State Transition Methods:**
 
 | Method | Effect | Duration Calc Ref |
 |--------|--------|-------------------|
-| `ActivateValue(value=None)` | Activate with given datetime, or internally stored value if None. | Steps 2.1, 3.1 |
-| `DeactivateValue()` | Active → Inactive. Values preserved internally. | Steps 2.5.2, 3.5.2 |
+| `ActivateValue(value=None)` | Inactive → Active. If `value` provided, writes to sub-controls. Checks checkbox. Fires `EVT_VALUE_CHANGED`. See [Sub-Control Stash Model](#sub-control-stash-model). | Steps 2.1, 3.1 |
+| `DeactivateValue()` | Active → Inactive. Unchecks checkbox. Sub-controls retain values (they are the stash). Fires `EVT_VALUE_CHANGED`. See [Sub-Control Stash Model](#sub-control-stash-model). | Steps 2.5.2, 3.5.2 |
 | `SetEditable()` | Make combo editable (no args) | UI Field States |
 | `SetReadOnly()` | Make combo read-only (no args) | UI Field States |
 | `HideCheckBox()` | Hide checkbox for always-active controls | Effort start |
 
-**DateTimeCombo2 State Query Methods:**
+**DateTimeCombo State Query Methods:**
 
 | Method | Returns |
 |--------|---------|
@@ -1081,7 +1041,7 @@ Use `wx.ComboCtrl` which provides a **native dropdown button** and manages popup
 | `IsEditable()` | True if editable (not read-only) |
 | `IsReadOnly()` | True if read-only |
 
-**DateTimeCombo2 Value Access:**
+**DateTimeCombo Value Access:**
 
 | Method | Type |
 |--------|------|
@@ -1090,12 +1050,12 @@ Use `wx.ComboCtrl` which provides a **native dropdown button** and manages popup
 | `GetDate()` | `datetime.date` (read-only) |
 | `GetTime()` | `datetime.time` (read-only) |
 
-**DateTimeCombo2 Layout Accessors** (for sizer arrangement, not state logic):
+**DateTimeCombo Layout Accessors** (for sizer arrangement, not state logic):
 
 | Method | Returns |
 |--------|---------|
 | `GetCheckBox()` | `wx.CheckBox` |
-| `GetDateCtrl()` | `DateCtrl4` |
+| `GetDateCtrl()` | `DateCtrl` |
 | `GetTimeCtrl()` | `TimeCtrl` / `TimeWithSecondsCtrl` |
 | `GetWidgets()` | Tuple of all three |
 | `CreateRowPanel(parent)` | `wx.Panel` with all three arranged horizontally |
@@ -1116,12 +1076,12 @@ Use `wx.ComboCtrl` which provides a **native dropdown button** and manages popup
 - `Create()` — creates interior panel, binds paint/mouse/key events
 - `GetAdjustedSize()` — returns calendar dimensions
 - `GetStringValue()` — returns selected date as ISO string
-- `OnPopup()` — syncs selection from parent DateCtrl4
+- `OnPopup()` — syncs selection from parent DateCtrl
 - Duck-typed `_getDateCtrl2()` finds parent via `hasattr` checks
 
-### Focus Management in DateCtrl4
+### Focus Management in DateCtrl
 
-The ComboCtrl's internal text control is hidden behind the overlaid `_EmbeddedDateCtrl`. DateCtrl4 handles this by:
+The ComboCtrl's internal text control is hidden behind the overlaid `_EmbeddedDateCtrl`. DateCtrl handles this by:
 
 1. **Focus redirection**: `EVT_SET_FOCUS` on the ComboCtrl's text control redirects focus to the inner DateCtrl, with a `_redirectingFocus` guard to prevent recursion.
 2. **Text interception**: `EVT_TEXT` handler clears any text the ComboCtrl auto-inserts.
@@ -1129,20 +1089,18 @@ The ComboCtrl's internal text control is hidden behind the overlaid `_EmbeddedDa
 
 ### Wiring
 
-`__init__.py` exports aliases so existing app code works unchanged:
-- `DateCtrl4 as MaskedDateCtrl`
-- `DateTimeCombo2 as DateTimeCombo`
+`__init__.py` exports aliases:
+- `DateCtrl as MaskedDateCtrl`
+- `DateTimeCombo as DateTimeCombo`
 
-Old `DateCtrl`, `DateTimeCombo` remain in `maskedtimectrl.py` for transition.
+Old `DateCtrl` (FieldsCtrl-based), `_CalendarPopup`, and `DateTimeCombo` v1
+have been removed. `DateCtrl` and `DateTimeCombo` are the only implementations.
 
 ### Demo
 
-Demo rows in `docs/scripts/datetime_controls_demo.py`:
-- **Section 2**: Old `DateTimeCombo` (regression reference)
-- **3.0**: Standard `wx.ComboBox` baseline
-- **3.1**: `DateCtrl4` standalone
-- **3.2**: `DateCtrl4` standalone read-only
-- **3.3**: `DateTimeCombo2` — Planned Start (checked, with dropdowns)
-- **3.4**: `DateTimeCombo2` — Due Date (unchecked)
-- **3.5**: `DateTimeCombo2` — Completed (SetReadOnly(), toggle button)
-- **3.6**: `DateTimeCombo2` — Reminder (checked, no dropdowns)
+Interactive demo showing all controls (duration, time, date, datetime combos)
+with various configurations. Run from the project root:
+
+```
+python3 docs/scripts/datetime_controls_demo.py
+```

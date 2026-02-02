@@ -20,7 +20,7 @@ app = wx.App()
 from taskcoachlib.widgets import maskedtimectrl
 from taskcoachlib.widgets.maskedtimectrl import (
     DurationCtrl, DurationCtrlVerbose, TimeCtrl, TimeWithSecondsCtrl,
-    DateCtrl, DateCtrl4, DateTimeCombo, DateTimeCombo2, _PopupWindow,
+    DateCtrl, DateTimeCombo, _PopupWindow,
     PopupDismissEvent, _CalendarComboPopup
 )
 
@@ -110,7 +110,6 @@ if _is_wayland():
     # the original subclasses.
 
     _OrigChoicesPopup = maskedtimectrl._ChoicesPopup
-    _OrigCalendarPopup = maskedtimectrl._CalendarPopup
 
     # Collect all methods/attrs defined directly on each original class
     def _get_class_attrs(cls):
@@ -124,12 +123,6 @@ if _is_wayland():
         '_ChoicesPopup',
         (_WaylandPopupWindow,),
         _get_class_attrs(_OrigChoicesPopup)
-    )
-
-    maskedtimectrl._CalendarPopup = type(
-        '_CalendarPopup',
-        (_WaylandPopupWindow,),
-        _get_class_attrs(_OrigCalendarPopup)
     )
 
     print("[Wayland] Patch applied. Test dropdown positioning below.")
@@ -229,125 +222,23 @@ class DemoFrame(wx.Frame):
         grid.Add(self.ctrl7, 0, wx.ALIGN_CENTER_VERTICAL)
         grid.Add(wx.StaticText(panel, label="WITH choices: [0-30], [0-23], [0,15,30,45]"), 0, wx.ALIGN_CENTER_VERTICAL)
 
-        # 1.8 DateCtrl (calendar popup)
-        grid.Add(wx.StaticText(panel, label="1.8 DateCtrl:"), 0, wx.ALIGN_CENTER_VERTICAL)
-        self.ctrl8 = DateCtrl(panel)
-        grid.Add(self.ctrl8, 0, wx.ALIGN_CENTER_VERTICAL)
-        grid.Add(wx.StaticText(panel, label="calendar popup (click or Enter)"), 0, wx.ALIGN_CENTER_VERTICAL)
-
         mainSizer.Add(grid, 0, wx.ALL | wx.EXPAND, 20)
 
         # Separator
         mainSizer.Add(wx.StaticLine(panel), 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 20)
 
-        # =============================================================
-        # Section 2: DateTimeCombo - Flexible Table Layout
-        # =============================================================
-        comboTitle = wx.StaticText(panel, label="2. DateTimeCombo - Flexible Table Layout")
-        comboTitle.SetFont(comboTitle.GetFont().Bold().Scaled(1.3))
-        mainSizer.Add(comboTitle, 0, wx.ALL | wx.EXPAND, 10)
-
-        # Create a table grid showing aligned DateTimeCombos
-        # 5 columns: Label, Checkbox, Date, Time, Description
-        comboGrid = wx.FlexGridSizer(cols=5, hgap=10, vgap=8)
-
-        # Header row
-        comboGrid.Add(wx.StaticText(panel, label=""), 0)
-        comboGrid.Add(wx.StaticText(panel, label=""), 0)
-        hdrDate = wx.StaticText(panel, label="Date")
-        hdrDate.SetFont(hdrDate.GetFont().Bold())
-        comboGrid.Add(hdrDate, 0, wx.ALIGN_CENTER)
-        hdrTime = wx.StaticText(panel, label="Time")
-        hdrTime.SetFont(hdrTime.GetFont().Bold())
-        comboGrid.Add(hdrTime, 0, wx.ALIGN_CENTER)
-        comboGrid.Add(wx.StaticText(panel, label=""), 0)
-
-        # 2.1 Planned Start (value=datetime means checked)
-        import datetime
-        self.plannedStartCombo = DateTimeCombo(
-            panel,
-            value=datetime.datetime(2026, 1, 20, 9, 0),
-            hourChoices=[8, 9, 10, 11, 12],
-            minuteChoices=[0, 15, 30, 45]
-        )
-        comboGrid.Add(wx.StaticText(panel, label="2.1 Planned Start:"), 0, wx.ALIGN_CENTER_VERTICAL)
-        comboGrid.Add(self.plannedStartCombo.GetCheckBox(), 0, wx.ALIGN_CENTER_VERTICAL)
-        comboGrid.Add(self.plannedStartCombo.GetDateCtrl(), 0, wx.ALIGN_CENTER_VERTICAL)
-        comboGrid.Add(self.plannedStartCombo.GetTimeCtrl(), 0, wx.ALIGN_CENTER_VERTICAL)
-        comboGrid.Add(wx.StaticText(panel, label="(value=datetime -> checked)"), 0, wx.ALIGN_CENTER_VERTICAL)
-
-        # 2.2 Due Date (value=None means unchecked)
-        self.dueDateCombo = DateTimeCombo(
-            panel,
-            value=None,  # None = unchecked, defaults to "now" when user checks it
-            hourChoices=[17, 18, 19, 20, 21],
-            minuteChoices=[0, 30]
-        )
-        comboGrid.Add(wx.StaticText(panel, label="2.2 Due Date:"), 0, wx.ALIGN_CENTER_VERTICAL)
-        comboGrid.Add(self.dueDateCombo.GetCheckBox(), 0, wx.ALIGN_CENTER_VERTICAL)
-        comboGrid.Add(self.dueDateCombo.GetDateCtrl(), 0, wx.ALIGN_CENTER_VERTICAL)
-        comboGrid.Add(self.dueDateCombo.GetTimeCtrl(), 0, wx.ALIGN_CENTER_VERTICAL)
-        comboGrid.Add(wx.StaticText(panel, label="(value=None -> unchecked)"), 0, wx.ALIGN_CENTER_VERTICAL)
-
-        # 2.3 Actual Start (another checked example)
-        self.actualStartCombo = DateTimeCombo(
-            panel,
-            value=datetime.datetime(2026, 6, 15, 9, 30)
-        )
-        comboGrid.Add(wx.StaticText(panel, label="2.3 Actual Start:"), 0, wx.ALIGN_CENTER_VERTICAL)
-        comboGrid.Add(self.actualStartCombo.GetCheckBox(), 0, wx.ALIGN_CENTER_VERTICAL)
-        comboGrid.Add(self.actualStartCombo.GetDateCtrl(), 0, wx.ALIGN_CENTER_VERTICAL)
-        comboGrid.Add(self.actualStartCombo.GetTimeCtrl(), 0, wx.ALIGN_CENTER_VERTICAL)
-        comboGrid.Add(wx.StaticText(panel, label="(value=2026-06-15 09:30)"), 0, wx.ALIGN_CENTER_VERTICAL)
-
-        # 2.4 Completed (inactive/read-only - values visible but greyed)
-        self.completedCombo = DateTimeCombo(
-            panel,
-            value=datetime.datetime(2026, 1, 19, 14, 30)
-        )
-        self.completedCombo.SetEditable(False)  # Inactive: values visible but greyed
-        comboGrid.Add(wx.StaticText(panel, label="2.4 Completed:"), 0, wx.ALIGN_CENTER_VERTICAL)
-        comboGrid.Add(self.completedCombo.GetCheckBox(), 0, wx.ALIGN_CENTER_VERTICAL)
-        comboGrid.Add(self.completedCombo.GetDateCtrl(), 0, wx.ALIGN_CENTER_VERTICAL)
-        comboGrid.Add(self.completedCombo.GetTimeCtrl(), 0, wx.ALIGN_CENTER_VERTICAL)
-        lbl_inactive = wx.StaticText(panel, label="(Read-Only / Editable - Toggle Button below)")
-        lbl_inactive.SetForegroundColour(wx.RED)
-        comboGrid.Add(lbl_inactive, 0, wx.ALIGN_CENTER_VERTICAL)
-
-        # 2.5 Reminder (enabled, no time dropdowns)
-        self.reminderCombo = DateTimeCombo(
-            panel,
-            value=datetime.datetime(2026, 1, 21, 8, 0)
-            # No hourChoices/minuteChoices = no dropdowns
-        )
-        comboGrid.Add(wx.StaticText(panel, label="2.5 Reminder:"), 0, wx.ALIGN_CENTER_VERTICAL)
-        comboGrid.Add(self.reminderCombo.GetCheckBox(), 0, wx.ALIGN_CENTER_VERTICAL)
-        comboGrid.Add(self.reminderCombo.GetDateCtrl(), 0, wx.ALIGN_CENTER_VERTICAL)
-        comboGrid.Add(self.reminderCombo.GetTimeCtrl(), 0, wx.ALIGN_CENTER_VERTICAL)
-        comboGrid.Add(wx.StaticText(panel, label="(no time dropdowns)"), 0, wx.ALIGN_CENTER_VERTICAL)
-
-        mainSizer.Add(comboGrid, 0, wx.ALL | wx.EXPAND, 20)
-
-        # Toggle button to test read-only/editable state
-        toggleBtn = wx.Button(panel, label="Toggle 2.4 'Completed' Read-Only / Editable")
-        toggleBtn.Bind(wx.EVT_BUTTON, self._onToggleCompleted)
-        mainSizer.Add(toggleBtn, 0, wx.ALL | wx.ALIGN_CENTER, 10)
-
-        # Separator
-        mainSizer.Add(wx.StaticLine(panel), 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 20)
-
         # =====================================================================
-        # Section 3: ComboCtrl-Based Date Controls
+        # Section 2: ComboCtrl-Based Date Controls
         # =====================================================================
-        dc2Title = wx.StaticText(panel, label="3. ComboCtrl-Based Date Controls")
+        dc2Title = wx.StaticText(panel, label="2. ComboCtrl-Based Date Controls")
         dc2Title.SetFont(dc2Title.GetFont().Bold().Scaled(1.3))
         mainSizer.Add(dc2Title, 0, wx.ALL | wx.EXPAND, 10)
 
         dc2Grid = wx.FlexGridSizer(cols=3, hgap=15, vgap=10)
         dc2Grid.AddGrowableCol(2)
 
-        # 3.0 Standard ComboBox baseline reference
-        dc2Grid.Add(wx.StaticText(panel, label="3.0 Baseline:"), 0,
+        # 2.0 Standard ComboBox baseline reference
+        dc2Grid.Add(wx.StaticText(panel, label="2.0 Baseline:"), 0,
                      wx.ALIGN_CENTER_VERTICAL)
         self.dc2Baseline = wx.ComboBox(panel, value="Standard ComboBox (reference)",
             choices=["Standard ComboBox (reference)", "Option 2", "Option 3"],
@@ -357,30 +248,30 @@ class DemoFrame(wx.Frame):
         lbl_baseline.SetForegroundColour(wx.Colour(128, 128, 128))
         dc2Grid.Add(lbl_baseline, 0, wx.ALIGN_CENTER_VERTICAL)
 
-        # 3.1 DateCtrl4 standalone (no checkbox, no time)
-        self.dc2EmbedDate = DateCtrl4(panel,
+        # 2.1 DateCtrl standalone (no checkbox, no time)
+        self.dc2EmbedDate = DateCtrl(panel,
             year=2026, month=1, day=31)
-        dc2Grid.Add(wx.StaticText(panel, label="3.1 DateCtrl4:"), 0,
+        dc2Grid.Add(wx.StaticText(panel, label="2.1 DateCtrl:"), 0,
                      wx.ALIGN_CENTER_VERTICAL)
         dc2Grid.Add(self.dc2EmbedDate, 0, wx.ALIGN_CENTER_VERTICAL)
-        lbl_31 = wx.StaticText(panel, label="(standalone DateCtrl4, no checkbox/time)")
+        lbl_31 = wx.StaticText(panel, label="(standalone DateCtrl, no checkbox/time)")
         lbl_31.SetForegroundColour(wx.Colour(0, 128, 0))
         dc2Grid.Add(lbl_31, 0, wx.ALIGN_CENTER_VERTICAL)
 
-        # 3.2 DateCtrl4 standalone read-only
-        self.dc2EmbedDateRO = DateCtrl4(panel,
+        # 2.2 DateCtrl standalone read-only
+        self.dc2EmbedDateRO = DateCtrl(panel,
             year=2026, month=1, day=19)
         self.dc2EmbedDateRO.SetReadOnly(True)
-        dc2Grid.Add(wx.StaticText(panel, label="3.2 DateCtrl4:"), 0,
+        dc2Grid.Add(wx.StaticText(panel, label="2.2 DateCtrl:"), 0,
                      wx.ALIGN_CENTER_VERTICAL)
         dc2Grid.Add(self.dc2EmbedDateRO, 0, wx.ALIGN_CENTER_VERTICAL)
-        lbl_32 = wx.StaticText(panel, label="(standalone DateCtrl4, read-only)")
+        lbl_32 = wx.StaticText(panel, label="(standalone DateCtrl, read-only)")
         lbl_32.SetForegroundColour(wx.Colour(128, 128, 128))
         dc2Grid.Add(lbl_32, 0, wx.ALIGN_CENTER_VERTICAL)
 
         mainSizer.Add(dc2Grid, 0, wx.ALL | wx.EXPAND, 20)
 
-        # --- 3.3-3.6 DateTimeCombo2 (DateCtrl4-based, same API as section 2) ---
+        # --- 3.3-3.6 DateTimeCombo (DateCtrl-based, same API as section 1) ---
         dc3Grid = wx.FlexGridSizer(cols=5, hgap=10, vgap=8)
 
         # Header row
@@ -394,14 +285,14 @@ class DemoFrame(wx.Frame):
         dc3Grid.Add(hdrTime3, 0, wx.ALIGN_CENTER)
         dc3Grid.Add(wx.StaticText(panel, label=""), 0)
 
-        # 3.3 Planned Start (checked, with dropdowns)
-        self.dc3PlannedStartCombo = DateTimeCombo2(
+        # 2.3 Planned Start (checked, with dropdowns)
+        self.dc3PlannedStartCombo = DateTimeCombo(
             panel,
             value=datetime.datetime(2026, 1, 20, 9, 0),
             hourChoices=[8, 9, 10, 11, 12],
             minuteChoices=[0, 15, 30, 45]
         )
-        dc3Grid.Add(wx.StaticText(panel, label="3.3 Planned Start:"), 0,
+        dc3Grid.Add(wx.StaticText(panel, label="2.3 Planned Start:"), 0,
                      wx.ALIGN_CENTER_VERTICAL)
         dc3Grid.Add(self.dc3PlannedStartCombo.GetCheckBox(), 0, wx.ALIGN_CENTER_VERTICAL)
         dc3Grid.Add(self.dc3PlannedStartCombo.GetDateCtrl(), 0, wx.ALIGN_CENTER_VERTICAL)
@@ -409,14 +300,14 @@ class DemoFrame(wx.Frame):
         dc3Grid.Add(wx.StaticText(panel, label="(checked, with time dropdowns)"), 0,
                      wx.ALIGN_CENTER_VERTICAL)
 
-        # 3.4 Due Date (unchecked)
-        self.dc3DueDateCombo = DateTimeCombo2(
+        # 2.4 Due Date (unchecked)
+        self.dc3DueDateCombo = DateTimeCombo(
             panel,
             value=None,
             hourChoices=[17, 18, 19, 20, 21],
             minuteChoices=[0, 30]
         )
-        dc3Grid.Add(wx.StaticText(panel, label="3.4 Due Date:"), 0,
+        dc3Grid.Add(wx.StaticText(panel, label="2.4 Due Date:"), 0,
                      wx.ALIGN_CENTER_VERTICAL)
         dc3Grid.Add(self.dc3DueDateCombo.GetCheckBox(), 0, wx.ALIGN_CENTER_VERTICAL)
         dc3Grid.Add(self.dc3DueDateCombo.GetDateCtrl(), 0, wx.ALIGN_CENTER_VERTICAL)
@@ -424,13 +315,13 @@ class DemoFrame(wx.Frame):
         dc3Grid.Add(wx.StaticText(panel, label="(unchecked, fields disabled)"), 0,
                      wx.ALIGN_CENTER_VERTICAL)
 
-        # 3.5 Completed (read-only / editable toggle)
-        self.dc3CompletedCombo = DateTimeCombo2(
+        # 2.5 Completed (read-only / editable toggle)
+        self.dc3CompletedCombo = DateTimeCombo(
             panel,
             value=datetime.datetime(2026, 1, 19, 14, 30)
         )
         self.dc3CompletedCombo.SetReadOnly()
-        dc3Grid.Add(wx.StaticText(panel, label="3.5 Completed:"), 0,
+        dc3Grid.Add(wx.StaticText(panel, label="2.5 Completed:"), 0,
                      wx.ALIGN_CENTER_VERTICAL)
         dc3Grid.Add(self.dc3CompletedCombo.GetCheckBox(), 0, wx.ALIGN_CENTER_VERTICAL)
         dc3Grid.Add(self.dc3CompletedCombo.GetDateCtrl(), 0, wx.ALIGN_CENTER_VERTICAL)
@@ -439,12 +330,12 @@ class DemoFrame(wx.Frame):
         lbl_dc3_ro.SetForegroundColour(wx.RED)
         dc3Grid.Add(lbl_dc3_ro, 0, wx.ALIGN_CENTER_VERTICAL)
 
-        # 3.6 Reminder (checked, no time dropdowns)
-        self.dc3ReminderCombo = DateTimeCombo2(
+        # 2.6 Reminder (checked, no time dropdowns)
+        self.dc3ReminderCombo = DateTimeCombo(
             panel,
             value=datetime.datetime(2026, 1, 21, 8, 0)
         )
-        dc3Grid.Add(wx.StaticText(panel, label="3.6 Reminder:"), 0,
+        dc3Grid.Add(wx.StaticText(panel, label="2.6 Reminder:"), 0,
                      wx.ALIGN_CENTER_VERTICAL)
         dc3Grid.Add(self.dc3ReminderCombo.GetCheckBox(), 0, wx.ALIGN_CENTER_VERTICAL)
         dc3Grid.Add(self.dc3ReminderCombo.GetDateCtrl(), 0, wx.ALIGN_CENTER_VERTICAL)
@@ -455,7 +346,7 @@ class DemoFrame(wx.Frame):
         mainSizer.Add(dc3Grid, 0, wx.ALL | wx.EXPAND, 20)
 
         # Toggle button to test read-only/editable state on 3.5
-        dc3ToggleBtn = wx.Button(panel, label="Toggle 3.5 'Completed' Read-Only / Editable")
+        dc3ToggleBtn = wx.Button(panel, label="Toggle 2.5 'Completed' Read-Only / Editable")
         dc3ToggleBtn.Bind(wx.EVT_BUTTON, self._onToggleDc3Completed)
         mainSizer.Add(dc3ToggleBtn, 0, wx.ALL | wx.ALIGN_CENTER, 10)
 
@@ -463,25 +354,25 @@ class DemoFrame(wx.Frame):
         mainSizer.Add(wx.StaticLine(panel), 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 20)
 
         # =====================================================================
-        # Section 4: Standard wxPython Date/Calendar Controls
+        # Section 3: Standard wxPython Date/Calendar Controls
         # =====================================================================
-        stdTitle = wx.StaticText(panel, label="4. Standard wxPython Date/Calendar Controls")
+        stdTitle = wx.StaticText(panel, label="3. Standard wxPython Date/Calendar Controls")
         stdTitle.SetFont(stdTitle.GetFont().Bold().Scaled(1.3))
         mainSizer.Add(stdTitle, 0, wx.ALL | wx.EXPAND, 10)
 
         stdGrid = wx.FlexGridSizer(cols=3, hgap=15, vgap=10)
         stdGrid.AddGrowableCol(2)
 
-        # 4.1 DatePickerCtrl - Native dropdown (week start from locale)
-        stdGrid.Add(wx.StaticText(panel, label="4.1 DatePickerCtrl:"), 0,
+        # 3.1 DatePickerCtrl - Native dropdown (week start from locale)
+        stdGrid.Add(wx.StaticText(panel, label="3.1 DatePickerCtrl:"), 0,
                      wx.ALIGN_CENTER_VERTICAL)
         self.stdDatePickerDD = wx.adv.DatePickerCtrl(panel, style=wx.adv.DP_DROPDOWN)
         stdGrid.Add(self.stdDatePickerDD, 0, wx.ALIGN_CENTER_VERTICAL)
         stdGrid.Add(wx.StaticText(panel, label="DP_DROPDOWN — native popup, week start from locale"), 0,
                      wx.ALIGN_CENTER_VERTICAL)
 
-        # 4.2 DatePickerCtrlGeneric - locale week start
-        stdGrid.Add(wx.StaticText(panel, label="4.2 DatePickerCtrlGeneric:"), 0,
+        # 3.2 DatePickerCtrlGeneric - locale week start
+        stdGrid.Add(wx.StaticText(panel, label="3.2 DatePickerCtrlGeneric:"), 0,
                      wx.ALIGN_CENTER_VERTICAL)
         self.stdDatePickerGen = wx.adv.DatePickerCtrlGeneric(
             panel, style=wx.adv.DP_DROPDOWN)
@@ -509,13 +400,8 @@ class DemoFrame(wx.Frame):
         panel.SetSizer(mainSizer)
         self.Centre()
 
-    def _onToggleCompleted(self, event):
-        """Toggle the editable state of the 'Completed' DateTimeCombo."""
-        currentState = self.completedCombo.IsEditable()
-        self.completedCombo.SetEditable(not currentState)
-
     def _onToggleDc3Completed(self, event):
-        """Toggle read-only/editable on the 3.5 Completed DateTimeCombo2."""
+        """Toggle read-only/editable on the 2.5 Completed DateTimeCombo."""
         if self.dc3CompletedCombo.IsEditable():
             self.dc3CompletedCombo.SetReadOnly()
         else:

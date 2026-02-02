@@ -13,8 +13,7 @@ This document tracks planned improvements and known issues to address in future 
 - [GTK3 Widget Sizing Inconsistency](#gtk3-widget-sizing-inconsistency)
 - [BookPage Default Alignment Inconsistency](#bookpage-default-alignment-inconsistency)
 - [Preferences Dialog: Dirty-Check and Button State](#preferences-dialog-dirty-check-and-button-state)
-- [Other TODOs](#other-todos)
-  - [EVT_TEXT Compatibility Shim](#evt_text-compatibility-shim-in-multilinetextctrl)
+- [EVT_TEXT Compatibility Shim in MultiLineTextCtrl](#evt_text-compatibility-shim-in-multilinetextctrl)
 
 ---
 
@@ -412,9 +411,7 @@ No need to store "original values" — the settings object is the baseline.
 
 ---
 
-## Other TODOs
-
-### EVT_TEXT Compatibility Shim in MultiLineTextCtrl
+## EVT_TEXT Compatibility Shim in MultiLineTextCtrl
 
 `MultiLineTextCtrl` (StyledTextCtrl/Scintilla) overrides `Bind()` to remap `wx.EVT_TEXT` to `stc.EVT_STC_CHANGE` for compatibility with code written for `wx.TextCtrl`. If we keep Scintilla long-term, refactor all callers to use `EVT_STC_CHANGE` directly and remove the shim. File: `taskcoachlib/widgets/textctrl.py`.
 

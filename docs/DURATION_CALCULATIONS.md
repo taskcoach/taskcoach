@@ -16,6 +16,7 @@ Duration calculations for Edit Task Dates and Edit Effort windows.
   - [Entry Modes](#entry-modes)
   - [Field Change Effects](#field-change-effects)
   - [Action Sequence](#action-sequence-1)
+- [Preset Dropdown Sync](#preset-dropdown-sync)
 - [Persistence](#persistence)
 
 ---
@@ -42,7 +43,7 @@ Duration calculations for Edit Task Dates and Edit Effort windows.
 9. ~~DateTimeCombo Checkbox toggle EVT_KILL_FOCUS gap~~ — **Resolved.**
    ~~Editor binds `EVT_CHECKBOX` via `combo.Bind(wx.EVT_CHECKBOX, handler)`
    and calls `sync.commit()` explicitly.~~
-   **Update:** EVT_CHECKBOX is no longer exposed by DateTimeCombo2. All
+   **Update:** EVT_CHECKBOX is no longer exposed by DateTimeCombo. All
    AttributeSync instances use `EVT_VALUE_CHANGED` as `editedEventType`,
    which fires on checkbox toggle AND date/time edits. External
    EVT_CHECKBOX handlers and `sync.commit()` hacks removed.
@@ -319,7 +320,7 @@ Start: Standard mode, Duration 0, Stop-Date disabled
        1.9.1 If Duration > 0, Then
            1.9.1.1 Set Sync-Mode [0.4]
            1.9.1.2 Adj Stop-Date
-           1.9.1.3 Adj Duration
+           1.9.1.3 Adj Duration *Impossible* TODO remove step? remove sync-mode?
            1.9.1.4 Unset Sync-Mode
        1.9.2 If Duration = 0, Then do nothing
    1.10 If Duration changed and exists, Then
@@ -329,7 +330,7 @@ Start: Standard mode, Duration 0, Stop-Date disabled
        1.10.2 If Duration = 0, Then disable Stop-Date
    1.11 If Stop-Date changed and exists, Then adj Duration
    1.12 If Duration = 0, Then Autoheal, Thus
-       1.12.1 Disable Stop-Date
+       1.12.1 Not possible: Disable Stop-Date Conflicts [Ref3]
    1.13 If Duration > 0, Then Autoheal, Thus
        1.13.1 Enable Stop-Date
        1.13.2 Adj Stop-Date
@@ -350,7 +351,7 @@ Start: Standard mode, Duration 0, Stop-Date disabled
            2.9.1.2 Adj Start-Date
        2.9.2 If Duration = 0, Then disable Stop-Date
    2.10 If Duration = 0, Then Autoheal, Thus
-       2.10.1 Disable Stop-Date
+       2.10.1 Not possible: Disable Stop-Date Conflicts [Ref2]
    2.11 If Duration > 0, Then Autoheal, Thus
        2.11.1 Enable Stop-Date
        2.11.2 Adj Start-Date
@@ -377,6 +378,12 @@ Glossary:
 
 References:
    [Ref1] Covered by "UI Field States" section
+   [Ref2] 2.10.1 Not possible to Disable Stop-Date because it can conflict
+          with 2.9.1.1 and 2.11.1 if the Stop-Date is the same as the
+          Start-Date and we won't modify the values, leave as-is
+   [Ref3] 1.12.1 Not possible to Disable Stop-Date because it can conflict
+          with 1.10.1.1 and 1.13.1 if the Stop-Date is the same as the
+          Start-Date and we won't modify the values, leave as-is
 ```
 
 ```
@@ -466,6 +473,41 @@ Called on: After main calc logic, every change of Start-Date, Stop-Date, Duratio
 | Implicit | ✅ | ✅ | Uncheck Stop | Duration disabled |
 | Implicit | ✅ | ✅ | Set Standard | Duration editable |
 | Implicit | ✅ | ✅ | Set Retroactive | Start read-only, Duration editable |
+
+---
+
+## Preset Dropdown Sync
+
+Both the task and effort editors have a "Presets" dropdown next to the duration
+control. The dropdown must stay aligned with the current duration value:
+selecting a matching preset when the duration matches, or resetting to the
+"Presets..." placeholder when it doesn't.
+
+### Sync Pattern
+
+The preset dropdown subscribes directly to the domain's duration-changed
+pubsub event. This decouples it from the source of the change — whether the
+user typed a value, selected a preset, or an external source updated the
+domain, the dropdown updates itself.
+
+**Task editor:**
+- Subscribes to `plannedDurationChangedEventType()` → `__updatePresetSelection()`
+
+**Effort editor:**
+- Subscribes to `durationChangedEventType()` → `__updateEffortPresetSelection()`
+
+### Why Not a Callback?
+
+The alternative is calling the preset update from the duration change handler
+or `AttributeSync` callback. This couples the preset to the commit path —
+any code that changes duration must remember to also update the preset.
+Pubsub subscription ensures the preset is always correct regardless of how
+the duration changed.
+
+### Lifecycle
+
+Subscriptions are created during `addEntries()` / `addDurationEntry()` and
+unsubscribed in `close()` / `close_edit_book()`.
 
 ---
 
