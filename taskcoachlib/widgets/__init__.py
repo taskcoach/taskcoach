@@ -55,6 +55,7 @@ from .calendarconfig import CalendarConfigDialog
 from .password import GetPassword
 from .hcalendar import HierarchicalCalendar
 from .hcalendarconfig import HierarchicalCalendarConfigDialog
+from .numericctrl import NumericCtrl
 from .currencyctrl import CurrencyCtrl
 from . import masked
 from wx.lib import sized_controls

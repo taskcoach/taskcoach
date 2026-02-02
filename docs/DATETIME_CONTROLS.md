@@ -569,6 +569,9 @@ The settings are stored in `TaskCoach.ini` under `[view]` as `dateformat` and `t
 - `getEffectiveTimeFormat()` - Returns "24" or "12" respecting user settings (defaults to "24" when automatic)
 - `getDateFormatFromSettings()` - Raw setting value
 
+See [LOCALE.md](LOCALE.md) for the common three-layer locale access pattern
+used across all regional settings (date, time, decimal separator, currency).
+
 ## Events
 
 Use standard wx events for sync:

@@ -58,6 +58,10 @@ defaults = {
         "dateformat": "",
         # Time format override: "24" = 24-hour (default), "12" = 12-hour with AM/PM, "" = automatic
         "timeformat": "24",
+        # Decimal separator override: "" = automatic (from locale), "." = period, "," = comma
+        "decimal_separator": "",
+        # Currency decimal places override: "" = automatic (from locale frac_digits), or "0"/"2"/"3"
+        "currency_decimal_places": "",
         "categoryfiltermatchall": "False",
         "weekstart": "monday",  # Start of work week, 'monday' or 'sunday'
         # The next three options are used in the effort dialog to populate the

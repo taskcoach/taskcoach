@@ -255,3 +255,9 @@ must pass `source_field` so the sync logic knows which field changed
 (DURATION_CALCULATIONS.md section 0.1) and skips steps that would
 overwrite the user's change.
 
+See also: [LOCALE.md](LOCALE.md) for how locale settings interact with
+Layer 2 controls (decimal separator, date/time format detection).
+[NUMERIC_CONTROLS.md](NUMERIC_CONTROLS.md) and
+[MONETARY_CONTROLS.md](MONETARY_CONTROLS.md) for `EVT_VALUE_CHANGED`
+migration of monetary controls (TODO #1).
+

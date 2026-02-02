@@ -2171,7 +2171,7 @@ class BudgetPage(Page):
             currentHourlyFee,
             self.items,
             command.EditHourlyFeeCommand,
-            wx.EVT_KILL_FOCUS,
+            widgets.EVT_VALUE_CHANGED,
             self.items[0].hourlyFeeChangedEventType(),
         )
         self.addEntry(
@@ -2192,7 +2192,7 @@ class BudgetPage(Page):
             currentFixedFee,
             self.items,
             command.EditFixedFeeCommand,
-            wx.EVT_KILL_FOCUS,
+            widgets.EVT_VALUE_CHANGED,
             self.items[0].fixedFeeChangedEventType(),
         )
         self.addEntry(

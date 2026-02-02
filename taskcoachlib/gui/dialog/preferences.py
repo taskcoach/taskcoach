@@ -1387,7 +1387,13 @@ class LanguagePage(SettingsPage):
             if setting == "language_set_by_user":
                 choiceCtrls[0].Bind(wx.EVT_CHOICE, self._onLanguageChange)
 
-        # Separator line between language and date/time format sections
+        # Separator line between language and spell check sections
+        self.addLine()
+
+        # === SPELL CHECK SECTION ===
+        self._setupSpellCheckSection()
+
+        # Separator line between spell check and date/time format sections
         self.addLine()
 
         # === DATE FORMAT SECTION ===
@@ -1514,15 +1520,109 @@ class LanguagePage(SettingsPage):
         )
         self.addEntry("", timeFormatNote)
 
-        # Separator line between time format and spell check sections
+        # Separator line between time format and number format sections
         self.addLine()
 
-        # === SPELL CHECK SECTION ===
-        self._setupSpellCheckSection()
+        # === NUMBER FORMAT SECTION ===
+        # Decimal separator dropdown
+        decSepPanel = wx.Panel(self)
+        decSepSizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self._decimalSepChoice = wx.Choice(decSepPanel)
+        decimalSepFormats = [
+            ("", _("Automatic (detect from system)")),
+            (".", _("Period (.)")),
+            (",", _("Comma (,)")),
+        ]
+        currentDecSep = self.gettext("view", "decimal_separator")
+        selectedDecSepIdx = 0
+        for i, (value, label) in enumerate(decimalSepFormats):
+            self._decimalSepChoice.Append(label, value)
+            if value == currentDecSep:
+                selectedDecSepIdx = i
+        self._decimalSepChoice.SetSelection(selectedDecSepIdx)
+        self._decimalSepChoice.Bind(wx.EVT_CHOICE, self._onDecimalSepChange)
+        decSepSizer.Add(self._decimalSepChoice, 0, wx.ALIGN_CENTER_VERTICAL)
+
+        # Detected decimal separator label
+        import locale as _locale
+        detectedDecSep = _locale.localeconv().get("decimal_point", ".") or "."
+        self._detectedDecSepLabel = wx.StaticText(
+            decSepPanel,
+            label=_("Detected: %s") % ('"%s"' % detectedDecSep)
+        )
+        self._detectedDecSepLabel.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
+        decSepSizer.Add(self._detectedDecSepLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 15)
+
+        decSepPanel.SetSizer(decSepSizer)
+        self.addEntry(_("Decimal separator"), decSepPanel)
+
+        # Currency decimal places dropdown
+        currDpPanel = wx.Panel(self)
+        currDpSizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self._currencyDpChoice = wx.Choice(currDpPanel)
+        currencyDpOptions = [
+            ("", _("Automatic (from locale)")),
+            ("0", _("0 (e.g. JPY, KRW)")),
+            ("2", _("2 (e.g. USD, EUR)")),
+            ("3", _("3 (e.g. BHD, KWD)")),
+        ]
+        currentCurrDp = self.gettext("view", "currency_decimal_places")
+        selectedCurrDpIdx = 0
+        for i, (value, label) in enumerate(currencyDpOptions):
+            self._currencyDpChoice.Append(label, value)
+            if value == currentCurrDp:
+                selectedCurrDpIdx = i
+        self._currencyDpChoice.SetSelection(selectedCurrDpIdx)
+        self._currencyDpChoice.Bind(wx.EVT_CHOICE, self._onCurrencyDpChange)
+        currDpSizer.Add(self._currencyDpChoice, 0, wx.ALIGN_CENTER_VERTICAL)
+
+        # Detected currency decimal places label
+        detectedFrac = _locale.localeconv().get("frac_digits", 2)
+        if detectedFrac == 127:
+            detectedFrac = 2
+        self._detectedCurrDpLabel = wx.StaticText(
+            currDpPanel,
+            label=_("Detected: %d") % detectedFrac
+        )
+        self._detectedCurrDpLabel.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
+        currDpSizer.Add(self._detectedCurrDpLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 15)
+
+        currDpPanel.SetSizer(currDpSizer)
+        self.addEntry(_("Currency decimal places"), currDpPanel)
+
+        # Demo CurrencyCtrl showing the selected decimal separator and places (live update)
+        from taskcoachlib.widgets.numericctrl import NumericCtrl
+        currDemoPanel = wx.Panel(self)
+        currDemoSizer = wx.BoxSizer(wx.HORIZONTAL)
+        currDemoLabel = wx.StaticText(currDemoPanel, label=_("Preview:"))
+        currDemoSizer.Add(currDemoLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
+        # Resolve effective decimal char and places for initial demo
+        effectiveDecChar = currentDecSep or detectedDecSep
+        if currentCurrDp:
+            effectiveCurrDp = int(currentCurrDp)
+        else:
+            effectiveCurrDp = detectedFrac
+        self._demoCurrencyCtrl = NumericCtrl(
+            currDemoPanel,
+            value=1234.56,
+            decimal_places=effectiveCurrDp,
+            decimal_char=effectiveDecChar,
+        )
+        currDemoSizer.Add(self._demoCurrencyCtrl, 0, wx.ALIGN_CENTER_VERTICAL)
+        currDemoPanel.SetSizer(currDemoSizer)
+        self.addEntry("", currDemoPanel)
 
         # Store original formats to detect changes
         self._originalDateFormat = currentFormat
         self._originalTimeFormat = currentTimeFormat
+        self._originalDecimalSep = currentDecSep
+        self._originalCurrencyDp = currentCurrDp
 
         self.fit()
 
@@ -1695,6 +1795,53 @@ class LanguagePage(SettingsPage):
 
         event.Skip()
 
+    def _onDecimalSepChange(self, event):
+        """Handle decimal separator dropdown change - update demo and restart warning."""
+        self._updateCurrencyDemo()
+        self._updateRestartWarning()
+        event.Skip()
+
+    def _onCurrencyDpChange(self, event):
+        """Handle currency decimal places dropdown change - update demo and restart warning."""
+        self._updateCurrencyDemo()
+        self._updateRestartWarning()
+        event.Skip()
+
+    def _updateCurrencyDemo(self):
+        """Recreate the demo NumericCtrl with current dropdown selections."""
+        import locale as _locale
+        from taskcoachlib.widgets.numericctrl import NumericCtrl
+
+        # Resolve effective decimal char
+        selectedDecSep = self._decimalSepChoice.GetClientData(
+            self._decimalSepChoice.GetSelection()
+        )
+        if not selectedDecSep:
+            selectedDecSep = _locale.localeconv().get("decimal_point", ".")
+
+        # Resolve effective currency decimal places
+        selectedCurrDp = self._currencyDpChoice.GetClientData(
+            self._currencyDpChoice.GetSelection()
+        )
+        if selectedCurrDp:
+            effectiveDp = int(selectedCurrDp)
+        else:
+            effectiveDp = _locale.localeconv().get("frac_digits", 2)
+            if effectiveDp == 127:
+                effectiveDp = 2
+
+        # Destroy old and create new
+        parent = self._demoCurrencyCtrl.GetParent()
+        sizer = parent.GetSizer()
+        self._demoCurrencyCtrl.Destroy()
+        self._demoCurrencyCtrl = NumericCtrl(
+            parent, value=1234.56,
+            decimal_places=effectiveDp, decimal_char=selectedDecSep,
+        )
+        sizer.Add(self._demoCurrencyCtrl, 0, wx.ALIGN_CENTER_VERTICAL)
+        parent.Layout()
+        parent.Fit()
+
     def _onLanguageChange(self, event):
         """Handle language dropdown change."""
         self._updateLocaleWarning()
@@ -1711,12 +1858,21 @@ class LanguagePage(SettingsPage):
             self._timeFormatChoice.GetSelection()
         )
 
+        selected_decimal_sep = self._decimalSepChoice.GetClientData(
+            self._decimalSepChoice.GetSelection()
+        )
+        selected_currency_dp = self._currencyDpChoice.GetClientData(
+            self._currencyDpChoice.GetSelection()
+        )
+
         # Check if any regional setting has changed
         language_changed = selected_lang != self._originalLanguage
         date_format_changed = selected_date_format != self._originalDateFormat
         time_format_changed = selected_time_format != self._originalTimeFormat
+        decimal_sep_changed = selected_decimal_sep != self._originalDecimalSep
+        currency_dp_changed = selected_currency_dp != self._originalCurrencyDp
 
-        if language_changed or date_format_changed or time_format_changed:
+        if language_changed or date_format_changed or time_format_changed or decimal_sep_changed or currency_dp_changed:
             # Change detected - show red warning
             self._restartWarning.SetLabel(
                 self._restartWarningBase + " " + _("Change detected, restart required!")
@@ -1754,6 +1910,16 @@ class LanguagePage(SettingsPage):
             self._timeFormatChoice.GetSelection()
         )
         self.set("view", "timeformat", selectedTimeFormat)
+        # Save decimal separator setting
+        selectedDecSep = self._decimalSepChoice.GetClientData(
+            self._decimalSepChoice.GetSelection()
+        )
+        self.set("view", "decimal_separator", selectedDecSep)
+        # Save currency decimal places setting
+        selectedCurrDp = self._currencyDpChoice.GetClientData(
+            self._currencyDpChoice.GetSelection()
+        )
+        self.set("view", "currency_decimal_places", selectedCurrDp)
         # Save spell check settings
         self.setboolean("spellcheck", "enabled", self._spellCheckEnabledCheck.IsChecked())
         selectedSpellLang = self._spellCheckLangChoice.GetClientData(
@@ -2510,7 +2676,9 @@ class Preferences(widgets.NotebookDialog):
             self.CentreOnParent()
 
     def addPages(self):
-        self._interior.SetMinSize((1250, 550))
+        screenHeight = wx.Display(wx.Display.GetFromWindow(self)).GetClientArea().GetHeight()
+        height = min(650, int(screenHeight * 0.9))
+        self._interior.SetMinSize((1250, height))
         for page_name in self.allPageNames:
             page = self.createPage(page_name)
             self._interior.AddPage(page, page.pageTitle, page.pageIcon)
