@@ -1,13 +1,17 @@
-"""Subprocess probe to detect whether numpy is importable and functional.
+"""Subprocess probe for numpy diagnostic logging at startup.
 
-Numpy 2.4+ requires SSE4.2 (x86_64-v2 baseline). On older CPUs (e.g.
-AMD A6-3650 with SSE4a only), importing numpy triggers a fatal
-STATUS_ILLEGAL_INSTRUCTION (0xc000001d on Windows, SIGILL on POSIX).
-This hardware fault cannot be caught by try/except in-process.
+Spawns a short-lived subprocess to test numpy import and a basic
+operation. The result is logged with [NUMPY] prefix to aid
+troubleshooting from user-submitted logs.
 
-This module spawns a short-lived subprocess to test numpy import and a
-basic operation. If the subprocess crashes, numpy_usable is set to False
-and wxhelper.py uses pure-Python fallbacks instead.
+NumPy is pinned to 1.x (>=1.26,<2) in all pip-based builds, which
+avoids the SSE4.2 baseline introduced in NumPy 2.4+. This probe is
+therefore informational only — it does not gate any runtime behavior.
+
+Historical context: NumPy 2.4+ requires SSE4.2 (x86_64-v2 baseline).
+On older CPUs (e.g. AMD A6-3650 with SSE4a only), importing numpy 2.4+
+triggers a fatal ILLEGAL INSTRUCTION fault that cannot be caught by
+try/except. See issues #331 and #338.
 
 See docs/NUMPY.md for full documentation.
 """

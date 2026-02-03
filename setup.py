@@ -121,7 +121,7 @@ install_requires = [
     "lxml",
     "pyxdg",
     "keyring",
-    "numpy",
+    "numpy",  # Pinned to 1.x in pip-based builds only (see build workflows)
     "fasteners>=0.19",  # File locking
     "pyenchant>=3.2.0",  # Spell checking for text fields
 ]

@@ -30,6 +30,7 @@ This document describes the packaging setup for Task Coach on Linux (Debian, Ubu
 | wxPython | >=4.2.4 | hypertreelist row background fix (PR #2088) | All current (Bookworm 4.2.0, Trixie 4.2.3) |
 | pyparsing | >=3.1.3 | `pp.Tag()` API | Debian Bookworm (3.0.9) |
 | watchdog | >=3.0.0 | File monitoring API | Debian Bookworm (2.2.1) |
+| numpy | >=1.26,<2 | NumPy 2.4+ requires SSE4.2 (crashes old CPUs, see [NUMPY.md](NUMPY.md)) | — |
 | fasteners | >=0.19 | File locking API | — |
 
 **Note**: wxPython 4.2.4 was released October 28, 2025 but is not yet packaged for any distro. Until then, a bundled patch in `taskcoachlib/patches/` is used (see [CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md)).
@@ -47,7 +48,8 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | squaremap | distro | distro | distro | distro | **pip** | **pip** | bundled | pip | pip |
 | six | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
 | lxml | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
-| numpy | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
+| numpy (<2) | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
+| ↳ version | 1.24.2 | 1.21.5 | 2.2.4 | 1.26.4 | 2.4.0 | 2.3.3 | 1.26.4 | 1.26.4 | 1.26.4 |
 | chardet | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
 | python-dateutil | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
 | keyring | distro | distro | distro | distro | distro | distro | bundled | pip | pip |

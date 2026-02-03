@@ -138,6 +138,16 @@ if sys.platform == 'win32':
                 os.add_dll_directory(dll_dir)
 ```
 
+## NumPy Version Pin
+
+NumPy is pinned to 1.x (`>=1.26,<2`) in the Windows build. NumPy 2.4+ raised its CPU
+baseline to x86_64-v2 (requires SSE4.2), which causes a fatal `STATUS_ILLEGAL_INSTRUCTION`
+(`0xc000001d`) crash on older CPUs lacking SSE4.2 (e.g. AMD A6-3650 with SSE4a only).
+
+A subprocess probe (`taskcoachlib/tools/_numpy_probe.py`) runs at startup and logs numpy
+health with `[NUMPY]` prefix for diagnostic traceability. See [NUMPY.md](NUMPY.md) for
+full details.
+
 ## Windows Exit/Shutdown Behavior
 
 wxPython applications on Windows require special handling for clean shutdown, particularly when launched from a console vs from the Start Menu.
