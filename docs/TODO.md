@@ -153,6 +153,8 @@ This section documents workarounds and patches in the codebase that should be re
 |----------|------------|---------|--------------|
 | `taskcoach.py:43-71` | `_set_wayland_app_id()` | Sets GLib program name for Wayland app ID matching | Required for proper Wayland dock integration |
 | `taskcoach.py:73-74` | `import workarounds.monkeypatches` | Runtime patches for hypertreelist, inspect.getargspec, Window.SetSize | Required for wxPython compatibility |
+| `monkeypatches.py` | `wx.CallAfter` crash guard | Prevents segfaults from callbacks to destroyed C++ objects | Required — see [CRASH_GUARD.md](CRASH_GUARD.md) |
+| `application.py` | `OnExceptionInMainLoop` | Catches unhandled exceptions during wx event dispatch | Required — see [CRASH_GUARD.md](CRASH_GUARD.md) |
 
 ### Python 3.10 Support (Ubuntu 22.04)
 

@@ -229,7 +229,7 @@ class SubjectPage(Page):
         self.addEntry(
             _("Subject"),
             self._subjectEntry,
-            flags=[wx.ALIGN_RIGHT, wx.EXPAND],
+            flags=[None, wx.ALL | wx.EXPAND],
         )
 
     def addDescriptionEntry(self):
@@ -260,7 +260,7 @@ class SubjectPage(Page):
             _("Description"),
             self._descriptionEntry,
             growable=True,
-            flags=[wx.ALIGN_TOP | wx.ALIGN_RIGHT, wx.EXPAND],
+            flags=[None, wx.ALL | wx.EXPAND],
         )
 
     def addCreationDateTimeEntry(self):
@@ -274,21 +274,13 @@ class SubjectPage(Page):
             creation_text += " - %s" % render.dateTime(
                 max_creation_datetime, humanReadable=True
             )
-        self.addEntry(
-            _("Creation date"),
-            creation_text,
-            flags=[wx.ALIGN_RIGHT, wx.EXPAND],
-        )
+        self.addEntry(_("Creation date"), creation_text)
 
     def addModificationDateTimeEntry(self):
         self._modificationTextEntry = wx.StaticText(
             self, label=self.__modification_text()
         )
-        self.addEntry(
-            _("Modification date"),
-            self._modificationTextEntry,
-            flags=[wx.ALIGN_RIGHT, wx.EXPAND],
-        )
+        self.addEntry(_("Modification date"), self._modificationTextEntry)
         for eventType in self.items[0].modificationEventTypes():
             if eventType.startswith("pubsub"):
                 pub.subscribe(self.onAttributeChanged, eventType)
@@ -369,11 +361,7 @@ class TaskSubjectPage(SubjectPage):
             wx.EVT_SPINCTRL,
             self.items[0].priorityChangedEventType(),
         )
-        self.addEntry(
-            _("Priority"),
-            self._priorityEntry,
-            flags=[wx.ALIGN_RIGHT, wx.EXPAND],
-        )
+        self.addEntry(_("Priority"), self._priorityEntry)
 
     def entries(self):
         entries = super().entries()
@@ -399,10 +387,16 @@ class CategorySubjectPage(SubjectPage):
             if len(self.items) == 1
             else False
         )
-        self._exclusiveSubcategoriesCheckBox = wx.CheckBox(
-            self, label=_("Mutually exclusive")
-        )
+        panel = wx.Panel(self)
+        panelSizer = wx.BoxSizer(wx.HORIZONTAL)
+        self._exclusiveSubcategoriesCheckBox = wx.CheckBox(panel)
         self._exclusiveSubcategoriesCheckBox.SetValue(currentExclusivity)
+        panelSizer.Add(self._exclusiveSubcategoriesCheckBox, 0, wx.ALIGN_CENTER_VERTICAL)
+        hintText = wx.StaticText(panel, label=_("Subcategories are mutually exclusive"))
+        hintText.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+        panelSizer.Add(hintText, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        panel.SetSizer(panelSizer)
         self._exclusiveSubcategoriesSync = attributesync.AttributeSync(
             "hasExclusiveSubcategories",
             self._exclusiveSubcategoriesCheckBox,
@@ -412,11 +406,7 @@ class CategorySubjectPage(SubjectPage):
             wx.EVT_CHECKBOX,
             self.items[0].exclusiveSubcategoriesChangedEventType(),
         )
-        self.addEntry(
-            _("Subcategories"),
-            self._exclusiveSubcategoriesCheckBox,
-            flags=[None, wx.ALL],
-        )
+        self.addEntry(_("Mutually exclusive"), panel)
 
     def addStylePriorityEntry(self):
         # pylint: disable=W0201
@@ -435,11 +425,7 @@ class CategorySubjectPage(SubjectPage):
             wx.EVT_SPINCTRL,
             self.items[0].stylePriorityChangedEventType(),
         )
-        self.addEntry(
-            _("Style priority"),
-            self._stylePriorityEntry,
-            flags=[wx.ALIGN_RIGHT, wx.EXPAND],
-        )
+        self.addEntry(_("Style priority"), self._stylePriorityEntry)
 
 
 class AttachmentSubjectPage(SubjectPage):
@@ -515,7 +501,7 @@ class AttachmentSubjectPage(SubjectPage):
         type_label = wx.StaticText(panel, label=type_name)
         sizer.Add(type_label, 0, wx.ALIGN_CENTER_VERTICAL)
         panel.SetSizer(sizer)
-        self.addEntry(_("Type"), panel, flags=[wx.ALIGN_RIGHT, wx.ALIGN_CENTER_VERTICAL])
+        self.addEntry(_("Type"), panel, flags=[None, wx.ALIGN_CENTER_VERTICAL])
 
     def addLocationEntry(self):
         panel = wx.Panel(self)
@@ -544,7 +530,7 @@ class AttachmentSubjectPage(SubjectPage):
             sizer.Add(button, 0, wx.LEFT, 5)
             button.Bind(wx.EVT_BUTTON, self.onSelectLocation)
         panel.SetSizer(sizer)
-        self.addEntry(_("Location"), panel, flags=[wx.ALIGN_RIGHT, wx.EXPAND])
+        self.addEntry(_("Location"), panel, flags=[None, wx.EXPAND])
 
     def onSelectLocation(self, event):  # pylint: disable=W0613
         base_path = self._settings.get("file", "lastattachmentpath")
@@ -1104,7 +1090,7 @@ class TaskAppearancePage(ScrolledPage):
         super().close()
 
 
-class DatesPage(Page):
+class DatesPage(ScrolledPage):
     pageName = "dates"
     pageTitle = _("Dates")
     pageIcon = "calendar_icon"
@@ -2017,7 +2003,7 @@ class ProgressPage(Page):
         self.addEntry(
             _("Percentage complete"),
             self._percentageCompleteEntry,
-            flags=[wx.ALIGN_RIGHT, wx.EXPAND],
+            flags=[None, wx.EXPAND],
         )
 
     @staticmethod
@@ -2056,7 +2042,7 @@ class ProgressPage(Page):
         self.addEntry(
             _("Mark task completed when all children are completed?"),
             self._shouldMarkCompletedEntry,
-            flags=[wx.ALIGN_RIGHT, wx.EXPAND],
+            flags=[None, wx.EXPAND],
         )
 
     def entries(self):
@@ -2066,7 +2052,7 @@ class ProgressPage(Page):
         )
 
 
-class BudgetPage(Page):
+class BudgetPage(ScrolledPage):
     pageName = "budget"
     pageTitle = _("Budget")
     pageIcon = "calculator_icon"
@@ -2177,7 +2163,7 @@ class BudgetPage(Page):
         self.addEntry(
             _("Hourly fee"),
             self._hourlyFeeEntry,
-            flags=[wx.ALIGN_RIGHT, wx.ALL],
+            flags=[None, wx.ALL],
         )
 
     def addFixedFeeEntry(self):
@@ -2196,7 +2182,7 @@ class BudgetPage(Page):
             self.items[0].fixedFeeChangedEventType(),
         )
         self.addEntry(
-            _("Fixed fee"), self._fixedFeeEntry, flags=[wx.ALIGN_RIGHT, wx.ALL]
+            _("Fixed fee"), self._fixedFeeEntry, flags=[None, wx.ALL]
         )
 
     def addRevenueEntry(self):
@@ -2206,7 +2192,7 @@ class BudgetPage(Page):
             self, revenue, readonly=True
         )  # pylint: disable=W0201
         self.addEntry(
-            _("Revenue"), self._revenueEntry, flags=[wx.ALIGN_RIGHT, wx.ALL]
+            _("Revenue"), self._revenueEntry, flags=[None, wx.ALL]
         )
         pub.subscribe(
             self.onRevenueChanged, self.items[0].revenueChangedEventType()
@@ -2676,7 +2662,7 @@ class PrerequisitesPage(PageWithViewer):
         return dict()
 
 
-class PathPage(Page):
+class PathPage(ScrolledPage):
     """Page that displays the hierarchical path (nesting) of the current object.
 
     The path is built only when the tab is selected (lazy loading).
@@ -2764,7 +2750,7 @@ class PathPage(Page):
                 pass  # Window destroyed
 
     def _rebuildPathDisplay(self):
-        """Rebuild the path display."""
+        """Rebuild the path display with all sections."""
         if not self._pathPanel or not self._pathSizer:
             return
         try:
@@ -2778,7 +2764,7 @@ class PathPage(Page):
         # Clear existing content
         self._pathSizer.Clear(True)
 
-        # Only show path for single item
+        # Only show sections for single item
         if len(self.items) != 1:
             label = wx.StaticText(self._pathPanel,
                                   label=_("Path is only shown for single items"))
@@ -2787,16 +2773,40 @@ class PathPage(Page):
             return
 
         item = self.items[0]
+
+        # Section: Path
+        self._buildPathSection(item)
+
+        # Section: Categories (Tasks and Notes only)
+        from taskcoachlib.domain import task as task_module, note
+        if isinstance(item, (task_module.Task, note.Note)):
+            self._buildCategoriesSection(item)
+
+        # Section: Prerequisites (Tasks only)
+        if isinstance(item, task_module.Task):
+            self._buildPrerequisitesSection(item)
+
+        # Section: Dependants (Tasks only)
+        if isinstance(item, task_module.Task):
+            self._buildDependantsSection(item)
+
+        self._pathPanel.Layout()
+        self.Layout()
+        self.SetupScrolling(scroll_x=True, scroll_y=True)
+
+    # -- Section builders --------------------------------------------------
+
+    def _buildPathSection(self, item):
+        """Build the Path section: header + hierarchical path display."""
+        self._addSectionHeader(_("Path"))
         path_objects = self._buildPathObjects(item)
 
         if not path_objects:
             label = wx.StaticText(self._pathPanel,
                                   label=_("This item has no parent objects"))
-            self._pathSizer.Add(label, 0, wx.EXPAND)
-            self._pathPanel.Layout()
+            self._pathSizer.Add(label, 0, wx.EXPAND | wx.LEFT, 5)
             return
 
-        # Display path from root to current item
         for index, obj in enumerate(path_objects):
             obj_type, icon_name = self._getTypeInfo(obj)
             subject = obj.subject()
@@ -2808,7 +2818,6 @@ class PathPage(Page):
             if index > 0:
                 indent = wx.Panel(item_panel, size=(index * 20, 1))
                 item_sizer.Add(indent, 0)
-                # Add arrow icon to show hierarchy
                 arrow_bitmap = wx.ArtProvider.GetBitmap(
                     "arrow_down_right", wx.ART_MENU, (16, 16)
                 )
@@ -2822,10 +2831,8 @@ class PathPage(Page):
                 if bitmap.IsOk():
                     icon = wx.StaticBitmap(item_panel, bitmap=bitmap)
                     item_sizer.Add(icon, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-                    # Subscribe this icon to the object's effective icon changes
                     self._subscribeIconToObject(obj, icon)
 
-            # Add type and subject label using [Type] Subject format
             label_text = "[%s] %s" % (obj_type, subject)
             label = wx.StaticText(item_panel, label=label_text)
 
@@ -2839,8 +2846,86 @@ class PathPage(Page):
             item_panel.SetSizer(item_sizer)
             self._pathSizer.Add(item_panel, 0, wx.EXPAND | wx.ALL, 2)
 
-        self._pathPanel.Layout()
-        self.Layout()
+    def _buildCategoriesSection(self, item):
+        """Build the Categories section: separator, header, category list."""
+        self._addSectionSeparator()
+        self._addSectionHeader(_("Categories"))
+        categories = sorted(item.categories(), key=lambda c: c.subject())
+        if not categories:
+            self._addNoneLabel()
+            return
+        for cat in categories:
+            # Build breadcrumb path: "Parent > Child > Grandchild"
+            ancestors = cat.ancestors()
+            if ancestors:
+                display = " > ".join(a.subject() for a in ancestors)
+                display += " > " + cat.subject()
+            else:
+                display = cat.subject()
+            self._addItemRow(cat, display_text=display)
+
+    def _buildPrerequisitesSection(self, item):
+        """Build the Prerequisites section: separator, header, task list."""
+        self._addSectionSeparator()
+        self._addSectionHeader(_("Prerequisites"))
+        prerequisites = sorted(item.prerequisites(), key=lambda t: t.subject())
+        if not prerequisites:
+            self._addNoneLabel()
+            return
+        for prereq in prerequisites:
+            self._addItemRow(prereq)
+
+    def _buildDependantsSection(self, item):
+        """Build the Dependants section: separator, header, task list."""
+        self._addSectionSeparator()
+        self._addSectionHeader(_("Dependants"))
+        dependants = sorted(item.dependencies(), key=lambda t: t.subject())
+        if not dependants:
+            self._addNoneLabel()
+            return
+        for dep in dependants:
+            self._addItemRow(dep)
+
+    # -- Shared helpers ----------------------------------------------------
+
+    def _addSectionSeparator(self):
+        """Add a horizontal line separator to the path panel."""
+        line = wx.StaticLine(self._pathPanel)
+        self._pathSizer.Add(line, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 8)
+
+    def _addSectionHeader(self, title):
+        """Add a bold section header to the path panel."""
+        header = wx.StaticText(self._pathPanel, label=title)
+        font = header.GetFont()
+        font.SetWeight(wx.FONTWEIGHT_BOLD)
+        header.SetFont(font)
+        self._pathSizer.Add(header, 0, wx.EXPAND | wx.BOTTOM, 4)
+
+    def _addNoneLabel(self):
+        """Add a '(none)' label for empty sections."""
+        label = wx.StaticText(self._pathPanel, label=_("(none)"))
+        self._pathSizer.Add(label, 0, wx.LEFT, 20)
+
+    def _addItemRow(self, obj, display_text=None):
+        """Add an item row with icon and label to the path panel."""
+        obj_type, icon_name = self._getTypeInfo(obj)
+        item_panel = wx.Panel(self._pathPanel)
+        item_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        # Add type icon if available
+        if icon_name:
+            bitmap = wx.ArtProvider.GetBitmap(icon_name, wx.ART_MENU, (16, 16))
+            if bitmap.IsOk():
+                icon = wx.StaticBitmap(item_panel, bitmap=bitmap)
+                item_sizer.Add(icon, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+                self._subscribeIconToObject(obj, icon)
+
+        label_text = display_text or ("[%s] %s" % (obj_type, obj.subject()))
+        label = wx.StaticText(item_panel, label=label_text)
+        item_sizer.Add(label, 1, wx.ALIGN_CENTER_VERTICAL)
+
+        item_panel.SetSizer(item_sizer)
+        self._pathSizer.Add(item_panel, 0, wx.EXPAND | wx.ALL, 2)
 
     def _subscribeIconToObject(self, obj, bitmap):
         """Register a StaticBitmap for updates when object's effective icon changes."""
@@ -2925,20 +3010,18 @@ class PathPage(Page):
         super().close()
 
     def _getTypeInfo(self, obj):
-        """Get the type name and icon for an object."""
+        """Get the type name and effective icon for an object."""
         from taskcoachlib.domain import task as task_module
         from taskcoachlib.domain import category, note, attachment, effort
 
         if isinstance(obj, task_module.Task):
-            return (_("Task"), obj.effectiveIcon() or "led_blue_icon")
+            return (_("Task"), obj.effectiveIcon())
         elif isinstance(obj, category.Category):
-            return (_("Category"), obj.effectiveIcon() or "folder_blue_icon")
+            return (_("Category"), obj.effectiveIcon())
         elif isinstance(obj, note.Note):
-            # Notes use icon(recursive=True) - no effectiveIcon() SSOT
-            return (_("Note"), obj.icon(recursive=True) or "note_icon")
+            return (_("Note"), obj.effectiveIcon())
         elif isinstance(obj, attachment.Attachment):
-            # Attachments have no inheritance
-            return (_("Attachment"), obj.icon() or "paperclip_icon")
+            return (_("Attachment"), obj.effectiveIcon())
         elif isinstance(obj, effort.Effort):
             return (_("Effort"), "clock_icon")
         else:

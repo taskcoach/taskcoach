@@ -162,3 +162,74 @@ def Window_SetSizeNew(self, *args, **kw):
 
 
 Window.SetSize = Window_SetSizeNew
+
+
+# =============================================================================
+# wx.CallAfter Crash Guard
+# =============================================================================
+# wx.CallAfter schedules a callback to run in the main event loop. If the
+# callback is a bound method on a wx widget that has been destroyed (C++ object
+# deleted), calling it causes a segfault. This wrapper detects that situation,
+# logs it, and skips the call.
+#
+# For details, see: docs/CRASH_GUARD.md
+# =============================================================================
+
+import traceback
+from taskcoachlib.meta.debug import log_step
+
+_wx_CallAfter_original = wx.CallAfter
+
+
+def _guarded_CallAfter(callableObj, *args, **kw):
+    """Wrapper around wx.CallAfter that guards against calls to dead objects.
+
+    When a wx.CallAfter is scheduled but the target wx object is destroyed
+    before the callback fires, the original wx.CallAfter would segfault.
+    This wrapper captures the scheduling traceback and wraps the callback
+    so it checks object validity before calling.
+    """
+    # Capture where the CallAfter was scheduled from (for logging)
+    schedule_tb = traceback.format_stack(limit=6)[:-1]
+
+    # Check if this is a bound method on a wx object
+    obj = getattr(callableObj, '__self__', None)
+    is_wx_obj = isinstance(obj, wx.Object)
+
+    if is_wx_obj:
+        # Wrap the call with a validity check
+        def _safe_call(*a, **k):
+            try:
+                # bool(wxObject) returns False if C++ object is deleted
+                if not obj:
+                    caller = "%s.%s" % (type(obj).__name__,
+                                        getattr(callableObj, '__name__', '?'))
+                    log_step("Blocked CallAfter to destroyed object:", caller,
+                             prefix="CRASH_GUARD")
+                    log_step("Originally scheduled from:",
+                             prefix="CRASH_GUARD")
+                    for line in schedule_tb:
+                        for part in line.rstrip().split('\n'):
+                            log_step("  " + part, prefix="CRASH_GUARD")
+                    return
+                callableObj(*a, **k)
+            except RuntimeError as e:
+                if "C/C++ object" in str(e) or "deleted" in str(e):
+                    caller = "%s.%s" % (type(obj).__name__,
+                                        getattr(callableObj, '__name__', '?'))
+                    log_step("RuntimeError calling %s:" % caller, e,
+                             prefix="CRASH_GUARD")
+                    log_step("Originally scheduled from:",
+                             prefix="CRASH_GUARD")
+                    for line in schedule_tb:
+                        for part in line.rstrip().split('\n'):
+                            log_step("  " + part, prefix="CRASH_GUARD")
+                else:
+                    raise
+
+        _wx_CallAfter_original(_safe_call, *args, **kw)
+    else:
+        _wx_CallAfter_original(callableObj, *args, **kw)
+
+
+wx.CallAfter = _guarded_CallAfter

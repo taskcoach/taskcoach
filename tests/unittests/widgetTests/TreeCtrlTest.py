@@ -240,52 +240,6 @@ class CommonTestsMixin(object):
         item = self.getFirstTreeItem()
         self.assertEqual("item 0", self.treeCtrl.GetItemText(item))
 
-    def testIsAnyItemCollapsable_NoItems(self):
-        self.assertFalse(self.treeCtrl.isAnyItemCollapsable())
-
-    def testIsAnyItemExpandable_NoItems(self):
-        self.assertFalse(self.treeCtrl.isAnyItemExpandable())
-
-    def testIsAnyItemCollapsable_OneItem(self):
-        self.children[None] = [self.item0]
-        self.treeCtrl.RefreshAllItems(1)
-        self.assertFalse(self.treeCtrl.isAnyItemCollapsable())
-
-    def testIsAnyItemExpandable_OneItem(self):
-        self.children[None] = [self.item0]
-        self.treeCtrl.RefreshAllItems(1)
-        self.assertFalse(self.treeCtrl.isAnyItemExpandable())
-
-    def testIsAnyItemCollapsable_OneCollapsedParent(self):
-        self.children[None] = [self.item0]
-        self.children[self.item0] = [self.item0_0]
-        self.collapsedItems.append(self.item0)
-        self.treeCtrl.RefreshAllItems(2)
-        self.assertFalse(self.treeCtrl.isAnyItemCollapsable())
-
-    def testIsAnyItemExpandable_OneCollapsedParent(self):
-        self.children[None] = [self.item0]
-        self.children[self.item0] = [self.item0_0]
-        self.collapsedItems.append(self.item0)
-        self.treeCtrl.RefreshAllItems(2)
-        self.assertTrue(self.treeCtrl.isAnyItemExpandable())
-
-    def testIsAnyItemCollapsable_OneExpandedParent(self):
-        self.children[None] = [self.item0]
-        self.children[self.item0] = [self.item0_0]
-        self.treeCtrl.RefreshAllItems(2)
-        parent = self.getFirstTreeItem()
-        self.treeCtrl.Expand(parent)
-        self.assertTrue(self.treeCtrl.isAnyItemCollapsable())
-
-    def testIsAnyItemExpandable_OneExpandedParent(self):
-        self.children[None] = [self.item0]
-        self.children[self.item0] = [self.item0_0]
-        self.treeCtrl.RefreshAllItems(2)
-        parent = self.getFirstTreeItem()
-        self.treeCtrl.Expand(parent)
-        self.assertFalse(self.treeCtrl.isAnyItemExpandable())
-
 
 class TreeListCtrlTest(TreeCtrlTestCase, CommonTestsMixin):
     def setUp(self):

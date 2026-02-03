@@ -1018,9 +1018,9 @@ Tasks have `derivedXxx()` / `derivedXxxSource()` and `effectiveXxx()` / `effecti
 ### Notes, Efforts, and Attachments
 
 **Notes:**
-- Inherit appearance from parent notes only (do NOT inherit from attached task)
+- Inherit appearance from categories (sorted by stylePriority) then parent notes
 - SSOT `effectiveXxx()` methods follow same pattern as Tasks/Categories
-- Fewer sources than Tasks: only parent note or own override (no categories, no status)
+- Sources: categories → parent note → default icon (no status)
 - Appearance tab shows Derived/Override/Effective sections
 
 **Efforts:**

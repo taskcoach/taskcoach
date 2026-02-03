@@ -57,13 +57,13 @@ class BaseCompositeEffort(base.BaseEffort):  # pylint: disable=W0223
             return duration.round(seconds=rounding, alwaysUp=roundUp)
         return duration
 
-    def duration(
+    def totalTimeSpent(
         self, recursive=False, rounding=0, roundUp=False, consolidate=False
     ):
         if consolidate:
             totalEffort = sum(
                 (
-                    self.__doRound(effort.duration(), 0, False)
+                    self.__doRound(effort.timeSpent(), 0, False)
                     for effort in self._getEfforts(recursive)
                 ),
                 date.TimeDelta(),
@@ -71,7 +71,7 @@ class BaseCompositeEffort(base.BaseEffort):  # pylint: disable=W0223
             return totalEffort.round(seconds=rounding, alwaysUp=roundUp)
         return sum(
             (
-                self.__doRound(effort.duration(), rounding, roundUp)
+                self.__doRound(effort.timeSpent(), rounding, roundUp)
                 for effort in self._getEfforts(recursive)
             ),
             date.TimeDelta(),
@@ -80,16 +80,16 @@ class BaseCompositeEffort(base.BaseEffort):  # pylint: disable=W0223
     def isBeingTracked(self, recursive=False):  # pylint: disable=W0613
         return any(effort.isBeingTracked() for effort in self._getEfforts())
 
-    def durationDay(
+    def totalTimeSpentForDay(
         self, dayOffset, rounding=0, roundUp=False, consolidate=False
     ):
-        """Return the duration of this composite effort on a specific day."""
+        """Return the total time spent of grouped efforts on a specific day."""
         startOfDay = self.getStart() + date.TimeDelta(days=dayOffset)
         endOfDay = self.getStart() + date.TimeDelta(days=dayOffset + 1)
         if consolidate:
             totalEffort = sum(
                 (
-                    self.__doRound(effort.duration(), 0, false)
+                    self.__doRound(effort.timeSpent(), 0, false)
                     for effort in self._getEfforts(recursive=False)
                     if startOfDay <= effort.getStart() <= endOfDay
                 ),
@@ -98,7 +98,7 @@ class BaseCompositeEffort(base.BaseEffort):  # pylint: disable=W0223
             return self.__doRound(totalEffort, rounding, roundUp)
         return sum(
             (
-                self.__doRound(effort.duration(), rounding, roundUp)
+                self.__doRound(effort.timeSpent(), rounding, roundUp)
                 for effort in self._getEfforts(recursive=False)
                 if startOfDay <= effort.getStart() <= endOfDay
             ),

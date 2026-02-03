@@ -970,12 +970,6 @@ class HierarchicalCalendarViewer(
         )
         return create(event=None, show=show)
 
-    def isAnyItemExpandable(self):
-        return False
-
-    def isAnyItemCollapsable(self):
-        return False
-
     def GetPrintout(self, settings):
         return self.widget.GetPrintout(settings)
 
@@ -1154,15 +1148,6 @@ class CalendarViewer(
         else:
             toSave = dt.Format()
         self.settings.set(self.settingsSection(), "viewdate", toSave)
-
-    # We need to override these because BaseTaskTreeViewer is a tree viewer, but
-    # CalendarViewer is not. There is probably a better solution...
-
-    def isAnyItemExpandable(self):
-        return False
-
-    def isAnyItemCollapsable(self):
-        return False
 
     def reconfig(self):
         self.widget.Freeze()

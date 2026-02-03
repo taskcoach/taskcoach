@@ -422,9 +422,6 @@ class Calendar(wx.Panel):
     def curselection(self):
         return self._content.curselection()
 
-    def isAnyItemCollapsable(self):
-        return False
-
     def select(self, tasks):
         if len(tasks) == 1:
             self._content.SelectTask(tasks[0])

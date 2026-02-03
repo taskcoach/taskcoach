@@ -176,9 +176,18 @@ class Effort(baseeffort.BaseEffort, base.Object):
             sender=self,
         )
 
+    def timeSpent(self, now=date.DateTime.now):
+        """Always compute elapsed time from start/stop."""
+        stop = self._stop.get()
+        if stop is not None:
+            return stop - self._start.get()
+        return now() - self._start.get()
+
     def duration(self, now=date.DateTime.now):
-        cached = self.__duration.get()
-        return (now() - self._start.get()) if cached is None else cached
+        """DEPRECATED: use timeSpent() instead."""
+        from taskcoachlib.meta.debug import log_step
+        log_step("DEPRECATED effort.duration() called, use timeSpent()", prefix="DEPRECATION")
+        return
 
     def setDuration(self, newDuration, event=None):
         """Setter — normalizes and delegates to Attribute."""
@@ -241,7 +250,7 @@ class Effort(baseeffort.BaseEffort, base.Object):
     def revenue(self):
         task = self._task() if self._task else None
         hourlyFee = task.hourlyFee() if task else 0
-        return self.duration().hours() * hourlyFee
+        return self.timeSpent().hours() * hourlyFee
 
     @staticmethod
     def periodSortFunction(**kwargs):

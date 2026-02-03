@@ -161,23 +161,6 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
             self.SelectAll()
         self.selectCommand()
 
-    def isAnyItemCollapsable(self):
-        for item in self.GetItemChildren():
-            if self.__is_item_collapsable(item):
-                return True
-        return False
-
-    def isAnyItemExpandable(self):
-        for item in self.GetItemChildren():
-            if self.__is_item_expandable(item):
-                return True
-        return False
-
-    def __is_item_expandable(self, item):
-        return self.ItemHasChildren(item) and not self.IsExpanded(item)
-
-    def __is_item_collapsable(self, item):
-        return self.ItemHasChildren(item) and self.IsExpanded(item)
 
     def IsLabelBeingEdited(self):
         return bool(self.GetLabelTextCtrl())

@@ -103,11 +103,6 @@ class Timeline(tooltip.ToolTipMixin, timeline.TimeLine):
     def GetItemCount(self):
         return 0
 
-    def isAnyItemExpandable(self):
-        return False
-
-    isAnyItemCollapsable = isAnyItemExpandable
-
     def GetMainWindow(self):
         return self
 

@@ -668,7 +668,7 @@ class EffortViewer(
     def __sumTimeSpent(self, efforts):
         td = date.TimeDelta()
         for effort in efforts:
-            td = td + effort.duration()
+            td = td + effort.timeSpent()
 
         sumTimeSpent = render.timeSpent(
             td,
@@ -771,54 +771,53 @@ class EffortViewer(
         return anEffort.getStop() == previousEffort.getStop()
 
     def __renderTimeSpent(self, anEffort):
-        """Return a rendered version of the effort duration."""
-        kwargs = dict()
+        """Return a rendered version of the effort time spent."""
         if isinstance(anEffort, effort.BaseCompositeEffort):
-            kwargs["rounding"] = self.__round_precision()
-            kwargs["roundUp"] = self.__always_round_up()
-        duration = anEffort.duration(**kwargs)
+            timeSpent = anEffort.totalTimeSpent(
+                rounding=self.__round_precision(),
+                roundUp=self.__always_round_up(),
+            )
+        else:
+            timeSpent = anEffort.timeSpent()
         # Check for aggregation because we never round in details mode
         if self.isShowingAggregatedEffort():
-            duration = self.__round_duration(duration)
+            timeSpent = self.__roundTimeSpent(timeSpent)
             showSeconds = self.__show_seconds()
         else:
             showSeconds = True
         return render.timeSpent(
-            duration,
+            timeSpent,
             showSeconds=showSeconds,
         )
 
     def __renderTotalTimeSpent(self, anEffort):
-        """Return a rendered version of the effort total duration (of
-        composite efforts)."""
-        # No need to check for aggregation because this method is only used
-        # in aggregated mode
-        total_duration = anEffort.duration(
+        """Return a rendered version of the total time spent (aggregated mode only)."""
+        totalTimeSpent = anEffort.totalTimeSpent(
             recursive=True,
             rounding=self.__round_precision(),
             roundUp=self.__always_round_up(),
             consolidate=self.__consolidate_efforts_per_task(),
         )
         return render.timeSpent(
-            total_duration,
+            totalTimeSpent,
             showSeconds=self.__show_seconds(),
         )
 
     def __renderTimeSpentOnDay(self, anEffort, dayOffset):
-        """Return a rendered version of the duration of the effort on a
-        specific day."""
-        kwargs = dict()
-        if isinstance(anEffort, effort.BaseCompositeEffort):
-            kwargs["rounding"] = self.__round_precision()
-            kwargs["roundUp"] = self.__always_round_up()
-            kwargs["consolidate"] = self.__consolidate_efforts_per_task()
-        duration = (
-            anEffort.durationDay(dayOffset, **kwargs)
-            if self.aggregation == "week"
-            else date.TimeDelta()
-        )
+        """Return a rendered version of the time spent on a specific day."""
+        if self.aggregation != "week":
+            timeSpent = date.TimeDelta()
+        elif isinstance(anEffort, effort.BaseCompositeEffort):
+            timeSpent = anEffort.totalTimeSpentForDay(
+                dayOffset,
+                rounding=self.__round_precision(),
+                roundUp=self.__always_round_up(),
+                consolidate=self.__consolidate_efforts_per_task(),
+            )
+        else:
+            timeSpent = anEffort.timeSpent()
         return render.timeSpent(
-            self.__round_duration(duration),
+            self.__roundTimeSpent(timeSpent),
             showSeconds=self.__show_seconds(),
         )
 
@@ -851,10 +850,9 @@ class EffortViewer(
         """Return the total revenue of the effort as a monetary value."""
         return render.monetaryAmount(anEffort.revenue(recursive=True))
 
-    def __round_duration(self, duration):
-        """Round a duration with the current precision and direction (i.e.
-        always up or not)."""
-        return duration.round(
+    def __roundTimeSpent(self, timeSpent):
+        """Round time spent with the current precision and direction."""
+        return timeSpent.round(
             seconds=self.__round_precision(), alwaysUp=self.__always_round_up()
         )
 

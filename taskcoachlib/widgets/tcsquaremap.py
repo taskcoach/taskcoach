@@ -108,11 +108,6 @@ class TcSquareMap(tooltip.ToolTipMixin, squaremap.SquareMap):
     def GetItemCount(self):
         return 0
 
-    def isAnyItemExpandable(self):
-        return False
-
-    isAnyItemCollapsable = isAnyItemExpandable
-
     def GetMainWindow(self):
         return self
 

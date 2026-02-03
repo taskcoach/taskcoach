@@ -1331,9 +1331,6 @@ class ViewExpandAll(mixin_uicommand.NeedsTreeViewerMixin, ViewerCommand):
             **kwargs
         )
 
-    def enabled(self, event):
-        return super().enabled(event) and self.viewer.isAnyItemExpandable()
-
     def doCommand(self, event):
         self.viewer.expandAll()
 
@@ -1347,9 +1344,6 @@ class ViewCollapseAll(mixin_uicommand.NeedsTreeViewerMixin, ViewerCommand):
             *args,
             **kwargs
         )
-
-    def enabled(self, event):
-        return super().enabled(event) and self.viewer.isAnyItemCollapsable()
 
     def doCommand(self, event):
         self.viewer.collapseAll()

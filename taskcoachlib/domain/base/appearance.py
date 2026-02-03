@@ -162,6 +162,14 @@ DERIVED_SETTERS = {
 }
 
 
+# Default icons for types without status-based icons (Task gets icons from status)
+TYPE_DEFAULT_ICONS = {
+    'Category': 'folder_blue_icon',
+    'Note': 'note_icon',
+    'Attachment': 'paperclip_icon',
+}
+
+
 def _getObjectType(obj):
     class_name = obj.__class__.__name__
     if class_name == 'Task':
@@ -181,14 +189,52 @@ def _isSystemThemeValue(value):
     return False
 
 
+def _getFromCategories(object_ref, effective_getter):
+    """Get a style value from the object's categories, sorted by stylePriority.
+
+    Returns (value, source) from the highest-priority category that has
+    a non-system-theme value, or (None, None) if no category provides one.
+    """
+    if not hasattr(object_ref, 'categories'):
+        return None, None
+    categories = list(object_ref.categories())
+    categories.sort(
+        key=lambda c: getattr(c, 'stylePriority', lambda: 0)(),
+        reverse=True,
+    )
+    for cat in categories:
+        getter = getattr(cat, effective_getter, None)
+        if getter:
+            cat_value = getter()
+            if cat_value and not _isSystemThemeValue(cat_value):
+                return cat_value, f"[Category] {cat.subject()}"
+    return None, None
+
+
+def _getFromParent(object_ref, obj_type, effective_getter):
+    """Get a style value from the object's parent.
+
+    Returns (value, source) or (None, None).
+    """
+    if not object_ref.parent():
+        return None, None
+    parent = object_ref.parent()
+    getter = getattr(parent, effective_getter, None)
+    if getter:
+        parent_value = getter()
+        if parent_value and not _isSystemThemeValue(parent_value):
+            return parent_value, f"[{obj_type}] {parent.subject()}"
+    return None, None
+
+
 def computeDerived(object_ref, field_type):
     """Compute derived value from sources and write to SSOT.
 
     Sources by object type:
-    - Category: parent.effectiveXxx()
     - Task: categories (sorted by stylePriority) → parent → status
-    - Note: parent.effectiveXxx()
-    - Attachment: (none - always empty)
+    - Note: categories (sorted by stylePriority) → parent
+    - Category: parent only
+    - Attachment: (none - always uses default icon)
 
     OUTPUTS: Calls object_ref.setDerivedXxx(value, source)
     """
@@ -200,29 +246,14 @@ def computeDerived(object_ref, field_type):
 
     if obj_type == 'Task':
         # Task sources: categories → parent → status
-        # Check categories first (sorted by stylePriority, higher = first)
-        if hasattr(object_ref, 'categories'):
-            categories = list(object_ref.categories())
-            # Sort by stylePriority descending (higher priority first)
-            categories.sort(key=lambda c: getattr(c, 'stylePriority', lambda: 0)(), reverse=True)
-            for cat in categories:
-                getter = getattr(cat, effective_getter, None)
-                if getter:
-                    cat_value = getter()
-                    if cat_value and not _isSystemThemeValue(cat_value):
-                        value = cat_value
-                        source = f"[Category] {cat.subject()}"
-                        break
+        value, src = _getFromCategories(object_ref, effective_getter)
+        if src:
+            source = src
 
-        # Check parent task if no category value
-        if value is None and object_ref.parent():
-            parent = object_ref.parent()
-            getter = getattr(parent, effective_getter, None)
-            if getter:
-                parent_value = getter()
-                if parent_value and not _isSystemThemeValue(parent_value):
-                    value = parent_value
-                    source = f"[Task] {parent.subject()}"
+        if value is None:
+            value, src = _getFromParent(object_ref, obj_type, effective_getter)
+            if src:
+                source = src
 
         # Fall back to status
         if value is None:
@@ -235,18 +266,31 @@ def computeDerived(object_ref, field_type):
                 else:
                     source = "[Status]"
 
-    elif obj_type in ('Category', 'Note'):
-        # Category/Note sources: parent only
-        if object_ref.parent():
-            parent = object_ref.parent()
-            getter = getattr(parent, effective_getter, None)
-            if getter:
-                parent_value = getter()
-                if parent_value and not _isSystemThemeValue(parent_value):
-                    value = parent_value
-                    source = f"[{obj_type}] {parent.subject()}"
+    elif obj_type == 'Note':
+        # Note sources: categories → parent
+        value, src = _getFromCategories(object_ref, effective_getter)
+        if src:
+            source = src
+
+        if value is None:
+            value, src = _getFromParent(object_ref, obj_type, effective_getter)
+            if src:
+                source = src
+
+    elif obj_type == 'Category':
+        # Category sources: parent only
+        value, src = _getFromParent(object_ref, obj_type, effective_getter)
+        if src:
+            source = src
 
     # Attachment: no sources, value stays None
+
+    # Default icon fallback for types without status (Category, Note, Attachment)
+    if field_type == 'icon' and value is None:
+        default_icon = TYPE_DEFAULT_ICONS.get(obj_type)
+        if default_icon:
+            value = default_icon
+            source = SYSTEM_THEME_SOURCE
 
     # Write via object setter
     setter_name = DERIVED_SETTERS[field_type]
@@ -338,8 +382,9 @@ class ComputeStyles:
         if not self._taskFile:
             return
 
-        # Process in order: categories, tasks, notes, attachments
-        # Categories first so tasks can read their effective values
+        # Process in order: categories, tasks, global notes
+        # Categories first so tasks can read their effective values.
+        # _computeForObject handles owned notes and attachments recursively.
         for category in self._taskFile.categories():
             self._computeForObject(category)
 
@@ -349,23 +394,23 @@ class ComputeStyles:
         for note in self._taskFile.notes():
             self._computeForObject(note)
 
-        # Attachments from tasks and notes
-        for task in self._taskFile.tasks():
-            if hasattr(task, 'attachments'):
-                for attachment in task.attachments():
-                    self._computeForObject(attachment)
-        for note in self._taskFile.notes():
-            if hasattr(note, 'attachments'):
-                for attachment in note.attachments():
-                    self._computeForObject(attachment)
-
     def _computeForObject(self, obj):
-        """Per-object processing: status (tasks only) → derived → effective."""
+        """Per-object processing: status (tasks only) → derived → effective.
+
+        Also processes owned notes and attachments, which in turn process
+        their own owned objects (attachments own notes, notes own attachments).
+        """
         if hasattr(obj, 'computeStoredStatus'):
             obj.computeStoredStatus()
         for field_type in FIELD_TYPES:
             computeDerived(obj, field_type)
             computeEffective(obj, field_type)
+        if hasattr(obj, 'notes'):
+            for n in obj.notes(recursive=True):
+                self._computeForObject(n)
+        if hasattr(obj, 'attachments'):
+            for a in obj.attachments():
+                self._computeForObject(a)
 
     def shutdown(self):
         """Cleanup subscriptions."""

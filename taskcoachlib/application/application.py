@@ -428,6 +428,20 @@ class wxApp(wx.App):
         if event is not None:
             event.Skip()
 
+    def OnExceptionInMainLoop(self):
+        """Called by wx when an unhandled exception occurs during event dispatch.
+
+        Logs the full traceback to stderr so crashes during event handling
+        are visible instead of being silently swallowed. Returns True to
+        continue running (the event that caused the error is skipped).
+        See docs/CRASH_GUARD.md for details.
+        """
+        import traceback
+        from taskcoachlib.meta.debug import log_step
+        log_step("Unhandled exception in MainLoop:",
+                 traceback.format_exc(), prefix="CRASH_GUARD")
+        return True
+
 
 class Application(object, metaclass=patterns.Singleton):
     """

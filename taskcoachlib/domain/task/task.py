@@ -919,7 +919,7 @@ class Task(
 
     def timeSpent(self, recursive=False):
         return sum(
-            (effort.duration() for effort in self.efforts(recursive)),
+            (effort.timeSpent() for effort in self.efforts(recursive)),
             date.TimeDelta(),
         )
 

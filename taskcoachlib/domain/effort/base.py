@@ -87,7 +87,7 @@ class BaseEffort(object):
     def sendDurationChangedMessage(self):
         pub.sendMessage(
             self.durationChangedEventType(),
-            newValue=self.duration(),
+            newValue=self.timeSpent(),
             sender=self,
         )
 

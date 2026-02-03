@@ -228,7 +228,7 @@ class EditEffortDurationCommand(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__newDuration = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__oldDurations = [item.duration() for item in self.items]
+        self.__oldDurations = [item.timeSpent() for item in self.items]
 
     def do_command(self):
         super().do_command()

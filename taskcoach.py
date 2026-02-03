@@ -26,7 +26,12 @@ import faulthandler
 # This provides detailed Python stack traces on crashes (SIGSEGV, SIGBUS, etc.)
 # which are essential for diagnosing future issues. Without it, crashes only show
 # "Fatal Python error: Segmentation fault" with no actionable information.
-faulthandler.enable()
+# NOTE: On Windows, only enable if stderr is redirected to a file,
+# as faulthandler writing to console during shutdown can cause issues.
+if sys.platform != 'win32' or not sys.stderr.isatty():
+    faulthandler.enable(all_threads=True)
+else:
+    faulthandler.enable()
 
 # Fix DLL loading on Windows with Python embeddable package
 # The embeddable package doesn't process .pth files by default.
@@ -60,16 +65,6 @@ if sys.platform == 'win32':
 #
 # from taskcoachlib.tee import init_tee
 # init_tee()
-
-import faulthandler
-
-# Enable faulthandler to get Python tracebacks on segfaults
-# This helps debug crashes in wxPython/GTK C++ code by showing which
-# Python code was executing when the crash occurred
-# NOTE: On Windows, only enable if stderr is redirected to a file,
-# as faulthandler writing to console during shutdown can cause issues
-if sys.platform != 'win32' or not sys.stderr.isatty():
-    faulthandler.enable(all_threads=True)
 
 
 def _set_wayland_app_id():
