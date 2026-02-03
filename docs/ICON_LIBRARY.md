@@ -16,6 +16,7 @@
 - [Adding New Icons](#adding-new-icons)
 - [Migration from Legacy Icons](#migration-from-legacy-icons)
 - [Recently Added Icons](#recently-added-icons)
+- [Icon Grid Browser (Dev Tool)](#icon-grid-browser-dev-tool)
 - [See Also](#see-also)
 
 ## TODO
@@ -38,7 +39,7 @@ See `ICON_MAPPING.json` for documented duplicates (in the `duplicates` field of 
 
 ## IMPORTANT: Complete Import Cycle
 
-**When adding a new icon, ALL THREE steps are required:**
+**When adding a new icon, ALL FOUR steps are required:**
 
 1. **Convert SVG → PNG** (minimum 16x16):
    ```bash
@@ -59,9 +60,20 @@ See `ICON_MAPPING.json` for documented duplicates (in the `duplicates` field of 
    },
    ```
 
+4. **Update per-pack catalog** (icon browser search):
+   - If the icon has `"hints"` in its catalog file (`tools/icon_grid_browser_data/{source}.json`),
+     review and merge relevant hints into the artprovider.py hints above.
+   - Replace the hints entry with `"inherits"` pointing to the new TaskCoach icon ID:
+     ```json
+     "apps/source.svg": {"inherits": "iconname", "sizes": [16, 22, 24, 32, 48, 64]}
+     ```
+   - This is a one-way merge: hints flow from the catalog into artprovider.py,
+     then the catalog switches to `inherits` so it tracks the app's canonical hints.
+   - If no hints exist yet, just add the `"inherits"` field to the existing entry.
+
 **ICON_MAPPING.json alone does NOT make an icon usable!** It only documents where the icon came from. The PNG file and artprovider.py entry are required for the icon to appear in the picker.
 
-**View the actual icon** before writing hints - describe what you SEE, not just the filename.
+**View the actual icon at ALL available sizes** before writing hints - describe what you SEE, not just the filename. Small sizes (16x16) can look very different from large sizes (48x48, 128x128).
 
 ### Coherence Check
 
@@ -173,7 +185,7 @@ Defines source repositories (one entry per icon set):
     "license": "MIT"
   },
   "nuvola": {
-    "url": "https://github.com/nicubunu/nuvola-icon-theme",
+    "url": "https://github.com/spartrekus/nuvola-icon-theme",
     "license": "LGPL-2.1"
   },
   "taskcoach": {
@@ -293,22 +305,19 @@ Download and unzip icon sets to an **external directory** (not inside the repo):
 
 **Optional/Low priority:**
 - `pix.zip` - Moodle web GIFs (user, admin, grades icons - low quality)
-- `gnome-themes-extras-0.9.0` - Contains Nuvola SVG sources (274 vectors), but unmaintained since 2005
+- `gnome-themes-extras-0.9.0` - Adwaita/HighContrast GTK themes and icons, unmaintained since 2005
 
 **Legacy/Unmaintained sets:**
 
 | Set | Status | Notes |
 |-----|--------|-------|
 | Nuvola | Unmaintained | Final v1.0 by David Vignoni. Mirror: https://github.com/spartrekus/nuvola-icon-theme |
-| gnome-themes-extra | Archived | https://gitlab.gnome.org/GNOME/gnome-themes-extra (v3.28, read-only) |
-
-The standalone `nuvola/` folder (3,706 PNGs) is more complete than gnome-themes-extras Nuvola (274 SVGs).
-Keep both if you want SVG sources for potential future scaling.
+| gnome-themes-extra | Archived | Adwaita/HighContrast themes. https://gitlab.gnome.org/GNOME/gnome-themes-extra (v3.28, read-only) |
 
 **Reference links:**
 - [Nuvola - Wikipedia](https://en.wikipedia.org/wiki/Nuvola) - History and background
-- [gnome-themes-extra - GitLab](https://gitlab.gnome.org/GNOME/gnome-themes-extra) - Archived official repo
-- [spartrekus/nuvola-icon-theme - GitHub](https://github.com/spartrekus/nuvola-icon-theme) - Community mirror
+- [spartrekus/nuvola-icon-theme - GitHub](https://github.com/spartrekus/nuvola-icon-theme) - Community mirror (PNGs, 3,706 icons)
+- [gnome-themes-extra - GitLab](https://gitlab.gnome.org/GNOME/gnome-themes-extra) - Adwaita/HighContrast themes (archived, v3.28)
 
 ### Currently Used
 - **Nuvola/KDE** - Current TaskCoach icons (LGPL)
@@ -534,7 +543,7 @@ See "IMPORTANT: Complete Import Cycle" at the top of this document.
    },
    ```
 
-   **Important:** Always VIEW the actual icon image before writing hints. Don't rely solely on the filename—icons often depict something different from their name. For example:
+   **Important:** Always VIEW the actual icon at ALL available sizes before writing hints. Small sizes (16x16) can look very different from large sizes (48x48, 128x128). Don't rely solely on the filename—icons often depict something different from their name. For example:
    - An icon named `accessories-safe.svg` might show a vault, lockbox, or strongbox
    - An icon named `wallet-open.svg` might show bills, cards, or coins inside
 
@@ -571,6 +580,97 @@ This auto-migrates saved task files using old icon names.
 ## Recently Added Icons
 
 See `ICON_MAPPING.json` for the full list of imported icons with provenance.
+
+## Icon Grid Browser (Dev Tool)
+
+A standalone wxPython tool for visually browsing all TaskCoach icons and external icon theme packs in a grid layout with filtering, hover previews, and copy-pasteable import instructions.
+
+### Running
+
+```bash
+python tools/icon_grid_browser.py
+```
+
+### Requirements
+
+Beyond TaskCoach's standard dependencies (wxPython, etc.), this tool requires:
+
+- **cairosvg** — for rendering SVG icons from Papirus/Breeze theme packs
+
+```bash
+# Debian/Ubuntu
+sudo apt install python3-cairosvg
+
+# pip
+pip install cairosvg
+```
+
+The tool exits with install instructions if cairosvg is missing.
+
+### Features
+
+- **Scrollable icon grid** with auto-wrapping columns
+- **Search** by name, ID, or hints (debounced)
+- **Display size selector** (dynamically populated from discovered sizes)
+- **Theme pack multi-select** — Nuvola, Papirus, Breeze, Oxygen (see [External Icon Theme Packs](#external-icon-theme-packs))
+- **Filter checkboxes** — show/hide included icons, duplicates, dark background
+- **Hover popup** showing all available sizes and metadata
+- **Copy-pasteable import instructions** (varies by source type)
+- **Copy-pasteable duplicate instructions** for documenting duplicates
+
+### Border Color Key
+
+| Color  | Meaning |
+|--------|---------|
+| Green  | Icon is in `artprovider.chooseableItems` (included in TaskCoach) |
+| Grey   | Icon is a documented duplicate in `ICON_MAPPING.json` |
+| Yellow | Legacy Nuvola icon (on disk via `iconmap.py`) |
+| None   | Icon exists in external theme pack but not yet imported |
+
+### Per-Pack Catalog Files
+
+The tool maintains persistent catalog files in `tools/icon_grid_browser_data/`:
+
+```
+tools/icon_grid_browser_data/
+├── papirus.json          # Papirus theme pack catalog
+├── oxygen.json           # Oxygen theme pack catalog
+├── nuvola.json           # Nuvola theme pack catalog
+├── nuvola_github.json    # Nuvola GitHub theme pack catalog
+├── breeze.json           # Breeze theme pack catalog
+└── internal.json         # Internal TaskCoach icons
+```
+
+Each catalog is a persistent record of all icons ever discovered in that theme pack.
+Icons and sizes are **additive** (never removed from the catalog, even if the icon
+disappears from disk — a log message is printed instead).
+
+Catalog entries can also contain:
+- `"hints"` — search keywords describing what the icon looks like (generated by the tool)
+- `"inherits"` — references a TaskCoach icon ID to inherit hints from artprovider.py
+- `"duplicates"` / `"duplicate_of"` — bidirectional duplicate relationships
+
+### Hints Workflow
+
+Hints describe what an icon visually depicts and are used for search in the browser.
+
+**Generating hints:** View the icon at ALL available sizes in the browser, then add
+descriptive keywords to the catalog file as a `"hints"` array. Describe what you SEE,
+not just the filename.
+
+**On import (one-way merge):** When importing an icon into TaskCoach:
+1. Review the catalog hints and merge relevant ones into artprovider.py `chooseableItems`
+2. Replace the `"hints"` entry in the catalog with `"inherits": "icon_id"`
+3. The catalog entry now tracks the app's canonical hints via the inherits reference
+
+This is a one-time, one-way merge. After setting `inherits`, the catalog no longer
+stores its own hints — it inherits them from the app.
+
+### External Icon Theme Packs
+
+The tool looks for external theme packs in the `../icons/` sibling directory (see [Downloading Icon Sets](#downloading-icon-sets) for setup).
+
+Theme pack checkboxes are automatically disabled if the expected directory is not found on disk.
 
 ## See Also
 

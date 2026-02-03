@@ -18,19 +18,19 @@ Download the package for your system from the [latest release](https://github.co
 
 | Platform | Package |
 |----------|---------|
-| [Any Linux (x86_64)](#appimage) | `TaskCoach-2.0.1.63-x86_64.AppImage` |
-| [Arch Linux / Manjaro](#arch-linux--manjaro) | `taskcoach-2.0.1.63-arch.pkg.tar.zst` |
-| [Debian 12 (Bookworm)](#debian--ubuntu) | `taskcoach_2.0.1.63_debian-12-bookworm.deb` |
-| [Debian 13 (Trixie)](#debian--ubuntu) | `taskcoach_2.0.1.63_debian-13-trixie.deb` |
-| [Debian Sid](#debian--ubuntu) | `taskcoach_2.0.1.63_debian-sid.deb` |
-| [Fedora 42/43](#fedora) | `taskcoach-2.0.1.63-fedora43.rpm` |
+| [Any Linux (x86_64)](#appimage) | `TaskCoach-2.0.1.64-x86_64.AppImage` |
+| [Arch Linux / Manjaro](#arch-linux--manjaro) | `taskcoach-2.0.1.64-arch.pkg.tar.zst` |
+| [Debian 12 (Bookworm)](#debian--ubuntu) | `taskcoach_2.0.1.64_debian-12-bookworm.deb` |
+| [Debian 13 (Trixie)](#debian--ubuntu) | `taskcoach_2.0.1.64_debian-13-trixie.deb` |
+| [Debian Sid](#debian--ubuntu) | `taskcoach_2.0.1.64_debian-sid.deb` |
+| [Fedora 42/43](#fedora) | `taskcoach-2.0.1.64-fedora43.rpm` |
 | [Linux Mint](#debian--ubuntu) | Use Ubuntu `.deb` (Mint is Ubuntu-based) |
-| [macOS (Apple Silicon)](#macos) | `TaskCoach-2.0.1.63-macos-arm64.dmg` |
-| [macOS (Intel)](#macos) | `TaskCoach-2.0.1.63-macos-intel.dmg` |
-| [Ubuntu 22.04 (Jammy)](#debian--ubuntu) | `taskcoach_2.0.1.63_ubuntu-22.04-jammy.deb` |
-| [Ubuntu 24.04 (Noble)](#debian--ubuntu) | `taskcoach_2.0.1.63_ubuntu-24.04-noble.deb` |
-| [Windows](#windows) | `TaskCoach-2.0.1.63-windows-x64-setup.exe` |
-| [Windows (portable)](#windows) | `TaskCoach-2.0.1.63-windows-x64-portable.zip` |
+| [macOS (Apple Silicon)](#macos) | `TaskCoach-2.0.1.64-macos-arm64.dmg` |
+| [macOS (Intel)](#macos) | `TaskCoach-2.0.1.64-macos-intel.dmg` |
+| [Ubuntu 22.04 (Jammy)](#debian--ubuntu) | `taskcoach_2.0.1.64_ubuntu-22.04-jammy.deb` |
+| [Ubuntu 24.04 (Noble)](#debian--ubuntu) | `taskcoach_2.0.1.64_ubuntu-24.04-noble.deb` |
+| [Windows](#windows) | `TaskCoach-2.0.1.64-windows-x64-setup.exe` |
+| [Windows (portable)](#windows) | `TaskCoach-2.0.1.64-windows-x64-portable.zip` |
 
 After installing, Task Coach should be in normal system launchers (Applications → Office → Task Coach). For CLI, the launch command is `taskcoach.py`.
 
@@ -42,8 +42,8 @@ Install instructions for Debian Trixie (similar for other Debian/Ubuntu systems,
 
 ```bash
 cd ~/Downloads
-wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach_2.0.1.63_debian-13-trixie.deb
-sudo apt install ./taskcoach_2.0.1.63_debian-13-trixie.deb
+wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach_2.0.1.64_debian-13-trixie.deb
+sudo apt install ./taskcoach_2.0.1.64_debian-13-trixie.deb
 ```
 
 To uninstall:
@@ -56,8 +56,8 @@ sudo apt autoremove  # optional: remove unused dependencies
 
 ```bash
 cd ~/Downloads
-wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach-2.0.1.63-arch.pkg.tar.zst
-sudo pacman -U taskcoach-2.0.1.63-arch.pkg.tar.zst
+wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach-2.0.1.64-arch.pkg.tar.zst
+sudo pacman -U taskcoach-2.0.1.64-arch.pkg.tar.zst
 ```
 
 To uninstall:
@@ -70,8 +70,8 @@ sudo pacman -Qdtq | sudo pacman -Rs -  # optional: remove orphaned dependencies
 
 ```bash
 cd ~/Downloads
-wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach-2.0.1.63-fedora43.rpm
-sudo dnf install ./taskcoach-2.0.1.63-fedora43.rpm
+wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach-2.0.1.64-fedora43.rpm
+sudo dnf install ./taskcoach-2.0.1.64-fedora43.rpm
 ```
 
 To uninstall:
@@ -86,13 +86,13 @@ Run on any Linux without installation:
 
 ```bash
 cd ~/Downloads
-wget https://github.com/taskcoach/taskcoach/releases/latest/download/TaskCoach-2.0.1.63-x86_64.AppImage
-chmod +x TaskCoach-2.0.1.63-x86_64.AppImage
+wget https://github.com/taskcoach/taskcoach/releases/latest/download/TaskCoach-2.0.1.64-x86_64.AppImage
+chmod +x TaskCoach-2.0.1.64-x86_64.AppImage
 ```
 
 To launch the AppImage, open the file or run:
 ```
-./TaskCoach-2.0.1.63-x86_64.AppImage
+./TaskCoach-2.0.1.64-x86_64.AppImage
 ```
 
 To remove: simply delete the AppImage file.
@@ -159,7 +159,7 @@ This tests Python version, dependencies, module imports, and wxPython patch stat
 
 Task Coach is free software licensed under the [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0.html).
 
-Copyright (C) 2004-2025 Task Coach developers
+Copyright (C) 2004-2026 Task Coach developers
 
 ## Architecture Overview
 

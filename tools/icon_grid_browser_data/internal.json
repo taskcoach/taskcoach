@@ -1,0 +1,2865 @@
+{
+  "_comment": "Internal TaskCoach icons from artprovider.py and disk.",
+  "icons": {
+    "arrow_down_icon": {
+      "sizes": [
+        16,
+        32
+      ],
+      "name": "Arrow - Down",
+      "hints": [
+        "download",
+        "below",
+        "descend",
+        "lower",
+        "next"
+      ]
+    },
+    "arrow_down_with_status_icon": {
+      "sizes": [
+        16
+      ],
+      "name": "Arrow - Down with status",
+      "hints": [
+        "download",
+        "below",
+        "descend",
+        "lower",
+        "next",
+        "status"
+      ]
+    },
+    "arrow_forward_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ],
+      "name": "Arrow - Forward",
+      "hints": [
+        "next",
+        "continue",
+        "proceed",
+        "right",
+        "go"
+      ]
+    },
+    "arrows_looped_blue_icon": {
+      "sizes": [
+        16,
+        22
+      ],
+      "name": "Arrows looped - Blue",
+      "hints": [
+        "sync",
+        "refresh",
+        "cycle",
+        "repeat",
+        "reload",
+        "recurrence",
+        "recurring"
+      ]
+    },
+    "arrows_looped_green_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Arrows looped - Green",
+      "hints": [
+        "sync",
+        "refresh",
+        "cycle",
+        "repeat",
+        "reload",
+        "recurrence",
+        "recurring"
+      ]
+    },
+    "arrow_up_icon": {
+      "sizes": [
+        16,
+        32
+      ],
+      "name": "Arrow - Up",
+      "hints": [
+        "upload",
+        "above",
+        "ascend",
+        "raise",
+        "previous"
+      ]
+    },
+    "arrow_up_with_status_icon": {
+      "sizes": [
+        16
+      ],
+      "name": "Arrow - Up with status",
+      "hints": [
+        "upload",
+        "above",
+        "ascend",
+        "raise",
+        "previous",
+        "status"
+      ]
+    },
+    "attach_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ],
+      "name": "Attachment",
+      "hints": [
+        "attachment",
+        "paperclip",
+        "file",
+        "document",
+        "clip",
+        "fasten"
+      ]
+    },
+    "bell_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "Bell",
+      "hints": [
+        "alarm",
+        "notification",
+        "alert",
+        "reminder",
+        "ring",
+        "wake"
+      ]
+    },
+    "bomb_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Bomb",
+      "hints": [
+        "danger",
+        "urgent",
+        "explosive",
+        "critical",
+        "warning",
+        "deadline"
+      ]
+    },
+    "book_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Book",
+      "hints": [
+        "read",
+        "document",
+        "manual",
+        "guide",
+        "reference",
+        "study",
+        "learn"
+      ]
+    },
+    "bookmark_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ],
+      "name": "Bookmark",
+      "hints": [
+        "favorite",
+        "save",
+        "mark",
+        "remember",
+        "reference",
+        "link"
+      ]
+    },
+    "books_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Books",
+      "hints": [
+        "read",
+        "documents",
+        "manuals",
+        "guides",
+        "library",
+        "collection"
+      ]
+    },
+    "box_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Box",
+      "hints": [
+        "package",
+        "container",
+        "storage",
+        "shipping",
+        "delivery"
+      ]
+    },
+    "briefcase_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "Briefcase",
+      "hints": [
+        "work",
+        "business",
+        "professional",
+        "portfolio",
+        "job",
+        "office"
+      ]
+    },
+    "bug_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Ladybug",
+      "hints": [
+        "ladybug",
+        "insect",
+        "debug",
+        "error",
+        "problem",
+        "issue"
+      ]
+    },
+    "cake_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Cake",
+      "hints": [
+        "birthday",
+        "celebration",
+        "party",
+        "anniversary",
+        "event"
+      ]
+    },
+    "calculator_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Calculator",
+      "hints": [
+        "math",
+        "calculate",
+        "compute",
+        "numbers",
+        "finance",
+        "accounting"
+      ]
+    },
+    "calendar_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Calendar",
+      "hints": [
+        "date",
+        "schedule",
+        "appointment",
+        "event",
+        "planner",
+        "day",
+        "month",
+        "year",
+        "deadline",
+        "due"
+      ]
+    },
+    "camera_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "Camera",
+      "hints": [
+        "photo",
+        "picture",
+        "image",
+        "capture",
+        "screenshot",
+        "media"
+      ]
+    },
+    "cat_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Cat",
+      "hints": [
+        "pet",
+        "animal",
+        "feline",
+        "meow",
+        "kitty"
+      ]
+    },
+    "cd_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Compact disc (CD)",
+      "hints": [
+        "disc",
+        "music",
+        "media",
+        "backup",
+        "storage"
+      ]
+    },
+    "charts_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Charts",
+      "hints": [
+        "graph",
+        "statistics",
+        "data",
+        "analytics",
+        "report",
+        "metrics"
+      ]
+    },
+    "chat_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Chat",
+      "hints": [
+        "message",
+        "talk",
+        "conversation",
+        "discuss",
+        "communicate"
+      ]
+    },
+    "checkmark_green_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Check mark",
+      "hints": [
+        "done",
+        "complete",
+        "finished",
+        "success",
+        "yes",
+        "approve",
+        "accept"
+      ]
+    },
+    "checkmark_green_icon_multiple": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ],
+      "name": "Check marks",
+      "hints": [
+        "done",
+        "complete",
+        "finished",
+        "success",
+        "batch",
+        "multiple"
+      ]
+    },
+    "clock_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        128
+      ],
+      "name": "Clock",
+      "hints": [
+        "time",
+        "hour",
+        "minute",
+        "watch",
+        "schedule",
+        "duration"
+      ]
+    },
+    "clock_alarm_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ],
+      "name": "Clock - Alarm",
+      "hints": [
+        "time",
+        "alarm",
+        "reminder",
+        "wake",
+        "alert",
+        "notification",
+        "deadline"
+      ]
+    },
+    "clock_stopwatch_icon": {
+      "sizes": [
+        16,
+        48,
+        128
+      ],
+      "name": "Clock - Stopwatch",
+      "hints": [
+        "time",
+        "timer",
+        "countdown",
+        "measure",
+        "track",
+        "duration"
+      ]
+    },
+    "cogwheel_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Cogwheel",
+      "hints": [
+        "settings",
+        "config",
+        "gear",
+        "preferences",
+        "options",
+        "setup"
+      ]
+    },
+    "cogwheels_icon": {
+      "sizes": [
+        16,
+        32
+      ],
+      "name": "Cogwheels",
+      "hints": [
+        "settings",
+        "config",
+        "gears",
+        "preferences",
+        "options",
+        "setup",
+        "system"
+      ]
+    },
+    "contact_card_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "Contact card",
+      "hints": [
+        "vcard",
+        "address",
+        "business card",
+        "profile",
+        "person"
+      ]
+    },
+    "cookie_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "Cookie",
+      "hints": [
+        "treat",
+        "reward",
+        "snack",
+        "food",
+        "biscuit",
+        "sweet"
+      ]
+    },
+    "computer_desktop_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Computer - Desktop",
+      "hints": [
+        "pc",
+        "workstation",
+        "monitor",
+        "screen",
+        "computer",
+        "desktop"
+      ]
+    },
+    "computer_laptop_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Computer - Laptop",
+      "hints": [
+        "notebook",
+        "portable",
+        "pc",
+        "mobile",
+        "computer",
+        "laptop"
+      ]
+    },
+    "computer_handheld_icon": {
+      "sizes": [
+        16,
+        22
+      ],
+      "name": "Computer - Handheld",
+      "hints": [
+        "mobile",
+        "phone",
+        "pda",
+        "tablet",
+        "device"
+      ]
+    },
+    "cross_red_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Cross - Red",
+      "hints": [
+        "error",
+        "cancel",
+        "close",
+        "delete",
+        "stop",
+        "reject",
+        "no",
+        "remove"
+      ]
+    },
+    "die_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Die",
+      "hints": [
+        "dice",
+        "random",
+        "game",
+        "luck",
+        "chance"
+      ]
+    },
+    "document_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Document",
+      "hints": [
+        "file",
+        "paper",
+        "text",
+        "note",
+        "write",
+        "report"
+      ]
+    },
+    "earth_blue_icon": {
+      "sizes": [
+        16,
+        22
+      ],
+      "name": "Earth - Blue",
+      "hints": [
+        "world",
+        "globe",
+        "planet",
+        "international",
+        "global",
+        "web"
+      ]
+    },
+    "earth_green_icon": {
+      "sizes": [
+        16
+      ],
+      "name": "Earth - Green",
+      "hints": [
+        "world",
+        "globe",
+        "planet",
+        "environment",
+        "nature",
+        "eco"
+      ]
+    },
+    "energy_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "Energy",
+      "hints": [
+        "power",
+        "electricity",
+        "lightning",
+        "bolt",
+        "charge",
+        "battery"
+      ]
+    },
+    "envelope_icon": {
+      "sizes": [
+        16,
+        22
+      ],
+      "name": "Envelope",
+      "hints": [
+        "mail",
+        "email",
+        "message",
+        "letter",
+        "send",
+        "receive",
+        "inbox"
+      ]
+    },
+    "error_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "Error",
+      "hints": [
+        "warning",
+        "problem",
+        "issue",
+        "fail",
+        "failure",
+        "bug",
+        "mistake"
+      ]
+    },
+    "envelopes_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Envelopes",
+      "hints": [
+        "mail",
+        "email",
+        "messages",
+        "letters",
+        "inbox",
+        "batch"
+      ]
+    },
+    "file_important_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "File - Important",
+      "hints": [
+        "document",
+        "priority",
+        "urgent",
+        "attention",
+        "critical",
+        "star"
+      ]
+    },
+    "file_locked_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "File - Locked",
+      "hints": [
+        "document",
+        "secure",
+        "protected",
+        "private",
+        "locked",
+        "secret"
+      ]
+    },
+    "folder_blue_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Folder - Blue",
+      "hints": [
+        "directory",
+        "storage",
+        "files",
+        "container",
+        "organize"
+      ]
+    },
+    "folder_blue_light_icon": {
+      "sizes": [
+        16
+      ],
+      "name": "Folder - Light blue",
+      "hints": [
+        "directory",
+        "storage",
+        "files",
+        "container",
+        "organize"
+      ]
+    },
+    "folder_green_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Folder - Green",
+      "hints": [
+        "directory",
+        "storage",
+        "files",
+        "container",
+        "organize"
+      ]
+    },
+    "folder_grey_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Folder - Grey",
+      "hints": [
+        "directory",
+        "storage",
+        "files",
+        "container",
+        "organize",
+        "archive"
+      ]
+    },
+    "folder_orange_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Folder - Orange",
+      "hints": [
+        "directory",
+        "storage",
+        "files",
+        "container",
+        "organize"
+      ]
+    },
+    "folder_purple_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Folder - Purple",
+      "hints": [
+        "directory",
+        "storage",
+        "files",
+        "container",
+        "organize"
+      ]
+    },
+    "folder_red_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Folder - Red",
+      "hints": [
+        "directory",
+        "storage",
+        "files",
+        "container",
+        "organize",
+        "important",
+        "urgent"
+      ]
+    },
+    "folder_yellow_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Folder - Yellow",
+      "hints": [
+        "directory",
+        "storage",
+        "files",
+        "container",
+        "organize"
+      ]
+    },
+    "folder_blue_arrow_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Folder - Blue with arrow",
+      "hints": [
+        "directory",
+        "storage",
+        "files",
+        "move",
+        "transfer"
+      ]
+    },
+    "folder_favorite_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "Folder - Favorite",
+      "hints": [
+        "directory",
+        "storage",
+        "star",
+        "bookmark",
+        "best",
+        "preferred"
+      ]
+    },
+    "folder_important_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "Folder - Important",
+      "hints": [
+        "directory",
+        "storage",
+        "priority",
+        "urgent",
+        "attention",
+        "critical"
+      ]
+    },
+    "fsview_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "Color swatches",
+      "hints": [
+        "color",
+        "swatches",
+        "palette",
+        "design",
+        "theme"
+      ]
+    },
+    "graph_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Graph",
+      "hints": [
+        "chart",
+        "statistics",
+        "data",
+        "analytics",
+        "plot",
+        "diagram"
+      ]
+    },
+    "heart_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Heart",
+      "hints": [
+        "love",
+        "favorite",
+        "like",
+        "health",
+        "wellness"
+      ]
+    },
+    "hearts_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Hearts",
+      "hints": [
+        "love",
+        "favorites",
+        "likes",
+        "health",
+        "wellness"
+      ]
+    },
+    "house_green_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "House - Green",
+      "hints": [
+        "home",
+        "residence",
+        "building",
+        "dwelling",
+        "personal"
+      ]
+    },
+    "house_red_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "House - Red",
+      "hints": [
+        "home",
+        "residence",
+        "building",
+        "dwelling",
+        "urgent"
+      ]
+    },
+    "key_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Key",
+      "hints": [
+        "lock",
+        "security",
+        "password",
+        "access",
+        "unlock",
+        "credential"
+      ]
+    },
+    "keys_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Keys",
+      "hints": [
+        "locks",
+        "security",
+        "passwords",
+        "access",
+        "unlock",
+        "credentials"
+      ]
+    },
+    "lamp_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ],
+      "name": "Lamp",
+      "hints": [
+        "light",
+        "idea",
+        "bulb",
+        "bright",
+        "illuminate",
+        "thought"
+      ]
+    },
+    "led_blue_questionmark_icon": {
+      "sizes": [
+        16
+      ],
+      "name": "Question mark",
+      "hints": [
+        "question",
+        "help",
+        "unknown",
+        "ask",
+        "uncertain"
+      ]
+    },
+    "led_blue_information_icon": {
+      "sizes": [
+        16
+      ],
+      "name": "Information",
+      "hints": [
+        "info",
+        "information",
+        "details",
+        "about",
+        "help"
+      ]
+    },
+    "led_blue_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "LED - Blue",
+      "hints": [
+        "status",
+        "indicator",
+        "light",
+        "signal",
+        "online",
+        "active"
+      ]
+    },
+    "led_blue_light_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "LED - Light blue",
+      "hints": [
+        "status",
+        "indicator",
+        "light",
+        "signal",
+        "online",
+        "active"
+      ]
+    },
+    "led_grey_icon": {
+      "sizes": [
+        16
+      ],
+      "name": "LED - Grey",
+      "hints": [
+        "status",
+        "indicator",
+        "light",
+        "signal",
+        "inactive",
+        "disabled",
+        "off"
+      ]
+    },
+    "led_green_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "LED - Green",
+      "hints": [
+        "status",
+        "indicator",
+        "light",
+        "signal",
+        "ok",
+        "active",
+        "go",
+        "done"
+      ]
+    },
+    "led_green_light_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "LED - Light green",
+      "hints": [
+        "status",
+        "indicator",
+        "light",
+        "signal",
+        "ok",
+        "active",
+        "go",
+        "done"
+      ]
+    },
+    "led_orange_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "LED - Orange",
+      "hints": [
+        "status",
+        "indicator",
+        "light",
+        "signal",
+        "warning",
+        "caution"
+      ]
+    },
+    "led_purple_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "LED - Purple",
+      "hints": [
+        "status",
+        "indicator",
+        "light",
+        "signal",
+        "special",
+        "custom"
+      ]
+    },
+    "led_red_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "LED - Red",
+      "hints": [
+        "status",
+        "indicator",
+        "light",
+        "signal",
+        "error",
+        "stop",
+        "offline",
+        "failed"
+      ]
+    },
+    "led_yellow_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "LED - Yellow",
+      "hints": [
+        "status",
+        "indicator",
+        "light",
+        "signal",
+        "warning",
+        "pause",
+        "attention"
+      ]
+    },
+    "life_ring_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Life ring",
+      "hints": [
+        "help",
+        "support",
+        "rescue",
+        "assist",
+        "safety",
+        "emergency"
+      ]
+    },
+    "lock_locked_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Lock - Locked",
+      "hints": [
+        "secure",
+        "private",
+        "protected",
+        "closed",
+        "secret"
+      ]
+    },
+    "lock_unlocked_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Lock - Unlocked",
+      "hints": [
+        "open",
+        "access",
+        "public",
+        "unlocked",
+        "available"
+      ]
+    },
+    "magnifier_glass_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Magnifier glass",
+      "hints": [
+        "search",
+        "find",
+        "zoom",
+        "look",
+        "inspect",
+        "explore"
+      ]
+    },
+    "music_piano_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Music - Piano",
+      "hints": [
+        "piano",
+        "keyboard",
+        "music",
+        "instrument",
+        "play"
+      ]
+    },
+    "music_note_icon": {
+      "sizes": [
+        16,
+        22
+      ],
+      "name": "Music - Note",
+      "hints": [
+        "music",
+        "sound",
+        "audio",
+        "melody",
+        "song",
+        "tune"
+      ]
+    },
+    "note_icon": {
+      "sizes": [
+        16,
+        22
+      ],
+      "name": "Note",
+      "hints": [
+        "sticky",
+        "memo",
+        "reminder",
+        "post-it",
+        "write"
+      ]
+    },
+    "palette_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Palette",
+      "hints": [
+        "color",
+        "art",
+        "design",
+        "paint",
+        "creative"
+      ]
+    },
+    "paperclip_icon": {
+      "sizes": [
+        16,
+        22
+      ],
+      "name": "Paperclip",
+      "hints": [
+        "attach",
+        "attachment",
+        "file",
+        "document",
+        "clip"
+      ]
+    },
+    "password_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "Password",
+      "hints": [
+        "security",
+        "credential",
+        "secret",
+        "key",
+        "login",
+        "authenticate"
+      ]
+    },
+    "pencil_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Pencil",
+      "hints": [
+        "edit",
+        "write",
+        "draw",
+        "modify",
+        "change",
+        "update"
+      ]
+    },
+    "person_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Person",
+      "hints": [
+        "user",
+        "account",
+        "profile",
+        "member",
+        "contact",
+        "individual"
+      ]
+    },
+    "persons_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "People",
+      "hints": [
+        "users",
+        "people",
+        "team",
+        "group",
+        "members",
+        "contacts"
+      ]
+    },
+    "person_id_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Person - ID",
+      "hints": [
+        "user",
+        "identity",
+        "card",
+        "profile",
+        "badge",
+        "employee"
+      ]
+    },
+    "person_talking_icon": {
+      "sizes": [
+        16,
+        22
+      ],
+      "name": "Person - Talking",
+      "hints": [
+        "speak",
+        "talk",
+        "discuss",
+        "communicate",
+        "voice",
+        "call"
+      ]
+    },
+    "printer_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "Printer",
+      "hints": [
+        "print",
+        "output",
+        "paper",
+        "document",
+        "hardcopy"
+      ]
+    },
+    "reload_icon": {
+      "sizes": [
+        16,
+        22
+      ],
+      "name": "Reload",
+      "hints": [
+        "refresh",
+        "update",
+        "sync",
+        "repeat",
+        "restart",
+        "renew"
+      ]
+    },
+    "remote_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "Remote",
+      "hints": [
+        "control",
+        "wireless",
+        "distance",
+        "network",
+        "access"
+      ]
+    },
+    "run_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ],
+      "name": "Run",
+      "hints": [
+        "execute",
+        "start",
+        "play",
+        "begin",
+        "go",
+        "launch",
+        "sprint"
+      ]
+    },
+    "science_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "Science",
+      "hints": [
+        "lab",
+        "experiment",
+        "research",
+        "chemistry",
+        "biology"
+      ]
+    },
+    "sign_important_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "Sign - Important",
+      "hints": [
+        "warning",
+        "attention",
+        "urgent",
+        "priority",
+        "exclamation",
+        "alert"
+      ]
+    },
+    "symbol_minus_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Symbol - Minus",
+      "hints": [
+        "subtract",
+        "remove",
+        "decrease",
+        "less",
+        "reduce"
+      ]
+    },
+    "symbol_plus_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Symbol - Plus",
+      "hints": [
+        "add",
+        "create",
+        "increase",
+        "more",
+        "expand"
+      ]
+    },
+    "star_red_icon": {
+      "sizes": [
+        16,
+        32
+      ],
+      "name": "Star - Red",
+      "hints": [
+        "favorite",
+        "important",
+        "priority",
+        "rating",
+        "bookmark",
+        "urgent",
+        "critical"
+      ]
+    },
+    "star_yellow_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Star - Yellow",
+      "hints": [
+        "favorite",
+        "important",
+        "priority",
+        "rating",
+        "bookmark",
+        "best"
+      ]
+    },
+    "sticky_note_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "Sticky note",
+      "hints": [
+        "memo",
+        "reminder",
+        "post-it",
+        "note",
+        "yellow",
+        "paper"
+      ]
+    },
+    "tea_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "Tea",
+      "hints": [
+        "break",
+        "rest",
+        "relax",
+        "pause",
+        "coffee",
+        "drink",
+        "beverage"
+      ]
+    },
+    "terminal_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "Terminal",
+      "hints": [
+        "command",
+        "console",
+        "shell",
+        "code",
+        "developer"
+      ]
+    },
+    "timer_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "Timer",
+      "hints": [
+        "countdown",
+        "time",
+        "limit",
+        "duration",
+        "stopwatch",
+        "deadline"
+      ]
+    },
+    "trafficlight_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Traffic light",
+      "hints": [
+        "status",
+        "priority",
+        "waiting",
+        "proceed",
+        "stop"
+      ]
+    },
+    "traffic_go_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "Traffic - Go",
+      "hints": [
+        "proceed",
+        "start",
+        "green light",
+        "continue",
+        "execute"
+      ]
+    },
+    "trashcan_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Trashcan",
+      "hints": [
+        "delete",
+        "remove",
+        "garbage",
+        "bin",
+        "recycle",
+        "discard"
+      ]
+    },
+    "weather_lightning_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Weather - Lightning",
+      "hints": [
+        "storm",
+        "thunder",
+        "electric",
+        "power",
+        "urgent",
+        "fast"
+      ]
+    },
+    "weather_umbrella_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Weather - Umbrella",
+      "hints": [
+        "rain",
+        "protection",
+        "shelter",
+        "weather",
+        "umbrella",
+        "wet"
+      ]
+    },
+    "weather_sunny_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Weather - Partly sunny",
+      "hints": [
+        "sun",
+        "bright",
+        "day",
+        "clear",
+        "good",
+        "positive"
+      ]
+    },
+    "wizard_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ],
+      "name": "Wizard",
+      "hints": [
+        "magic",
+        "helper",
+        "assistant",
+        "guide",
+        "setup"
+      ]
+    },
+    "wrench_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Wrench",
+      "hints": [
+        "tool",
+        "settings",
+        "config",
+        "repair",
+        "fix",
+        "maintenance",
+        "service"
+      ]
+    },
+    "bank_account": {
+      "sizes": [],
+      "name": "Bank Account",
+      "hints": [
+        "bank",
+        "account",
+        "checking",
+        "savings",
+        "finance",
+        "institution"
+      ],
+      "source": "papirus",
+      "category": "actions",
+      "original_file": "view-bank-account-checking.svg"
+    },
+    "money_budget": {
+      "sizes": [],
+      "name": "Money Budget",
+      "hints": [
+        "money",
+        "budget",
+        "finance",
+        "coins",
+        "piggybank",
+        "savings",
+        "personal"
+      ],
+      "source": "papirus",
+      "category": "actions",
+      "original_file": "view-financial-budget.svg"
+    },
+    "taxes": {
+      "sizes": [],
+      "name": "Taxes",
+      "hints": [
+        "tax",
+        "taxes",
+        "money",
+        "dollar",
+        "cash",
+        "government",
+        "irs",
+        "percent",
+        "form"
+      ],
+      "source": "papirus",
+      "category": "actions",
+      "original_file": "taxes-finances.svg"
+    },
+    "currency_dollar": {
+      "sizes": [],
+      "name": "Currency",
+      "hints": [
+        "currency",
+        "dollar",
+        "money",
+        "symbol",
+        "usd",
+        "format",
+        "price"
+      ],
+      "source": "papirus",
+      "category": "actions",
+      "original_file": "format-currency.svg"
+    },
+    "calculator_flat": {
+      "sizes": [],
+      "name": "Calculator (Flat)",
+      "hints": [
+        "calculator",
+        "math",
+        "compute",
+        "calculate",
+        "numbers",
+        "flat",
+        "modern"
+      ],
+      "source": "papirus",
+      "category": "apps",
+      "original_file": "accessories-calculator.svg",
+      "duplicates": [
+        {
+          "source": "papirus",
+          "category": "apps",
+          "file": "io.liri.Calculator.svg"
+        },
+        {
+          "source": "papirus",
+          "category": "apps",
+          "file": "deepin-calculator.svg"
+        },
+        {
+          "source": "papirus",
+          "category": "apps",
+          "file": "xfce4-calculator-plugin.svg"
+        },
+        {
+          "source": "papirus",
+          "category": "apps",
+          "file": "io.elementary.calculator.svg"
+        }
+      ]
+    },
+    "uno_calculator": {
+      "sizes": [],
+      "name": "Calculator (Uno)",
+      "hints": [
+        "calculator",
+        "math",
+        "uno",
+        "compute",
+        "blue",
+        "numbers",
+        "arithmetic"
+      ],
+      "source": "papirus",
+      "category": "apps",
+      "original_file": "uno-calculator.svg"
+    },
+    "gnome_calculator": {
+      "sizes": [],
+      "name": "Calculator (GNOME)",
+      "hints": [
+        "calculator",
+        "math",
+        "gnome",
+        "compute",
+        "colorful",
+        "numbers",
+        "arithmetic"
+      ],
+      "source": "papirus",
+      "category": "apps",
+      "original_file": "gnome-calculator.svg",
+      "duplicates": [
+        {
+          "source": "papirus",
+          "category": "apps",
+          "file": "org.gnome.Calculator.svg"
+        }
+      ]
+    },
+    "safe_vault": {
+      "sizes": [],
+      "name": "Safe",
+      "hints": [
+        "safe",
+        "vault",
+        "secure",
+        "lock",
+        "storage",
+        "protect",
+        "valuables"
+      ],
+      "source": "papirus",
+      "category": "apps",
+      "original_file": "accessories-safe.svg"
+    },
+    "bitcoin": {
+      "sizes": [],
+      "name": "Bitcoin",
+      "hints": [
+        "bitcoin",
+        "crypto",
+        "cryptocurrency",
+        "digital",
+        "btc",
+        "blockchain"
+      ],
+      "source": "papirus",
+      "category": "apps",
+      "original_file": "bitcoin.svg",
+      "duplicates": [
+        {
+          "source": "papirus",
+          "category": "apps",
+          "file": "org.bitcoincore.bitcoin-qt.svg"
+        },
+        {
+          "source": "papirus",
+          "category": "apps",
+          "file": "bitcoin-qt.svg"
+        },
+        {
+          "source": "papirus",
+          "category": "apps",
+          "file": "bitcoin128.svg"
+        }
+      ]
+    },
+    "wallet_flat": {
+      "sizes": [],
+      "name": "Wallet (Flat)",
+      "hints": [
+        "wallet",
+        "billfold",
+        "money",
+        "cash",
+        "flat",
+        "modern"
+      ],
+      "source": "papirus",
+      "category": "apps",
+      "original_file": "kwalletmanager.svg"
+    },
+    "money_expense": {
+      "sizes": [],
+      "name": "Money Expense",
+      "hints": [
+        "expense",
+        "money",
+        "spending",
+        "budget",
+        "track",
+        "manager",
+        "receipt"
+      ],
+      "source": "papirus",
+      "category": "actions",
+      "original_file": "view-financial-expense.svg"
+    },
+    "homebank": {
+      "sizes": [],
+      "name": "HomeBank",
+      "hints": [
+        "home",
+        "bank",
+        "finance",
+        "budget",
+        "personal",
+        "accounting"
+      ],
+      "source": "papirus",
+      "category": "apps",
+      "original_file": "homebank.svg",
+      "duplicates": [
+        {
+          "source": "papirus",
+          "category": "apps",
+          "file": "fr.free.Homebank.svg"
+        }
+      ]
+    },
+    "cointop": {
+      "sizes": [],
+      "name": "CoinTop",
+      "hints": [
+        "crypto",
+        "cryptocurrency",
+        "terminal",
+        "bitcoin",
+        "portfolio",
+        "tracker"
+      ],
+      "source": "papirus",
+      "category": "apps",
+      "original_file": "cointop.svg",
+      "duplicates": [
+        {
+          "source": "papirus",
+          "category": "apps",
+          "file": "com.github.miguelmota.Cointop.svg"
+        }
+      ]
+    },
+    "cryptomator": {
+      "sizes": [],
+      "name": "Cryptomator",
+      "hints": [
+        "encrypt",
+        "security",
+        "vault",
+        "cloud",
+        "privacy",
+        "lock"
+      ],
+      "source": "papirus",
+      "category": "apps",
+      "original_file": "cryptomator.svg",
+      "duplicates": [
+        {
+          "source": "papirus",
+          "category": "apps",
+          "file": "org.cryptomator.Cryptomator.svg"
+        },
+        {
+          "source": "papirus",
+          "category": "apps",
+          "file": "appimagekit-org.cryptomator.Cryptomator.svg"
+        }
+      ]
+    },
+    "banking": {
+      "sizes": [],
+      "name": "Banking",
+      "hints": [
+        "bank",
+        "credit",
+        "card",
+        "finance",
+        "payment",
+        "account"
+      ],
+      "source": "papirus",
+      "category": "apps",
+      "original_file": "org.tabos.banking.svg"
+    },
+    "safeeyes": {
+      "sizes": [],
+      "name": "Safe Eyes",
+      "hints": [
+        "break",
+        "rest",
+        "health",
+        "eye",
+        "reminder",
+        "timer"
+      ],
+      "source": "papirus",
+      "category": "apps",
+      "original_file": "safeeyes.svg",
+      "duplicates": [
+        {
+          "source": "papirus",
+          "category": "apps",
+          "file": "io.github.slgobinath.SafeEyes.svg"
+        }
+      ]
+    },
+    "kmymoney": {
+      "sizes": [],
+      "name": "KMyMoney",
+      "hints": [
+        "money",
+        "finance",
+        "personal",
+        "budget",
+        "accounting",
+        "kde"
+      ],
+      "source": "papirus",
+      "category": "apps",
+      "original_file": "kmymoney.svg"
+    },
+    "money_manager": {
+      "sizes": [],
+      "name": "Money Manager",
+      "hints": [
+        "money",
+        "expense",
+        "manager",
+        "budget",
+        "track",
+        "finance"
+      ],
+      "source": "papirus",
+      "category": "apps",
+      "original_file": "money-manager-ex.svg"
+    },
+    "moneydance": {
+      "sizes": [],
+      "name": "Moneydance",
+      "hints": [
+        "money",
+        "finance",
+        "personal",
+        "budget",
+        "banking",
+        "investment"
+      ],
+      "source": "papirus",
+      "category": "apps",
+      "original_file": "moneydance.svg"
+    },
+    "bank_building": {
+      "sizes": [],
+      "name": "Bank Building",
+      "hints": [
+        "bank",
+        "building",
+        "institution",
+        "columns",
+        "finance",
+        "classic"
+      ],
+      "source": "oxygen",
+      "category": "actions",
+      "original_file": "view-bank.png"
+    },
+    "wallet_closed": {
+      "sizes": [],
+      "name": "Wallet (Closed)",
+      "hints": [
+        "wallet",
+        "closed",
+        "locked",
+        "secure",
+        "billfold",
+        "leather"
+      ],
+      "source": "oxygen",
+      "category": "status",
+      "original_file": "wallet-closed.png"
+    },
+    "wallet_open": {
+      "sizes": [],
+      "name": "Wallet (Open)",
+      "hints": [
+        "wallet",
+        "open",
+        "money",
+        "cash",
+        "billfold",
+        "spend"
+      ],
+      "source": "oxygen",
+      "category": "status",
+      "original_file": "wallet-open.png"
+    },
+    "calculator_3d": {
+      "sizes": [],
+      "name": "Calculator (3D)",
+      "hints": [
+        "calculator",
+        "math",
+        "compute",
+        "calculate",
+        "classic",
+        "3d"
+      ],
+      "source": "oxygen",
+      "category": "apps",
+      "original_file": "accessories-calculator.png"
+    },
+    "wallet_keys": {
+      "sizes": [],
+      "name": "Wallet Keys",
+      "hints": [
+        "wallet",
+        "keys",
+        "password",
+        "secure",
+        "manager",
+        "keyring"
+      ],
+      "source": "oxygen",
+      "category": "apps",
+      "original_file": "kwalletmanager.png"
+    },
+    "cactus": {
+      "sizes": [],
+      "name": "Cactus",
+      "hints": [
+        "cactus",
+        "plant",
+        "desert",
+        "green",
+        "nature",
+        "succulent"
+      ],
+      "source": "nuvola",
+      "category": "apps",
+      "original_file": "khangman.png"
+    },
+    "markuncompleted": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Markuncompleted"
+    },
+    "up": {
+      "sizes": [
+        16
+      ],
+      "name": "Up"
+    },
+    "paste_subitem": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ],
+      "name": "Paste Subitem"
+    },
+    "viewalltasks": {
+      "sizes": [
+        16
+      ],
+      "name": "Viewalltasks"
+    },
+    "print": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Print"
+    },
+    "2rightarrow": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ],
+      "name": "2Rightarrow"
+    },
+    "newsub": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Newsub"
+    },
+    "fileopen_red": {
+      "sizes": [
+        16
+      ],
+      "name": "Fileopen Red"
+    },
+    "undo": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Undo"
+    },
+    "taskcoach": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "Taskcoach"
+    },
+    "paste": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Paste"
+    },
+    "folder_orange_open_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Folder Orange Open"
+    },
+    "arrow_down_right": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ],
+      "name": "Arrow Down Right"
+    },
+    "newtmpl": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Newtmpl"
+    },
+    "link_icon": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ],
+      "name": "Link"
+    },
+    "folder_purple_open_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Folder Purple Open"
+    },
+    "tree_expand_all": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ],
+      "name": "Tree Expand All"
+    },
+    "person_photo_icon": {
+      "sizes": [
+        16
+      ],
+      "name": "Person Photo"
+    },
+    "folder_red_open_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Folder Red Open"
+    },
+    "maxpriority": {
+      "sizes": [
+        16
+      ],
+      "name": "Maxpriority"
+    },
+    "markcompleted": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Markcompleted"
+    },
+    "clock_stop_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Clock Stop"
+    },
+    "listview": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Listview"
+    },
+    "down": {
+      "sizes": [
+        16
+      ],
+      "name": "Down"
+    },
+    "copy": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Copy"
+    },
+    "folder_grey_open_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Folder Grey Open"
+    },
+    "prev": {
+      "sizes": [
+        16,
+        22
+      ],
+      "name": "Prev"
+    },
+    "incpriority": {
+      "sizes": [
+        16
+      ],
+      "name": "Incpriority"
+    },
+    "save": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Save"
+    },
+    "edit": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Edit"
+    },
+    "timelineviewer": {
+      "sizes": [
+        16
+      ],
+      "name": "Timelineviewer"
+    },
+    "folder_blue_open_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Folder Blue Open"
+    },
+    "tree_collapse_all": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ],
+      "name": "Tree Collapse All"
+    },
+    "folder_blue_light_open_icon": {
+      "sizes": [
+        16
+      ],
+      "name": "Folder Blue Light Open"
+    },
+    "folder_yellow_open_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Folder Yellow Open"
+    },
+    "activatepreviousviewer": {
+      "sizes": [
+        16
+      ],
+      "name": "Activatepreviousviewer"
+    },
+    "checkall": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ],
+      "name": "Checkall"
+    },
+    "clock_menu_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Clock Menu"
+    },
+    "clock_resume_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Clock Resume"
+    },
+    "cut": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Cut"
+    },
+    "mergedisk": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Mergedisk"
+    },
+    "folder_green_open_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Folder Green Open"
+    },
+    "saveas": {
+      "sizes": [
+        16
+      ],
+      "name": "Saveas"
+    },
+    "next": {
+      "sizes": [
+        16,
+        22
+      ],
+      "name": "Next"
+    },
+    "delete": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Delete"
+    },
+    "folder_home_icon": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Folder Home"
+    },
+    "treeview": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Treeview"
+    },
+    "windows": {
+      "sizes": [
+        16,
+        22
+      ],
+      "name": "Windows"
+    },
+    "restore": {
+      "sizes": [
+        16
+      ],
+      "name": "Restore"
+    },
+    "activatenextviewer": {
+      "sizes": [
+        16
+      ],
+      "name": "Activatenextviewer"
+    },
+    "exportashtml": {
+      "sizes": [
+        16
+      ],
+      "name": "Exportashtml"
+    },
+    "decpriority": {
+      "sizes": [
+        16
+      ],
+      "name": "Decpriority"
+    },
+    "exportasvcal": {
+      "sizes": [
+        16
+      ],
+      "name": "Exportasvcal"
+    },
+    "viewnewviewer": {
+      "sizes": [
+        16
+      ],
+      "name": "Viewnewviewer"
+    },
+    "new": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "New"
+    },
+    "linux": {
+      "sizes": [
+        16
+      ],
+      "name": "Linux"
+    },
+    "uncheckall": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ],
+      "name": "Uncheckall"
+    },
+    "redo": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Redo"
+    },
+    "progress": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Progress"
+    },
+    "squaremapviewer": {
+      "sizes": [
+        16
+      ],
+      "name": "Squaremapviewer"
+    },
+    "exportascsv": {
+      "sizes": [
+        16
+      ],
+      "name": "Exportascsv"
+    },
+    "sort": {
+      "sizes": [
+        16
+      ],
+      "name": "Sort"
+    },
+    "box_in_icon": {
+      "sizes": [
+        16
+      ],
+      "name": "Box In"
+    },
+    "minpriority": {
+      "sizes": [
+        16
+      ],
+      "name": "Minpriority"
+    },
+    "export": {
+      "sizes": [
+        16
+      ],
+      "name": "Export"
+    },
+    "mac": {
+      "sizes": [
+        16
+      ],
+      "name": "Mac"
+    },
+    "fileopen": {
+      "sizes": [
+        16,
+        22,
+        32
+      ],
+      "name": "Fileopen"
+    },
+    "box_out_icon": {
+      "sizes": [
+        16
+      ],
+      "name": "Box Out"
+    },
+    "magnifier_glass_dropdown_icon": {
+      "sizes": [
+        16
+      ],
+      "name": "Magnifier Glass Dropdown"
+    },
+    "exit": {
+      "sizes": [
+        16
+      ],
+      "name": "Exit"
+    },
+    "close": {
+      "sizes": [
+        16
+      ],
+      "name": "Close"
+    }
+  }
+}

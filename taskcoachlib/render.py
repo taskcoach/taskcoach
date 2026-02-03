@@ -322,7 +322,7 @@ def monetaryAmount(aFloat):
     return (
         ""
         if round(aFloat, 2) == 0
-        else locale.format("%.2f", aFloat, monetary=True)
+        else locale.format_string("%.2f", aFloat, monetary=True)
     )
 
 

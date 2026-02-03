@@ -101,7 +101,7 @@ class ArtProvider(wx.ArtProvider):
         return result_image.ConvertToBitmap()
 
     def _CreateBitmap(self, artId, artClient, size) -> wx.Bitmap:
-        if not artId:
+        if not artId or artId == "nobitmap":
             return wx.Bitmap(*size)
 
         # Try new format first: "16x16/iconname.png" (size-based directories)

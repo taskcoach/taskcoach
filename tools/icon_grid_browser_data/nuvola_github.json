@@ -1,0 +1,6603 @@
+{
+  "_comment": "Auto-maintained catalog for nuvola_github theme pack. Icons/sizes are additive only.",
+  "icons": {
+    "devices/print_printer.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/multimedia-player-apple-ipod.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/samba_unmount.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/drive-removable-media-usb.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/memory.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/video-television.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/media-floppy.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/raid.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/drive-removable-media-usb-pendrive.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/media-optical-dvd.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/cpu.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/drive-harddisk.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/printer1.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/zip_unmount.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/pda.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/pda_blue.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/modem.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/media-optical.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/nfs_unmount.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/camera-photo.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/pda_black.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/5floppy_unmount.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/media-optical-recordable.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/computer.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/scanner.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/input-mouse.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/mo_unmount.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/input-tablet.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/camera_unmount.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/media-tape.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/joystick.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/multimedia-player.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/media-optical-audio.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/print_class.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "devices/printer.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/keditbookmarks.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/khotkeys.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/digikam.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/opera.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/indeximg.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-desktop-font.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/mozilla-thunderbird.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/netscape.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/ktimer.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kopete.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/laptop_pcmcia.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kaddressbook.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-desktop-color.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kmplot.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/accessories-dictionary.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kxkb.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-web-browser-stylesheets.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-web-browser-cookies.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kappfinder.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kcmpci.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kcmprocessor.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/knode.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kmenuedit.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kmenu.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kcoloredit.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/xfmail.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kooka.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/ktouch.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/ksplash.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/hwinfo.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-desktop-screensaver.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/inkscape.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/galeon.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kchart.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/irkick.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kate.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kruler.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/reload.png": {
+      "sizes": [
+        16,
+        22
+      ]
+    },
+    "apps/xapp.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kmix.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kcmpartitions.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kolf.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/korganizer_todo.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/khangman.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kfig.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/parley.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/date.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kmoon.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/designer.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-system-login.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-desktop-display.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kcmdevice.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/bookcase.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kppp.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-desktop-keyboard-layout.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-web-browser-identification.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/noatun.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/atlantik.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kcmmidi.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/aktion.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/artsbuilder.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-desktop-wallpaper.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-system-windows-actions.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kmousetool.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-desktop-printer.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kjots.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/xconfig.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/licq.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kmid.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/krfb.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-desktop-locale.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kuser.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kfind.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/korganizer.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/klpq.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/clanbomber.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kcmx.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/usb.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/klipper.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        256
+      ]
+    },
+    "apps/preferences-desktop-multimedia.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/fsview.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/gnome_apps.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kworldclock.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kfm_home.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/evolution.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kpresenter.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kcmscsi.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-desktop-filetype-association.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/okteta.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kiten.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kbackgammon_engine.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kwikdisk.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kpercentage.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/utilities-terminal.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-desktop-display-randr.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-system-windows.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kblackbox.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kmahjong.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/konqsidebar_mediaplayer.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kig.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/knotify.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/chat.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kcolorchooser.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/krita.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kcontrol.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/korn.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/konqueror.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-desktop-theme-style.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-web-browser-cache.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kghostview.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kmag.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/gaim.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/system-file-manager.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/device-notifier.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kpager.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/internet-mail.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/knotes.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/gnome_apps2.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-desktop-accessibility.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/file-manager.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kdisknav.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/help_index.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kview.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/package_favorite.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-system-network-share-windows.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/ksim.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kfloppy.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/ooo_gulls.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/email.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/acroread.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/mozilla.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kbackgammon.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/keybindings.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-desktop-theme.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/browser.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/krec.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kpdf.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-desktop-user-password.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/klettres.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kbounce.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/package_editors.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kcmdevices.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kaudiocreator.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/amor.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/utilities-file-archiver.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kmines.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kcmmemory.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kreversi.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kteatime.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kwin4.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/knewsticker.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kscd.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kweather.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/krdc.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kdf.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/key_bindings.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        128
+      ]
+    },
+    "apps/kcmdrkonqi.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kuickshow.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/package.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kverbos.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/mozilla-firebird.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/juk.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-desktop-sound.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/ksysv.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/terminal.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/xcalc.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/window_list.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kaboodle.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-web-browser-shortcuts.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kalarm.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/ksnapshot.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kcmdf.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/download_manager.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kasteroids.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/emacs.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/ksirc.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-desktop-keyboard.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kpackage.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/amarok.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/applixware.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kbugbuster.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kword.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/ooo_setup.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kshisen.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kpilot.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-desktop-user.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kalzium.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kwrite.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kugar.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/accessories-character-map.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-desktop-font-installer.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/accessories-text-editor.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-system-session-services.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/mplayer.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/clock.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kjobviewer.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/katomic.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/artscontrol.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/realplayer.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kolourpaint.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kontact.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/help-browser.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/ksig.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kpovmodeler.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/gimp2.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/accessories-calculator.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/gimp.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kpaint.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kthememgr.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kivio.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/artsmidimanager.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kanagram.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/iconthemes.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kgpg.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kcmsystem.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/ktimetracker.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/laptop_battery.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/xmag.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/xemacs.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/xclock.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/spellcheck.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "apps/kedit.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kget.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/ktip.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kbrunch.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/konquest.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-desktop-icons.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/remote.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-system-power-management.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/x.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/kwin.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "apps/preferences-desktop-notification-bell.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-txt.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-downloads.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/document-multiple.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-tar.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-games.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-important.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-grey.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-midi.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/user-home.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-green.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-print.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-html.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/start-here.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/user-desktop.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-video.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-blue.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-orange.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-sound.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-image.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-locked.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/network-server.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/user-trash.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-favorites.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-cyan.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-photo.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-mail.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-font.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/network-workgroup.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-yellow.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/start-here-kde.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/bookmarks.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "places/folder-red.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-violet.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "emblems/emblem-favorite.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "status/media-playlist-repeat.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "status/dialog-warning.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "status/dialog-password.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "status/battery-charging.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "status/battery-missing.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "status/key-single.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "status/dialog-error.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "status/mail-attachment.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "status/user-trash-full.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "status/media-playlist-shuffle.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "status/dialog-information.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "status/battery-low.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "status/key-group.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "status/key-pair.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "mimetypes/source.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-java-archive.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/install.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/message-rfc822.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/audio-midi.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/mime_empty.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-kspread.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/file_temporary.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/document.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/ebuild.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/kget_list.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-vnd.oasis.opendocument.spreadsheet.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/source_l.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/text-x-tex.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/gf.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/file_locked.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/mime_temp.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/text-css.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-kword.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/mozilla_doc.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/text-x-pascal.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/cdtrack.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-lyx.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/txt.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/audio-vnd.rn-realvideo.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-font-type1.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/ooo_impress.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/font.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-applix-spreadsheet.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-dvi.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/text-x-python.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-trash.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/krec_fileplay.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/unknown.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/core.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-deb.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-vnd.oasis.opendocument.spreadsheet-template.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-vnd.ms-excel.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-php.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/inode-socket.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-tar.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/x-office-spreadsheet.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/ooo_writer.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/misc_doc.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/mime_ebuild.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/source_s.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/image-svg+xml-compressed.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/mime_koffice.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/exec_wine.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/image-x-xcf.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        64,
+        128
+      ]
+    },
+    "mimetypes/image-x-eps.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/image-x-generic.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/text-x-readme.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/text-html.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128,
+        256
+      ]
+    },
+    "mimetypes/application-x-kcsrc.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/video-x-mng.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/text-x-log.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/inode-chardevice.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/file_locked-[Converted].png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/cdbo_list.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-postscript.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/source_j.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/encrypted.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/text-x-vcard.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/inode-directory.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128,
+        256
+      ]
+    },
+    "mimetypes/source_y.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-kformula.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-octet-stream.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/ooo_calc.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/wordprocessing.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/message.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/video-quicktime.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-pdf.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/kpovmodeler_doc.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/cdr.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-font-ttf.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-shellscript.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-compressed-tar.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/text-x-moc.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-abiword.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/bc.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/soffice.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-kig.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-kchart.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/mime.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-krita.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/gettext.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/gnome_app_info.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-zip.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-troff-man.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/message-news.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/resource.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-karbon.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/info.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/audio-x-generic.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/video-x-generic.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-kivio.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-cd-image.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/audio-vnd.rn-realaudio.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-object.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/text-x-patch.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/text-x-c++src.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/audio-prs.sid.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/ooo_draw_tpl.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/krec_filerec.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/text-x-makefile.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/audio-x-pn-realaudio-plugin.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/ooo_setup.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/image-svg+xml.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-vnd.rn-realmedia.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/colorset.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/koffice.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/inode-fifo.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/ooo_impress_tpl.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/text-x-csrc.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/applix.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/inode-blockdevice.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-perl.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-zerosize.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/real_doc.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/netscape_doc.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-xhtml+xml.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/metafont.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-kpresenter.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/text-vcalendar.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-designer.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/text-plain.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/ooo_draw.png": {
+      "sizes": [
+        16,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/text-x-java.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/template_source.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-executable.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "mimetypes/quicktime.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/krec_fileempty.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-rar.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/font_bitmap.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/text-x-chdr.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/ooo_calc_tpl.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/kugardata.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-kugar.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-sharedlib.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/ooo_writer_tpl.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/text-x-fortran.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/application-x-rpm.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "categories/applications-games-strategy.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "categories/applications-education-mathematics.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "categories/applications-development.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "categories/applications-games-board.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "categories/applications-education-language.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "categories/applications-graphics.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "categories/applications-science.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "categories/preferences-desktop-peripherals.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "categories/applications-multimedia.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "categories/applications-other.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "categories/applications-toys.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "categories/applications-games.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "categories/preferences-system-network.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "categories/applications-education.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "categories/preferences-system.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "categories/applications-utilities.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "categories/applications-office.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "categories/preferences-other.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "categories/applications-internet.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "categories/applications-games-arcade.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "actions/ledpurple.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/configure.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/arrow-left.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/application-exit.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/document-print.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/mail-reply-all.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/transform-rotate.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/roll.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/bookmark_folder.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/go-next-document.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/edit-delete.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/kmixdocked_error.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/view-split-left-right.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/edit-redo.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/mail-message-new.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/edit-paste.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/colorize.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/mail-send.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/mail-queue.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/dialog-close.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/quiz.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/kgpg_edit.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/openterm.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/document-export-key.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/tab-new.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/mix_unknown.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/arrow-down-double.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/laptop_power.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/piano.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/mail-forward.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/kgpg_term.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/tools-wizard.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/irkick.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/view-list-tree.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/view-bottom-new.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/ledyellow.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/zoom.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/media-skip-forward.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/document-export.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/list-add-font.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/bookmark-new-list.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/media-eject.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/edit-cut.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/view-fullscreen.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/document-save.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/tools-report-bug.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/misc.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/project-open.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/go-next.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/go-first.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/document-print-preview.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/kmixdocked_mute.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/button_accept.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/toggle_log.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/decrypted.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/color_line.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/ledblue.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/view-list-details.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/player_rev.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/edit-undo.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/view-split-top-bottom.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/ledgreen.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/edit-clear-history.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/mouse.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/document-revert.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/ledorange.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/noatunloopsong.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/mail_post_to.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/bookmark-new.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/encrypted.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/run-build.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/edittrash.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/kalarm_disabled.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/media-playback-stop.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/artsmediatypes.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/arrow-down.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/ledlightblue.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/artsaudiomanager.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/document-properties-key.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/system-lock-screen.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/kgpg_identity.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/color-gradient.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/window-new.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/media-playback-start.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/message.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "actions/network-disconnect.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/colorpicker.png": {
+      "sizes": [
+        16,
+        22
+      ]
+    },
+    "actions/document-new.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/zoom-out.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/edit-bomb.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "actions/edit-find.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/view-preview.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/go-down.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/media-seek-forward.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/tools-check-spelling.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/ok.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/view-list-icons.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/contact-new.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/mail-reply-sender.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/mix_recmon.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/kdevelop_down.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/kgpg_photo.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/view-history.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/kaboodleloop.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/mail_delete.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/cancel.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/view-sidetree.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/process-stop.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/go-previous.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/tab-new-background.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/media-skip-backward.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/kmixdocked.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/draw-freehand.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/kgpg_sign.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/media-record.png": {
+      "sizes": [
+        16,
+        22,
+        32
+      ]
+    },
+    "actions/no.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/document-print-frame.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/document-open.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/document-save-all.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/games-endturn.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/help-about.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/klipper_dock.png": {
+      "sizes": [
+        16,
+        32,
+        48
+      ]
+    },
+    "actions/edit-copy.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/mix_volume.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/rebuild.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/connect_creating.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/document-save-as.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/go-home.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/about_kde.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/go-bottom.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/go-previous-document.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/object-rotate-right.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/kalarm.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/object-rotate-left.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/view-restore.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/view-key-secret.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/key-generate-pair.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/view.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/run-build-file.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/bookmark-toolbar.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/irkickflash.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/arrow-up.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/ledred.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/artsenvironment.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/list-add.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/view-refresh.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/fill-color.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/document-import-key.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/view-list-text.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/ledlightgreen.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/dialog-ok.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/dialog-cancel.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/irkickoff.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/tab-close.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/go-top.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/tab-duplicate.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/view-right-new.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/camera_test.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/cd.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/view-file-columns.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/go-last.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/arrow-up-double.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/artsmidimanager.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/edit-delete-shred.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/media-playback-pause.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/mix_midi.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/arrow-right-double.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/kgpg.png": {
+      "sizes": [
+        16,
+        22
+      ]
+    },
+    "actions/system-run.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/folder-new.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/go-up.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/list-remove.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/edit-find-mail.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/zoom-original.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/connect_established.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/arrow-left-double.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/power.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/playsound.png": {
+      "sizes": [
+        16,
+        22
+      ]
+    },
+    "actions/mail-receive.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/edit.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/media-seek-backward.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/format-fill-color.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/news-subscribe.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/mail_generic.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/zoom-fit-best.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/document-sign.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/zoom-in.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/news-unsubscribe.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "actions/view-choose.png": {
+      "sizes": [
+        16,
+        22,
+        32,
+        48
+      ]
+    },
+    "apps/knewsletter.png": {
+      "sizes": [
+        64,
+        128
+      ]
+    },
+    "places/folder-man.png": {
+      "sizes": [
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "places/folder-cool.png": {
+      "sizes": [
+        22,
+        32,
+        48,
+        64,
+        128
+      ]
+    },
+    "mimetypes/audio-x-ms-asx.png": {
+      "sizes": [
+        48
+      ]
+    },
+    "mimetypes/audio-x-matroska.png": {
+      "sizes": [
+        48
+      ]
+    },
+    "mimetypes/audio-x-ms-wma.png": {
+      "sizes": [
+        48
+      ]
+    },
+    "mimetypes/audio-basic.png": {
+      "sizes": [
+        48
+      ]
+    },
+    "mimetypes/audio-mpeg.png": {
+      "sizes": [
+        48
+      ]
+    },
+    "mimetypes/audio-ac3.png": {
+      "sizes": [
+        48
+      ]
+    },
+    "mimetypes/audio-x-wav.png": {
+      "sizes": [
+        48
+      ]
+    },
+    "mimetypes/audio-x-mp2.png": {
+      "sizes": [
+        48
+      ]
+    },
+    "mimetypes/audio-x-musepack.png": {
+      "sizes": [
+        48
+      ]
+    },
+    "mimetypes/audio-x-scpls.png": {
+      "sizes": [
+        48
+      ]
+    },
+    "mimetypes/audio-x-flac+ogg.png": {
+      "sizes": [
+        48
+      ]
+    },
+    "mimetypes/audio-x-vorbis+ogg.png": {
+      "sizes": [
+        48
+      ]
+    },
+    "mimetypes/audio-aac.png": {
+      "sizes": [
+        48
+      ]
+    },
+    "mimetypes/audio-x-adpcm.png": {
+      "sizes": [
+        48
+      ]
+    },
+    "mimetypes/image_gimp.png": {
+      "sizes": [
+        48
+      ]
+    },
+    "mimetypes/audio-x-monkey.png": {
+      "sizes": [
+        48
+      ]
+    },
+    "mimetypes/audio-x-mpegurl.png": {
+      "sizes": [
+        48
+      ]
+    },
+    "mimetypes/audio-x-aiff.png": {
+      "sizes": [
+        48
+      ]
+    },
+    "mimetypes/audio-mp4.png": {
+      "sizes": [
+        48
+      ]
+    },
+    "mimetypes/audio-x-mod.png": {
+      "sizes": [
+        48
+      ]
+    },
+    "mimetypes/audio-x-flac.png": {
+      "sizes": [
+        48
+      ]
+    },
+    "apps/gnome.png": {
+      "sizes": [
+        32
+      ]
+    },
+    "places/mail-message.png": {
+      "sizes": [
+        32
+      ]
+    },
+    "categories/applications-system.png": {
+      "sizes": [
+        32
+      ]
+    },
+    "actions/noatunplay.png": {
+      "sizes": [
+        22,
+        32
+      ]
+    },
+    "actions/kcmpci.png": {
+      "sizes": [
+        32
+      ]
+    },
+    "actions/hwinfo.png": {
+      "sizes": [
+        32
+      ]
+    },
+    "actions/noatunforward.png": {
+      "sizes": [
+        22,
+        32
+      ]
+    },
+    "actions/noatunpause.png": {
+      "sizes": [
+        22,
+        32
+      ]
+    },
+    "actions/noatunback.png": {
+      "sizes": [
+        22,
+        32
+      ]
+    },
+    "actions/help-contents.png": {
+      "sizes": [
+        32
+      ]
+    },
+    "actions/homepage.png": {
+      "sizes": [
+        32
+      ]
+    },
+    "actions/noatunstop.png": {
+      "sizes": [
+        22,
+        32
+      ]
+    },
+    "actions/noatunplaylist.png": {
+      "sizes": [
+        22,
+        32
+      ]
+    },
+    "apps/kgpg_docked.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "apps/kopete_offline.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "apps/kopete_some_away.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "apps/kopete_some_online.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "apps/kmaillight.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "apps/kopete_all_away.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/kgpg_docked.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/kopete.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/volume.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/mix_video.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/dock.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/tool_restart.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/klpq.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/tool_uselastdir.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/klipper.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/ark_new.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/tool_drop_target.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/tool_pause.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/ark_options.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/mix_audio.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/kmaillight.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/printmgr.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/mix_record.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/kmail.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/juk_dock.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/tool_resume.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/korgac.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/amarok.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/tool_delay.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/kjobviewer.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/tool_timer.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/folder.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/tool_dock.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/tool_clipboard.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/tool_delete.png": {
+      "sizes": [
+        22
+      ]
+    },
+    "actions/mix_cd.png": {
+      "sizes": [
+        22
+      ]
+    }
+  }
+}
