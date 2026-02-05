@@ -1442,10 +1442,10 @@ class LanguagePage(SettingsPage):
         demoSizer = wx.BoxSizer(wx.HORIZONTAL)
         demoLabel = wx.StaticText(demoPanel, label=_("Preview:"))
         demoSizer.Add(demoLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
+        demoPanel.SetSizer(demoSizer)
         self._demoDatePanel = demoPanel
         self._demoDateCtrl = None
         self._rebuildDemoDateCtrl(currentFormat or None)
-        demoPanel.SetSizer(demoSizer)
         self.addEntry("", demoPanel)
 
         # === TIME FORMAT SECTION ===
@@ -1490,10 +1490,10 @@ class LanguagePage(SettingsPage):
         timeDemoSizer = wx.BoxSizer(wx.HORIZONTAL)
         timeDemoLabel = wx.StaticText(timeDemoPanel, label=_("Preview:"))
         timeDemoSizer.Add(timeDemoLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
+        timeDemoPanel.SetSizer(timeDemoSizer)
         self._demoTimePanel = timeDemoPanel
         self._demoTimeCtrl = None
         self._rebuildDemoTimeCtrl(currentTimeFormat if currentTimeFormat else "24")
-        timeDemoPanel.SetSizer(timeDemoSizer)
         self.addEntry("", timeDemoPanel)
 
         # Note about 12-hour mode and working hours

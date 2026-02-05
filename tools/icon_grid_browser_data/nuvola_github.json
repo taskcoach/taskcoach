@@ -2,6602 +2,2968 @@
   "_comment": "Auto-maintained catalog for nuvola_github theme pack. Icons/sizes are additive only.",
   "icons": {
     "devices/print_printer.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["printer", "print", "inkjet", "paper", "output", "hardware", "document", "tray"]
     },
     "devices/multimedia-player-apple-ipod.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["ipod", "apple", "music", "player", "multimedia", "portable", "clickwheel", "white"]
     },
     "devices/samba_unmount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["samba", "network", "drive", "windows", "share", "unmount", "disconnect", "smb"]
     },
     "devices/drive-removable-media-usb.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["usb", "flash", "drive", "removable", "storage", "thumbdrive", "portable", "blue"]
     },
     "devices/memory.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["ram", "memory", "dimm", "module", "chip", "hardware", "green", "pcb"]
     },
     "devices/video-television.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["television", "tv", "crt", "screen", "testcard", "colorbars", "video", "monitor"]
     },
     "devices/media-floppy.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["floppy", "disk", "save", "storage", "media", "blue", "removable", "backup"]
     },
     "devices/raid.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["raid", "disk", "array", "storage", "server", "stacked", "drives", "hardware"]
     },
     "devices/drive-removable-media-usb-pendrive.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["usb", "pendrive", "flash", "drive", "removable", "storage", "portable", "blue"]
     },
     "devices/media-optical-dvd.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["dvd", "disc", "optical", "media", "video", "blue", "silver", "cdrom"]
     },
     "devices/cpu.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["cpu", "processor", "chip", "microchip", "hardware", "gold", "pins", "integrated"]
     },
     "devices/drive-harddisk.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["harddisk", "drive", "hdd", "storage", "disk", "internal", "white", "hardware"]
     },
     "devices/printer1.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["printer", "print", "inkjet", "paper", "output", "hardware", "white", "document"]
     },
     "devices/zip_unmount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["zip", "drive", "unmount", "removable", "iomega", "eject", "media", "grey"]
     },
     "devices/pda.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["pda", "handheld", "palm", "touchscreen", "mobile", "device", "portable", "grey"]
     },
     "devices/pda_blue.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["pda", "handheld", "palm", "touchscreen", "mobile", "device", "blue", "green"]
     },
     "devices/modem.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["modem", "dialup", "network", "serial", "leds", "silver", "connection", "hardware"]
     },
     "devices/media-optical.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["cd", "disc", "optical", "media", "circular", "blue", "silver", "cdrom"]
     },
     "devices/nfs_unmount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["nfs", "network", "drive", "unmount", "server", "disconnect", "filesystem", "grey"]
     },
     "devices/camera-photo.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["camera", "photo", "digital", "lens", "compact", "snapshot", "blue", "flash"]
     },
     "devices/pda_black.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["pda", "handheld", "palm", "touchscreen", "mobile", "device", "black", "green"]
     },
     "devices/5floppy_unmount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["floppy", "5inch", "disk", "unmount", "eject", "storage", "grey", "removable"]
     },
     "devices/media-optical-recordable.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["cdr", "recordable", "disc", "optical", "burn", "writable", "pink", "purple"]
     },
     "devices/computer.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["computer", "desktop", "monitor", "keyboard", "mouse", "pc", "screen", "white"]
     },
     "devices/scanner.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["scanner", "flatbed", "scan", "imaging", "lid", "glass", "white", "hardware"]
     },
     "devices/input-mouse.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["mouse", "input", "pointer", "click", "cursor", "peripheral", "blue", "corded"]
     },
     "devices/mo_unmount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["magneto", "optical", "mo", "disc", "cartridge", "unmount", "green", "storage"]
     },
     "devices/input-tablet.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["tablet", "graphics", "stylus", "pen", "drawing", "digitizer", "input", "blue"]
     },
     "devices/camera_unmount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["camera", "digital", "compact", "unmount", "eject", "photo", "purple", "lens"]
     },
     "devices/media-tape.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["cassette", "tape", "audio", "media", "reels", "recording", "grey", "analog"]
     },
     "devices/joystick.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["gamepad", "controller", "joystick", "gaming", "buttons", "dpad", "corded", "purple"]
     },
     "devices/multimedia-player.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["mp3", "player", "ipod", "multimedia", "music", "portable", "white", "clickwheel"]
     },
     "devices/media-optical-audio.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["cd", "audio", "disc", "music", "note", "optical", "green", "sound"]
     },
     "devices/print_class.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["printer", "class", "group", "network", "two", "arrows", "print", "shared"]
     },
     "devices/printer.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["printer", "print", "inkjet", "paper", "output", "hardware", "white", "blue"]
     },
     "apps/keditbookmarks.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["heart", "bookmark", "edit", "pencil", "favorite", "love", "red", "write"]
     },
     "apps/khotkeys.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["keyboard", "key", "hotkey", "shortcut", "keybinding", "letter", "red", "input"]
     },
     "apps/digikam.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["camera", "photo", "digikam", "picture", "skyline", "silver", "gallery", "image"]
     },
     "apps/opera.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["opera", "browser", "web", "red", "letter", "internet", "glossy", "oval"]
     },
     "apps/indeximg.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["photos", "gallery", "index", "image", "polaroid", "stack", "skyline", "viewer"]
     },
     "apps/preferences-desktop-font.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["font", "text", "typography", "letter", "green", "preferences", "typeface", "Aa"]
     },
     "apps/mozilla-thunderbird.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["thunderbird", "email", "mail", "star", "envelope", "mozilla", "orange", "client"]
     },
     "apps/netscape.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["netscape", "browser", "web", "navigator", "teal", "globe", "internet", "letter"]
     },
     "apps/ktimer.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["stopwatch", "timer", "clock", "time", "countdown", "blue", "watch", "chronometer"]
     },
     "apps/kopete.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["chat", "messenger", "smiley", "emoticon", "speech", "bubble", "instant", "messaging"]
     },
     "apps/laptop_pcmcia.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["laptop", "notebook", "computer", "portable", "pcmcia", "screen", "hardware", "blue"]
     },
     "apps/kaddressbook.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["addressbook", "contacts", "notebook", "green", "book", "directory", "tabs", "organizer"]
     },
     "apps/preferences-desktop-color.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["color", "umbrella", "rainbow", "palette", "preferences", "colorful", "theme", "parasol"]
     },
     "apps/kmplot.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["graph", "plot", "chart", "sine", "wave", "math", "function", "axis"]
     },
     "apps/accessories-dictionary.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["dictionary", "book", "reference", "blue", "bookmark", "reading", "glossary", "hardcover"]
     },
     "apps/kxkb.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["keyboard", "key", "layout", "input", "language", "keycap", "letter", "switch"]
     },
     "apps/preferences-web-browser-stylesheets.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["css", "stylesheet", "web", "style", "design", "checkmark", "browser", "preferences"]
     },
     "apps/preferences-web-browser-cookies.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["cookie", "cake", "candle", "browser", "web", "privacy", "preferences", "sweet"]
     },
     "apps/kappfinder.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["search", "find", "magnifier", "application", "discover", "lookup", "lens", "locate"]
     },
     "apps/kcmpci.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["pci", "card", "circuit", "hardware", "expansion", "board", "component", "device"]
     },
     "apps/kcmprocessor.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["processor", "cpu", "chip", "microchip", "hardware", "computer", "silicon", "component"]
     },
     "apps/knode.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["newspaper", "news", "usenet", "reader", "article", "press", "headline", "paper"]
     },
     "apps/kmenuedit.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["menu", "edit", "list", "panel", "organize", "layout", "items", "configure"]
     },
     "apps/kmenu.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["kde", "menu", "start", "gear", "logo", "launcher", "desktop", "kmenu"]
     },
     "apps/kcoloredit.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["palette", "paint", "color", "art", "drawing", "brush", "colorful", "editor"]
     },
     "apps/xfmail.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["mail", "email", "envelope", "purple", "letter", "message", "client", "xfce"]
     },
     "apps/kooka.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["scanner", "scan", "flatbed", "digitize", "image", "capture", "copy", "hardware"]
     },
     "apps/ktouch.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["keyboard", "typing", "tutor", "keys", "learn", "practice", "arrow", "touch"]
     },
     "apps/ksplash.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["splash", "screen", "monitor", "startup", "boot", "kde", "display", "welcome"]
     },
     "apps/hwinfo.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["hardware", "info", "information", "system", "ruler", "diagnostics", "device", "blue"]
     },
     "apps/preferences-desktop-screensaver.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["screensaver", "monitor", "screen", "idle", "lock", "diamond", "display", "preferences"]
     },
     "apps/inkscape.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["vector", "inkscape", "bezier", "drawing", "svg", "green", "path", "graphic"]
     },
     "apps/galeon.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["browser", "web", "gnome", "foot", "paw", "internet", "blue", "circle"]
     },
     "apps/kchart.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["chart", "graph", "pie", "bar", "statistics", "data", "spreadsheet", "colorful"]
     },
     "apps/irkick.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["infrared", "remote", "wireless", "signal", "receiver", "antenna", "red", "wave"]
     },
     "apps/kate.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["editor", "text", "notepad", "pencil", "code", "write", "document", "purple"]
     },
     "apps/kruler.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["ruler", "measure", "millimeter", "pixel", "yellow", "scale", "length", "tool"]
     },
     "apps/reload.png": {
-      "sizes": [
-        16,
-        22
-      ]
+      "sizes": [16, 22],
+      "hints": ["reload", "refresh", "arrows", "circular", "green", "repeat", "sync", "update"]
     },
     "apps/xapp.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["application", "generic", "purple", "x11", "program", "default", "letter", "xorg"]
     },
     "apps/kmix.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["speaker", "volume", "audio", "sound", "mixer", "loud", "megaphone", "wave"]
     },
     "apps/kcmpartitions.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["partition", "disk", "pie", "chart", "storage", "segments", "drive", "space"]
     },
     "apps/kolf.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["golf", "ball", "tee", "club", "sport", "minigolf", "game"]
     },
     "apps/korganizer_todo.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["todo", "task", "checklist", "clipboard", "checkmark", "organizer", "list"]
     },
     "apps/khangman.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["cactus", "desert", "plant", "word", "game", "hangman", "green"]
     },
     "apps/kfig.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["drawing", "vector", "shapes", "geometry", "triangle", "circle", "square", "figure"]
     },
     "apps/parley.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["flashcard", "cards", "vocabulary", "language", "learning", "education", "trainer"]
     },
     "apps/date.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["calendar", "date", "day", "schedule", "planner", "appointment"]
     },
     "apps/kmoon.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["moon", "crescent", "night", "lunar", "phase", "sky", "blue"]
     },
     "apps/designer.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["compass", "divider", "drafting", "designer", "form", "layout", "ui"]
     },
     "apps/preferences-system-login.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["login", "users", "people", "group", "accounts", "authentication", "preferences"]
     },
     "apps/preferences-desktop-display.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["monitor", "display", "screen", "desktop", "crt", "preferences", "resolution"]
     },
     "apps/kcmdevice.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["harddrive", "disk", "storage", "device", "hardware", "drive"]
     },
     "apps/bookcase.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["books", "library", "stack", "collection", "reading", "education", "bookcase"]
     },
     "apps/kppp.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["modem", "dialup", "internet", "connection", "network", "ppp", "lightning"]
     },
     "apps/preferences-desktop-keyboard-layout.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["keyboard", "layout", "language", "input", "international", "flag", "locale"]
     },
     "apps/preferences-web-browser-identification.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["browser", "identification", "useragent", "cap", "police", "badge", "identity"]
     },
     "apps/noatun.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["play", "media", "player", "audio", "music", "triangle", "blue"]
     },
     "apps/atlantik.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["dice", "die", "board", "game", "monopoly", "random", "chance"]
     },
     "apps/kcmmidi.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["piano", "midi", "keyboard", "music", "keys", "instrument", "synthesizer"]
     },
     "apps/aktion.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["clapperboard", "film", "movie", "video", "cinema", "action", "slate"]
     },
     "apps/artsbuilder.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["speaker", "sound", "audio", "hammer", "build", "configure", "megaphone"]
     },
     "apps/preferences-desktop-wallpaper.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["wallpaper", "desktop", "background", "landscape", "monitor", "screen", "preferences"]
     },
     "apps/preferences-system-windows-actions.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["window", "actions", "behavior", "preferences", "frame", "titlebar", "system"]
     },
     "apps/kmousetool.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["mouse", "click", "pointer", "accessibility", "cursor", "input", "hardware"]
     },
     "apps/preferences-desktop-printer.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["printer", "print", "paper", "output", "hardware", "preferences", "inkjet"]
     },
     "apps/kjots.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["notes", "notebook", "clipboard", "jotter", "memo", "write", "tabs"]
     },
     "apps/xconfig.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["xorg", "xwindow", "configure", "display", "server", "purple", "settings"]
     },
     "apps/licq.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["icq", "messenger", "chat", "flower", "instant", "messaging", "green"]
     },
     "apps/kmid.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["piano", "midi", "player", "music", "keys", "keyboard", "audio"]
     },
     "apps/krfb.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["remote", "desktop", "sharing", "vnc", "globe", "monitor", "network"]
     },
     "apps/preferences-desktop-locale.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["locale", "language", "flags", "international", "region", "translation", "country"]
     },
     "apps/kuser.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["users", "people", "group", "accounts", "management", "admin", "person"]
     },
     "apps/kfind.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["search", "find", "magnifier", "lookup", "locate", "file", "document"]
     },
     "apps/korganizer.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["organizer", "planner", "clipboard", "checklist", "checkmark", "schedule", "pim"]
     },
     "apps/klpq.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["printer", "print", "queue", "paper", "jobs", "spooler", "output"]
     },
     "apps/clanbomber.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["bomb", "explosion", "fuse", "game", "bomberman", "black", "arcade"]
     },
     "apps/kcmx.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["xorg", "xserver", "xwindow", "configure", "display", "purple", "settings"]
     },
     "apps/usb.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["usb", "connector", "port", "plug", "device", "hardware", "green"]
     },
     "apps/klipper.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        256
-      ]
+      "sizes": [16, 32, 48, 64, 256],
+      "hints": ["clipboard", "paste", "clip", "copy", "pin", "papers", "klipper"]
     },
     "apps/preferences-desktop-multimedia.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["multimedia", "audio", "video", "speaker", "clapperboard", "media", "preferences"]
     },
     "apps/fsview.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["filesystem", "treemap", "blocks", "disk", "usage", "visualizer", "grid"]
     },
     "apps/gnome_apps.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["gnome", "foot", "applications", "desktop", "linux", "logo", "blue"]
     },
     "apps/kworldclock.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["world", "clock", "timezone", "globe", "map", "time", "international"]
     },
     "apps/kfm_home.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["home", "house", "directory", "folder", "residence", "building", "red"]
     },
     "apps/evolution.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["email", "mail", "envelope", "inbox", "groupware", "evolution", "message"]
     },
     "apps/kpresenter.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["presentation", "slides", "slideshow", "easel", "projector", "talk", "office"]
     },
     "apps/kcmscsi.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["scsi", "connector", "device", "hardware", "interface", "storage", "metallic"]
     },
     "apps/preferences-desktop-filetype-association.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["filetype", "association", "question", "mime", "unknown", "bubble", "preferences"]
     },
     "apps/okteta.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["hex", "editor", "binary", "notepad", "book", "green", "data"]
     },
     "apps/kiten.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["japan", "japanese", "flag", "dictionary", "kanji", "language", "reference"]
     },
     "apps/kbackgammon_engine.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["backgammon", "board", "game", "wrench", "engine", "settings", "configure"]
     },
     "apps/kwikdisk.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["cubes", "blocks", "3d", "geometric", "red", "green", "orange", "shapes"]
     },
     "apps/kpercentage.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["percentage", "percent", "math", "symbol", "calculation", "statistics"]
     },
     "apps/utilities-terminal.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["terminal", "console", "command", "shell", "prompt", "cli"]
     },
     "apps/preferences-desktop-display-randr.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["monitor", "display", "screen", "desktop", "resolution", "settings"]
     },
     "apps/preferences-system-windows.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["windows", "window", "manager", "overlapping", "desktop", "layout"]
     },
     "apps/kblackbox.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["cube", "black", "box", "3d", "dark", "puzzle", "game"]
     },
     "apps/kmahjong.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["mahjong", "chinese", "character", "tile", "game", "red"]
     },
     "apps/konqsidebar_mediaplayer.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["clapperboard", "movie", "film", "video", "media", "cinema"]
     },
     "apps/kig.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["geometry", "drawing", "triangle", "circle", "pencil", "math", "shapes"]
     },
     "apps/knotify.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["notification", "sound", "music", "note", "alert", "speech", "bubble"]
     },
     "apps/chat.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["chat", "speech", "bubble", "message", "conversation", "smiley", "talk"]
     },
     "apps/kcolorchooser.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["eyedropper", "color", "picker", "dropper", "sample", "pipette"]
     },
     "apps/krita.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["pencils", "drawing", "art", "colored", "sketch", "crayons"]
     },
     "apps/kcontrol.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["wrench", "screwdriver", "tools", "settings", "repair", "configure"]
     },
     "apps/korn.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["mailbox", "mail", "envelope", "letter", "inbox", "postal"]
     },
     "apps/konqueror.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["globe", "gear", "browser", "web", "internet", "world"]
     },
     "apps/preferences-desktop-theme-style.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["window", "theme", "style", "decoration", "titlebar", "appearance"]
     },
     "apps/preferences-web-browser-cache.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["lightning", "bolt", "flash", "speed", "cache", "power", "energy"]
     },
     "apps/kghostview.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["magnify", "document", "search", "viewer", "page", "preview"]
     },
     "apps/kmag.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["magnifier", "zoom", "plus", "enlarge", "accessibility", "search"]
     },
     "apps/gaim.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["smiley", "chat", "messenger", "instant", "face", "speech", "bubble"]
     },
     "apps/system-file-manager.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["server", "cabinet", "tower", "storage", "computer", "hardware"]
     },
     "apps/device-notifier.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["computer", "desktop", "monitor", "keyboard", "mouse", "workstation"]
     },
     "apps/kpager.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["pages", "screens", "virtual", "desktop", "pager", "workspace"]
     },
     "apps/internet-mail.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["envelope", "email", "mail", "letter", "message", "open"]
     },
     "apps/knotes.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["sticky", "note", "yellow", "pushpin", "memo", "reminder", "post-it"]
     },
     "apps/gnome_apps2.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["gnome", "foot", "footprint", "logo", "linux", "desktop"]
     },
     "apps/preferences-desktop-accessibility.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["wheelchair", "accessibility", "disability", "handicap", "mobility", "inclusive"]
     },
     "apps/file-manager.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["desk", "lamp", "office", "drawer", "furniture", "workspace"]
     },
     "apps/kdisknav.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["folder", "lightning", "fast", "quick", "access", "directory"]
     },
     "apps/help_index.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["lifebuoy", "help", "rescue", "support", "star", "ring", "assistance"]
     },
     "apps/kview.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["image", "viewer", "magnify", "photos", "pictures", "preview"]
     },
     "apps/package_favorite.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["heart", "favorite", "love", "red", "like", "bookmark"]
     },
     "apps/preferences-system-network-share-windows.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["drive", "windows", "network", "share", "samba", "smb", "storage"]
     },
     "apps/ksim.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["circuit", "hardware", "ram", "cpu", "chip", "motherboard", "system"]
     },
     "apps/kfloppy.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["floppy", "disk", "screwdriver", "format", "save", "storage"]
     },
     "apps/ooo_gulls.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["seagulls", "birds", "openoffice", "office", "blue", "flying"]
     },
     "apps/email.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["envelope", "email", "mail", "letter", "message", "closed"]
     },
     "apps/acroread.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["pdf", "acrobat", "adobe", "reader", "document", "red"]
     },
     "apps/mozilla.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["star", "red", "yellow", "mozilla", "browser", "web"]
     },
     "apps/kbackgammon.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["backgammon", "board", "game", "checkers", "dice", "strategy"]
     },
     "apps/keybindings.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["keyboard", "key", "shortcut", "binding", "hotkey", "input"]
     },
     "apps/preferences-desktop-theme.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["palette", "paint", "theme", "colors", "customize", "appearance"]
     },
     "apps/browser.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["globe", "earth", "world", "internet", "browser", "web"]
     },
     "apps/krec.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["record", "red", "circle", "button", "recording", "audio"]
     },
     "apps/kpdf.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["book", "magnify", "reader", "pdf", "document", "search", "open"]
     },
     "apps/preferences-desktop-user-password.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["key", "password", "security", "golden", "lock", "authentication"]
     },
     "apps/klettres.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["flag", "french", "france", "language", "tricolor", "learning"]
     },
     "apps/kbounce.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["ball", "red", "sphere", "bounce", "game", "orb"]
     },
     "apps/package_editors.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["notepad", "pencil", "editor", "text", "write", "document"]
     },
     "apps/kcmdevices.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["harddrive", "disk", "drive", "storage", "device", "hardware"]
     },
     "apps/kaudiocreator.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["cd", "disc", "music", "audio", "rip", "note", "extract"]
     },
     "apps/amor.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["hearts", "love", "red", "romance", "valentine", "affection"]
     },
     "apps/utilities-file-archiver.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["archive", "compress", "zip", "box", "clamp", "package"]
     },
     "apps/kmines.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["flag", "minesweeper", "mine", "game", "grid", "tiles"]
     },
     "apps/kcmmemory.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["ram", "memory", "module", "stick", "circuit", "hardware"]
     },
     "apps/kreversi.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["reversi", "othello", "marbles", "spheres", "board", "game"]
     },
     "apps/kteatime.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["tea", "cup", "coffee", "mug", "hot", "beverage", "steam"]
     },
     "apps/kwin4.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["four", "number", "connect", "game", "yellow", "digit"]
     },
     "apps/knewsticker.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["newspaper", "news", "headlines", "press", "article", "media"]
     },
     "apps/kscd.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["cd", "disc", "music", "note", "player", "audio"]
     },
     "apps/kweather.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["sun", "clouds", "weather", "forecast", "sky", "sunny"]
     },
     "apps/krdc.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["monitor", "screen", "remote", "desktop", "display", "computer"]
     },
     "apps/kdf.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["cubes", "blocks", "3d", "disk", "usage", "space", "colored"]
     },
     "apps/key_bindings.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        128
-      ]
+      "sizes": [16, 32, 48, 128],
+      "hints": ["ctrl", "key", "keyboard", "shortcut", "binding", "folder"]
     },
     "apps/kcmdrkonqi.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["cross", "plus", "red", "error", "crash", "medical", "emergency"]
     },
     "apps/kuickshow.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["flower", "purple", "blossom", "plant", "image", "viewer"]
     },
     "apps/package.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["box", "package", "cardboard", "open", "delivery", "container"]
     },
     "apps/kverbos.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["flag", "spanish", "spain", "language", "verbs", "learning"]
     },
     "apps/mozilla-firebird.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["star", "globe", "browser", "firefox", "web", "internet", "red"]
     },
     "apps/juk.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["speaker", "music", "note", "jukebox", "audio", "player"]
     },
     "apps/preferences-desktop-sound.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["speaker", "sound", "audio", "volume", "megaphone", "settings"]
     },
     "apps/ksysv.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["traffic", "light", "signal", "services", "init", "system"]
     },
     "apps/terminal.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["terminal", "console", "command", "shell", "prompt", "cli"]
     },
     "apps/xcalc.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["calculator", "math", "buttons", "compute", "numbers", "arithmetic"]
     },
     "apps/window_list.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["windows", "overlapping", "list", "taskbar", "panels", "desktop"]
     },
     "apps/kaboodle.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["clapperboard", "play", "video", "media", "movie", "player"]
     },
     "apps/preferences-web-browser-shortcuts.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["division", "slash", "shortcut", "url", "green", "symbol"]
     },
     "apps/kalarm.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["alarm", "clock", "bells", "timer", "reminder", "wake", "yellow"]
     },
     "apps/ksnapshot.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["camera", "screenshot", "capture", "monitor", "photo", "screen"]
     },
     "apps/kcmdf.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["cubes", "blocks", "3d", "colored", "fonts", "disk", "manager"]
     },
     "apps/download_manager.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["arrow", "down", "download", "blue", "transfer", "save"]
     },
     "apps/kasteroids.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["spaceship", "asteroid", "space", "rocket", "game", "shoot"]
     },
     "apps/emacs.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["gnu", "wildebeest", "editor", "text", "emacs", "mascot"]
     },
     "apps/ksirc.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["chat", "irc", "speech", "bubbles", "smiley", "conversation"]
     },
     "apps/preferences-desktop-keyboard.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["keyboard", "key", "input", "typing", "settings", "hardware"]
     },
     "apps/kpackage.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["box", "package", "software", "install", "open", "purple"]
     },
     "apps/amarok.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["speaker", "sound", "waves", "music", "player", "audio"]
     },
     "apps/applixware.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["letter", "A", "text", "office", "font", "black"]
     },
     "apps/kbugbuster.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["ladybug", "bug", "beetle", "insect", "red", "tracker"]
     },
     "apps/kword.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["pen", "fountain", "writing", "word", "processor", "document"]
     },
     "apps/ooo_setup.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["floppy", "cd", "setup", "install", "openoffice", "seagulls"]
     },
     "apps/kshisen.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["chinese", "character", "tile", "matching", "game", "red"]
     },
     "apps/kpilot.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["pda", "palm", "handheld", "sync", "device", "mobile"]
     },
     "apps/preferences-desktop-user.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["person", "user", "profile", "account", "tie", "avatar"]
     },
     "apps/kalzium.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["molecule", "atoms", "chemistry", "science", "periodic", "element"]
     },
     "apps/kwrite.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["notepad", "pencil", "editor", "text", "write", "red"]
     },
     "apps/kugar.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["paw", "print", "footprint", "animal", "report", "orange"]
     },
     "apps/accessories-character-map.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["keyboard", "key", "character", "map", "symbol", "input"]
     },
     "apps/preferences-desktop-font-installer.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["abc", "letters", "font", "typography", "install", "text"]
     },
     "apps/accessories-text-editor.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["notepad", "pencil", "editor", "text", "write", "blue"]
     },
     "apps/preferences-system-session-services.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["gear", "cog", "services", "session", "system", "settings"]
     },
     "apps/mplayer.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["clapperboard", "movie", "video", "media", "player", "film"]
     },
     "apps/clock.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["clock", "time", "watch", "hours", "minutes", "blue"]
     },
     "apps/kjobviewer.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["printer", "print", "paper", "output", "jobs", "queue"]
     },
     "apps/katomic.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["atoms", "spheres", "molecule", "red", "blue", "science", "game"]
     },
     "apps/artscontrol.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["speaker", "screwdriver", "audio", "sound", "control", "settings"]
     },
     "apps/realplayer.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["speech", "bubble", "speaker", "media", "player", "audio"]
     },
     "apps/kolourpaint.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["paintbrush", "canvas", "landscape", "painting", "art", "draw"]
     },
     "apps/kontact.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["star", "green", "cards", "contact", "organizer", "pim"]
     },
     "apps/help-browser.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["lifebuoy", "help", "rescue", "ring", "support", "red"]
     },
     "apps/ksig.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["pen", "fountain", "nib", "signature", "writing", "ink"]
     },
     "apps/kpovmodeler.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["cylinder", "cone", "3d", "modeling", "shapes", "render"]
     },
     "apps/gimp2.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["gimp", "dog", "mascot", "image", "editor", "photo"]
     },
     "apps/accessories-calculator.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["calculator", "math", "buttons", "compute", "numbers", "arithmetic"]
     },
     "apps/gimp.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["gimp", "dog", "mascot", "image", "editor", "photo", "purple"]
     },
     "apps/kpaint.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["paintbrush", "landscape", "painting", "canvas", "art", "draw"]
     },
     "apps/kthememgr.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["box", "plus", "add", "theme", "install", "package", "orange"]
     },
     "apps/kivio.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["shapes", "flowchart", "diagram", "geometric", "colorful", "chart"]
     },
     "apps/artsmidimanager.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["piano", "keyboard", "speaker", "midi", "music", "audio"]
     },
     "apps/kanagram.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["abc", "letters", "alphabet", "anagram", "word", "game", "colorful"]
     },
     "apps/iconthemes.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["checklist", "wand", "magic", "star", "theme", "icons", "selector"]
     },
     "apps/kgpg.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["key", "person", "encryption", "gpg", "security", "golden"]
     },
     "apps/kcmsystem.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["gears", "cogs", "system", "settings", "configure", "silver"]
     },
     "apps/ktimetracker.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["clock", "calendar", "time", "tracker", "schedule", "hours"]
     },
     "apps/laptop_battery.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["battery", "laptop", "power", "energy", "charge", "portable"]
     },
     "apps/xmag.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["magnifier", "magnifying", "glass", "zoom", "search", "enlarge"]
     },
     "apps/xemacs.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["gnu", "wildebeest", "xemacs", "editor", "text", "x"]
     },
     "apps/xclock.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["clock", "time", "analog", "watch", "hours", "x"]
     },
     "apps/spellcheck.png": {
-      "sizes": [
-        16
-      ]
+      "sizes": [16],
+      "hints": ["checkmark", "spell", "check", "red", "abc", "grammar"]
     },
     "apps/kedit.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["pen", "ballpoint", "orange", "editor", "text", "write"]
     },
     "apps/kget.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["arrow", "down", "download", "blue", "transfer", "get"]
     },
     "apps/ktip.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["lightbulb", "tip", "idea", "yellow", "bright", "hint"]
     },
     "apps/kbrunch.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["fraction", "math", "formula", "division", "equation", "xy"]
     },
     "apps/konquest.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["ufo", "saucer", "flying", "space", "alien", "game", "purple"]
     },
     "apps/preferences-desktop-icons.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["desktop", "checklist", "icons", "settings", "preferences", "blue"]
     },
     "apps/remote.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["antenna", "wireless", "signal", "remote", "waves", "red"]
     },
     "apps/preferences-system-power-management.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["battery", "plug", "power", "energy", "charge", "management"]
     },
     "apps/x.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["x", "letter", "purple", "xwindow", "xorg", "display"]
     },
     "apps/kwin.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["window", "K", "manager", "kde", "titlebar", "desktop"]
     },
     "apps/preferences-desktop-notification-bell.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["bell", "golden", "notification", "alert", "ring", "alarm"]
     },
     "places/folder-txt.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "pencil", "text", "txt", "files", "blue"]
     },
     "places/folder-downloads.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "arrow", "down", "download", "green", "blue"]
     },
     "places/document-multiple.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["documents", "pages", "multiple", "papers", "white", "stack"]
     },
     "places/folder-tar.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "box", "archive", "tar", "cube", "compressed"]
     },
     "places/folder-games.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "controller", "gamepad", "games", "play", "blue"]
     },
     "places/folder-important.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "warning", "exclamation", "important", "alert", "triangle"]
     },
     "places/folder-grey.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "grey", "gray", "silver", "plain", "inactive"]
     },
     "places/folder-midi.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "piano", "keyboard", "midi", "music", "audio"]
     },
     "places/user-home.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["house", "home", "roof", "red", "building", "directory"]
     },
     "places/folder-green.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "green", "colored", "directory", "plain"]
     },
     "places/folder-print.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "printer", "print", "output", "blue", "paper"]
     },
     "places/folder-html.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "globe", "html", "web", "internet", "world"]
     },
     "places/start-here.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["kde", "gear", "K", "logo", "start", "menu", "cog"]
     },
     "places/user-desktop.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["notepad", "pencil", "desktop", "tray", "green", "write"]
     },
     "places/folder-video.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "clapperboard", "film", "video", "movie", "blue"]
     },
     "places/folder-blue.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "blue", "colored", "directory", "plain"]
     },
     "places/folder-orange.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "orange", "colored", "directory", "plain"]
     },
     "places/folder-sound.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "music", "note", "sound", "audio", "green"]
     },
     "places/folder-image.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "photo", "image", "picture", "landscape", "gallery"]
     },
     "places/folder-locked.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "locked", "restricted", "blocked", "stop", "no-access", "private"]
     },
     "places/network-server.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["server", "network", "computer", "hardware", "host", "machine", "datacenter"]
     },
     "places/user-trash.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["trash", "bin", "recycle", "delete", "waste", "cylinder", "container"]
     },
     "places/folder-favorites.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "favorites", "heart", "love", "bookmarks", "preferred", "starred"]
     },
     "places/folder-cyan.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "cyan", "teal", "turquoise", "directory", "blue-green"]
     },
     "places/folder-photo.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "photo", "camera", "pictures", "images", "photography", "gallery"]
     },
     "places/folder-mail.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "mail", "email", "envelope", "messages", "inbox", "correspondence"]
     },
     "places/folder-font.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "font", "typography", "text", "typeface", "letters", "Aa"]
     },
     "places/network-workgroup.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["network", "workgroup", "globe", "world", "internet", "web", "connected"]
     },
     "places/folder.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "directory", "blue", "generic", "container", "files"]
     },
     "places/folder-yellow.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "yellow", "orange", "directory", "container", "files"]
     },
     "places/start-here-kde.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["kde", "start", "menu", "gear", "logo", "desktop", "launcher"]
     },
     "places/bookmarks.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["bookmarks", "heart", "favorite", "love", "red", "saved"]
     },
     "places/folder-red.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "red", "directory", "container", "files", "crimson"]
     },
     "places/folder-violet.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["folder", "violet", "purple", "directory", "container", "files"]
     },
     "emblems/emblem-favorite.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["favorite", "heart", "love", "emblem", "bookmark", "liked"]
     },
     "status/media-playlist-repeat.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["repeat", "playlist", "loop", "list", "media", "lines", "document"]
     },
     "status/dialog-warning.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["warning", "alert", "exclamation", "caution", "triangle", "danger", "error"]
     },
     "status/dialog-password.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["password", "key", "security", "authentication", "lock", "golden", "access"]
     },
     "status/battery-charging.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["battery", "charging", "lightning", "power", "energy", "electric", "bolt"]
     },
     "status/battery-missing.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["battery", "missing", "empty", "dead", "depleted", "cross", "power-off"]
     },
     "status/key-single.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["key", "single", "golden", "security", "password", "unlock", "access"]
     },
     "status/dialog-error.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["error", "cross", "close", "red", "cancel", "delete", "stop", "fail"]
     },
     "status/mail-attachment.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["attachment", "paperclip", "clip", "mail", "attach", "file", "blue"]
     },
     "status/user-trash-full.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["trash", "full", "recycle", "bin", "waste", "paper", "delete", "garbage"]
     },
     "status/media-playlist-shuffle.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["shuffle", "random", "dice", "chance", "mix", "randomize"]
     },
     "status/dialog-information.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["information", "info", "help", "about", "circle", "blue", "details"]
     },
     "status/battery-low.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["battery", "low", "empty", "depleted", "power", "gray", "cylinder"]
     },
     "status/key-group.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["keys", "group", "keyring", "multiple", "security", "golden", "silver"]
     },
     "status/key-pair.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["keys", "pair", "two", "security", "golden", "silver", "authentication"]
     },
     "mimetypes/source.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["source", "code", "programming", "text", "document", "script", "syntax"]
     },
     "mimetypes/application-x-java-archive.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["java", "jar", "archive", "coffee", "cup", "package", "application"]
     },
     "mimetypes/install.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["install", "setup", "floppy", "disk", "cd", "save", "installer", "media"]
     },
     "mimetypes/message-rfc822.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["email", "message", "mail", "at-sign", "rfc822", "document", "green"]
     },
     "mimetypes/audio-midi.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["midi", "audio", "music", "piano", "keyboard", "keys", "instrument"]
     },
     "mimetypes/mime_empty.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["empty", "blank", "file", "document", "white", "generic", "placeholder"]
     },
     "mimetypes/application-x-kspread.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["spreadsheet", "calculator", "table", "grid", "kspread", "cells", "data"]
     },
     "mimetypes/file_temporary.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["temporary", "temp", "clock", "time", "file", "schedule", "transient"]
     },
     "mimetypes/document.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["document", "text", "file", "page", "paper", "writing", "content"]
     },
     "mimetypes/ebuild.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["ebuild", "gentoo", "package", "build", "script", "purple", "linux"]
     },
     "mimetypes/kget_list.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["download", "arrow", "blue", "save", "transfer", "kget", "file"]
     },
     "mimetypes/application-vnd.oasis.opendocument.spreadsheet.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["spreadsheet", "chart", "table", "data", "pie-chart", "opendocument", "cells"]
     },
     "mimetypes/source_l.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["source", "code", "programming", "library", "linked", "script", "red-L"]
     },
     "mimetypes/text-x-tex.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["tex", "latex", "typesetting", "document", "text", "academic", "publishing"]
     },
     "mimetypes/gf.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["gf", "font", "cat", "emoji", "cute", "face", "character"]
     },
     "mimetypes/file_locked.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["file", "locked", "padlock", "security", "protected", "encrypted", "private"]
     },
     "mimetypes/mime_temp.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["temporary", "blank", "empty", "white", "placeholder", "generic", "file"]
     },
     "mimetypes/text-css.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["css", "stylesheet", "web", "design", "style", "checkmark", "document"]
     },
     "mimetypes/application-x-kword.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["kword", "document", "pen", "writing", "word-processor", "text", "edit"]
     },
     "mimetypes/mozilla_doc.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["mozilla", "star", "bookmark", "favorite", "red", "orange", "browser"]
     },
     "mimetypes/text-x-pascal.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["pascal", "source", "code", "programming", "text", "script", "P"]
     },
     "mimetypes/cdtrack.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["cd", "track", "music", "audio", "disc", "note", "media"]
     },
     "mimetypes/application-x-lyx.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["lyx", "document", "editor", "latex", "typesetting", "text", "academic"]
     },
     "mimetypes/txt.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["text", "txt", "notepad", "lined", "paper", "plain", "document", "note"]
     },
     "mimetypes/audio-vnd.rn-realvideo.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["audio", "realvideo", "speaker", "sound", "media", "speech", "blue"]
     },
     "mimetypes/application-x-font-type1.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["font", "type1", "letter", "A", "red", "typography", "typeface"]
     },
     "mimetypes/ooo_impress.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["impress", "presentation", "slides", "openoffice", "projector", "screen", "slideshow"]
     },
     "mimetypes/font.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["font", "typography", "Aa", "letters", "typeface", "text", "character"]
     },
     "mimetypes/application-x-applix-spreadsheet.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["spreadsheet", "applix", "chart", "table", "data", "pie-chart", "cells"]
     },
     "mimetypes/application-x-dvi.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["dvi", "document", "tex", "typeset", "page", "book", "paradiso"]
     },
     "mimetypes/text-x-python.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["python", "source", "code", "programming", "script", "PY", "language"]
     },
     "mimetypes/application-x-trash.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["trash", "recycle", "refresh", "arrows", "green", "sync", "restore"]
     },
     "mimetypes/krec_fileplay.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["audio", "speaker", "sound", "play", "recording", "blue", "media"]
     },
     "mimetypes/unknown.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["unknown", "blank", "empty", "generic", "file", "unrecognized", "white"]
     },
     "mimetypes/core.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["core", "bomb", "crash", "dump", "error", "explosive", "fatal"]
     },
     "mimetypes/application-x-deb.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["deb", "debian", "package", "box", "archive", "install", "linux"]
     },
     "mimetypes/application-vnd.oasis.opendocument.spreadsheet-template.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["spreadsheet", "template", "opendocument", "chart", "table", "data", "cells"]
     },
     "mimetypes/application-vnd.ms-excel.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["excel", "spreadsheet", "chart", "table", "data", "microsoft", "cells"]
     },
     "mimetypes/application-x-php.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["php", "web", "programming", "script", "globe", "server", "language"]
     },
     "mimetypes/inode-socket.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["socket", "network", "inode", "globe", "plug", "connection", "red"]
     },
     "mimetypes/application-x-tar.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["tar", "archive", "box", "package", "compressed", "bundle", "container"]
     },
     "mimetypes/x-office-spreadsheet.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["spreadsheet", "office", "chart", "table", "data", "pie-chart", "cells"]
     },
     "mimetypes/ooo_writer.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["writer", "document", "openoffice", "text", "word-processor", "book", "page"]
     },
     "mimetypes/misc_doc.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["document", "misc", "blank", "empty", "generic", "file", "white"]
     },
     "mimetypes/mime_ebuild.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["ebuild", "gentoo", "package", "build", "script", "purple", "linux"]
     },
     "mimetypes/source_s.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["source", "code", "programming", "script", "S", "magenta", "language"]
     },
     "mimetypes/image-svg+xml-compressed.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["svg", "vector", "image", "compressed", "graphic", "bezier", "red"]
     },
     "mimetypes/mime_koffice.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["koffice", "kde", "office", "gear", "K", "document", "suite"]
     },
     "mimetypes/exec_wine.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["wine", "windows", "executable", "glass", "red-wine", "emulator", "run"]
     },
     "mimetypes/image-x-xcf.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 64, 128],
+      "hints": ["xcf", "gimp", "image", "edit", "paintbrush", "photo", "graphic"]
     },
     "mimetypes/image-x-eps.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["eps", "vector", "image", "postscript", "graphic", "bezier", "red"]
     },
     "mimetypes/image-x-generic.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["image", "photo", "picture", "generic", "polaroid", "cityscape", "frame"]
     },
     "mimetypes/text-x-readme.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["readme", "info", "important", "exclamation", "notice", "blue", "document"]
     },
     "mimetypes/text-html.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128,
-        256
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["html", "web", "globe", "world", "internet", "webpage", "browser"]
     },
     "mimetypes/application-x-kcsrc.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["kcsrc", "colorscheme", "umbrella", "rainbow", "colors", "theme", "palette"]
     },
     "mimetypes/video-x-mng.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["video", "mng", "animation", "image", "photo", "cityscape", "frame"]
     },
     "mimetypes/text-x-log.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["log", "chart", "graph", "statistics", "data", "red", "line-graph"]
     },
     "mimetypes/inode-chardevice.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["chardevice", "terminal", "console", "device", "plug", "inode", "hardware"]
     },
     "mimetypes/file_locked-[Converted].png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["file", "locked", "padlock", "security", "protected", "encrypted", "converted"]
     },
     "mimetypes/cdbo_list.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["cd", "disc", "list", "catalog", "title", "media", "optical"]
     },
     "mimetypes/application-postscript.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["postscript", "print", "printer", "document", "PS", "output", "paper"]
     },
     "mimetypes/source_j.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["source", "code", "java", "programming", "J", "blue", "script"]
     },
     "mimetypes/encrypted.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["encrypted", "locked", "padlock", "security", "private", "protected", "key"]
     },
     "mimetypes/text-x-vcard.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["vcard", "contact", "person", "address", "business-card", "profile", "identity"]
     },
     "mimetypes/inode-directory.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128,
-        256
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["directory", "folder", "blue", "inode", "container", "files", "open"]
     },
     "mimetypes/source_y.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["source", "code", "yacc", "programming", "Y", "red", "script"]
     },
     "mimetypes/application-x-kformula.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["formula", "math", "equation", "square-root", "kformula", "fraction", "algebra"]
     },
     "mimetypes/application-octet-stream.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["binary", "octet-stream", "data", "bits", "ones", "zeros", "raw"]
     },
     "mimetypes/ooo_calc.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["calc", "spreadsheet", "openoffice", "chart", "pie-chart", "data", "table"]
     },
     "mimetypes/wordprocessing.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["wordprocessing", "document", "text", "writing", "page", "article", "paper"]
     },
     "mimetypes/message.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["email", "message", "mail", "at-sign", "correspondence", "envelope"]
     },
     "mimetypes/video-quicktime.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["quicktime", "video", "movie", "media", "apple", "player", "multimedia"]
     },
     "mimetypes/application-pdf.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["pdf", "acrobat", "adobe", "document", "portable", "reader"]
     },
     "mimetypes/kpovmodeler_doc.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["3d", "modeling", "povray", "shapes", "cylinder", "cone", "render"]
     },
     "mimetypes/cdr.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["coreldraw", "cdr", "vector", "graphics", "drawing", "design"]
     },
     "mimetypes/application-x-font-ttf.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["font", "truetype", "ttf", "typography", "typeface", "text"]
     },
     "mimetypes/application-x-shellscript.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["shell", "script", "terminal", "console", "command", "bash", "prompt"]
     },
     "mimetypes/application-x-compressed-tar.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["archive", "compressed", "tar", "gzip", "gz", "package", "box"]
     },
     "mimetypes/text-x-moc.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["moc", "module", "blocks", "cubes", "components", "3d", "building"]
     },
     "mimetypes/application-x-abiword.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["abiword", "writer", "pen", "fountain-pen", "document", "writing", "editor"]
     },
     "mimetypes/bc.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["books", "library", "reading", "education", "literature", "stack"]
     },
     "mimetypes/soffice.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["staroffice", "butterfly", "office", "suite", "colorful", "openoffice"]
     },
     "mimetypes/application-x-kig.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["kig", "geometry", "shapes", "circle", "square", "interactive", "math"]
     },
     "mimetypes/application-x-kchart.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["kchart", "chart", "graph", "pie", "bar", "statistics", "data"]
     },
     "mimetypes/mime.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["mime", "document", "blank", "empty", "generic", "file", "unknown"]
     },
     "mimetypes/application-x-krita.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["krita", "drawing", "pencils", "art", "paint", "coloring", "illustration"]
     },
     "mimetypes/gettext.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["gettext", "translation", "localization", "text", "language", "i18n"]
     },
     "mimetypes/gnome_app_info.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["gnome", "application", "info", "foot", "desktop", "linux"]
     },
     "mimetypes/application-x-zip.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["zip", "archive", "compressed", "package", "box", "container"]
     },
     "mimetypes/application-x-troff-man.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["man", "manual", "help", "lifesaver", "buoy", "documentation", "reference"]
     },
     "mimetypes/message-news.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["news", "message", "email", "usenet", "newsgroup", "at-sign"]
     },
     "mimetypes/resource.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["resource", "cassette", "tape", "media", "audio", "recording", "vintage"]
     },
     "mimetypes/application-x-karbon.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["karbon", "karbon14", "vector", "drawing", "illustration", "koffice"]
     },
     "mimetypes/info.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["info", "information", "about", "help", "details", "circle"]
     },
     "mimetypes/audio-x-generic.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["audio", "music", "sound", "note", "song", "media"]
     },
     "mimetypes/video-x-generic.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["video", "movie", "clapperboard", "film", "cinema", "clip"]
     },
     "mimetypes/application-x-kivio.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["kivio", "flowchart", "diagram", "shapes", "koffice", "colorful"]
     },
     "mimetypes/application-x-cd-image.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["cd", "disc", "image", "iso", "burn", "optical", "mount"]
     },
     "mimetypes/audio-vnd.rn-realaudio.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["realaudio", "audio", "speaker", "sound", "streaming", "real", "media"]
     },
     "mimetypes/application-x-object.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["object", "code", "source", "compiled", "binary", "programming", "c"]
     },
     "mimetypes/text-x-patch.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["patch", "diff", "plus", "addition", "fix", "update", "cross"]
     },
     "mimetypes/text-x-c++src.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["cpp", "c++", "source", "code", "programming", "development"]
     },
     "mimetypes/audio-prs.sid.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["sid", "audio", "piano", "keyboard", "music", "commodore", "chiptune"]
     },
     "mimetypes/ooo_draw_tpl.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["openoffice", "draw", "template", "vector", "illustration", "ruler", "pencil"]
     },
     "mimetypes/krec_filerec.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["recording", "record", "red", "button", "audio", "capture", "krec"]
     },
     "mimetypes/text-x-makefile.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["makefile", "make", "build", "checkerboard", "compile", "automation"]
     },
     "mimetypes/audio-x-pn-realaudio-plugin.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["realaudio", "plugin", "audio", "speaker", "sound", "streaming", "media"]
     },
     "mimetypes/ooo_setup.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["openoffice", "setup", "install", "floppy", "disc", "save", "installer"]
     },
     "mimetypes/image-svg+xml.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["svg", "vector", "scalable", "bezier", "curve", "graphic", "drawing"]
     },
     "mimetypes/application-vnd.rn-realmedia.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["realmedia", "real", "audio", "speaker", "sound", "streaming", "media"]
     },
     "mimetypes/colorset.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["colorset", "umbrella", "palette", "rainbow", "colors", "theme"]
     },
     "mimetypes/koffice.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["koffice", "kde", "office", "gear", "suite", "productivity"]
     },
     "mimetypes/inode-fifo.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["fifo", "pipe", "inode", "queue", "connector", "socket"]
     },
     "mimetypes/ooo_impress_tpl.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["openoffice", "impress", "template", "presentation", "slides", "screen"]
     },
     "mimetypes/text-x-csrc.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["c", "source", "code", "programming", "development", "csrc"]
     },
     "mimetypes/applix.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["applix", "font", "letter", "text", "document", "typeface"]
     },
     "mimetypes/inode-blockdevice.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["block", "device", "inode", "cubes", "storage", "hardware"]
     },
     "mimetypes/application-x-perl.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["perl", "script", "code", "programming", "pl", "development"]
     },
     "mimetypes/application-x-zerosize.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["zerosize", "empty", "blank", "zero", "null", "file"]
     },
     "mimetypes/real_doc.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["real", "realmedia", "audio", "speaker", "sound", "streaming", "document"]
     },
     "mimetypes/netscape_doc.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["netscape", "navigator", "browser", "web", "document", "internet"]
     },
     "mimetypes/application-xhtml+xml.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["xhtml", "xml", "html", "web", "globe", "internet", "webpage"]
     },
     "mimetypes/metafont.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["metafont", "font", "typography", "typeface", "letters", "colorful"]
     },
     "mimetypes/application-x-kpresenter.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["kpresenter", "presentation", "slides", "slideshow", "screen", "koffice"]
     },
     "mimetypes/text-vcalendar.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["calendar", "vcalendar", "date", "schedule", "march", "day", "event"]
     },
     "mimetypes/application-x-designer.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["designer", "qt", "form", "widget", "gui", "interface", "ui"]
     },
     "mimetypes/text-plain.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["text", "plain", "document", "file", "txt", "notepad"]
     },
     "mimetypes/ooo_draw.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["openoffice", "draw", "vector", "illustration", "ruler", "pencil"]
     },
     "mimetypes/text-x-java.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["java", "coffee", "cup", "programming", "code", "development"]
     },
     "mimetypes/template_source.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["template", "source", "code", "programming", "highlighted", "syntax"]
     },
     "mimetypes/application-x-executable.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["executable", "binary", "program", "run", "application", "checkerboard"]
     },
     "mimetypes/quicktime.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["quicktime", "video", "movie", "apple", "media", "player", "q"]
     },
     "mimetypes/krec_fileempty.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["krec", "empty", "blank", "recording", "file", "new"]
     },
     "mimetypes/application-x-rar.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["rar", "archive", "compressed", "package", "box", "container"]
     },
     "mimetypes/font_bitmap.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["bitmap", "font", "pixel", "typeface", "letter", "raster"]
     },
     "mimetypes/text-x-chdr.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["header", "c", "h", "source", "code", "programming", "include"]
     },
     "mimetypes/ooo_calc_tpl.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["openoffice", "calc", "template", "spreadsheet", "chart", "pie"]
     },
     "mimetypes/kugardata.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["kugar", "data", "paw", "report", "footprint", "koffice"]
     },
     "mimetypes/application-x-kugar.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["kugar", "report", "paw", "generator", "koffice", "footprint"]
     },
     "mimetypes/application-x-sharedlib.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["sharedlib", "library", "binary", "shared", "so", "dll", "object"]
     },
     "mimetypes/ooo_writer_tpl.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["openoffice", "writer", "template", "document", "text", "book"]
     },
     "mimetypes/text-x-fortran.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["fortran", "source", "code", "programming", "scientific", "development"]
     },
     "mimetypes/application-x-rpm.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["rpm", "package", "redhat", "linux", "installer", "box", "archive"]
     },
     "categories/applications-games-strategy.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["strategy", "chess", "knight", "games", "board", "horse"]
     },
     "categories/applications-education-mathematics.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["mathematics", "math", "square-root", "algebra", "formula", "equation"]
     },
     "categories/applications-development.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["development", "hammer", "tool", "build", "programming", "coding"]
     },
     "categories/applications-games-board.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["board", "games", "dice", "die", "tabletop", "gambling"]
     },
     "categories/applications-education-language.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["language", "education", "speech", "person", "talk", "conversation"]
     },
     "categories/applications-graphics.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["graphics", "art", "palette", "paint", "brush", "drawing", "colors"]
     },
     "categories/applications-science.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["science", "chemistry", "flask", "beaker", "laboratory", "experiment"]
     },
     "categories/preferences-desktop-peripherals.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["peripherals", "mouse", "tablet", "input", "hardware", "device"]
     },
     "categories/applications-multimedia.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["multimedia", "video", "audio", "speaker", "clapperboard", "media"]
     },
     "categories/applications-other.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["other", "application", "software", "cd", "disc", "program"]
     },
     "categories/applications-toys.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["toys", "cat", "kitten", "pet", "fun", "cute", "animal"]
     },
     "categories/applications-games.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["games", "gamepad", "controller", "joystick", "play", "gaming"]
     },
     "categories/preferences-system-network.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["network", "internet", "globe", "world", "connection", "web"]
     },
     "categories/applications-education.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["education", "school", "blackboard", "chalkboard", "abc", "teaching"]
     },
     "categories/preferences-system.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["system", "preferences", "settings", "screwdriver", "monitor", "repair"]
     },
     "categories/applications-utilities.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["utilities", "scissors", "tools", "cut", "accessories", "craft"]
     },
     "categories/applications-office.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["office", "typewriter", "writing", "business", "document", "productivity"]
     },
     "categories/preferences-other.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["preferences", "settings", "tools", "screwdriver", "wrench", "configure"]
     },
     "categories/applications-internet.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["internet", "globe", "earth", "world", "web", "online"]
     },
     "categories/applications-games-arcade.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["arcade", "joystick", "games", "retro", "play", "lever"]
     },
     "actions/ledpurple.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["purple", "led", "light", "indicator", "status", "orb", "sphere", "glossy"]
     },
     "actions/configure.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["wrench", "tool", "settings", "configure", "preferences", "repair", "silver", "spanner"]
     },
     "actions/arrow-left.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["arrow", "left", "back", "previous", "navigate", "return", "blue", "chevron"]
     },
     "actions/application-exit.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["power", "exit", "shutdown", "quit", "close", "red", "button", "circle"]
     },
     "actions/document-print.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["printer", "print", "paper", "document", "output", "inkjet", "blue", "hardware"]
     },
     "actions/mail-reply-all.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["reply", "all", "mail", "email", "arrows", "envelope", "respond"]
     },
     "actions/transform-rotate.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["rotate", "transform", "turn", "arrow", "spin", "orientation"]
     },
     "actions/roll.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["roll", "dice", "die", "random", "chance", "gambling"]
     },
     "actions/bookmark_folder.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["bookmark", "folder", "favorite", "heart", "save", "directory"]
     },
     "actions/go-next-document.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["next", "forward", "arrow", "right", "go", "navigate"]
     },
     "actions/edit-delete.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["delete", "remove", "cross", "cancel", "close", "red"]
     },
     "actions/kmixdocked_error.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["volume", "speaker", "error", "mute", "audio", "sound", "cross"]
     },
     "actions/view-split-left-right.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["split", "vertical", "panes", "columns", "layout", "window", "divide"]
     },
     "actions/edit-redo.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["redo", "arrow", "forward", "repeat", "again", "restore"]
     },
     "actions/mail-message-new.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["mail", "email", "message", "new", "compose", "envelope", "write"]
     },
     "actions/edit-paste.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["paste", "clipboard", "document", "insert", "board", "attach"]
     },
     "actions/colorize.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["color", "palette", "paint", "brush", "art", "draw", "colorize"]
     },
     "actions/mail-send.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["mail", "send", "email", "envelope", "arrow", "deliver", "outbox"]
     },
     "actions/mail-queue.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["mail", "queue", "email", "envelope", "pending", "waiting", "outbox"]
     },
     "actions/dialog-close.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["close", "dialog", "cancel", "dismiss", "x", "cross", "exit"]
     },
     "actions/quiz.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["quiz", "question", "help", "unknown", "mark", "info", "ask"]
     },
     "actions/kgpg_edit.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["screwdriver", "edit", "tool", "configure", "fix", "repair", "settings"]
     },
     "actions/openterm.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["terminal", "console", "shell", "command", "prompt", "cli", "bash"]
     },
     "actions/document-export-key.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["key", "export", "security", "unlock", "access", "arrow", "send"]
     },
     "actions/tab-new.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["tab", "new", "add", "folder", "star", "open", "create"]
     },
     "actions/mix_unknown.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["unknown", "mix", "question", "triangle", "media", "audio", "unidentified"]
     },
     "actions/arrow-down-double.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["arrow", "down", "double", "chevron", "bottom", "skip", "fast"]
     },
     "actions/laptop_power.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["power", "plug", "cable", "cord", "electricity", "energy", "laptop"]
     },
     "actions/piano.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["piano", "keyboard", "music", "keys", "instrument", "midi", "notes"]
     },
     "actions/mail-forward.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["mail", "forward", "email", "envelope", "arrow", "redirect", "send"]
     },
     "actions/kgpg_term.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["key", "terminal", "gpg", "encrypt", "security", "console", "crypto"]
     },
     "actions/tools-wizard.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["wizard", "wand", "magic", "star", "auto", "generate", "sparkle"]
     },
     "actions/irkick.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["infrared", "remote", "wireless", "signal", "antenna", "broadcast", "ir"]
     },
     "actions/view-list-tree.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["tree", "list", "hierarchy", "view", "structure", "nested", "outline"]
     },
     "actions/view-bottom-new.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "bottom", "new", "panel", "split", "horizontal", "pane"]
     },
     "actions/ledyellow.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["led", "yellow", "light", "indicator", "status", "circle", "orb"]
     },
     "actions/zoom.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["zoom", "magnify", "search", "lens", "glass", "find", "inspect"]
     },
     "actions/media-skip-forward.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["skip", "forward", "next", "media", "player", "track", "advance"]
     },
     "actions/document-export.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["export", "save", "floppy", "disk", "document", "backup", "store"]
     },
     "actions/list-add-font.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["font", "add", "text", "typography", "typeface", "letter", "install"]
     },
     "actions/bookmark-new-list.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["bookmark", "new", "favorite", "heart", "add", "list", "love"]
     },
     "actions/media-eject.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["eject", "media", "triangle", "remove", "disc", "unmount", "up"]
     },
     "actions/edit-cut.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["cut", "scissors", "clip", "trim", "snip", "edit", "remove"]
     },
     "actions/view-fullscreen.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["fullscreen", "maximize", "expand", "window", "resize", "arrows", "enlarge"]
     },
     "actions/document-save.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["save", "floppy", "disk", "document", "store", "write", "backup"]
     },
     "actions/tools-report-bug.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["bug", "report", "ladybug", "insect", "error", "issue", "debug"]
     },
     "actions/misc.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["misc", "gear", "cog", "settings", "configure", "options", "preferences"]
     },
     "actions/project-open.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["project", "open", "folder", "directory", "browse", "files", "load"]
     },
     "actions/go-next.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["next", "right", "arrow", "forward", "go", "navigate", "advance"]
     },
     "actions/go-first.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["first", "left", "arrow", "start", "begin", "go", "navigate"]
     },
     "actions/document-print-preview.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["print", "preview", "printer", "lightning", "fast", "quick", "document"]
     },
     "actions/kmixdocked_mute.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["mute", "speaker", "volume", "silent", "audio", "sound", "quiet"]
     },
     "actions/button_accept.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["accept", "check", "ok", "confirm", "approve", "yes", "done"]
     },
     "actions/toggle_log.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["log", "toggle", "book", "notebook", "journal", "record", "diary"]
     },
     "actions/decrypted.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["decrypted", "unlock", "padlock", "open", "security", "access", "unsecure"]
     },
     "actions/color_line.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["color", "line", "pencil", "draw", "pen", "write", "green"]
     },
     "actions/ledblue.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["led", "blue", "light", "indicator", "status", "circle", "orb"]
     },
     "actions/view-list-details.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["list", "details", "view", "rows", "table", "lines", "itemize"]
     },
     "actions/player_rev.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["rewind", "reverse", "backward", "media", "player", "back", "fast"]
     },
     "actions/edit-undo.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["undo", "arrow", "back", "revert", "return", "cancel", "history"]
     },
     "actions/view-split-top-bottom.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["split", "horizontal", "panes", "rows", "layout", "window", "divide"]
     },
     "actions/ledgreen.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["led", "green", "light", "indicator", "status", "circle", "orb"]
     },
     "actions/edit-clear-history.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["clear", "history", "clock", "delete", "time", "remove", "erase"]
     },
     "actions/mouse.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["mouse", "pointer", "cursor", "click", "input", "device", "hardware"]
     },
     "actions/document-revert.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["revert", "document", "floppy", "restore", "undo", "reload", "save"]
     },
     "actions/ledorange.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["led", "orange", "light", "indicator", "status", "circle", "orb"]
     },
     "actions/noatunloopsong.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["loop", "repeat", "song", "cycle", "refresh", "arrows", "recycle"]
     },
     "actions/mail_post_to.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["mail", "post", "email", "envelope", "message", "compose", "write"]
     },
     "actions/bookmark-new.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["bookmark", "new", "heart", "favorite", "star", "love", "add"]
     },
     "actions/encrypted.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["encrypted", "lock", "padlock", "secure", "security", "closed", "protected"]
     },
     "actions/run-build.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["build", "run", "compile", "execute", "blocks", "construct", "make"]
     },
     "actions/edittrash.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["trash", "delete", "bin", "recycle", "garbage", "remove", "discard"]
     },
     "actions/kalarm_disabled.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["alarm", "disabled", "clock", "cancel", "off", "timer", "inactive"]
     },
     "actions/media-playback-stop.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["stop", "media", "playback", "square", "halt", "end", "player"]
     },
     "actions/artsmediatypes.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["audio", "speaker", "sound", "media", "volume", "music", "arts"]
     },
     "actions/arrow-down.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["arrow", "down", "chevron", "descend", "drop", "lower", "navigate"]
     },
     "actions/ledlightblue.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["led", "lightblue", "light", "indicator", "status", "circle", "orb"]
     },
     "actions/artsaudiomanager.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["megaphone", "audio", "announce", "loudspeaker", "horn", "sound", "manager"]
     },
     "actions/document-properties-key.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["document", "properties", "key", "security", "file", "metadata", "info"]
     },
     "actions/system-lock-screen.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["lock", "screen", "security", "padlock", "protect", "system", "secure"]
     },
     "actions/kgpg_identity.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["identity", "key", "user", "person", "gpg", "authenticate", "account"]
     },
     "actions/color-gradient.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["gradient", "color", "blend", "fade", "fill", "spectrum", "transition"]
     },
     "actions/window-new.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["window", "new", "open", "create", "frame", "panel", "star"]
     },
     "actions/media-playback-start.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["play", "start", "media", "triangle", "playback", "begin", "player"]
     },
     "actions/message.png": {
-      "sizes": [
-        16
-      ]
+      "sizes": [16],
+      "hints": ["message", "note", "notification", "paper", "memo", "alert", "info"]
     },
     "actions/network-disconnect.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["network", "disconnect", "cable", "offline", "unplug", "error", "broken"]
     },
     "actions/colorpicker.png": {
-      "sizes": [
-        16,
-        22
-      ]
+      "sizes": [16, 22],
+      "hints": ["colorpicker", "eyedropper", "pipette", "sample", "pick", "color", "dropper"]
     },
     "actions/document-new.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["document", "new", "page", "blank", "create", "file", "add"]
     },
     "actions/zoom-out.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["zoom", "out", "minus", "magnify", "reduce", "shrink", "lens"]
     },
     "actions/edit-bomb.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["bomb", "explosive", "danger", "warning", "destroy", "delete", "nuke"]
     },
     "actions/edit-find.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["find", "search", "magnify", "lens", "look", "locate", "glass"]
     },
     "actions/view-preview.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["preview", "image", "photo", "picture", "thumbnail", "view", "landscape"]
     },
     "actions/go-down.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["down", "arrow", "download", "descend", "go", "navigate", "drop"]
     },
     "actions/media-seek-forward.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["seek", "forward", "fast", "media", "arrows", "right", "advance"]
     },
     "actions/tools-check-spelling.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["spelling", "check", "abc", "grammar", "text", "verify", "proofread"]
     },
     "actions/ok.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["ok", "check", "yes", "confirm", "accept", "done", "approve"]
     },
     "actions/view-list-icons.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["icons", "grid", "view", "tiles", "thumbnails", "gallery", "matrix"]
     },
     "actions/contact-new.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["contact", "new", "person", "user", "card", "vcard", "add"]
     },
     "actions/mail-reply-sender.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["reply", "mail", "email", "envelope", "arrow", "respond", "back"]
     },
     "actions/mix_recmon.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["record", "monitor", "audio", "mixer", "triangle", "red", "capture"]
     },
     "actions/kdevelop_down.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["down", "check", "checkmark", "tick", "blue", "arrow", "complete"]
     },
     "actions/kgpg_photo.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["photo", "id", "portrait", "picture", "identity", "badge", "profile"]
     },
     "actions/view-history.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["history", "clock", "time", "recent", "past", "watch", "schedule"]
     },
     "actions/kaboodleloop.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["loop", "repeat", "refresh", "sync", "arrows", "cycle", "reload"]
     },
     "actions/mail_delete.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["email", "mail", "delete", "remove", "envelope", "message", "discard"]
     },
     "actions/cancel.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["cancel", "close", "stop", "abort", "x", "red", "cross", "reject"]
     },
     "actions/view-sidetree.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["sidebar", "tree", "panel", "split", "view", "layout", "pane", "navigation"]
     },
     "actions/process-stop.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["stop", "process", "kill", "terminate", "halt", "cancel", "abort", "red", "x"]
     },
     "actions/go-previous.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["back", "previous", "left", "arrow", "navigate", "return", "history"]
     },
     "actions/tab-new-background.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["tab", "new", "background", "open", "browser", "page", "add"]
     },
     "actions/media-skip-backward.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["skip", "backward", "previous", "track", "media", "rewind", "beginning", "player"]
     },
     "actions/kmixdocked.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["volume", "speaker", "sound", "audio", "mixer", "mute", "unmute", "tray"]
     },
     "actions/draw-freehand.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["pencil", "draw", "freehand", "write", "edit", "pen", "sketch", "green"]
     },
     "actions/kgpg_sign.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["key", "sign", "signature", "gpg", "pgp", "encrypt", "security", "certificate", "pen"]
     },
     "actions/media-record.png": {
-      "sizes": [
-        16,
-        22,
-        32
-      ]
+      "sizes": [16, 22, 32],
+      "hints": ["record", "red", "circle", "dot", "recording", "media", "capture"]
     },
     "actions/no.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["no", "error", "reject", "deny", "forbidden", "wrong", "fail", "red", "circle", "x"]
     },
     "actions/document-print-frame.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["print", "printer", "document", "frame", "page", "paper", "output"]
     },
     "actions/document-open.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["open", "folder", "document", "file", "browse", "load", "blue"]
     },
     "actions/document-save-all.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["save", "all", "floppy", "disk", "store", "multiple", "batch", "backup"]
     },
     "actions/games-endturn.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["checkmark", "check", "done", "complete", "yes", "ok", "accept", "green", "tick", "confirm"]
     },
     "actions/help-about.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["help", "about", "question", "info", "information", "support", "blue", "circle"]
     },
     "actions/klipper_dock.png": {
-      "sizes": [
-        16,
-        32,
-        48
-      ]
+      "sizes": [16, 32, 48],
+      "hints": ["clipboard", "paste", "klipper", "dock", "clip", "board", "copy", "note"]
     },
     "actions/edit-copy.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["copy", "duplicate", "documents", "pages", "clipboard", "two", "papers"]
     },
     "actions/mix_volume.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["volume", "level", "mixer", "audio", "sound", "triangle", "green", "ramp"]
     },
     "actions/rebuild.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["rebuild", "refresh", "reload", "sync", "update", "arrows", "window", "recycle"]
     },
     "actions/connect_creating.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["connect", "plug", "cable", "network", "creating", "link", "join", "wire"]
     },
     "actions/document-save-as.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["save", "as", "floppy", "disk", "pen", "write", "rename", "export"]
     },
     "actions/go-home.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["home", "house", "green", "main", "start", "homepage", "default"]
     },
     "actions/about_kde.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["kde", "about", "logo", "k", "gear", "desktop", "environment", "info"]
     },
     "actions/go-bottom.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["bottom", "down", "arrow", "end", "last", "download", "below"]
     },
     "actions/go-previous-document.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["previous", "document", "back", "left", "arrow", "chevron", "navigate", "page"]
     },
     "actions/object-rotate-right.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["rotate", "right", "clockwise", "turn", "redo", "arrow", "curved", "green"]
     },
     "actions/kalarm.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["alarm", "clock", "timer", "reminder", "bell", "time", "alert", "orange", "schedule"]
     },
     "actions/object-rotate-left.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["rotate", "left", "counterclockwise", "turn", "undo", "arrow", "curved", "green"]
     },
     "actions/view-restore.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["restore", "window", "resize", "unmaximize", "view", "shrink", "cascade"]
     },
     "actions/view-key-secret.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["key", "secret", "password", "security", "lock", "private", "credential", "metal"]
     },
     "actions/key-generate-pair.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["key", "generate", "pair", "keypair", "security", "crypto", "certificate", "two", "keys"]
     },
     "actions/view.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "window", "frame", "document", "panel", "screen", "display", "interface"]
     },
     "actions/run-build-file.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["run", "build", "execute", "file", "document", "compile", "green", "arrow"]
     },
     "actions/bookmark-toolbar.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["bookmark", "toolbar", "favorite", "heart", "red", "star", "love", "save"]
     },
     "actions/irkickflash.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["infrared", "remote", "wireless", "signal", "transmit", "red", "waves", "control"]
     },
     "actions/arrow-up.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["arrow", "up", "upward", "direction", "blue", "navigate", "rise", "ascend"]
     },
     "actions/ledred.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["led", "red", "light", "indicator", "status", "glow", "sphere", "circle"]
     },
     "actions/artsenvironment.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["speaker", "audio", "sound", "megaphone", "blue", "volume", "arts", "output"]
     },
     "actions/list-add.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["add", "plus", "new", "create", "green", "cross", "insert", "list"]
     },
     "actions/view-refresh.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["refresh", "reload", "sync", "arrows", "circular", "green", "update", "repeat"]
     },
     "actions/fill-color.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["fill", "color", "paint", "bucket", "red", "pour", "flood", "tool"]
     },
     "actions/document-import-key.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["import", "key", "certificate", "gold", "download", "arrow", "security", "crypto"]
     },
     "actions/view-list-text.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["list", "text", "view", "lines", "rows", "document", "detail", "window"]
     },
     "actions/ledlightgreen.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["led", "light", "green", "indicator", "status", "glow", "sphere", "on"]
     },
     "actions/dialog-ok.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["ok", "checkmark", "confirm", "accept", "yes", "green", "done", "success"]
     },
     "actions/dialog-cancel.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["cancel", "close", "x", "reject", "no", "red", "delete", "stop"]
     },
     "actions/irkickoff.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["infrared", "remote", "off", "disabled", "red", "transmitter", "ir", "control"]
     },
     "actions/tab-close.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["tab", "close", "folder", "x", "red", "remove", "window", "browser"]
     },
     "actions/go-top.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["go", "top", "arrow", "up", "beginning", "first", "blue", "navigate"]
     },
     "actions/tab-duplicate.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["tab", "duplicate", "copy", "folder", "clone", "green", "arrow", "new"]
     },
     "actions/view-right-new.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "right", "new", "split", "pane", "panel", "window", "star"]
     },
     "actions/camera_test.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["camera", "test", "checkmark", "pass", "ok", "green", "verify", "success"]
     },
     "actions/cd.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["cd", "disc", "compact", "optical", "media", "dvd", "music", "silver"]
     },
     "actions/view-file-columns.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "columns", "files", "browser", "grid", "layout", "miller", "finder"]
     },
     "actions/go-last.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["go", "last", "end", "arrow", "right", "final", "blue", "navigate"]
     },
     "actions/arrow-up-double.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["arrow", "up", "double", "fast", "skip", "blue", "chevron", "navigate"]
     },
     "actions/artsmidimanager.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["midi", "audio", "music", "piano", "keys", "speaker", "sound", "arts"]
     },
     "actions/edit-delete-shred.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["shred", "delete", "secure", "destroy", "paper", "wipe", "erase", "vertical"]
     },
     "actions/media-playback-pause.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["pause", "media", "playback", "bars", "blue", "stop", "player", "control"]
     },
     "actions/mix_midi.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["midi", "piano", "keyboard", "keys", "music", "mix", "audio", "instrument"]
     },
     "actions/arrow-right-double.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["arrow", "right", "double", "fast", "forward", "skip", "blue", "chevron"]
     },
     "actions/kgpg.png": {
-      "sizes": [
-        16,
-        22
-      ]
+      "sizes": [16, 22],
+      "hints": ["gpg", "key", "lock", "encrypt", "security", "pgp", "crypto", "padlock"]
     },
     "actions/system-run.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["run", "execute", "system", "checkered", "flag", "start", "launch", "racing"]
     },
     "actions/folder-new.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["folder", "new", "create", "directory", "blue", "star", "sparkle", "add"]
     },
     "actions/go-up.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["go", "up", "arrow", "parent", "folder", "blue", "navigate", "back"]
     },
     "actions/list-remove.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["remove", "minus", "delete", "list", "green", "subtract", "item", "line"]
     },
     "actions/edit-find-mail.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["find", "mail", "search", "magnifier", "envelope", "email", "locate", "message"]
     },
     "actions/zoom-original.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["zoom", "original", "magnifier", "one", "100", "actual", "reset", "size"]
     },
     "actions/connect_established.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["connect", "established", "plug", "lightning", "power", "electric", "online", "active"]
     },
     "actions/arrow-left-double.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["arrow", "left", "double", "rewind", "back", "previous", "blue", "chevron"]
     },
     "actions/power.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["power", "plug", "cord", "electric", "cable", "connect", "outlet", "energy"]
     },
     "actions/playsound.png": {
-      "sizes": [
-        16,
-        22
-      ]
+      "sizes": [16, 22],
+      "hints": ["play", "sound", "music", "note", "green", "audio", "melody", "tone"]
     },
     "actions/mail-receive.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["mail", "receive", "envelope", "check", "email", "inbox", "download", "get"]
     },
     "actions/edit.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["edit", "crop", "selection", "frame", "corner", "resize", "modify", "window"]
     },
     "actions/media-seek-backward.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["seek", "backward", "rewind", "media", "blue", "triangles", "player", "back"]
     },
     "actions/format-fill-color.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["fill", "color", "paint", "bucket", "format", "background", "pour", "red"]
     },
     "actions/news-subscribe.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["news", "subscribe", "newspaper", "plus", "add", "rss", "feed", "green"]
     },
     "actions/mail_generic.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["mail", "generic", "envelope", "email", "message", "letter", "blue", "send"]
     },
     "actions/zoom-fit-best.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["zoom", "fit", "best", "magnifier", "arrows", "expand", "window", "green"]
     },
     "actions/document-sign.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["sign", "document", "pen", "fountain", "nib", "write", "signature", "ink"]
     },
     "actions/zoom-in.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["zoom", "in", "magnifier", "plus", "enlarge", "bigger", "green", "search"]
     },
     "actions/news-unsubscribe.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["news", "unsubscribe", "newspaper", "x", "remove", "rss", "feed", "red"]
     },
     "actions/view-choose.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48
-      ]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "choose", "layout", "options", "select", "panel", "grid", "list"]
     },
     "apps/knewsletter.png": {
-      "sizes": [
-        64,
-        128
-      ]
+      "sizes": [64, 128],
+      "hints": ["newsletter", "news", "newspaper", "folded", "article", "press", "reading", "paper"]
     },
     "places/folder-man.png": {
-      "sizes": [
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [22, 32, 48, 64, 128],
+      "hints": ["folder", "manual", "help", "lifering", "buoy", "rescue", "blue", "documentation"]
     },
     "places/folder-cool.png": {
-      "sizes": [
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [22, 32, 48, 64, 128],
+      "hints": ["folder", "cool", "smiley", "face", "happy", "emoji", "blue", "fun"]
     },
     "mimetypes/audio-x-ms-asx.png": {
-      "sizes": [
-        48
-      ]
+      "sizes": [48],
+      "hints": ["audio", "asx", "music", "note", "file", "document", "playlist", "microsoft"]
     },
     "mimetypes/audio-x-matroska.png": {
-      "sizes": [
-        48
-      ]
+      "sizes": [48],
+      "hints": ["audio", "matroska", "mka", "music", "note", "file", "document", "container"]
     },
     "mimetypes/audio-x-ms-wma.png": {
-      "sizes": [
-        48
-      ]
+      "sizes": [48],
+      "hints": ["audio", "wma", "music", "note", "file", "document", "microsoft", "windows"]
     },
     "mimetypes/audio-basic.png": {
-      "sizes": [
-        48
-      ]
+      "sizes": [48],
+      "hints": ["audio", "basic", "music", "note", "file", "document", "sound", "wav"]
     },
     "mimetypes/audio-mpeg.png": {
-      "sizes": [
-        48
-      ]
+      "sizes": [48],
+      "hints": ["audio", "mpeg", "mp3", "music", "note", "file", "document", "sound"]
     },
     "mimetypes/audio-ac3.png": {
-      "sizes": [
-        48
-      ]
+      "sizes": [48],
+      "hints": ["audio", "ac3", "music", "note", "file", "document", "dolby", "surround"]
     },
     "mimetypes/audio-x-wav.png": {
-      "sizes": [
-        48
-      ]
+      "sizes": [48],
+      "hints": ["audio", "wav", "wave", "music", "note", "file", "document", "sound"]
     },
     "mimetypes/audio-x-mp2.png": {
-      "sizes": [
-        48
-      ]
+      "sizes": [48],
+      "hints": ["audio", "mp2", "music", "note", "file", "document", "mpeg", "sound"]
     },
     "mimetypes/audio-x-musepack.png": {
-      "sizes": [
-        48
-      ]
+      "sizes": [48],
+      "hints": ["audio", "musepack", "mpc", "music", "note", "file", "document", "lossless"]
     },
     "mimetypes/audio-x-scpls.png": {
-      "sizes": [
-        48
-      ]
+      "sizes": [48],
+      "hints": ["audio", "scpls", "pls", "playlist", "music", "note", "file", "stream"]
     },
     "mimetypes/audio-x-flac+ogg.png": {
-      "sizes": [
-        48
-      ]
+      "sizes": [48],
+      "hints": ["audio", "flac", "ogg", "music", "note", "file", "lossless", "container"]
     },
     "mimetypes/audio-x-vorbis+ogg.png": {
-      "sizes": [
-        48
-      ]
+      "sizes": [48],
+      "hints": ["audio", "vorbis", "ogg", "music", "note", "file", "lossy", "container"]
     },
     "mimetypes/audio-aac.png": {
-      "sizes": [
-        48
-      ]
+      "sizes": [48],
+      "hints": ["audio", "aac", "music", "note", "file", "document", "apple", "lossy"]
     },
     "mimetypes/audio-x-adpcm.png": {
-      "sizes": [
-        48
-      ]
+      "sizes": [48],
+      "hints": ["audio", "adpcm", "music", "note", "file", "document", "codec", "sound"]
     },
     "mimetypes/image_gimp.png": {
-      "sizes": [
-        48
-      ]
+      "sizes": [48],
+      "hints": ["image", "gimp", "xcf", "photo", "edit", "pencil", "graphic", "artwork"]
     },
     "mimetypes/audio-x-monkey.png": {
-      "sizes": [
-        48
-      ]
+      "sizes": [48],
+      "hints": ["audio", "monkey", "ape", "music", "note", "file", "lossless", "sound"]
     },
     "mimetypes/audio-x-mpegurl.png": {
-      "sizes": [
-        48
-      ]
+      "sizes": [48],
+      "hints": ["audio", "mpegurl", "m3u", "playlist", "music", "note", "file", "url"]
     },
     "mimetypes/audio-x-aiff.png": {
-      "sizes": [
-        48
-      ]
+      "sizes": [48],
+      "hints": ["audio", "aiff", "apple", "music", "note", "file", "lossless", "mac"]
     },
     "mimetypes/audio-mp4.png": {
-      "sizes": [
-        48
-      ]
+      "sizes": [48],
+      "hints": ["audio", "mp4", "m4a", "music", "note", "file", "aac", "container"]
     },
     "mimetypes/audio-x-mod.png": {
-      "sizes": [
-        48
-      ]
+      "sizes": [48],
+      "hints": ["audio", "mod", "tracker", "music", "note", "file", "module", "chiptune"]
     },
     "mimetypes/audio-x-flac.png": {
-      "sizes": [
-        48
-      ]
+      "sizes": [48],
+      "hints": ["audio", "flac", "lossless", "music", "note", "file", "hifi", "compression"]
     },
     "apps/gnome.png": {
-      "sizes": [
-        32
-      ]
+      "sizes": [32],
+      "hints": ["gnome", "desktop", "footprint", "linux", "logo", "blue", "foot", "gtk"]
     },
     "places/mail-message.png": {
-      "sizes": [
-        32
-      ]
+      "sizes": [32],
+      "hints": ["mail", "message", "envelope", "open", "email", "letter", "blue", "inbox"]
     },
     "categories/applications-system.png": {
-      "sizes": [
-        32
-      ]
+      "sizes": [32],
+      "hints": ["system", "applications", "gear", "cog", "settings", "tools", "config", "admin"]
     },
     "actions/noatunplay.png": {
-      "sizes": [
-        22,
-        32
-      ]
+      "sizes": [22, 32],
+      "hints": ["play", "noatun", "media", "triangle", "blue", "player", "start", "audio"]
     },
     "actions/kcmpci.png": {
-      "sizes": [
-        32
-      ]
+      "sizes": [32],
+      "hints": ["pci", "hardware", "card", "config", "layout", "document", "system", "board"]
     },
     "actions/hwinfo.png": {
-      "sizes": [
-        32
-      ]
+      "sizes": [32],
+      "hints": ["hardware", "info", "information", "computer", "system", "device", "specs", "details"]
     },
     "actions/noatunforward.png": {
-      "sizes": [
-        22,
-        32
-      ]
+      "sizes": [22, 32],
+      "hints": ["forward", "skip", "next", "noatun", "media", "blue", "arrow", "player"]
     },
     "actions/noatunpause.png": {
-      "sizes": [
-        22,
-        32
-      ]
+      "sizes": [22, 32],
+      "hints": ["pause", "noatun", "media", "bars", "blue", "stop", "player", "control"]
     },
     "actions/noatunback.png": {
-      "sizes": [
-        22,
-        32
-      ]
+      "sizes": [22, 32],
+      "hints": ["back", "rewind", "previous", "noatun", "media", "blue", "arrow", "player"]
     },
     "actions/help-contents.png": {
-      "sizes": [
-        32
-      ]
+      "sizes": [32],
+      "hints": ["help", "contents", "book", "open", "documentation", "manual", "green", "pages"]
     },
     "actions/homepage.png": {
-      "sizes": [
-        32
-      ]
+      "sizes": [32],
+      "hints": ["homepage", "home", "globe", "world", "web", "browser", "earth", "internet"]
     },
     "actions/noatunstop.png": {
-      "sizes": [
-        22,
-        32
-      ]
+      "sizes": [22, 32],
+      "hints": ["stop", "noatun", "media", "square", "red", "halt", "player", "control"]
     },
     "actions/noatunplaylist.png": {
-      "sizes": [
-        22,
-        32
-      ]
+      "sizes": [22, 32],
+      "hints": ["playlist", "noatun", "list", "stack", "queue", "blue", "media", "songs"]
     },
     "apps/kgpg_docked.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["kgpg", "docked", "key", "lock", "encrypt", "tray", "gpg", "security"]
     },
     "apps/kopete_offline.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["kopete", "offline", "chat", "bubble", "gray", "messenger", "im", "disconnected"]
     },
     "apps/kopete_some_away.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["kopete", "away", "chat", "bubble", "messenger", "im", "status", "yellow"]
     },
     "apps/kopete_some_online.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["kopete", "online", "chat", "bubble", "messenger", "im", "status", "green"]
     },
     "apps/kmaillight.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["kmail", "mail", "email", "envelope", "letter", "message", "inbox"]
     },
     "apps/kopete_all_away.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["kopete", "away", "chat", "bubble", "messenger", "im", "status", "yellow"]
     },
     "actions/kgpg_docked.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["kgpg", "key", "keys", "encryption", "gpg", "security", "lock", "tray"]
     },
     "actions/kopete.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["kopete", "chat", "bubble", "messenger", "im", "instant message", "communication"]
     },
     "actions/volume.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["volume", "sound", "audio", "speaker", "green", "triangle", "level"]
     },
     "actions/mix_video.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["video", "movie", "film", "clapperboard", "slate", "media", "editing"]
     },
     "actions/dock.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["dock", "minimize", "tray", "arrow", "down", "panel", "taskbar"]
     },
     "actions/tool_restart.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["restart", "refresh", "reload", "cycle", "arrow", "green", "repeat"]
     },
     "actions/klpq.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["printer", "print", "paper", "output", "document", "queue", "hardware"]
     },
     "actions/tool_uselastdir.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["folder", "directory", "recent", "last", "path", "blue", "open"]
     },
     "actions/klipper.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["klipper", "clipboard", "paste", "copy", "pin", "document", "history"]
     },
     "actions/ark_new.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["ark", "archive", "new", "document", "star", "create", "zip"]
     },
     "actions/tool_drop_target.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["drop", "target", "drag", "arrow", "down", "blue", "destination"]
     },
     "actions/tool_pause.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["pause", "stop", "media", "player", "blue", "bars", "suspend"]
     },
     "actions/ark_options.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["ark", "options", "settings", "screwdriver", "tool", "configure", "red"]
     },
     "actions/mix_audio.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["audio", "sound", "speaker", "volume", "music", "mix", "waves"]
     },
     "actions/kmaillight.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["kmail", "mail", "email", "envelope", "letter", "message", "inbox"]
     },
     "actions/printmgr.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["printer", "print", "manager", "paper", "output", "queue", "hardware"]
     },
     "actions/mix_record.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["record", "recording", "red", "circle", "audio", "media", "capture"]
     },
     "actions/kmail.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["kmail", "mail", "email", "envelope", "letter", "message", "inbox"]
     },
     "actions/juk_dock.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["juk", "music", "cd", "disc", "note", "player", "audio", "tray"]
     },
     "actions/tool_resume.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["resume", "play", "start", "continue", "triangle", "blue", "media"]
     },
     "actions/korgac.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["korganizer", "calendar", "alarm", "reminder", "schedule", "check", "event"]
     },
     "actions/amarok.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["amarok", "music", "player", "speaker", "audio", "sound", "media"]
     },
     "actions/tool_delay.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["delay", "stop", "wait", "red", "square", "pause", "halt"]
     },
     "actions/kjobviewer.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["printer", "print", "job", "queue", "paper", "viewer", "hardware"]
     },
     "actions/tool_timer.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["timer", "clock", "time", "watch", "schedule", "blue", "countdown"]
     },
     "actions/folder.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["folder", "directory", "blue", "open", "files", "storage", "browse"]
     },
     "actions/tool_dock.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["dock", "check", "arrow", "down", "blue", "minimize", "tray"]
     },
     "actions/tool_clipboard.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["clipboard", "paste", "copy", "note", "paper", "board", "document"]
     },
     "actions/tool_delete.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["delete", "trash", "remove", "bin", "garbage", "blue", "discard"]
     },
     "actions/mix_cd.png": {
-      "sizes": [
-        22
-      ]
+      "sizes": [22],
+      "hints": ["cd", "disc", "dvd", "burn", "media", "music", "optical"]
     }
   }
 }

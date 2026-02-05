@@ -2,412 +2,168 @@
   "_comment": "Auto-maintained catalog for nuvola_local_zip theme pack. Icons/sizes are additive only.",
   "icons": {
     "devices/print_printer.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["printer", "print", "paper", "output", "document", "hardware", "device"]
     },
     "devices/cdaudio_mount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["cd", "audio", "disc", "mount", "music", "media", "optical"]
     },
     "devices/samba_mount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["samba", "network", "share", "windows", "mount", "drive", "smb"]
     },
     "devices/cdrom_unmount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["cdrom", "disc", "unmount", "eject", "cd", "optical", "media"]
     },
     "devices/mo_mount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["mo", "magneto", "optical", "disk", "mount", "storage", "removable"]
     },
     "devices/cdwriter_mount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["cdwriter", "cd", "burn", "disc", "mount", "write", "optical"]
     },
     "devices/samba_unmount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["samba", "network", "share", "windows", "unmount", "drive", "smb"]
     },
     "devices/memory.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["memory", "ram", "dimm", "chip", "hardware", "module", "computer"]
     },
     "devices/3floppy_mount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["floppy", "disk", "mount", "save", "storage", "removable", "legacy"]
     },
     "devices/tablet.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["tablet", "graphics", "pen", "stylus", "drawing", "input", "wacom"]
     },
     "devices/cdwriter_unmount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["cdwriter", "cd", "burn", "disc", "unmount", "eject", "optical"]
     },
     "devices/raid.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["raid", "server", "storage", "drives", "array", "disk", "hardware"]
     },
     "devices/dvd_mount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["dvd", "disc", "mount", "video", "movie", "optical", "media"]
     },
     "devices/mouse.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["mouse", "pointer", "click", "input", "cursor", "device", "hardware"]
     },
     "devices/usbpendrive_mount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["usb", "pendrive", "flash", "mount", "storage", "thumb", "removable"]
     },
     "devices/printer1.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["printer", "print", "paper", "output", "document", "hardware", "device"]
     },
     "devices/dvd_unmount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["dvd", "disc", "unmount", "eject", "video", "optical", "media"]
     },
     "devices/hdd_mount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["hdd", "harddrive", "disk", "mount", "storage", "drive", "internal"]
     },
     "devices/zip_unmount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["zip", "disk", "unmount", "eject", "removable", "iomega", "storage"]
     },
     "devices/camera_mount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["camera", "photo", "digital", "mount", "picture", "device", "image"]
     },
     "devices/pda.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["pda", "handheld", "palm", "mobile", "device", "pocket", "stylus"]
     },
     "devices/pda_blue.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["pda", "handheld", "palm", "mobile", "device", "blue", "pocket"]
     },
     "devices/modem.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["modem", "dialup", "internet", "network", "connection", "hardware", "led"]
     },
     "devices/nfs_unmount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["nfs", "network", "share", "unmount", "drive", "unix", "storage"]
     },
     "devices/pda_black.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["pda", "handheld", "palm", "mobile", "device", "black", "pocket"]
     },
     "devices/ipod.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["ipod", "music", "player", "apple", "mp3", "portable", "audio"]
     },
     "devices/usbpendrive_unmount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["usb", "pendrive", "flash", "unmount", "eject", "thumb", "removable"]
     },
     "devices/blockdevice.png": {
-      "sizes": [
-        16,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 32, 48, 64, 128],
+      "hints": ["block", "device", "cubes", "storage", "partition", "disk", "volume"]
     },
     "devices/3floppy_unmount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["floppy", "disk", "unmount", "eject", "save", "storage", "legacy"]
     },
     "devices/nfs_mount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["nfs", "network", "share", "mount", "drive", "unix", "storage"]
     },
     "devices/camera.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["camera", "photo", "digital", "picture", "image", "device", "snapshot"]
     },
     "devices/hdd_unmount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["hdd", "harddrive", "disk", "unmount", "eject", "drive", "internal"]
     },
     "devices/5floppy_unmount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["floppy", "525", "disk", "unmount", "legacy", "storage", "vintage"]
     },
     "devices/zip_mount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["zip", "disk", "mount", "iomega", "removable", "storage", "cartridge"]
     },
     "devices/scanner.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["scanner", "scan", "flatbed", "image", "document", "hardware", "input"]
     },
     "devices/cdrom_mount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["cdrom", "cd", "disc", "mount", "optical", "media", "read"]
     },
     "devices/mo_unmount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["mo", "magneto", "optical", "disk", "unmount", "eject", "removable"]
     },
     "devices/camera_unmount.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["camera", "photo", "digital", "unmount", "eject", "device", "image"]
     },
     "devices/tv.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["tv", "television", "monitor", "screen", "video", "display", "broadcast"]
     },
     "devices/joystick.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["joystick", "gamepad", "controller", "game", "input", "play", "gaming"]
     },
     "devices/print_class.png": {
-      "sizes": [
-        16,
-        22,
-        32,
-        48,
-        64,
-        128
-      ]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["printer", "class", "group", "print", "multiple", "network", "queue"]
     },
     "devices/5floppy_mount.png": {
       "sizes": [
