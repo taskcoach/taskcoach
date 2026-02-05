@@ -97,7 +97,7 @@ Empty field is treated as `0.0`.
 ## EVT_VALUE_CHANGED Pattern
 
 Reuses the existing `EVT_VALUE_CHANGED` / `ValueChangedEvent` from
-`maskedtimectrl.py`. Same event type used by `DurationCtrl`, `DateTimeCombo`,
+`maskedtimectrl.py`. Same event type used by `DurationCtrl`, `DateTimeComboCtrl`,
 and now `NumericCtrl`.
 
 Fires from:

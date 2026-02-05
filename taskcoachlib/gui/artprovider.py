@@ -100,9 +100,21 @@ class ArtProvider(wx.ArtProvider):
 
         return result_image.ConvertToBitmap()
 
+    # Art ID for a transparent placeholder bitmap (real bitmap object with
+    # alpha=0). Needed where a wx.Bitmap object is required but should appear
+    # empty — e.g. icon picker "No icon" option, toolbar image list slots.
+    # NOTE: This may no longer be needed if all callers can handle
+    # wx.NullBitmap. Check icon picker and toolbar customization dialog.
+    TRANSPARENT_EMPTY_ICON = "transparent_empty_icon"
+
     def _CreateBitmap(self, artId, artClient, size) -> wx.Bitmap:
         if not artId or artId == "nobitmap":
-            return wx.Bitmap(*size)
+            return wx.NullBitmap
+
+        if artId == self.TRANSPARENT_EMPTY_ICON:
+            img = wx.Image(*size)
+            img.InitAlpha()
+            return img.ConvertToBitmap()
 
         # Try new format first: "16x16/iconname.png" (size-based directories)
         size_dir = "%dx%d" % (size[0], size[1])

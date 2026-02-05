@@ -33,8 +33,10 @@ from .maskedtimectrl import (
     DurationCtrlVerbose as MaskedDurationCtrlVerbose,
     TimeCtrl as MaskedTimeCtrl,
     TimeWithSecondsCtrl as MaskedTimeWithSecondsCtrl,
-    DateCtrl as MaskedDateCtrl,
-    DateTimeCombo,
+    DateCtrl,
+    DateComboCustomCtrl,
+    DateComboRouterCtrl,
+    DateTimeComboCtrl,
     EVT_VALUE_CHANGED,
 )
 from .textctrl import (

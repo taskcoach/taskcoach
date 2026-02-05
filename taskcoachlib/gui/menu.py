@@ -837,6 +837,7 @@ class TaskPriorityMenu(Menu):
         )
 
 
+
 class HelpMenu(Menu):
     def __init__(self, mainwindow, settings, iocontroller):
         super().__init__(mainwindow)
@@ -852,6 +853,8 @@ class HelpMenu(Menu):
             None,
             uicommand.HelpTranslate(),
             None,
+        )
+        self.appendUICommands(
             uicommand.HelpAbout(),
             uicommand.CheckForUpdate(settings=settings),
             uicommand.HelpLicense(),

@@ -20,39 +20,19 @@ The domain model's change-detection and event-notification pattern.
 
 1. **Migrate remaining `EVT_KILL_FOCUS` AttributeSync sites to
    `EVT_VALUE_CHANGED`.** The legacy pattern binds AttributeSync to
-   `EVT_KILL_FOCUS` (blur). This works for user edits (commit on focus
-   loss), but is invisible to programmatic writes — widget methods like
-   `SetDuration()` fire `EVT_VALUE_CHANGED`, not `EVT_KILL_FOCUS`, so
-   the AttributeSync never sees them and the domain is never updated.
-   **Done:** DurationCtrl (task and effort) and all DateTimeCombo fields
-   now use plain `EVT_VALUE_CHANGED` with immediate commit — no
-   `commit_on_focus_loss` needed because `FieldsCtrl` fires only on
-   blur (user) or `SetDuration()` (programmatic). See TODO #2.
-   **Remaining:** monetary controls (budget, hourly fee, fixed fee) are
-   FieldsCtrl-based and should follow the same pattern. Subject,
-   description, and attachment location use `wx.TextCtrl` (fires
-   per-keystroke `EVT_TEXT`) — different migration path. See
+   `EVT_KILL_FOCUS` (blur). This works for user edits but is invisible
+   to programmatic writes — widget methods like `SetDuration()` fire
+   `EVT_VALUE_CHANGED`, not `EVT_KILL_FOCUS`, so the AttributeSync
+   never sees them and the domain is never updated.
+   **Done:** All `MaskedFieldsCtrl`-based controls — DurationCtrl (task
+   and effort), budget (`MaskedDurationCtrl`), all DateTimeComboCtrl fields,
+   hourly fee, and fixed fee now use `EVT_VALUE_CHANGED` with immediate
+   commit. `MaskedFieldsCtrl` fires only on blur (user) or
+   `SetDuration()`/`SetTime()`/`SetDate()` (programmatic).
+   **Remaining:** subject, description, and attachment location use
+   `wx.TextCtrl` (fires per-keystroke `EVT_TEXT`) — different migration
+   path. See
    [Three-Layer Relationship](#three-layer-relationship), Layer 2.
-
-2. **Remove `commit_on_focus_loss` from AttributeSync.** The
-   `commit_on_focus_loss` mechanism was added to batch per-keystroke
-   `EVT_VALUE_CHANGED` events into a single command on blur. This is
-   the wrong separation of concerns — whether events fire per-keystroke
-   or on blur is the **control's** responsibility, not the sync layer's.
-   `FieldsCtrl` now handles this correctly: `NumericField.SetValue()`
-   no longer fires `NotifyValueChanged()`; instead, `FieldsCtrl` fires
-   `EVT_VALUE_CHANGED` only on `_onKillFocus` (user finished typing)
-   and from `SetDuration()`/`SetTime()`/`SetDate()` (programmatic
-   complete-value writes). Every `EVT_VALUE_CHANGED` that reaches
-   `AttributeSync` represents a final value — immediate commit is
-   always correct. The `commit_on_focus_loss` parameter, the
-   `__editSessionValue`/`__hasChanges` tracking, the `__onSetFocus`/
-   `__onKillFocus` handlers, and the `commit()` method can all be
-   removed. All `AttributeSync` sites should use plain
-   `EVT_VALUE_CHANGED` with immediate commit (the default).
-   **Status:** `commit_on_focus_loss` has zero callers (the only caller,
-   `addDateEntry`, was dead code and has been deleted). The mechanism in
-   `attributesync.py` can be removed now.
 
 ---
 
@@ -225,7 +205,7 @@ updated. Domain changes → `control.SetValue()` → UI updated. Expects
 controls to implement `GetValue()`/`SetValue()`. Standard pattern:
 `EVT_VALUE_CHANGED` with immediate commit — the control decides when to fire
 (on blur for user edits, immediately for programmatic writes). Composite
-controls like `DateTimeCombo` inherit `wx.EvtHandler` and own the event,
+controls like `DateTimeComboCtrl` inherit `wx.EvtHandler` and own the event,
 firing on sub-control blur and state transitions. Legacy sites still use
 `EVT_KILL_FOCUS` (see [TODO #1](#todo)).
 **File:** `taskcoachlib/gui/dialog/attributesync.py`

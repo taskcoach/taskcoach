@@ -68,6 +68,7 @@ IMPORTANT - Focus Event Handling for External Code:
 """
 
 import wx
+import wx.adv
 import math
 import datetime
 import time
@@ -780,7 +781,7 @@ def drawFocusRect(win, dc, x, y, w, h):
 
 
 class NumericField:
-    """A numeric subfield within a FieldsCtrl."""
+    """A numeric subfield within a MaskedFieldsCtrl."""
 
     def __init__(self, name, width, minVal, maxVal, value, choices, observer, padZeros=True):
         self.__name = name
@@ -807,7 +808,7 @@ class NumericField:
         oldValue = self.__value
         value = max(self.__minVal, min(self.__maxVal, int(value)))
         self.__value = value
-        # Always validate (e.g., DateCtrl adjusts day when month changes)
+        # Always validate (e.g., DateComboCustomCtrl adjusts day when month changes)
         result = self.__observer.ValidateChange(self, value)
         if result is None:
             # Validation rejected - restore old value
@@ -972,7 +973,7 @@ class NumericField:
         return False
 
 
-class FieldsCtrl(wx.Panel):
+class MaskedFieldsCtrl(wx.Panel):
     """
     Base control with explicit subfields and labels.
     Visually identical to smartdatetimectrl Entry - single painted field.
@@ -1411,7 +1412,7 @@ class FieldsCtrl(wx.Panel):
         wx.PostEvent(self, event)
 
 
-class DurationCtrl(FieldsCtrl):
+class DurationCtrl(MaskedFieldsCtrl):
     """Duration control: DDDd HH:MM[:SS] with translatable 'd' suffix.
 
     Args:
@@ -1535,7 +1536,7 @@ class DurationCtrl(FieldsCtrl):
         self.SetDuration(duration)
 
 
-class DurationCtrlVerbose(FieldsCtrl):
+class DurationCtrlVerbose(MaskedFieldsCtrl):
     """Duration control with full word suffixes: 000 days 00 hours 00 mins [00 secs].
 
     Args:
@@ -1661,7 +1662,7 @@ class DurationCtrlVerbose(FieldsCtrl):
         self.SetDuration(duration)
 
 
-class TimeCtrl(FieldsCtrl):
+class TimeCtrl(MaskedFieldsCtrl):
     """Simple time control: HH:MM (24-hour) or HH:MM AM/PM (12-hour).
 
     Supports both 24-hour and 12-hour time formats. The format can be
@@ -1768,7 +1769,7 @@ class TimeCtrl(FieldsCtrl):
         self.SetFieldValue('minute', t.minute)
 
 
-class TimeWithSecondsCtrl(FieldsCtrl):
+class TimeWithSecondsCtrl(MaskedFieldsCtrl):
     """Time control with seconds: HH:MM:SS (24-hour) or HH:MM:SS AM/PM (12-hour).
 
     Supports both 24-hour and 12-hour time formats. The format can be
@@ -1952,8 +1953,8 @@ class _CalendarComboPopup(wx.ComboPopup):
         size = self._getExtent(dc)
         return size
 
-    def _getDateCtrl2(self):
-        """Get the DateCtrl (ComboCtrl) that owns this popup."""
+    def _getDateComboCustomCtrl(self):
+        """Get the DateComboCustomCtrl (ComboCtrl) that owns this popup."""
         combo = self.GetComboCtrl()
         if combo:
             if hasattr(combo, '_dateCtrl') and hasattr(combo, '_setDateFromCalendar'):
@@ -1962,7 +1963,7 @@ class _CalendarComboPopup(wx.ComboPopup):
 
     def OnPopup(self):
         """Called when popup is shown — sync selection from parent or text."""
-        dc2 = self._getDateCtrl2()
+        dc2 = self._getDateComboCustomCtrl()
         if dc2:
             self._selection = dc2._dateCtrl.GetDate()
             self._font = dc2._dateCtrl.GetFont()
@@ -2001,7 +2002,7 @@ class _CalendarComboPopup(wx.ComboPopup):
         if keyCode in (wx.WXK_ESCAPE, wx.WXK_F4):
             self.Dismiss()
         elif keyCode == wx.WXK_RETURN:
-            dc2 = self._getDateCtrl2()
+            dc2 = self._getDateComboCustomCtrl()
             if dc2:
                 dc2._setDateFromCalendar(self._highlightedDate)
             self.Dismiss()
@@ -2253,7 +2254,7 @@ class _CalendarComboPopup(wx.ComboPopup):
                 and event.GetY() >= y
                 and event.GetY() < y + self._maxDim
             ):
-                dc2 = self._getDateCtrl2()
+                dc2 = self._getDateComboCustomCtrl()
                 if dc2:
                     dc2._setDateFromCalendar(
                         datetime.date(year=year, month=month, day=day)
@@ -2280,10 +2281,10 @@ class _CalendarComboPopup(wx.ComboPopup):
         pass
 
 
-class _EmbeddedDateCtrl(FieldsCtrl):
+class DateCtrl(MaskedFieldsCtrl):
     """Date control designed for embedding inside a ComboCtrl.
 
-    A clean copy of DateCtrl with all popup/frame/calendar logic removed.
+    Raw masked date fields with all popup/frame/calendar logic removed.
     The parent ComboCtrl owns the dropdown — this control only handles
     subfield editing, keyboard navigation, and date validation.
 
@@ -2337,7 +2338,7 @@ class _EmbeddedDateCtrl(FieldsCtrl):
 
         Uses IsThisEnabled() (own state) instead of IsEnabled() (parent chain)
         so that disabling the parent ComboCtrl for read-only visuals doesn't
-        trigger the "N/A" branch. Only a direct Enable(False) on DateCtrl
+        trigger the "N/A" branch. Only a direct Enable(False) on DateComboCustomCtrl
         (which propagates to this control's own state) shows "N/A".
 
         No frame drawing — the parent ComboCtrl provides the frame.
@@ -2403,7 +2404,8 @@ class _EmbeddedDateCtrl(FieldsCtrl):
 
         # F4/Enter open the parent ComboCtrl popup
         if keyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER, wx.WXK_F4):
-            self._comboCtrl.Popup()
+            if self._comboCtrl:
+                self._comboCtrl.Popup()
             return
 
         # Left/Right arrows navigate between subfields
@@ -2482,10 +2484,10 @@ class _EmbeddedDateCtrl(FieldsCtrl):
         self.SetFieldValue('date_day', d.day)
 
 
-class DateCtrl(wx.ComboCtrl):
-    """Date control: _EmbeddedDateCtrl inside a ComboCtrl.
+class DateComboCustomCtrl(wx.ComboCtrl):
+    """Date control: DateCtrl inside a ComboCtrl.
 
-    Uses _EmbeddedDateCtrl which has all popup/frame logic removed at the
+    Uses DateCtrl which has all popup/frame logic removed at the
     class level. The ComboCtrl provides the native dropdown button and
     manages popup positioning.
     """
@@ -2501,7 +2503,7 @@ class DateCtrl(wx.ComboCtrl):
         self.SetPopupControl(self._calendarPopup)
 
         # Clean embedded DateCtrl — no monkey-patches needed
-        self._dateCtrl = _EmbeddedDateCtrl(
+        self._dateCtrl = DateCtrl(
             self, comboCtrl=self, year=year, month=month, day=day,
             minDate=minDate, maxDate=maxDate, dateFormat=dateFormat
         )
@@ -2609,7 +2611,7 @@ class DateCtrl(wx.ComboCtrl):
         """Set read-only mode: values greyed but visible, dropdown disabled.
 
         Disables the ComboCtrl (greys the dropdown button) and sets inner
-        _EmbeddedDateCtrl to read-only. The inner control's _onPaint uses
+        DateCtrl to read-only. The inner control's _onPaint uses
         IsThisEnabled() so it shows greyed values, not "N/A", even though
         the parent ComboCtrl is disabled.
         """
@@ -2624,7 +2626,7 @@ class DateCtrl(wx.ComboCtrl):
         return self.IsPopupShown()
 
     def Bind(self, eventType, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
-        """Forward UI events to inner _EmbeddedDateCtrl.
+        """Forward UI events to inner DateCtrl.
 
         Events like EVT_VALUE_CHANGED, EVT_KEY_DOWN, EVT_KILL_FOCUS, and
         EVT_SET_FOCUS fire on the inner control, not the ComboCtrl wrapper.
@@ -2644,8 +2646,197 @@ class DateCtrl(wx.ComboCtrl):
     def SetFocus(self):
         self._dateCtrl.SetFocus()
 
-class DateTimeCombo(wx.EvtHandler):
-    """Composite date/time control with checkbox, DateCtrl, and TimeCtrl.
+
+class _NativeDateCtrl(wx.Panel):
+    """Windows wrapper around wx.adv.DatePickerCtrl.
+
+    Provides the same public API as DateComboCustomCtrl so
+    DateComboRouterCtrl callers don't need platform branches.
+
+    Uses the Win32 Date-Time Picker control underneath, which provides:
+    - Native rendering matching Windows theme
+    - Correct tab navigation
+    - Screen reader accessibility
+    - Built-in dropdown calendar popup
+    """
+
+    def __init__(self, parent, year=None, month=None, day=None,
+                 minDate=None, maxDate=None, dateFormat=None):
+        super().__init__(parent)
+
+        today = datetime.date.today()
+        if year is None:
+            year = today.year
+        if month is None:
+            month = today.month
+        if day is None:
+            day = today.day
+
+        self._readOnly = False
+        self._showingNA = False
+
+        # Create native date picker (wx.DateTime months are 0-based)
+        wxdt = wx.DateTime.FromDMY(day, month - 1, year)
+        self._picker = wx.adv.DatePickerCtrl(
+            self, dt=wxdt, style=wx.adv.DP_DROPDOWN
+        )
+
+        # Set date range if specified
+        if minDate is not None or maxDate is not None:
+            wxMin = self._date_to_wxdt(minDate) if minDate else wx.DefaultDateTime
+            wxMax = self._date_to_wxdt(maxDate) if maxDate else wx.DefaultDateTime
+            self._picker.SetRange(wxMin, wxMax)
+
+        # Apply custom date format via Win32 DTM_SETFORMATW
+        if dateFormat is not None:
+            self.SetDateFormat(dateFormat)
+
+        # Bridge native EVT_DATE_CHANGED → app's EVT_VALUE_CHANGED
+        self._picker.Bind(wx.adv.EVT_DATE_CHANGED, self._onDateChanged)
+
+        # Layout: picker fills the panel
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(self._picker, 1, wx.EXPAND)
+        self.SetSizer(sizer)
+        self.SetMinSize(self._picker.GetBestSize())
+
+        # Paint handler for "N/A" when disabled (picker hidden)
+        self.bindPaintNA = lambda evt: self._onPaintNA(evt)
+        self.Bind(wx.EVT_PAINT, self.bindPaintNA)
+
+    # --- Date conversion helpers ---
+
+    @staticmethod
+    def _wxdt_to_date(wxdt):
+        """wx.DateTime → datetime.date"""
+        return datetime.date(wxdt.GetYear(), wxdt.GetMonth() + 1, wxdt.GetDay())
+
+    @staticmethod
+    def _date_to_wxdt(d):
+        """datetime.date → wx.DateTime"""
+        return wx.DateTime.FromDMY(d.day, d.month - 1, d.year)
+
+    # --- N/A paint ---
+
+    def _onPaintNA(self, event):
+        """Paint 'N/A' centered when disabled. No-op when picker is visible."""
+        if not self._showingNA:
+            event.Skip()
+            return
+        dc = wx.PaintDC(self)
+        w, h = self.GetClientSize()
+        dc.SetBackground(wx.Brush(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)))
+        dc.Clear()
+        dc.SetFont(self._picker.GetFont())
+        dc.SetTextForeground(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+        text = "N/A"
+        tw, th = dc.GetTextExtent(text)
+        dc.DrawText(text, (w - tw) // 2, (h - th) // 2)
+
+    # --- Event bridge ---
+
+    def _onDateChanged(self, event):
+        """Bridge native EVT_DATE_CHANGED → app's EVT_VALUE_CHANGED."""
+        evt = ValueChangedEvent(self)
+        wx.PostEvent(self, evt)
+
+    # --- Public API (matching DateComboCustomCtrl) ---
+
+    def GetDate(self):
+        """Return current date as datetime.date."""
+        return self._wxdt_to_date(self._picker.GetValue())
+
+    def SetDate(self, d):
+        """Set date from datetime.date."""
+        self._picker.SetValue(self._date_to_wxdt(d))
+
+    def SetReadOnly(self, readOnly=True):
+        """Set read-only mode: picker greyed but values visible, not 'N/A'."""
+        self._readOnly = readOnly
+        self._showingNA = False
+        self._picker.Show()
+        self._picker.Enable(not readOnly)
+        self.Refresh()
+
+    def IsReadOnly(self):
+        return self._readOnly
+
+    def Enable(self, enable=True):
+        """Enable or disable. When disabled, hides picker and paints 'N/A'."""
+        super().Enable(enable)
+        if enable:
+            self._showingNA = False
+            self._picker.Show()
+            self._picker.Enable(True)
+        else:
+            self._picker.Hide()
+            self._showingNA = True
+        self.Refresh()
+        return True
+
+    def SetFocus(self):
+        self._picker.SetFocus()
+
+    def HasOpenPopup(self):
+        """Native popup state is not queryable — return False."""
+        return False
+
+    def DismissPopup(self):
+        """No-op — native control manages its own popup."""
+        pass
+
+    def Bind(self, eventType, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
+        """Route EVT_VALUE_CHANGED to this panel; others to super()."""
+        if eventType in (EVT_VALUE_CHANGED, wx.EVT_KEY_DOWN,
+                         wx.EVT_KILL_FOCUS, wx.EVT_SET_FOCUS):
+            # These fire on the inner picker — bind there
+            if eventType == EVT_VALUE_CHANGED:
+                # EVT_VALUE_CHANGED fires on this panel (posted by _onDateChanged)
+                super().Bind(eventType, handler, source, id, id2)
+            else:
+                self._picker.Bind(eventType, handler, source, id, id2)
+        else:
+            super().Bind(eventType, handler, source, id, id2)
+
+    def SetDateFormat(self, dateFormat):
+        """Set display format using Win32 DTM_SETFORMATW message.
+
+        Args:
+            dateFormat: 4-char format string (e.g. "YMD-", "MDY/", "DMY.")
+                       as used by getLocaleDateFormat().
+        """
+        if wx.Platform != '__WXMSW__':
+            return  # DTM_SETFORMATW is Windows-only
+
+        field_order, separator = getLocaleDateFormat(override=dateFormat)
+        dtp_map = {'year': 'yyyy', 'month': 'MM', 'date_day': 'dd'}
+        fmt = separator.join(dtp_map[f] for f in field_order)
+
+        try:
+            import ctypes
+            DTM_SETFORMATW = 0x1032  # DTM_FIRST (0x1000) + 50
+            hwnd = self._picker.GetHandle()
+            ctypes.windll.user32.SendMessageW(hwnd, DTM_SETFORMATW, 0, fmt)
+        except Exception:
+            pass  # Silently fail on non-Windows or if handle unavailable
+
+
+def DateComboRouterCtrl(*args, **kwargs):
+    """Router that returns the platform-appropriate date combo control.
+
+    - Windows: _NativeDateCtrl (native Win32 Date-Time Picker)
+    - Elsewhere (Linux, macOS): DateComboCustomCtrl (custom masked fields
+      + calendar popup)
+    """
+    if wx.Platform == '__WXMSW__':
+        return _NativeDateCtrl(*args, **kwargs)
+    return DateComboCustomCtrl(*args, **kwargs)
+
+
+class DateTimeComboCtrl(wx.EvtHandler):
+    """Composite date/time control with checkbox, DateComboCustomCtrl, and TimeCtrl.
 
     Inherits wx.EvtHandler so it can host event handlers directly.
     DTC owns the change event — fires EVT_VALUE_CHANGED on sub-control
@@ -2664,7 +2855,7 @@ class DateTimeCombo(wx.EvtHandler):
 
     For flexible table layouts, get individual widgets with:
     - GetCheckBox() - wx.CheckBox (no label)
-    - GetDateCtrl() - DateCtrl
+    - GetDateCtrl() - DateComboCustomCtrl
     - GetTimeCtrl() - TimeCtrl or TimeWithSecondsCtrl
 
     Args:
@@ -2690,7 +2881,7 @@ class DateTimeCombo(wx.EvtHandler):
         self._checkbox.SetValue(checked)
         self._checkbox.Bind(wx.EVT_CHECKBOX, self._onCheckboxChanged)
 
-        self._dateCtrl = DateCtrl(parent, year=display_value.year,
+        self._dateCtrl = DateComboRouterCtrl(parent, year=display_value.year,
                                    month=display_value.month, day=display_value.day)
 
         if showSeconds:
@@ -2815,10 +3006,10 @@ class DateTimeCombo(wx.EvtHandler):
 
         panel.SetSizer(sizer)
 
-        # Re-apply enabled state after reparenting. wx.ComboCtrl (DateCtrl)
+        # Re-apply enabled state after reparenting. wx.ComboCtrl (DateComboCustomCtrl)
         # loses its native visual state (button greying, background color)
         # when reparented, because the platform re-creates theme state for
-        # the new parent hierarchy. FieldsCtrl-based controls don't have
+        # the new parent hierarchy. MaskedFieldsCtrl-based controls don't have
         # this issue since they paint everything in _onPaint.
         self._updateEnabled()
 
@@ -2829,10 +3020,10 @@ class DateTimeCombo(wx.EvtHandler):
 
     def HasOpenPopup(self):
         """Return True if any child control has an open popup."""
-        # DateCtrl provides public HasOpenPopup()
+        # DateComboCustomCtrl provides public HasOpenPopup()
         if self._dateCtrl.HasOpenPopup():
             return True
-        # TimeCtrl uses FieldsCtrl._popup (same module, acceptable)
+        # TimeCtrl uses MaskedFieldsCtrl._popup (same module, acceptable)
         if hasattr(self._timeCtrl, '_popup') and self._timeCtrl._popup is not None:
             return True
         return False

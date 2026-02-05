@@ -61,7 +61,7 @@ class KillFocusAcceptsEditsMixin(object):
         if wx.Window.FindFocus() in window_and_all_children(self):
             return True
 
-        # Check if any DateTimeCombo has an open popup
+        # Check if any DateTimeComboCtrl has an open popup
         if hasattr(self, '_dateTimeCombo') and self._dateTimeCombo.HasOpenPopup():
             return True
 
@@ -189,22 +189,22 @@ class AmountCtrl(
 class DateTimeCtrl(
     EscapeKeyMixin, KillFocusAcceptsEditsMixin, hypertreelist.EditCtrl, Panel
 ):
-    """Inline date and time picker control using DateTimeCombo."""
+    """Inline date and time picker control using DateTimeComboCtrl."""
 
     def __init__(self, parent, wxId, item, column, owner, value, **kwargs):
         # TODO: The "relative" preset offset dropdown (showing durations like
         # "+1 day", "+1 week" relative to planned start) is not yet implemented
-        # in DateTimeCombo. This would need to be added as a duration field
+        # in DateTimeComboCtrl. This would need to be added as a duration field
         # with duration presets. For now, we ignore the relative parameter.
         kwargs.pop("relative", False)
         kwargs.pop("startDateTime", None)
         super().__init__(parent, wxId, item, column, owner)
         settings = kwargs["settings"]
 
-        # Convert empty DateTime to None for DateTimeCombo (unchecked state)
+        # Convert empty DateTime to None for DateTimeComboCtrl (unchecked state)
         combo_value = None if value == date.DateTime() else value
 
-        self._dateTimeCombo = widgets.DateTimeCombo(
+        self._dateTimeCombo = widgets.DateTimeComboCtrl(
             self,
             value=combo_value,
             hourChoices=lambda: get_suggested_hour_choices(settings),

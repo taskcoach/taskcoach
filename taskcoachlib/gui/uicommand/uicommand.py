@@ -3126,6 +3126,7 @@ class CheckForUpdate(URLCommand):
         )
 
 
+
 class MainWindowRestore(base_uicommand.UICommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
