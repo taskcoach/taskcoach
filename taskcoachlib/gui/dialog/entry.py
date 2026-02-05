@@ -752,12 +752,12 @@ class RecurrenceEntry(wx.Panel):
         )
         maxPanel.SetSizerAndFit(panelSizer)
 
-        # Stop after date using new DateTimeCombo control
+        # Stop after date using DateTimeComboCtrl
         stopPanel = wx.Panel(self)
         panelSizer = wx.BoxSizer(wx.HORIZONTAL)
 
         # value=None means unchecked (no stop date); when user checks it, defaults to "now"
-        self._recurrenceStopDateTimeCombo = widgets.DateTimeCombo(
+        self._recurrenceStopDateTimeCombo = widgets.DateTimeComboCtrl(
             stopPanel,
             value=None,  # unchecked by default
             hourChoices=lambda: get_suggested_hour_choices(self._settings),

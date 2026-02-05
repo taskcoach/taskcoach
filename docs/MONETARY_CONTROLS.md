@@ -73,7 +73,7 @@ Configurable in Preferences → Regional → "Currency decimal places".
 `AttributeSync` in `BudgetPage` binds `EVT_VALUE_CHANGED` instead of
 `EVT_KILL_FOCUS` for hourly fee and fixed fee. This completes
 ATTRIBUTE_PATTERN.md TODO #1 for monetary controls, matching the pattern
-already used by `DurationCtrl` and `DateTimeCombo`.
+already used by `DurationCtrl` and `DateTimeComboCtrl`.
 
 ---
 

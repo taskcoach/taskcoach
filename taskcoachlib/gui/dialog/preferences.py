@@ -1437,21 +1437,15 @@ class LanguagePage(SettingsPage):
         dateFormatPanel.SetSizer(dateFormatSizer)
         self.addEntry(_("Date format"), dateFormatPanel)
 
-        # Demo DateCtrl showing the selected format (interactive, starts with today)
-        from taskcoachlib.widgets.maskedtimectrl import DateCtrl
-        import datetime
-        today = datetime.date.today()
+        # Demo DateComboRouterCtrl showing the selected format (interactive, starts with today)
         demoPanel = wx.Panel(self)
         demoSizer = wx.BoxSizer(wx.HORIZONTAL)
         demoLabel = wx.StaticText(demoPanel, label=_("Preview:"))
         demoSizer.Add(demoLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
-        self._demoDateCtrl = DateCtrl(
-            demoPanel,
-            year=today.year, month=today.month, day=today.day,
-            dateFormat=currentFormat or None
-        )
-        demoSizer.Add(self._demoDateCtrl, 0, wx.ALIGN_CENTER_VERTICAL)
         demoPanel.SetSizer(demoSizer)
+        self._demoDatePanel = demoPanel
+        self._demoDateCtrl = None
+        self._rebuildDemoDateCtrl(currentFormat or None)
         self.addEntry("", demoPanel)
 
         # === TIME FORMAT SECTION ===
@@ -1492,22 +1486,14 @@ class LanguagePage(SettingsPage):
         self.addEntry(_("Time format"), timeFormatPanel)
 
         # Demo TimeCtrl showing the selected format (interactive, starts with current time)
-        # TimeCtrl now has built-in defaults from settings, so no need to pass choices
-        from taskcoachlib.widgets.maskedtimectrl import TimeCtrl
         timeDemoPanel = wx.Panel(self)
         timeDemoSizer = wx.BoxSizer(wx.HORIZONTAL)
         timeDemoLabel = wx.StaticText(timeDemoPanel, label=_("Preview:"))
         timeDemoSizer.Add(timeDemoLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
-        now = datetime.datetime.now()
-        # Pass explicit timeFormat to preview the selected format (not yet saved to settings)
-        effectiveFormat = currentTimeFormat if currentTimeFormat else "24"
-        self._demoTimeCtrl = TimeCtrl(
-            timeDemoPanel,
-            hours=now.hour, minutes=now.minute,
-            timeFormat=effectiveFormat
-        )
-        timeDemoSizer.Add(self._demoTimeCtrl, 0, wx.ALIGN_CENTER_VERTICAL)
         timeDemoPanel.SetSizer(timeDemoSizer)
+        self._demoTimePanel = timeDemoPanel
+        self._demoTimeCtrl = None
+        self._rebuildDemoTimeCtrl(currentTimeFormat if currentTimeFormat else "24")
         self.addEntry("", timeDemoPanel)
 
         # Note about 12-hour mode and working hours
@@ -1733,66 +1719,56 @@ class LanguagePage(SettingsPage):
                 return choice.GetClientData(choice.GetSelection())
         return ""
 
-    def _onDateFormatChange(self, event):
-        """Handle date format dropdown change - update demo control and restart warning."""
-        choice = event.GetEventObject()
-        newFormat = choice.GetClientData(choice.GetSelection())
-
-        # Recreate the demo DateCtrl with new format, using today's date
-        from taskcoachlib.widgets.maskedtimectrl import DateCtrl
+    def _rebuildDemoDateCtrl(self, dateFormat):
+        """(Re)create the demo DateComboRouterCtrl with the given format."""
+        from taskcoachlib.widgets.maskedtimectrl import DateComboRouterCtrl
         import datetime
         today = datetime.date.today()
-        parent = self._demoDateCtrl.GetParent()
+        parent = self._demoDatePanel
         sizer = parent.GetSizer()
-
-        # Destroy old and create new with today's date
-        self._demoDateCtrl.Destroy()
-        self._demoDateCtrl = DateCtrl(
+        if self._demoDateCtrl:
+            self._demoDateCtrl.Destroy()
+        self._demoDateCtrl = DateComboRouterCtrl(
             parent,
-            year=today.year,
-            month=today.month,
-            day=today.day,
-            dateFormat=newFormat or None
+            year=today.year, month=today.month, day=today.day,
+            dateFormat=dateFormat
         )
         sizer.Add(self._demoDateCtrl, 0, wx.ALIGN_CENTER_VERTICAL)
         parent.Layout()
         parent.Fit()
 
-        # Update restart warning
-        self._updateRestartWarning()
+    def _rebuildDemoTimeCtrl(self, timeFormat):
+        """(Re)create the demo TimeCtrl with the given format."""
+        from taskcoachlib.widgets.maskedtimectrl import TimeCtrl
+        import datetime
+        now = datetime.datetime.now()
+        parent = self._demoTimePanel
+        sizer = parent.GetSizer()
+        if self._demoTimeCtrl:
+            self._demoTimeCtrl.Destroy()
+        self._demoTimeCtrl = TimeCtrl(
+            parent,
+            hours=now.hour, minutes=now.minute,
+            timeFormat=timeFormat
+        )
+        sizer.Add(self._demoTimeCtrl, 0, wx.ALIGN_CENTER_VERTICAL)
+        parent.Layout()
+        parent.Fit()
 
+    def _onDateFormatChange(self, event):
+        """Handle date format dropdown change - update demo control and restart warning."""
+        choice = event.GetEventObject()
+        newFormat = choice.GetClientData(choice.GetSelection())
+        self._rebuildDemoDateCtrl(newFormat or None)
+        self._updateRestartWarning()
         event.Skip()
 
     def _onTimeFormatChange(self, event):
         """Handle time format dropdown change - update demo control and restart warning."""
         choice = event.GetEventObject()
         newFormat = choice.GetClientData(choice.GetSelection())
-
-        # Recreate the demo TimeCtrl with new format, using current time
-        # TimeCtrl has built-in defaults, just pass the format to preview
-        from taskcoachlib.widgets.maskedtimectrl import TimeCtrl
-        import datetime
-        now = datetime.datetime.now()
-        parent = self._demoTimeCtrl.GetParent()
-        sizer = parent.GetSizer()
-
-        # Determine effective format for preview
-        effectiveFormat = newFormat if newFormat else "24"
-
-        # Destroy old and create new with current time
-        self._demoTimeCtrl.Destroy()
-        self._demoTimeCtrl = TimeCtrl(
-            parent,
-            hours=now.hour, minutes=now.minute,
-            timeFormat=effectiveFormat
-        )
-        sizer.Add(self._demoTimeCtrl, 0, wx.ALIGN_CENTER_VERTICAL)
-        parent.Layout()
-        parent.Fit()
-
-        # Update restart warning
+        self._rebuildDemoTimeCtrl(newFormat if newFormat else "24")
         self._updateRestartWarning()
-
         event.Skip()
 
     def _onDecimalSepChange(self, event):

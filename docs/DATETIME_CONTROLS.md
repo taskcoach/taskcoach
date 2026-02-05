@@ -44,7 +44,7 @@ Simple time and duration input controls with explicit subfields and translatable
   - [Popup Toggle Logic](#popup-toggle-logic)
   - [Dropdown Width and Position](#dropdown-width-and-position)
   - [Events from Popup](#events-from-popup)
-  - [Sync Pattern: EVT_VALUE_CHANGED (DateTimeCombo)](#sync-pattern-evt_value_changed-datetimecombo2)
+  - [Sync Pattern: EVT_VALUE_CHANGED (DateTimeComboCtrl)](#sync-pattern-evt_value_changed-datetimecomboctrl)
   - [Sub-Control Stash Model](#sub-control-stash-model)
 - [Wayland](#wayland)
   - [Problem](#problem)
@@ -54,8 +54,13 @@ Simple time and duration input controls with explicit subfields and translatable
   - [Motivation](#motivation)
   - [Approach](#approach)
   - [Key Classes](#key-classes)
-  - [Focus Management in DateCtrl3](#focus-management-in-datectrl3)
+  - [Focus Management in DateComboCustomCtrl](#focus-management-in-datecombocustomctrl)
   - [Demo](#demo-1)
+- [Platform-Specific DateComboRouterCtrl: Native Windows, Custom Elsewhere](#platform-specific-datecomborouterctrl-native-windows-custom-elsewhere)
+  - [Windows — Native DatePickerCtrl with DTM_SETFORMAT](#windows--native-datepickerctrl-with-dtm_setformat)
+  - [macOS — Custom Control (No Native Format Override)](#macos--custom-control-no-native-format-override)
+  - [Architecture — Factory Function](#architecture--factory-function)
+  - [Preferences Demo Live Update](#preferences-demo-live-update)
 
 **Demo:** `docs/scripts/datetime_controls_demo.py`
 
@@ -64,10 +69,10 @@ Self-contained module with custom-painted single field and navigable subfields.
 
 ## TODO
 
-1. ~~Add `Activate()` method to DateTimeCombo~~ — **Done.** `ActivateValue()` on
-   DateTimeCombo. Editor uses it in `__activateStartDate()` / `__activateDueDate()`.
-2. ~~Add `Deactivate()` method to DateTimeCombo~~ — **Done.** `DeactivateValue()` on
-   DateTimeCombo. Editor deactivation goes through `DeactivateValue()` →
+1. ~~Add `Activate()` method to DateTimeComboCtrl~~ — **Done.** `ActivateValue()` on
+   DateTimeComboCtrl. Editor uses it in `__activateStartDate()` / `__activateDueDate()`.
+2. ~~Add `Deactivate()` method to DateTimeComboCtrl~~ — **Done.** `DeactivateValue()` on
+   DateTimeComboCtrl. Editor deactivation goes through `DeactivateValue()` →
    widget fires event → AttributeSync → command → domain. ~~Previously went
    through commands directly (domain write → pubsub → SetValue(sentinel) →
    unchecks), violating widget-as-UI-SSOT principle.~~ Fixed: all editor
@@ -75,16 +80,16 @@ Self-contained module with custom-painted single field and navigable subfields.
 3. ~~Checkbox toggle EVT_KILL_FOCUS gap~~ — **Resolved.** ~~Editor binds
    `EVT_CHECKBOX` via `combo.Bind(wx.EVT_CHECKBOX, handler)` and calls
    `sync.commit()` explicitly.~~
-   **Update:** EVT_CHECKBOX is no longer exposed by DateTimeCombo. The
+   **Update:** EVT_CHECKBOX is no longer exposed by DateTimeComboCtrl. The
    checkbox is an internal implementation detail. All AttributeSync instances
    now use `EVT_VALUE_CHANGED` as `editedEventType`, which fires on checkbox
    toggle AND date/time edits — no external EVT_CHECKBOX handlers needed.
    See [DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md) TODO item 9.
-   **Superseded:** DateTimeCombo now inherits `wx.EvtHandler` and posts
+   **Superseded:** DateTimeComboCtrl now inherits `wx.EvtHandler` and posts
    `EVT_VALUE_CHANGED` on itself. See
-   [DateTimeCombo Event Ownership](#datetimecombo-event-ownership).
+   [DateTimeComboCtrl Event Ownership](#datetimecomboctrl-event-ownership).
 4. **Sub-control stash model and event contract** — The sub-controls are the
-   stash for DateTimeCombo. `ActivateValue()` and `DeactivateValue()` must
+   stash for DateTimeComboCtrl. `ActivateValue()` and `DeactivateValue()` must
    each fire `EVT_VALUE_CHANGED` when they change the control's
    externally-visible state. Sub-control events alone are not sufficient —
    they don't fire when only the checkbox changes. See
@@ -95,15 +100,37 @@ Self-contained module with custom-painted single field and navigable subfields.
    inlined into `__syncTaskState` using `ActivateValue()`/`DeactivateValue()`
    /`SetDuration()` on the widget. The effort calc was already inline.
 7. **Migrate remaining `EVT_KILL_FOCUS` AttributeSync sites to
-   `EVT_VALUE_CHANGED`.** DurationCtrl (both task and effort) and all
-   DateTimeCombo fields are done — they use plain `EVT_VALUE_CHANGED` with
-   immediate commit (no `commit_on_focus_loss`). The control fires only on
+   `EVT_VALUE_CHANGED`.** All `MaskedFieldsCtrl`-based controls are done —
+   DurationCtrl (task and effort), budget (`MaskedDurationCtrl`), all
+   DateTimeComboCtrl fields, hourly fee, and fixed fee now use plain
+   `EVT_VALUE_CHANGED` with immediate commit. The control fires only on
    blur or programmatic complete-value write, so every event is a final
-   value. Remaining `EVT_KILL_FOCUS` sites: budget, hourly fee, fixed fee
-   (FieldsCtrl-based monetary controls). Subject, description, and
-   attachment location use `wx.TextCtrl` (per-keystroke `EVT_TEXT`) — a
-   different migration. See
-   [ATTRIBUTE_PATTERN.md TODO #1](ATTRIBUTE_PATTERN.md#todo).
+   value. **Remaining:** subject, description, and attachment location
+   use `wx.TextCtrl` (per-keystroke `EVT_TEXT`) — different migration
+   path. See [ATTRIBUTE_PATTERN.md TODO #1](ATTRIBUTE_PATTERN.md#todo).
+8. **Planned: Extract popup from MaskedFieldsCtrl.** MaskedFieldsCtrl currently
+   contains popup infrastructure (_ChoicesPopup, _openPopupForFocusedField,
+   DismissPopup) that doesn't belong in the base masked field control. The base
+   should only handle fields + navigation + digit entry. Each higher-level
+   control decides what popup to attach:
+   - DateComboCustomCtrl already follows this pattern (uses
+     _CalendarComboPopup via wx.ComboCtrl, DateCtrl has no popup).
+   - TimeCtrl will get its own wrapper with a single popup for the time block.
+   - DurationCtrl will get its own wrapper with a single popup for the
+     duration block.
+   The popup may still live in MaskedFieldsCtrl as infrastructure that
+   higher-level controls opt into, but it will be the higher-level control
+   that decides — not the base class automatically.
+
+9. **Consolidate "N/A" disabled state into DateTimeComboCtrl.** The "N/A"
+   overlay when a date field is unchecked is currently implemented separately
+   in each date picker: `DateComboCustomCtrl` paints it in `DateCtrl._onPaint`,
+   and `_NativeDateCtrl` paints it in `_onPaintNA` (hiding the native picker).
+   This should be consolidated so that `DateTimeComboCtrl` owns a single "N/A"
+   paint layer that covers whichever date picker is behind it. The date picker
+   itself would then only need Enabled/ReadOnly states — it would never need
+   to know about "N/A". This removes duplicate logic and ensures consistent
+   appearance across platforms.
 
 ## Location
 
@@ -277,9 +304,9 @@ Controls provide `GetValue()` / `SetValue()` that work with domain types
 
 See ATTRIBUTE_PATTERN.md for the full three-layer relationship.
 
-### DateTimeCombo Event Ownership
+### DateTimeComboCtrl Event Ownership
 
-`DateTimeCombo` is the composite control and **owns** the change event. It
+`DateTimeComboCtrl` is the composite control and **owns** the change event. It
 inherits from `wx.EvtHandler` so it can host event handlers directly —
 external code binds `EVT_VALUE_CHANGED` on the DTC itself, not on sub-controls.
 
@@ -588,10 +615,10 @@ def onFocusLost(self, event):
 
 ## Creating Custom Controls
 
-Subclass `FieldsCtrl`:
+Subclass `MaskedFieldsCtrl`:
 
 ```python
-class MyDurationCtrl(FieldsCtrl):
+class MyDurationCtrl(MaskedFieldsCtrl):
     def __init__(self, parent, days=0, hours=0, minutes=0,
                  dayChoices=None, hourChoices=None, minuteChoices=None):
         elements = [
@@ -654,7 +681,7 @@ The module is fully self-contained with these components:
 - **Event classes**: `PopupDismissEvent`, `ChoiceSelectedEvent`, `ChoicePreviewEvent`
 - **Popup classes**: `_PopupWindow` (base), `_ChoicesPopup` (dropdown), `_CalendarPopup` (date selection)
 - **Field class**: `NumericField` (individual editable subfield)
-- **Control classes**: `FieldsCtrl` (base), `DurationCtrl`, `DurationCtrlVerbose`, `TimeCtrl`, `TimeWithSecondsCtrl`, `DateCtrl`
+- **Control classes**: `MaskedFieldsCtrl` (base), `DurationCtrl`, `DurationCtrlVerbose`, `TimeCtrl`, `TimeWithSecondsCtrl`, `DateCtrl`, `DateComboCustomCtrl`, `DateComboRouterCtrl` (router), `DateTimeComboCtrl`
 
 ### Font Customization
 
@@ -673,7 +700,7 @@ The control uses `wx.EVT_PAINT` with `wx.PaintDC` for custom rendering. Each sub
 
 Most colours are queried from `wx.SystemSettings` at paint time for live theme switching. Calendar-specific colours are configurable via **Edit > Preferences > Theme** with separate settings for light and dark modes.
 
-**FieldsCtrl (date/time entry fields):**
+**MaskedFieldsCtrl (date/time entry fields):**
 
 | Element | Colour Source | Notes |
 |---------|--------------|-------|
@@ -796,7 +823,7 @@ wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)     # Disabled text
 
 ### Read-Only Mode
 
-All `FieldsCtrl`-based controls support read-only mode:
+All `MaskedFieldsCtrl`-based controls support read-only mode:
 
 ```python
 ctrl.SetReadOnly(True)   # Values visible but greyed, not editable
@@ -837,9 +864,9 @@ The popup fires three events:
 - `EVT_CHOICE_SELECTED`: Enter key or click selection (confirms value)
 - `EVT_POPUP_DISMISS`: Popup closed for any reason (Escape, click outside, selection)
 
-### Sync Pattern: EVT_VALUE_CHANGED (DateTimeCombo)
+### Sync Pattern: EVT_VALUE_CHANGED (DateTimeComboCtrl)
 
-DateTimeCombo uses `EVT_VALUE_CHANGED` for AttributeSync synchronization.
+DateTimeComboCtrl uses `EVT_VALUE_CHANGED` for AttributeSync synchronization.
 This single event fires on all value changes: checkbox toggle, date edit,
 and time edit. The checkbox is an internal implementation detail — external
 code never binds to `EVT_CHECKBOX`.
@@ -863,7 +890,7 @@ self._plannedStartDateTimeSync = attributesync.AttributeSync(
 
 **Setters:**
 - `SetTime(t)` - TimeCtrl, TimeWithSecondsCtrl
-- `SetDate(d)` - DateCtrl
+- `SetDate(d)` - DateCtrl, DateComboCustomCtrl
 - `SetDuration(d)` - DurationCtrl, DurationCtrlVerbose
 
 **ValidateChange for Field Validation:**
@@ -895,7 +922,7 @@ self.__observer.Update()   # Force immediate repaint
 
 ### Sub-Control Stash Model
 
-The sub-controls (DateCtrl, TimeCtrl) are the stash for DateTimeCombo. They
+The sub-controls (DateComboRouterCtrl, TimeCtrl) are the stash for DateTimeComboCtrl. They
 always hold a datetime value — they cannot be empty. When the checkbox is
 unchecked, the sub-controls are hidden behind the "N/A" overlay but retain
 their values. When the checkbox is checked, those same values become visible
@@ -986,22 +1013,22 @@ Platform-conditional base class:
 
 ### Motivation
 
-The original `DateCtrl` uses `_PopupWindow` (wx.Dialog) for its calendar popup, which cannot be positioned on Wayland (xdg_toplevel ignores Move()/SetPosition()). Custom dropdown buttons using `RendererNative.DrawComboBoxDropButton()` are also invisible on Wayland.
+The original date control used `_PopupWindow` (wx.Dialog) for its calendar popup, which cannot be positioned on Wayland (xdg_toplevel ignores Move()/SetPosition()). Custom dropdown buttons using `RendererNative.DrawComboBoxDropButton()` are also invisible on Wayland.
 
 ### Approach
 
-Use `wx.ComboCtrl` which provides a **native dropdown button** and manages popup positioning natively (including Wayland-safe xdg_popup). The inner date field is a clean `FieldsCtrl` subclass with all popup/frame logic removed.
+Use `wx.ComboCtrl` which provides a **native dropdown button** and manages popup positioning natively (including Wayland-safe xdg_popup). The inner date field is a clean `MaskedFieldsCtrl` subclass with all popup/frame logic removed.
 
 ### Key Classes
 
-**`_EmbeddedDateCtrl(FieldsCtrl)`** — Clean date control for embedding inside a ComboCtrl:
+**`DateCtrl(MaskedFieldsCtrl)`** — Clean date control for embedding inside a ComboCtrl:
 - No calendar popup, no frame drawing (`_drawFrame=False`), no field dropdown popups
 - F4/Enter delegates to parent ComboCtrl.Popup()
 - Click only changes subfield focus (no popup toggle)
 - Custom `_onPaint` using `IsThisEnabled()` (own state) so parent ComboCtrl's disabled state for read-only mode shows greyed values, not "N/A"
-- Same date validation, GetDate/SetDate, locale-aware format as DateCtrl
+- Same date validation, GetDate/SetDate, locale-aware format as DateComboCustomCtrl
 
-**`DateCtrl(wx.ComboCtrl)`** — ComboCtrl wrapper around `_EmbeddedDateCtrl`:
+**`DateComboCustomCtrl(wx.ComboCtrl)`** — ComboCtrl wrapper around `DateCtrl`:
 - Native dropdown button and popup management
 - `_CalendarComboPopup` for the calendar dropdown
 - `SetReadOnly(True)` disables the ComboCtrl (greys button) + sets inner control read-only
@@ -1010,15 +1037,19 @@ Use `wx.ComboCtrl` which provides a **native dropdown button** and manages popup
 - `Bind()` override forwards UI events (EVT_KEY_DOWN, EVT_KILL_FOCUS, EVT_SET_FOCUS) to inner control
 - Focus redirection from ComboCtrl's text control to inner DateCtrl
 
-**`DateTimeCombo(wx.EvtHandler)`** — Composite date/time control:
+**`DateComboRouterCtrl`** — Router function returning the platform-appropriate date combo:
+- Windows: `_NativeDateCtrl` (native `wx.adv.DatePickerCtrl` wrapper)
+- Elsewhere (Linux, macOS): `DateComboCustomCtrl`
+
+**`DateTimeComboCtrl(wx.EvtHandler)`** — Composite date/time control:
 - Inherits from `wx.EvtHandler` so it can host event handlers directly
-- Composes checkbox + `DateCtrl` + `TimeCtrl`
+- Composes checkbox + `DateComboRouterCtrl` + `TimeCtrl`
 - Owns the change event: fires `EVT_VALUE_CHANGED` on sub-control blur
   and from `ActivateValue()`/`DeactivateValue()`
 - Traps and drops sub-control `EVT_VALUE_CHANGED` (debug log point)
-- See [DateTimeCombo Event Ownership](#datetimecombo-event-ownership)
+- See [DateTimeComboCtrl Event Ownership](#datetimecomboctrl-event-ownership)
 
-**DateTimeCombo States:**
+**DateTimeComboCtrl States:**
 
 | State | Visual | Entered Via |
 |-------|--------|------------|
@@ -1026,7 +1057,7 @@ Use `wx.ComboCtrl` which provides a **native dropdown button** and manages popup
 | **Inactive** | Checkbox unchecked/enabled, fields show "N/A" | `DeactivateValue()`, construct with `value=None` |
 | **Active + Read-only** | Checkbox checked/disabled, fields greyed | `SetReadOnly()` |
 
-**DateTimeCombo State Transition Methods:**
+**DateTimeComboCtrl State Transition Methods:**
 
 | Method | Effect | Duration Calc Ref |
 |--------|--------|-------------------|
@@ -1036,7 +1067,7 @@ Use `wx.ComboCtrl` which provides a **native dropdown button** and manages popup
 | `SetReadOnly()` | Make combo read-only (no args) | UI Field States |
 | `HideCheckBox()` | Hide checkbox for always-active controls | Effort start |
 
-**DateTimeCombo State Query Methods:**
+**DateTimeComboCtrl State Query Methods:**
 
 | Method | Returns |
 |--------|---------|
@@ -1044,7 +1075,7 @@ Use `wx.ComboCtrl` which provides a **native dropdown button** and manages popup
 | `IsEditable()` | True if editable (not read-only) |
 | `IsReadOnly()` | True if read-only |
 
-**DateTimeCombo Value Access:**
+**DateTimeComboCtrl Value Access:**
 
 | Method | Type |
 |--------|------|
@@ -1053,12 +1084,12 @@ Use `wx.ComboCtrl` which provides a **native dropdown button** and manages popup
 | `GetDate()` | `datetime.date` (read-only) |
 | `GetTime()` | `datetime.time` (read-only) |
 
-**DateTimeCombo Layout Accessors** (for sizer arrangement, not state logic):
+**DateTimeComboCtrl Layout Accessors** (for sizer arrangement, not state logic):
 
 | Method | Returns |
 |--------|---------|
 | `GetCheckBox()` | `wx.CheckBox` |
-| `GetDateCtrl()` | `DateCtrl` |
+| `GetDateCtrl()` | `DateComboCustomCtrl` |
 | `GetTimeCtrl()` | `TimeCtrl` / `TimeWithSecondsCtrl` |
 | `GetWidgets()` | Tuple of all three |
 | `CreateRowPanel(parent)` | `wx.Panel` with all three arranged horizontally |
@@ -1079,12 +1110,12 @@ Use `wx.ComboCtrl` which provides a **native dropdown button** and manages popup
 - `Create()` — creates interior panel, binds paint/mouse/key events
 - `GetAdjustedSize()` — returns calendar dimensions
 - `GetStringValue()` — returns selected date as ISO string
-- `OnPopup()` — syncs selection from parent DateCtrl
-- Duck-typed `_getDateCtrl2()` finds parent via `hasattr` checks
+- `OnPopup()` — syncs selection from parent DateComboCustomCtrl
+- Duck-typed `_getDateComboCustomCtrl()` finds parent via `hasattr` checks
 
-### Focus Management in DateCtrl
+### Focus Management in DateComboCustomCtrl
 
-The ComboCtrl's internal text control is hidden behind the overlaid `_EmbeddedDateCtrl`. DateCtrl handles this by:
+The ComboCtrl's internal text control is hidden behind the overlaid `DateCtrl`. DateComboCustomCtrl handles this by:
 
 1. **Focus redirection**: `EVT_SET_FOCUS` on the ComboCtrl's text control redirects focus to the inner DateCtrl, with a `_redirectingFocus` guard to prevent recursion.
 2. **Text interception**: `EVT_TEXT` handler clears any text the ComboCtrl auto-inserts.
@@ -1092,12 +1123,11 @@ The ComboCtrl's internal text control is hidden behind the overlaid `_EmbeddedDa
 
 ### Wiring
 
-`__init__.py` exports aliases:
-- `DateCtrl as MaskedDateCtrl`
-- `DateTimeCombo as DateTimeCombo`
-
-Old `DateCtrl` (FieldsCtrl-based), `_CalendarPopup`, and `DateTimeCombo` v1
-have been removed. `DateCtrl` and `DateTimeCombo` are the only implementations.
+`__init__.py` exports:
+- `DateCtrl`
+- `DateComboCustomCtrl`
+- `DateComboRouterCtrl` (router)
+- `DateTimeComboCtrl`
 
 ### Demo
 
@@ -1107,3 +1137,129 @@ with various configurations. Run from the project root:
 ```
 python3 docs/scripts/datetime_controls_demo.py
 ```
+
+## Platform-Specific DateComboRouterCtrl: Native Windows, Custom Elsewhere
+
+TaskCoach requires two capabilities from a date picker control:
+
+1. **Masked input** — day, month, and year are independently navigable and
+   editable subfields (arrow keys move between fields, typing replaces the
+   focused field). This prevents invalid freeform text entry and provides a
+   consistent editing experience.
+2. **Format override** — the display order and separator must match the user's
+   chosen format (e.g. `YMD-`, `DMY/`, `MDY.`) from Preferences → Regional,
+   not just the OS locale default.
+
+`DateComboRouterCtrl` selects the implementation per platform based on whether
+the native control satisfies both requirements:
+
+| Platform | Native Control         | Masked Input | Format Override        | Router Returns          |
+|----------|------------------------|--------------|------------------------|-------------------------|
+| Windows  | Win32 Date-Time Picker | Yes          | Yes (`DTM_SETFORMATW`) | `_NativeDateCtrl`       |
+| Linux    | GTK date entry         | No           | No                     | `DateComboCustomCtrl`   |
+| macOS    | NSDatePicker           | Yes          | No (wxWidgets #9888)   | `DateComboCustomCtrl`   |
+
+On **Linux**, `wx.adv.DatePickerCtrl` wraps a GTK widget that is a plain text
+entry with a dropdown calendar — not a masked control. There is no GTK API to
+set a custom date display format. Neither requirement is met, so Linux uses the
+custom ComboCtrl + `DateCtrl` architecture.
+
+On **Windows**, the native Win32 Date-Time Picker is already masked (each
+subfield is independently selectable and editable) and supports
+`DTM_SETFORMATW` for arbitrary format strings. Both requirements are met, and
+the native control also fixes the rendering and focus problems that
+`DateComboCustomCtrl` has on Windows (see below).
+
+On **macOS**, `NSDatePicker` is masked but wxPython does not expose its format
+API, and wxWidgets hardcodes MM/DD/YYYY regardless of locale. Only one
+requirement is met, so macOS uses the custom control.
+
+### Windows — Native DatePickerCtrl with DTM_SETFORMAT
+
+**Problem:** On Windows, `DateCtrl` (a custom-painted `wx.Panel`)
+inside the `wx.ComboCtrl` renders as a white box with no visible date text.
+The panel's background painting conflicts with the ComboCtrl's native text
+area. Tab navigation also breaks due to the focus redirection between the
+ComboCtrl's internal text control and the inner panel (see
+[Focus Management in DateComboCustomCtrl](#focus-management-in-datecombocustomctrl)).
+
+**Solution:** On Windows, `DateComboRouterCtrl` returns a native `wx.adv.DatePickerCtrl` (the
+Win32 Date-Time Picker control) instead of the ComboCtrl + `DateCtrl`
+approach. This provides correct rendering, native keyboard navigation, and
+accessibility out of the box.
+
+**Format override:** The native Win32 Date-Time Picker supports the
+`DTM_SETFORMATW` message (`0x1032`) to set an arbitrary display format at any
+time. This is sent via `ctypes.windll.user32.SendMessageW`. The app's format
+codes (see [Locale and Date Format Settings](#locale-and-date-format-settings))
+are converted to Win32 date format tokens:
+
+| App Format Code | Win32 Format String | Display |
+|-----------------|--------------------:|---------|
+| `"YMD-"` | `yyyy-MM-dd` | 2026-01-18 |
+| `"YMD/"` | `yyyy/MM/dd` | 2026/01/18 |
+| `"MDY/"` | `MM/dd/yyyy` | 01/18/2026 |
+| `"DMY/"` | `dd/MM/yyyy` | 18/01/2026 |
+| `"DMY."` | `dd.MM.yyyy` | 18.01.2026 |
+| `""` (auto) | Detected from locale | varies |
+
+**Live update:** `SetDateFormat(dateFormat)` re-sends `DTM_SETFORMATW` — the
+native control updates instantly without needing to destroy/recreate.
+
+### macOS — Custom Control (No Native Format Override)
+
+`wx.adv.DatePickerCtrl` on macOS wraps `NSDatePicker`, which is a
+segmented/masked control (each date component is independently editable with
+stepper arrows). However:
+
+- wxPython does not expose `NSDatePicker.dateFormatter` — there is no way to
+  set a custom format without adding a PyObjC dependency.
+- [wxWidgets #9888](https://github.com/wxWidgets/wxWidgets/issues/9888) (open
+  since 2008) — the macOS `DatePickerCtrl` ignores the system locale and
+  hardcodes MM/DD/YYYY.
+
+Therefore macOS continues using `DateComboCustomCtrl` (the ComboCtrl +
+`DateCtrl` architecture documented in [Key Classes](#key-classes)),
+which correctly respects the app's format settings.
+
+### Architecture — Factory Function
+
+`DateComboRouterCtrl` is a router function that returns the appropriate implementation
+for the current platform:
+
+- **Windows** (`wx.Platform == '__WXMSW__'`): `_NativeDateCtrl` — wraps
+  `wx.adv.DatePickerCtrl` with `DTM_SETFORMATW` for format control.
+- **Elsewhere** (Linux, macOS): `DateComboCustomCtrl` — the ComboCtrl +
+  `DateCtrl` architecture.
+
+Both implementations expose the same public API:
+
+| Method | Description |
+|--------|-------------|
+| `GetDate()` | Returns `datetime.date` |
+| `SetDate(d)` | Sets date (`datetime.date` or `None` → today) |
+| `SetDateFormat(fmt)` | Change display format (live on Windows, rebuild on others) |
+| `SetReadOnly(bool)` | Grey values, block editing |
+| `IsReadOnly()` | Query read-only state |
+| `HasOpenPopup()` | Whether calendar popup is open |
+| `DismissPopup()` | Close any open popup |
+| `Enable(bool)` | Enable/disable (shows "N/A" when disabled) |
+| `SetFocus()` | Move focus to the control |
+| `Bind(evt, handler)` | Event binding with forwarding |
+
+**Event bridging:** The Windows native wrapper translates
+`wx.adv.EVT_DATE_CHANGED` from the native picker into the app's
+`EVT_VALUE_CHANGED` (see [Events](#events)), so `DateTimeComboCtrl` and
+`AttributeSync` work without changes.
+
+### Preferences Demo Live Update
+
+The Preferences → Regional date format preview (in `preferences.py`
+`_rebuildDemoDateCtrl()`) destroys and recreates the `DateComboRouterCtrl`.
+On Windows, `_NativeDateCtrl.SetDateFormat()` could update the native control
+in place via `DTM_SETFORMATW`, but the current rebuild approach works on all
+platforms.
+
+- **Windows:** `DTM_SETFORMATW` updates the native control in place (via `SetDateFormat()`).
+- **Other platforms:** Destroys and recreates the `DateComboRouterCtrl`
+  with the new field order and separator, preserving the current date value.

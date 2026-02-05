@@ -104,7 +104,7 @@ Cascading checks for language selection:
 - **Date/time:** Python `datetime` objects. XML uses ISO-like format.
 - **The control is the locale boundary.** `NumericCtrl.GetValue()` returns
   Python float (period). `NumericCtrl.SetValue(float)` displays with locale
-  decimal. Same for `DateCtrl`, `TimeCtrl`.
+  decimal. Same for `DateComboRouterCtrl`, `TimeCtrl`.
 
 Data flow example (German locale, comma decimal):
 ```
@@ -149,7 +149,7 @@ locale, and `strftime` uses the locale's date/time formatting.
 ## Cross-References
 
 - **Date/time controls:** [DATETIME_CONTROLS.md](DATETIME_CONTROLS.md) —
-  `DateCtrl`, `TimeCtrl`, `DateTimeCombo`, locale detection via strftime
+  `DateComboRouterCtrl`, `TimeCtrl`, `DateTimeComboCtrl`, locale detection via strftime
 - **Numeric controls:** [NUMERIC_CONTROLS.md](NUMERIC_CONTROLS.md) —
   `NumericCtrl`, blur validation, decimal separator handling
 - **Monetary controls:** [MONETARY_CONTROLS.md](MONETARY_CONTROLS.md) —

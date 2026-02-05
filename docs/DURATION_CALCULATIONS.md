@@ -40,10 +40,10 @@ Duration calculations for Edit Task Dates and Edit Effort windows.
    OPEN QUESTION: How to differentiate between loading in process
    (mode not yet set, should wait) and invalid value requiring reset
    to automatic?
-9. ~~DateTimeCombo Checkbox toggle EVT_KILL_FOCUS gap~~ — **Resolved.**
+9. ~~DateTimeComboCtrl Checkbox toggle EVT_KILL_FOCUS gap~~ — **Resolved.**
    ~~Editor binds `EVT_CHECKBOX` via `combo.Bind(wx.EVT_CHECKBOX, handler)`
    and calls `sync.commit()` explicitly.~~
-   **Update:** EVT_CHECKBOX is no longer exposed by DateTimeCombo. All
+   **Update:** EVT_CHECKBOX is no longer exposed by DateTimeComboCtrl. All
    AttributeSync instances use `EVT_VALUE_CHANGED` as `editedEventType`,
    which fires on checkbox toggle AND date/time edits. External
    EVT_CHECKBOX handlers and `sync.commit()` hacks removed.
@@ -530,4 +530,4 @@ All values are stored in hardcoded formats — no locale involvement. Locale for
 ### Internal Types
 - Durations use `date.TimeDelta` (extends `datetime.timedelta`, adds `hoursMinutesSeconds()`)
 - DateTimes use `date.DateTime` (extends `datetime.datetime`)
-- UI controls (`DurationCtrl`, `DateTimeCombo`) return these domain types directly for `AttributeSync` compatibility
+- UI controls (`DurationCtrl`, `DateTimeComboCtrl`) return these domain types directly for `AttributeSync` compatibility

@@ -1267,7 +1267,7 @@ class DatesPage(ScrolledPage):
         # value=None means no date set, value=datetime means date exists
         value = plannedStartDateTime if plannedStartDateTime != date.DateTime() else None
 
-        self._plannedStartDateTimeCombo = widgets.DateTimeCombo(
+        self._plannedStartDateTimeCombo = widgets.DateTimeComboCtrl(
             self, value=value,
             suggestedValue=task.Task.suggestedPlannedStartDateTime(),
             hourChoices=lambda: get_suggested_hour_choices(self._DatesPage__settings),
@@ -1405,7 +1405,7 @@ class DatesPage(ScrolledPage):
         # value=None means no date set, value=datetime means date exists
         value = dueDateTime if dueDateTime != date.DateTime() else None
 
-        self._dueDateTimeCombo = widgets.DateTimeCombo(
+        self._dueDateTimeCombo = widgets.DateTimeComboCtrl(
             self, value=value,
             suggestedValue=task.Task.suggestedDueDateTime(),
             hourChoices=lambda: get_suggested_hour_choices(self._DatesPage__settings),
@@ -1439,7 +1439,7 @@ class DatesPage(ScrolledPage):
         self.__updatePresetSelection()
 
     def _addActualStartDateEntry(self):
-        """Add actual start date entry using DateTimeCombo."""
+        """Add actual start date entry using DateTimeComboCtrl."""
         actualStartDateTime = (
             self.items[0].actualStartDateTime()
             if len(self.items) == 1
@@ -1450,7 +1450,7 @@ class DatesPage(ScrolledPage):
         # value=None means no date set, value=datetime means date exists
         value = actualStartDateTime if actualStartDateTime != date.DateTime() else None
 
-        self._actualStartDateTimeCombo = widgets.DateTimeCombo(
+        self._actualStartDateTimeCombo = widgets.DateTimeComboCtrl(
             self, value=value,
             suggestedValue=task.Task.suggestedActualStartDateTime(),
             hourChoices=lambda: get_suggested_hour_choices(self._DatesPage__settings),
@@ -1480,7 +1480,7 @@ class DatesPage(ScrolledPage):
         self._currentActualStartDateTime = value
 
     def _addCompletionDateEntry(self):
-        """Add completion date entry using DateTimeCombo with AttributeSync."""
+        """Add completion date entry using DateTimeComboCtrl with AttributeSync."""
         completionDateTime = (
             self.items[0].completionDateTime()
             if len(self.items) == 1
@@ -1490,7 +1490,7 @@ class DatesPage(ScrolledPage):
         # value=None means no date set, value=datetime means date exists
         value = completionDateTime if completionDateTime != date.DateTime() else None
 
-        self._completionDateTimeCombo = widgets.DateTimeCombo(
+        self._completionDateTimeCombo = widgets.DateTimeComboCtrl(
             self, value=value,
             suggestedValue=task.Task.suggestedCompletionDateTime(),
             hourChoices=lambda: get_suggested_hour_choices(self._DatesPage__settings),
@@ -1877,7 +1877,7 @@ class DatesPage(ScrolledPage):
         self.__updateDurationModeDropdown()
 
     def addReminderEntry(self):
-        """Add reminder entry using DateTimeCombo."""
+        """Add reminder entry using DateTimeComboCtrl."""
         reminderDateTime = (
             self.items[0].reminder()
             if len(self.items) == 1
@@ -1888,7 +1888,7 @@ class DatesPage(ScrolledPage):
         # value=None means no date set, value=datetime means date exists
         value = reminderDateTime if reminderDateTime != date.DateTime() else None
 
-        self._reminderDateTimeCombo = widgets.DateTimeCombo(
+        self._reminderDateTimeCombo = widgets.DateTimeComboCtrl(
             self, value=value,
             suggestedValue=task.Task.suggestedReminderDateTime(),
             hourChoices=lambda: get_suggested_hour_choices(self._DatesPage__settings),
@@ -1950,7 +1950,7 @@ class DatesPage(ScrolledPage):
 
     def entries(self):
         # pylint: disable=E1101
-        # For DateTimeCombo controls, return the date control as the focusable widget
+        # For DateTimeComboCtrl controls, return the date control as the focusable widget
         return dict(
             firstEntry=self._plannedStartDateTimeCombo.GetDateCtrl(),
             plannedStartDateTime=self._plannedStartDateTimeCombo.GetDateCtrl(),
@@ -2089,7 +2089,7 @@ class BudgetPage(ScrolledPage):
             currentBudget,
             self.items,
             command.EditBudgetCommand,
-            wx.EVT_KILL_FOCUS,
+            widgets.EVT_VALUE_CHANGED,
             self.items[0].budgetChangedEventType(),
         )
         self.addEntry(
@@ -3670,7 +3670,7 @@ class EffortEditBook(Page):
 
         # --- Start row: Label, DateTime row (checkbox hidden), Button ---
         current_start_date_time = self.items[0].getStart()
-        self._startDateTimeCombo = widgets.DateTimeCombo(
+        self._startDateTimeCombo = widgets.DateTimeComboCtrl(
             self,
             value=current_start_date_time,
             showSeconds=True,
@@ -3805,7 +3805,7 @@ class EffortEditBook(Page):
         )
 
         # --- Stop row: Label, DateTime row (with checkbox), Button ---
-        self._stopDateTimeCombo = widgets.DateTimeCombo(
+        self._stopDateTimeCombo = widgets.DateTimeComboCtrl(
             self,
             value=current_stop_date_time,
             showSeconds=True,

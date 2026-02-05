@@ -2,7 +2,7 @@
 """
 Demo app for maskedtimectrl controls.
 Shows different dropdown list scenarios: with choices, without choices, and calendar popup.
-Also demonstrates DateTimeCombo for flexible table layouts.
+Also demonstrates DateTimeComboCtrl for flexible table layouts.
 """
 
 import sys
@@ -17,115 +17,10 @@ import wx
 import wx.adv
 app = wx.App()
 
-from taskcoachlib.widgets import maskedtimectrl
 from taskcoachlib.widgets.maskedtimectrl import (
     DurationCtrl, DurationCtrlVerbose, TimeCtrl, TimeWithSecondsCtrl,
-    DateCtrl, DateTimeCombo, _PopupWindow,
-    PopupDismissEvent, _CalendarComboPopup
+    DateComboRouterCtrl, DateTimeComboCtrl, DateCtrl
 )
-
-# =============================================================================
-# Wayland test patch: Replace _PopupWindow base class with wx.PopupWindow
-# on Wayland so dropdowns use xdg_popup (compositor-positioned) instead of
-# wx.Dialog (xdg_toplevel, which ignores Move()/SetPosition()).
-# =============================================================================
-def _is_wayland():
-    return os.environ.get("XDG_SESSION_TYPE", "").lower() == "wayland"
-
-if _is_wayland():
-    print("[Wayland] Patching _PopupWindow to use wx.PopupWindow (xdg_popup)")
-
-    # wx.PopupWindow is a real C++ type — we can't just swap __bases__ on
-    # _PopupWindow(wx.Dialog) because the C++ object type is fixed at
-    # construction. Instead, create a proper wx.PopupWindow subclass with
-    # the same interface and swap it as the base of the popup subclasses.
-
-    class _WaylandPopupWindow(wx.PopupWindow):
-        """wx.PopupWindow-based replacement for _PopupWindow on Wayland."""
-
-        def __init__(self, *args, **kwargs):
-            # Accept and ignore style/title kwargs from wx.Dialog interface
-            kwargs.pop('style', None)
-            kwargs.pop('title', None)
-            parent = args[0] if args else kwargs.pop('parent', None)
-            wx.PopupWindow.__init__(self, parent, style=wx.BORDER_NONE)
-
-            style = wx.BORDER_NONE
-            if "__WXMSW__" in wx.PlatformInfo:
-                style |= wx.WANTS_CHARS
-            self.__interior = wx.Panel(self, style=style)
-            self._dismissed = False
-
-            self.__interior.Bind(wx.EVT_CHAR, self._onChar)
-
-            self.Fill(self.__interior)
-
-            sizer = wx.BoxSizer()
-            sizer.Add(self.__interior, 1, wx.EXPAND)
-            self.SetSizer(sizer)
-
-        def interior(self):
-            return self.__interior
-
-        def Fill(self, interior):
-            pass
-
-        def Popup(self, position):
-            self.Position(position, (0, 0))
-            self.Show()
-
-        def Dismiss(self):
-            if self._dismissed:
-                return
-            self._dismissed = True
-            self.Hide()
-            try:
-                interior = self.interior()
-                if interior:
-                    interior.Unbind(wx.EVT_CHAR)
-                    interior.Unbind(wx.EVT_PAINT)
-                    interior.Unbind(wx.EVT_LEFT_UP)
-            except RuntimeError:
-                pass
-            self.ProcessEvent(PopupDismissEvent(self))
-            wx.CallLater(100, self._safeDestroy)
-
-        def _safeDestroy(self):
-            try:
-                if self:
-                    self.Destroy()
-            except RuntimeError:
-                pass
-
-        def _onChar(self, event):
-            if not self.HandleKey(event):
-                self.GetParent().OnChar(event)
-
-        def HandleKey(self, event):
-            return False
-
-    # wxPython bakes C++ type info into class objects at creation time, so
-    # __bases__ swap doesn't work. We must create entirely new classes using
-    # type() that inherit from _WaylandPopupWindow and copy all methods from
-    # the original subclasses.
-
-    _OrigChoicesPopup = maskedtimectrl._ChoicesPopup
-
-    # Collect all methods/attrs defined directly on each original class
-    def _get_class_attrs(cls):
-        attrs = {}
-        for name in cls.__dict__:
-            if name != '__dict__' and name != '__weakref__':
-                attrs[name] = cls.__dict__[name]
-        return attrs
-
-    maskedtimectrl._ChoicesPopup = type(
-        '_ChoicesPopup',
-        (_WaylandPopupWindow,),
-        _get_class_attrs(_OrigChoicesPopup)
-    )
-
-    print("[Wayland] Patch applied. Test dropdown positioning below.")
 
 
 class DemoFrame(wx.Frame):
@@ -222,6 +117,23 @@ class DemoFrame(wx.Frame):
         grid.Add(self.ctrl7, 0, wx.ALIGN_CENTER_VERTICAL)
         grid.Add(wx.StaticText(panel, label="WITH choices: [0-30], [0-23], [0,15,30,45]"), 0, wx.ALIGN_CENTER_VERTICAL)
 
+        # 1.8 Raw DateCtrl (no popup, no ComboCtrl wrapper)
+        grid.Add(wx.StaticText(panel, label="1.8 DateCtrl:"), 0, wx.ALIGN_CENTER_VERTICAL)
+        self.ctrl8 = DateCtrl(panel, comboCtrl=None,
+            year=2026, month=2, day=4)
+        grid.Add(self.ctrl8, 0, wx.ALIGN_CENTER_VERTICAL)
+        lbl_8 = wx.StaticText(panel, label="(editable, raw — no popup, no themed frame)")
+        lbl_8.SetForegroundColour(wx.Colour(128, 128, 128))
+        grid.Add(lbl_8, 0, wx.ALIGN_CENTER_VERTICAL)
+
+        # 1.9 Native wx.adv.DatePickerCtrl (GTK on Linux, Win32 DTP on Windows)
+        grid.Add(wx.StaticText(panel, label="1.9 DatePickerCtrl:"), 0, wx.ALIGN_CENTER_VERTICAL)
+        self.ctrl9 = wx.adv.DatePickerCtrl(panel, style=wx.adv.DP_DROPDOWN)
+        grid.Add(self.ctrl9, 0, wx.ALIGN_CENTER_VERTICAL)
+        lbl_9 = wx.StaticText(panel, label="(native wx.adv.DatePickerCtrl — for testing Windows)")
+        lbl_9.SetForegroundColour(wx.Colour(0, 0, 180))
+        grid.Add(lbl_9, 0, wx.ALIGN_CENTER_VERTICAL)
+
         mainSizer.Add(grid, 0, wx.ALL | wx.EXPAND, 20)
 
         # Separator
@@ -248,30 +160,50 @@ class DemoFrame(wx.Frame):
         lbl_baseline.SetForegroundColour(wx.Colour(128, 128, 128))
         dc2Grid.Add(lbl_baseline, 0, wx.ALIGN_CENTER_VERTICAL)
 
-        # 2.1 DateCtrl standalone (no checkbox, no time)
-        self.dc2EmbedDate = DateCtrl(panel,
+        # 2.1 DateComboRouterCtrl standalone (no checkbox, no time)
+        self.dc2EmbedDate = DateComboRouterCtrl(panel,
             year=2026, month=1, day=31)
-        dc2Grid.Add(wx.StaticText(panel, label="2.1 DateCtrl:"), 0,
+        dc2Grid.Add(wx.StaticText(panel, label="2.1 DateComboRouterCtrl:"), 0,
                      wx.ALIGN_CENTER_VERTICAL)
         dc2Grid.Add(self.dc2EmbedDate, 0, wx.ALIGN_CENTER_VERTICAL)
-        lbl_31 = wx.StaticText(panel, label="(standalone DateCtrl, no checkbox/time)")
+        lbl_31 = wx.StaticText(panel, label="(standalone DateComboRouterCtrl, no checkbox/time)")
         lbl_31.SetForegroundColour(wx.Colour(0, 128, 0))
         dc2Grid.Add(lbl_31, 0, wx.ALIGN_CENTER_VERTICAL)
 
-        # 2.2 DateCtrl standalone read-only
-        self.dc2EmbedDateRO = DateCtrl(panel,
+        # 2.2 DateComboRouterCtrl standalone read-only
+        self.dc2EmbedDateRO = DateComboRouterCtrl(panel,
             year=2026, month=1, day=19)
         self.dc2EmbedDateRO.SetReadOnly(True)
-        dc2Grid.Add(wx.StaticText(panel, label="2.2 DateCtrl:"), 0,
+        dc2Grid.Add(wx.StaticText(panel, label="2.2 DateComboRouterCtrl:"), 0,
                      wx.ALIGN_CENTER_VERTICAL)
         dc2Grid.Add(self.dc2EmbedDateRO, 0, wx.ALIGN_CENTER_VERTICAL)
-        lbl_32 = wx.StaticText(panel, label="(standalone DateCtrl, read-only)")
+        lbl_32 = wx.StaticText(panel, label="(standalone DateComboRouterCtrl, read-only)")
         lbl_32.SetForegroundColour(wx.Colour(128, 128, 128))
         dc2Grid.Add(lbl_32, 0, wx.ALIGN_CENTER_VERTICAL)
 
+        # 2.7 DateComboRouterCtrl with explicit ISO format (YMD-)
+        self.dc2Iso = DateComboRouterCtrl(panel,
+            year=2026, month=2, day=14, dateFormat="YMD-")
+        dc2Grid.Add(wx.StaticText(panel, label="2.7 DateComboRouterCtrl:"), 0,
+                     wx.ALIGN_CENTER_VERTICAL)
+        dc2Grid.Add(self.dc2Iso, 0, wx.ALIGN_CENTER_VERTICAL)
+        lbl_iso = wx.StaticText(panel, label="(explicit dateFormat='YMD-')")
+        lbl_iso.SetForegroundColour(wx.Colour(0, 0, 180))
+        dc2Grid.Add(lbl_iso, 0, wx.ALIGN_CENTER_VERTICAL)
+
+        # 2.8 DateComboRouterCtrl with European format (DMY.)
+        self.dc2Eur = DateComboRouterCtrl(panel,
+            year=2026, month=2, day=14, dateFormat="DMY.")
+        dc2Grid.Add(wx.StaticText(panel, label="2.8 DateComboRouterCtrl:"), 0,
+                     wx.ALIGN_CENTER_VERTICAL)
+        dc2Grid.Add(self.dc2Eur, 0, wx.ALIGN_CENTER_VERTICAL)
+        lbl_eur = wx.StaticText(panel, label="(explicit dateFormat='DMY.')")
+        lbl_eur.SetForegroundColour(wx.Colour(0, 0, 180))
+        dc2Grid.Add(lbl_eur, 0, wx.ALIGN_CENTER_VERTICAL)
+
         mainSizer.Add(dc2Grid, 0, wx.ALL | wx.EXPAND, 20)
 
-        # --- 3.3-3.6 DateTimeCombo (DateCtrl-based, same API as section 1) ---
+        # --- 3.3-3.6 DateTimeComboCtrl (DateComboRouterCtrl-based, same API as section 1) ---
         dc3Grid = wx.FlexGridSizer(cols=5, hgap=10, vgap=8)
 
         # Header row
@@ -286,7 +218,7 @@ class DemoFrame(wx.Frame):
         dc3Grid.Add(wx.StaticText(panel, label=""), 0)
 
         # 2.3 Planned Start (checked, with dropdowns)
-        self.dc3PlannedStartCombo = DateTimeCombo(
+        self.dc3PlannedStartCombo = DateTimeComboCtrl(
             panel,
             value=datetime.datetime(2026, 1, 20, 9, 0),
             hourChoices=[8, 9, 10, 11, 12],
@@ -301,7 +233,7 @@ class DemoFrame(wx.Frame):
                      wx.ALIGN_CENTER_VERTICAL)
 
         # 2.4 Due Date (unchecked)
-        self.dc3DueDateCombo = DateTimeCombo(
+        self.dc3DueDateCombo = DateTimeComboCtrl(
             panel,
             value=None,
             hourChoices=[17, 18, 19, 20, 21],
@@ -316,7 +248,7 @@ class DemoFrame(wx.Frame):
                      wx.ALIGN_CENTER_VERTICAL)
 
         # 2.5 Completed (read-only / editable toggle)
-        self.dc3CompletedCombo = DateTimeCombo(
+        self.dc3CompletedCombo = DateTimeComboCtrl(
             panel,
             value=datetime.datetime(2026, 1, 19, 14, 30)
         )
@@ -331,7 +263,7 @@ class DemoFrame(wx.Frame):
         dc3Grid.Add(lbl_dc3_ro, 0, wx.ALIGN_CENTER_VERTICAL)
 
         # 2.6 Reminder (checked, no time dropdowns)
-        self.dc3ReminderCombo = DateTimeCombo(
+        self.dc3ReminderCombo = DateTimeComboCtrl(
             panel,
             value=datetime.datetime(2026, 1, 21, 8, 0)
         )
@@ -387,7 +319,7 @@ class DemoFrame(wx.Frame):
             "Dropdown List Behavior:\n"
             "- None: NO dropdown (Up/Down arrows still increment/decrement)\n"
             "- [1,2,3,...]: provides dropdown with those choices\n\n"
-            "DateTimeCombo States (checkbox state determined by value):\n"
+            "DateTimeComboCtrl States (checkbox state determined by value):\n"
             "- value=datetime -> checkbox ON, fields editable\n"
             "- value=None -> checkbox OFF, fields disabled\n"
             "- SetEditable(False) -> checkbox ON but disabled, fields greyed (read-only)\n\n"
@@ -401,7 +333,7 @@ class DemoFrame(wx.Frame):
         self.Centre()
 
     def _onToggleDc3Completed(self, event):
-        """Toggle read-only/editable on the 2.5 Completed DateTimeCombo."""
+        """Toggle read-only/editable on the 2.5 Completed DateTimeComboCtrl."""
         if self.dc3CompletedCombo.IsEditable():
             self.dc3CompletedCombo.SetReadOnly()
         else:

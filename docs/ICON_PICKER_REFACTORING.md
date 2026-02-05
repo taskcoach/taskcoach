@@ -85,6 +85,12 @@ This document describes the custom `IconPicker` widget used in Task Coach for se
 | 33 | Add icon hints to artprovider.py | Done | `chooseableItems` dict with translatable hints arrays |
 | 34 | Test on Windows/macOS | Not Started | Cross-platform verification |
 
+### Transparent Empty Bitmap
+
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| 35 | Review if `TRANSPARENT_EMPTY_ICON` is still needed | Not Started | `ArtProvider.TRANSPARENT_EMPTY_ICON` was added to centralize transparent bitmap creation (returns a real bitmap with alpha=0). The icon picker "No icon" option needs a real bitmap because `GenBitmapButton.SetBitmapLabel()` crashes on `wx.NullBitmap`. Verify whether this is still the case — if `wx.NullBitmap` works, the constant can be removed. See `artprovider.py`. |
+
 ### Status Legend
 
 - **Done**: Completed and integrated

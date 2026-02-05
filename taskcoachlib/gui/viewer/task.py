@@ -57,7 +57,7 @@ class DueDateTimeCtrl(inplace_editor.DateTimeCtrl):
     TODO: The old smartdatetimectrl had a "relative preset" dropdown that showed
     duration offsets like "+1 day", "+1 week" relative to the planned start date.
     This feature would need to be reimplemented as a separate duration field with
-    duration presets in DateTimeCombo. The settings key "feature.task_duration_presets"
+    duration presets in DateTimeComboCtrl. The settings key "feature.task_duration_presets"
     stores the user's custom duration choices. For now, due dates are edited as
     absolute datetime values only.
     """
