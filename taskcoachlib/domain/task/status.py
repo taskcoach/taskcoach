@@ -22,13 +22,15 @@ from taskcoachlib.config import defaults
 
 class TaskStatus(object):
     def __init__(
-        self, statusString, pluralLabel, countLabel, hideMenuText, hideHelpText
+        self, statusString, pluralLabel, countLabel, hideMenuText, hideHelpText,
+        statusSortPriority=0
     ):
         self.statusString = statusString
         self.pluralLabel = pluralLabel
         self.countLabel = countLabel
         self.hideMenuText = hideMenuText
         self.hideHelpText = hideHelpText
+        self.statusSortPriority = statusSortPriority
 
     # This is only used by uicommands so use default if the user configured 'no bitmap', because we
     # need one for the toolbar...
@@ -73,6 +75,7 @@ inactive = TaskStatus(
     _("Inactive tasks: %d (%d%%)"),
     _("Hide &inactive tasks"),
     _("Show/hide inactive tasks (incomplete tasks without actual start date)"),
+    statusSortPriority=2,
 )
 
 late = TaskStatus(
@@ -83,6 +86,7 @@ late = TaskStatus(
     _(
         "Show/hide late tasks (inactive tasks with a planned start in the past)"
     ),
+    statusSortPriority=4,
 )
 
 active = TaskStatus(
@@ -93,6 +97,7 @@ active = TaskStatus(
     _(
         "Show/hide active tasks (incomplete tasks with an actual start date in the past)"
     ),
+    statusSortPriority=3,
 )
 
 duesoon = TaskStatus(
@@ -103,6 +108,7 @@ duesoon = TaskStatus(
     _(
         "Show/hide due soon tasks (incomplete tasks with a due date in the near future)"
     ),
+    statusSortPriority=5,
 )
 
 overdue = TaskStatus(
@@ -113,6 +119,7 @@ overdue = TaskStatus(
     _(
         "Show/hide over due tasks (incomplete tasks with a due date in the past)"
     ),
+    statusSortPriority=6,
 )
 
 completed = TaskStatus(
@@ -121,4 +128,5 @@ completed = TaskStatus(
     _("Completed tasks: %d (%d%%)"),
     _("Hide &completed tasks"),
     _("Show/hide completed tasks"),
+    statusSortPriority=1,
 )

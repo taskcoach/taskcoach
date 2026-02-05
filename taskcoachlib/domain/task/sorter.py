@@ -71,9 +71,11 @@ class Sorter(base.TreeSorter):
     def __createStatusSortKey(self):
         if self.__sortByTaskStatusFirst:
             if self.isAscending():
-                return lambda task: [task.completed(), task.inactive()]
+                # Negate priority so higher priority (more urgent) sorts first
+                return lambda task: [-task.computedStatus().statusSortPriority]
             else:
-                return lambda task: [not task.completed(), not task.inactive()]
+                # For descending, use priority directly (higher sorts first)
+                return lambda task: [task.computedStatus().statusSortPriority]
         else:
             return lambda task: []
 
