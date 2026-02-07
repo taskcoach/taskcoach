@@ -19,58 +19,73 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import wx
 import wx.lib.buttons as buttons
 
+from taskcoachlib.meta.debug import log_step
 
-class _IconVListBox(wx.VListBox):
-    """Virtual list box with icon, label, and hints columns."""
+
+class _IconListCtrl(wx.ListCtrl):
+    """List control with 3 columns: Name (with icon), Hints, Internal."""
 
     ICON_SIZE = 16
-    ITEM_HEIGHT = 24
-    PADDING = 4
 
     def __init__(self, parent):
-        super().__init__(parent, style=wx.BORDER_NONE | wx.WANTS_CHARS | wx.TAB_TRAVERSAL | wx.VSCROLL)
+        super().__init__(parent, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.BORDER_NONE)
+
+        # Image list for icons
+        self._image_list = wx.ImageList(self.ICON_SIZE, self.ICON_SIZE)
+        self.SetImageList(self._image_list, wx.IMAGE_LIST_SMALL)
+
+        # 3 columns: Name (with icon), Hints, Internal
+        self.InsertColumn(0, _("Name"), width=200)
+        self.InsertColumn(1, _("Hints"), width=300)
+        self.InsertColumn(2, _("Internal"), width=100)
+
         self._items = []
         self._all_items = []
+        self._image_map = {}  # key -> image list index
         self._on_select_callback = None
-        self._max_label_width = 100
-        self._max_hints_width = 100
-        self._total_width = 300
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_LISTBOX))
-        self.Bind(wx.EVT_LEFT_DOWN, self._on_left_down)
-        self.Bind(wx.EVT_LEFT_DCLICK, self._on_left_dclick)
-        self.Bind(wx.EVT_KEY_DOWN, self._on_key_down)
-        self.Bind(wx.EVT_MOTION, self._on_motion)
+
         # Debounce timer for search filtering
         self._filter_timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self._on_filter_timer, self._filter_timer)
         self._pending_filter = ""
 
+        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self._on_item_activated)
+        self.Bind(wx.EVT_KEY_DOWN, self._on_key_down)
+
     def SetItems(self, items):
         """Set items: list of (key, label, bitmap, hints, enabled) tuples."""
         self._all_items = list(items)
         self._items = list(items)
-        self._calculate_column_widths()
-        self.SetItemCount(len(self._items))
-        self.Refresh()
+        self._rebuild_list()
 
-    def _calculate_column_widths(self):
-        dc = wx.ClientDC(self)
-        dc.SetFont(self.GetFont())
-        max_label = 0
-        max_hints = 0
-        for item in self._all_items:
-            label_width = dc.GetTextExtent(item[1])[0]
-            hints_width = dc.GetTextExtent(item[3])[0] if item[3] else 0
-            max_label = max(max_label, label_width)
-            max_hints = max(max_hints, hints_width)
-        self._max_label_width = max_label + 10
-        self._max_hints_width = max_hints + 10
-        self._total_width = (self.PADDING + self.ICON_SIZE + self.PADDING +
-                             self._max_label_width + self.PADDING +
-                             self._max_hints_width + self.PADDING)
+    def _rebuild_list(self):
+        """Rebuild the list from current _items."""
+        self.DeleteAllItems()
 
-    def GetPreferredWidth(self):
-        return self._total_width
+        for i, item in enumerate(self._items):
+            key, label, bmp, hints, enabled = item
+
+            # Add bitmap to image list if not already there
+            if key not in self._image_map:
+                if bmp and bmp.IsOk():
+                    if not enabled:
+                        # Greyscale for disabled items
+                        img = bmp.ConvertToImage().ConvertToGreyscale()
+                        idx = self._image_list.Add(img.ConvertToBitmap())
+                    else:
+                        idx = self._image_list.Add(bmp)
+                else:
+                    idx = -1  # No image
+                self._image_map[key] = idx
+
+            # Insert row: Name (with icon), Hints, Internal
+            idx = self.InsertItem(i, label, self._image_map.get(key, -1))
+            self.SetItem(idx, 1, hints or "")
+            self.SetItem(idx, 2, key)
+
+            # Grey out disabled items
+            if not enabled:
+                self.SetItemTextColour(idx, wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
 
     def FilterItems(self, filter_text):
         """Start debounced filter - waits 300ms after last keystroke."""
@@ -90,148 +105,56 @@ class _IconVListBox(wx.VListBox):
                 item for item in self._all_items
                 if self._matches_any_term(item, terms)
             ]
-        self.SetItemCount(len(self._items))
+        self._rebuild_list()
+
+        # Select first enabled item
         for i, item in enumerate(self._items):
             if item[4]:  # enabled
-                self.SetSelection(i)
+                self.Select(i)
+                self.EnsureVisible(i)
                 break
-        else:
-            self.SetSelection(wx.NOT_FOUND)
-        self.RefreshAll()
 
     def _matches_any_term(self, item, terms):
-        """Return True if ANY term is found in item's label or hints (OR search)."""
+        """Return True if ANY term is found in item's label, hints, or key (OR search)."""
+        key = item[0].lower()
         label = item[1].lower()
         hints = item[3].lower()
-        searchable = label + " " + hints
+        searchable = key + " " + label + " " + hints
         return any(term in searchable for term in terms)
 
     def GetSelectedItem(self):
-        sel = self.GetSelection()
-        if sel != wx.NOT_FOUND and 0 <= sel < len(self._items):
+        """Return the selected item tuple, or None."""
+        sel = self.GetFirstSelected()
+        if sel != -1 and 0 <= sel < len(self._items):
             return self._items[sel]
         return None
 
     def SelectByKey(self, key):
+        """Select item by key."""
         for i, item in enumerate(self._items):
             if item[0] == key:
-                self.SetSelection(i)
+                self.Select(i)
+                self.EnsureVisible(i)
                 return
 
     def SetSelectCallback(self, callback):
+        """Set callback for double-click/enter selection."""
         self._on_select_callback = callback
 
-    def _find_next_enabled(self, start, direction=1):
-        i = start
-        while 0 <= i < len(self._items):
-            if self._items[i][4]:  # enabled is index 4 now
-                return i
-            i += direction
-        return None
-
-    def OnMeasureItem(self, n):
-        return self.ITEM_HEIGHT
-
-    def OnDrawItem(self, dc, rect, n):
-        if n < 0 or n >= len(self._items):
-            return
-        key, label, bmp, hints, enabled = self._items[n]
-        is_selected = self.IsSelected(n)
-
-        # Get theme colors based on state
-        if not enabled:
-            text_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
-            hints_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
-        elif is_selected:
-            text_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
-            hints_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
-        else:
-            text_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_LISTBOXTEXT)
-            hints_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
-
-        # Draw icon
-        x = rect.x + self.PADDING
-        if bmp and bmp.IsOk():
-            bmp_y = rect.y + (rect.height - bmp.GetHeight()) // 2
-            if not enabled:
-                img = bmp.ConvertToImage().ConvertToGreyscale()
-                dc.DrawBitmap(img.ConvertToBitmap(), x, bmp_y, True)
-            else:
-                dc.DrawBitmap(bmp, x, bmp_y, True)
-
-        # Draw label
-        label_x = x + self.ICON_SIZE + self.PADDING
-        text_y = rect.y + (rect.height - dc.GetCharHeight()) // 2
-        dc.SetTextForeground(text_color)
-        display_label = wx.Control.Ellipsize(label, dc, wx.ELLIPSIZE_END, self._max_label_width)
-        dc.DrawText(display_label, label_x, text_y)
-
-        # Draw hints (grey, after label column)
-        if hints:
-            hints_x = label_x + self._max_label_width + self.PADDING
-            dc.SetTextForeground(hints_color)
-            display_hints = wx.Control.Ellipsize(hints, dc, wx.ELLIPSIZE_END, self._max_hints_width)
-            dc.DrawText(display_hints, hints_x, text_y)
-
-    def OnDrawBackground(self, dc, rect, n):
-        if n < 0 or n >= len(self._items):
-            return
-        is_selected = self.IsSelected(n)
-        bg_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_LISTBOX)
-        dc.SetBrush(wx.Brush(bg_color))
-        dc.SetPen(wx.TRANSPARENT_PEN)
-        dc.DrawRectangle(rect)
-        if is_selected:
-            highlight = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT)
-            dc.SetBrush(wx.Brush(highlight))
-            dc.DrawRectangle(rect)
-
-    def _on_left_down(self, event):
-        item_idx = self.VirtualHitTest(event.GetPosition().y)
-        if item_idx != wx.NOT_FOUND and 0 <= item_idx < len(self._items):
-            item = self._items[item_idx]
-            if item[4]:  # enabled
-                self.SetSelection(item_idx)
-                if self._on_select_callback:
-                    self._on_select_callback(*item)
-        event.Skip()
-
-    def _on_left_dclick(self, event):
-        self._on_left_down(event)
+    def _on_item_activated(self, event):
+        """Handle double-click or enter on item."""
+        item = self.GetSelectedItem()
+        if item and item[4] and self._on_select_callback:  # enabled
+            self._on_select_callback(*item)
 
     def _on_key_down(self, event):
         key = event.GetKeyCode()
         if key == wx.WXK_RETURN or key == wx.WXK_NUMPAD_ENTER:
-            sel = self.GetSelection()
-            if sel != wx.NOT_FOUND and 0 <= sel < len(self._items):
-                item = self._items[sel]
-                if item[4] and self._on_select_callback:
-                    self._on_select_callback(*item)
-        elif key == wx.WXK_DOWN:
-            sel = self.GetSelection()
-            next_idx = self._find_next_enabled(sel + 1 if sel != wx.NOT_FOUND else 0, 1)
-            if next_idx is not None:
-                self.SetSelection(next_idx)
-                self.Refresh()
-        elif key == wx.WXK_UP:
-            sel = self.GetSelection()
-            if sel == wx.NOT_FOUND:
-                sel = len(self._items)
-            prev_idx = self._find_next_enabled(sel - 1, -1)
-            if prev_idx is not None:
-                self.SetSelection(prev_idx)
-                self.Refresh()
+            item = self.GetSelectedItem()
+            if item and item[4] and self._on_select_callback:  # enabled
+                self._on_select_callback(*item)
         else:
             event.Skip()
-
-    def _on_motion(self, event):
-        item_idx = self.VirtualHitTest(event.GetPosition().y)
-        if item_idx != wx.NOT_FOUND and 0 <= item_idx < len(self._items):
-            if self._items[item_idx][4]:  # enabled
-                if item_idx != self.GetSelection():
-                    self.SetSelection(item_idx)
-                    self.Refresh()
-        event.Skip()
 
 
 class _IconDialog(wx.Dialog):
@@ -251,7 +174,7 @@ class _IconDialog(wx.Dialog):
         self._search.ShowCancelButton(True)
         sizer.Add(self._search, 0, wx.EXPAND | wx.ALL, 5)
 
-        self._listbox = _IconVListBox(panel)
+        self._listbox = _IconListCtrl(panel)
         self._listbox.SetItems(items)
         self._listbox.SetSelectCallback(self._on_item_selected)
         sizer.Add(self._listbox, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 5)
@@ -261,26 +184,25 @@ class _IconDialog(wx.Dialog):
         # Dialog layout: panel (search + list) + button bar
         dlgSizer = wx.BoxSizer(wx.VERTICAL)
         dlgSizer.Add(panel, 1, wx.EXPAND)
-        btnSizer = self.CreateButtonSizer(wx.OK | wx.CANCEL)
-        if btnSizer:
-            dlgSizer.Add(btnSizer, 0, wx.EXPAND | wx.ALL, 5)
+
+        # Button bar: Clear + OK + Cancel (all in standard sizer for consistent padding)
+        btnSizer = self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL)
+        self._clearBtn = wx.Button(self, wx.ID_CLEAR, _("Clear"))
+        # Insert Clear at the beginning (index 0)
+        btnSizer.Insert(0, self._clearBtn, 0, wx.LEFT | wx.RIGHT, 5)
+        btnSizer.Insert(1, (0, 0), 1)  # Stretch spacer after Clear
+        dlgSizer.Add(btnSizer, 0, wx.EXPAND | wx.ALL, 5)
+
         self.SetSizer(dlgSizer)
         self.Bind(wx.EVT_BUTTON, self._on_ok, id=wx.ID_OK)
+        self.Bind(wx.EVT_BUTTON, self._on_clear, id=wx.ID_CLEAR)
 
-        # Calculate dialog size - show all items, limited by screen height
-        list_height = len(items) * _IconVListBox.ITEM_HEIGHT
-        search_height = self._search.GetBestSize().GetHeight() + 12
-        btn_height = 40  # OK/Cancel button bar + padding
-        content_width = self._listbox.GetPreferredWidth() + 24
-        total_height = search_height + list_height + btn_height + 16
-
-        # Limit to 75% of screen height
+        # Dialog size: fixed width, 75% of screen height
         display = wx.Display(wx.Display.GetFromWindow(parent))
         screen_height = display.GetClientArea().GetHeight()
-        max_height = int(screen_height * 0.75)
-        total_height = min(total_height, max_height)
+        total_height = int(screen_height * 0.75)
 
-        self._desired_size = wx.Size(content_width, total_height)
+        self._desired_size = wx.Size(600, total_height)
 
         def _on_shown(evt):
             self.SetSize(self._desired_size)
@@ -331,6 +253,11 @@ class _IconDialog(wx.Dialog):
             self.EndModal(wx.ID_OK)
         # If nothing valid selected, don't close
 
+    def _on_clear(self, event):
+        """Clear button — select no icon."""
+        self._selected_item = ("", _("No icon"), None, "", True)
+        self.EndModal(wx.ID_OK)
+
     def _on_item_selected(self, key, label, bmp, hints, enabled):
         if enabled:
             self._selected_item = (key, label, bmp, hints, enabled)
@@ -370,18 +297,11 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
         self._current_bmp = None
         self._previous_key = ""
 
-        # Create transparent placeholder bitmap for "No icon" state.
-        # Required because GenBitmapButton.SetBitmapLabel() calls ConvertToImage()
-        # which fails on wx.NullBitmap with "invalid bitmap" assertion.
-        self._empty_bmp = wx.Bitmap(self.ICON_SIZE, self.ICON_SIZE, 32)
-        self._empty_bmp.UseAlpha()
-        dc = wx.MemoryDC(self._empty_bmp)
-        dc.SetBackground(wx.Brush(wx.Colour(0, 0, 0, 0)))
-        dc.Clear()
-        dc.SelectObject(wx.NullBitmap)
-
-        # Initialize with placeholder bitmap
-        super().__init__(parent, wx.ID_ANY, self._empty_bmp, "", style=wx.BORDER_NONE)
+        # Initialize button - GenBitmapButton requires a bitmap in constructor,
+        # but we immediately clear it. For "no icon" state, bmpLabel stays None.
+        # Never call SetBitmapLabel(None) - that hits wxPython bug #2093.
+        super().__init__(parent, wx.ID_ANY, wx.Bitmap(1, 1), "", style=wx.BORDER_NONE)
+        self.bmpLabel = None  # Clear - start with no icon
         self.SetUseFocusIndicator(True)
 
         self._load_icons()
@@ -392,18 +312,11 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
         self.Bind(wx.EVT_KEY_DOWN, self._on_key_down)
 
     def _load_icons(self):
-        """Load icons from artprovider.
-
-        If noIcon=True, "No icon" is added as the first item with key="".
-        """
+        """Load icons from artprovider."""
         # Import here to avoid circular import (widgets <- gui <- widgets)
         from taskcoachlib.gui import artprovider
 
-        # Add "No icon" as first item if enabled
-        if self._noIcon:
-            no_icon_item = ("", self.NO_ICON_LABEL, self._empty_bmp, "", True)
-            self._items.append(no_icon_item)
-            self._items_dict[""] = no_icon_item
+        # Note: "No icon" is handled via Clear button in dialog, not in list
 
         # Load icons from artprovider.chooseableItems
         # Sort by name for consistent ordering
@@ -434,6 +347,41 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
         rect = wx.Rect(3, 3, w - 6, h - 6)
         wx.RendererNative.Get().DrawFocusRect(self, dc, rect)
 
+    def SetBitmapLabel(self, bitmap, createOthers=True):
+        """Set bitmap label. Passing None/invalid bitmap is an error.
+
+        For "no icon" state, set bmpLabel=None directly instead of calling this.
+        This avoids wxPython bug #2093 where GenBitmapButton crashes on NullBitmap.
+        """
+        if bitmap is None or not bitmap.IsOk():
+            log_step("ERROR: SetBitmapLabel called with invalid bitmap - use bmpLabel=None instead",
+                     prefix="ICON")
+            return  # Ignore the call, don't crash
+        super().SetBitmapLabel(bitmap, createOthers)
+
+    def _get_icon_size(self):
+        """Return (width, height) of current icon, or (0, 0) if no icon."""
+        if self.bmpLabel and self.bmpLabel.IsOk():
+            return self.bmpLabel.GetWidth(), self.bmpLabel.GetHeight()
+        return 0, 0
+
+    def _get_layout_metrics(self):
+        """Return layout metrics for button content.
+
+        Returns (text_start_x, non_text_width, icon_size) where:
+        - text_start_x: x position where text drawing starts
+        - non_text_width: total width used by padding and icon (for width calculations)
+        - icon_size: (width, height) of icon, or (0, 0) if none
+        """
+        bw, bh = self._get_icon_size()
+        if bw > 0:
+            text_x = self.PADDING + bw + self.PADDING
+            overhead = bw + self.PADDING * 3
+        else:
+            text_x = self.PADDING
+            overhead = self.PADDING * 2
+        return text_x, overhead, (bw, bh)
+
     def _set_current(self, item):
         self._current_key = item[0]
         self._current_label = item[1]
@@ -445,8 +393,12 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
         if self._current_bmp and self._current_bmp.IsOk():
             self.SetBitmapLabel(self._current_bmp)
         else:
-            # Use placeholder bitmap for "No icon" - required by GenBitmapButton
-            self.SetBitmapLabel(self._empty_bmp)
+            # No icon - set internal state directly, never call SetBitmapLabel(None)
+            # This avoids wxPython bug #2093
+            self.bmpLabel = None
+            self.bmpDisabled = None
+            self.bmpFocus = None
+            self.bmpSelected = None
         if not self._fixedWidth:
             self.InvalidateBestSize()
             self.SetInitialSize()
@@ -457,22 +409,19 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
         self.Refresh()
 
     def DrawLabel(self, dc, width, height, dx=0, dy=0):
-        # Always reserve ICON_SIZE space for consistent layout
-        bmp = self.bmpLabel
-        has_valid_bmp = bmp is not None and bmp.IsOk()
+        text_x, overhead, (bw, bh) = self._get_layout_metrics()
 
-        if has_valid_bmp:
+        # Get the appropriate bitmap for current state
+        bmp = self.bmpLabel
+        if bmp and bmp.IsOk():
             if self.bmpDisabled and not self.IsEnabled():
                 bmp = self.bmpDisabled
             if self.bmpFocus and self.hasFocus:
                 bmp = self.bmpFocus
             if self.bmpSelected and not self.up:
                 bmp = self.bmpSelected
-            bw, bh = bmp.GetWidth(), bmp.GetHeight()
             hasMask = bmp.GetMask() is not None
         else:
-            # No icon, but still reserve space for consistent layout
-            bw, bh = self.ICON_SIZE, self.ICON_SIZE
             hasMask = False
 
         if not self.up:
@@ -485,35 +434,27 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
             dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
 
         label = self.GetLabel()
-        available_width = width - bw - self.PADDING * 3
+        available_width = width - overhead
         if available_width > 0:
             label = wx.Control.Ellipsize(label, dc, wx.ELLIPSIZE_END, available_width)
 
         tw, th = dc.GetTextExtent(label)
 
         # Draw icon if present
-        pos_x = self.PADDING + dx
-        if has_valid_bmp:
-            dc.DrawBitmap(bmp, pos_x, (height - bh) // 2 + dy, hasMask)
-        # Always advance past icon space for consistent text positioning
-        pos_x += bw + self.PADDING
+        if bw > 0 and bmp:
+            dc.DrawBitmap(bmp, self.PADDING + dx, (height - bh) // 2 + dy, hasMask)
 
-        dc.DrawText(label, pos_x, (height - th) // 2 + dy)
+        dc.DrawText(label, text_x + dx, (height - th) // 2 + dy)
 
     def DoGetBestSize(self):
+        _, overhead, (bw, bh) = self._get_layout_metrics()
         dc = wx.ClientDC(self)
         dc.SetFont(self.GetFont())
-        label = self.GetLabel()
-        tw, th = dc.GetTextExtent(label)
-        # Always include ICON_SIZE for consistent button size
-        bw, bh = self.ICON_SIZE, self.ICON_SIZE
-        if self.bmpLabel and self.bmpLabel.IsOk():
-            bw, bh = self.bmpLabel.GetWidth(), self.bmpLabel.GetHeight()
-        height = max(th, bh) + self.PADDING * 2
+        tw, th = dc.GetTextExtent(self.GetLabel())
+        height = max(th, bh) + self.PADDING * 2 if bh > 0 else th + self.PADDING * 2
         if self._fixedWidth:
             return wx.Size(self._fixedWidth, height)
-        width = self.PADDING + bw + self.PADDING + tw + self.PADDING
-        return wx.Size(width, height)
+        return wx.Size(overhead + tw, height)
 
     def _on_click(self, event):
         dialog = _IconDialog(self.GetTopLevelParent(), self._items, self._current_key)
@@ -537,7 +478,10 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
         self._setSelectionByValue(newValue)
 
     def _setSelectionByValue(self, newValue):
-        if newValue in self._items_dict:
+        if newValue == "" and self._noIcon:
+            # No icon selected - create item tuple directly
+            self._set_current(("", self.NO_ICON_LABEL, None, "", True))
+        elif newValue in self._items_dict:
             self._set_current(self._items_dict[newValue])
         elif self._items:
             self._set_current(self._items[0])

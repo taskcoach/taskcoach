@@ -45,6 +45,9 @@ import wx
 import wx.adv
 import wx.lib.buttons as buttons
 
+# Production IconPicker imported inside DemoFrame.__init__ after wx.App exists
+# (module-level _("No icon") requires wx.App for gettext initialization)
+
 
 # --- Test data with hints ---
 
@@ -1306,10 +1309,8 @@ class IconPickerButtonMF(buttons.ThemedGenBitmapTextButton):
     - GTK/Linux: MiniFrame with proper focus and caret visibility
     - macOS: Regular frame behavior (caret works natively)
 
-    The button always displays with active/enabled appearance, even when
-    "No icon" is selected. A transparent placeholder bitmap is required because
-    GenBitmapButton.SetBitmapLabel() calls bitmap.ConvertToImage() which fails
-    on wx.NullBitmap.
+    TEST: Removing placeholder bitmap - handle "No icon" by not calling
+    SetBitmapLabel at all.
     """
 
     PADDING = 8
@@ -1325,18 +1326,10 @@ class IconPickerButtonMF(buttons.ThemedGenBitmapTextButton):
         self._fixed_width = fixed_width
         self._popup_open = False
 
-        # Create transparent placeholder bitmap for "No icon" state.
-        # Required because GenBitmapButton.SetBitmapLabel() calls ConvertToImage()
-        # which fails on wx.NullBitmap with "invalid bitmap" assertion.
-        self._empty_bmp = wx.Bitmap(self.ICON_SIZE, self.ICON_SIZE, 32)
-        self._empty_bmp.UseAlpha()
-        dc = wx.MemoryDC(self._empty_bmp)
-        dc.SetBackground(wx.Brush(wx.Colour(0, 0, 0, 0)))
-        dc.Clear()
-        dc.SelectObject(wx.NullBitmap)
-
-        # Initialize with placeholder bitmap
-        super().__init__(parent, wx.ID_ANY, self._empty_bmp, "", style=wx.BORDER_NONE)
+        # Initialize with minimal bitmap to satisfy constructor, then clear it
+        # TEST: handle "No icon" without placeholder bitmap
+        super().__init__(parent, wx.ID_ANY, wx.Bitmap(1, 1), "", style=wx.BORDER_NONE)
+        self.bmpLabel = None  # Clear immediately - no placeholder needed
 
         # Enable focus indicator (disabled by default with BORDER_NONE)
         self.SetUseFocusIndicator(True)
@@ -1382,15 +1375,17 @@ class IconPickerButtonMF(buttons.ThemedGenBitmapTextButton):
         if self._current_bmp and self._current_bmp.IsOk():
             self.SetBitmapLabel(self._current_bmp)
         else:
-            # Use placeholder bitmap for "No icon" - required by GenBitmapButton
-            self.SetBitmapLabel(self._empty_bmp)
+            # TEST: No icon - set internal state directly, skip SetBitmapLabel
+            self.bmpLabel = None
+            self.bmpDisabled = None
+            self.bmpFocus = None
+            self.bmpSelected = None
         if not self._fixed_width:
             self.SetInitialSize()
             self.GetParent().Layout()
         self.Refresh()
 
     def DrawLabel(self, dc, width, height, dx=0, dy=0):
-        # Always reserve ICON_SIZE space for consistent layout
         bmp = self.bmpLabel
         has_valid_bmp = bmp is not None and bmp.IsOk()
 
@@ -1404,8 +1399,8 @@ class IconPickerButtonMF(buttons.ThemedGenBitmapTextButton):
             bw, bh = bmp.GetWidth(), bmp.GetHeight()
             hasMask = bmp.GetMask() is not None
         else:
-            # No icon, but still reserve space for consistent layout
-            bw, bh = self.ICON_SIZE, self.ICON_SIZE
+            # No icon - no space reserved
+            bw, bh = 0, 0
             hasMask = False
 
         if not self.up:
@@ -1421,7 +1416,8 @@ class IconPickerButtonMF(buttons.ThemedGenBitmapTextButton):
         # Account for arrow width in available space
         arrow_space = self.ARROW_WIDTH + self.PADDING
         if self._fixed_width:
-            available_width = width - bw - self.PADDING * 3 - arrow_space
+            icon_space = bw + self.PADDING if has_valid_bmp else 0
+            available_width = width - icon_space - self.PADDING * 2 - arrow_space
             if available_width > 0:
                 label = wx.Control.Ellipsize(label, dc, wx.ELLIPSIZE_END, available_width)
 
@@ -1431,10 +1427,9 @@ class IconPickerButtonMF(buttons.ThemedGenBitmapTextButton):
         pos_x = self.PADDING + dx
         if has_valid_bmp:
             dc.DrawBitmap(bmp, pos_x, (height - bh) // 2 + dy, hasMask)
-        # Always advance past icon space for consistent text positioning
-        pos_x += bw + self.PADDING
+            pos_x += bw + self.PADDING
 
-        # Draw text (after icon space)
+        # Draw text
         dc.DrawText(label, pos_x, (height - th) // 2 + dy)
 
         # Draw dropdown arrow (right-aligned) using native renderer
@@ -1450,12 +1445,15 @@ class IconPickerButtonMF(buttons.ThemedGenBitmapTextButton):
         dc.SetFont(self.GetFont())
         label = self.GetLabel()
         tw, th = dc.GetTextExtent(label)
-        # Always include ICON_SIZE for consistent button size
-        bw, bh = self.ICON_SIZE, self.ICON_SIZE
+        # Only include icon size if there's an icon
         if self.bmpLabel and self.bmpLabel.IsOk():
             bw, bh = self.bmpLabel.GetWidth(), self.bmpLabel.GetHeight()
+            icon_space = bw + self.PADDING
+        else:
+            bh = 0
+            icon_space = 0
         # Include arrow width in size calculation
-        width = self.PADDING + bw + self.PADDING + tw + self.PADDING + self.ARROW_WIDTH + self.PADDING
+        width = self.PADDING + icon_space + tw + self.PADDING + self.ARROW_WIDTH + self.PADDING
         height = max(th, bh) + self.PADDING * 2
         if self._fixed_width:
             width = self._fixed_width
@@ -1495,6 +1493,15 @@ class IconPickerButtonMF(buttons.ThemedGenBitmapTextButton):
 
 class DemoFrame(wx.Frame):
     def __init__(self):
+        # Initialize artprovider (must be done after wx.App exists)
+        from taskcoachlib.gui import artprovider
+        artprovider.init()
+
+        # Import production IconPicker here (after wx.App exists)
+        # Module-level _("No icon") in iconpicker.py requires wx.App for gettext
+        from taskcoachlib.widgets.iconpicker import IconPicker as ProductionIconPicker
+        self.ProductionIconPicker = ProductionIconPicker
+
         super().__init__(None, title="Icon Picker Demo - Full Features", size=(750, 900))
         panel = wx.Panel(self, style=wx.TAB_TRAVERSAL)
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -1565,20 +1572,20 @@ class DemoFrame(wx.Frame):
 
         sizer.Add(wx.StaticLine(panel), 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 2)
 
-        # === 4. MiniFrame-based Icon Picker (Recommended - cross-platform) ===
-        section_mf = wx.StaticText(panel, label="=== 4. MiniFrame-based Icon Picker (Recommended) ===")
+        # === 4. Production IconPicker (from taskcoachlib.widgets.iconpicker) ===
+        section_mf = wx.StaticText(panel, label="=== 4. Production IconPicker (Real Control) ===")
         section_mf.SetFont(section_mf.GetFont().Bold())
         sizer.Add(section_mf, 0, wx.LEFT | wx.TOP, 10)
 
-        # Control 4a: MiniFrame button auto width - starts with "No icon" to test visual appearance
-        sizer.Add(wx.StaticText(panel, label="4a. MINIFRAME (Auto width): Starts with 'No icon' - button should look active"), 0, wx.LEFT | wx.TOP, 5)
-        self._btn_mf_auto = IconPickerButtonMF(panel, items, current_key="")
+        # Control 4a: Production IconPicker - starts with "No icon" to test visual appearance
+        sizer.Add(wx.StaticText(panel, label="4a. PRODUCTION (Auto width): Starts with 'No icon' - button should look active"), 0, wx.LEFT | wx.TOP, 5)
+        self._btn_mf_auto = self.ProductionIconPicker(panel, currentIcon="")
         sizer.Add(self._btn_mf_auto, 0, wx.LEFT, 10)
 
-        # Control 4b: MiniFrame button 120px with comparison standard button
-        sizer.Add(wx.StaticText(panel, label="4b. MINIFRAME (120px) + Standard Button for focus comparison:"), 0, wx.LEFT | wx.TOP, 5)
+        # Control 4b: Production IconPicker 120px with comparison standard button
+        sizer.Add(wx.StaticText(panel, label="4b. PRODUCTION (120px) + Standard Button for focus comparison:"), 0, wx.LEFT | wx.TOP, 5)
         row_4b = wx.BoxSizer(wx.HORIZONTAL)
-        self._btn_mf_narrow = IconPickerButtonMF(panel, items, current_key="weather_lightning_icon", fixed_width=120)
+        self._btn_mf_narrow = self.ProductionIconPicker(panel, currentIcon="weather_lightning_icon", fixedWidth=120)
         row_4b.Add(self._btn_mf_narrow, 0)
         row_4b.Add((10, 0))  # Spacer
         self._btn_compare = wx.Button(panel, label="Standard Button")

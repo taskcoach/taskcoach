@@ -89,7 +89,7 @@ class UICheckCommand(BooleanSettingsCommand):
         # all platforms, most notably Gtk where providing our own bitmap causes
         # "(python:8569): Gtk-CRITICAL **: gtk_check_menu_item_set_active:
         # assertion `GTK_IS_CHECK_MENU_ITEM (check_menu_item)' failed"
-        return "nobitmap"
+        return None
 
 
 class UIRadioCommand(BooleanSettingsCommand):

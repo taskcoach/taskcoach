@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import wx
 from taskcoachlib import operating_system
 from taskcoachlib.gui.newid import IdProvider
+from taskcoachlib.meta.debug import log_step
 
 
 """ User interface commands (subclasses of UICommand) are actions that can
@@ -40,7 +41,7 @@ class UICommand(object):
         self,
         menuText="",
         helpText="",
-        bitmap="nobitmap",
+        bitmap=None,
         kind=wx.ITEM_NORMAL,
         id=None,
         bitmap2=None,
@@ -109,8 +110,18 @@ class UICommand(object):
             bitmap1 = self.__getBitmap(self.bitmap)
             bitmap2 = self.__getBitmap(self.bitmap2)
             menuItem.SetBitmaps(bitmap1, bitmap2)
-        elif self.bitmap and self.kind == wx.ITEM_NORMAL:
-            menuItem.SetBitmap(self.__getBitmap(self.bitmap))
+        elif self.kind == wx.ITEM_NORMAL:
+            if self.bitmap is None:
+                return  # No icon intended - correct, do nothing
+
+            bitmap = self.__getBitmap(self.bitmap)
+            if not bitmap.IsOk():
+                # TRAP: bitmap name given but invalid - this is an error
+                log_step("ERROR: invalid bitmap '%s' for menu item '%s'" %
+                         (self.bitmap, menuItem.GetItemLabelText()), prefix="ICON")
+                return
+
+            menuItem.SetBitmap(bitmap)
 
     def removeFromMenu(self, menu, window):
         for menuItem in self.menuItems:

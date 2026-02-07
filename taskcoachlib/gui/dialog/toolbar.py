@@ -50,14 +50,14 @@ class _ToolBarEditorInterior(wx.Panel):
         self.__imgListIndex = dict()
         empty = wx.Image(16, 16)
         empty.Replace(0, 0, 0, 255, 255, 255)
-        self.__imgListIndex["nobitmap"] = self.__imgList.Add(
+        self.__imgListIndex[None] = self.__imgList.Add(
             empty.ConvertToBitmap()
         )
         for uiCmd in toolbar.uiCommands():
             if (
                 uiCmd is not None
                 and not isinstance(uiCmd, int)
-                and uiCmd.bitmap != "nobitmap"
+                and uiCmd.bitmap is not None
             ):
                 self.__imgListIndex[uiCmd.bitmap] = self.__imgList.Add(
                     wx.ArtProvider.GetBitmap(
@@ -288,9 +288,9 @@ class _ToolBarEditorInterior(wx.Panel):
     def __GetItemTextAndImage(self, uiCmd):
         """Get display text and image index for a uiCommand."""
         if uiCmd is None:
-            return _("Separator"), self.__imgListIndex.get("nobitmap", -1)
+            return _("Separator"), self.__imgListIndex.get(None, -1)
         elif isinstance(uiCmd, int):
-            return _("Spacer"), self.__imgListIndex.get("nobitmap", -1)
+            return _("Spacer"), self.__imgListIndex.get(None, -1)
         else:
             return uiCmd.getHelpText(), self.__imgListIndex.get(uiCmd.bitmap, -1)
 

@@ -5,7 +5,8 @@ This document covers AUI-related topics for Task Coach, which uses wxPython's AG
 ## Contents
 
 1. [Layout Persistence](#layout-persistence)
-2. [Related Documentation](#related-documentation)
+2. [Sash Cursor Seep-Through Fix](#sash-cursor-seep-through-fix)
+3. [Related Documentation](#related-documentation)
 
 ---
 
@@ -112,6 +113,33 @@ The name is determined by `viewer.settingsSection()` in `taskcoachlib/gui/viewer
 | `taskcoachlib/gui/viewer/container.py` | `addViewer()` - adds panes to AUI manager |
 | `taskcoachlib/widgets/frame.py` | `addPane()` - configures AuiPaneInfo |
 | `taskcoachlib/config/settings.py` | Stores perspective in INI file |
+
+---
+
+## Sash Cursor Seep-Through Fix
+
+### Problem
+
+When a dialog or popup window is positioned over the main window's sash areas, the sash resize cursor incorrectly "seeps through" and appears when hovering over empty areas of the foreground window. Controls in the dialog block this correctly, but empty panel areas do not.
+
+**Key observation:** This is purely a visual cursor artifact - the sash cannot actually be dragged through the popup window.
+
+### Root Cause
+
+`wx.lib.agw.aui.AuiManager.OnSetCursor()` receives `EVT_SET_CURSOR` events and performs hit testing on sash rectangles without checking if another window is occluding the frame. Controls block the cursor seep-through because they handle `EVT_SET_CURSOR` themselves and set their own cursor. Empty areas let the event propagate to the main frame.
+
+### Solution
+
+Make dialogs handle `EVT_SET_CURSOR` the same way controls do - set a standard cursor without calling `Skip()`. This prevents the event from propagating to the main window's AuiManager.
+
+Implemented via monkey-patch on `wx.Dialog` at application startup in `taskcoachlib/widgets/__init__.py`.
+
+### Related Files
+
+| File | Purpose |
+|------|---------|
+| `taskcoachlib/widgets/__init__.py` | `_install_dialog_cursor_fix()` - patches wx.Dialog |
+| `wx/lib/agw/aui/framemanager.py` | System file - `OnSetCursor()` that causes the issue |
 
 ---
 

@@ -153806,6 +153806,2607 @@
       "sizes": [
         22
       ]
+    },
+    "emotes/face-crying.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48
+      ]
+    },
+    "emotes/face-worried.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48
+      ]
+    },
+    "emotes/face-smirk.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48
+      ]
+    },
+    "emotes/face-angel.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48
+      ]
+    },
+    "emotes/face-raspberry.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48
+      ]
+    },
+    "emotes/face-plain.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48
+      ]
+    },
+    "emotes/face-angry.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48
+      ]
+    },
+    "emotes/face-smile.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        48
+      ]
+    },
+    "emotes/face-surprise.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48
+      ]
+    },
+    "emotes/face-wink.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48
+      ]
+    },
+    "emotes/face-laugh.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48
+      ]
+    },
+    "emotes/face-sick.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48
+      ]
+    },
+    "emotes/face-cool.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48
+      ]
+    },
+    "emotes/face-kiss.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48
+      ]
+    },
+    "emotes/face-sad.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48
+      ]
+    },
+    "emotes/face-smile-big.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48
+      ]
+    },
+    "emotes/face-monkey.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48
+      ]
+    },
+    "emotes/face-glasses.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48
+      ]
+    },
+    "emotes/face-embarrassed.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48
+      ]
+    },
+    "emotes/face-devilish.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48
+      ]
+    },
+    "emotes/emote-love.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48
+      ]
+    },
+    "emotes/face-tired.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48
+      ]
+    },
+    "emotes/face-uncertain.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48
+      ]
+    },
+    "devices/knemo-modem-error.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/gnome-dev-ethernet.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/camera-web.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/drive-virtual.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/media-memory-sd.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/audio-input-microphone.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/blueman-handheld.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/media-optical-mixed-cd.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/blueman-keyboard.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/blueman-laptop.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-disc-cdr.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/blueman-smart-phone.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-printer.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/audio-speaker-center.png": {
+      "sizes": [
+        16,
+        48
+      ]
+    },
+    "devices/hifi.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/device_serial.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/device_cpu.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-harddisk-1394.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-disc-cdrw.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/phone-htc-g1-white.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/audio-subwoofer.png": {
+      "sizes": [
+        16,
+        48
+      ]
+    },
+    "devices/stock_cell-phone.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/audio-speaker-front-left-of-center.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/drive-removable-media-usb.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/audio-card.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/media-flash.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/knemo-wireless-transmit.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/serial-port.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/media-flash-smart-media.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/display.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-harddisk-usb.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/bus-usb.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/memory.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/audio-speaker-right-back.png": {
+      "sizes": [
+        16,
+        48
+      ]
+    },
+    "devices/network-vpn.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/network-wired.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/multimedia-player-ipod-mini-blue.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/laptop.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-dvd.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/ipodtouchicon.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/media-cdrom.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/multimedia-player-ipod-shuffle.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/blueman-device.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/battery.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-cdrom-audio.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/blueman-camera.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/multimedia-player-ipod-mini-pink.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/media-floppy.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/bluetooth.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/audio-headphones.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-keyboard.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/media-floppy-3_5.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/i-network-printer.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/device_usb.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/blueman-loudspeaker.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/lan-segment.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/drive-removable-media-usb-pendrive.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/computer-laptop.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/knemo-wireless-idle.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/drive-harddisk-root.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-media-cf.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/media-optical-dvd.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/knemo-modem-idle.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/gnome-dev-battery.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/media-optical-data.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/cpu.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-wavelan.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/audio-speaker-center-back.png": {
+      "sizes": [
+        16,
+        48
+      ]
+    },
+    "devices/multimedia-player-ipod-mini-green.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/drive-optical.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/audio-speaker-front-right-of-center.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/drive-harddisk.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/phone-google-nexus-one.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/printer-network.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-removable-1394.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/unity-fallback-mount-helper.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-disc-dvdr-plus.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/camera-video.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-cdrom.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/knemo-wireless-transmit-receive.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/blueman-mouse.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-computer.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/knemo-monitor-offline.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/gnome-dev-media-sm.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/drive-harddisk-system.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/knemo-monitor-error.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/multimedia-player-ipod-standard-color.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/phone-nokia-n900.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/knemo-modem-transmit-receive.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/multimedia-player-ipod-nano-black.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/knemo-network-error.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/multimedia-player-ipod-standard-monochrome.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/media-optical.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/network-server.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/knemo-network-transmit.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/device-notifier.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/gnome-dev-disc-dvdram.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/input-keyboard.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/video-display.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/phone.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/camera-photo.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/headphones.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/blueman-desktop.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/audio-speaker-left-side.png": {
+      "sizes": [
+        16,
+        48
+      ]
+    },
+    "devices/multimedia-player-ipod-mini-gold.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/knemo-monitor-receive.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/blockdevice.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/drive-multidisk.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-media-sdmmc.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/media-memory.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/blueman-headset.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-printer-new.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/media-optical-video.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/camera.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-phone-manager.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/knemo-wireless-offline.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/gnome-dev-media-ms.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/server-database.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/media-optical-recordable.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/knemo-network-receive.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/computer.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/drive-removable-media.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/audio-speaker-right-side.png": {
+      "sizes": [
+        16,
+        48
+      ]
+    },
+    "devices/audio-speaker-left-back.png": {
+      "sizes": [
+        16,
+        48
+      ]
+    },
+    "devices/input-touchpad.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-harddisk.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/multimedia-player-ipod-mini-silver.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/scanner.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-mouse-ball.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/knemo-modem-receive.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/multimedia-player-ipod-nano-white.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/system.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-removable.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/smartphone.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/input-dialpad.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/knemo-wireless-receive.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/knemo-network-offline.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/knemo-monitor-transmit.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/vmware-memory.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/blueman-scanner.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-removable-usb.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/input-mouse.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/device_pci.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/knemo-network-idle.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/audio-speaker-right.png": {
+      "sizes": [
+        16,
+        48
+      ]
+    },
+    "devices/gnome-dev-memory.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/blueman-server.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/knemo-modem-transmit.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/drive-harddisk-ieee1394.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/audio-speakers.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/media-flash-sd-mmc.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/input-tablet.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/blueman-cellular.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-ipod.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/uninterruptible-power-supply.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/removable-media.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/tv.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/gnome-dev-disc-dvdr.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/phone-palm-pre.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/media-optical-dvd-video.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/media-tape.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/network-wireless.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/audio-speaker-left.png": {
+      "sizes": [
+        16,
+        48
+      ]
+    },
+    "devices/input-gaming.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/joystick.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/soundcard.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/multimedia-player.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/knemo-modem-offline.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/knemo-wireless-error.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/media-optical-audio.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-disc-dvdrom.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/multimedia-player-ipod-nano-green.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/gnome-dev-disc-dvdrw.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/knemo-monitor-idle.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/blueman-handsfree.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-mouse-optical.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/media-optical-blu-ray.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/knemo-network-transmit-receive.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/blueman-pointing.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/media-removable.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/gnome-dev-floppy.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/network-server-database.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/keyboard.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/knemo-monitor-transmit-receive.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/multimedia-player-ipod-U2-color.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/audio-headset.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "devices/multimedia-player-ipod-U2-monochrome.png": {
+      "sizes": [
+        16
+      ]
+    },
+    "devices/printer.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/steam_icon_1055540.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/cockatrice.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/org.gnome.Polari.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/fez.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/yast-sw_source.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/yast-timezone.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/qemu-system-x86_64-spice.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/aircrack-ng.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/FlashCS6.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/radeon-profile.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/xnretro.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/indicator-stickynotes.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/org.avidemux.Avidemux.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/gnome-robots.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/org.mpdevil.mpdevil.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/mdmsetup.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/distributor-logo-calculate-linux.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/GammaRay.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/org.gnome.design.VectorSlicer.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/wsw.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/designer5.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/PCSX2.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/dotmemory.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/so.libdb.gtkcord4.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/org.gnome.Meld.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/sgt-launcher.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/custom-toolbox.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/dupeguru.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/com.scoutshonour.dtipbijays.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/git.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/jami-gnome.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/device-notifier.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/pocket.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/com.github.davidmhewitt.torrential.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/statalogo_14.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/wassabee.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/io.elementary.videos.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/smc.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/lutris_shadwen.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/org.gnome.Four-in-a-row.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/guitarpro6.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/godot.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/starbound.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/four-in-a-row.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/half-life-alyx.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/steam_icon_546560.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/io.elementary.appcenter.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/input-tablet.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/ardour.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/tigervnc.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/com.github.basjam.valacompiler.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/messengerfordesktop.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/lutris_emily-is-away-too.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/org.gnome.NetworkDisplays.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/mx-alerts.png": {
+      "sizes": [
+        16,
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "panel/knemo-modem-error.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-wireless-transmit.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/network-vpn.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/network-wired.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-wireless-idle.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-modem-idle.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/drive-harddisk.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-wireless-transmit-receive.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-monitor-offline.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-monitor-error.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-modem-transmit-receive.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-network-error.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-network-transmit.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-monitor-receive.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-wireless-offline.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-network-receive.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-modem-receive.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-wireless-receive.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-network-offline.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-monitor-transmit.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-network-idle.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-modem-transmit.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/network-wireless.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-modem-offline.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-wireless-error.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-monitor-idle.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-network-transmit-receive.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/knemo-monitor-transmit-receive.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "panel/printer.png": {
+      "sizes": [
+        16,
+        22,
+        24
+      ]
+    },
+    "apps/display.png": {
+      "sizes": [
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "apps/printer.png": {
+      "sizes": [
+        22,
+        24,
+        32,
+        48,
+        64
+      ]
+    },
+    "status/bluetooth.png": {
+      "sizes": [
+        48
+      ]
+    },
+    "status/face-cool.png": {
+      "sizes": [
+        48
+      ]
     }
   }
 }

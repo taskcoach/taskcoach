@@ -61,3 +61,28 @@ from .numericctrl import NumericCtrl
 from .currencyctrl import CurrencyCtrl
 from . import masked
 from wx.lib import sized_controls
+import wx
+
+
+def _install_dialog_cursor_fix():
+    """Prevent cursor seep-through from main window behind dialogs.
+
+    Dialogs with empty areas (no controls) let EVT_SET_CURSOR propagate
+    to the parent window, causing sash resize cursors to show through.
+    This patch makes all dialogs handle EVT_SET_CURSOR with a standard
+    cursor, preventing propagation - same pattern controls use.
+    """
+    _original_dialog_init = wx.Dialog.__init__
+
+    def _patched_dialog_init(self, *args, **kwargs):
+        _original_dialog_init(self, *args, **kwargs)
+        self.Bind(wx.EVT_SET_CURSOR, _on_set_cursor_standard)
+
+    def _on_set_cursor_standard(event):
+        # Set standard arrow cursor - prevents seep-through from parent
+        event.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
+
+    wx.Dialog.__init__ = _patched_dialog_init
+
+
+_install_dialog_cursor_fix()
