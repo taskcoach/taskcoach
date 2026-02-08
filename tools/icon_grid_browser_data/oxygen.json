@@ -5230,107 +5230,128 @@
     "oxygen_actions_object-order-back-calligra": {
       "category": "actions",
       "file": "object-order-back-calligra.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["back", "order", "layer", "behind", "stack", "arrange", "object", "calligra"]
     },
     "oxygen_actions_geany-build": {
       "category": "actions",
       "file": "geany-build.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["build", "compile", "gear", "cog", "geany", "make", "run", "execute"]
     },
     "oxygen_actions_format-font-size-more": {
       "category": "actions",
       "file": "format-font-size-more.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["font", "size", "increase", "larger", "bigger", "text", "zoom", "format"]
     },
     "oxygen_actions_call-stop": {
       "category": "actions",
       "file": "call-stop.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["call", "stop", "hangup", "phone", "end", "red", "decline", "reject"]
     },
     "oxygen_actions_mail-meeting-request-reply": {
       "category": "actions",
       "file": "mail-meeting-request-reply.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["meeting", "reply", "mail", "calendar", "invitation", "respond", "request", "event"]
     },
     "oxygen_actions_mail-reply-all": {
       "category": "actions",
       "file": "mail-reply-all.png",
-      "sizes": [16, 22, 32, 48, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["reply", "all", "mail", "email", "respond", "envelope", "message", "everyone"]
     },
     "oxygen_actions_debug-step-into": {
       "category": "actions",
       "file": "debug-step-into.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["debug", "step", "into", "code", "function", "enter", "breakpoint", "trace"]
     },
     "oxygen_actions_distribute-vertical-margin": {
       "category": "actions",
       "file": "distribute-vertical-margin.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["distribute", "vertical", "margin", "spacing", "align", "layout", "even", "gap"]
     },
     "oxygen_actions_practice-start": {
       "category": "actions",
       "file": "practice-start.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["practice", "start", "play", "begin", "run", "exercise", "training", "learn"]
     },
     "oxygen_actions_fileview-preview": {
       "category": "actions",
       "file": "fileview-preview.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["preview", "file", "view", "thumbnail", "image", "picture", "look", "display"]
     },
     "oxygen_actions_games-difficult": {
       "category": "actions",
       "file": "games-difficult.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["difficult", "hard", "level", "games", "challenge", "bars", "chart", "skill"]
     },
     "oxygen_actions_view-certificate": {
       "category": "actions",
       "file": "view-certificate.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["certificate", "diploma", "award", "ribbon", "seal", "security", "ssl", "credential"]
     },
     "oxygen_actions_dialog-filters": {
       "category": "actions",
       "file": "dialog-filters.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["filter", "funnel", "sort", "search", "narrow", "refine", "dialog", "criteria"]
     },
     "oxygen_actions_document-export-table": {
       "category": "actions",
       "file": "document-export-table.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["export", "table", "database", "spreadsheet", "data", "csv", "save", "extract"]
     },
     "oxygen_actions_edit-find-replace": {
       "category": "actions",
       "file": "edit-find-replace.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["find", "replace", "search", "substitute", "magnifier", "pencil", "text", "change"]
     },
     "oxygen_actions_view-calendar-month": {
       "category": "actions",
       "file": "view-calendar-month.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["calendar", "month", "view", "schedule", "date", "grid", "planner", "days"]
     },
     "oxygen_actions_mail-mark-important": {
       "category": "actions",
       "file": "mail-mark-important.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["important", "mail", "email", "exclamation", "priority", "urgent", "flag", "alert"]
     },
     "oxygen_actions_office-chart-bar-stacked": {
       "category": "actions",
       "file": "office-chart-bar-stacked.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["chart", "bar", "stacked", "graph", "statistics", "data", "office", "report"]
     },
     "oxygen_actions_object-flip-horizontal": {
       "category": "actions",
       "file": "object-flip-horizontal.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["flip", "horizontal", "mirror", "reverse", "transform", "reflect", "object", "image"]
     },
     "oxygen_actions_view-resource-calendar": {
       "category": "actions",
       "file": "view-resource-calendar.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["resource", "calendar", "schedule", "planning", "cube", "allocation", "project", "view"]
     },
     "oxygen_actions_gpgsm": {
       "category": "actions",
       "file": "gpgsm.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["gpg", "encryption", "security", "lock", "padlock", "certificate", "smime", "key"]
     },
     "oxygen_actions_transform-rotate": {
       "category": "actions",
