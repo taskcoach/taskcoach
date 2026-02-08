@@ -5698,72 +5698,86 @@
     "oxygen_actions_mail-signed": {
       "category": "actions",
       "file": "mail-signed.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["mail", "signed", "email", "envelope", "signature", "certificate", "secure"]
     },
     "oxygen_actions_align-horizontal-center": {
       "category": "actions",
       "file": "align-horizontal-center.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["align", "horizontal", "center", "layout", "middle", "objects"]
     },
     "oxygen_actions_document-edit": {
       "category": "actions",
       "file": "document-edit.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["document", "edit", "pencil", "write", "modify", "paper", "page"]
     },
     "oxygen_actions_format-text-color": {
       "category": "actions",
       "file": "format-text-color.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["text", "color", "format", "font", "typography", "A", "palette"]
     },
     "oxygen_actions_tab-new": {
       "category": "actions",
       "file": "tab-new.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["tab", "new", "add", "page", "browser", "window", "starburst"]
     },
     "oxygen_actions_window-close": {
       "category": "actions",
       "file": "window-close.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["window", "close", "red", "x", "exit", "button", "quit"]
     },
     "oxygen_actions_view-pim-notes": {
       "category": "actions",
       "file": "view-pim-notes.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["notes", "pim", "sticky", "yellow", "memo", "reminder", "view"]
     },
     "oxygen_actions_im-kick-user": {
       "category": "actions",
       "file": "im-kick-user.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["kick", "user", "im", "remove", "ban", "person", "x", "chat"]
     },
     "oxygen_actions_Info-amarok": {
       "category": "actions",
       "file": "Info-amarok.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["info", "amarok", "flower", "music", "about", "wolf", "player"]
     },
     "oxygen_actions_tab-close-other": {
       "category": "actions",
       "file": "tab-close-other.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["tab", "close", "other", "x", "red", "browser", "window"]
     },
     "oxygen_actions_view-right-close": {
       "category": "actions",
       "file": "view-right-close.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "right", "close", "panel", "sidebar", "split", "window"]
     },
     "oxygen_actions_view-time-schedule-calculus": {
       "category": "actions",
       "file": "view-time-schedule-calculus.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["schedule", "time", "calculator", "calculus", "planning", "timetable"]
     },
     "oxygen_actions_document-import-ocal": {
       "category": "actions",
       "file": "document-import-ocal.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["document", "import", "ocal", "clipart", "arrow", "download"]
     },
     "oxygen_actions_irc-channel-active": {
       "category": "actions",
       "file": "irc-channel-active.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["irc", "channel", "active", "chat", "hashtag", "green", "bubble"]
     },
     "oxygen_actions_open-for-editing": {
       "category": "actions",
