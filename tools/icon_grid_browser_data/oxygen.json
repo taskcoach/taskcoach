@@ -6358,72 +6358,86 @@
     "oxygen_actions_view-calendar-agenda": {
       "category": "actions",
       "file": "view-calendar-agenda.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "calendar", "agenda", "schedule", "list", "date", "events"]
     },
     "oxygen_actions_run-build-install-root": {
       "category": "actions",
       "file": "run-build-install-root.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["run", "build", "install", "root", "gear", "admin", "arrow", "execute"]
     },
     "oxygen_actions_format-justify-right": {
       "category": "actions",
       "file": "format-justify-right.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["format", "justify", "right", "align", "text", "lines", "paragraph"]
     },
     "oxygen_actions_shear": {
       "category": "actions",
       "file": "shear.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["shear", "transform", "skew", "slant", "parallelogram", "distort", "shape"]
     },
     "oxygen_actions_mail-encrypted": {
       "category": "actions",
       "file": "mail-encrypted.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["mail", "encrypted", "lock", "padlock", "secure", "email", "protection"]
     },
     "oxygen_actions_stroke-join-bevel": {
       "category": "actions",
       "file": "stroke-join-bevel.png",
-      "sizes": [16, 32, 48]
+      "sizes": [16, 32, 48],
+      "hints": ["stroke", "join", "bevel", "corner", "line", "path", "angle"]
     },
     "oxygen_actions_labplot-transform-move": {
       "category": "actions",
       "file": "labplot-transform-move.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["labplot", "transform", "move", "arrows", "position", "drag", "crosshair"]
     },
     "oxygen_actions_dialog-fill-and-stroke": {
       "category": "actions",
       "file": "dialog-fill-and-stroke.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["dialog", "fill", "stroke", "color", "shape", "paint", "outline"]
     },
     "oxygen_actions_view-calendar-journal": {
       "category": "actions",
       "file": "view-calendar-journal.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "calendar", "journal", "diary", "date", "notes", "log"]
     },
     "oxygen_actions_view-task": {
       "category": "actions",
       "file": "view-task.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "task", "todo", "checklist", "clipboard", "checkmark", "list"]
     },
     "oxygen_actions_document-edit-sign-encrypt": {
       "category": "actions",
       "file": "document-edit-sign-encrypt.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["document", "edit", "sign", "encrypt", "pencil", "secure", "signature"]
     },
     "oxygen_actions_go-next": {
       "category": "actions",
       "file": "go-next.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["go", "next", "arrow", "right", "forward", "navigate", "blue"]
     },
     "oxygen_actions_go-first": {
       "category": "actions",
       "file": "go-first.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["go", "first", "arrow", "left", "beginning", "start", "navigate", "blue"]
     },
     "oxygen_actions_umbr-coll-message-synchronous": {
       "category": "actions",
       "file": "umbr-coll-message-synchronous.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["uml", "collaboration", "message", "synchronous", "diagram", "arrow", "umbrello"]
     },
     "oxygen_actions_draw-polygon": {
       "category": "actions",
