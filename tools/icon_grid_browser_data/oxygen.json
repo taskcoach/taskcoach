@@ -6280,67 +6280,80 @@
     "oxygen_actions_distribute-vertical-center": {
       "category": "actions",
       "file": "distribute-vertical-center.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["distribute", "vertical", "center", "layout", "spacing", "objects", "arrange"]
     },
     "oxygen_actions_view-web-browser-dom-tree": {
       "category": "actions",
       "file": "view-web-browser-dom-tree.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "web", "browser", "dom", "tree", "globe", "html", "developer"]
     },
     "oxygen_actions_edit-cut": {
       "category": "actions",
       "file": "edit-cut.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["edit", "cut", "scissors", "clipboard", "snip", "remove", "trim"]
     },
     "oxygen_actions_document-open-folder": {
       "category": "actions",
       "file": "document-open-folder.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["document", "open", "folder", "file", "directory", "browse", "blue"]
     },
     "oxygen_actions_view-fullscreen": {
       "category": "actions",
       "file": "view-fullscreen.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "fullscreen", "expand", "maximize", "window", "arrows", "screen"]
     },
     "oxygen_actions_document-save": {
       "category": "actions",
       "file": "document-save.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["document", "save", "floppy", "disk", "file", "store", "write"]
     },
     "oxygen_actions_tools-report-bug": {
       "category": "actions",
       "file": "tools-report-bug.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["tools", "report", "bug", "ladybug", "insect", "issue", "error", "debug"]
     },
     "oxygen_actions_format-connect-node": {
       "category": "actions",
       "file": "format-connect-node.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["format", "connect", "node", "link", "path", "join", "line"]
     },
     "oxygen_actions_zoom-in-large": {
       "category": "actions",
       "file": "zoom-in-large.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["zoom", "in", "large", "magnify", "plus", "enlarge", "glass"]
     },
     "oxygen_actions_text-frame-unlink": {
       "category": "actions",
       "file": "text-frame-unlink.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["text", "frame", "unlink", "disconnect", "break", "chain", "document"]
     },
     "oxygen_actions_selection-lower": {
       "category": "actions",
       "file": "selection-lower.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["selection", "lower", "back", "behind", "layer", "order", "arrange"]
     },
     "oxygen_actions_gtk-connect": {
       "category": "actions",
       "file": "gtk-connect.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["connect", "connection", "checkmark", "network", "link", "online", "green"]
     },
     "oxygen_actions_project-open": {
       "category": "actions",
       "file": "project-open.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["project", "open", "folder", "files", "workspace", "load", "browse"]
     },
     "oxygen_actions_view-calendar-agenda": {
       "category": "actions",
