@@ -6190,77 +6190,92 @@
     "oxygen_actions_draw-star": {
       "category": "actions",
       "file": "draw-star.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["draw", "star", "shape", "favorite", "create", "five-pointed", "outline"]
     },
     "oxygen_actions_media-skip-forward": {
       "category": "actions",
       "file": "media-skip-forward.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["media", "skip", "forward", "next", "track", "player", "audio", "button"]
     },
     "oxygen_actions_document-edit-verify": {
       "category": "actions",
       "file": "document-edit-verify.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["document", "edit", "verify", "check", "magnify", "search", "inspect", "review"]
     },
     "oxygen_actions_document-export": {
       "category": "actions",
       "file": "document-export.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["document", "export", "arrow", "save", "out", "file", "send"]
     },
     "oxygen_actions_ratiocrop": {
       "category": "actions",
       "file": "ratiocrop.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["ratio", "crop", "aspect", "image", "resize", "cut", "proportion"]
     },
     "oxygen_actions_mail-forwarded-replied": {
       "category": "actions",
       "file": "mail-forwarded-replied.png",
-      "sizes": [16, 48]
+      "sizes": [16, 48],
+      "hints": ["mail", "forwarded", "replied", "email", "envelope", "arrows", "response"]
     },
     "oxygen_actions_window-next": {
       "category": "actions",
       "file": "window-next.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["window", "next", "forward", "arrow", "green", "navigate", "switch"]
     },
     "oxygen_actions_list-add-font": {
       "category": "actions",
       "file": "list-add-font.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["list", "add", "font", "text", "plus", "green", "typography", "letter"]
     },
     "oxygen_actions_games-config-custom": {
       "category": "actions",
       "file": "games-config-custom.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["games", "config", "custom", "controller", "hammer", "settings", "gamepad"]
     },
     "oxygen_actions_align-vertical-bottom-to-anchor": {
       "category": "actions",
       "file": "align-vertical-bottom-to-anchor.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["align", "vertical", "bottom", "anchor", "layout", "objects", "arrange"]
     },
     "oxygen_actions_bookmark-new-list": {
       "category": "actions",
       "file": "bookmark-new-list.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["bookmark", "new", "list", "star", "plus", "favorite", "add", "yellow"]
     },
     "oxygen_actions_media-eject": {
       "category": "actions",
       "file": "media-eject.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["media", "eject", "disc", "remove", "button", "up", "arrow", "player"]
     },
     "oxygen_actions_new-command-alarm": {
       "category": "actions",
       "file": "new-command-alarm.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["new", "command", "alarm", "clock", "timer", "plus", "add", "schedule"]
     },
     "oxygen_actions_transform-crop": {
       "category": "actions",
       "file": "transform-crop.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["transform", "crop", "cut", "image", "selection", "resize", "tool"]
     },
     "oxygen_actions_services": {
       "category": "actions",
       "file": "services.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["services", "flag", "blue", "banner", "system", "daemon", "process"]
     },
     "oxygen_actions_distribute-vertical-center": {
       "category": "actions",
