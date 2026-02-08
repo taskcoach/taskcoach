@@ -5530,72 +5530,86 @@
     "oxygen_actions_mail-message-new": {
       "category": "actions",
       "file": "mail-message-new.png",
-      "sizes": [16, 22, 32, 48, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["mail", "message", "new", "email", "envelope", "compose", "plus", "write"]
     },
     "oxygen_actions_edit-paste": {
       "category": "actions",
       "file": "edit-paste.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["paste", "clipboard", "document", "paper", "insert", "copy"]
     },
     "oxygen_actions_insert-table-row": {
       "category": "actions",
       "file": "insert-table-row.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["table", "row", "insert", "add", "grid", "spreadsheet", "plus"]
     },
     "oxygen_actions_games-solve": {
       "category": "actions",
       "file": "games-solve.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["solve", "game", "magic", "wand", "hint", "sparkle", "auto"]
     },
     "oxygen_actions_page-2sides": {
       "category": "actions",
       "file": "page-2sides.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["page", "duplex", "double-sided", "print", "two", "sides", "document"]
     },
     "oxygen_actions_distribute-horizontal-page": {
       "category": "actions",
       "file": "distribute-horizontal-page.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["distribute", "horizontal", "page", "layout", "arrange", "align", "objects"]
     },
     "oxygen_actions_kdenlive-select-tool": {
       "category": "actions",
       "file": "kdenlive-select-tool.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["select", "tool", "cursor", "pointer", "arrow", "click", "mouse"]
     },
     "oxygen_actions_amarok_playcount": {
       "category": "actions",
       "file": "amarok_playcount.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["playcount", "bar chart", "statistics", "music", "plays", "amarok", "count"]
     },
     "oxygen_actions_x-shape-image": {
       "category": "actions",
       "file": "x-shape-image.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["image", "picture", "photo", "shape", "landscape", "mountains", "insert"]
     },
     "oxygen_actions_code-context": {
       "category": "actions",
       "file": "code-context.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["code", "context", "braces", "curly", "programming", "scope", "block"]
     },
     "oxygen_actions_kt-stop": {
       "category": "actions",
       "file": "kt-stop.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["stop", "media", "button", "square", "halt", "player", "pause"]
     },
     "oxygen_actions_labplot-auto-scale-y": {
       "category": "actions",
       "file": "labplot-auto-scale-y.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["auto", "scale", "y-axis", "plot", "graph", "chart", "vertical"]
     },
     "oxygen_actions_mail-send": {
       "category": "actions",
       "file": "mail-send.png",
-      "sizes": [16, 22, 32, 48, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["mail", "send", "stamp", "postage", "email", "post", "letter"]
     },
     "oxygen_actions_mail-queue": {
       "category": "actions",
       "file": "mail-queue.png",
-      "sizes": [16, 22, 32, 48, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["mail", "queue", "envelope", "outbox", "email", "pending", "letter"]
     },
     "oxygen_actions_go-next-use": {
       "category": "actions",
