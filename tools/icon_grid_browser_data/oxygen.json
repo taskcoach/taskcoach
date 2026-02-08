@@ -2962,97 +2962,116 @@
     "oxygen_mimetypes_application-x-applix-spreadsheet": {
       "category": "mimetypes",
       "file": "application-x-applix-spreadsheet.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["applix", "spreadsheet", "table", "grid", "calc", "document", "office", "data"]
     },
     "oxygen_mimetypes_video-x-msvideo": {
       "category": "mimetypes",
       "file": "video-x-msvideo.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["avi", "msvideo", "video", "movie", "film", "media", "windows", "microsoft"]
     },
     "oxygen_mimetypes_text-x-python": {
       "category": "mimetypes",
       "file": "text-x-python.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["python", "code", "script", "programming", "source", "py", "language", "developer"]
     },
     "oxygen_mimetypes_video-mp4": {
       "category": "mimetypes",
       "file": "video-mp4.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["mp4", "video", "movie", "film", "media", "h264", "mpeg4", "codec"]
     },
     "oxygen_mimetypes_text-vnd.wap.wml": {
       "category": "mimetypes",
       "file": "text-vnd.wap.wml.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["wml", "wap", "wireless", "mobile", "markup", "web", "phone", "document"]
     },
     "oxygen_mimetypes_application-x-trash": {
       "category": "mimetypes",
       "file": "application-x-trash.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["trash", "deleted", "recycle", "garbage", "bin", "waste", "remove", "discard"]
     },
     "oxygen_mimetypes_application-vnd.oasis.opendocument.drawing": {
       "category": "mimetypes",
       "file": "application-vnd.oasis.opendocument.drawing.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["odg", "draw", "drawing", "vector", "graphic", "opendocument", "illustration", "art"]
     },
     "oxygen_mimetypes_image-x-vnd.trolltech.qpicture": {
       "category": "mimetypes",
       "file": "image-x-vnd.trolltech.qpicture.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["qpicture", "qt", "image", "vector", "trolltech", "graphic", "picture", "drawing"]
     },
     "oxygen_mimetypes_application-pkcs7-mime": {
       "category": "mimetypes",
       "file": "application-pkcs7-mime.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["pkcs7", "encrypted", "security", "certificate", "signed", "crypto", "smime", "secure"]
     },
     "oxygen_mimetypes_application-x-flash-video": {
       "category": "mimetypes",
       "file": "application-x-flash-video.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["flv", "flash", "video", "swf", "movie", "media", "adobe", "streaming"]
     },
     "oxygen_mimetypes_text-x-generic": {
       "category": "mimetypes",
       "file": "text-x-generic.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["text", "txt", "plain", "document", "file", "generic", "notepad", "ascii"]
     },
     "oxygen_mimetypes_video-x-flic": {
       "category": "mimetypes",
       "file": "video-x-flic.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["flic", "animation", "video", "autodesk", "flc", "movie", "film", "animator"]
     },
     "oxygen_mimetypes_application-vnd.oasis.opendocument.presentation-template": {
       "category": "mimetypes",
       "file": "application-vnd.oasis.opendocument.presentation-template.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["otp", "presentation", "template", "slides", "impress", "opendocument", "slideshow", "office"]
     },
     "oxygen_mimetypes_libreoffice-presentation-template": {
       "category": "mimetypes",
       "file": "libreoffice-presentation-template.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["libreoffice", "presentation", "template", "slides", "impress", "otp", "slideshow", "potx"]
     },
     "oxygen_mimetypes_application-xml": {
       "category": "mimetypes",
       "file": "application-xml.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["xml", "markup", "data", "code", "configuration", "web", "document", "structured"]
     },
     "oxygen_mimetypes_unknown": {
       "category": "mimetypes",
       "file": "unknown.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["unknown", "file", "generic", "unrecognized", "mystery", "document", "question", "undefined"]
     },
     "oxygen_mimetypes_text-x-csharp": {
       "category": "mimetypes",
       "file": "text-x-csharp.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["csharp", "dotnet", "code", "programming", "microsoft", "source", "cs", "mono"]
     },
     "oxygen_mimetypes_application-x-kdenlivetitle": {
       "category": "mimetypes",
       "file": "application-x-kdenlivetitle.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["kdenlive", "title", "video", "editor", "movie", "kde", "film", "subtitle"]
     },
     "oxygen_mimetypes_application-x-deb": {
       "category": "mimetypes",
       "file": "application-x-deb.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["deb", "debian", "package", "install", "linux", "ubuntu", "apt", "dpkg"]
     },
     "oxygen_mimetypes_application-x-pak": {
       "category": "mimetypes",
