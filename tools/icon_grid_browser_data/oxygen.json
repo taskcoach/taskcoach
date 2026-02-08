@@ -4516,97 +4516,116 @@
     "oxygen_mimetypes_text-x-sql": {
       "category": "mimetypes",
       "file": "text-x-sql.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["sql", "database", "query", "db", "cylinder", "code", "mysql", "postgresql"]
     },
     "oxygen_mimetypes_application-vnd.oasis.opendocument.formula": {
       "category": "mimetypes",
       "file": "application-vnd.oasis.opendocument.formula.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["odf", "formula", "math", "equation", "greek", "libreoffice", "scientific", "oasis"]
     },
     "oxygen_mimetypes_application-x-wmf": {
       "category": "mimetypes",
       "file": "application-x-wmf.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["wmf", "metafile", "windows", "vector", "bezier", "curve", "graphics", "clipart"]
     },
     "oxygen_mimetypes_application-x-zerosize": {
       "category": "mimetypes",
       "file": "application-x-zerosize.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["empty", "zero", "blank", "file", "document", "size", "white", "placeholder"]
     },
     "oxygen_mimetypes_mail-message-new-list": {
       "category": "mimetypes",
       "file": "mail-message-new-list.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["mail", "email", "message", "list", "envelope", "mailing", "newsletter", "new"]
     },
     "oxygen_mimetypes_application-pkcs7-signature": {
       "category": "mimetypes",
       "file": "application-pkcs7-signature.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["pkcs7", "signature", "sign", "certificate", "pen", "crypto", "security", "digital"]
     },
     "oxygen_mimetypes_libreoffice-presentation": {
       "category": "mimetypes",
       "file": "libreoffice-presentation.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["libreoffice", "impress", "presentation", "slides", "odp", "slideshow", "office", "blue"]
     },
     "oxygen_mimetypes_application-vnd.sun.xml.writer.template": {
       "category": "mimetypes",
       "file": "application-vnd.sun.xml.writer.template.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["sun", "writer", "stw", "staroffice", "template", "pen", "document", "ruler"]
     },
     "oxygen_mimetypes_application-x-subrip": {
       "category": "mimetypes",
       "file": "application-x-subrip.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["srt", "subrip", "subtitle", "caption", "video", "text", "sub", "movie"]
     },
     "oxygen_mimetypes_text-calendar": {
       "category": "mimetypes",
       "file": "text-calendar.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["ics", "ical", "calendar", "vcal", "event", "schedule", "green", "appointment"]
     },
     "oxygen_mimetypes_application-x-arj": {
       "category": "mimetypes",
       "file": "application-x-arj.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["arj", "archive", "compress", "box", "zipper", "package", "dos", "vintage"]
     },
     "oxygen_mimetypes_image-x-adobe-dng": {
       "category": "mimetypes",
       "file": "image-x-adobe-dng.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["dng", "adobe", "raw", "camera", "negative", "rgb", "photo", "digital"]
     },
     "oxygen_mimetypes_application-xhtml+xml": {
       "category": "mimetypes",
       "file": "application-xhtml+xml.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["xhtml", "html", "xml", "web", "globe", "page", "markup", "document"]
     },
     "oxygen_mimetypes_application-epub+zip": {
       "category": "mimetypes",
       "file": "application-epub+zip.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["epub", "ebook", "book", "reader", "leather", "kindle", "digital", "reading"]
     },
     "oxygen_mimetypes_libreoffice-oasis-text-template": {
       "category": "mimetypes",
       "file": "libreoffice-oasis-text-template.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["libreoffice", "odt", "template", "ott", "writer", "pen", "document", "oasis"]
     },
     "oxygen_mimetypes_text-x-objcsrc": {
       "category": "mimetypes",
       "file": "text-x-objcsrc.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["objc", "objective", "apple", "cocoa", "ios", "macos", "code", "source"]
     },
     "oxygen_mimetypes_audio-x-aiff": {
       "category": "mimetypes",
       "file": "audio-x-aiff.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["aiff", "aif", "audio", "apple", "waveform", "music", "green", "lossless"]
     },
     "oxygen_mimetypes_text-vcalendar": {
       "category": "mimetypes",
       "file": "text-vcalendar.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["vcalendar", "vcs", "calendar", "event", "schedule", "green", "appointment", "date"]
     },
     "oxygen_mimetypes_video-x-matroska": {
       "category": "mimetypes",
       "file": "video-x-matroska.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["mkv", "matroska", "video", "container", "clapperboard", "movie", "webm", "film"]
     },
     "oxygen_mimetypes_application-vnd.sun.xml.writer": {
       "category": "mimetypes",
