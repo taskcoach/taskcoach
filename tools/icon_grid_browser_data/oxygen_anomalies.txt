@@ -2,3 +2,5 @@ oxygen_apps_semn: FILE_ERROR: path_pattern did not match: /home/user/Downloads/i
 oxygen_apps_semn: FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/apps/semn.png
 oxygen_status_weather-many-clouds: FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/status/weather-many-clouds.svg
 oxygen_status_weather-many-clouds: FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/status/weather-many-clouds.png
+oxygen_actions_user-group-delete: FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/actions/user-group-delete.svg
+oxygen_actions_user-group-delete: FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/actions/user-group-delete.png
