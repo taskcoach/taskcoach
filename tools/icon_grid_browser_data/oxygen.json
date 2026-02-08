@@ -5614,72 +5614,86 @@
     "oxygen_actions_go-next-use": {
       "category": "actions",
       "file": "go-next-use.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["next", "use", "forward", "history", "arrow", "list", "navigate"]
     },
     "oxygen_actions_dialog-scripts": {
       "category": "actions",
       "file": "dialog-scripts.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["scripts", "terminal", "console", "command", "prompt", "shell", "code"]
     },
     "oxygen_actions_dialog-close": {
       "category": "actions",
       "file": "dialog-close.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["close", "dialog", "red", "x", "error", "cancel", "stop"]
     },
     "oxygen_actions_kt-start": {
       "category": "actions",
       "file": "kt-start.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["start", "play", "begin", "button", "media", "run", "triangle"]
     },
     "oxygen_actions_flag-yellow": {
       "category": "actions",
       "file": "flag-yellow.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["flag", "yellow", "marker", "bookmark", "important", "attention", "warning"]
     },
     "oxygen_actions_snap-guideline": {
       "category": "actions",
       "file": "snap-guideline.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["snap", "guideline", "align", "lines", "ruler", "CAD", "drawing"]
     },
     "oxygen_actions_office-chart-polar": {
       "category": "actions",
       "file": "office-chart-polar.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["chart", "polar", "radar", "spider", "graph", "statistics", "office"]
     },
     "oxygen_actions_addressbook-details": {
       "category": "actions",
       "file": "addressbook-details.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["addressbook", "details", "contact", "add", "plus", "book", "folder"]
     },
     "oxygen_actions_media-playlist-repeat": {
       "category": "actions",
       "file": "media-playlist-repeat.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["repeat", "playlist", "loop", "media", "circular", "arrows", "music"]
     },
     "oxygen_actions_object-group-calligra": {
       "category": "actions",
       "file": "object-group-calligra.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["group", "object", "combine", "merge", "shapes", "calligra"]
     },
     "oxygen_actions_user-group-properties": {
       "category": "actions",
       "file": "user-group-properties.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["user", "group", "properties", "edit", "people", "team", "settings"]
     },
     "oxygen_actions_code-typedef": {
       "category": "actions",
       "file": "code-typedef.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["typedef", "code", "type", "definition", "green", "programming", "alias"]
     },
     "oxygen_actions_office-chart-area-percentage": {
       "category": "actions",
       "file": "office-chart-area-percentage.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["chart", "area", "percentage", "stacked", "graph", "100%", "office"]
     },
     "oxygen_actions_mail-signed-part": {
       "category": "actions",
       "file": "mail-signed-part.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["mail", "signed", "partial", "email", "envelope", "certificate", "part"]
     },
     "oxygen_actions_mail-signed": {
       "category": "actions",
