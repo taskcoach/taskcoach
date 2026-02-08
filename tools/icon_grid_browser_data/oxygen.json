@@ -3502,122 +3502,146 @@
     "oxygen_mimetypes_application-postscript": {
       "category": "mimetypes",
       "file": "application-postscript.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["postscript", "ps", "eps", "print", "printer", "adobe", "vector", "document"]
     },
     "oxygen_mimetypes_application-x-awk": {
       "category": "mimetypes",
       "file": "application-x-awk.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["awk", "script", "text", "processing", "programming", "gawk", "pattern", "unix"]
     },
     "oxygen_mimetypes_audio-x-mp2": {
       "category": "mimetypes",
       "file": "audio-x-mp2.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["mp2", "audio", "mpeg", "music", "sound", "layer2", "multimedia", "codec"]
     },
     "oxygen_mimetypes_video-x-ogm+ogg": {
       "category": "mimetypes",
       "file": "video-x-ogm+ogg.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["ogm", "ogg", "video", "vorbis", "theora", "movie", "film", "opensource"]
     },
     "oxygen_mimetypes_encrypted": {
       "category": "mimetypes",
       "file": "encrypted.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["encrypted", "secure", "locked", "protected", "cipher", "password", "security", "cryptography"]
     },
     "oxygen_mimetypes_text-x-vcard": {
       "category": "mimetypes",
       "file": "text-x-vcard.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["vcard", "vcf", "contact", "address", "person", "phone", "card", "contacts"]
     },
     "oxygen_mimetypes_application-x-srt": {
       "category": "mimetypes",
       "file": "application-x-srt.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["srt", "subtitle", "subtitles", "caption", "video", "movie", "text", "translation"]
     },
     "oxygen_mimetypes_inode-directory": {
       "category": "mimetypes",
       "file": "inode-directory.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["folder", "directory", "dir", "inode", "filesystem", "files", "container", "path"]
     },
     "oxygen_mimetypes_application-x-cpio": {
       "category": "mimetypes",
       "file": "application-x-cpio.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["cpio", "archive", "unix", "backup", "package", "rpm", "install", "extract"]
     },
     "oxygen_mimetypes_application-x-marble": {
       "category": "mimetypes",
       "file": "application-x-marble.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["marble", "globe", "earth", "map", "geo", "geography", "kde", "world"]
     },
     "oxygen_mimetypes_text-xmcd": {
       "category": "mimetypes",
       "file": "text-xmcd.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["xmcd", "cd", "database", "cddb", "music", "audio", "freedb", "tracks"]
     },
     "oxygen_mimetypes_application-vnd.sun.xml.impress": {
       "category": "mimetypes",
       "file": "application-vnd.sun.xml.impress.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["impress", "presentation", "staroffice", "openoffice", "slides", "slideshow", "sxi", "sun"]
     },
     "oxygen_mimetypes_video-x-theor+ogg": {
       "category": "mimetypes",
       "file": "video-x-theor+ogg.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["theora", "ogg", "video", "opensource", "vorbis", "movie", "film", "codec"]
     },
     "oxygen_mimetypes_libreoffice-spreadsheet-template": {
       "category": "mimetypes",
       "file": "libreoffice-spreadsheet-template.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["spreadsheet", "template", "libreoffice", "calc", "ots", "table", "cells", "reusable"]
     },
     "oxygen_mimetypes_x-mail-distribution-list": {
       "category": "mimetypes",
       "file": "x-mail-distribution-list.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["mail", "distribution", "list", "email", "mailing", "recipients", "contacts", "group"]
     },
     "oxygen_mimetypes_application-x-kformula": {
       "category": "mimetypes",
       "file": "application-x-kformula.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["kformula", "kde", "math", "equation", "formula", "koffice", "calligra", "scientific"]
     },
     "oxygen_mimetypes_application-x-archive": {
       "category": "mimetypes",
       "file": "application-x-archive.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["archive", "package", "compressed", "files", "container", "extract", "backup", "storage"]
     },
     "oxygen_mimetypes_x-office-contact": {
       "category": "mimetypes",
       "file": "x-office-contact.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["contact", "office", "person", "address", "card", "identity", "employee", "information"]
     },
     "oxygen_mimetypes_libreoffice-oasis-database": {
       "category": "mimetypes",
       "file": "libreoffice-oasis-database.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["database", "libreoffice", "base", "odb", "oasis", "data", "tables", "sql"]
     },
     "oxygen_mimetypes_libreoffice-oasis-web-template": {
       "category": "mimetypes",
       "file": "libreoffice-oasis-web-template.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["web", "template", "libreoffice", "html", "oasis", "oth", "internet", "webpage"]
     },
     "oxygen_mimetypes_application-octet-stream": {
       "category": "mimetypes",
       "file": "application-octet-stream.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["binary", "file", "octet", "stream", "data", "unknown", "generic", "raw"]
     },
     "oxygen_mimetypes_libreoffice-oasis-text": {
       "category": "mimetypes",
       "file": "libreoffice-oasis-text.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["text", "libreoffice", "writer", "odt", "oasis", "document", "word", "processor"]
     },
     "oxygen_mimetypes_application-x-sqlite3": {
       "category": "mimetypes",
       "file": "application-x-sqlite3.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["sqlite", "sqlite3", "database", "db", "sql", "embedded", "file", "data"]
     },
     "oxygen_mimetypes_text-x-c++hdr": {
       "category": "mimetypes",
       "file": "text-x-c++hdr.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["cpp", "header", "hdr", "hpp", "include", "programming", "cplusplus", "code"]
     },
     "oxygen_mimetypes_application-x-font-snf": {
       "category": "mimetypes",
