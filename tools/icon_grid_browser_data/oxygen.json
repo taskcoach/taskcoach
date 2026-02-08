@@ -4246,127 +4246,152 @@
     "oxygen_mimetypes_text-x-c++src": {
       "category": "mimetypes",
       "file": "text-x-c++src.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["cpp", "c++", "source", "code", "programming", "cxx", "header", "compile"]
     },
     "oxygen_mimetypes_application-x-bittorrent": {
       "category": "mimetypes",
       "file": "application-x-bittorrent.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["torrent", "bittorrent", "p2p", "download", "sharing", "peer", "stream", "magnet"]
     },
     "oxygen_mimetypes_application-x-chm": {
       "category": "mimetypes",
       "file": "application-x-chm.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["chm", "help", "windows", "compiled", "html", "documentation", "spiral", "microsoft"]
     },
     "oxygen_mimetypes_application-x-source-rpm": {
       "category": "mimetypes",
       "file": "application-x-source-rpm.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["srpm", "rpm", "source", "package", "redhat", "fedora", "box", "linux"]
     },
     "oxygen_mimetypes_audio-prs.sid": {
       "category": "mimetypes",
       "file": "audio-prs.sid.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["sid", "commodore", "c64", "chiptune", "piano", "music", "sheet", "retro"]
     },
     "oxygen_mimetypes_application-vnd.oasis.opendocument.chart": {
       "category": "mimetypes",
       "file": "application-vnd.oasis.opendocument.chart.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["odc", "opendocument", "chart", "pie", "graph", "libreoffice", "data", "statistics"]
     },
     "oxygen_mimetypes_application-x-font-bdf": {
       "category": "mimetypes",
       "file": "application-x-font-bdf.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["bdf", "font", "bitmap", "pixel", "typeface", "distribution", "xorg", "grid"]
     },
     "oxygen_mimetypes_text-x-makefile": {
       "category": "mimetypes",
       "file": "text-x-makefile.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["makefile", "make", "build", "gear", "compile", "automation", "script", "gnu"]
     },
     "oxygen_mimetypes_text-x-katefilelist": {
       "category": "mimetypes",
       "file": "text-x-katefilelist.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["kate", "filelist", "session", "editor", "kde", "pen", "text", "files"]
     },
     "oxygen_mimetypes_application-x-iso": {
       "category": "mimetypes",
       "file": "application-x-iso.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["iso", "disc", "image", "cd", "dvd", "optical", "mount", "burn"]
     },
     "oxygen_mimetypes_x-office-drawing": {
       "category": "mimetypes",
       "file": "x-office-drawing.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["drawing", "office", "vector", "bezier", "curves", "graphics", "diagram", "shapes"]
     },
     "oxygen_mimetypes_application-pgp-signature": {
       "category": "mimetypes",
       "file": "application-pgp-signature.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["pgp", "signature", "gpg", "verify", "sign", "pen", "crypto", "asc"]
     },
     "oxygen_mimetypes_application-x-javascript": {
       "category": "mimetypes",
       "file": "application-x-javascript.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["javascript", "js", "script", "web", "code", "programming", "ecmascript", "node"]
     },
     "oxygen_mimetypes_video-wavelet": {
       "category": "mimetypes",
       "file": "video-wavelet.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["wavelet", "video", "clapperboard", "movie", "compression", "codec", "film", "dirac"]
     },
     "oxygen_mimetypes_image-x-krita": {
       "category": "mimetypes",
       "file": "image-x-krita.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["krita", "image", "painting", "brush", "art", "kde", "kra", "layers"]
     },
     "oxygen_mimetypes_application-vnd.sun.xml.math": {
       "category": "mimetypes",
       "file": "application-vnd.sun.xml.math.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["sun", "math", "formula", "equation", "staroffice", "greek", "symbols", "sxm"]
     },
     "oxygen_mimetypes_application-vnd.stardivision.math": {
       "category": "mimetypes",
       "file": "application-vnd.stardivision.math.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["stardivision", "math", "formula", "equation", "staroffice", "smf", "legacy", "scientific"]
     },
     "oxygen_mimetypes_application-vnd.sun.xml.draw": {
       "category": "mimetypes",
       "file": "application-vnd.sun.xml.draw.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["sun", "draw", "sxd", "staroffice", "flower", "graphics", "pencil", "illustration"]
     },
     "oxygen_mimetypes_application-rss+xml": {
       "category": "mimetypes",
       "file": "application-rss+xml.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["rss", "feed", "xml", "atom", "subscribe", "orange", "syndication", "news"]
     },
     "oxygen_mimetypes_audio-x-monkey": {
       "category": "mimetypes",
       "file": "audio-x-monkey.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["ape", "monkey", "audio", "lossless", "music", "compression", "sound", "notes"]
     },
     "oxygen_mimetypes_image-gif": {
       "category": "mimetypes",
       "file": "image-gif.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["gif", "image", "picture", "photo", "graphics", "animation", "raster", "web"]
     },
     "oxygen_mimetypes_application-x-bzip": {
       "category": "mimetypes",
       "file": "application-x-bzip.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["bzip", "bz2", "archive", "compress", "zipper", "package", "compression", "file"]
     },
     "oxygen_mimetypes_text-x-nfo": {
       "category": "mimetypes",
       "file": "text-x-nfo.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["nfo", "info", "readme", "text", "document", "information", "txt", "ascii"]
     },
     "oxygen_mimetypes_image-svg+xml": {
       "category": "mimetypes",
       "file": "image-svg+xml.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["svg", "vector", "scalable", "bezier", "curve", "xml", "graphics", "illustration"]
     },
     "oxygen_mimetypes_application-vnd.rn-realmedia": {
       "category": "mimetypes",
       "file": "application-vnd.rn-realmedia.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["realmedia", "real", "rm", "ram", "video", "streaming", "clapperboard", "media"]
     },
     "oxygen_mimetypes_text-x-javascript": {
       "category": "mimetypes",
