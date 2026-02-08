@@ -4966,112 +4966,134 @@
     "oxygen_categories_applications-graphics": {
       "category": "categories",
       "file": "applications-graphics.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["graphics", "art", "palette", "paint", "brush", "colors", "drawing", "design"]
     },
     "oxygen_categories_applications-science": {
       "category": "categories",
       "file": "applications-science.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["science", "chemistry", "flask", "beaker", "laboratory", "experiment", "research", "blue"]
     },
     "oxygen_categories_applications-development-translation": {
       "category": "categories",
       "file": "applications-development-translation.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["translation", "development", "localization", "i18n", "l10n", "language", "international", "tools"]
     },
     "oxygen_categories_preferences-desktop": {
       "category": "categories",
       "file": "preferences-desktop.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["preferences", "desktop", "settings", "configure", "wrench", "screwdriver", "tools", "system"]
     },
     "oxygen_categories_preferences-desktop-peripherals": {
       "category": "categories",
       "file": "preferences-desktop-peripherals.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["peripherals", "mouse", "tablet", "stylus", "input", "devices", "preferences", "hardware"]
     },
     "oxygen_categories_applications-multimedia": {
       "category": "categories",
       "file": "applications-multimedia.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["multimedia", "video", "audio", "music", "movie", "clapperboard", "film", "media"]
     },
     "oxygen_categories_applications-other": {
       "category": "categories",
       "file": "applications-other.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["other", "misc", "miscellaneous", "software", "package", "kde", "box", "cd"]
     },
     "oxygen_categories_preferences-kde-connect": {
       "category": "categories",
       "file": "preferences-kde-connect.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["kde", "connect", "phone", "mobile", "sync", "device", "wireless", "link"]
     },
     "oxygen_categories_applications-education-preschool": {
       "category": "categories",
       "file": "applications-education-preschool.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["preschool", "education", "ball", "play", "child", "toddler", "kindergarten", "colorful"]
     },
     "oxygen_categories_applications-toys": {
       "category": "categories",
       "file": "applications-toys.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["toys", "ball", "play", "fun", "game", "child", "recreation", "colorful"]
     },
     "oxygen_categories_applications-games": {
       "category": "categories",
       "file": "applications-games.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["games", "cards", "playing", "hearts", "poker", "casino", "fun", "entertainment"]
     },
     "oxygen_categories_preferences-system-network": {
       "category": "categories",
       "file": "preferences-system-network.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["network", "preferences", "globe", "internet", "wrench", "settings", "connection", "configure"]
     },
     "oxygen_categories_applications-education": {
       "category": "categories",
       "file": "applications-education.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["education", "school", "chalkboard", "blackboard", "math", "learning", "teaching", "classroom"]
     },
     "oxygen_categories_preferences-system": {
       "category": "categories",
       "file": "preferences-system.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["system", "preferences", "settings", "wrench", "screwdriver", "tools", "configure", "admin"]
     },
     "oxygen_categories_applications-development-web": {
       "category": "categories",
       "file": "applications-development-web.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["web", "development", "internet", "globe", "hammer", "html", "programming", "website"]
     },
     "oxygen_categories_applications-system": {
       "category": "categories",
       "file": "applications-system.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["system", "gear", "cog", "settings", "configuration", "machinery", "admin", "tools"]
     },
     "oxygen_categories_applications-education-science": {
       "category": "categories",
       "file": "applications-education-science.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["science", "education", "chemistry", "flask", "beaker", "laboratory", "experiment", "learning"]
     },
     "oxygen_categories_applications-utilities": {
       "category": "categories",
       "file": "applications-utilities.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["utilities", "terminal", "console", "command", "monitor", "tools", "graph", "system"]
     },
     "oxygen_categories_applications-office": {
       "category": "categories",
       "file": "applications-office.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["office", "typewriter", "document", "writing", "business", "work", "typing", "text"]
     },
     "oxygen_categories_preferences-other": {
       "category": "categories",
       "file": "preferences-other.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["preferences", "other", "wrench", "gear", "settings", "configure", "misc", "options"]
     },
     "oxygen_categories_preferences-devices-printer": {
       "category": "categories",
       "file": "preferences-devices-printer.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["printer", "print", "device", "preferences", "paper", "output", "hardware", "settings"]
     },
     "oxygen_categories_applications-internet": {
       "category": "categories",
       "file": "applications-internet.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["internet", "web", "globe", "world", "network", "online", "browser", "www"]
     },
     "oxygen_categories_preferences-desktop-personal": {
       "category": "categories",
