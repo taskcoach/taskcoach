@@ -4738,97 +4738,116 @@
     "oxygen_mimetypes_uri-mms": {
       "category": "mimetypes",
       "file": "uri-mms.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["mms", "stream", "microsoft", "media", "globe", "clapperboard", "uri", "video"]
     },
     "oxygen_mimetypes_application-x-mplayer2": {
       "category": "mimetypes",
       "file": "application-x-mplayer2.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["mplayer", "video", "player", "clapperboard", "movie", "film", "media", "playback"]
     },
     "oxygen_mimetypes_application-x-rar": {
       "category": "mimetypes",
       "file": "application-x-rar.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["rar", "archive", "compress", "box", "zipper", "package", "winrar", "extract"]
     },
     "oxygen_mimetypes_image-x-tga": {
       "category": "mimetypes",
       "file": "image-x-tga.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["tga", "targa", "image", "picture", "photo", "raster", "graphics", "truevision"]
     },
     "oxygen_mimetypes_application-x-ruby": {
       "category": "mimetypes",
       "file": "application-x-ruby.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["ruby", "rb", "gem", "red", "script", "code", "programming", "rails"]
     },
     "oxygen_mimetypes_text-x-objchdr": {
       "category": "mimetypes",
       "file": "text-x-objchdr.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["objc", "header", "h", "objective", "apple", "cocoa", "include", "pink"]
     },
     "oxygen_mimetypes_application-vnd.oasis.opendocument.draw.template": {
       "category": "mimetypes",
       "file": "application-vnd.oasis.opendocument.draw.template.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["otg", "odf", "draw", "template", "flower", "orange", "pencil", "ruler"]
     },
     "oxygen_mimetypes_text-x-copying": {
       "category": "mimetypes",
       "file": "text-x-copying.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["copying", "license", "gpl", "legal", "copyright", "text", "document", "terms"]
     },
     "oxygen_mimetypes_font-ttf": {
       "category": "mimetypes",
       "file": "font-ttf.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["ttf", "truetype", "font", "typeface", "typography", "grid", "letter", "glyph"]
     },
     "oxygen_mimetypes_audio-flac": {
       "category": "mimetypes",
       "file": "audio-flac.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["flac", "audio", "lossless", "music", "notes", "green", "equalizer", "sound"]
     },
     "oxygen_mimetypes_audio-mp4": {
       "category": "mimetypes",
       "file": "audio-mp4.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["mp4", "m4a", "aac", "audio", "music", "notes", "pink", "equalizer"]
     },
     "oxygen_mimetypes_text-x-chdr": {
       "category": "mimetypes",
       "file": "text-x-chdr.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["c", "header", "h", "include", "code", "programming", "pink", "source"]
     },
     "oxygen_mimetypes_application-x-bzdvi": {
       "category": "mimetypes",
       "file": "application-x-bzdvi.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["dvi", "bzip", "tex", "latex", "compress", "box", "zipper", "typeset"]
     },
     "oxygen_mimetypes_application-x-font-afm": {
       "category": "mimetypes",
       "file": "application-x-font-afm.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["afm", "adobe", "font", "metrics", "typeface", "grid", "letter", "postscript"]
     },
     "oxygen_mimetypes_libreoffice-extension": {
       "category": "mimetypes",
       "file": "libreoffice-extension.png",
-      "sizes": [16, 22, 32, 64]
+      "sizes": [16, 22, 32, 64],
+      "hints": ["libreoffice", "extension", "oxt", "plugin", "puzzle", "green", "addon", "office"]
     },
     "oxygen_mimetypes_image-x-psd": {
       "category": "mimetypes",
       "file": "image-x-psd.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["psd", "photoshop", "adobe", "layers", "paintbrush", "swatches", "image", "design"]
     },
     "oxygen_mimetypes_libreoffice-master-document": {
       "category": "mimetypes",
       "file": "libreoffice-master-document.png",
-      "sizes": [16, 22, 32, 64]
+      "sizes": [16, 22, 32, 64],
+      "hints": ["libreoffice", "master", "odm", "document", "writer", "navigator", "book", "office"]
     },
     "oxygen_mimetypes_x-media-podcast": {
       "category": "mimetypes",
       "file": "x-media-podcast.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["podcast", "rss", "broadcast", "audio", "person", "waves", "subscribe", "feed"]
     },
     "oxygen_mimetypes_application-x-executable-script": {
       "category": "mimetypes",
       "file": "application-x-executable-script.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["script", "executable", "bash", "shell", "gear", "terminal", "command", "run"]
     },
     "oxygen_mimetypes_application-x-mswrite": {
       "category": "mimetypes",
