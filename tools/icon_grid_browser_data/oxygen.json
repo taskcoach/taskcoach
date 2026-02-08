@@ -4852,97 +4852,116 @@
     "oxygen_mimetypes_application-x-mswrite": {
       "category": "mimetypes",
       "file": "application-x-mswrite.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["mswrite", "wri", "windows", "write", "document", "pen", "text", "wordpad"]
     },
     "oxygen_mimetypes_application-x-sharedlib": {
       "category": "mimetypes",
       "file": "application-x-sharedlib.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["so", "dll", "library", "shared", "binary", "blocks", "module", "dynamic"]
     },
     "oxygen_mimetypes_uri-rtspt": {
       "category": "mimetypes",
       "file": "uri-rtspt.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["rtsp", "stream", "realtime", "protocol", "globe", "clapperboard", "uri", "video"]
     },
     "oxygen_mimetypes_text-x-adasrc": {
       "category": "mimetypes",
       "file": "text-x-adasrc.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["ada", "source", "code", "programming", "green", "3d", "language", "aerospace"]
     },
     "oxygen_mimetypes_application-x-tgif": {
       "category": "mimetypes",
       "file": "application-x-tgif.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["tgif", "vector", "drawing", "bezier", "curve", "unix", "graphics", "illustration"]
     },
     "oxygen_mimetypes_application-vnd.oasis.opendocument.text-template": {
       "category": "mimetypes",
       "file": "application-vnd.oasis.opendocument.text-template.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["ott", "odf", "template", "text", "writer", "pen", "ruler", "oasis"]
     },
     "oxygen_mimetypes_audio-x-flac": {
       "category": "mimetypes",
       "file": "audio-x-flac.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["flac", "audio", "lossless", "music", "notes", "green", "equalizer", "codec"]
     },
     "oxygen_mimetypes_application-x-rpm": {
       "category": "mimetypes",
       "file": "application-x-rpm.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["rpm", "redhat", "fedora", "package", "box", "linux", "install", "software"]
     },
     "oxygen_special_file-zoom-out": {
       "category": "special",
       "file": "file-zoom-out.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["file", "zoom", "out", "minus", "reduce", "document", "smaller", "view"]
     },
     "oxygen_special_image-zoom-out": {
       "category": "special",
       "file": "image-zoom-out.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["image", "zoom", "out", "magnify", "minus", "reduce", "smaller", "glass"]
     },
     "oxygen_special_file-zoom-in": {
       "category": "special",
       "file": "file-zoom-in.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["file", "zoom", "in", "plus", "enlarge", "document", "bigger", "view"]
     },
     "oxygen_special_image-zoom-in": {
       "category": "special",
       "file": "image-zoom-in.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["image", "zoom", "in", "magnify", "plus", "enlarge", "bigger", "glass"]
     },
     "oxygen_categories_applications-education-mathematics": {
       "category": "categories",
       "file": "applications-education-mathematics.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["math", "pi", "education", "greek", "symbol", "calculate", "number", "science"]
     },
     "oxygen_categories_system-help": {
       "category": "categories",
       "file": "system-help.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["help", "question", "mark", "blue", "circle", "support", "faq", "info"]
     },
     "oxygen_categories_applications-engineering": {
       "category": "categories",
       "file": "applications-engineering.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["engineering", "hardhat", "helmet", "yellow", "construction", "build", "safety", "work"]
     },
     "oxygen_categories_applications-education-miscellaneous": {
       "category": "categories",
       "file": "applications-education-miscellaneous.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["education", "miscellaneous", "asterisk", "star", "orange", "burst", "general", "learning"]
     },
     "oxygen_categories_applications-development": {
       "category": "categories",
       "file": "applications-development.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["development", "hammer", "build", "tool", "construct", "programming", "code", "compile"]
     },
     "oxygen_categories_applications-education-school": {
       "category": "categories",
       "file": "applications-education-school.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["school", "education", "chalkboard", "blackboard", "math", "chalk", "classroom", "learning"]
     },
     "oxygen_categories_applications-education-language": {
       "category": "categories",
       "file": "applications-education-language.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["language", "education", "international", "flag", "globe", "world", "translation", "foreign"]
     },
     "oxygen_categories_applications-graphics": {
       "category": "categories",
