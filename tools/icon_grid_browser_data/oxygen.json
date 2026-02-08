@@ -6886,77 +6886,92 @@
     "oxygen_actions_gpg": {
       "category": "actions",
       "file": "gpg.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["gpg", "encryption", "lock", "padlock", "security", "privacy", "key"]
     },
     "oxygen_actions_go-next-view-page": {
       "category": "actions",
       "file": "go-next-view-page.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["go", "next", "view", "page", "forward", "arrow", "document"]
     },
     "oxygen_actions_go-next-view": {
       "category": "actions",
       "file": "go-next-view.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["go", "next", "view", "forward", "arrow", "right", "blue"]
     },
     "oxygen_actions_download-amarok": {
       "category": "actions",
       "file": "download-amarok.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["download", "amarok", "globe", "internet", "arrow", "music", "web"]
     },
     "oxygen_actions_mail-signed-full": {
       "category": "actions",
       "file": "mail-signed-full.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["mail", "signed", "full", "email", "signature", "verified", "letter"]
     },
     "oxygen_actions_edit-clear-history": {
       "category": "actions",
       "file": "edit-clear-history.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["edit", "clear", "history", "hourglass", "time", "delete", "remove"]
     },
     "oxygen_actions_run-build-prune": {
       "category": "actions",
       "file": "run-build-prune.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["run", "build", "prune", "gear", "cog", "clean", "scissors"]
     },
     "oxygen_actions_view-media-equalizer": {
       "category": "actions",
       "file": "view-media-equalizer.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "media", "equalizer", "audio", "sliders", "sound", "mixer"]
     },
     "oxygen_actions_kt-check-data": {
       "category": "actions",
       "file": "kt-check-data.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["ktorrent", "check", "data", "verify", "green", "checkmark", "valid"]
     },
     "oxygen_actions_stroke-cap-bevel": {
       "category": "actions",
       "file": "stroke-cap-bevel.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["stroke", "cap", "bevel", "line", "angled", "path", "vector"]
     },
     "oxygen_actions_insert-image": {
       "category": "actions",
       "file": "insert-image.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["insert", "image", "picture", "photo", "add", "plus", "landscape"]
     },
     "oxygen_actions_edit-select": {
       "category": "actions",
       "file": "edit-select.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["edit", "select", "cursor", "pointer", "arrow", "mouse", "click"]
     },
     "oxygen_actions_draw-triangle1": {
       "category": "actions",
       "file": "draw-triangle1.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["draw", "triangle", "shape", "geometry", "polygon", "outline", "vector"]
     },
     "oxygen_actions_document-revert": {
       "category": "actions",
       "file": "document-revert.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["document", "revert", "undo", "arrow", "restore", "previous", "file"]
     },
     "oxygen_actions_mail-reply-custom-all": {
       "category": "actions",
       "file": "mail-reply-custom-all.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["mail", "reply", "custom", "all", "email", "envelope", "arrows"]
     },
     "oxygen_actions_align-horizontal-top-out": {
       "category": "actions",
