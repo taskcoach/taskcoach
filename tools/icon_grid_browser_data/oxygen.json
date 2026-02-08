@@ -3076,112 +3076,134 @@
     "oxygen_mimetypes_application-x-pak": {
       "category": "mimetypes",
       "file": "application-x-pak.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["pak", "archive", "game", "package", "quake", "zip", "compressed", "data"]
     },
     "oxygen_mimetypes_message-partial": {
       "category": "mimetypes",
       "file": "message-partial.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["partial", "email", "message", "incomplete", "split", "mail", "fragment", "part"]
     },
     "oxygen_mimetypes_video-x-javafx": {
       "category": "mimetypes",
       "file": "video-x-javafx.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["javafx", "video", "java", "movie", "film", "media", "fx", "oracle"]
     },
     "oxygen_mimetypes_application-vnd.oasis.opendocument.spreadsheet-template": {
       "category": "mimetypes",
       "file": "application-vnd.oasis.opendocument.spreadsheet-template.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["ots", "spreadsheet", "template", "calc", "table", "opendocument", "grid", "office"]
     },
     "oxygen_mimetypes_application-x-shockwave-flash": {
       "category": "mimetypes",
       "file": "application-x-shockwave-flash.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["flash", "swf", "shockwave", "adobe", "animation", "movie", "player", "media"]
     },
     "oxygen_mimetypes_application-vnd.ms-excel": {
       "category": "mimetypes",
       "file": "application-vnd.ms-excel.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["excel", "xls", "xlsx", "spreadsheet", "microsoft", "office", "table", "worksheet"]
     },
     "oxygen_mimetypes_application-pgp-keys": {
       "category": "mimetypes",
       "file": "application-pgp-keys.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["pgp", "keys", "encryption", "security", "gpg", "crypto", "keyring", "public"]
     },
     "oxygen_mimetypes_image-x-xfig": {
       "category": "mimetypes",
       "file": "image-x-xfig.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["xfig", "vector", "figure", "drawing", "diagram", "graphic", "illustration", "fig"]
     },
     "oxygen_mimetypes_application-vnd.oasis.opendocument.formula-template": {
       "category": "mimetypes",
       "file": "application-vnd.oasis.opendocument.formula-template.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["otf", "formula", "template", "math", "equation", "opendocument", "scientific", "latex"]
     },
     "oxygen_mimetypes_application-x-tzo": {
       "category": "mimetypes",
       "file": "application-x-tzo.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["tzo", "archive", "compressed", "lzo", "tar", "package", "lzop", "zip"]
     },
     "oxygen_mimetypes_application-x-php": {
       "category": "mimetypes",
       "file": "application-x-php.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["php", "code", "web", "script", "programming", "source", "server", "hypertext"]
     },
     "oxygen_mimetypes_image-x-wmf": {
       "category": "mimetypes",
       "file": "image-x-wmf.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["wmf", "metafile", "windows", "vector", "clipart", "graphic", "microsoft", "image"]
     },
     "oxygen_mimetypes_application-x-qet-element": {
       "category": "mimetypes",
       "file": "application-x-qet-element.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["qet", "element", "circuit", "electronic", "electrical", "schematic", "diagram", "component"]
     },
     "oxygen_mimetypes_application-vnd.openxmlformats-officedocument.wordprocessingml.document": {
       "category": "mimetypes",
       "file": "application-vnd.openxmlformats-officedocument.wordprocessingml.document.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["docx", "word", "document", "microsoft", "office", "text", "writer", "ooxml"]
     },
     "oxygen_mimetypes_text-x-haskell": {
       "category": "mimetypes",
       "file": "text-x-haskell.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["haskell", "code", "functional", "programming", "source", "hs", "lambda", "pure"]
     },
     "oxygen_mimetypes_application-zip": {
       "category": "mimetypes",
       "file": "application-zip.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["zip", "archive", "compressed", "pkzip", "winzip", "extract", "folder", "package"]
     },
     "oxygen_mimetypes_application-x-tar": {
       "category": "mimetypes",
       "file": "application-x-tar.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["tar", "archive", "tape", "unix", "linux", "package", "bundle", "box"]
     },
     "oxygen_mimetypes_application-x-xz-compressed-tar": {
       "category": "mimetypes",
       "file": "application-x-xz-compressed-tar.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["xz", "tar", "compressed", "archive", "txz", "lzma", "package", "linux"]
     },
     "oxygen_mimetypes_application-x-cue": {
       "category": "mimetypes",
       "file": "application-x-cue.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["cue", "cuesheet", "cd", "audio", "tracks", "disc", "burn", "music"]
     },
     "oxygen_mimetypes_application-x-compress": {
       "category": "mimetypes",
       "file": "application-x-compress.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["compress", "z", "compressed", "unix", "archive", "lzw", "file", "pack"]
     },
     "oxygen_mimetypes_application-x-sif": {
       "category": "mimetypes",
       "file": "application-x-sif.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["sif", "synfig", "animation", "vector", "2d", "graphic", "cartoon", "drawing"]
     },
     "oxygen_mimetypes_text-directory": {
       "category": "mimetypes",
       "file": "text-directory.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["vcard", "contact", "directory", "addressbook", "vcf", "person", "card", "address"]
     },
     "oxygen_mimetypes_x-office-spreadsheet": {
       "category": "mimetypes",
