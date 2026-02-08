@@ -6682,87 +6682,104 @@
     "oxygen_actions_format-text-underline": {
       "category": "actions",
       "file": "format-text-underline.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["format", "text", "underline", "typography", "style", "letter", "decoration"]
     },
     "oxygen_actions_dialog-align-and-distribute": {
       "category": "actions",
       "file": "dialog-align-and-distribute.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["dialog", "align", "distribute", "layout", "spacing", "arrange", "objects"]
     },
     "oxygen_actions_view-calendar": {
       "category": "actions",
       "file": "view-calendar.png",
-      "sizes": [16, 32, 48]
+      "sizes": [16, 32, 48],
+      "hints": ["view", "calendar", "date", "schedule", "month", "days", "planner"]
     },
     "oxygen_actions_practice-stop": {
       "category": "actions",
       "file": "practice-stop.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["practice", "stop", "halt", "end", "square", "media", "player"]
     },
     "oxygen_actions_project-development": {
       "category": "actions",
       "file": "project-development.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["project", "development", "code", "programming", "window", "ide", "software"]
     },
     "oxygen_actions_skg-chart-bubble": {
       "category": "actions",
       "file": "skg-chart-bubble.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["chart", "bubble", "graph", "circles", "data", "visualization", "statistics"]
     },
     "oxygen_actions_umbrello_diagram_state": {
       "category": "actions",
       "file": "umbrello_diagram_state.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["umbrello", "diagram", "state", "uml", "workflow", "circle", "arrow"]
     },
     "oxygen_actions_text-convert-to-regular": {
       "category": "actions",
       "file": "text-convert-to-regular.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["text", "convert", "regular", "font", "typography", "normal", "letter"]
     },
     "oxygen_actions_snap-extension": {
       "category": "actions",
       "file": "snap-extension.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["snap", "extension", "line", "nodes", "path", "connect", "points"]
     },
     "oxygen_actions_labplot-auto-scale-all": {
       "category": "actions",
       "file": "labplot-auto-scale-all.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["labplot", "auto", "scale", "all", "resize", "fit", "chart"]
     },
     "oxygen_actions_view-list-details": {
       "category": "actions",
       "file": "view-list-details.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "list", "details", "items", "rows", "information", "display"]
     },
     "oxygen_actions_list-resource-add": {
       "category": "actions",
       "file": "list-resource-add.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["list", "resource", "add", "person", "user", "plus", "new"]
     },
     "oxygen_actions_quickopen-class": {
       "category": "actions",
       "file": "quickopen-class.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["quick", "open", "class", "lightning", "code", "programming", "fast"]
     },
     "oxygen_actions_end_of_life": {
       "category": "actions",
       "file": "end_of_life.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["end", "life", "deprecated", "stop", "forbidden", "red", "cancel"]
     },
     "oxygen_actions_system-suspend-hibernate": {
       "category": "actions",
       "file": "system-suspend-hibernate.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["system", "suspend", "hibernate", "sleep", "snowflake", "power", "freeze"]
     },
     "oxygen_actions_distribute-vertical-gaps": {
       "category": "actions",
       "file": "distribute-vertical-gaps.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["distribute", "vertical", "gaps", "spacing", "layout", "align", "arrange"]
     },
     "oxygen_actions_answer": {
       "category": "actions",
       "file": "answer.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["answer", "check", "correct", "yes", "confirm", "green", "tick"]
     },
     "oxygen_actions_note": {
       "category": "actions",
