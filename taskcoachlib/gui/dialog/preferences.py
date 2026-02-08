@@ -381,7 +381,7 @@ class SettingsPageBase(widgets.ScrolledBookPage):
         excluded = excluded_icons or set()
         iconEntry = widgets.IconPicker(self, "", excluded_icons=excluded, fixedWidth=120)
         # imageNames returned for backward compatibility (unused)
-        imageNames = sorted(artprovider.chooseableItems.keys(), key=lambda k: artprovider.chooseableItems[k]["name"])
+        imageNames = sorted(artprovider.chooseableItems.keys(), key=lambda k: artprovider.chooseableItems[k]["label"])
         return iconEntry, imageNames
 
     def _createAppearanceControls(self, fgColorSection, fgColorSetting,
@@ -2117,6 +2117,55 @@ class FeaturesPage(SettingsPage):
         )
 
 
+class IconsPage(SettingsPage):
+    pageName = "icons"
+    pageTitle = _("Icons")
+    pageIcon = "palette_icon"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(columns=2, growableColumn=-1, *args, **kwargs)
+        self.addBooleanSetting(
+            "iconpicker",
+            "theme_nuvola",
+            _("Show Nuvola icons in picker"),
+        )
+        self.addBooleanSetting(
+            "iconpicker",
+            "theme_oxygen",
+            _("Show Oxygen icons in picker"),
+        )
+        self.addBooleanSetting(
+            "iconpicker",
+            "theme_papirus",
+            _("Show Papirus icons in picker"),
+        )
+        self.addBooleanSetting(
+            "iconpicker",
+            "theme_breeze",
+            _("Show Breeze icons in picker"),
+        )
+        self.addBooleanSetting(
+            "iconpicker",
+            "search_include_theme",
+            _("Include theme name in icon search"),
+        )
+        self.addBooleanSetting(
+            "iconpicker",
+            "search_include_category",
+            _("Include category in icon search"),
+        )
+        # Icon size dropdown - placeholder for future functionality
+        sizeChoice = wx.Choice(self, choices=["16"])
+        sizeChoice.SetSelection(0)
+        sizeChoice.Enable(False)
+        self.addEntry(
+            _("Icon size"),
+            sizeChoice,
+            helpText=_("More sizes will be available as icon themes are imported"),
+        )
+        self.fit()
+
+
 class TaskDatesPage(SettingsPage):
     pageName = "task"
     pageTitle = _("Task dates")
@@ -2630,6 +2679,7 @@ class Preferences(widgets.NotebookDialog):
         "theme",
         "appearance",
         "features",
+        "icons",
     ]
     pages = dict(
         window=WindowBehaviorPage,
@@ -2641,6 +2691,7 @@ class Preferences(widgets.NotebookDialog):
         language=LanguagePage,
         appearance=TaskAppearancePage,
         features=FeaturesPage,
+        icons=IconsPage,
     )
 
     def __init__(self, settings=None, taskFile=None, *args, **kwargs):

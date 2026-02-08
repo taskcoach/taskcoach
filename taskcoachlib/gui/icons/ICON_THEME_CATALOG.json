@@ -1,0 +1,74 @@
+{
+  "papirus": {
+    "name": "Papirus",
+    "url": "https://github.com/PapirusDevelopmentTeam/papirus-icon-theme",
+    "license": "GPL-3.0",
+    "debian_package": "papirus-icon-theme",
+    "debian_url": "https://tracker.debian.org/pkg/papirus-icon-theme",
+    "path_pattern": "{theme}/{size}x{size}/{category}/{file}",
+    "sizes": [8, 16, 18, 22, 24, 32, 42, 48, 64, 84, 96, 128],
+    "categories": ["actions", "animations", "apps", "categories", "devices", "emblems", "emotes", "mimetypes", "panel", "places", "status"],
+    "icons_file": "papirus.json"
+  },
+  "oxygen": {
+    "name": "Oxygen",
+    "url": "https://invent.kde.org/frameworks/oxygen-icons",
+    "license": "LGPL-2.1",
+    "debian_package": "oxygen-icons",
+    "debian_url": "https://tracker.debian.org/pkg/oxygen-icons",
+    "path_pattern": "{theme}/{size}x{size}/{category}/{file}",
+    "sizes": [8, 16, 22, 24, 32, 48, 64, 128, 256],
+    "categories": ["actions", "animations", "applets", "apps", "categories", "devices", "emblems", "emotes", "mimetypes", "places", "preferences", "special", "status"],
+    "icons_file": "oxygen.json"
+  },
+  "breeze": {
+    "name": "Breeze",
+    "url": "https://invent.kde.org/frameworks/breeze-icons",
+    "license": "LGPL-2.1",
+    "debian_package": "breeze-icons",
+    "debian_url": "https://tracker.debian.org/pkg/breeze-icons",
+    "path_pattern": "{theme}/{category}/{size}/{file}",
+    "sizes": [8, 12, 16, 22, 32, 48, 64, 96, 128, 256],
+    "categories": ["actions", "animations", "applets", "apps", "categories", "devices", "emblems", "emotes", "mimetypes", "places", "preferences", "status"]
+  },
+  "nuvola": {
+    "name": "Nuvola",
+    "url": "https://github.com/spartrekus/nuvola-icon-theme",
+    "license": "LGPL-2.1",
+    "debian_package": "nuvola-icon-theme",
+    "debian_url": "http://archive.debian.org/debian/pool/main/k/kdeartwork/nuvola-icon-theme_15.08.3-2_all.deb",
+    "note": "Original by David Vignoni, unmaintained since v1.0. Reference is Debian archive (last in stretch). GitHub is community mirror.",
+    "path_pattern": "{theme}/{size}x{size}/{category}/{file}",
+    "sizes": [16, 22, 32, 48, 64, 128, 256],
+    "categories": ["actions", "apps", "categories", "devices", "emblems", "mimetypes", "places", "status"],
+    "icons_file": "nuvola.json"
+  },
+  "twemoji": {
+    "name": "Twemoji",
+    "url": "https://github.com/twitter/twemoji",
+    "license": "MIT"
+  },
+  "openmoji": {
+    "name": "OpenMoji",
+    "url": "https://github.com/hfg-gmuend/openmoji",
+    "license": "CC-BY-SA-4.0"
+  },
+  "taskcoach": {
+    "name": "TaskCoach",
+    "url": "https://github.com/taskcoach/taskcoach",
+    "license": "GPL-3.0",
+    "note": "New custom TaskCoach icons following XDG structure.",
+    "path_pattern": "{size}x{size}/{file}",
+    "sizes": [16, 22, 32, 48],
+    "categories": [],
+    "icons_file": "taskcoach.json"
+  },
+  "legacy": {
+    "name": "Legacy",
+    "license": "GPL-3.0",
+    "note": "Old internal icons using flat format (*16x16.png). Will be migrated to taskcoach theme.",
+    "path_pattern": "{file}",
+    "sizes": [16, 22, 32, 48, 64, 128],
+    "categories": []
+  }
+}

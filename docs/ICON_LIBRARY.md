@@ -27,7 +27,7 @@
 
 ## TODO
 
-### Monochrome Icon Support
+### 1. Monochrome Icon Support
 - [ ] Add support for monochrome (symbolic) icons from Breeze, Adwaita
 - [ ] Implement icon recoloring: monochrome icons can be tinted to match theme
 - [ ] Add icon color options to the icon picker:
@@ -37,11 +37,19 @@
 
 **Note:** Currently only pre-colored icons are used. Breeze icons have colors (#232629 dark gray + accent colors like #da4453 red, #27ae60 green) - they are NOT monochrome. The `-symbolic` variants ARE monochrome. Only the `-symbolic` versions should be excluded until recoloring support is implemented.
 
-### Duplicate Icon Review
+### 2. Duplicate Icon Review
 - [x] Document duplicates in ICON_MAPPING.json to prevent re-importing
 - [ ] Audit new icons against existing legacy icons for visual duplicates
 
 See `ICON_MAPPING.json` for documented duplicates (in the `duplicates` field of each icon entry).
+
+### 3. Refactor Overlay Icon Hack
+- [ ] Create proper pre-composed "symbolic" theme icons to replace the `+` overlay hack
+- [ ] Current `ArtProvider.CreateBitmap()` parses `main+overlay` strings to compose icons at runtime
+- [ ] This hack breaks when icon names contain `+` (e.g., `text-x-c++src` from C++ files)
+- [ ] Used by: `ViewerHideTasks` toolbar buttons (`completedtasks+cross_red_icon`, etc.)
+- [ ] Solution: Pre-compose at load time into "symbolic" theme, remove `+` parsing hack
+- [ ] See `_CreateOverlayBitmap()` in `artprovider.py`
 
 ## IMPORTANT: Complete Import Cycle
 
@@ -121,10 +129,134 @@ The icon system supports **two formats** (hybrid mode):
 The `ArtProvider` checks new format first, falls back to legacy. Both coexist.
 
 **Provenance tracking:**
-- `ICON_SOURCES.json` - Source repositories (URL, license)
-- `ICON_MAPPING.json` - Maps icon names to source + original filename
+- `ICON_THEME_CATALOG.json` - Theme metadata (URL, license, path_pattern, categories, sizes)
+- `ICON_MAPPING.json` - Maps icon names to theme + original filename
 
 **Metadata** (names, hints) is in `taskcoachlib/gui/artprovider.py:chooseableItems`.
+
+## Two-System Architecture
+
+There are **two separate systems** for managing icons:
+
+### 1. Prep Tools (Discovery/Cataloging)
+
+**Purpose:** Discover and catalog icons in EXTERNAL theme packs for selection.
+
+**Location:** `tools/icon_grid_browser_data/`
+
+**Files:**
+- `oxygen.json`, `papirus.json`, `nuvola.json` - Catalogs of ALL icons in each theme pack
+- Contains: sizes, hints (for discovery/search)
+- NOT part of the app - just tooling for icon selection
+
+**Key format:** `{category}/{filename}` (e.g., `emotes/face-angel.png`)
+
+### 2. App Internal Library (Imported Icons)
+
+**Purpose:** Icons actually USED by TaskCoach.
+
+**Location:** `taskcoachlib/gui/icons/`
+
+**Files:**
+- `oxygen.json`, `papirus.json` - Registry of IMPORTED icons with metadata
+- `oxygen_i18n.py`, `papirus_i18n.py` - Generated translation files
+- `oxygen/16x16/emotes/face-angel.png` - Actual icon files
+
+**Key format:** `{theme}_{category}_{filename}` (e.g., `oxygen_emotes_face-angel`)
+
+### Theme Identifiers
+
+Every icon belongs to a theme. The theme identifier is required for all icon
+operations to ensure consistent key generation.
+
+| Theme | Description |
+|-------|-------------|
+| `oxygen` | Oxygen icons from KDE |
+| `papirus` | Papirus icons |
+| `breeze` | Breeze icons from KDE |
+| `nuvola` | Nuvola icons |
+| `taskcoach` | New custom TaskCoach icons following XDG structure |
+| `legacy` | Old internal icons using flat format (exception, see below) |
+
+Note: The codebase previously used "source" and "pack" inconsistently. All new
+code should use "theme" for consistency. ICON_MAPPING.json still uses "source"
+for backward compatibility but will eventually migrate to "theme".
+
+### Themes Without Categories vs Legacy Exception
+
+**Themes without categories** still follow XDG icon theme structure:
+- `taskcoach`: path pattern `{size}x{size}/{file}` (e.g., `16x16/custom.png`)
+- Category is simply omitted from the path
+- Key format: `{theme}_{stem}` (e.g., `taskcoach_custom`)
+- These are normal XDG-compliant icons
+
+**Legacy theme is a special exception:**
+- Mixed formats coexist (historical reasons):
+  1. Flat files with size in filename: `add16x16.png`, `edit22x22.png`
+  2. Some icons in sized directories: `16x16/something.png`
+- Key format: `legacy_{stem}` (e.g., `legacy_add`)
+
+**Handling the legacy exception:**
+- Legacy icons require hardcoded handling for both formats
+- Flat files: parse size from filename, reconstruct clean filename
+  - Example: `add16x16.png` → size=16, file=`add.png`
+- Sized directories: parse normally like XDG themes
+  - Example: `16x16/icon.png` → size=16, file=`icon.png`
+- This exception handling will remain until all legacy icons are migrated to taskcoach theme
+
+**Do not confuse:**
+- A theme without categories (taskcoach) → normal XDG structure, just no category
+- The legacy theme → flat files with size in filename, requires special parsing
+
+### Key Generation Strategy
+
+When scanning icon directories, keys must be generated consistently so that disk
+scans match catalog entries. Inconsistent keys cause silent merge failures where
+discovered icons are treated as new and existing entries are logged as missing.
+
+**Strategy:** Generate consistent keys at scan time using the theme. The scanner
+receives the theme and generates keys in the correct format immediately, rather
+than trying to translate between formats later.
+
+**Data flow:**
+1. Disk scanner receives theme identifier
+2. For each icon found, scanner generates key: `{theme}_{category}_{stem}`
+3. Scanner also extracts category and file as separate fields
+4. Catalog load returns entries with the same key format
+5. Merge finds matches because keys are identical
+6. Use category and file from info dict directly - no fallback parsing
+
+**Why this is robust:**
+- Single source of truth for key format (the scanner)
+- Fail-fast on missing data - errors surface immediately, not masked by fallbacks
+- No silent failures - merge works correctly or fails visibly
+- Sequential decomposition in path parsing reduces complexity
+
+**Sequential decomposition in path parsing:**
+
+When parsing disk paths to extract size, category, and filename, we decompose
+sequentially starting with the simplest parts. First get the relative path from
+the base directory. Then try pattern matching in order of commonality. Once a
+pattern matches, extract all components and build the key.
+
+This approach reduces search complexity because each step narrows the possibilities.
+If one pattern does not match, try the next. The result is simpler logic that
+handles theme variations (different directory structures, HiDPI variants) without
+complex regex or fragile assumptions.
+
+### Import Flow
+
+```
+External Theme Pack          Prep Tool                    App Internal Library
+~/Downloads/icons/oxygen/    tools/.../oxygen.json   -->  taskcoachlib/gui/icons/oxygen/
+(source files)               (hints for discovery)        (imported icons + JSON + .py)
+```
+
+**After import:**
+1. Icon file copied to app library
+2. Entry added to app JSON with `name`, `hints`, `category`, `file`, `source_sizes`
+3. Prep tool JSON updated: `hints` replaced with `inherits: "icon_id"`
+4. Translation .py file regenerated
 
 ## Required Sizes
 
@@ -165,41 +297,231 @@ taskcoachlib/gui/icons/
 │   └── ...
 ├── 32x32/                    # Toolbar icons
 │   └── ...
-├── ICON_SOURCES.json         # Source repositories
-├── ICON_MAPPING.json         # Icon provenance
+├── ICON_THEME_CATALOG.json   # Theme metadata (path patterns, categories, sizes)
+├── ICON_MAPPING.json         # Icon provenance (legacy, keep during transition)
 │
 ├── # Legacy icons (flat, coexist during migration)
 ├── person_icon16x16.png      # Legacy: keep _icon suffix
 └── person_icon22x22.png
 ```
 
-### ICON_SOURCES.json
+### Target Layout (Per-Theme Structure)
 
-Defines source repositories (one entry per icon set):
+The target structure uses per-theme JSON files and mirrors each theme's path_pattern:
+```
+taskcoachlib/gui/icons/
+├── ICON_THEME_CATALOG.json   # Theme metadata, references per-theme JSONs via icons_file
+│
+├── # Per-theme JSON files (icons imported from each theme)
+├── papirus.json              # Papirus icons: hints, sizes, category
+├── oxygen.json               # Oxygen icons
+├── nuvola.json               # Nuvola icons
+├── taskcoach.json            # Internal TaskCoach icons
+│
+├── # Directory structure follows theme's path_pattern:
+├── # Papirus/Oxygen/Nuvola: {size}x{size}/{category}/{file}
+├── 16x16/
+│   ├── actions/
+│   │   └── edit-copy.png
+│   ├── apps/
+│   │   └── homebank.png
+│   └── status/
+│       └── led_blue.png
+│
+├── # Breeze: {category}/{size}/{file}
+├── actions/
+│   ├── 16/
+│   │   └── edit-copy.png
+│   └── 22/
+│       └── edit-copy.png
+│
+├── # TaskCoach (no categories): {size}x{size}/{file}
+├── 16x16/
+│   └── custom_icon.png
+│
+├── # Legacy (keep until fully migrated)
+├── ICON_MAPPING.json         # Global provenance (deprecated)
+├── person_icon16x16.png      # Flat legacy icons
+└── person_icon22x22.png
+```
+
+**Migration path:**
+1. New icons go into theme-specific structure with per-theme JSON
+2. Legacy icons remain in flat structure with ICON_MAPPING.json
+3. Both coexist until all legacy icons are migrated
+4. Remove ICON_MAPPING.json and flat files when migration complete
+
+### ICON_THEME_CATALOG.json
+
+Defines icon theme metadata including path structure (one entry per theme):
 ```json
 {
   "papirus": {
     "url": "https://github.com/PapirusDevelopmentTeam/papirus-icon-theme",
-    "license": "GPL-3.0"
+    "license": "GPL-3.0",
+    "debian_package": "papirus-icon-theme",
+    "debian_url": "https://tracker.debian.org/pkg/papirus-icon-theme",
+    "path_pattern": "{theme}/{size}x{size}/{category}/{file}",
+    "sizes": [16, 22, 24, 32, 48, 64],
+    "categories": ["actions", "apps", "devices", "emblems", "mimetypes", "places", "status"]
   },
   "breeze": {
-    "url": "https://github.com/KDE/breeze-icons",
-    "license": "LGPL-2.1"
-  },
-  "twemoji": {
-    "url": "https://github.com/twitter/twemoji",
-    "license": "MIT"
-  },
-  "nuvola": {
-    "url": "https://github.com/spartrekus/nuvola-icon-theme",
-    "license": "LGPL-2.1"
-  },
-  "taskcoach": {
-    "url": "https://github.com/taskcoach/taskcoach",
-    "license": "GPL-3.0"
+    "url": "https://invent.kde.org/frameworks/breeze-icons",
+    "license": "LGPL-2.1",
+    "debian_package": "breeze-icons",
+    "debian_url": "https://tracker.debian.org/pkg/breeze-icons",
+    "path_pattern": "{theme}/{category}/{size}/{file}",
+    "sizes": [12, 16, 22, 32, 48, 64],
+    "categories": ["actions", "apps", "devices", "emblems", "mimetypes", "places", "status"]
   }
 }
 ```
+
+**Fields:**
+- `url` - Project homepage (GitHub, KDE Invent, etc.)
+- `license` - SPDX license identifier
+- `debian_package` - Debian package name (optional)
+- `debian_url` - Debian package tracker URL (optional)
+- `path_pattern` - Path template for icon files
+- `sizes` - Available icon sizes as array
+- `categories` - Valid category names for this theme
+- `icons_file` - Per-theme JSON file for imported icons (e.g., `papirus.json`)
+- `note` - Additional notes (optional)
+
+**Path pattern tokens:**
+- `{theme}` - Theme directory name (e.g., `Papirus`, `icons`)
+- `{size}x{size}` - Dimension format (e.g., `16x16`, also matches `64x64@2x` HiDPI)
+- `{size}` - Bare size number (e.g., `16`)
+- `{category}` - Category name (e.g., `actions`, `apps`)
+- `{file}` - Filename with extension
+
+### Path Parsing Strategy
+
+**Why sequential parsing instead of regex?**
+
+Different icon themes have different directory structures:
+- Oxygen: `{theme}/{size}x{size}/{category}/{file}` (size before category)
+- Breeze: `{theme}/{category}/{size}/{file}` (category before size)
+- Some themes have HiDPI variants: `64x64@2x` alongside `64x64`
+
+A single regex pattern cannot handle all variations robustly. Sequential parsing
+adapts to each theme's `path_pattern` and handles edge cases like:
+- HiDPI directories (`64x64@2x` → extracts base size 64)
+- Bare size numbers (`16` vs `16x16`)
+- Variable token order per theme
+
+**Logic:**
+
+The `path_pattern` in ICON_THEME_CATALOG.json defines the exact folder sequence.
+We split both the pattern and the path by `/`, then match positionally. This gives
+us exactly where each component (size, category, file) should be.
+
+**Validation:**
+
+Categories and sizes are validated against the catalog's authoritative lists.
+If a path contains an unexpected category or size, it's a FATAL ERROR - the catalog
+must be updated rather than silently accepting unknown values.
+
+**Sequential processing (pseudocode):**
+
+```
+1. pattern = config["path_pattern"]                    # e.g., "{theme}/{size}x{size}/{category}/{file}"
+2. tokens = pattern.removePrefix("{theme}/").split("/") # → ["{size}x{size}", "{category}", "{file}"]
+3. parts = path.relativeTo(search_root).split("/")      # → ["64x64@2x", "emotes", "face.png"]
+
+4. if len(parts) != len(tokens):
+       return None  # path doesn't match pattern
+
+5. for i, (token, part) in enumerate(zip(tokens, parts)):
+       if token == "{file}":
+           result.file = part
+       elif token == "{category}":
+           if part not in config["categories"]:
+               FATAL ERROR
+           result.category = part
+       elif "{size}" in token:
+           size = extractLeadingDigits(part)  # "64x64@2x" → 64
+           if size not in config["sizes"]:
+               FATAL ERROR
+           result.size = size
+
+6. return result  # {file, category, size}
+```
+
+**Example:** Path `64x64@2x/emotes/face-uncertain.png`
+
+| Position | Token | Part | Extraction |
+|----------|-------|------|------------|
+| 0 | `{size}x{size}` | `64x64@2x` | size = 64 (leading digits) |
+| 1 | `{category}` | `emotes` | validated against categories |
+| 2 | `{file}` | `face-uncertain.png` | file = `face-uncertain.png` |
+
+### Per-Theme JSON Files (App Internal Library)
+
+Each theme has a JSON file containing imported icons with metadata:
+
+```json
+// taskcoachlib/gui/icons/oxygen.json
+{
+  "icons": {
+    "oxygen_emotes_face-angel": {
+      "name": "Face - Angel",
+      "category": "emotes",
+      "file": "face-angel.png",
+      "source_sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["angel", "halo", "innocent", "good", "smiley", "face"]
+    }
+  }
+}
+```
+
+**Fields:**
+- `name` - Display name for UI (English, title case, "Category - Description" format)
+- `category` - XDG category (actions, apps, emotes, etc.)
+- `file` - Original filename with extension
+- `source_sizes` - Array of sizes available in source theme
+- `hints` - Search keywords (English)
+
+**Key format:** `{theme}_{category}_{filename-without-extension}`
+- Example: `oxygen_emotes_face-angel`
+- Underscores separate components; original filename preserved (dashes/underscores intact)
+
+### Translation Generation
+
+The app library JSON files are the source of truth. A tool generates per-theme Python
+files for translation:
+
+```
+oxygen.json  →  oxygen_i18n.py (generated)
+papirus.json →  papirus_i18n.py (generated)
+```
+
+**Generated Python structure:**
+```python
+# Generated from oxygen.json - DO NOT EDIT MANUALLY
+from taskcoachlib.i18n import _
+
+icons = {
+    "oxygen_emotes_face-angel": {
+        "name": _("Face - Angel"),
+        "hints": [_("angel"), _("halo"), _("innocent"), _("good"), _("smiley"), _("face")],
+    },
+}
+```
+
+This wraps `name` and `hints` in `_()` for gettext translation extraction.
+
+**Generation tool:**
+```bash
+# Regenerate all themes with icons
+python tools/generate_icon_i18n.py
+
+# Regenerate a specific theme only
+python tools/generate_icon_i18n.py oxygen
+python tools/generate_icon_i18n.py nuvola
+```
+
+The tool reads `taskcoachlib/gui/icons/{theme}.json` and generates `taskcoachlib/gui/icons/{theme}_i18n.py`.
 
 ### ICON_MAPPING.json
 
@@ -227,7 +549,7 @@ Maps TaskCoach icon names to their source (provenance tracking):
 - **New icons** (no suffix): Use original name or descriptive name (e.g., `homebank`, `bitcoin`, `wallet_closed`)
 
 **Fields:**
-- `source` - Library name (must exist in ICON_SOURCES.json)
+- `source` - Theme name (must exist in ICON_THEME_CATALOG.json)
 - `category` - Subfolder in source (actions/apps/status)
 - `file` - Original filename in source repo
 - `source_sizes` - Sizes available in the SOURCE library (for provenance tracking)
@@ -533,11 +855,14 @@ See "IMPORTANT: Complete Import Cycle" at the top of this document.
    "homebank": {"source": "papirus", "category": "apps", "file": "homebank.svg", "source_sizes": "16,22,24,32,48,64"}
    ```
 
-7. **Update ICON_SOURCES.json** (if new source):
+7. **Update ICON_THEME_CATALOG.json** (if new theme):
    ```json
    "papirus": {
      "url": "https://github.com/PapirusDevelopmentTeam/papirus-icon-theme",
-     "license": "GPL-3.0"
+     "license": "GPL-3.0",
+     "path_pattern": "{theme}/{size}x{size}/{category}/{file}",
+     "sizes": [16, 22, 24, 32, 48, 64],
+     "categories": ["actions", "apps", "devices", "emblems", "mimetypes", "places", "status"]
    }
    ```
 
@@ -639,11 +964,10 @@ The tool maintains persistent catalog files in `tools/icon_grid_browser_data/`:
 
 ```
 tools/icon_grid_browser_data/
-├── papirus.json          # Papirus theme pack catalog
-├── oxygen.json           # Oxygen theme pack catalog
-├── nuvola.json           # Nuvola theme pack catalog
-├── nuvola_github.json    # Nuvola GitHub theme pack catalog
-├── breeze.json           # Breeze theme pack catalog
+├── papirus.json          # Papirus theme catalog
+├── oxygen.json           # Oxygen theme catalog
+├── nuvola.json           # Nuvola theme catalog
+├── breeze.json           # Breeze theme catalog
 └── internal.json         # Internal TaskCoach icons
 ```
 
@@ -683,6 +1007,170 @@ The tool looks for external theme packs in the `../icons/` sibling directory (se
 
 Theme pack checkboxes are automatically disabled if the expected directory is not found on disk.
 
+## Icon Duplicates Script
+
+Finds duplicate icon files by content hash, grouped by icon name. Reports icons where ALL sizes are duplicates (full duplicates) first, then icons with partial duplicates.
+
+### Running
+
+```bash
+python tools/icon_duplicates.py <theme> [path]
+```
+
+Arguments:
+- `theme`: Theme name (nuvola, oxygen, papirus, breeze, taskcoach)
+- `path`: Optional start path. If omitted, uses default from LOCAL_THEMES.
+
+### Output
+
+The script shows which icons are already marked in the catalog JSON:
+- `[PRIMARY]` — Icon has `"duplicates"` array (canonical icon)
+- `[duplicate_of: key]` — Icon has `"duplicate_of"` field
+- `[DONE]` — All icons in the group are marked
+
+For partial duplicates, additional flags indicate superset patterns:
+- `[SUSPECTED SUPERSET]` — This icon has more sizes than matching `[FULL-DUP]` icons
+- `[FULL-DUP]` — The matching icon is part of a full-duplicate group
+
+### Superset Pattern
+
+When a partial duplicate has MORE sizes than matching full-duplicate icons, it's flagged as `[SUSPECTED SUPERSET]`. This typically means:
+- The partial icon is the complete/canonical version (e.g., 6 sizes)
+- The full-dup icons are subsets with fewer sizes (e.g., only 48px)
+- At overlapping sizes, the content is identical
+
+**Worker action:** When you see `[SUSPECTED SUPERSET]`:
+1. Review the icon visually to confirm it's the same image
+2. If confirmed, make this icon PRIMARY with `"duplicates"` array
+3. Update all matching `[FULL-DUP]` icons to have `"duplicate_of"` pointing to this icon
+4. If an existing PRIMARY in the full-dup group, change it to `"duplicate_of"` as well
+
+### Example
+
+```bash
+python tools/icon_duplicates.py nuvola > tools/nuvola_duplicates.txt
+```
+
+## Icon Import Script (Migrate JSON Entries)
+
+Imports icons from the tools prep catalog to the app internal library. Creates directory structure, copies primary icon images, and transforms JSON entries.
+
+### Running
+
+```bash
+python tools/icon_import_theme.py <theme> [--dry-run]
+```
+
+Arguments:
+- `theme`: Theme name (nuvola, oxygen, papirus, breeze)
+- `--dry-run`: Show what would be done without making changes
+
+### Field Transformation Table
+
+| Field | Tools JSON (Source) | App Primary | App Duplicate |
+|-------|---------------------|-------------|---------------|
+| `name` | has | copy | copy |
+| `category` | has | copy | copy |
+| `file` | has | copy | copy |
+| `sizes` | has | rename → `source_sizes` | rename → `source_sizes` |
+| `source_sizes` | n/a | **NEW** (from `sizes`) | **NEW** (from `sizes`) |
+| `sizes` | has | **NEW** (files copied) | **NEW** (empty `[]`) |
+| `hints` | has | copy | copy |
+| `duplicates` | has (primary only) | copy | n/a |
+| `duplicate_of` | has (dup only) | n/a | copy |
+| `inherits` | **ADD** (after import) | n/a | n/a |
+
+### Key Differences
+
+- **`source_sizes`**: What sizes exist in the source theme (renamed from tools `sizes`)
+- **`sizes`**: What sizes were actually imported to app (primaries have files, duplicates have `[]`)
+- **`inherits`**: Added to tools JSON only, points to itself (the app icon key). App JSON never has `inherits`.
+
+### Example: Primary Icon
+
+**Tools JSON BEFORE:**
+```json
+"nuvola_devices_printer": {
+  "category": "devices",
+  "file": "printer.png",
+  "sizes": [16, 22, 32, 48, 64, 128],
+  "hints": ["printer", "print", ...],
+  "name": "Printer",
+  "duplicates": ["nuvola_apps_kjobviewer", ...]
+}
+```
+
+**Tools JSON AFTER (adds `inherits`):**
+```json
+"nuvola_devices_printer": {
+  "category": "devices",
+  "file": "printer.png",
+  "sizes": [16, 22, 32, 48, 64, 128],
+  "hints": ["printer", "print", ...],
+  "name": "Printer",
+  "duplicates": ["nuvola_apps_kjobviewer", ...],
+  "inherits": "nuvola_devices_printer"
+}
+```
+
+**App JSON (new entry):**
+```json
+"nuvola_devices_printer": {
+  "name": "Printer",
+  "category": "devices",
+  "file": "printer.png",
+  "source_sizes": [16, 22, 32, 48, 64, 128],
+  "sizes": [16],
+  "hints": ["printer", "print", ...],
+  "duplicates": ["nuvola_apps_kjobviewer", ...]
+}
+```
+
+### Example: Duplicate Icon
+
+**Tools JSON BEFORE:**
+```json
+"nuvola_mimetypes_file_locked": {
+  "category": "mimetypes",
+  "file": "file_locked.png",
+  "sizes": [16, 32, 48, 64, 128],
+  "hints": ["file", "locked", ...],
+  "name": "File Locked",
+  "duplicate_of": "nuvola_mimetypes_file_locked-[Converted]"
+}
+```
+
+**Tools JSON AFTER (adds `inherits` pointing to itself):**
+```json
+"nuvola_mimetypes_file_locked": {
+  "category": "mimetypes",
+  "file": "file_locked.png",
+  "sizes": [16, 32, 48, 64, 128],
+  "hints": ["file", "locked", ...],
+  "name": "File Locked",
+  "duplicate_of": "nuvola_mimetypes_file_locked-[Converted]",
+  "inherits": "nuvola_mimetypes_file_locked"
+}
+```
+
+**App JSON (empty `sizes` since no files copied):**
+```json
+"nuvola_mimetypes_file_locked": {
+  "name": "File Locked",
+  "category": "mimetypes",
+  "file": "file_locked.png",
+  "source_sizes": [16, 32, 48, 64, 128],
+  "sizes": [],
+  "hints": ["file", "locked", ...],
+  "duplicate_of": "nuvola_mimetypes_file_locked-[Converted]"
+}
+```
+
+### Image File Copying
+
+- **Primary icons**: Copy 16x16 PNG files to `taskcoachlib/gui/icons/{theme}/16x16/{category}/`
+- **Duplicate icons**: No files copied (they reference the primary's image via `duplicate_of`)
+
 ## Icon Hints Worker Plan
 
 Pre-Plan instructions: Copy this "Icon Hints Work Plan" verbatim from ./docs/ICON_LIBRARY.md to your plan file, except for this sentence.
@@ -690,31 +1178,30 @@ Pre-Plan instructions: Copy this "Icon Hints Work Plan" verbatim from ./docs/ICO
 Add `"hints"` arrays to all icons in the catalog JSON files so they're searchable in the icon grid browser.
 
 ### Catalogs to Process (in order)
-1. `nuvola_github.json` (741 icons)
-2. `nuvola_local_zip.json` (742 icons)
+1. `nuvola.json` (741 icons)
+2. `oxygen.json` (2,053 icons)
 3. `papirus.json` (17,516 icons)
 4. `breeze.json` (4,238 icons)
-5. `oxygen.json` (2,053 icons)
-6. `internal.json` (71 icons)
+5. `internal.json` (71 icons)
 
 ### Workflow
 
 ```
-1. Run: python3 tools/icon_grid_browser_data/icon_grid_browser_next_hints.py
+1. Run: python3 tools/icon_next_hints.py
 2. Follow the NEXT STEP - WORKER INSTRUCTIONS in the script output
 3. Go back to 1 and execute the steps again
 4. Do not stop until the script tells you all the work is done! If the script gives you another file, that means your work is NOT complete!
 ```
 
 ### Anomaly Logs
-- Location: `tools/icon_grid_browser_data/{pack}_anomalies.txt`
+- Location: `tools/icon_grid_browser_data/{theme}_anomalies.txt`
 - Log any issues: conflicts resolved, icons added/skipped, anything unusual
 
 
 ### Key Files
-- **Script**: `./tools/icon_grid_browser_data/icon_grid_browser_next_hints.py`
+- **Script**: `./tools/icon_next_hints.py`
 - **Catalogs**: `./tools/icon_grid_browser_data/*.json`
-- **Anomaly logs**: `./tools/icon_grid_browser_data/{pack}_anomalies.txt`
+- **Anomaly logs**: `./tools/icon_grid_browser_data/{theme}_anomalies.txt`
 
 ## See Also
 

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Icon Grid Browser — Standalone dev tool for browsing TaskCoach icons
-and external icon theme packs.
+and external icon external themes.
 
 Usage:
     python tools/icon_grid_browser.py
@@ -17,6 +17,22 @@ import json
 import io
 from pathlib import Path
 from dataclasses import dataclass, field
+
+
+def json_dumps_compact_arrays(data):
+    """Serialize to JSON with indent=2 but arrays on single lines."""
+    text = json.dumps(data, indent=2, ensure_ascii=False)
+    # Collapse multi-line arrays to single lines
+    def collapse_array(match):
+        content = match.group(0)
+        collapsed = re.sub(r'\[\s+', '[', content)
+        collapsed = re.sub(r'\s+\]', ']', collapsed)
+        collapsed = re.sub(r',\s+', ', ', collapsed)
+        return collapsed
+    text = re.sub(r'\[\s*\n\s+[^\[\]]*?\s*\]', collapse_array, text)
+    return text
+
+from icon_theme_processor import ThemeProcessor, load_canon_themes
 
 # --- Dependency check (only extras beyond TaskCoach requirements) ---
 try:
@@ -34,40 +50,28 @@ REPO_ROOT = SCRIPT_DIR.parent
 ICONS_DIR = REPO_ROOT / "taskcoachlib" / "gui" / "icons"
 ARTPROVIDER_PATH = REPO_ROOT / "taskcoachlib" / "gui" / "artprovider.py"
 ICON_MAPPING_PATH = ICONS_DIR / "ICON_MAPPING.json"
-ICON_SOURCES_PATH = ICONS_DIR / "ICON_SOURCES.json"
 EXTERNAL_ICONS_BASE = REPO_ROOT.parent / "icons"
 DATA_DIR = SCRIPT_DIR / "icon_grid_browser_data"
 
 
-# Theme pack definitions: (id, label, base_path, path_pattern_func)
-# path_pattern_func(base, size, category, filename) -> Path
-THEME_PACKS = {
-    "nuvola_local_zip": {
-        "label": "Nuvola (Local Zip)",
-        "path": str(EXTERNAL_ICONS_BASE / "nuvola_local_zip"),
-        "license": "LGPL-2.1",
-    },
-    "nuvola_github": {
-        "label": "Nuvola (GitHub)",
-        "path": str(EXTERNAL_ICONS_BASE / "nuvola-icon-theme-master" / "usr" / "share" / "icons" / "nuvola"),
-        "license": "LGPL-2.1",
+# Local paths for external external themes.
+LOCAL_THEMES = {
+    "nuvola": {
+        "search_root": str(EXTERNAL_ICONS_BASE / "nuvola"),
     },
     "papirus": {
-        "label": "Papirus",
-        "path": str(EXTERNAL_ICONS_BASE / "papirus-icon-theme-master" / "Papirus"),
-        "license": "GPL-3.0",
+        "search_root": str(EXTERNAL_ICONS_BASE / "papirus-icon-theme-master" / "Papirus"),
     },
     "breeze": {
-        "label": "Breeze",
-        "path": str(EXTERNAL_ICONS_BASE / "breeze-icons-master" / "icons"),
-        "license": "LGPL-2.1",
+        "search_root": str(EXTERNAL_ICONS_BASE / "breeze-icons-master" / "icons"),
     },
     "oxygen": {
-        "label": "Oxygen",
-        "path": str(EXTERNAL_ICONS_BASE / "oxygen-icons-master"),
-        "license": "LGPL-2.1",
+        "search_root": str(EXTERNAL_ICONS_BASE / "oxygen-icons-master"),
     },
 }
+
+# Load canonical theme catalog from common library
+_canon_themes = load_canon_themes()
 
 
 # ============================================================================
@@ -82,14 +86,15 @@ class IconEntry:
     source: str = ""  # nuvola, papirus, breeze, oxygen
     category: str = ""
     status: str = "external"  # included, duplicate, legacy, external
-    sizes: dict = field(default_factory=dict)  # size -> path_str
+    paths: dict = field(default_factory=dict)  # size -> path_str
     duplicates: list = field(default_factory=list)
+    duplicate_of: str = ""  # key of primary icon if this is a duplicate
     original_file: str = ""  # original filename in source library
 
 
 
 class IconDataModel:
-    """Loads and indexes all icon data from repo files and external theme packs."""
+    """Loads and indexes all icon data from repo files and external external themes."""
 
     def __init__(self):
         self._entries = {}  # key -> IconEntry
@@ -98,11 +103,35 @@ class IconDataModel:
         self._icon_mapping = {}
         self._icon_sources = {}
         self._bitmap_cache = {}  # (key, size) -> wx.Bitmap
-        self._discovered_sizes = set()  # all sizes seen across all packs
+        self._discovered_sizes = set()  # all sizes seen across all themes
+        self._app_theme_hints = {}  # theme_id -> {icon_key -> hints}
+
+    def _load_app_theme_data(self, theme_id):
+        """Load icon data from app's theme JSON (taskcoachlib/gui/icons/{theme}.json).
+
+        Returns dict of {icon_key: {"hints": [...], "duplicates": [...]}}.
+        """
+        if theme_id in self._app_theme_hints:
+            return self._app_theme_hints[theme_id]
+
+        app_theme_path = ICONS_DIR / f"{theme_id}.json"
+        data_map = {}
+        if app_theme_path.exists():
+            try:
+                data = json.loads(app_theme_path.read_text())
+                for icon_key, info in data.get("icons", {}).items():
+                    data_map[icon_key] = {
+                        "hints": info.get("hints", []),
+                        "duplicates": info.get("duplicates", []),
+                    }
+            except (json.JSONDecodeError, KeyError):
+                pass
+        self._app_theme_hints[theme_id] = data_map
+        return data_map
 
     @property
     def discovered_sizes(self):
-        """All icon sizes discovered across all loaded packs, sorted."""
+        """All icon sizes discovered across all loaded themes, sorted."""
         return sorted(self._discovered_sizes)
 
     def load_internal(self):
@@ -162,20 +191,18 @@ class IconDataModel:
                 entry.duplicates = info.get("duplicates", [])
 
     def _load_icon_sources(self):
-        """Load ICON_SOURCES.json."""
-        if not ICON_SOURCES_PATH.exists():
-            return
-        self._icon_sources = json.loads(ICON_SOURCES_PATH.read_text())
+        """Load canonical theme catalog."""
+        self._icon_sources = _canon_themes
 
     # --- Catalog load/save/merge ---
 
-    def _catalog_path(self, pack_id):
-        """Return path to per-pack catalog JSON file."""
-        return DATA_DIR / f"{pack_id}.json"
+    def _catalog_path(self, theme_id):
+        """Return path to per-theme catalog JSON file."""
+        return DATA_DIR / f"{theme_id}.json"
 
-    def _load_catalog(self, pack_id):
-        """Load existing per-pack catalog from disk. Returns dict of icons."""
-        path = self._catalog_path(pack_id)
+    def _load_catalog(self, theme_id):
+        """Load existing per-theme catalog from disk. Returns dict of icons."""
+        path = self._catalog_path(theme_id)
         if not path.exists():
             return {}
         try:
@@ -184,21 +211,21 @@ class IconDataModel:
         except (json.JSONDecodeError, KeyError):
             return {}
 
-    def _save_catalog(self, pack_id, icons, comment=None):
-        """Write per-pack catalog JSON to disk.
+    def _save_catalog(self, theme_id, icons, comment=None):
+        """Write per-theme catalog JSON to disk.
 
         Only writes if the icons content has changed.
         """
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         if comment is None:
-            comment = f"Auto-maintained catalog for {pack_id} theme pack. Icons/sizes are additive only."
-        path = self._catalog_path(pack_id)
+            comment = f"Auto-maintained catalog for {theme_id} external theme. Icons/sizes are additive only."
+        path = self._catalog_path(theme_id)
 
         data = {
             "_comment": comment,
             "icons": icons,
         }
-        new_content = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
+        new_content = json_dumps_compact_arrays(data) + "\n"
 
         # Skip write if content unchanged
         if path.exists() and path.read_text() == new_content:
@@ -206,7 +233,7 @@ class IconDataModel:
 
         path.write_text(new_content)
 
-    def _merge_catalog(self, pack_id, discovered_icons):
+    def _merge_catalog(self, theme_id, discovered_icons):
         """Additively merge discovered icons into the existing catalog.
 
         Icons/sizes are additive (never removed).
@@ -214,49 +241,48 @@ class IconDataModel:
         Logs missing icons (in catalog but not on disk).
 
         Args:
-            pack_id: theme pack identifier
-            discovered_icons: dict of {cat_file: {"sizes": [...], ...}}
+            theme_id: theme identifier
+            discovered_icons: dict of {icon_key: {"sizes": [...], "paths": {...}, "category": ..., "file": ...}}
         Returns:
-            merged catalog dict
+            merged catalog dict (paths not stored in JSON)
         """
-        existing = self._load_catalog(pack_id)
+        existing = self._load_catalog(theme_id)
 
         # Merge discovered into existing
-        for cat_file, info in discovered_icons.items():
-            if cat_file in existing:
+        for icon_key, info in discovered_icons.items():
+            if icon_key in existing:
                 # Additive sizes: union of existing and discovered
-                existing_sizes = set(existing[cat_file].get("sizes", []))
-                new_sizes = set(info.get("sizes", []))
-                existing[cat_file]["sizes"] = sorted(existing_sizes | new_sizes)
-                # Updatable fields: only update if present in discovered
-                for field in ("hints", "inherits", "duplicates", "duplicate_of"):
+                existing_sizes = set(existing[icon_key].get("sizes", []))
+                new_sizes = set(info["sizes"])
+                existing[icon_key]["sizes"] = sorted(existing_sizes | new_sizes)
+                # Updatable fields
+                for field in ("hints", "inherits", "duplicates", "duplicate_of", "category", "file"):
                     if field in info:
-                        existing[cat_file][field] = info[field]
+                        existing[icon_key][field] = info[field]
             else:
-                # New icon — add it
-                existing[cat_file] = info
+                # New icon (don't store paths in JSON)
+                existing[icon_key] = {"sizes": info["sizes"]}
+                if info["category"]:
+                    existing[icon_key]["category"] = info["category"]
+                if info["file"]:
+                    existing[icon_key]["file"] = info["file"]
 
         # Log missing icons (in catalog but not discovered on disk)
-        for cat_file in existing:
-            if cat_file not in discovered_icons:
-                sizes = existing[cat_file].get("sizes", [])
-                print(f"CATALOG: {pack_id}/{cat_file} not found on disk (was: {sizes})")
+        for icon_key in existing:
+            if icon_key not in discovered_icons:
+                sizes = existing[icon_key].get("sizes", [])
+                print(f"CATALOG: {theme_id}/{icon_key} not found on disk (was: {sizes})")
 
         return existing
 
     def _scan_disk_icons(self):
-        """Scan internal icons directory using the generic scanner."""
-        scanned = self._scan_icon_directory(ICONS_DIR)
+        """Scan internal icons directory using theme processor."""
+        # Scan legacy flat icons
+        proc = ThemeProcessor("legacy", ICONS_DIR)
+        scanned = proc.scan_directory()
 
-        for cat_file, info in scanned.items():
-            # Legacy flat icons get _legacy/ prefix from scanner
-            if cat_file.startswith("_legacy/"):
-                icon_id = Path(cat_file).stem  # strip _legacy/ and extension
-            elif "/" in cat_file:
-                # New format: category/name.png — use stem as icon_id
-                icon_id = Path(cat_file).stem
-            else:
-                icon_id = Path(cat_file).stem
+        for icon_key, info in scanned.items():
+            icon_id = Path(info["file"]).stem
 
             key = ("internal", icon_id)
             if key not in self._entries:
@@ -266,27 +292,12 @@ class IconDataModel:
                     name=clean_name,
                     status="legacy" if icon_id not in self._chooseable_ids else "included",
                 )
-            entry = self._entries[key]
-            # Add file paths for each discovered size
-            for size in info.get("sizes", []):
-                if size in entry.sizes:
-                    continue
-                # Resolve actual path
-                if cat_file.startswith("_legacy/"):
-                    # Legacy: {name}{N}x{N}.png in ICONS_DIR root
-                    legacy_name = cat_file.split("/", 1)[1]  # e.g. "arrow_down_icon.png"
-                    stem = Path(legacy_name).stem
-                    ext = Path(legacy_name).suffix
-                    p = ICONS_DIR / f"{stem}{size}x{size}{ext}"
-                else:
-                    # New format: {N}x{N}/{category}/{file} or {category}/{N}/{file}
-                    parts = cat_file.split("/")
-                    if len(parts) == 2:
-                        p = ICONS_DIR / f"{size}x{size}" / cat_file
-                    else:
-                        p = ICONS_DIR / cat_file
-                if p.exists():
-                    entry.sizes[size] = str(p)
+            icon = self._entries[key]
+
+            for size, path in info["paths"].items():
+                if size not in icon.paths:
+                    icon.paths[size] = path
+                self._discovered_sizes.add(size)
 
     def _save_internal_catalog(self):
         """Save internal icons as a catalog for external reference."""
@@ -295,7 +306,7 @@ class IconDataModel:
             if key[0] != "internal":
                 continue
             icon_id = entry.id
-            info = {"sizes": sorted(entry.sizes.keys())}
+            info = {"sizes": sorted(entry.paths.keys()), "category": None, "file": None}
             if entry.name:
                 info["name"] = entry.name
             if entry.hints:
@@ -314,170 +325,76 @@ class IconDataModel:
         self._save_catalog("internal", catalog,
                           comment="Internal TaskCoach icons from artprovider.py and disk.")
 
-    def load_theme_pack(self, pack_id):
-        """Load all icons from an external theme pack directory.
+    def load_theme(self, theme_id):
+        """Load all icons from an external external theme directory.
 
         Scans disk, merges into persistent catalog (additive for icons/sizes),
         resolves hints from catalog, and creates IconEntry objects.
         """
-        pack = THEME_PACKS.get(pack_id)
-        if not pack:
+        theme_info = LOCAL_THEMES.get(theme_id)
+        if not theme_info:
             return
-        base = Path(pack["path"])
+        base = Path(theme_info["search_root"])
         if not base.exists():
             return
 
-        # Build reverse mapping from ICON_MAPPING duplicates
-        dup_files = set()  # filenames known as duplicates
-        imported_files = {}  # filename -> tc_icon_id
-        dup_of_map = {}  # duplicate filename -> canonical cat/file
-        for tc_name, info in self._icon_mapping.items():
-            if not isinstance(info, dict):
-                continue
-            if info.get("source") == pack_id:
-                f = info.get("file", "")
-                cat = info.get("category", "")
-                canonical_key = f"{cat}/{f}" if cat and f else ""
-                if f:
-                    imported_files[f] = tc_name
-                for dup in info.get("duplicates", []):
-                    df = dup.get("file", "")
-                    if df and dup.get("source") == pack_id:
-                        dup_files.add(df)
-                        if canonical_key:
-                            dup_of_map[df] = canonical_key
-
         # Scan disk to discover all icons and sizes
-        discovered = self._scan_icon_directory(base)
+        proc = ThemeProcessor(theme_id, base)
+        discovered = proc.scan_directory()
 
         if not discovered:
             return
 
-        # Add duplicate relationships (bidirectional) to discovered icons
-        for cat_file, info in list(discovered.items()):
-            filename = cat_file.split("/")[-1] if "/" in cat_file else cat_file
-            # Mark duplicates with duplicate_of back-reference
-            if filename in dup_of_map:
-                info["duplicate_of"] = dup_of_map[filename]
-            # Mark canonical icons with their duplicates list
-            if filename in imported_files:
-                dups_for_this = [
-                    d for d in self._icon_mapping.get(imported_files[filename], {}).get("duplicates", [])
-                    if d.get("source") == pack_id
-                ]
-                if dups_for_this:
-                    info["duplicates"] = dups_for_this
-
         # Merge into persistent catalog and save
-        catalog = self._merge_catalog(pack_id, discovered)
-        self._save_catalog(pack_id, catalog)
+        # (catalog contains inherits, duplicate_of, duplicates fields)
+        catalog = self._merge_catalog(theme_id, discovered)
+        self._save_catalog(theme_id, catalog)
 
         # Build IconEntry objects from merged catalog
-        for cat_file, info in catalog.items():
-            parts = cat_file.split("/", 1)
-            if len(parts) == 2:
-                category, filename = parts
-            else:
-                category, filename = "", parts[0]
+        for icon_key, info in catalog.items():
+            category = info["category"]
+            filename = info["file"]
             stem = Path(filename).stem
-            icon_id = f"{pack_id}:{cat_file}"
+            icon_id = icon_key
 
-            # Determine status
-            if filename in imported_files:
-                status = "included"
-            elif filename in dup_files:
+            # Determine status based on catalog fields
+            if "inherits" in info:
+                status = "included"  # Has inherits = imported to app
+            elif "duplicate_of" in info:
                 status = "duplicate"
             else:
                 status = "external"
 
-            # Resolve hints: inherits resolves from artprovider
+            # Resolve hints and duplicates: inherits resolves from app's theme JSON
             hints = []
+            duplicates = []
             if "inherits" in info:
-                tc_id = info["inherits"]
-                if tc_id in self._chooseable_hints:
-                    hints = self._chooseable_hints[tc_id]
-            elif "hints" in info:
-                hints = info["hints"]
+                inherited_key = info["inherits"]
+                app_data = self._load_app_theme_data(theme_id)
+                if inherited_key in app_data:
+                    hints = app_data[inherited_key].get("hints", [])
+                    duplicates = app_data[inherited_key].get("duplicates", [])
+            else:
+                hints = info.get("hints", [])
+                duplicates = info.get("duplicates", [])
 
-            # Build sizes dict with actual file paths (only for sizes on disk)
-            sizes = {}
-            for sz in info.get("sizes", []):
-                if pack_id == "breeze":
-                    p = base / category / str(sz) / filename
-                else:
-                    p = base / f"{sz}x{sz}" / category / filename
-                if p.exists():
-                    sizes[sz] = str(p)
+            # Use paths from discovered if available, otherwise empty
+            paths = discovered.get(icon_key, {}).get("paths", {})
+            self._discovered_sizes.update(paths.keys())
 
-            key = (pack_id, icon_id)
+            key = (theme_id, icon_id)
             self._entries[key] = IconEntry(
                 id=icon_id,
                 name=stem.replace("-", " ").replace("_", " ").title(),
                 hints=hints,
-                source=pack_id,
+                source=theme_id,
                 category=category,
                 status=status,
-                sizes=sizes,
-                duplicates=info.get("duplicates", []),
+                paths=paths,
+                duplicates=duplicates,
+                duplicate_of=info.get("duplicate_of", ""),
                 original_file=filename,
             )
-
-    def _scan_icon_directory(self, base):
-        """Scan any icon directory and build inventory of all icons found.
-
-        Collects all .svg and .png files in one pass, then parses paths to
-        extract size, category, and filename. Handles all known layouts:
-          - {N}x{N}/{category}/{file}   (Papirus, Oxygen, Nuvola, internal)
-          - {category}/{N}/{file}        (Breeze)
-          - {name}{N}x{N}.png           (legacy flat, internal only)
-
-        Returns dict of {cat/file: {"sizes": [...]}}
-        """
-        all_files = list(base.rglob("*.svg")) + list(base.rglob("*.png"))
-
-        # Path patterns (relative to base)
-        pat_nxn = re.compile(r'^(\d+)x(\d+)/([^/]+)/(.+)$')
-        pat_bare = re.compile(r'^([^/]+)/(\d+)/(.+)$')
-        pat_legacy = re.compile(r'^(.+?)(\d+)x(\d+)\.(png|svg)$')
-
-        discovered = {}  # cat/file -> set of sizes
-        for f in all_files:
-            if "-symbolic" in f.name:
-                continue
-            try:
-                rel = str(f.relative_to(base))
-            except ValueError:
-                continue
-
-            # Pattern: {N}x{N}/{category}/{file}
-            m = pat_nxn.match(rel)
-            if m and m.group(1) == m.group(2):
-                size = int(m.group(1))
-                cat_file = f"{m.group(3)}/{m.group(4)}"
-                discovered.setdefault(cat_file, set()).add(size)
-                self._discovered_sizes.add(size)
-                continue
-
-            # Pattern: {category}/{N}/{file}
-            m = pat_bare.match(rel)
-            if m:
-                size = int(m.group(2))
-                cat_file = f"{m.group(1)}/{m.group(3)}"
-                discovered.setdefault(cat_file, set()).add(size)
-                self._discovered_sizes.add(size)
-                continue
-
-            # Pattern: {name}{N}x{N}.ext (legacy flat — no category)
-            m = pat_legacy.match(rel)
-            if m and "/" not in rel:
-                size = int(m.group(2))
-                cat_file = f"_legacy/{m.group(1)}.{m.group(4)}"
-                discovered.setdefault(cat_file, set()).add(size)
-                self._discovered_sizes.add(size)
-                continue
-
-        return {k: {"sizes": sorted(v)} for k, v in discovered.items()}
-
     def get_filtered(self, query="", themes=None, show_included=True,
                      show_duplicates=True, show_legacy=True,
                      min_size=None, sort_key=None):
@@ -489,21 +406,21 @@ class IconDataModel:
         query_terms = query.lower().split() if query else []
 
         for key, entry in self._entries.items():
-            pack = key[0]
+            theme = key[0]
 
-            # Theme filter — external packs need to be selected
-            if pack not in ("internal",):
-                if pack not in themes:
+            # Theme filter — external themes need to be selected
+            if theme not in ("internal",):
+                if theme not in themes:
                     continue
             # Internal icons with a known external source: only show if
             # that source is selected OR the icon is included/legacy
-            if pack == "internal" and entry.source in THEME_PACKS:
+            if theme == "internal" and entry.source in LOCAL_THEMES:
                 if entry.source not in themes and entry.status not in ("included", "legacy"):
                     continue
 
             # Size filter: only show icons with at least one size >= min_size
-            if min_size and entry.sizes:
-                if max(entry.sizes.keys()) < min_size:
+            if min_size and entry.paths:
+                if max(entry.paths.keys()) < min_size:
                     continue
 
             # Status filter
@@ -535,14 +452,14 @@ class IconDataModel:
             return self._bitmap_cache[cache_key]
 
         # Find best available size
-        path_str = entry.sizes.get(size)
+        path_str = entry.paths.get(size)
         if not path_str:
             # Try nearest size
-            available = sorted(entry.sizes.keys())
+            available = sorted(entry.paths.keys())
             if not available:
                 return wx.NullBitmap
             nearest = min(available, key=lambda s: abs(s - size))
-            path_str = entry.sizes[nearest]
+            path_str = entry.paths[nearest]
 
         bitmap = self._load_bitmap(path_str, size)
         self._bitmap_cache[cache_key] = bitmap
@@ -572,14 +489,6 @@ class IconDataModel:
             return image.ConvertToBitmap()
         except Exception:
             return wx.NullBitmap
-
-    def get_license(self, source):
-        """Get license for a source library."""
-        if source in THEME_PACKS:
-            return THEME_PACKS[source].get("license", "Unknown")
-        if source in self._icon_sources:
-            return self._icon_sources[source].get("license", "Unknown")
-        return "Unknown"
 
     def clear_cache(self):
         """Clear the bitmap cache (e.g., on size change)."""
@@ -622,17 +531,17 @@ def generate_import_instructions(entry, display_size):
 
     clean_id = entry.id.split(":")[-1].split("/")[-1] if ":" in entry.id else entry.id
     clean_id = clean_id.replace("-", "_")
-    source_sizes = sorted(entry.sizes.keys())
+    source_sizes = sorted(entry.paths.keys())
     source_sizes_str = ",".join(str(s) for s in source_sizes)
     target_size = display_size
 
     if entry.source in ("papirus", "breeze"):
         # SVG source — render with cairosvg at 16x16 only
-        src_path_16 = entry.sizes.get(target_size) or next(iter(entry.sizes.values()), "")
+        src_path_16 = entry.paths.get(target_size) or next(iter(entry.paths.values()), "")
         dest = f"taskcoachlib/gui/icons/{target_size}x{target_size}/{clean_id}.png"
 
         lines.append("1. View the source SVG at all available sizes:")
-        for sz, p in sorted(entry.sizes.items()):
+        for sz, p in sorted(entry.paths.items()):
             lines.append(f"   {sz}x{sz}: {p}")
         lines.append("")
         lines.append(f"2. Render at {target_size}x{target_size} with cairosvg:")
@@ -660,11 +569,11 @@ def generate_import_instructions(entry, display_size):
 
     elif entry.source == "oxygen":
         # PNG source — copy 16x16 only
-        src_path_16 = entry.sizes.get(target_size) or next(iter(entry.sizes.values()), "")
+        src_path_16 = entry.paths.get(target_size) or next(iter(entry.paths.values()), "")
         dest = f"taskcoachlib/gui/icons/{target_size}x{target_size}/{clean_id}.png"
 
         lines.append("1. View the source PNG at all available sizes:")
-        for sz, p in sorted(entry.sizes.items()):
+        for sz, p in sorted(entry.paths.items()):
             lines.append(f"   {sz}x{sz}: {p}")
         lines.append("")
         lines.append(f"2. Copy the {target_size}x{target_size} PNG:")
@@ -692,11 +601,11 @@ def generate_import_instructions(entry, display_size):
 
     elif entry.source == "nuvola":
         # Nuvola PNG source — copy target size
-        src_path = entry.sizes.get(target_size) or next(iter(entry.sizes.values()), "")
+        src_path = entry.paths.get(target_size) or next(iter(entry.paths.values()), "")
         dest = f"taskcoachlib/gui/icons/{target_size}x{target_size}/{clean_id}.png"
 
         lines.append("1. View the source PNG at all available sizes:")
-        for sz, p in sorted(entry.sizes.items()):
+        for sz, p in sorted(entry.paths.items()):
             lines.append(f"   {sz}x{sz}: {p}")
         lines.append("")
         lines.append(f"2. Copy the {target_size}x{target_size} PNG:")
@@ -1049,8 +958,9 @@ class IconDetailPopup(wx.PopupWindow):
         name_label.SetFont(header_font)
         sizer.Add(name_label, 0, wx.ALL, 5)
 
-        license_str = model.get_license(entry.source)
-        info = f"Source: {entry.source or 'internal'}  |  License: {license_str}  |  Status: {entry.status}"
+        info = f"Source: {entry.source or 'internal'}  |  Status: {entry.status}"
+        if entry.duplicate_of:
+            info += f"  |  duplicate_of: {entry.duplicate_of}"
         info_label = wx.StaticText(panel, label=info)
         info_label.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
         sizer.Add(info_label, 0, wx.LEFT | wx.RIGHT, 5)
@@ -1062,7 +972,7 @@ class IconDetailPopup(wx.PopupWindow):
 
         # --- Size previews (all sizes this icon has on disk) ---
         size_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        for size in sorted(entry.sizes.keys()):
+        for size in sorted(entry.paths.keys()):
             bmp = model.get_bitmap(entry, size)
             if bmp.IsOk():
                 vbox = wx.BoxSizer(wx.VERTICAL)
@@ -1142,10 +1052,10 @@ class IconDetailPopup(wx.PopupWindow):
 class CheckListComboPopup(wx.ComboPopup):
     """Popup with a CheckListBox for multi-select dropdown."""
 
-    def __init__(self, labels, pack_ids, available):
+    def __init__(self, labels, theme_ids, available):
         super().__init__()
         self._labels = labels
-        self._pack_ids = pack_ids
+        self._theme_ids = theme_ids
         self._available = available
         self._checklist = None
 
@@ -1154,7 +1064,7 @@ class CheckListComboPopup(wx.ComboPopup):
         self._checklist.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT,
                                          wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
         # Grey out unavailable items
-        for i, pid in enumerate(self._pack_ids):
+        for i, pid in enumerate(self._theme_ids):
             if not self._available.get(pid):
                 self._checklist.SetItemForegroundColour(i, wx.Colour(180, 120, 120))
         self._checklist.Bind(wx.EVT_CHECKLISTBOX, self._on_check)
@@ -1170,8 +1080,8 @@ class CheckListComboPopup(wx.ComboPopup):
 
     def _on_check(self, event):
         idx = event.GetInt()
-        pid = self._pack_ids[idx]
-        # Prevent checking unavailable packs
+        pid = self._theme_ids[idx]
+        # Prevent checking unavailable themes
         if not self._available.get(pid):
             self._checklist.Check(idx, False)
             return
@@ -1193,12 +1103,12 @@ class CheckListComboPopup(wx.ComboPopup):
 class CheckListComboCtrl(wx.ComboCtrl):
     """Dropdown combo that shows a CheckListBox popup for multi-select."""
 
-    def __init__(self, parent, labels, pack_ids, available, **kwargs):
+    def __init__(self, parent, labels, theme_ids, available, **kwargs):
         super().__init__(parent, style=wx.CB_READONLY, **kwargs)
-        self._pack_ids = pack_ids
+        self._theme_ids = theme_ids
         self._labels = labels
         self._available = available
-        self._popup = CheckListComboPopup(labels, pack_ids, available)
+        self._popup = CheckListComboPopup(labels, theme_ids, available)
         self.SetPopupControl(self._popup)
         self.update_text()
 
@@ -1207,16 +1117,16 @@ class CheckListComboCtrl(wx.ComboCtrl):
 
     def update_text(self):
         selected = []
-        for i, pid in enumerate(self._pack_ids):
+        for i, pid in enumerate(self._theme_ids):
             if self._popup.is_checked(i):
                 # Use short label (strip " (not found)" etc)
-                label = THEME_PACKS[pid]["label"]
+                label = _canon_themes[pid].get("name", pid.title())
                 selected.append(label)
         self.SetText(", ".join(selected) if selected else "(none)")
 
     def get_checked_ids(self):
-        return {self._pack_ids[i]
-                for i in range(len(self._pack_ids))
+        return {self._theme_ids[i]
+                for i in range(len(self._theme_ids))
                 if self._popup.is_checked(i)}
 
 
@@ -1262,31 +1172,33 @@ class ControlsPanel(wx.Panel):
         self._size_choice.SetSelection(0)
         row_sizer.Add(make_col("Size", self._size_choice), 0, wx.RIGHT, 12)
 
-        # 3. Theme packs (dropdown multi-select)
-        self._theme_pack_ids = []
+        # 3. External themes (dropdown multi-select)
+        self._theme_ids = []
         self._theme_available = {}
         popup_labels = []
-        for pack_id, pack_info in THEME_PACKS.items():
-            path = Path(pack_info["path"])
+        for theme_id, theme_info in LOCAL_THEMES.items():
+            path = Path(theme_info["search_root"])
             exists = path.exists()
-            self._theme_pack_ids.append(pack_id)
-            self._theme_available[pack_id] = exists
-            path_display = pack_info["path"]
+            self._theme_ids.append(theme_id)
+            self._theme_available[theme_id] = exists
+            path_display = theme_info["search_root"]
             try:
                 path_display = str(Path(path_display).relative_to(REPO_ROOT.parent))
             except ValueError:
                 pass
+            label = _canon_themes[theme_id].get("name", theme_id.title())
             if exists:
-                popup_labels.append(f"{pack_info['label']}  ({path_display})")
+                popup_labels.append(f"{label}  ({path_display})")
             else:
-                popup_labels.append(f"{pack_info['label']}  ({path_display}) — not found")
+                popup_labels.append(f"{label}  ({path_display}) — not found")
 
         self._theme_combo = CheckListComboCtrl(
-            self, popup_labels, self._theme_pack_ids,
+            self, popup_labels, self._theme_ids,
             self._theme_available, size=(220, -1))
-        for i, pack_id in enumerate(self._theme_pack_ids):
-            if self._theme_available.get(pack_id) and pack_id == "nuvola_local_zip":
+        for i, theme_id in enumerate(self._theme_ids):
+            if self._theme_available.get(theme_id):
                 self._theme_combo.check(i, True)
+                break  # Select first available
         self._theme_combo.update_text()
         row_sizer.Add(make_col("Theme Packs", self._theme_combo), 0, wx.RIGHT, 12)
 
@@ -1349,9 +1261,9 @@ class ControlsPanel(wx.Panel):
         self._on_filter_changed()
 
     def _on_theme_change(self, event):
-        # Load theme pack data for newly enabled packs
-        for pack_id in self._theme_combo.get_checked_ids():
-            self._model.load_theme_pack(pack_id)
+        # Load external theme data for newly enabled themes
+        for theme_id in self._theme_combo.get_checked_ids():
+            self._model.load_theme(theme_id)
         self.update_size_choices()
         self._on_filter_changed()
 
@@ -1441,9 +1353,9 @@ class IconGridBrowserFrame(wx.Frame):
         ])
         self.SetAcceleratorTable(accel)
 
-        # Load theme packs that are checked by default
-        for pack_id in self._controls.selected_themes:
-            self._model.load_theme_pack(pack_id)
+        # Load external themes that are checked by default
+        for theme_id in self._controls.selected_themes:
+            self._model.load_theme(theme_id)
 
         # Initial filter
         self._on_filter_changed()

@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import patterns, operating_system
 from taskcoachlib.i18n import _
 from taskcoachlib.tools import wxhelper
+from taskcoachlib.gui.icons import icon_library
 import numpy as np
 import wx
 import os
@@ -39,11 +40,20 @@ def get_resource_path(relative_path):
 
 class ArtProvider(wx.ArtProvider):
     def CreateBitmap(self, id, client, size):
-        if "+" not in id:
-            return self._CreateBitmap(id, client, size)
+        # Try catalog lookup first
+        is_cataloged = id in chooseableItems
+        if not is_cataloged:
+            # Legacy fallback: check for overlay pattern "main+overlay"
+            # TODO 3: Refactor this hack - see docs/ICON_LIBRARY.md
+            if "+" in id:
+                parts = id.split("+")
+                if len(parts) == 2 and parts[0] in chooseableItems and parts[1] in chooseableItems:
+                    return self._CreateOverlayBitmap(parts[0], parts[1], client, size)
 
+        return self._CreateBitmap(id, client, size)
+
+    def _CreateOverlayBitmap(self, main, overlay, client, size):
         width, height = size
-        main, overlay = id.split("+")
 
         # Create overlay image
         overlay_image = self._CreateBitmap(
@@ -115,30 +125,48 @@ class ArtProvider(wx.ArtProvider):
             img.InitAlpha()
             return img.ConvertToBitmap()
 
-        # Try new format first: "16x16/iconname.png" (size-based directories)
-        size_dir = "%dx%d" % (size[0], size[1])
-        new_icon_path = get_resource_path(
-            os.path.join('icons', size_dir, artId + '.png')
-        )
+        icon_path = None
+        icon_size = size[0]  # Assume square icons
 
-        # Fall back to legacy format: "iconname16x16.png" (flat with size suffix)
-        legacy_icon_path = get_resource_path(
-            os.path.join('icons', "%s%dx%d.png" % (artId, size[0], size[1]))
-        )
+        # Check if this is a theme icon (has theme/category/file in chooseableItems)
+        icon_data = chooseableItems.get(artId)
+        if icon_data and "theme" in icon_data and "file" in icon_data:
+            theme = icon_data["theme"]
+            category = icon_data.get("category", "")
+            filename = icon_data["file"]
+            icon_path = icon_library.build_icon_path(theme, category, filename, icon_size)
 
-        # Use new format if exists, otherwise legacy
-        icon_path = new_icon_path if os.path.exists(new_icon_path) else legacy_icon_path
+        if not icon_path or not os.path.exists(icon_path):
+            # Legacy icon: try new format first, then flat format
+            size_dir = "%dx%d" % (size[0], size[1])
+            new_icon_path = get_resource_path(
+                os.path.join('icons', size_dir, artId + '.png')
+            )
+            if os.path.exists(new_icon_path):
+                icon_path = new_icon_path
+            else:
+                # Fall back to legacy flat format: "iconname16x16.png"
+                legacy_icon_path = get_resource_path(
+                    os.path.join('icons', "%s%dx%d.png" % (artId, size[0], size[1]))
+                )
+                if os.path.exists(legacy_icon_path):
+                    icon_path = legacy_icon_path
 
-        if os.path.exists(icon_path):
+        if icon_path and os.path.exists(icon_path):
             image = wx.Image(icon_path)
             if not image.IsOk():
+                from taskcoachlib.meta.debug import log_step
+                log_step(f"ERROR: Failed to load image: {icon_path}", prefix="ICON")
                 return wx.NullBitmap
             bitmap = image.ConvertToBitmap()
             if artClient == wx.ART_FRAME_ICON:
                 bitmap = self.convertAlphaToMask(bitmap)
             return bitmap
-        else:
-            return wx.NullBitmap
+
+        # Log error if icon not found
+        from taskcoachlib.meta.debug import log_step
+        log_step(f"ERROR: Icon file not found for artId='{artId}' size={size}", prefix="ICON")
+        return wx.NullBitmap
 
     @staticmethod
     def convertAlphaToMask(bitmap):
@@ -223,573 +251,578 @@ def init():
 chooseableItems = {
     # Arrows and navigation
     "arrow_down_icon": {
-        "name": _("Arrow - Down"),
+        "label": _("Arrow - Down"),
         "hints": [_("download"), _("below"), _("descend"), _("lower"), _("next")],
     },
     "arrow_down_with_status_icon": {
-        "name": _("Arrow - Down with status"),
+        "label": _("Arrow - Down with status"),
         "hints": [_("download"), _("below"), _("descend"), _("lower"), _("next"), _("status")],
     },
     "arrow_forward_icon": {
-        "name": _("Arrow - Forward"),
+        "label": _("Arrow - Forward"),
         "hints": [_("next"), _("continue"), _("proceed"), _("right"), _("go")],
     },
     "arrows_looped_blue_icon": {
-        "name": _("Arrows looped - Blue"),
+        "label": _("Arrows looped - Blue"),
         "hints": [_("sync"), _("refresh"), _("cycle"), _("repeat"), _("reload"), _("recurrence"), _("recurring")],
     },
     "arrows_looped_green_icon": {
-        "name": _("Arrows looped - Green"),
+        "label": _("Arrows looped - Green"),
         "hints": [_("sync"), _("refresh"), _("cycle"), _("repeat"), _("reload"), _("recurrence"), _("recurring")],
     },
     "arrow_up_icon": {
-        "name": _("Arrow - Up"),
+        "label": _("Arrow - Up"),
         "hints": [_("upload"), _("above"), _("ascend"), _("raise"), _("previous")],
     },
     "arrow_up_with_status_icon": {
-        "name": _("Arrow - Up with status"),
+        "label": _("Arrow - Up with status"),
         "hints": [_("upload"), _("above"), _("ascend"), _("raise"), _("previous"), _("status")],
     },
 
     # Attachments and files
     "attach_icon": {
-        "name": _("Attachment"),
+        "label": _("Attachment"),
         "hints": [_("attachment"), _("paperclip"), _("file"), _("document"), _("clip"), _("fasten")],
     },
 
     # Time and scheduling
     "bell_icon": {
-        "name": _("Bell"),
+        "label": _("Bell"),
         "hints": [_("alarm"), _("notification"), _("alert"), _("reminder"), _("ring"), _("wake")],
     },
     "bomb_icon": {
-        "name": _("Bomb"),
+        "label": _("Bomb"),
         "hints": [_("danger"), _("urgent"), _("explosive"), _("critical"), _("warning"), _("deadline")],
     },
     "book_icon": {
-        "name": _("Book"),
+        "label": _("Book"),
         "hints": [_("read"), _("document"), _("manual"), _("guide"), _("reference"), _("study"), _("learn")],
     },
     "bookmark_icon": {
-        "name": _("Bookmark"),
+        "label": _("Bookmark"),
         "hints": [_("favorite"), _("save"), _("mark"), _("remember"), _("reference"), _("link")],
     },
     "books_icon": {
-        "name": _("Books"),
+        "label": _("Books"),
         "hints": [_("read"), _("documents"), _("manuals"), _("guides"), _("library"), _("collection")],
     },
     "box_icon": {
-        "name": _("Box"),
+        "label": _("Box"),
         "hints": [_("package"), _("container"), _("storage"), _("shipping"), _("delivery")],
     },
     "briefcase_icon": {
-        "name": _("Briefcase"),
+        "label": _("Briefcase"),
         "hints": [_("work"), _("business"), _("professional"), _("portfolio"), _("job"), _("office")],
     },
     "bug_icon": {
-        "name": _("Ladybug"),
+        "label": _("Ladybug"),
         "hints": [_("ladybug"), _("insect"), _("debug"), _("error"), _("problem"), _("issue")],
     },
     "cake_icon": {
-        "name": _("Cake"),
+        "label": _("Cake"),
         "hints": [_("birthday"), _("celebration"), _("party"), _("anniversary"), _("event")],
     },
     "calculator_icon": {
-        "name": _("Calculator"),
+        "label": _("Calculator"),
         "hints": [_("math"), _("calculate"), _("compute"), _("numbers"), _("finance"), _("accounting")],
     },
     "calendar_icon": {
-        "name": _("Calendar"),
+        "label": _("Calendar"),
         "hints": [_("date"), _("schedule"), _("appointment"), _("event"), _("planner"), _("day"), _("month"), _("year"), _("deadline"), _("due")],
     },
     "camera_icon": {
-        "name": _("Camera"),
+        "label": _("Camera"),
         "hints": [_("photo"), _("picture"), _("image"), _("capture"), _("screenshot"), _("media")],
     },
     "cat_icon": {
-        "name": _("Cat"),
+        "label": _("Cat"),
         "hints": [_("pet"), _("animal"), _("feline"), _("meow"), _("kitty")],
     },
     "cd_icon": {
-        "name": _("Compact disc (CD)"),
+        "label": _("Compact disc (CD)"),
         "hints": [_("disc"), _("music"), _("media"), _("backup"), _("storage")],
     },
     "charts_icon": {
-        "name": _("Charts"),
+        "label": _("Charts"),
         "hints": [_("graph"), _("statistics"), _("data"), _("analytics"), _("report"), _("metrics")],
     },
     "chat_icon": {
-        "name": _("Chat"),
+        "label": _("Chat"),
         "hints": [_("message"), _("talk"), _("conversation"), _("discuss"), _("communicate")],
     },
     "checkmark_green_icon": {
-        "name": _("Check mark"),
+        "label": _("Check mark"),
         "hints": [_("done"), _("complete"), _("finished"), _("success"), _("yes"), _("approve"), _("accept")],
     },
     "checkmark_green_icon_multiple": {
-        "name": _("Check marks"),
+        "label": _("Check marks"),
         "hints": [_("done"), _("complete"), _("finished"), _("success"), _("batch"), _("multiple")],
     },
     "clock_icon": {
-        "name": _("Clock"),
+        "label": _("Clock"),
         "hints": [_("time"), _("hour"), _("minute"), _("watch"), _("schedule"), _("duration")],
     },
     "clock_alarm_icon": {
-        "name": _("Clock - Alarm"),
+        "label": _("Clock - Alarm"),
         "hints": [_("time"), _("alarm"), _("reminder"), _("wake"), _("alert"), _("notification"), _("deadline")],
     },
     "clock_stopwatch_icon": {
-        "name": _("Clock - Stopwatch"),
+        "label": _("Clock - Stopwatch"),
         "hints": [_("time"), _("timer"), _("countdown"), _("measure"), _("track"), _("duration")],
     },
     "cogwheel_icon": {
-        "name": _("Cogwheel"),
+        "label": _("Cogwheel"),
         "hints": [_("settings"), _("config"), _("gear"), _("preferences"), _("options"), _("setup")],
     },
     "cogwheels_icon": {
-        "name": _("Cogwheels"),
+        "label": _("Cogwheels"),
         "hints": [_("settings"), _("config"), _("gears"), _("preferences"), _("options"), _("setup"), _("system")],
     },
     "contact_card_icon": {
-        "name": _("Contact card"),
+        "label": _("Contact card"),
         "hints": [_("vcard"), _("address"), _("business card"), _("profile"), _("person")],
     },
     "cookie_icon": {
-        "name": _("Cookie"),
+        "label": _("Cookie"),
         "hints": [_("treat"), _("reward"), _("snack"), _("food"), _("biscuit"), _("sweet")],
     },
     "computer_desktop_icon": {
-        "name": _("Computer - Desktop"),
+        "label": _("Computer - Desktop"),
         "hints": [_("pc"), _("workstation"), _("monitor"), _("screen"), _("computer"), _("desktop")],
     },
     "computer_laptop_icon": {
-        "name": _("Computer - Laptop"),
+        "label": _("Computer - Laptop"),
         "hints": [_("notebook"), _("portable"), _("pc"), _("mobile"), _("computer"), _("laptop")],
     },
     "computer_handheld_icon": {
-        "name": _("Computer - Handheld"),
+        "label": _("Computer - Handheld"),
         "hints": [_("mobile"), _("phone"), _("pda"), _("tablet"), _("device")],
     },
     "cross_red_icon": {
-        "name": _("Cross - Red"),
+        "label": _("Cross - Red"),
         "hints": [_("error"), _("cancel"), _("close"), _("delete"), _("stop"), _("reject"), _("no"), _("remove")],
     },
     "die_icon": {
-        "name": _("Die"),
+        "label": _("Die"),
         "hints": [_("dice"), _("random"), _("game"), _("luck"), _("chance")],
     },
     "document_icon": {
-        "name": _("Document"),
+        "label": _("Document"),
         "hints": [_("file"), _("paper"), _("text"), _("note"), _("write"), _("report")],
     },
     "earth_blue_icon": {
-        "name": _("Earth - Blue"),
+        "label": _("Earth - Blue"),
         "hints": [_("world"), _("globe"), _("planet"), _("international"), _("global"), _("web")],
     },
     "earth_green_icon": {
-        "name": _("Earth - Green"),
+        "label": _("Earth - Green"),
         "hints": [_("world"), _("globe"), _("planet"), _("environment"), _("nature"), _("eco")],
     },
     "energy_icon": {
-        "name": _("Energy"),
+        "label": _("Energy"),
         "hints": [_("power"), _("electricity"), _("lightning"), _("bolt"), _("charge"), _("battery")],
     },
     "envelope_icon": {
-        "name": _("Envelope"),
+        "label": _("Envelope"),
         "hints": [_("mail"), _("email"), _("message"), _("letter"), _("send"), _("receive"), _("inbox")],
     },
     "error_icon": {
-        "name": _("Error"),
+        "label": _("Error"),
         "hints": [_("warning"), _("problem"), _("issue"), _("fail"), _("failure"), _("bug"), _("mistake")],
     },
     "envelopes_icon": {
-        "name": _("Envelopes"),
+        "label": _("Envelopes"),
         "hints": [_("mail"), _("email"), _("messages"), _("letters"), _("inbox"), _("batch")],
     },
     "file_important_icon": {
-        "name": _("File - Important"),
+        "label": _("File - Important"),
         "hints": [_("document"), _("priority"), _("urgent"), _("attention"), _("critical"), _("star")],
     },
     "file_locked_icon": {
-        "name": _("File - Locked"),
+        "label": _("File - Locked"),
         "hints": [_("document"), _("secure"), _("protected"), _("private"), _("locked"), _("secret")],
     },
     "folder_blue_icon": {
-        "name": _("Folder - Blue"),
+        "label": _("Folder - Blue"),
         "hints": [_("directory"), _("storage"), _("files"), _("container"), _("organize")],
     },
     "folder_blue_light_icon": {
-        "name": _("Folder - Light blue"),
+        "label": _("Folder - Light blue"),
         "hints": [_("directory"), _("storage"), _("files"), _("container"), _("organize")],
     },
     "folder_green_icon": {
-        "name": _("Folder - Green"),
+        "label": _("Folder - Green"),
         "hints": [_("directory"), _("storage"), _("files"), _("container"), _("organize")],
     },
     "folder_grey_icon": {
-        "name": _("Folder - Grey"),
+        "label": _("Folder - Grey"),
         "hints": [_("directory"), _("storage"), _("files"), _("container"), _("organize"), _("archive")],
     },
     "folder_orange_icon": {
-        "name": _("Folder - Orange"),
+        "label": _("Folder - Orange"),
         "hints": [_("directory"), _("storage"), _("files"), _("container"), _("organize")],
     },
     "folder_purple_icon": {
-        "name": _("Folder - Purple"),
+        "label": _("Folder - Purple"),
         "hints": [_("directory"), _("storage"), _("files"), _("container"), _("organize")],
     },
     "folder_red_icon": {
-        "name": _("Folder - Red"),
+        "label": _("Folder - Red"),
         "hints": [_("directory"), _("storage"), _("files"), _("container"), _("organize"), _("important"), _("urgent")],
     },
     "folder_yellow_icon": {
-        "name": _("Folder - Yellow"),
+        "label": _("Folder - Yellow"),
         "hints": [_("directory"), _("storage"), _("files"), _("container"), _("organize")],
     },
     "folder_blue_arrow_icon": {
-        "name": _("Folder - Blue with arrow"),
+        "label": _("Folder - Blue with arrow"),
         "hints": [_("directory"), _("storage"), _("files"), _("move"), _("transfer")],
     },
     "folder_favorite_icon": {
-        "name": _("Folder - Favorite"),
+        "label": _("Folder - Favorite"),
         "hints": [_("directory"), _("storage"), _("star"), _("bookmark"), _("best"), _("preferred")],
     },
     "folder_important_icon": {
-        "name": _("Folder - Important"),
+        "label": _("Folder - Important"),
         "hints": [_("directory"), _("storage"), _("priority"), _("urgent"), _("attention"), _("critical")],
     },
     "fsview_icon": {
-        "name": _("Color swatches"),
+        "label": _("Color swatches"),
         "hints": [_("color"), _("swatches"), _("palette"), _("design"), _("theme")],
     },
     "graph_icon": {
-        "name": _("Graph"),
+        "label": _("Graph"),
         "hints": [_("chart"), _("statistics"), _("data"), _("analytics"), _("plot"), _("diagram")],
     },
     "heart_icon": {
-        "name": _("Heart"),
+        "label": _("Heart"),
         "hints": [_("love"), _("favorite"), _("like"), _("health"), _("wellness")],
     },
     "hearts_icon": {
-        "name": _("Hearts"),
+        "label": _("Hearts"),
         "hints": [_("love"), _("favorites"), _("likes"), _("health"), _("wellness")],
     },
     "house_green_icon": {
-        "name": _("House - Green"),
+        "label": _("House - Green"),
         "hints": [_("home"), _("residence"), _("building"), _("dwelling"), _("personal")],
     },
     "house_red_icon": {
-        "name": _("House - Red"),
+        "label": _("House - Red"),
         "hints": [_("home"), _("residence"), _("building"), _("dwelling"), _("urgent")],
     },
     "key_icon": {
-        "name": _("Key"),
+        "label": _("Key"),
         "hints": [_("lock"), _("security"), _("password"), _("access"), _("unlock"), _("credential")],
     },
     "keys_icon": {
-        "name": _("Keys"),
+        "label": _("Keys"),
         "hints": [_("locks"), _("security"), _("passwords"), _("access"), _("unlock"), _("credentials")],
     },
     "lamp_icon": {
-        "name": _("Lamp"),
+        "label": _("Lamp"),
         "hints": [_("light"), _("idea"), _("bulb"), _("bright"), _("illuminate"), _("thought")],
     },
     "led_blue_questionmark_icon": {
-        "name": _("Question mark"),
+        "label": _("Question mark"),
         "hints": [_("question"), _("help"), _("unknown"), _("ask"), _("uncertain")],
     },
     "led_blue_information_icon": {
-        "name": _("Information"),
+        "label": _("Information"),
         "hints": [_("info"), _("information"), _("details"), _("about"), _("help")],
     },
     "led_blue_icon": {
-        "name": _("LED - Blue"),
+        "label": _("LED - Blue"),
         "hints": [_("status"), _("indicator"), _("light"), _("signal"), _("online"), _("active")],
     },
     "led_blue_light_icon": {
-        "name": _("LED - Light blue"),
+        "label": _("LED - Light blue"),
         "hints": [_("status"), _("indicator"), _("light"), _("signal"), _("online"), _("active")],
     },
     "led_grey_icon": {
-        "name": _("LED - Grey"),
+        "label": _("LED - Grey"),
         "hints": [_("status"), _("indicator"), _("light"), _("signal"), _("inactive"), _("disabled"), _("off")],
     },
     "led_green_icon": {
-        "name": _("LED - Green"),
+        "label": _("LED - Green"),
         "hints": [_("status"), _("indicator"), _("light"), _("signal"), _("ok"), _("active"), _("go"), _("done")],
     },
     "led_green_light_icon": {
-        "name": _("LED - Light green"),
+        "label": _("LED - Light green"),
         "hints": [_("status"), _("indicator"), _("light"), _("signal"), _("ok"), _("active"), _("go"), _("done")],
     },
     "led_orange_icon": {
-        "name": _("LED - Orange"),
+        "label": _("LED - Orange"),
         "hints": [_("status"), _("indicator"), _("light"), _("signal"), _("warning"), _("caution")],
     },
     "led_purple_icon": {
-        "name": _("LED - Purple"),
+        "label": _("LED - Purple"),
         "hints": [_("status"), _("indicator"), _("light"), _("signal"), _("special"), _("custom")],
     },
     "led_red_icon": {
-        "name": _("LED - Red"),
+        "label": _("LED - Red"),
         "hints": [_("status"), _("indicator"), _("light"), _("signal"), _("error"), _("stop"), _("offline"), _("failed")],
     },
     "led_yellow_icon": {
-        "name": _("LED - Yellow"),
+        "label": _("LED - Yellow"),
         "hints": [_("status"), _("indicator"), _("light"), _("signal"), _("warning"), _("pause"), _("attention")],
     },
     "life_ring_icon": {
-        "name": _("Life ring"),
+        "label": _("Life ring"),
         "hints": [_("help"), _("support"), _("rescue"), _("assist"), _("safety"), _("emergency")],
     },
     "lock_locked_icon": {
-        "name": _("Lock - Locked"),
+        "label": _("Lock - Locked"),
         "hints": [_("secure"), _("private"), _("protected"), _("closed"), _("secret")],
     },
     "lock_unlocked_icon": {
-        "name": _("Lock - Unlocked"),
+        "label": _("Lock - Unlocked"),
         "hints": [_("open"), _("access"), _("public"), _("unlocked"), _("available")],
     },
     "magnifier_glass_icon": {
-        "name": _("Magnifier glass"),
+        "label": _("Magnifier glass"),
         "hints": [_("search"), _("find"), _("zoom"), _("look"), _("inspect"), _("explore")],
     },
     "music_piano_icon": {
-        "name": _("Music - Piano"),
+        "label": _("Music - Piano"),
         "hints": [_("piano"), _("keyboard"), _("music"), _("instrument"), _("play")],
     },
     "music_note_icon": {
-        "name": _("Music - Note"),
+        "label": _("Music - Note"),
         "hints": [_("music"), _("sound"), _("audio"), _("melody"), _("song"), _("tune")],
     },
     "note_icon": {
-        "name": _("Note"),
+        "label": _("Note"),
         "hints": [_("sticky"), _("memo"), _("reminder"), _("post-it"), _("write")],
     },
     "palette_icon": {
-        "name": _("Palette"),
+        "label": _("Palette"),
         "hints": [_("color"), _("art"), _("design"), _("paint"), _("creative")],
     },
     "paperclip_icon": {
-        "name": _("Paperclip"),
+        "label": _("Paperclip"),
         "hints": [_("attach"), _("attachment"), _("file"), _("document"), _("clip")],
     },
     "password_icon": {
-        "name": _("Password"),
+        "label": _("Password"),
         "hints": [_("security"), _("credential"), _("secret"), _("key"), _("login"), _("authenticate")],
     },
     "pencil_icon": {
-        "name": _("Pencil"),
+        "label": _("Pencil"),
         "hints": [_("edit"), _("write"), _("draw"), _("modify"), _("change"), _("update")],
     },
     "person_icon": {
-        "name": _("Person"),
+        "label": _("Person"),
         "hints": [_("user"), _("account"), _("profile"), _("member"), _("contact"), _("individual")],
     },
     "persons_icon": {
-        "name": _("People"),
+        "label": _("People"),
         "hints": [_("users"), _("people"), _("team"), _("group"), _("members"), _("contacts")],
     },
     "person_id_icon": {
-        "name": _("Person - ID"),
+        "label": _("Person - ID"),
         "hints": [_("user"), _("identity"), _("card"), _("profile"), _("badge"), _("employee")],
     },
     "person_talking_icon": {
-        "name": _("Person - Talking"),
+        "label": _("Person - Talking"),
         "hints": [_("speak"), _("talk"), _("discuss"), _("communicate"), _("voice"), _("call")],
     },
     "printer_icon": {
-        "name": _("Printer"),
+        "label": _("Printer"),
         "hints": [_("print"), _("output"), _("paper"), _("document"), _("hardcopy")],
     },
     "reload_icon": {
-        "name": _("Reload"),
+        "label": _("Reload"),
         "hints": [_("refresh"), _("update"), _("sync"), _("repeat"), _("restart"), _("renew")],
     },
     "remote_icon": {
-        "name": _("Remote"),
+        "label": _("Remote"),
         "hints": [_("control"), _("wireless"), _("distance"), _("network"), _("access")],
     },
     "run_icon": {
-        "name": _("Run"),
+        "label": _("Run"),
         "hints": [_("execute"), _("start"), _("play"), _("begin"), _("go"), _("launch"), _("sprint")],
     },
     "science_icon": {
-        "name": _("Science"),
+        "label": _("Science"),
         "hints": [_("lab"), _("experiment"), _("research"), _("chemistry"), _("biology")],
     },
     "sign_important_icon": {
-        "name": _("Sign - Important"),
+        "label": _("Sign - Important"),
         "hints": [_("warning"), _("attention"), _("urgent"), _("priority"), _("exclamation"), _("alert")],
     },
     "symbol_minus_icon": {
-        "name": _("Symbol - Minus"),
+        "label": _("Symbol - Minus"),
         "hints": [_("subtract"), _("remove"), _("decrease"), _("less"), _("reduce")],
     },
     "symbol_plus_icon": {
-        "name": _("Symbol - Plus"),
+        "label": _("Symbol - Plus"),
         "hints": [_("add"), _("create"), _("increase"), _("more"), _("expand")],
     },
     "star_red_icon": {
-        "name": _("Star - Red"),
+        "label": _("Star - Red"),
         "hints": [_("favorite"), _("important"), _("priority"), _("rating"), _("bookmark"), _("urgent"), _("critical")],
     },
     "star_yellow_icon": {
-        "name": _("Star - Yellow"),
+        "label": _("Star - Yellow"),
         "hints": [_("favorite"), _("important"), _("priority"), _("rating"), _("bookmark"), _("best")],
     },
     "sticky_note_icon": {
-        "name": _("Sticky note"),
+        "label": _("Sticky note"),
         "hints": [_("memo"), _("reminder"), _("post-it"), _("note"), _("yellow"), _("paper")],
     },
     "tea_icon": {
-        "name": _("Tea"),
+        "label": _("Tea"),
         "hints": [_("break"), _("rest"), _("relax"), _("pause"), _("coffee"), _("drink"), _("beverage")],
     },
     "terminal_icon": {
-        "name": _("Terminal"),
+        "label": _("Terminal"),
         "hints": [_("command"), _("console"), _("shell"), _("code"), _("developer")],
     },
     "timer_icon": {
-        "name": _("Timer"),
+        "label": _("Timer"),
         "hints": [_("countdown"), _("time"), _("limit"), _("duration"), _("stopwatch"), _("deadline")],
     },
     "trafficlight_icon": {
-        "name": _("Traffic light"),
+        "label": _("Traffic light"),
         "hints": [_("status"), _("priority"), _("waiting"), _("proceed"), _("stop")],
     },
     "traffic_go_icon": {
-        "name": _("Traffic - Go"),
+        "label": _("Traffic - Go"),
         "hints": [_("proceed"), _("start"), _("green light"), _("continue"), _("execute")],
     },
     "trashcan_icon": {
-        "name": _("Trashcan"),
+        "label": _("Trashcan"),
         "hints": [_("delete"), _("remove"), _("garbage"), _("bin"), _("recycle"), _("discard")],
     },
     "weather_lightning_icon": {
-        "name": _("Weather - Lightning"),
+        "label": _("Weather - Lightning"),
         "hints": [_("storm"), _("thunder"), _("electric"), _("power"), _("urgent"), _("fast")],
     },
     "weather_umbrella_icon": {
-        "name": _("Weather - Umbrella"),
+        "label": _("Weather - Umbrella"),
         "hints": [_("rain"), _("protection"), _("shelter"), _("weather"), _("umbrella"), _("wet")],
     },
     "weather_sunny_icon": {
-        "name": _("Weather - Partly sunny"),
+        "label": _("Weather - Partly sunny"),
         "hints": [_("sun"), _("bright"), _("day"), _("clear"), _("good"), _("positive")],
     },
     "wizard_icon": {
-        "name": _("Wizard"),
+        "label": _("Wizard"),
         "hints": [_("magic"), _("helper"), _("assistant"), _("guide"), _("setup")],
     },
     "wrench_icon": {
-        "name": _("Wrench"),
+        "label": _("Wrench"),
         "hints": [_("tool"), _("settings"), _("config"), _("repair"), _("fix"), _("maintenance"), _("service")],
     },
     # Bank/Accounting icons (Papirus) - new format without _icon suffix
     "bank_account": {
-        "name": _("Bank Account"),
+        "label": _("Bank Account"),
         "hints": [_("bank"), _("account"), _("checking"), _("savings"), _("finance"), _("institution")],
     },
     "money_budget": {
-        "name": _("Money Budget"),
+        "label": _("Money Budget"),
         "hints": [_("money"), _("budget"), _("finance"), _("coins"), _("piggybank"), _("savings"), _("personal")],
     },
     "taxes": {
-        "name": _("Taxes"),
+        "label": _("Taxes"),
         "hints": [_("tax"), _("taxes"), _("money"), _("dollar"), _("cash"), _("government"), _("irs"), _("percent"), _("form")],
     },
     "currency_dollar": {
-        "name": _("Currency"),
+        "label": _("Currency"),
         "hints": [_("currency"), _("dollar"), _("money"), _("symbol"), _("usd"), _("format"), _("price")],
     },
     "calculator_flat": {
-        "name": _("Calculator (Flat)"),
+        "label": _("Calculator (Flat)"),
         "hints": [_("calculator"), _("math"), _("compute"), _("calculate"), _("numbers"), _("flat"), _("modern")],
     },
     "uno_calculator": {
-        "name": _("Calculator (Uno)"),
+        "label": _("Calculator (Uno)"),
         "hints": [_("calculator"), _("math"), _("uno"), _("compute"), _("blue"), _("numbers"), _("arithmetic")],
     },
     "gnome_calculator": {
-        "name": _("Calculator (GNOME)"),
+        "label": _("Calculator (GNOME)"),
         "hints": [_("calculator"), _("math"), _("gnome"), _("compute"), _("colorful"), _("numbers"), _("arithmetic")],
     },
     "safe_vault": {
-        "name": _("Safe"),
+        "label": _("Safe"),
         "hints": [_("safe"), _("vault"), _("secure"), _("lock"), _("storage"), _("protect"), _("valuables")],
     },
     "bitcoin": {
-        "name": _("Bitcoin"),
+        "label": _("Bitcoin"),
         "hints": [_("bitcoin"), _("crypto"), _("cryptocurrency"), _("digital"), _("btc"), _("blockchain")],
     },
     "wallet_flat": {
-        "name": _("Wallet (Flat)"),
+        "label": _("Wallet (Flat)"),
         "hints": [_("wallet"), _("billfold"), _("money"), _("cash"), _("flat"), _("modern")],
     },
     "money_expense": {
-        "name": _("Money Expense"),
+        "label": _("Money Expense"),
         "hints": [_("expense"), _("money"), _("spending"), _("budget"), _("track"), _("manager"), _("receipt")],
     },
     # Bank/Accounting apps (Papirus)
     "homebank": {
-        "name": _("HomeBank"),
+        "label": _("HomeBank"),
         "hints": [_("home"), _("bank"), _("finance"), _("budget"), _("personal"), _("accounting")],
     },
     "cointop": {
-        "name": _("CoinTop"),
+        "label": _("CoinTop"),
         "hints": [_("crypto"), _("cryptocurrency"), _("terminal"), _("bitcoin"), _("portfolio"), _("tracker")],
     },
     "cryptomator": {
-        "name": _("Cryptomator"),
+        "label": _("Cryptomator"),
         "hints": [_("encrypt"), _("security"), _("vault"), _("cloud"), _("privacy"), _("lock")],
     },
     "banking": {
-        "name": _("Banking"),
+        "label": _("Banking"),
         "hints": [_("bank"), _("credit"), _("card"), _("finance"), _("payment"), _("account")],
     },
     "safeeyes": {
-        "name": _("Safe Eyes"),
+        "label": _("Safe Eyes"),
         "hints": [_("break"), _("rest"), _("health"), _("eye"), _("reminder"), _("timer")],
     },
     "kmymoney": {
-        "name": _("KMyMoney"),
+        "label": _("KMyMoney"),
         "hints": [_("money"), _("finance"), _("personal"), _("budget"), _("accounting"), _("kde")],
     },
     "money_manager": {
-        "name": _("Money Manager"),
+        "label": _("Money Manager"),
         "hints": [_("money"), _("expense"), _("manager"), _("budget"), _("track"), _("finance")],
     },
     "moneydance": {
-        "name": _("Moneydance"),
+        "label": _("Moneydance"),
         "hints": [_("money"), _("finance"), _("personal"), _("budget"), _("banking"), _("investment")],
     },
     # Bank/Accounting icons (Oxygen) - new format without _icon suffix
     "bank_building": {
-        "name": _("Bank Building"),
+        "label": _("Bank Building"),
         "hints": [_("bank"), _("building"), _("institution"), _("columns"), _("finance"), _("classic")],
     },
     "wallet_closed": {
-        "name": _("Wallet (Closed)"),
+        "label": _("Wallet (Closed)"),
         "hints": [_("wallet"), _("closed"), _("locked"), _("secure"), _("billfold"), _("leather")],
     },
     "wallet_open": {
-        "name": _("Wallet (Open)"),
+        "label": _("Wallet (Open)"),
         "hints": [_("wallet"), _("open"), _("money"), _("cash"), _("billfold"), _("spend")],
     },
     "calculator_3d": {
-        "name": _("Calculator (3D)"),
+        "label": _("Calculator (3D)"),
         "hints": [_("calculator"), _("math"), _("compute"), _("calculate"), _("classic"), _("3d")],
     },
     "wallet_keys": {
-        "name": _("Wallet Keys"),
+        "label": _("Wallet Keys"),
         "hints": [_("wallet"), _("keys"), _("password"), _("secure"), _("manager"), _("keyring")],
     },
     "cactus": {
-        "name": _("Cactus"),
+        "label": _("Cactus"),
         "hints": [_("cactus"), _("plant"), _("desert"), _("green"), _("nature"), _("succulent")],
     },
 }
+
+
+# Load theme icons and merge into chooseableItems
+for _theme in ["nuvola"]:  # Add more themes as they are imported
+    chooseableItems.update(icon_library.get_chooseable_icons(_theme))
 
 
 itemImages = list(chooseableItems.keys()) + [

@@ -1,0 +1,2470 @@
+Theme: nuvola
+Scanning: /home/user/Downloads/icons/nuvola
+Found 3745 icon files
+Processing: 500/3745
+Processing: 1000/3745
+Processing: 1500/3745
+Processing: 2000/3745
+Processing: 2500/3745
+Processing: 3000/3745
+Processing: 3500/3745
+Found 741 unique icons
+
+Full duplicates: 55 groups
+Partial duplicate hashes: 327
+
+======================================================================
+FULL DUPLICATES (all sizes of these icons are identical)
+======================================================================
+
+# 20 identical icons (1 size each): [DONE]
+  nuvola_mimetypes_audio-aac
+      HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+      48px  cf6a7089c93d  48x48/mimetypes/audio-aac.png
+  nuvola_mimetypes_audio-ac3
+      HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+      48px  cf6a7089c93d  48x48/mimetypes/audio-ac3.png
+  nuvola_mimetypes_audio-basic
+      HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+      48px  cf6a7089c93d  48x48/mimetypes/audio-basic.png
+  nuvola_mimetypes_audio-mp4
+      HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+      48px  cf6a7089c93d  48x48/mimetypes/audio-mp4.png
+  nuvola_mimetypes_audio-mpeg
+      HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+      48px  cf6a7089c93d  48x48/mimetypes/audio-mpeg.png
+  nuvola_mimetypes_audio-x-adpcm
+      HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+      48px  cf6a7089c93d  48x48/mimetypes/audio-x-adpcm.png
+  nuvola_mimetypes_audio-x-aiff
+      HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+      48px  cf6a7089c93d  48x48/mimetypes/audio-x-aiff.png
+  nuvola_mimetypes_audio-x-flac
+      HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+      48px  cf6a7089c93d  48x48/mimetypes/audio-x-flac.png
+  nuvola_mimetypes_audio-x-flac+ogg
+      HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+      48px  cf6a7089c93d  48x48/mimetypes/audio-x-flac+ogg.png
+  nuvola_mimetypes_audio-x-matroska
+      HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+      48px  cf6a7089c93d  48x48/mimetypes/audio-x-matroska.png
+  nuvola_mimetypes_audio-x-mod
+      HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+      48px  cf6a7089c93d  48x48/mimetypes/audio-x-mod.png
+  nuvola_mimetypes_audio-x-monkey
+      HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+      48px  cf6a7089c93d  48x48/mimetypes/audio-x-monkey.png
+  nuvola_mimetypes_audio-x-mp2
+      HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+      48px  cf6a7089c93d  48x48/mimetypes/audio-x-mp2.png
+  nuvola_mimetypes_audio-x-mpegurl
+      HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+      48px  cf6a7089c93d  48x48/mimetypes/audio-x-mpegurl.png
+  nuvola_mimetypes_audio-x-ms-asx
+      HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+      48px  cf6a7089c93d  48x48/mimetypes/audio-x-ms-asx.png
+  nuvola_mimetypes_audio-x-ms-wma
+      HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+      48px  cf6a7089c93d  48x48/mimetypes/audio-x-ms-wma.png
+  nuvola_mimetypes_audio-x-musepack
+      HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+      48px  cf6a7089c93d  48x48/mimetypes/audio-x-musepack.png
+  nuvola_mimetypes_audio-x-scpls
+      HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+      48px  cf6a7089c93d  48x48/mimetypes/audio-x-scpls.png
+  nuvola_mimetypes_audio-x-vorbis+ogg
+      HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+      48px  cf6a7089c93d  48x48/mimetypes/audio-x-vorbis+ogg.png
+  nuvola_mimetypes_audio-x-wav
+      HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+      48px  cf6a7089c93d  48x48/mimetypes/audio-x-wav.png
+  [This group refers to: nuvola_mimetypes_audio-x-generic]
+
+# 5 identical icons (6 sizes each): [DONE]
+  nuvola_mimetypes_application-vnd.ms-excel
+      HAS duplicate_of: nuvola_mimetypes_x-office-spreadsheet
+      16px  dba7f75fe2b5  16x16/mimetypes/application-vnd.ms-excel.png
+      22px  35bd37271de1  22x22/mimetypes/application-vnd.ms-excel.png
+      32px  85584490363e  32x32/mimetypes/application-vnd.ms-excel.png
+      48px  ad753c9138c6  48x48/mimetypes/application-vnd.ms-excel.png
+      64px  f1ae796499ca  64x64/mimetypes/application-vnd.ms-excel.png
+     128px  a6244dcf1775  128x128/mimetypes/application-vnd.ms-excel.png
+  nuvola_mimetypes_application-vnd.oasis.opendocument.spreadsheet
+      HAS duplicate_of: nuvola_mimetypes_x-office-spreadsheet
+      16px  dba7f75fe2b5  16x16/mimetypes/application-vnd.oasis.opendocument.spreadsheet.png
+      22px  35bd37271de1  22x22/mimetypes/application-vnd.oasis.opendocument.spreadsheet.png
+      32px  85584490363e  32x32/mimetypes/application-vnd.oasis.opendocument.spreadsheet.png
+      48px  ad753c9138c6  48x48/mimetypes/application-vnd.oasis.opendocument.spreadsheet.png
+      64px  f1ae796499ca  64x64/mimetypes/application-vnd.oasis.opendocument.spreadsheet.png
+     128px  a6244dcf1775  128x128/mimetypes/application-vnd.oasis.opendocument.spreadsheet.png
+  nuvola_mimetypes_application-vnd.oasis.opendocument.spreadsheet-template
+      HAS duplicate_of: nuvola_mimetypes_x-office-spreadsheet
+      16px  dba7f75fe2b5  16x16/mimetypes/application-vnd.oasis.opendocument.spreadsheet-template.png
+      22px  35bd37271de1  22x22/mimetypes/application-vnd.oasis.opendocument.spreadsheet-template.png
+      32px  85584490363e  32x32/mimetypes/application-vnd.oasis.opendocument.spreadsheet-template.png
+      48px  ad753c9138c6  48x48/mimetypes/application-vnd.oasis.opendocument.spreadsheet-template.png
+      64px  f1ae796499ca  64x64/mimetypes/application-vnd.oasis.opendocument.spreadsheet-template.png
+     128px  a6244dcf1775  128x128/mimetypes/application-vnd.oasis.opendocument.spreadsheet-template.png
+  nuvola_mimetypes_application-x-applix-spreadsheet
+      HAS duplicate_of: nuvola_mimetypes_x-office-spreadsheet
+      16px  dba7f75fe2b5  16x16/mimetypes/application-x-applix-spreadsheet.png
+      22px  35bd37271de1  22x22/mimetypes/application-x-applix-spreadsheet.png
+      32px  85584490363e  32x32/mimetypes/application-x-applix-spreadsheet.png
+      48px  ad753c9138c6  48x48/mimetypes/application-x-applix-spreadsheet.png
+      64px  f1ae796499ca  64x64/mimetypes/application-x-applix-spreadsheet.png
+     128px  a6244dcf1775  128x128/mimetypes/application-x-applix-spreadsheet.png
+  nuvola_mimetypes_x-office-spreadsheet [PRIMARY]
+      16px  dba7f75fe2b5  16x16/mimetypes/x-office-spreadsheet.png
+      22px  35bd37271de1  22x22/mimetypes/x-office-spreadsheet.png
+      32px  85584490363e  32x32/mimetypes/x-office-spreadsheet.png
+      48px  ad753c9138c6  48x48/mimetypes/x-office-spreadsheet.png
+      64px  f1ae796499ca  64x64/mimetypes/x-office-spreadsheet.png
+     128px  a6244dcf1775  128x128/mimetypes/x-office-spreadsheet.png
+
+# 5 identical icons (6 sizes each): [DONE]
+  nuvola_mimetypes_application-vnd.rn-realmedia [PRIMARY]
+      16px  ae4b36830169  16x16/mimetypes/application-vnd.rn-realmedia.png
+      22px  648c679c712b  22x22/mimetypes/application-vnd.rn-realmedia.png
+      32px  4d25dd87b01f  32x32/mimetypes/application-vnd.rn-realmedia.png
+      48px  a7fb048877a9  48x48/mimetypes/application-vnd.rn-realmedia.png
+      64px  e25683e6915b  64x64/mimetypes/application-vnd.rn-realmedia.png
+     128px  0f29b9f27be0  128x128/mimetypes/application-vnd.rn-realmedia.png
+  nuvola_mimetypes_audio-vnd.rn-realaudio
+      HAS duplicate_of: nuvola_mimetypes_application-vnd.rn-realmedia
+      16px  ae4b36830169  16x16/mimetypes/audio-vnd.rn-realaudio.png
+      22px  648c679c712b  22x22/mimetypes/audio-vnd.rn-realaudio.png
+      32px  4d25dd87b01f  32x32/mimetypes/audio-vnd.rn-realaudio.png
+      48px  a7fb048877a9  48x48/mimetypes/audio-vnd.rn-realaudio.png
+      64px  e25683e6915b  64x64/mimetypes/audio-vnd.rn-realaudio.png
+     128px  0f29b9f27be0  128x128/mimetypes/audio-vnd.rn-realaudio.png
+  nuvola_mimetypes_audio-vnd.rn-realvideo
+      HAS duplicate_of: nuvola_mimetypes_application-vnd.rn-realmedia
+      16px  ae4b36830169  16x16/mimetypes/audio-vnd.rn-realvideo.png
+      22px  648c679c712b  22x22/mimetypes/audio-vnd.rn-realvideo.png
+      32px  4d25dd87b01f  32x32/mimetypes/audio-vnd.rn-realvideo.png
+      48px  a7fb048877a9  48x48/mimetypes/audio-vnd.rn-realvideo.png
+      64px  e25683e6915b  64x64/mimetypes/audio-vnd.rn-realvideo.png
+     128px  0f29b9f27be0  128x128/mimetypes/audio-vnd.rn-realvideo.png
+  nuvola_mimetypes_audio-x-pn-realaudio-plugin
+      HAS duplicate_of: nuvola_mimetypes_application-vnd.rn-realmedia
+      16px  ae4b36830169  16x16/mimetypes/audio-x-pn-realaudio-plugin.png
+      22px  648c679c712b  22x22/mimetypes/audio-x-pn-realaudio-plugin.png
+      32px  4d25dd87b01f  32x32/mimetypes/audio-x-pn-realaudio-plugin.png
+      48px  a7fb048877a9  48x48/mimetypes/audio-x-pn-realaudio-plugin.png
+      64px  e25683e6915b  64x64/mimetypes/audio-x-pn-realaudio-plugin.png
+     128px  0f29b9f27be0  128x128/mimetypes/audio-x-pn-realaudio-plugin.png
+  nuvola_mimetypes_real_doc
+      HAS duplicate_of: nuvola_mimetypes_application-vnd.rn-realmedia
+      16px  ae4b36830169  16x16/mimetypes/real_doc.png
+      22px  648c679c712b  22x22/mimetypes/real_doc.png
+      32px  4d25dd87b01f  32x32/mimetypes/real_doc.png
+      48px  a7fb048877a9  48x48/mimetypes/real_doc.png
+      64px  e25683e6915b  64x64/mimetypes/real_doc.png
+     128px  0f29b9f27be0  128x128/mimetypes/real_doc.png
+
+# 5 identical icons (6 sizes each): [DONE]
+  nuvola_mimetypes_application-x-zerosize
+      HAS duplicate_of: nuvola_mimetypes_unknown
+      16px  24a960ccf751  16x16/mimetypes/application-x-zerosize.png
+      22px  9a8981afd677  22x22/mimetypes/application-x-zerosize.png
+      32px  6f6e9b40ef43  32x32/mimetypes/application-x-zerosize.png
+      48px  0167f129d5c7  48x48/mimetypes/application-x-zerosize.png
+      64px  c9cf6be37aa6  64x64/mimetypes/application-x-zerosize.png
+     128px  1fdfecc52e23  128x128/mimetypes/application-x-zerosize.png
+  nuvola_mimetypes_krec_fileempty
+      HAS duplicate_of: nuvola_mimetypes_unknown
+      16px  24a960ccf751  16x16/mimetypes/krec_fileempty.png
+      22px  9a8981afd677  22x22/mimetypes/krec_fileempty.png
+      32px  6f6e9b40ef43  32x32/mimetypes/krec_fileempty.png
+      48px  0167f129d5c7  48x48/mimetypes/krec_fileempty.png
+      64px  c9cf6be37aa6  64x64/mimetypes/krec_fileempty.png
+     128px  1fdfecc52e23  128x128/mimetypes/krec_fileempty.png
+  nuvola_mimetypes_mime
+      HAS duplicate_of: nuvola_mimetypes_unknown
+      16px  24a960ccf751  16x16/mimetypes/mime.png
+      22px  9a8981afd677  22x22/mimetypes/mime.png
+      32px  6f6e9b40ef43  32x32/mimetypes/mime.png
+      48px  0167f129d5c7  48x48/mimetypes/mime.png
+      64px  c9cf6be37aa6  64x64/mimetypes/mime.png
+     128px  1fdfecc52e23  128x128/mimetypes/mime.png
+  nuvola_mimetypes_misc_doc
+      HAS duplicate_of: nuvola_mimetypes_unknown
+      16px  24a960ccf751  16x16/mimetypes/misc_doc.png
+      22px  9a8981afd677  22x22/mimetypes/misc_doc.png
+      32px  6f6e9b40ef43  32x32/mimetypes/misc_doc.png
+      48px  0167f129d5c7  48x48/mimetypes/misc_doc.png
+      64px  c9cf6be37aa6  64x64/mimetypes/misc_doc.png
+     128px  1fdfecc52e23  128x128/mimetypes/misc_doc.png
+  nuvola_mimetypes_unknown [PRIMARY]
+      16px  24a960ccf751  16x16/mimetypes/unknown.png
+      22px  9a8981afd677  22x22/mimetypes/unknown.png
+      32px  6f6e9b40ef43  32x32/mimetypes/unknown.png
+      48px  0167f129d5c7  48x48/mimetypes/unknown.png
+      64px  c9cf6be37aa6  64x64/mimetypes/unknown.png
+     128px  1fdfecc52e23  128x128/mimetypes/unknown.png
+
+# 4 identical icons (4 sizes each): [DONE]
+  nuvola_actions_camera_test
+      HAS duplicate_of: nuvola_actions_dialog-ok
+      16px  6e05cff451a0  16x16/actions/camera_test.png
+      22px  799ed670394e  22x22/actions/camera_test.png
+      32px  1ccba9713343  32x32/actions/camera_test.png
+      48px  910b44b58a69  48x48/actions/camera_test.png
+  nuvola_actions_dialog-ok [PRIMARY]
+      16px  6e05cff451a0  16x16/actions/dialog-ok.png
+      22px  799ed670394e  22x22/actions/dialog-ok.png
+      32px  1ccba9713343  32x32/actions/dialog-ok.png
+      48px  910b44b58a69  48x48/actions/dialog-ok.png
+  nuvola_actions_games-endturn
+      HAS duplicate_of: nuvola_actions_dialog-ok
+      16px  6e05cff451a0  16x16/actions/games-endturn.png
+      22px  799ed670394e  22x22/actions/games-endturn.png
+      32px  1ccba9713343  32x32/actions/games-endturn.png
+      48px  910b44b58a69  48x48/actions/games-endturn.png
+  nuvola_actions_ok
+      HAS duplicate_of: nuvola_actions_dialog-ok
+      16px  6e05cff451a0  16x16/actions/ok.png
+      22px  799ed670394e  22x22/actions/ok.png
+      32px  1ccba9713343  32x32/actions/ok.png
+      48px  910b44b58a69  48x48/actions/ok.png
+  [+1 referrers: nuvola_actions_button_accept]
+
+# 4 identical icons (6 sizes each): [DONE]
+  nuvola_apps_kjobviewer
+      HAS duplicate_of: nuvola_devices_printer
+      16px  acc79028cb6c  16x16/apps/kjobviewer.png
+      22px  b042eca016f0  22x22/apps/kjobviewer.png
+      32px  1096ea761792  32x32/apps/kjobviewer.png
+      48px  3fcc96dd1cb1  48x48/apps/kjobviewer.png
+      64px  4516f0c92c79  64x64/apps/kjobviewer.png
+     128px  7ff34c635f74  128x128/apps/kjobviewer.png
+  nuvola_apps_klpq
+      HAS duplicate_of: nuvola_devices_printer
+      16px  acc79028cb6c  16x16/apps/klpq.png
+      22px  b042eca016f0  22x22/apps/klpq.png
+      32px  1096ea761792  32x32/apps/klpq.png
+      48px  3fcc96dd1cb1  48x48/apps/klpq.png
+      64px  4516f0c92c79  64x64/apps/klpq.png
+     128px  7ff34c635f74  128x128/apps/klpq.png
+  nuvola_apps_preferences-desktop-printer
+      HAS duplicate_of: nuvola_devices_printer
+      16px  acc79028cb6c  16x16/apps/preferences-desktop-printer.png
+      22px  b042eca016f0  22x22/apps/preferences-desktop-printer.png
+      32px  1096ea761792  32x32/apps/preferences-desktop-printer.png
+      48px  3fcc96dd1cb1  48x48/apps/preferences-desktop-printer.png
+      64px  4516f0c92c79  64x64/apps/preferences-desktop-printer.png
+     128px  7ff34c635f74  128x128/apps/preferences-desktop-printer.png
+  nuvola_devices_printer [PRIMARY]
+      16px  acc79028cb6c  16x16/devices/printer.png
+      22px  b042eca016f0  22x22/devices/printer.png
+      32px  1096ea761792  32x32/devices/printer.png
+      48px  3fcc96dd1cb1  48x48/devices/printer.png
+      64px  4516f0c92c79  64x64/devices/printer.png
+     128px  7ff34c635f74  128x128/devices/printer.png
+  [+1 referrers: nuvola_actions_printmgr]
+
+# 3 identical icons (6 sizes each): [DONE]
+  nuvola_apps_kmenu
+      HAS duplicate_of: nuvola_places_start-here
+      16px  42e6bdb7d745  16x16/apps/kmenu.png
+      22px  a1028a079019  22x22/apps/kmenu.png
+      32px  7b3e238f76b9  32x32/apps/kmenu.png
+      48px  fdbbe17a61d7  48x48/apps/kmenu.png
+      64px  147f047a5455  64x64/apps/kmenu.png
+     128px  15a2f9dc93a4  128x128/apps/kmenu.png
+  nuvola_places_start-here [PRIMARY]
+      16px  42e6bdb7d745  16x16/places/start-here.png
+      22px  a1028a079019  22x22/places/start-here.png
+      32px  7b3e238f76b9  32x32/places/start-here.png
+      48px  fdbbe17a61d7  48x48/places/start-here.png
+      64px  147f047a5455  64x64/places/start-here.png
+     128px  15a2f9dc93a4  128x128/places/start-here.png
+  nuvola_places_start-here-kde
+      HAS duplicate_of: nuvola_places_start-here
+      16px  42e6bdb7d745  16x16/places/start-here-kde.png
+      22px  a1028a079019  22x22/places/start-here-kde.png
+      32px  7b3e238f76b9  32x32/places/start-here-kde.png
+      48px  fdbbe17a61d7  48x48/places/start-here-kde.png
+      64px  147f047a5455  64x64/places/start-here-kde.png
+     128px  15a2f9dc93a4  128x128/places/start-here-kde.png
+  [+1 referrers: nuvola_actions_about_kde]
+
+# 3 identical icons (6 sizes each): [DONE]
+  nuvola_apps_accessories-character-map
+      HAS duplicate_of: nuvola_apps_preferences-desktop-keyboard
+      16px  169d2eb06f4f  16x16/apps/accessories-character-map.png
+      22px  638b8218efaa  22x22/apps/accessories-character-map.png
+      32px  1606e53a99c4  32x32/apps/accessories-character-map.png
+      48px  add0134e5d48  48x48/apps/accessories-character-map.png
+      64px  986f33a5eabe  64x64/apps/accessories-character-map.png
+     128px  9ada50917b2a  128x128/apps/accessories-character-map.png
+  nuvola_apps_kxkb
+      HAS duplicate_of: nuvola_apps_preferences-desktop-keyboard
+      16px  169d2eb06f4f  16x16/apps/kxkb.png
+      22px  638b8218efaa  22x22/apps/kxkb.png
+      32px  1606e53a99c4  32x32/apps/kxkb.png
+      48px  add0134e5d48  48x48/apps/kxkb.png
+      64px  986f33a5eabe  64x64/apps/kxkb.png
+     128px  9ada50917b2a  128x128/apps/kxkb.png
+  nuvola_apps_preferences-desktop-keyboard [PRIMARY]
+      16px  169d2eb06f4f  16x16/apps/preferences-desktop-keyboard.png
+      22px  638b8218efaa  22x22/apps/preferences-desktop-keyboard.png
+      32px  1606e53a99c4  32x32/apps/preferences-desktop-keyboard.png
+      48px  add0134e5d48  48x48/apps/preferences-desktop-keyboard.png
+      64px  986f33a5eabe  64x64/apps/preferences-desktop-keyboard.png
+     128px  9ada50917b2a  128x128/apps/preferences-desktop-keyboard.png
+
+# 3 identical icons (6 sizes each): [DONE]
+  nuvola_apps_x [PRIMARY]
+      16px  b014119db0f5  16x16/apps/x.png
+      22px  05c91af9d4a9  22x22/apps/x.png
+      32px  88522c22f94f  32x32/apps/x.png
+      48px  512c8dcd5f97  48x48/apps/x.png
+      64px  f6419b2b1bf8  64x64/apps/x.png
+     128px  05ce2fba1042  128x128/apps/x.png
+  nuvola_apps_xapp
+      HAS duplicate_of: nuvola_apps_x
+      16px  b014119db0f5  16x16/apps/xapp.png
+      22px  05c91af9d4a9  22x22/apps/xapp.png
+      32px  88522c22f94f  32x32/apps/xapp.png
+      48px  512c8dcd5f97  48x48/apps/xapp.png
+      64px  f6419b2b1bf8  64x64/apps/xapp.png
+     128px  05ce2fba1042  128x128/apps/xapp.png
+  nuvola_apps_xconfig
+      HAS duplicate_of: nuvola_apps_x
+      16px  b014119db0f5  16x16/apps/xconfig.png
+      22px  05c91af9d4a9  22x22/apps/xconfig.png
+      32px  88522c22f94f  32x32/apps/xconfig.png
+      48px  512c8dcd5f97  48x48/apps/xconfig.png
+      64px  f6419b2b1bf8  64x64/apps/xconfig.png
+     128px  05ce2fba1042  128x128/apps/xconfig.png
+
+# 3 identical icons (6 sizes each): [DONE]
+  nuvola_mimetypes_application-x-rar
+      HAS duplicate_of: nuvola_mimetypes_application-x-zip
+      16px  ac25551cbba0  16x16/mimetypes/application-x-rar.png
+      22px  26a52f20aaa0  22x22/mimetypes/application-x-rar.png
+      32px  6e41fca26718  32x32/mimetypes/application-x-rar.png
+      48px  6c7f1b94beac  48x48/mimetypes/application-x-rar.png
+      64px  68e8af45f46f  64x64/mimetypes/application-x-rar.png
+     128px  b887049b24a2  128x128/mimetypes/application-x-rar.png
+  nuvola_mimetypes_application-x-tar
+      HAS duplicate_of: nuvola_mimetypes_application-x-zip
+      16px  ac25551cbba0  16x16/mimetypes/application-x-tar.png
+      22px  26a52f20aaa0  22x22/mimetypes/application-x-tar.png
+      32px  6e41fca26718  32x32/mimetypes/application-x-tar.png
+      48px  6c7f1b94beac  48x48/mimetypes/application-x-tar.png
+      64px  68e8af45f46f  64x64/mimetypes/application-x-tar.png
+     128px  b887049b24a2  128x128/mimetypes/application-x-tar.png
+  nuvola_mimetypes_application-x-zip [PRIMARY]
+      16px  ac25551cbba0  16x16/mimetypes/application-x-zip.png
+      22px  26a52f20aaa0  22x22/mimetypes/application-x-zip.png
+      32px  6e41fca26718  32x32/mimetypes/application-x-zip.png
+      48px  6c7f1b94beac  48x48/mimetypes/application-x-zip.png
+      64px  68e8af45f46f  64x64/mimetypes/application-x-zip.png
+     128px  b887049b24a2  128x128/mimetypes/application-x-zip.png
+
+# 3 identical icons (6 sizes each): [DONE]
+  nuvola_mimetypes_image-svg+xml [PRIMARY]
+      16px  f4138e4c2b07  16x16/mimetypes/image-svg+xml.png
+      22px  b823637a13df  22x22/mimetypes/image-svg+xml.png
+      32px  caddd7a089d1  32x32/mimetypes/image-svg+xml.png
+      48px  6bfebd3f7a92  48x48/mimetypes/image-svg+xml.png
+      64px  858204c46262  64x64/mimetypes/image-svg+xml.png
+     128px  faf5cbd35c27  128x128/mimetypes/image-svg+xml.png
+  nuvola_mimetypes_image-svg+xml-compressed
+      HAS duplicate_of: nuvola_mimetypes_image-svg+xml
+      16px  f4138e4c2b07  16x16/mimetypes/image-svg+xml-compressed.png
+      22px  b823637a13df  22x22/mimetypes/image-svg+xml-compressed.png
+      32px  caddd7a089d1  32x32/mimetypes/image-svg+xml-compressed.png
+      48px  6bfebd3f7a92  48x48/mimetypes/image-svg+xml-compressed.png
+      64px  858204c46262  64x64/mimetypes/image-svg+xml-compressed.png
+     128px  faf5cbd35c27  128x128/mimetypes/image-svg+xml-compressed.png
+  nuvola_mimetypes_image-x-eps
+      HAS duplicate_of: nuvola_mimetypes_image-svg+xml
+      16px  f4138e4c2b07  16x16/mimetypes/image-x-eps.png
+      22px  b823637a13df  22x22/mimetypes/image-x-eps.png
+      32px  caddd7a089d1  32x32/mimetypes/image-x-eps.png
+      48px  6bfebd3f7a92  48x48/mimetypes/image-x-eps.png
+      64px  858204c46262  64x64/mimetypes/image-x-eps.png
+     128px  faf5cbd35c27  128x128/mimetypes/image-x-eps.png
+
+# 3 identical icons (6 sizes each): [DONE]
+  nuvola_mimetypes_message [PRIMARY]
+      16px  7635c568d32d  16x16/mimetypes/message.png
+      22px  baa495510407  22x22/mimetypes/message.png
+      32px  dca27ae06d50  32x32/mimetypes/message.png
+      48px  d9630a1878aa  48x48/mimetypes/message.png
+      64px  0515e76c6979  64x64/mimetypes/message.png
+     128px  05c939bc7a5c  128x128/mimetypes/message.png
+  nuvola_mimetypes_message-news
+      HAS duplicate_of: nuvola_mimetypes_message
+      16px  7635c568d32d  16x16/mimetypes/message-news.png
+      22px  baa495510407  22x22/mimetypes/message-news.png
+      32px  dca27ae06d50  32x32/mimetypes/message-news.png
+      48px  d9630a1878aa  48x48/mimetypes/message-news.png
+      64px  0515e76c6979  64x64/mimetypes/message-news.png
+     128px  05c939bc7a5c  128x128/mimetypes/message-news.png
+  nuvola_mimetypes_message-rfc822
+      HAS duplicate_of: nuvola_mimetypes_message
+      16px  7635c568d32d  16x16/mimetypes/message-rfc822.png
+      22px  baa495510407  22x22/mimetypes/message-rfc822.png
+      32px  dca27ae06d50  32x32/mimetypes/message-rfc822.png
+      48px  d9630a1878aa  48x48/mimetypes/message-rfc822.png
+      64px  0515e76c6979  64x64/mimetypes/message-rfc822.png
+     128px  05c939bc7a5c  128x128/mimetypes/message-rfc822.png
+
+# 2 identical icons (4 sizes each): [DONE]
+  nuvola_actions_arrow-down [PRIMARY]
+      16px  aac0742d785a  16x16/actions/arrow-down.png
+      22px  599d9c72a848  22x22/actions/arrow-down.png
+      32px  1effb5f5b6c3  32x32/actions/arrow-down.png
+      48px  a1801a54b557  48x48/actions/arrow-down.png
+  nuvola_actions_kdevelop_down
+      HAS duplicate_of: nuvola_actions_arrow-down
+      16px  aac0742d785a  16x16/actions/kdevelop_down.png
+      22px  599d9c72a848  22x22/actions/kdevelop_down.png
+      32px  1effb5f5b6c3  32x32/actions/kdevelop_down.png
+      48px  a1801a54b557  48x48/actions/kdevelop_down.png
+
+# 2 identical icons (4 sizes each): [DONE]
+  nuvola_actions_arrow-left [PRIMARY]
+      16px  afc70eea64c5  16x16/actions/arrow-left.png
+      22px  899962236a0e  22x22/actions/arrow-left.png
+      32px  096f5ff62a71  32x32/actions/arrow-left.png
+      48px  6e0139b5209f  48x48/actions/arrow-left.png
+  nuvola_actions_go-previous-document
+      HAS duplicate_of: nuvola_actions_arrow-left
+      16px  afc70eea64c5  16x16/actions/go-previous-document.png
+      22px  899962236a0e  22x22/actions/go-previous-document.png
+      32px  096f5ff62a71  32x32/actions/go-previous-document.png
+      48px  6e0139b5209f  48x48/actions/go-previous-document.png
+
+# 2 identical icons (4 sizes each): [DONE]
+  nuvola_actions_cancel [PRIMARY]
+      16px  18c30c87dd30  16x16/actions/cancel.png
+      22px  ebb09e86ff0a  22x22/actions/cancel.png
+      32px  8fd4a4f45396  32x32/actions/cancel.png
+      48px  44f33ef3a5b6  48x48/actions/cancel.png
+  nuvola_actions_dialog-cancel
+      HAS duplicate_of: nuvola_actions_cancel
+      16px  18c30c87dd30  16x16/actions/dialog-cancel.png
+      22px  ebb09e86ff0a  22x22/actions/dialog-cancel.png
+      32px  8fd4a4f45396  32x32/actions/dialog-cancel.png
+      48px  44f33ef3a5b6  48x48/actions/dialog-cancel.png
+
+# 2 identical icons (1 size each): [DONE]
+  nuvola_actions_dock [PRIMARY]
+      22px  d00ae894b93f  22x22/actions/dock.png
+  nuvola_actions_tool_drop_target
+      HAS duplicate_of: nuvola_actions_dock
+      22px  d00ae894b93f  22x22/actions/tool_drop_target.png
+
+# 2 identical icons (1 size each): [DONE]
+  nuvola_actions_kjobviewer [PRIMARY]
+      22px  2327b9eea794  22x22/actions/kjobviewer.png
+  nuvola_actions_klpq
+      HAS duplicate_of: nuvola_actions_kjobviewer
+      22px  2327b9eea794  22x22/actions/klpq.png
+
+# 2 identical icons (4 sizes each): [DONE]
+  nuvola_actions_mail-message-new [PRIMARY]
+      16px  7fb1a0d4b3b2  16x16/actions/mail-message-new.png
+      22px  f9c15bd873bc  22x22/actions/mail-message-new.png
+      32px  3ac795d31ac3  32x32/actions/mail-message-new.png
+      48px  2c73f1f34bce  48x48/actions/mail-message-new.png
+  nuvola_actions_mail_post_to
+      HAS duplicate_of: nuvola_actions_mail-message-new
+      16px  7fb1a0d4b3b2  16x16/actions/mail_post_to.png
+      22px  f9c15bd873bc  22x22/actions/mail_post_to.png
+      32px  3ac795d31ac3  32x32/actions/mail_post_to.png
+      48px  2c73f1f34bce  48x48/actions/mail_post_to.png
+
+# 2 identical icons (1 size each): [DONE]
+  nuvola_actions_folder [PRIMARY]
+      22px  151f6b76abd1  22x22/actions/folder.png
+  nuvola_actions_tool_uselastdir
+      HAS duplicate_of: nuvola_actions_folder
+      22px  151f6b76abd1  22x22/actions/tool_uselastdir.png
+
+# 2 identical icons (4 sizes each): [DONE]
+  nuvola_actions_object-rotate-left [PRIMARY]
+      16px  64e8f14c3cba  16x16/actions/object-rotate-left.png
+      22px  72174c2ec38c  22x22/actions/object-rotate-left.png
+      32px  bdda20c457e1  32x32/actions/object-rotate-left.png
+      48px  8870ffa7d652  48x48/actions/object-rotate-left.png
+  nuvola_actions_transform-rotate
+      HAS duplicate_of: nuvola_actions_object-rotate-left
+      16px  64e8f14c3cba  16x16/actions/transform-rotate.png
+      22px  72174c2ec38c  22x22/actions/transform-rotate.png
+      32px  bdda20c457e1  32x32/actions/transform-rotate.png
+      48px  8870ffa7d652  48x48/actions/transform-rotate.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_apps_atlantik
+      HAS duplicate_of: nuvola_categories_applications-games-board
+      16px  820f42fcb50a  16x16/apps/atlantik.png
+      22px  c4c3c15295c4  22x22/apps/atlantik.png
+      32px  40fe79add22c  32x32/apps/atlantik.png
+      48px  d01909c0ec6c  48x48/apps/atlantik.png
+      64px  cb3420820738  64x64/apps/atlantik.png
+     128px  349bc0c0e311  128x128/apps/atlantik.png
+  nuvola_categories_applications-games-board [PRIMARY]
+      16px  820f42fcb50a  16x16/categories/applications-games-board.png
+      22px  c4c3c15295c4  22x22/categories/applications-games-board.png
+      32px  40fe79add22c  32x32/categories/applications-games-board.png
+      48px  d01909c0ec6c  48x48/categories/applications-games-board.png
+      64px  cb3420820738  64x64/categories/applications-games-board.png
+     128px  349bc0c0e311  128x128/categories/applications-games-board.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_apps_browser
+      HAS duplicate_of: nuvola_categories_applications-internet
+      16px  b14ba609ba84  16x16/apps/browser.png
+      22px  acf0f7fd4800  22x22/apps/browser.png
+      32px  4bc33cfe6627  32x32/apps/browser.png
+      48px  6a65813e8eb7  48x48/apps/browser.png
+      64px  51ae7e989166  64x64/apps/browser.png
+     128px  6cb0912e3680  128x128/apps/browser.png
+  nuvola_categories_applications-internet [PRIMARY]
+      16px  b14ba609ba84  16x16/categories/applications-internet.png
+      22px  acf0f7fd4800  22x22/categories/applications-internet.png
+      32px  4bc33cfe6627  32x32/categories/applications-internet.png
+      48px  6a65813e8eb7  48x48/categories/applications-internet.png
+      64px  51ae7e989166  64x64/categories/applications-internet.png
+     128px  6cb0912e3680  128x128/categories/applications-internet.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_apps_download_manager [PRIMARY]
+      16px  4bf534bfc674  16x16/apps/download_manager.png
+      22px  0ab7d7945d19  22x22/apps/download_manager.png
+      32px  2f9531814b16  32x32/apps/download_manager.png
+      48px  cb61a4faaaeb  48x48/apps/download_manager.png
+      64px  6ec59593b670  64x64/apps/download_manager.png
+     128px  fc9a0deb09fa  128x128/apps/download_manager.png
+  nuvola_apps_kget
+      HAS duplicate_of: nuvola_apps_download_manager
+      16px  4bf534bfc674  16x16/apps/kget.png
+      22px  0ab7d7945d19  22x22/apps/kget.png
+      32px  2f9531814b16  32x32/apps/kget.png
+      48px  cb61a4faaaeb  48x48/apps/kget.png
+      64px  6ec59593b670  64x64/apps/kget.png
+     128px  fc9a0deb09fa  128x128/apps/kget.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_apps_kcmmidi [PRIMARY]
+      16px  5b5a4d17a2a8  16x16/apps/kcmmidi.png
+      22px  205ea6ac5b53  22x22/apps/kcmmidi.png
+      32px  ca3fa4e4c091  32x32/apps/kcmmidi.png
+      48px  c7ca43f912b3  48x48/apps/kcmmidi.png
+      64px  a0041a8e7ed1  64x64/apps/kcmmidi.png
+     128px  aacd86c55c93  128x128/apps/kcmmidi.png
+  nuvola_apps_kmid
+      HAS duplicate_of: nuvola_apps_kcmmidi
+      16px  5b5a4d17a2a8  16x16/apps/kmid.png
+      22px  205ea6ac5b53  22x22/apps/kmid.png
+      32px  ca3fa4e4c091  32x32/apps/kmid.png
+      48px  c7ca43f912b3  48x48/apps/kmid.png
+      64px  a0041a8e7ed1  64x64/apps/kmid.png
+     128px  aacd86c55c93  128x128/apps/kmid.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_apps_kfm_home
+      HAS duplicate_of: nuvola_places_user-home
+      16px  25481a75a46c  16x16/apps/kfm_home.png
+      22px  fb2fb2e9cdb2  22x22/apps/kfm_home.png
+      32px  95cfabedcd01  32x32/apps/kfm_home.png
+      48px  0ef94e6c7e52  48x48/apps/kfm_home.png
+      64px  c1b4988b02cf  64x64/apps/kfm_home.png
+     128px  b33ea1e9ce86  128x128/apps/kfm_home.png
+  nuvola_places_user-home [PRIMARY]
+      16px  25481a75a46c  16x16/places/user-home.png
+      22px  fb2fb2e9cdb2  22x22/places/user-home.png
+      32px  95cfabedcd01  32x32/places/user-home.png
+      48px  0ef94e6c7e52  48x48/places/user-home.png
+      64px  c1b4988b02cf  64x64/places/user-home.png
+     128px  b33ea1e9ce86  128x128/places/user-home.png
+
+# 2 identical icons (1 size each): [DONE]
+  nuvola_actions_kgpg_docked
+      HAS duplicate_of: nuvola_actions_kgpg_identity
+      22px  dda36d00bad6  22x22/actions/kgpg_docked.png
+  nuvola_apps_kgpg_docked
+      HAS duplicate_of: nuvola_actions_kgpg_identity
+      22px  dda36d00bad6  22x22/apps/kgpg_docked.png
+  [This group refers to: nuvola_actions_kgpg_identity]
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_apps_kmahjong [PRIMARY]
+      16px  3cdc98611b6c  16x16/apps/kmahjong.png
+      22px  79cb9da1770b  22x22/apps/kmahjong.png
+      32px  191970b03514  32x32/apps/kmahjong.png
+      48px  473e395424f7  48x48/apps/kmahjong.png
+      64px  8f0a80f482b3  64x64/apps/kmahjong.png
+     128px  9cabf1f25012  128x128/apps/kmahjong.png
+  nuvola_apps_kshisen
+      HAS duplicate_of: nuvola_apps_kmahjong
+      16px  3cdc98611b6c  16x16/apps/kshisen.png
+      22px  79cb9da1770b  22x22/apps/kshisen.png
+      32px  191970b03514  32x32/apps/kshisen.png
+      48px  473e395424f7  48x48/apps/kshisen.png
+      64px  8f0a80f482b3  64x64/apps/kshisen.png
+     128px  9cabf1f25012  128x128/apps/kshisen.png
+
+# 2 identical icons (1 size each): [DONE]
+  nuvola_actions_kmaillight
+      HAS duplicate_of: nuvola_apps_kmaillight
+      22px  1e336c0e4133  22x22/actions/kmaillight.png
+  nuvola_apps_kmaillight [PRIMARY]
+      22px  1e336c0e4133  22x22/apps/kmaillight.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_apps_kolourpaint [PRIMARY]
+      16px  c7389798c62a  16x16/apps/kolourpaint.png
+      22px  37111e9d6e61  22x22/apps/kolourpaint.png
+      32px  4ae354449c57  32x32/apps/kolourpaint.png
+      48px  bd5dafc05361  48x48/apps/kolourpaint.png
+      64px  1e0ce4d32833  64x64/apps/kolourpaint.png
+     128px  556cdd090784  128x128/apps/kolourpaint.png
+  nuvola_apps_kpaint
+      HAS duplicate_of: nuvola_apps_kolourpaint
+      16px  c7389798c62a  16x16/apps/kpaint.png
+      22px  37111e9d6e61  22x22/apps/kpaint.png
+      32px  4ae354449c57  32x32/apps/kpaint.png
+      48px  bd5dafc05361  48x48/apps/kpaint.png
+      64px  1e0ce4d32833  64x64/apps/kpaint.png
+     128px  556cdd090784  128x128/apps/kpaint.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_apps_korganizer [PRIMARY]
+      16px  a14199b3f8d0  16x16/apps/korganizer.png
+      22px  cc7d13cc7324  22x22/apps/korganizer.png
+      32px  b05e144853c4  32x32/apps/korganizer.png
+      48px  65bf645711a2  48x48/apps/korganizer.png
+      64px  62764acb3d4f  64x64/apps/korganizer.png
+     128px  054a95c1abf7  128x128/apps/korganizer.png
+  nuvola_apps_korganizer_todo
+      HAS duplicate_of: nuvola_apps_korganizer
+      16px  a14199b3f8d0  16x16/apps/korganizer_todo.png
+      22px  cc7d13cc7324  22x22/apps/korganizer_todo.png
+      32px  b05e144853c4  32x32/apps/korganizer_todo.png
+      48px  65bf645711a2  48x48/apps/korganizer_todo.png
+      64px  62764acb3d4f  64x64/apps/korganizer_todo.png
+     128px  054a95c1abf7  128x128/apps/korganizer_todo.png
+  [+1 referrers: nuvola_actions_korgac]
+
+# 2 identical icons (5 sizes each): [DONE]
+  nuvola_apps_kdf [PRIMARY]
+      16px  367d303861e4  16x16/apps/kdf.png
+      32px  39d09178c432  32x32/apps/kdf.png
+      48px  b9dfa2285048  48x48/apps/kdf.png
+      64px  a09b29189ba8  64x64/apps/kdf.png
+     128px  320907e08723  128x128/apps/kdf.png
+  nuvola_apps_kwikdisk
+      HAS duplicate_of: nuvola_apps_kdf
+      16px  367d303861e4  16x16/apps/kwikdisk.png
+      32px  39d09178c432  32x32/apps/kwikdisk.png
+      48px  b9dfa2285048  48x48/apps/kwikdisk.png
+      64px  a09b29189ba8  64x64/apps/kwikdisk.png
+     128px  320907e08723  128x128/apps/kwikdisk.png
+  [+2 referrers: nuvola_apps_kcmdf, nuvola_mimetypes_inode-blockdevice]
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_apps_accessories-text-editor [PRIMARY]
+      16px  ccb4230b375a  16x16/apps/accessories-text-editor.png
+      22px  8e5119ca7205  22x22/apps/accessories-text-editor.png
+      32px  ba691380e8d7  32x32/apps/accessories-text-editor.png
+      48px  f7ca9bb996d2  48x48/apps/accessories-text-editor.png
+      64px  068d23a7f915  64x64/apps/accessories-text-editor.png
+     128px  7d45f5df46ec  128x128/apps/accessories-text-editor.png
+  nuvola_apps_package_editors
+      HAS duplicate_of: nuvola_apps_accessories-text-editor
+      16px  ccb4230b375a  16x16/apps/package_editors.png
+      22px  8e5119ca7205  22x22/apps/package_editors.png
+      32px  ba691380e8d7  32x32/apps/package_editors.png
+      48px  f7ca9bb996d2  48x48/apps/package_editors.png
+      64px  068d23a7f915  64x64/apps/package_editors.png
+     128px  7d45f5df46ec  128x128/apps/package_editors.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_apps_krdc
+      HAS duplicate_of: nuvola_apps_preferences-desktop-display
+      16px  ddb3372fb68d  16x16/apps/krdc.png
+      22px  5fabfcffc13a  22x22/apps/krdc.png
+      32px  0a252bd52056  32x32/apps/krdc.png
+      48px  f440fb7a22ce  48x48/apps/krdc.png
+      64px  2c22e70593d5  64x64/apps/krdc.png
+     128px  f9daaa15b983  128x128/apps/krdc.png
+  nuvola_apps_preferences-desktop-display [PRIMARY]
+      16px  ddb3372fb68d  16x16/apps/preferences-desktop-display.png
+      22px  5fabfcffc13a  22x22/apps/preferences-desktop-display.png
+      32px  0a252bd52056  32x32/apps/preferences-desktop-display.png
+      48px  f440fb7a22ce  48x48/apps/preferences-desktop-display.png
+      64px  2c22e70593d5  64x64/apps/preferences-desktop-display.png
+     128px  f9daaa15b983  128x128/apps/preferences-desktop-display.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_apps_preferences-desktop-multimedia
+      HAS duplicate_of: nuvola_categories_applications-multimedia
+      16px  fddeebb8cfbd  16x16/apps/preferences-desktop-multimedia.png
+      22px  bca5e14b81be  22x22/apps/preferences-desktop-multimedia.png
+      32px  fa845ea30fb2  32x32/apps/preferences-desktop-multimedia.png
+      48px  da527742a58b  48x48/apps/preferences-desktop-multimedia.png
+      64px  3aa9aaf9b7d3  64x64/apps/preferences-desktop-multimedia.png
+     128px  ab9692ce5b07  128x128/apps/preferences-desktop-multimedia.png
+  nuvola_categories_applications-multimedia [PRIMARY]
+      16px  fddeebb8cfbd  16x16/categories/applications-multimedia.png
+      22px  bca5e14b81be  22x22/categories/applications-multimedia.png
+      32px  fa845ea30fb2  32x32/categories/applications-multimedia.png
+      48px  da527742a58b  48x48/categories/applications-multimedia.png
+      64px  3aa9aaf9b7d3  64x64/categories/applications-multimedia.png
+     128px  ab9692ce5b07  128x128/categories/applications-multimedia.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_apps_preferences-desktop-user-password
+      HAS duplicate_of: nuvola_status_dialog-password
+      16px  504def733672  16x16/apps/preferences-desktop-user-password.png
+      22px  55ccc72c77e4  22x22/apps/preferences-desktop-user-password.png
+      32px  9ddb20defc0a  32x32/apps/preferences-desktop-user-password.png
+      48px  716d396747ac  48x48/apps/preferences-desktop-user-password.png
+      64px  e0d86d93a275  64x64/apps/preferences-desktop-user-password.png
+     128px  d0af8867ad67  128x128/apps/preferences-desktop-user-password.png
+  nuvola_status_dialog-password [PRIMARY]
+      16px  504def733672  16x16/status/dialog-password.png
+      22px  55ccc72c77e4  22x22/status/dialog-password.png
+      32px  9ddb20defc0a  32x32/status/dialog-password.png
+      48px  716d396747ac  48x48/status/dialog-password.png
+      64px  e0d86d93a275  64x64/status/dialog-password.png
+     128px  d0af8867ad67  128x128/status/dialog-password.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_devices_camera-photo [PRIMARY]
+      16px  5345daa19aae  16x16/devices/camera-photo.png
+      22px  3695ddb68f3e  22x22/devices/camera-photo.png
+      32px  2be5c1eb29f2  32x32/devices/camera-photo.png
+      48px  c2f268d2ca2e  48x48/devices/camera-photo.png
+      64px  83c3303795f8  64x64/devices/camera-photo.png
+     128px  19b47f5f9459  128x128/devices/camera-photo.png
+  nuvola_devices_camera_unmount
+      HAS duplicate_of: nuvola_devices_camera-photo
+      16px  5345daa19aae  16x16/devices/camera_unmount.png
+      22px  3695ddb68f3e  22x22/devices/camera_unmount.png
+      32px  2be5c1eb29f2  32x32/devices/camera_unmount.png
+      48px  c2f268d2ca2e  48x48/devices/camera_unmount.png
+      64px  83c3303795f8  64x64/devices/camera_unmount.png
+     128px  19b47f5f9459  128x128/devices/camera_unmount.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_apps_device-notifier
+      HAS duplicate_of: nuvola_devices_computer
+      16px  8faf7d8bc6dc  16x16/apps/device-notifier.png
+      22px  7e2e1e446878  22x22/apps/device-notifier.png
+      32px  822eb9e77805  32x32/apps/device-notifier.png
+      48px  da947f4f89d1  48x48/apps/device-notifier.png
+      64px  2f9ec8458fd4  64x64/apps/device-notifier.png
+     128px  0ace734931e4  128x128/apps/device-notifier.png
+  nuvola_devices_computer [PRIMARY]
+      16px  8faf7d8bc6dc  16x16/devices/computer.png
+      22px  7e2e1e446878  22x22/devices/computer.png
+      32px  822eb9e77805  32x32/devices/computer.png
+      48px  da947f4f89d1  48x48/devices/computer.png
+      64px  2f9ec8458fd4  64x64/devices/computer.png
+     128px  0ace734931e4  128x128/devices/computer.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_apps_kcmdevice
+      HAS duplicate_of: nuvola_devices_drive-harddisk
+      16px  54a21d3afd1e  16x16/apps/kcmdevice.png
+      22px  b81fbb407d29  22x22/apps/kcmdevice.png
+      32px  084d816a6b6d  32x32/apps/kcmdevice.png
+      48px  214ca47f4c07  48x48/apps/kcmdevice.png
+      64px  1661d332473e  64x64/apps/kcmdevice.png
+     128px  f079f561d401  128x128/apps/kcmdevice.png
+  nuvola_devices_drive-harddisk [PRIMARY]
+      16px  54a21d3afd1e  16x16/devices/drive-harddisk.png
+      22px  b81fbb407d29  22x22/devices/drive-harddisk.png
+      32px  084d816a6b6d  32x32/devices/drive-harddisk.png
+      48px  214ca47f4c07  48x48/devices/drive-harddisk.png
+      64px  1661d332473e  64x64/devices/drive-harddisk.png
+     128px  f079f561d401  128x128/devices/drive-harddisk.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_devices_drive-removable-media-usb [PRIMARY]
+      16px  57622709e4cf  16x16/devices/drive-removable-media-usb.png
+      22px  f25a290b68e6  22x22/devices/drive-removable-media-usb.png
+      32px  945f6d61852d  32x32/devices/drive-removable-media-usb.png
+      48px  f6c33b40bf69  48x48/devices/drive-removable-media-usb.png
+      64px  d6d201986ca6  64x64/devices/drive-removable-media-usb.png
+     128px  f63d93b46728  128x128/devices/drive-removable-media-usb.png
+  nuvola_devices_drive-removable-media-usb-pendrive
+      HAS duplicate_of: nuvola_devices_drive-removable-media-usb
+      16px  57622709e4cf  16x16/devices/drive-removable-media-usb-pendrive.png
+      22px  f25a290b68e6  22x22/devices/drive-removable-media-usb-pendrive.png
+      32px  945f6d61852d  32x32/devices/drive-removable-media-usb-pendrive.png
+      48px  f6c33b40bf69  48x48/devices/drive-removable-media-usb-pendrive.png
+      64px  d6d201986ca6  64x64/devices/drive-removable-media-usb-pendrive.png
+     128px  f63d93b46728  128x128/devices/drive-removable-media-usb-pendrive.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_apps_kmousetool
+      HAS duplicate_of: nuvola_devices_input-mouse
+      16px  8e88031ecd6f  16x16/apps/kmousetool.png
+      22px  074908d97613  22x22/apps/kmousetool.png
+      32px  02f7cf6f9268  32x32/apps/kmousetool.png
+      48px  947bd582eb48  48x48/apps/kmousetool.png
+      64px  13ca10e41ed2  64x64/apps/kmousetool.png
+     128px  feae934a5d5e  128x128/apps/kmousetool.png
+  nuvola_devices_input-mouse [PRIMARY]
+      16px  8e88031ecd6f  16x16/devices/input-mouse.png
+      22px  074908d97613  22x22/devices/input-mouse.png
+      32px  02f7cf6f9268  32x32/devices/input-mouse.png
+      48px  947bd582eb48  48x48/devices/input-mouse.png
+      64px  13ca10e41ed2  64x64/devices/input-mouse.png
+     128px  feae934a5d5e  128x128/devices/input-mouse.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_apps_kcmmemory
+      HAS duplicate_of: nuvola_devices_memory
+      16px  90bbac453bf8  16x16/apps/kcmmemory.png
+      22px  a1ca5d19017b  22x22/apps/kcmmemory.png
+      32px  77e8d8c3495c  32x32/apps/kcmmemory.png
+      48px  6d735e986816  48x48/apps/kcmmemory.png
+      64px  d75b46f11d72  64x64/apps/kcmmemory.png
+     128px  99e050c158e7  128x128/apps/kcmmemory.png
+  nuvola_devices_memory [PRIMARY]
+      16px  90bbac453bf8  16x16/devices/memory.png
+      22px  a1ca5d19017b  22x22/devices/memory.png
+      32px  77e8d8c3495c  32x32/devices/memory.png
+      48px  6d735e986816  48x48/devices/memory.png
+      64px  d75b46f11d72  64x64/devices/memory.png
+     128px  99e050c158e7  128x128/devices/memory.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_devices_multimedia-player [PRIMARY]
+      16px  848fea68a8a7  16x16/devices/multimedia-player.png
+      22px  cb2b1f098532  22x22/devices/multimedia-player.png
+      32px  4517b1ff7c7d  32x32/devices/multimedia-player.png
+      48px  8d2a34617d63  48x48/devices/multimedia-player.png
+      64px  268f78650d22  64x64/devices/multimedia-player.png
+     128px  2d0780f3da8b  128x128/devices/multimedia-player.png
+  nuvola_devices_multimedia-player-apple-ipod
+      HAS duplicate_of: nuvola_devices_multimedia-player
+      16px  848fea68a8a7  16x16/devices/multimedia-player-apple-ipod.png
+      22px  cb2b1f098532  22x22/devices/multimedia-player-apple-ipod.png
+      32px  4517b1ff7c7d  32x32/devices/multimedia-player-apple-ipod.png
+      48px  8d2a34617d63  48x48/devices/multimedia-player-apple-ipod.png
+      64px  268f78650d22  64x64/devices/multimedia-player-apple-ipod.png
+     128px  2d0780f3da8b  128x128/devices/multimedia-player-apple-ipod.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_apps_kooka
+      HAS duplicate_of: nuvola_devices_scanner
+      16px  93a4c3980815  16x16/apps/kooka.png
+      22px  4c94a2604602  22x22/apps/kooka.png
+      32px  a4a14b2f395e  32x32/apps/kooka.png
+      48px  da4609065e75  48x48/apps/kooka.png
+      64px  7af17d47f5fc  64x64/apps/kooka.png
+     128px  19326e04042c  128x128/apps/kooka.png
+  nuvola_devices_scanner [PRIMARY]
+      16px  93a4c3980815  16x16/devices/scanner.png
+      22px  4c94a2604602  22x22/devices/scanner.png
+      32px  a4a14b2f395e  32x32/devices/scanner.png
+      48px  da4609065e75  48x48/devices/scanner.png
+      64px  7af17d47f5fc  64x64/devices/scanner.png
+     128px  19326e04042c  128x128/devices/scanner.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_mimetypes_application-octet-stream [PRIMARY]
+      16px  ae1e08ffa8c3  16x16/mimetypes/application-octet-stream.png
+      22px  147b28205730  22x22/mimetypes/application-octet-stream.png
+      32px  dd46cf0410a7  32x32/mimetypes/application-octet-stream.png
+      48px  2a6be8dfcc8a  48x48/mimetypes/application-octet-stream.png
+      64px  61ccba769cc0  64x64/mimetypes/application-octet-stream.png
+     128px  2a93e26af1a9  128x128/mimetypes/application-octet-stream.png
+  nuvola_mimetypes_application-x-sharedlib
+      HAS duplicate_of: nuvola_mimetypes_application-octet-stream
+      16px  ae1e08ffa8c3  16x16/mimetypes/application-x-sharedlib.png
+      22px  147b28205730  22x22/mimetypes/application-x-sharedlib.png
+      32px  dd46cf0410a7  32x32/mimetypes/application-x-sharedlib.png
+      48px  2a6be8dfcc8a  48x48/mimetypes/application-x-sharedlib.png
+      64px  61ccba769cc0  64x64/mimetypes/application-x-sharedlib.png
+     128px  2a93e26af1a9  128x128/mimetypes/application-x-sharedlib.png
+
+# 2 identical icons (4 sizes each): [DONE]
+  nuvola_actions_system-run
+      HAS duplicate_of: nuvola_mimetypes_application-x-executable
+      16px  558e33f75210  16x16/actions/system-run.png
+      22px  05300db30873  22x22/actions/system-run.png
+      32px  0bf7e993c0a7  32x32/actions/system-run.png
+      48px  9e5c9165014e  48x48/actions/system-run.png
+  nuvola_mimetypes_application-x-executable [PRIMARY]
+      16px  558e33f75210  16x16/mimetypes/application-x-executable.png
+      22px  05300db30873  22x22/mimetypes/application-x-executable.png
+      32px  0bf7e993c0a7  32x32/mimetypes/application-x-executable.png
+      48px  9e5c9165014e  48x48/mimetypes/application-x-executable.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_mimetypes_application-x-kcsrc [PRIMARY]
+      16px  aca6bb4af15c  16x16/mimetypes/application-x-kcsrc.png
+      22px  3786cba5e4af  22x22/mimetypes/application-x-kcsrc.png
+      32px  85385a43d74a  32x32/mimetypes/application-x-kcsrc.png
+      48px  d8423c7a0880  48x48/mimetypes/application-x-kcsrc.png
+      64px  b043e1eaafc0  64x64/mimetypes/application-x-kcsrc.png
+     128px  46e60b6a115b  128x128/mimetypes/application-x-kcsrc.png
+  nuvola_mimetypes_colorset
+      HAS duplicate_of: nuvola_mimetypes_application-x-kcsrc
+      16px  aca6bb4af15c  16x16/mimetypes/colorset.png
+      22px  3786cba5e4af  22x22/mimetypes/colorset.png
+      32px  85385a43d74a  32x32/mimetypes/colorset.png
+      48px  d8423c7a0880  48x48/mimetypes/colorset.png
+      64px  b043e1eaafc0  64x64/mimetypes/colorset.png
+     128px  46e60b6a115b  128x128/mimetypes/colorset.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_mimetypes_audio-midi [PRIMARY]
+      16px  cda957f8f862  16x16/mimetypes/audio-midi.png
+      22px  fc915a86bfd7  22x22/mimetypes/audio-midi.png
+      32px  bf699583fc7a  32x32/mimetypes/audio-midi.png
+      48px  f2b4737a8f30  48x48/mimetypes/audio-midi.png
+      64px  b3c74248b507  64x64/mimetypes/audio-midi.png
+     128px  2db372c316fd  128x128/mimetypes/audio-midi.png
+  nuvola_mimetypes_audio-prs.sid
+      HAS duplicate_of: nuvola_mimetypes_audio-midi
+      16px  cda957f8f862  16x16/mimetypes/audio-prs.sid.png
+      22px  fc915a86bfd7  22x22/mimetypes/audio-prs.sid.png
+      32px  bf699583fc7a  32x32/mimetypes/audio-prs.sid.png
+      48px  f2b4737a8f30  48x48/mimetypes/audio-prs.sid.png
+      64px  b3c74248b507  64x64/mimetypes/audio-prs.sid.png
+     128px  2db372c316fd  128x128/mimetypes/audio-prs.sid.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_mimetypes_ebuild [PRIMARY]
+      16px  747a8467c6bd  16x16/mimetypes/ebuild.png
+      22px  54012a0db9d6  22x22/mimetypes/ebuild.png
+      32px  cf10f99147ee  32x32/mimetypes/ebuild.png
+      48px  6c3e4eda5aca  48x48/mimetypes/ebuild.png
+      64px  b35de5f2ec94  64x64/mimetypes/ebuild.png
+     128px  84b23b91ad58  128x128/mimetypes/ebuild.png
+  nuvola_mimetypes_mime_ebuild
+      HAS duplicate_of: nuvola_mimetypes_ebuild
+      16px  747a8467c6bd  16x16/mimetypes/mime_ebuild.png
+      22px  54012a0db9d6  22x22/mimetypes/mime_ebuild.png
+      32px  cf10f99147ee  32x32/mimetypes/mime_ebuild.png
+      48px  6c3e4eda5aca  48x48/mimetypes/mime_ebuild.png
+      64px  b35de5f2ec94  64x64/mimetypes/mime_ebuild.png
+     128px  84b23b91ad58  128x128/mimetypes/mime_ebuild.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_mimetypes_image-x-generic [PRIMARY]
+      16px  6abefdfbdb59  16x16/mimetypes/image-x-generic.png
+      22px  8b58603e5d3b  22x22/mimetypes/image-x-generic.png
+      32px  a77da63eb79a  32x32/mimetypes/image-x-generic.png
+      48px  016f2ab515d0  48x48/mimetypes/image-x-generic.png
+      64px  685d8e706dca  64x64/mimetypes/image-x-generic.png
+     128px  b625be1c84d1  128x128/mimetypes/image-x-generic.png
+  nuvola_mimetypes_video-x-mng
+      HAS duplicate_of: nuvola_mimetypes_image-x-generic
+      16px  6abefdfbdb59  16x16/mimetypes/video-x-mng.png
+      22px  8b58603e5d3b  22x22/mimetypes/video-x-mng.png
+      32px  a77da63eb79a  32x32/mimetypes/video-x-mng.png
+      48px  016f2ab515d0  48x48/mimetypes/video-x-mng.png
+      64px  685d8e706dca  64x64/mimetypes/video-x-mng.png
+     128px  b625be1c84d1  128x128/mimetypes/video-x-mng.png
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_mimetypes_quicktime
+      HAS duplicate_of: nuvola_mimetypes_video-quicktime
+      16px  074468690f63  16x16/mimetypes/quicktime.png
+      22px  1505bfc0f7aa  22x22/mimetypes/quicktime.png
+      32px  a08a3bac7d16  32x32/mimetypes/quicktime.png
+      48px  d77b808a8d2a  48x48/mimetypes/quicktime.png
+      64px  aef859693191  64x64/mimetypes/quicktime.png
+     128px  00fbf0d6fd85  128x128/mimetypes/quicktime.png
+  nuvola_mimetypes_video-quicktime [PRIMARY]
+      16px  074468690f63  16x16/mimetypes/video-quicktime.png
+      22px  1505bfc0f7aa  22x22/mimetypes/video-quicktime.png
+      32px  a08a3bac7d16  32x32/mimetypes/video-quicktime.png
+      48px  d77b808a8d2a  48x48/mimetypes/video-quicktime.png
+      64px  aef859693191  64x64/mimetypes/video-quicktime.png
+     128px  00fbf0d6fd85  128x128/mimetypes/video-quicktime.png
+
+# 2 identical icons (4 sizes each): [DONE]
+  nuvola_emblems_emblem-favorite [PRIMARY]
+      16px  70df48dd0e32  16x16/emblems/emblem-favorite.png
+      22px  5f0a5dc27c9b  22x22/emblems/emblem-favorite.png
+      32px  ae814fcbeba5  32x32/emblems/emblem-favorite.png
+      48px  0e92523ea4cc  48x48/emblems/emblem-favorite.png
+  nuvola_places_bookmarks
+      HAS duplicate_of: nuvola_emblems_emblem-favorite
+      16px  70df48dd0e32  16x16/places/bookmarks.png
+      22px  5f0a5dc27c9b  22x22/places/bookmarks.png
+      32px  ae814fcbeba5  32x32/places/bookmarks.png
+      48px  0e92523ea4cc  48x48/places/bookmarks.png
+  [+1 referrers: nuvola_apps_package_favorite]
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_places_folder
+      HAS duplicate_of: nuvola_mimetypes_inode-directory
+      16px  eb376be9bdea  16x16/places/folder.png
+      22px  4c4167caaf5b  22x22/places/folder.png
+      32px  49a7b67a8a17  32x32/places/folder.png
+      48px  15627e393b40  48x48/places/folder.png
+      64px  afc8f976aeb4  64x64/places/folder.png
+     128px  ee0ca6afc647  128x128/places/folder.png
+  nuvola_places_folder-blue
+      HAS duplicate_of: nuvola_mimetypes_inode-directory
+      16px  eb376be9bdea  16x16/places/folder-blue.png
+      22px  4c4167caaf5b  22x22/places/folder-blue.png
+      32px  49a7b67a8a17  32x32/places/folder-blue.png
+      48px  15627e393b40  48x48/places/folder-blue.png
+      64px  afc8f976aeb4  64x64/places/folder-blue.png
+     128px  ee0ca6afc647  128x128/places/folder-blue.png
+  [This group refers to: nuvola_mimetypes_inode-directory]
+
+# 2 identical icons (6 sizes each): [DONE]
+  nuvola_categories_preferences-system-network
+      HAS duplicate_of: nuvola_places_network-workgroup
+      16px  cac718de8a4a  16x16/categories/preferences-system-network.png
+      22px  63f824c54405  22x22/categories/preferences-system-network.png
+      32px  ab9894b99bce  32x32/categories/preferences-system-network.png
+      48px  44b964f075be  48x48/categories/preferences-system-network.png
+      64px  8de519a052c9  64x64/categories/preferences-system-network.png
+     128px  6a901dddec45  128x128/categories/preferences-system-network.png
+  nuvola_places_network-workgroup [PRIMARY]
+      16px  cac718de8a4a  16x16/places/network-workgroup.png
+      22px  63f824c54405  22x22/places/network-workgroup.png
+      32px  ab9894b99bce  32x32/places/network-workgroup.png
+      48px  44b964f075be  48x48/places/network-workgroup.png
+      64px  8de519a052c9  64x64/places/network-workgroup.png
+     128px  6a901dddec45  128x128/places/network-workgroup.png
+
+# 2 identical icons (4 sizes each): [DONE]
+  nuvola_actions_view-list-text [PRIMARY]
+      16px  de425c56526d  16x16/actions/view-list-text.png
+      22px  de8ab669c9af  22x22/actions/view-list-text.png
+      32px  47850838b38d  32x32/actions/view-list-text.png
+      48px  423656eb4386  48x48/actions/view-list-text.png
+  nuvola_status_media-playlist-repeat
+      HAS duplicate_of: nuvola_actions_view-list-text
+      16px  de425c56526d  16x16/status/media-playlist-repeat.png
+      22px  de8ab669c9af  22x22/status/media-playlist-repeat.png
+      32px  47850838b38d  32x32/status/media-playlist-repeat.png
+      48px  423656eb4386  48x48/status/media-playlist-repeat.png
+
+# 2 identical icons (4 sizes each): [DONE]
+  nuvola_actions_roll
+      HAS duplicate_of: nuvola_status_media-playlist-shuffle
+      16px  4366698f248d  16x16/actions/roll.png
+      22px  3f54bd0ee8dc  22x22/actions/roll.png
+      32px  62f383acb04e  32x32/actions/roll.png
+      48px  d4380db2f1ff  48x48/actions/roll.png
+  nuvola_status_media-playlist-shuffle [PRIMARY]
+      16px  4366698f248d  16x16/status/media-playlist-shuffle.png
+      22px  3f54bd0ee8dc  22x22/status/media-playlist-shuffle.png
+      32px  62f383acb04e  32x32/status/media-playlist-shuffle.png
+      48px  d4380db2f1ff  48x48/status/media-playlist-shuffle.png
+
+======================================================================
+PARTIAL DUPLICATES (icons with some matching files)
+======================================================================
+
+# nuvola_mimetypes_audio-x-generic (6 sizes) [SUSPECTED SUPERSET] [REVIEW DUPLICATES] [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_mimetypes_audio-basic
+      nuvola_mimetypes_audio-aac
+      nuvola_mimetypes_audio-ac3
+      nuvola_mimetypes_audio-mp4
+      nuvola_mimetypes_audio-mpeg
+      nuvola_mimetypes_audio-x-adpcm
+      nuvola_mimetypes_audio-x-aiff
+      nuvola_mimetypes_audio-x-flac
+      nuvola_mimetypes_audio-x-flac+ogg
+      nuvola_mimetypes_audio-x-matroska
+      nuvola_mimetypes_audio-x-mod
+      nuvola_mimetypes_audio-x-monkey
+      nuvola_mimetypes_audio-x-mp2
+      nuvola_mimetypes_audio-x-mpegurl
+      nuvola_mimetypes_audio-x-ms-asx
+      nuvola_mimetypes_audio-x-ms-wma
+      nuvola_mimetypes_audio-x-musepack
+      nuvola_mimetypes_audio-x-scpls
+      nuvola_mimetypes_audio-x-vorbis+ogg
+      nuvola_mimetypes_audio-x-wav
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      SUPERSET SUSPECTED: This icon has more sizes than matching icons.
+      This icon is likely the PRIMARY.
+      MULTIPLE DUPLICATES: Matches 20 [FULL-DUP] icons.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_mimetypes_audio-aac
+        nuvola_mimetypes_audio-ac3
+        nuvola_mimetypes_audio-basic
+        nuvola_mimetypes_audio-mp4
+        nuvola_mimetypes_audio-mpeg
+        nuvola_mimetypes_audio-x-adpcm
+        nuvola_mimetypes_audio-x-aiff
+        nuvola_mimetypes_audio-x-flac
+        nuvola_mimetypes_audio-x-flac+ogg
+        nuvola_mimetypes_audio-x-matroska
+        nuvola_mimetypes_audio-x-mod
+        nuvola_mimetypes_audio-x-monkey
+        nuvola_mimetypes_audio-x-mp2
+        nuvola_mimetypes_audio-x-mpegurl
+        nuvola_mimetypes_audio-x-ms-asx
+        nuvola_mimetypes_audio-x-ms-wma
+        nuvola_mimetypes_audio-x-musepack
+        nuvola_mimetypes_audio-x-scpls
+        nuvola_mimetypes_audio-x-vorbis+ogg
+        nuvola_mimetypes_audio-x-wav
+    16px  f52994c4ed7c  16x16/mimetypes/audio-x-generic.png  (unique)
+    22px  05040143429b  22x22/mimetypes/audio-x-generic.png  (unique)
+    32px  c27b104c367c  32x32/mimetypes/audio-x-generic.png  (unique)
+    48px  cf6a7089c93d  48x48/mimetypes/audio-x-generic.png  (duplicate)
+    48px  cf6a7089c93d  48x48/mimetypes/audio-aac.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+    48px  cf6a7089c93d  48x48/mimetypes/audio-ac3.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+    48px  cf6a7089c93d  48x48/mimetypes/audio-basic.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+    48px  cf6a7089c93d  48x48/mimetypes/audio-mp4.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+    48px  cf6a7089c93d  48x48/mimetypes/audio-mpeg.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+    48px  cf6a7089c93d  48x48/mimetypes/audio-x-adpcm.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+    48px  cf6a7089c93d  48x48/mimetypes/audio-x-aiff.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+    48px  cf6a7089c93d  48x48/mimetypes/audio-x-flac.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+    48px  cf6a7089c93d  48x48/mimetypes/audio-x-flac+ogg.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+    48px  cf6a7089c93d  48x48/mimetypes/audio-x-matroska.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+    48px  cf6a7089c93d  48x48/mimetypes/audio-x-mod.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+    48px  cf6a7089c93d  48x48/mimetypes/audio-x-monkey.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+    48px  cf6a7089c93d  48x48/mimetypes/audio-x-mp2.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+    48px  cf6a7089c93d  48x48/mimetypes/audio-x-mpegurl.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+    48px  cf6a7089c93d  48x48/mimetypes/audio-x-ms-asx.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+    48px  cf6a7089c93d  48x48/mimetypes/audio-x-ms-wma.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+    48px  cf6a7089c93d  48x48/mimetypes/audio-x-musepack.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+    48px  cf6a7089c93d  48x48/mimetypes/audio-x-scpls.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+    48px  cf6a7089c93d  48x48/mimetypes/audio-x-vorbis+ogg.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+    48px  cf6a7089c93d  48x48/mimetypes/audio-x-wav.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_audio-x-generic
+    64px  2cf366bc94be  64x64/mimetypes/audio-x-generic.png  (unique)
+   128px  a47b441e4f65  128x128/mimetypes/audio-x-generic.png  (unique)
+
+# nuvola_actions_button_accept (4 sizes) [REVIEW LARGEST] [REVIEW DUPLICATES] [DUPLICATE_OF REFERRERS] [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_actions_dialog-ok
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 3 duplicate files found.
+      LARGEST MATCH: Largest common size is identical to [FULL-DUP] icons.
+      MULTIPLE DUPLICATES: Matches 4 [FULL-DUP] icons.
+      DUPLICATE_OF REFERRERS:
+        nuvola_actions_camera_test
+        nuvola_actions_games-endturn
+        nuvola_actions_ok
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_camera_test
+        nuvola_actions_dialog-ok
+        nuvola_actions_games-endturn
+        nuvola_actions_ok
+    16px  6e05cff451a0  16x16/actions/button_accept.png  (duplicate)
+    16px  6e05cff451a0  16x16/actions/camera_test.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_dialog-ok
+    16px  6e05cff451a0  16x16/actions/dialog-ok.png  (duplicate)
+    16px  6e05cff451a0  16x16/actions/games-endturn.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_dialog-ok
+    16px  6e05cff451a0  16x16/actions/ok.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_dialog-ok
+    22px  bacdcdea89dc  22x22/actions/button_accept.png  (unique)
+    32px  1ccba9713343  32x32/actions/button_accept.png  (duplicate)
+    32px  1ccba9713343  32x32/actions/camera_test.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_dialog-ok
+    32px  1ccba9713343  32x32/actions/dialog-ok.png  (duplicate)
+    32px  1ccba9713343  32x32/actions/games-endturn.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_dialog-ok
+    32px  1ccba9713343  32x32/actions/ok.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_dialog-ok
+    48px  910b44b58a69  48x48/actions/button_accept.png  (duplicate)
+    48px  910b44b58a69  48x48/actions/camera_test.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_dialog-ok
+    48px  910b44b58a69  48x48/actions/dialog-ok.png  (duplicate)
+    48px  910b44b58a69  48x48/actions/games-endturn.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_dialog-ok
+    48px  910b44b58a69  48x48/actions/ok.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_dialog-ok
+
+# nuvola_mimetypes_inode-directory (7 sizes) [SUSPECTED SUPERSET] [REVIEW DUPLICATES] [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_places_folder
+      nuvola_places_folder-blue
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 6 duplicate files found.
+      SUPERSET SUSPECTED: This icon has more sizes than matching icons.
+      This icon is likely the PRIMARY.
+      MULTIPLE DUPLICATES: Matches 2 [FULL-DUP] icons.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_places_folder
+        nuvola_places_folder-blue
+    16px  eb376be9bdea  16x16/mimetypes/inode-directory.png  (duplicate)
+    16px  eb376be9bdea  16x16/places/folder.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_inode-directory
+    16px  eb376be9bdea  16x16/places/folder-blue.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_inode-directory
+    22px  4c4167caaf5b  22x22/mimetypes/inode-directory.png  (duplicate)
+    22px  4c4167caaf5b  22x22/places/folder.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_inode-directory
+    22px  4c4167caaf5b  22x22/places/folder-blue.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_inode-directory
+    32px  49a7b67a8a17  32x32/mimetypes/inode-directory.png  (duplicate)
+    32px  49a7b67a8a17  32x32/places/folder.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_inode-directory
+    32px  49a7b67a8a17  32x32/places/folder-blue.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_inode-directory
+    48px  15627e393b40  48x48/mimetypes/inode-directory.png  (duplicate)
+    48px  15627e393b40  48x48/places/folder.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_inode-directory
+    48px  15627e393b40  48x48/places/folder-blue.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_inode-directory
+    64px  afc8f976aeb4  64x64/mimetypes/inode-directory.png  (duplicate)
+    64px  afc8f976aeb4  64x64/places/folder.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_inode-directory
+    64px  afc8f976aeb4  64x64/places/folder-blue.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_inode-directory
+   128px  ee0ca6afc647  128x128/mimetypes/inode-directory.png  (duplicate)
+   128px  ee0ca6afc647  128x128/places/folder.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_inode-directory
+   128px  ee0ca6afc647  128x128/places/folder-blue.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_inode-directory
+   256px  c67bd627b6c1  256x256/mimetypes/inode-directory.png  (unique)
+
+# nuvola_mimetypes_inode-blockdevice (5 sizes) [REVIEW LARGEST] [REVIEW DUPLICATES] [DUPLICATE_OF REFERRERS] [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_apps_kdf
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 4 duplicate files found.
+      LARGEST MATCH: Largest common size is identical to [FULL-DUP] icons.
+      MULTIPLE DUPLICATES: Matches 2 [FULL-DUP] icons.
+      DUPLICATE_OF REFERRERS:
+        nuvola_apps_kcmdf
+        nuvola_apps_kwikdisk
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_apps_kdf
+        nuvola_apps_kwikdisk
+    16px  367d303861e4  16x16/mimetypes/inode-blockdevice.png  (duplicate)
+    16px  367d303861e4  16x16/apps/kdf.png  (duplicate)
+    16px  367d303861e4  16x16/apps/kwikdisk.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_kdf
+    32px  ba103ffdccad  32x32/mimetypes/inode-blockdevice.png  (unique)
+    48px  b9dfa2285048  48x48/mimetypes/inode-blockdevice.png  (duplicate)
+    48px  b9dfa2285048  48x48/apps/kdf.png  (duplicate)
+    48px  b9dfa2285048  48x48/apps/kwikdisk.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_kdf
+    64px  a09b29189ba8  64x64/mimetypes/inode-blockdevice.png  (duplicate)
+    64px  a09b29189ba8  64x64/apps/kdf.png  (duplicate)
+    64px  a09b29189ba8  64x64/apps/kwikdisk.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_kdf
+   128px  320907e08723  128x128/mimetypes/inode-blockdevice.png  (duplicate)
+   128px  320907e08723  128x128/apps/kdf.png  (duplicate)
+   128px  320907e08723  128x128/apps/kwikdisk.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_kdf
+
+# nuvola_actions_about_kde (4 sizes) [REVIEW DUPLICATES] [DUPLICATE_OF REFERRERS] [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_places_start-here
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 2 duplicate files found.
+      MULTIPLE DUPLICATES: Matches 3 [FULL-DUP] icons.
+      DUPLICATE_OF REFERRERS:
+        nuvola_apps_kmenu
+        nuvola_places_start-here-kde
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_apps_kmenu
+        nuvola_places_start-here
+        nuvola_places_start-here-kde
+    16px  42e6bdb7d745  16x16/actions/about_kde.png  (duplicate)
+    16px  42e6bdb7d745  16x16/apps/kmenu.png  (duplicate)
+          -> HAS duplicate_of: nuvola_places_start-here
+    16px  42e6bdb7d745  16x16/places/start-here.png  (duplicate)
+    16px  42e6bdb7d745  16x16/places/start-here-kde.png  (duplicate)
+          -> HAS duplicate_of: nuvola_places_start-here
+    22px  a1028a079019  22x22/actions/about_kde.png  (duplicate)
+    22px  a1028a079019  22x22/apps/kmenu.png  (duplicate)
+          -> HAS duplicate_of: nuvola_places_start-here
+    22px  a1028a079019  22x22/places/start-here.png  (duplicate)
+    22px  a1028a079019  22x22/places/start-here-kde.png  (duplicate)
+          -> HAS duplicate_of: nuvola_places_start-here
+    32px  4577cd9ea271  32x32/actions/about_kde.png  (unique)
+    48px  918c8a320e83  48x48/actions/about_kde.png  (unique)
+
+# nuvola_mimetypes_application-xhtml+xml (6 sizes) [ALL SIZES MATCH] [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_mimetypes_text-html
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 6 duplicate files found.
+      ALL SIZES MATCH: Every size of this icon matches another icon.
+      This icon is likely duplicate_of that icon.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_mimetypes_text-html
+    16px  b054a6cfa513  16x16/mimetypes/application-xhtml+xml.png  (duplicate)
+    16px  b054a6cfa513  16x16/mimetypes/text-html.png  (duplicate)
+    22px  147be307c83e  22x22/mimetypes/application-xhtml+xml.png  (duplicate)
+    22px  147be307c83e  22x22/mimetypes/text-html.png  (duplicate)
+    32px  6fe2ba579f90  32x32/mimetypes/application-xhtml+xml.png  (duplicate)
+    32px  6fe2ba579f90  32x32/mimetypes/text-html.png  (duplicate)
+    48px  9e70a5e7d485  48x48/mimetypes/application-xhtml+xml.png  (duplicate)
+    48px  9e70a5e7d485  48x48/mimetypes/text-html.png  (duplicate)
+    64px  ee540d4b9976  64x64/mimetypes/application-xhtml+xml.png  (duplicate)
+    64px  ee540d4b9976  64x64/mimetypes/text-html.png  (duplicate)
+   128px  de9283c91f34  128x128/mimetypes/application-xhtml+xml.png  (duplicate)
+   128px  de9283c91f34  128x128/mimetypes/text-html.png  (duplicate)
+
+# nuvola_mimetypes_text-html (7 sizes) [SUSPECTED SUPERSET] [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_mimetypes_application-xhtml+xml
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 6 duplicate files found.
+      SUPERSET SUSPECTED: This icon has more sizes than matching icons.
+      This icon is likely the PRIMARY.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_mimetypes_application-xhtml+xml
+    16px  b054a6cfa513  16x16/mimetypes/text-html.png  (duplicate)
+    16px  b054a6cfa513  16x16/mimetypes/application-xhtml+xml.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_text-html
+    22px  147be307c83e  22x22/mimetypes/text-html.png  (duplicate)
+    22px  147be307c83e  22x22/mimetypes/application-xhtml+xml.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_text-html
+    32px  6fe2ba579f90  32x32/mimetypes/text-html.png  (duplicate)
+    32px  6fe2ba579f90  32x32/mimetypes/application-xhtml+xml.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_text-html
+    48px  9e70a5e7d485  48x48/mimetypes/text-html.png  (duplicate)
+    48px  9e70a5e7d485  48x48/mimetypes/application-xhtml+xml.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_text-html
+    64px  ee540d4b9976  64x64/mimetypes/text-html.png  (duplicate)
+    64px  ee540d4b9976  64x64/mimetypes/application-xhtml+xml.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_text-html
+   128px  de9283c91f34  128x128/mimetypes/text-html.png  (duplicate)
+   128px  de9283c91f34  128x128/mimetypes/application-xhtml+xml.png  (duplicate)
+          -> HAS duplicate_of: nuvola_mimetypes_text-html
+   256px  e52827b9d502  256x256/mimetypes/text-html.png  (unique)
+
+# nuvola_actions_edit-bomb (6 sizes) [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_apps_clanbomber
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 5 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_apps_clanbomber
+    16px  2a9fe8fc8a24  16x16/actions/edit-bomb.png  (duplicate)
+    16px  2a9fe8fc8a24  16x16/apps/clanbomber.png  (duplicate)
+    22px  573b99c663f1  22x22/actions/edit-bomb.png  (unique)
+    32px  49656d8e4c16  32x32/actions/edit-bomb.png  (duplicate)
+    32px  49656d8e4c16  32x32/apps/clanbomber.png  (duplicate)
+    48px  e4111626659d  48x48/actions/edit-bomb.png  (duplicate)
+    48px  e4111626659d  48x48/apps/clanbomber.png  (duplicate)
+    64px  34a4f7b01f0b  64x64/actions/edit-bomb.png  (duplicate)
+    64px  34a4f7b01f0b  64x64/apps/clanbomber.png  (duplicate)
+   128px  51d5f888ad5d  128x128/actions/edit-bomb.png  (duplicate)
+   128px  51d5f888ad5d  128x128/apps/clanbomber.png  (duplicate)
+
+# nuvola_actions_mail_generic (4 sizes) [ALL SIZES MATCH] [SUSPECTED SUPERSET] [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_apps_internet-mail
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 4 duplicate files found.
+      ALL SIZES MATCH: Every size of this icon matches another icon.
+      This icon is likely duplicate_of that icon.
+      SUPERSET SUSPECTED: This icon has more sizes than matching icons.
+      This icon is likely the PRIMARY.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_apps_internet-mail
+        nuvola_places_mail-message
+    16px  0433fa34b49b  16x16/actions/mail_generic.png  (duplicate)
+    16px  0433fa34b49b  16x16/apps/internet-mail.png  (duplicate)
+    22px  b4c5dec69e38  22x22/actions/mail_generic.png  (duplicate)
+    22px  b4c5dec69e38  22x22/apps/internet-mail.png  (duplicate)
+    32px  42e4e725edd4  32x32/actions/mail_generic.png  (duplicate)
+    32px  42e4e725edd4  32x32/apps/internet-mail.png  (duplicate)
+    32px  42e4e725edd4  32x32/places/mail-message.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_internet-mail
+    48px  8d525dcf33b2  48x48/actions/mail_generic.png  (duplicate)
+    48px  8d525dcf33b2  48x48/apps/internet-mail.png  (duplicate)
+
+# nuvola_apps_clanbomber (6 sizes) [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_actions_edit-bomb
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 5 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_edit-bomb
+    16px  2a9fe8fc8a24  16x16/apps/clanbomber.png  (duplicate)
+    16px  2a9fe8fc8a24  16x16/actions/edit-bomb.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_clanbomber
+    22px  f91615dedd70  22x22/apps/clanbomber.png  (unique)
+    32px  49656d8e4c16  32x32/apps/clanbomber.png  (duplicate)
+    32px  49656d8e4c16  32x32/actions/edit-bomb.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_clanbomber
+    48px  e4111626659d  48x48/apps/clanbomber.png  (duplicate)
+    48px  e4111626659d  48x48/actions/edit-bomb.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_clanbomber
+    64px  34a4f7b01f0b  64x64/apps/clanbomber.png  (duplicate)
+    64px  34a4f7b01f0b  64x64/actions/edit-bomb.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_clanbomber
+   128px  51d5f888ad5d  128x128/apps/clanbomber.png  (duplicate)
+   128px  51d5f888ad5d  128x128/actions/edit-bomb.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_clanbomber
+
+# nuvola_apps_internet-mail (6 sizes) [SUSPECTED SUPERSET] [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_actions_mail_generic
+      nuvola_places_mail-message
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 4 duplicate files found.
+      SUPERSET SUSPECTED: This icon has more sizes than matching icons.
+      This icon is likely the PRIMARY.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_mail_generic
+        nuvola_places_mail-message
+    16px  0433fa34b49b  16x16/apps/internet-mail.png  (duplicate)
+    16px  0433fa34b49b  16x16/actions/mail_generic.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_internet-mail
+    22px  b4c5dec69e38  22x22/apps/internet-mail.png  (duplicate)
+    22px  b4c5dec69e38  22x22/actions/mail_generic.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_internet-mail
+    32px  42e4e725edd4  32x32/apps/internet-mail.png  (duplicate)
+    32px  42e4e725edd4  32x32/actions/mail_generic.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_internet-mail
+    32px  42e4e725edd4  32x32/places/mail-message.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_internet-mail
+    48px  8d525dcf33b2  48x48/apps/internet-mail.png  (duplicate)
+    48px  8d525dcf33b2  48x48/actions/mail_generic.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_internet-mail
+    64px  6933d34dc11b  64x64/apps/internet-mail.png  (unique)
+   128px  c098117eb5cf  128x128/apps/internet-mail.png  (unique)
+
+# nuvola_apps_irkick (6 sizes) [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_apps_remote
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 5 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_apps_remote
+    16px  db4ff3b0355c  16x16/apps/irkick.png  (unique)
+    22px  3f061d9766d4  22x22/apps/irkick.png  (duplicate)
+    22px  3f061d9766d4  22x22/apps/remote.png  (duplicate)
+    32px  6ddb8581eafa  32x32/apps/irkick.png  (duplicate)
+    32px  6ddb8581eafa  32x32/apps/remote.png  (duplicate)
+    48px  623a57d28a22  48x48/apps/irkick.png  (duplicate)
+    48px  623a57d28a22  48x48/apps/remote.png  (duplicate)
+    64px  c6074bd463ca  64x64/apps/irkick.png  (duplicate)
+    64px  c6074bd463ca  64x64/apps/remote.png  (duplicate)
+   128px  83587d60a3ff  128x128/apps/irkick.png  (duplicate)
+   128px  83587d60a3ff  128x128/apps/remote.png  (duplicate)
+
+# nuvola_apps_remote (6 sizes) [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_apps_irkick
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 5 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_apps_irkick
+    16px  497fa3920a74  16x16/apps/remote.png  (unique)
+    22px  3f061d9766d4  22x22/apps/remote.png  (duplicate)
+    22px  3f061d9766d4  22x22/apps/irkick.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_remote
+    32px  6ddb8581eafa  32x32/apps/remote.png  (duplicate)
+    32px  6ddb8581eafa  32x32/apps/irkick.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_remote
+    48px  623a57d28a22  48x48/apps/remote.png  (duplicate)
+    48px  623a57d28a22  48x48/apps/irkick.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_remote
+    64px  c6074bd463ca  64x64/apps/remote.png  (duplicate)
+    64px  c6074bd463ca  64x64/apps/irkick.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_remote
+   128px  83587d60a3ff  128x128/apps/remote.png  (duplicate)
+   128px  83587d60a3ff  128x128/apps/irkick.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_remote
+
+# nuvola_actions_printmgr (1 sizes) [ALL SIZES MATCH] [REVIEW LARGEST] [REVIEW DUPLICATES] [DUPLICATE_OF REFERRERS] [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_devices_printer
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      ALL SIZES MATCH: Every size of this icon matches another icon.
+      This icon is likely duplicate_of that icon.
+      LARGEST MATCH: Largest common size is identical to [FULL-DUP] icons.
+      MULTIPLE DUPLICATES: Matches 4 [FULL-DUP] icons.
+      DUPLICATE_OF REFERRERS:
+        nuvola_apps_kjobviewer
+        nuvola_apps_klpq
+        nuvola_apps_preferences-desktop-printer
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_apps_kjobviewer
+        nuvola_apps_klpq
+        nuvola_apps_preferences-desktop-printer
+        nuvola_devices_printer
+    22px  b042eca016f0  22x22/actions/printmgr.png  (duplicate)
+    22px  b042eca016f0  22x22/apps/kjobviewer.png  (duplicate)
+          -> HAS duplicate_of: nuvola_devices_printer
+    22px  b042eca016f0  22x22/apps/klpq.png  (duplicate)
+          -> HAS duplicate_of: nuvola_devices_printer
+    22px  b042eca016f0  22x22/apps/preferences-desktop-printer.png  (duplicate)
+          -> HAS duplicate_of: nuvola_devices_printer
+    22px  b042eca016f0  22x22/devices/printer.png  (duplicate)
+
+# nuvola_actions_toggle_log (4 sizes) [ALL SIZES MATCH] [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_apps_kaddressbook
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 4 duplicate files found.
+      ALL SIZES MATCH: Every size of this icon matches another icon.
+      This icon is likely duplicate_of that icon.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_apps_kaddressbook
+    16px  3465ac4cd0aa  16x16/actions/toggle_log.png  (duplicate)
+    16px  3465ac4cd0aa  16x16/apps/kaddressbook.png  (duplicate)
+    22px  08d195a2e2a0  22x22/actions/toggle_log.png  (duplicate)
+    22px  08d195a2e2a0  22x22/apps/kaddressbook.png  (duplicate)
+    32px  25aa9cf6f2ec  32x32/actions/toggle_log.png  (duplicate)
+    32px  25aa9cf6f2ec  32x32/apps/kaddressbook.png  (duplicate)
+    48px  195f480d5912  48x48/actions/toggle_log.png  (duplicate)
+    48px  195f480d5912  48x48/apps/kaddressbook.png  (duplicate)
+
+# nuvola_actions_tools-report-bug (4 sizes) [ALL SIZES MATCH] [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_apps_kbugbuster
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 4 duplicate files found.
+      ALL SIZES MATCH: Every size of this icon matches another icon.
+      This icon is likely duplicate_of that icon.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_apps_kbugbuster
+    16px  fd82dacc7ddb  16x16/actions/tools-report-bug.png  (duplicate)
+    16px  fd82dacc7ddb  16x16/apps/kbugbuster.png  (duplicate)
+    22px  9f7ba23f2e22  22x22/actions/tools-report-bug.png  (duplicate)
+    22px  9f7ba23f2e22  22x22/apps/kbugbuster.png  (duplicate)
+    32px  6b09c5effa70  32x32/actions/tools-report-bug.png  (duplicate)
+    32px  6b09c5effa70  32x32/apps/kbugbuster.png  (duplicate)
+    48px  11cb3ea33a10  48x48/actions/tools-report-bug.png  (duplicate)
+    48px  11cb3ea33a10  48x48/apps/kbugbuster.png  (duplicate)
+
+# nuvola_apps_aktion (5 sizes) [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_apps_konqsidebar_mediaplayer
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 4 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_apps_konqsidebar_mediaplayer
+    16px  9599905c0f5f  16x16/apps/aktion.png  (unique)
+    32px  1ce7fcabfda9  32x32/apps/aktion.png  (duplicate)
+    32px  1ce7fcabfda9  32x32/apps/konqsidebar_mediaplayer.png  (duplicate)
+    48px  f63aa95771d3  48x48/apps/aktion.png  (duplicate)
+    48px  f63aa95771d3  48x48/apps/konqsidebar_mediaplayer.png  (duplicate)
+    64px  97eb908958ac  64x64/apps/aktion.png  (duplicate)
+    64px  97eb908958ac  64x64/apps/konqsidebar_mediaplayer.png  (duplicate)
+   128px  52f27aaac9bd  128x128/apps/aktion.png  (duplicate)
+   128px  52f27aaac9bd  128x128/apps/konqsidebar_mediaplayer.png  (duplicate)
+
+# nuvola_apps_kaddressbook (6 sizes) [SUSPECTED SUPERSET] [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_actions_toggle_log
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 4 duplicate files found.
+      SUPERSET SUSPECTED: This icon has more sizes than matching icons.
+      This icon is likely the PRIMARY.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_toggle_log
+    16px  3465ac4cd0aa  16x16/apps/kaddressbook.png  (duplicate)
+    16px  3465ac4cd0aa  16x16/actions/toggle_log.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_kaddressbook
+    22px  08d195a2e2a0  22x22/apps/kaddressbook.png  (duplicate)
+    22px  08d195a2e2a0  22x22/actions/toggle_log.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_kaddressbook
+    32px  25aa9cf6f2ec  32x32/apps/kaddressbook.png  (duplicate)
+    32px  25aa9cf6f2ec  32x32/actions/toggle_log.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_kaddressbook
+    48px  195f480d5912  48x48/apps/kaddressbook.png  (duplicate)
+    48px  195f480d5912  48x48/actions/toggle_log.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_kaddressbook
+    64px  f61c75f88318  64x64/apps/kaddressbook.png  (unique)
+   128px  cc079e105ed0  128x128/apps/kaddressbook.png  (unique)
+
+# nuvola_apps_kbugbuster (6 sizes) [SUSPECTED SUPERSET] [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_actions_tools-report-bug
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 4 duplicate files found.
+      SUPERSET SUSPECTED: This icon has more sizes than matching icons.
+      This icon is likely the PRIMARY.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_tools-report-bug
+    16px  fd82dacc7ddb  16x16/apps/kbugbuster.png  (duplicate)
+    16px  fd82dacc7ddb  16x16/actions/tools-report-bug.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_kbugbuster
+    22px  9f7ba23f2e22  22x22/apps/kbugbuster.png  (duplicate)
+    22px  9f7ba23f2e22  22x22/actions/tools-report-bug.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_kbugbuster
+    32px  6b09c5effa70  32x32/apps/kbugbuster.png  (duplicate)
+    32px  6b09c5effa70  32x32/actions/tools-report-bug.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_kbugbuster
+    48px  11cb3ea33a10  48x48/apps/kbugbuster.png  (duplicate)
+    48px  11cb3ea33a10  48x48/actions/tools-report-bug.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_kbugbuster
+    64px  050b0079fc52  64x64/apps/kbugbuster.png  (unique)
+   128px  c5ed880bbb21  128x128/apps/kbugbuster.png  (unique)
+
+# nuvola_apps_konqsidebar_mediaplayer (6 sizes) [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_apps_aktion
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 4 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_apps_aktion
+    16px  5e4e256fd0d9  16x16/apps/konqsidebar_mediaplayer.png  (unique)
+    22px  ae956a85eb73  22x22/apps/konqsidebar_mediaplayer.png  (unique)
+    32px  1ce7fcabfda9  32x32/apps/konqsidebar_mediaplayer.png  (duplicate)
+    32px  1ce7fcabfda9  32x32/apps/aktion.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_konqsidebar_mediaplayer
+    48px  f63aa95771d3  48x48/apps/konqsidebar_mediaplayer.png  (duplicate)
+    48px  f63aa95771d3  48x48/apps/aktion.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_konqsidebar_mediaplayer
+    64px  97eb908958ac  64x64/apps/konqsidebar_mediaplayer.png  (duplicate)
+    64px  97eb908958ac  64x64/apps/aktion.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_konqsidebar_mediaplayer
+   128px  52f27aaac9bd  128x128/apps/konqsidebar_mediaplayer.png  (duplicate)
+   128px  52f27aaac9bd  128x128/apps/aktion.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_konqsidebar_mediaplayer
+
+# nuvola_actions_kgpg (2 sizes) [SUSPECTED SUPERSET] [REVIEW DUPLICATES] [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_actions_kgpg_identity
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      SUPERSET SUSPECTED: This icon has more sizes than matching icons.
+      This icon is likely the PRIMARY.
+      MULTIPLE DUPLICATES: Matches 2 [FULL-DUP] icons.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_kgpg_docked
+        nuvola_actions_kgpg_identity
+        nuvola_apps_kgpg_docked
+    16px  a1a1892a6637  16x16/actions/kgpg.png  (unique)
+    22px  dda36d00bad6  22x22/actions/kgpg.png  (duplicate)
+    22px  dda36d00bad6  22x22/actions/kgpg_docked.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_kgpg_identity
+    22px  dda36d00bad6  22x22/actions/kgpg_identity.png  (duplicate)
+    22px  dda36d00bad6  22x22/apps/kgpg_docked.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_kgpg_identity
+
+# nuvola_actions_kgpg_identity (4 sizes) [SUSPECTED SUPERSET] [REVIEW DUPLICATES] [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_actions_kgpg
+      nuvola_apps_kgpg_docked
+      nuvola_actions_kgpg_docked
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      SUPERSET SUSPECTED: This icon has more sizes than matching icons.
+      This icon is likely the PRIMARY.
+      MULTIPLE DUPLICATES: Matches 2 [FULL-DUP] icons.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_kgpg
+        nuvola_actions_kgpg_docked
+        nuvola_apps_kgpg_docked
+    16px  145b2d4da049  16x16/actions/kgpg_identity.png  (unique)
+    22px  dda36d00bad6  22x22/actions/kgpg_identity.png  (duplicate)
+    22px  dda36d00bad6  22x22/actions/kgpg.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_kgpg_identity
+    22px  dda36d00bad6  22x22/actions/kgpg_docked.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_kgpg_identity
+    22px  dda36d00bad6  22x22/apps/kgpg_docked.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_kgpg_identity
+    32px  8b7069273f9e  32x32/actions/kgpg_identity.png  (unique)
+    48px  feea0f297a4c  48x48/actions/kgpg_identity.png  (unique)
+
+# nuvola_actions_mix_midi (4 sizes) [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_actions_piano
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 3 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_piano
+    16px  5ef798a9830f  16x16/actions/mix_midi.png  (duplicate)
+    16px  5ef798a9830f  16x16/actions/piano.png  (duplicate)
+    22px  1e5cc521c1fe  22x22/actions/mix_midi.png  (unique)
+    32px  1d8847966b38  32x32/actions/mix_midi.png  (duplicate)
+    32px  1d8847966b38  32x32/actions/piano.png  (duplicate)
+    48px  fcdd09fd6da2  48x48/actions/mix_midi.png  (duplicate)
+    48px  fcdd09fd6da2  48x48/actions/piano.png  (duplicate)
+
+# nuvola_actions_piano (4 sizes) [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_actions_mix_midi
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 3 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_mix_midi
+    16px  5ef798a9830f  16x16/actions/piano.png  (duplicate)
+    16px  5ef798a9830f  16x16/actions/mix_midi.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_piano
+    22px  93e865dc371a  22x22/actions/piano.png  (unique)
+    32px  1d8847966b38  32x32/actions/piano.png  (duplicate)
+    32px  1d8847966b38  32x32/actions/mix_midi.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_piano
+    48px  fcdd09fd6da2  48x48/actions/piano.png  (duplicate)
+    48px  fcdd09fd6da2  48x48/actions/mix_midi.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_piano
+
+# nuvola_actions_korgac (1 sizes) [ALL SIZES MATCH] [REVIEW LARGEST] [REVIEW DUPLICATES] [DUPLICATE_OF REFERRERS] [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_apps_korganizer
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      ALL SIZES MATCH: Every size of this icon matches another icon.
+      This icon is likely duplicate_of that icon.
+      LARGEST MATCH: Largest common size is identical to [FULL-DUP] icons.
+      MULTIPLE DUPLICATES: Matches 2 [FULL-DUP] icons.
+      DUPLICATE_OF REFERRERS:
+        nuvola_apps_korganizer_todo
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_apps_korganizer
+        nuvola_apps_korganizer_todo
+    22px  cc7d13cc7324  22x22/actions/korgac.png  (duplicate)
+    22px  cc7d13cc7324  22x22/apps/korganizer.png  (duplicate)
+    22px  cc7d13cc7324  22x22/apps/korganizer_todo.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_korganizer
+
+# nuvola_actions_media-playback-stop (4 sizes) [SUSPECTED SUPERSET] [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_actions_noatunstop
+      nuvola_actions_tool_delay
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      SUPERSET SUSPECTED: This icon has more sizes than matching icons.
+      This icon is likely the PRIMARY.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_noatunstop
+        nuvola_actions_tool_delay
+    16px  7089b0b5a373  16x16/actions/media-playback-stop.png  (unique)
+    22px  4aedc7185e36  22x22/actions/media-playback-stop.png  (duplicate)
+    22px  4aedc7185e36  22x22/actions/noatunstop.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_media-playback-stop
+    22px  4aedc7185e36  22x22/actions/tool_delay.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_media-playback-stop
+    32px  b309d399c237  32x32/actions/media-playback-stop.png  (unique)
+    48px  5e85902ca0b4  48x48/actions/media-playback-stop.png  (unique)
+
+# nuvola_actions_misc (4 sizes) [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_apps_preferences-system-session-services
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 2 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_apps_preferences-system-session-services
+    16px  11f1c65372c6  16x16/actions/misc.png  (unique)
+    22px  ddaf7663ed5e  22x22/actions/misc.png  (unique)
+    32px  cecc70ea853e  32x32/actions/misc.png  (duplicate)
+    32px  cecc70ea853e  32x32/apps/preferences-system-session-services.png  (duplicate)
+    48px  4ad5c06bb140  48x48/actions/misc.png  (duplicate)
+    48px  4ad5c06bb140  48x48/apps/preferences-system-session-services.png  (duplicate)
+
+# nuvola_actions_noatunstop (2 sizes) [SUSPECTED SUPERSET] [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_actions_media-playback-stop
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      SUPERSET SUSPECTED: This icon has more sizes than matching icons.
+      This icon is likely the PRIMARY.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_media-playback-stop
+        nuvola_actions_tool_delay
+    22px  4aedc7185e36  22x22/actions/noatunstop.png  (duplicate)
+    22px  4aedc7185e36  22x22/actions/media-playback-stop.png  (duplicate)
+    22px  4aedc7185e36  22x22/actions/tool_delay.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_media-playback-stop
+    32px  c297c950b351  32x32/actions/noatunstop.png  (unique)
+
+# nuvola_actions_tool_delay (1 sizes) [ALL SIZES MATCH] [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_actions_media-playback-stop
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      ALL SIZES MATCH: Every size of this icon matches another icon.
+      This icon is likely duplicate_of that icon.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_media-playback-stop
+        nuvola_actions_noatunstop
+    22px  4aedc7185e36  22x22/actions/tool_delay.png  (duplicate)
+    22px  4aedc7185e36  22x22/actions/media-playback-stop.png  (duplicate)
+    22px  4aedc7185e36  22x22/actions/noatunstop.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_media-playback-stop
+
+# nuvola_apps_package_favorite (6 sizes) [REVIEW DUPLICATES] [DUPLICATE_OF REFERRERS] [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_emblems_emblem-favorite
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      MULTIPLE DUPLICATES: Matches 2 [FULL-DUP] icons.
+      DUPLICATE_OF REFERRERS:
+        nuvola_places_bookmarks
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_emblems_emblem-favorite
+        nuvola_places_bookmarks
+    16px  70df48dd0e32  16x16/apps/package_favorite.png  (duplicate)
+    16px  70df48dd0e32  16x16/emblems/emblem-favorite.png  (duplicate)
+    16px  70df48dd0e32  16x16/places/bookmarks.png  (duplicate)
+          -> HAS duplicate_of: nuvola_emblems_emblem-favorite
+    22px  83ddabec7870  22x22/apps/package_favorite.png  (unique)
+    32px  3bb6947faf4a  32x32/apps/package_favorite.png  (unique)
+    48px  995645775033  48x48/apps/package_favorite.png  (unique)
+    64px  b6e4f336e1aa  64x64/apps/package_favorite.png  (unique)
+   128px  44c703fe5c7a  128x128/apps/package_favorite.png  (unique)
+
+# nuvola_apps_preferences-system-session-services (5 sizes) [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_actions_misc
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 2 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_misc
+    16px  648465000074  16x16/apps/preferences-system-session-services.png  (unique)
+    32px  cecc70ea853e  32x32/apps/preferences-system-session-services.png  (duplicate)
+    32px  cecc70ea853e  32x32/actions/misc.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_preferences-system-session-services
+    48px  4ad5c06bb140  48x48/apps/preferences-system-session-services.png  (duplicate)
+    48px  4ad5c06bb140  48x48/actions/misc.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_preferences-system-session-services
+    64px  91d1da587307  64x64/apps/preferences-system-session-services.png  (unique)
+   128px  1b83b24e4400  128x128/apps/preferences-system-session-services.png  (unique)
+
+# nuvola_places_mail-message (1 sizes) [ALL SIZES MATCH] [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_apps_internet-mail
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      ALL SIZES MATCH: Every size of this icon matches another icon.
+      This icon is likely duplicate_of that icon.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_mail_generic
+        nuvola_apps_internet-mail
+    32px  42e4e725edd4  32x32/places/mail-message.png  (duplicate)
+    32px  42e4e725edd4  32x32/actions/mail_generic.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_internet-mail
+    32px  42e4e725edd4  32x32/apps/internet-mail.png  (duplicate)
+
+# nuvola_actions_ark_new (1 sizes) [ALL SIZES MATCH] [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_actions_document-new
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      ALL SIZES MATCH: Every size of this icon matches another icon.
+      This icon is likely duplicate_of that icon.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_document-new
+    22px  a60280fc56c4  22x22/actions/ark_new.png  (duplicate)
+    22px  a60280fc56c4  22x22/actions/document-new.png  (duplicate)
+
+# nuvola_actions_ark_options (1 sizes) [ALL SIZES MATCH] [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_actions_kgpg_edit
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      ALL SIZES MATCH: Every size of this icon matches another icon.
+      This icon is likely duplicate_of that icon.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_kgpg_edit
+    22px  0e4a7a087f8d  22x22/actions/ark_options.png  (duplicate)
+    22px  0e4a7a087f8d  22x22/actions/kgpg_edit.png  (duplicate)
+
+# nuvola_actions_cd (4 sizes) [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_devices_media-optical
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_devices_media-optical
+    16px  90a2ca52b93c  16x16/actions/cd.png  (unique)
+    22px  6e50e0762574  22x22/actions/cd.png  (duplicate)
+    22px  6e50e0762574  22x22/devices/media-optical.png  (duplicate)
+    32px  b471d126608a  32x32/actions/cd.png  (unique)
+    48px  e17b9239c9fe  48x48/actions/cd.png  (unique)
+
+# nuvola_actions_document-new (4 sizes) [SUSPECTED SUPERSET] [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_actions_ark_new
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      SUPERSET SUSPECTED: This icon has more sizes than matching icons.
+      This icon is likely the PRIMARY.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_ark_new
+    16px  0200b1b2fc82  16x16/actions/document-new.png  (unique)
+    22px  a60280fc56c4  22x22/actions/document-new.png  (duplicate)
+    22px  a60280fc56c4  22x22/actions/ark_new.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_document-new
+    32px  3cc69a717e81  32x32/actions/document-new.png  (unique)
+    48px  e8dfed0e84dc  48x48/actions/document-new.png  (unique)
+
+# nuvola_actions_kgpg_edit (4 sizes) [SUSPECTED SUPERSET] [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_actions_ark_options
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      SUPERSET SUSPECTED: This icon has more sizes than matching icons.
+      This icon is likely the PRIMARY.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_ark_options
+    16px  31d54a4f60ec  16x16/actions/kgpg_edit.png  (unique)
+    22px  0e4a7a087f8d  22x22/actions/kgpg_edit.png  (duplicate)
+    22px  0e4a7a087f8d  22x22/actions/ark_options.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_kgpg_edit
+    32px  3696458dfc1a  32x32/actions/kgpg_edit.png  (unique)
+    48px  b75deb1a4c92  48x48/actions/kgpg_edit.png  (unique)
+
+# nuvola_actions_media-eject (4 sizes) [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_actions_noatunplaylist
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_noatunplaylist
+    16px  48def8a22720  16x16/actions/media-eject.png  (unique)
+    22px  667521e54c97  22x22/actions/media-eject.png  (duplicate)
+    22px  667521e54c97  22x22/actions/noatunplaylist.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_media-eject
+    32px  bc4d37487763  32x32/actions/media-eject.png  (unique)
+    48px  25164dbb6ebc  48x48/actions/media-eject.png  (unique)
+
+# nuvola_actions_media-playback-pause (4 sizes) [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_actions_noatunpause
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_noatunpause
+    16px  e6aabb0e3b5c  16x16/actions/media-playback-pause.png  (unique)
+    22px  ba08f5a7c1f3  22x22/actions/media-playback-pause.png  (duplicate)
+    22px  ba08f5a7c1f3  22x22/actions/noatunpause.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_media-playback-pause
+    32px  5bef14a4cf18  32x32/actions/media-playback-pause.png  (unique)
+    48px  1ed273c7ee67  48x48/actions/media-playback-pause.png  (unique)
+
+# nuvola_actions_media-playback-start (4 sizes) [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_actions_noatunplay
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_noatunplay
+    16px  b56877e9bed4  16x16/actions/media-playback-start.png  (unique)
+    22px  79d6ccc22758  22x22/actions/media-playback-start.png  (duplicate)
+    22px  79d6ccc22758  22x22/actions/noatunplay.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_media-playback-start
+    32px  a8ddf2401050  32x32/actions/media-playback-start.png  (unique)
+    48px  f420157f7eba  48x48/actions/media-playback-start.png  (unique)
+
+# nuvola_actions_media-skip-backward (4 sizes) [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_actions_noatunback
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_noatunback
+    16px  26b054db1f20  16x16/actions/media-skip-backward.png  (unique)
+    22px  5e3153ea7128  22x22/actions/media-skip-backward.png  (duplicate)
+    22px  5e3153ea7128  22x22/actions/noatunback.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_media-skip-backward
+    32px  6e6e1a186285  32x32/actions/media-skip-backward.png  (unique)
+    48px  5d64e565a872  48x48/actions/media-skip-backward.png  (unique)
+
+# nuvola_actions_media-skip-forward (4 sizes) [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_actions_noatunforward
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_noatunforward
+    16px  c0bda13344de  16x16/actions/media-skip-forward.png  (unique)
+    22px  526492af2b1b  22x22/actions/media-skip-forward.png  (duplicate)
+    22px  526492af2b1b  22x22/actions/noatunforward.png  (duplicate)
+          -> HAS duplicate_of: nuvola_actions_media-skip-forward
+    32px  0557a674aa34  32x32/actions/media-skip-forward.png  (unique)
+    48px  ca24a9d23a91  48x48/actions/media-skip-forward.png  (unique)
+
+# nuvola_actions_mix_video (1 sizes) [ALL SIZES MATCH] [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_apps_mplayer
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      ALL SIZES MATCH: Every size of this icon matches another icon.
+      This icon is likely duplicate_of that icon.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_apps_mplayer
+    22px  c46f8cfd2ee5  22x22/actions/mix_video.png  (duplicate)
+    22px  c46f8cfd2ee5  22x22/apps/mplayer.png  (duplicate)
+
+# nuvola_actions_noatunback (2 sizes) [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_actions_media-skip-backward
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_media-skip-backward
+    22px  5e3153ea7128  22x22/actions/noatunback.png  (duplicate)
+    22px  5e3153ea7128  22x22/actions/media-skip-backward.png  (duplicate)
+    32px  c23bca44573f  32x32/actions/noatunback.png  (unique)
+
+# nuvola_actions_noatunforward (2 sizes) [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_actions_media-skip-forward
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_media-skip-forward
+    22px  526492af2b1b  22x22/actions/noatunforward.png  (duplicate)
+    22px  526492af2b1b  22x22/actions/media-skip-forward.png  (duplicate)
+    32px  a5a1d748da29  32x32/actions/noatunforward.png  (unique)
+
+# nuvola_actions_noatunpause (2 sizes) [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_actions_media-playback-pause
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_media-playback-pause
+    22px  ba08f5a7c1f3  22x22/actions/noatunpause.png  (duplicate)
+    22px  ba08f5a7c1f3  22x22/actions/media-playback-pause.png  (duplicate)
+    32px  57a97774a4c5  32x32/actions/noatunpause.png  (unique)
+
+# nuvola_actions_noatunplay (2 sizes) [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_actions_media-playback-start
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_media-playback-start
+    22px  79d6ccc22758  22x22/actions/noatunplay.png  (duplicate)
+    22px  79d6ccc22758  22x22/actions/media-playback-start.png  (duplicate)
+    32px  962d76678991  32x32/actions/noatunplay.png  (unique)
+
+# nuvola_actions_noatunplaylist (2 sizes) [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_actions_media-eject
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_media-eject
+    22px  667521e54c97  22x22/actions/noatunplaylist.png  (duplicate)
+    22px  667521e54c97  22x22/actions/media-eject.png  (duplicate)
+    32px  df1752c9b2e0  32x32/actions/noatunplaylist.png  (unique)
+
+# nuvola_apps_mplayer (6 sizes) [SUSPECTED SUPERSET] [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_actions_mix_video
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      SUPERSET SUSPECTED: This icon has more sizes than matching icons.
+      This icon is likely the PRIMARY.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_mix_video
+    16px  51efe3164b18  16x16/apps/mplayer.png  (unique)
+    22px  c46f8cfd2ee5  22x22/apps/mplayer.png  (duplicate)
+    22px  c46f8cfd2ee5  22x22/actions/mix_video.png  (duplicate)
+          -> HAS duplicate_of: nuvola_apps_mplayer
+    32px  05aec8809714  32x32/apps/mplayer.png  (unique)
+    48px  10c10db7ca20  48x48/apps/mplayer.png  (unique)
+    64px  c519d3aa12df  64x64/apps/mplayer.png  (unique)
+   128px  9c16a99ba602  128x128/apps/mplayer.png  (unique)
+
+# nuvola_categories_applications-games (6 sizes) [DONE-DUPLICATE-OF]
+    HAS duplicate_of: nuvola_devices_joystick
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_devices_joystick
+    16px  c7fc461221ff  16x16/categories/applications-games.png  (duplicate)
+    16px  c7fc461221ff  16x16/devices/joystick.png  (duplicate)
+    22px  d33a8f5649cb  22x22/categories/applications-games.png  (unique)
+    32px  56e6c06bda5d  32x32/categories/applications-games.png  (unique)
+    48px  665ac23c531f  48x48/categories/applications-games.png  (unique)
+    64px  4fd608438d45  64x64/categories/applications-games.png  (unique)
+   128px  c1a37a870876  128x128/categories/applications-games.png  (unique)
+
+# nuvola_devices_joystick (6 sizes) [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_categories_applications-games
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_categories_applications-games
+    16px  c7fc461221ff  16x16/devices/joystick.png  (duplicate)
+    16px  c7fc461221ff  16x16/categories/applications-games.png  (duplicate)
+          -> HAS duplicate_of: nuvola_devices_joystick
+    22px  7d70af86ce03  22x22/devices/joystick.png  (unique)
+    32px  ccdb071b0373  32x32/devices/joystick.png  (unique)
+    48px  4a9d2ddf7998  48x48/devices/joystick.png  (unique)
+    64px  329b1237ee08  64x64/devices/joystick.png  (unique)
+   128px  e00209d578f5  128x128/devices/joystick.png  (unique)
+
+# nuvola_devices_media-optical (6 sizes) [DONE-PRIMARY]
+    JSON DUPLICATES LIST:
+      nuvola_actions_cd
+      nuvola_actions_mix_cd
+    WORKER INSTRUCTIONS:
+      DUPLICATES: 1 duplicate files found.
+      ACTION - REQUIRED STEPS:
+        1. List ALL sizes for EACH icon being compared
+        2. View EVERY size for each icon - no exceptions
+        3. DESCRIBE what you see (e.g., 'red heart with glossy highlight')
+        4. WARNING: Different hashes may be visually identical!
+        5. Compare side-by-side at each common size
+        6. Only skip if images are VISUALLY DIFFERENT after viewing ALL
+      Review these sections:
+        nuvola_actions_cd
+    16px  686bc82875c3  16x16/devices/media-optical.png  (unique)
+    22px  6e50e0762574  22x22/devices/media-optical.png  (duplicate)
+    22px  6e50e0762574  22x22/actions/cd.png  (duplicate)
+          -> HAS duplicate_of: nuvola_devices_media-optical
+    32px  8de82d2d80f2  32x32/devices/media-optical.png  (unique)
+    48px  232dbd0acf30  48x48/devices/media-optical.png  (unique)
+    64px  8eed6d641b4b  64x64/devices/media-optical.png  (unique)
+   128px  2b05f907fbce  128x128/devices/media-optical.png  (unique)
+

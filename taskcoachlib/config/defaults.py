@@ -652,6 +652,16 @@ defaults = {
     "spellcheck_dark": {
         "squiggle_color": "(255, 80, 80, 255)",
     },
+    "iconpicker": {
+        # Theme visibility in icon picker (legacy always enabled)
+        "theme_nuvola": "True",
+        "theme_oxygen": "True",
+        "theme_papirus": "True",
+        "theme_breeze": "True",
+        # Search options
+        "search_include_theme": "False",
+        "search_include_category": "False",
+    },
 }
 
 minimum = {"view": {"taskviewercount": "1"}}

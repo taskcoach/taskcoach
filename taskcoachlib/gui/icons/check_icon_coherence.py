@@ -23,12 +23,12 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).parent
 ICONS_16 = SCRIPT_DIR / "16x16"
 MAPPING_FILE = SCRIPT_DIR / "ICON_MAPPING.json"
-SOURCES_FILE = SCRIPT_DIR / "ICON_SOURCES.json"
+SOURCES_FILE = SCRIPT_DIR / "ICON_THEME_CATALOG.json"
 ARTPROVIDER = SCRIPT_DIR.parent / "artprovider.py"
 
 
 def load_icon_sources():
-    """Load valid source names from ICON_SOURCES.json."""
+    """Load valid source names from ICON_THEME_CATALOG.json."""
     if not SOURCES_FILE.exists():
         return set()
     data = json.loads(SOURCES_FILE.read_text())
@@ -150,7 +150,7 @@ def check_coherence():
         if "source" not in info:
             missing_fields.append(f"{icon_name} (missing 'source')")
         else:
-            # Validate source exists in ICON_SOURCES.json
+            # Validate source exists in ICON_THEME_CATALOG.json
             if info["source"] not in valid_sources:
                 invalid_sources.append(f"{icon_name} (source='{info['source']}')")
 
@@ -174,7 +174,7 @@ def check_coherence():
         issues.append(("ICON_MAPPING.json → missing required fields", sorted(missing_fields)))
 
     if invalid_sources:
-        issues.append(("ICON_MAPPING.json → source not in ICON_SOURCES.json", sorted(invalid_sources)))
+        issues.append(("ICON_MAPPING.json → source not in ICON_THEME_CATALOG.json", sorted(invalid_sources)))
 
     if missing_category:
         issues.append(("ICON_MAPPING.json → new icons missing 'category'", sorted(missing_category)))
@@ -234,7 +234,7 @@ def main():
         print("✓ All icons are coherent. No issues found.")
         print()
         print("Checked:")
-        print(f"  - ICON_SOURCES.json: {len(load_icon_sources())} sources")
+        print(f"  - ICON_THEME_CATALOG.json: {len(load_icon_sources())} sources")
         print(f"  - ICON_MAPPING.json: {len(load_mapping_icons())} entries")
         print(f"  - 16x16/*.png: {len(load_png_icons())} files")
         print(f"  - artprovider.py: {len(load_artprovider_icons()[0])} entries")
