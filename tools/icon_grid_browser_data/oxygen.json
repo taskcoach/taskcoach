@@ -5356,147 +5356,176 @@
     "oxygen_actions_transform-rotate": {
       "category": "actions",
       "file": "transform-rotate.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["rotate", "transform", "spin", "turn", "angle", "circular", "orientation", "image"]
     },
     "oxygen_actions_snap-orthogonal": {
       "category": "actions",
       "file": "snap-orthogonal.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["snap", "orthogonal", "align", "crosshair", "target", "grid", "precision", "perpendicular"]
     },
     "oxygen_actions_go-jump-definition": {
       "category": "actions",
       "file": "go-jump-definition.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["jump", "definition", "go", "navigate", "code", "declaration", "symbol", "function"]
     },
     "oxygen_actions_view-statistics": {
       "category": "actions",
       "file": "view-statistics.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["statistics", "chart", "bar", "graph", "data", "analytics", "report", "metrics"]
     },
     "oxygen_actions_roll": {
       "category": "actions",
       "file": "roll.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["die", "dice", "roll", "game", "gambling", "random", "cube", "chance"]
     },
     "oxygen_actions_page-simple": {
       "category": "actions",
       "file": "page-simple.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["page", "document", "blank", "paper", "sheet", "empty", "new"]
     },
     "oxygen_actions_datatype": {
       "category": "actions",
       "file": "datatype.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["datatype", "field", "input", "form", "green", "bar", "variable", "type"]
     },
     "oxygen_actions_code-class": {
       "category": "actions",
       "file": "code-class.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["class", "code", "hierarchy", "inheritance", "OOP", "diagram", "structure", "programming"]
     },
     "oxygen_actions_document-print-direct": {
       "category": "actions",
       "file": "document-print-direct.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["print", "printer", "direct", "quick", "lightning", "fast", "instant"]
     },
     "oxygen_actions_edit-find-user": {
       "category": "actions",
       "file": "edit-find-user.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["find", "user", "search", "person", "binoculars", "lookup", "locate"]
     },
     "oxygen_actions_go-jump-today": {
       "category": "actions",
       "file": "go-jump-today.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["calendar", "today", "jump", "go", "date", "navigate", "current"]
     },
     "oxygen_actions_view-object-histogram-linear": {
       "category": "actions",
       "file": "view-object-histogram-linear.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["histogram", "chart", "graph", "linear", "statistics", "distribution", "bars"]
     },
     "oxygen_actions_go-first-view": {
       "category": "actions",
       "file": "go-first-view.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["first", "go", "beginning", "start", "arrow", "left", "navigation", "skip"]
     },
     "oxygen_actions_system-shutdown": {
       "category": "actions",
       "file": "system-shutdown.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["shutdown", "power", "off", "turn off", "red", "button", "system", "exit"]
     },
     "oxygen_actions_umbrello_diagram_class": {
       "category": "actions",
       "file": "umbrello_diagram_class.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["class", "diagram", "UML", "hierarchy", "inheritance", "OOP", "umbrello"]
     },
     "oxygen_actions_gtk-floppy": {
       "category": "actions",
       "file": "gtk-floppy.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["floppy", "disk", "save", "storage", "diskette", "backup", "gtk"]
     },
     "oxygen_actions_archive-insert-directory": {
       "category": "actions",
       "file": "archive-insert-directory.png",
-      "sizes": [16, 22, 32, 48, 256]
+      "sizes": [16, 22, 32, 48, 128, 256],
+      "hints": ["archive", "folder", "add", "insert", "directory", "plus", "new folder"]
     },
     "oxygen_actions_snap-intersection": {
       "category": "actions",
       "file": "snap-intersection.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["snap", "intersection", "crosshair", "point", "lines", "crossing", "CAD"]
     },
     "oxygen_actions_draw-triangle": {
       "category": "actions",
       "file": "draw-triangle.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["triangle", "draw", "shape", "geometry", "polygon", "outline"]
     },
     "oxygen_actions_geany-close-all": {
       "category": "actions",
       "file": "geany-close-all.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["close", "all", "red", "x", "delete", "cancel", "stop"]
     },
     "oxygen_actions_mail-signed-fully": {
       "category": "actions",
       "file": "mail-signed-fully.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["mail", "signed", "verified", "email", "envelope", "secure", "certificate"]
     },
     "oxygen_actions_umbr-message-synchronous": {
       "category": "actions",
       "file": "umbr-message-synchronous.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["message", "synchronous", "UML", "arrow", "sequence", "call", "umbrello"]
     },
     "oxygen_actions_distribute-horizontal-gaps": {
       "category": "actions",
       "file": "distribute-horizontal-gaps.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["distribute", "horizontal", "gaps", "spacing", "align", "layout", "arrange"]
     },
     "oxygen_actions_bookmark-edit": {
       "category": "actions",
       "file": "bookmark-edit.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["bookmark", "edit", "pencil", "flag", "modify", "favorite", "marker"]
     },
     "oxygen_actions_edit-delete": {
       "category": "actions",
       "file": "edit-delete.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["delete", "remove", "x", "red", "cross", "cancel", "erase"]
     },
     "oxygen_actions_go-previous-use": {
       "category": "actions",
       "file": "go-previous-use.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["previous", "use", "history", "back", "arrow", "undo", "list"]
     },
     "oxygen_actions_view-split-left-right": {
       "category": "actions",
       "file": "view-split-left-right.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["split", "view", "left", "right", "vertical", "window", "panes"]
     },
     "oxygen_actions_edit-redo": {
       "category": "actions",
       "file": "edit-redo.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["redo", "forward", "arrow", "green", "repeat", "restore", "again"]
     },
     "oxygen_actions_format-text-subscript": {
       "category": "actions",
       "file": "format-text-subscript.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["subscript", "text", "format", "typography", "below", "small", "chemical"]
     },
     "oxygen_actions_mail-message-new": {
       "category": "actions",
