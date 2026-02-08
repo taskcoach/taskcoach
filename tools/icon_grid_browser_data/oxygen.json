@@ -5932,87 +5932,104 @@
     "oxygen_actions_tools-wizard": {
       "category": "actions",
       "file": "tools-wizard.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["wizard", "magic", "wand", "stars", "sparkle", "auto", "helper"]
     },
     "oxygen_actions_address-book-new": {
       "category": "actions",
       "file": "address-book-new.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["address", "book", "new", "contact", "plus", "add", "folder"]
     },
     "oxygen_actions_view-list-tree": {
       "category": "actions",
       "file": "view-list-tree.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["tree", "list", "view", "hierarchy", "expand", "folder", "structure"]
     },
     "oxygen_actions_action-albumfolder-importdir2": {
       "category": "actions",
       "file": "action-albumfolder-importdir2.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["album", "folder", "import", "directory", "plus", "add", "photos"]
     },
     "oxygen_actions_usecase": {
       "category": "actions",
       "file": "usecase.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["usecase", "UML", "ellipse", "oval", "diagram", "requirement"]
     },
     "oxygen_actions_practice-setup": {
       "category": "actions",
       "file": "practice-setup.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["practice", "setup", "wrench", "configure", "settings", "tool"]
     },
     "oxygen_actions_view-pim-journal": {
       "category": "actions",
       "file": "view-pim-journal.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["journal", "pim", "notebook", "diary", "log", "personal", "view"]
     },
     "oxygen_actions_mail-mark-unread-new": {
       "category": "actions",
       "file": "mail-mark-unread-new.png",
-      "sizes": [16, 22, 32, 48, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["mail", "unread", "new", "envelope", "starburst", "email", "inbox"]
     },
     "oxygen_actions_draw-spiral": {
       "category": "actions",
       "file": "draw-spiral.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["spiral", "draw", "curve", "swirl", "shape", "vector", "coil"]
     },
     "oxygen_actions_postalcode": {
       "category": "actions",
       "file": "postalcode.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["postal", "code", "envelope", "mail", "address", "zip", "letter"]
     },
     "oxygen_actions_zoom-double-size": {
       "category": "actions",
       "file": "zoom-double-size.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["zoom", "double", "2x", "magnify", "enlarge", "scale", "glass"]
     },
     "oxygen_actions_view-media-playlist": {
       "category": "actions",
       "file": "view-media-playlist.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["media", "playlist", "view", "list", "tracks", "songs", "queue"]
     },
     "oxygen_actions_im-twitter": {
       "category": "actions",
       "file": "im-twitter.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["twitter", "im", "social", "blue", "t", "tweet", "microblog"]
     },
     "oxygen_actions_meeting-participant-no-response": {
       "category": "actions",
       "file": "meeting-participant-no-response.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["meeting", "participant", "no response", "person", "question", "x", "pending"]
     },
     "oxygen_actions_media-standard-track-progression-amarok": {
       "category": "actions",
       "file": "media-standard-track-progression-amarok.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["media", "track", "progression", "playlist", "amarok", "standard", "sequential"]
     },
     "oxygen_actions_object": {
       "category": "actions",
       "file": "object.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["object", "generic", "item", "element", "component", "UML"]
     },
     "oxygen_actions_configure-toolbars": {
       "category": "actions",
       "file": "configure-toolbars.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["configure", "toolbars", "wrench", "customize", "settings", "buttons"]
     },
     "oxygen_actions_align-horizontal-right": {
       "category": "actions",
