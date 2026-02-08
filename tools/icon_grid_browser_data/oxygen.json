@@ -3946,127 +3946,152 @@
     "oxygen_mimetypes_application-x-smb-server": {
       "category": "mimetypes",
       "file": "application-x-smb-server.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["smb", "server", "samba", "network", "fileserver", "computer", "tower", "share"]
     },
     "oxygen_mimetypes_audio-mp2": {
       "category": "mimetypes",
       "file": "audio-mp2.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["mp2", "mpeg", "audio", "music", "layer2", "sound", "notes", "compressed"]
     },
     "oxygen_mimetypes_application-x-krita": {
       "category": "mimetypes",
       "file": "application-x-krita.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["krita", "painting", "brush", "art", "digital", "kde", "graphics", "draw"]
     },
     "oxygen_mimetypes_application-x-it87": {
       "category": "mimetypes",
       "file": "application-x-it87.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["it87", "color", "calibration", "profile", "gamut", "spectrum", "icc", "chromaticity"]
     },
     "oxygen_mimetypes_image-jpeg": {
       "category": "mimetypes",
       "file": "image-jpeg.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["jpeg", "jpg", "photo", "image", "picture", "photography", "compressed", "lossy"]
     },
     "oxygen_mimetypes_application-vnd.oasis.opendocument.text-master": {
       "category": "mimetypes",
       "file": "application-vnd.oasis.opendocument.text-master.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["odt", "master", "opendocument", "text", "libreoffice", "odm", "document", "writer"]
     },
     "oxygen_mimetypes_image-x-svg+xml": {
       "category": "mimetypes",
       "file": "image-x-svg+xml.png",
-      "sizes": [16, 22, 32, 64]
+      "sizes": [16, 22, 32, 64],
+      "hints": ["svg", "vector", "scalable", "xml", "bezier", "graphics", "curve", "inkscape"]
     },
     "oxygen_mimetypes_application-vnd.oasis.opendocument.image": {
       "category": "mimetypes",
       "file": "application-vnd.oasis.opendocument.image.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["odi", "opendocument", "image", "draw", "libreoffice", "flower", "graphics", "oasis"]
     },
     "oxygen_mimetypes_application-x-mswinurl": {
       "category": "mimetypes",
       "file": "application-x-mswinurl.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["url", "windows", "shortcut", "internet", "link", "web", "globe", "bookmark"]
     },
     "oxygen_mimetypes_libreoffice-oasis-formula": {
       "category": "mimetypes",
       "file": "libreoffice-oasis-formula.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["formula", "math", "equation", "libreoffice", "odf", "greek", "symbols", "scientific"]
     },
     "oxygen_mimetypes_application-x-troff-man": {
       "category": "mimetypes",
       "file": "application-x-troff-man.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["man", "manual", "troff", "unix", "documentation", "help", "book", "groff"]
     },
     "oxygen_mimetypes_application-vnd.ms-powerpoint": {
       "category": "mimetypes",
       "file": "application-vnd.ms-powerpoint.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["powerpoint", "ppt", "presentation", "slides", "microsoft", "office", "slideshow", "orange"]
     },
     "oxygen_mimetypes_fonts-package": {
       "category": "mimetypes",
       "file": "fonts-package.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["fonts", "package", "typeface", "typography", "collection", "bundle", "text", "letter"]
     },
     "oxygen_mimetypes_application-vnd.oasis.opendocument.presentation": {
       "category": "mimetypes",
       "file": "application-vnd.oasis.opendocument.presentation.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["odp", "presentation", "opendocument", "impress", "libreoffice", "slides", "slideshow", "oasis"]
     },
     "oxygen_mimetypes_application-x-kontour": {
       "category": "mimetypes",
       "file": "application-x-kontour.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["kontour", "vector", "graphics", "bezier", "curve", "kde", "drawing", "karbon"]
     },
     "oxygen_mimetypes_video-mlt-playlist": {
       "category": "mimetypes",
       "file": "video-mlt-playlist.png",
-      "sizes": [16, 22, 32, 64]
+      "sizes": [16, 22, 32, 64],
+      "hints": ["mlt", "playlist", "video", "editing", "kdenlive", "shotcut", "clapperboard", "multimedia"]
     },
     "oxygen_mimetypes_text-x-credits": {
       "category": "mimetypes",
       "file": "text-x-credits.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["credits", "acknowledgments", "contributors", "thanks", "text", "license", "copyright", "attribution"]
     },
     "oxygen_mimetypes_message-news": {
       "category": "mimetypes",
       "file": "message-news.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["news", "newspaper", "usenet", "nntp", "newsgroup", "article", "times", "press"]
     },
     "oxygen_mimetypes_text-x-authors": {
       "category": "mimetypes",
       "file": "text-x-authors.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["authors", "contributors", "names", "developers", "maintainers", "text", "credits", "team"]
     },
     "oxygen_mimetypes_video-x-google-vlc-plugin": {
       "category": "mimetypes",
       "file": "video-x-google-vlc-plugin.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["vlc", "plugin", "video", "google", "browser", "clapperboard", "movie", "streaming"]
     },
     "oxygen_mimetypes_libreoffice-database": {
       "category": "mimetypes",
       "file": "libreoffice-database.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["libreoffice", "database", "base", "odb", "tables", "records", "sql", "cylinder"]
     },
     "oxygen_mimetypes_application-vnd.rar": {
       "category": "mimetypes",
       "file": "application-vnd.rar.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["rar", "archive", "compressed", "winrar", "zipper", "box", "extract", "package"]
     },
     "oxygen_mimetypes_image-bmp": {
       "category": "mimetypes",
       "file": "image-bmp.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["bmp", "bitmap", "image", "windows", "picture", "uncompressed", "raster", "photo"]
     },
     "oxygen_mimetypes_libreoffice-text": {
       "category": "mimetypes",
       "file": "libreoffice-text.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["libreoffice", "writer", "odt", "document", "text", "pen", "word", "opendocument"]
     },
     "oxygen_mimetypes_application-x-kexi-connectiondata": {
       "category": "mimetypes",
       "file": "application-x-kexi-connectiondata.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["kexi", "connection", "database", "connector", "network", "kde", "server", "link"]
     },
     "oxygen_mimetypes_application-x-tarz": {
       "category": "mimetypes",
