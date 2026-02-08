@@ -5098,112 +5098,134 @@
     "oxygen_categories_preferences-desktop-personal": {
       "category": "categories",
       "file": "preferences-desktop-personal.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["personal", "profile", "user", "photo", "frame", "account", "identity", "preferences"]
     },
     "oxygen_categories_applications-education-university": {
       "category": "categories",
       "file": "applications-education-university.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["university", "graduation", "cap", "mortarboard", "college", "degree", "academic", "education"]
     },
     "oxygen_categories_applications-accessories": {
       "category": "categories",
       "file": "applications-accessories.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["accessories", "pencil", "ruler", "eraser", "cup", "supplies", "tools", "stationery"]
     },
     "oxygen_categories_applications-all": {
       "category": "categories",
       "file": "applications-all.png",
-      "sizes": [16, 32, 48, 64, 128, 256]
+      "sizes": [16, 32, 48, 64, 128, 256],
+      "hints": ["all", "applications", "grid", "menu", "launcher", "crosshair", "view", "programs"]
     },
     "oxygen_actions_configure": {
       "category": "actions",
       "file": "configure.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["configure", "wrench", "settings", "options", "setup", "preferences", "tool", "adjust"]
     },
     "oxygen_actions_arrow-left": {
       "category": "actions",
       "file": "arrow-left.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["arrow", "left", "back", "previous", "navigation", "green", "direction", "return"]
     },
     "oxygen_actions_edit-image-face-show": {
       "category": "actions",
       "file": "edit-image-face-show.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["face", "detection", "photo", "image", "people", "recognition", "portrait", "show"]
     },
     "oxygen_actions_select-rectangular": {
       "category": "actions",
       "file": "select-rectangular.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["select", "rectangular", "selection", "marquee", "box", "region", "area", "draw"]
     },
     "oxygen_actions_object-order-lower": {
       "category": "actions",
       "file": "object-order-lower.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["lower", "order", "back", "behind", "layer", "stack", "arrange", "object"]
     },
     "oxygen_actions_relationship": {
       "category": "actions",
       "file": "relationship.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["relationship", "link", "connection", "associate", "related", "reference", "dependency", "join"]
     },
     "oxygen_actions_color-picker": {
       "category": "actions",
       "file": "color-picker.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["color", "picker", "eyedropper", "pipette", "sample", "dropper", "select", "palette"]
     },
     "oxygen_actions_media-track-edit-amarok": {
       "category": "actions",
       "file": "media-track-edit-amarok.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["edit", "track", "media", "pencil", "music", "modify", "amarok", "song"]
     },
     "oxygen_actions_user-group-delete": {
       "category": "actions",
       "file": "user-group-delete.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/actions/user-group-delete.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/actions/user-group-delete.png"]
     },
     "oxygen_actions_im-user-busy": {
       "category": "actions",
       "file": "im-user-busy.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["busy", "user", "status", "unavailable", "dnd", "away", "person", "messenger"]
     },
     "oxygen_actions_polygon-add-nodes": {
       "category": "actions",
       "file": "polygon-add-nodes.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["polygon", "add", "nodes", "point", "vector", "shape", "vertex", "path"]
     },
     "oxygen_actions_amarok_lyrics": {
       "category": "actions",
       "file": "amarok_lyrics.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["lyrics", "text", "song", "words", "music", "document", "amarok", "karaoke"]
     },
     "oxygen_actions_document-open-remote": {
       "category": "actions",
       "file": "document-open-remote.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["open", "remote", "document", "folder", "network", "globe", "cloud", "internet"]
     },
     "oxygen_actions_application-exit": {
       "category": "actions",
       "file": "application-exit.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["exit", "close", "quit", "stop", "red", "x", "terminate", "end"]
     },
     "oxygen_actions_document-print": {
       "category": "actions",
       "file": "document-print.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["print", "printer", "document", "paper", "output", "hardcopy", "page", "publish"]
     },
     "oxygen_actions_help-hint": {
       "category": "actions",
       "file": "help-hint.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["hint", "tip", "help", "idea", "lightbulb", "suggestion", "bulb", "info"]
     },
     "oxygen_actions_view-multiple-objects": {
       "category": "actions",
       "file": "view-multiple-objects.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["multiple", "objects", "view", "windows", "documents", "stack", "cascade", "many"]
     },
     "oxygen_actions_view-pim-contacts": {
       "category": "actions",
       "file": "view-pim-contacts.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["contacts", "pim", "badge", "card", "person", "address", "vcard", "people"]
     },
     "oxygen_actions_object-order-back-calligra": {
       "category": "actions",
