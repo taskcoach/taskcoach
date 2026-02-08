@@ -3796,127 +3796,152 @@
     "oxygen_mimetypes_application-x-shellscript": {
       "category": "mimetypes",
       "file": "application-x-shellscript.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["shell", "script", "bash", "terminal", "command", "sh", "console", "unix"]
     },
     "oxygen_mimetypes_application-x-compressed-tar": {
       "category": "mimetypes",
       "file": "application-x-compressed-tar.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["tar", "tgz", "gzip", "archive", "compressed", "package", "box", "tarball"]
     },
     "oxygen_mimetypes_video-x-flv": {
       "category": "mimetypes",
       "file": "video-x-flv.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["flv", "flash", "video", "movie", "clapperboard", "film", "streaming", "adobe"]
     },
     "oxygen_mimetypes_application-ogg": {
       "category": "mimetypes",
       "file": "application-ogg.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["ogg", "vorbis", "audio", "music", "container", "sound", "multimedia", "opensource"]
     },
     "oxygen_mimetypes_application-x-kplato": {
       "category": "mimetypes",
       "file": "application-x-kplato.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["kplato", "project", "gantt", "schedule", "planning", "tasks", "timeline", "kde"]
     },
     "oxygen_mimetypes_libreoffice-oasis-presentation": {
       "category": "mimetypes",
       "file": "libreoffice-oasis-presentation.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["libreoffice", "impress", "presentation", "slides", "odp", "oasis", "slideshow", "powerpoint"]
     },
     "oxygen_mimetypes_application-x-kvtml": {
       "category": "mimetypes",
       "file": "application-x-kvtml.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["kvtml", "vocabulary", "flashcard", "learning", "parley", "education", "kde", "cards"]
     },
     "oxygen_mimetypes_application-x-qet-project": {
       "category": "mimetypes",
       "file": "application-x-qet-project.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["qet", "qelectrotech", "electrical", "schematic", "circuit", "diagram", "electronics", "wiring"]
     },
     "oxygen_mimetypes_application-x-font-pcf": {
       "category": "mimetypes",
       "file": "application-x-font-pcf.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["pcf", "font", "bitmap", "pixel", "typeface", "portable", "compiled", "xorg"]
     },
     "oxygen_mimetypes_uri-rtspu": {
       "category": "mimetypes",
       "file": "uri-rtspu.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["rtsp", "rtspu", "streaming", "video", "network", "protocol", "udp", "broadcast"]
     },
     "oxygen_mimetypes_image-x-compressed-xcf": {
       "category": "mimetypes",
       "file": "image-x-compressed-xcf.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["xcf", "gimp", "compressed", "image", "layers", "archive", "zipper", "graphics"]
     },
     "oxygen_mimetypes_application-x-abiword": {
       "category": "mimetypes",
       "file": "application-x-abiword.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["abiword", "document", "word", "processor", "text", "abw", "writing", "opensource"]
     },
     "oxygen_mimetypes_application-x-plasma": {
       "category": "mimetypes",
       "file": "application-x-plasma.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["plasma", "kde", "widget", "plasmoid", "desktop", "applet", "linux", "theme"]
     },
     "oxygen_mimetypes_application-vnd.ms-access": {
       "category": "mimetypes",
       "file": "application-vnd.ms-access.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["access", "database", "mdb", "accdb", "microsoft", "office", "tables", "records"]
     },
     "oxygen_mimetypes_image-vnd.adobe.photoshop": {
       "category": "mimetypes",
       "file": "image-vnd.adobe.photoshop.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["photoshop", "psd", "adobe", "image", "layers", "graphics", "brush", "design"]
     },
     "oxygen_mimetypes_video-x-ms-wmp": {
       "category": "mimetypes",
       "file": "video-x-ms-wmp.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["wmp", "windows", "media", "player", "video", "movie", "microsoft", "clapperboard"]
     },
     "oxygen_mimetypes_application-x-jar": {
       "category": "mimetypes",
       "file": "application-x-jar.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["jar", "java", "archive", "package", "box", "application", "bytecode", "class"]
     },
     "oxygen_mimetypes_text-x-qml": {
       "category": "mimetypes",
       "file": "text-x-qml.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["qml", "qt", "markup", "interface", "ui", "declarative", "quick", "code"]
     },
     "oxygen_mimetypes_text-csv": {
       "category": "mimetypes",
       "file": "text-csv.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["csv", "spreadsheet", "table", "data", "comma", "separated", "values", "excel"]
     },
     "oxygen_mimetypes_text-rdf+xml": {
       "category": "mimetypes",
       "file": "text-rdf+xml.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["rdf", "xml", "metadata", "semantic", "web", "linked", "graph", "nodes"]
     },
     "oxygen_mimetypes_application-sxw": {
       "category": "mimetypes",
       "file": "application-sxw.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["sxw", "staroffice", "writer", "document", "openoffice", "text", "balloon", "word"]
     },
     "oxygen_mimetypes_application-pgp-encrypted": {
       "category": "mimetypes",
       "file": "application-pgp-encrypted.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["pgp", "encrypted", "secure", "keyhole", "lock", "privacy", "gpg", "crypto"]
     },
     "oxygen_mimetypes_application-x-smb-workgroup": {
       "category": "mimetypes",
       "file": "application-x-smb-workgroup.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["smb", "workgroup", "network", "samba", "windows", "share", "globe", "lan"]
     },
     "oxygen_mimetypes_application-vnd.sun.xml.writer.global": {
       "category": "mimetypes",
       "file": "application-vnd.sun.xml.writer.global.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["sun", "xml", "writer", "global", "master", "openoffice", "document", "sxg"]
     },
     "oxygen_mimetypes_text-x-po": {
       "category": "mimetypes",
       "file": "text-x-po.png",
-      "sizes": [16, 22, 32, 48, 64, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["po", "gettext", "translation", "localization", "i18n", "language", "international", "l10n"]
     },
     "oxygen_mimetypes_application-x-smb-server": {
       "category": "mimetypes",
