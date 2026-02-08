@@ -5782,62 +5782,74 @@
     "oxygen_actions_open-for-editing": {
       "category": "actions",
       "file": "open-for-editing.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["open", "edit", "pencil", "document", "write", "modify", "paper"]
     },
     "oxygen_actions_draw-triangle4": {
       "category": "actions",
       "file": "draw-triangle4.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["triangle", "draw", "shape", "geometry", "polygon", "pointing down"]
     },
     "oxygen_actions_player-time": {
       "category": "actions",
       "file": "player-time.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["player", "time", "stopwatch", "chronometer", "play", "duration", "media"]
     },
     "oxygen_actions_svn-commit": {
       "category": "actions",
       "file": "svn-commit.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["svn", "commit", "upload", "push", "server", "database", "arrow"]
     },
     "oxygen_actions_edit-image-face-detect": {
       "category": "actions",
       "file": "edit-image-face-detect.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["face", "detect", "image", "edit", "recognition", "smiley", "photo"]
     },
     "oxygen_actions_exifinfo": {
       "category": "actions",
       "file": "exifinfo.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["exif", "info", "information", "metadata", "photo", "blue", "i"]
     },
     "oxygen_actions_format-join-node": {
       "category": "actions",
       "file": "format-join-node.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["join", "node", "format", "merge", "vector", "path", "connect"]
     },
     "oxygen_actions_view-certificate-server-configure": {
       "category": "actions",
       "file": "view-certificate-server-configure.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["certificate", "server", "configure", "wrench", "ssl", "security", "settings"]
     },
     "oxygen_actions_tool-measure": {
       "category": "actions",
       "file": "tool-measure.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["measure", "tool", "ruler", "distance", "length", "scale"]
     },
     "oxygen_actions_code-block": {
       "category": "actions",
       "file": "code-block.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["code", "block", "array", "grid", "elements", "programming", "structure"]
     },
     "oxygen_actions_key-enter": {
       "category": "actions",
       "file": "key-enter.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["enter", "key", "return", "keyboard", "arrow", "submit", "newline"]
     },
     "oxygen_actions_view-conversation-balloon": {
       "category": "actions",
       "file": "view-conversation-balloon.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["conversation", "balloon", "speech", "bubble", "chat", "message", "talk"]
     },
     "oxygen_actions_kt-pause": {
       "category": "actions",
