@@ -6976,92 +6976,110 @@
     "oxygen_actions_align-horizontal-top-out": {
       "category": "actions",
       "file": "align-horizontal-top-out.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["align", "horizontal", "top", "outside", "layout", "objects", "position"]
     },
     "oxygen_actions_measure": {
       "category": "actions",
       "file": "measure.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["measure", "ruler", "distance", "scale", "length", "size", "dimension"]
     },
     "oxygen_actions_document-swap": {
       "category": "actions",
       "file": "document-swap.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["document", "swap", "exchange", "arrows", "switch", "replace", "trade"]
     },
     "oxygen_actions_insert-table": {
       "category": "actions",
       "file": "insert-table.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["insert", "table", "grid", "add", "plus", "cells", "spreadsheet"]
     },
     "oxygen_actions_quickopen-file": {
       "category": "actions",
       "file": "quickopen-file.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["quick", "open", "file", "document", "lightning", "fast", "bolt"]
     },
     "oxygen_actions_selection-make-bitmap-copy": {
       "category": "actions",
       "file": "selection-make-bitmap-copy.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["selection", "make", "bitmap", "copy", "image", "raster", "export"]
     },
     "oxygen_actions_office-chart-pie": {
       "category": "actions",
       "file": "office-chart-pie.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["office", "chart", "pie", "graph", "circular", "data", "statistics"]
     },
     "oxygen_actions_view-barcode-add": {
       "category": "actions",
       "file": "view-barcode-add.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "barcode", "add", "plus", "scan", "lines", "inventory"]
     },
     "oxygen_actions_transform-shear-left": {
       "category": "actions",
       "file": "transform-shear-left.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["transform", "shear", "left", "skew", "distort", "shape", "slant"]
     },
     "oxygen_actions_run-build-configure": {
       "category": "actions",
       "file": "run-build-configure.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["run", "build", "configure", "gear", "wrench", "settings", "tools"]
     },
     "oxygen_actions_stroke-cap-square": {
       "category": "actions",
       "file": "stroke-cap-square.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["stroke", "cap", "square", "line", "flat", "path", "vector"]
     },
     "oxygen_actions_tools-media-optical-copy": {
       "category": "actions",
       "file": "tools-media-optical-copy.png",
-      "sizes": [16, 22, 32, 48, 128, 256]
+      "sizes": [16, 22, 32, 48, 64, 128, 256],
+      "hints": ["tools", "media", "optical", "copy", "disc", "cd", "dvd"]
     },
     "oxygen_actions_format-line-spacing-normal": {
       "category": "actions",
       "file": "format-line-spacing-normal.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["format", "line", "spacing", "normal", "text", "paragraph", "lines"]
     },
     "oxygen_actions_view-time-schedule-edit": {
       "category": "actions",
       "file": "view-time-schedule-edit.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "time", "schedule", "edit", "calendar", "pencil", "planner"]
     },
     "oxygen_actions_system-suspend": {
       "category": "actions",
       "file": "system-suspend.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["system", "suspend", "power", "sleep", "pause", "button", "standby"]
     },
     "oxygen_actions_distribute-horizontal": {
       "category": "actions",
       "file": "distribute-horizontal.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["distribute", "horizontal", "spacing", "layout", "align", "objects", "arrange"]
     },
     "oxygen_actions_view-pim-calendar": {
       "category": "actions",
       "file": "view-pim-calendar.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "pim", "calendar", "date", "day", "schedule", "planner"]
     },
     "oxygen_actions_tool-animator": {
       "category": "actions",
       "file": "tool-animator.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["tool", "animator", "clapperboard", "movie", "film", "video", "animation"]
     },
     "oxygen_actions_draw-halfcircle4": {
       "category": "actions",
