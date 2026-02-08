@@ -6784,87 +6784,104 @@
     "oxygen_actions_note": {
       "category": "actions",
       "file": "note.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["note", "sticky", "paper", "yellow", "memo", "reminder", "post-it"]
     },
     "oxygen_actions_stroke-cap-round": {
       "category": "actions",
       "file": "stroke-cap-round.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["stroke", "cap", "round", "line", "curve", "path", "vector"]
     },
     "oxygen_actions_mail-mark-read": {
       "category": "actions",
       "file": "mail-mark-read.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["mail", "mark", "read", "email", "envelope", "open", "message"]
     },
     "oxygen_actions_filename-composer-amarok": {
       "category": "actions",
       "file": "filename-composer-amarok.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["filename", "composer", "amarok", "music", "document", "edit", "write"]
     },
     "oxygen_actions_kdenlive-up": {
       "category": "actions",
       "file": "kdenlive-up.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["kdenlive", "up", "arrow", "move", "video", "editor", "navigate"]
     },
     "oxygen_actions_edit-undo": {
       "category": "actions",
       "file": "edit-undo.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["edit", "undo", "back", "revert", "arrow", "yellow", "history"]
     },
     "oxygen_actions_color-picker-white": {
       "category": "actions",
       "file": "color-picker-white.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["color", "picker", "white", "eyedropper", "sample", "select", "dropper"]
     },
     "oxygen_actions_layer-visible-off": {
       "category": "actions",
       "file": "layer-visible-off.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["layer", "visible", "off", "hide", "eye", "invisible", "hidden"]
     },
     "oxygen_actions_games-hint": {
       "category": "actions",
       "file": "games-hint.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["games", "hint", "lightbulb", "idea", "tip", "green", "help"]
     },
     "oxygen_actions_tag": {
       "category": "actions",
       "file": "tag.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["tag", "label", "yellow", "marker", "category", "keyword", "metadata"]
     },
     "oxygen_actions_view-split-top-bottom": {
       "category": "actions",
       "file": "view-split-top-bottom.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "split", "top", "bottom", "horizontal", "window", "pane"]
     },
     "oxygen_actions_kdenlive-deleffect": {
       "category": "actions",
       "file": "kdenlive-deleffect.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["kdenlive", "delete", "effect", "remove", "red", "cross", "video"]
     },
     "oxygen_actions_player-volume": {
       "category": "actions",
       "file": "player-volume.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["player", "volume", "speaker", "sound", "audio", "media", "loud"]
     },
     "oxygen_actions_edit-text-frame-update": {
       "category": "actions",
       "file": "edit-text-frame-update.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["edit", "text", "frame", "update", "refresh", "document", "sync"]
     },
     "oxygen_actions_view-close": {
       "category": "actions",
       "file": "view-close.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "close", "window", "exit", "quit", "dismiss", "panel"]
     },
     "oxygen_actions_view-group": {
       "category": "actions",
       "file": "view-group.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "group", "windows", "multiple", "collection", "organize", "items"]
     },
     "oxygen_actions_list-remove-user": {
       "category": "actions",
       "file": "list-remove-user.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["list", "remove", "user", "delete", "person", "red", "cross"]
     },
     "oxygen_actions_gpg": {
       "category": "actions",
