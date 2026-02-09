@@ -11116,62 +11116,74 @@
     "oxygen_apps_kaddressbook": {
       "category": "apps",
       "file": "kaddressbook.png",
-      "sizes": [22, 48, 64, 128]
+      "sizes": [22, 48, 64, 128],
+      "hints": ["addressbook", "contacts", "badge", "card", "person", "identity", "kde"]
     },
     "oxygen_apps_korg-todo": {
       "category": "apps",
       "file": "korg-todo.png",
-      "sizes": [22, 32, 48, 64, 128]
+      "sizes": [22, 32, 48, 64, 128],
+      "hints": ["todo", "checklist", "clipboard", "task", "pencil", "checkbox", "organizer"]
     },
     "oxygen_apps_filelight": {
       "category": "apps",
       "file": "filelight.png",
-      "sizes": [22, 32, 48, 64]
+      "sizes": [22, 32, 48, 64],
+      "hints": ["filelight", "disk", "usage", "pie-chart", "storage", "hard-drive", "analyze"]
     },
     "oxygen_apps_korg-journal": {
       "category": "apps",
       "file": "korg-journal.png",
-      "sizes": [22, 32, 48, 64, 128]
+      "sizes": [22, 32, 48, 64, 128],
+      "hints": ["journal", "diary", "notebook", "writing", "notes", "organizer", "personal"]
     },
     "oxygen_places_library-music": {
       "category": "places",
       "file": "library-music.png",
-      "sizes": [32, 64]
+      "sizes": [32, 64],
+      "hints": ["music", "library", "folder", "notes", "audio", "collection", "songs"]
     },
     "oxygen_preferences_preferences-kde-connect": {
       "category": "preferences",
       "file": "preferences-kde-connect.png",
-      "sizes": [24]
+      "sizes": [24],
+      "hints": ["kde-connect", "connect", "device", "sync", "phone", "preferences", "link"]
     },
     "oxygen_apps_preferences-system-network-ethernet": {
       "category": "apps",
       "file": "preferences-system-network-ethernet.png",
-      "sizes": [128]
+      "sizes": [64, 128],
+      "hints": ["ethernet", "network", "rj45", "port", "connector", "lan", "preferences"]
     },
     "oxygen_apps_device-notifier": {
       "category": "apps",
       "file": "device-notifier.png",
-      "sizes": [22, 32, 128]
+      "sizes": [22, 32, 64, 128],
+      "hints": ["device", "notifier", "usb", "monitor", "disc", "removable", "plug"]
     },
     "oxygen_apps_baloo": {
       "category": "apps",
       "file": "baloo.png",
-      "sizes": [32, 128]
+      "sizes": [32, 64, 128],
+      "hints": ["baloo", "search", "index", "magnifying-glass", "paw", "find", "file-search"]
     },
     "oxygen_status_weather-none-available": {
       "category": "status",
       "file": "weather-none-available.png",
-      "sizes": [32, 128]
+      "sizes": [32, 64, 128],
+      "hints": ["weather", "unavailable", "none", "prohibited", "no-data", "status", "error"]
     },
     "oxygen_categories_preferences-desktop-wallpaper": {
       "category": "categories",
       "file": "preferences-desktop-wallpaper.png",
-      "sizes": [128]
+      "sizes": [64, 128],
+      "hints": ["wallpaper", "desktop", "monitor", "background", "screen", "display", "preferences"]
     },
     "oxygen_apps_spectacle": {
       "category": "apps",
       "file": "spectacle.png",
-      "sizes": [48]
+      "sizes": [48],
+      "hints": ["spectacle", "screenshot", "capture", "screen", "monitor", "snapshot", "display"]
     },
     "oxygen_apps_network-manager": {
       "category": "apps",
