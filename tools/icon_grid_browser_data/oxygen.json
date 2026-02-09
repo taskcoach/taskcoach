@@ -11296,87 +11296,104 @@
     "oxygen_actions_view-financial-categories": {
       "category": "actions",
       "file": "view-financial-categories.png",
-      "sizes": [32, 48]
+      "sizes": [32, 48],
+      "hints": ["financial", "categories", "budget", "classify", "organize", "accounting", "view"]
     },
     "oxygen_actions_view-investment-account": {
       "category": "actions",
       "file": "view-investment-account.png",
-      "sizes": [48]
+      "sizes": [48],
+      "hints": ["investment", "account", "portfolio", "gear", "finance", "stock", "view"]
     },
     "oxygen_actions_merge": {
       "category": "actions",
       "file": "merge.png",
-      "sizes": [32, 48]
+      "sizes": [32, 48],
+      "hints": ["merge", "combine", "join", "arrows", "converge", "unite", "action"]
     },
     "oxygen_actions_mail-mark-task": {
       "category": "actions",
       "file": "mail-mark-task.png",
-      "sizes": [22, 32, 48]
+      "sizes": [22, 32, 48],
+      "hints": ["mail", "task", "mark", "checklist", "clipboard", "todo", "email"]
     },
     "oxygen_actions_window-suppressed": {
       "category": "actions",
       "file": "window-suppressed.png",
-      "sizes": [48]
+      "sizes": [48],
+      "hints": ["window", "suppressed", "blocked", "popup", "close", "red-x", "deny"]
     },
     "oxygen_actions_document-encrypted": {
       "category": "actions",
       "file": "document-encrypted.png",
-      "sizes": [22, 32, 48]
+      "sizes": [22, 32, 48],
+      "hints": ["document", "encrypted", "secure", "locked", "cipher", "grid", "protection"]
     },
     "oxygen_actions_view-loan": {
       "category": "actions",
       "file": "view-loan.png",
-      "sizes": [32, 48]
+      "sizes": [32, 48],
+      "hints": ["loan", "money", "person", "checkmark", "approve", "finance", "borrow"]
     },
     "oxygen_actions_im-gadugadu": {
       "category": "actions",
       "file": "im-gadugadu.png",
-      "sizes": [22, 32, 48]
+      "sizes": [22, 32, 48],
+      "hints": ["gadugadu", "im", "instant-message", "chat", "smiley", "sun", "messenger"]
     },
     "oxygen_actions_view-bank-account-savings": {
       "category": "actions",
       "file": "view-bank-account-savings.png",
-      "sizes": [32, 48]
+      "sizes": [32, 48],
+      "hints": ["savings", "bank", "safe", "vault", "money", "dollar", "deposit"]
     },
     "oxygen_actions_view-investment": {
       "category": "actions",
       "file": "view-investment.png",
-      "sizes": [32, 48]
+      "sizes": [32, 48],
+      "hints": ["investment", "chart", "growth", "money", "dollar", "bar-chart", "finance"]
     },
     "oxygen_actions_view-loan-asset": {
       "category": "actions",
       "file": "view-loan-asset.png",
-      "sizes": [32, 48]
+      "sizes": [32, 48],
+      "hints": ["loan", "asset", "person", "money", "dollar", "finance", "borrower"]
     },
     "oxygen_actions_view-income-categories": {
       "category": "actions",
       "file": "view-income-categories.png",
-      "sizes": [32, 48]
+      "sizes": [32, 48],
+      "hints": ["income", "categories", "money-bag", "calculator", "budget", "earnings", "finance"]
     },
     "oxygen_actions_view-bank-account-checking": {
       "category": "actions",
       "file": "view-bank-account-checking.png",
-      "sizes": [32, 48]
+      "sizes": [32, 48],
+      "hints": ["checking", "bank", "checkbook", "cheque", "pen", "account", "finance"]
     },
     "oxygen_actions_edit-web-search": {
       "category": "actions",
       "file": "edit-web-search.png",
-      "sizes": [48]
+      "sizes": [48],
+      "hints": ["web", "search", "globe", "binoculars", "internet", "find", "browse"]
     },
     "oxygen_actions_view-financial-list": {
       "category": "actions",
       "file": "view-financial-list.png",
-      "sizes": [32, 48]
+      "sizes": [32, 48],
+      "hints": ["financial", "list", "ledger", "spreadsheet", "transactions", "records", "view"]
     },
     "oxygen_actions_im-google-talk": {
       "category": "actions",
       "file": "im-google-talk.png",
-      "sizes": [22, 32, 48]
+      "sizes": [22, 32, 48],
+      "hints": ["google-talk", "gtalk", "im", "chat", "voice", "messenger", "hangouts"]
     },
     "oxygen_actions_view-credit-card-account": {
       "category": "actions",
       "file": "view-credit-card-account.png",
-      "sizes": [32, 48]
+      "sizes": [32, 48],
+      "hints": ["credit-card", "account", "payment", "card", "bank", "finance", "plastic"]
     },
     "oxygen_actions_split": {
       "category": "actions",
