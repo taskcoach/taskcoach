@@ -333,17 +333,16 @@ class SettingsPageBase(widgets.ScrolledBookPage):
         self._fontSettings.append((section, setting, font_button))
 
     def addAppearanceHeader(self):
-        # Row 0: Group headers - "" | Light (spanning 4) | Dark (spanning 4) | ""
-        emptyLabel = wx.StaticText(self, label="")
+        # Row 0: Group headers - only Light and Dark bold headers (cols 2-5, 6-9)
         lightLabel = wx.StaticText(self, label=_("Light Theme"))
         darkLabel = wx.StaticText(self, label=_("Dark Theme"))
         boldFont = lightLabel.GetFont().Bold()
         lightLabel.SetFont(boldFont)
         darkLabel.SetFont(boldFont)
 
-        pos = self._position.next(1)
-        self._sizer.Add(emptyLabel, pos, span=(1, 1),
-                        flag=wx.ALL | wx.ALIGN_CENTER, border=self._borderWidth)
+        # Skip cols 0-1 (Label, Priority have no bold group header)
+        self._position.next(1)
+        self._position.next(1)
         pos = self._position.next(4)
         self._sizer.Add(lightLabel, pos, span=(1, 4),
                         flag=wx.ALL | wx.ALIGN_CENTER, border=self._borderWidth)
@@ -353,17 +352,22 @@ class SettingsPageBase(widgets.ScrolledBookPage):
         # Empty cell for reset column
         self._position.next(1)
 
-        # Row 1: Partial horizontal lines under Light and Dark headers
-        self._sizer.Add(wx.StaticLine(self), (1, 1), span=(1, 4),
+        # Row 1: Separator lines under Label, Priority, Light and Dark
+        self._sizer.Add(wx.StaticLine(self), (1, 0), span=(1, 1),
                         flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=self._borderWidth)
-        self._sizer.Add(wx.StaticLine(self), (1, 5), span=(1, 4),
+        self._sizer.Add(wx.StaticLine(self), (1, 1), span=(1, 1),
+                        flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=self._borderWidth)
+        self._sizer.Add(wx.StaticLine(self), (1, 2), span=(1, 4),
+                        flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=self._borderWidth)
+        self._sizer.Add(wx.StaticLine(self), (1, 6), span=(1, 4),
                         flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=self._borderWidth)
         # Advance cursor past the line row
-        self._position.next(10)
+        self._position.next(11)
 
-        # Row 2: Sub-headers
+        # Row 2: Sub-headers - Label left-aligned, Priority centered, rest centered
         self.addEntry(
-            "",
+            _("Label"),
+            _("Priority"),
             _("Foreground"),
             _("Background"),
             _("Font"),
@@ -373,7 +377,10 @@ class SettingsPageBase(widgets.ScrolledBookPage):
             _("Font"),
             _("Icon"),
             "",
-            flags=[wx.ALL | wx.ALIGN_CENTER] * 10,
+            flags=[
+                wx.ALL | wx.ALIGN_LEFT | wx.ALIGN_CENTRE_VERTICAL,  # Label
+                wx.ALL | wx.ALIGN_CENTER,                            # Priority
+            ] + [wx.ALL | wx.ALIGN_CENTER] * 9,
         )
 
     def _createIconEntry(self, excluded_icons=None):
@@ -429,6 +436,14 @@ class SettingsPageBase(widgets.ScrolledBookPage):
         iconSetting,
         text,
     ):
+        # Priority dropdown
+        priorityChoice = wx.Choice(self, choices=[str(i) for i in range(1, 7)])
+        currentPriority = int(self.get("statussortpriority", fgColorSetting))
+        priorityChoice.SetSelection(currentPriority - 1)
+        self._priorityChoices.append((fgColorSetting, priorityChoice))
+        self._previousPriorities[priorityChoice] = currentPriority
+        priorityChoice.Bind(wx.EVT_CHOICE, self._onPriorityChanged)
+
         # Light controls
         lightFg, lightBg, lightFont, lightIcon = self._createAppearanceControls(
             fgColorSection, fgColorSetting,
@@ -444,7 +459,7 @@ class SettingsPageBase(widgets.ScrolledBookPage):
             iconSection + "_dark", iconSetting,
         )
 
-        # Reset button
+        # Reset button (resets appearance only, not priority)
         resetBtn = wx.Button(self, label=_("Reset"), size=(60, -1))
         resetBtn.Bind(wx.EVT_BUTTON, lambda evt, s=fgColorSetting,
                       lf=lightFg, lb=lightBg, lfn=lightFont, li=lightIcon,
@@ -453,11 +468,13 @@ class SettingsPageBase(widgets.ScrolledBookPage):
 
         self.addEntry(
             text,
+            priorityChoice,
             lightFg, lightBg, lightFont, lightIcon,
             darkFg, darkBg, darkFont, darkIcon,
             resetBtn,
             flags=(
-                wx.ALIGN_LEFT | wx.ALIGN_CENTRE_VERTICAL,
+                wx.ALL | wx.ALIGN_LEFT | wx.ALIGN_CENTRE_VERTICAL,
+                wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL,
                 wx.ALL | wx.EXPAND | wx.ALIGN_CENTER_VERTICAL,
                 wx.ALL | wx.EXPAND | wx.ALIGN_CENTER_VERTICAL,
                 wx.ALL | wx.EXPAND | wx.ALIGN_CENTER_VERTICAL,
@@ -470,9 +487,10 @@ class SettingsPageBase(widgets.ScrolledBookPage):
             ),
         )
 
-    def _onResetAppearanceRow(self, setting, lightFg, lightBg, lightFont, lightIcon,
+    def _onResetAppearanceRow(self, setting,
+                              lightFg, lightBg, lightFont, lightIcon,
                               darkFg, darkBg, darkFont, darkIcon):
-        """Reset all appearance controls in a row to their defaults."""
+        """Reset appearance controls in a row to defaults (not priority)."""
         import ast
         from taskcoachlib.config import defaults as defaults_mod
         defs = defaults_mod.defaults
@@ -1904,14 +1922,16 @@ class LanguagePage(SettingsPage):
         self.set("spellcheck", "language", selectedSpellLang)
 
 
-class TaskAppearancePage(SettingsPage):
-    pageName = "appearance"
-    pageTitle = _("Task appearance")
+class StatusesPage(SettingsPage):
+    pageName = "statuses"
+    pageTitle = _("Statuses")
     pageIcon = "palette_icon"
 
     def __init__(self, *args, **kwargs):
-        super().__init__(columns=10, growableColumn=-1, *args, **kwargs)
+        super().__init__(columns=11, growableColumn=-1, *args, **kwargs)
         self._objectIcons = self._collectObjectIcons()
+        self._priorityChoices = []  # [(setting, choiceCtrl), ...]
+        self._previousPriorities = {}  # choiceCtrl -> int
         self.addAppearanceHeader()
         for status in task.Task.possibleStatuses():
             setting = "%stasks" % status
@@ -1931,12 +1951,31 @@ class TaskAppearancePage(SettingsPage):
         for section, setting, iconEntry in self._iconSettings:
             iconEntry.Bind(wx.EVT_COMBOBOX,
                            lambda evt, ie=iconEntry: self._onStatusIconChanged(evt, ie))
+        # Separator lines under the table, matching header lines
+        lineRow = self._position.next(11)  # consume full row, get row number
+        self._sizer.Add(wx.StaticLine(self), (lineRow[0], 0), span=(1, 1),
+                        flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=self._borderWidth)
+        self._sizer.Add(wx.StaticLine(self), (lineRow[0], 1), span=(1, 1),
+                        flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=self._borderWidth)
+        self._sizer.Add(wx.StaticLine(self), (lineRow[0], 2), span=(1, 4),
+                        flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=self._borderWidth)
+        self._sizer.Add(wx.StaticLine(self), (lineRow[0], 6), span=(1, 4),
+                        flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=self._borderWidth)
+        # Reset priorities button placed directly in col 1 (priority column)
+        resetPrioritiesBtn = wx.Button(self, label=_("Reset"), size=(60, -1))
+        resetPrioritiesBtn.Bind(wx.EVT_BUTTON, self._onResetPriorities)
+        resetRow = self._position.next(11)  # consume full row, get row number
+        self._sizer.Add(resetPrioritiesBtn, (resetRow[0], 1), span=(1, 1),
+                        flag=wx.ALL | wx.ALIGN_CENTER, border=self._borderWidth)
+        # Note text spanning all columns, left-aligned
         noteText = wx.StaticText(self, label=_(
             "These appearance settings can be overridden "
             "for individual tasks in the task edit dialog."
         ))
         noteText.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-        self.addEntry("", noteText, flags=(wx.ALL | wx.ALIGN_LEFT, wx.ALL | wx.EXPAND))
+        noteRow = self._position.next(11)  # consume full row
+        self._sizer.Add(noteText, (noteRow[0], 0), span=(1, 11),
+                        flag=wx.ALL | wx.ALIGN_LEFT, border=self._borderWidth)
         self.fit()
 
     def _collectObjectIcons(self):
@@ -1962,6 +2001,49 @@ class TaskAppearancePage(SettingsPage):
         """Handle icon selection change. Excluded icons are handled by IconPicker."""
         # The new IconPicker prevents selection of excluded icons internally
         event.Skip()
+
+    def _onPriorityChanged(self, event):
+        """Handle priority dropdown change with insert-before semantics."""
+        changed = event.GetEventObject()
+        newPriority = changed.GetSelection() + 1  # 0-indexed -> 1-indexed
+        oldPriority = self._previousPriorities[changed]
+        if newPriority == oldPriority:
+            return
+        for setting, ctrl in self._priorityChoices:
+            if ctrl is changed:
+                continue
+            p = ctrl.GetSelection() + 1
+            if newPriority < oldPriority:
+                # Moving up: priorities in [new, old) get +1
+                if newPriority <= p < oldPriority:
+                    ctrl.SetSelection(p)  # p+1 in 0-indexed = p
+            else:
+                # Moving down: priorities in (old, new] get -1
+                if oldPriority < p <= newPriority:
+                    ctrl.SetSelection(p - 2)  # p-1 in 0-indexed = p-2
+        # Update all previous priorities
+        for setting, ctrl in self._priorityChoices:
+            self._previousPriorities[ctrl] = ctrl.GetSelection() + 1
+
+    def _onResetPriorities(self, event):
+        """Reset all priority dropdowns to their defaults."""
+        from taskcoachlib.config import defaults as defaults_mod
+        defs = defaults_mod.defaults
+        for setting, ctrl in self._priorityChoices:
+            defaultPriority = int(defs["statussortpriority"][setting])
+            ctrl.SetSelection(defaultPriority - 1)
+        for setting, ctrl in self._priorityChoices:
+            self._previousPriorities[ctrl] = ctrl.GetSelection() + 1
+
+    def ok(self):
+        # Save priority values to settings
+        from taskcoachlib.domain.task import status as task_status
+        for setting, ctrl in self._priorityChoices:
+            value = str(ctrl.GetSelection() + 1)
+            self.set("statussortpriority", setting, value)
+        task_status.loadSortPrioritiesFromSettings(self.settings)
+        pub.sendMessage("settings.statussortpriority.changed")
+        super().ok()
 
 
 class FeaturesPage(SettingsPage):
@@ -2677,7 +2759,7 @@ class Preferences(widgets.NotebookDialog):
         "reminder",
         "presets",
         "theme",
-        "appearance",
+        "statuses",
         "features",
         "icons",
     ]
@@ -2689,7 +2771,7 @@ class Preferences(widgets.NotebookDialog):
         presets=DurationPresetsPage,
         save=SavePage,
         language=LanguagePage,
-        appearance=TaskAppearancePage,
+        statuses=StatusesPage,
         features=FeaturesPage,
         icons=IconsPage,
     )

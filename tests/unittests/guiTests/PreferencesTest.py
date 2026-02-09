@@ -34,14 +34,16 @@ class PreferencesTest(test.wxTestCase):
     # pylint: disable=W0212
 
     def testCancel(self):
-        self.preferences[5]._colorSettings[4][2].SetColour(self.newColor)
+        # Page 7 = Statuses tab; color index 8 = active tasks light fg
+        self.preferences[7]._colorSettings[8][2].SetColour(self.newColor)
         self.preferences.cancel()
         self.assertEqual(
             self.originalColor, self.settings.get("fgcolor", "activetasks")
         )
 
     def testOk(self):
-        self.preferences[5]._colorSettings[4][2].SetColour(self.newColor)
+        # Page 7 = Statuses tab; color index 8 = active tasks light fg
+        self.preferences[7]._colorSettings[8][2].SetColour(self.newColor)
         self.preferences.ok()
         self.assertEqual(
             self.newColor,

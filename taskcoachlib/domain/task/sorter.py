@@ -45,6 +45,12 @@ class Sorter(base.TreeSorter):
             task.Task.completionDateTimeChangedEventType(),
         ):
             pub.subscribe(self.onAttributeChanged, eventType)
+        pub.subscribe(self._onStatusSortPriorityChanged,
+                      "settings.statussortpriority.changed")
+
+    def _onStatusSortPriorityChanged(self):
+        """Re-sort when status sort priorities change in settings."""
+        self.reset()
 
     def setTreeMode(self, treeMode=True):
         self.__treeMode = treeMode

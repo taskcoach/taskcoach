@@ -130,3 +130,10 @@ completed = TaskStatus(
     _("Show/hide completed tasks"),
     statusSortPriority=1,
 )
+
+
+def loadSortPrioritiesFromSettings(settings):
+    """Load status sort priorities from settings into status singletons."""
+    for s in (inactive, late, active, duesoon, overdue, completed):
+        key = "%stasks" % s.statusString
+        s.statusSortPriority = int(settings.get("statussortpriority", key))

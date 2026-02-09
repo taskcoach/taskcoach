@@ -255,8 +255,9 @@ an `"appearance"` page).
 | `taskcoachlib/domain/category/category.py` | `stylePriority` attribute |
 | `taskcoachlib/domain/categorizable/categorizable.py` | Legacy category color/font mixers |
 | `taskcoachlib/command/categoryCommands.py` | `EditStylePriorityCommand` |
-| `taskcoachlib/config/defaults.py` | Default status icons/colors/fonts |
-| `taskcoachlib/gui/dialog/editor.py` | `TaskAppearancePage` (Appearance tab) |
+| `taskcoachlib/config/defaults.py` | Default status icons/colors/fonts/sort priorities |
+| `taskcoachlib/gui/dialog/editor.py` | `TaskAppearancePage` (Appearance tab in editor) |
+| `taskcoachlib/gui/dialog/preferences.py` | `StatusesPage` (Statuses tab in preferences) |
 
 ---
 

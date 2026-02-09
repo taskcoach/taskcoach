@@ -588,6 +588,14 @@ defaults = {
         "inactivetasks": "led_grey_icon",
         "duesoontasks": "led_orange_icon",
     },
+    "statussortpriority": {
+        "inactivetasks": "2",
+        "latetasks": "4",
+        "activetasks": "3",
+        "duesoontasks": "5",
+        "overduetasks": "6",
+        "completedtasks": "1",
+    },
     "version": {
         "python": "",  # Filled in by the Settings class when saving the settings
         "wxpython": "",  # Idem

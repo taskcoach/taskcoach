@@ -483,6 +483,10 @@ class Application(object, metaclass=patterns.Singleton):
         # 5. Acquire INI lock (needs wxApp for error dialog)
         self.settings.acquire_ini_lock()
 
+        # 5b. Load status sort priorities from settings
+        from taskcoachlib.domain.task import status as task_status
+        task_status.loadSortPrioritiesFromSettings(self.settings)
+
         # 6. Continue with rest of initialization
         self.init(**kwargs)
 

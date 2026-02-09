@@ -283,7 +283,10 @@ class Settings(CachingConfigParser):
         ):
             result = "Task Coach"
         elif section == "editor" and option == "preferencespages":
-            result = result.replace("colors", "appearance")
+            # Migrate legacy page names saved in .ini files from older versions.
+            # Each step must be kept so upgrades from any prior version work.
+            result = result.replace("colors", "appearance")  # pre-1.x "colors" tab
+            result = result.replace("appearance", "statuses")  # renamed to "Statuses" tab
         elif section in orderingViewers and option == "columnsalwaysvisible":
             # XXX: remove 'ordering' from always visible columns. This wasn't in any official release
             # but I need it so that people can test without resetting their .ini file...
