@@ -8248,97 +8248,116 @@
     "oxygen_actions_view-hidden": {
       "category": "actions",
       "file": "view-hidden.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["hidden", "eye", "invisible", "private", "view", "hide", "conceal"]
     },
     "oxygen_actions_distribute-vertical-equal": {
       "category": "actions",
       "file": "distribute-vertical-equal.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["distribute", "vertical", "equal", "spacing", "layout", "arrange", "align"]
     },
     "oxygen_actions_folder-sync": {
       "category": "actions",
       "file": "folder-sync.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["folder", "sync", "synchronize", "refresh", "update", "directory", "backup"]
     },
     "oxygen_actions_games-config-options": {
       "category": "actions",
       "file": "games-config-options.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["games", "config", "options", "settings", "controller", "wrench", "preferences"]
     },
     "oxygen_actions_format-disconnect-node": {
       "category": "actions",
       "file": "format-disconnect-node.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["disconnect", "node", "break", "separate", "unlink", "path", "vector"]
     },
     "oxygen_actions_bqm-update": {
       "category": "actions",
       "file": "bqm-update.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["update", "download", "bqm", "batch", "queue", "arrow", "refresh"]
     },
     "oxygen_actions_draw-freehand": {
       "category": "actions",
       "file": "draw-freehand.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["draw", "freehand", "pencil", "sketch", "write", "pen", "scribble"]
     },
     "oxygen_actions_milestone": {
       "category": "actions",
       "file": "milestone.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["milestone", "marker", "goal", "progress", "project", "target", "checkpoint"]
     },
     "oxygen_actions_media-record": {
       "category": "actions",
       "file": "media-record.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["record", "media", "red", "circle", "capture", "audio", "video"]
     },
     "oxygen_actions_group-edit": {
       "category": "actions",
       "file": "group-edit.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["group", "edit", "pencil", "modify", "change", "write", "update"]
     },
     "oxygen_actions_specific-setup": {
       "category": "actions",
       "file": "specific-setup.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["specific", "setup", "config", "document", "page", "settings", "configure"]
     },
     "oxygen_actions_kt-bandwidth-scheduler": {
       "category": "actions",
       "file": "kt-bandwidth-scheduler.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["bandwidth", "scheduler", "clock", "time", "ktorrent", "schedule", "limit"]
     },
     "oxygen_actions_view-time-schedule-baselined-remove": {
       "category": "actions",
       "file": "view-time-schedule-baselined-remove.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["schedule", "baseline", "remove", "gantt", "timeline", "project", "delete"]
     },
     "oxygen_actions_align-vertical-center": {
       "category": "actions",
       "file": "align-vertical-center.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["align", "vertical", "center", "middle", "layout", "arrange", "position"]
     },
     "oxygen_actions_tag-folder": {
       "category": "actions",
       "file": "tag-folder.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["tag", "folder", "label", "categorize", "directory", "organize", "bookmark"]
     },
     "oxygen_actions_initial_state": {
       "category": "actions",
       "file": "initial_state.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["initial", "state", "start", "beginning", "reset", "first", "restart"]
     },
     "oxygen_actions_document-print-frame": {
       "category": "actions",
       "file": "document-print-frame.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["print", "document", "frame", "printer", "paper", "output", "page"]
     },
     "oxygen_actions_atmosphere": {
       "category": "actions",
       "file": "atmosphere.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["atmosphere", "globe", "earth", "world", "planet", "global", "sphere"]
     },
     "oxygen_actions_document-preview": {
       "category": "actions",
       "file": "document-preview.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["document", "preview", "magnify", "view", "search", "look", "examine"]
     },
     "oxygen_actions_go-previous-view": {
       "category": "actions",
