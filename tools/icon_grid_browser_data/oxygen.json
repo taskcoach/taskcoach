@@ -11188,92 +11188,110 @@
     "oxygen_apps_network-manager": {
       "category": "apps",
       "file": "network-manager.png",
-      "sizes": [48]
+      "sizes": [48],
+      "hints": ["network", "manager", "globe", "earth", "internet", "connection", "web"]
     },
     "oxygen_apps_kwrite": {
       "category": "apps",
       "file": "kwrite.png",
-      "sizes": [48]
+      "sizes": [48],
+      "hints": ["kwrite", "text", "editor", "pen", "notepad", "write", "document"]
     },
     "oxygen_apps_kwalletmanager2": {
       "category": "apps",
       "file": "kwalletmanager2.png",
-      "sizes": [48]
+      "sizes": [48],
+      "hints": ["kwallet", "wallet", "password", "security", "credentials", "manager", "leather"]
     },
     "oxygen_apps_inkscape-logo": {
       "category": "apps",
       "file": "inkscape-logo.png",
-      "sizes": [48]
+      "sizes": [48],
+      "hints": ["inkscape", "vector", "graphics", "svg", "drawing", "pen", "design"]
     },
     "oxygen_apps_kcalc": {
       "category": "apps",
       "file": "kcalc.png",
-      "sizes": [48]
+      "sizes": [48],
+      "hints": ["kcalc", "calculator", "math", "numbers", "compute", "arithmetic", "buttons"]
     },
     "oxygen_places_folder-add": {
       "category": "places",
       "file": "folder-add.png",
-      "sizes": [48]
+      "sizes": [48],
+      "hints": ["folder", "add", "new", "plus", "create", "directory", "green"]
     },
     "oxygen_actions_view-table-of-contents-rtl": {
       "category": "actions",
       "file": "view-table-of-contents-rtl.png",
-      "sizes": [22, 32, 48]
+      "sizes": [22, 32, 48],
+      "hints": ["table-of-contents", "index", "rtl", "document", "sidebar", "navigation", "view"]
     },
     "oxygen_actions_view-categories": {
       "category": "actions",
       "file": "view-categories.png",
-      "sizes": [32, 48]
+      "sizes": [32, 48],
+      "hints": ["categories", "view", "list", "grid", "organize", "classify", "filter"]
     },
     "oxygen_actions_view-currency-list": {
       "category": "actions",
       "file": "view-currency-list.png",
-      "sizes": [32, 48]
+      "sizes": [32, 48],
+      "hints": ["currency", "exchange", "euro", "yen", "money", "chart", "finance"]
     },
     "oxygen_actions_view-bank-account": {
       "category": "actions",
       "file": "view-bank-account.png",
-      "sizes": [22, 32, 48]
+      "sizes": [22, 32, 48],
+      "hints": ["bank", "account", "money", "dollar", "ledger", "finance", "statement"]
     },
     "oxygen_actions_view-table-of-contents-ltr": {
       "category": "actions",
       "file": "view-table-of-contents-ltr.png",
-      "sizes": [22, 32, 48]
+      "sizes": [22, 32, 48],
+      "hints": ["table-of-contents", "index", "ltr", "document", "sidebar", "navigation", "view"]
     },
     "oxygen_actions_view-catalog": {
       "category": "actions",
       "file": "view-catalog.png",
-      "sizes": [32, 48]
+      "sizes": [32, 48],
+      "hints": ["catalog", "chart", "bar-chart", "view", "statistics", "colorful", "data"]
     },
     "oxygen_actions_view-financial-transfer": {
       "category": "actions",
       "file": "view-financial-transfer.png",
-      "sizes": [32, 48]
+      "sizes": [32, 48],
+      "hints": ["transfer", "financial", "money", "arrows", "exchange", "payment", "transaction"]
     },
     "oxygen_actions_taxes-finances": {
       "category": "actions",
       "file": "taxes-finances.png",
-      "sizes": [32, 48]
+      "sizes": [32, 48],
+      "hints": ["taxes", "finances", "money", "dollar", "bill", "pen", "accounting"]
     },
     "oxygen_actions_view-documents-finances": {
       "category": "actions",
       "file": "view-documents-finances.png",
-      "sizes": [32, 48]
+      "sizes": [32, 48],
+      "hints": ["documents", "finances", "ledger", "spreadsheet", "records", "report", "view"]
     },
     "oxygen_actions_view-financial-payment-mode": {
       "category": "actions",
       "file": "view-financial-payment-mode.png",
-      "sizes": [32, 48]
+      "sizes": [32, 48],
+      "hints": ["payment", "credit-card", "money", "financial", "bank", "house", "mode"]
     },
     "oxygen_actions_im-google": {
       "category": "actions",
       "file": "im-google.png",
-      "sizes": [22, 32, 48]
+      "sizes": [22, 32, 48],
+      "hints": ["google", "im", "instant-message", "chat", "talk", "messenger", "gtalk"]
     },
     "oxygen_actions_view-stock-account": {
       "category": "actions",
       "file": "view-stock-account.png",
-      "sizes": [32, 48]
+      "sizes": [32, 48],
+      "hints": ["stock", "account", "investment", "gear", "portfolio", "finance", "view"]
     },
     "oxygen_actions_view-financial-categories": {
       "category": "actions",
