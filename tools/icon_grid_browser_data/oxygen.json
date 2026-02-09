@@ -9994,97 +9994,116 @@
     "oxygen_actions_insert-text-frame": {
       "category": "actions",
       "file": "insert-text-frame.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["text", "frame", "insert", "box", "container", "layout", "field"]
     },
     "oxygen_actions_class": {
       "category": "actions",
       "file": "class.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["class", "uml", "diagram", "object", "code", "programming", "type"]
     },
     "oxygen_actions_arrow-right-double": {
       "category": "actions",
       "file": "arrow-right-double.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["arrow", "right", "double", "fast", "forward", "skip", "next"]
     },
     "oxygen_actions_kdenlive-add-slide-clip": {
       "category": "actions",
       "file": "kdenlive-add-slide-clip.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["slide", "clip", "add", "video", "kdenlive", "clapperboard", "movie"]
     },
     "oxygen_actions_run-build-clean": {
       "category": "actions",
       "file": "run-build-clean.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["build", "clean", "run", "broom", "gear", "compile", "make"]
     },
     "oxygen_actions_feed-subscribe": {
       "category": "actions",
       "file": "feed-subscribe.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["feed", "subscribe", "rss", "atom", "news", "syndication", "follow"]
     },
     "oxygen_actions_align-horizontal-right-to-anchor": {
       "category": "actions",
       "file": "align-horizontal-right-to-anchor.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["align", "horizontal", "right", "anchor", "layout", "position", "objects"]
     },
     "oxygen_actions_games-achievements": {
       "category": "actions",
       "file": "games-achievements.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["achievement", "games", "badge", "star", "award", "trophy", "medal", "reward"]
     },
     "oxygen_actions_format-font-size-less": {
       "category": "actions",
       "file": "format-font-size-less.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["font", "size", "less", "smaller", "decrease", "text", "reduce"]
     },
     "oxygen_actions_bookmarks": {
       "category": "actions",
       "file": "bookmarks.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["bookmarks", "star", "favorite", "save", "mark", "browser", "saved"]
     },
     "oxygen_actions_system-run": {
       "category": "actions",
       "file": "system-run.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["system", "run", "gear", "execute", "play", "start", "launch", "application"]
     },
     "oxygen_actions_object-unlocked": {
       "category": "actions",
       "file": "object-unlocked.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["unlocked", "object", "padlock", "open", "lock", "security", "access"]
     },
     "oxygen_actions_document-cleanup": {
       "category": "actions",
       "file": "document-cleanup.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["document", "cleanup", "clean", "broom", "file", "clear", "tidy"]
     },
     "oxygen_actions_irc-channel-inactive": {
       "category": "actions",
       "file": "irc-channel-inactive.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["irc", "channel", "inactive", "hashtag", "chat", "offline", "disconnected", "gray"]
     },
     "oxygen_actions_zoom-select-x": {
       "category": "actions",
       "file": "zoom-select-x.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["zoom", "select", "horizontal", "axis", "magnify", "rectangle", "x"]
     },
     "oxygen_actions_kt-info-widget": {
       "category": "actions",
       "file": "kt-info-widget.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["info", "widget", "information", "help", "about", "details", "ktorrent"]
     },
     "oxygen_actions_folder-new": {
       "category": "actions",
       "file": "folder-new.png",
-      "sizes": [16, 22, 32, 48, 256]
+      "sizes": [16, 22, 32, 48, 256],
+      "hints": ["folder", "new", "create", "directory", "add", "plus", "files"]
     },
     "oxygen_actions_refactor": {
       "category": "actions",
       "file": "refactor.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["refactor", "code", "rename", "restructure", "edit", "arrow", "circular"]
     },
     "oxygen_actions_irc-operator": {
       "category": "actions",
       "file": "irc-operator.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["irc", "operator", "admin", "badge", "star", "moderator", "hat"]
     },
     "oxygen_actions_go-up": {
       "category": "actions",
