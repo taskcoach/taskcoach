@@ -10576,82 +10576,98 @@
     "oxygen_actions_view-calendar-wedding-anniversary": {
       "category": "actions",
       "file": "view-calendar-wedding-anniversary.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["calendar", "wedding", "anniversary", "rings", "event", "date", "marriage"]
     },
     "oxygen_actions_help-feedback": {
       "category": "actions",
       "file": "help-feedback.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["help", "feedback", "smiley", "happy", "face", "satisfaction", "rating"]
     },
     "oxygen_actions_tag-places": {
       "category": "actions",
       "file": "tag-places.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["tag", "places", "globe", "world", "location", "earth", "geo"]
     },
     "oxygen_actions_document-sign": {
       "category": "actions",
       "file": "document-sign.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["document", "sign", "signature", "pen", "write", "autograph", "contract"]
     },
     "oxygen_actions_view-ldap-resource": {
       "category": "actions",
       "file": "view-ldap-resource.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["ldap", "resource", "contact", "card", "directory", "user", "profile"]
     },
     "oxygen_actions_flag-black": {
       "category": "actions",
       "file": "flag-black.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["flag", "black", "marker", "label", "tag", "priority", "banner"]
     },
     "oxygen_actions_mail-tagged": {
       "category": "actions",
       "file": "mail-tagged.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["mail", "tagged", "email", "label", "envelope", "message", "colorful"]
     },
     "oxygen_actions_zoom-in": {
       "category": "actions",
       "file": "zoom-in.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["zoom", "in", "magnify", "plus", "enlarge", "glass", "increase"]
     },
     "oxygen_actions_chronometer-lap": {
       "category": "actions",
       "file": "chronometer-lap.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["chronometer", "lap", "stopwatch", "timer", "time", "race", "sports"]
     },
     "oxygen_actions_routeplanning": {
       "category": "actions",
       "file": "routeplanning.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["route", "planning", "flag", "green", "waypoint", "navigation", "marker"]
     },
     "oxygen_actions_align-horizontal-bottom-out": {
       "category": "actions",
       "file": "align-horizontal-bottom-out.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["align", "horizontal", "bottom", "out", "layout", "objects", "rectangles"]
     },
     "oxygen_actions_view-calendar-upcoming-events": {
       "category": "actions",
       "file": "view-calendar-upcoming-events.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["calendar", "upcoming", "events", "alert", "schedule", "reminder", "exclamation"]
     },
     "oxygen_actions_view-financial-forecast": {
       "category": "actions",
       "file": "view-financial-forecast.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["financial", "forecast", "cone", "chart", "projection", "budget", "money"]
     },
     "oxygen_actions_view-bank": {
       "category": "actions",
       "file": "view-bank.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["bank", "building", "financial", "columns", "institution", "money", "finance"]
     },
     "oxygen_actions_debug-step-into-instruction": {
       "category": "actions",
       "file": "debug-step-into-instruction.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["debug", "step", "into", "instruction", "arrow", "code", "debugger"]
     },
     "oxygen_actions_format-remove-node": {
       "category": "actions",
       "file": "format-remove-node.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["format", "remove", "node", "delete", "point", "path", "red"]
     },
     "oxygen_actions_social": {
       "category": "actions",
