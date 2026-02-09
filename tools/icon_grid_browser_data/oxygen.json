@@ -11644,72 +11644,86 @@
     "oxygen_emotes_opinion-okay": {
       "category": "emotes",
       "file": "opinion-okay.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["opinion", "okay", "check", "approve", "green", "agree", "yes"]
     },
     "oxygen_emotes_face-angry": {
       "category": "emotes",
       "file": "face-angry.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "angry", "mad", "rage", "red", "emoji", "furious"]
     },
     "oxygen_emotes_face-quiet": {
       "category": "emotes",
       "file": "face-quiet.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "quiet", "shush", "silent", "emoji", "mute", "hush"]
     },
     "oxygen_emotes_food-pizza": {
       "category": "emotes",
       "file": "food-pizza.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["food", "pizza", "slice", "pepperoni", "cheese", "meal"]
     },
     "oxygen_emotes_face-sleeping": {
       "category": "emotes",
       "file": "face-sleeping.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "sleeping", "asleep", "snore", "tired", "emoji", "nap"]
     },
     "oxygen_emotes_face-sick": {
       "category": "emotes",
       "file": "face-sick.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "sick", "ill", "nauseous", "green", "emoji", "unwell"]
     },
     "oxygen_emotes_gift": {
       "category": "emotes",
       "file": "gift.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["gift", "present", "box", "wrapped", "bow", "birthday", "surprise"]
     },
     "oxygen_emotes_rose": {
       "category": "emotes",
       "file": "rose.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["rose", "flower", "red", "romance", "love", "valentine"]
     },
     "oxygen_emotes_food-cake": {
       "category": "emotes",
       "file": "food-cake.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["food", "cake", "chocolate", "dessert", "birthday", "sweet"]
     },
     "oxygen_emotes_opinion-no": {
       "category": "emotes",
       "file": "opinion-no.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["opinion", "no", "reject", "cross", "red", "deny", "disagree"]
     },
     "oxygen_emotes_face-cool": {
       "category": "emotes",
       "file": "face-cool.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "cool", "sunglasses", "awesome", "emoji", "shades", "confident"]
     },
     "oxygen_emotes_face-foot-in-mouth": {
       "category": "emotes",
       "file": "face-foot-in-mouth.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "foot", "mouth", "embarrassed", "oops", "emoji", "awkward"]
     },
     "oxygen_emotes_face-pirate": {
       "category": "emotes",
       "file": "face-pirate.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "pirate", "eyepatch", "skull", "emoji", "buccaneer", "adventure"]
     },
     "oxygen_emotes_face-in-love": {
       "category": "emotes",
       "file": "face-in-love.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "love", "heart", "eyes", "emoji", "romance", "adore"]
     },
     "oxygen_emotes_face-laughing": {
       "category": "emotes",
