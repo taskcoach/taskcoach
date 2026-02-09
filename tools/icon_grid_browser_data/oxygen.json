@@ -8128,102 +8128,122 @@
     "oxygen_actions_interface": {
       "category": "actions",
       "file": "interface.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["interface", "ui", "form", "input", "fields", "dialog", "gui"]
     },
     "oxygen_actions_format-text-direction-ltr": {
       "category": "actions",
       "file": "format-text-direction-ltr.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["text", "direction", "ltr", "left-to-right", "format", "alignment", "paragraph"]
     },
     "oxygen_actions_flag": {
       "category": "actions",
       "file": "flag.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["flag", "green", "marker", "milestone", "goal", "banner", "checkpoint"]
     },
     "oxygen_actions_process-stop": {
       "category": "actions",
       "file": "process-stop.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["stop", "process", "cancel", "abort", "error", "red", "terminate"]
     },
     "oxygen_actions_format-justify-center": {
       "category": "actions",
       "file": "format-justify-center.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["justify", "center", "align", "text", "format", "paragraph", "middle"]
     },
     "oxygen_actions_go-last-view-page": {
       "category": "actions",
       "file": "go-last-view-page.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["last", "page", "go", "end", "navigate", "forward", "document"]
     },
     "oxygen_actions_upindicator": {
       "category": "actions",
       "file": "upindicator.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["up", "indicator", "arrow", "triangle", "direction", "pointer", "ascending"]
     },
     "oxygen_actions_dashboard-show": {
       "category": "actions",
       "file": "dashboard-show.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["dashboard", "show", "desktop", "widgets", "plasma", "display", "view"]
     },
     "oxygen_actions_im-aim": {
       "category": "actions",
       "file": "im-aim.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["aim", "instant", "messenger", "aol", "chat", "yellow", "person"]
     },
     "oxygen_actions_go-previous": {
       "category": "actions",
       "file": "go-previous.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["previous", "back", "left", "arrow", "navigate", "go", "return"]
     },
     "oxygen_actions_knotes_delete": {
       "category": "actions",
       "file": "knotes_delete.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["delete", "remove", "knotes", "red", "cross", "discard", "cancel"]
     },
     "oxygen_actions_tab-new-background": {
       "category": "actions",
       "file": "tab-new-background.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["tab", "new", "background", "add", "browser", "open", "plus"]
     },
     "oxygen_actions_clock-large": {
       "category": "actions",
       "file": "clock-large.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["clock", "large", "time", "add", "timer", "duration", "increase"]
     },
     "oxygen_actions_text-frame-link": {
       "category": "actions",
       "file": "text-frame-link.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["text", "frame", "link", "chain", "connect", "flow", "document"]
     },
     "oxygen_actions_office-chart-bar-percentage": {
       "category": "actions",
       "file": "office-chart-bar-percentage.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["chart", "bar", "percentage", "graph", "statistics", "data", "office"]
     },
     "oxygen_actions_gtk-no": {
       "category": "actions",
       "file": "gtk-no.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["no", "cancel", "reject", "red", "cross", "decline", "negative"]
     },
     "oxygen_actions_irc-join-channel": {
       "category": "actions",
       "file": "irc-join-channel.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["irc", "join", "channel", "chat", "hash", "connect", "enter"]
     },
     "oxygen_actions_media-skip-backward": {
       "category": "actions",
       "file": "media-skip-backward.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["media", "skip", "backward", "previous", "track", "player", "rewind"]
     },
     "oxygen_actions_view-barcode": {
       "category": "actions",
       "file": "view-barcode.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["barcode", "scan", "product", "upc", "inventory", "label", "code"]
     },
     "oxygen_actions_document-encrypt": {
       "category": "actions",
       "file": "document-encrypt.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["encrypt", "document", "lock", "security", "padlock", "protect", "secure"]
     },
     "oxygen_actions_view-hidden": {
       "category": "actions",
