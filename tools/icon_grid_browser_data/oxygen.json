@@ -12172,82 +12172,98 @@
     "oxygen_actions_mixer-lfe": {
       "category": "actions",
       "file": "mixer-lfe.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["mixer", "lfe", "subwoofer", "bass", "speaker", "audio", "low-frequency"]
     },
     "oxygen_actions_group-delete": {
       "category": "actions",
       "file": "group-delete.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["group", "delete", "remove", "red", "cross", "cancel", "close"]
     },
     "oxygen_actions_diag_class": {
       "category": "actions",
       "file": "diag_class.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["diagram", "class", "uml", "boxes", "rectangles", "object", "model"]
     },
     "oxygen_actions_tool_text": {
       "category": "actions",
       "file": "tool_text.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["tool", "text", "type", "font", "letter", "typography", "write"]
     },
     "oxygen_actions_group": {
       "category": "actions",
       "file": "group.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["group", "users", "people", "team", "add", "plus", "members"]
     },
     "oxygen_actions_mixer-microphone-boost": {
       "category": "actions",
       "file": "mixer-microphone-boost.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["mixer", "microphone", "boost", "gain", "amplify", "audio", "input"]
     },
     "oxygen_actions_arrow": {
       "category": "actions",
       "file": "arrow.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["arrow", "cursor", "pointer", "select", "mouse", "click"]
     },
     "oxygen_actions_player-volume-muted": {
       "category": "actions",
       "file": "player-volume-muted.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["player", "volume", "muted", "speaker", "silent", "audio", "off"]
     },
     "oxygen_actions_freerotation": {
       "category": "actions",
       "file": "freerotation.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["free", "rotation", "rotate", "transform", "angle", "spin", "image"]
     },
     "oxygen_actions_mixer-surround": {
       "category": "actions",
       "file": "mixer-surround.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["mixer", "surround", "audio", "speakers", "sound", "channels", "equalizer"]
     },
     "oxygen_actions_tool_pen": {
       "category": "actions",
       "file": "tool_pen.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["tool", "pen", "draw", "write", "pencil", "ink", "freehand"]
     },
     "oxygen_actions_zoom-out-large": {
       "category": "actions",
       "file": "zoom-out-large.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["zoom", "out", "large", "magnify", "minus", "shrink", "reduce"]
     },
     "oxygen_actions_step_object_Disk": {
       "category": "actions",
       "file": "step_object_Disk.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["step", "object", "disk", "cd", "disc", "storage", "media"]
     },
     "oxygen_actions_mixer-pcm": {
       "category": "actions",
       "file": "mixer-pcm.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["mixer", "pcm", "waveform", "audio", "digital", "signal", "sound"]
     },
     "oxygen_actions_kstars_colors": {
       "category": "actions",
       "file": "kstars_colors.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["kstars", "colors", "crayon", "palette", "theme", "astronomy", "appearance"]
     },
     "oxygen_actions_kstars_advanced": {
       "category": "actions",
       "file": "kstars_advanced.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["kstars", "advanced", "wrench", "settings", "configure", "tools", "options"]
     },
     "oxygen_actions_kalarm-disabled": {
       "category": "actions",
