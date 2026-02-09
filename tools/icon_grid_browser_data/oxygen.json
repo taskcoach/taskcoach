@@ -11494,127 +11494,152 @@
     "oxygen_actions_tag-new": {
       "category": "actions",
       "file": "tag-new.png",
-      "sizes": [32]
+      "sizes": [32],
+      "hints": ["tag", "new", "label", "star", "sparkle", "create", "yellow"]
     },
     "oxygen_actions_task-new": {
       "category": "actions",
       "file": "task-new.png",
-      "sizes": [32]
+      "sizes": [32],
+      "hints": ["task", "new", "add", "plus", "checklist", "create", "green"]
     },
     "oxygen_actions_journal-new": {
       "category": "actions",
       "file": "journal-new.png",
-      "sizes": [32]
+      "sizes": [32],
+      "hints": ["journal", "new", "notebook", "add", "plus", "diary", "create"]
     },
     "oxygen_actions_tag-addresbook": {
       "category": "actions",
       "file": "tag-addresbook.png",
-      "sizes": [32]
+      "sizes": [32],
+      "hints": ["tag", "addressbook", "label", "contact", "book", "bookmark"]
     },
     "oxygen_actions_transform-scale-textbox-points": {
       "category": "actions",
       "file": "transform-scale-textbox-points.png",
-      "sizes": [32]
+      "sizes": [32],
+      "hints": ["transform", "scale", "textbox", "resize", "text", "points", "handle"]
     },
     "oxygen_actions_formula": {
       "category": "actions",
       "file": "formula.png",
-      "sizes": [32]
+      "sizes": [32],
+      "hints": ["formula", "math", "equation", "root", "expression", "calculation"]
     },
     "oxygen_actions_blurimage": {
       "category": "actions",
       "file": "blurimage.png",
-      "sizes": [32]
+      "sizes": [32],
+      "hints": ["blur", "image", "smudge", "filter", "soften", "effect", "drop"]
     },
     "oxygen_emblems_emblem-unavailable": {
       "category": "emblems",
       "file": "emblem-unavailable.png",
-      "sizes": [8]
+      "sizes": [8],
+      "hints": ["emblem", "unavailable", "error", "cross", "red", "blocked"]
     },
     "oxygen_emblems_emblem-link": {
       "category": "emblems",
       "file": "emblem-link.png",
-      "sizes": [8]
+      "sizes": [8],
+      "hints": ["emblem", "link", "shortcut", "symlink", "arrow", "chain"]
     },
     "oxygen_emblems_emblem-pause": {
       "category": "emblems",
       "file": "emblem-pause.png",
-      "sizes": [8]
+      "sizes": [8],
+      "hints": ["emblem", "pause", "suspend", "hold", "yellow", "wait"]
     },
     "oxygen_emblems_checkmark": {
       "category": "emblems",
       "file": "checkmark.png",
-      "sizes": [8]
+      "sizes": [8],
+      "hints": ["checkmark", "check", "done", "complete", "green", "tick", "approved"]
     },
     "oxygen_emblems_emblem-checked": {
       "category": "emblems",
       "file": "emblem-checked.png",
-      "sizes": [8]
+      "sizes": [8],
+      "hints": ["emblem", "checked", "check", "done", "complete", "green", "verified"]
     },
     "oxygen_emotes_face-smile-grin": {
       "category": "emotes",
       "file": "face-smile-grin.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "smile", "grin", "happy", "smiley", "emoji", "laugh"]
     },
     "oxygen_emotes_heart-broken": {
       "category": "emotes",
       "file": "heart-broken.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["heart", "broken", "love", "sad", "crack", "red", "breakup"]
     },
     "oxygen_emotes_face-ninja": {
       "category": "emotes",
       "file": "face-ninja.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "ninja", "mask", "stealth", "emoji", "disguise", "hidden"]
     },
     "oxygen_emotes_face-sleep": {
       "category": "emotes",
       "file": "face-sleep.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "sleep", "tired", "sleeping", "zzz", "emoji", "rest"]
     },
     "oxygen_emotes_drink-martini": {
       "category": "emotes",
       "file": "drink-martini.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["drink", "martini", "cocktail", "glass", "alcohol", "olive", "beverage"]
     },
     "oxygen_emotes_face-hug-left": {
       "category": "emotes",
       "file": "face-hug-left.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "hug", "left", "embrace", "emoji", "affection", "friendly"]
     },
     "oxygen_emotes_drink-beer": {
       "category": "emotes",
       "file": "drink-beer.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["drink", "beer", "mug", "ale", "alcohol", "beverage", "pint"]
     },
     "oxygen_emotes_heart": {
       "category": "emotes",
       "file": "heart.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["heart", "love", "red", "valentine", "romance", "favorite"]
     },
     "oxygen_emotes_face-crying": {
       "category": "emotes",
       "file": "face-crying.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "crying", "tears", "sad", "weep", "emoji", "upset"]
     },
     "oxygen_emotes_face-smile-gearhead-female": {
       "category": "emotes",
       "file": "face-smile-gearhead-female.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "smile", "gearhead", "female", "pink", "flower", "emoji"]
     },
     "oxygen_emotes_face-worried": {
       "category": "emotes",
       "file": "face-worried.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "worried", "concerned", "anxious", "emoji", "nervous", "frown"]
     },
     "oxygen_emotes_face-smirk": {
       "category": "emotes",
       "file": "face-smirk.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "smirk", "sly", "grin", "emoji", "wink", "cheeky"]
     },
     "oxygen_emotes_rose-wilted": {
       "category": "emotes",
       "file": "rose-wilted.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["rose", "wilted", "flower", "dead", "drooping", "red", "sad"]
     },
     "oxygen_emotes_opinion-okay": {
       "category": "emotes",
