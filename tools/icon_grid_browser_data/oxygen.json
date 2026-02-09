@@ -10108,97 +10108,116 @@
     "oxygen_actions_go-up": {
       "category": "actions",
       "file": "go-up.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["up", "go", "arrow", "navigate", "back", "parent", "previous"]
     },
     "oxygen_actions_list-remove": {
       "category": "actions",
       "file": "list-remove.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["list", "remove", "minus", "delete", "subtract", "red", "item"]
     },
     "oxygen_actions_x-shape-text": {
       "category": "actions",
       "file": "x-shape-text.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["text", "shape", "lines", "paragraph", "format", "block", "content"]
     },
     "oxygen_actions_archive-extract": {
       "category": "actions",
       "file": "archive-extract.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["archive", "extract", "unzip", "decompress", "file", "arrow", "up"]
     },
     "oxygen_actions_edit-find-mail": {
       "category": "actions",
       "file": "edit-find-mail.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["find", "mail", "search", "email", "binoculars", "envelope", "look"]
     },
     "oxygen_actions_im-jabber": {
       "category": "actions",
       "file": "im-jabber.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["jabber", "xmpp", "chat", "messenger", "lamp", "im", "protocol"]
     },
     "oxygen_actions_zoom-original": {
       "category": "actions",
       "file": "zoom-original.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["zoom", "original", "actual", "size", "magnify", "one", "ratio"]
     },
     "oxygen_actions_internet-amarok": {
       "category": "actions",
       "file": "internet-amarok.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["internet", "amarok", "globe", "world", "web", "online", "music"]
     },
     "oxygen_actions_bqm-add": {
       "category": "actions",
       "file": "bqm-add.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["bqm", "add", "plus", "batch", "queue", "digikam", "green"]
     },
     "oxygen_actions_labplot-auto-scale-x": {
       "category": "actions",
       "file": "labplot-auto-scale-x.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["labplot", "auto", "scale", "axis", "plot", "graph", "x"]
     },
     "oxygen_actions_format-text-direction-rtl": {
       "category": "actions",
       "file": "format-text-direction-rtl.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["rtl", "text", "direction", "right", "left", "format", "arrow", "arabic"]
     },
     "oxygen_actions_arrow-left-double": {
       "category": "actions",
       "file": "arrow-left-double.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["arrow", "left", "double", "fast", "backward", "rewind", "previous"]
     },
     "oxygen_actions_edit-clear-locationbar-rtl": {
       "category": "actions",
       "file": "edit-clear-locationbar-rtl.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["clear", "edit", "locationbar", "delete", "rtl", "remove", "x"]
     },
     "oxygen_actions_settings-configure": {
       "category": "actions",
       "file": "settings-configure.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["settings", "configure", "wrench", "tool", "preferences", "options", "setup"]
     },
     "oxygen_actions_acrobat": {
       "category": "actions",
       "file": "acrobat.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["acrobat", "pdf", "adobe", "document", "reader", "file", "red"]
     },
     "oxygen_actions_applications-internet": {
       "category": "actions",
       "file": "applications-internet.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["internet", "applications", "globe", "world", "web", "browser", "online"]
     },
     "oxygen_actions_edit-table-insert-row-below": {
       "category": "actions",
       "file": "edit-table-insert-row-below.png",
-      "sizes": [16, 32, 48]
+      "sizes": [16, 32, 48],
+      "hints": ["table", "row", "insert", "below", "add", "grid", "cell"]
     },
     "oxygen_actions_meeting-attending": {
       "category": "actions",
       "file": "meeting-attending.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["meeting", "attending", "people", "confirmed", "calendar", "event", "accepted"]
     },
     "oxygen_actions_download": {
       "category": "actions",
       "file": "download.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["download", "arrow", "down", "internet", "globe", "save", "transfer"]
     },
     "oxygen_actions_sticky_zoom": {
       "category": "actions",
