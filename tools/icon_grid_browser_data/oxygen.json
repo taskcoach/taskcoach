@@ -10942,147 +10942,176 @@
     "oxygen_devices_media-optical-dvd-data": {
       "category": "devices",
       "file": "media-optical-dvd-data.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["dvd", "disc", "optical", "data", "binary", "media", "storage"]
     },
     "oxygen_devices_printer-laser": {
       "category": "devices",
       "file": "printer-laser.png",
-      "sizes": [32, 48, 64, 128, 256]
+      "sizes": [32, 48, 64, 128, 256],
+      "hints": ["printer", "laser", "print", "paper", "office", "hardware", "device"]
     },
     "oxygen_devices_network-wireless-connected-00": {
       "category": "devices",
       "file": "network-wireless-connected-00.png",
-      "sizes": [22, 32, 48, 64, 128, 256]
+      "sizes": [22, 32, 48, 64, 128, 256],
+      "hints": ["wireless", "wifi", "network", "antenna", "signal", "no-signal", "connected"]
     },
     "oxygen_devices_network-wireless-connected-50": {
       "category": "devices",
       "file": "network-wireless-connected-50.png",
-      "sizes": [22, 32, 48, 64, 128, 256]
+      "sizes": [22, 32, 48, 64, 128, 256],
+      "hints": ["wireless", "wifi", "network", "antenna", "signal", "medium", "connected"]
     },
     "oxygen_devices_network-wireless-disconnected": {
       "category": "devices",
       "file": "network-wireless-disconnected.png",
-      "sizes": [22, 32, 48, 64, 128, 256]
+      "sizes": [22, 32, 48, 64, 128, 256],
+      "hints": ["wireless", "wifi", "network", "antenna", "disconnected", "offline", "no-connection"]
     },
     "oxygen_devices_network-wireless-connected-100": {
       "category": "devices",
       "file": "network-wireless-connected-100.png",
-      "sizes": [22, 32, 48, 64, 128, 256]
+      "sizes": [22, 32, 48, 64, 128, 256],
+      "hints": ["wireless", "wifi", "network", "antenna", "signal", "full", "strong", "connected"]
     },
     "oxygen_devices_network-wireless-connected-25": {
       "category": "devices",
       "file": "network-wireless-connected-25.png",
-      "sizes": [22, 32, 48, 64, 128, 256]
+      "sizes": [22, 32, 48, 64, 128, 256],
+      "hints": ["wireless", "wifi", "network", "antenna", "signal", "weak", "low", "connected"]
     },
     "oxygen_devices_media-optical-dvd-video": {
       "category": "devices",
       "file": "media-optical-dvd-video.png",
-      "sizes": [32, 48, 64, 128, 256]
+      "sizes": [32, 48, 64, 128, 256],
+      "hints": ["dvd", "video", "disc", "optical", "movie", "clapperboard", "media"]
     },
     "oxygen_devices_network-wireless-connected-75": {
       "category": "devices",
       "file": "network-wireless-connected-75.png",
-      "sizes": [22, 32, 48, 64, 128, 256]
+      "sizes": [22, 32, 48, 64, 128, 256],
+      "hints": ["wireless", "wifi", "network", "antenna", "signal", "good", "strong", "connected"]
     },
     "oxygen_apps_kontact-import-wizard": {
       "category": "apps",
       "file": "kontact-import-wizard.png",
-      "sizes": [64, 128, 256]
+      "sizes": [64, 128, 256],
+      "hints": ["kontact", "import", "wizard", "arrow", "tablet", "migration", "data"]
     },
     "oxygen_apps_planner": {
       "category": "apps",
       "file": "planner.png",
-      "sizes": [64, 128, 256]
+      "sizes": [64, 128, 256],
+      "hints": ["planner", "calendar", "clock", "schedule", "task", "checklist", "time"]
     },
     "oxygen_apps_hotspot": {
       "category": "apps",
       "file": "hotspot.png",
-      "sizes": [256]
+      "sizes": [128, 256],
+      "hints": ["hotspot", "fire", "flame", "orange", "ball", "hot", "wireless"]
     },
     "oxygen_apps_system-diagnosis": {
       "category": "apps",
       "file": "system-diagnosis.png",
-      "sizes": [128, 256]
+      "sizes": [64, 128, 256],
+      "hints": ["system", "diagnosis", "stethoscope", "syringe", "monitor", "health", "repair"]
     },
     "oxygen_apps_preferences-desktop-thunderbolt": {
       "category": "apps",
       "file": "preferences-desktop-thunderbolt.png",
-      "sizes": [32, 128, 256]
+      "sizes": [32, 64, 128, 256],
+      "hints": ["thunderbolt", "port", "connector", "lightning", "preferences", "hardware", "desktop"]
     },
     "oxygen_apps_kmail2": {
       "category": "apps",
       "file": "kmail2.png",
-      "sizes": [128, 256]
+      "sizes": [64, 128, 256],
+      "hints": ["kmail", "email", "envelope", "mail", "stamp", "pen", "message"]
     },
     "oxygen_apps_zanshin": {
       "category": "apps",
       "file": "zanshin.png",
-      "sizes": [48, 64, 128, 256]
+      "sizes": [48, 64, 128, 256],
+      "hints": ["zanshin", "task", "drop", "water", "ripple", "focus", "zen"]
     },
     "oxygen_apps_mameexecutor": {
       "category": "apps",
       "file": "mameexecutor.png",
-      "sizes": [128, 256]
+      "sizes": [64, 128, 256],
+      "hints": ["mame", "arcade", "emulator", "joystick", "retro", "game", "pong", "television"]
     },
     "oxygen_apps_preferences-desktop-search": {
       "category": "apps",
       "file": "preferences-desktop-search.png",
-      "sizes": [32, 128, 256]
+      "sizes": [32, 64, 128, 256],
+      "hints": ["search", "binoculars", "find", "look", "preferences", "desktop", "discover"]
     },
     "oxygen_apps_timevault": {
       "category": "apps",
       "file": "timevault.png",
-      "sizes": [256]
+      "sizes": [128, 256],
+      "hints": ["timevault", "vault", "safe", "backup", "date", "time", "security"]
     },
     "oxygen_mimetypes_audio-vn.rn-realvideo": {
       "category": "mimetypes",
       "file": "audio-vn.rn-realvideo.png",
-      "sizes": [64, 128, 256]
+      "sizes": [64, 128, 256],
+      "hints": ["realvideo", "video", "file", "clapperboard", "movie", "mimetype", "media"]
     },
     "oxygen_mimetypes_application-vnd.sun.xml.impress.png": {
       "category": "mimetypes",
       "file": "application-vnd.sun.xml.impress.png.png",
-      "sizes": [256]
+      "sizes": [128, 256],
+      "hints": ["impress", "presentation", "slides", "openoffice", "document", "file", "mimetype"]
     },
     "oxygen_mimetypes_application-x-dgn": {
       "category": "mimetypes",
       "file": "application-x-dgn.png",
-      "sizes": [64, 256]
+      "sizes": [64, 128, 256],
+      "hints": ["dgn", "design", "cad", "blueprint", "floorplan", "architecture", "drawing"]
     },
     "oxygen_mimetypes_application-vnd.sun.xml.impress.template.png": {
       "category": "mimetypes",
       "file": "application-vnd.sun.xml.impress.template.png.png",
-      "sizes": [256]
+      "sizes": [128, 256],
+      "hints": ["impress", "template", "presentation", "slides", "openoffice", "ruler", "mimetype"]
     },
     "oxygen_mimetypes_application-vnd.sun.xml.writer.png": {
       "category": "mimetypes",
       "file": "application-vnd.sun.xml.writer.png.png",
-      "sizes": [256]
+      "sizes": [128, 256],
+      "hints": ["writer", "document", "text", "pen", "openoffice", "word-processor", "mimetype"]
     },
     "oxygen_mimetypes_application-wps-office.xls": {
       "category": "mimetypes",
       "file": "application-wps-office.xls.png",
-      "sizes": [256]
+      "sizes": [128, 256],
+      "hints": ["spreadsheet", "xls", "excel", "table", "grid", "wps", "office", "green"]
     },
     "oxygen_categories_preferences-system-network-ethernet": {
       "category": "categories",
       "file": "preferences-system-network-ethernet.png",
-      "sizes": [32, 256]
+      "sizes": [32, 128, 256],
+      "hints": ["ethernet", "network", "rj45", "port", "connector", "lan", "preferences"]
     },
     "oxygen_categories_preferences-system-users": {
       "category": "categories",
       "file": "preferences-system-users.png",
-      "sizes": [32, 128, 256]
+      "sizes": [32, 64, 128, 256],
+      "hints": ["users", "people", "accounts", "group", "preferences", "system", "profile"]
     },
     "oxygen_categories_system-users": {
       "category": "categories",
       "file": "system-users.png",
-      "sizes": [32, 128, 256]
+      "sizes": [32, 64, 128, 256],
+      "hints": ["users", "people", "accounts", "group", "system", "profile", "contacts"]
     },
     "oxygen_actions_continue-data-project": {
       "category": "actions",
       "file": "continue-data-project.png",
-      "sizes": [64, 128, 256]
+      "sizes": [64, 128, 256],
+      "hints": ["continue", "data", "project", "disc", "refresh", "resume", "burn"]
     },
     "oxygen_apps_kaddressbook": {
       "category": "apps",
