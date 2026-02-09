@@ -9874,102 +9874,122 @@
     "oxygen_actions_debug-execute-from-cursor": {
       "category": "actions",
       "file": "debug-execute-from-cursor.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["debug", "execute", "cursor", "run", "code", "breakpoint", "start"]
     },
     "oxygen_actions_transform-skew-horizontal": {
       "category": "actions",
       "file": "transform-skew-horizontal.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["transform", "skew", "horizontal", "shear", "slant", "shape", "parallelogram"]
     },
     "oxygen_actions_unlock": {
       "category": "actions",
       "file": "unlock.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["unlock", "padlock", "open", "security", "access", "key", "lock"]
     },
     "oxygen_actions_guides": {
       "category": "actions",
       "file": "guides.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["guides", "rulers", "grid", "alignment", "layout", "design", "lines"]
     },
     "oxygen_actions_system-upgrade": {
       "category": "actions",
       "file": "system-upgrade.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["upgrade", "system", "update", "arrow", "up", "improve", "install"]
     },
     "oxygen_actions_draw-eraser": {
       "category": "actions",
       "file": "draw-eraser.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["eraser", "draw", "delete", "remove", "rubber", "clear", "undo"]
     },
     "oxygen_actions_view-task-child-add": {
       "category": "actions",
       "file": "view-task-child-add.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["task", "child", "add", "subtask", "checklist", "todo", "new", "nested"]
     },
     "oxygen_actions_gtk-clear": {
       "category": "actions",
       "file": "gtk-clear.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["clear", "broom", "sweep", "clean", "delete", "remove", "gtk"]
     },
     "oxygen_actions_answer-correct": {
       "category": "actions",
       "file": "answer-correct.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["correct", "answer", "check", "right", "yes", "verify", "approved"]
     },
     "oxygen_actions_edit-delete-shred": {
       "category": "actions",
       "file": "edit-delete-shred.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["shred", "delete", "secure", "destroy", "paper", "document", "file", "permanent"]
     },
     "oxygen_actions_amarok_playlist": {
       "category": "actions",
       "file": "amarok_playlist.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["playlist", "amarok", "music", "list", "songs", "queue", "tracks"]
     },
     "oxygen_actions_irc-unvoice": {
       "category": "actions",
       "file": "irc-unvoice.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["unvoice", "irc", "mute", "megaphone", "revoke", "chat", "speaker", "silence"]
     },
     "oxygen_actions_draw-cross": {
       "category": "actions",
       "file": "draw-cross.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["cross", "draw", "shape", "plus", "medical", "symbol", "add"]
     },
     "oxygen_actions_draw-donut": {
       "category": "actions",
       "file": "draw-donut.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["donut", "draw", "ring", "circle", "shape", "torus", "hole"]
     },
     "oxygen_actions_page-4sides": {
       "category": "actions",
       "file": "page-4sides.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["page", "sides", "fold", "brochure", "layout", "pamphlet", "print"]
     },
     "oxygen_actions_media-playback-pause": {
       "category": "actions",
       "file": "media-playback-pause.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["pause", "media", "playback", "stop", "player", "audio", "video", "wait"]
     },
     "oxygen_actions_layer-visible-on": {
       "category": "actions",
       "file": "layer-visible-on.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["layer", "visible", "eye", "show", "view", "on", "see"]
     },
     "oxygen_actions_object-order-raise": {
       "category": "actions",
       "file": "object-order-raise.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["raise", "order", "object", "front", "layer", "stack", "up"]
     },
     "oxygen_actions_knotes_alarm": {
       "category": "actions",
       "file": "knotes_alarm.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["alarm", "knotes", "clock", "time", "reminder", "note", "add"]
     },
     "oxygen_actions_chronometer-start": {
       "category": "actions",
       "file": "chronometer-start.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["chronometer", "start", "stopwatch", "timer", "time", "begin", "lap"]
     },
     "oxygen_actions_insert-text-frame": {
       "category": "actions",
