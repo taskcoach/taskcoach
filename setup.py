@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from setuptools import setup
+from setuptools import setup, find_namespace_packages
 import platform
 import re
 import os
@@ -70,21 +70,6 @@ try:
     import distro
 except ImportError:
     distro = None
-
-
-def findPackages(base):
-    if not os.path.exists(base):
-        return list()
-
-    result = [base.replace("/", ".")]
-
-    for name in os.listdir(base):
-        fname = os.path.join(base, name)
-        if os.path.isdir(fname) and os.path.exists(
-            os.path.join(fname, "__init__.py")
-        ):
-            result.extend(findPackages(fname))
-    return result
 
 
 def majorAndMinorPythonVersion():
@@ -162,11 +147,7 @@ setupOptions = {
     "install_requires": install_requires,
     "extras_require": extras_require,
     "tests_require": tests_requires,
-    "packages": findPackages("taskcoachlib") + findPackages("buildlib"),
-    "package_data": {
-        "taskcoachlib.gui": ["icons/*.png"],
-        "taskcoachlib.i18n": ["locales/*.po"],
-    },
+    "packages": find_namespace_packages(include=["taskcoachlib", "taskcoachlib.*"]),
     "include_package_data": True,
     "scripts": ["taskcoach.py"],
     "classifiers": [
