@@ -11398,82 +11398,98 @@
     "oxygen_actions_split": {
       "category": "actions",
       "file": "split.png",
-      "sizes": [32, 48]
+      "sizes": [32, 48],
+      "hints": ["split", "fork", "divide", "branch", "arrow", "separate", "action"]
     },
     "oxygen_actions_view-expenses-categories": {
       "category": "actions",
       "file": "view-expenses-categories.png",
-      "sizes": [32, 48]
+      "sizes": [32, 48],
+      "hints": ["expenses", "categories", "calculator", "budget", "spending", "costs", "finance"]
     },
     "oxygen_devices_network-wireless-signal-good": {
       "category": "devices",
       "file": "network-wireless-signal-good.png",
-      "sizes": [22, 32]
+      "sizes": [22, 32],
+      "hints": ["wireless", "wifi", "network", "signal", "good", "antenna", "connected"]
     },
     "oxygen_devices_network-wired-disconnected": {
       "category": "devices",
       "file": "network-wired-disconnected.png",
-      "sizes": [22, 32]
+      "sizes": [22, 32],
+      "hints": ["network", "wired", "disconnected", "ethernet", "cable", "offline", "red-x"]
     },
     "oxygen_devices_network-wireless-signal-ok": {
       "category": "devices",
       "file": "network-wireless-signal-ok.png",
-      "sizes": [22, 32]
+      "sizes": [22, 32],
+      "hints": ["wireless", "wifi", "network", "signal", "ok", "medium", "antenna"]
     },
     "oxygen_devices_network-wireless-acquiring": {
       "category": "devices",
       "file": "network-wireless-acquiring.png",
-      "sizes": [22, 32]
+      "sizes": [22, 32],
+      "hints": ["wireless", "wifi", "acquiring", "connecting", "antenna", "refresh", "scanning"]
     },
     "oxygen_devices_network-wireless-signal-excellent": {
       "category": "devices",
       "file": "network-wireless-signal-excellent.png",
-      "sizes": [22, 32]
+      "sizes": [22, 32],
+      "hints": ["wireless", "wifi", "network", "signal", "excellent", "full", "strong"]
     },
     "oxygen_devices_network-offline": {
       "category": "devices",
       "file": "network-offline.png",
-      "sizes": [22, 32]
+      "sizes": [22, 32],
+      "hints": ["network", "offline", "disconnected", "ethernet", "cable", "no-connection", "red-x"]
     },
     "oxygen_devices_network-wireless-signal-weak": {
       "category": "devices",
       "file": "network-wireless-signal-weak.png",
-      "sizes": [22, 32]
+      "sizes": [22, 32],
+      "hints": ["wireless", "wifi", "network", "signal", "weak", "low", "antenna"]
     },
     "oxygen_devices_network-wireless-signal-none": {
       "category": "devices",
       "file": "network-wireless-signal-none.png",
-      "sizes": [22, 32]
+      "sizes": [22, 32],
+      "hints": ["wireless", "wifi", "network", "signal", "none", "no-signal", "antenna"]
     },
     "oxygen_apps_amarok_change_language": {
       "category": "apps",
       "file": "amarok_change_language.png",
-      "sizes": [32]
+      "sizes": [32],
+      "hints": ["amarok", "language", "flag", "translate", "locale", "international", "change"]
     },
     "oxygen_apps_application-sxw": {
       "category": "apps",
       "file": "application-sxw.png",
-      "sizes": [32]
+      "sizes": [32],
+      "hints": ["sxw", "staroffice", "writer", "document", "text", "heart", "openoffice"]
     },
     "oxygen_apps_preferences-desktop-baloo": {
       "category": "apps",
       "file": "preferences-desktop-baloo.png",
-      "sizes": [32]
+      "sizes": [32],
+      "hints": ["baloo", "search", "preferences", "binoculars", "gear", "settings", "desktop"]
     },
     "oxygen_categories_preferences-desktop-thunderbolt": {
       "category": "categories",
       "file": "preferences-desktop-thunderbolt.png",
-      "sizes": [32]
+      "sizes": [32],
+      "hints": ["thunderbolt", "port", "connector", "lightning", "preferences", "hardware", "desktop"]
     },
     "oxygen_actions_tag-assigned": {
       "category": "actions",
       "file": "tag-assigned.png",
-      "sizes": [22, 32]
+      "sizes": [22, 32],
+      "hints": ["tag", "assigned", "label", "checkmark", "complete", "yellow", "mark"]
     },
     "oxygen_actions_shapes": {
       "category": "actions",
       "file": "shapes.png",
-      "sizes": [32]
+      "sizes": [32],
+      "hints": ["shapes", "geometry", "square", "circle", "triangle", "drawing", "objects"]
     },
     "oxygen_actions_tag-new": {
       "category": "actions",
