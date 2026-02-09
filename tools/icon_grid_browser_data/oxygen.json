@@ -11902,72 +11902,86 @@
     "oxygen_actions_diag_component": {
       "category": "actions",
       "file": "diag_component.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["diagram", "component", "module", "box", "green", "plus", "add"]
     },
     "oxygen_actions_user": {
       "category": "actions",
       "file": "user.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["user", "person", "profile", "account", "avatar", "blue", "silhouette"]
     },
     "oxygen_actions_mixer-microphone": {
       "category": "actions",
       "file": "mixer-microphone.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["mixer", "microphone", "mic", "audio", "record", "voice", "input"]
     },
     "oxygen_actions_kstars_flag": {
       "category": "actions",
       "file": "kstars_flag.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["kstars", "flag", "marker", "red", "bookmark", "astronomy", "pole"]
     },
     "oxygen_actions_step_object_Rope": {
       "category": "actions",
       "file": "step_object_Rope.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["step", "rope", "physics", "tether", "connect", "line", "simulation"]
     },
     "oxygen_actions_entry-delete": {
       "category": "actions",
       "file": "entry-delete.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["entry", "delete", "remove", "cross", "red", "cancel", "close"]
     },
     "oxygen_actions_mixer-microphone-front-boost": {
       "category": "actions",
       "file": "mixer-microphone-front-boost.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["mixer", "microphone", "front", "boost", "gain", "audio", "amplify"]
     },
     "oxygen_actions_tool_polyline": {
       "category": "actions",
       "file": "tool_polyline.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["tool", "polyline", "draw", "line", "path", "segments", "shape"]
     },
     "oxygen_actions_labplot-zoom-select-x": {
       "category": "actions",
       "file": "labplot-zoom-select-x.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["labplot", "zoom", "select", "x-axis", "chart", "plot", "graph"]
     },
     "oxygen_actions_mixer-pc-speaker": {
       "category": "actions",
       "file": "mixer-pc-speaker.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["mixer", "pc", "speaker", "beep", "audio", "computer", "sound"]
     },
     "oxygen_actions_mixer-front": {
       "category": "actions",
       "file": "mixer-front.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["mixer", "front", "speaker", "audio", "channel", "output", "green"]
     },
     "oxygen_actions_mixer-headset": {
       "category": "actions",
       "file": "mixer-headset.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["mixer", "headset", "headphones", "audio", "listen", "earphones"]
     },
     "oxygen_actions_tool_brush": {
       "category": "actions",
       "file": "tool_brush.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["tool", "brush", "paint", "draw", "art", "stroke", "freehand"]
     },
     "oxygen_actions_mixer-line": {
       "category": "actions",
       "file": "mixer-line.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["mixer", "line", "input", "audio", "jack", "plug", "cable"]
     },
     "oxygen_actions_mixer-capture": {
       "category": "actions",
