@@ -820,6 +820,12 @@ class NumericField:
         self.__observer.Refresh()
         self.__observer.Update()  # Force immediate repaint
 
+    def SetRawValue(self, value):
+        """Store value without clamping - used during typing."""
+        self.__value = int(value)
+        self.__observer.Refresh()
+        self.__observer.Update()
+
     def GetChoices(self):
         """Get choices for dropdown. If choices is callable, call it to get fresh values.
 
@@ -949,15 +955,16 @@ class NumericField:
             self.__lastKeyTime = now
 
             if self.__digitCount == 0:
-                # First digit: replace value entirely
-                self.SetValue(number)
+                # First digit: replace value entirely (no clamp during typing)
+                self.SetRawValue(number)
             else:
                 newVal = (self.__value * 10 + number) % int(math.pow(10, self.__width))
-                self.SetValue(newVal)
+                self.SetRawValue(newVal)
             self.__digitCount += 1
             self.__observer.DismissPopup()
             # Auto-advance to next field after all digits typed
             if self.__digitCount >= self.__width:
+                self.SetValue(self.__value)  # Clamp + validate before advancing
                 self.__digitCount = 0
                 self.__lastKeyTime = 0
                 # Advance unless this is the last field
@@ -1188,6 +1195,8 @@ class MaskedFieldsCtrl(wx.Panel):
             return
         try:
             idx = self._fieldList.index(self._focus)
+            # Clamp + validate old field before leaving
+            self._focus.SetValue(self._focus.GetValue())
             # Wrap: last -> first
             nextIdx = (idx + 1) % len(self._fieldList)
             self._focus = self._fieldList[nextIdx]
@@ -1203,6 +1212,8 @@ class MaskedFieldsCtrl(wx.Panel):
             return
         try:
             idx = self._fieldList.index(self._focus)
+            # Clamp + validate old field before leaving
+            self._focus.SetValue(self._focus.GetValue())
             # Wrap: first -> last
             prevIdx = (idx - 1) % len(self._fieldList)
             self._focus = self._fieldList[prevIdx]
@@ -1250,6 +1261,9 @@ class MaskedFieldsCtrl(wx.Panel):
         for widget, x, y, w, h in self._widgets:
             if isinstance(widget, NumericField):
                 if (x + xOff) <= pt.x <= (x + xOff) + w and (y + yOff) <= pt.y <= (y + yOff) + h:
+                    # Clamp + validate old field before leaving
+                    if self._focus and self._focus != widget:
+                        self._focus.SetValue(self._focus.GetValue())
                     # Set focus to this field
                     self._focus = widget
                     self._focus.ResetState()
@@ -1365,6 +1379,8 @@ class MaskedFieldsCtrl(wx.Panel):
         """
         self._hasFocus = False
         if self._focus:
+            # Clamp + validate before losing focus
+            self._focus.SetValue(self._focus.GetValue())
             self._focus.ResetState()  # Clear any partial digit entry
         self.Refresh()
         self.NotifyValueChanged()
@@ -2434,6 +2450,9 @@ class DateCtrl(MaskedFieldsCtrl):
         for widget, x, y, w, h in self._widgets:
             if isinstance(widget, NumericField):
                 if (x + xOff) <= pt.x <= (x + xOff) + w and (y + yOff) <= pt.y <= (y + yOff) + h:
+                    # Clamp + validate old field before leaving
+                    if self._focus and self._focus != widget:
+                        self._focus.SetValue(self._focus.GetValue())
                     self._focus = widget
                     self._focus.ResetState()
                     self.SetFocus()
