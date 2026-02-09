@@ -7600,72 +7600,86 @@
     "oxygen_actions_class-or-package": {
       "category": "actions",
       "file": "class-or-package.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["class", "package", "boxes", "squares", "uml", "module", "programming"]
     },
     "oxygen_actions_edit-find": {
       "category": "actions",
       "file": "edit-find.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["edit", "find", "search", "binoculars", "look", "locate", "discover"]
     },
     "oxygen_actions_globe": {
       "category": "actions",
       "file": "globe.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["globe", "world", "earth", "internet", "web", "browser", "window"]
     },
     "oxygen_actions_kdenlive-select-rects": {
       "category": "actions",
       "file": "kdenlive-select-rects.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["kdenlive", "select", "rects", "rectangles", "video", "cursor", "editor"]
     },
     "oxygen_actions_view-grid": {
       "category": "actions",
       "file": "view-grid.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "grid", "squares", "layout", "tiles", "display", "matrix"]
     },
     "oxygen_actions_view-certificate-sign": {
       "category": "actions",
       "file": "view-certificate-sign.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "certificate", "sign", "badge", "pen", "signature", "security"]
     },
     "oxygen_actions_bookmark-add-folder": {
       "category": "actions",
       "file": "bookmark-add-folder.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["bookmark", "add", "folder", "star", "favorite", "plus", "directory"]
     },
     "oxygen_actions_documentation": {
       "category": "actions",
       "file": "documentation.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["documentation", "document", "tabs", "bookmarks", "help", "manual", "guide"]
     },
     "oxygen_actions_draw-arrow-down": {
       "category": "actions",
       "file": "draw-arrow-down.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["draw", "arrow", "down", "shape", "direction", "pointer", "descend"]
     },
     "oxygen_actions_resource-group": {
       "category": "actions",
       "file": "resource-group.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["resource", "group", "person", "cube", "businessman", "team", "green"]
     },
     "oxygen_actions_text-field": {
       "category": "actions",
       "file": "text-field.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["text", "field", "input", "form", "lines", "type", "entry"]
     },
     "oxygen_actions_filename-year-amarok": {
       "category": "actions",
       "file": "filename-year-amarok.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["filename", "year", "amarok", "calendar", "date", "music", "organize"]
     },
     "oxygen_actions_view-process-all": {
       "category": "actions",
       "file": "view-process-all.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "process", "all", "table", "grid", "list", "monitor"]
     },
     "oxygen_actions_format-text-italic": {
       "category": "actions",
       "file": "format-text-italic.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["format", "text", "italic", "slant", "font", "style", "typography"]
     },
     "oxygen_actions_view-preview": {
       "category": "actions",
