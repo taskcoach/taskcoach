@@ -11818,72 +11818,86 @@
     "oxygen_apps_system-reboot": {
       "category": "apps",
       "file": "system-reboot.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["system", "reboot", "restart", "refresh", "green", "arrow", "cycle"]
     },
     "oxygen_apps_kget": {
       "category": "apps",
       "file": "kget.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["kget", "download", "arrow", "blue", "transfer", "save", "get"]
     },
     "oxygen_status_update-none": {
       "category": "status",
       "file": "update-none.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["update", "none", "gear", "status", "current", "no updates"]
     },
     "oxygen_status_update-low": {
       "category": "status",
       "file": "update-low.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["update", "low", "priority", "gear", "status", "minor"]
     },
     "oxygen_status_update-high": {
       "category": "status",
       "file": "update-high.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["update", "high", "priority", "gear", "status", "critical", "important"]
     },
     "oxygen_status_update-medium": {
       "category": "status",
       "file": "update-medium.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["update", "medium", "priority", "gear", "status", "moderate", "orange"]
     },
     "oxygen_actions_mixer-digital": {
       "category": "actions",
       "file": "mixer-digital.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["mixer", "digital", "audio", "cable", "connector", "sound"]
     },
     "oxygen_actions_gtk-authentication": {
       "category": "actions",
       "file": "gtk-authentication.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["authentication", "password", "login", "security", "dots", "pin", "gtk"]
     },
     "oxygen_actions_mixer-surround-center": {
       "category": "actions",
       "file": "mixer-surround-center.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["mixer", "surround", "center", "speaker", "audio", "channel", "sound"]
     },
     "oxygen_actions_kstars_stars": {
       "category": "actions",
       "file": "kstars_stars.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["kstars", "stars", "astronomy", "star", "sky", "space", "constellation"]
     },
     "oxygen_actions_step_object_Particle": {
       "category": "actions",
       "file": "step_object_Particle.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["step", "particle", "physics", "sphere", "circle", "object", "simulation"]
     },
     "oxygen_actions_mixer-video": {
       "category": "actions",
       "file": "mixer-video.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["mixer", "video", "film", "clapperboard", "movie", "media", "camera"]
     },
     "oxygen_actions_inpainting": {
       "category": "actions",
       "file": "inpainting.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["inpainting", "restore", "repair", "image", "fix", "edit", "retouch"]
     },
     "oxygen_actions_mixer-ac97": {
       "category": "actions",
       "file": "mixer-ac97.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["mixer", "ac97", "audio", "soundcard", "chip", "codec", "hardware"]
     },
     "oxygen_actions_diag_component": {
       "category": "actions",
