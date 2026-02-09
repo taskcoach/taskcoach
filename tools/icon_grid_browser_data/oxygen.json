@@ -7390,97 +7390,116 @@
     "oxygen_actions_window-new": {
       "category": "actions",
       "file": "window-new.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["window", "new", "add", "plus", "create", "open", "frame"]
     },
     "oxygen_actions_edit-duplicate": {
       "category": "actions",
       "file": "edit-duplicate.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["edit", "duplicate", "copy", "clone", "documents", "pages", "replicate"]
     },
     "oxygen_actions_office-chart-area": {
       "category": "actions",
       "file": "office-chart-area.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["office", "chart", "area", "graph", "data", "statistics", "visualization"]
     },
     "oxygen_actions_tag-people": {
       "category": "actions",
       "file": "tag-people.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["tag", "people", "person", "user", "face", "contact", "label"]
     },
     "oxygen_actions_media-playback-start": {
       "category": "actions",
       "file": "media-playback-start.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["media", "playback", "start", "play", "triangle", "button", "audio", "video"]
     },
     "oxygen_actions_gtk-undelete-rtl": {
       "category": "actions",
       "file": "gtk-undelete-rtl.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["gtk", "undelete", "rtl", "restore", "undo", "arrow", "green", "recover"]
     },
     "oxygen_actions_view-process-all-tree": {
       "category": "actions",
       "file": "view-process-all-tree.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "process", "all", "tree", "hierarchy", "windows", "layout"]
     },
     "oxygen_actions_align-vertical-top-to-anchor": {
       "category": "actions",
       "file": "align-vertical-top-to-anchor.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["align", "vertical", "top", "anchor", "rectangles", "layout", "position"]
     },
     "oxygen_actions_transform-shear-down": {
       "category": "actions",
       "file": "transform-shear-down.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["transform", "shear", "down", "skew", "slant", "shape", "distort"]
     },
     "oxygen_actions_go-home-large": {
       "category": "actions",
       "file": "go-home-large.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["go", "home", "large", "house", "navigate", "main", "start"]
     },
     "oxygen_actions_network-disconnect": {
       "category": "actions",
       "file": "network-disconnect.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["network", "disconnect", "cable", "ethernet", "unplug", "offline", "connection"]
     },
     "oxygen_actions_tag-recents": {
       "category": "actions",
       "file": "tag-recents.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["tag", "recents", "hourglass", "time", "history", "recent", "clock"]
     },
     "oxygen_actions_media-track-remove-amarok": {
       "category": "actions",
       "file": "media-track-remove-amarok.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["media", "track", "remove", "amarok", "minus", "delete", "music", "red"]
     },
     "oxygen_actions_align-vertical-bottom": {
       "category": "actions",
       "file": "align-vertical-bottom.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["align", "vertical", "bottom", "rectangles", "layout", "position", "arrange"]
     },
     "oxygen_actions_chronometer": {
       "category": "actions",
       "file": "chronometer.png",
-      "sizes": [16, 22, 32, 48, 64]
+      "sizes": [16, 22, 32, 48, 64],
+      "hints": ["chronometer", "stopwatch", "timer", "time", "clock", "measure", "speed"]
     },
     "oxygen_actions_umbrello_diagram_activity": {
       "category": "actions",
       "file": "umbrello_diagram_activity.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["umbrello", "diagram", "activity", "uml", "circles", "workflow", "colorful"]
     },
     "oxygen_actions_flag-red": {
       "category": "actions",
       "file": "flag-red.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["flag", "red", "marker", "banner", "tag", "label", "priority", "important"]
     },
     "oxygen_actions_office-chart-line-percentage": {
       "category": "actions",
       "file": "office-chart-line-percentage.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["office", "chart", "line", "percentage", "graph", "data", "statistics"]
     },
     "oxygen_actions_object-flip-vertical": {
       "category": "actions",
       "file": "object-flip-vertical.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["object", "flip", "vertical", "mirror", "reflect", "triangle", "transform"]
     },
     "oxygen_actions_games-config-theme": {
       "category": "actions",
