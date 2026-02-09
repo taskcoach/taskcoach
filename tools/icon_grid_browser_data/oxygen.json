@@ -10222,212 +10222,254 @@
     "oxygen_actions_sticky_zoom": {
       "category": "actions",
       "file": "sticky_zoom.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["sticky", "zoom", "magnify", "pin", "lock", "persistent", "view"]
     },
     "oxygen_actions_view-calendar-birthday": {
       "category": "actions",
       "file": "view-calendar-birthday.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["calendar", "birthday", "cake", "candles", "event", "celebration", "party"]
     },
     "oxygen_actions_go-up-search": {
       "category": "actions",
       "file": "go-up-search.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["go", "up", "search", "find", "arrow", "previous", "navigate"]
     },
     "oxygen_actions_zoom-select-y": {
       "category": "actions",
       "file": "zoom-select-y.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["zoom", "select", "vertical", "axis", "magnify", "rectangle", "y"]
     },
     "oxygen_actions_edit-select-none": {
       "category": "actions",
       "file": "edit-select-none.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["select", "none", "deselect", "edit", "clear", "unselect", "document"]
     },
     "oxygen_actions_view-calendar-day": {
       "category": "actions",
       "file": "view-calendar-day.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["calendar", "day", "view", "date", "schedule", "event", "single"]
     },
     "oxygen_actions_tools-media-optical-burn": {
       "category": "actions",
       "file": "tools-media-optical-burn.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["burn", "cd", "dvd", "disc", "optical", "fire", "write", "media"]
     },
     "oxygen_actions_CVnamespace": {
       "category": "actions",
       "file": "CVnamespace.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["namespace", "cv", "gear", "code", "programming", "settings", "controlled"]
     },
     "oxygen_actions_smallclock": {
       "category": "actions",
       "file": "smallclock.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["clock", "small", "time", "add", "plus", "timer", "schedule"]
     },
     "oxygen_actions_view-task-child": {
       "category": "actions",
       "file": "view-task-child.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["task", "child", "view", "subtask", "checklist", "nested", "todo"]
     },
     "oxygen_actions_color-fill": {
       "category": "actions",
       "file": "color-fill.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["color", "fill", "paint", "bucket", "drop", "background", "flood"]
     },
     "oxygen_actions_im-facebook": {
       "category": "actions",
       "file": "im-facebook.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["facebook", "im", "messenger", "social", "chat", "blue", "network"]
     },
     "oxygen_actions_view-calendar-time-spent": {
       "category": "actions",
       "file": "view-calendar-time-spent.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["calendar", "time", "spent", "chart", "clock", "progress", "tracking", "hours"]
     },
     "oxygen_actions_photo": {
       "category": "actions",
       "file": "photo.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["photo", "image", "picture", "landscape", "mountains", "sun", "gallery"]
     },
     "oxygen_actions_view-sort-descending": {
       "category": "actions",
       "file": "view-sort-descending.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["sort", "descending", "order", "list", "arrow", "up", "arrange"]
     },
     "oxygen_actions_story-editor": {
       "category": "actions",
       "file": "story-editor.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["story", "editor", "pencil", "clipboard", "write", "document", "notepad"]
     },
     "oxygen_actions_mail-receive": {
       "category": "actions",
       "file": "mail-receive.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["mail", "receive", "inbox", "download", "email", "arrow", "incoming", "tray"]
     },
     "oxygen_actions_window-previous": {
       "category": "actions",
       "file": "window-previous.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["window", "previous", "arrow", "back", "switch", "left", "navigate"]
     },
     "oxygen_actions_edit-select-all": {
       "category": "actions",
       "file": "edit-select-all.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["select", "all", "document", "text", "selection", "dashed", "highlight", "edit"]
     },
     "oxygen_actions_gtk-undelete-ltr": {
       "category": "actions",
       "file": "gtk-undelete-ltr.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["undelete", "undo", "restore", "recover", "arrow", "curved", "yellow"]
     },
     "oxygen_actions_draw-square-inverted-corners": {
       "category": "actions",
       "file": "draw-square-inverted-corners.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["square", "shape", "inverted", "corners", "draw", "curved", "concave"]
     },
     "oxygen_actions_view-media-visualization": {
       "category": "actions",
       "file": "view-media-visualization.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["media", "visualization", "view", "colorful", "audio", "music", "spectrum"]
     },
     "oxygen_actions_selection-raise": {
       "category": "actions",
       "file": "selection-raise.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["selection", "raise", "layer", "forward", "front", "up", "rectangle"]
     },
     "oxygen_actions_media-seek-backward": {
       "category": "actions",
       "file": "media-seek-backward.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["media", "seek", "backward", "rewind", "arrows", "left", "video", "audio"]
     },
     "oxygen_actions_actor": {
       "category": "actions",
       "file": "actor.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["actor", "person", "user", "figure", "human", "blue", "character"]
     },
     "oxygen_actions_object-order-front": {
       "category": "actions",
       "file": "object-order-front.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["object", "order", "front", "layer", "bring", "forward", "rectangle"]
     },
     "oxygen_actions_format-fill-color": {
       "category": "actions",
       "file": "format-fill-color.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["fill", "color", "paint", "bucket", "format", "colorful", "background"]
     },
     "oxygen_actions_format-justify-fill": {
       "category": "actions",
       "file": "format-justify-fill.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["justify", "fill", "text", "align", "format", "lines", "paragraph"]
     },
     "oxygen_actions_format-line-spacing-triple": {
       "category": "actions",
       "file": "format-line-spacing-triple.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["line", "spacing", "triple", "format", "text", "paragraph", "wide"]
     },
     "oxygen_actions_stroke-join-miter": {
       "category": "actions",
       "file": "stroke-join-miter.png",
-      "sizes": [16, 32, 48]
+      "sizes": [16, 32, 48],
+      "hints": ["stroke", "join", "miter", "corner", "sharp", "angle", "line"]
     },
     "oxygen_actions_distribute-vertical-bottom": {
       "category": "actions",
       "file": "distribute-vertical-bottom.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["distribute", "vertical", "bottom", "align", "layout", "objects", "rectangles"]
     },
     "oxygen_actions_kdenlive-show-audiothumb": {
       "category": "actions",
       "file": "kdenlive-show-audiothumb.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["kdenlive", "audio", "thumbnail", "waveform", "show", "video", "editor"]
     },
     "oxygen_actions_go-previous-context": {
       "category": "actions",
       "file": "go-previous-context.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["go", "previous", "context", "back", "navigate", "bracket", "left"]
     },
     "oxygen_actions_draw-path": {
       "category": "actions",
       "file": "draw-path.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["draw", "path", "pen", "curve", "line", "bezier", "vector"]
     },
     "oxygen_actions_object-visible": {
       "category": "actions",
       "file": "object-visible.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["object", "visible", "eye", "show", "view", "visibility", "display"]
     },
     "oxygen_actions_transform-shear-right": {
       "category": "actions",
       "file": "transform-shear-right.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["transform", "shear", "right", "skew", "parallelogram", "distort", "slant"]
     },
     "oxygen_actions_visibility": {
       "category": "actions",
       "file": "visibility.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["visibility", "eye", "view", "show", "visible", "see", "look"]
     },
     "oxygen_actions_zoom-draw": {
       "category": "actions",
       "file": "zoom-draw.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["zoom", "draw", "magnify", "search", "canvas", "document", "glass"]
     },
     "oxygen_actions_format-add-node": {
       "category": "actions",
       "file": "format-add-node.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["add", "node", "point", "path", "curve", "plus", "format"]
     },
     "oxygen_actions_draw-circle": {
       "category": "actions",
       "file": "draw-circle.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["draw", "circle", "shape", "round", "ellipse", "oval", "outline"]
     },
     "oxygen_actions_news-subscribe": {
       "category": "actions",
       "file": "news-subscribe.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["news", "subscribe", "newspaper", "rss", "feed", "checkmark", "follow"]
     },
     "oxygen_actions_document-share": {
       "category": "actions",
       "file": "document-share.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["document", "share", "send", "export", "arrow", "file", "collaborate"]
     },
     "oxygen_actions_document-decrypt": {
       "category": "actions",
