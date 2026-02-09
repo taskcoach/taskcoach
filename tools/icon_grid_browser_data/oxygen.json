@@ -10672,227 +10672,272 @@
     "oxygen_actions_social": {
       "category": "actions",
       "file": "social.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["social", "person", "user", "profile", "human", "figure", "network"]
     },
     "oxygen_actions_news-unsubscribe": {
       "category": "actions",
       "file": "news-unsubscribe.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["news", "unsubscribe", "newspaper", "remove", "rss", "feed", "cancel"]
     },
     "oxygen_actions_view-choose": {
       "category": "actions",
       "file": "view-choose.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "choose", "select", "list", "menu", "option", "highlight"]
     },
     "oxygen_actions_bqm-addqueue": {
       "category": "actions",
       "file": "bqm-addqueue.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["add", "queue", "plus", "green", "batch", "new", "create"]
     },
     "oxygen_actions_tools-media-optical-burn-image": {
       "category": "actions",
       "file": "tools-media-optical-burn-image.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["burn", "image", "optical", "disc", "cd", "dvd", "iso"]
     },
     "oxygen_applets_org.kde.plasma.systemmonitor.cpu": {
       "category": "applets",
       "file": "org.kde.plasma.systemmonitor.cpu.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.systemmonitor.cpu.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.systemmonitor.cpu.png"]
     },
     "oxygen_applets_org.kde.plasma.windowlist": {
       "category": "applets",
       "file": "org.kde.plasma.windowlist.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.windowlist.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.windowlist.png"]
     },
     "oxygen_applets_org.kde.plasma.systemmonitor.diskactivity": {
       "category": "applets",
       "file": "org.kde.plasma.systemmonitor.diskactivity.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.systemmonitor.diskactivity.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.systemmonitor.diskactivity.png"]
     },
     "oxygen_applets_org.kde.plasma.systemmonitor.diskusage": {
       "category": "applets",
       "file": "org.kde.plasma.systemmonitor.diskusage.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.systemmonitor.diskusage.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.systemmonitor.diskusage.png"]
     },
     "oxygen_applets_org.kde.plasma.digitalclock": {
       "category": "applets",
       "file": "org.kde.plasma.digitalclock.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.digitalclock.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.digitalclock.png"]
     },
     "oxygen_applets_org.kde.plasma.comic": {
       "category": "applets",
       "file": "org.kde.plasma.comic.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.comic.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.comic.png"]
     },
     "oxygen_applets_org.kde.muonnotifier": {
       "category": "applets",
       "file": "org.kde.muonnotifier.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.muonnotifier.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.muonnotifier.png"]
     },
     "oxygen_applets_org.kde.plasma.calendar": {
       "category": "applets",
       "file": "org.kde.plasma.calendar.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.calendar.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.calendar.png"]
     },
     "oxygen_applets_org.kde.plasma.activitybar": {
       "category": "applets",
       "file": "org.kde.plasma.activitybar.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.activitybar.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.activitybar.png"]
     },
     "oxygen_applets_org.kde.plasma.systemtray": {
       "category": "applets",
       "file": "org.kde.plasma.systemtray.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.systemtray.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.systemtray.png"]
     },
     "oxygen_applets_org.kde.plasma.icontasks": {
       "category": "applets",
       "file": "org.kde.plasma.icontasks.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.icontasks.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.icontasks.png"]
     },
     "oxygen_applets_org.kde.plasma.devicenotifier": {
       "category": "applets",
       "file": "org.kde.plasma.devicenotifier.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.devicenotifier.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.devicenotifier.png"]
     },
     "oxygen_applets_org.kde.plasma.analogclock": {
       "category": "applets",
       "file": "org.kde.plasma.analogclock.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.analogclock.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.analogclock.png"]
     },
     "oxygen_applets_org.kde.plasma.userswitcher": {
       "category": "applets",
       "file": "org.kde.plasma.userswitcher.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.userswitcher.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.userswitcher.png"]
     },
     "oxygen_applets_org.kde.plasma.systemloadviewer": {
       "category": "applets",
       "file": "org.kde.plasma.systemloadviewer.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.systemloadviewer.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.systemloadviewer.png"]
     },
     "oxygen_applets_org.kde.plasma.quicklaunch": {
       "category": "applets",
       "file": "org.kde.plasma.quicklaunch.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.quicklaunch.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.quicklaunch.png"]
     },
     "oxygen_applets_org.kde.plasma.showActivityManager": {
       "category": "applets",
       "file": "org.kde.plasma.showActivityManager.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.showActivityManager.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.showActivityManager.png"]
     },
     "oxygen_applets_org.kde.plasma.frame": {
       "category": "applets",
       "file": "org.kde.plasma.frame.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.frame.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.frame.png"]
     },
     "oxygen_applets_org.kde.plasma.systemmonitor.memory": {
       "category": "applets",
       "file": "org.kde.plasma.systemmonitor.memory.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.systemmonitor.memory.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.systemmonitor.memory.png"]
     },
     "oxygen_applets_org.kde.plasma.binaryclock": {
       "category": "applets",
       "file": "org.kde.plasma.binaryclock.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.binaryclock.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.binaryclock.png"]
     },
     "oxygen_applets_org.kde.ktpcontactlist": {
       "category": "applets",
       "file": "org.kde.ktpcontactlist.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.ktpcontactlist.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.ktpcontactlist.png"]
     },
     "oxygen_applets_org.kde.plasma.notes": {
       "category": "applets",
       "file": "org.kde.plasma.notes.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.notes.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.notes.png"]
     },
     "oxygen_applets_org.kde.plasma.battery": {
       "category": "applets",
       "file": "org.kde.plasma.battery.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.battery.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.battery.png"]
     },
     "oxygen_applets_org.kde.plasma.clipboard": {
       "category": "applets",
       "file": "org.kde.plasma.clipboard.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.clipboard.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.clipboard.png"]
     },
     "oxygen_applets_org.kde.plasma.fifteenpuzzle": {
       "category": "applets",
       "file": "org.kde.plasma.fifteenpuzzle.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.fifteenpuzzle.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.fifteenpuzzle.png"]
     },
     "oxygen_applets_org.kde.plasma.kickoff": {
       "category": "applets",
       "file": "org.kde.plasma.kickoff.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.kickoff.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.kickoff.png"]
     },
     "oxygen_applets_org.kde.plasma.volume": {
       "category": "applets",
       "file": "org.kde.plasma.volume.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.volume.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.volume.png"]
     },
     "oxygen_applets_org.kde.plasma.colorpicker": {
       "category": "applets",
       "file": "org.kde.plasma.colorpicker.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.colorpicker.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.colorpicker.png"]
     },
     "oxygen_applets_org.kde.plasma.calculator": {
       "category": "applets",
       "file": "org.kde.plasma.calculator.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.calculator.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.calculator.png"]
     },
     "oxygen_applets_org.kde.plasma.kickerdash": {
       "category": "applets",
       "file": "org.kde.plasma.kickerdash.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.kickerdash.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.kickerdash.png"]
     },
     "oxygen_applets_applets-template": {
       "category": "applets",
       "file": "applets-template.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/applets-template.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/applets-template.png"]
     },
     "oxygen_applets_org.kde.plasma.systemmonitor.net": {
       "category": "applets",
       "file": "org.kde.plasma.systemmonitor.net.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.systemmonitor.net.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.systemmonitor.net.png"]
     },
     "oxygen_applets_org.kde.plasma.networkmanagement": {
       "category": "applets",
       "file": "org.kde.plasma.networkmanagement.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.networkmanagement.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.networkmanagement.png"]
     },
     "oxygen_applets_org.kde.plasma.folder": {
       "category": "applets",
       "file": "org.kde.plasma.folder.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.folder.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.folder.png"]
     },
     "oxygen_applets_org.kde.plasma.timer": {
       "category": "applets",
       "file": "org.kde.plasma.timer.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.timer.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.timer.png"]
     },
     "oxygen_applets_org.kde.plasma.mediacontroller": {
       "category": "applets",
       "file": "org.kde.plasma.mediacontroller.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.mediacontroller.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.mediacontroller.png"]
     },
     "oxygen_applets_org.kde.plasma.fuzzyclock": {
       "category": "applets",
       "file": "org.kde.plasma.fuzzyclock.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.fuzzyclock.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.fuzzyclock.png"]
     },
     "oxygen_applets_org.kde.plasma.taskmanager": {
       "category": "applets",
       "file": "org.kde.plasma.taskmanager.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.taskmanager.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.taskmanager.png"]
     },
     "oxygen_applets_org.kde.plasma.pager": {
       "category": "applets",
       "file": "org.kde.plasma.pager.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.pager.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.pager.png"]
     },
     "oxygen_applets_org.kde.plasma.kicker": {
       "category": "applets",
       "file": "org.kde.plasma.kicker.png",
-      "sizes": [256]
+      "sizes": [256],
+      "hints": ["FILE_ERROR: path_pattern did not match: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.kicker.svg", "FILE_ERROR: PNG missing after conversion: /home/user/Downloads/icons/oxygen-icons-master/scalable/applets/org.kde.plasma.kicker.png"]
     },
     "oxygen_devices_media-optical-dvd-data": {
       "category": "devices",
