@@ -42,6 +42,45 @@
     - [Inheritance Methods](#inheritance-methods)
     - [Notes and Attachments](#notes-and-attachments)
 11. [File Reference](#file-reference)
+12. [SSOT Principle: Action vs Display](#ssot-principle-action-vs-display)
+
+---
+
+## SSOT Principle: Action vs Display
+
+**Critical distinction between status for ACTION vs status for DISPLAY:**
+
+| Purpose | Method | When to Use |
+|---------|--------|-------------|
+| **Action logic** | Direct field check | Cascades, event handlers, business logic |
+| **Display/reporting** | `computedStatus()` | UI columns, filtering, status bar |
+
+### Why This Matters
+
+`computedStatus()` is cached and only updated by the scheduler (every second). During event handlers, it may be **stale**.
+
+```python
+# BAD - uses stale cache during event handler:
+def completed(self):
+    return self.computedStatus() == status.completed
+
+# GOOD - direct SSOT check, always accurate:
+def completed(self):
+    return self.completionDateTime() != self.maxDateTime
+```
+
+### Example: Cascade Bug
+
+When child task is completed, `_onCompletionDateTimeChanged` fires. At that moment:
+- Child's `completionDateTime` is set (accurate)
+- Child's `computedStatus()` is stale (not yet recomputed)
+- Parent calls `allChildrenCompleted()` → `child.completed()` → returns False!
+
+**Fix:** `completed()` must use direct datetime check, not `computedStatus()`.
+
+### Rule
+
+Action methods (`completed()`, `allChildrenCompleted()`, etc.) must use **direct field checks**. The computed status system is for display/reporting only.
 
 ---
 
@@ -59,7 +98,7 @@ trigger-based updates. This provides:
 **Processing order:** Categories → Tasks → Notes → Attachments
 
 **Key classes:**
-- `ComputeStyles` in `appearance.py` - Polls every second via `timer.second` pubsub
+- `MasterScheduler` in `scheduler.py` - Polls every second, calls `computeStyles()` for each object
 - `computeDerived(obj, field_type)` - Computes derived value from sources
 - `computeEffective(obj, field_type)` - Computes effective from override + derived
 
@@ -288,31 +327,27 @@ Status is recomputed in three scenarios:
 
 ### Timer-Driven Updates (ComputeStyles)
 
-**File:** `taskcoachlib/domain/base/appearance.py`
+**File:** `taskcoachlib/gui/scheduler.py`
 **Instantiated in:** `taskcoachlib/gui/mainwindow.py:_create_window_components()`
 
-StatusChecker was merged into `ComputeStyles` so that each task's status is computed
-immediately before its derived and effective appearance values, guaranteeing correct
-ordering within a single per-object processing pass.
-
-`ComputeStyles` subscribes to `timer.second` (the GlobalTimer's 1-second tick) and
+`MasterScheduler` subscribes to `timer.second` (the GlobalTimer's 1-second tick) and
 processes all objects. For each task, the per-object flow is:
 
 ```
 GlobalTimer._onTick() (every 1 second)
     └── pub.sendMessage('timer.second', timestamp=now)
-        └── ComputeStyles._onSecond(timestamp)
+        └── MasterScheduler._onSecond(timestamp)
             └── For each task:
-                └── _computeForObject(task)
-                    1. task.computeStoredStatus()
-                    │   ├── Calls Task.computeStatus() with task's dates
-                    │   ├── Updates __computed_status, __status_text, __status_icon
-                    │   └── Fires statusChangedEventType if changed
-                    2. computeDerived(task, field_type) for each field
-                    3. computeEffective(task, field_type) for each field
+                1. task.computeStoredStatus()
+                │   ├── Calls Task.computeStatus() with task's dates
+                │   ├── Updates __computed_status, __status_text, __status_icon
+                │   └── Fires statusChangedEventType if changed
+                2. computeStyles(task)
+                    ├── computeDerived(task, field_type) for each field
+                    └── computeEffective(task, field_type) for each field
 ```
 
-See docs/SCHEDULERS.md for the complete ComputeStyles processing flow.
+See docs/SCHEDULERS.md for the complete MasterScheduler processing flow.
 
 ### Immediate Updates (Date Setters)
 
@@ -882,10 +917,10 @@ with automatic change event firing via `Attribute.set()`.
 1. App starts, loads data file
    └── Objects created with override values, parent relationships
 
-2. ComputeStyles poller starts (timer.second)
-   └── Within 1 second, all objects get derived + effective values computed
+2. MasterScheduler starts (timer.second)
+   └── Within 1 second, all objects get status + derived + effective values computed
 
-3. Ongoing: poller runs every second
+3. Ongoing: scheduler runs every second
    └── Any data change (override, category, status, parent) is picked up
    └── Attribute.set() fires per-field change events when values change
    └── UI subscribers update automatically
@@ -1043,7 +1078,7 @@ Tasks have `derivedXxx()` / `derivedXxxSource()` and `effectiveXxx()` / `effecti
 | `taskcoachlib/domain/task/task.py` | `status()`, color/icon/font methods, `recomputeAppearance()` |
 | `taskcoachlib/domain/task/filter.py` | ViewFilter with status-based hiding |
 | `taskcoachlib/domain/task/tasklist.py` | `nrOfTasksPerStatus()` count method |
-| `taskcoachlib/gui/timer.py` | GlobalTimer + ReminderChecker |
+| `taskcoachlib/gui/scheduler.py` | GlobalTimer + MasterScheduler |
 | `taskcoachlib/gui/dialog/editor.py` | Status display in Edit Task Dates tab |
 | `taskcoachlib/gui/viewer/task.py` | Status bar counts, filter UI commands |
 | `taskcoachlib/gui/taskbaricon.py` | System tray status counts |

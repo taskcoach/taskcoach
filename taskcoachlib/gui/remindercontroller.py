@@ -17,15 +17,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 """
-Reminder Controller - Simplified polling-based implementation.
+Reminder Controller - Event-based implementation.
 
-This module checks for due reminders every second via the global timer,
-replacing the previous complex per-task scheduling system.
+This module responds to reminder trigger events fired by Task.processReminder(),
+which is called by MasterScheduler every second.
 
 See docs/SCHEDULERS.md for architecture documentation.
 """
 
-from taskcoachlib.domain import date, task
 from taskcoachlib.gui.dialog import reminder, editor
 from taskcoachlib.tools import wxhelper
 from pubsub import pub
@@ -36,8 +35,8 @@ class ReminderController(object):
     """
     Controller for showing task reminders.
 
-    Uses simple polling via global timer instead of per-task scheduling.
-    Checks all tasks every second and shows reminders for those that are due.
+    Subscribes to task.reminder.trigger events fired by Task.processReminder().
+    MasterScheduler calls processReminder() every second for all tasks.
 
     Note: As of January 2026, only the built-in Task Coach reminder dialog is used.
     External notification system support (KNotify, Growl) has been removed.
@@ -51,57 +50,22 @@ class ReminderController(object):
         self.taskList = taskList
         self.effortList = effortList
 
-        # Track shown reminders to avoid duplicates (replaces __tasksWithReminders)
-        self._shownReminders = set()
+        # Subscribe to reminder trigger events from Task.processReminder()
+        pub.subscribe(self._onReminderTrigger, 'task.reminder.trigger')
 
-        # Subscribe to timer for polling
-        pub.subscribe(self._onTimerSecond, 'timer.second')
-
-        # Subscribe to reminder changes to clear shown status when snoozed
-        pub.subscribe(self._onReminderChanged, task.Task.reminderChangedEventType())
-
-    def _onTimerSecond(self, timestamp):
+    def _onReminderTrigger(self, task):
         """
-        Check for due reminders every second.
+        Handle reminder trigger from Task.processReminder().
+
+        Idempotent - safe to receive multiple triggers for same task.
+        Only shows dialog if not already open (checked via ReminderDialog.isOpenFor).
 
         Args:
-            timestamp: DateTime from global timer (reuse, don't call now())
+            task: The task whose reminder is due
         """
-        self._checkReminders(timestamp)
-
-    def _onReminderChanged(self, newValue, sender):
-        """
-        Handle reminder change (e.g., snooze).
-        Clear from shown set so it can fire again at new time.
-        """
-        self._shownReminders.discard(sender)
-
-    def _checkReminders(self, now):
-        """
-        Check all tasks for due reminders.
-
-        Args:
-            now: Current timestamp from timer
-        """
-        # Add small buffer to not miss reminders (consistent with old behavior)
-        checkTime = now + date.TimeDelta(seconds=2)
-
-        tasksToRemind = []
-
-        for task in self.taskList:
-            # Skip completed tasks - no point reminding about finished work
-            if task.completed():
-                continue
-            reminderTime = task.reminder()
-            if reminderTime and reminderTime <= checkTime:
-                if task not in self._shownReminders:
-                    tasksToRemind.append(task)
-                    self._shownReminders.add(task)
-
-        # Show reminders (outside loop for safety)
-        if tasksToRemind:
-            for taskWithReminder in tasksToRemind:
-                self.showReminderMessage(taskWithReminder)
+        # Check if dialog already open for this task (SSOT check)
+        if not reminder.ReminderDialog.isOpenFor(task):
+            self.showReminderMessage(task)
             self.requestUserAttention()
 
     def showReminderMessage(
@@ -170,5 +134,4 @@ class ReminderController(object):
 
     def shutdown(self):
         """Cleanup subscriptions."""
-        pub.unsubscribe(self._onTimerSecond, 'timer.second')
-        pub.unsubscribe(self._onReminderChanged, task.Task.reminderChangedEventType())
+        pub.unsubscribe(self._onReminderTrigger, 'task.reminder.trigger')

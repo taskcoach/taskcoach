@@ -298,7 +298,6 @@ class SortableViewerMixin(object):
     def onSortOrderChanged(self, sender):
         if sender == self.presentation():
             self.refresh()
-            self.updateSelection(sendViewerStatusEvent=False)
             self.sendViewerStatusEvent()
 
     def createSorter(self, presentation):

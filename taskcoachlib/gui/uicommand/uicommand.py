@@ -1483,9 +1483,8 @@ class Edit(mixin_uicommand.NeedsSelectionMixin, ViewerCommand):
             columnName = event.columnName
         except AttributeError:
             columnName = ""
-        # Use forceUpdate=True to ensure we get the current selection,
-        # not a stale cached value (important for fast double-click)
-        items = self.viewer.curselection(forceUpdate=True)
+        # curselection() always queries widget fresh (SSOT principle)
+        items = self.viewer.curselection()
         editor = self.viewer.editItemDialog(items, self.bitmap, columnName)
         if len(items) > 1:
             # Use modal dialog for multi-item editing to prevent selection
@@ -1830,7 +1829,7 @@ class NewTaskWithSelectedCategories(TaskNew, ViewerCommand):
         )
 
     def enabled(self, event):
-        return super().enabled(event) and bool(self.viewer.curselection(forceUpdate=True))
+        return super().enabled(event) and bool(self.viewer.curselection())
 
     def categoriesForTheNewTask(self):
         return self.viewer.curselection()
@@ -2365,7 +2364,7 @@ class EffortNew(
             return False
         # When viewer is showing tasks, require a task to be selected
         if self.viewer and self.viewer.isShowingTasks():
-            return bool(self.viewer.curselection(forceUpdate=True))
+            return bool(self.viewer.curselection())
         return True
 
     def doCommand(self, event, show=True):
@@ -2797,7 +2796,7 @@ class NewNoteWithSelectedCategories(NoteNew, ViewerCommand):
     helpText = _("Insert a new note with the selected categories checked")
 
     def enabled(self, event):
-        return super().enabled(event) and bool(self.viewer.curselection(forceUpdate=True))
+        return super().enabled(event) and bool(self.viewer.curselection())
 
     def categoriesForTheNewNote(self):
         return self.viewer.curselection()

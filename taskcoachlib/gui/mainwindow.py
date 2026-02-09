@@ -33,7 +33,7 @@ from taskcoachlib.gui import (
     artprovider,
     windowdimensionstracker,
     idlecontroller,
-    timer as globaltimer,
+    scheduler,
 )
 from taskcoachlib.gui.dialog.editor import Editor
 from taskcoachlib.i18n import _
@@ -109,11 +109,10 @@ class MainWindow(
         self.Freeze()
         try:
             # Start global timer FIRST - other components subscribe to its events
-            self._globalTimer = globaltimer.GlobalTimer(self)
+            self._globalTimer = scheduler.GlobalTimer(self)
             self._globalTimer.start()
-            # ComputeStyles handles per-second polling for status + appearance SSOT updates
-            from taskcoachlib.domain.base.appearance import ComputeStyles
-            self._computeStyles = ComputeStyles(self.taskFile)
+            # MasterScheduler handles all per-second processing (status, styles, auto-complete)
+            self._masterScheduler = scheduler.MasterScheduler(self.taskFile)
 
             self._create_viewer_container()
             viewer.addViewers(self.viewer, self.taskFile, self.settings)
@@ -328,8 +327,8 @@ If this happens again, please make a copy of your TaskCoach.ini file """
                 event.Skip()
                 self.taskFile.stop()
                 self._idleController.stop()
-                if hasattr(self, '_computeStyles'):
-                    self._computeStyles.shutdown()
+                if hasattr(self, '_masterScheduler'):
+                    self._masterScheduler.shutdown()
 
     def restore(self, event):  # pylint: disable=W0613
         if self.settings.getboolean("window", "maximized"):

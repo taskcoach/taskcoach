@@ -866,11 +866,11 @@ class HierarchicalCalendarViewer(
 
         self.reconfig()
 
-        # Subscribe to global timer for midnight processing
-        pub.subscribe(self._onDateChanged, 'timer.date')
+        # Subscribe to scheduler's UI refresh event (fires after all data changes)
+        pub.subscribe(self._onDateChanged, 'scheduler.dateChange.uiRefresh')
 
     def _onDateChanged(self, timestamp):
-        """Handle date change from global timer."""
+        """Handle date change from scheduler."""
         self.atMidnight()
 
     def reconfig(self):
@@ -918,7 +918,7 @@ class HierarchicalCalendarViewer(
 
     def detach(self):
         super().detach()
-        pub.unsubscribe(self._onDateChanged, 'timer.date')
+        pub.unsubscribe(self._onDateChanged, 'scheduler.dateChange.uiRefresh')
 
     def atMidnight(self):
         self.widget.SetCalendarFormat(self.widget.CalendarFormat())
@@ -1025,12 +1025,12 @@ class CalendarViewer(
                 self.registerObserver(
                     self.onAttributeChanged_Deprecated, eventType
                 )
-        # Subscribe to global timer for midnight processing
-        pub.subscribe(self._onDateChanged, 'timer.date')
+        # Subscribe to scheduler's UI refresh event (fires after all data changes)
+        pub.subscribe(self._onDateChanged, 'scheduler.dateChange.uiRefresh')
         pub.subscribe(self._onCalendarColoursChanged, 'calendar.colours.changed')
 
     def _onDateChanged(self, timestamp):
-        """Handle date change from global timer."""
+        """Handle date change from scheduler."""
         self.atMidnight()
 
     def _onCalendarColoursChanged(self):
@@ -1038,7 +1038,7 @@ class CalendarViewer(
 
     def detach(self):
         super().detach()
-        pub.unsubscribe(self._onDateChanged, 'timer.date')
+        pub.unsubscribe(self._onDateChanged, 'scheduler.dateChange.uiRefresh')
         pub.unsubscribe(self._onCalendarColoursChanged, 'calendar.colours.changed')
 
     def isTreeViewer(self):

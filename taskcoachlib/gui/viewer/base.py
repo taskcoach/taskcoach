@@ -58,8 +58,6 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         self.__use_separate_settings_section = kwargs.pop(
             "use_separate_settings_section", True
         )
-        # Selection cache:
-        self.__curselection = []
         # Flag so that we don't notify observers while we're selecting all items
         self.__selectingAllItems = False
         # Popup menus we have to destroy before closing the viewer to prevent
@@ -338,16 +336,28 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         def itemsRemoved():
             return event.type() == self.presentation().removeItemEventType()
 
-        def allItemsAreSelected():
-            return set(self.__curselection).issubset(set(event.values()))
+        # BEFORE refresh - capture selection info while widget has old state
+        selectionInfo = None
+        if itemsRemoved():
+            selectionInfo = self._captureSelectionInfo()
 
         self.refresh()
-        if itemsRemoved() and allItemsAreSelected():
-            self.selectNextItemsAfterRemoval(list(event.values()))
-        self.updateSelection(sendViewerStatusEvent=False)
+
+        # AFTER refresh - select next if selection became empty
+        if itemsRemoved() and not self.widget.curselection() and selectionInfo:
+            self.selectNextItemsAfterRemoval(selectionInfo)
         self.sendViewerStatusEvent()
 
-    def selectNextItemsAfterRemoval(self, removedItems):
+    def _captureSelectionInfo(self):
+        """Capture selection info before refresh. Override in subclasses."""
+        return None
+
+    def selectNextItemsAfterRemoval(self, selectionInfo):
+        """Select the next item after items were removed.
+
+        Args:
+            selectionInfo: Selection state captured before refresh (parent + index)
+        """
         raise NotImplementedError
 
     def onSelect(self, event=None):  # pylint: disable=W0613
@@ -360,28 +370,22 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
                 # deleting all items as part of the Destroy process. Ignore.
                 return
 
-            # Be sure all wx events are handled before we update our selection
-            # cache and notify our observers:
-            wx.CallAfter(self.updateSelection)
+            # Fire status event - StatusBar has its own 500ms debounce
+            # No need to query selection here; status bar queries fresh when displaying
+            wx.CallAfter(self.sendViewerStatusEvent)
         except RuntimeError:
             # RuntimeError: wrapped C/C++ object of type EffortViewer has been deleted
             # FIXME: It's a bug?
             pass
 
     def updateSelection(self, sendViewerStatusEvent=True):
-        # Guard against deleted C++ object - can happen when wx.CallAfter
-        # callback executes after window destruction (e.g., closing nested dialogs)
-        try:
-            if not self or self.IsBeingDeleted():
-                return
-        except RuntimeError:
-            # wrapped C/C++ object has been deleted
-            return
-        newSelection = self.widget.curselection()
-        if newSelection != self.__curselection:
-            self.__curselection = newSelection
-            if sendViewerStatusEvent:
-                self.sendViewerStatusEvent()
+        """Legacy method - kept for subclass compatibility.
+
+        With SSOT selection (curselection() queries widget fresh),
+        there's no cache to update. Just fires status event if requested.
+        """
+        if sendViewerStatusEvent:
+            self.sendViewerStatusEvent()
 
     def freeze(self):
         self.widget.Freeze()
@@ -399,21 +403,16 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             self.widget.RefreshItems(*items)  # pylint: disable=W0142
 
     def select(self, items):
-        self.__curselection = items
         self.widget.select(items)
 
-    def curselection(self, forceUpdate=False):
-        """Return a list of items (domain objects) currently selected in our
-        widget.
+    def curselection(self):
+        """Return currently selected domain objects. Always fresh from widget.
 
-        If forceUpdate is True, refresh the cached selection from the widget
-        before returning. This is useful when selection may have changed but
-        the cached value hasn't been updated yet (e.g., during double-click
-        handling where wx.CallAfter hasn't executed yet).
+        SSOT principle: Always query widget live, no cache for reads.
+        Commands get fresh selection when user triggers action.
+        Status bar queries fresh after its 500ms debounce.
         """
-        if forceUpdate:
-            self.updateSelection(sendViewerStatusEvent=False)
-        return self.__curselection
+        return self.widget.curselection()
 
     def curselectionIsInstanceOf(self, class_):
         """Return whether all items in the current selection are instances of
@@ -446,13 +445,11 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         except RuntimeError:
             # wrapped C/C++ object has been deleted
             return
-        self.__curselection = self.presentation()
         self.__selectingAllItems = False
         # Pretend we received one selection event for the select_all() call:
         self.onSelect()
 
     def clear_selection(self):
-        self.__curselection = []
         self.widget.clear_selection()
 
     def size(self):
@@ -795,13 +792,12 @@ class ListViewer(Viewer):  # pylint: disable=W0223
     def getIndexOfItem(self, item):
         return self.presentation().index(item)
 
-    def selectNextItemsAfterRemoval(self, removedItems):
+    def selectNextItemsAfterRemoval(self, selectionInfo):
         pass  # Done automatically by list controls
 
 
 class TreeViewer(Viewer):  # pylint: disable=W0223
     def __init__(self, *args, **kwargs):
-        self.__selectionIndex = 0
         super().__init__(*args, **kwargs)
         self.widget.Bind(wx.EVT_TREE_ITEM_EXPANDED, self.onItemExpanded)
         self.widget.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.onItemCollapsed)
@@ -859,33 +855,34 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
             parent.expand(True, context=self.settingsSection(), notify=False)
             self.__expandItemRecursively(parent)
 
-    def selectNextItemsAfterRemoval(self, removedItems):
-        parents = [self.getItemParent(item) for item in removedItems]
-        parents = [
-            parent for parent in parents if parent in self.presentation()
-        ]
-        parent = parents[0] if parents else None
+    def _captureSelectionInfo(self):
+        """Capture selection position before refresh."""
+        curselection = self.widget.curselection()
+        if curselection and curselection[0] is not None:
+            selectedItem = curselection[0]
+            parent = self.getItemParent(selectedItem)
+            siblings = self.children(parent)
+            index = siblings.index(selectedItem) if selectedItem in siblings else 0
+            return {'parent': parent, 'index': index}
+        return None
+
+    def selectNextItemsAfterRemoval(self, selectionInfo):
+        """Select next item using position captured before refresh."""
+        if not selectionInfo:
+            return
+        parent = selectionInfo['parent']
+        index = selectionInfo['index']
+        # Parent might have been deleted too - check if still in presentation
+        if parent is not None and parent not in self.presentation():
+            parent = None
         siblings = self.children(parent)
         newSelection = (
-            siblings[min(len(siblings) - 1, self.__selectionIndex)]
+            siblings[min(len(siblings) - 1, index)]
             if siblings
             else parent
         )
         if newSelection:
             self.select([newSelection])
-
-    def updateSelection(self, *args, **kwargs):
-        super().updateSelection(*args, **kwargs)
-        curselection = self.curselection()
-        if curselection and curselection[0] is not None:
-            siblings = self.children(self.getItemParent(curselection[0]))
-            self.__selectionIndex = (
-                siblings.index(curselection[0])
-                if curselection[0] in siblings
-                else 0
-            )
-        else:
-            self.__selectionIndex = 0
 
     def visibleItems(self):
         """Iterate over the items in the presentation."""

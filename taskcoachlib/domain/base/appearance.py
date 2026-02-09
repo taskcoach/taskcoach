@@ -352,66 +352,21 @@ def computeEffective(object_ref, field_type):
 
 
 # =============================================================================
-# ComputeStyles - Per-Second Polling for SSOT Updates
+# computeStyles - Per-Object Style Computation
 # =============================================================================
 
-class ComputeStyles:
-    """Computes derived and effective styles for all objects every second.
+def computeStyles(obj):
+    """Compute derived and effective styles for a single object.
 
-    This polling approach catches ALL changes without needing explicit triggers:
-    - Category changes (color, icon, font)
-    - Parent changes
-    - Status changes (from time passing)
-    - Settings changes (theme, status colors)
+    Called by MasterScheduler for each object. Computes all field types.
+    Does NOT recurse into notes/attachments - caller handles that.
+    Does NOT call computeStoredStatus - caller handles that separately.
 
-    Processing order: Categories → Tasks → Notes → Attachments
-    Simple iteration, no hierarchy sorting. Eventual consistency within 1-2 seconds.
+    Args:
+        obj: Domain object (Task, Category, Note, Attachment)
     """
+    for field_type in FIELD_TYPES:
+        computeDerived(obj, field_type)
+        computeEffective(obj, field_type)
 
-    def __init__(self, taskFile):
-        """Initialize ComputeStyles.
 
-        Args:
-            taskFile: The task file to access categories, tasks, notes, attachments
-        """
-        self._taskFile = taskFile
-        pub.subscribe(self._onSecond, 'timer.second')
-
-    def _onSecond(self, timestamp):
-        """Recompute derived and effective values for all objects."""
-        if not self._taskFile:
-            return
-
-        # Process in order: categories, tasks, global notes
-        # Categories first so tasks can read their effective values.
-        # _computeForObject handles owned notes and attachments recursively.
-        for category in self._taskFile.categories():
-            self._computeForObject(category)
-
-        for task in self._taskFile.tasks():
-            self._computeForObject(task)
-
-        for note in self._taskFile.notes():
-            self._computeForObject(note)
-
-    def _computeForObject(self, obj):
-        """Per-object processing: status (tasks only) → derived → effective.
-
-        Also processes owned notes and attachments, which in turn process
-        their own owned objects (attachments own notes, notes own attachments).
-        """
-        if hasattr(obj, 'computeStoredStatus'):
-            obj.computeStoredStatus()
-        for field_type in FIELD_TYPES:
-            computeDerived(obj, field_type)
-            computeEffective(obj, field_type)
-        if hasattr(obj, 'notes'):
-            for n in obj.notes(recursive=True):
-                self._computeForObject(n)
-        if hasattr(obj, 'attachments'):
-            for a in obj.attachments():
-                self._computeForObject(a)
-
-    def shutdown(self):
-        """Cleanup subscriptions."""
-        pub.unsubscribe(self._onSecond, 'timer.second')

@@ -40,16 +40,16 @@ class MinuteRefresher(object):
 
     def startClock(self):
         if not self.__running:
-            pub.subscribe(self._onMinuteChanged, 'timer.minute')
+            pub.subscribe(self._onMinuteChanged, 'scheduler.minuteChange.uiRefresh')
             self.__running = True
 
     def stopClock(self):
         if self.__running:
-            pub.unsubscribe(self._onMinuteChanged, 'timer.minute')
+            pub.unsubscribe(self._onMinuteChanged, 'scheduler.minuteChange.uiRefresh')
             self.__running = False
 
     def _onMinuteChanged(self, timestamp):
-        """Handle minute change from global timer."""
+        """Handle minute change from scheduler."""
         self.onEveryMinute()
 
     def onEveryMinute(self):

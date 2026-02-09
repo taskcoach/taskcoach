@@ -645,8 +645,8 @@ class EffortViewer(
     def getItemImages(self, index, column=0):  # pylint: disable=W0613
         return {wx.TreeItemIcon_Normal: -1}
 
-    def curselection(self, forceUpdate=False):
-        selection = super().curselection(forceUpdate=forceUpdate)
+    def curselection(self):
+        selection = super().curselection()
         if self.aggregation != "details":
             selection = [
                 anEffort

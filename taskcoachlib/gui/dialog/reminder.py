@@ -38,6 +38,20 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
     """
     FREEZE_DURATION_MS = 2000  # Freeze duration in milliseconds
 
+    @classmethod
+    def isOpenFor(cls, task):
+        """Check if a reminder dialog is already open for this task.
+
+        SSOT: Checks actual windows, not a tracking dict.
+        Used by ReminderController to avoid duplicate dialogs.
+        """
+        for window in wx.GetTopLevelWindows():
+            if isinstance(window, cls):
+                if hasattr(window, 'task') and window.task is task:
+                    if window.IsShown():
+                        return True
+        return False
+
     def __init__(self, task, taskList, effortList, settings, parent, *args, **kwargs):
         kwargs["title"] = _("%(name)s reminder - %(task)s") % dict(
             name=meta.name, task=task.subject(recursive=True)

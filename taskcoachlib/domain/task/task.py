@@ -262,10 +262,17 @@ class Task(
         super().setParent(parent)
 
     def allChildrenCompleted(self):
-        """Return whether all children (non-recursively) are completed."""
+        """Return whether all children (non-recursively) are completed.
+
+        Uses direct datetime check instead of computedStatus() because
+        this may be called during completion event before status is recomputed.
+        """
         children = self.children()
-        return (
-            all(child.completed() for child in children) if children else False
+        if not children:
+            return False
+        return all(
+            child.completionDateTime() != child.maxDateTime
+            for child in children
         )
 
     @patterns.eventSource
@@ -523,32 +530,37 @@ class Task(
 
     def _onCompletionDateTimeChanged(self, event):
         self.__status = None
-        # Use direct datetime comparison instead of self.completed() because
-        # computedStatus() cache is stale at this point (not yet recomputed).
         completionDateTime = self.completionDateTime()
         isCompleted = completionDateTime != self.maxDateTime
+
         if isCompleted and self.recurrence():
             self.recur(completionDateTime)
             return  # recur resets completionDateTime, triggering this callback again
-        parent = self.parent()
+
         if isCompleted:
             self.setReminder(None)
             self.setPercentageComplete(100)
-            for child in self.children():
-                if child.completionDateTime() == self.maxDateTime:
-                    child.setRecurrence()
-                    child.setCompletionDateTime(completionDateTime)
             if self.isBeingTracked():
                 self.stopTracking()
+
+            # Parent→Children cascade: complete my incomplete children
+            for child in self.children():
+                if child.completionDateTime() == self.maxDateTime:
+                    child.setRecurrence()  # Clear recurrence first (since 2008)
+                    child.setCompletionDateTime(completionDateTime)
+
+            # Children→Parent cascade: check if parent should auto-complete
+            parent = self.parent()
+            if parent and parent.shouldBeMarkedCompleted():
+                parent.setCompletionDateTime(completionDateTime)
         elif self.percentageComplete() == 100:
             self.setPercentageComplete(0)
+
+        # Notify parent of priority change (not a cascade - just notification)
+        parent = self.parent()
         if parent:
-            if isCompleted:
-                if parent.shouldBeMarkedCompleted():
-                    parent.setCompletionDateTime(completionDateTime)
-            elif parent.completionDateTime() != self.maxDateTime:
-                parent.setCompletionDateTime(self.maxDateTime)
             parent.sendPriorityChangedMessage()
+
         self.markDirty()
         self.recomputeAppearance()
         for dependency in self.dependencies():
@@ -618,8 +630,12 @@ class Task(
     # Task state
 
     def completed(self):
-        """A task is completed if it has a completion date/time."""
-        return self.computedStatus() == status.completed
+        """A task is completed if it has a completion date/time.
+
+        Uses direct datetime check (SSOT) - not computedStatus() which
+        is for display/reporting only and may be stale during events.
+        """
+        return self.completionDateTime() != self.maxDateTime
 
     def overdue(self):
         """A task is over due if its due date/time is in the past and it is
@@ -823,6 +839,86 @@ class Task(
 
     def statusSource(self):
         return self.__status_source
+
+    # =========================================================================
+    # Scheduler methods - called by MasterScheduler every second
+    # =========================================================================
+
+    def recomputeLegacyStatus(self, timestamp=None):
+        """Recompute legacy status cache for color/font lookups.
+
+        This is the legacy status system - separate from modern computeStoredStatus().
+        Called by scheduler every second to handle time-based transitions.
+
+        Note: recomputeAppearance() handles data-change-triggered updates.
+        This method handles time-passing updates (due soon → overdue at midnight).
+
+        No pubsub events - legacy system didn't have them. UI updates via:
+        - Modern system fires statusChangedEventType
+        - MinuteRefresher calls viewer.refresh() every minute
+
+        Args:
+            timestamp: Current time from scheduler (avoids redundant Now() calls)
+        """
+        now = timestamp or date.Now()
+
+        if self.completionDateTime() != self.maxDateTime:
+            self.__status = status.completed
+        # Direct prereqs only - no recursive (each task's status already computed)
+        elif any(p.completionDateTime() == self.maxDateTime
+                 for p in self.prerequisites()):
+            self.__status = status.inactive
+        elif self.dueDateTime() < now:
+            self.__status = status.overdue
+        elif 0 <= self.timeLeft().hours() < self.__dueSoonHours:
+            self.__status = status.duesoon
+        elif self.actualStartDateTime() <= now:
+            self.__status = status.active
+        elif self.plannedStartDateTime() < now:
+            self.__status = status.late
+        else:
+            self.__status = status.inactive
+
+    def onDailyChange(self):
+        """Called once at midnight for daily processing.
+
+        Status updates are handled separately by the scheduler
+        (both legacy and refactored).
+
+        Placeholder for future daily-specific logic:
+        - Daily aggregates
+        - Daily notifications
+        - etc.
+        """
+        pass
+
+    def processReminder(self, timestamp):
+        """Process reminder state and trigger if due.
+
+        Called by scheduler every second. Fires trigger event every
+        second while reminder is due - controller handles deduplication.
+        """
+        # Clear reminder if completed and not recurring
+        if self.completed() and not self.recurrence():
+            if self.reminder():
+                self.setReminder(None)
+            return
+
+        # Check if due and trigger
+        reminder = self.reminder()
+        if not reminder:
+            return
+        # 2-second buffer to not miss reminders (matches prior behavior)
+        if reminder <= timestamp + date.TimeDelta(seconds=2):
+            self.triggerReminder()
+
+    def triggerReminder(self):
+        """Trigger reminder popup for this task.
+
+        Fires event - ReminderController subscribes and shows dialog
+        if not already open. Safe to call multiple times.
+        """
+        pub.sendMessage('task.reminder.trigger', task=self)
 
     def onDueSoonHoursChanged(self, value):
         self.__dueSoonHours = value

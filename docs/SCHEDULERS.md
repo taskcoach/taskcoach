@@ -1,26 +1,52 @@
 # Task Coach Scheduler Architecture
 
+## Table of Contents
+
+1. [Overview](#overview)
+   - [SSOT Principle: Scheduler vs Events](#ssot-principle-scheduler-vs-events)
+2. [Architecture](#architecture)
+3. [MasterScheduler Processing Flow](#masterscheduler-processing-flow)
+4. [Optimizations](#optimizations)
+5. [Performance Considerations](#performance-considerations)
+6. [Historical Context](#historical-context)
+7. [Benefits of New Architecture](#benefits-of-new-architecture)
+
+---
+
 ## Overview
 
-Task Coach uses scheduled/timed events for various features. This document describes the architecture after the 2024 refactoring.
+Task Coach uses scheduled/timed events for various features. This document describes the architecture after the 2026 refactoring.
+
+### SSOT Principle: Scheduler vs Events
+
+**Critical distinction between scheduler-updated status and action logic:**
+
+| Responsibility | Mechanism | Example |
+|----------------|-----------|---------|
+| **TIME-based updates** | Scheduler (polling) | Status recomputation, reminders, styles |
+| **DATA-based cascades** | Events | Parent/child auto-completion |
+
+**Why this matters:**
+
+During event handlers, `computedStatus()` may be stale (scheduler hasn't run yet). Action methods like `completed()` and `allChildrenCompleted()` must use **direct field checks** (e.g., `completionDateTime() != maxDateTime`), not `computedStatus()`.
+
+- `computedStatus()`: For UI display, filtering, reporting (updated every second by scheduler)
+- Direct field checks: For action logic, cascades, event handlers (always current)
+
+See also: `docs/TASK_STATUS.md` section "SSOT Principle: Action vs Display"
+
+---
 
 ## Architecture
 
-The system uses a single `GlobalTimer` that fires every second and publishes events via pubsub. Components subscribe to the events they need.
+The system uses a `GlobalTimer` that fires every second, and a `MasterScheduler` that handles all per-second processing. Only MasterScheduler subscribes to `timer.second` for data processing.
 
-### Core Component
+### Core Components
 
-**File:** `taskcoachlib/gui/timer.py`
+**File:** `taskcoachlib/gui/scheduler.py`
 
-```python
-class GlobalTimer:
-    """Single 1-second timer that publishes timing events."""
-
-    # Events published:
-    # - 'timer.second': Every tick
-    # - 'timer.minute': When minute changes
-    # - 'timer.date': When date changes (or on first run)
-```
+- `GlobalTimer`: 1-second timer, publishes `timer.second`, `timer.minute`, `timer.date`
+- `MasterScheduler`: Subscribes to `timer.second`, emits `scheduler.dateChange.uiRefresh`, `scheduler.minuteChange.uiRefresh`
 
 ### Event Flow
 
@@ -45,101 +71,83 @@ Every 1 second (_onTick):
 
 | Event | Subscriber | Purpose |
 |-------|------------|---------|
+| `timer.second` | `MasterScheduler` | All per-second data processing |
 | `timer.date` | `TaskFilter` | Re-filter tasks at midnight |
-| `timer.date` | `CalendarViewer` | Redraw calendar at midnight |
-| `timer.minute` | `MinuteRefresher` | Update "time left" displays |
-| `timer.second` | `ReminderController` | Check for due reminders |
-| `timer.second` | `TaskbarIcon` | Update tracking tooltip |
-| `timer.second` | `Editor` | Update budget/revenue while tracking |
+| `scheduler.dateChange.uiRefresh` | `CalendarViewer` | Redraw calendar after midnight processing |
+| `scheduler.minuteChange.uiRefresh` | `MinuteRefresher` | Update "time left" displays |
+| `task.reminder.trigger` | `ReminderController` | Show reminder dialog |
+| `timer.second` | `TaskbarIcon` | Update tracking tooltip (local UI) |
+| `timer.second` | `Editor` | Update budget/revenue while tracking (local UI) |
 
 ### Component Implementation
 
 | Component | File | How It Uses Timer |
 |-----------|------|-------------------|
-| ComputeStyles | `gui/timer.py` (instantiated in `gui/mainwindow.py`) | Subscribes to `timer.second`, computes task status transitions and recomputes derived/effective appearance for all domain objects. See `docs/TASK_STATUS.md` |
-| Reminder Controller | `gui/remindercontroller.py` | Subscribes to `timer.second`, polls all tasks |
+| MasterScheduler | `gui/scheduler.py` | Subscribes to `timer.second`, processes all tasks and styles |
+| Reminder Controller | `gui/remindercontroller.py` | Subscribes to `task.reminder.trigger` event |
 | Task Filter | `domain/task/filter.py` | Subscribes to `timer.date`, calls `reset()` |
-| Calendar Viewer | `gui/viewer/task.py` | Subscribes to `timer.date`, calls refresh |
-| Minute Refresher | `gui/viewer/refresher.py` | Subscribes to `timer.minute` |
+| Calendar Viewer | `gui/viewer/task.py` | Subscribes to `scheduler.dateChange.uiRefresh` |
+| Minute Refresher | `gui/viewer/refresher.py` | Subscribes to `scheduler.minuteChange.uiRefresh` |
 | Second Refresher | `gui/viewer/refresher.py` | Uses own `wx.Timer` (per-viewer tracking) |
-| Taskbar Icon | `gui/taskbaricon.py` | Subscribes to `timer.second` |
-| Task Editor | `gui/dialog/editor.py` | Subscribes to `timer.second` when tracking |
+| Taskbar Icon | `gui/taskbaricon.py` | Subscribes to `timer.second` (local UI update) |
+| Task Editor | `gui/dialog/editor.py` | Subscribes to `timer.second` when tracking (local UI) |
 
 ---
 
-## ComputeStyles Processing Flow
+## MasterScheduler Processing Flow
 
 ```
-Every second:
+Every second (_onSecond):
   Skip if no task file loaded
 
-  For each category (one at a time):
-    Compute derived (source: parent category's effective values)
-    Compute effective (override or derived, with system default)
+  Detect date/minute changes
 
-  For each task (one at a time):
-    Compute status (from dates + current time → fires statusChanged if changed)
-    Compute derived (sources: categories → parent task → status colors/font/icon)
-    Compute effective (override or derived, with system default)
+  For each category:
+    computeStyles(category)
 
-  For each note (one at a time):
-    Compute derived (source: parent note's effective values)
-    Compute effective (override or derived, with system default)
+  For each task:
+    if dateChanged: task.onDailyChange()
+    task.recomputeLegacyStatus()        # Legacy __status
+    task.computeStoredStatus()          # Modern __computed_status
+    task.processReminder()              # Fire trigger if due
+    computeStyles(task)
+    computeStyles(task.notes)
+    computeStyles(task.attachments)
 
-  For each task's attachments (one at a time):
-    Compute derived (no sources → always empty)
-    Compute effective (override or system default)
+  For each global note:
+    computeStyles(note)
+    computeStyles(note.attachments)
 
-  For each note's attachments (one at a time):
-    Compute derived (no sources → always empty)
-    Compute effective (override or system default)
+  if dateChanged:
+    emit 'scheduler.dateChange.uiRefresh'
+  if minuteChanged:
+    emit 'scheduler.minuteChange.uiRefresh'
 ```
 
-> **Note:** Categories are processed first because tasks read category.effectiveXxx() during their derived step. Each individual object completes all its phases before the next object starts.
+> **Key Principle:** MasterScheduler handles TIME-based changes (status updates, reminders, styles). Auto-completion cascades are EVENT-driven via `_onCompletionDateTimeChanged` to respect user intent when manually unchecking tasks.
 
 ---
 
 ## Optimizations
 
-### 1. Single Timestamp Per Tick
-```python
-def _onTick(self, event):
-    now = DateTime.now()  # ONCE - expensive system call
-    # All subscribers receive the same timestamp
-    pub.sendMessage('timer.second', timestamp=now)
-```
+**Reference:** `scheduler.py:GlobalTimer._onTick()`, `MasterScheduler._onSecond()`
 
-### 2. Tuple Comparison for Date/Time
-```python
-currentDate = (now.year, now.month, now.day)
-if self._lastDate != currentDate:  # Fast integer comparison
-    ...
-```
+1. **Single Timestamp Per Tick**: `DateTime.now()` called once, passed to all subscribers
+2. **Tuple Comparison**: Date/minute stored as tuples for fast integer comparison
+3. **First-Run Detection**: `_lastDate = None` triggers date event on first tick
+4. **Timestamp Reuse**: Subscribers receive timestamp parameter, no extra `now()` calls
 
-### 3. First-Run Detection via None
-```python
-self._lastDate = None  # None = first run
+---
 
-if self._lastDate != currentDate:  # True on first run
-    self._lastDate = currentDate
-    pub.sendMessage('timer.date', timestamp=now)
-```
+## Performance Considerations
 
-### 4. Shown Reminders Set (O(1) lookup)
-```python
-self._shownReminders = set()
+If `_onSecond()` ever freezes the UI with very large task files:
 
-if task not in self._shownReminders:  # O(1)
-    showReminder(task)
-    self._shownReminders.add(task)
-```
+1. **Profile first** - Don't optimize blindly. Identify actual bottlenecks before making changes.
 
-### 5. Timestamp Passed to Subscribers
-```python
-# Subscribers reuse the timestamp - NO extra DateTime.now() calls
-def _onTimerSecond(self, timestamp):
-    now = timestamp  # Use passed value
-```
+2. **Yield to event loop** - If loop iteration is the issue, yield to wx event loop every 100-200ms using `wx.SafeYield()` or `wx.GetApp().Yield()`.
+
+3. **Only if needed** - Only add yielding if there are actual cases where processing exceeds 100-200ms.
 
 ---
 
@@ -158,16 +166,6 @@ The old system used a custom `Scheduler` class (`domain/date/scheduler.py`) that
 **Removed files:**
 - `taskcoachlib/domain/date/scheduler.py` - Deleted entirely (not deprecated as stub)
 
-### Migration (Completed 2024)
-
-| Phase | Description | Status |
-|-------|-------------|--------|
-| Phase 1 | Create GlobalTimer in `gui/timer.py` | Complete |
-| Phase 2 | Migrate Reminder Controller to polling | Complete |
-| Phase 3 | Remove scheduling from Task status methods | Complete |
-| Phase 4 | Migrate midnight processing (filter, viewers) | Complete |
-| Phase 5 | Migrate minute/second processing | Complete |
-| Phase 6 | Remove old Scheduler code and update tests | Complete |
 
 ---
 
@@ -182,33 +180,4 @@ The old system used a custom `Scheduler` class (`domain/date/scheduler.py`) that
 
 ---
 
-## Performance
 
-### Timer Overhead
-- 1-second timer: ~1000 ticks per 16 minutes of use
-- Each tick: 1 timestamp call + tuple comparisons + pub/sub dispatch
-- Minimal CPU impact for typical usage
-
-### Task List Iteration
-- Reminder check iterates task list once per second
-- For 1000 tasks: ~1000 comparisons per second (trivial)
-
-### Memory
-- Old: One `wx.CallLater` per scheduled event (potentially hundreds)
-- New: One `wx.Timer` + small state variables
-
----
-
-## Change Log
-
-| Date | Change |
-|------|--------|
-| 2026-01-12 | Initial documentation of current architecture and issues |
-| 2026-01-12 | Proposed simplified architecture with global timer |
-| 2026-01-12 | Created `gui/timer.py` with optimized `GlobalTimer` class |
-| 2026-01-12 | Completed migration of all components |
-| 2026-01-12 | Removed old `scheduler.py` entirely (no stub) |
-| 2026-01-12 | Updated all tests to use new architecture |
-| 2026-01-22 | StatusChecker instantiated in mainwindow.py (was dead code) |
-| 2026-01-22 | computeStatus() called from recomputeAppearance() for immediate updates |
-| 2026-01-27 | StatusChecker merged into ComputeStyles; status computed per-task before derived/effective |
