@@ -9370,127 +9370,152 @@
     "oxygen_actions_activity-fork": {
       "category": "actions",
       "file": "activity-fork.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["activity", "fork", "branch", "split", "arrows", "diverge", "process", "parallel"]
     },
     "oxygen_actions_list-add": {
       "category": "actions",
       "file": "list-add.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["list", "add", "plus", "green", "new", "create", "insert", "append"]
     },
     "oxygen_actions_knotes_date": {
       "category": "actions",
       "file": "knotes_date.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["knotes", "date", "calendar", "schedule", "day", "time", "notes", "reminder"]
     },
     "oxygen_actions_dirsync": {
       "category": "actions",
       "file": "dirsync.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["dirsync", "directory", "sync", "folder", "synchronize", "backup", "mirror", "copy"]
     },
     "oxygen_actions_view-refresh": {
       "category": "actions",
       "file": "view-refresh.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "refresh", "reload", "green", "circular", "arrow", "update", "sync"]
     },
     "oxygen_actions_fill-color": {
       "category": "actions",
       "file": "fill-color.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["fill", "color", "paint", "bucket", "flood", "background", "splash", "colorful"]
     },
     "oxygen_actions_albumfolder-importimages": {
       "category": "actions",
       "file": "albumfolder-importimages.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["album", "folder", "import", "images", "photos", "arrow", "download", "transfer"]
     },
     "oxygen_actions_cursor-arrow": {
       "category": "actions",
       "file": "cursor-arrow.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["cursor", "arrow", "pointer", "mouse", "select", "click", "default", "tool"]
     },
     "oxygen_actions_view-media-lyrics": {
       "category": "actions",
       "file": "view-media-lyrics.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["lyrics", "media", "music", "song", "text", "notes", "words", "karaoke"]
     },
     "oxygen_actions_align-horizontal-left-out": {
       "category": "actions",
       "file": "align-horizontal-left-out.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["align", "horizontal", "left", "out", "outside", "layout", "arrange", "position"]
     },
     "oxygen_actions_zoom-fit-drawing": {
       "category": "actions",
       "file": "zoom-fit-drawing.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["zoom", "fit", "drawing", "document", "scale", "canvas", "view", "page"]
     },
     "oxygen_actions_draw-ellipse": {
       "category": "actions",
       "file": "draw-ellipse.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["draw", "ellipse", "oval", "shape", "circle", "geometry", "round", "curve"]
     },
     "oxygen_actions_editimage": {
       "category": "actions",
       "file": "editimage.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["edit", "image", "pencil", "modify", "draw", "photo", "change", "retouch"]
     },
     "oxygen_actions_edit-table-insert-row-above": {
       "category": "actions",
       "file": "edit-table-insert-row-above.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["table", "insert", "row", "above", "add", "grid", "spreadsheet", "plus"]
     },
     "oxygen_actions_debug-run-cursor": {
       "category": "actions",
       "file": "debug-run-cursor.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["debug", "run", "cursor", "gear", "execute", "breakpoint", "code", "step"]
     },
     "oxygen_actions_transform-shear-up": {
       "category": "actions",
       "file": "transform-shear-up.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["transform", "shear", "up", "skew", "slant", "parallelogram", "distort", "angle"]
     },
     "oxygen_actions_albumfolder-importdir": {
       "category": "actions",
       "file": "albumfolder-importdir.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["album", "folder", "import", "directory", "photos", "arrow", "move", "transfer"]
     },
     "oxygen_actions_stroke-cap-miter": {
       "category": "actions",
       "file": "stroke-cap-miter.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["stroke", "cap", "miter", "corner", "sharp", "join", "line", "vector"]
     },
     "oxygen_actions_view-list-text": {
       "category": "actions",
       "file": "view-list-text.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "list", "text", "lines", "details", "rows", "items", "document"]
     },
     "oxygen_actions_edit-clear-locationbar-ltr": {
       "category": "actions",
       "file": "edit-clear-locationbar-ltr.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["clear", "locationbar", "close", "x", "delete", "remove", "cancel", "erase"]
     },
     "oxygen_actions_show-offline": {
       "category": "actions",
       "file": "show-offline.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["show", "offline", "user", "gray", "disconnected", "unavailable", "status", "away"]
     },
     "oxygen_actions_edit-guides": {
       "category": "actions",
       "file": "edit-guides.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["edit", "guides", "lines", "ruler", "align", "snap", "grid", "layout"]
     },
     "oxygen_actions_rating": {
       "category": "actions",
       "file": "rating.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["rating", "star", "gold", "yellow", "favorite", "rank", "score", "review"]
     },
     "oxygen_actions_list-add-user": {
       "category": "actions",
       "file": "list-add-user.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["list", "add", "user", "person", "plus", "new", "account", "member"]
     },
     "oxygen_actions_align-horizontal-left": {
       "category": "actions",
       "file": "align-horizontal-left.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["align", "horizontal", "left", "object", "edge", "layout", "arrange", "position"]
     },
     "oxygen_actions_node-add": {
       "category": "actions",
