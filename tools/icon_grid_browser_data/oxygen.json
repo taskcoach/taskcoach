@@ -10474,87 +10474,104 @@
     "oxygen_actions_document-decrypt": {
       "category": "actions",
       "file": "document-decrypt.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["document", "decrypt", "unlock", "padlock", "security", "open", "unprotect"]
     },
     "oxygen_actions_dialog-object-properties": {
       "category": "actions",
       "file": "dialog-object-properties.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["dialog", "object", "properties", "wrench", "settings", "configure", "tool"]
     },
     "oxygen_actions_distribute-horizontal-margin": {
       "category": "actions",
       "file": "distribute-horizontal-margin.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["distribute", "horizontal", "margin", "spacing", "layout", "gap", "rectangles"]
     },
     "oxygen_actions_stroke-cap-butt": {
       "category": "actions",
       "file": "stroke-cap-butt.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["stroke", "cap", "butt", "flat", "end", "line", "square"]
     },
     "oxygen_actions_document-close": {
       "category": "actions",
       "file": "document-close.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["document", "close", "file", "exit", "red", "x", "cancel"]
     },
     "oxygen_actions_align-horizontal-left-to-anchor": {
       "category": "actions",
       "file": "align-horizontal-left-to-anchor.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["align", "horizontal", "left", "anchor", "layout", "objects", "snap"]
     },
     "oxygen_actions_go-parent-folder": {
       "category": "actions",
       "file": "go-parent-folder.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["go", "parent", "folder", "up", "directory", "navigate", "arrow"]
     },
     "oxygen_actions_irc-close-channel": {
       "category": "actions",
       "file": "irc-close-channel.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["irc", "close", "channel", "hashtag", "chat", "leave", "disconnect"]
     },
     "oxygen_actions_amarok_clock": {
       "category": "actions",
       "file": "amarok_clock.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["amarok", "clock", "timer", "time", "music", "schedule", "plus"]
     },
     "oxygen_actions_zoom-fit-best": {
       "category": "actions",
       "file": "zoom-fit-best.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["zoom", "fit", "best", "page", "document", "resize", "scale"]
     },
     "oxygen_actions_call-start": {
       "category": "actions",
       "file": "call-start.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["call", "start", "phone", "answer", "green", "dial", "telephone"]
     },
     "oxygen_actions_shuffle": {
       "category": "actions",
       "file": "shuffle.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["shuffle", "random", "dice", "mix", "randomize", "music", "playlist"]
     },
     "oxygen_actions_zoom-fit-height": {
       "category": "actions",
       "file": "zoom-fit-height.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["zoom", "fit", "height", "vertical", "page", "document", "scale"]
     },
     "oxygen_actions_gtk-select-font": {
       "category": "actions",
       "file": "gtk-select-font.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["font", "select", "text", "typography", "letter", "typeface", "serif"]
     },
     "oxygen_actions_text_subscript": {
       "category": "actions",
       "file": "text_subscript.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["text", "subscript", "format", "sub", "lower", "formula", "math"]
     },
     "oxygen_actions_object_node": {
       "category": "actions",
       "file": "object_node.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["object", "node", "point", "square", "anchor", "handle", "path"]
     },
     "oxygen_actions_page-zoom": {
       "category": "actions",
       "file": "page-zoom.png",
-      "sizes": [16, 22, 32, 48, 128]
+      "sizes": [16, 22, 32, 48, 128],
+      "hints": ["page", "zoom", "magnify", "search", "document", "glass", "view"]
     },
     "oxygen_actions_view-calendar-wedding-anniversary": {
       "category": "actions",
