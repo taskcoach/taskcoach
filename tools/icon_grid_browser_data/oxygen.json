@@ -11728,77 +11728,92 @@
     "oxygen_emotes_face-laughing": {
       "category": "emotes",
       "file": "face-laughing.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "laughing", "lol", "funny", "happy", "emoji", "hilarious"]
     },
     "oxygen_emotes_face-smile-gearhead-male": {
       "category": "emotes",
       "file": "face-smile-gearhead-male.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "smile", "gearhead", "male", "blue", "gear", "emoji"]
     },
     "oxygen_emotes_face-hug-right": {
       "category": "emotes",
       "file": "face-hug-right.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "hug", "right", "embrace", "emoji", "affection", "friendly"]
     },
     "oxygen_emotes_face-star": {
       "category": "emotes",
       "file": "face-star.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "star", "gold", "favorite", "emoji", "rating", "celebrity"]
     },
     "oxygen_emotes_face-confused": {
       "category": "emotes",
       "file": "face-confused.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "confused", "question", "puzzled", "emoji", "uncertain", "wonder"]
     },
     "oxygen_emotes_face-glasses": {
       "category": "emotes",
       "file": "face-glasses.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "glasses", "nerd", "smart", "emoji", "studious", "spectacles"]
     },
     "oxygen_emotes_face-yawn": {
       "category": "emotes",
       "file": "face-yawn.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "yawn", "bored", "tired", "sleepy", "emoji", "boring"]
     },
     "oxygen_emotes_opinion-agree": {
       "category": "emotes",
       "file": "opinion-agree.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["opinion", "agree", "plus", "add", "green", "positive", "yes"]
     },
     "oxygen_emotes_face-devilish": {
       "category": "emotes",
       "file": "face-devilish.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "devilish", "devil", "evil", "horns", "red", "emoji"]
     },
     "oxygen_emotes_opinion-disagree": {
       "category": "emotes",
       "file": "opinion-disagree.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["opinion", "disagree", "minus", "remove", "red", "negative", "no"]
     },
     "oxygen_emotes_face-clown": {
       "category": "emotes",
       "file": "face-clown.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["face", "clown", "funny", "circus", "red nose", "emoji", "comedy"]
     },
     "oxygen_emotes_food": {
       "category": "emotes",
       "file": "food.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["food", "plate", "dish", "meal", "eat", "dinner"]
     },
     "oxygen_devices_hifi": {
       "category": "devices",
       "file": "hifi.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["hifi", "stereo", "audio", "speaker", "music", "device", "amplifier"]
     },
     "oxygen_animations_process-idle": {
       "category": "animations",
       "file": "process-idle.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["process", "idle", "spinner", "waiting", "dots", "animation", "inactive"]
     },
     "oxygen_animations_process-working": {
       "category": "animations",
       "file": "process-working.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["process", "working", "spinner", "loading", "busy", "animation", "progress"]
     },
     "oxygen_apps_system-reboot": {
       "category": "apps",
