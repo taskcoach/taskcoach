@@ -7504,82 +7504,98 @@
     "oxygen_actions_games-config-theme": {
       "category": "actions",
       "file": "games-config-theme.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["games", "config", "theme", "controller", "gamepad", "joystick", "settings"]
     },
     "oxygen_actions_document-new": {
       "category": "actions",
       "file": "document-new.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["document", "new", "file", "page", "create", "add", "plus", "blank"]
     },
     "oxygen_actions_edit-image-face-add": {
       "category": "actions",
       "file": "edit-image-face-add.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["edit", "image", "face", "add", "photo", "tag", "person", "recognition"]
     },
     "oxygen_actions_object-align-vertical-top-calligra": {
       "category": "actions",
       "file": "object-align-vertical-top-calligra.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["object", "align", "vertical", "top", "calligra", "rectangles", "layout"]
     },
     "oxygen_actions_zoom-out": {
       "category": "actions",
       "file": "zoom-out.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["zoom", "out", "magnify", "minus", "reduce", "smaller", "glass"]
     },
     "oxygen_actions_view-form-table": {
       "category": "actions",
       "file": "view-form-table.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "form", "table", "grid", "rows", "columns", "spreadsheet"]
     },
     "oxygen_actions_document-edit-sign": {
       "category": "actions",
       "file": "document-edit-sign.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["document", "edit", "sign", "signature", "pen", "write", "pencil"]
     },
     "oxygen_actions_ktnef_extract_to": {
       "category": "actions",
       "file": "ktnef_extract_to.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["ktnef", "extract", "documents", "arrow", "export", "attachment", "outlook"]
     },
     "oxygen_actions_zoom-select-fit": {
       "category": "actions",
       "file": "zoom-select-fit.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["zoom", "select", "fit", "page", "document", "resize", "scale"]
     },
     "oxygen_actions_system-user-prompt": {
       "category": "actions",
       "file": "system-user-prompt.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["system", "user", "prompt", "login", "people", "group", "green", "dialog"]
     },
     "oxygen_actions_bqm-rmqueue": {
       "category": "actions",
       "file": "bqm-rmqueue.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["bqm", "rmqueue", "remove", "queue", "delete", "red", "cross", "cancel"]
     },
     "oxygen_actions_zoom-half-size": {
       "category": "actions",
       "file": "zoom-half-size.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["zoom", "half", "size", "50", "percent", "magnify", "reduce", "scale"]
     },
     "oxygen_actions_edit-bomb": {
       "category": "actions",
       "file": "edit-bomb.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["edit", "bomb", "explosive", "black", "fuse", "danger", "delete"]
     },
     "oxygen_actions_resource-calendar-insert": {
       "category": "actions",
       "file": "resource-calendar-insert.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["resource", "calendar", "insert", "add", "schedule", "plus", "event"]
     },
     "oxygen_actions_document-new-from-template": {
       "category": "actions",
       "file": "document-new-from-template.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["document", "new", "template", "file", "page", "create", "plus"]
     },
     "oxygen_actions_user-properties": {
       "category": "actions",
       "file": "user-properties.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["user", "properties", "person", "profile", "edit", "pencil", "settings"]
     },
     "oxygen_actions_class-or-package": {
       "category": "actions",
