@@ -8920,127 +8920,152 @@
     "oxygen_actions_office-chart-area-stacked": {
       "category": "actions",
       "file": "office-chart-area-stacked.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["chart", "area", "stacked", "graph", "data", "statistics", "layers", "visualization"]
     },
     "oxygen_actions_zoom-next": {
       "category": "actions",
       "file": "zoom-next.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["zoom", "next", "magnify", "forward", "navigate", "search", "find", "jump"]
     },
     "oxygen_actions_kdenlive-align-bottom": {
       "category": "actions",
       "file": "kdenlive-align-bottom.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["align", "bottom", "kdenlive", "video", "layout", "position", "arrange", "baseline"]
     },
     "oxygen_actions_gtk-select-color": {
       "category": "actions",
       "file": "gtk-select-color.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["color", "select", "gtk", "picker", "marker", "highlighter", "palette", "choose"]
     },
     "oxygen_actions_distribute-horizontal-center": {
       "category": "actions",
       "file": "distribute-horizontal-center.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["distribute", "horizontal", "center", "spacing", "layout", "align", "objects", "middle"]
     },
     "oxygen_actions_bqm-commit": {
       "category": "actions",
       "file": "bqm-commit.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["commit", "bqm", "upload", "submit", "arrow", "up", "apply", "queue"]
     },
     "oxygen_actions_kontes_close": {
       "category": "actions",
       "file": "kontes_close.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["close", "kontes", "x", "cancel", "exit", "stop", "red", "dismiss"]
     },
     "oxygen_actions_games-config-tiles": {
       "category": "actions",
       "file": "games-config-tiles.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["games", "config", "tiles", "mahjong", "settings", "puzzle", "board", "configure"]
     },
     "oxygen_actions_labplot-cursor-arrow": {
       "category": "actions",
       "file": "labplot-cursor-arrow.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["cursor", "arrow", "labplot", "pointer", "select", "mouse", "tool", "click"]
     },
     "oxygen_actions_transform-skew-vertical": {
       "category": "actions",
       "file": "transform-skew-vertical.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["transform", "skew", "vertical", "distort", "tilt", "shear", "graphic", "perspective"]
     },
     "oxygen_actions_kmix-master": {
       "category": "actions",
       "file": "kmix-master.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["kmix", "master", "volume", "mixer", "audio", "sound", "sliders", "control"]
     },
     "oxygen_actions_tools-rip-video-cd": {
       "category": "actions",
       "file": "tools-rip-video-cd.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["rip", "video", "cd", "disc", "extract", "dvd", "copy", "media"]
     },
     "oxygen_actions_draw-line": {
       "category": "actions",
       "file": "draw-line.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["draw", "line", "stroke", "tool", "graphic", "vector", "segment", "path"]
     },
     "oxygen_actions_object-rotate-right": {
       "category": "actions",
       "file": "object-rotate-right.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["rotate", "right", "clockwise", "object", "turn", "transform", "spin", "angle"]
     },
     "oxygen_actions_mail-replied": {
       "category": "actions",
       "file": "mail-replied.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["mail", "replied", "email", "response", "arrow", "envelope", "answer", "reply"]
     },
     "oxygen_actions_node-delete-segment": {
       "category": "actions",
       "file": "node-delete-segment.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["node", "delete", "segment", "path", "remove", "vector", "break", "disconnect"]
     },
     "oxygen_actions_debug-step-instruction": {
       "category": "actions",
       "file": "debug-step-instruction.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["debug", "step", "instruction", "code", "breakpoint", "execute", "trace", "developer"]
     },
     "oxygen_actions_videoclip-amarok": {
       "category": "actions",
       "file": "videoclip-amarok.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["video", "clip", "amarok", "film", "movie", "media", "filmstrip", "clapperboard"]
     },
     "oxygen_actions_view-pim-news": {
       "category": "actions",
       "file": "view-pim-news.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["news", "pim", "newspaper", "article", "feed", "rss", "view", "read"]
     },
     "oxygen_actions_playlist-sort": {
       "category": "actions",
       "file": "playlist-sort.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["playlist", "sort", "order", "list", "music", "arrange", "organize", "media"]
     },
     "oxygen_actions_debug-step-over": {
       "category": "actions",
       "file": "debug-step-over.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["debug", "step over", "skip", "code", "breakpoint", "function", "bypass", "developer"]
     },
     "oxygen_actions_office-chart-scatter": {
       "category": "actions",
       "file": "office-chart-scatter.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["chart", "scatter", "plot", "data", "points", "graph", "statistics", "xy"]
     },
     "oxygen_actions_archive-remove": {
       "category": "actions",
       "file": "archive-remove.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["archive", "remove", "delete", "document", "zip", "x", "unarchive", "extract"]
     },
     "oxygen_actions_download-later": {
       "category": "actions",
       "file": "download-later.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["download", "later", "schedule", "clock", "queue", "time", "defer", "postpone"]
     },
     "oxygen_actions_code-variable": {
       "category": "actions",
       "file": "code-variable.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["code", "variable", "programming", "symbol", "identifier", "value", "data", "developer"]
     },
     "oxygen_actions_object-rotate-left": {
       "category": "actions",
