@@ -12268,47 +12268,56 @@
     "oxygen_actions_kalarm-disabled": {
       "category": "actions",
       "file": "kalarm-disabled.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["kalarm", "disabled", "alarm", "clock", "inactive", "off", "grayed"]
     },
     "oxygen_actions_offline": {
       "category": "actions",
       "file": "offline.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["offline", "disconnected", "unavailable", "status", "network", "no-connection"]
     },
     "oxygen_actions_kstars_xplanet": {
       "category": "actions",
       "file": "kstars_xplanet.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["kstars", "xplanet", "planet", "globe", "earth", "astronomy", "render"]
     },
     "oxygen_actions_entry-edit": {
       "category": "actions",
       "file": "entry-edit.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["entry", "edit", "pencil", "modify", "write", "change", "update"]
     },
     "oxygen_actions_step_object_Polygon": {
       "category": "actions",
       "file": "step_object_Polygon.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["step", "object", "polygon", "shape", "angular", "outline", "geometry"]
     },
     "oxygen_actions_tool_ellipse": {
       "category": "actions",
       "file": "tool_ellipse.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["tool", "ellipse", "oval", "circle", "shape", "draw", "outline"]
     },
     "oxygen_actions_object-locked": {
       "category": "actions",
       "file": "object-locked.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["object", "locked", "padlock", "security", "protect", "freeze", "immovable"]
     },
     "oxygen_actions_tool_flood_fill": {
       "category": "actions",
       "file": "tool_flood_fill.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["tool", "flood", "fill", "bucket", "paint", "color", "area"]
     },
     "oxygen_actions_labplot-zoom-select": {
       "category": "actions",
       "file": "labplot-zoom-select.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["labplot", "zoom", "select", "chart", "region", "area", "magnify"]
     }
   }
 }
