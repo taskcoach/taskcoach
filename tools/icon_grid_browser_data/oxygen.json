@@ -7084,152 +7084,182 @@
     "oxygen_actions_draw-halfcircle4": {
       "category": "actions",
       "file": "draw-halfcircle4.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["draw", "half", "circle", "semicircle", "shape", "arc", "geometry"]
     },
     "oxygen_actions_edit-undo-history": {
       "category": "actions",
       "file": "edit-undo-history.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["edit", "undo", "history", "arrow", "revert", "back", "previous"]
     },
     "oxygen_actions_umbr-message-found": {
       "category": "actions",
       "file": "umbr-message-found.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["umbrello", "message", "found", "checkmark", "green", "success", "located"]
     },
     "oxygen_actions_bookmark-new": {
       "category": "actions",
       "file": "bookmark-new.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["bookmark", "new", "add", "plus", "favorite", "ribbon", "document", "page"]
     },
     "oxygen_actions_edit-table-insert-column-right": {
       "category": "actions",
       "file": "edit-table-insert-column-right.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["edit", "table", "insert", "column", "right", "add", "grid", "spreadsheet"]
     },
     "oxygen_actions_document-open-recent": {
       "category": "actions",
       "file": "document-open-recent.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["document", "open", "recent", "file", "clock", "time", "history"]
     },
     "oxygen_actions_geany-save-all": {
       "category": "actions",
       "file": "geany-save-all.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["geany", "save", "all", "floppy", "disk", "multiple", "files"]
     },
     "oxygen_actions_run-build": {
       "category": "actions",
       "file": "run-build.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["run", "build", "compile", "gear", "cog", "execute", "play", "settings"]
     },
     "oxygen_actions_format-list-unordered": {
       "category": "actions",
       "file": "format-list-unordered.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["format", "list", "unordered", "bullet", "points", "items", "text"]
     },
     "oxygen_actions_color-picker-black": {
       "category": "actions",
       "file": "color-picker-black.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["color", "picker", "black", "dropper", "pipette", "eyedropper", "sample"]
     },
     "oxygen_actions_view-certificate-export-secret": {
       "category": "actions",
       "file": "view-certificate-export-secret.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["certificate", "export", "secret", "key", "private", "security", "badge"]
     },
     "oxygen_actions_view-time-schedule-insert": {
       "category": "actions",
       "file": "view-time-schedule-insert.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["time", "schedule", "insert", "add", "calendar", "gantt", "timeline", "event"]
     },
     "oxygen_actions_media-playback-stop": {
       "category": "actions",
       "file": "media-playback-stop.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["media", "playback", "stop", "square", "button", "player", "audio", "video"]
     },
     "oxygen_actions_transform-move": {
       "category": "actions",
       "file": "transform-move.png",
-      "sizes": [16, 22, 32, 48, 64, 128]
+      "sizes": [16, 22, 32, 48, 64, 128],
+      "hints": ["transform", "move", "arrows", "direction", "drag", "position", "relocate"]
     },
     "oxygen_actions_edit-table-delete-row": {
       "category": "actions",
       "file": "edit-table-delete-row.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["edit", "table", "delete", "row", "remove", "grid", "spreadsheet"]
     },
     "oxygen_actions_dialog-icon-preview": {
       "category": "actions",
       "file": "dialog-icon-preview.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["dialog", "icon", "preview", "magnify", "zoom", "view", "search"]
     },
     "oxygen_actions_format-stroke-color": {
       "category": "actions",
       "file": "format-stroke-color.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["format", "stroke", "color", "pen", "marker", "rainbow", "outline", "draw"]
     },
     "oxygen_actions_polygon-merge-nodes": {
       "category": "actions",
       "file": "polygon-merge-nodes.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["polygon", "merge", "nodes", "vector", "points", "combine", "join"]
     },
     "oxygen_actions_albumfolder-properties": {
       "category": "actions",
       "file": "albumfolder-properties.png",
-      "sizes": [16, 22, 32]
+      "sizes": [16, 22, 32],
+      "hints": ["album", "folder", "properties", "photos", "images", "edit", "pencil"]
     },
     "oxygen_actions_flag-blue": {
       "category": "actions",
       "file": "flag-blue.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["flag", "blue", "marker", "banner", "tag", "label", "priority"]
     },
     "oxygen_actions_code-function": {
       "category": "actions",
       "file": "code-function.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["code", "function", "method", "block", "programming", "purple", "routine"]
     },
     "oxygen_actions_view-visible": {
       "category": "actions",
       "file": "view-visible.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "visible", "eye", "show", "see", "visibility", "display"]
     },
     "oxygen_actions_arrow-down": {
       "category": "actions",
       "file": "arrow-down.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["arrow", "down", "green", "triangle", "direction", "navigate", "descend"]
     },
     "oxygen_actions_amarok_playlist_refresh": {
       "category": "actions",
       "file": "amarok_playlist_refresh.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["amarok", "playlist", "refresh", "reload", "circular", "arrow", "music"]
     },
     "oxygen_actions_colormanagement": {
       "category": "actions",
       "file": "colormanagement.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["color", "management", "paint", "bucket", "palette", "fill", "rainbow"]
     },
     "oxygen_actions_path-mode-bezier": {
       "category": "actions",
       "file": "path-mode-bezier.png",
-      "sizes": [16, 22]
+      "sizes": [16, 22],
+      "hints": ["path", "mode", "bezier", "curve", "pen", "vector", "drawing"]
     },
     "oxygen_actions_quickview": {
       "category": "actions",
       "file": "quickview.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["quick", "view", "preview", "eye", "look", "see", "visibility"]
     },
     "oxygen_actions_view-calendar-week": {
       "category": "actions",
       "file": "view-calendar-week.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["view", "calendar", "week", "schedule", "date", "days", "planner"]
     },
     "oxygen_actions_end_state": {
       "category": "actions",
       "file": "end_state.png",
-      "sizes": [16]
+      "sizes": [16],
+      "hints": ["end", "state", "final", "target", "circle", "uml", "terminal"]
     },
     "oxygen_actions_edit-find-project": {
       "category": "actions",
       "file": "edit-find-project.png",
-      "sizes": [16, 22, 32, 48]
+      "sizes": [16, 22, 32, 48],
+      "hints": ["edit", "find", "project", "search", "binoculars", "locate", "keyboard"]
     },
     "oxygen_actions_tag-addressbook": {
       "category": "actions",
