@@ -11986,157 +11986,188 @@
     "oxygen_actions_mixer-capture": {
       "category": "actions",
       "file": "mixer-capture.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["mixer", "capture", "record", "red", "audio", "input", "microphone"]
     },
     "oxygen_actions_mixer-capture-secondary": {
       "category": "actions",
       "file": "mixer-capture-secondary.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["mixer", "capture", "secondary", "record", "red", "audio", "alternate"]
     },
     "oxygen_actions_tool_color_picker": {
       "category": "actions",
       "file": "tool_color_picker.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["tool", "color", "picker", "eyedropper", "pipette", "sample", "select"]
     },
     "oxygen_actions_tool_rect_selection": {
       "category": "actions",
       "file": "tool_rect_selection.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["tool", "rectangle", "selection", "select", "marquee", "crop", "area"]
     },
     "oxygen_actions_kstars_guides": {
       "category": "actions",
       "file": "kstars_guides.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["kstars", "guides", "grid", "coordinates", "lines", "astronomy", "celestial"]
     },
     "oxygen_actions_mixer-midi": {
       "category": "actions",
       "file": "mixer-midi.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["mixer", "midi", "piano", "keys", "music", "synthesizer", "keyboard"]
     },
     "oxygen_actions_step_object_Box": {
       "category": "actions",
       "file": "step_object_Box.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["step", "box", "rectangle", "square", "physics", "object", "shape"]
     },
     "oxygen_actions_kdenlive-lock": {
       "category": "actions",
       "file": "kdenlive-lock.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["kdenlive", "lock", "track", "protect", "secure", "video", "editing"]
     },
     "oxygen_actions_kdenlive-show-audio": {
       "category": "actions",
       "file": "kdenlive-show-audio.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["kdenlive", "show", "audio", "speaker", "sound", "waveform", "volume"]
     },
     "oxygen_actions_mixer-pcm-default": {
       "category": "actions",
       "file": "mixer-pcm-default.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["mixer", "pcm", "default", "audio", "waveform", "sound", "wave"]
     },
     "oxygen_actions_kstars_catalog": {
       "category": "actions",
       "file": "kstars_catalog.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["kstars", "catalog", "star", "astronomy", "database", "list", "objects"]
     },
     "oxygen_actions_online": {
       "category": "actions",
       "file": "online.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["online", "connected", "available", "green", "checkmark", "status"]
     },
     "oxygen_actions_tool_eraser": {
       "category": "actions",
       "file": "tool_eraser.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["eraser", "tool", "delete", "remove", "erase", "rubber", "clear"]
     },
     "oxygen_actions_lock": {
       "category": "actions",
       "file": "lock.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["lock", "padlock", "security", "locked", "protect", "password", "secure"]
     },
     "oxygen_actions_kalarm-partdisabled": {
       "category": "actions",
       "file": "kalarm-partdisabled.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["kalarm", "alarm", "partially", "disabled", "clock", "timer", "warning"]
     },
     "oxygen_actions_mixer-cd": {
       "category": "actions",
       "file": "mixer-cd.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["mixer", "cd", "disc", "audio", "compact", "media", "sound"]
     },
     "oxygen_actions_step_object_Controller": {
       "category": "actions",
       "file": "step_object_Controller.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["step", "object", "controller", "gear", "cog", "settings", "mechanism"]
     },
     "oxygen_actions_labplot-zoom-select-y": {
       "category": "actions",
       "file": "labplot-zoom-select-y.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["labplot", "zoom", "select", "y-axis", "chart", "plot", "vertical"]
     },
     "oxygen_actions_filename-artist-amarok": {
       "category": "actions",
       "file": "filename-artist-amarok.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["filename", "artist", "amarok", "music", "person", "musician", "tag"]
     },
     "oxygen_actions_step_object_Note": {
       "category": "actions",
       "file": "step_object_Note.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["step", "object", "note", "sticky", "yellow", "memo", "annotation"]
     },
     "oxygen_actions_mixer-microphone-front": {
       "category": "actions",
       "file": "mixer-microphone-front.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["mixer", "microphone", "front", "audio", "record", "input", "voice"]
     },
     "oxygen_actions_step_object_Graph": {
       "category": "actions",
       "file": "step_object_Graph.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["step", "object", "graph", "chart", "plot", "lines", "data"]
     },
     "oxygen_actions_tool_rectangle": {
       "category": "actions",
       "file": "tool_rectangle.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["tool", "rectangle", "shape", "square", "draw", "box", "outline"]
     },
     "oxygen_actions_mixer-master": {
       "category": "actions",
       "file": "mixer-master.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["mixer", "master", "volume", "equalizer", "sliders", "audio", "sound"]
     },
     "oxygen_actions_kdenlive-hide-audio": {
       "category": "actions",
       "file": "kdenlive-hide-audio.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["kdenlive", "hide", "audio", "mute", "speaker", "silence", "sound"]
     },
     "oxygen_actions_kstars_planets": {
       "category": "actions",
       "file": "kstars_planets.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["kstars", "planets", "astronomy", "globe", "earth", "space", "solar"]
     },
     "oxygen_actions_kstars_constellationart": {
       "category": "actions",
       "file": "kstars_constellationart.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["kstars", "constellation", "art", "astronomy", "figure", "stars", "mythology"]
     },
     "oxygen_actions_delete-table-row": {
       "category": "actions",
       "file": "delete-table-row.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["delete", "table", "row", "remove", "grid", "spreadsheet", "cross"]
     },
     "oxygen_actions_diag_activity": {
       "category": "actions",
       "file": "diag_activity.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["diagram", "activity", "uml", "circles", "bubbles", "workflow", "process"]
     },
     "oxygen_actions_kt-encrypted": {
       "category": "actions",
       "file": "kt-encrypted.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["kt", "encrypted", "lock", "padlock", "security", "torrent", "encryption"]
     },
     "oxygen_actions_distortionfx": {
       "category": "actions",
       "file": "distortionfx.png",
-      "sizes": [22]
+      "sizes": [22],
+      "hints": ["distortion", "effect", "spiral", "swirl", "warp", "filter", "transform"]
     },
     "oxygen_actions_mixer-lfe": {
       "category": "actions",
