@@ -9524,112 +9524,134 @@
     "papirus_apps_gpmdp": {
       "category": "apps",
       "file": "gpmdp.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gpmdp", "google", "play", "music", "desktop", "player", "streaming"]
     },
     "papirus_apps_com.github.plugarut.wingpanel-monitor": {
       "category": "apps",
       "file": "com.github.plugarut.wingpanel-monitor.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["wingpanel", "monitor", "system", "cpu", "fan", "performance", "elementary"]
     },
     "papirus_apps_com.github.appadeia.Taigo": {
       "category": "apps",
       "file": "com.github.appadeia.Taigo.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["taigo", "tamagotchi", "virtual", "pet", "purple", "toy", "game"]
     },
     "papirus_apps_gnome-mastermind": {
       "category": "apps",
       "file": "gnome-mastermind.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mastermind", "gnome", "puzzle", "code", "pegs", "colors", "game"]
     },
     "papirus_apps_org.gnome.design.Emblem": {
       "category": "apps",
       "file": "org.gnome.design.Emblem.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["emblem", "design", "gnome", "badge", "icon", "symbols", "creator"]
     },
     "papirus_apps_portproton": {
       "category": "apps",
       "file": "portproton.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["portproton", "proton", "wine", "windows", "gaming", "linux", "compatibility"]
     },
     "papirus_apps_zed": {
       "category": "apps",
       "file": "zed.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["zed", "editor", "code", "text", "ide", "programming", "fast"]
     },
     "papirus_apps_apport": {
       "category": "apps",
       "file": "apport.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["apport", "crash", "error", "report", "bug", "ubuntu", "warning"]
     },
     "papirus_apps_gksu-debian": {
       "category": "apps",
       "file": "gksu-debian.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gksu", "debian", "root", "sudo", "terminal", "admin", "privilege"]
     },
     "papirus_apps_q4_findmenu": {
       "category": "apps",
       "file": "q4_findmenu.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["findmenu", "search", "menu", "find", "launcher", "list", "q4"]
     },
     "papirus_apps_cs-gestures": {
       "category": "apps",
       "file": "cs-gestures.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gestures", "touchpad", "touch", "finger", "cinnamon", "settings", "swipe"]
     },
     "papirus_apps_wxHexEditor": {
       "category": "apps",
       "file": "wxHexEditor.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["wxhexeditor", "hex", "editor", "binary", "data", "bytes", "edit"]
     },
     "papirus_apps_jamulus": {
       "category": "apps",
       "file": "jamulus.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["jamulus", "jam", "music", "online", "cloud", "collaboration", "audio"]
     },
     "papirus_apps_org.sdrangel.SDRangel": {
       "category": "apps",
       "file": "org.sdrangel.SDRangel.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["sdrangel", "sdr", "radio", "software", "defined", "signal", "receiver"]
     },
     "papirus_apps_io.github.RodZill4.Material-Maker": {
       "category": "apps",
       "file": "io.github.RodZill4.Material-Maker.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["material", "maker", "texture", "procedural", "3d", "godot", "design"]
     },
     "papirus_apps_steam_icon_2620": {
       "category": "apps",
       "file": "steam_icon_2620.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["call", "duty", "cod", "star", "military", "shooter", "steam", "game"]
     },
     "papirus_apps_securecrt_64": {
       "category": "apps",
       "file": "securecrt_64.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["securecrt", "ssh", "terminal", "secure", "remote", "shell", "client"]
     },
     "papirus_apps_dvanalyzer": {
       "category": "apps",
       "file": "dvanalyzer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["dvanalyzer", "dv", "video", "analyzer", "media", "analysis", "tape"]
     },
     "papirus_apps_naver-whale": {
       "category": "apps",
       "file": "naver-whale.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["naver", "whale", "browser", "web", "korean", "internet", "teal"]
     },
     "papirus_apps_encryptpad": {
       "category": "apps",
       "file": "encryptpad.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["encryptpad", "encrypt", "padlock", "security", "text", "editor", "lock"]
     },
     "papirus_apps_org.gnome.Dia": {
       "category": "apps",
       "file": "org.gnome.Dia.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["dia", "diagram", "flowchart", "gnome", "chart", "drawing", "uml"]
     },
     "papirus_apps_cryptomator": {
       "category": "apps",
       "file": "cryptomator.svg",
-      "sizes": [16, 22, 24, 32, 48, 64],
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cryptomator", "encrypt", "cloud", "vault", "lock", "security", "privacy"],
       "duplicates": [{
           "source": "papirus", "category": "apps", "file": "org.cryptomator.Cryptomator.svg"
         }, {
@@ -9639,7 +9661,8 @@
     "papirus_apps_gimagereader": {
       "category": "apps",
       "file": "gimagereader.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gimagereader", "ocr", "text", "recognition", "scan", "image", "tesseract"]
     },
     "papirus_apps_com.github.manexim.insomnia": {
       "category": "apps",
