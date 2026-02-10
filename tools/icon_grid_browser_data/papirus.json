@@ -9128,102 +9128,122 @@
     "papirus_apps_listen-moe-desktop": {
       "category": "apps",
       "file": "listen-moe-desktop.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["listen", "moe", "anime", "radio", "music", "stream", "japanese"]
     },
     "papirus_apps_min": {
       "category": "apps",
       "file": "min.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["min", "browser", "web", "minimal", "internet", "colorful"]
     },
     "papirus_apps_appimagekit-internxt-drive": {
       "category": "apps",
       "file": "appimagekit-internxt-drive.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["internxt", "drive", "cloud", "storage", "encrypted", "privacy", "blue"]
     },
     "papirus_apps_gnome-audio": {
       "category": "apps",
       "file": "gnome-audio.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["audio", "music", "player", "note", "gnome", "sound", "green"]
     },
     "papirus_apps_jitsi-meet": {
       "category": "apps",
       "file": "jitsi-meet.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["jitsi", "meet", "video", "conference", "call", "chat", "blue"]
     },
     "papirus_apps_appimagekit-cozydrive": {
       "category": "apps",
       "file": "appimagekit-cozydrive.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cozy", "drive", "cloud", "storage", "sync", "smile", "blue"]
     },
     "papirus_apps_mx-datetime": {
       "category": "apps",
       "file": "mx-datetime.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["datetime", "calendar", "clock", "time", "date", "schedule", "mx"]
     },
     "papirus_apps_net.pcsx2.PCSX2": {
       "category": "apps",
       "file": "net.pcsx2.PCSX2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["pcsx2", "playstation", "ps2", "emulator", "gaming", "console", "purple"]
     },
     "papirus_apps_null_team-48": {
       "category": "apps",
       "file": "null_team-48.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["null", "team", "phone", "voip", "call", "chat", "blue"]
     },
     "papirus_apps_Cemu": {
       "category": "apps",
       "file": "Cemu.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cemu", "wiiu", "emulator", "nintendo", "console", "gaming", "blue"]
     },
     "papirus_apps_cgoban": {
       "category": "apps",
       "file": "cgoban.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cgoban", "go", "board", "game", "stones", "strategy", "weiqi"]
     },
     "papirus_apps_org.hedgewars.Hedgewars": {
       "category": "apps",
       "file": "org.hedgewars.Hedgewars.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["hedgewars", "hedgehog", "artillery", "worms", "game", "strategy", "pink"]
     },
     "papirus_apps_tipp10": {
       "category": "apps",
       "file": "tipp10.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tipp10", "typing", "tutor", "keyboard", "practice", "learn", "orange"]
     },
     "papirus_apps_ksirk": {
       "category": "apps",
       "file": "ksirk.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ksirk", "risk", "strategy", "cannon", "war", "board", "kde"]
     },
     "papirus_apps_Zoom": {
       "category": "apps",
       "file": "Zoom.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["zoom", "video", "conference", "meeting", "call", "camera", "blue"]
     },
     "papirus_apps_alien-swarm": {
       "category": "apps",
       "file": "alien-swarm.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["alien", "swarm", "shooter", "coop", "game", "claw", "teal"]
     },
     "papirus_apps_element4l": {
       "category": "apps",
       "file": "element4l.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["element4l", "platformer", "element", "physics", "game", "cute", "blue"]
     },
     "papirus_apps_keepass": {
       "category": "apps",
       "file": "keepass.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["keepass", "password", "manager", "lock", "security", "vault", "blue"]
     },
     "papirus_apps_winbox": {
       "category": "apps",
       "file": "winbox.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["winbox", "mikrotik", "router", "network", "admin", "wifi", "blue"]
     },
     "papirus_apps_steam_icon_220200": {
       "category": "apps",
       "file": "steam_icon_220200.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kerbal", "space", "program", "rocket", "ksp", "steam", "green"]
     },
     "papirus_apps_world-of-tanks": {
       "category": "apps",
