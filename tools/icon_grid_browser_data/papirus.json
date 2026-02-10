@@ -6736,168 +6736,201 @@
     "papirus_apps_slic3r": {
       "category": "apps",
       "file": "slic3r.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["slic3r", "3d-printing", "slicer", "gcode", "green", "stl", "printer", "manufacturing"]
     },
     "papirus_apps_com.github.candiedoperation.ordne": {
       "category": "apps",
       "file": "com.github.candiedoperation.ordne.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ordne", "task", "organizer", "hourglass", "purple", "timer", "time", "planner"]
     },
     "papirus_apps_KoboDeluxe": {
       "category": "apps",
       "file": "KoboDeluxe.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kobo", "deluxe", "spaceship", "shooter", "game", "arcade", "space", "gray"]
     },
     "papirus_apps_steam_icon_2410180": {
       "category": "apps",
       "file": "steam_icon_2410180.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "game", "camera", "aperture", "lens", "shutter", "photography"]
     },
     "papirus_apps_gootool": {
       "category": "apps",
       "file": "gootool.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["goo", "world of goo", "game", "gear", "settings", "green", "ball"]
     },
     "papirus_apps_io.github.slgobinath.SafeEyes": {
       "category": "apps",
       "file": "io.github.slgobinath.SafeEyes.svg",
-      "sizes": [16, 22, 24, 32, 48, 64],
-      "duplicate_of": "apps/safeeyes.svg"
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "duplicate_of": "apps/safeeyes.svg",
+      "hints": ["safe eyes", "eye care", "break reminder", "timer", "clock", "health", "screen"]
     },
     "papirus_apps_fedora-release-notes": {
       "category": "apps",
       "file": "fedora-release-notes.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["fedora", "release notes", "linux", "documentation", "notes", "changelog"]
     },
     "papirus_apps_normcap": {
       "category": "apps",
       "file": "normcap.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["normcap", "ocr", "screen capture", "text recognition", "magic wand", "selection", "screenshot"]
     },
     "papirus_apps_hardinfo": {
       "category": "apps",
       "file": "hardinfo.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["hardware", "system info", "profiler", "pci card", "chip", "benchmark", "diagnostics"]
     },
     "papirus_apps_org.gnome.DiskUtility": {
       "category": "apps",
       "file": "org.gnome.DiskUtility.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["disk", "utility", "hard drive", "wrench", "storage", "gnome", "partition"]
     },
     "papirus_apps_tellico": {
       "category": "apps",
       "file": "tellico.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tellico", "collection", "catalog", "cards", "organizer", "kde", "database"]
     },
     "papirus_apps_super-hexagon": {
       "category": "apps",
       "file": "super-hexagon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["super hexagon", "game", "hexagon", "arcade", "puzzle", "geometric", "red"]
     },
     "papirus_apps_steam_icon_476240": {
       "category": "apps",
       "file": "steam_icon_476240.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "game", "chess", "knight", "board game", "strategy", "checkered"]
     },
     "papirus_apps_steam_icon_294100": {
       "category": "apps",
       "file": "steam_icon_294100.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "game", "rimworld", "sheriff", "star", "badge", "colony", "survival"]
     },
     "papirus_apps_org.gnome.Taquin": {
       "category": "apps",
       "file": "org.gnome.Taquin.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["taquin", "sliding puzzle", "game", "tiles", "gnome", "puzzle", "grid"]
     },
     "papirus_apps_im.nheko.Nheko": {
       "category": "apps",
       "file": "im.nheko.Nheko.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["nheko", "matrix", "chat", "messaging", "instant messenger", "communication"]
     },
     "papirus_apps_digital-assets": {
       "category": "apps",
       "file": "digital-assets.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["bitcoin", "cryptocurrency", "digital assets", "crypto", "finance", "blockchain", "wallet"]
     },
     "papirus_apps_boostnote": {
       "category": "apps",
       "file": "boostnote.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["boostnote", "notes", "markdown", "developer", "editor", "writing", "paper airplane"]
     },
     "papirus_apps_chmsee-icon": {
       "category": "apps",
       "file": "chmsee-icon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["chmsee", "chm", "help", "question mark", "documentation", "viewer", "html help"]
     },
     "papirus_apps_org.tuxfamily.StuntRally": {
       "category": "apps",
       "file": "org.tuxfamily.StuntRally.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["stunt rally", "racing", "game", "car", "driving", "track", "open source"]
     },
     "papirus_apps_kipi": {
       "category": "apps",
       "file": "kipi.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kipi", "image plugin", "palette", "paint", "kde", "photo", "art"]
     },
     "papirus_apps_hwloc": {
       "category": "apps",
       "file": "hwloc.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["hwloc", "hardware", "locality", "cpu", "topology", "processor", "chip"]
     },
     "papirus_apps_libreoffice7.3-base": {
       "category": "apps",
       "file": "libreoffice7.3-base.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["libreoffice", "base", "database", "table", "office", "data", "purple"]
     },
     "papirus_apps_net.sourceforge.Hugin": {
       "category": "apps",
       "file": "net.sourceforge.Hugin.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["hugin", "panorama", "photo stitch", "photography", "landscape", "wide angle"]
     },
     "papirus_apps_app.riftshare.RiftShare": {
       "category": "apps",
       "file": "app.riftshare.RiftShare.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["riftshare", "file sharing", "transfer", "portal", "wormhole", "send", "peer to peer"]
     },
     "papirus_apps_mx-network-assistant": {
       "category": "apps",
       "file": "mx-network-assistant.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["network", "assistant", "ethernet", "settings", "gear", "mx linux", "connection"]
     },
     "papirus_apps_logviewer": {
       "category": "apps",
       "file": "logviewer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["log viewer", "logs", "search", "magnifying glass", "text", "system", "debug"]
     },
     "papirus_apps_kaffeine": {
       "category": "apps",
       "file": "kaffeine.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kaffeine", "media player", "video", "play", "clapperboard", "kde", "movie"]
     },
     "papirus_apps_lightdm-settings": {
       "category": "apps",
       "file": "lightdm-settings.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["lightdm", "login", "display manager", "settings", "greeter", "screen", "configuration"]
     },
     "papirus_apps_wewechat": {
       "category": "apps",
       "file": "wewechat.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["wechat", "chat", "messaging", "speech bubble", "chinese", "social", "communication"]
     },
     "papirus_apps_preferences-system-privacy": {
       "category": "apps",
       "file": "preferences-system-privacy.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["privacy", "preferences", "settings", "security", "system", "lock", "protection"]
     },
     "papirus_apps_chrome-majiogicmcnmdhhlgmkahaleckhjbmlk-Default": {
       "category": "apps",
       "file": "chrome-majiogicmcnmdhhlgmkahaleckhjbmlk-Default.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["telegram", "chrome", "web app", "messaging", "chat", "paper airplane", "communication"]
     },
     "papirus_apps_lutris_minetest": {
       "category": "apps",
       "file": "lutris_minetest.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["minetest", "lutris", "game", "voxel", "blocks", "tree", "sandbox", "minecraft"]
     },
     "papirus_apps_io.elementary.sideload": {
       "category": "apps",
