@@ -8726,102 +8726,122 @@
     "papirus_apps_lutris_super-hexagon": {
       "category": "apps",
       "file": "lutris_super-hexagon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["super-hexagon", "hexagon", "arcade", "game", "geometric", "red", "lutris"]
     },
     "papirus_apps_JabRef-icon": {
       "category": "apps",
       "file": "JabRef-icon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["jabref", "bibliography", "reference", "bibtex", "citation", "academic", "research"]
     },
     "papirus_apps_gnome-control-center": {
       "category": "apps",
       "file": "gnome-control-center.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gnome", "settings", "control", "center", "gear", "wrench", "system", "preferences"]
     },
     "papirus_apps_tracktion": {
       "category": "apps",
       "file": "tracktion.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tracktion", "daw", "audio", "music", "production", "recording", "gear"]
     },
     "papirus_apps_qtgain": {
       "category": "apps",
       "file": "qtgain.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["qtgain", "mp3gain", "audio", "volume", "normalize", "music", "level"]
     },
     "papirus_apps_athena": {
       "category": "apps",
       "file": "athena.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["athena", "files", "cabinet", "organizer", "manager", "archive", "cards"]
     },
     "papirus_apps_mpv": {
       "category": "apps",
       "file": "mpv.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mpv", "media", "player", "video", "play", "movie", "purple"]
     },
     "papirus_apps_kmousetool": {
       "category": "apps",
       "file": "kmousetool.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kmousetool", "mouse", "autoclick", "accessibility", "kde", "cursor", "click"]
     },
     "papirus_apps_com.github.huluti.Curtail": {
       "category": "apps",
       "file": "com.github.huluti.Curtail.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["curtail", "compress", "image", "optimize", "reduce", "size", "gnome"]
     },
     "papirus_apps_lutris_basingstoke": {
       "category": "apps",
       "file": "lutris_basingstoke.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["basingstoke", "survival", "game", "skull", "roguelike", "lutris", "purple"]
     },
     "papirus_apps_octodad-dadliest-catch": {
       "category": "apps",
       "file": "octodad-dadliest-catch.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["octodad", "octopus", "comedy", "game", "adventure", "mustache", "yellow"]
     },
     "papirus_apps_kcmopengl": {
       "category": "apps",
       "file": "kcmopengl.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["opengl", "graphics", "3d", "gpu", "kde", "kcm", "rendering"]
     },
     "papirus_apps_broken-age": {
       "category": "apps",
       "file": "broken-age.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["broken-age", "adventure", "game", "point-and-click", "doublefine", "story"]
     },
     "papirus_apps_com.github.dynobo.normcap": {
       "category": "apps",
       "file": "com.github.dynobo.normcap.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["normcap", "ocr", "screenshot", "capture", "text", "recognition", "screen"]
     },
     "papirus_apps_krusader_user": {
       "category": "apps",
       "file": "krusader_user.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["krusader", "file", "manager", "twin-panel", "kde", "cursor", "user"]
     },
     "papirus_apps_lutris_day-of-the-tentacle-remastered": {
       "category": "apps",
       "file": "lutris_day-of-the-tentacle-remastered.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["day-of-the-tentacle", "lucasarts", "adventure", "game", "tentacle", "purple", "remastered"]
     },
     "papirus_apps_clustertruck": {
       "category": "apps",
       "file": "clustertruck.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["clustertruck", "truck", "platformer", "game", "jumping", "vehicle", "action"]
     },
     "papirus_apps_com.github.debauchee.barrier": {
       "category": "apps",
       "file": "com.github.debauchee.barrier.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["barrier", "kvm", "keyboard", "mouse", "sharing", "synergy", "network"]
     },
     "papirus_apps_deepin-diskmanager": {
       "category": "apps",
       "file": "deepin-diskmanager.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["deepin", "disk", "manager", "partition", "storage", "drive", "harddisk"]
     },
     "papirus_apps_app-launcher": {
       "category": "apps",
       "file": "app-launcher.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["launcher", "app", "menu", "grid", "applications", "start", "dock"]
     },
     "papirus_apps_Terminal": {
       "category": "apps",
