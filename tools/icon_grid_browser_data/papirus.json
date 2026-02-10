@@ -6394,102 +6394,122 @@
     "papirus_apps_appimagekit-auryo": {
       "category": "apps",
       "file": "appimagekit-auryo.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["auryo", "soundcloud", "headphones", "music", "audio", "streaming", "player", "blue"]
     },
     "papirus_apps_com.viewizard.AstroMenace": {
       "category": "apps",
       "file": "com.viewizard.AstroMenace.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["astromenace", "space", "shooter", "spaceship", "game", "arcade", "fighter", "sci-fi"]
     },
     "papirus_apps_yast-firewall": {
       "category": "apps",
       "file": "yast-firewall.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["yast", "firewall", "security", "brick", "wall", "network", "opensuse", "protection"]
     },
     "papirus_apps_gnome-appfolders-manager": {
       "category": "apps",
       "file": "gnome-appfolders-manager.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["appfolders", "gnome", "grid", "folders", "organize", "apps", "launcher", "manager"]
     },
     "papirus_apps_heroesofnewerth": {
       "category": "apps",
       "file": "heroesofnewerth.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["hon", "heroes", "newerth", "moba", "game", "multiplayer", "green", "strategy"]
     },
     "papirus_apps_gnome-ppp": {
       "category": "apps",
       "file": "gnome-ppp.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ppp", "dialup", "modem", "telephone", "phone", "gnome", "network", "red"]
     },
     "papirus_apps_appimagekit-cool-retro-term": {
       "category": "apps",
       "file": "appimagekit-cool-retro-term.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cool-retro-term", "terminal", "crt", "retro", "vintage", "console", "amber", "emulator"]
     },
     "papirus_apps_video-player": {
       "category": "apps",
       "file": "video-player.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["video", "player", "media", "play", "movie", "purple", "multimedia", "stream"]
     },
     "papirus_apps_plasma-search": {
       "category": "apps",
       "file": "plasma-search.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["plasma", "search", "magnifying-glass", "find", "kde", "krunner", "lookup", "orange"]
     },
     "papirus_apps_gnome-settings": {
       "category": "apps",
       "file": "gnome-settings.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gnome", "settings", "gear", "wrench", "preferences", "configuration", "teal", "system"]
     },
     "papirus_apps_tuxboot": {
       "category": "apps",
       "file": "tuxboot.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tuxboot", "usb", "bootable", "flash-drive", "download", "linux", "installer", "live"]
     },
     "papirus_apps_lutris_firewatch": {
       "category": "apps",
       "file": "lutris_firewatch.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["firewatch", "game", "adventure", "shield", "tree", "forest", "orange", "lutris"]
     },
     "papirus_apps_appimagekit-youtube-music-desktop-app": {
       "category": "apps",
       "file": "appimagekit-youtube-music-desktop-app.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["youtube", "music", "streaming", "play", "red", "video", "desktop", "audio"]
     },
     "papirus_apps_appimagekit-vitomu": {
       "category": "apps",
       "file": "appimagekit-vitomu.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["vitomu", "converter", "video", "music", "audio", "pink", "convert", "extract"]
     },
     "papirus_apps_com.lettier.gifcurry": {
       "category": "apps",
       "file": "com.lettier.gifcurry.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gifcurry", "gif", "video", "converter", "animation", "purple", "clip", "editor"]
     },
     "papirus_apps_netsurf": {
       "category": "apps",
       "file": "netsurf.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["netsurf", "browser", "web", "globe", "internet", "star", "blue", "lightweight"]
     },
     "papirus_apps_ms-excel": {
       "category": "apps",
       "file": "ms-excel.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["excel", "microsoft", "spreadsheet", "office", "table", "green", "data", "cells"]
     },
     "papirus_apps_libreoffice7.3-writer": {
       "category": "apps",
       "file": "libreoffice7.3-writer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["libreoffice", "writer", "document", "word-processor", "text", "blue", "office", "writing"]
     },
     "papirus_apps_lutris_x3-albion-prelude": {
       "category": "apps",
       "file": "lutris_x3-albion-prelude.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["x3", "albion", "prelude", "space", "game", "trading", "lutris", "simulation"]
     },
     "papirus_apps_brave-mdpkiolbdkhdjpekfbkbmhigcaggjagi-Default": {
       "category": "apps",
       "file": "brave-mdpkiolbdkhdjpekfbkbmhigcaggjagi-Default.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["google-chat", "hangouts", "brave", "chat", "messaging", "green", "bubbles", "webapp"]
     },
     "papirus_apps_touchpad": {
       "category": "apps",
