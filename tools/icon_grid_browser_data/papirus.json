@@ -7211,92 +7211,110 @@
     "papirus_apps_agentdesktop": {
       "category": "apps",
       "file": "agentdesktop.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["agent", "mail.ru", "messaging", "chat", "email", "at sign", "russian"]
     },
     "papirus_apps_rocs": {
       "category": "apps",
       "file": "rocs.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["rocs", "graph theory", "nodes", "network", "algorithm", "kde", "visualization"]
     },
     "papirus_apps_preferences-desktop-display": {
       "category": "apps",
       "file": "preferences-desktop-display.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["display", "monitor", "screen", "preferences", "resolution", "desktop", "settings"]
     },
     "papirus_apps_kgoldrunner": {
       "category": "apps",
       "file": "kgoldrunner.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kgoldrunner", "game", "lode runner", "platformer", "gold", "ladder", "kde"]
     },
     "papirus_apps_steam_icon_281990": {
       "category": "apps",
       "file": "steam_icon_281990.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "stellaris", "game", "strategy", "space", "planet", "4x"]
     },
     "papirus_apps_gnucash": {
       "category": "apps",
       "file": "gnucash.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gnucash", "finance", "accounting", "money", "euro", "coin", "budget"]
     },
     "papirus_apps_device-notifier": {
       "category": "apps",
       "file": "device-notifier.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["device", "notifier", "eject", "unmount", "usb", "hardware", "notification"]
     },
     "papirus_apps_com.github.parnold-x.sudoku": {
       "category": "apps",
       "file": "com.github.parnold-x.sudoku.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["sudoku", "puzzle", "game", "numbers", "grid", "logic", "brain teaser"]
     },
     "papirus_apps_jclicauthor": {
       "category": "apps",
       "file": "jclicauthor.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["jclic", "author", "education", "activity", "authoring", "ruler", "teaching"]
     },
     "papirus_apps_com.skype.Client": {
       "category": "apps",
       "file": "com.skype.Client.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["skype", "video call", "chat", "messaging", "microsoft", "voip", "communication"]
     },
     "papirus_apps_org.kde.kmahjongg": {
       "category": "apps",
       "file": "org.kde.kmahjongg.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kmahjongg", "mahjong", "game", "tile", "chinese", "puzzle", "kde"]
     },
     "papirus_apps_org.gnome.font-viewer": {
       "category": "apps",
       "file": "org.gnome.font-viewer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["font viewer", "typography", "typeface", "gnome", "fonts", "text", "preview"]
     },
     "papirus_apps_svgcleaner": {
       "category": "apps",
       "file": "svgcleaner.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["svg", "cleaner", "optimizer", "vector", "graphics", "xml", "minify"]
     },
     "papirus_apps_boxy-svg": {
       "category": "apps",
       "file": "boxy-svg.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["boxy svg", "vector", "graphics editor", "svg", "design", "drawing", "illustration"]
     },
     "papirus_apps_Jellyamp": {
       "category": "apps",
       "file": "Jellyamp.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["jellyamp", "jellyfin", "music player", "audio", "play", "streaming", "media"]
     },
     "papirus_apps_libreoffice7.5-base": {
       "category": "apps",
       "file": "libreoffice7.5-base.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["libreoffice", "base", "database", "table", "office", "data", "purple"]
     },
     "papirus_apps_ferdium": {
       "category": "apps",
       "file": "ferdium.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ferdium", "messaging", "aggregator", "chat", "all-in-one", "communication", "franz"]
     },
     "papirus_apps_kube": {
       "category": "apps",
       "file": "kube.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kube", "email", "groupware", "mail", "calendar", "contacts", "kolab"]
     },
     "papirus_apps_dangerous-golf": {
       "category": "apps",
