@@ -5335,102 +5335,122 @@
     "papirus_apps_brave-ljcdbnjegamehjigdeiajddkhpihajpk-Default": {
       "category": "apps",
       "file": "brave-ljcdbnjegamehjigdeiajddkhpihajpk-Default.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["brave", "webapp", "shortcut", "colorful", "circle", "green", "pink", "yellow"]
     },
     "papirus_apps_mate-panel-force-quit": {
       "category": "apps",
       "file": "mate-panel-force-quit.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mate", "force", "quit", "kill", "close", "cross", "dark", "stop"]
     },
     "papirus_apps_appimagekit-expandrive": {
       "category": "apps",
       "file": "appimagekit-expandrive.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["expandrive", "cloud", "storage", "drive", "flower", "red", "mount", "remote"]
     },
     "papirus_apps_cinelerra": {
       "category": "apps",
       "file": "cinelerra.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cinelerra", "video", "editor", "film", "movie", "yellow", "frame", "editing"]
     },
     "papirus_apps_dosbox-ece": {
       "category": "apps",
       "file": "dosbox-ece.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["dosbox", "dos", "emulator", "retro", "gaming", "green", "terminal", "vintage"]
     },
     "papirus_apps_firefox-beta": {
       "category": "apps",
       "file": "firefox-beta.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["firefox", "beta", "browser", "web", "mozilla", "fox", "orange", "purple"]
     },
     "papirus_apps_preferences-system-windows-actions": {
       "category": "apps",
       "file": "preferences-system-windows-actions.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["windows", "actions", "preferences", "system", "panels", "overlap", "gray", "wm"]
     },
     "papirus_apps_org.vim.Vim": {
       "category": "apps",
       "file": "org.vim.Vim.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["vim", "editor", "text", "terminal", "code", "green", "diamond", "programming"]
     },
     "papirus_apps_computer-log-out": {
       "category": "apps",
       "file": "computer-log-out.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["logout", "log-out", "exit", "signout", "arrow", "green", "session", "leave"]
     },
     "papirus_apps_de.rwth_aachen.ient.YUView": {
       "category": "apps",
       "file": "de.rwth_aachen.ient.YUView.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["yuview", "yuv", "video", "player", "analyzer", "play", "teal", "media"]
     },
     "papirus_apps_wesnoth-icon": {
       "category": "apps",
       "file": "wesnoth-icon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["wesnoth", "strategy", "game", "shield", "swords", "medieval", "fantasy", "turn-based"]
     },
     "papirus_apps_org.xfce.webbrowser": {
       "category": "apps",
       "file": "org.xfce.webbrowser.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["xfce", "browser", "web", "internet", "orbit", "blue", "planet", "globe"]
     },
     "papirus_apps_torbrowser": {
       "category": "apps",
       "file": "torbrowser.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tor", "browser", "privacy", "anonymous", "onion", "purple", "security", "web"]
     },
     "papirus_apps_mat": {
       "category": "apps",
       "file": "mat.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mat", "metadata", "anonymisation", "privacy", "cleaner", "red", "sign", "security"]
     },
     "papirus_apps_seafile-client": {
       "category": "apps",
       "file": "seafile-client.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["seafile", "cloud", "sync", "storage", "file", "share", "orange", "wave"]
     },
     "papirus_apps_fwupd": {
       "category": "apps",
       "file": "fwupd.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["fwupd", "firmware", "update", "chip", "hardware", "refresh", "gray", "bios"]
     },
     "papirus_apps_edex-ui": {
       "category": "apps",
       "file": "edex-ui.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["edex", "terminal", "scifi", "futuristic", "console", "dark", "gray", "hacker"]
     },
     "papirus_apps_among-us": {
       "category": "apps",
       "file": "among-us.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["among-us", "game", "multiplayer", "crewmate", "impostor", "red", "visor", "social"]
     },
     "papirus_apps_openmw-cs": {
       "category": "apps",
       "file": "openmw-cs.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["openmw", "morrowind", "construction", "modding", "moon", "gear", "gold", "editor"]
     },
     "papirus_apps_gamejolt": {
       "category": "apps",
       "file": "gamejolt.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gamejolt", "indie", "games", "platform", "lightning", "pixel", "green", "bolt"]
     },
     "papirus_apps_granatier": {
       "category": "apps",
