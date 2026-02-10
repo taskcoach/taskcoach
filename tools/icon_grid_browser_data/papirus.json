@@ -10741,112 +10741,134 @@
     "papirus_apps_sakura-spirit": {
       "category": "apps",
       "file": "sakura-spirit.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["sakura", "spirit", "cherry", "blossom", "visual", "novel", "game"]
     },
     "papirus_apps_pencil2d": {
       "category": "apps",
       "file": "pencil2d.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["pencil2d", "animation", "drawing", "2d", "pencil", "cartoon", "frame"]
     },
     "papirus_apps_appimagekit-bitshares2-light": {
       "category": "apps",
       "file": "appimagekit-bitshares2-light.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["bitshares", "blockchain", "crypto", "wallet", "decentralized", "exchange", "appimage"]
     },
     "papirus_apps_xconsole": {
       "category": "apps",
       "file": "xconsole.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["xconsole", "terminal", "console", "command", "prompt", "shell", "x11"]
     },
     "papirus_apps_org.kde.kwatchgnupg": {
       "category": "apps",
       "file": "org.kde.kwatchgnupg.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kwatchgnupg", "gnupg", "gpg", "encryption", "log", "kde", "security"]
     },
     "papirus_apps_Buka": {
       "category": "apps",
       "file": "Buka.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["buka", "ebook", "book", "pdf", "reader", "library", "manager"]
     },
     "papirus_apps_vmd": {
       "category": "apps",
       "file": "vmd.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["vmd", "molecular", "dynamics", "visualization", "science", "3d", "simulation"]
     },
     "papirus_apps_rtt-rlinux": {
       "category": "apps",
       "file": "rtt-rlinux.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["rlinux", "recovery", "data", "restore", "disk", "undelete", "rtt"]
     },
     "papirus_apps_nostlan": {
       "category": "apps",
       "file": "nostlan.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["nostlan", "game", "launcher", "retro", "emulator", "console", "nostalgia"]
     },
     "papirus_apps_khotkeys": {
       "category": "apps",
       "file": "khotkeys.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["khotkeys", "keyboard", "shortcuts", "hotkey", "keybinding", "kde", "input"]
     },
     "papirus_apps_alien-swarm-reactive-drop": {
       "category": "apps",
       "file": "alien-swarm-reactive-drop.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["alien", "swarm", "reactive", "drop", "shooter", "coop", "game"]
     },
     "papirus_apps_appimagekit-Play": {
       "category": "apps",
       "file": "appimagekit-Play.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["play", "appimage", "exclamation", "alert", "notification", "app"]
     },
     "papirus_apps_steam_icon_2630": {
       "category": "apps",
       "file": "steam_icon_2630.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["call", "duty", "cod2", "shooter", "fps", "star", "steam"]
     },
     "papirus_apps_com.github.johnfactotum.QuickLookup": {
       "category": "apps",
       "file": "com.github.johnfactotum.QuickLookup.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["quicklookup", "dictionary", "definition", "word", "lookup", "book", "reference"]
     },
     "papirus_apps_steamdeck-gaming-return": {
       "category": "apps",
       "file": "steamdeck-gaming-return.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steamdeck", "gaming", "return", "back", "arrow", "steam", "deck"]
     },
     "papirus_apps_appimagekit-yaradio-yamusic": {
       "category": "apps",
       "file": "appimagekit-yaradio-yamusic.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["yandex", "radio", "music", "streaming", "yamusic", "russian", "appimage"]
     },
     "papirus_apps_rpmdrake": {
       "category": "apps",
       "file": "rpmdrake.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["rpmdrake", "package", "manager", "rpm", "install", "mageia", "software"]
     },
     "papirus_apps_gnome-remote-desktop": {
       "category": "apps",
       "file": "gnome-remote-desktop.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["remote", "desktop", "rdp", "vnc", "screen", "sharing", "gnome"]
     },
     "papirus_apps_info.cemu.Cemu": {
       "category": "apps",
       "file": "info.cemu.Cemu.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cemu", "wiiu", "emulator", "nintendo", "console", "gaming"]
     },
     "papirus_apps_system-switch-user": {
       "category": "apps",
       "file": "system-switch-user.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["switch", "user", "account", "login", "session", "arrows", "system"]
     },
     "papirus_apps_sonata": {
       "category": "apps",
       "file": "sonata.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["sonata", "music", "mpd", "player", "note", "audio", "client"]
     },
     "papirus_apps_jetbrains-toolbox": {
       "category": "apps",
       "file": "jetbrains-toolbox.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["jetbrains", "toolbox", "ide", "manager", "development", "cube", "installer"]
     },
     "papirus_apps_Othman": {
       "category": "apps",
