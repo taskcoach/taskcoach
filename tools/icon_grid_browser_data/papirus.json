@@ -4650,152 +4650,182 @@
     "papirus_apps_SheepShaver": {
       "category": "apps",
       "file": "SheepShaver.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["sheepshaver", "mac", "emulator", "apple", "scissors", "pink", "classic", "retro"]
     },
     "papirus_apps_google-earth-pro": {
       "category": "apps",
       "file": "google-earth-pro.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["google", "earth", "pro", "globe", "map", "satellite", "geography", "world"]
     },
     "papirus_apps_com.sublimetext.three": {
       "category": "apps",
       "file": "com.sublimetext.three.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["sublime", "text", "editor", "code", "programming", "orange", "dark", "ide"]
     },
     "papirus_apps_resharpercpp": {
       "category": "apps",
       "file": "resharpercpp.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["resharper", "cpp", "jetbrains", "ide", "c++", "code", "analysis", "dark"]
     },
     "papirus_apps_uterror": {
       "category": "apps",
       "file": "uterror.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["uterror", "tiles", "dominoes", "blue", "gray", "cards", "rectangles", "game"]
     },
     "papirus_apps_cronopete_restore": {
       "category": "apps",
       "file": "cronopete_restore.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cronopete", "restore", "backup", "undo", "arrow", "recovery", "time machine", "gray"]
     },
     "papirus_apps_xfce4-cpugraph-plugin": {
       "category": "apps",
       "file": "xfce4-cpugraph-plugin.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cpu", "graph", "xfce", "monitor", "pulse", "performance", "teal", "plugin"]
     },
     "papirus_apps_appimagekit-stacer": {
       "category": "apps",
       "file": "appimagekit-stacer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["stacer", "optimizer", "system", "cleaner", "gauge", "speedometer", "teal", "performance"]
     },
     "papirus_apps_xournalpp": {
       "category": "apps",
       "file": "xournalpp.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["xournal", "notes", "handwriting", "pen", "annotation", "pdf", "pencil", "paper"]
     },
     "papirus_apps_horizon-chase-turbo": {
       "category": "apps",
       "file": "horizon-chase-turbo.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["horizon", "chase", "turbo", "racing", "game", "car", "speed"]
     },
     "papirus_apps_sioyek-icon-linux": {
       "category": "apps",
       "file": "sioyek-icon-linux.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["sioyek", "pdf", "reader", "book", "bookmark", "document", "orange", "blue"]
     },
     "papirus_apps_io.github.divverent.aaaaxy": {
       "category": "apps",
       "file": "io.github.divverent.aaaaxy.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["aaaaxy", "puzzle", "platformer", "game", "pixel", "arrow", "retro"]
     },
     "papirus_apps_rosegarden": {
       "category": "apps",
       "file": "rosegarden.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["rosegarden", "music", "midi", "sequencer", "notation", "flower", "pink", "audio"]
     },
     "papirus_apps_com.abagames.noiz2sa": {
       "category": "apps",
       "file": "com.abagames.noiz2sa.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["noiz2sa", "shooter", "arcade", "game", "letter", "gray", "shmup"]
     },
     "papirus_apps_org.onionshare.OnionShare": {
       "category": "apps",
       "file": "org.onionshare.OnionShare.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["onionshare", "tor", "share", "privacy", "sync", "arrows", "purple", "anonymous"]
     },
     "papirus_apps_google-tasks-desktop": {
       "category": "apps",
       "file": "google-tasks-desktop.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["google", "tasks", "todo", "checklist", "checkmark", "blue", "circle", "productivity"]
     },
     "papirus_apps_com.gitlab.cutecom.cutecom": {
       "category": "apps",
       "file": "com.gitlab.cutecom.cutecom.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cutecom", "serial", "terminal", "port", "monitor", "console", "gray"]
     },
     "papirus_apps_appimagekit-plexamp": {
       "category": "apps",
       "file": "appimagekit-plexamp.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["plexamp", "plex", "music", "player", "audio", "arrows", "orange", "streaming"]
     },
     "papirus_apps_doom3": {
       "category": "apps",
       "file": "doom3.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["doom", "doom3", "fps", "shooter", "game", "pentagram", "red", "horror"]
     },
     "papirus_apps_steam_icon_319850": {
       "category": "apps",
       "file": "steam_icon_319850.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "game", "robot", "mech", "blue", "face", "machine"]
     },
     "papirus_apps_kali-menu": {
       "category": "apps",
       "file": "kali-menu.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kali", "linux", "security", "menu", "dragon", "pentesting", "hacking", "blue"]
     },
     "papirus_apps_inky": {
       "category": "apps",
       "file": "inky.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["inky", "ink", "fiction", "narrative", "writing", "scripting", "splatter", "inkle"]
     },
     "papirus_apps_solstice-deviantart-deviantart": {
       "category": "apps",
       "file": "solstice-deviantart-deviantart.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["deviantart", "art", "community", "gallery", "green", "social", "creative"]
     },
     "papirus_apps_upscayl": {
       "category": "apps",
       "file": "upscayl.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["upscayl", "upscale", "image", "ai", "enhance", "resolution", "pixel", "blue"]
     },
     "papirus_apps_metronome": {
       "category": "apps",
       "file": "metronome.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["metronome", "tempo", "music", "beat", "rhythm", "pendulum", "blue", "timing"]
     },
     "papirus_apps_mate-network-properties": {
       "category": "apps",
       "file": "mate-network-properties.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mate", "network", "properties", "globe", "earth", "internet", "settings", "blue"]
     },
     "papirus_apps_uosbrowser-cn": {
       "category": "apps",
       "file": "uosbrowser-cn.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["uos", "browser", "web", "internet", "blue", "orbit", "chinese", "deepin"]
     },
     "papirus_apps_appimagekit-sengi": {
       "category": "apps",
       "file": "appimagekit-sengi.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["sengi", "mastodon", "fediverse", "social", "client", "squirrel", "blue", "animal"]
     },
     "papirus_apps_performous": {
       "category": "apps",
       "file": "performous.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["performous", "karaoke", "singing", "music", "microphone", "game", "performer", "blue"]
     },
     "papirus_apps_xar": {
       "category": "apps",
       "file": "xar.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["xar", "archive", "compression", "zip", "zipper", "extract", "green"]
     },
     "papirus_apps_org.kde.kasts": {
       "category": "apps",
