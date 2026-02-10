@@ -6268,107 +6268,128 @@
     "papirus_apps_chromium-browser-privacy": {
       "category": "apps",
       "file": "chromium-browser-privacy.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["chromium", "browser", "privacy", "web", "internet", "blue", "circle", "incognito"]
     },
     "papirus_apps_org.gnome.Cheese": {
       "category": "apps",
       "file": "org.gnome.Cheese.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cheese", "webcam", "camera", "photo", "gnome", "selfie", "purple", "snapshot"]
     },
     "papirus_apps_parole": {
       "category": "apps",
       "file": "parole.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["parole", "media", "player", "video", "play", "xfce", "multimedia", "movie"]
     },
     "papirus_apps_anaconda": {
       "category": "apps",
       "file": "anaconda.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["anaconda", "installer", "download", "fedora", "system", "install", "green", "setup"]
     },
     "papirus_apps_com.anydesk.Anydesk": {
       "category": "apps",
       "file": "com.anydesk.Anydesk.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["anydesk", "remote", "desktop", "diamond", "red", "connection", "screen-sharing"]
     },
     "papirus_apps_appimagekit-retroshare": {
       "category": "apps",
       "file": "appimagekit-retroshare.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["retroshare", "network", "decentralized", "p2p", "nodes", "blue", "sharing", "mesh"]
     },
     "papirus_apps_mgba": {
       "category": "apps",
       "file": "mgba.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mgba", "gameboy", "emulator", "gba", "handheld", "console", "retro", "gaming"]
     },
     "papirus_apps_lutris_terraria": {
       "category": "apps",
       "file": "lutris_terraria.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["terraria", "game", "tree", "sandbox", "pixel", "adventure", "lutris", "green"]
     },
     "papirus_apps_com.jetbrains.GoLand": {
       "category": "apps",
       "file": "com.jetbrains.GoLand.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["goland", "jetbrains", "golang", "ide", "programming", "go", "developer", "code"]
     },
     "papirus_apps_kxstitch": {
       "category": "apps",
       "file": "kxstitch.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kxstitch", "cross-stitch", "needlework", "pattern", "grid", "craft", "sewing", "kde"]
     },
     "papirus_apps_timidity": {
       "category": "apps",
       "file": "timidity.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["timidity", "midi", "synthesizer", "piano", "keyboard", "music", "audio", "player"]
     },
     "papirus_apps_shellnoob": {
       "category": "apps",
       "file": "shellnoob.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["shellnoob", "terminal", "shell", "command-line", "prompt", "console", "security"]
     },
     "papirus_apps_net.mancubus.SLADE": {
       "category": "apps",
       "file": "net.mancubus.SLADE.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["slade", "doom", "wad", "editor", "gear", "modding", "level-editor", "game"]
     },
     "papirus_apps_gnome-latex": {
       "category": "apps",
       "file": "gnome-latex.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["latex", "gnome", "document", "math", "sigma", "typesetting", "editor", "academic"]
     },
     "papirus_apps_catia": {
       "category": "apps",
       "file": "catia.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["catia", "jack", "audio", "patchbay", "routing", "connections", "sound", "nodes"]
     },
     "papirus_apps_persona-4-golden": {
       "category": "apps",
       "file": "persona-4-golden.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["persona", "jrpg", "game", "golden", "yellow", "p4", "atlus", "rpg"]
     },
     "papirus_apps_gourmet": {
       "category": "apps",
       "file": "gourmet.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gourmet", "recipe", "cooking", "cookie", "food", "kitchen", "baking", "meal"]
     },
     "papirus_apps_com.github.cassidyjames.palette": {
       "category": "apps",
       "file": "com.github.cassidyjames.palette.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["palette", "color", "swatch", "picker", "design", "colors", "fan", "elementary"]
     },
     "papirus_apps_tuxpaint": {
       "category": "apps",
       "file": "tuxpaint.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tuxpaint", "paint", "drawing", "kids", "penguin", "tux", "art", "children"]
     },
     "papirus_apps_org.gnome.gnome-latex": {
       "category": "apps",
       "file": "org.gnome.gnome-latex.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["latex", "gnome", "document", "math", "sigma", "typesetting", "editor", "academic"]
     },
     "papirus_apps_preferences-online-accounts": {
       "category": "apps",
       "file": "preferences-online-accounts.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["online", "accounts", "email", "at-sign", "preferences", "settings", "green", "cloud"]
     },
     "papirus_apps_appimagekit-auryo": {
       "category": "apps",
