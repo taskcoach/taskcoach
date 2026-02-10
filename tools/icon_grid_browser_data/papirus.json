@@ -10621,102 +10621,122 @@
     "papirus_apps_gpicview": {
       "category": "apps",
       "file": "gpicview.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gpicview", "image", "viewer", "picture", "photo", "lxde", "lightweight"]
     },
     "papirus_apps_com.zamaudio.zamulticompx2": {
       "category": "apps",
       "file": "com.zamaudio.zamulticompx2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["zamaudio", "compressor", "audio", "plugin", "multiband", "lv2", "music"]
     },
     "papirus_apps_qwinff": {
       "category": "apps",
       "file": "qwinff.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["qwinff", "ffmpeg", "converter", "video", "media", "transcode", "convert"]
     },
     "papirus_apps_i-nex": {
       "category": "apps",
       "file": "i-nex.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["i-nex", "system", "information", "hardware", "cpu", "specs", "diagnostic"]
     },
     "papirus_apps_org.libretro.RetroArch": {
       "category": "apps",
       "file": "org.libretro.RetroArch.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["retroarch", "emulator", "retro", "gaming", "libretro", "console", "controller"]
     },
     "papirus_apps_gdlauncher-appimage": {
       "category": "apps",
       "file": "gdlauncher-appimage.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gdlauncher", "minecraft", "launcher", "modpack", "game", "appimage", "java"]
     },
     "papirus_apps_io.github.ripose_jp.Memento": {
       "category": "apps",
       "file": "io.github.ripose_jp.Memento.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["memento", "video", "player", "subtitle", "language", "learning", "moon"]
     },
     "papirus_apps_org.gnome.Geary": {
       "category": "apps",
       "file": "org.gnome.Geary.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["geary", "email", "mail", "envelope", "gnome", "client", "inbox"]
     },
     "papirus_apps_hi64-apps-ffado": {
       "category": "apps",
       "file": "hi64-apps-ffado.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ffado", "firewire", "audio", "mixer", "sound", "driver", "interface"]
     },
     "papirus_apps_cmyktool": {
       "category": "apps",
       "file": "cmyktool.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cmyk", "color", "print", "profile", "conversion", "prepress", "tool"]
     },
     "papirus_apps_org.kde.kalgebra": {
       "category": "apps",
       "file": "org.kde.kalgebra.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kalgebra", "algebra", "math", "graph", "calculator", "kde", "education"]
     },
     "papirus_apps_org.guitarix.Guitarix": {
       "category": "apps",
       "file": "org.guitarix.Guitarix.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["guitarix", "guitar", "amplifier", "amp", "effects", "music", "jack"]
     },
     "papirus_apps_lutris_half-life-opposing-force": {
       "category": "apps",
       "file": "lutris_half-life-opposing-force.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["half-life", "opposing", "force", "lambda", "valve", "fps", "lutris"]
     },
     "papirus_apps_microsoft": {
       "category": "apps",
       "file": "microsoft.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["microsoft", "windows", "logo", "office", "brand", "squares"]
     },
     "papirus_apps_unity-mail": {
       "category": "apps",
       "file": "unity-mail.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["unity", "mail", "email", "envelope", "notification", "ubuntu", "inbox"]
     },
     "papirus_apps_com.authy.Authy": {
       "category": "apps",
       "file": "com.authy.Authy.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["authy", "2fa", "authentication", "totp", "security", "twilio", "token"]
     },
     "papirus_apps_brightnesssettings": {
       "category": "apps",
       "file": "brightnesssettings.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["brightness", "display", "screen", "settings", "contrast", "backlight", "sun"]
     },
     "papirus_apps_filetypes": {
       "category": "apps",
       "file": "filetypes.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["filetypes", "file", "document", "association", "mime", "type", "blank"]
     },
     "papirus_apps_yast-kerberos": {
       "category": "apps",
       "file": "yast-kerberos.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["yast", "kerberos", "authentication", "security", "lock", "suse", "padlock"]
     },
     "papirus_apps_manuskript": {
       "category": "apps",
       "file": "manuskript.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["manuskript", "writing", "novel", "author", "quill", "feather", "manuscript"]
     },
     "papirus_apps_sakura-spirit": {
       "category": "apps",
