@@ -4944,107 +4944,128 @@
     "papirus_apps_moderndeck": {
       "category": "apps",
       "file": "moderndeck.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["moderndeck", "twitter", "social", "client", "chat", "bubble", "blue", "tweetdeck"]
     },
     "papirus_apps_google-earth": {
       "category": "apps",
       "file": "google-earth.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["google", "earth", "globe", "map", "satellite", "world", "blue", "geography"]
     },
     "papirus_apps_vmware-netcfg": {
       "category": "apps",
       "file": "vmware-netcfg.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["vmware", "network", "config", "virtual", "machine", "nodes", "topology", "orange"]
     },
     "papirus_apps_org.openchemistry.Avogadro2": {
       "category": "apps",
       "file": "org.openchemistry.Avogadro2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["avogadro", "chemistry", "molecular", "editor", "atom", "science", "molecule", "blue"]
     },
     "papirus_apps_mintupdate-release-upgrade": {
       "category": "apps",
       "file": "mintupdate-release-upgrade.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mint", "update", "upgrade", "release", "linux", "download", "arrow", "colorful"]
     },
     "papirus_apps_wootility": {
       "category": "apps",
       "file": "wootility.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["wootility", "wooting", "keyboard", "config", "hardware", "utility", "dark", "crown"]
     },
     "papirus_apps_org.gnome.glabels-3": {
       "category": "apps",
       "file": "org.gnome.glabels-3.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["glabels", "labels", "stickers", "print", "gnome", "grid", "orange", "cards"]
     },
     "papirus_apps_Nozbe": {
       "category": "apps",
       "file": "Nozbe.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["nozbe", "task", "project", "management", "todo", "checkmark", "green", "productivity"]
     },
     "papirus_apps_firefox-bin": {
       "category": "apps",
       "file": "firefox-bin.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["firefox", "browser", "web", "mozilla", "fox", "orange", "internet", "globe"]
     },
     "papirus_apps_cs-backgrounds": {
       "category": "apps",
       "file": "cs-backgrounds.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["backgrounds", "wallpaper", "cinnamon", "desktop", "landscape", "sun", "blue", "settings"]
     },
     "papirus_apps_kuiviewer": {
       "category": "apps",
       "file": "kuiviewer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kuiviewer", "ui", "viewer", "kde", "qt", "gears", "widgets", "designer"]
     },
     "papirus_apps_alltray": {
       "category": "apps",
       "file": "alltray.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["alltray", "tray", "systray", "dock", "minimize", "purple", "triangle", "taskbar"]
     },
     "papirus_apps_lutris_dont-starve-together": {
       "category": "apps",
       "file": "lutris_dont-starve-together.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["dont-starve", "survival", "game", "lutris", "wilson", "character", "cartoon", "multiplayer"]
     },
     "papirus_apps_org.equeim.Tremotesf": {
       "category": "apps",
       "file": "org.equeim.Tremotesf.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tremotesf", "transmission", "torrent", "remote", "download", "bittorrent", "wifi", "client"]
     },
     "papirus_apps_mandelbulber2": {
       "category": "apps",
       "file": "mandelbulber2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mandelbulber", "fractal", "3d", "render", "spiral", "math", "golden", "geometry"]
     },
     "papirus_apps_xchm-48": {
       "category": "apps",
       "file": "xchm-48.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["xchm", "help", "chm", "viewer", "question", "documentation", "blue", "html"]
     },
     "papirus_apps_mu.codewith.editor": {
       "category": "apps",
       "file": "mu.codewith.editor.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mu", "editor", "python", "code", "beginner", "programming", "red", "education"]
     },
     "papirus_apps_libreoffice7.4-chart": {
       "category": "apps",
       "file": "libreoffice7.4-chart.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["libreoffice", "chart", "graph", "bars", "data", "visualization", "office", "colorful"]
     },
     "papirus_apps_wxmaxima": {
       "category": "apps",
       "file": "wxmaxima.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["wxmaxima", "maxima", "algebra", "math", "calculator", "cas", "red", "purple"]
     },
     "papirus_apps_xdiagnose": {
       "category": "apps",
       "file": "xdiagnose.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["xdiagnose", "x11", "display", "diagnostics", "cross", "error", "gray", "debug"]
     },
     "papirus_apps_wechat": {
       "category": "apps",
       "file": "wechat.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["wechat", "chat", "message", "social", "chinese", "green", "bubble", "communication"]
     },
     "papirus_apps_cosmigo-pro-motion-icon": {
       "category": "apps",
