@@ -5203,112 +5203,134 @@
     "papirus_apps_org.bluesabre.MenuLibre": {
       "category": "apps",
       "file": "org.bluesabre.MenuLibre.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["menulibre", "menu", "editor", "list", "launcher", "lines", "blue", "text"]
     },
     "papirus_apps_org.tribler.Tribler": {
       "category": "apps",
       "file": "org.tribler.Tribler.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tribler", "torrent", "p2p", "decentralized", "download", "ribbon", "red", "bittorrent"]
     },
     "papirus_apps_document-viewer": {
       "category": "apps",
       "file": "document-viewer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["document", "viewer", "reader", "page", "text", "image", "file", "white"]
     },
     "papirus_apps_appimagekit-meshlab": {
       "category": "apps",
       "file": "appimagekit-meshlab.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["meshlab", "3d", "mesh", "processing", "eye", "green", "model", "scan"]
     },
     "papirus_apps_steam_icon_248610": {
       "category": "apps",
       "file": "steam_icon_248610.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "game", "tactical", "soldier", "shooter", "rifle", "blue", "military"]
     },
     "papirus_apps_ice": {
       "category": "apps",
       "file": "ice.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ice", "ssb", "browser", "webapp", "mint", "cube", "blue", "green"]
     },
     "papirus_apps_mozc": {
       "category": "apps",
       "file": "mozc.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mozc", "japanese", "input", "ime", "hiragana", "keyboard", "orange", "language"]
     },
     "papirus_apps_indicator-weather": {
       "category": "apps",
       "file": "indicator-weather.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["weather", "indicator", "sun", "cloud", "forecast", "sky", "blue", "temperature"]
     },
     "papirus_apps_pynvim": {
       "category": "apps",
       "file": "pynvim.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["pynvim", "neovim", "vim", "python", "editor", "terminal", "green", "blue"]
     },
     "papirus_apps_internet-chat": {
       "category": "apps",
       "file": "internet-chat.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["internet", "chat", "message", "bubble", "conversation", "blue", "text", "im"]
     },
     "papirus_apps_jetbrains-dataspell": {
       "category": "apps",
       "file": "jetbrains-dataspell.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["dataspell", "jetbrains", "data", "science", "ide", "python", "notebook", "dark"]
     },
     "papirus_apps_java11-jdk": {
       "category": "apps",
       "file": "java11-jdk.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["java", "jdk", "coffee", "programming", "development", "red", "cup", "oracle"]
     },
     "papirus_apps_org.wesnoth.Wesnoth": {
       "category": "apps",
       "file": "org.wesnoth.Wesnoth.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["wesnoth", "strategy", "game", "shield", "swords", "medieval", "fantasy", "turn-based"]
     },
     "papirus_apps_steam_icon_280680": {
       "category": "apps",
       "file": "steam_icon_280680.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "game", "paint", "brush", "art", "colorful", "creative", "drawing"]
     },
     "papirus_apps_yast-services-manager": {
       "category": "apps",
       "file": "yast-services-manager.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["yast", "services", "manager", "gear", "wrench", "opensuse", "purple", "system"]
     },
     "papirus_apps_ktikz": {
       "category": "apps",
       "file": "ktikz.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ktikz", "tikz", "latex", "diagram", "editor", "document", "pencil", "blue"]
     },
     "papirus_apps_smw-leveledit": {
       "category": "apps",
       "file": "smw-leveledit.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["smw", "mario", "level", "editor", "platformer", "red", "orange", "game"]
     },
     "papirus_apps_nvim-qt": {
       "category": "apps",
       "file": "nvim-qt.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["nvim", "neovim", "qt", "editor", "vim", "terminal", "green", "blue"]
     },
     "papirus_apps_chessx": {
       "category": "apps",
       "file": "chessx.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["chessx", "chess", "rook", "board", "game", "database", "brown", "strategy"]
     },
     "papirus_apps_pk-package-sources": {
       "category": "apps",
       "file": "pk-package-sources.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["package", "sources", "repository", "gear", "download", "software", "teal", "install"]
     },
     "papirus_apps_palemoon": {
       "category": "apps",
       "file": "palemoon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["palemoon", "browser", "web", "moon", "internet", "blue", "firefox", "globe"]
     },
     "papirus_apps_ubiquity-kde": {
       "category": "apps",
       "file": "ubiquity-kde.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ubiquity", "installer", "ubuntu", "kde", "install", "download", "disk", "green"]
     },
     "papirus_apps_brave-ljcdbnjegamehjigdeiajddkhpihajpk-Default": {
       "category": "apps",
