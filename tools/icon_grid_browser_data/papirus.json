@@ -11023,102 +11023,122 @@
     "papirus_apps_everpad": {
       "category": "apps",
       "file": "everpad.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["everpad", "evernote", "notes", "elephant", "notebook", "sync", "linux"]
     },
     "papirus_apps_steam_icon_271590": {
       "category": "apps",
       "file": "steam_icon_271590.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "gta", "grand", "theft", "auto", "v", "rockstar", "game"]
     },
     "papirus_apps_xfce4-whiskermenu": {
       "category": "apps",
       "file": "xfce4-whiskermenu.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["xfce4", "whiskermenu", "menu", "launcher", "mouse", "xfce", "start"]
     },
     "papirus_apps_org.shotcut.Shotcut": {
       "category": "apps",
       "file": "org.shotcut.Shotcut.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["shotcut", "video", "editor", "editing", "timeline", "film", "media"]
     },
     "papirus_apps_steam_icon_211820": {
       "category": "apps",
       "file": "steam_icon_211820.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "starbound", "space", "sandbox", "adventure", "pixel", "game"]
     },
     "papirus_apps_io.github.java_decompiler.jd-gui": {
       "category": "apps",
       "file": "io.github.java_decompiler.jd-gui.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["jd", "java", "decompiler", "gui", "coffee", "bytecode", "reverse"]
     },
     "papirus_apps_nwg-shell-translate": {
       "category": "apps",
       "file": "nwg-shell-translate.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["nwg", "translate", "language", "translation", "shell", "localization", "i18n"]
     },
     "papirus_apps_config-date": {
       "category": "apps",
       "file": "config-date.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["config", "date", "calendar", "time", "settings", "clock", "schedule"]
     },
     "papirus_apps_cups": {
       "category": "apps",
       "file": "cups.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cups", "printer", "printing", "print", "paper", "unix", "system"]
     },
     "papirus_apps_steam_icon_1118310": {
       "category": "apps",
       "file": "steam_icon_1118310.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "retroarch", "emulator", "retro", "gamepad", "controller", "gaming"]
     },
     "papirus_apps_quassel": {
       "category": "apps",
       "file": "quassel.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["quassel", "irc", "chat", "messaging", "client", "distributed", "wave"]
     },
     "papirus_apps_steam_icon_646570": {
       "category": "apps",
       "file": "steam_icon_646570.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "slay", "spire", "card", "roguelike", "deckbuilder", "game"]
     },
     "papirus_apps_in.p1x.TanksOfFreedom": {
       "category": "apps",
       "file": "in.p1x.TanksOfFreedom.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tanks", "freedom", "tank", "strategy", "military", "turnbased", "game"]
     },
     "papirus_apps_multisystem-vbox": {
       "category": "apps",
       "file": "multisystem-vbox.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["multisystem", "vbox", "usb", "multiboot", "virtualbox", "bootable", "drive"]
     },
     "papirus_apps_steam_icon_431730": {
       "category": "apps",
       "file": "steam_icon_431730.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "pixel", "indie", "character", "platformer", "retro", "game"]
     },
     "papirus_apps_AdobeMediaEncoder": {
       "category": "apps",
       "file": "AdobeMediaEncoder.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["adobe", "media", "encoder", "video", "render", "convert", "export"]
     },
     "papirus_apps_lutris_magicka-2": {
       "category": "apps",
       "file": "lutris_magicka-2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["magicka", "wizard", "magic", "staff", "coop", "lutris", "game"]
     },
     "papirus_apps_tdewalletmanager": {
       "category": "apps",
       "file": "tdewalletmanager.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tde", "wallet", "manager", "password", "trinity", "keychain", "security"]
     },
     "papirus_apps_steam_icon_22010": {
       "category": "apps",
       "file": "steam_icon_22010.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "world", "goo", "puzzle", "physics", "indie", "game"]
     },
     "papirus_apps_lutris_american-truck-simulator": {
       "category": "apps",
       "file": "lutris_american-truck-simulator.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["american", "truck", "simulator", "driving", "wheel", "lutris", "game"]
     },
     "papirus_apps_org.xfce.thunar": {
       "category": "apps",
