@@ -9248,132 +9248,158 @@
     "papirus_apps_world-of-tanks": {
       "category": "apps",
       "file": "world-of-tanks.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["world", "tanks", "wot", "military", "combat", "shield", "game"]
     },
     "papirus_apps_lutris_sven-co-op": {
       "category": "apps",
       "file": "lutris_sven-co-op.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["sven", "coop", "half-life", "lambda", "multiplayer", "game", "lutris"]
     },
     "papirus_apps_deepin-music-player": {
       "category": "apps",
       "file": "deepin-music-player.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["deepin", "music", "player", "audio", "note", "orange", "sound"]
     },
     "papirus_apps_preferences-desktop-activities": {
       "category": "apps",
       "file": "preferences-desktop-activities.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["activities", "desktop", "preferences", "workspace", "plasma", "kde", "windows"]
     },
     "papirus_apps_okular": {
       "category": "apps",
       "file": "okular.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["okular", "document", "viewer", "pdf", "reader", "kde", "page"]
     },
     "papirus_apps_computersettings": {
       "category": "apps",
       "file": "computersettings.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["computer", "settings", "gear", "wrench", "configuration", "system", "preferences"]
     },
     "papirus_apps_org.virt_manager.virt-viewer": {
       "category": "apps",
       "file": "org.virt_manager.virt-viewer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["virt", "viewer", "virtual", "machine", "monitor", "remote", "kvm"]
     },
     "papirus_apps_steam_icon_302380": {
       "category": "apps",
       "file": "steam_icon_302380.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["wargame", "red", "dragon", "circle", "strategy", "steam", "game"]
     },
     "papirus_apps_unturned": {
       "category": "apps",
       "file": "unturned.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["unturned", "zombie", "survival", "green", "pixel", "game", "steam"]
     },
     "papirus_apps_preferences-desktop-theme-global": {
       "category": "apps",
       "file": "preferences-desktop-theme-global.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["theme", "global", "desktop", "preferences", "appearance", "look", "style"]
     },
     "papirus_apps_org.taisei_project.Taisei": {
       "category": "apps",
       "file": "org.taisei_project.Taisei.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["taisei", "touhou", "bullet", "hell", "shooter", "game", "arcade"]
     },
     "papirus_apps_steam_icon_859580": {
       "category": "apps",
       "file": "steam_icon_859580.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["warhammer", "gladius", "eagle", "gold", "laurel", "strategy", "steam", "game"]
     },
     "papirus_apps_manaplus": {
       "category": "apps",
       "file": "manaplus.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["manaplus", "mmorpg", "rpg", "client", "game", "orange", "mana"]
     },
     "papirus_apps_qdbusviewer": {
       "category": "apps",
       "file": "qdbusviewer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["qdbusviewer", "dbus", "qt", "viewer", "debug", "bus", "developer"]
     },
     "papirus_apps_ghostwriter": {
       "category": "apps",
       "file": "ghostwriter.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ghostwriter", "markdown", "editor", "ghost", "writer", "text", "writing"]
     },
     "papirus_apps_laditools": {
       "category": "apps",
       "file": "laditools.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ladi", "tools", "audio", "jack", "linux", "sound", "connector"]
     },
     "papirus_apps_snap.telegram-desktop.": {
       "category": "apps",
       "file": "snap.telegram-desktop..svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["telegram", "messenger", "chat", "airplane", "message", "snap", "social"]
     },
     "papirus_apps_iso-customizer": {
       "category": "apps",
       "file": "iso-customizer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["iso", "customizer", "disc", "cd", "edit", "image", "linux"]
     },
     "papirus_apps_com.seafile.Client": {
       "category": "apps",
       "file": "com.seafile.Client.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["seafile", "cloud", "storage", "sync", "file", "orange", "share"]
     },
     "papirus_apps_devhub": {
       "category": "apps",
       "file": "devhub.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["devhub", "developer", "github", "notifications", "hub", "teal"]
     },
     "papirus_apps_duckstation-sdl": {
       "category": "apps",
       "file": "duckstation-sdl.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["duckstation", "playstation", "emulator", "duck", "psx", "sdl", "retro"]
     },
     "papirus_apps_byzanz": {
       "category": "apps",
       "file": "byzanz.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["byzanz", "screen", "recorder", "video", "capture", "gif", "record"]
     },
     "papirus_apps_litenetworkshares": {
       "category": "apps",
       "file": "litenetworkshares.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["network", "shares", "share", "samba", "nodes", "lite", "connect"]
     },
     "papirus_apps_net.sourceforge.Chessx": {
       "category": "apps",
       "file": "net.sourceforge.Chessx.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["chessx", "chess", "rook", "board", "database", "game", "strategy"]
     },
     "papirus_apps_codeblocks": {
       "category": "apps",
       "file": "codeblocks.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["codeblocks", "ide", "code", "c++", "programming", "compiler", "blocks"]
     },
     "papirus_apps_com.github.phase1geo.annotator": {
       "category": "apps",
       "file": "com.github.phase1geo.annotator.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["annotator", "image", "annotation", "marker", "highlight", "screenshot", "draw"]
     },
     "papirus_apps_rawtherapee": {
       "category": "apps",
