@@ -9404,102 +9404,122 @@
     "papirus_apps_rawtherapee": {
       "category": "apps",
       "file": "rawtherapee.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["rawtherapee", "photo", "raw", "editor", "color", "wheel", "photography"]
     },
     "papirus_apps_org.gnome.gitlab.ilhooq.Bookup": {
       "category": "apps",
       "file": "org.gnome.gitlab.ilhooq.Bookup.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["bookup", "book", "notebook", "notes", "bookmark", "gnome", "reading"]
     },
     "papirus_apps_twinkle": {
       "category": "apps",
       "file": "twinkle.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["twinkle", "sip", "phone", "voip", "star", "call", "softphone"]
     },
     "papirus_apps_org.freedownloadmanager.Manager": {
       "category": "apps",
       "file": "org.freedownloadmanager.Manager.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["fdm", "free", "download", "manager", "arrow", "transfer", "accelerator"]
     },
     "papirus_apps_gnome-settings-background": {
       "category": "apps",
       "file": "gnome-settings-background.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["background", "wallpaper", "desktop", "gnome", "settings", "landscape", "image"]
     },
     "papirus_apps_com.jetbrains.DataGrip": {
       "category": "apps",
       "file": "com.jetbrains.DataGrip.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["datagrip", "jetbrains", "database", "sql", "ide", "query", "db"]
     },
     "papirus_apps_steam_icon_327030": {
       "category": "apps",
       "file": "steam_icon_327030.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["nuclear", "throne", "radiation", "hazard", "roguelike", "steam", "game"]
     },
     "papirus_apps_gvim": {
       "category": "apps",
       "file": "gvim.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gvim", "vim", "editor", "text", "terminal", "graphical", "code"]
     },
     "papirus_apps_yandex-music": {
       "category": "apps",
       "file": "yandex-music.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["yandex", "music", "streaming", "audio", "star", "player", "listen"]
     },
     "papirus_apps_androidstudio": {
       "category": "apps",
       "file": "androidstudio.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["android", "studio", "ide", "google", "mobile", "development", "app"]
     },
     "papirus_apps_org.gnome.Calendar": {
       "category": "apps",
       "file": "org.gnome.Calendar.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["calendar", "gnome", "date", "schedule", "event", "planner", "day"]
     },
     "papirus_apps_reicast": {
       "category": "apps",
       "file": "reicast.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["reicast", "dreamcast", "sega", "emulator", "spiral", "console", "retro"]
     },
     "papirus_apps_xhydra": {
       "category": "apps",
       "file": "xhydra.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["xhydra", "hydra", "security", "password", "pentest", "dragon", "network"]
     },
     "papirus_apps_net.sourceforge.Teo": {
       "category": "apps",
       "file": "net.sourceforge.Teo.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["teo", "thomson", "emulator", "retro", "cube", "computer", "vintage"]
     },
     "papirus_apps_knetwalk": {
       "category": "apps",
       "file": "knetwalk.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["knetwalk", "network", "puzzle", "globe", "kde", "game", "connect"]
     },
     "papirus_apps_steam_icon_311690": {
       "category": "apps",
       "file": "steam_icon_311690.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["enter", "gungeon", "bullet", "roguelike", "orange", "steam", "game"]
     },
     "papirus_apps_rssguard": {
       "category": "apps",
       "file": "rssguard.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["rssguard", "rss", "feed", "reader", "news", "shield", "atom"]
     },
     "papirus_apps_shadps4": {
       "category": "apps",
       "file": "shadps4.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["shadps4", "playstation", "ps4", "emulator", "sony", "console", "gaming"]
     },
     "papirus_apps_asciiportal": {
       "category": "apps",
       "file": "asciiportal.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["asciiportal", "ascii", "portal", "puzzle", "text", "pixel", "game"]
     },
     "papirus_apps_accessibility_section": {
       "category": "apps",
       "file": "accessibility_section.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["accessibility", "a11y", "person", "settings", "universal", "access", "disability"]
     },
     "papirus_apps_gpmdp": {
       "category": "apps",
