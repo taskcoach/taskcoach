@@ -4289,107 +4289,128 @@
     "papirus_apps_yast-update-online": {
       "category": "apps",
       "file": "yast-update-online.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["yast", "update", "online", "suse", "refresh", "package", "upgrade", "orange"]
     },
     "papirus_apps_dev.gbstudio.gb-studio": {
       "category": "apps",
       "file": "dev.gbstudio.gb-studio.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gb studio", "gameboy", "retro", "game", "development", "console", "handheld", "green"]
     },
     "papirus_apps_jdownloader": {
       "category": "apps",
       "file": "jdownloader.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["jdownloader", "download", "manager", "globe", "arrow", "internet", "files", "yellow"]
     },
     "papirus_apps_haguichi": {
       "category": "apps",
       "file": "haguichi.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["haguichi", "hamachi", "vpn", "network", "tunnel", "chevron", "red", "connection"]
     },
     "papirus_apps_xfce-mouse": {
       "category": "apps",
       "file": "xfce-mouse.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mouse", "xfce", "settings", "input", "pointer", "cursor", "device", "gray"]
     },
     "papirus_apps_yast-live-install": {
       "category": "apps",
       "file": "yast-live-install.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["yast", "install", "live", "suse", "download", "disk", "drive", "green"]
     },
     "papirus_apps_floating-point": {
       "category": "apps",
       "file": "floating-point.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["floating point", "game", "dot", "red", "circle", "ball", "arcade", "minimal"]
     },
     "papirus_apps_appimagekit-de.rwth_aachen.ient.YUView": {
       "category": "apps",
       "file": "appimagekit-de.rwth_aachen.ient.YUView.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["yuview", "video", "player", "yuv", "analyzer", "play", "teal", "codec"]
     },
     "papirus_apps_lutris_crush-crush": {
       "category": "apps",
       "file": "lutris_crush-crush.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["crush", "dating", "game", "hearts", "pink", "love", "romance", "lutris"]
     },
     "papirus_apps_preferences-system-network-sharing": {
       "category": "apps",
       "file": "preferences-system-network-sharing.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["sharing", "network", "preferences", "nodes", "connected", "blue", "share", "settings"]
     },
     "papirus_apps_solstice-microsoft-365-powerpoint": {
       "category": "apps",
       "file": "solstice-microsoft-365-powerpoint.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["powerpoint", "microsoft", "365", "presentation", "slides", "office", "orange", "p"]
     },
     "papirus_apps_org.kde.kontrast": {
       "category": "apps",
       "file": "org.kde.kontrast.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kontrast", "contrast", "accessibility", "kde", "color", "checker", "teal", "dark"]
     },
     "papirus_apps_lubuntu-software-center": {
       "category": "apps",
       "file": "lubuntu-software-center.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["lubuntu", "software", "center", "store", "install", "bag", "download", "apps"]
     },
     "papirus_apps_brave-desktop": {
       "category": "apps",
       "file": "brave-desktop.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["brave", "browser", "web", "privacy", "lion", "shield", "orange", "internet"]
     },
     "papirus_apps_lutris_warframe": {
       "category": "apps",
       "file": "lutris_warframe.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["warframe", "game", "lotus", "ninja", "shooter", "teal", "space", "lutris"]
     },
     "papirus_apps_netflix": {
       "category": "apps",
       "file": "netflix.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["netflix", "streaming", "video", "movies", "tv", "shows", "red", "entertainment"]
     },
     "papirus_apps_avocode-app-icon": {
       "category": "apps",
       "file": "avocode-app-icon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["avocode", "design", "handoff", "avocado", "green", "code", "inspect", "css"]
     },
     "papirus_apps_cisco-anyconnect": {
       "category": "apps",
       "file": "cisco-anyconnect.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cisco", "anyconnect", "vpn", "network", "security", "connection", "blue", "green"]
     },
     "papirus_apps_bareftp": {
       "category": "apps",
       "file": "bareftp.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["bareftp", "ftp", "transfer", "upload", "download", "arrows", "yellow", "green"]
     },
     "papirus_apps_qalculate-qt": {
       "category": "apps",
       "file": "qalculate-qt.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["qalculate", "calculator", "math", "qt", "equation", "compute", "scientific", "pink"]
     },
     "papirus_apps_rkward": {
       "category": "apps",
       "file": "rkward.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["rkward", "statistics", "r language", "ide", "data", "analysis", "blue", "kde"]
     },
     "papirus_apps_steam_icon_475550": {
       "category": "apps",
