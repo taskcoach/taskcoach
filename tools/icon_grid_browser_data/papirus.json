@@ -11143,97 +11143,116 @@
     "papirus_apps_org.xfce.thunar": {
       "category": "apps",
       "file": "org.xfce.thunar.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["thunar", "file", "manager", "xfce", "files", "browser", "folder"]
     },
     "papirus_apps_distributor-logo-archman": {
       "category": "apps",
       "file": "distributor-logo-archman.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["archman", "linux", "arch", "distributor", "logo", "distro", "arrow"]
     },
     "papirus_apps_screenruler": {
       "category": "apps",
       "file": "screenruler.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["screenruler", "ruler", "measure", "pixel", "screen", "dimension", "tool"]
     },
     "papirus_apps_steam_icon_282140": {
       "category": "apps",
       "file": "steam_icon_282140.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "darkwood", "horror", "survival", "eye", "indie", "game"]
     },
     "papirus_apps_com.zandronum.Zandronum": {
       "category": "apps",
       "file": "com.zandronum.Zandronum.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["zandronum", "doom", "fps", "multiplayer", "sourceport", "helmet", "shooter"]
     },
     "papirus_apps_tomate": {
       "category": "apps",
       "file": "tomate.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tomate", "pomodoro", "timer", "tomato", "productivity", "focus", "clock"]
     },
     "papirus_apps_lutris_half-life-alyx": {
       "category": "apps",
       "file": "lutris_half-life-alyx.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["halflife", "alyx", "valve", "vr", "fps", "lutris", "game"]
     },
     "papirus_apps_hardinfo2": {
       "category": "apps",
       "file": "hardinfo2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["hardinfo", "hardware", "system", "benchmark", "profiler", "gauge", "info"]
     },
     "papirus_apps_org.gnome.Documents": {
       "category": "apps",
       "file": "org.gnome.Documents.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gnome", "documents", "document", "viewer", "text", "page", "reader"]
     },
     "papirus_apps_desktop-environment-kde": {
       "category": "apps",
       "file": "desktop-environment-kde.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kde", "desktop", "environment", "plasma", "gear", "linux", "logo"]
     },
     "papirus_apps_com.visualstudio.code-oss": {
       "category": "apps",
       "file": "com.visualstudio.code-oss.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["vscode", "code", "oss", "editor", "visualstudio", "programming", "ide"]
     },
     "papirus_apps_clawsker": {
       "category": "apps",
       "file": "clawsker.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["clawsker", "claws", "mail", "email", "config", "settings", "envelope"]
     },
     "papirus_apps_com.github.torikulhabib.nino": {
       "category": "apps",
       "file": "com.github.torikulhabib.nino.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["nino", "network", "monitor", "internet", "speed", "bandwidth", "traffic"]
     },
     "papirus_apps_gcolor2": {
       "category": "apps",
       "file": "gcolor2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gcolor", "color", "picker", "eyedropper", "palette", "gtk", "chooser"]
     },
     "papirus_apps_lutris_the-elder-scrolls-v-skyrim": {
       "category": "apps",
       "file": "lutris_the-elder-scrolls-v-skyrim.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["skyrim", "elder", "scrolls", "dragon", "rpg", "bethesda", "lutris", "game"]
     },
     "papirus_apps_com.github.bcedu.museic": {
       "category": "apps",
       "file": "com.github.bcedu.museic.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["museic", "music", "player", "note", "audio", "song", "playback"]
     },
     "papirus_apps_steam_icon_1388880": {
       "category": "apps",
       "file": "steam_icon_1388880.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "heart", "love", "dating", "visual", "novel", "game"]
     },
     "papirus_apps_pymol": {
       "category": "apps",
       "file": "pymol.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["pymol", "molecular", "visualization", "chemistry", "science", "3d", "protein"]
     },
     "papirus_apps_kcmpartitions": {
       "category": "apps",
       "file": "kcmpartitions.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kcm", "partitions", "disk", "storage", "kde", "drive", "settings"]
     },
     "papirus_apps_AmneziaVPN": {
       "category": "apps",
