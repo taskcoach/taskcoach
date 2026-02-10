@@ -9002,107 +9002,128 @@
     "papirus_apps_sw4stm32": {
       "category": "apps",
       "file": "sw4stm32.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["stm32", "embedded", "ide", "microcontroller", "butterfly", "workbench", "blue"]
     },
     "papirus_apps_uos-service-support": {
       "category": "apps",
       "file": "uos-service-support.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["uos", "support", "service", "help", "lifebuoy", "rescue", "red"]
     },
     "papirus_apps_org.gnode.NixView": {
       "category": "apps",
       "file": "org.gnode.NixView.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["nixview", "data", "viewer", "neuroscience", "magnify", "search", "blue"]
     },
     "papirus_apps_org.gnome.gedit": {
       "category": "apps",
       "file": "org.gnome.gedit.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gedit", "text", "editor", "notepad", "pencil", "gnome", "write"]
     },
     "papirus_apps_com.github.subhadeepjasu.pebbles": {
       "category": "apps",
       "file": "com.github.subhadeepjasu.pebbles.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["pebbles", "calculator", "math", "arithmetic", "compute", "elementary"]
     },
     "papirus_apps_scummvm": {
       "category": "apps",
       "file": "scummvm.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["scummvm", "adventure", "game", "emulator", "retro", "engine", "green"]
     },
     "papirus_apps_org.kde.digikam": {
       "category": "apps",
       "file": "org.kde.digikam.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["digikam", "photo", "camera", "lens", "manager", "kde", "gallery"]
     },
     "papirus_apps_mixxx_icon": {
       "category": "apps",
       "file": "mixxx_icon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mixxx", "dj", "vinyl", "record", "music", "mixing", "turntable"]
     },
     "papirus_apps_stock_keyring": {
       "category": "apps",
       "file": "stock_keyring.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["keyring", "key", "password", "security", "lock", "credential", "green"]
     },
     "papirus_apps_BinaryNinja": {
       "category": "apps",
       "file": "BinaryNinja.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["binary", "ninja", "reverse", "engineering", "disassembler", "security", "red"]
     },
     "papirus_apps_qtdesigner": {
       "category": "apps",
       "file": "qtdesigner.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["qt", "designer", "gui", "builder", "ui", "form", "green"]
     },
     "papirus_apps_signal-desktop": {
       "category": "apps",
       "file": "signal-desktop.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["signal", "messenger", "encrypted", "chat", "privacy", "bubble", "blue"]
     },
     "papirus_apps_repository": {
       "category": "apps",
       "file": "repository.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["repository", "package", "globe", "source", "software", "store", "blue"]
     },
     "papirus_apps_lutris_half-life-2": {
       "category": "apps",
       "file": "lutris_half-life-2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["half-life", "valve", "lambda", "fps", "shooter", "game", "lutris"]
     },
     "papirus_apps_gcolor": {
       "category": "apps",
       "file": "gcolor.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gcolor", "color", "picker", "eyedropper", "palette", "chooser"]
     },
     "papirus_apps_type-rider": {
       "category": "apps",
       "file": "type-rider.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["type", "rider", "typography", "font", "game", "puzzle", "teal"]
     },
     "papirus_apps_heroic": {
       "category": "apps",
       "file": "heroic.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["heroic", "games", "launcher", "epic", "gog", "shield", "sword"]
     },
     "papirus_apps_gnome-screenshot": {
       "category": "apps",
       "file": "gnome-screenshot.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["screenshot", "capture", "camera", "shutter", "gnome", "screen", "teal"]
     },
     "papirus_apps_tde": {
       "category": "apps",
       "file": "tde.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tde", "trinity", "desktop", "environment", "gear", "settings", "blue"]
     },
     "papirus_apps_terraria": {
       "category": "apps",
       "file": "terraria.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["terraria", "sandbox", "adventure", "tree", "game", "pixel", "green"]
     },
     "papirus_apps_gshutdown": {
       "category": "apps",
       "file": "gshutdown.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["shutdown", "power", "off", "timer", "schedule", "red", "button"]
     },
     "papirus_apps_listen-moe-desktop": {
       "category": "apps",
