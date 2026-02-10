@@ -8312,112 +8312,134 @@
     "papirus_apps_cs-drivers": {
       "category": "apps",
       "file": "cs-drivers.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["drivers", "hardware", "card", "pci", "device", "cinnamon", "settings"]
     },
     "papirus_apps_xfce4-backdrop": {
       "category": "apps",
       "file": "xfce4-backdrop.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["backdrop", "wallpaper", "desktop", "background", "xfce", "landscape", "image"]
     },
     "papirus_apps_rhel": {
       "category": "apps",
       "file": "rhel.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["rhel", "red hat", "enterprise", "linux", "fedora", "hat", "distro"]
     },
     "papirus_apps_browser-tor": {
       "category": "apps",
       "file": "browser-tor.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tor", "browser", "onion", "privacy", "anonymous", "web", "secure"]
     },
     "papirus_apps_utilities-system-monitor": {
       "category": "apps",
       "file": "utilities-system-monitor.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["system monitor", "cpu", "memory", "performance", "task manager", "process", "graph"]
     },
     "papirus_apps_mangareader": {
       "category": "apps",
       "file": "mangareader.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["manga", "reader", "comic", "anime", "book", "japanese", "reading"]
     },
     "papirus_apps_komodo": {
       "category": "apps",
       "file": "komodo.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["komodo", "editor", "ide", "code", "lizard", "activestate", "programming"]
     },
     "papirus_apps_foxit-reader": {
       "category": "apps",
       "file": "foxit-reader.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["foxit", "pdf", "reader", "document", "viewer", "fox", "acrobat"]
     },
     "papirus_apps_org.kde.okteta": {
       "category": "apps",
       "file": "org.kde.okteta.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["okteta", "hex", "editor", "binary", "kde", "bytes", "data"]
     },
     "papirus_apps_io.beekeeperstudio.Studio": {
       "category": "apps",
       "file": "io.beekeeperstudio.Studio.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["beekeeper", "database", "sql", "studio", "mysql", "postgres", "query"]
     },
     "papirus_apps_qtpass-icon": {
       "category": "apps",
       "file": "qtpass-icon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["qtpass", "password", "manager", "lock", "security", "heart", "pass"]
     },
     "papirus_apps_guilded": {
       "category": "apps",
       "file": "guilded.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["guilded", "chat", "communication", "team", "gaming", "voice", "community"]
     },
     "papirus_apps_org.gnome.Weather": {
       "category": "apps",
       "file": "org.gnome.Weather.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["weather", "sun", "cloud", "forecast", "gnome", "temperature", "climate"]
     },
     "papirus_apps_fr.romainvigier.zap": {
       "category": "apps",
       "file": "fr.romainvigier.zap.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["zap", "lightning", "bolt", "sound", "audio", "quick", "flash"]
     },
     "papirus_apps_mixxx": {
       "category": "apps",
       "file": "mixxx.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mixxx", "dj", "music", "mixing", "vinyl", "record", "turntable"]
     },
     "papirus_apps_thunderbolt": {
       "category": "apps",
       "file": "thunderbolt.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["thunderbolt", "lightning", "bolt", "interface", "connection", "hardware", "port"]
     },
     "papirus_apps_lutris_spec-ops-the-line": {
       "category": "apps",
       "file": "lutris_spec-ops-the-line.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["spec ops", "the line", "shooter", "military", "game", "lutris", "war"]
     },
     "papirus_apps_cs-startup-programs": {
       "category": "apps",
       "file": "cs-startup-programs.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["startup", "programs", "autostart", "boot", "rocket", "cinnamon", "launch"]
     },
     "papirus_apps_solarus": {
       "category": "apps",
       "file": "solarus.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["solarus", "game engine", "rpg", "sword", "zelda", "adventure", "action"]
     },
     "papirus_apps_wargus": {
       "category": "apps",
       "file": "wargus.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["wargus", "warcraft", "strategy", "rts", "game", "stratagus", "war"]
     },
     "papirus_apps_org.freedesktop.Bustle": {
       "category": "apps",
       "file": "org.freedesktop.Bustle.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["bustle", "dbus", "debug", "message", "bus", "freedesktop", "visualizer"]
     },
     "papirus_apps_mongodb-compass-community": {
       "category": "apps",
       "file": "mongodb-compass-community.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mongodb", "compass", "database", "nosql", "leaf", "gui", "query"]
     },
     "papirus_apps_mutt": {
       "category": "apps",
