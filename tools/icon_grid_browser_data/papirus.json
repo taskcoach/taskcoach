@@ -6935,132 +6935,158 @@
     "papirus_apps_io.elementary.sideload": {
       "category": "apps",
       "file": "io.elementary.sideload.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["sideload", "flatpak", "installer", "package", "box", "elementary", "install"]
     },
     "papirus_apps_com.moddb.TotalChaos": {
       "category": "apps",
       "file": "com.moddb.TotalChaos.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["total chaos", "game", "horror", "mod", "doom", "fps", "shooter"]
     },
     "papirus_apps_prey": {
       "category": "apps",
       "file": "prey.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["prey", "anti-theft", "tracking", "device", "security", "bird", "phoenix"]
     },
     "papirus_apps_deskreen": {
       "category": "apps",
       "file": "deskreen.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["deskreen", "screen sharing", "display", "mirror", "cast", "desktop", "remote"]
     },
     "papirus_apps_filen": {
       "category": "apps",
       "file": "filen.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["filen", "cloud storage", "encrypted", "sync", "files", "privacy", "backup"]
     },
     "papirus_apps_filter": {
       "category": "apps",
       "file": "filter.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["filter", "funnel", "sort", "refine", "red", "search", "narrow"]
     },
     "papirus_apps_for-the-king": {
       "category": "apps",
       "file": "for-the-king.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["for the king", "game", "rpg", "strategy", "sword", "shield", "adventure", "medieval"]
     },
     "papirus_apps_thomas-was-alone": {
       "category": "apps",
       "file": "thomas-was-alone.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["thomas was alone", "game", "indie", "platformer", "puzzle", "minimalist", "rectangle"]
     },
     "papirus_apps_youtube-dl-qt-icon": {
       "category": "apps",
       "file": "youtube-dl-qt-icon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["youtube", "download", "video", "yt-dlp", "youtube-dl", "downloader", "qt"]
     },
     "papirus_apps_com.vscodium.codium-insiders": {
       "category": "apps",
       "file": "com.vscodium.codium-insiders.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["vscodium", "insiders", "code editor", "ide", "vscode", "open source", "programming"]
     },
     "papirus_apps_lutris_skullgirls": {
       "category": "apps",
       "file": "lutris_skullgirls.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["skullgirls", "lutris", "game", "fighting", "skull", "heart", "arcade"]
     },
     "papirus_apps_system-config-authentication": {
       "category": "apps",
       "file": "system-config-authentication.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["authentication", "user", "login", "account", "system config", "identity", "avatar"]
     },
     "papirus_apps_slimbookbattery": {
       "category": "apps",
       "file": "slimbookbattery.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["slimbook", "battery", "power", "lightning", "energy", "optimization", "laptop"]
     },
     "papirus_apps_xfce4-color-settings": {
       "category": "apps",
       "file": "xfce4-color-settings.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["color", "settings", "xfce", "profile", "display", "calibration", "flower"]
     },
     "papirus_apps_com.github.spheras.desktopfolder": {
       "category": "apps",
       "file": "com.github.spheras.desktopfolder.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["desktop folder", "organizer", "widgets", "panels", "tiles", "desktop", "monitor"]
     },
     "papirus_apps_com.polyphone_soundfonts.polyphone": {
       "category": "apps",
       "file": "com.polyphone_soundfonts.polyphone.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["polyphone", "soundfont", "audio", "music", "sound", "editor", "tuning fork"]
     },
     "papirus_apps_deepin-movie": {
       "category": "apps",
       "file": "deepin-movie.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["deepin", "movie", "video player", "play", "film", "media", "cinema"]
     },
     "papirus_apps_rlogo_icon": {
       "category": "apps",
       "file": "rlogo_icon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["r", "programming", "statistics", "data science", "rstudio", "language", "analytics"]
     },
     "papirus_apps_org.fontforge.FontForge": {
       "category": "apps",
       "file": "org.fontforge.FontForge.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["fontforge", "font", "editor", "typography", "typeface", "design", "glyph"]
     },
     "papirus_apps_subdownloader": {
       "category": "apps",
       "file": "subdownloader.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["subtitle", "download", "srt", "captions", "video", "text", "speech bubble"]
     },
     "papirus_apps_makehuman_bg": {
       "category": "apps",
       "file": "makehuman_bg.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["makehuman", "3d", "human", "modeling", "body", "character", "figure"]
     },
     "papirus_apps_vk": {
       "category": "apps",
       "file": "vk.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["vk", "vkontakte", "social network", "russian", "messaging", "chat", "social media"]
     },
     "papirus_apps_drawpile": {
       "category": "apps",
       "file": "drawpile.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["drawpile", "drawing", "collaborative", "paint", "pencil", "art", "online"]
     },
     "papirus_apps_ff-password-exporter": {
       "category": "apps",
       "file": "ff-password-exporter.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["firefox", "password", "exporter", "export", "arrow", "security", "backup"]
     },
     "papirus_apps_awf": {
       "category": "apps",
       "file": "awf.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["awf", "widget factory", "gtk", "theme", "preview", "gnome", "foot"]
     },
     "papirus_apps_lutris_sid-meiers-civilization-vi": {
       "category": "apps",
       "file": "lutris_sid-meiers-civilization-vi.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["civilization", "civ 6", "game", "strategy", "lutris", "turn based", "4x"]
     },
     "papirus_apps_kate2": {
       "category": "apps",
