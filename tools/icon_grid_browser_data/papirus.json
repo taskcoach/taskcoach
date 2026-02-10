@@ -10201,107 +10201,128 @@
     "papirus_apps_steam_icon_395160": {
       "category": "apps",
       "file": "steam_icon_395160.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["furi", "steam", "action", "game", "combat", "boss", "fighter"]
     },
     "papirus_apps_gnome-settings-ui-behavior": {
       "category": "apps",
       "file": "gnome-settings-ui-behavior.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gnome", "settings", "ui", "behavior", "preferences", "interface", "configuration"]
     },
     "papirus_apps_applications-internet": {
       "category": "apps",
       "file": "applications-internet.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["internet", "web", "browser", "globe", "network", "online", "applications"]
     },
     "papirus_apps_chrome-abnfpfhjmipcnaibcolbacfhgfcmjjbn-Default": {
       "category": "apps",
       "file": "chrome-abnfpfhjmipcnaibcolbacfhgfcmjjbn-Default.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["onedrive", "cloud", "storage", "microsoft", "chrome", "sync", "backup"]
     },
     "papirus_apps_electron": {
       "category": "apps",
       "file": "electron.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["electron", "atom", "framework", "javascript", "desktop", "chromium", "nodejs"]
     },
     "papirus_apps_org.filmulator.Filmulator": {
       "category": "apps",
       "file": "org.filmulator.Filmulator.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["filmulator", "film", "photo", "raw", "photography", "editor", "processing"]
     },
     "papirus_apps_zombie-panic-source": {
       "category": "apps",
       "file": "zombie-panic-source.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["zombie", "panic", "source", "biohazard", "horror", "game", "multiplayer"]
     },
     "papirus_apps_rquickshare": {
       "category": "apps",
       "file": "rquickshare.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["rquickshare", "quickshare", "nearby", "share", "transfer", "file", "wireless"]
     },
     "papirus_apps_reddit": {
       "category": "apps",
       "file": "reddit.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["reddit", "social", "forum", "community", "snoo", "discussion", "news"]
     },
     "papirus_apps_plan": {
       "category": "apps",
       "file": "plan.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["plan", "calendar", "schedule", "planner", "organizer", "tasks", "agenda"]
     },
     "papirus_apps_com.github.jmoerman.go-for-it": {
       "category": "apps",
       "file": "com.github.jmoerman.go-for-it.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["go-for-it", "timer", "productivity", "pomodoro", "clock", "tasks", "todo"]
     },
     "papirus_apps_plex-desktop": {
       "category": "apps",
       "file": "plex-desktop.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["plex", "media", "server", "streaming", "video", "movies", "player"]
     },
     "papirus_apps_enve": {
       "category": "apps",
       "file": "enve.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["enve", "animation", "2d", "vector", "motion", "graphics", "editor"]
     },
     "papirus_apps_kali-hydra": {
       "category": "apps",
       "file": "kali-hydra.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["hydra", "kali", "security", "password", "cracker", "pentest", "dragon"]
     },
     "papirus_apps_kcmdf": {
       "category": "apps",
       "file": "kcmdf.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kcmdf", "kde", "control", "module", "settings", "configuration", "blocks"]
     },
     "papirus_apps_firejail-ui": {
       "category": "apps",
       "file": "firejail-ui.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["firejail", "sandbox", "security", "firewall", "jail", "isolation", "linux"]
     },
     "papirus_apps_chirp": {
       "category": "apps",
       "file": "chirp.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["chirp", "radio", "ham", "amateur", "serial", "programming", "transceiver"]
     },
     "papirus_apps_xfce4-mixer": {
       "category": "apps",
       "file": "xfce4-mixer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["xfce", "mixer", "audio", "sound", "volume", "speaker", "equalizer"]
     },
     "papirus_apps_yast-vendor": {
       "category": "apps",
       "file": "yast-vendor.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["yast", "opensuse", "suse", "vendor", "chameleon", "linux", "repository"]
     },
     "papirus_apps_ocaml": {
       "category": "apps",
       "file": "ocaml.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ocaml", "camel", "programming", "language", "functional", "compiler", "ml"]
     },
     "papirus_apps_libreoffice-chart": {
       "category": "apps",
       "file": "libreoffice-chart.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["libreoffice", "chart", "graph", "bars", "data", "visualization", "office"]
     },
     "papirus_apps_org.cvfosammmm.Setzer": {
       "category": "apps",
