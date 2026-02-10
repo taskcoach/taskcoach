@@ -7736,152 +7736,182 @@
     "papirus_apps_com.github.subhadeepjasu.enigma": {
       "category": "apps",
       "file": "com.github.subhadeepjasu.enigma.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["enigma", "calculator", "math", "letter E", "brown", "app"]
     },
     "papirus_apps_Droidcam": {
       "category": "apps",
       "file": "Droidcam.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["droidcam", "android", "webcam", "camera", "phone", "green", "robot"]
     },
     "papirus_apps_io.github.ungoogled_software.ungoogled_chromium": {
       "category": "apps",
       "file": "io.github.ungoogled_software.ungoogled_chromium.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["chromium", "browser", "web", "internet", "blue", "circle"]
     },
     "papirus_apps_freeorion": {
       "category": "apps",
       "file": "freeorion.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["freeorion", "space", "strategy", "game", "compass", "star", "blue"]
     },
     "papirus_apps_de.klayout.KLayout": {
       "category": "apps",
       "file": "de.klayout.KLayout.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["klayout", "layout", "chip", "circuit", "electronics", "CAD", "yellow"]
     },
     "papirus_apps_eeschema": {
       "category": "apps",
       "file": "eeschema.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["eeschema", "schematic", "circuit", "electronics", "kicad", "nodes", "green"]
     },
     "papirus_apps_lutris_lovers-in-a-dangerous-spacetime": {
       "category": "apps",
       "file": "lutris_lovers-in-a-dangerous-spacetime.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["lovers", "spacetime", "heart", "game", "pink", "characters", "cute"]
     },
     "papirus_apps_appimagekit-dust3d": {
       "category": "apps",
       "file": "appimagekit-dust3d.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["dust3d", "3d", "modeling", "horse", "pony", "silhouette", "gray"]
     },
     "papirus_apps_icloud-photos": {
       "category": "apps",
       "file": "icloud-photos.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["icloud", "photos", "flower", "colorful", "pinwheel", "apple", "gallery"]
     },
     "papirus_apps_package_games": {
       "category": "apps",
       "file": "package_games.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["games", "gamepad", "controller", "joystick", "play", "yellow", "gaming"]
     },
     "papirus_apps_sakura-dungeon": {
       "category": "apps",
       "file": "sakura-dungeon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["sakura", "dungeon", "sword", "weapon", "game", "fantasy", "blade"]
     },
     "papirus_apps_com.yacreader.YACReader": {
       "category": "apps",
       "file": "com.yacreader.YACReader.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["yacreader", "comic", "reader", "speech bubble", "yellow", "chat", "balloon"]
     },
     "papirus_apps_oracle-sqldeveloper": {
       "category": "apps",
       "file": "oracle-sqldeveloper.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["oracle", "sql", "database", "developer", "query", "discs", "green play"]
     },
     "papirus_apps_brave-kjgfgldnnfoeklkmfkjfagphfepbbdan-Default": {
       "category": "apps",
       "file": "brave-kjgfgldnnfoeklkmfkjfagphfepbbdan-Default.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["google meet", "video", "call", "conference", "camera", "meeting", "chat"]
     },
     "papirus_apps_Diablo": {
       "category": "apps",
       "file": "Diablo.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["diablo", "game", "rpg", "letter D", "red", "demon", "blizzard"]
     },
     "papirus_apps_libreoffice7.5-draw": {
       "category": "apps",
       "file": "libreoffice7.5-draw.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["libreoffice", "draw", "vector", "graphics", "shapes", "drawing", "yellow"]
     },
     "papirus_apps_appimagekit-junior_install_icon": {
       "category": "apps",
       "file": "appimagekit-junior_install_icon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["junior", "installer", "alpha", "symbol", "greek", "dark", "red"]
     },
     "papirus_apps_spideroak": {
       "category": "apps",
       "file": "spideroak.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["spideroak", "cloud", "backup", "upload", "sync", "storage", "orange"]
     },
     "papirus_apps_system-keyboard-mx": {
       "category": "apps",
       "file": "system-keyboard-mx.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["keyboard", "keys", "typing", "input", "hardware", "blue", "system"]
     },
     "papirus_apps_net.sourceforge.fretsonfire": {
       "category": "apps",
       "file": "net.sourceforge.fretsonfire.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["frets on fire", "guitar", "music", "rhythm", "game", "fire", "orange"]
     },
     "papirus_apps_lutris_hypnospace-outlaw": {
       "category": "apps",
       "file": "lutris_hypnospace-outlaw.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["hypnospace", "outlaw", "game", "crystal", "gem", "badge", "colorful"]
     },
     "papirus_apps_AppImage": {
       "category": "apps",
       "file": "AppImage.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["appimage", "package", "install", "download", "gear", "cog", "blue"]
     },
     "papirus_apps_gogland": {
       "category": "apps",
       "file": "gogland.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["goland", "golang", "go", "jetbrains", "IDE", "programming", "code"]
     },
     "papirus_apps_konsolekalendar": {
       "category": "apps",
       "file": "konsolekalendar.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["calendar", "date", "schedule", "planner", "days", "month", "appointment"]
     },
     "papirus_apps_appimagekit-tc": {
       "category": "apps",
       "file": "appimagekit-tc.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["chat", "message", "speech bubble", "conversation", "talk", "purple", "messaging"]
     },
     "papirus_apps_icedove-uxp": {
       "category": "apps",
       "file": "icedove-uxp.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["icedove", "email", "mail", "dove", "bird", "globe", "thunderbird"]
     },
     "papirus_apps_msiexec": {
       "category": "apps",
       "file": "msiexec.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["wine", "msi", "installer", "windows", "glass", "red", "error"]
     },
     "papirus_apps_mednafen": {
       "category": "apps",
       "file": "mednafen.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mednafen", "emulator", "retro", "bug", "beetle", "gaming", "console"]
     },
     "papirus_apps_steam_icon_1146310": {
       "category": "apps",
       "file": "steam_icon_1146310.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "game", "people", "parent", "child", "silhouette", "blue"]
     },
     "papirus_apps_com.dhsdevelopments.Climaxima": {
       "category": "apps",
       "file": "com.dhsdevelopments.Climaxima.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["climaxima", "maxima", "math", "sigma", "algebra", "calculator", "blue"]
     },
     "papirus_apps_steam_icon_40710": {
       "category": "apps",
