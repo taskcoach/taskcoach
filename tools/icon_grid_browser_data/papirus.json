@@ -7916,87 +7916,104 @@
     "papirus_apps_steam_icon_40710": {
       "category": "apps",
       "file": "steam_icon_40710.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["machinarium", "robot", "helmet", "gold", "steam", "game", "adventure"]
     },
     "papirus_apps_io.github.Andrettin.Wyrmsun": {
       "category": "apps",
       "file": "io.github.Andrettin.Wyrmsun.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["wyrmsun", "strategy", "game", "letter W", "gray", "medieval", "rts"]
     },
     "papirus_apps_kali-aircrack-ng": {
       "category": "apps",
       "file": "kali-aircrack-ng.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["aircrack", "wifi", "wireless", "security", "network", "kali", "hacking"]
     },
     "papirus_apps_tracker": {
       "category": "apps",
       "file": "tracker.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tracker", "search", "magnifying glass", "find", "index", "lookup", "blue"]
     },
     "papirus_apps_org.flatpak.qtdemo": {
       "category": "apps",
       "file": "org.flatpak.qtdemo.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["flatpak", "package", "box", "cube", "cardboard", "brown", "container"]
     },
     "papirus_apps_qemu-system-x86_64": {
       "category": "apps",
       "file": "qemu-system-x86_64.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["qemu", "emulator", "virtual machine", "bird", "penguin", "orange", "virtualization"]
     },
     "papirus_apps_applications-system": {
       "category": "apps",
       "file": "applications-system.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["system", "settings", "gear", "cog", "preferences", "configuration", "gray"]
     },
     "papirus_apps_kdbg": {
       "category": "apps",
       "file": "kdbg.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kdbg", "debugger", "debug", "grid", "squares", "programming", "breakpoint"]
     },
     "papirus_apps_org.gnome.Aisleriot": {
       "category": "apps",
       "file": "org.gnome.Aisleriot.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["solitaire", "cards", "ace", "hearts", "playing card", "game", "poker"]
     },
     "papirus_apps_gdebi": {
       "category": "apps",
       "file": "gdebi.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gdebi", "debian", "deb", "package", "installer", "pink", "spiral"]
     },
     "papirus_apps_yast-addon": {
       "category": "apps",
       "file": "yast-addon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["yast", "addon", "plugin", "puzzle", "extension", "blue", "module"]
     },
     "papirus_apps_wolfram-player": {
       "category": "apps",
       "file": "wolfram-player.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["wolfram", "mathematica", "math", "spiral", "star", "red", "science"]
     },
     "papirus_apps_yast-vm-install": {
       "category": "apps",
       "file": "yast-vm-install.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["yast", "virtual machine", "install", "download", "window", "blue", "setup"]
     },
     "papirus_apps_qubic": {
       "category": "apps",
       "file": "qubic.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["qubic", "cube", "3d", "green", "block", "game", "hexagon"]
     },
     "papirus_apps_steam_icon_108600": {
       "category": "apps",
       "file": "steam_icon_108600.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["zomboid", "zombie", "person", "walking", "silhouette", "steam", "game"]
     },
     "papirus_apps_gnome-hideseek": {
       "category": "apps",
       "file": "gnome-hideseek.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["search", "find", "magnifying glass", "lookup", "hide", "seek", "blue"]
     },
     "papirus_apps_suanPan": {
       "category": "apps",
       "file": "suanPan.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["suanpan", "abacus", "simulation", "engineering", "chinese", "blue", "analysis"]
     },
     "papirus_apps_irccloud": {
       "category": "apps",
