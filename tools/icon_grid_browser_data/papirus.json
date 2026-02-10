@@ -8168,122 +8168,146 @@
     "papirus_apps_steam_icon_474750": {
       "category": "apps",
       "file": "steam_icon_474750.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["reigns", "castle", "tower", "crown", "kingdom", "game", "steam"]
     },
     "papirus_apps_org.gnome.Contacts": {
       "category": "apps",
       "file": "org.gnome.Contacts.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["contacts", "address book", "people", "gnome", "email", "phone", "directory"]
     },
     "papirus_apps_lutris_moonlighter": {
       "category": "apps",
       "file": "lutris_moonlighter.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["moonlighter", "rpg", "dungeon", "game", "lutris", "action", "adventure"]
     },
     "papirus_apps_nautilus-alt": {
       "category": "apps",
       "file": "nautilus-alt.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["nautilus", "files", "file manager", "cabinet", "drawer", "gnome", "browser"]
     },
     "papirus_apps_worms-armageddon": {
       "category": "apps",
       "file": "worms-armageddon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["worms", "armageddon", "explosion", "game", "strategy", "turn-based", "bomb"]
     },
     "papirus_apps_com.github.santileortiz.iconoscope": {
       "category": "apps",
       "file": "com.github.santileortiz.iconoscope.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["iconoscope", "icon", "viewer", "browser", "grid", "theme", "preview"]
     },
     "papirus_apps_distributor-logo-smartos": {
       "category": "apps",
       "file": "distributor-logo-smartos.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["smartos", "operating system", "unix", "illumos", "distro", "logo", "server"]
     },
     "papirus_apps_idea": {
       "category": "apps",
       "file": "idea.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["intellij", "idea", "jetbrains", "java", "ide", "programming", "development"]
     },
     "papirus_apps_libreoffice-startcenter": {
       "category": "apps",
       "file": "libreoffice-startcenter.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["libreoffice", "start center", "office", "document", "suite", "launcher"]
     },
     "papirus_apps_whatsdesk": {
       "category": "apps",
       "file": "whatsdesk.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["whatsdesk", "whatsapp", "messaging", "chat", "phone", "desktop", "communication"]
     },
     "papirus_apps_tribler": {
       "category": "apps",
       "file": "tribler.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tribler", "torrent", "bittorrent", "p2p", "download", "decentralized", "sharing"]
     },
     "papirus_apps_qtox": {
       "category": "apps",
       "file": "qtox.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["qtox", "tox", "messaging", "encrypted", "secure", "chat", "privacy"]
     },
     "papirus_apps_xfsm-hibernate": {
       "category": "apps",
       "file": "xfsm-hibernate.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["hibernate", "xfce", "session", "sleep", "suspend", "power", "system"]
     },
     "papirus_apps_knavalbattle": {
       "category": "apps",
       "file": "knavalbattle.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["knavalbattle", "battleship", "naval", "anchor", "game", "kde", "ship"]
     },
     "papirus_apps_goland": {
       "category": "apps",
       "file": "goland.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["goland", "golang", "jetbrains", "go", "ide", "programming", "development"]
     },
     "papirus_apps_lvim": {
       "category": "apps",
       "file": "lvim.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["lunarvim", "lvim", "neovim", "vim", "editor", "text", "ide"]
     },
     "papirus_apps_lutris_super-meat-boy": {
       "category": "apps",
       "file": "lutris_super-meat-boy.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["super meat boy", "platformer", "indie", "game", "lutris", "character", "red"]
     },
     "papirus_apps_3D-Coat": {
       "category": "apps",
       "file": "3D-Coat.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["3d-coat", "3d", "modeling", "sculpting", "texturing", "painting", "voxel"]
     },
     "papirus_apps_plague-inc-evolved": {
       "category": "apps",
       "file": "plague-inc-evolved.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["plague", "biohazard", "disease", "simulation", "strategy", "game", "virus"]
     },
     "papirus_apps_miro": {
       "category": "apps",
       "file": "miro.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["miro", "whiteboard", "collaboration", "board", "diagram", "brainstorm", "team"]
     },
     "papirus_apps_thunderbird": {
       "category": "apps",
       "file": "thunderbird.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["thunderbird", "email", "mail", "mozilla", "client", "bird", "envelope"]
     },
     "papirus_apps_gcleaner": {
       "category": "apps",
       "file": "gcleaner.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gcleaner", "cleaner", "broom", "cleanup", "system", "junk", "maintenance"]
     },
     "papirus_apps_syncthing-gtk": {
       "category": "apps",
       "file": "syncthing-gtk.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["syncthing", "sync", "file", "synchronization", "network", "p2p", "backup"]
     },
     "papirus_apps_distributor-logo-mac": {
       "category": "apps",
       "file": "distributor-logo-mac.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mac", "macos", "apple", "finder", "logo", "distro", "operating system"]
     },
     "papirus_apps_cs-drivers": {
       "category": "apps",
