@@ -7319,242 +7319,289 @@
     "papirus_apps_dangerous-golf": {
       "category": "apps",
       "file": "dangerous-golf.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["dangerous golf", "game", "golf", "sports", "destruction", "arcade", "physics"]
     },
     "papirus_apps_freegish": {
       "category": "apps",
       "file": "freegish.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["freegish", "gish", "game", "platformer", "physics", "blob", "open source"]
     },
     "papirus_apps_sound-juicer": {
       "category": "apps",
       "file": "sound-juicer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["sound juicer", "cd ripper", "audio", "disc", "music", "extract", "gnome"]
     },
     "papirus_apps_metro-last-light-redux": {
       "category": "apps",
       "file": "metro-last-light-redux.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["metro", "last light", "redux", "game", "fps", "shooter", "post-apocalyptic"]
     },
     "papirus_apps_motrix": {
       "category": "apps",
       "file": "motrix.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["motrix", "download", "manager", "torrent", "transfer", "robot", "aria2"]
     },
     "papirus_apps_preferences-desktop-keyboard": {
       "category": "apps",
       "file": "preferences-desktop-keyboard.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["keyboard", "preferences", "input", "typing", "keys", "settings", "layout"]
     },
     "papirus_apps_smw-worldedit": {
       "category": "apps",
       "file": "smw-worldedit.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["super mario war", "world editor", "game", "mario", "level editor", "platformer"]
     },
     "papirus_apps_gstreamer-properties": {
       "category": "apps",
       "file": "gstreamer-properties.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gstreamer", "multimedia", "audio", "music note", "properties", "settings", "media"]
     },
     "papirus_apps_brave-onhfoihkhodaeblmangmjjgfpfehnlkm-Default": {
       "category": "apps",
       "file": "brave-onhfoihkhodaeblmangmjjgfpfehnlkm-Default.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["brave", "web app", "spacedrive", "hexagon", "file manager", "cloud", "storage"]
     },
     "papirus_apps_lazpaint": {
       "category": "apps",
       "file": "lazpaint.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["lazpaint", "paint", "image editor", "palette", "brush", "drawing", "art"]
     },
     "papirus_apps_org.freedesktop.MalcontentControl": {
       "category": "apps",
       "file": "org.freedesktop.MalcontentControl.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["parental controls", "child", "family", "safety", "restriction", "malcontent", "parent"]
     },
     "papirus_apps_phoenix-emu-project-logo": {
       "category": "apps",
       "file": "phoenix-emu-project-logo.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["phoenix", "emulator", "game", "console", "retro", "gaming", "wings"]
     },
     "papirus_apps_openshot": {
       "category": "apps",
       "file": "openshot.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["openshot", "video editor", "film", "movie", "editing", "timeline", "open source"]
     },
     "papirus_apps_kappfinder": {
       "category": "apps",
       "file": "kappfinder.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kappfinder", "application finder", "search", "magnifying glass", "kde", "launcher", "find"]
     },
     "papirus_apps_deezer": {
       "category": "apps",
       "file": "deezer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["deezer", "music", "streaming", "audio", "heart", "playlist", "songs"]
     },
     "papirus_apps_com.frogatto.Frogatto": {
       "category": "apps",
       "file": "com.frogatto.Frogatto.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["frogatto", "game", "frog", "platformer", "adventure", "green", "cute"]
     },
     "papirus_apps_drakconf": {
       "category": "apps",
       "file": "drakconf.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["drakconf", "control center", "settings", "wrench", "tools", "mageia", "configuration"]
     },
     "papirus_apps_freedroidrpg": {
       "category": "apps",
       "file": "freedroidrpg.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["freedroid", "rpg", "game", "robot", "droid", "action", "open source"]
     },
     "papirus_apps_yast-vm-migrate": {
       "category": "apps",
       "file": "yast-vm-migrate.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["yast", "virtual machine", "migrate", "suse", "arrow", "transfer", "vm"]
     },
     "papirus_apps_lutris_uplink": {
       "category": "apps",
       "file": "lutris_uplink.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["uplink", "lutris", "game", "hacking", "simulation", "computer", "introversion"]
     },
     "papirus_apps_pipal": {
       "category": "apps",
       "file": "pipal.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["pipal", "password", "analyzer", "security", "user", "statistics", "pentest"]
     },
     "papirus_apps_sweethome3d-furniture-editor": {
       "category": "apps",
       "file": "sweethome3d-furniture-editor.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["sweet home 3d", "furniture", "editor", "desk", "interior", "design", "cabinet"]
     },
     "papirus_apps_nsm-legacy-gui": {
       "category": "apps",
       "file": "nsm-legacy-gui.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["nsm", "non session manager", "audio", "session", "jack", "music", "daw"]
     },
     "papirus_apps_fcitx-setting": {
       "category": "apps",
       "file": "fcitx-setting.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["fcitx", "input method", "keyboard", "settings", "ime", "chinese", "configuration"]
     },
     "papirus_apps_lutris_the-stanley-parable": {
       "category": "apps",
       "file": "lutris_the-stanley-parable.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["stanley parable", "game", "narrative", "walking simulator", "suit", "tie", "lutris"]
     },
     "papirus_apps_preferences-desktop-notification": {
       "category": "apps",
       "file": "preferences-desktop-notification.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["notification", "preferences", "alert", "exclamation", "speech bubble", "desktop", "settings"]
     },
     "papirus_apps_redriver2": {
       "category": "apps",
       "file": "redriver2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["redriver2", "driver 2", "game", "driving", "racing", "engine", "reimplementation"]
     },
     "papirus_apps_pnmixer": {
       "category": "apps",
       "file": "pnmixer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["pnmixer", "volume", "audio", "mixer", "speaker", "sound", "pulseaudio"]
     },
     "papirus_apps_xfce4-cpufreq-plugin": {
       "category": "apps",
       "file": "xfce4-cpufreq-plugin.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["xfce4", "cpu", "frequency", "processor", "chip", "cpufreq", "plugin", "monitor"]
     },
     "papirus_apps_wemeet": {
       "category": "apps",
       "file": "wemeet.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["wemeet", "tencent", "meeting", "video", "conference", "voip", "chat"]
     },
     "papirus_apps_rambox": {
       "category": "apps",
       "file": "rambox.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["rambox", "messaging", "aggregator", "chat", "email", "workspace", "communication"]
     },
     "papirus_apps_kteatime": {
       "category": "apps",
       "file": "kteatime.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kteatime", "tea", "timer", "cup", "beverage", "kde", "countdown"]
     },
     "papirus_apps_apktool": {
       "category": "apps",
       "file": "apktool.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["apktool", "android", "apk", "reverse engineering", "decompile", "developer", "tool"]
     },
     "papirus_apps_com.parsecgaming.parsec": {
       "category": "apps",
       "file": "com.parsecgaming.parsec.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["parsec", "gaming", "remote desktop", "streaming", "game", "cloud", "low latency"]
     },
     "papirus_apps_kcmkwm": {
       "category": "apps",
       "file": "kcmkwm.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kcmkwm", "window manager", "kde", "settings", "display", "screen", "kwin"]
     },
     "papirus_apps_celeste": {
       "category": "apps",
       "file": "celeste.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["celeste", "game", "platformer", "strawberry", "pixel", "indie", "mountain"]
     },
     "papirus_apps_webcord": {
       "category": "apps",
       "file": "webcord.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["webcord", "discord", "chat", "voice", "messaging", "gaming", "community"]
     },
     "papirus_apps_org.jaspstats.JASP": {
       "category": "apps",
       "file": "org.jaspstats.JASP.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["jasp", "statistics", "analysis", "data", "research", "bayesian", "chart"]
     },
     "papirus_apps_turtleart": {
       "category": "apps",
       "file": "turtleart.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["turtleart", "turtle", "logo", "programming", "education", "kids", "drawing"]
     },
     "papirus_apps_org.kicad.KiCad": {
       "category": "apps",
       "file": "org.kicad.KiCad.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kicad", "eda", "pcb", "electronics", "schematic", "circuit", "design"]
     },
     "papirus_apps_twitter-x": {
       "category": "apps",
       "file": "twitter-x.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["twitter", "x", "social media", "tweet", "microblog", "post", "feed"]
     },
     "papirus_apps_rogue-legacy": {
       "category": "apps",
       "file": "rogue-legacy.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["rogue legacy", "game", "roguelike", "platformer", "knight", "helmet", "indie"]
     },
     "papirus_apps_kedit": {
       "category": "apps",
       "file": "kedit.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kedit", "text editor", "editor", "document", "pencil", "kde", "write"]
     },
     "papirus_apps_com.github.naaando.lyrics": {
       "category": "apps",
       "file": "com.github.naaando.lyrics.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["lyrics", "music", "song", "text", "audio", "play", "karaoke"]
     },
     "papirus_apps_grsync": {
       "category": "apps",
       "file": "grsync.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["grsync", "rsync", "sync", "backup", "synchronize", "files", "transfer"]
     },
     "papirus_apps_org.wireshark.Wireshark": {
       "category": "apps",
       "file": "org.wireshark.Wireshark.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["wireshark", "network", "packet", "sniffer", "protocol", "analyzer", "capture"]
     },
     "papirus_apps_com.katawa_shoujo.KatawaShoujo": {
       "category": "apps",
       "file": "com.katawa_shoujo.KatawaShoujo.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["katawa shoujo", "visual novel", "game", "heart", "bandage", "anime", "romance"]
     },
     "papirus_apps_accessories-calculator": {
       "category": "apps",
       "file": "accessories-calculator.svg",
-      "sizes": [16, 22, 24, 32, 48, 64],
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
       "duplicates": [{
           "source": "papirus", "category": "apps", "file": "io.liri.Calculator.svg"
         }, {
@@ -7563,22 +7610,26 @@
           "source": "papirus", "category": "apps", "file": "xfce4-calculator-plugin.svg"
         }, {
           "source": "papirus", "category": "apps", "file": "io.elementary.calculator.svg"
-        }]
+        }],
+      "hints": ["calculator", "math", "arithmetic", "compute", "addition", "equals", "accessories"]
     },
     "papirus_apps_gmail": {
       "category": "apps",
       "file": "gmail.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gmail", "google", "email", "mail", "envelope", "inbox", "message"]
     },
     "papirus_apps_postscript-viewer": {
       "category": "apps",
       "file": "postscript-viewer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["postscript", "viewer", "document", "ps", "print", "preview", "file"]
     },
     "papirus_apps_appimagekit-torrenttools": {
       "category": "apps",
       "file": "appimagekit-torrenttools.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["torrenttools", "bittorrent", "torrent", "gear", "settings", "download", "p2p"]
     },
     "papirus_apps_lightdm-gtk-greeter-settings": {
       "category": "apps",
