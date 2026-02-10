@@ -8444,137 +8444,164 @@
     "papirus_apps_mutt": {
       "category": "apps",
       "file": "mutt.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mutt", "email", "mail", "client", "terminal", "envelope", "text"]
     },
     "papirus_apps_mscore-portable": {
       "category": "apps",
       "file": "mscore-portable.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["musescore", "music", "notation", "sheet", "score", "composer", "notes"]
     },
     "papirus_apps_in.bharatkalluri.shortcircuit": {
       "category": "apps",
       "file": "in.bharatkalluri.shortcircuit.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["shortcircuit", "developer", "api", "tool", "lightning", "code", "testing"]
     },
     "papirus_apps_io.gitlab.o20.word": {
       "category": "apps",
       "file": "io.gitlab.o20.word.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["word", "document", "writer", "office", "text", "processor", "microsoft"]
     },
     "papirus_apps_frogatto": {
       "category": "apps",
       "file": "frogatto.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["frogatto", "frog", "platformer", "game", "adventure", "green", "amphibian"]
     },
     "papirus_apps_epic-games": {
       "category": "apps",
       "file": "epic-games.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["epic", "games", "store", "launcher", "gaming", "platform", "shop"]
     },
     "papirus_apps_steam_icon_4000": {
       "category": "apps",
       "file": "steam_icon_4000.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["garrys-mod", "gmod", "sandbox", "game", "steam", "physics", "valve"]
     },
     "papirus_apps_google-chrome2": {
       "category": "apps",
       "file": "google-chrome2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["chrome", "google", "browser", "web", "internet", "chromium"]
     },
     "papirus_apps_google-chat-linux": {
       "category": "apps",
       "file": "google-chat-linux.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["google", "chat", "messaging", "bubble", "conversation", "hangouts", "communication"]
     },
     "papirus_apps_kmymoney": {
       "category": "apps",
       "file": "kmymoney.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kmymoney", "finance", "money", "coin", "budget", "accounting", "kde"]
     },
     "papirus_apps_xampp": {
       "category": "apps",
       "file": "xampp.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["xampp", "apache", "mysql", "php", "server", "webserver", "development"]
     },
     "papirus_apps_sh.ppy.osu": {
       "category": "apps",
       "file": "sh.ppy.osu.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["osu", "rhythm", "game", "music", "beatmap", "circle", "pink"]
     },
     "papirus_apps_audio-recorder": {
       "category": "apps",
       "file": "audio-recorder.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["audio", "recorder", "microphone", "sound", "voice", "recording", "mic"]
     },
     "papirus_apps_org.gnome.five-or-more": {
       "category": "apps",
       "file": "org.gnome.five-or-more.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["five-or-more", "puzzle", "game", "balls", "gnome", "board", "matching"]
     },
     "papirus_apps_translator": {
       "category": "apps",
       "file": "translator.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["translator", "translate", "language", "google", "text", "localization", "conversion"]
     },
     "papirus_apps_org.gajim.Gajim": {
       "category": "apps",
       "file": "org.gajim.Gajim.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gajim", "xmpp", "jabber", "messaging", "chat", "instant-messaging", "communication"]
     },
     "papirus_apps_osmo": {
       "category": "apps",
       "file": "osmo.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["osmo", "calendar", "organizer", "planner", "schedule", "date", "pim"]
     },
     "papirus_apps_io.github.webcamoid.Webcamoid": {
       "category": "apps",
       "file": "io.github.webcamoid.Webcamoid.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["webcamoid", "webcam", "camera", "video", "capture", "lens", "recording"]
     },
     "papirus_apps_glippy": {
       "category": "apps",
       "file": "glippy.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["glippy", "clipboard", "paste", "copy", "manager", "document", "text"]
     },
     "papirus_apps_openra-d2k": {
       "category": "apps",
       "file": "openra-d2k.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["openra", "dune", "d2k", "strategy", "rts", "game", "desert", "planet"]
     },
     "papirus_apps_harmony": {
       "category": "apps",
       "file": "harmony.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["harmony", "music", "player", "audio", "streaming", "pink"]
     },
     "papirus_apps_evernote-client": {
       "category": "apps",
       "file": "evernote-client.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["evernote", "notes", "elephant", "notebook", "organizer", "productivity", "green"]
     },
     "papirus_apps_io.github.dosbox-staging": {
       "category": "apps",
       "file": "io.github.dosbox-staging.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["dosbox", "dos", "emulator", "retro", "gaming", "msdos", "staging"]
     },
     "papirus_apps_opera-developer": {
       "category": "apps",
       "file": "opera-developer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["opera", "developer", "browser", "web", "internet", "dev"]
     },
     "papirus_apps_net.minetest.Minetest": {
       "category": "apps",
       "file": "net.minetest.Minetest.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["minetest", "voxel", "sandbox", "game", "minecraft", "block", "tree", "opensource"]
     },
     "papirus_apps_io.github.spacingbat3.webcord": {
       "category": "apps",
       "file": "io.github.spacingbat3.webcord.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["webcord", "discord", "chat", "voice", "gaming", "communication", "messaging"]
     },
     "papirus_apps_nvidia-x-server-settings": {
       "category": "apps",
       "file": "nvidia-x-server-settings.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["nvidia", "gpu", "graphics", "settings", "driver", "xserver", "geforce"]
     },
     "papirus_apps_atomix-icon": {
       "category": "apps",
