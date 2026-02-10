@@ -10873,127 +10873,152 @@
     "papirus_apps_Othman": {
       "category": "apps",
       "file": "Othman.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["othman", "quran", "arabic", "islamic", "reader", "browser", "religion"]
     },
     "papirus_apps_ibus-setup-chewing": {
       "category": "apps",
       "file": "ibus-setup-chewing.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ibus", "chewing", "chinese", "input", "method", "setup", "keyboard"]
     },
     "papirus_apps_metro-2033-redux": {
       "category": "apps",
       "file": "metro-2033-redux.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["metro", "2033", "redux", "shooter", "fps", "apocalyptic", "game"]
     },
     "papirus_apps_war-thunder": {
       "category": "apps",
       "file": "war-thunder.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["war", "thunder", "tank", "military", "combat", "vehicle", "game"]
     },
     "papirus_apps_xfce4-pulseaudio-plugin": {
       "category": "apps",
       "file": "xfce4-pulseaudio-plugin.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["xfce4", "pulseaudio", "audio", "sound", "speaker", "volume", "plugin"]
     },
     "papirus_apps_dse": {
       "category": "apps",
       "file": "dse.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["dse", "download", "arrow", "station", "extension", "synology"]
     },
     "papirus_apps_deepin-voice-note": {
       "category": "apps",
       "file": "deepin-voice-note.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["deepin", "voice", "note", "microphone", "recorder", "audio", "memo"]
     },
     "papirus_apps_Mesen-S": {
       "category": "apps",
       "file": "Mesen-S.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mesen", "snes", "emulator", "nintendo", "retro", "gaming", "console"]
     },
     "papirus_apps_cs-actions": {
       "category": "apps",
       "file": "cs-actions.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cinnamon", "settings", "actions", "shortcuts", "keybindings", "edit", "list"]
     },
     "papirus_apps_com.vzhd1701.gridplayer": {
       "category": "apps",
       "file": "com.vzhd1701.gridplayer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gridplayer", "video", "player", "multi", "grid", "media", "playback"]
     },
     "papirus_apps_org.pymol.PyMOL": {
       "category": "apps",
       "file": "org.pymol.PyMOL.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["pymol", "molecular", "visualization", "chemistry", "science", "3d", "protein"]
     },
     "papirus_apps_pizarra": {
       "category": "apps",
       "file": "pizarra.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["pizarra", "whiteboard", "drawing", "feather", "quill", "blackboard", "canvas"]
     },
     "papirus_apps_solstice-reddit-reddit": {
       "category": "apps",
       "file": "solstice-reddit-reddit.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["reddit", "solstice", "social", "forum", "snoo", "community", "news"]
     },
     "papirus_apps_moserial": {
       "category": "apps",
       "file": "moserial.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["moserial", "serial", "terminal", "satellite", "dish", "communication", "gnome"]
     },
     "papirus_apps_org.gnome.Genius": {
       "category": "apps",
       "file": "org.gnome.Genius.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["genius", "calculator", "math", "gnome", "equation", "arithmetic", "science"]
     },
     "papirus_apps_pyhoca_x2go-logo-ubuntu": {
       "category": "apps",
       "file": "pyhoca_x2go-logo-ubuntu.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["pyhoca", "x2go", "remote", "desktop", "ubuntu", "rdp", "connection"]
     },
     "papirus_apps_steam_icon_225840": {
       "category": "apps",
       "file": "steam_icon_225840.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "halflife", "blueshift", "lambda", "valve", "fps", "game"]
     },
     "papirus_apps_io.github.paledega.alpine-rootfs": {
       "category": "apps",
       "file": "io.github.paledega.alpine-rootfs.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["alpine", "rootfs", "linux", "mountain", "container", "filesystem", "minimal"]
     },
     "papirus_apps_blueradio-48": {
       "category": "apps",
       "file": "blueradio-48.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["blueradio", "bluetooth", "wireless", "radio", "connectivity", "adapter"]
     },
     "papirus_apps_lutris_grand-theft-auto-iii": {
       "category": "apps",
       "file": "lutris_grand-theft-auto-iii.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gta", "grand", "theft", "auto", "iii", "rockstar", "lutris", "game"]
     },
     "papirus_apps_kpicosim": {
       "category": "apps",
       "file": "kpicosim.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kpicosim", "picoblaze", "simulator", "microcontroller", "kde", "embedded", "fpga"]
     },
     "papirus_apps_distributor-logo-ultimate-edition": {
       "category": "apps",
       "file": "distributor-logo-ultimate-edition.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ultimate", "edition", "linux", "distributor", "logo", "distro", "ubuntu"]
     },
     "papirus_apps_com.github.sixpounder.GameOfLife": {
       "category": "apps",
       "file": "com.github.sixpounder.GameOfLife.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gameoflife", "conway", "cellular", "automaton", "simulation", "grid", "cells"]
     },
     "papirus_apps_gottet": {
       "category": "apps",
       "file": "gottet.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gottet", "tetris", "blocks", "puzzle", "game", "falling", "arcade"]
     },
     "papirus_apps_cryptr": {
       "category": "apps",
       "file": "cryptr.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cryptr", "vault", "secrets", "encryption", "keyhole", "lock", "security"]
     },
     "papirus_apps_everpad": {
       "category": "apps",
