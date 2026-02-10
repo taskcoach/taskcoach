@@ -3875,122 +3875,146 @@
     "papirus_apps_org.gtimelog.GTimeLog": {
       "category": "apps",
       "file": "org.gtimelog.GTimeLog.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["clock", "time", "log", "tracking", "timesheet", "hours", "schedule"]
     },
     "papirus_apps_phoronix-test-suite": {
       "category": "apps",
       "file": "phoronix-test-suite.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["benchmark", "test", "performance", "green", "letter p", "sync", "arrows"]
     },
     "papirus_apps_org.xfce.terminal-settings": {
       "category": "apps",
       "file": "org.xfce.terminal-settings.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["terminal", "console", "settings", "gear", "command prompt", "shell", "configure"]
     },
     "papirus_apps_org.kde.khangman": {
       "category": "apps",
       "file": "org.kde.khangman.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["hangman", "rope", "noose", "word game", "purple", "guess", "education"]
     },
     "papirus_apps_parlatype": {
       "category": "apps",
       "file": "parlatype.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["headphones", "audio", "transcription", "listen", "music", "sound", "earphones"]
     },
     "papirus_apps_bottles_wine-winecfg": {
       "category": "apps",
       "file": "bottles_wine-winecfg.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["wine glass", "bottle", "red", "settings", "gear", "configure", "drink"]
     },
     "papirus_apps_amnesia-rebirth": {
       "category": "apps",
       "file": "amnesia-rebirth.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["eye", "red", "horror", "game", "pupil", "watching", "dark"]
     },
     "papirus_apps_tortoisehg": {
       "category": "apps",
       "file": "tortoisehg.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["turtle", "tortoise", "mercurial", "version control", "green", "vcs", "hg"]
     },
     "papirus_apps_sigil": {
       "category": "apps",
       "file": "sigil.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["letter s", "ebook", "epub", "editor", "red", "book", "publishing"]
     },
     "papirus_apps_steam_icon_291650": {
       "category": "apps",
       "file": "steam_icon_291650.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mountains", "peaks", "gold", "teal", "game", "adventure", "landscape"]
     },
     "papirus_apps_ibus-keyboard": {
       "category": "apps",
       "file": "ibus-keyboard.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["keyboard", "keys", "typing", "input", "blue", "spacebar", "text entry"]
     },
     "papirus_apps_QDiskInfo": {
       "category": "apps",
       "file": "QDiskInfo.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["hard drive", "disk", "storage", "info", "hdd", "ssd", "health"]
     },
     "papirus_apps_steam_icon_417860": {
       "category": "apps",
       "file": "steam_icon_417860.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["window", "sticky note", "yellow", "note", "document", "memo", "game"]
     },
     "papirus_apps_preferences": {
       "category": "apps",
       "file": "preferences.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["sliders", "preferences", "settings", "equalizer", "controls", "adjust", "blue"]
     },
     "papirus_apps_io.ark.Desktop": {
       "category": "apps",
       "file": "io.ark.Desktop.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["triangle", "letter a", "red", "crypto", "wallet", "blockchain", "ark"]
     },
     "papirus_apps_radiotray": {
       "category": "apps",
       "file": "radiotray.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["radio", "dial", "tuner", "music", "broadcast", "antenna", "streaming"]
     },
     "papirus_apps_re.sonny.OhMySVG": {
       "category": "apps",
       "file": "re.sonny.OhMySVG.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["svg", "vector", "graphic", "orange", "flower", "path", "design"]
     },
     "papirus_apps_Stacer": {
       "category": "apps",
       "file": "Stacer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["speedometer", "gauge", "monitor", "system", "performance", "optimizer", "meter"]
     },
     "papirus_apps_nz.scuttlebutt.Patchwork": {
       "category": "apps",
       "file": "nz.scuttlebutt.Patchwork.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["bug", "caterpillar", "insect", "green", "blue", "social", "creature"]
     },
     "papirus_apps_com.github.zadam.trilium": {
       "category": "apps",
       "file": "com.github.zadam.trilium.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["leaves", "tree", "notes", "knowledge", "plant", "colorful", "nature"]
     },
     "papirus_apps_org.kde.qmlkonsole": {
       "category": "apps",
       "file": "org.kde.qmlkonsole.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["terminal", "console", "command prompt", "shell", "dark", "cli", "bash"]
     },
     "papirus_apps_googledrive": {
       "category": "apps",
       "file": "googledrive.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cloud", "drive", "storage", "google", "triangle", "files", "sync"]
     },
     "papirus_apps_org.gnome.Yelp": {
       "category": "apps",
       "file": "org.gnome.Yelp.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["life preserver", "lifebuoy", "help", "rescue", "red", "ring", "support"]
     },
     "papirus_apps_wesnoth_editor-icon": {
       "category": "apps",
       "file": "wesnoth_editor-icon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["shield", "swords", "battle", "game", "medieval", "strategy", "war"]
     },
     "papirus_apps_activity-log-manager": {
       "category": "apps",
