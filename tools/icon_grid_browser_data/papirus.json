@@ -6514,87 +6514,104 @@
     "papirus_apps_touchpad": {
       "category": "apps",
       "file": "touchpad.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["touchpad", "laptop", "trackpad", "input", "gesture", "mouse", "pointing", "hardware"]
     },
     "papirus_apps_trashindicator": {
       "category": "apps",
       "file": "trashindicator.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["trash", "indicator", "recycle", "bin", "delete", "green", "waste", "garbage"]
     },
     "papirus_apps_endless-sky": {
       "category": "apps",
       "file": "endless-sky.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["endless-sky", "space", "spaceship", "exploration", "game", "trading", "open-source", "sci-fi"]
     },
     "papirus_apps_zen-browser": {
       "category": "apps",
       "file": "zen-browser.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["zen", "browser", "web", "firefox", "internet", "circles", "orange", "privacy"]
     },
     "papirus_apps_x2-the-threat": {
       "category": "apps",
       "file": "x2-the-threat.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["x2", "threat", "space", "game", "trading", "purple", "simulation", "sci-fi"]
     },
     "papirus_apps_steam_icon_241600": {
       "category": "apps",
       "file": "steam_icon_241600.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["rogue-legacy", "steam", "game", "roguelike", "platformer", "flame", "red", "adventure"]
     },
     "papirus_apps_system-help": {
       "category": "apps",
       "file": "system-help.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["help", "system", "lifebuoy", "support", "assistance", "rescue", "red", "documentation"]
     },
     "papirus_apps_artscontrol": {
       "category": "apps",
       "file": "artscontrol.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["arts", "audio", "sound", "control", "speaker", "gear", "settings", "kde"]
     },
     "papirus_apps_kaddressbook": {
       "category": "apps",
       "file": "kaddressbook.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kaddressbook", "contacts", "address-book", "people", "kde", "brown", "directory", "person"]
     },
     "papirus_apps_org.gnome.design.SymbolicPreview": {
       "category": "apps",
       "file": "org.gnome.design.SymbolicPreview.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["symbolic", "preview", "icons", "gnome", "design", "symbols", "developer", "grid"]
     },
     "papirus_apps_apk-icon-editor": {
       "category": "apps",
       "file": "apk-icon-editor.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["apk", "android", "icon", "editor", "grid", "green", "pixel", "app"]
     },
     "papirus_apps_com.github.brandonlujan.exchange": {
       "category": "apps",
       "file": "com.github.brandonlujan.exchange.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["exchange", "currency", "dollar", "money", "converter", "green", "finance", "rate"]
     },
     "papirus_apps_com.github.cryptowyrm.copypastegrab": {
       "category": "apps",
       "file": "com.github.cryptowyrm.copypastegrab.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["copypastegrab", "video", "download", "film", "play", "red", "clip", "grabber"]
     },
     "papirus_apps_kawaii-player": {
       "category": "apps",
       "file": "kawaii-player.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kawaii", "player", "media", "cute", "anime", "video", "multimedia", "streaming"]
     },
     "papirus_apps_appimagekit-github-desktop": {
       "category": "apps",
       "file": "appimagekit-github-desktop.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["github", "desktop", "git", "octocat", "purple", "version-control", "repository", "code"]
     },
     "papirus_apps_thonny": {
       "category": "apps",
       "file": "thonny.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["thonny", "python", "ide", "beginner", "programming", "editor", "code", "education"]
     },
     "papirus_apps_preferences-plugin": {
       "category": "apps",
       "file": "preferences-plugin.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["plugin", "puzzle", "extension", "addon", "preferences", "blue", "module", "piece"]
     },
     "papirus_apps_bridge-constructor-playground": {
       "category": "apps",
