@@ -4415,102 +4415,122 @@
     "papirus_apps_steam_icon_475550": {
       "category": "apps",
       "file": "steam_icon_475550.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "game", "ninja", "masked", "face", "dark", "character", "round"]
     },
     "papirus_apps_lutris_indivisible": {
       "category": "apps",
       "file": "lutris_indivisible.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["indivisible", "game", "rpg", "dinosaur", "character", "cute", "lutris", "green"]
     },
     "papirus_apps_m64py": {
       "category": "apps",
       "file": "m64py.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["m64py", "mupen64", "n64", "emulator", "nintendo", "retro", "red", "gaming"]
     },
     "papirus_apps_deepin-repair-tools": {
       "category": "apps",
       "file": "deepin-repair-tools.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["deepin", "repair", "tools", "wrench", "hammer", "fix", "maintenance", "gray"]
     },
     "papirus_apps_preferences-desktop-gestures-screenedges": {
       "category": "apps",
       "file": "preferences-desktop-gestures-screenedges.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gestures", "screen", "edges", "corners", "preferences", "desktop", "blue", "hot corners"]
     },
     "papirus_apps_nitrogen": {
       "category": "apps",
       "file": "nitrogen.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["nitrogen", "wallpaper", "background", "desktop", "flower", "petals", "blue", "setter"]
     },
     "papirus_apps_gpk-log": {
       "category": "apps",
       "file": "gpk-log.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gpk", "log", "package", "history", "viewer", "document", "orange", "arrow"]
     },
     "papirus_apps_gnome-tali": {
       "category": "apps",
       "file": "gnome-tali.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tali", "yahtzee", "dice", "game", "gnome", "board", "dots", "roll"]
     },
     "papirus_apps_gnome-help": {
       "category": "apps",
       "file": "gnome-help.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["help", "gnome", "support", "lifebuoy", "ring", "rescue", "red", "documentation"]
     },
     "papirus_apps_cuyo": {
       "category": "apps",
       "file": "cuyo.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cuyo", "puzzle", "game", "monkey", "face", "gray", "tetris", "arcade"]
     },
     "papirus_apps_lutris_trine-2-complete-story": {
       "category": "apps",
       "file": "lutris_trine-2-complete-story.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["trine", "game", "puzzle", "platformer", "fantasy", "gold", "adventure", "lutris"]
     },
     "papirus_apps_tlauncher": {
       "category": "apps",
       "file": "tlauncher.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tlauncher", "minecraft", "launcher", "game", "blue", "tl", "block", "sandbox"]
     },
     "papirus_apps_addressbook": {
       "category": "apps",
       "file": "addressbook.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["addressbook", "contacts", "people", "person", "card", "brown", "directory", "phone"]
     },
     "papirus_apps_appimagekit-bazecor": {
       "category": "apps",
       "file": "appimagekit-bazecor.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["bazecor", "dygma", "keyboard", "configurator", "hexagon", "pink", "magenta", "input"]
     },
     "papirus_apps_forticlientsslvpn": {
       "category": "apps",
       "file": "forticlientsslvpn.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["fortinet", "forticlient", "vpn", "ssl", "security", "shield", "red", "firewall"]
     },
     "papirus_apps_appimagekit-substance": {
       "category": "apps",
       "file": "appimagekit-substance.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["substance", "adobe", "3d", "texture", "painter", "hexagon", "red", "design"]
     },
     "papirus_apps_smb4k": {
       "category": "apps",
       "file": "smb4k.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["smb4k", "samba", "smb", "network", "share", "arrows", "blue", "kde"]
     },
     "papirus_apps_soundux": {
       "category": "apps",
       "file": "soundux.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["soundux", "soundboard", "audio", "duck", "rubber duck", "teal", "sound", "effects"]
     },
     "papirus_apps_com.jetbrains.Rider": {
       "category": "apps",
       "file": "com.jetbrains.Rider.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["rider", "jetbrains", "ide", "dotnet", "csharp", "development", "coding", "dark"]
     },
     "papirus_apps_variety": {
       "category": "apps",
       "file": "variety.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["variety", "wallpaper", "changer", "desktop", "background", "monitor", "landscape", "image"]
     },
     "papirus_apps_org.freecad.FreeCAD": {
       "category": "apps",
