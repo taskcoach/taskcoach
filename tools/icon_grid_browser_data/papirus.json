@@ -9937,97 +9937,116 @@
     "papirus_apps_org.pjbroad.EternallandsClient": {
       "category": "apps",
       "file": "org.pjbroad.EternallandsClient.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["eternal", "lands", "mmorpg", "dragon", "fantasy", "game", "online"]
     },
     "papirus_apps_org.gnome.gThumb": {
       "category": "apps",
       "file": "org.gnome.gThumb.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gthumb", "image", "viewer", "photo", "gnome", "gallery", "picture"]
     },
     "papirus_apps_redhat-linux": {
       "category": "apps",
       "file": "redhat-linux.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["redhat", "linux", "fedora", "hat", "enterprise", "rhel", "distro"]
     },
     "papirus_apps_losslesscut": {
       "category": "apps",
       "file": "losslesscut.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["losslesscut", "video", "trim", "cut", "edit", "lossless", "clapperboard"]
     },
     "papirus_apps_1cv8": {
       "category": "apps",
       "file": "1cv8.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["1c", "enterprise", "erp", "business", "accounting", "russian", "platform"]
     },
     "papirus_apps_kali-reporting-tools-trans": {
       "category": "apps",
       "file": "kali-reporting-tools-trans.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kali", "reporting", "tools", "document", "report", "security", "pentest"]
     },
     "papirus_apps_xfce-unknown": {
       "category": "apps",
       "file": "xfce-unknown.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["xfce", "unknown", "question", "generic", "application", "default", "missing"]
     },
     "papirus_apps_zettlr": {
       "category": "apps",
       "file": "zettlr.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["zettlr", "markdown", "editor", "writing", "academic", "notes", "zettelkasten"]
     },
     "papirus_apps_seafile": {
       "category": "apps",
       "file": "seafile.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["seafile", "cloud", "sync", "file", "share", "storage", "collaboration"]
     },
     "papirus_apps_org.perezdecastro.Revolt": {
       "category": "apps",
       "file": "org.perezdecastro.Revolt.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["revolt", "chat", "messaging", "dial", "phone", "communication", "social"]
     },
     "papirus_apps_the-witcher-3": {
       "category": "apps",
       "file": "the-witcher-3.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["witcher", "3", "wild", "hunt", "wolf", "rpg", "game", "geralt"]
     },
     "papirus_apps_steam_icon_220": {
       "category": "apps",
       "file": "steam_icon_220.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["halflife", "2", "half", "life", "valve", "fps", "steam", "lambda"]
     },
     "papirus_apps_dhewm3": {
       "category": "apps",
       "file": "dhewm3.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["dhewm3", "doom", "3", "shooter", "fps", "pentagram", "game", "idtech"]
     },
     "papirus_apps_vifm": {
       "category": "apps",
       "file": "vifm.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["vifm", "vi", "file", "manager", "terminal", "console", "commander"]
     },
     "papirus_apps_org.netsurf_browser.NetSurf": {
       "category": "apps",
       "file": "org.netsurf_browser.NetSurf.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["netsurf", "browser", "web", "internet", "globe", "lightweight", "html"]
     },
     "papirus_apps_little-inferno": {
       "category": "apps",
       "file": "little-inferno.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["little", "inferno", "fire", "chimney", "puzzle", "indie", "game"]
     },
     "papirus_apps_bzflag": {
       "category": "apps",
       "file": "bzflag.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["bzflag", "tank", "battle", "multiplayer", "game", "capture", "flag"]
     },
     "papirus_apps_workflowy": {
       "category": "apps",
       "file": "workflowy.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["workflowy", "notes", "outline", "list", "organize", "todo", "productivity"]
     },
     "papirus_apps_knights": {
       "category": "apps",
       "file": "knights.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["knights", "chess", "knight", "board", "game", "kde", "strategy"]
     },
     "papirus_apps_steam_icon_12110": {
       "category": "apps",
