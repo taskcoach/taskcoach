@@ -9817,102 +9817,122 @@
     "papirus_apps_CE93_RobloxPlayerLauncher.0": {
       "category": "apps",
       "file": "CE93_RobloxPlayerLauncher.0.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["roblox", "player", "launcher", "game", "online", "platform", "kids"]
     },
     "papirus_apps_org.desmume.DeSmuME": {
       "category": "apps",
       "file": "org.desmume.DeSmuME.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["desmume", "nintendo", "ds", "emulator", "handheld", "retro", "gaming"]
     },
     "papirus_apps_anatine": {
       "category": "apps",
       "file": "anatine.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["anatine", "twitter", "duck", "social", "media", "bird", "client"]
     },
     "papirus_apps_com.synology.SynologyDrive": {
       "category": "apps",
       "file": "com.synology.SynologyDrive.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["synology", "drive", "cloud", "storage", "nas", "sync", "backup"]
     },
     "papirus_apps_org.gnome.design.AppIconPreview": {
       "category": "apps",
       "file": "org.gnome.design.AppIconPreview.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["app", "icon", "preview", "gnome", "design", "theme", "developer"]
     },
     "papirus_apps_steam_icon_729040": {
       "category": "apps",
       "file": "steam_icon_729040.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["borderlands", "3", "vault", "shooter", "loot", "game", "steam", "gearbox"]
     },
     "papirus_apps_appimagekit-gqrx": {
       "category": "apps",
       "file": "appimagekit-gqrx.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gqrx", "sdr", "radio", "receiver", "signal", "waveform", "frequency"]
     },
     "papirus_apps_distributor-logo-korora": {
       "category": "apps",
       "file": "distributor-logo-korora.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["korora", "linux", "distro", "distributor", "logo", "fedora", "leaf"]
     },
     "papirus_apps_LyricsFinder": {
       "category": "apps",
       "file": "LyricsFinder.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["lyrics", "finder", "music", "search", "song", "text", "binoculars"]
     },
     "papirus_apps_footnote": {
       "category": "apps",
       "file": "footnote.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["footnote", "note", "clipboard", "text", "writing", "memo", "pad"]
     },
     "papirus_apps_qnapi": {
       "category": "apps",
       "file": "qnapi.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["qnapi", "subtitle", "download", "movie", "video", "caption", "srt"]
     },
     "papirus_apps_com.alacritty.Alacritty": {
       "category": "apps",
       "file": "com.alacritty.Alacritty.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["alacritty", "terminal", "console", "shell", "gpu", "emulator", "cli"]
     },
     "papirus_apps_5742_rundll32.0": {
       "category": "apps",
       "file": "5742_rundll32.0.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["wine", "rundll32", "windows", "compatibility", "dll", "emulation", "glass"]
     },
     "papirus_apps_preferences-ubuntu-panel": {
       "category": "apps",
       "file": "preferences-ubuntu-panel.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ubuntu", "panel", "preferences", "taskbar", "settings", "desktop", "dock"]
     },
     "papirus_apps_org.kde.kcachegrind": {
       "category": "apps",
       "file": "org.kde.kcachegrind.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kcachegrind", "profiler", "cache", "performance", "valgrind", "kde", "debug"]
     },
     "papirus_apps_dockstation": {
       "category": "apps",
       "file": "dockstation.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["dockstation", "docker", "container", "devops", "management", "water", "gui"]
     },
     "papirus_apps_cxmenu-cxoffice-0-crossover": {
       "category": "apps",
       "file": "cxmenu-cxoffice-0-crossover.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["crossover", "wine", "windows", "office", "compatibility", "codeweavers"]
     },
     "papirus_apps_com.github.bartzaalberg.php-tester": {
       "category": "apps",
       "file": "com.github.bartzaalberg.php-tester.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["php", "tester", "code", "programming", "script", "web", "developer"]
     },
     "papirus_apps_steam_icon_736260": {
       "category": "apps",
       "file": "steam_icon_736260.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["baba", "you", "puzzle", "indie", "game", "steam", "logic"]
     },
     "papirus_apps_steam_icon_383980": {
       "category": "apps",
       "file": "steam_icon_383980.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["aether", "rpg", "fantasy", "ornate", "game", "steam", "adventure"]
     },
     "papirus_apps_org.pjbroad.EternallandsClient": {
       "category": "apps",
