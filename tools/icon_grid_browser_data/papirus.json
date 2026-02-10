@@ -4535,98 +4535,117 @@
     "papirus_apps_org.freecad.FreeCAD": {
       "category": "apps",
       "file": "org.freecad.FreeCAD.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["freecad", "cad", "3d", "modeling", "engineering", "parametric", "red", "gear"]
     },
     "papirus_apps_com.github.miguelmota.Cointop": {
       "category": "apps",
       "file": "com.github.miguelmota.Cointop.svg",
-      "sizes": [16, 22, 24, 32, 48, 64],
-      "duplicate_of": "apps/cointop.svg"
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "duplicate_of": "apps/cointop.svg",
+      "hints": ["cointop", "cryptocurrency", "bitcoin", "terminal", "chart", "bars", "green", "finance"]
     },
     "papirus_apps_nuclear": {
       "category": "apps",
       "file": "nuclear.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["nuclear", "music", "player", "streaming", "triangles", "purple", "blue", "audio"]
     },
     "papirus_apps_Ardour-Ardour_6.5.0": {
       "category": "apps",
       "file": "Ardour-Ardour_6.5.0.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ardour", "daw", "audio", "recording", "music", "waveform", "red", "triangle"]
     },
     "papirus_apps_twin": {
       "category": "apps",
       "file": "twin.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["twin", "window", "manager", "frame", "screen", "display", "gray", "desktop"]
     },
     "papirus_apps_com.wps.Office2019.wpsmain": {
       "category": "apps",
       "file": "com.wps.Office2019.wpsmain.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["wps", "office", "writer", "document", "word", "blue", "w", "text"]
     },
     "papirus_apps_com.shatteredpixel.shatteredpixeldungeon": {
       "category": "apps",
       "file": "com.shatteredpixel.shatteredpixeldungeon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["pixel dungeon", "roguelike", "game", "treasure", "chest", "green", "gold", "rpg"]
     },
     "papirus_apps_unity-color-panel": {
       "category": "apps",
       "file": "unity-color-panel.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["color", "panel", "picker", "palette", "circles", "colorful", "unity", "flower"]
     },
     "papirus_apps_steam_icon_249590": {
       "category": "apps",
       "file": "steam_icon_249590.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "game", "face", "character", "sad", "blue", "hood", "cartoon"]
     },
     "papirus_apps_preferences-system-network-remote": {
       "category": "apps",
       "file": "preferences-system-network-remote.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["remote", "desktop", "network", "connection", "monitor", "screen", "blue", "vnc"]
     },
     "papirus_apps_btrfs-assistant": {
       "category": "apps",
       "file": "btrfs-assistant.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["btrfs", "filesystem", "snapshot", "disk", "gear", "orange", "storage", "linux"]
     },
     "papirus_apps_sengi": {
       "category": "apps",
       "file": "sengi.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["sengi", "mastodon", "fediverse", "social", "fox", "blue", "client", "microblog"]
     },
     "papirus_apps_lunarclient": {
       "category": "apps",
       "file": "lunarclient.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["lunar", "client", "minecraft", "moon", "crescent", "launcher", "dark", "hexagon"]
     },
     "papirus_apps_desktop-environment-tde": {
       "category": "apps",
       "file": "desktop-environment-tde.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tde", "trinity", "desktop", "environment", "gear", "blue", "kde", "linux"]
     },
     "papirus_apps_preferences-system-windows": {
       "category": "apps",
       "file": "preferences-system-windows.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["windows", "preferences", "window", "manager", "panels", "tiling", "gray", "overlap"]
     },
     "papirus_apps_gnome-character-map": {
       "category": "apps",
       "file": "gnome-character-map.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["character", "map", "gnome", "unicode", "accented", "font", "symbols", "special"]
     },
     "papirus_apps_featherpad": {
       "category": "apps",
       "file": "featherpad.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["featherpad", "text", "editor", "notepad", "feather", "quill", "blue", "writing"]
     },
     "papirus_apps_com.bitstower.Markets": {
       "category": "apps",
       "file": "com.bitstower.Markets.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["markets", "stocks", "finance", "chart", "trading", "graph", "teal", "trend"]
     },
     "papirus_apps_net.danigm.loop": {
       "category": "apps",
       "file": "net.danigm.loop.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["loop", "audio", "recorder", "microphone", "colorful", "sound", "music", "voice"]
     },
     "papirus_apps_SheepShaver": {
       "category": "apps",
