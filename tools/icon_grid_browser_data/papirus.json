@@ -4187,87 +4187,104 @@
     "papirus_apps_fiji": {
       "category": "apps",
       "file": "fiji.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["fiji", "imagej", "microscope", "science", "image", "analysis", "blue", "research"]
     },
     "papirus_apps_de.unifreiburg.ellipticcurve": {
       "category": "apps",
       "file": "de.unifreiburg.ellipticcurve.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["elliptic", "curve", "math", "graph", "plot", "pencil", "equation", "cryptography"]
     },
     "papirus_apps_googlechrome": {
       "category": "apps",
       "file": "googlechrome.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["chrome", "google", "browser", "web", "internet", "colorful", "circle", "search"]
     },
     "papirus_apps_rustdesk": {
       "category": "apps",
       "file": "rustdesk.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["rustdesk", "remote", "desktop", "connection", "control", "blue", "screen sharing", "vnc"]
     },
     "papirus_apps_org.freedesktop.Piper": {
       "category": "apps",
       "file": "org.freedesktop.Piper.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["piper", "mouse", "gaming", "configuration", "trap", "cheese", "input", "device"]
     },
     "papirus_apps_qtwebflix": {
       "category": "apps",
       "file": "qtwebflix.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["qtwebflix", "netflix", "streaming", "video", "tv", "watch", "movies", "web"]
     },
     "papirus_apps_ch.x29a.playitslowly": {
       "category": "apps",
       "file": "ch.x29a.playitslowly.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["play it slowly", "snail", "audio", "slow", "speed", "music", "tempo", "pink"]
     },
     "papirus_apps_gnome-characters": {
       "category": "apps",
       "file": "gnome-characters.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["characters", "unicode", "gnome", "symbols", "emoji", "font", "text", "special"]
     },
     "papirus_apps_gtk4-widget-factory": {
       "category": "apps",
       "file": "gtk4-widget-factory.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gtk4", "widget", "factory", "demo", "ui", "toolkit", "window", "controls"]
     },
     "papirus_apps_gnome-chess": {
       "category": "apps",
       "file": "gnome-chess.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["chess", "gnome", "game", "board", "knight", "pawn", "strategy", "pieces"]
     },
     "papirus_apps_seamonkey-mozilla-build": {
       "category": "apps",
       "file": "seamonkey-mozilla-build.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["seamonkey", "mozilla", "browser", "internet", "suite", "bird", "blue", "web"]
     },
     "papirus_apps_screengrab": {
       "category": "apps",
       "file": "screengrab.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["screengrab", "screenshot", "capture", "shutter", "aperture", "camera", "teal", "screen"]
     },
     "papirus_apps_dukto": {
       "category": "apps",
       "file": "dukto.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["dukto", "file", "transfer", "share", "lan", "green", "rectangles", "network"]
     },
     "papirus_apps_chrome-cnmnfnkedfekfidgojcdmndbcipagogc-Default": {
       "category": "apps",
       "file": "chrome-cnmnfnkedfekfidgojcdmndbcipagogc-Default.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["notion", "chrome", "app", "notes", "letter", "n", "webapp", "productivity"]
     },
     "papirus_apps_smillaenlarger": {
       "category": "apps",
       "file": "smillaenlarger.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["smillaenlarger", "enlarge", "upscale", "image", "pixels", "resize", "zoom", "purple"]
     },
     "papirus_apps_lutris_bioshock-infinite": {
       "category": "apps",
       "file": "lutris_bioshock-infinite.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["bioshock", "infinite", "game", "lutris", "star", "stripes", "american", "shooter"]
     },
     "papirus_apps_lutris_black-mesa": {
       "category": "apps",
       "file": "lutris_black-mesa.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["black mesa", "half-life", "game", "lutris", "lambda", "orange", "shooter", "valve"]
     },
     "papirus_apps_yast-update-online": {
       "category": "apps",
