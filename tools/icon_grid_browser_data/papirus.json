@@ -10051,127 +10051,152 @@
     "papirus_apps_steam_icon_12110": {
       "category": "apps",
       "file": "steam_icon_12110.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gta", "vice", "city", "grand", "theft", "auto", "steam", "rockstar"]
     },
     "papirus_apps_dev.bsnes.bsnes": {
       "category": "apps",
       "file": "dev.bsnes.bsnes.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["bsnes", "snes", "emulator", "nintendo", "super", "retro", "gaming"]
     },
     "papirus_apps_dragonframe4": {
       "category": "apps",
       "file": "dragonframe4.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["dragonframe", "stop", "motion", "animation", "dragon", "camera", "film"]
     },
     "papirus_apps_flightgear": {
       "category": "apps",
       "file": "flightgear.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["flightgear", "flight", "simulator", "airplane", "aviation", "pilot", "plane"]
     },
     "papirus_apps_bt-logo": {
       "category": "apps",
       "file": "bt-logo.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["bluetooth", "wireless", "connectivity", "bt", "logo", "radio", "signal"]
     },
     "papirus_apps_password-manager": {
       "category": "apps",
       "file": "password-manager.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["password", "manager", "key", "security", "credentials", "login", "access"]
     },
     "papirus_apps_lutris_euro-truck-simulator-2": {
       "category": "apps",
       "file": "lutris_euro-truck-simulator-2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["euro", "truck", "simulator", "ets2", "driving", "wheel", "tire", "lutris"]
     },
     "papirus_apps_distributor-logo-voyager": {
       "category": "apps",
       "file": "distributor-logo-voyager.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["voyager", "linux", "distributor", "logo", "distro", "orange"]
     },
     "papirus_apps_net.sourceforge.VMPK": {
       "category": "apps",
       "file": "net.sourceforge.VMPK.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["vmpk", "piano", "keyboard", "midi", "virtual", "music", "keys"]
     },
     "papirus_apps_com.visualstudio.code.oss": {
       "category": "apps",
       "file": "com.visualstudio.code.oss.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["vscode", "code", "editor", "visual", "studio", "oss", "programming", "ide"]
     },
     "papirus_apps_geary": {
       "category": "apps",
       "file": "geary.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["geary", "email", "mail", "envelope", "client", "gnome", "message"]
     },
     "papirus_apps_io.github.cloose.CuteMarkEd": {
       "category": "apps",
       "file": "io.github.cloose.CuteMarkEd.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cutemarked", "markdown", "editor", "document", "text", "writing", "pencil"]
     },
     "papirus_apps_wiznote": {
       "category": "apps",
       "file": "wiznote.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["wiznote", "notes", "writing", "knowledge", "wiki", "notebook"]
     },
     "papirus_apps_schism": {
       "category": "apps",
       "file": "schism.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["schism", "tracker", "music", "audio", "module", "chiptune", "sequencer"]
     },
     "papirus_apps_vitomu": {
       "category": "apps",
       "file": "vitomu.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["vitomu", "video", "music", "converter", "audio", "convert", "play"]
     },
     "papirus_apps_deepin-media-player": {
       "category": "apps",
       "file": "deepin-media-player.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["deepin", "media", "player", "video", "movie", "play", "streaming"]
     },
     "papirus_apps_org.osgeo.grass": {
       "category": "apps",
       "file": "org.osgeo.grass.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["grass", "gis", "geographic", "mapping", "geospatial", "osgeo", "terrain"]
     },
     "papirus_apps_moneydance": {
       "category": "apps",
       "file": "moneydance.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["moneydance", "finance", "money", "coins", "banking", "budget", "accounting"]
     },
     "papirus_apps_steam_icon_553850": {
       "category": "apps",
       "file": "steam_icon_553850.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["helldivers", "skull", "steam", "shooter", "game", "action", "coop"]
     },
     "papirus_apps_org.signal.Signal": {
       "category": "apps",
       "file": "org.signal.Signal.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["signal", "messenger", "chat", "encrypted", "messaging", "privacy", "secure"]
     },
     "papirus_apps_ru.linux_gaming.PortProtonQt": {
       "category": "apps",
       "file": "ru.linux_gaming.PortProtonQt.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["portproton", "gaming", "proton", "wine", "controller", "gamepad", "linux"]
     },
     "papirus_apps_lutris_amnesia-the-dark-descent": {
       "category": "apps",
       "file": "lutris_amnesia-the-dark-descent.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["amnesia", "dark", "descent", "horror", "game", "eye", "lutris"]
     },
     "papirus_apps_org.kde.klettres": {
       "category": "apps",
       "file": "org.kde.klettres.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["klettres", "alphabet", "letters", "language", "learning", "education", "kde"]
     },
     "papirus_apps_com.github.eneshecan.WhatsAppForLinux": {
       "category": "apps",
       "file": "com.github.eneshecan.WhatsAppForLinux.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["whatsapp", "messenger", "chat", "messaging", "phone", "communication", "linux"]
     },
     "papirus_apps_ark-game": {
       "category": "apps",
       "file": "ark-game.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ark", "survival", "evolved", "dinosaur", "game", "steam", "sandbox"]
     },
     "papirus_apps_steam_icon_395160": {
       "category": "apps",
