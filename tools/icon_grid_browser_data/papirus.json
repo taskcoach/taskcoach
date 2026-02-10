@@ -8846,132 +8846,158 @@
     "papirus_apps_Terminal": {
       "category": "apps",
       "file": "Terminal.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["terminal", "console", "command", "shell", "prompt", "cli", "bash"]
     },
     "papirus_apps_ximian-evolution-calendar": {
       "category": "apps",
       "file": "ximian-evolution-calendar.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["evolution", "calendar", "ximian", "schedule", "date", "planner", "gnome"]
     },
     "papirus_apps_info.olasagasti.revelation": {
       "category": "apps",
       "file": "info.olasagasti.revelation.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["revelation", "password", "key", "security", "manager", "vault", "green"]
     },
     "papirus_apps_grid-autosport": {
       "category": "apps",
       "file": "grid-autosport.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["grid", "autosport", "racing", "car", "eagle", "wings", "motorsport", "game"]
     },
     "papirus_apps_simple-image-reducer": {
       "category": "apps",
       "file": "simple-image-reducer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["image", "reducer", "compress", "resize", "photo", "optimize", "green"]
     },
     "papirus_apps_appimagekit-org.olivevideoeditor.Olive": {
       "category": "apps",
       "file": "appimagekit-org.olivevideoeditor.Olive.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["olive", "video", "editor", "branch", "nle", "editing", "green"]
     },
     "papirus_apps_teams": {
       "category": "apps",
       "file": "teams.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["teams", "microsoft", "chat", "meeting", "collaboration", "video", "purple"]
     },
     "papirus_apps_Acetino2": {
       "category": "apps",
       "file": "Acetino2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["acetino", "disc", "cd", "dvd", "burn", "copy", "backup", "refresh"]
     },
     "papirus_apps_nip2": {
       "category": "apps",
       "file": "nip2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["nip2", "image", "vips", "processing", "landscape", "photo", "editor"]
     },
     "papirus_apps_krunner": {
       "category": "apps",
       "file": "krunner.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["krunner", "search", "launcher", "magnify", "kde", "find", "run", "orange"]
     },
     "papirus_apps_AdobeDreamweaver": {
       "category": "apps",
       "file": "AdobeDreamweaver.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["dreamweaver", "adobe", "web", "design", "html", "editor", "dw"]
     },
     "papirus_apps_lutris_ftl-faster-than-light": {
       "category": "apps",
       "file": "lutris_ftl-faster-than-light.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ftl", "faster", "light", "space", "roguelike", "game", "lutris"]
     },
     "papirus_apps_lutris_beat-saber": {
       "category": "apps",
       "file": "lutris_beat-saber.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["beat", "saber", "vr", "rhythm", "lightsaber", "game", "lutris"]
     },
     "papirus_apps_gmic_qt": {
       "category": "apps",
       "file": "gmic_qt.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gmic", "image", "processing", "filter", "magic", "hat", "plugin"]
     },
     "papirus_apps_appimagekit-ledger-live-desktop": {
       "category": "apps",
       "file": "appimagekit-ledger-live-desktop.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ledger", "crypto", "wallet", "bitcoin", "blockchain", "sync", "finance"]
     },
     "papirus_apps_OPNplug": {
       "category": "apps",
       "file": "OPNplug.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["opnplug", "synthesizer", "fm", "music", "chip", "audio", "red"]
     },
     "papirus_apps_mx-select-sound": {
       "category": "apps",
       "file": "mx-select-sound.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["sound", "card", "audio", "select", "hardware", "music", "mx"]
     },
     "papirus_apps_me.proton.Pass": {
       "category": "apps",
       "file": "me.proton.Pass.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["proton", "pass", "password", "manager", "security", "vault", "purple"]
     },
     "papirus_apps_lutris_prison-architect": {
       "category": "apps",
       "file": "lutris_prison-architect.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["prison", "architect", "simulation", "management", "game", "lutris", "orange"]
     },
     "papirus_apps_devhelp": {
       "category": "apps",
       "file": "devhelp.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["devhelp", "documentation", "api", "developer", "book", "reference", "gnome"]
     },
     "papirus_apps_litemanual": {
       "category": "apps",
       "file": "litemanual.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["manual", "help", "lifebuoy", "rescue", "guide", "support", "red"]
     },
     "papirus_apps_upsource": {
       "category": "apps",
       "file": "upsource.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["upsource", "jetbrains", "code", "review", "repository", "browser"]
     },
     "papirus_apps_org.quassel_irc.QuasselClient": {
       "category": "apps",
       "file": "org.quassel_irc.QuasselClient.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["quassel", "irc", "chat", "messaging", "client", "blue", "wave"]
     },
     "papirus_apps_qtconfig": {
       "category": "apps",
       "file": "qtconfig.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["qt", "config", "settings", "gear", "toolkit", "configuration", "green"]
     },
     "papirus_apps_lutris_outlast": {
       "category": "apps",
       "file": "lutris_outlast.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["outlast", "horror", "survival", "game", "lutris", "green", "dark"]
     },
     "papirus_apps_org.gnome.Chess": {
       "category": "apps",
       "file": "org.gnome.Chess.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["chess", "gnome", "board", "game", "knight", "pawn", "strategy"]
     },
     "papirus_apps_sw4stm32": {
       "category": "apps",
