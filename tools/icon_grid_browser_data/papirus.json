@@ -9667,127 +9667,152 @@
     "papirus_apps_com.github.manexim.insomnia": {
       "category": "apps",
       "file": "com.github.manexim.insomnia.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["insomnia", "caffeine", "sleep", "awake", "screen", "prevent", "nosleep"]
     },
     "papirus_apps_package_system": {
       "category": "apps",
       "file": "package_system.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["package", "system", "gear", "settings", "configuration", "cog", "admin"]
     },
     "papirus_apps_cs": {
       "category": "apps",
       "file": "cs.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["counter", "strike", "cs", "shooter", "fps", "valve", "steam", "game"]
     },
     "papirus_apps_easyeffects": {
       "category": "apps",
       "file": "easyeffects.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["easyeffects", "audio", "equalizer", "effects", "sound", "slider", "pipewire"]
     },
     "papirus_apps_kradio4": {
       "category": "apps",
       "file": "kradio4.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kradio", "radio", "tuner", "broadcast", "receiver", "audio", "fm"]
     },
     "papirus_apps_osmscout-server": {
       "category": "apps",
       "file": "osmscout-server.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["osmscout", "map", "openstreetmap", "navigation", "server", "terrain", "gps"]
     },
     "papirus_apps_cookie": {
       "category": "apps",
       "file": "cookie.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cookie", "biscuit", "chocolate", "chip", "snack", "food", "treat"]
     },
     "papirus_apps_start-here-hyperbola": {
       "category": "apps",
       "file": "start-here-hyperbola.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["hyperbola", "linux", "gnu", "distro", "start", "menu", "launcher"]
     },
     "papirus_apps_lutris_portal-stories-mel": {
       "category": "apps",
       "file": "lutris_portal-stories-mel.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["portal", "stories", "mel", "valve", "game", "aperture", "mod", "lutris"]
     },
     "papirus_apps_soundkonverter": {
       "category": "apps",
       "file": "soundkonverter.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["soundkonverter", "audio", "convert", "music", "format", "encoder", "transcode"]
     },
     "papirus_apps_ue4editor": {
       "category": "apps",
       "file": "ue4editor.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["unreal", "engine", "ue4", "editor", "game", "epic", "3d", "development"]
     },
     "papirus_apps_appimagekit-duckstation-qt": {
       "category": "apps",
       "file": "appimagekit-duckstation-qt.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["duckstation", "playstation", "emulator", "psx", "ps1", "duck", "retro", "gaming"]
     },
     "papirus_apps_lutris_7-days-to-die": {
       "category": "apps",
       "file": "lutris_7-days-to-die.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["7days", "die", "survival", "zombie", "game", "horror", "lutris"]
     },
     "papirus_apps_pia": {
       "category": "apps",
       "file": "pia.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["pia", "private", "internet", "access", "vpn", "lock", "privacy", "security"]
     },
     "papirus_apps_play": {
       "category": "apps",
       "file": "play.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["play", "alert", "exclamation", "notification", "warning", "purple"]
     },
     "papirus_apps_gnome-session-hibernate": {
       "category": "apps",
       "file": "gnome-session-hibernate.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["hibernate", "session", "sleep", "suspend", "power", "gnome", "target"]
     },
     "papirus_apps_flycast": {
       "category": "apps",
       "file": "flycast.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["flycast", "dreamcast", "emulator", "sega", "spiral", "retro", "gaming"]
     },
     "papirus_apps_diffuse": {
       "category": "apps",
       "file": "diffuse.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["diffuse", "diff", "merge", "compare", "text", "file", "editor"]
     },
     "papirus_apps_steam_icon_200900": {
       "category": "apps",
       "file": "steam_icon_200900.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cave", "story", "platformer", "indie", "game", "steam", "adventure"]
     },
     "papirus_apps_nvidia-drivers-settings": {
       "category": "apps",
       "file": "nvidia-drivers-settings.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["nvidia", "gpu", "driver", "settings", "graphics", "video", "card"]
     },
     "papirus_apps_tuxcut": {
       "category": "apps",
       "file": "tuxcut.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tuxcut", "network", "arp", "security", "protection", "swords", "firewall"]
     },
     "papirus_apps_qdirstat": {
       "category": "apps",
       "file": "qdirstat.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["qdirstat", "disk", "usage", "directory", "statistics", "space", "analyzer"]
     },
     "papirus_apps_org.xfce.filemanager": {
       "category": "apps",
       "file": "org.xfce.filemanager.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["thunar", "xfce", "file", "manager", "browser", "folder", "cabinet"]
     },
     "papirus_apps_kali-hardware-hacking-trans": {
       "category": "apps",
       "file": "kali-hardware-hacking-trans.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kali", "hardware", "hacking", "chip", "microchip", "security", "pentest"]
     },
     "papirus_apps_io.github.seadve.Kooha": {
       "category": "apps",
       "file": "io.github.seadve.Kooha.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kooha", "screen", "recorder", "capture", "video", "recording", "screencast"]
     },
     "papirus_apps_CE93_RobloxPlayerLauncher.0": {
       "category": "apps",
