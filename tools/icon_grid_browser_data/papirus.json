@@ -5767,97 +5767,116 @@
     "papirus_apps_io.atom.electron.BaseApp": {
       "category": "apps",
       "file": "io.atom.electron.BaseApp.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["electron", "atom", "framework", "web", "desktop", "app", "orbital", "javascript"]
     },
     "papirus_apps_steam_icon_57300": {
       "category": "apps",
       "file": "steam_icon_57300.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "amnesia", "horror", "game", "eye", "dark-descent", "green"]
     },
     "papirus_apps_cadence": {
       "category": "apps",
       "file": "cadence.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cadence", "jack", "audio", "toolbox", "sound", "music", "production", "linux"]
     },
     "papirus_apps_kde-logo": {
       "category": "apps",
       "file": "kde-logo.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kde", "logo", "plasma", "desktop", "gear", "blue", "linux"]
     },
     "papirus_apps_git-dag": {
       "category": "apps",
       "file": "git-dag.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["git", "dag", "graph", "branch", "visualizer", "version-control", "red", "nodes"]
     },
     "papirus_apps_mysql-workbench": {
       "category": "apps",
       "file": "mysql-workbench.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mysql", "workbench", "database", "sql", "dolphin", "admin", "query", "blue"]
     },
     "papirus_apps_onlyoffice-desktopeditors": {
       "category": "apps",
       "file": "onlyoffice-desktopeditors.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["onlyoffice", "office", "suite", "document", "editor", "layers", "colorful"]
     },
     "papirus_apps_crack-attack": {
       "category": "apps",
       "file": "crack-attack.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["crack-attack", "puzzle", "game", "blocks", "grid", "tetris", "colorful", "match"]
     },
     "papirus_apps_bloboats": {
       "category": "apps",
       "file": "bloboats.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["bloboats", "boat", "racing", "game", "cartoon", "blue", "water"]
     },
     "papirus_apps_popout3d": {
       "category": "apps",
       "file": "popout3d.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["popout3d", "3d", "glasses", "stereoscopic", "viewer", "image", "anaglyph"]
     },
     "papirus_apps_pulsar": {
       "category": "apps",
       "file": "pulsar.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["pulsar", "atom", "editor", "text", "code", "purple", "orbital", "fork"]
     },
     "papirus_apps_gpk-prefs": {
       "category": "apps",
       "file": "gpk-prefs.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gpk", "packagekit", "preferences", "update", "refresh", "gear", "settings", "orange"]
     },
     "papirus_apps_lara-croft-and-the-temple-of-osiris": {
       "category": "apps",
       "file": "lara-croft-and-the-temple-of-osiris.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["lara-croft", "tomb-raider", "osiris", "game", "adventure", "gold", "action"]
     },
     "papirus_apps_warzone2100": {
       "category": "apps",
       "file": "warzone2100.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["warzone", "2100", "rts", "strategy", "tank", "military", "game", "open-source"]
     },
     "papirus_apps_openrct2": {
       "category": "apps",
       "file": "openrct2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["openrct2", "rollercoaster", "tycoon", "game", "simulation", "theme-park", "tower"]
     },
     "papirus_apps_gnome-subtitles": {
       "category": "apps",
       "file": "gnome-subtitles.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gnome", "subtitles", "editor", "video", "text", "captions", "speech", "teal"]
     },
     "papirus_apps_sanctum-2": {
       "category": "apps",
       "file": "sanctum-2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["sanctum", "tower-defense", "fps", "game", "shooter", "sci-fi", "yellow"]
     },
     "papirus_apps_klatexformula": {
       "category": "apps",
       "file": "klatexformula.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["klatexformula", "latex", "formula", "math", "equation", "render", "kde"]
     },
     "papirus_apps_system-shutdown": {
       "category": "apps",
       "file": "system-shutdown.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["system", "shutdown", "power", "off", "button", "red", "halt", "turn-off"]
     },
     "papirus_apps_tuxpuck": {
       "category": "apps",
