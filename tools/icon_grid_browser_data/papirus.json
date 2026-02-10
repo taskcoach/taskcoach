@@ -11257,147 +11257,176 @@
     "papirus_apps_AmneziaVPN": {
       "category": "apps",
       "file": "AmneziaVPN.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["amnezia", "vpn", "privacy", "network", "tunnel", "secure", "anonymous"]
     },
     "papirus_apps_winemine": {
       "category": "apps",
       "file": "winemine.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["winemine", "minesweeper", "mine", "wine", "puzzle", "grid", "game"]
     },
     "papirus_apps_package_wordprocessing": {
       "category": "apps",
       "file": "package_wordprocessing.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["wordprocessing", "document", "text", "writer", "word", "office", "page"]
     },
     "papirus_apps_com.rawtherapee.RawTherapee": {
       "category": "apps",
       "file": "com.rawtherapee.RawTherapee.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["rawtherapee", "raw", "photo", "editor", "photography", "color", "image"]
     },
     "papirus_apps_dash-qt": {
       "category": "apps",
       "file": "dash-qt.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["dash", "cryptocurrency", "wallet", "crypto", "blockchain", "digital", "coin"]
     },
     "papirus_apps_hidemy.name": {
       "category": "apps",
       "file": "hidemy.name.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["hidemy", "vpn", "privacy", "shield", "anonymous", "proxy", "cat"]
     },
     "papirus_apps_draw.io": {
       "category": "apps",
       "file": "draw.io.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["drawio", "diagram", "flowchart", "draw", "chart", "uml", "whiteboard"]
     },
     "papirus_apps_aptdaemon-working": {
       "category": "apps",
       "file": "aptdaemon-working.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["aptdaemon", "package", "install", "update", "download", "software", "apt"]
     },
     "papirus_apps_calligraplan": {
       "category": "apps",
       "file": "calligraplan.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["calligra", "plan", "project", "gantt", "schedule", "management", "task"]
     },
     "papirus_apps_org.keepassxc.KeePassXC": {
       "category": "apps",
       "file": "org.keepassxc.KeePassXC.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["keepassxc", "password", "key", "security", "vault", "credential", "lock"]
     },
     "papirus_apps_code": {
       "category": "apps",
       "file": "code.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["vscode", "code", "editor", "programming", "developer", "ide", "microsoft"]
     },
     "papirus_apps_electron36": {
       "category": "apps",
       "file": "electron36.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["electron", "atom", "framework", "web", "chromium", "javascript", "orbital"]
     },
     "papirus_apps_steam_icon_360": {
       "category": "apps",
       "file": "steam_icon_360.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["counterstrike", "condition-zero", "lambda", "valve", "shooter", "steam", "fps"]
     },
     "papirus_apps_seahorse": {
       "category": "apps",
       "file": "seahorse.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["seahorse", "password", "key", "encryption", "gpg", "gnome", "keyring"]
     },
     "papirus_apps_firefox-icon": {
       "category": "apps",
       "file": "firefox-icon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["firefox", "browser", "mozilla", "web", "internet", "fox", "globe"]
     },
     "papirus_apps_org.xfce.panel.directorymenu": {
       "category": "apps",
       "file": "org.xfce.panel.directorymenu.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["xfce", "directory", "folder", "menu", "panel", "browse", "files"]
     },
     "papirus_apps_truecrypt": {
       "category": "apps",
       "file": "truecrypt.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["truecrypt", "encryption", "disk", "volume", "security", "crypto", "lock"]
     },
     "papirus_apps_workspace-switcher": {
       "category": "apps",
       "file": "workspace-switcher.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["workspace", "switcher", "desktop", "virtual", "grid", "panel", "pager"]
     },
     "papirus_apps_zaz": {
       "category": "apps",
       "file": "zaz.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["zaz", "puzzle", "marble", "ball", "zuma", "game", "arcade"]
     },
     "papirus_apps_plexmediaplayer": {
       "category": "apps",
       "file": "plexmediaplayer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["plex", "media", "player", "streaming", "video", "server", "movie"]
     },
     "papirus_apps_com.github.linuxhubit.gitscover": {
       "category": "apps",
       "file": "com.github.linuxhubit.gitscover.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gitscover", "git", "discover", "search", "repository", "browse", "version"]
     },
     "papirus_apps_steam_icon_231430": {
       "category": "apps",
       "file": "steam_icon_231430.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["company-of-heroes", "strategy", "war", "star", "rts", "steam", "military"]
     },
     "papirus_apps_gnome-do-panel": {
       "category": "apps",
       "file": "gnome-do-panel.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gnome-do", "launcher", "gear", "settings", "panel", "cog", "quick"]
     },
     "papirus_apps_mono-runtime": {
       "category": "apps",
       "file": "mono-runtime.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mono", "runtime", "dotnet", "csharp", "framework", "monkey", "xamarin"]
     },
     "papirus_apps_artikulate": {
       "category": "apps",
       "file": "artikulate.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["artikulate", "language", "pronunciation", "speech", "globe", "learning", "kde"]
     },
     "papirus_apps_fheroes2": {
       "category": "apps",
       "file": "fheroes2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["fheroes2", "heroes", "might-magic", "shield", "strategy", "rpg", "game"]
     },
     "papirus_apps_fontypython": {
       "category": "apps",
       "file": "fontypython.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["fontypython", "font", "manager", "typography", "typeface", "text", "python"]
     },
     "papirus_apps_cinelerra-cv": {
       "category": "apps",
       "file": "cinelerra-cv.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cinelerra", "video", "editor", "film", "movie", "editing", "nle"]
     },
     "papirus_apps_dev.vencord.Vesktop": {
       "category": "apps",
       "file": "dev.vencord.Vesktop.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["vesktop", "vencord", "discord", "chat", "voice", "messaging", "rainbow"]
     },
     "papirus_apps_org.laptop.TurtleArtActivity": {
       "category": "apps",
