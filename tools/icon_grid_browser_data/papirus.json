@@ -7634,87 +7634,104 @@
     "papirus_apps_lightdm-gtk-greeter-settings": {
       "category": "apps",
       "file": "lightdm-gtk-greeter-settings.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["lightdm", "greeter", "login", "screen", "settings", "gtk", "display manager"]
     },
     "papirus_apps_cs-windows": {
       "category": "apps",
       "file": "cs-windows.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cinnamon", "windows", "window manager", "settings", "tiling", "stacking", "desktop"]
     },
     "papirus_apps_cs-workspaces": {
       "category": "apps",
       "file": "cs-workspaces.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cinnamon", "workspaces", "virtual desktop", "settings", "grid", "layout", "desktop"]
     },
     "papirus_apps_me.dusansimic.DynamicWallpaper": {
       "category": "apps",
       "file": "me.dusansimic.DynamicWallpaper.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["dynamic wallpaper", "wallpaper", "day", "night", "sun", "moon", "background"]
     },
     "papirus_apps_jitsi": {
       "category": "apps",
       "file": "jitsi.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["jitsi", "video conference", "meeting", "voip", "chat", "call", "open source"]
     },
     "papirus_apps_confclerk": {
       "category": "apps",
       "file": "confclerk.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["confclerk", "conference", "schedule", "calendar", "planner", "event", "agenda"]
     },
     "papirus_apps_caption": {
       "category": "apps",
       "file": "caption.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["caption", "subtitle", "text", "video", "closed captions", "accessibility", "srt"]
     },
     "papirus_apps_AdobeFresco": {
       "category": "apps",
       "file": "AdobeFresco.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["adobe", "fresco", "painting", "drawing", "digital art", "brush", "illustration"]
     },
     "papirus_apps_responder": {
       "category": "apps",
       "file": "responder.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["responder", "messaging", "reply", "communication", "arrow", "chat", "send"]
     },
     "papirus_apps_org.flycast.Flycast": {
       "category": "apps",
       "file": "org.flycast.Flycast.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["flycast", "dreamcast", "sega", "emulator", "console", "gaming", "retro"]
     },
     "papirus_apps_org.pipewire.Helvum": {
       "category": "apps",
       "file": "org.pipewire.Helvum.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["helvum", "pipewire", "patchbay", "audio", "routing", "mixer", "sound"]
     },
     "papirus_apps_kdiskmark": {
       "category": "apps",
       "file": "kdiskmark.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kdiskmark", "disk", "benchmark", "speed", "gauge", "performance", "storage"]
     },
     "papirus_apps_teeworlds": {
       "category": "apps",
       "file": "teeworlds.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["teeworlds", "game", "multiplayer", "online", "shooter", "platformer", "tee"]
     },
     "papirus_apps_appimagekit-dockstation": {
       "category": "apps",
       "file": "appimagekit-dockstation.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["dockstation", "docker", "container", "devops", "management", "water", "deploy"]
     },
     "papirus_apps_preferences-desktop-locale": {
       "category": "apps",
       "file": "preferences-desktop-locale.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["locale", "language", "translation", "preferences", "region", "internationalization", "desktop"]
     },
     "papirus_apps_cc.retroshare.retroshare-gui": {
       "category": "apps",
       "file": "cc.retroshare.retroshare-gui.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["retroshare", "decentralized", "p2p", "network", "communication", "encrypted", "sharing"]
     },
     "papirus_apps_world-of-goo": {
       "category": "apps",
       "file": "world-of-goo.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["world of goo", "game", "puzzle", "physics", "goo ball", "indie", "building"]
     },
     "papirus_apps_com.github.subhadeepjasu.enigma": {
       "category": "apps",
