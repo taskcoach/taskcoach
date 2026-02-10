@@ -6016,97 +6016,116 @@
     "papirus_apps_apifox": {
       "category": "apps",
       "file": "apifox.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["apifox", "api", "development", "testing", "fox", "hexagon", "red", "platform"]
     },
     "papirus_apps_kdiamond": {
       "category": "apps",
       "file": "kdiamond.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kdiamond", "diamond", "puzzle", "match", "game", "kde", "colorful", "gems"]
     },
     "papirus_apps_gespeaker": {
       "category": "apps",
       "file": "gespeaker.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gespeaker", "text-to-speech", "tts", "espeak", "voice", "sound", "speak", "face"]
     },
     "papirus_apps_thunderbird-icon": {
       "category": "apps",
       "file": "thunderbird-icon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["thunderbird", "email", "mail", "mozilla", "bird", "envelope", "blue", "client"]
     },
     "papirus_apps_filendesktop": {
       "category": "apps",
       "file": "filendesktop.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["filen", "cloud", "storage", "encrypted", "circuit", "sync", "privacy", "gray"]
     },
     "papirus_apps_mullvad-browser": {
       "category": "apps",
       "file": "mullvad-browser.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mullvad", "browser", "privacy", "vpn", "web", "yellow", "dark", "tor"]
     },
     "papirus_apps_com.github.marbetschar.time-limit": {
       "category": "apps",
       "file": "com.github.marbetschar.time-limit.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["time-limit", "timer", "countdown", "clock", "blue", "circle", "pomodoro"]
     },
     "papirus_apps_pac": {
       "category": "apps",
       "file": "pac.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["pac", "connection", "ssh", "telnet", "ethernet", "network", "manager", "blue"]
     },
     "papirus_apps_computer-runprocesscatcher": {
       "category": "apps",
       "file": "computer-runprocesscatcher.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["run", "process", "execute", "play", "start", "launch", "gray", "button"]
     },
     "papirus_apps_yast-scanner": {
       "category": "apps",
       "file": "yast-scanner.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["yast", "scanner", "flatbed", "scan", "suse", "hardware", "red", "device"]
     },
     "papirus_apps_lutris_teeworlds": {
       "category": "apps",
       "file": "lutris_teeworlds.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["teeworlds", "game", "multiplayer", "shooter", "cartoon", "yellow", "2d", "lutris"]
     },
     "papirus_apps_com.bxabi.bumblebee-indicator": {
       "category": "apps",
       "file": "com.bxabi.bumblebee-indicator.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["bumblebee", "nvidia", "optimus", "gpu", "graphics", "indicator", "green", "hybrid"]
     },
     "papirus_apps_q4os-swprofiler": {
       "category": "apps",
       "file": "q4os-swprofiler.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["q4os", "software", "profiler", "gear", "settings", "purple", "config"]
     },
     "papirus_apps_system-config-services": {
       "category": "apps",
       "file": "system-config-services.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["system", "config", "services", "gear", "cog", "settings", "daemon", "administration"]
     },
     "papirus_apps_blobAndConquer": {
       "category": "apps",
       "file": "blobAndConquer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["blob-wars", "conquer", "game", "action", "adventure", "red", "angry", "3d"]
     },
     "papirus_apps_appimagekit-joplin": {
       "category": "apps",
       "file": "appimagekit-joplin.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["joplin", "notes", "todo", "markdown", "notebook", "blue", "open-source", "sync"]
     },
     "papirus_apps_com.endlessnetwork.frogsquash": {
       "category": "apps",
       "file": "com.endlessnetwork.frogsquash.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["frog", "squash", "game", "green", "cartoon", "animal", "endless"]
     },
     "papirus_apps_jango": {
       "category": "apps",
       "file": "jango.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["jango", "radio", "music", "streaming", "internet", "blue", "audio"]
     },
     "papirus_apps_org.yuzu_emu.yuzu": {
       "category": "apps",
       "file": "org.yuzu_emu.yuzu.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["yuzu", "switch", "emulator", "nintendo", "joycon", "gaming", "console"]
     },
     "papirus_apps_klickety": {
       "category": "apps",
