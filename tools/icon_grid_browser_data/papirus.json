@@ -5881,115 +5881,137 @@
     "papirus_apps_tuxpuck": {
       "category": "apps",
       "file": "tuxpuck.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tuxpuck", "tux", "penguin", "hockey", "puck", "game", "linux"]
     },
     "papirus_apps_io.github.Freedoom-Phase-2": {
       "category": "apps",
       "file": "io.github.Freedoom-Phase-2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["freedoom", "doom", "fps", "shooter", "game", "red", "free", "open-source"]
     },
     "papirus_apps_duckstation": {
       "category": "apps",
       "file": "duckstation.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["duckstation", "playstation", "emulator", "ps1", "duck", "pixel", "gaming", "orange"]
     },
     "papirus_apps_pirut": {
       "category": "apps",
       "file": "pirut.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["pirut", "package", "installer", "fedora", "download", "software", "grid", "colorful"]
     },
     "papirus_apps_trackma": {
       "category": "apps",
       "file": "trackma.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["trackma", "anime", "manga", "tracker", "cat", "list", "blue", "myanimelist"]
     },
     "papirus_apps_dirt4": {
       "category": "apps",
       "file": "dirt4.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["dirt", "rally", "racing", "game", "car", "offroad", "codemasters", "orange"]
     },
     "papirus_apps_cointop": {
       "category": "apps",
       "file": "cointop.svg",
-      "sizes": [16, 22, 24, 32, 48, 64],
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
       "duplicates": [{
           "source": "papirus", "category": "apps", "file": "com.github.miguelmota.Cointop.svg"
-        }]
+        }],
+      "hints": ["cointop", "cryptocurrency", "bitcoin", "terminal", "price", "tracker", "crypto"]
     },
     "papirus_apps_org.gnome.Gnote": {
       "category": "apps",
       "file": "org.gnome.Gnote.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gnote", "gnome", "notes", "clipboard", "text", "memo", "brown", "writing"]
     },
     "papirus_apps_distributor-logo-fedora": {
       "category": "apps",
       "file": "distributor-logo-fedora.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["fedora", "linux", "distro", "logo", "blue", "infinity", "operating-system"]
     },
     "papirus_apps_system-software-installer": {
       "category": "apps",
       "file": "system-software-installer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["software", "installer", "package", "download", "system", "apps", "store", "grid"]
     },
     "papirus_apps_mx-tools": {
       "category": "apps",
       "file": "mx-tools.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mx-linux", "tools", "wrench", "hammer", "system", "utilities", "teal", "mountain"]
     },
     "papirus_apps_jgray": {
       "category": "apps",
       "file": "jgray.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["jgray", "java", "grayscale", "image", "viewer", "gray", "letter"]
     },
     "papirus_apps_mandrivaupdate": {
       "category": "apps",
       "file": "mandrivaupdate.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mandriva", "update", "linux", "refresh", "package", "manager", "orange"]
     },
     "papirus_apps_supertuxkart": {
       "category": "apps",
       "file": "supertuxkart.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["supertuxkart", "kart", "racing", "tux", "penguin", "game", "open-source", "red"]
     },
     "papirus_apps_nwg-look": {
       "category": "apps",
       "file": "nwg-look.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["nwg-look", "theme", "appearance", "gtk", "wand", "star", "sway", "wayland"]
     },
     "papirus_apps_redhat": {
       "category": "apps",
       "file": "redhat.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["redhat", "red-hat", "linux", "enterprise", "hat", "fedora", "rhel"]
     },
     "papirus_apps_chrome-egmafekfmcnknbdlbfbhafbllplmjlhn-Default": {
       "category": "apps",
       "file": "chrome-egmafekfmcnknbdlbfbhafbllplmjlhn-Default.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["nvidia", "geforce-now", "cloud", "gaming", "streaming", "green", "chrome"]
     },
     "papirus_apps_megazeux": {
       "category": "apps",
       "file": "megazeux.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["megazeux", "game", "creator", "pixel", "smiley", "retro", "cyan", "editor"]
     },
     "papirus_apps_steam_icon_232770": {
       "category": "apps",
       "file": "steam_icon_232770.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "postal", "game", "shooter", "red", "letter", "action"]
     },
     "papirus_apps_com.rafaelmardojai.Blanket": {
       "category": "apps",
       "file": "com.rafaelmardojai.Blanket.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["blanket", "ambient", "sound", "noise", "focus", "relax", "gnome", "blue"]
     },
     "papirus_apps_cemu": {
       "category": "apps",
       "file": "cemu.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cemu", "wii-u", "emulator", "nintendo", "console", "gaming", "blue"]
     },
     "papirus_apps_torguard": {
       "category": "apps",
       "file": "torguard.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["torguard", "vpn", "privacy", "cloud", "lock", "security", "green", "network"]
     },
     "papirus_apps_apifox": {
       "category": "apps",
