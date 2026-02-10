@@ -3701,147 +3701,176 @@
     "papirus_apps_mail-client": {
       "category": "apps",
       "file": "mail-client.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["email", "mail", "envelope", "letter", "at sign", "inbox", "message"]
     },
     "papirus_apps_com.georgefb.quickaccess": {
       "category": "apps",
       "file": "com.georgefb.quickaccess.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["search", "magnifying glass", "quick access", "find", "lookup", "browse"]
     },
     "papirus_apps_appimagekit-mandelbulber2": {
       "category": "apps",
       "file": "appimagekit-mandelbulber2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["spiral", "swirl", "fractal", "circle", "mandelbrot", "3d", "rendering"]
     },
     "papirus_apps_io.github.manisandro.gImageReader": {
       "category": "apps",
       "file": "io.github.manisandro.gImageReader.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ocr", "magnifying glass", "text recognition", "scan", "reader", "image", "search"]
     },
     "papirus_apps_org.stellarium.Stellarium": {
       "category": "apps",
       "file": "org.stellarium.Stellarium.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["moon", "stars", "night sky", "astronomy", "planetarium", "crescent", "space"]
     },
     "papirus_apps_tint2": {
       "category": "apps",
       "file": "tint2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["panel", "taskbar", "blue", "rectangle", "desktop", "toolbar"]
     },
     "papirus_apps_kali-ettercap": {
       "category": "apps",
       "file": "kali-ettercap.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["letter e", "network", "security", "striped", "blue", "analysis"]
     },
     "papirus_apps_kitty": {
       "category": "apps",
       "file": "kitty.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cat", "terminal", "console", "command prompt", "shell", "kitty", "brown"]
     },
     "papirus_apps_nvidia-current-updates-settings": {
       "category": "apps",
       "file": "nvidia-current-updates-settings.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["nvidia", "gpu", "graphics card", "green", "eye", "settings", "video"]
     },
     "papirus_apps_warmux": {
       "category": "apps",
       "file": "warmux.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["bomb", "skull", "game", "war", "artillery", "explosion", "fuse"]
     },
     "papirus_apps_org.gottcode.Tetzle": {
       "category": "apps",
       "file": "org.gottcode.Tetzle.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["puzzle", "jigsaw", "game", "pieces", "blue", "green", "tetris"]
     },
     "papirus_apps_kvirc": {
       "category": "apps",
       "file": "kvirc.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["chat", "irc", "gear", "cog", "purple", "orange", "messaging"]
     },
     "papirus_apps_gtk-lshw": {
       "category": "apps",
       "file": "gtk-lshw.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["hardware", "circuit board", "chip", "expansion card", "pci", "computer", "component"]
     },
     "papirus_apps_applications-featured": {
       "category": "apps",
       "file": "applications-featured.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["star", "favorite", "featured", "gold", "yellow", "bookmark", "rating"]
     },
     "papirus_apps_appimagekit-kuro": {
       "category": "apps",
       "file": "appimagekit-kuro.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["checkmark", "tick", "green", "todo", "task", "done", "complete"]
     },
     "papirus_apps_geogebra-classic": {
       "category": "apps",
       "file": "geogebra-classic.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["math", "geometry", "nodes", "graph", "circle", "dots", "education"]
     },
     "papirus_apps_qtemu": {
       "category": "apps",
       "file": "qtemu.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["monitor", "screen", "computer", "virtual machine", "emulator", "display"]
     },
     "papirus_apps_app-outlet": {
       "category": "apps",
       "file": "app-outlet.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["shopping bag", "store", "purple", "shop", "market", "buy", "purchase"]
     },
     "papirus_apps_appimagekit-nuclear": {
       "category": "apps",
       "file": "appimagekit-nuclear.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["music", "player", "triangles", "geometric", "purple", "blue", "streaming"]
     },
     "papirus_apps_caffeine": {
       "category": "apps",
       "file": "caffeine.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["coffee", "cup", "tea", "steam", "hot", "drink", "beverage", "awake"]
     },
     "papirus_apps_io.freetubeapp.FreeTube": {
       "category": "apps",
       "file": "io.freetubeapp.FreeTube.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["video", "play", "tube", "red", "streaming", "media", "youtube"]
     },
     "papirus_apps_io.github.trytonvanmeer.DungeonJournal": {
       "category": "apps",
       "file": "io.github.trytonvanmeer.DungeonJournal.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["book", "journal", "red", "notebook", "diary", "dungeon", "rpg"]
     },
     "papirus_apps_kobodl": {
       "category": "apps",
       "file": "kobodl.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["rocket", "spaceship", "launch", "gray", "download", "ebook", "reader"]
     },
     "papirus_apps_surviving-mars": {
       "category": "apps",
       "file": "surviving-mars.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["rocket", "mars", "space", "orange", "game", "planet", "survival"]
     },
     "papirus_apps_org.gnome.Shell.Extensions.GSConnect": {
       "category": "apps",
       "file": "org.gnome.Shell.Extensions.GSConnect.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["phone", "smartphone", "mobile", "sync", "connect", "kde", "gear"]
     },
     "papirus_apps_astah_gsn": {
       "category": "apps",
       "file": "astah_gsn.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["diagram", "modeling", "green", "uml", "notation", "letter a", "design"]
     },
     "papirus_apps_skanlite": {
       "category": "apps",
       "file": "skanlite.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["scanner", "scan", "flatbed", "red bar", "document", "digitize"]
     },
     "papirus_apps_kblocks": {
       "category": "apps",
       "file": "kblocks.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["blocks", "squares", "tetris", "game", "puzzle", "colorful", "tiles"]
     },
     "papirus_apps_net.veloren.airshipper": {
       "category": "apps",
       "file": "net.veloren.airshipper.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["letter v", "game", "brown", "blue", "launcher", "rpg", "voxel"]
     },
     "papirus_apps_org.gtimelog.GTimeLog": {
       "category": "apps",

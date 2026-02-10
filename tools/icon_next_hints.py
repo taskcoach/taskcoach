@@ -88,7 +88,10 @@ LOCAL_THEMES_SORTED = [
     {
         "file": "papirus.json",
         "theme": "papirus",
-        "search_root": os.path.join(ICONS_DIR, "papirus-icon-theme-master"),
+        # IMPORTANT NOTE TODO: This is a temp hack! search_root should be
+        # papirus-icon-theme-master/ but _build_glob_pattern strips {theme}
+        # instead of wildcarding it, so we force Papirus/ here. Clean up later.
+        "search_root": os.path.join(ICONS_DIR, "papirus-icon-theme-master/Papirus"),
         "base": os.path.join(ICONS_DIR, "papirus-icon-theme-master/Papirus"),
     },
     {
