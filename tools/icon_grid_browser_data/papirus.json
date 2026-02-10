@@ -8606,102 +8606,122 @@
     "papirus_apps_atomix-icon": {
       "category": "apps",
       "file": "atomix-icon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["atomix", "molecule", "puzzle", "game", "atom", "chemistry", "gnome"]
     },
     "papirus_apps_rednotebook": {
       "category": "apps",
       "file": "rednotebook.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["rednotebook", "diary", "journal", "notebook", "book", "writing", "red"]
     },
     "papirus_apps_cs-themes": {
       "category": "apps",
       "file": "cs-themes.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["themes", "appearance", "cinnamon", "settings", "customization", "desktop", "grid"]
     },
     "papirus_apps_feh": {
       "category": "apps",
       "file": "feh.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["feh", "image", "viewer", "photo", "picture", "lightweight"]
     },
     "papirus_apps_beyondallreason": {
       "category": "apps",
       "file": "beyondallreason.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["beyondallreason", "bar", "rts", "strategy", "game", "military", "war"]
     },
     "papirus_apps_org.kde.keysmith": {
       "category": "apps",
       "file": "org.kde.keysmith.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["keysmith", "authenticator", "2fa", "otp", "security", "lock", "kde", "totp"]
     },
     "papirus_apps_waydroid": {
       "category": "apps",
       "file": "waydroid.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["waydroid", "android", "container", "emulator", "wayland", "mobile", "apps"]
     },
     "papirus_apps_start-here-lubuntu": {
       "category": "apps",
       "file": "start-here-lubuntu.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["lubuntu", "start", "menu", "bird", "linux", "distribution", "lxqt"]
     },
     "papirus_apps_yuzu-ea": {
       "category": "apps",
       "file": "yuzu-ea.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["yuzu", "nintendo", "switch", "emulator", "gaming", "early-access"]
     },
     "papirus_apps_libreoffice7.6-writer": {
       "category": "apps",
       "file": "libreoffice7.6-writer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["libreoffice", "writer", "document", "word", "text", "office", "processor"]
     },
     "papirus_apps_gnome-session": {
       "category": "apps",
       "file": "gnome-session.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gnome", "session", "power", "shutdown", "logout", "restart", "off"]
     },
     "papirus_apps_appimagekit-altus": {
       "category": "apps",
       "file": "appimagekit-altus.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["altus", "whatsapp", "messaging", "chat", "client", "bird", "appimage"]
     },
     "papirus_apps_appimagekit-odio": {
       "category": "apps",
       "file": "appimagekit-odio.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["odio", "radio", "internet", "audio", "streaming", "music", "soundwave"]
     },
     "papirus_apps_fm.cancel.Ripcord": {
       "category": "apps",
       "file": "fm.cancel.Ripcord.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ripcord", "discord", "slack", "chat", "messaging", "voice", "client"]
     },
     "papirus_apps_labplot2": {
       "category": "apps",
       "file": "labplot2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["labplot", "graph", "plot", "chart", "science", "data", "analysis", "kde"]
     },
     "papirus_apps_pppoeconf": {
       "category": "apps",
       "file": "pppoeconf.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["pppoeconf", "pppoe", "network", "dsl", "telephone", "connection", "dialup"]
     },
     "papirus_apps_rmg": {
       "category": "apps",
       "file": "rmg.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["rmg", "mupen", "n64", "nintendo", "emulator", "gaming", "retro"]
     },
     "papirus_apps_lxmusic": {
       "category": "apps",
       "file": "lxmusic.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["lxmusic", "music", "player", "audio", "lxde", "note", "orange"]
     },
     "papirus_apps_yast-release-notes": {
       "category": "apps",
       "file": "yast-release-notes.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["yast", "opensuse", "suse", "release", "notes", "chameleon", "linux"]
     },
     "papirus_apps_viewnior": {
       "category": "apps",
       "file": "viewnior.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["viewnior", "image", "viewer", "photo", "picture", "landscape", "gallery"]
     },
     "papirus_apps_lutris_super-hexagon": {
       "category": "apps",
