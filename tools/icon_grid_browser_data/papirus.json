@@ -6130,117 +6130,140 @@
     "papirus_apps_klickety": {
       "category": "apps",
       "file": "klickety.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["klickety", "puzzle", "blocks", "click", "kde", "game", "colorful", "squares"]
     },
     "papirus_apps_kgeography": {
       "category": "apps",
       "file": "kgeography.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kgeography", "geography", "globe", "earth", "world", "map", "kde", "education"]
     },
     "papirus_apps_flameshot": {
       "category": "apps",
       "file": "flameshot.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["flameshot", "screenshot", "capture", "flame", "screen", "snip", "purple", "annotate"]
     },
     "papirus_apps_kali-ophcrack": {
       "category": "apps",
       "file": "kali-ophcrack.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ophcrack", "kali", "password", "recovery", "security", "green", "hash"]
     },
     "papirus_apps_gnome-volume-control": {
       "category": "apps",
       "file": "gnome-volume-control.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gnome", "volume", "control", "sound", "audio", "speaker", "mixer", "yellow"]
     },
     "papirus_apps_jclic": {
       "category": "apps",
       "file": "jclic.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["jclic", "education", "activities", "learning", "orange", "school", "interactive"]
     },
     "papirus_apps_net.sourceforge.uqm_mods.UQM-MegaMod": {
       "category": "apps",
       "file": "net.sourceforge.uqm_mods.UQM-MegaMod.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["uqm", "megamod", "star-control", "spaceship", "game", "green", "sci-fi"]
     },
     "papirus_apps_catarina": {
       "category": "apps",
       "file": "catarina.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["catarina", "jack", "patchbay", "audio", "routing", "nodes", "graph", "connection"]
     },
     "papirus_apps_somiibo": {
       "category": "apps",
       "file": "somiibo.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["somiibo", "social", "media", "automation", "robot", "blue", "bot"]
     },
     "papirus_apps_basilisk2": {
       "category": "apps",
       "file": "basilisk2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["basilisk", "macintosh", "emulator", "apple", "rainbow", "68k", "retro", "mac"]
     },
     "papirus_apps_appimagekit-OpenRGB": {
       "category": "apps",
       "file": "appimagekit-OpenRGB.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["openrgb", "rgb", "lighting", "led", "color", "rainbow", "bulb", "control"]
     },
     "papirus_apps_Blender": {
       "category": "apps",
       "file": "Blender.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["blender", "3d", "modeling", "animation", "rendering", "blue", "open-source", "design"]
     },
     "papirus_apps_vstudio": {
       "category": "apps",
       "file": "vstudio.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["vstudio", "visual", "studio", "ide", "rocket", "coding", "blue", "development"]
     },
     "papirus_apps_net.scribus.Scribus": {
       "category": "apps",
       "file": "net.scribus.Scribus.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["scribus", "publishing", "desktop", "layout", "quill", "feather", "blue", "dtp"]
     },
     "papirus_apps_com.github.bleakgrey.transporter": {
       "category": "apps",
       "file": "com.github.bleakgrey.transporter.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["transporter", "wormhole", "file", "transfer", "send", "share", "purple"]
     },
     "papirus_apps_kali-exploitation-tools-trans": {
       "category": "apps",
       "file": "kali-exploitation-tools-trans.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kali", "exploitation", "security", "bomb", "pentest", "tools", "hacking"]
     },
     "papirus_apps_wps-office2019-etmain": {
       "category": "apps",
       "file": "wps-office2019-etmain.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["wps", "spreadsheet", "office", "excel", "table", "green", "data", "cells"]
     },
     "papirus_apps_com.sweetscape.ZeroOneZeroEditor": {
       "category": "apps",
       "file": "com.sweetscape.ZeroOneZeroEditor.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["010-editor", "hex", "editor", "binary", "pencil", "orange", "sweetscape", "data"]
     },
     "papirus_apps_lutris_lara-croft-and-the-temple-of-osiris": {
       "category": "apps",
       "file": "lutris_lara-croft-and-the-temple-of-osiris.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["lara-croft", "temple", "osiris", "game", "lutris", "gold", "monogram", "adventure"]
     },
     "papirus_apps_cs-fonts": {
       "category": "apps",
       "file": "cs-fonts.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["fonts", "typography", "letter", "cursive", "italic", "font-manager", "typeface"]
     },
     "papirus_apps_package_toys": {
       "category": "apps",
       "file": "package_toys.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["toys", "smiley", "emoji", "face", "happy", "yellow", "fun", "games"]
     },
     "papirus_apps_brosix": {
       "category": "apps",
       "file": "brosix.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["brosix", "messenger", "chat", "instant-messaging", "blue", "communication", "team"]
     },
     "papirus_apps_preferences-desktop-accessibility-pointing": {
       "category": "apps",
       "file": "preferences-desktop-accessibility-pointing.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["accessibility", "pointing", "cursor", "mouse", "pointer", "arrow", "preferences"]
     },
     "papirus_apps_chromium-browser-privacy": {
       "category": "apps",
