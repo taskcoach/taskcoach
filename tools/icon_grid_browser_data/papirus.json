@@ -6616,102 +6616,122 @@
     "papirus_apps_bridge-constructor-playground": {
       "category": "apps",
       "file": "bridge-constructor-playground.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["bridge", "constructor", "playground", "game", "puzzle", "engineering", "physics", "building"]
     },
     "papirus_apps_preferences-web-browser-cache": {
       "category": "apps",
       "file": "preferences-web-browser-cache.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cache", "browser", "web", "lightning", "fast", "yellow", "preferences", "speed"]
     },
     "papirus_apps_dooble": {
       "category": "apps",
       "file": "dooble.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["dooble", "browser", "web", "privacy", "blue", "internet", "secure", "browsing"]
     },
     "papirus_apps_harmonoid": {
       "category": "apps",
       "file": "harmonoid.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["harmonoid", "music", "player", "audio", "speaker", "purple", "playlist", "sound"]
     },
     "papirus_apps_appimagekit-electron-cash": {
       "category": "apps",
       "file": "appimagekit-electron-cash.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["electron-cash", "bitcoin", "cryptocurrency", "wallet", "bch", "blue", "coin", "finance"]
     },
     "papirus_apps_freedoom1": {
       "category": "apps",
       "file": "freedoom1.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["freedoom", "doom", "fps", "game", "shooter", "free", "open-source", "retro"]
     },
     "papirus_apps_cumulonimbus": {
       "category": "apps",
       "file": "cumulonimbus.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cumulonimbus", "weather", "cloud", "yellow", "forecast", "storm", "climate", "arcs"]
     },
     "papirus_apps_pgAdmin4": {
       "category": "apps",
       "file": "pgAdmin4.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["pgadmin", "postgresql", "database", "elephant", "sql", "admin", "blue", "management"]
     },
     "papirus_apps_cave-story": {
       "category": "apps",
       "file": "cave-story.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cave-story", "game", "platformer", "robot", "indie", "retro", "adventure", "pixel"]
     },
     "papirus_apps_lutris_insurgency": {
       "category": "apps",
       "file": "lutris_insurgency.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["insurgency", "fps", "shooter", "fist", "military", "game", "lutris", "teal"]
     },
     "papirus_apps_deepin-calendar": {
       "category": "apps",
       "file": "deepin-calendar.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["deepin", "calendar", "date", "schedule", "red", "planner", "events", "organizer"]
     },
     "papirus_apps_freeciv-client": {
       "category": "apps",
       "file": "freeciv-client.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["freeciv", "civilization", "strategy", "globe", "world", "game", "empire", "turn-based"]
     },
     "papirus_apps_litesoundsglob": {
       "category": "apps",
       "file": "litesoundsglob.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["litesoundsglob", "speaker", "audio", "sound", "volume", "yellow", "music", "output"]
     },
     "papirus_apps_net.gaijin.WarThunder": {
       "category": "apps",
       "file": "net.gaijin.WarThunder.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["war-thunder", "tank", "military", "game", "combat", "vehicle", "army", "green"]
     },
     "papirus_apps_com.zamaudio.zameq2": {
       "category": "apps",
       "file": "com.zamaudio.zameq2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["zameq2", "equalizer", "audio", "eq", "plugin", "gray", "mixing", "sound"]
     },
     "papirus_apps_chrome-cmkncekebbebpfilplodngbpllndjkfo-Default": {
       "category": "apps",
       "file": "chrome-cmkncekebbebpfilplodngbpllndjkfo-Default.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["chrome-remote-desktop", "remote", "screen", "sharing", "chrome", "monitor", "connection"]
     },
     "papirus_apps_mintsources-ppa": {
       "category": "apps",
       "file": "mintsources-ppa.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mint", "ppa", "sources", "software", "repository", "hexagon", "colorful", "package"]
     },
     "papirus_apps_mint-dev-settings": {
       "category": "apps",
       "file": "mint-dev-settings.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mint", "developer", "settings", "linux", "gear", "green", "configuration", "system"]
     },
     "papirus_apps_nestopia": {
       "category": "apps",
       "file": "nestopia.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["nestopia", "nes", "nintendo", "emulator", "console", "retro", "gaming", "8bit"]
     },
     "papirus_apps_io.github.Hexchat": {
       "category": "apps",
       "file": "io.github.Hexchat.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["hexchat", "irc", "chat", "orange", "hexagon", "messaging", "client", "communication"]
     },
     "papirus_apps_slic3r": {
       "category": "apps",
