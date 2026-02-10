@@ -10327,112 +10327,134 @@
     "papirus_apps_org.cvfosammmm.Setzer": {
       "category": "apps",
       "file": "org.cvfosammmm.Setzer.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["setzer", "latex", "editor", "document", "typesetting", "tex", "writing"]
     },
     "papirus_apps_yast-network_services": {
       "category": "apps",
       "file": "yast-network_services.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["yast", "network", "services", "suse", "globe", "internet", "configuration"]
     },
     "papirus_apps_lutris_vvvvvv": {
       "category": "apps",
       "file": "lutris_vvvvvv.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["vvvvvv", "platformer", "indie", "pixel", "game", "retro", "lutris"]
     },
     "papirus_apps_org.chocolate_doom.ChocolateDoom": {
       "category": "apps",
       "file": "org.chocolate_doom.ChocolateDoom.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["chocolate", "doom", "game", "fps", "shooter", "retro", "ice cream"]
     },
     "papirus_apps_gnome-term": {
       "category": "apps",
       "file": "gnome-term.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gnome", "terminal", "console", "command", "shell", "prompt", "cli"]
     },
     "papirus_apps_org.gnome.clocks": {
       "category": "apps",
       "file": "org.gnome.clocks.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gnome", "clocks", "time", "alarm", "timer", "stopwatch", "clock"]
     },
     "papirus_apps_mozo": {
       "category": "apps",
       "file": "mozo.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mozo", "menu", "editor", "mate", "desktop", "launcher", "configuration"]
     },
     "papirus_apps_steampowered": {
       "category": "apps",
       "file": "steampowered.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "valve", "gaming", "store", "platform", "games", "launcher"]
     },
     "papirus_apps_smuxi": {
       "category": "apps",
       "file": "smuxi.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["smuxi", "irc", "chat", "messaging", "client", "communication", "speech"]
     },
     "papirus_apps_org.gnome.Podcasts": {
       "category": "apps",
       "file": "org.gnome.Podcasts.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gnome", "podcasts", "audio", "cassette", "listening", "episodes", "rss"]
     },
     "papirus_apps_enjoy-music-player": {
       "category": "apps",
       "file": "enjoy-music-player.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["enjoy", "music", "player", "audio", "play", "media", "songs"]
     },
     "papirus_apps_pop-cosmic-launcher": {
       "category": "apps",
       "file": "pop-cosmic-launcher.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["pop", "cosmic", "launcher", "search", "applications", "popos", "finder"]
     },
     "papirus_apps_org.xfce.taskmanager": {
       "category": "apps",
       "file": "org.xfce.taskmanager.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["xfce", "task", "manager", "system", "monitor", "process", "cpu"]
     },
     "papirus_apps_user-admin": {
       "category": "apps",
       "file": "user-admin.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["user", "admin", "account", "person", "profile", "administrator", "management"]
     },
     "papirus_apps_java11-openjdk": {
       "category": "apps",
       "file": "java11-openjdk.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["java", "openjdk", "jdk", "coffee", "programming", "runtime", "jvm"]
     },
     "papirus_apps_ms-word": {
       "category": "apps",
       "file": "ms-word.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["microsoft", "word", "office", "document", "writing", "editor", "docx"]
     },
     "papirus_apps_element-nightly": {
       "category": "apps",
       "file": "element-nightly.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["element", "matrix", "chat", "nightly", "messenger", "encrypted", "communication"]
     },
     "papirus_apps_recipes": {
       "category": "apps",
       "file": "recipes.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["recipes", "cooking", "food", "kitchen", "knife", "tomato", "gnome"]
     },
     "papirus_apps_lutris_amnesia-a-machine-for-pigs": {
       "category": "apps",
       "file": "lutris_amnesia-a-machine-for-pigs.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["amnesia", "machine", "pigs", "horror", "game", "eye", "lutris"]
     },
     "papirus_apps_winhelp": {
       "category": "apps",
       "file": "winhelp.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["wine", "help", "windows", "compatibility", "question", "winhelp", "documentation"]
     },
     "papirus_apps_alienarena": {
       "category": "apps",
       "file": "alienarena.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["alien", "arena", "fps", "shooter", "game", "multiplayer", "extraterrestrial"]
     },
     "papirus_apps_yast-language": {
       "category": "apps",
       "file": "yast-language.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["yast", "language", "locale", "translate", "suse", "internationalization", "settings"]
     },
     "papirus_apps_mc": {
       "category": "apps",
