@@ -10459,137 +10459,164 @@
     "papirus_apps_mc": {
       "category": "apps",
       "file": "mc.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["midnight", "commander", "file", "manager", "panel", "terminal", "mc"]
     },
     "papirus_apps_appimagekit-brackets-electron": {
       "category": "apps",
       "file": "appimagekit-brackets-electron.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["brackets", "code", "editor", "adobe", "web", "html", "appimage"]
     },
     "papirus_apps_tusk-app": {
       "category": "apps",
       "file": "tusk-app.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tusk", "evernote", "notes", "client", "notebook", "writing", "desktop"]
     },
     "papirus_apps_xreader": {
       "category": "apps",
       "file": "xreader.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["xreader", "document", "reader", "pdf", "viewer", "xapps", "mint"]
     },
     "papirus_apps_lutris_machinarium": {
       "category": "apps",
       "file": "lutris_machinarium.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["machinarium", "robot", "puzzle", "game", "adventure", "indie", "lutris"]
     },
     "papirus_apps_FDE2_Bridge.0": {
       "category": "apps",
       "file": "FDE2_Bridge.0.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["adobe", "bridge", "media", "asset", "manager", "creative", "photography"]
     },
     "papirus_apps_resapplet": {
       "category": "apps",
       "file": "resapplet.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["resolution", "display", "monitor", "screen", "applet", "settings"]
     },
     "papirus_apps_net.supertuxkart.SuperTuxKart": {
       "category": "apps",
       "file": "net.supertuxkart.SuperTuxKart.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["supertuxkart", "racing", "kart", "game", "penguin", "tux", "opensource"]
     },
     "papirus_apps_lutris_broken-sword-1-shadow-of-the-templars-directors-cu": {
       "category": "apps",
       "file": "lutris_broken-sword-1-shadow-of-the-templars-directors-cu.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["broken", "sword", "templar", "cross", "adventure", "game", "lutris"]
     },
     "papirus_apps_linphone": {
       "category": "apps",
       "file": "linphone.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["linphone", "phone", "voip", "call", "sip", "communication", "telephony"]
     },
     "papirus_apps_minetime": {
       "category": "apps",
       "file": "minetime.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["minetime", "calendar", "schedule", "time", "planner", "organizer"]
     },
     "papirus_apps_evtest-qt": {
       "category": "apps",
       "file": "evtest-qt.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["evtest", "joystick", "gamepad", "input", "controller", "testing", "qt"]
     },
     "papirus_apps_io.github.lainsce.Notejot": {
       "category": "apps",
       "file": "io.github.lainsce.Notejot.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["notejot", "notes", "sticky", "notepad", "pencil", "memo", "writing"]
     },
     "papirus_apps_lutris_fez": {
       "category": "apps",
       "file": "lutris_fez.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["fez", "puzzle", "platformer", "game", "indie", "pixel", "lutris"]
     },
     "papirus_apps_com.teamspeak.TeamSpeak": {
       "category": "apps",
       "file": "com.teamspeak.TeamSpeak.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["teamspeak", "voice", "chat", "headset", "voip", "gaming", "communication"]
     },
     "papirus_apps_avogadro-icon": {
       "category": "apps",
       "file": "avogadro-icon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["avogadro", "molecule", "chemistry", "science", "atom", "editor", "3d"]
     },
     "papirus_apps_night-in-the-woods": {
       "category": "apps",
       "file": "night-in-the-woods.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["night", "woods", "cat", "adventure", "game", "indie", "story"]
     },
     "papirus_apps_com.calibre_ebook.calibre.ebook-edit": {
       "category": "apps",
       "file": "com.calibre_ebook.calibre.ebook-edit.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["calibre", "ebook", "editor", "book", "epub", "publish", "gear"]
     },
     "papirus_apps_org.videolan.VLC": {
       "category": "apps",
       "file": "org.videolan.VLC.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["vlc", "media", "player", "video", "cone", "multimedia", "videolan"]
     },
     "papirus_apps_gnome-color-manager": {
       "category": "apps",
       "file": "gnome-color-manager.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["color", "manager", "palette", "profile", "calibration", "gnome", "display"]
     },
     "papirus_apps_com.github.qarmin.czkawka": {
       "category": "apps",
       "file": "com.github.qarmin.czkawka.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["czkawka", "duplicate", "finder", "cleaner", "files", "cleanup", "utility"]
     },
     "papirus_apps_quiterss": {
       "category": "apps",
       "file": "quiterss.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["quiterss", "rss", "feed", "reader", "news", "aggregator", "star"]
     },
     "papirus_apps_idea-ultimate": {
       "category": "apps",
       "file": "idea-ultimate.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["intellij", "idea", "ultimate", "jetbrains", "java", "ide", "development"]
     },
     "papirus_apps_com.github.cassidyjames.clairvoyant": {
       "category": "apps",
       "file": "com.github.cassidyjames.clairvoyant.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["clairvoyant", "magic", "8ball", "fortune", "decision", "random", "elementary"]
     },
     "papirus_apps_com.github.unrud.VideoDownloader": {
       "category": "apps",
       "file": "com.github.unrud.VideoDownloader.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["video", "downloader", "download", "film", "youtube", "media", "save"]
     },
     "papirus_apps_lutris_grand-theft-auto-v": {
       "category": "apps",
       "file": "lutris_grand-theft-auto-v.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gta", "grand", "theft", "auto", "rockstar", "game", "lutris"]
     },
     "papirus_apps_CycligentGitTool": {
       "category": "apps",
       "file": "CycligentGitTool.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cycligent", "git", "version", "control", "repository", "tool", "gui"]
     },
     "papirus_apps_gpicview": {
       "category": "apps",
