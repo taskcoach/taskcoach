@@ -4019,142 +4019,170 @@
     "papirus_apps_activity-log-manager": {
       "category": "apps",
       "file": "activity-log-manager.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["magnifying glass", "log", "document", "search", "activity", "audit", "report"]
     },
     "papirus_apps_java-25-openjdk": {
       "category": "apps",
       "file": "java-25-openjdk.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["java", "coffee cup", "steam", "red", "programming", "openjdk", "developer"]
     },
     "papirus_apps_com.github.harisvsulaiman.pushy": {
       "category": "apps",
       "file": "com.github.harisvsulaiman.pushy.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["button", "push", "green", "round", "press", "notification", "alert"]
     },
     "papirus_apps_qalculate": {
       "category": "apps",
       "file": "qalculate.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["calculator", "math", "equals", "omega", "pink", "compute", "formula"]
     },
     "papirus_apps_steam_icon_319910": {
       "category": "apps",
       "file": "steam_icon_319910.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["letter t", "purple", "number 3", "text", "game", "serif", "typography"]
     },
     "papirus_apps_Ripcord_Icon": {
       "category": "apps",
       "file": "Ripcord_Icon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ripcord", "chat", "messaging", "diamond", "layers", "orange", "blue", "communication"]
     },
     "papirus_apps_steam_icon_448510": {
       "category": "apps",
       "file": "steam_icon_448510.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "game", "target", "circles", "red", "bullseye", "concentric", "ring"]
     },
     "papirus_apps_danganronpa": {
       "category": "apps",
       "file": "danganronpa.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["danganronpa", "game", "bear", "monokuma", "black", "white", "split", "anime"]
     },
     "papirus_apps_appimagekit-cpod": {
       "category": "apps",
       "file": "appimagekit-cpod.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cpod", "podcast", "audio", "yellow", "circle", "concentric", "arcs", "media"]
     },
     "papirus_apps_distributor-logo-antix": {
       "category": "apps",
       "file": "distributor-logo-antix.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["antix", "linux", "distro", "distribution", "logo", "gray", "circle", "x"]
     },
     "papirus_apps_bendy-and-the-ink-machine": {
       "category": "apps",
       "file": "bendy-and-the-ink-machine.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["bendy", "ink", "machine", "game", "cartoon", "demon", "horror", "yellow"]
     },
     "papirus_apps_euro-truck-simulator-2": {
       "category": "apps",
       "file": "euro-truck-simulator-2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["euro", "truck", "simulator", "game", "wheel", "tire", "driving", "vehicle"]
     },
     "papirus_apps_7-days-to-die": {
       "category": "apps",
       "file": "7-days-to-die.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["7 days", "survival", "zombie", "game", "seven", "lightning", "red", "horror"]
     },
     "papirus_apps_kali-sniffing-spoofing-trans": {
       "category": "apps",
       "file": "kali-sniffing-spoofing-trans.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kali", "sniffing", "spoofing", "security", "spy", "incognito", "hat", "glasses"]
     },
     "papirus_apps_preferences-desktop-navigation": {
       "category": "apps",
       "file": "preferences-desktop-navigation.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["navigation", "compass", "direction", "preferences", "desktop", "settings", "north", "needle"]
     },
     "papirus_apps_kfm": {
       "category": "apps",
       "file": "kfm.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kfm", "file manager", "drawer", "cabinet", "kde", "files", "storage", "yellow"]
     },
     "papirus_apps_tizen-studio-em": {
       "category": "apps",
       "file": "tizen-studio-em.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tizen", "emulator", "manager", "list", "checklist", "blue", "bullets", "items"]
     },
     "papirus_apps_ED2E_EpicGamesLauncher.0": {
       "category": "apps",
       "file": "ED2E_EpicGamesLauncher.0.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["epic", "games", "launcher", "store", "gaming", "platform", "shield", "gray"]
     },
     "papirus_apps_airstrike": {
       "category": "apps",
       "file": "airstrike.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["airstrike", "balloon", "hot air", "flying", "game", "red", "white", "sky"]
     },
     "papirus_apps_tw.ddnet.ddnet": {
       "category": "apps",
       "file": "tw.ddnet.ddnet.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ddnet", "teeworlds", "game", "multiplayer", "tee", "orange", "character", "blob"]
     },
     "papirus_apps_xfsm-reboot": {
       "category": "apps",
       "file": "xfsm-reboot.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["reboot", "restart", "refresh", "xfce", "session", "arrows", "circular", "orange"]
     },
     "papirus_apps_ms-onedrive": {
       "category": "apps",
       "file": "ms-onedrive.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["onedrive", "microsoft", "cloud", "storage", "sync", "blue", "backup", "drive"]
     },
     "papirus_apps_protege": {
       "category": "apps",
       "file": "protege.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["protege", "ontology", "editor", "semantic", "web", "triangles", "colorful", "knowledge"]
     },
     "papirus_apps_netradiant": {
       "category": "apps",
       "file": "netradiant.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["netradiant", "level editor", "map", "3d", "quake", "radiant", "colorful", "modeling"]
     },
     "papirus_apps_calligrakrita": {
       "category": "apps",
       "file": "calligrakrita.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["krita", "paint", "drawing", "art", "brush", "digital", "calligra", "canvas"]
     },
     "papirus_apps_appimagekit-irccloud-desktop": {
       "category": "apps",
       "file": "appimagekit-irccloud-desktop.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["irccloud", "irc", "chat", "cloud", "messaging", "speech bubble", "blue", "communication"]
     },
     "papirus_apps_deepin-system-monitor": {
       "category": "apps",
       "file": "deepin-system-monitor.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["deepin", "system", "monitor", "performance", "cpu", "waveform", "green", "pulse"]
     },
     "papirus_apps_yandex-browser-beta": {
       "category": "apps",
       "file": "yandex-browser-beta.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["yandex", "browser", "beta", "web", "internet", "red", "y", "russian"]
     },
     "papirus_apps_fiji": {
       "category": "apps",
