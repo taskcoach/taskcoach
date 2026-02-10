@@ -5617,127 +5617,152 @@
     "papirus_apps_qemu-system-aarch64": {
       "category": "apps",
       "file": "qemu-system-aarch64.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["qemu", "emulator", "virtual", "machine", "aarch64", "arm", "virtualization", "bird"]
     },
     "papirus_apps_mate-panel": {
       "category": "apps",
       "file": "mate-panel.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mate", "panel", "taskbar", "desktop", "toolbar", "blue", "bar"]
     },
     "papirus_apps_amarok2": {
       "category": "apps",
       "file": "amarok2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["amarok", "music", "player", "wolf", "kde", "audio", "media", "blue"]
     },
     "papirus_apps_org.olivevideoeditor.Olive": {
       "category": "apps",
       "file": "org.olivevideoeditor.Olive.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["olive", "video", "editor", "nonlinear", "branch", "green", "film", "editing"]
     },
     "papirus_apps_zuluCrypt": {
       "category": "apps",
       "file": "zuluCrypt.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["zulucrypt", "encryption", "disk", "security", "luks", "volume", "red"]
     },
     "papirus_apps_nvidia-ddm-mx": {
       "category": "apps",
       "file": "nvidia-ddm-mx.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["nvidia", "driver", "gpu", "graphics", "display", "mx-linux", "green", "manager"]
     },
     "papirus_apps_appimagekit-webcamoid": {
       "category": "apps",
       "file": "appimagekit-webcamoid.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["webcamoid", "webcam", "camera", "video", "capture", "lens", "recording"]
     },
     "papirus_apps_xfce-mail": {
       "category": "apps",
       "file": "xfce-mail.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["xfce", "mail", "email", "envelope", "message", "inbox", "yellow", "at-sign"]
     },
     "papirus_apps_enteauth": {
       "category": "apps",
       "file": "enteauth.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ente", "auth", "authenticator", "2fa", "totp", "security", "lock", "shield"]
     },
     "papirus_apps_net.baseart.Glide": {
       "category": "apps",
       "file": "net.baseart.Glide.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["glide", "video", "player", "clapperboard", "play", "movie", "media"]
     },
     "papirus_apps_appimagekit-fluent-reader": {
       "category": "apps",
       "file": "appimagekit-fluent-reader.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["fluent", "reader", "rss", "feed", "news", "articles", "blue"]
     },
     "papirus_apps_io.github.freedoom.Phase1": {
       "category": "apps",
       "file": "io.github.freedoom.Phase1.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["freedoom", "doom", "fps", "shooter", "game", "retro", "free", "open-source"]
     },
     "papirus_apps_intellij-idea-ce": {
       "category": "apps",
       "file": "intellij-idea-ce.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["intellij", "idea", "jetbrains", "java", "ide", "coding", "development", "community"]
     },
     "papirus_apps_appimagekit-makagiga": {
       "category": "apps",
       "file": "appimagekit-makagiga.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["makagiga", "organizer", "todo", "notes", "tasks", "productivity", "colorful"]
     },
     "papirus_apps_asbru-cm": {
       "category": "apps",
       "file": "asbru-cm.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["asbru", "connection", "manager", "ssh", "remote", "terminal", "network"]
     },
     "papirus_apps_steam_icon_385800": {
       "category": "apps",
       "file": "steam_icon_385800.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "game", "paw", "cat", "nekopara", "visual-novel", "pink"]
     },
     "papirus_apps_planwork": {
       "category": "apps",
       "file": "planwork.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["planwork", "planner", "task", "list", "schedule", "project", "management"]
     },
     "papirus_apps_cs-thunderbolt": {
       "category": "apps",
       "file": "cs-thunderbolt.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["thunderbolt", "cinnamon", "settings", "lightning", "bolt", "hardware", "device", "blue"]
     },
     "papirus_apps_sqldeveloper": {
       "category": "apps",
       "file": "sqldeveloper.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["sql", "developer", "database", "oracle", "query", "ide", "data", "db"]
     },
     "papirus_apps_org.gnome.Crosswords.Editor": {
       "category": "apps",
       "file": "org.gnome.Crosswords.Editor.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gnome", "crosswords", "editor", "puzzle", "grid", "word", "game", "create"]
     },
     "papirus_apps_org.eu.encom.spectral": {
       "category": "apps",
       "file": "org.eu.encom.spectral.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["spectral", "matrix", "chat", "messaging", "teal", "swirl", "client"]
     },
     "papirus_apps_gnome-terminal": {
       "category": "apps",
       "file": "gnome-terminal.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gnome", "terminal", "console", "command", "shell", "bash", "prompt", "cli"]
     },
     "papirus_apps_rocket-league": {
       "category": "apps",
       "file": "rocket-league.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["rocket-league", "game", "soccer", "car", "sports", "blue", "shield", "multiplayer"]
     },
     "papirus_apps_preferences-system-session": {
       "category": "apps",
       "file": "preferences-system-session.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["preferences", "session", "startup", "system", "rocket", "launch", "green", "settings"]
     },
     "papirus_apps_org.gnome.DejaDup": {
       "category": "apps",
       "file": "org.gnome.DejaDup.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["dejadup", "backup", "gnome", "safe", "vault", "restore", "archive", "security"]
     },
     "papirus_apps_io.atom.electron.BaseApp": {
       "category": "apps",
