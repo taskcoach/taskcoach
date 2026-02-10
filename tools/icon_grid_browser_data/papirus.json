@@ -4830,97 +4830,116 @@
     "papirus_apps_org.kde.kasts": {
       "category": "apps",
       "file": "org.kde.kasts.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kasts", "podcast", "kde", "radio", "antenna", "broadcast", "audio", "purple"]
     },
     "papirus_apps_goa-account-lastfm": {
       "category": "apps",
       "file": "goa-account-lastfm.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["lastfm", "music", "scrobble", "account", "red", "social", "streaming"]
     },
     "papirus_apps_time": {
       "category": "apps",
       "file": "time.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["time", "clock", "watch", "hours", "minutes", "orange", "schedule", "timer"]
     },
     "papirus_apps_preferences-desktop-filter": {
       "category": "apps",
       "file": "preferences-desktop-filter.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["filter", "funnel", "preferences", "desktop", "settings", "red", "sort"]
     },
     "papirus_apps_spyder": {
       "category": "apps",
       "file": "spyder.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["spyder", "python", "ide", "science", "programming", "code", "editor", "red"]
     },
     "papirus_apps_com.steamgriddb.SGDBoop": {
       "category": "apps",
       "file": "com.steamgriddb.SGDBoop.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steamgriddb", "sgdboop", "steam", "artwork", "grid", "blue", "moon", "gaming"]
     },
     "papirus_apps_pragha": {
       "category": "apps",
       "file": "pragha.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["pragha", "music", "player", "audio", "lightweight", "blue", "letter"]
     },
     "papirus_apps_sleep": {
       "category": "apps",
       "file": "sleep.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["sleep", "hibernate", "suspend", "power", "minus", "teal", "rest", "standby"]
     },
     "papirus_apps_org.kde.kompare": {
       "category": "apps",
       "file": "org.kde.kompare.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kompare", "diff", "compare", "kde", "merge", "document", "green", "blue"]
     },
     "papirus_apps_com.unity.UnityHub": {
       "category": "apps",
       "file": "com.unity.UnityHub.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["unity", "hub", "game", "engine", "3d", "cube", "development", "gray"]
     },
     "papirus_apps_appimagekit-guitar": {
       "category": "apps",
       "file": "appimagekit-guitar.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["guitar", "git", "gui", "client", "version", "control", "blue", "branch"]
     },
     "papirus_apps_lutris_postal": {
       "category": "apps",
       "file": "lutris_postal.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["postal", "lutris", "game", "shooter", "red", "letter", "action"]
     },
     "papirus_apps_bioshock-infinite": {
       "category": "apps",
       "file": "bioshock-infinite.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["bioshock", "infinite", "game", "fps", "star", "shooter", "patriotic", "stripes"]
     },
     "papirus_apps_tdemid": {
       "category": "apps",
       "file": "tdemid.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["tdemid", "midi", "piano", "keyboard", "music", "player", "keys", "audio"]
     },
     "papirus_apps_kpdf": {
       "category": "apps",
       "file": "kpdf.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kpdf", "pdf", "viewer", "document", "reader", "kde", "page", "text"]
     },
     "papirus_apps_kali-reverse-engineering-trans": {
       "category": "apps",
       "file": "kali-reverse-engineering-trans.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kali", "reverse", "engineering", "binary", "code", "security", "analysis", "dark"]
     },
     "papirus_apps_org.gnome.SystemMonitor": {
       "category": "apps",
       "file": "org.gnome.SystemMonitor.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gnome", "system", "monitor", "cpu", "activity", "process", "green", "performance"]
     },
     "papirus_apps_photoflare": {
       "category": "apps",
       "file": "photoflare.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["photoflare", "photo", "image", "editor", "puzzle", "colorful", "sparkle", "graphics"]
     },
     "papirus_apps_lutris_no-more-room-in-hell": {
       "category": "apps",
       "file": "lutris_no-more-room-in-hell.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["nmrih", "zombie", "survival", "horror", "game", "lutris", "silhouette", "dark"]
     },
     "papirus_apps_moderndeck": {
       "category": "apps",
