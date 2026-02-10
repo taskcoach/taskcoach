@@ -5070,113 +5070,135 @@
     "papirus_apps_cosmigo-pro-motion-icon": {
       "category": "apps",
       "file": "cosmigo-pro-motion-icon.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cosmigo", "pixel", "art", "animation", "sprite", "eye", "rainbow", "colorful"]
     },
     "papirus_apps_steam_icon_231160": {
       "category": "apps",
       "file": "steam_icon_231160.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "game", "survival", "helmet", "visor", "purple", "dark", "long"]
     },
     "papirus_apps_io.elementary.code": {
       "category": "apps",
       "file": "io.elementary.code.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["elementary", "code", "editor", "text", "braces", "programming", "teal", "developer"]
     },
     "papirus_apps_smw": {
       "category": "apps",
       "file": "smw.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mario", "smw", "super", "world", "platformer", "game", "red", "hat"]
     },
     "papirus_apps_org.ubuntubudgie.budgiewpreviews": {
       "category": "apps",
       "file": "org.ubuntubudgie.budgiewpreviews.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["budgie", "window", "previews", "ubuntu", "grid", "layout", "red", "overview"]
     },
     "papirus_apps_qtodotxt": {
       "category": "apps",
       "file": "qtodotxt.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["qtodotxt", "todo", "task", "checklist", "checkmark", "green", "text", "productivity"]
     },
     "papirus_apps_appimagekit-Freeter": {
       "category": "apps",
       "file": "appimagekit-Freeter.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["freeter", "productivity", "dashboard", "workspace", "organizer", "gray", "letter"]
     },
     "papirus_apps_photoshop": {
       "category": "apps",
       "file": "photoshop.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["photoshop", "adobe", "photo", "image", "editor", "graphics", "blue", "design"]
     },
     "papirus_apps_io.github.Pithos": {
       "category": "apps",
       "file": "io.github.Pithos.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["pithos", "pandora", "radio", "music", "note", "streaming", "blue", "audio"]
     },
     "papirus_apps_preferences-calendar-and-tasks": {
       "category": "apps",
       "file": "preferences-calendar-and-tasks.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["calendar", "tasks", "preferences", "schedule", "date", "red", "grid", "planner"]
     },
     "papirus_apps_aqualung": {
       "category": "apps",
       "file": "aqualung.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["aqualung", "audio", "music", "player", "headphones", "water", "blue", "droplet"]
     },
     "papirus_apps_org.gnome.Showtime": {
       "category": "apps",
       "file": "org.gnome.Showtime.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["showtime", "gnome", "video", "player", "play", "media", "colorful", "triangle"]
     },
     "papirus_apps_mullvad-vpn": {
       "category": "apps",
       "file": "mullvad-vpn.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mullvad", "vpn", "privacy", "security", "duck", "yellow", "network", "anonymous"]
     },
     "papirus_apps_com.heroicgameslauncher.hgl": {
       "category": "apps",
       "file": "com.heroicgameslauncher.hgl.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["heroic", "games", "launcher", "epic", "shield", "sword", "blue", "gaming"]
     },
     "papirus_apps_org.bitcoincore.bitcoin-qt": {
       "category": "apps",
       "file": "org.bitcoincore.bitcoin-qt.svg",
-      "sizes": [16, 22, 24, 32, 48, 64],
-      "duplicate_of": "apps/bitcoin.svg"
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "duplicate_of": "apps/bitcoin.svg",
+      "hints": ["bitcoin", "crypto", "wallet", "currency", "orange", "blockchain", "btc", "money"]
     },
     "papirus_apps_com.github.ronnydo.colorpicker": {
       "category": "apps",
       "file": "com.github.ronnydo.colorpicker.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["colorpicker", "color", "picker", "eyedropper", "dropper", "orange", "design", "sample"]
     },
     "papirus_apps_gnome-shell-extension-prefs": {
       "category": "apps",
       "file": "gnome-shell-extension-prefs.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gnome", "shell", "extension", "preferences", "puzzle", "plugin", "blue", "addon"]
     },
     "papirus_apps_com.jetbrains.RubyMine": {
       "category": "apps",
       "file": "com.jetbrains.RubyMine.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["rubymine", "jetbrains", "ruby", "ide", "programming", "code", "editor", "dark"]
     },
     "papirus_apps_io.github.realmazharhussain.GdmSettings": {
       "category": "apps",
       "file": "io.github.realmazharhussain.GdmSettings.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gdm", "settings", "login", "display", "manager", "gnome", "user", "gear"]
     },
     "papirus_apps_com.github.mubitosh.qrshare": {
       "category": "apps",
       "file": "com.github.mubitosh.qrshare.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["qrshare", "qr", "code", "share", "barcode", "scan", "black", "white"]
     },
     "papirus_apps_steam_icon_203770": {
       "category": "apps",
       "file": "steam_icon_203770.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["steam", "crusader", "kings", "strategy", "game", "shield", "cross", "gold"]
     },
     "papirus_apps_umbrello": {
       "category": "apps",
       "file": "umbrello.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["umbrello", "uml", "diagram", "model", "kde", "class", "red", "yellow"]
     },
     "papirus_apps_org.bluesabre.MenuLibre": {
       "category": "apps",
