@@ -7091,102 +7091,122 @@
     "papirus_apps_kate2": {
       "category": "apps",
       "file": "kate2.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kate", "text editor", "kde", "code", "bird", "programming", "advanced"]
     },
     "papirus_apps_org.kde.ark": {
       "category": "apps",
       "file": "org.kde.ark.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ark", "archive", "zip", "compress", "extract", "kde", "zipper"]
     },
     "papirus_apps_ignuit": {
       "category": "apps",
       "file": "ignuit.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ignuit", "flashcard", "memorize", "study", "learning", "cards", "education"]
     },
     "papirus_apps_applications-development-translation": {
       "category": "apps",
       "file": "applications-development-translation.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["translation", "localization", "language", "i18n", "development", "japanese", "l10n"]
     },
     "papirus_apps_com.github.kjlaw89.archetype": {
       "category": "apps",
       "file": "com.github.kjlaw89.archetype.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["archetype", "scaffold", "template", "generator", "development", "purple", "app"]
     },
     "papirus_apps_augur": {
       "category": "apps",
       "file": "augur.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["augur", "prediction", "market", "cryptocurrency", "ethereum", "blockchain", "betting"]
     },
     "papirus_apps_sage-notebook": {
       "category": "apps",
       "file": "sage-notebook.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["sage", "sagemath", "notebook", "mathematics", "computing", "polyhedron", "algebra"]
     },
     "papirus_apps_appimagekit-Cyan": {
       "category": "apps",
       "file": "appimagekit-Cyan.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cyan", "image editor", "color", "cmyk", "prepress", "appimage", "print"]
     },
     "papirus_apps_google-play": {
       "category": "apps",
       "file": "google-play.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["google play", "store", "android", "apps", "market", "play store", "download"]
     },
     "papirus_apps_org.xfce.xfburn": {
       "category": "apps",
       "file": "org.xfce.xfburn.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["xfburn", "disc", "burn", "cd", "dvd", "xfce", "fire", "iso"]
     },
     "papirus_apps_mx-broadcom-manager": {
       "category": "apps",
       "file": "mx-broadcom-manager.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["broadcom", "wireless", "driver", "wifi", "mx linux", "network", "manager"]
     },
     "papirus_apps_awesomebump": {
       "category": "apps",
       "file": "awesomebump.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["awesomebump", "texture", "bump map", "normal map", "3d", "material", "generator"]
     },
     "papirus_apps_skanpage": {
       "category": "apps",
       "file": "skanpage.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["skanpage", "scanner", "scan", "document", "kde", "ocr", "flatbed"]
     },
     "papirus_apps_texmacs": {
       "category": "apps",
       "file": "texmacs.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["texmacs", "tex", "scientific", "editor", "document", "latex", "typesetting"]
     },
     "papirus_apps_lutris_grim-fandango-remastered": {
       "category": "apps",
       "file": "lutris_grim-fandango-remastered.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["grim fandango", "game", "adventure", "skull", "lucasarts", "lutris", "remastered"]
     },
     "papirus_apps_io.itch.azagaya.Laigter": {
       "category": "apps",
       "file": "io.itch.azagaya.Laigter.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["laigter", "normal map", "2d", "texture", "lighting", "flame", "game dev"]
     },
     "papirus_apps_org.gnome.PowerStats": {
       "category": "apps",
       "file": "org.gnome.PowerStats.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["power", "statistics", "battery", "lightning", "energy", "gnome", "info"]
     },
     "papirus_apps_commix": {
       "category": "apps",
       "file": "commix.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["commix", "security", "injection", "syringe", "pentest", "exploit", "hacking"]
     },
     "papirus_apps_broforce": {
       "category": "apps",
       "file": "broforce.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["broforce", "game", "action", "platformer", "military", "star", "shooter"]
     },
     "papirus_apps_4kstogram": {
       "category": "apps",
       "file": "4kstogram.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["4k stogram", "instagram", "download", "camera", "photo", "social media", "backup"]
     },
     "papirus_apps_agentdesktop": {
       "category": "apps",
