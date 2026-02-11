@@ -2,6 +2,7 @@
 
 ## Table of Contents
 
+- [TODO](#todo)
 1. [Overview](#overview)
    - [SSOT Principle: Scheduler vs Events](#ssot-principle-scheduler-vs-events)
 2. [Architecture](#architecture)
@@ -10,6 +11,49 @@
 5. [Performance Considerations](#performance-considerations)
 6. [Historical Context](#historical-context)
 7. [Benefits of New Architecture](#benefits-of-new-architecture)
+
+---
+
+## TODO
+
+1. **Review: move recursive priority to scheduler.** Currently, recursive
+   priority is computed on-demand by `Task.priority(recursive=True)` and
+   notifications are triggered inline — the priority callback walks all
+   ancestors, and the completion callback explicitly notifies the parent.
+   This is a derived value with multiple inputs, similar to stored status,
+   and may be better as a scheduler-computed volatile Attribute.
+
+   **Recursive priority rules:**
+   - A task's recursive priority = `max(own priority, max of children's
+     recursive priorities)`
+   - Only non-completed children are included (completed children are
+     excluded from the max)
+   - The calculation walks the full subtree recursively
+
+   **Inputs that affect recursive priority:**
+   - Own priority changes (`setPriority`)
+   - Child priority changes (any descendant)
+   - Child completion/uncompletion (`setCompletionDateTime`) — completed
+     children are excluded from the recursive max
+   - Child added/removed (structural change to subtree)
+
+   **Current notification sites:**
+   - `_onPriorityChanged` callback: notifies self + all ancestors
+   - `_onCompletionDateTimeChanged` callback: notifies parent
+     via `event.addSource` on parent
+
+   **Scheduler approach:** store `recursivePriority` as a volatile
+   Attribute on each task, recomputed by `ComputeStyles._computeForObject()`.
+   The Attribute equality check suppresses notifications when the value
+   hasn't changed. Removes cross-concern coupling from completion callback.
+   Same 1-second staleness tradeoff as stored status.
+
+   **Natural cascade (no recursive search):** each task computes its
+   recursive priority from its own priority and its direct children's
+   already-stored recursive priorities — `max(own, max of children's
+   stored recursivePriority)`. The scheduler processes all tasks each
+   tick, so values propagate upward naturally. No tree walk needed;
+   each task only reads its immediate children's stored values.
 
 ---
 

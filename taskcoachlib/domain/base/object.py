@@ -538,19 +538,19 @@ class Object(SynchronizedObject):
 
     @classmethod
     def derivedFgColorChangedEventType(class_):
-        return "pubsub.derived.fgColor"
+        return "derived.fgColor"
 
     @classmethod
     def derivedBgColorChangedEventType(class_):
-        return "pubsub.derived.bgColor"
+        return "derived.bgColor"
 
     @classmethod
     def derivedIconChangedEventType(class_):
-        return "pubsub.derived.icon"
+        return "derived.icon"
 
     @classmethod
     def derivedFontChangedEventType(class_):
-        return "pubsub.derived.font"
+        return "derived.font"
 
     # --- Effective SSOT Getters ---
 
@@ -627,19 +627,19 @@ class Object(SynchronizedObject):
 
     @classmethod
     def effectiveFgColorChangedEventType(class_):
-        return "pubsub.effective.fgColor"
+        return "effective.fgColor"
 
     @classmethod
     def effectiveBgColorChangedEventType(class_):
-        return "pubsub.effective.bgColor"
+        return "effective.bgColor"
 
     @classmethod
     def effectiveIconChangedEventType(class_):
-        return "pubsub.effective.icon"
+        return "effective.icon"
 
     @classmethod
     def effectiveFontChangedEventType(class_):
-        return "pubsub.effective.font"
+        return "effective.font"
 
     @classmethod
     def modificationEventTypes(class_):

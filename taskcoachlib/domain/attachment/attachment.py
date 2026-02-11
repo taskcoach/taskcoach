@@ -20,8 +20,8 @@ import os
 import urllib.parse
 from taskcoachlib import patterns, mailer
 from taskcoachlib.domain import base
+from taskcoachlib.domain.base.attribute import Attribute
 from taskcoachlib.tools import openfile
-from pubsub import pub
 from taskcoachlib.domain.note.noteowner import NoteOwner
 from functools import total_ordering
 
@@ -81,7 +81,7 @@ class Attachment(base.Object, NoteOwner):
             filename = os.path.basename(location)
             kwargs["subject"] = os.path.splitext(filename)[0] or location
         super().__init__(*args, **kwargs)
-        self.__location = location
+        self.__location = Attribute(location, self, self._onLocationChanged)
         # Note: Effective appearance is computed by ComputeStyles polling
 
     def data(self):
@@ -93,19 +93,18 @@ class Attachment(base.Object, NoteOwner):
         pass
 
     def location(self):
-        return self.__location
+        return self.__location.get()
 
-    def setLocation(self, location):
-        if location != self.__location:
-            self.__location = location
-            self.markDirty()
-            pub.sendMessage(
-                self.locationChangedEventType(), newValue=location, sender=self
-            )
+    def setLocation(self, location, event=None):
+        self.__location.set(location, event=event)
+
+    def _onLocationChanged(self, event):
+        self.markDirty()
+        event.addSource(self, type=self.locationChangedEventType())
 
     @classmethod
     def locationChangedEventType(class_):
-        return "pubsub.attachment.location"
+        return "attachment.location"
 
     @classmethod
     def monitoredAttributes(class_):
@@ -140,7 +139,7 @@ class Attachment(base.Object, NoteOwner):
             super().__setstate__(state, event=event)
         except AttributeError:
             pass
-        self.setLocation(state["location"])
+        self.setLocation(state["location"], event=event)
 
     def __getcopystate__(self):
         # Don't include id and creationDateTime - copies should get new ones

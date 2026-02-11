@@ -2940,7 +2940,7 @@ class PathPage(ScrolledPage):
         self._iconSubscribed = True
         self.registerObserver(
             self._onEffectiveIconChanged,
-            eventType="pubsub.effective.icon"
+            eventType="effective.icon"
         )
 
     def _onEffectiveIconChanged(self, event):

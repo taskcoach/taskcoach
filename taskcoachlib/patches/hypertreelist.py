@@ -1735,6 +1735,22 @@ class TreeListItem(GenericTreeItem):
             self._col_images[column] = image
 
 
+    def SetImages(self, column, images):
+        """Sets multiple image indices for a column (for multi-icon display).
+
+        :param `column`: column index;
+        :param `images`: list of image indices.
+        """
+        if not hasattr(self, '_multiImages'):
+            self._multiImages = {}
+        self._multiImages[column] = list(images)
+
+    def GetImages(self, column):
+        """Returns the list of image indices for a column, or empty list."""
+        if not hasattr(self, '_multiImages'):
+            return []
+        return self._multiImages.get(column, [])
+
     def GetTextX(self):
         """ Returns the `x` position of the item text. """
 
@@ -3115,6 +3131,7 @@ class TreeListMainWindow(CustomTreeCtrl):
             dc.SetClippingRegion(x_colstart, item.GetY(), col_w, total_h) # only within column
 
             image = _NO_IMAGE
+            multi_images = []
             x = image_w = wcheck = hcheck = 0
 
             if i == self.GetMainColumn():
@@ -3135,9 +3152,13 @@ class TreeListMainWindow(CustomTreeCtrl):
 
             else:
                 x = x_colstart + _MARGIN
-                image = item.GetImage(column=i)
+                multi_images = item.GetImages(i)
+                if not multi_images:
+                    image = item.GetImage(column=i)
 
-            if image != _NO_IMAGE:
+            if multi_images:
+                image_w = (self._imgWidth + 1) * len(multi_images) + _MARGIN
+            elif image != _NO_IMAGE:
                 image_w = self._imgWidth + _MARGIN
 
             # honor text alignment
@@ -3254,7 +3275,15 @@ class TreeListMainWindow(CustomTreeCtrl):
 
             dc.SetBackgroundMode(wx.TRANSPARENT)
 
-            if image != _NO_IMAGE:
+            if multi_images:
+                y = item.GetY() + img_extraH
+                imglist = self._imageListNormal if item.IsEnabled() else self._grayedImageList
+                draw_x = x
+                for img_idx in multi_images:
+                    if img_idx >= 0:
+                        imglist.Draw(img_idx, dc, draw_x, y, wx.IMAGELIST_DRAW_TRANSPARENT)
+                    draw_x += self._imgWidth + 1
+            elif image != _NO_IMAGE:
                 y = item.GetY() + img_extraH
                 if wcheck:
                     x += wcheck

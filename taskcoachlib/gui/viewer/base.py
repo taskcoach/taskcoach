@@ -1130,6 +1130,13 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
     def hasColumnImages(self, column):
         return self.visibleColumns()[column].hasImages()
 
+    def getItemMultiImages(self, item, column=0):
+        column = self.visibleColumns()[column]
+        return column.multiImageIndices(item)
+
+    def hasColumnMultiImages(self, column):
+        return self.visibleColumns()[column].hasMultiImages()
+
     def subjectImageIndices(self, item):
         normalIcon = item.icon(recursive=True)
         selectedIcon = item.selectedIcon(recursive=True) or normalIcon

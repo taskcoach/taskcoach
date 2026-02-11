@@ -1877,6 +1877,7 @@ class LanguagePage(SettingsPage):
             self._restartWarning.SetLabel(self._restartWarningBase)
             self._restartWarning.SetForegroundColour(self._restartWarningDefaultColor)
         self._restartWarning.Refresh()
+        self.Layout()
 
     def _updateLocaleWarning(self):
         """Show or hide the locale warning based on selected language's locale availability."""
@@ -1885,11 +1886,7 @@ class LanguagePage(SettingsPage):
         selected_lang = self._getSelectedLanguageCode()
         showWarning = not i18n.isLocaleAvailable(selected_lang)
         self._localeWarning.Show(showWarning)
-        # Re-layout the parent panel
-        parent = self._localeWarning.GetParent()
-        if parent:
-            parent.Layout()
-            parent.Fit()
+        self.Layout()
 
     def ok(self):
         super().ok()
@@ -2037,11 +2034,9 @@ class StatusesPage(SettingsPage):
 
     def ok(self):
         # Save priority values to settings
-        from taskcoachlib.domain.task import status as task_status
         for setting, ctrl in self._priorityChoices:
             value = str(ctrl.GetSelection() + 1)
             self.set("statussortpriority", setting, value)
-        task_status.loadSortPrioritiesFromSettings(self.settings)
         pub.sendMessage("settings.statussortpriority.changed")
         super().ok()
 

@@ -385,6 +385,11 @@ class TreeListCtrl(
             item.SetText(column_index, text)
 
     def _refreshImage(self, item, domain_object, column_index, check=False):
+        if self.__adapter.hasColumnMultiImages(column_index):
+            images = self.__adapter.getItemMultiImages(domain_object, column_index)
+            if not check or (check and images != item.GetImages(column_index)):
+                item.SetImages(column_index, images)
+            return
         images = self.__adapter.getItemImages(domain_object, column_index)
         for which, image in list(images.items()):
             image = image if image >= 0 else -1

@@ -483,10 +483,6 @@ class Application(object, metaclass=patterns.Singleton):
         # 5. Acquire INI lock (needs wxApp for error dialog)
         self.settings.acquire_ini_lock()
 
-        # 5b. Load status sort priorities from settings
-        from taskcoachlib.domain.task import status as task_status
-        task_status.loadSortPrioritiesFromSettings(self.settings)
-
         # 6. Continue with rest of initialization
         self.init(**kwargs)
 
@@ -686,6 +682,16 @@ Break the lock?"""
     def __init_language(self):
         """Initialize the current translation."""
         from taskcoachlib import i18n
+        from taskcoachlib.meta.debug import log_step
+
+        if i18n.Translator.hasInstance():
+            log_step("FATAL ERROR: Translator already created before __init_language(). "
+                     "A module-level _() call ran before language was initialized — "
+                     "the user's language preference was silently ignored. "
+                     "This is a programming error — fix the initialization sequence "
+                     "so nothing calls _() before __init_language().",
+                     prefix="i18n")
+            sys.exit(1)
 
         i18n.Translator(self.determine_language(self._options, self.settings))
 

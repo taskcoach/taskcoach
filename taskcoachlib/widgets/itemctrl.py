@@ -418,6 +418,9 @@ class Column(object):
             kwargs.pop("imageIndicesCallback", self.defaultImageIndices)
             or self.defaultImageIndices
         )
+        self.__multiImageIndicesCallback = kwargs.pop(
+            "multiImageIndicesCallback", None
+        )
         # NB: because the header image is needed for sorting a fixed header
         # image cannot be combined with a sortable column
         self.__headerImageIndex = kwargs.pop("headerImageIndex", -1)
@@ -478,7 +481,15 @@ class Column(object):
         return self.__imageIndicesCallback(*args, **kwargs)
 
     def hasImages(self):
-        return self.__hasImages
+        return self.__hasImages or self.__multiImageIndicesCallback is not None
+
+    def hasMultiImages(self):
+        return self.__multiImageIndicesCallback is not None
+
+    def multiImageIndices(self, *args, **kwargs):
+        if self.__multiImageIndicesCallback:
+            return self.__multiImageIndicesCallback(*args, **kwargs)
+        return []
 
     def isEditable(self):
         return self.__editControlClass != None and self.__editCallback != None

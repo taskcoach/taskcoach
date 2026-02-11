@@ -49,9 +49,6 @@ class FileAttachmentTest(test.TestCase):
         self.attachment = attachment.FileAttachment("filename")
         self.events = []
 
-    def onEvent(self, newValue, sender):  # pylint: disable=W0221
-        self.events.append((newValue, sender))
-
     def openAttachment(self, filename):
         self.filename = filename
 
@@ -83,9 +80,9 @@ class FileAttachmentTest(test.TestCase):
         self.assertEqual(copy.location(), self.attachment.location())
 
     def testLocationNotification(self):
-        pub.subscribe(self.onEvent, self.attachment.locationChangedEventType())
+        self.registerObserver(self.attachment.locationChangedEventType())
         self.attachment.setLocation("new location")
-        self.assertEqual([("new location", self.attachment)], self.events)
+        self.assertIn(self.attachment, self.events[0].sources())
 
     def testModificationEventTypes(self):
         Attachment = attachment.Attachment

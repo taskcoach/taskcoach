@@ -143,7 +143,7 @@ Higher priority wins. Default is 0.
 |------|---------|---------|
 | `effectiveXxx()` | value | Actual value (None/"" if nothing set) |
 | `effectiveXxxDefault()` | default | System theme constant to use when value is empty |
-| `effectiveXxxSource()` | source | "Override", "[Category] Name", etc. |
+| `effectiveXxxSource()` | source | "[Override]", "[Category] Name", "[Tracking]", etc. |
 
 **Derived accessors** use separate methods:
 
@@ -167,7 +167,7 @@ def effectiveFgColorDefault(self):
     return self.__effectiveFgColorDefault.get()
 
 def effectiveFgColorSource(self):
-    """Return effective foreground color source ("Override", "[Category] Name", etc)."""
+    """Return effective foreground color source ("[Override]", "[Category] Name", etc)."""
     return self.__effectiveFgColorSource.get()
 
 # DERIVED accessors (in object.py)
@@ -462,6 +462,25 @@ and guarantees correct ordering: status is always fresh when appearance values a
 The legacy cache is still cleared by `recomputeAppearance()` from ~15 call sites.
 To be removed after migration — stored fields eliminate the need for cache/invalidation.
 
+### 5. Derived/Effective Event Types Used Wrong Prefix — RESOLVED
+
+The derived and effective Attribute fields (on base `Object`, inherited by
+all domain types) had event type strings prefixed with `"pubsub."` — e.g.
+`"pubsub.derived.fgColor"`, `"pubsub.effective.icon"`. The Attribute
+callbacks correctly used `event.addSource()` (legacy Publisher dispatch),
+but the `"pubsub."` prefix caused the viewer's `__startObserving()` to
+subscribe via `pub.subscribe` (broadcast) instead of `registerObserver`
+(sender-filtered). The viewer never received these notifications because
+pypubsub and the legacy Publisher are separate dispatch systems.
+
+**Fix:** dropped the `"pubsub."` prefix from all 8 derived + 8 effective
+event type strings. The viewer now uses `registerObserver` for these types,
+correctly receiving `event.addSource()` notifications via sender-filtered
+dispatch. No callback or consumer changes were needed.
+
+See [ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md) §Signal Dispatch for the
+per-instance dispatch requirement and naming convention.
+
 ---
 
 ## Refactor: Single Source of Truth
@@ -531,6 +550,9 @@ every consumer to potentially trigger computation. The new pattern separates wri
    | Category cascade on load | category.py | ✓ Done (centralized in _computeEffectiveAppearance) |
    | Note effectiveXxx(explain) | note.py | ✓ Done |
    | Attachment effectiveXxx(explain) | attachment.py | ✓ Done |
+   | Tracking icon in derived/effective | appearance.py | ✓ Done (highest-priority derived, skips override) |
+   | Plural/singular icon transform | task.py | Will not migrate (intentionally kept in legacy `icon()` accessor) |
+   | Selected icon variant (open/closed folder) | task.py | Will not migrate (concept will be removed) |
 
 3. **Final cleanup:** Remove legacy `status()` cache, `__status` field, and the
    scattered `__status = None` invalidations. Remove duplicated logic from
@@ -665,7 +687,7 @@ Font          [font picker──────────────────
 
 ───────────────────────────────────────────────── ←── spans 3 cols
 Effective values          Source                   ←── title spans 2 cols, Source in col 2
-Icon          [bitmap]           Override
+Icon          [bitmap]           [Override]
 Foreground    [picker]           [Category] Work
 Background    [picker]           [Status] Active
 Font          [picker]           System Theme
@@ -682,7 +704,8 @@ Font          [picker]           System Theme
 - `[Task] Name` — from parent task
 - `[Note] Name` — from parent note
 - `[Status] StatusName` — from task status (e.g., Inactive, Active, Overdue)
-- `Override` — user set this value
+- `[Tracking]` — task is being tracked (effort in progress), icon only
+- `[Override]` — user set this value
 - `System Theme` — no value set, using system default (colors/fonts only)
 - `N/A` — no derived value (icons only - there is no "system theme" for icons)
 
@@ -692,18 +715,21 @@ Tasks **always** have derived values because they always have a status. The inhe
 
 ```
 Derived values (read-only display):
-├── Icon: categoryIcon() or statusIcon()
-├── Foreground: categoryForegroundColor() or statusFgColor()
-└── Background: categoryBackgroundColor() or statusBgColor()
+├── Icon: tracking > category > parent > status
+├── Foreground: category > parent > status
+├── Background: category > parent > status
+└── Font: category > parent > status
 
 Override values (editable):
-├── Icon: own icon set directly on task
+├── Icon: own icon set directly on task (skipped when tracking)
 ├── Foreground: own foreground color
 ├── Background: own background color
 └── Font: own font
 ```
 
 The status always provides a fallback, so derived values are never empty for tasks.
+Tracking icon (`clock_icon`) is the highest-priority derived source for icon — it
+also skips user overrides in the effective computation.
 
 ### Category Appearance
 
@@ -1002,8 +1028,9 @@ Tasks have `derivedXxx()` / `derivedXxxSource()` and `effectiveXxx()` / `effecti
    └── Source: "[Status] StatusName" (e.g., "[Status] Inactive", "[Status] Active")
 ```
 
-**`effectiveXxx()` is simple:** own override OR derivedXxx()
-- If own override set → Source: "Override"
+**`effectiveXxx()` is simple:** tracking (icon only) OR own override OR derivedXxx()
+- If tracking effort → Source: "[Tracking]" (skips override)
+- If own override set → Source: "[Override]"
 - Else → delegates to `derivedXxx()`
 
 **SSOT accessors** (defined as Attribute fields in base `Object`, written by `computeDerived()` and `computeEffective()`):
@@ -1029,7 +1056,8 @@ Tasks have `derivedXxx()` / `derivedXxxSource()` and `effectiveXxx()` / `effecti
 **Note:** Tasks always have status fallback, so derived values are never empty for Tasks.
 
 **Source label patterns:**
-- `"Override"` — user set this value directly
+- `"[Override]"` — user set this value directly
+- `"[Tracking]"` — task is being tracked (icon only, skips override)
 - `"[Category] WorkCategory"` — from a category's effective value
 - `"[Task] ParentTaskName"` — from parent task's effective value
 - `"[Status] Inactive"` — from task status (includes status name)

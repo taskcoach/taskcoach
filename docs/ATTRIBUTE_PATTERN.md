@@ -5,6 +5,7 @@ The domain model's change-detection and event-notification pattern.
 ## Index
 
 - [TODO](#todo)
+- [Signal Dispatch](#signal-dispatch)
 - [Overview](#overview)
 - [Attribute Class API](#attribute-class-api)
 - [SetAttribute Class API](#setattribute-class-api)
@@ -33,6 +34,103 @@ The domain model's change-detection and event-notification pattern.
    `wx.TextCtrl` (fires per-keystroke `EVT_TEXT`) — different migration
    path. See
    [Three-Layer Relationship](#three-layer-relationship), Layer 2.
+
+2. **Migrate signal dispatch to per-instance.** Some Attribute callbacks
+   (Task dates, percentage, duration; Effort fields) use pypubsub
+   (`pub.sendMessage`) which is topic-based broadcast — every subscriber
+   receives every object's changes. This is wrong for per-instance
+   Attribute signals. These fields should be migrated back to per-instance
+   dispatch (legacy `registerObserver` with `eventSource`, or a future
+   modern signal library). See [Signal Dispatch](#signal-dispatch).
+   **Done:** Task priority, Attachment location, and all 16
+   derived/effective appearance event types migrated to per-instance
+   dispatch (dropped `"pubsub."` prefix). **Remaining:** Task dates,
+   percentage, duration; Effort fields.
+
+---
+
+## Signal Dispatch
+
+Attribute change notifications must be **per-instance** — "this specific
+object's field changed" — not broadcast. An Attribute is always a field on
+a specific domain object. Subscribers (editors, viewers, sync handlers) care
+about specific objects, not all objects of a type.
+
+### Requirement: per-instance signals
+
+All Attribute callbacks must use **per-instance signal dispatch**: the
+subscriber connects to a specific sender, and the dispatch layer delivers
+only to subscribers of that sender. No subscriber should receive
+notifications from objects it did not subscribe to.
+
+This rules out topic-based broadcast systems (like pypubsub's
+`pub.sendMessage`) where every subscriber to a topic receives every
+notification regardless of sender, requiring handler-side filtering.
+
+### Current state (mixed, partially incorrect)
+
+The codebase has two signal dispatch systems:
+
+**Legacy Publisher** (`patterns.Publisher`, `registerObserver`/
+`notifyObservers`) — sender-filtered dispatch via a global routing table.
+Subscriber registers for a `(eventType, eventSource)` pair; dispatch does
+a dict lookup on that key and delivers only to matching observers.
+Observers registered for other senders are never touched — O(1) lookup,
+not iteration over all observers. Used by the base `Object` fields
+(subject, description, appearance, derived/effective) and collection fields
+(categories, categorizables).
+
+Note: the Publisher is a **Singleton** (one global registry), not true
+per-instance signals (where the signal object lives on the instance itself,
+e.g. `task.icon_changed.connect(handler)`). The difference is structural —
+a global routing table vs per-instance subscriber lists — not behavioral.
+The dispatch semantics are per-instance: only matching subscribers are
+invoked, no subscriber has to check "is this message for me?"
+
+**pypubsub** (`pub.sendMessage`/`pub.subscribe`) — topic-based broadcast.
+All subscribers to a topic receive all messages regardless of sender. No
+per-sender filtering at dispatch; subscribers must check the `sender` kwarg
+in the handler to decide whether to act. Used by some Task fields (dates,
+percentage, duration) and Effort fields that were migrated circa 2012.
+The migration was intended to replace the legacy system entirely but
+stalled partway.
+
+The pypubsub migration was motivated by API simplicity and weak reference
+support, but it introduced broadcast dispatch for what are inherently
+per-instance signals. This is architecturally wrong: an editor showing one
+task receives (and discards) notifications from every other task in the
+system.
+
+### Target architecture
+
+1. **Immediate:** new Attribute fields use the legacy Publisher with
+   sender-filtered `eventSource` dispatch. Dispatch semantics are correct
+   (only matching subscribers called), even though the implementation is a
+   global routing table rather than true per-instance signal objects.
+
+2. **Future:** migrate all signal dispatch to a modern signal library
+   following the Qt signals/slots pattern (e.g. Blinker or psygnal). These
+   use true per-instance signals — the signal object lives on the instance
+   (`task.icon_changed.connect(handler)`), no global registry. This would
+   replace both the legacy Publisher and pypubsub with a single system that
+   supports per-sender subscription natively, weak references, and a clean
+   API.
+
+3. **Revert pypubsub fields:** the Task and Effort fields currently using
+   `pub.sendMessage` should be migrated back to sender-filtered dispatch
+   (either legacy Publisher or the future signal library). pypubsub should
+   be removed as a dependency once all fields are migrated.
+
+### Naming convention
+
+Event type strings prefixed `"pubsub."` were introduced during the
+pypubsub migration. The viewer's `__startObserving()` in `base.py` uses
+this prefix to choose dispatch system: `"pubsub."` → `pub.subscribe`,
+otherwise → `registerObserver`.
+
+New event types should **not** use the `"pubsub."` prefix. They should use
+the legacy Publisher dispatch (per-instance) until the future signal library
+migration.
 
 ---
 
@@ -119,7 +217,8 @@ Clean separation between the setter and the callback:
 
 Three complexity levels of callbacks:
 
-**Notification callback** — fires `pub.sendMessage`, `markDirty`,
+**Notification callback** — fires change signal (see
+[Signal Dispatch](#signal-dispatch)), `markDirty`,
 `recomputeAppearance`. Example: `_onDueDateTimeChanged`,
 `_onPlannedStartDateTimeChanged`.
 
@@ -220,12 +319,15 @@ synchronization. Documented in DURATION_CALCULATIONS.md section 0.2.
 ### Layer 2 Requirement
 
 Every persisted Attribute field shown in an editor needs a corresponding
-pubsub subscription to handle external domain changes. This is either:
+signal subscription to handle external domain changes. This is either:
 
 - **AttributeSync** — for fields with a control that supports
   GetValue/SetValue and a corresponding edit command.
-- **Manual pub.subscribe** — for fields with custom controls (dropdowns,
-  checkboxes) where AttributeSync doesn't fit directly.
+- **Manual signal subscription** — for fields with custom controls
+  (dropdowns, checkboxes) where AttributeSync doesn't fit directly.
+  Currently a mix of `registerObserver` (legacy) and `pub.subscribe`
+  (pypubsub) — see [Signal Dispatch](#signal-dispatch) for target
+  architecture.
 
 Without Layer 2, the Attribute pattern is incomplete: the domain notifies
 correctly, but no UI listens.

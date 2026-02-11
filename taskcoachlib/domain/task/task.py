@@ -99,7 +99,7 @@ class Task(
         mode_map = {"todue": "adjdue", "fromstart": "adjstart"}
         self.__plannedDurationMode = Attribute(mode_map.get(plannedDurationMode, plannedDurationMode) or "implicit", self, self._onPlannedDurationModeChanged)
         self._efforts = efforts or []
-        self.__priority = priority
+        self.__priority = Attribute(priority, self, self._onPriorityChanged)
         self.__hourlyFee = hourlyFee
         self.__fixedFee = fixedFee
         self.__reminder = reminder or maxDateTime
@@ -159,7 +159,7 @@ class Task(
         self.setBudget(state["budget"])
         self.setPlannedDuration(state.get("plannedDuration", date.TimeDelta()), event=event)
         self.setPlannedDurationMode(state.get("plannedDurationMode", "implicit"), event=event)
-        self.setPriority(state["priority"])
+        self.setPriority(state["priority"], event=event)
         self.setHourlyFee(state["hourlyFee"])
         self.setFixedFee(state["fixedFee"])
         self.setPrerequisites(state["prerequisites"])
@@ -183,7 +183,7 @@ class Task(
                 budget=self.__budget,
                 plannedDuration=self.__plannedDuration.get(),
                 plannedDurationMode=self.__plannedDurationMode.get(),
-                priority=self.__priority,
+                priority=self.__priority.get(),
                 hourlyFee=self.__hourlyFee,
                 fixedFee=self.__fixedFee,
                 recurrence=self.__recurrence.copy(),
@@ -208,7 +208,7 @@ class Task(
                 budget=self.__budget,
                 plannedDuration=self.__plannedDuration.get(),
                 plannedDurationMode=self.__plannedDurationMode.get(),
-                priority=self.__priority,
+                priority=self.__priority.get(),
                 hourlyFee=self.__hourlyFee,
                 fixedFee=self.__fixedFee,
                 recurrence=self.__recurrence.copy(),
@@ -320,7 +320,7 @@ class Task(
         ):
             self.sendBudgetLeftChangedMessage()
         if childPriority > self.priority():
-            self.sendPriorityChangedMessage()
+            event.addSource(self, type=self.priorityChangedEventType())
         isTracking = self.isBeingTracked(recursive=True)
         if wasTracking and not isTracking:
             self.sendTrackingChangedMessage(tracking=False)
@@ -556,10 +556,11 @@ class Task(
         elif self.percentageComplete() == 100:
             self.setPercentageComplete(0)
 
-        # Notify parent of priority change (not a cascade - just notification)
+        # Notify parent of recursive priority change (child completion
+        # changes which children are included in the recursive max)
         parent = self.parent()
         if parent:
-            parent.sendPriorityChangedMessage()
+            event.addSource(parent, type=parent.priorityChangedEventType())
 
         self.markDirty()
         self.recomputeAppearance()
@@ -1490,32 +1491,21 @@ class Task(
                 for child in self.children()
                 if not child.completed()
             ]
-            return max(childPriorities + [self.__priority])
+            return max(childPriorities + [self.__priority.get()])
         else:
-            return self.__priority
+            return self.__priority.get()
 
-    def setPriority(self, priority):
-        if priority == self.__priority:
-            return
-        self.__priority = priority
-        self.sendPriorityChangedMessage()
+    def setPriority(self, priority, event=None):
+        self.__priority.set(priority, event=event)
 
-    def sendPriorityChangedMessage(self):
-        pub.sendMessage(
-            self.priorityChangedEventType(),
-            newValue=self.priority(),
-            sender=self,
-        )
+    def _onPriorityChanged(self, event):
+        event.addSource(self, type=self.priorityChangedEventType())
         for ancestor in self.ancestors():
-            pub.sendMessage(
-                ancestor.priorityChangedEventType(),
-                newValue=ancestor.priority(),
-                sender=ancestor,
-            )
+            event.addSource(ancestor, type=ancestor.priorityChangedEventType())
 
     @classmethod
     def priorityChangedEventType(class_):
-        return "pubsub.task.priority"
+        return "task.priority"
 
     @staticmethod
     def prioritySortFunction(**kwargs):

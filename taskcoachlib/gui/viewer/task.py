@@ -1421,6 +1421,18 @@ class TaskViewer(
                     **kwargs
                 ),
                 widgets.Column(
+                    "categoryIcons",
+                    _("Category icons"),
+                    task.Task.categoryAddedEventType(),
+                    task.Task.categoryRemovedEventType(),
+                    task.Task.appearanceChangedEventType(),
+                    width=self.getColumnWidth("categoryIcons"),
+                    alignment=wx.LIST_FORMAT_LEFT,
+                    multiImageIndicesCallback=self.categoryIconsImageIndices,
+                    renderCallback=lambda task: "",
+                    **kwargs
+                ),
+                widgets.Column(
                     "prerequisites",
                     _("Prerequisites"),
                     task.Task.prerequisitesChangedEventType(),
@@ -1925,6 +1937,12 @@ class TaskViewer(
                     viewer=self,
                 ),
                 uicommand.ViewColumn(
+                    menuText=_("Category &icons"),
+                    helpText=_("Show/hide category icons column"),
+                    setting="categoryIcons",
+                    viewer=self,
+                ),
+                uicommand.ViewColumn(
                     menuText=_("&Priority"),
                     helpText=_("Show/hide priority column"),
                     setting="priority",
@@ -2102,6 +2120,20 @@ class TaskViewer(
         iconName = task.statusIconName()
         index = self.imageIndex.get(iconName, -1)
         return {wx.TreeItemIcon_Normal: index}
+
+    def categoryIconsImageIndices(self, task):
+        """Return list of image indices for the task's category icons,
+        sorted by category stylePriority descending."""
+        cats = sorted(
+            task.categories(),
+            key=lambda c: c.stylePriority(),
+            reverse=True,
+        )
+        return [
+            self.imageIndex[c.effectiveIcon()]
+            for c in cats
+            if c.effectiveIcon() and c.effectiveIcon() in self.imageIndex
+        ]
 
     def onEditPlannedStartDateTime(self, item, newValue):
         keep_delta = self.settings.get("view", "datestied") == "startdue"

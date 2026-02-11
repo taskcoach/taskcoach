@@ -81,19 +81,19 @@ OVERRIDE_METHOD = {
 # =============================================================================
 
 def effectiveFgColorChangedEventType():
-    return "pubsub.effective.fgColor"
+    return "effective.fgColor"
 
 
 def effectiveBgColorChangedEventType():
-    return "pubsub.effective.bgColor"
+    return "effective.bgColor"
 
 
 def effectiveIconChangedEventType():
-    return "pubsub.effective.icon"
+    return "effective.icon"
 
 
 def effectiveFontChangedEventType():
-    return "pubsub.effective.font"
+    return "effective.font"
 
 
 EFFECTIVE_EVENT_TYPES = {
@@ -168,6 +168,10 @@ TYPE_DEFAULT_ICONS = {
     'Note': 'note_icon',
     'Attachment': 'paperclip_icon',
 }
+
+
+def _isBeingTracked(obj):
+    return hasattr(obj, 'isBeingTracked') and obj.isBeingTracked()
 
 
 def _getObjectType(obj):
@@ -245,10 +249,16 @@ def computeDerived(object_ref, field_type):
     source = FIELD_NO_VALUE_SOURCE[field_type]
 
     if obj_type == 'Task':
+        # Tracking icon: highest priority for icon field
+        if field_type == 'icon' and _isBeingTracked(object_ref):
+            value = "clock_icon"
+            source = "[Tracking]"
+
         # Task sources: categories → parent → status
-        value, src = _getFromCategories(object_ref, effective_getter)
-        if src:
-            source = src
+        if value is None:
+            value, src = _getFromCategories(object_ref, effective_getter)
+            if src:
+                source = src
 
         if value is None:
             value, src = _getFromParent(object_ref, obj_type, effective_getter)
@@ -337,9 +347,12 @@ def computeEffective(object_ref, field_type):
     override_value = override_method() if field_type == 'icon' else override_method(recursive=False)
 
     # Compute effective
-    if override_value:
+    if field_type == 'icon' and _isBeingTracked(object_ref):
+        effective_value = derived_value
+        effective_source = derived_source
+    elif override_value:
         effective_value = override_value
-        effective_source = "Override"
+        effective_source = "[Override]"
     else:
         effective_value = derived_value
         effective_source = derived_source
