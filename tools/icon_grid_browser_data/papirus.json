@@ -11431,137 +11431,164 @@
     "papirus_apps_org.laptop.TurtleArtActivity": {
       "category": "apps",
       "file": "org.laptop.TurtleArtActivity.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["turtleart", "turtle", "logo", "programming", "education", "draw", "coding"]
     },
     "papirus_apps_kwin": {
       "category": "apps",
       "file": "kwin.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kwin", "window", "manager", "kde", "compositor", "desktop", "frame"]
     },
     "papirus_apps_steam_icon_421170": {
       "category": "apps",
       "file": "steam_icon_421170.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["dungeons3", "dragon", "strategy", "dungeon", "monster", "steam", "game"]
     },
     "papirus_apps_pgadmin4": {
       "category": "apps",
       "file": "pgadmin4.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["pgadmin", "postgresql", "database", "elephant", "sql", "admin", "postgres"]
     },
     "papirus_apps_com.github.Bleuzen.FFaudioConverter": {
       "category": "apps",
       "file": "com.github.Bleuzen.FFaudioConverter.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["ffaudio", "converter", "audio", "ffmpeg", "format", "sound", "encode"]
     },
     "papirus_apps_resharper": {
       "category": "apps",
       "file": "resharper.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["resharper", "jetbrains", "dotnet", "csharp", "refactor", "ide", "code"]
     },
     "papirus_apps_clamav": {
       "category": "apps",
       "file": "clamav.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["clamav", "antivirus", "virus", "security", "scan", "malware", "protection"]
     },
     "papirus_apps_xonsh": {
       "category": "apps",
       "file": "xonsh.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["xonsh", "shell", "conch", "terminal", "python", "command", "cli"]
     },
     "papirus_apps_java-24-openjdk": {
       "category": "apps",
       "file": "java-24-openjdk.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["java", "openjdk", "coffee", "jdk", "runtime", "programming", "jvm"]
     },
     "papirus_apps_com.locomalito.abbayedesmorts": {
       "category": "apps",
       "file": "com.locomalito.abbayedesmorts.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["abbaye", "morts", "retro", "platformer", "cross", "pixel", "game"]
     },
     "papirus_apps_waveform11": {
       "category": "apps",
       "file": "waveform11.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["waveform", "tracktion", "daw", "audio", "music", "recording", "production"]
     },
     "papirus_apps_gambas3": {
       "category": "apps",
       "file": "gambas3.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gambas", "basic", "ide", "programming", "shrimp", "developer", "visual"]
     },
     "papirus_apps_org.scilab.Scilab": {
       "category": "apps",
       "file": "org.scilab.Scilab.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["scilab", "numerical", "computing", "math", "matlab", "science", "simulation"]
     },
     "papirus_apps_libreoffice7.5-chart": {
       "category": "apps",
       "file": "libreoffice7.5-chart.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["libreoffice", "chart", "graph", "bar", "data", "office", "visualization"]
     },
     "papirus_apps_qtoctave": {
       "category": "apps",
       "file": "qtoctave.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["octave", "numerical", "computing", "math", "matlab", "qt", "science"]
     },
     "papirus_apps_com.gitlab.coringao.cavestory-nx": {
       "category": "apps",
       "file": "com.gitlab.coringao.cavestory-nx.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["cavestory", "platformer", "indie", "retro", "adventure", "pixel", "game"]
     },
     "papirus_apps_aoi": {
       "category": "apps",
       "file": "aoi.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["aoi", "art-of-illusion", "3d", "modeling", "shapes", "render", "geometry"]
     },
     "papirus_apps_gcompris-edit": {
       "category": "apps",
       "file": "gcompris-edit.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gcompris", "edit", "wrench", "settings", "education", "configure", "tool"]
     },
     "papirus_apps_com.rafaelmardojai.WebfontKitGenerator": {
       "category": "apps",
       "file": "com.rafaelmardojai.WebfontKitGenerator.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["webfont", "font", "generator", "typography", "kit", "woff", "css"]
     },
     "papirus_apps_com.jetbrains.IntelliJ-IDEA-Ultimate": {
       "category": "apps",
       "file": "com.jetbrains.IntelliJ-IDEA-Ultimate.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["intellij", "idea", "jetbrains", "java", "ide", "ultimate", "developer"]
     },
     "papirus_apps_appimagekit-google-tasks-desktop": {
       "category": "apps",
       "file": "appimagekit-google-tasks-desktop.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["google", "tasks", "todo", "checklist", "reminder", "productivity", "appimage"]
     },
     "papirus_apps_indivisible": {
       "category": "apps",
       "file": "indivisible.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["indivisible", "rpg", "action", "dragon", "adventure", "monster", "game"]
     },
     "papirus_apps_key_bindings": {
       "category": "apps",
       "file": "key_bindings.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["keyboard", "shortcuts", "keybindings", "hotkey", "input", "settings", "keys"]
     },
     "papirus_apps_start-here-kde": {
       "category": "apps",
       "file": "start-here-kde.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kde", "start", "menu", "plasma", "launcher", "gear", "logo"]
     },
     "papirus_apps_latexila": {
       "category": "apps",
       "file": "latexila.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["latexila", "latex", "editor", "math", "document", "sigma", "typesetting"]
     },
     "papirus_apps_fbmessenger": {
       "category": "apps",
       "file": "fbmessenger.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["facebook", "messenger", "chat", "message", "social", "bubble", "meta"]
     },
     "papirus_apps_goobox": {
       "category": "apps",
       "file": "goobox.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["goobox", "cd", "music", "player", "ripper", "disc", "audio"]
     },
     "papirus_apps_servez": {
       "category": "apps",
