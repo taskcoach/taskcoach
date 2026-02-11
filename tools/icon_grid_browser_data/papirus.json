@@ -11593,47 +11593,56 @@
     "papirus_apps_servez": {
       "category": "apps",
       "file": "servez.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["servez", "server", "web", "http", "localhost", "mask", "hosting"]
     },
     "papirus_apps_mate-panel-fish": {
       "category": "apps",
       "file": "mate-panel-fish.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["mate", "fish", "wanda", "panel", "applet", "easter", "fun"]
     },
     "papirus_apps_gnome-nibbles": {
       "category": "apps",
       "file": "gnome-nibbles.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["nibbles", "snake", "gnome", "worm", "puzzle", "arcade", "game"]
     },
     "papirus_apps_pidgin": {
       "category": "apps",
       "file": "pidgin.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["pidgin", "messenger", "chat", "instant", "bubble", "im", "protocol"]
     },
     "papirus_apps_kup": {
       "category": "apps",
       "file": "kup.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["kup", "backup", "kde", "scheduler", "archive", "restore", "vault"]
     },
     "papirus_apps_org.freeciv.gtk322": {
       "category": "apps",
       "file": "org.freeciv.gtk322.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["freeciv", "civilization", "strategy", "globe", "turn-based", "empire", "game"]
     },
     "papirus_apps_org.gnome.Builder": {
       "category": "apps",
       "file": "org.gnome.Builder.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["gnome", "builder", "ide", "robot", "developer", "code", "programming"]
     },
     "papirus_apps_com.github.diegoivanme.plano": {
       "category": "apps",
       "file": "com.github.diegoivanme.plano.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["plano", "task", "planner", "organizer", "schedule", "calendar", "productivity"]
     },
     "papirus_apps_org.libreoffice.LibreOffice.math": {
       "category": "apps",
       "file": "org.libreoffice.LibreOffice.math.svg",
-      "sizes": [16, 22, 24, 32, 48, 64]
+      "sizes": [16, 22, 24, 32, 48, 64, 96, 128],
+      "hints": ["libreoffice", "math", "formula", "equation", "sqrt", "office", "editor"]
     },
     "papirus_apps_distributor-logo-parrot": {
       "category": "apps",
