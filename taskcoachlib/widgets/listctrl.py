@@ -214,6 +214,11 @@ class VirtualListCtrl(
         if self.curselection():
             self.Focus(self.GetFirstSelected())
 
+    def ensureSelectionVisible(self):
+        first = self.GetFirstSelected()
+        if first != -1:
+            self.EnsureVisible(first)
+
     def clear_selection(self):
         """Unselect all selected items."""
         for index in self.__curselection_indices():

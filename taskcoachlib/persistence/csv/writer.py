@@ -51,6 +51,7 @@ class CSVWriter(object):
             csvRows = generator.viewer2csv(
                 viewer, selectionOnly, separateDateAndTimeColumns, columns
             )
+        self.__fd.write("\ufeff")  # UTF-8 BOM for Excel compatibility
         csv.writer(self.__fd).writerows(csvRows)
         return len(csvRows) - 1  # Don't count header row
 

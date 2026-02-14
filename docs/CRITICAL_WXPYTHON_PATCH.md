@@ -471,6 +471,21 @@ If ALL items are checked ✓, the patch is working correctly!
 
 ---
 
+---
+
+## ⛔ Modification Policy
+
+**`hypertreelist.py` must NOT be modified beyond the documented background color patches above.**
+
+- The file is a patched copy of the upstream wxPython AGW widget
+- Only the two background color fixes (Issue #2081 and Issue #1898) are permitted
+- All behavioral extensions (scroll fixes, event handling, etc.) must live in our subclass code:
+  - `taskcoachlib/widgets/treectrl.py` — tree control subclass
+  - `taskcoachlib/gui/viewer/base.py` — viewer base class
+- **Reason:** Diverging from upstream makes future wxPython upgrades difficult. When wxPython 4.2.4+ is available, we need to be able to drop our patched copy entirely.
+
+---
+
 **⚠️ DO NOT REMOVE THIS PATCH UNTIL WXPYTHON 4.2.4+ IS AVAILABLE IN DEBIAN OR VIA PIP**
 
 Last verified working: 2025-12-14

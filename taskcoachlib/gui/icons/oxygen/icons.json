@@ -1,0 +1,82 @@
+{
+  "_comment": "Icons imported from Oxygen theme. See ICON_THEME_CATALOG.json for theme metadata.",
+  "icons": {
+    "oxygen_emotes_face-angel": {
+      "label": "Face Angel",
+      "file": "face-angel.png",
+      "hints": ["angel", "smiley", "halo", "innocent", "happy", "emoticon", "yellow", "good"],
+      "context": "emotes",
+      "sizes": [16]
+    },
+    "oxygen_emotes_face-raspberry": {
+      "label": "Face Raspberry",
+      "file": "face-raspberry.png",
+      "hints": ["raspberry", "tongue", "playful", "teasing", "silly", "emoticon", "cheeky", "smiley"],
+      "context": "emotes",
+      "sizes": [16]
+    },
+    "oxygen_emotes_face-plain": {
+      "label": "Face Plain",
+      "file": "face-plain.png",
+      "hints": ["neutral", "plain", "straight face", "flat", "meh", "emoticon", "expressionless", "smiley"],
+      "context": "emotes",
+      "sizes": [16]
+    },
+    "oxygen_emotes_face-smile": {
+      "label": "Face Smile",
+      "file": "face-smile.png",
+      "hints": ["smile", "happy", "friendly", "cheerful", "positive", "emoticon", "yellow", "smiley"],
+      "context": "emotes",
+      "sizes": [16]
+    },
+    "oxygen_emotes_face-surprise": {
+      "label": "Face Surprise",
+      "file": "face-surprise.png",
+      "hints": ["surprise", "shocked", "wow", "open mouth", "amazed", "emoticon", "gasp", "smiley"],
+      "context": "emotes",
+      "sizes": [16]
+    },
+    "oxygen_emotes_face-wink": {
+      "label": "Face Wink",
+      "file": "face-wink.png",
+      "hints": ["wink", "flirt", "smile", "playful", "cheeky", "emoticon", "one eye", "smiley"],
+      "context": "emotes",
+      "sizes": [16]
+    },
+    "oxygen_emotes_face-laugh": {
+      "label": "Face Laugh",
+      "file": "face-laugh.png",
+      "hints": ["laugh", "happy", "grin", "joy", "funny", "emoticon", "teeth", "smiley"],
+      "context": "emotes",
+      "sizes": [16]
+    },
+    "oxygen_emotes_face-kiss": {
+      "label": "Face Kiss",
+      "file": "face-kiss.png",
+      "hints": ["kiss", "lips", "love", "smooch", "red", "emoticon", "affection", "smiley"],
+      "context": "emotes",
+      "sizes": [16]
+    },
+    "oxygen_emotes_face-sad": {
+      "label": "Face Sad",
+      "file": "face-sad.png",
+      "hints": ["sad", "frown", "unhappy", "down", "disappointed", "emoticon", "upset", "smiley"],
+      "context": "emotes",
+      "sizes": [16]
+    },
+    "oxygen_emotes_face-smile-big": {
+      "label": "Face Smile Big",
+      "file": "face-smile-big.png",
+      "hints": ["grin", "big smile", "happy", "teeth", "cheerful", "emoticon", "beaming", "smiley"],
+      "context": "emotes",
+      "sizes": [16]
+    },
+    "oxygen_emotes_face-embarrassed": {
+      "label": "Face Embarrassed",
+      "file": "face-embarrassed.png",
+      "hints": ["embarrassed", "blushing", "surprised", "shocked", "red cheeks", "emoticon", "oops", "smiley"],
+      "context": "emotes",
+      "sizes": [16]
+    }
+  }
+}

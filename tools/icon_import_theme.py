@@ -21,7 +21,6 @@ Examples:
 
 import json
 import os
-import re
 import shutil
 import sys
 from pathlib import Path
@@ -36,42 +35,30 @@ except ImportError:
 # Path setup
 SCRIPT_DIR = Path(__file__).parent
 PROJECT_DIR = SCRIPT_DIR.parent
-DATA_DIR = SCRIPT_DIR / "icon_grid_browser_data"
+DISTILLERY_DIR = PROJECT_DIR.parent / "icon-distillery"
 ICONS_DIR = PROJECT_DIR / "taskcoachlib" / "gui" / "icons"
-EXTERNAL_ICONS_DIR = Path.home() / "Downloads" / "icons"
 
-# Theme source directories
+# Import shared utility from icon_theme_processor (unmodified copy from icon-distillery)
+from icon_theme_processor import save_json_compact_arrays
+
+# Theme source directories (icons and catalogs live in icon-distillery)
 THEME_SOURCES = {
-    "nuvola": EXTERNAL_ICONS_DIR / "nuvola",
-    "oxygen": EXTERNAL_ICONS_DIR / "oxygen-icons-master",
-    "papirus": EXTERNAL_ICONS_DIR / "papirus-icon-theme-master" / "Papirus",
-    "breeze": EXTERNAL_ICONS_DIR / "breeze-icons-master" / "icons",
+    "nuvola": DISTILLERY_DIR / "nuvola",
+    "oxygen": DISTILLERY_DIR / "oxygen",
+    "papirus": DISTILLERY_DIR / "papirus" / "Papirus",
+    "breeze": DISTILLERY_DIR / "breeze",
 }
 
 KNOWN_THEMES = list(THEME_SOURCES.keys())
 
 
-def save_json_compact_arrays(filepath, data):
-    """Save JSON with indent=2 but arrays on single lines."""
-    text = json.dumps(data, indent=2)
-    def collapse_array(match):
-        content = match.group(0)
-        collapsed = re.sub(r'\[\s+', '[', content)
-        collapsed = re.sub(r'\s+\]', ']', collapsed)
-        collapsed = re.sub(r',\s+', ', ', collapsed)
-        return collapsed
-    text = re.sub(r'\[\s*\n\s+[^\[\]]*?\s*\]', collapse_array, text)
-    with open(filepath, "w") as f:
-        f.write(text)
-
-
-def find_source_image(theme_source, category, filename, sizes):
+def find_source_image(theme_source, context, filename, sizes):
     """Find source image path, preferring smallest size for resize.
 
     Returns (path, size) tuple or (None, None) if not found.
     """
     for size in sorted(sizes):
-        path = theme_source / f"{size}x{size}" / category / filename
+        path = theme_source / f"{size}x{size}" / context / filename
         if path.exists():
             return path, size
     return None, None
@@ -103,8 +90,8 @@ def main():
         sys.exit(1)
 
     # Paths
-    tools_json_path = DATA_DIR / f"{theme}.json"
-    app_json_path = ICONS_DIR / f"{theme}.json"
+    tools_json_path = DISTILLERY_DIR / theme / "icons.json"
+    app_json_path = ICONS_DIR / theme / "icons.json"
     theme_source = THEME_SOURCES[theme]
 
     if not tools_json_path.is_file():
@@ -148,15 +135,15 @@ def main():
         print("ALL_DONE")
         return
 
-    # Get categories and create directories
-    categories = set()
+    # Get contexts and create directories
+    contexts = set()
     for icon_data in tools_icons.values():
-        if "category" in icon_data:
-            categories.add(icon_data["category"])
+        if "context" in icon_data:
+            contexts.add(icon_data["context"])
 
-    for category in sorted(categories):
-        cat_dir = ICONS_DIR / theme / f"{target_size}x{target_size}" / category
-        cat_dir.mkdir(parents=True, exist_ok=True)
+    for context in sorted(contexts):
+        ctx_dir = ICONS_DIR / theme / f"{target_size}x{target_size}" / context
+        ctx_dir.mkdir(parents=True, exist_ok=True)
 
     # Process one icon at a time
     processed = 0
@@ -166,15 +153,15 @@ def main():
             continue
 
         # Get required fields
-        category = icon_data.get("category")
+        context = icon_data.get("context")
         filename = icon_data.get("file")
         sizes = icon_data.get("sizes", [])
         name = icon_data.get("label")
         hints = icon_data.get("hints", [])
         is_duplicate = "duplicate_of" in icon_data
 
-        if not filename or not category:
-            print(f"ERROR: {icon_key} missing file or category - STOPPING")
+        if not filename or not context:
+            print(f"ERROR: {icon_key} missing file or context - STOPPING")
             sys.exit(1)
 
         if not name:
@@ -184,9 +171,8 @@ def main():
         # Build app JSON entry
         app_entry = {
             "label": name,
-            "category": category,
+            "context": context,
             "file": filename,
-            "source_sizes": sizes,
             "hints": hints,
         }
 
@@ -197,11 +183,11 @@ def main():
             action = "dup"
         else:
             # Primary: copy or resize image
-            dst_path = ICONS_DIR / theme / f"{target_size}x{target_size}" / category / filename
+            dst_path = ICONS_DIR / theme / f"{target_size}x{target_size}" / context / filename
 
             if target_size in sizes:
                 # Step 1: Direct copy image
-                src_path = theme_source / f"{target_size}x{target_size}" / category / filename
+                src_path = theme_source / f"{target_size}x{target_size}" / context / filename
                 if not src_path.exists():
                     print(f"ERROR: {icon_key} source not found: {src_path} - STOPPING")
                     sys.exit(1)
@@ -210,7 +196,7 @@ def main():
                 action = "copy"
             else:
                 # Step 1: Resize image from smallest available
-                src_path, src_size = find_source_image(theme_source, category, filename, sizes)
+                src_path, src_size = find_source_image(theme_source, context, filename, sizes)
                 if not src_path:
                     print(f"ERROR: {icon_key} no source found for resize - STOPPING")
                     sys.exit(1)

@@ -116,6 +116,26 @@ class ArtProvider(wx.ArtProvider):
     # wx.NullBitmap. Check icon picker and toolbar customization dialog.
     TRANSPARENT_EMPTY_ICON = "transparent_empty_icon"
 
+    def _resolve_theme_icon_path(self, artId, icon_data, icon_size):
+        """Resolve path for a theme icon via pre-computed paths lookup."""
+        theme = icon_data["theme"]
+        return icon_library.build_icon_path(theme, artId, icon_size)
+
+    def _resolve_legacy_icon_path(self, artId, size):
+        """Resolve path for a legacy icon (new format then flat format)."""
+        size_dir = "%dx%d" % (size[0], size[1])
+        new_icon_path = get_resource_path(
+            os.path.join('icons', size_dir, artId + '.png')
+        )
+        if os.path.exists(new_icon_path):
+            return new_icon_path
+        legacy_icon_path = get_resource_path(
+            os.path.join('icons', "%s%dx%d.png" % (artId, size[0], size[1]))
+        )
+        if os.path.exists(legacy_icon_path):
+            return legacy_icon_path
+        return None
+
     def _CreateBitmap(self, artId, artClient, size) -> wx.Bitmap:
         if not artId:
             return wx.NullBitmap
@@ -125,48 +145,33 @@ class ArtProvider(wx.ArtProvider):
             img.InitAlpha()
             return img.ConvertToBitmap()
 
-        icon_path = None
+        from taskcoachlib.meta.debug import log_step
         icon_size = size[0]  # Assume square icons
 
-        # Check if this is a theme icon (has theme/category/file in chooseableItems)
+        # Theme icon or legacy icon?
         icon_data = chooseableItems.get(artId)
         if icon_data and "theme" in icon_data and "file" in icon_data:
-            theme = icon_data["theme"]
-            category = icon_data.get("category", "")
-            filename = icon_data["file"]
-            icon_path = icon_library.build_icon_path(theme, category, filename, icon_size)
-
-        if not icon_path or not os.path.exists(icon_path):
-            # Legacy icon: try new format first, then flat format
-            size_dir = "%dx%d" % (size[0], size[1])
-            new_icon_path = get_resource_path(
-                os.path.join('icons', size_dir, artId + '.png')
-            )
-            if os.path.exists(new_icon_path):
-                icon_path = new_icon_path
-            else:
-                # Fall back to legacy flat format: "iconname16x16.png"
-                legacy_icon_path = get_resource_path(
-                    os.path.join('icons', "%s%dx%d.png" % (artId, size[0], size[1]))
-                )
-                if os.path.exists(legacy_icon_path):
-                    icon_path = legacy_icon_path
-
-        if icon_path and os.path.exists(icon_path):
-            image = wx.Image(icon_path)
-            if not image.IsOk():
-                from taskcoachlib.meta.debug import log_step
-                log_step(f"ERROR: Failed to load image: {icon_path}", prefix="ICON")
+            icon_path = self._resolve_theme_icon_path(artId, icon_data, icon_size)
+            if not icon_path or not os.path.exists(icon_path):
+                log_step(f"ERROR: Theme icon not found: '{artId}' size={icon_size}", prefix="ICON")
+                icon_library.mark_icon_failed(artId)
                 return wx.NullBitmap
-            bitmap = image.ConvertToBitmap()
-            if artClient == wx.ART_FRAME_ICON:
-                bitmap = self.convertAlphaToMask(bitmap)
-            return bitmap
+        else:
+            icon_path = self._resolve_legacy_icon_path(artId, size)
+            if not icon_path:
+                log_step(f"ERROR: Legacy icon not found: '{artId}' size={size}", prefix="ICON")
+                icon_library.mark_icon_failed(artId)
+                return wx.NullBitmap
 
-        # Log error if icon not found
-        from taskcoachlib.meta.debug import log_step
-        log_step(f"ERROR: Icon file not found for artId='{artId}' size={size}", prefix="ICON")
-        return wx.NullBitmap
+        image = wx.Image(icon_path)
+        if not image.IsOk():
+            log_step(f"ERROR: Failed to load image: {icon_path}", prefix="ICON")
+            icon_library.mark_icon_failed(artId)
+            return wx.NullBitmap
+        bitmap = image.ConvertToBitmap()
+        if artClient == wx.ART_FRAME_ICON:
+            bitmap = self.convertAlphaToMask(bitmap)
+        return bitmap
 
     @staticmethod
     def convertAlphaToMask(bitmap):
@@ -823,6 +828,9 @@ chooseableItems = {
 # Load theme icons and merge into chooseableItems
 for _theme in ["nuvola"]:  # Add more themes as they are imported
     chooseableItems.update(icon_library.get_chooseable_icons(_theme))
+
+# Build duplicate icon map after all themes are loaded
+icon_library._build_duplicate_map()
 
 
 itemImages = list(chooseableItems.keys()) + [

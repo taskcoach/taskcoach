@@ -43,7 +43,7 @@ After accepting the security warning, follow the installer prompts:
 For the portable version:
 
 1. Extract the `.zip` to any folder
-2. Run `TaskCoach.exe` from the extracted folder
+2. Run `TaskCoach.bat` from the extracted folder (or `TaskCoach.vbs` for silent launch without a console window)
 3. Your data is stored in the same folder, making it easy to move between computers
 
 ## Launching Task Coach

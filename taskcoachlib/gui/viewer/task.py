@@ -2023,6 +2023,11 @@ class TaskViewer(
 
     def onTreeListModeChanged(self, value):
         self.presentation().setTreeMode(value)
+        # Mode switch goes through Sorter.reset() which fires a sort event
+        # (not add/remove), so onPresentationChanged doesn't fire.
+        # Center on selected item explicitly.
+        if hasattr(self.widget, 'scrollToSelectionCentered'):
+            self.widget.scrollToSelectionCentered()
 
     # pylint: disable=W0621
 

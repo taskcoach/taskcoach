@@ -2228,8 +2228,8 @@ class IconsPage(SettingsPage):
         )
         self.addBooleanSetting(
             "iconpicker",
-            "search_include_category",
-            _("Include category in icon search"),
+            "search_include_context",
+            _("Include context in icon search"),
         )
         # Icon size dropdown - placeholder for future functionality
         sizeChoice = wx.Choice(self, choices=["16"])

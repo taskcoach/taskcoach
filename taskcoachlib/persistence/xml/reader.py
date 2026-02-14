@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from .. import sessiontempfile  # pylint: disable=F0401
 from taskcoachlib import meta, patterns
+from taskcoachlib.meta.debug import log_step
 from taskcoachlib.changes import ChangeMonitor
 from taskcoachlib.domain import (
     base,
@@ -730,22 +731,19 @@ class XMLReader(object):
             if "location" in node.attrib:
                 location = node.attrib["location"]
             else:
+                # Legacy inline attachments (base64 data embedded in XML)
+                # are no longer supported. Keep the attachment object but
+                # the file data is lost.
                 data_node = node.find("data")
-
-                if data_node is None:
-                    raise ValueError(
-                        "Neither location or data are defined "
-                        "for this attachment."
-                    )
-
-                data = self.__parse_text(data_node)
-                ext = data_node.attrib["extension"]
-
-                location = sessiontempfile.get_temp_file(suffix=ext)
-                open(location, "wb").write(data.decode("base64"))
-
-                if os.name == "nt":
-                    os.chmod(location, stat.S_IREAD)
+                ext = data_node.attrib.get("extension", "") if data_node is not None else ""
+                log_step(
+                    f"WARNING: Inline attachment '{subject}' — "
+                    f"embedded file data is not supported and will be "
+                    f"lost on save. Use a legacy 1.x version to extract "
+                    f"and save attachments before migrating",
+                    prefix="FILE",
+                )
+                location = f"(embedded {ext} — data not migrated)"
 
         return self.__save_modification_datetime(
             attachment.AttachmentFactory(
@@ -806,8 +804,13 @@ class XMLReader(object):
 
     @staticmethod
     def __parse_icon(text):
-        """Parse an icon name from the text, migrating deprecated names."""
-        return XMLReader._deprecated_icons.get(text, text)
+        """Parse an icon name from the text, migrating deprecated names
+        and resolving duplicate icons to their targets."""
+        icon_name = XMLReader._deprecated_icons.get(text, text)
+        if icon_name:
+            from taskcoachlib.gui.icons import icon_library
+            icon_name = icon_library.resolve_duplicate(icon_name)
+        return icon_name
 
     @classmethod
     def __parse_boolean(cls, text, default_value=None):

@@ -23,7 +23,7 @@ from taskcoachlib.meta.debug import log_step
 
 
 class _IconListCtrl(wx.ListCtrl):
-    """List control with 5 columns: Label (with icon), Hints, Theme, Category, Key."""
+    """List control with 5 columns: Label (with icon), Hints, Theme, Context, Key."""
 
     ICON_SIZE = 16
 
@@ -34,11 +34,11 @@ class _IconListCtrl(wx.ListCtrl):
         self._image_list = wx.ImageList(self.ICON_SIZE, self.ICON_SIZE)
         self.SetImageList(self._image_list, wx.IMAGE_LIST_SMALL)
 
-        # 5 columns: Label (with icon), Hints, Theme, Category, Key
+        # 5 columns: Label (with icon), Hints, Theme, Context, Key
         self.InsertColumn(0, _("Label"), width=200)
         self.InsertColumn(1, _("Hints"), width=250)
         self.InsertColumn(2, _("Theme"), width=70)
-        self.InsertColumn(3, _("Category"), width=80)
+        self.InsertColumn(3, _("Context"), width=80)
         self.InsertColumn(4, _("Key"), width=150)
 
         self._items = []
@@ -55,7 +55,7 @@ class _IconListCtrl(wx.ListCtrl):
         self.Bind(wx.EVT_KEY_DOWN, self._on_key_down)
 
     def SetItems(self, items):
-        """Set items: list of (key, label, bitmap, hints, theme, category, enabled) tuples."""
+        """Set items: list of (key, label, bitmap, hints, theme, context, enabled) tuples."""
         self._all_items = list(items)
         self._items = list(items)
         self._rebuild_list()
@@ -65,7 +65,7 @@ class _IconListCtrl(wx.ListCtrl):
         self.DeleteAllItems()
 
         for i, item in enumerate(self._items):
-            key, label, bmp, hints, theme, category, enabled = item
+            key, label, bmp, hints, theme, context, enabled = item
 
             # Add bitmap to image list if not already there
             if key not in self._image_map:
@@ -80,11 +80,11 @@ class _IconListCtrl(wx.ListCtrl):
                     idx = -1  # No image
                 self._image_map[key] = idx
 
-            # Insert row: Label (with icon), Hints, Theme, Category, Key
+            # Insert row: Label (with icon), Hints, Theme, Context, Key
             idx = self.InsertItem(i, label, self._image_map.get(key, -1))
             self.SetItem(idx, 1, hints or "")
             self.SetItem(idx, 2, theme or "")
-            self.SetItem(idx, 3, category or "")
+            self.SetItem(idx, 3, context or "")
             self.SetItem(idx, 4, key)
 
             # Grey out disabled items
@@ -121,14 +121,14 @@ class _IconListCtrl(wx.ListCtrl):
     def _matches_any_term(self, item, terms):
         """Return True if ANY term is found in item's searchable fields (OR search).
 
-        Searches key, label, hints. Theme and category are included based on
-        iconpicker preferences (search_include_theme, search_include_category).
+        Searches key, label, hints. Theme and context are included based on
+        iconpicker preferences (search_include_theme, search_include_context).
         """
         key = item[0].lower()
         label = item[1].lower()
         hints = item[3].lower()
         theme = item[4].lower()
-        category = item[5].lower()
+        context = item[5].lower()
 
         # Build searchable string based on preferences
         searchable = key + " " + label + " " + hints
@@ -136,8 +136,8 @@ class _IconListCtrl(wx.ListCtrl):
         settings = wx.GetApp().settings
         if settings.getboolean("iconpicker", "search_include_theme"):
             searchable += " " + theme
-        if settings.getboolean("iconpicker", "search_include_category"):
-            searchable += " " + category
+        if settings.getboolean("iconpicker", "search_include_context"):
+            searchable += " " + context
 
         return any(term in searchable for term in terms)
 
@@ -275,14 +275,14 @@ class _IconDialog(wx.Dialog):
 
     def _on_clear(self, event):
         """Clear button — select no icon (empty key)."""
-        # (key, label, bitmap, hints, theme, category, enabled)
+        # (key, label, bitmap, hints, theme, context, enabled)
         # Only key="" matters - consumer uses its own NO_ICON_LABEL for display
         self._selected_item = ("", "", None, "", "", "", True)
         self.EndModal(wx.ID_OK)
 
-    def _on_item_selected(self, key, label, bmp, hints, theme, category, enabled):
+    def _on_item_selected(self, key, label, bmp, hints, theme, context, enabled):
         if enabled:
-            self._selected_item = (key, label, bmp, hints, theme, category, enabled)
+            self._selected_item = (key, label, bmp, hints, theme, context, enabled)
             self.EndModal(wx.ID_OK)
 
 
@@ -373,10 +373,11 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
             # Join hints array into space-separated string for search
             hints = " ".join(item_data.get("hints", []))
             theme_label = icon_library.get_theme_label(theme_key)
-            category = item_data.get("category", "")
+            context_id = item_data.get("context", "")
+            context_label = icon_library.get_context_label(theme_key, context_id) if context_id else ""
             enabled = image_name not in self._excluded_icons
-            # (key, label, bitmap, hints, theme, category, enabled)
-            item = (image_name, label, bitmap, hints, theme_label, category, enabled)
+            # (key, label, bitmap, hints, theme, context, enabled)
+            item = (image_name, label, bitmap, hints, theme_label, context_label, enabled)
             self._items.append(item)
             self._items_dict[image_name] = item
 
@@ -524,7 +525,7 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
     def _setSelectionByValue(self, newValue):
         if newValue == "":
             if self._noIcon:
-                # No icon selected - (key, label, bitmap, hints, theme, category, enabled)
+                # No icon selected - (key, label, bitmap, hints, theme, context, enabled)
                 self._set_current(("", self.NO_ICON_LABEL, None, "", "", "", True))
             else:
                 log_step("ERROR: Received empty key but noIcon=False - should not happen", prefix="ICON")

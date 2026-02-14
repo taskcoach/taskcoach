@@ -1,0 +1,38 @@
+{
+  "actions": {
+    "xdg_context": "Actions",
+    "context_label": "Actions"
+  },
+  "apps": {
+    "xdg_context": "Applications",
+    "context_label": "Applications"
+  },
+  "categories": {
+    "xdg_context": "Categories",
+    "context_label": "Categories"
+  },
+  "devices": {
+    "xdg_context": "Devices",
+    "context_label": "Devices"
+  },
+  "emblems": {
+    "xdg_context": "Emblems",
+    "context_label": "Emblems"
+  },
+  "filesystems": {
+    "xdg_context": "FileSystems",
+    "context_label": "FileSystems"
+  },
+  "mimetypes": {
+    "xdg_context": "MimeTypes",
+    "context_label": "MimeTypes"
+  },
+  "places": {
+    "xdg_context": "Places",
+    "context_label": "Places"
+  },
+  "status": {
+    "xdg_context": "Status",
+    "context_label": "Status"
+  }
+}

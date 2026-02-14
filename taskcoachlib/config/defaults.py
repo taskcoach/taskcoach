@@ -668,7 +668,7 @@ defaults = {
         "theme_breeze": "True",
         # Search options
         "search_include_theme": "False",
-        "search_include_category": "False",
+        "search_include_context": "False",
     },
 }
 

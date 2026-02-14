@@ -1,0 +1,46 @@
+{
+  "actions": {
+    "xdg_context": "Actions",
+    "context_label": "Actions"
+  },
+  "animations": {
+    "xdg_context": "Animations",
+    "context_label": "Animations"
+  },
+  "apps": {
+    "xdg_context": "Applications",
+    "context_label": "Applications"
+  },
+  "categories": {
+    "xdg_context": "Categories",
+    "context_label": "Categories"
+  },
+  "devices": {
+    "xdg_context": "Devices",
+    "context_label": "Devices"
+  },
+  "emblems": {
+    "xdg_context": "Emblems",
+    "context_label": "Emblems"
+  },
+  "emotes": {
+    "xdg_context": "Emotes",
+    "context_label": "Emotes"
+  },
+  "international": {
+    "xdg_context": "International",
+    "context_label": "International"
+  },
+  "mimetypes": {
+    "xdg_context": "MimeTypes",
+    "context_label": "MimeTypes"
+  },
+  "places": {
+    "xdg_context": "Places",
+    "context_label": "Places"
+  },
+  "status": {
+    "xdg_context": "Status",
+    "context_label": "Status"
+  }
+}

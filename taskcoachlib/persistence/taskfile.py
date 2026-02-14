@@ -507,6 +507,9 @@ class TaskFile(patterns.Observer):
                 xml.ChangesXMLWriter(
                     open(self.filename() + ".delta", "wb")
                 ).write(self.__changes)
+
+            # Validate icon references after loading all objects
+            self._validate_icons()
         except Exception:
             self.setFilename("")
             raise
@@ -515,6 +518,20 @@ class TaskFile(patterns.Observer):
             self.markClean()
             self.__changedOnDisk = False
             pub.sendMessage("taskfile.justRead", taskFile=self)
+
+    def _validate_icons(self):
+        """Validate icon references in all loaded objects."""
+        try:
+            from taskcoachlib.gui.icons import icon_library
+            from taskcoachlib.gui.artprovider import chooseableItems
+            icon_library.validate_icons(
+                chooseableItems,
+                tasks=self.tasks().rootItems(),
+                categories=self.categories().rootItems(),
+                notes=self.notes().rootItems(),
+            )
+        except Exception:
+            pass  # Don't let validation errors prevent file load
 
     def save(self):
         try:

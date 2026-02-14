@@ -60,11 +60,14 @@ class BaseHyperTreeList(hypertreelist.HyperTreeList):
         wx.CallAfter(self.__safeAdjustScrollbars)
 
     def __safeAdjustScrollbars(self):
-        """Safely adjust scrollbars, guarding against deleted C++ objects."""
+        """Safely adjust scrollbars, guarding against deleted C++ objects.
+        Also re-centers on selected item after resize."""
         try:
             main_win = self.GetMainWindow()
             if main_win:
                 main_win.AdjustMyScrollbars()
+                if hasattr(self, 'scrollToSelectionCentered'):
+                    self.scrollToSelectionCentered()
         except RuntimeError:
             # wrapped C/C++ object has been deleted
             pass
@@ -291,19 +294,34 @@ class TreeListCtrl(
         self.Thaw()
         self.__refreshing = False
         # Restore selection AFTER Thaw - SelectItem doesn't work while Frozen
-        selected_item = None
         if self.__selection:
-            selected_item = self.select(self.__selection)
-        selections = self.GetSelections()
-        # Use the item returned by select() for scrolling if GetSelections fails
-        scroll_target = selections[0] if selections else selected_item
-        if scroll_target:
-            self.GetMainWindow()._current = (
-                self.GetMainWindow()._key_current
-            ) = scroll_target
-            self.ScrollTo(scroll_target)
+            self.select(self.__selection)
+        self.scrollToSelection()
         # Force immediate repaint to reduce visible flicker after rebuild
         self.GetMainWindow().Refresh(eraseBackground=False)
+
+    def scrollToSelection(self):
+        """Scroll minimally to make first selected item visible."""
+        selections = self.GetSelections()
+        if selections:
+            main = self.GetMainWindow()
+            main.AdjustMyScrollbars()
+            self.ScrollTo(selections[0])
+
+    def scrollToSelectionCentered(self):
+        """Center viewport on first selected item."""
+        selections = self.GetSelections()
+        if selections:
+            main = self.GetMainWindow()
+            main.AdjustMyScrollbars()
+            item = selections[0]
+            item_y = item.GetY()
+            xUnit, yUnit = main.GetScrollPixelsPerUnit()
+            client_h = main.GetClientSize().GetHeight()
+            line_h = main.GetLineHeight(item)
+            center_y = max(0, item_y - client_h // 2 + line_h // 2)
+            x_pos = main.GetScrollPos(wx.HORIZONTAL)
+            main.Scroll(x_pos, center_y // yUnit if yUnit > 0 else 0)
 
     def RefreshItems(self, *objects):
         self.__selection = self.curselection()

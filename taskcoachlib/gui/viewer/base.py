@@ -277,9 +277,12 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         self.imageIndex = {}  # pylint: disable=W0201
         for index, image in enumerate(self.viewerImages):
             try:
-                imageList.Add(
-                    wx.ArtProvider.GetBitmap(image, wx.ART_MENU, size)
-                )
+                bitmap = wx.ArtProvider.GetBitmap(image, wx.ART_MENU, size)
+                if not bitmap.IsOk():
+                    from taskcoachlib.meta.debug import log_step
+                    log_step(f"ERROR: Failed to load bitmap for '{image}' size={size}", prefix="ICON")
+                    bitmap = wx.Bitmap(*size)
+                imageList.Add(bitmap)
             except Exception:
                 print(image)
                 raise
@@ -346,6 +349,12 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         # AFTER refresh - select next if selection became empty
         if itemsRemoved() and not self.widget.curselection() and selectionInfo:
             self.selectNextItemsAfterRemoval(selectionInfo)
+        # Center on selected item — tree views use scrollToSelectionCentered,
+        # list views use ensureSelectionVisible (native wx scrollbar management)
+        if hasattr(self.widget, 'scrollToSelectionCentered'):
+            self.widget.scrollToSelectionCentered()
+        else:
+            self.widget.ensureSelectionVisible()
         self.sendViewerStatusEvent()
 
     def _captureSelectionInfo(self):
