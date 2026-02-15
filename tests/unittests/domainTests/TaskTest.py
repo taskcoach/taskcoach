@@ -2409,12 +2409,12 @@ class TaskWithChildTest(
         )
 
     def testIconWithPluralVersion(self):
-        self.task.setIcon("books_icon")
-        self.assertEqual("books_icon", self.task.icon(recursive=True))
+        self.task.setIcon("nuvola_apps_bookcase")
+        self.assertEqual("nuvola_apps_bookcase", self.task.icon(recursive=True))
 
     def testIconWithSingularVersion(self):
-        self.task.setIcon("book_icon")
-        self.assertEqual("books_icon", self.task.icon(recursive=True))
+        self.task.setIcon("nuvola_apps_accessories-dictionary")
+        self.assertEqual("nuvola_apps_accessories-dictionary", self.task.icon(recursive=True))
 
     def testChildIsInactiveWhenParentHasPrerequisite(self):
         prerequisite = task.Task()
@@ -2723,7 +2723,7 @@ class TaskWithActiveEffort(TaskTestCase, CommonTaskTestsMixin):
         return [
             {
                 "efforts": [effort.Effort(None, date.DateTime.now())],
-                "icon": "bomb_icon",
+                "icon": "nuvola_apps_clanbomber",
             }
         ]
 

@@ -265,9 +265,8 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "color_line.png",
-        "paths": {
-            16: "16x16/actions/color_line.png",
-        },
+        "duplicate_of": "nuvola_actions_draw-freehand",
+        "paths": {},
     },
     "nuvola_actions_colorize": {
         "label": _("Colorize"),
@@ -275,9 +274,8 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "colorize.png",
-        "paths": {
-            16: "16x16/actions/colorize.png",
-        },
+        "duplicate_of": "nuvola_apps_kcoloredit",
+        "paths": {},
     },
     "nuvola_actions_colorpicker": {
         "label": _("Colorpicker"),
@@ -653,9 +651,8 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "edittrash.png",
-        "paths": {
-            16: "16x16/actions/edittrash.png",
-        },
+        "duplicate_of": "nuvola_places_user-trash",
+        "paths": {},
     },
     "nuvola_actions_encrypted": {
         "label": _("Encrypted"),
@@ -921,9 +918,8 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "kalarm.png",
-        "paths": {
-            16: "16x16/actions/kalarm.png",
-        },
+        "duplicate_of": "nuvola_apps_kalarm",
+        "paths": {},
     },
     "nuvola_actions_kalarm_disabled": {
         "label": _("Kalarm Disabled"),
@@ -1907,9 +1903,8 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "tool_delete.png",
-        "paths": {
-            16: "16x16/actions/tool_delete.png",
-        },
+        "duplicate_of": "nuvola_places_user-trash",
+        "paths": {},
     },
     "nuvola_actions_tool_dock": {
         "label": _("Tool Dock"),

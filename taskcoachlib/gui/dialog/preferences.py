@@ -383,10 +383,9 @@ class SettingsPageBase(widgets.ScrolledBookPage):
             ] + [wx.ALL | wx.ALIGN_CENTER] * 9,
         )
 
-    def _createIconEntry(self, excluded_icons=None):
+    def _createIconEntry(self, exclude=None):
         """Create a searchable icon picker with fixed 120px width."""
-        excluded = excluded_icons or set()
-        iconEntry = widgets.IconPicker(self, "", excluded_icons=excluded, fixedWidth=120)
+        iconEntry = widgets.IconPicker(self, "", exclude=exclude, fixedWidth=120)
         # imageNames returned for backward compatibility (unused)
         imageNames = sorted(artprovider.chooseableItems.keys(), key=lambda k: artprovider.chooseableItems[k]["label"])
         return iconEntry, imageNames
@@ -411,8 +410,7 @@ class SettingsPageBase(widgets.ScrolledBookPage):
             self, font=currentFont or defaultFont, colour=currentFgColor,
             bgColour=currentBgColor, fixedWidth=75
         )
-        excluded = getattr(self, '_objectIcons', None)
-        iconEntry, imageNames = self._createIconEntry(excluded_icons=excluded)
+        iconEntry, imageNames = self._createIconEntry(exclude="data")
         currentIcon = self.gettext(iconSection, iconSetting)
         iconEntry.SetValue(currentIcon)
 
@@ -1272,7 +1270,7 @@ class ThemePage(SettingsPage):
 class LanguagePage(SettingsPage):
     pageName = "language"
     pageTitle = _("Regional")
-    pageIcon = "person_talking_icon"
+    pageIcon = "nuvola_categories_applications-education"
 
     def __init__(self, *args, **kwargs):
         super().__init__(columns=3, *args, **kwargs)
@@ -1922,11 +1920,10 @@ class LanguagePage(SettingsPage):
 class StatusesPage(SettingsPage):
     pageName = "statuses"
     pageTitle = _("Statuses")
-    pageIcon = "palette_icon"
+    pageIcon = "nuvola_apps_kcoloredit"
 
     def __init__(self, *args, **kwargs):
         super().__init__(columns=11, growableColumn=-1, *args, **kwargs)
-        self._objectIcons = self._collectObjectIcons()
         self._priorityChoices = []  # [(setting, choiceCtrl), ...]
         self._previousPriorities = {}  # choiceCtrl -> int
         self.addAppearanceHeader()
@@ -1974,25 +1971,6 @@ class StatusesPage(SettingsPage):
         self._sizer.Add(noteText, (noteRow[0], 0), span=(1, 11),
                         flag=wx.ALL | wx.ALIGN_LEFT, border=self._borderWidth)
         self.fit()
-
-    def _collectObjectIcons(self):
-        """Collect all icons currently used by tasks, categories, and notes."""
-        icons = set()
-        if self.taskFile is None:
-            return icons
-        for obj in self.taskFile.tasks():
-            icon = obj.icon()
-            if icon:
-                icons.add(icon)
-        for obj in self.taskFile.categories():
-            icon = obj.icon()
-            if icon:
-                icons.add(icon)
-        for obj in self.taskFile.notes():
-            icon = obj.icon()
-            if icon:
-                icons.add(icon)
-        return icons
 
     def _onStatusIconChanged(self, event, iconEntry):
         """Handle icon selection change. Excluded icons are handled by IconPicker."""
@@ -2197,7 +2175,7 @@ class FeaturesPage(SettingsPage):
 class IconsPage(SettingsPage):
     pageName = "icons"
     pageTitle = _("Icons")
-    pageIcon = "palette_icon"
+    pageIcon = "nuvola_apps_kcoloredit"
 
     def __init__(self, *args, **kwargs):
         super().__init__(columns=2, growableColumn=-1, *args, **kwargs)
@@ -2380,7 +2358,7 @@ class TaskDatesPage(SettingsPage):
 class TaskReminderPage(SettingsPage):
     pageName = "reminder"
     pageTitle = _("Reminders")
-    pageIcon = "clock_alarm_icon"
+    pageIcon = "nuvola_apps_kalarm"
 
     def __init__(self, *args, **kwargs):
         super().__init__(columns=3, growableColumn=-1, *args, **kwargs)
@@ -2775,7 +2753,7 @@ class Preferences(widgets.NotebookDialog):
         self.settings = settings
         self.taskFile = taskFile
         kwargs.setdefault("buttonTypes", wx.OK | wx.CANCEL | wx.APPLY)
-        super().__init__(bitmap="wrench_icon", *args, **kwargs)
+        super().__init__(bitmap="nuvola_actions_configure", *args, **kwargs)
         if operating_system.isMac():
             self.CentreOnParent()
 

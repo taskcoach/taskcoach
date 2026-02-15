@@ -436,6 +436,7 @@
       "file": "kcoloredit.png",
       "hints": ["palette", "paint", "color", "art", "drawing", "brush", "colorful", "editor"],
       "sizes": [16],
+      "duplicates": ["nuvola_actions_colorize"],
       "context": "apps"
     },
     "nuvola_apps_xfmail": {
@@ -1481,7 +1482,8 @@
       "file": "kalarm.png",
       "hints": ["alarm", "clock", "bells", "timer", "reminder", "wake", "yellow"],
       "sizes": [16],
-      "context": "apps"
+      "context": "apps",
+      "duplicates": ["nuvola_actions_kalarm"]
     },
     "nuvola_apps_ksnapshot": {
       "label": "Ksnapshot",
@@ -2087,6 +2089,7 @@
       "file": "user-trash.png",
       "hints": ["trash", "bin", "recycle", "delete", "waste", "cylinder", "container"],
       "sizes": [16],
+      "duplicates": ["nuvola_actions_tool_delete", "nuvola_actions_edittrash"],
       "context": "places"
     },
     "nuvola_places_folder-favorites": {
@@ -3596,7 +3599,8 @@
       "label": "Colorize",
       "file": "colorize.png",
       "hints": ["color", "palette", "paint", "brush", "art", "draw", "colorize"],
-      "sizes": [16],
+      "sizes": [],
+      "duplicate_of": "nuvola_apps_kcoloredit",
       "context": "actions"
     },
     "nuvola_actions_mail-send": {
@@ -3877,7 +3881,8 @@
       "label": "Color Line",
       "file": "color_line.png",
       "hints": ["color", "line", "pencil", "draw", "pen", "write", "green"],
-      "sizes": [16],
+      "sizes": [],
+      "duplicate_of": "nuvola_actions_draw-freehand",
       "context": "actions"
     },
     "nuvola_actions_ledblue": {
@@ -3990,7 +3995,8 @@
       "label": "Edittrash",
       "file": "edittrash.png",
       "hints": ["trash", "delete", "bin", "recycle", "garbage", "remove", "discard"],
-      "sizes": [16],
+      "sizes": [],
+      "duplicate_of": "nuvola_places_user-trash",
       "context": "actions"
     },
     "nuvola_actions_kalarm_disabled": {
@@ -4288,6 +4294,7 @@
       "file": "draw-freehand.png",
       "hints": ["pencil", "draw", "freehand", "write", "edit", "pen", "sketch", "green"],
       "sizes": [16],
+      "duplicates": ["nuvola_actions_color_line"],
       "context": "actions"
     },
     "nuvola_actions_kgpg_sign": {
@@ -4430,8 +4437,9 @@
       "label": "Kalarm",
       "file": "kalarm.png",
       "hints": ["alarm", "clock", "timer", "reminder", "bell", "time", "alert", "orange", "schedule"],
-      "sizes": [16],
-      "context": "actions"
+      "sizes": [],
+      "context": "actions",
+      "duplicate_of": "nuvola_apps_kalarm"
     },
     "nuvola_actions_object-rotate-left": {
       "label": "Object Rotate Left",
@@ -5380,7 +5388,8 @@
       "label": "Tool Delete",
       "file": "tool_delete.png",
       "hints": ["delete", "trash", "remove", "bin", "garbage", "blue", "discard"],
-      "sizes": [16],
+      "sizes": [],
+      "duplicate_of": "nuvola_places_user-trash",
       "context": "actions"
     },
     "nuvola_actions_mix_cd": {

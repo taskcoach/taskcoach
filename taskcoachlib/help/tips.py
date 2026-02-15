@@ -94,7 +94,7 @@ class TipDialog(sized_controls.SizedDialog):
         wx.StaticBitmap(
             pane,
             bitmap=wx.ArtProvider.GetBitmap(
-                "lamp_icon", wx.ART_MENU, (32, 32)
+                "nuvola_apps_ktip", wx.ART_MENU, (32, 32)
             ),
         )
         tip_pane = sized_controls.SizedPanel(pane)

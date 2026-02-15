@@ -429,11 +429,11 @@ IconEntryEvent, EVT_ICONENTRY = newevent.NewEvent()
 
 class IconEntry(widgets.PanelWithBoxSizer):
     """Icon entry with checkbox. When unchecked, returns empty string (no icon)."""
-    def __init__(self, parent, currentIcon, excluded_icons=None, *args, **kwargs):
+    def __init__(self, parent, currentIcon, exclude=None, *args, **kwargs):
         kwargs["orientation"] = wx.HORIZONTAL
         super().__init__(parent, *args, **kwargs)
         self._iconCheckBox = self._createCheckBox(currentIcon)
-        self._iconPicker = self._createIconPicker(parent, currentIcon, excluded_icons)
+        self._iconPicker = self._createIconPicker(parent, currentIcon, exclude)
         self.add(
             self._iconCheckBox,
             flag=wx.ALIGN_CENTER_VERTICAL | wx.RIGHT,
@@ -454,8 +454,8 @@ class IconEntry(widgets.PanelWithBoxSizer):
         checkBox.Bind(wx.EVT_CHECKBOX, self.onChecked)
         return checkBox
 
-    def _createIconPicker(self, parent, currentIcon, excluded_icons):
-        picker = widgets.IconPicker(self, currentIcon or "", excluded_icons)
+    def _createIconPicker(self, parent, currentIcon, exclude):
+        picker = widgets.IconPicker(self, currentIcon or "", exclude=exclude)
         picker.Bind(wx.EVT_COMBOBOX, self.onIconPicked)
         return picker
 

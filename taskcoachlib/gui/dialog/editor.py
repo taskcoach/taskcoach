@@ -195,7 +195,7 @@ class ScrolledPage(patterns.Observer, widgets.ScrolledBookPage):
 class SubjectPage(Page):
     pageName = "subject"
     pageTitle = _("Description")
-    pageIcon = "pencil_icon"
+    pageIcon = "nuvola_actions_draw-freehand"
 
     def __init__(self, items, parent, settings, *args, **kwargs):
         self._settings = settings
@@ -558,7 +558,7 @@ class TaskAppearancePage(ScrolledPage):
     """Appearance tab with scrollbar support for all domain object types."""
     pageName = "appearance"
     pageTitle = _("Appearance")
-    pageIcon = "palette_icon"
+    pageIcon = "nuvola_apps_kcoloredit"
     columns = 3  # Label, Control, Source
     _vgap = 2
     _hgap = 5
@@ -1058,16 +1058,7 @@ class TaskAppearancePage(ScrolledPage):
         # pylint: disable=W0201,E1101
         currentIcon = self.items[0].icon() if len(self.items) == 1 else ""
 
-        # Debug logging for Priority categories
-        settings = self.GetParent().settings
-        status_keys = ["activetasks", "latetasks", "completedtasks",
-                       "overduetasks", "inactivetasks", "duesoontasks"]
-        excluded = set()
-        for key in status_keys:
-            excluded.add(settings.gettext("icon", key))
-            excluded.add(settings.gettext("icon_dark", key))
-        excluded.discard("")
-        self._iconEntry = entry.IconEntry(self, currentIcon, excluded_icons=excluded)
+        self._iconEntry = entry.IconEntry(self, currentIcon, exclude="status")
         self._iconSync = attributesync.AttributeSync(
             "icon",
             self._iconEntry,
@@ -2618,7 +2609,7 @@ class LocalPrerequisiteViewer(
 class PrerequisitesPage(PageWithViewer):
     pageName = "prerequisites"
     pageTitle = _("Prerequisites")
-    pageIcon = "trafficlight_icon"
+    pageIcon = "nuvola_apps_ksysv"
 
     def __init__(self, *args, **kwargs):
         self.__realized = False

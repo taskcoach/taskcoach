@@ -118,13 +118,16 @@ def build_icon_path(theme, icon_key, size):
     parsed = _load_theme_parsed(theme)
     icon_data = parsed["icons"].get(icon_key)
     if not icon_data:
+        log_step(f"ERROR: Icon key '{icon_key}' not found in theme '{theme}'", prefix="ICON")
         return None
 
     paths = icon_data.get("paths", {})
     rel_path = paths.get(size)
-    if rel_path:
-        return os.path.join(_ICONS_DIR, theme, rel_path)
-    return None
+    if not rel_path:
+        available = sorted(paths.keys()) if paths else []
+        log_step(f"ERROR: Icon '{icon_key}' has no size {size} (available: {available})", prefix="ICON")
+        return None
+    return os.path.join(_ICONS_DIR, theme, rel_path)
 
 
 def build_legacy_icon_path(filename, size):

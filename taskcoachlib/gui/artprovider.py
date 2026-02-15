@@ -291,26 +291,6 @@ chooseableItems = {
     },
 
     # Time and scheduling
-    "bell_icon": {
-        "label": _("Bell"),
-        "hints": [_("alarm"), _("notification"), _("alert"), _("reminder"), _("ring"), _("wake")],
-    },
-    "bomb_icon": {
-        "label": _("Bomb"),
-        "hints": [_("danger"), _("urgent"), _("explosive"), _("critical"), _("warning"), _("deadline")],
-    },
-    "book_icon": {
-        "label": _("Book"),
-        "hints": [_("read"), _("document"), _("manual"), _("guide"), _("reference"), _("study"), _("learn")],
-    },
-    "bookmark_icon": {
-        "label": _("Bookmark"),
-        "hints": [_("favorite"), _("save"), _("mark"), _("remember"), _("reference"), _("link")],
-    },
-    "books_icon": {
-        "label": _("Books"),
-        "hints": [_("read"), _("documents"), _("manuals"), _("guides"), _("library"), _("collection")],
-    },
     "box_icon": {
         "label": _("Box"),
         "hints": [_("package"), _("container"), _("storage"), _("shipping"), _("delivery")],
@@ -318,14 +298,6 @@ chooseableItems = {
     "briefcase_icon": {
         "label": _("Briefcase"),
         "hints": [_("work"), _("business"), _("professional"), _("portfolio"), _("job"), _("office")],
-    },
-    "bug_icon": {
-        "label": _("Ladybug"),
-        "hints": [_("ladybug"), _("insect"), _("debug"), _("error"), _("problem"), _("issue")],
-    },
-    "cake_icon": {
-        "label": _("Cake"),
-        "hints": [_("birthday"), _("celebration"), _("party"), _("anniversary"), _("event")],
     },
     "calculator_icon": {
         "label": _("Calculator"),
@@ -335,25 +307,13 @@ chooseableItems = {
         "label": _("Calendar"),
         "hints": [_("date"), _("schedule"), _("appointment"), _("event"), _("planner"), _("day"), _("month"), _("year"), _("deadline"), _("due")],
     },
-    "camera_icon": {
-        "label": _("Camera"),
-        "hints": [_("photo"), _("picture"), _("image"), _("capture"), _("screenshot"), _("media")],
-    },
     "cat_icon": {
         "label": _("Cat"),
         "hints": [_("pet"), _("animal"), _("feline"), _("meow"), _("kitty")],
     },
-    "cd_icon": {
-        "label": _("Compact disc (CD)"),
-        "hints": [_("disc"), _("music"), _("media"), _("backup"), _("storage")],
-    },
     "charts_icon": {
         "label": _("Charts"),
         "hints": [_("graph"), _("statistics"), _("data"), _("analytics"), _("report"), _("metrics")],
-    },
-    "chat_icon": {
-        "label": _("Chat"),
-        "hints": [_("message"), _("talk"), _("conversation"), _("discuss"), _("communicate")],
     },
     "checkmark_green_icon": {
         "label": _("Check mark"),
@@ -366,10 +326,6 @@ chooseableItems = {
     "clock_icon": {
         "label": _("Clock"),
         "hints": [_("time"), _("hour"), _("minute"), _("watch"), _("schedule"), _("duration")],
-    },
-    "clock_alarm_icon": {
-        "label": _("Clock - Alarm"),
-        "hints": [_("time"), _("alarm"), _("reminder"), _("wake"), _("alert"), _("notification"), _("deadline")],
     },
     "clock_stopwatch_icon": {
         "label": _("Clock - Stopwatch"),
@@ -395,10 +351,6 @@ chooseableItems = {
         "label": _("Computer - Desktop"),
         "hints": [_("pc"), _("workstation"), _("monitor"), _("screen"), _("computer"), _("desktop")],
     },
-    "computer_laptop_icon": {
-        "label": _("Computer - Laptop"),
-        "hints": [_("notebook"), _("portable"), _("pc"), _("mobile"), _("computer"), _("laptop")],
-    },
     "computer_handheld_icon": {
         "label": _("Computer - Handheld"),
         "hints": [_("mobile"), _("phone"), _("pda"), _("tablet"), _("device")],
@@ -422,10 +374,6 @@ chooseableItems = {
     "earth_green_icon": {
         "label": _("Earth - Green"),
         "hints": [_("world"), _("globe"), _("planet"), _("environment"), _("nature"), _("eco")],
-    },
-    "energy_icon": {
-        "label": _("Energy"),
-        "hints": [_("power"), _("electricity"), _("lightning"), _("bolt"), _("charge"), _("battery")],
     },
     "envelope_icon": {
         "label": _("Envelope"),
@@ -483,10 +431,6 @@ chooseableItems = {
         "label": _("Folder - Blue with arrow"),
         "hints": [_("directory"), _("storage"), _("files"), _("move"), _("transfer")],
     },
-    "folder_favorite_icon": {
-        "label": _("Folder - Favorite"),
-        "hints": [_("directory"), _("storage"), _("star"), _("bookmark"), _("best"), _("preferred")],
-    },
     "folder_important_icon": {
         "label": _("Folder - Important"),
         "hints": [_("directory"), _("storage"), _("priority"), _("urgent"), _("attention"), _("critical")],
@@ -499,14 +443,6 @@ chooseableItems = {
         "label": _("Graph"),
         "hints": [_("chart"), _("statistics"), _("data"), _("analytics"), _("plot"), _("diagram")],
     },
-    "heart_icon": {
-        "label": _("Heart"),
-        "hints": [_("love"), _("favorite"), _("like"), _("health"), _("wellness")],
-    },
-    "hearts_icon": {
-        "label": _("Hearts"),
-        "hints": [_("love"), _("favorites"), _("likes"), _("health"), _("wellness")],
-    },
     "house_green_icon": {
         "label": _("House - Green"),
         "hints": [_("home"), _("residence"), _("building"), _("dwelling"), _("personal")],
@@ -514,18 +450,6 @@ chooseableItems = {
     "house_red_icon": {
         "label": _("House - Red"),
         "hints": [_("home"), _("residence"), _("building"), _("dwelling"), _("urgent")],
-    },
-    "key_icon": {
-        "label": _("Key"),
-        "hints": [_("lock"), _("security"), _("password"), _("access"), _("unlock"), _("credential")],
-    },
-    "keys_icon": {
-        "label": _("Keys"),
-        "hints": [_("locks"), _("security"), _("passwords"), _("access"), _("unlock"), _("credentials")],
-    },
-    "lamp_icon": {
-        "label": _("Lamp"),
-        "hints": [_("light"), _("idea"), _("bulb"), _("bright"), _("illuminate"), _("thought")],
     },
     "led_blue_questionmark_icon": {
         "label": _("Question mark"),
@@ -587,33 +511,13 @@ chooseableItems = {
         "label": _("Magnifier glass"),
         "hints": [_("search"), _("find"), _("zoom"), _("look"), _("inspect"), _("explore")],
     },
-    "music_piano_icon": {
-        "label": _("Music - Piano"),
-        "hints": [_("piano"), _("keyboard"), _("music"), _("instrument"), _("play")],
-    },
-    "music_note_icon": {
-        "label": _("Music - Note"),
-        "hints": [_("music"), _("sound"), _("audio"), _("melody"), _("song"), _("tune")],
-    },
     "note_icon": {
         "label": _("Note"),
         "hints": [_("sticky"), _("memo"), _("reminder"), _("post-it"), _("write")],
     },
-    "palette_icon": {
-        "label": _("Palette"),
-        "hints": [_("color"), _("art"), _("design"), _("paint"), _("creative")],
-    },
     "paperclip_icon": {
         "label": _("Paperclip"),
         "hints": [_("attach"), _("attachment"), _("file"), _("document"), _("clip")],
-    },
-    "password_icon": {
-        "label": _("Password"),
-        "hints": [_("security"), _("credential"), _("secret"), _("key"), _("login"), _("authenticate")],
-    },
-    "pencil_icon": {
-        "label": _("Pencil"),
-        "hints": [_("edit"), _("write"), _("draw"), _("modify"), _("change"), _("update")],
     },
     "person_icon": {
         "label": _("Person"),
@@ -627,10 +531,6 @@ chooseableItems = {
         "label": _("Person - ID"),
         "hints": [_("user"), _("identity"), _("card"), _("profile"), _("badge"), _("employee")],
     },
-    "person_talking_icon": {
-        "label": _("Person - Talking"),
-        "hints": [_("speak"), _("talk"), _("discuss"), _("communicate"), _("voice"), _("call")],
-    },
     "printer_icon": {
         "label": _("Printer"),
         "hints": [_("print"), _("output"), _("paper"), _("document"), _("hardcopy")],
@@ -638,14 +538,6 @@ chooseableItems = {
     "reload_icon": {
         "label": _("Reload"),
         "hints": [_("refresh"), _("update"), _("sync"), _("repeat"), _("restart"), _("renew")],
-    },
-    "remote_icon": {
-        "label": _("Remote"),
-        "hints": [_("control"), _("wireless"), _("distance"), _("network"), _("access")],
-    },
-    "run_icon": {
-        "label": _("Run"),
-        "hints": [_("execute"), _("start"), _("play"), _("begin"), _("go"), _("launch"), _("sprint")],
     },
     "science_icon": {
         "label": _("Science"),
@@ -675,49 +567,9 @@ chooseableItems = {
         "label": _("Sticky note"),
         "hints": [_("memo"), _("reminder"), _("post-it"), _("note"), _("yellow"), _("paper")],
     },
-    "tea_icon": {
-        "label": _("Tea"),
-        "hints": [_("break"), _("rest"), _("relax"), _("pause"), _("coffee"), _("drink"), _("beverage")],
-    },
-    "terminal_icon": {
-        "label": _("Terminal"),
-        "hints": [_("command"), _("console"), _("shell"), _("code"), _("developer")],
-    },
     "timer_icon": {
         "label": _("Timer"),
         "hints": [_("countdown"), _("time"), _("limit"), _("duration"), _("stopwatch"), _("deadline")],
-    },
-    "trafficlight_icon": {
-        "label": _("Traffic light"),
-        "hints": [_("status"), _("priority"), _("waiting"), _("proceed"), _("stop")],
-    },
-    "traffic_go_icon": {
-        "label": _("Traffic - Go"),
-        "hints": [_("proceed"), _("start"), _("green light"), _("continue"), _("execute")],
-    },
-    "trashcan_icon": {
-        "label": _("Trashcan"),
-        "hints": [_("delete"), _("remove"), _("garbage"), _("bin"), _("recycle"), _("discard")],
-    },
-    "weather_lightning_icon": {
-        "label": _("Weather - Lightning"),
-        "hints": [_("storm"), _("thunder"), _("electric"), _("power"), _("urgent"), _("fast")],
-    },
-    "weather_umbrella_icon": {
-        "label": _("Weather - Umbrella"),
-        "hints": [_("rain"), _("protection"), _("shelter"), _("weather"), _("umbrella"), _("wet")],
-    },
-    "weather_sunny_icon": {
-        "label": _("Weather - Partly sunny"),
-        "hints": [_("sun"), _("bright"), _("day"), _("clear"), _("good"), _("positive")],
-    },
-    "wizard_icon": {
-        "label": _("Wizard"),
-        "hints": [_("magic"), _("helper"), _("assistant"), _("guide"), _("setup")],
-    },
-    "wrench_icon": {
-        "label": _("Wrench"),
-        "hints": [_("tool"), _("settings"), _("config"), _("repair"), _("fix"), _("maintenance"), _("service")],
     },
     # Bank/Accounting icons (Papirus) - new format without _icon suffix
     "bank_account": {
@@ -817,10 +669,6 @@ chooseableItems = {
     "wallet_keys": {
         "label": _("Wallet Keys"),
         "hints": [_("wallet"), _("keys"), _("password"), _("secure"), _("manager"), _("keyring")],
-    },
-    "cactus": {
-        "label": _("Cactus"),
-        "hints": [_("cactus"), _("plant"), _("desert"), _("green"), _("nature"), _("succulent")],
     },
 }
 

@@ -128,9 +128,9 @@ class EditorTestCase(test.wxTestCase):
         self.assertEqual(wx.RED, self.appearance._fontEntry.GetColor())
 
     def testThatPickingAnIconChangesTheItemIcon(self):
-        self.appearance._iconEntry.SetValue("bomb_icon")
+        self.appearance._iconEntry.SetValue("nuvola_apps_clanbomber")
         self.appearance._iconSync.onAttributeEdited(dummy.Event())
-        self.assertEqual("bomb_icon", self.item.icon())
+        self.assertEqual("nuvola_apps_clanbomber", self.item.icon())
 
     def testThatChangingTheItemIconAffectsTheIconEntry(self):
         imageNames = sorted(gui.artprovider.chooseableItems.keys(), key=lambda k: gui.artprovider.chooseableItems[k]["name"])

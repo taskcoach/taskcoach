@@ -1039,7 +1039,7 @@ class EditPreferences(settings_uicommand.SettingsCommand):
         super().__init__(
             menuText=_("&Preferences...\tAlt+P"),
             helpText=help.editPreferences,
-            bitmap="wrench_icon",
+            bitmap="nuvola_actions_configure",
             id=wx.ID_PREFERENCES,
             *args,
             **kwargs
@@ -2974,7 +2974,7 @@ class Tips(settings_uicommand.SettingsCommand):
         super().__init__(
             menuText=_("&Tips"),
             helpText=_("Tips about the program"),
-            bitmap="lamp_icon",
+            bitmap="nuvola_apps_ktip",
             *args,
             **kwargs
         )
@@ -3067,7 +3067,7 @@ class ReportBug(URLCommand):
         super().__init__(
             menuText=_("Report a &bug..."),
             helpText=_("Report a bug or browse known bugs"),
-            bitmap="bug_icon",
+            bitmap="nuvola_apps_kbugbuster",
             url=meta.known_bugs_url,
             *args,
             **kwargs
@@ -3103,7 +3103,7 @@ class HelpTranslate(URLCommand):
         super().__init__(
             menuText=_("Help improve &translations..."),
             helpText=_("Help improve the translations of %s") % meta.name,
-            bitmap="person_talking_icon",
+            bitmap="nuvola_categories_applications-education",
             url=meta.translations_url,
             *args,
             **kwargs
@@ -3491,7 +3491,7 @@ class SquareTaskViewerOrderByOption(
 class CalendarViewerConfigure(ViewerCommand):
     menuText = _("&Configure")
     helpText = _("Configure the calendar viewer")
-    bitmap = "wrench_icon"
+    bitmap = "nuvola_actions_configure"
 
     def __init__(self, *args, **kwargs):
         super().__init__(

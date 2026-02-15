@@ -959,15 +959,143 @@ done
 
 ## Migration from Legacy Icons
 
-When removing old icons, add mapping to `persistence/xml/reader.py`:
+Legacy icons (flat PNGs like `hearts_icon16x16.png`) predate the XDG theme system.
+When a theme equivalent exists, the legacy icon should be retired and migrated.
 
-```python
-_deprecated_icons = {
-    "old_icon_name": "new_icon_name",
-}
-```
+### Completed Migrations
 
-This auto-migrates saved task files using old icon names.
+| Legacy Name | Replacement | Visual Match |
+|-------------|-------------|-------------|
+| `bell_icon` | `nuvola_apps_preferences-desktop-notification-bell` | Golden bell |
+| `bomb_icon` | `nuvola_apps_clanbomber` | Black bomb |
+| `bookmark_icon` | `nuvola_apps_package_favorite` | Single red glossy heart |
+| `cactus` | `nuvola_apps_khangman` | Green cactus |
+| `heart_icon` | `nuvola_apps_package_favorite` | Single red glossy heart |
+| `hearts_icon` | `nuvola_apps_amor` | Multiple red hearts |
+| `folder_favorite_icon` | `nuvola_places_folder-favorites` | Blue folder with red heart |
+| `clock_alarm_icon` | `nuvola_apps_kalarm` | Orange alarm clock |
+| `energy_icon` | `nuvola_apps_preferences-system-power-management` | Battery/power/energy |
+| `lamp_icon` | `nuvola_apps_ktip` | Lightbulb/tip/idea |
+| `traffic_go_icon` | `nuvola_places_start-here` | KDE gear/cog logo |
+| `trafficlight_icon` | `nuvola_apps_ksysv` | Traffic light |
+| `key_icon` | `nuvola_status_key-single` | Single golden key |
+| `keys_icon` | `nuvola_status_key-group` | Multiple keys/keyring |
+| `music_piano_icon` | `nuvola_actions_piano` | Piano keyboard |
+| `music_note_icon` | `nuvola_actions_playsound` | Music note |
+| `cd_icon` | `nuvola_devices_media-optical` | CD/disc |
+| `chat_icon` | `nuvola_apps_chat` | Chat bubble |
+| `cake_icon` | `nuvola_apps_preferences-web-browser-cookies` | Cake/cookie |
+| `camera_icon` | `nuvola_devices_camera-photo` | Camera |
+| `wrench_icon` | `nuvola_actions_configure` | Wrench/settings |
+| `wizard_icon` | `nuvola_actions_tools-wizard` | Wizard/magic wand |
+| `weather_umbrella_icon` | `nuvola_apps_preferences-desktop-color` | Colorful umbrella |
+| `weather_lightning_icon` | `nuvola_apps_preferences-web-browser-cache` | Lightning bolt |
+| `weather_sunny_icon` | `nuvola_apps_kweather` | Sun with clouds |
+| `tea_icon` | `nuvola_apps_kteatime` | Tea cup |
+| `terminal_icon` | `nuvola_apps_terminal` | Terminal/console |
+| `remote_icon` | `nuvola_devices_remote` | Remote control |
+| `run_icon` | `nuvola_mimetypes_application-x-executable` | Executable/run |
+| `password_icon` | `nuvola_status_dialog-password` | Password/lock |
+| `bug_icon` | `nuvola_apps_kbugbuster` | Ladybug |
+| `book_icon` | `nuvola_apps_accessories-dictionary` | Book |
+| `books_icon` | `nuvola_apps_bookcase` | Books/bookcase |
+| `computer_laptop_icon` | `nuvola_apps_laptop_pcmcia` | Laptop computer |
+| `trashcan_icon` | `nuvola_places_user-trash` | Trash can / recycle bin |
+| `person_talking_icon` | `nuvola_categories_applications-education` | Person speaking/education |
+| `pencil_icon` | `nuvola_actions_draw-freehand` | Pencil |
+| `palette_icon` | `nuvola_apps_kcoloredit` | Color palette |
+
+### Migration Procedure
+
+Follow these steps for each legacy icon being retired.
+
+#### Step 1 — Where-used analysis (comprehensive)
+
+Search ALL code for the legacy icon name. Every reference must be accounted for:
+
+- **Python code**: `grep -r "icon_name" taskcoachlib/ tests/`
+- **Menus and toolbars**: hardcoded UI references in viewer/toolbar code
+- **Icon picker**: `chooseableItems` dict in `artprovider.py`
+- **Defaults**: task status icons, type defaults, viewer defaults
+- **Plural/singular mappings**: `itemImagePlural` in `domain/attribute/icon/__init__.py`
+- **Documentation**: `docs/ICON_PLURALIZE.md`, `docs/ICON_LIBRARY.md`, demo scripts
+- **Data files**: JSON catalogs, `icons_parsed.py`, `nuvola/icons.json`
+- **Test data**: unit tests using the icon name as test data
+- **Auto-generated files**: `SOURCES.txt` (auto-updates on build, no manual action)
+
+#### Step 2 — Identify the theme equivalent
+
+1. Search nuvola `icons.json` / `icons_parsed.py` by hints, label, or visual match
+2. **Visually compare** the legacy icon and the nuvola candidate side-by-side
+   (open/view both image files) to confirm they are the same icon
+3. **Check available sizes.** User-assignable icons (Tier 1) only need 16px —
+   the tree view, icon picker, menus, and editors all request `(16, 16)`
+   via `wx.ArtProvider.GetBitmap()` → `_CreateBitmap()`. If the nuvola icon
+   has 16px, no additional sizes are needed.
+
+   **Do not confuse with `IconProvider`** (`artprovider.py:185`), which requests
+   48px on GTK and 128px on Mac — that class is only used for the **application
+   window icon** (`"taskcoach"` in the title bar/taskbar), not for user-assignable
+   icons. Legacy icons may ship with many sizes (16–128) but those extra sizes
+   were never used for Tier 1 icons.
+
+   If additional sizes are required (e.g. Tier 2 icons used in toolbars or
+   window frames), trace the actual `GetBitmap` callers to determine which
+   sizes, and import only what is needed from the distillery.
+4. Note any duplicates pointing to the target icon
+
+#### Step 3 — Code changes
+
+1. **`persistence/xml/reader.py`**: Add entry to `_deprecated_icons` dict.
+   This auto-converts old icon names when loading XML task files. On next save,
+   the new name is written permanently.
+
+   ```python
+   _deprecated_icons = {
+       "old_icon_name": "nuvola_context_newname",
+   }
+   ```
+
+2. **`artprovider.py`**: Remove the legacy entry from `chooseableItems`.
+   Users now see the proper nuvola icon in the picker instead.
+
+3. **`domain/attribute/icon/__init__.py`**: Remove the migrated icon's entry
+   from `itemImagePlural` if it was the singular (key) side of a mapping.
+   Do NOT replace the key with the new nuvola name — the plural icon
+   (e.g., `keys_icon`) is a separate icon that needs its own migration.
+   Just delete the row. Update `docs/ICON_PLURALIZE.md` likewise.
+
+4. **Test files**: Update any tests using the legacy icon name as test data.
+
+#### Step 4 — Delete legacy files
+
+Delete the legacy PNG files from `taskcoachlib/gui/icons/`.
+Legacy icons use one of two naming conventions:
+- Flat: `name_icon{size}x{size}.png` (e.g., `bomb_icon16x16.png`)
+- Size-dir: `{size}x{size}/name.png` (e.g., `16x16/cactus.png`)
+
+#### Step 5 — Update documentation
+
+- `docs/ICON_PLURALIZE.md` — remove row from plural table if applicable
+- `docs/scripts/icon_picker_refactoring_demo.py` — update test data
+- `docs/ICON_LIBRARY.md` — add to "Completed Migrations" table above
+- Delete `icon_overview.html` and `generate_icon_overview.py` if not already removed
+
+#### Step 6 — Verify
+
+1. Launch app, open icon picker — old icon gone, theme equivalent present
+2. Load a task file with old icon name — confirm auto-migration
+3. Save and reopen — confirm XML now has new icon name
+4. Check log output — no errors for the migrated icon
+
+### Migration Tiers
+
+- **Tier 1 — User-assignable only** (hearts, bombs, keys, etc.): straightforward,
+  follow procedure above. The icon appears only in the picker and user data files.
+- **Tier 2 — Hardcoded defaults** (status LEDs, type icons, viewer icons): requires
+  additional code changes beyond the deprecated mapping (default values in code).
+- **Tier 3 — Semantic pairs** (LED→folder, singular→plural with different images):
+  needs replacement concept, not just renaming.
 
 ## Recently Added Icons
 

@@ -653,81 +653,81 @@ class CompositeObjectTest(test.TestCase):
         self.assertEqual(1, len(self.eventsReceived))
 
     def testCompositeWithChildrenUsesPluralIconIfAvailable(self):
-        self.compositeObject.setIcon("book_icon")
+        self.compositeObject.setIcon("nuvola_apps_accessories-dictionary")
         self.assertEqual(
-            "book_icon", self.compositeObject.icon(recursive=True)
+            "nuvola_apps_accessories-dictionary", self.compositeObject.icon(recursive=True)
         )
         self.addChild()
         self.assertEqual(
-            "books_icon", self.compositeObject.icon(recursive=True)
+            "nuvola_apps_bookcase", self.compositeObject.icon(recursive=True)
         )
         self.assertEqual(
-            "book_icon", self.compositeObject.icon(recursive=False)
+            "nuvola_apps_accessories-dictionary", self.compositeObject.icon(recursive=False)
         )
 
     def testCompositeWithChildrenUsesPluralSelectedIconIfAvailable(self):
-        self.compositeObject.setSelectedIcon("book_icon")
+        self.compositeObject.setSelectedIcon("nuvola_apps_accessories-dictionary")
         self.assertEqual(
-            "book_icon", self.compositeObject.selectedIcon(recursive=True)
+            "nuvola_apps_accessories-dictionary", self.compositeObject.selectedIcon(recursive=True)
         )
         self.addChild()
         self.assertEqual(
-            "books_icon", self.compositeObject.selectedIcon(recursive=True)
+            "nuvola_apps_bookcase", self.compositeObject.selectedIcon(recursive=True)
         )
         self.assertEqual(
-            "book_icon", self.compositeObject.selectedIcon(recursive=False)
+            "nuvola_apps_accessories-dictionary", self.compositeObject.selectedIcon(recursive=False)
         )
 
     def testCompositeWithoutChildrenDoesNotUseSingularIconIfAvailable(self):
-        self.compositeObject.setIcon("books_icon")
+        self.compositeObject.setIcon("nuvola_apps_bookcase")
         self.assertEqual(
-            "books_icon", self.compositeObject.icon(recursive=False)
+            "nuvola_apps_bookcase", self.compositeObject.icon(recursive=False)
         )
         self.assertEqual(
-            "books_icon", self.compositeObject.icon(recursive=True)
+            "nuvola_apps_bookcase", self.compositeObject.icon(recursive=True)
         )
 
     def testCompositeWithoutChildrenDoesNotUseSingularSelectedIconIfAvailable(
         self,
     ):
-        self.compositeObject.setSelectedIcon("books_icon")
+        self.compositeObject.setSelectedIcon("nuvola_apps_bookcase")
         self.assertEqual(
-            "books_icon", self.compositeObject.selectedIcon(recursive=False)
+            "nuvola_apps_bookcase", self.compositeObject.selectedIcon(recursive=False)
         )
         self.assertEqual(
-            "books_icon", self.compositeObject.selectedIcon(recursive=True)
+            "nuvola_apps_bookcase", self.compositeObject.selectedIcon(recursive=True)
         )
 
     def testChildOfCompositeUsesSingularIconIfAvailable(self):
-        self.compositeObject.setIcon("books_icon")
+        self.compositeObject.setIcon("nuvola_apps_bookcase")
         self.addChild()
-        self.assertEqual("book_icon", self.child.icon(recursive=True))
+        self.assertEqual("nuvola_apps_accessories-dictionary", self.child.icon(recursive=True))
 
     def testChildOfCompositeUsesSingularSelectedIconIfAvailable(self):
-        self.compositeObject.setSelectedIcon("books_icon")
+        self.compositeObject.setSelectedIcon("nuvola_apps_bookcase")
         self.addChild()
-        self.assertEqual("book_icon", self.child.selectedIcon(recursive=True))
+        self.assertEqual("nuvola_apps_accessories-dictionary", self.child.selectedIcon(recursive=True))
 
     def testParentUsesSingularIconAfterChildRemoved(self):
-        self.compositeObject.setIcon("book_icon")
+        self.compositeObject.setIcon("nuvola_apps_accessories-dictionary")
         self.addChild()
         self.assertEqual(
-            "books_icon", self.compositeObject.icon(recursive=True)
+            "nuvola_apps_bookcase", self.compositeObject.icon(recursive=True)
         )
         self.removeChild()
         self.assertEqual(
-            "book_icon", self.compositeObject.icon(recursive=True)
+            "nuvola_apps_accessories-dictionary", self.compositeObject.icon(recursive=True)
         )
 
     def testParentUsesSingularSelectedIconAfterChildRemoved(self):
-        self.compositeObject.setSelectedIcon("book_icon")
+        self.compositeObject.setSelectedIcon("nuvola_apps_accessories-dictionary")
         self.addChild()
         self.assertEqual(
-            "books_icon", self.compositeObject.selectedIcon(recursive=True)
+            "nuvola_apps_bookcase", self.compositeObject.selectedIcon(recursive=True)
         )
         self.removeChild()
         self.assertEqual(
-            "book_icon", self.compositeObject.selectedIcon(recursive=True)
+            "nuvola_apps_accessories-dictionary", self.compositeObject.selectedIcon(recursive=True)
         )
 
     def testCopy(self):

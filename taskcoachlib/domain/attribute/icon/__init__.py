@@ -17,11 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 itemImagePlural = dict(
-    book_icon="books_icon",
     cogwheel_icon="cogwheels_icon",
     envelope_icon="envelopes_icon",
-    heart_icon="hearts_icon",
-    key_icon="keys_icon",
     led_blue_icon="folder_blue_icon",
     led_blue_light_icon="folder_blue_light_icon",
     led_grey_icon="folder_grey_icon",

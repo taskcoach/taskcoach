@@ -30,11 +30,8 @@ Defined in `taskcoachlib/domain/attribute/icon/__init__.py`:
 
 | Singular (No Children) | Plural (Has Children)          |
 |------------------------|--------------------------------|
-| `book_icon`            | `books_icon`                   |
 | `cogwheel_icon`        | `cogwheels_icon`               |
 | `envelope_icon`        | `envelopes_icon`               |
-| `heart_icon`           | `hearts_icon`                  |
-| `key_icon`             | `keys_icon`                    |
 | `checkmark_green_icon` | `checkmark_green_icon_multiple` |
 | `person_icon`          | `persons_icon`                 |
 

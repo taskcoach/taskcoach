@@ -105,12 +105,17 @@ The `IconPicker` widget (`taskcoachlib/widgets/iconpicker.py`) is a custom searc
 **Architecture:**
 ```
 IconPicker (ThemedGenBitmapTextButton)
-├── Button: icon + label
+├── Button: displays one icon + label (no list-building)
+├── SetValue(icon_id) looks up artprovider.chooseableItems directly
+├── exclude parameter: None / "status" / "data" (passed to dialog)
 ├── Custom painting via DrawLabel/DrawBezel
-└── _IconDialog (wx.Dialog) — modal, ShowModal()
+└── _IconDialog (wx.Dialog) — modal, input=icon_id, output=icon_id
+    ├── _get_excluded_icons() — resolves exclude mode to actual icon_id set
+    ├── _load_icons() — builds item list from artprovider (fresh each open)
     ├── wx.SearchCtrl (filter input)
-    └── _IconVListBox (wx.VListBox)
-        └── Items: [icon] [label] [hints in grey]
+    └── _IconListCtrl (wx.ListCtrl)
+        └── 5 columns: Label (with icon), Hints, Theme, Context, icon_id (COL_ICON_ID=4)
+        └── _try_select_current() — inline selection + duplicate icon_id integrity check
 ```
 
 **Why Modal Dialog:**
@@ -128,6 +133,10 @@ IconPicker (ThemedGenBitmapTextButton)
 - Fixed-width option with text ellipsis
 - "No icon" option via `noIcon` parameter
 - Button grows/shrinks to fit selected icon label
+- Separation of concerns: button only displays one icon, dialog owns list-building
+- List built fresh each dialog open (no persistent list state on button)
+- `COL_ICON_ID = 4` column constant for readable list access
+- `_try_select_current()` inline selection with duplicate icon_id integrity check
 
 ## Features
 
@@ -166,8 +175,8 @@ Icons support additional searchable text shown in a secondary column:
 
 **Data structure:**
 ```python
-# Item format: (key, label, bitmap, hints, enabled)
-("led_blue_icon", "LED - Blue", bitmap, "status indicator light", True)
+# Item format: (icon_id, label, bitmap, hints, theme_label, context_label, enabled)
+("led_blue_icon", "LED - Blue", bitmap, "status indicator light", "Legacy", "", True)
 ```
 
 ### Icon Data in artprovider.py
@@ -176,13 +185,13 @@ Icon names and hints are stored together in a single structure in `taskcoachlib/
 
 ```python
 chooseableItems = {
-    "bell_icon": {
-        "name": _("Bell"),
-        "hints": [_("alarm"), _("notification"), _("alert"), _("reminder"), _("ring"), _("wake")],
-    },
     "calendar_icon": {
         "name": _("Calendar"),
         "hints": [_("date"), _("schedule"), _("appointment"), _("event"), _("planner")],
+    },
+    "clock_icon": {
+        "name": _("Clock"),
+        "hints": [_("time"), _("hour"), _("minute"), _("watch"), _("schedule"), _("duration")],
     },
     # ...
 }
@@ -197,14 +206,17 @@ Each hint term is individually translatable via the `_()` function. The IconPick
 
 ### Disabled Items
 
-Icons can be disabled in the picker via the `excluded_icons` parameter:
+Icons can be disabled in the picker via the `exclude` parameter:
+- `None`: no exclusion (all icons enabled)
+- `"status"`: exclude icons used in status configuration (for task/category editor)
+- `"data"`: exclude icons used by tasks, categories, and notes (for status preferences)
+
+The dialog resolves the actual excluded icon_ids internally via `_get_excluded_icons()`.
+
+Disabled icons show:
 - Grey text color and greyscale icon
 - Unselectable (skipped in keyboard nav, clicks ignored)
 - Still visible in list for user awareness
-
-Use cases:
-- Task editor: excludes icons used as status indicators
-- Preferences: excludes icons already in use by objects
 
 ## Usage
 
@@ -212,10 +224,10 @@ Use cases:
 from taskcoachlib import widgets
 
 # Basic usage - includes "No icon" option by default
-picker = widgets.IconPicker(parent, currentIcon="bell_icon")
+picker = widgets.IconPicker(parent, currentIcon="calendar_icon")
 
 # With excluded icons (shown as disabled/strikethrough)
-picker = widgets.IconPicker(parent, currentIcon, excluded_icons={"led_red_icon"})
+picker = widgets.IconPicker(parent, currentIcon, exclude="status")
 
 # Without "No icon" option - user must select an icon
 picker = widgets.IconPicker(parent, currentIcon, noIcon=False)
@@ -224,7 +236,7 @@ picker = widgets.IconPicker(parent, currentIcon, noIcon=False)
 picker = widgets.IconPicker(parent, currentIcon, fixedWidth=120)
 
 # Get/set the selected icon
-icon_key = picker.GetValue()  # Returns "" for "No icon", or icon key
+icon_id = picker.GetValue()  # Returns "" for "No icon", or icon_id string
 picker.SetValue("calendar_icon")
 ```
 

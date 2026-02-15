@@ -599,6 +599,7 @@ class Application(object, metaclass=patterns.Singleton):
         self.taskFile = persistence.LockedTaskFile(
             poll=self.settings.getboolean("file", "fspoll")
         )
+        self.__wx_app.taskFile = self.taskFile
         self.__auto_saver = persistence.AutoSaver(self.settings)
         self.__auto_exporter = persistence.AutoImporterExporter(self.settings)
         self.__auto_backup = persistence.AutoBackup(self.settings)

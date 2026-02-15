@@ -49,91 +49,34 @@ import wx.lib.buttons as buttons
 # (module-level _("No icon") requires wx.App for gettext initialization)
 
 
-# --- Test data with hints ---
-
-ICON_HINTS = {
-    "bell_icon": "alarm notification alert reminder",
-    "calendar_icon": "date schedule appointment event",
-    "checkmark_green_icon": "done complete finished success yes",
-    "clock_icon": "time hour minute watch",
-    "envelope_icon": "mail email message letter",
-    "folder_blue_icon": "directory storage files container",
-    "heart_icon": "love favorite like health",
-    "house_green_icon": "home residence building dwelling",
-    "key_icon": "lock security password access",
-    "led_blue_icon": "status indicator light signal online",
-    "led_red_icon": "status indicator light signal error offline",
-    "led_green_icon": "status indicator light signal ok active",
-    "magnifier_glass_icon": "search find zoom look inspect",
-    "pencil_icon": "edit write draw modify",
-    "person_icon": "user account profile member contact",
-    "star_yellow_icon": "favorite important priority rating bookmark",
-    "trashcan_icon": "delete remove garbage bin recycle",
-    "weather_lightning_icon": "storm thunder electric power urgent",
-    "wrench_icon": "tool settings config repair fix maintenance",
-}
-
-DISABLED_ICONS = {"led_grey_icon", "cross_red_icon", "lock_locked_icon"}
-
-
-def get_icons_dir():
-    return os.path.join(
-        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-        "taskcoachlib", "gui", "icons"
-    )
-
-
 def load_icon_data():
-    """Load icon data: (key, label, bitmap, hints, enabled) tuples."""
-    icons_dir = get_icons_dir()
-    icon_labels = {
-        "arrow_down_icon": "Arrow - Down",
-        "arrow_forward_icon": "Arrow - Forward",
-        "bell_icon": "Bell",
-        "book_icon": "Book",
-        "calendar_icon": "Calendar",
-        "checkmark_green_icon": "Check mark",
-        "clock_icon": "Clock",
-        "clock_alarm_icon": "Clock - Alarm",
-        "cross_red_icon": "Cross - Red",
-        "envelope_icon": "Envelope",
-        "folder_blue_icon": "Folder - Blue",
-        "folder_green_icon": "Folder - Green",
-        "heart_icon": "Heart",
-        "house_green_icon": "House - Green",
-        "key_icon": "Key",
-        "led_blue_icon": "LED - Blue",
-        "led_green_icon": "LED - Green",
-        "led_grey_icon": "LED - Grey",
-        "led_red_icon": "LED - Red",
-        "lock_locked_icon": "Lock - Locked",
-        "lock_unlocked_icon": "Lock - Unlocked",
-        "magnifier_glass_icon": "Magnifier glass",
-        "pencil_icon": "Pencil",
-        "person_icon": "Person",
-        "star_red_icon": "Star - Red",
-        "star_yellow_icon": "Star - Yellow",
-        "trashcan_icon": "Trashcan",
-        "weather_lightning_icon": "Weather - Lightning",
-        "weather_sunny_icon": "Weather - Partly sunny",
-        "wrench_icon": "Wrench",
-    }
+    """Load icon data from artprovider.chooseableItems (production data).
+
+    Returns list of (key, label, bitmap, hints_str, enabled) tuples.
+    Randomly picks 10 icons to mark as disabled for demo purposes.
+    Must be called after artprovider.init() and wx.App exists.
+    """
+    import random
+    from taskcoachlib.gui import artprovider
+
+    all_keys = list(artprovider.chooseableItems.keys())
+    disabled = set(random.sample(all_keys, min(10, len(all_keys))))
 
     items = []
     # Add "No icon" option first (empty key, no bitmap) - matches artprovider behavior
     items.append(("", "No icon", wx.NullBitmap, "", True))
-    sorted_keys = sorted(icon_labels, key=lambda k: icon_labels[k])
+
+    sorted_keys = sorted(all_keys,
+                         key=lambda k: artprovider.chooseableItems[k].get("label", k))
     for key in sorted_keys:
-        label = icon_labels[key]
-        path = os.path.join(icons_dir, f"{key}16x16.png")
-        if os.path.exists(path):
-            img = wx.Image(path)
-            bmp = img.ConvertToBitmap() if img.IsOk() else wx.NullBitmap
-        else:
-            bmp = wx.NullBitmap
-        hints = ICON_HINTS.get(key, "")
-        enabled = key not in DISABLED_ICONS
-        items.append((key, label, bmp, hints, enabled))
+        data = artprovider.chooseableItems[key]
+        label = data.get("label", key)
+        hints_str = " ".join(str(h) for h in data.get("hints", []))
+        bitmap = wx.ArtProvider.GetBitmap(key, wx.ART_MENU, (16, 16))
+        if not bitmap.IsOk():
+            bitmap = wx.NullBitmap
+        enabled = key not in disabled
+        items.append((key, label, bitmap, hints_str, enabled))
     return items
 
 
@@ -1540,7 +1483,7 @@ class DemoFrame(wx.Frame):
 
         # Control 2a: Stretched full width
         sizer.Add(wx.StaticText(panel, label="2a. CUSTOM (Stretched): Expands to fill width"), 0, wx.LEFT | wx.TOP, 5)
-        self._combo_stretched = SearchableIconCombo(panel, items, current_key="bell_icon")
+        self._combo_stretched = SearchableIconCombo(panel, items, current_key="calendar_icon")
         sizer.Add(self._combo_stretched, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
 
         # Control 2b: Auto-sized (natural width)
@@ -1550,7 +1493,7 @@ class DemoFrame(wx.Frame):
 
         # Control 2c: Fixed 75px
         sizer.Add(wx.StaticText(panel, label="2c. CUSTOM (75px): Fixed narrow width with ellipsis"), 0, wx.LEFT | wx.TOP, 5)
-        self._combo_narrow = SearchableIconCombo(panel, items, current_key="weather_lightning_icon", fixed_width=75)
+        self._combo_narrow = SearchableIconCombo(panel, items, current_key="nuvola_apps_preferences-web-browser-cache", fixed_width=75)
         sizer.Add(self._combo_narrow, 0, wx.LEFT, 10)
 
         sizer.Add(wx.StaticLine(panel), 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 2)
@@ -1562,12 +1505,12 @@ class DemoFrame(wx.Frame):
 
         # Control 3a: Button auto width
         sizer.Add(wx.StaticText(panel, label="3a. BUTTON (Auto width): Simple button opens popup"), 0, wx.LEFT | wx.TOP, 5)
-        self._btn_picker_auto = IconPickerButton(panel, items, current_key="bell_icon")
+        self._btn_picker_auto = IconPickerButton(panel, items, current_key="calendar_icon")
         sizer.Add(self._btn_picker_auto, 0, wx.LEFT, 10)
 
         # Control 3b: Button 100px
         sizer.Add(wx.StaticText(panel, label="3b. BUTTON (100px): Fixed width with ellipsis"), 0, wx.LEFT | wx.TOP, 5)
-        self._btn_picker_narrow = IconPickerButton(panel, items, current_key="weather_lightning_icon", fixed_width=120)
+        self._btn_picker_narrow = IconPickerButton(panel, items, current_key="nuvola_apps_preferences-web-browser-cache", fixed_width=120)
         sizer.Add(self._btn_picker_narrow, 0, wx.LEFT, 10)
 
         sizer.Add(wx.StaticLine(panel), 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 2)
@@ -1585,7 +1528,7 @@ class DemoFrame(wx.Frame):
         # Control 4b: Production IconPicker 120px with comparison standard button
         sizer.Add(wx.StaticText(panel, label="4b. PRODUCTION (120px) + Standard Button for focus comparison:"), 0, wx.LEFT | wx.TOP, 5)
         row_4b = wx.BoxSizer(wx.HORIZONTAL)
-        self._btn_mf_narrow = self.ProductionIconPicker(panel, currentIcon="weather_lightning_icon", fixedWidth=120)
+        self._btn_mf_narrow = self.ProductionIconPicker(panel, currentIcon="nuvola_apps_preferences-web-browser-cache", fixedWidth=120)
         row_4b.Add(self._btn_mf_narrow, 0)
         row_4b.Add((10, 0))  # Spacer
         self._btn_compare = wx.Button(panel, label="Standard Button")

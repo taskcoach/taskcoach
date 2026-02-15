@@ -30,7 +30,7 @@ class BalloonTipManager(balloontip.BalloonTipManager):
                 message=message,
                 title=title,
                 bitmap=wx.ArtProvider.GetBitmap(
-                    "lamp_icon", wx.ART_MENU, (16, 16)
+                    "nuvola_apps_ktip", wx.ART_MENU, (16, 16)
                 ),
                 getRect=getRect,
                 name=name,
