@@ -303,6 +303,46 @@ class DropTarget(wx.DropTarget):
             self.__onDropFileCallback(x, y, filenames)
 
 
+class _DragEventHandler(wx.EvtHandler):
+    """Temporary event handler pushed during drag operations.
+
+    Intercepts EVT_MOTION and EVT_KEY_DOWN. Popped on drag end,
+    cleanly restoring original HyperTreeList/ToolTipMixin handlers.
+    Uses PushEventHandler/PopEventHandler per wxWidgets best practice.
+    """
+    def __init__(self, mixin):
+        super().__init__()
+        self._mixin = mixin
+        self.Bind(wx.EVT_MOTION, self._onMotion)
+        self.Bind(wx.EVT_KEY_DOWN, self._onKeyDown)
+        self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self._onCaptureLost)
+
+    def _onMotion(self, event):
+        self._mixin.OnDragging(event)
+
+    def _onKeyDown(self, event):
+        self._mixin.OnKeyDuringDrag(event)
+
+    def _onCaptureLost(self, event):
+        self._mixin.StopDragging()
+        self._mixin._dragItems = []
+
+
+class _HeaderDragEventHandler(wx.EvtHandler):
+    """Temporary handler pushed on header window during drag."""
+    def __init__(self, mixin):
+        super().__init__()
+        self._mixin = mixin
+        self.Bind(wx.EVT_MOTION, self._onMotion)
+        self.Bind(wx.EVT_LEFT_UP, self._onLeftUp)
+
+    def _onMotion(self, event):
+        self._mixin.OnDraggingOverHeader(event)
+
+    def _onLeftUp(self, event):
+        self._mixin.OnDropOnHeader(event)
+
+
 class TreeHelperMixin(object):
     """This class provides methods that are not part of the API of any
     tree control, but are convenient to have available."""
@@ -364,6 +404,8 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
         self._dragStartPos = None
         self.GetMainWindow().Bind(wx.EVT_LEFT_DOWN, self._OnLeftDown)
         self._dragItems = []
+        self._dragHandler = None
+        self._headerDragHandler = None
         # Hover-expand timer: auto-expand collapsed items after hover delay
         self._hoverExpandTimerId = wx.NewIdRef()
         self._hoverExpandTimer = wx.Timer(self, self._hoverExpandTimerId)
@@ -500,7 +542,6 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
             self.UnselectAll()
             if item != self.GetRootItem():
                 self.SelectItem(item)
-        event.Skip()
 
     def _handleHoverExpand(self, item, flags):
         """Handle auto-expand of collapsed items during drag hover.
@@ -565,31 +606,48 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
             mainWin.ClearDropHighlight()
 
     def StartDragging(self):
-        self.GetMainWindow().Bind(wx.EVT_MOTION, self.OnDragging)
-        self.GetMainWindow().Bind(wx.EVT_KEY_DOWN, self.OnKeyDuringDrag)
-        self.Bind(wx.EVT_TREE_END_DRAG, self.OnEndDrag)
-        # Also bind to header window for header drops
+        mainWin = self.GetMainWindow()
+        self._dragHandler = _DragEventHandler(self)
+        mainWin.PushEventHandler(self._dragHandler)
         headerWin = self.GetHeaderWindow()
         if headerWin:
-            headerWin.Bind(wx.EVT_MOTION, self.OnDraggingOverHeader)
-            headerWin.Bind(wx.EVT_LEFT_UP, self.OnDropOnHeader)
+            self._headerDragHandler = _HeaderDragEventHandler(self)
+            headerWin.PushEventHandler(self._headerDragHandler)
+        else:
+            self._headerDragHandler = None
+        self.Bind(wx.EVT_TREE_END_DRAG, self.OnEndDrag)
         self.SetCursorToDragging()
         self._droppedOnHeader = False
 
     def StopDragging(self):
-        self.GetMainWindow().Unbind(wx.EVT_MOTION)
-        self.GetMainWindow().Unbind(wx.EVT_KEY_DOWN)
-        self.Unbind(wx.EVT_TREE_END_DRAG)
-        # Unbind header events
+        # Pop temporary drag handlers (restores original handler chain)
+        mainWin = self.GetMainWindow()
+        try:
+            if hasattr(self, '_dragHandler') and self._dragHandler:
+                mainWin.PopEventHandler(False)
+                self._dragHandler.Destroy()
+                self._dragHandler = None
+        except RuntimeError:
+            pass
         headerWin = self.GetHeaderWindow()
-        if headerWin:
-            headerWin.Unbind(wx.EVT_MOTION)
-            headerWin.Unbind(wx.EVT_LEFT_UP)
+        try:
+            if hasattr(self, '_headerDragHandler') and self._headerDragHandler:
+                headerWin.PopEventHandler(False)
+                self._headerDragHandler.Destroy()
+                self._headerDragHandler = None
+        except RuntimeError:
+            pass
+        self.Unbind(wx.EVT_TREE_END_DRAG)
         # Cancel any pending hover-expand
         self._hoverExpandTimer.Stop()
         self._hoverExpandItem = None
+        # Release mouse capture (fixes Windows scrollbar loss)
+        try:
+            if mainWin and mainWin.HasCapture():
+                mainWin.ReleaseMouse()
+        except RuntimeError:
+            pass
         # Clean up HyperTreeList's internal drag state
-        mainWin = self.GetMainWindow()
         if hasattr(mainWin, '_dragImage') and mainWin._dragImage:
             mainWin._dragImage.EndDrag()
             mainWin._dragImage = None
@@ -599,7 +657,6 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
         self._ResetHeaderCursor()
         self._ClearDropFeedback()
         self.selectDraggedItems()
-        # Refresh to clear any visual artifacts
         mainWin.Refresh()
 
     def OnKeyDuringDrag(self, event):
@@ -636,7 +693,6 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
     def OnDraggingOverHeader(self, event):
         """Handle mouse motion over the header window during dragging."""
         if not self._dragItems:
-            event.Skip()
             return
         # Show home folder cursor when over header (indicates root drop)
         headerWin = self.GetHeaderWindow()
@@ -644,18 +700,15 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
             headerWin.SetCursor(_getHomeCursor(headerWin))
         # Clear drop feedback in main window since we're over header
         self._ClearDropFeedback()
-        event.Skip()
 
     def OnDropOnHeader(self, event):
         """Handle drop on the header window - makes task a root task."""
         if not self._dragItems:
-            event.Skip()
             return
 
         # Get the column under the mouse
         headerWin = self.GetHeaderWindow()
         if not headerWin:
-            event.Skip()
             return
 
         x, _ = self.CalcUnscrolledPosition(event.GetX(), 0)
@@ -671,7 +724,6 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
 
         self.StopDragging()
         self._dragItems = []
-        event.Skip()
 
     def _isPrereqOrDepColumn(self, column):
         """Check if the column index is a prerequisites or dependencies column."""

@@ -8,7 +8,8 @@
 4. [Select Next After Deletion](#select-next-after-deletion)
 5. [Status Bar Updates](#status-bar-updates)
 6. [Scroll After Rebuild (Tree Views)](#scroll-after-rebuild-tree-views)
-7. [Key Files](#key-files)
+7. [Drag-and-Drop (Tree Views)](#drag-and-drop-tree-views)
+8. [Key Files](#key-files)
 
 ---
 
@@ -212,6 +213,62 @@ List-only viewers (effort, attachments) always use `ensureSelectionVisible` (nat
 
 ---
 
+## Drag-and-Drop (Tree Views)
+
+### Event Flow
+
+```
+EVT_TREE_BEGIN_DRAG (wx/HyperTreeList)
+    │
+    ▼
+OnBeginDrag (draganddrop.py)
+    │  validates selection, records _dragItems / _dragColumn
+    ▼
+StartDragging()
+    │  pushes _DragEventHandler on mainWin
+    │  pushes _HeaderDragEventHandler on headerWin
+    │  binds EVT_TREE_END_DRAG on self
+    ▼
+OnDragging (EVT_MOTION via pushed handler)
+    │  hit-test, cursor feedback, hover-expand
+    ▼
+OnEndDrag (EVT_TREE_END_DRAG) ─or─ OnDropOnHeader (EVT_LEFT_UP on header)
+    │
+    ▼
+StopDragging()
+    │  pops pushed handlers, releases mouse capture, cleans up drag state
+    ▼
+OnDrop (implemented in subclass)
+```
+
+### PushEventHandler / PopEventHandler Pattern
+
+Original code used `Bind()` in `StartDragging()` and blanket `Unbind()` in `StopDragging()`. This permanently destroyed original handlers:
+
+- `HyperTreeList.OnMouse` (`EVT_MOUSE_EVENTS`, `hypertreelist.py:2244`)
+- `ToolTipMixin.__OnMotion` (`EVT_MOTION`, `tooltip.py:39`)
+- `CustomTreeCtrl.OnKeyDown` (keyboard navigation)
+- Header window `OnMouse` (column resize feedback, `hypertreelist.py:710`)
+
+**Fix:** Push a temporary `wx.EvtHandler` (`_DragEventHandler`) onto the window's handler chain during drag. Pushed handlers get first crack at events; not calling `event.Skip()` prevents propagation to original handlers. `PopEventHandler()` on drag end cleanly restores the original chain without touching any bindings.
+
+Reference: [wxWidgets Event Handler Chain](https://docs.wxpython.org/events_overview.html)
+
+### Mouse Capture Platform Quirk
+
+`HyperTreeList` calls `CaptureMouse()` on drag start (`hypertreelist.py:3909`). The matching `ReleaseMouse()` is commented out upstream (workaround for [wxPython issue #349](https://github.com/wxWidgets/Phoenix/issues/349)).
+
+- **GTK/Linux:** GDK auto-releases the grab on button-up — no visible bug
+- **Windows/MSW:** `SetCapture` persists until explicit `ReleaseCapture` — scrollbar (non-client area) permanently stops receiving mouse events
+
+**Fix:** `StopDragging()` now calls `mainWin.ReleaseMouse()` if `mainWin.HasCapture()` is true.
+
+### event.Skip() in Drag Methods
+
+With pushed handlers, `event.Skip()` propagates events to the original handlers underneath. Drag motion/key handlers must NOT call `Skip()` (except `OnKeyDuringDrag` for non-Escape keys, which lets arrow keys reach `CustomTreeCtrl.OnKeyDown`).
+
+---
+
 ## Key Files
 
 | File | Purpose |
@@ -220,5 +277,7 @@ List-only viewers (effort, attachments) always use `ensureSelectionVisible` (nat
 | `taskcoachlib/gui/status.py` | Status bar with 500ms debounce |
 | `taskcoachlib/widgets/treectrl.py` | Tree widget with selection handling, scroll methods |
 | `taskcoachlib/widgets/listctrl.py` | List widget with selection handling |
+| `taskcoachlib/widgets/draganddrop.py` | DnD mixin with PushEventHandler/PopEventHandler pattern |
+| `taskcoachlib/widgets/tooltip.py` | ToolTipMixin — binds EVT_MOTION, destroyed by blanket Unbind (fixed) |
 | `taskcoachlib/patches/hypertreelist.py` | Patched upstream widget — DO NOT MODIFY (see `CRITICAL_WXPYTHON_PATCH.md`) |
 
