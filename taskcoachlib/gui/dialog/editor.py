@@ -22,10 +22,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import widgets, patterns, command, operating_system, render
+from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.meta.debug import log_step
 from taskcoachlib.domain import task, category, date, note, attachment, effort, base
 from taskcoachlib.domain.task import status
-from taskcoachlib.gui import viewer, uicommand, windowdimensionstracker, artprovider
+from taskcoachlib.gui import viewer, uicommand, windowdimensionstracker
 from taskcoachlib.gui.dialog import entry, attributesync
 from taskcoachlib.gui.dialog.entry import (
     get_suggested_hour_choices,
@@ -431,10 +432,10 @@ class CategorySubjectPage(SubjectPage):
 class AttachmentSubjectPage(SubjectPage):
     # Map type_ values to human-readable names and icons
     TYPE_INFO = {
-        "file": (_("File"), "document_icon"),
-        "folder": (_("Folder"), "folder_blue_icon"),
-        "uri": (_("Link"), "earth_blue_icon"),
-        "mail": (_("Email"), "envelope_icon"),
+        "file": (_("File"), "nuvola_mimetypes_application-x-dvi"),
+        "folder": (_("Folder"), "nuvola_mimetypes_inode-directory"),
+        "uri": (_("Link"), "nuvola_categories_applications-internet"),
+        "mail": (_("Email"), "nuvola_apps_email"),
         "unknown": (_("Unknown"), None),
     }
 
@@ -468,33 +469,33 @@ class AttachmentSubjectPage(SubjectPage):
         if len(self.items) == 1:
             item = self.items[0]
             if self._isFolderUri(item):
-                type_name, icon_name = self.TYPE_INFO.get("folder")
+                type_name, icon_id = self.TYPE_INFO.get("folder")
             else:
                 item_type = item.type_
-                type_name, icon_name = self.TYPE_INFO.get(
+                type_name, icon_id = self.TYPE_INFO.get(
                     item_type, (item_type, None)
                 )
                 # Check if file exists for file attachments
                 if item_type == "file":
                     attachmentBase = self._settings.get("file", "attachmentbase")
                     if not os.path.exists(item.normalizedLocation(attachmentBase)):
-                        icon_name = "fileopen_red"
+                        icon_id = "taskcoach_actions_fileopen_red"
         else:
             # Multiple items - show type if all same, otherwise "Mixed"
             types = set(item.type_ for item in self.items)
             if len(types) == 1:
                 item_type = types.pop()
-                type_name, icon_name = self.TYPE_INFO.get(
+                type_name, icon_id = self.TYPE_INFO.get(
                     item_type, (_("Unknown"), None)
                 )
             else:
                 type_name = _("Mixed")
-                icon_name = None
+                icon_id = None
 
         panel = wx.Panel(self)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        if icon_name:
-            bitmap = wx.ArtProvider.GetBitmap(icon_name, wx.ART_MENU, (16, 16))
+        if icon_id:
+            bitmap = icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
             if bitmap.IsOk():
                 icon = wx.StaticBitmap(panel, bitmap=bitmap)
                 sizer.Add(icon, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
@@ -751,13 +752,12 @@ class TaskAppearancePage(ScrolledPage):
         # --- Icon ---
         # Icons have no system theme - show "N/A" when no inherited value
         if iconValue:
-            bitmap = wx.ArtProvider.GetBitmap(iconValue, wx.ART_MENU, (16, 16))
-            self._derivedIconDisplay.SetBitmap(bitmap)
+            from taskcoachlib.gui.icons.icon_library import icon_catalog
+            icon_id = iconValue  # iconValue follows the *Value/*Source pattern
+            self._derivedIconDisplay.SetBitmap(icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE))
             self._derivedIconDisplay.Show()
-            # Look up icon name from artprovider metadata
-            iconData = artprovider.chooseableItems.get(iconValue, {})
-            iconName = iconData.get("name", iconValue)
-            self._derivedIconName.SetLabel(iconName)
+            icon = icon_catalog.get_icon(icon_id)
+            self._derivedIconName.SetLabel(icon.label if icon else icon_id)
             self._derivedIconName.Show()
             self._derivedIconNA.Hide()
             self._derivedIconSource.SetLabel(iconSource or _("Initializing..."))
@@ -991,13 +991,12 @@ class TaskAppearancePage(ScrolledPage):
         # Icons have no system default - use empty string if no value
         iconValue = iconActual if iconActual else ""
         if iconValue:
-            bitmap = wx.ArtProvider.GetBitmap(iconValue, wx.ART_MENU, (16, 16))
-            self._effectiveIconDisplay.SetBitmap(bitmap)
+            from taskcoachlib.gui.icons.icon_library import icon_catalog
+            icon_id = iconValue  # iconValue follows the *Value/*Source pattern
+            self._effectiveIconDisplay.SetBitmap(icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE))
             self._effectiveIconDisplay.Show()
-            # Look up icon name from artprovider metadata
-            iconData = artprovider.chooseableItems.get(iconValue, {})
-            iconName = iconData.get("name", iconValue)
-            self._effectiveIconName.SetLabel(iconName)
+            icon = icon_catalog.get_icon(icon_id)
+            self._effectiveIconName.SetLabel(icon.label if icon else icon_id)
             self._effectiveIconName.Show()
             self._effectiveIconNA.Hide()
             self._effectiveIconSource.SetLabel(iconSource or _("Initializing..."))
@@ -1056,13 +1055,13 @@ class TaskAppearancePage(ScrolledPage):
 
     def addIconEntry(self):
         # pylint: disable=W0201,E1101
-        currentIcon = self.items[0].icon() if len(self.items) == 1 else ""
+        current_icon_id = self.items[0].icon_id() if len(self.items) == 1 else ""
 
-        self._iconEntry = entry.IconEntry(self, currentIcon, exclude="status")
+        self._iconEntry = entry.IconEntry(self, current_icon_id, exclude="status")
         self._iconSync = attributesync.AttributeSync(
-            "icon",
+            "icon_id",
             self._iconEntry,
-            currentIcon,
+            current_icon_id,
             self.items,
             command.EditIconCommand,
             entry.EVT_ICONENTRY,
@@ -1084,7 +1083,7 @@ class TaskAppearancePage(ScrolledPage):
 class DatesPage(ScrolledPage):
     pageName = "dates"
     pageTitle = _("Dates")
-    pageIcon = "calendar_icon"
+    pageIcon = "nuvola_apps_date"
     columns = 3  # label, datetime row, rest
 
     def __init__(
@@ -1213,8 +1212,8 @@ class DatesPage(ScrolledPage):
         taskStatus, statusSource = theTask.computedStatus(explain=True)
 
         # Update icon
-        icon_name = taskStatus.getBitmap(self.__settings)
-        bitmap = wx.ArtProvider.GetBitmap(icon_name, wx.ART_MENU, (16, 16))
+        icon_id = taskStatus.getBitmap(self.__settings)
+        bitmap = icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
         if bitmap.IsOk():
             self._statusIcon.SetBitmap(bitmap)
 
@@ -1966,7 +1965,7 @@ class DatesPage(ScrolledPage):
 class ProgressPage(Page):
     pageName = "progress"
     pageTitle = _("Progress")
-    pageIcon = "progress"
+    pageIcon = "nuvola_actions_go-last"
 
     def addEntries(self):
         self.addProgressEntry()
@@ -2046,7 +2045,7 @@ class ProgressPage(Page):
 class BudgetPage(ScrolledPage):
     pageName = "budget"
     pageTitle = _("Budget")
-    pageIcon = "calculator_icon"
+    pageIcon = "nuvola_apps_accessories-calculator"
 
     def NavigateBook(self, forward):
         self.GetParent().NavigateBook(forward)
@@ -2289,7 +2288,7 @@ class PageWithViewer(Page):
 class EffortPage(PageWithViewer):
     pageName = "effort"
     pageTitle = _("Effort")
-    pageIcon = "clock_icon"
+    pageIcon = "nuvola_apps_clock"
 
     def createViewer(self, taskFile, settings, settingsSection):
         return viewer.EffortViewer(
@@ -2368,7 +2367,7 @@ class LocalCategoryViewer(viewer.BaseCategoryViewer):  # pylint: disable=W0223
 class CategoriesPage(PageWithViewer):
     pageName = "categories"
     pageTitle = _("Categories")
-    pageIcon = "folder_blue_arrow_icon"
+    pageIcon = "nuvola_places_folder-downloads"
 
     def __init__(self, *args, **kwargs):
         self.__realized = False
@@ -2448,7 +2447,7 @@ class LocalAttachmentViewer(viewer.AttachmentViewer):  # pylint: disable=W0223
 class AttachmentsPage(PageWithViewer):
     pageName = "attachments"
     pageTitle = _("Attachments")
-    pageIcon = "paperclip_icon"
+    pageIcon = "nuvola_status_mail-attachment"
 
     def createViewer(self, taskFile, settings, settingsSection):
         assert len(self.items) == 1
@@ -2551,7 +2550,7 @@ class LocalNoteViewer(viewer.BaseNoteViewer):  # pylint: disable=W0223
 class NotesPage(PageWithViewer):
     pageName = "notes"
     pageTitle = _("Notes")
-    pageIcon = "note_icon"
+    pageIcon = "nuvola_apps_knotes"
 
     def createViewer(self, taskFile, settings, settingsSection):
         assert len(self.items) == 1
@@ -2663,7 +2662,7 @@ class PathPage(ScrolledPage):
 
     pageName = "path"
     pageTitle = _("Path")
-    pageIcon = "arrow_down_right"
+    pageIcon = "taskcoach_actions_arrow_down_right"
     columns = 1
 
     def __init__(self, items, parent, taskFile, *args, **kwargs):
@@ -2799,7 +2798,7 @@ class PathPage(ScrolledPage):
             return
 
         for index, obj in enumerate(path_objects):
-            obj_type, icon_name = self._getTypeInfo(obj)
+            obj_type, icon_id = self._getTypeInfo(obj)
             subject = obj.subject()
 
             item_panel = wx.Panel(self._pathPanel)
@@ -2809,16 +2808,16 @@ class PathPage(ScrolledPage):
             if index > 0:
                 indent = wx.Panel(item_panel, size=(index * 20, 1))
                 item_sizer.Add(indent, 0)
-                arrow_bitmap = wx.ArtProvider.GetBitmap(
-                    "arrow_down_right", wx.ART_MENU, (16, 16)
+                arrow_bitmap = icon_catalog.get_bitmap(
+                    "taskcoach_actions_arrow_down_right", LIST_ICON_SIZE
                 )
                 if arrow_bitmap.IsOk():
                     arrow = wx.StaticBitmap(item_panel, bitmap=arrow_bitmap)
                     item_sizer.Add(arrow, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
 
             # Add type icon if available
-            if icon_name:
-                bitmap = wx.ArtProvider.GetBitmap(icon_name, wx.ART_MENU, (16, 16))
+            if icon_id:
+                bitmap = icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
                 if bitmap.IsOk():
                     icon = wx.StaticBitmap(item_panel, bitmap=bitmap)
                     item_sizer.Add(icon, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
@@ -2899,13 +2898,13 @@ class PathPage(ScrolledPage):
 
     def _addItemRow(self, obj, display_text=None):
         """Add an item row with icon and label to the path panel."""
-        obj_type, icon_name = self._getTypeInfo(obj)
+        obj_type, icon_id = self._getTypeInfo(obj)
         item_panel = wx.Panel(self._pathPanel)
         item_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
         # Add type icon if available
-        if icon_name:
-            bitmap = wx.ArtProvider.GetBitmap(icon_name, wx.ART_MENU, (16, 16))
+        if icon_id:
+            bitmap = icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
             if bitmap.IsOk():
                 icon = wx.StaticBitmap(item_panel, bitmap=bitmap)
                 item_sizer.Add(icon, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
@@ -2941,9 +2940,9 @@ class PathPage(ScrolledPage):
             if obj_id in self._iconWidgets:
                 obj, bitmap = self._iconWidgets[obj_id]
                 try:
-                    _, icon_name = self._getTypeInfo(obj)
-                    if icon_name:
-                        new_bitmap = wx.ArtProvider.GetBitmap(icon_name, wx.ART_MENU, (16, 16))
+                    _, icon_id = self._getTypeInfo(obj)
+                    if icon_id:
+                        new_bitmap = icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
                         if new_bitmap.IsOk():
                             bitmap.SetBitmap(new_bitmap)
                             bitmap.Refresh()
@@ -3014,7 +3013,7 @@ class PathPage(ScrolledPage):
         elif isinstance(obj, attachment.Attachment):
             return (_("Attachment"), obj.effectiveIcon())
         elif isinstance(obj, effort.Effort):
-            return (_("Effort"), "clock_icon")
+            return (_("Effort"), "nuvola_apps_clock")
         else:
             return (_("Item"), None)
 

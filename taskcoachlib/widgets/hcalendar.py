@@ -23,6 +23,7 @@ from .wxevents import (
     EVT_EVENT_DATES_CHANGED,
 )
 from taskcoachlib.domain import date
+from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.widgets import draganddrop
 from taskcoachlib import command, render
 from . import tooltip
@@ -270,14 +271,14 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
         return None
 
     def GetIcons(self, task):
-        icons = [task.icon(recursive=True)]
+        icon_ids = [task.icon_id(recursive=True)]
         if task.attachments():
-            icons.append("paperclip_icon")
+            icon_ids.append("nuvola_status_mail-attachment")
         if task.notes():
-            icons.append("note_icon")
+            icon_ids.append("nuvola_apps_knotes")
         return [
-            wx.ArtProvider.GetIcon(name, wx.ART_FRAME_ICON, (16, 16))
-            for name in icons
+            icon_catalog.get_wx_icon(icon_id, LIST_ICON_SIZE)
+            for icon_id in icon_ids
         ]
 
     def GetFont(self, task):

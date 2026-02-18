@@ -59,10 +59,10 @@ class AttachmentViewerTest(test.wxTestCase):
 
     def testTypeImageIndex_UriAttachment(self):
         uriAttachment = attachment.URIAttachment("http://whatever.we")
-        self.assertIcon("earth_blue_icon", uriAttachment)
+        self.assertIcon("nuvola_categories_applications-internet", uriAttachment)
 
     def testTypeImgeIndex_MailAttachment(self):
         mailAttachment = attachment.MailAttachment(
             "", readMail=lambda location: ("", "")
         )
-        self.assertIcon("envelope_icon", mailAttachment)
+        self.assertIcon("nuvola_apps_email", mailAttachment)

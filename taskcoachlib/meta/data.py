@@ -40,11 +40,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #   - Patch: Incremented for each bug fix release
 # =============================================================================
 
-version = "2.0.1"  # Major.Minor.Milestone
-patch = "71"  # Patch number - INCREMENT THIS for each release
-version_full = f"{version}.{patch}"  # Full version: 2.0.1.71
+version = "2.0.2"  # Major.Minor.Milestone
+patch = "0"  # Patch number - INCREMENT THIS for each release
+version_full = f"{version}.{patch}"  # Full version: 2.0.2.0
 
-release_day = "9"  # Day of the release (1-31)
+release_day = "18"  # Day of the release (1-31)
 release_month = "February"  # Month of the release
 release_year = "2026"  # Year of the release
 

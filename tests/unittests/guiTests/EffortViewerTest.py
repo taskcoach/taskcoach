@@ -598,7 +598,7 @@ class CommonTestsMixin(object):
 
     def testNewEffortUsesSameTaskAsSelectedEffort(self):
         dialog = self.viewer.newItemDialog(
-            selectedTasks=[self.task2], bitmap="new"
+            selectedTasks=[self.task2], bitmap="nuvola_actions_document-new"
         )
         for newEffort in dialog._items:  # pylint: disable=W0212
             self.assertEqual(self.task2, newEffort.task())

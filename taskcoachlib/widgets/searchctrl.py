@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import wx, re, sre_constants
+from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.widgets import tooltip
 from taskcoachlib.i18n import _
 
@@ -37,15 +38,15 @@ class _SearchCtrlInner(tooltip.ToolTipMixin, wx.SearchCtrl):
         self.__includeSubItems = kwargs.pop("includeSubItems", False)
         self.__searchDescription = kwargs.pop("searchDescription", False)
         self.__regularExpression = kwargs.pop("regularExpression", False)
-        self.__bitmapSize = kwargs.pop("size", (16, 16))
+        self.__bitmapSize = kwargs.pop("size", (LIST_ICON_SIZE, LIST_ICON_SIZE))
         self.__debounceDelay = kwargs.pop("debounceDelay", self.SEARCH_DEBOUNCE_DELAY_MS)
         value = kwargs.pop("value", "")
         super().__init__(parent, *args, **kwargs)
         self.SetSearchMenuBitmap(
-            self.getBitmap("magnifier_glass_dropdown_icon")
+            self.getBitmap("taskcoach_actions_magnifier_glass_dropdown_icon")
         )
-        self.SetSearchBitmap(self.getBitmap("magnifier_glass_icon"))
-        self.SetCancelBitmap(self.getBitmap("cross_red_icon"))
+        self.SetSearchBitmap(self.getBitmap("nuvola_apps_xmag"))
+        self.SetCancelBitmap(self.getBitmap("nuvola_status_dialog-error"))
         self.__timer = wx.Timer(self)
         self.__recentSearches = []
         self.__maxRecentSearches = 5
@@ -65,10 +66,8 @@ class _SearchCtrlInner(tooltip.ToolTipMixin, wx.SearchCtrl):
         ]
         return textCtrl[0] if textCtrl else self
 
-    def getBitmap(self, bitmap):
-        return wx.ArtProvider.GetBitmap(
-            bitmap, wx.ART_TOOLBAR, self.__bitmapSize
-        )
+    def getBitmap(self, icon_id):
+        return icon_catalog.get_bitmap(icon_id, self.__bitmapSize[0])
 
     def createMenu(self):
         # pylint: disable=W0201

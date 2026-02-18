@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import ast
 from taskcoachlib import patterns, config
 from taskcoachlib.domain import task, effort, date, attachment, note, category
-from taskcoachlib.domain.attribute.icon import getImagePlural, getImageOpen
+from taskcoachlib.domain.attribute.icon import getImagePlural
 from pubsub import pub
 from unittests import asserts
 import test
@@ -1606,9 +1606,7 @@ class InactiveTaskWithChildTest(TaskTestCase):
 
     def testSelectedIcon(self):
         self.assertEqual(
-            getImageOpen(
-                getImagePlural(task.inactive.getBitmap(self.settings))
-            ),
+            getImagePlural(task.inactive.getBitmap(self.settings)),
             self.task.selectedIcon(recursive=True),
         )
 
@@ -2392,7 +2390,7 @@ class TaskWithChildTest(
 
     def testSelectedIcon(self):
         self.assertEqual(
-            getImageOpen(getImagePlural(task.active.getBitmap(self.settings))),
+            getImagePlural(task.active.getBitmap(self.settings)),
             self.task.selectedIcon(recursive=True),
         )
 
@@ -2571,9 +2569,7 @@ class OverdueTaskWithChildTest(TaskTestCase):
 
     def testSelectedIcon(self):
         self.assertEqual(
-            getImageOpen(
-                getImagePlural(task.overdue.getBitmap(self.settings))
-            ),
+            getImagePlural(task.overdue.getBitmap(self.settings)),
             self.task.selectedIcon(recursive=True),
         )
 
@@ -2601,9 +2597,7 @@ class DuesoonTaskWithChildTest(TaskTestCase):
 
     def testSelectedIcon(self):
         self.assertEqual(
-            getImageOpen(
-                getImagePlural(task.duesoon.getBitmap(self.settings))
-            ),
+            getImagePlural(task.duesoon.getBitmap(self.settings)),
             self.task.selectedIcon(recursive=True),
         )
 
@@ -2789,19 +2783,19 @@ class TaskWithActiveEffort(TaskTestCase, CommonTaskTestsMixin):
         self.assertEqual([(False, self.task)], events)
 
     def testIcon(self):
-        self.assertEqual("clock_icon", self.task.icon(recursive=True))
+        self.assertEqual("nuvola_apps_clock", self.task.icon(recursive=True))
 
     def testSelectedIcon(self):
-        self.assertEqual("clock_icon", self.task.selectedIcon(recursive=True))
+        self.assertEqual("nuvola_apps_clock", self.task.selectedIcon(recursive=True))
 
     def testIconAfterStopTracking(self):
         self.task.stopTracking()
-        self.assertNotEqual("clock_icon", self.task.icon(recursive=True))
+        self.assertNotEqual("nuvola_apps_clock", self.task.icon(recursive=True))
 
     def testSelectedIconAfterStopTracking(self):
         self.task.stopTracking()
         self.assertNotEqual(
-            "clock_icon", self.task.selectedIcon(recursive=True)
+            "nuvola_apps_clock", self.task.selectedIcon(recursive=True)
         )
 
 

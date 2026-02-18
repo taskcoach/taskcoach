@@ -41,7 +41,7 @@ class EffortViewer(
     base.SortableViewerWithColumns,
 ):
     defaultTitle = _("Effort")
-    defaultBitmap = "clock_icon"
+    defaultBitmap = "nuvola_apps_clock"
     coreObjectType = "efforts"
     SorterClass = effort.EffortSorter
 
@@ -277,7 +277,7 @@ class EffortViewer(
             resizeableColumn=1,
             **self.widgetCreationKeywordArguments()
         )
-        widget.AssignImageList(
+        widget.SetImageList(
             imageList, wx.IMAGE_LIST_SMALL
         )  # pylint: disable=E1101
         return widget
@@ -700,7 +700,7 @@ class EffortViewer(
 
     def newItemDialog(self, *args, **kwargs):
         selectedTasks = kwargs.get("selectedTasks", [])
-        bitmap = kwargs.get("bitmap", "new")
+        icon_id = kwargs.get("icon_id", "nuvola_actions_document-new")
         if not selectedTasks:
             subjectDecoratedTaskList = [
                 (task.subject(recursive=True), task)
@@ -708,7 +708,7 @@ class EffortViewer(
             ]
             subjectDecoratedTaskList.sort()  # Sort by subject
             selectedTasks = [subjectDecoratedTaskList[0][1]]
-        return super().newItemDialog(selectedTasks, bitmap=bitmap)
+        return super().newItemDialog(selectedTasks, icon_id=icon_id)
 
     def itemEditorClass(self):
         return dialog.editor.EffortEditor

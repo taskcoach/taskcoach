@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import widgets, operating_system
 from taskcoachlib.domain import date
-from taskcoachlib.gui import artprovider
 from taskcoachlib.i18n import _
 import datetime
 from wx.lib import combotreebox, newevent
@@ -429,11 +428,11 @@ IconEntryEvent, EVT_ICONENTRY = newevent.NewEvent()
 
 class IconEntry(widgets.PanelWithBoxSizer):
     """Icon entry with checkbox. When unchecked, returns empty string (no icon)."""
-    def __init__(self, parent, currentIcon, exclude=None, *args, **kwargs):
+    def __init__(self, parent, current_icon_id, exclude=None, *args, **kwargs):
         kwargs["orientation"] = wx.HORIZONTAL
         super().__init__(parent, *args, **kwargs)
-        self._iconCheckBox = self._createCheckBox(currentIcon)
-        self._iconPicker = self._createIconPicker(parent, currentIcon, exclude)
+        self._iconCheckBox = self._createCheckBox(current_icon_id)
+        self._iconPicker = self._createIconPicker(parent, current_icon_id, exclude)
         self.add(
             self._iconCheckBox,
             flag=wx.ALIGN_CENTER_VERTICAL | wx.RIGHT,
@@ -448,14 +447,14 @@ class IconEntry(widgets.PanelWithBoxSizer):
         )
         self.fitNoMinSize()
 
-    def _createCheckBox(self, currentIcon):
+    def _createCheckBox(self, current_icon_id):
         checkBox = wx.CheckBox(self, label="")
-        checkBox.SetValue(currentIcon != "")
+        checkBox.SetValue(current_icon_id != "")
         checkBox.Bind(wx.EVT_CHECKBOX, self.onChecked)
         return checkBox
 
-    def _createIconPicker(self, parent, currentIcon, exclude):
-        picker = widgets.IconPicker(self, currentIcon or "", exclude=exclude)
+    def _createIconPicker(self, parent, current_icon_id, exclude):
+        picker = widgets.IconPicker(self, current_icon_id or "", exclude=exclude)
         picker.Bind(wx.EVT_COMBOBOX, self.onIconPicked)
         return picker
 

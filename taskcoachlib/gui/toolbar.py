@@ -17,9 +17,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import operating_system
+from taskcoachlib.config.defaults import MAIN_TOOLBAR_ICON_SIZE_DEFAULT
+from taskcoachlib.gui.icons.icon_library import LIST_ICON_SIZE
+from taskcoachlib.meta.debug import log_step
 from wx.lib.agw import aui
 import wx
 from . import uicommand
+
+# All toolbars use LIST_ICON_SIZE except the main toolbar, which has
+# user-selectable sizes defined in config/defaults.py.
+TOOLBAR_ICON_SIZE = LIST_ICON_SIZE
 
 
 class _Toolbar(aui.AuiToolBar):
@@ -29,6 +36,17 @@ class _Toolbar(aui.AuiToolBar):
     def AddLabelTool(self, id, label, bitmap1, bitmap2, kind, **kwargs):
         long_help_string = kwargs.pop("longHelp", "")
         short_help_string = kwargs.pop("shortHelp", "")
+        if not bitmap1.IsOk():
+            size = self.GetToolBitmapSize()
+            log_step(
+                f"Toolbar item '{label}' has no bitmap at size "
+                f"{size[0]}x{size[1]}. Import the missing size from the "
+                f"distillery. See ICON_LIBRARY.md Step 2.3.",
+                prefix="ICON"
+            )
+            img = wx.Image(size[0], size[1])
+            img.InitAlpha()
+            bitmap1 = img.ConvertToBitmap()
         bitmap2 = self.MakeDisabledBitmap(bitmap1)
         super().AddTool(
             id,
@@ -61,11 +79,22 @@ class _Toolbar(aui.AuiToolBar):
             super().SetMargins(*args)
 
     def MakeDisabledBitmap(self, bitmap):
+        if not bitmap.IsOk():
+            size = self.GetToolBitmapSize()
+            log_step(
+                f"ERROR: Toolbar received NullBitmap at size {size[0]}x{size[1]}. "
+                f"A toolbar icon is missing this size — import it from the "
+                f"distillery and update icons.json sizes. "
+                f"See ICON_LIBRARY.md Step 2.3.",
+                prefix="ICON"
+            )
+            return bitmap
         return bitmap.ConvertToImage().ConvertToGreyscale().ConvertToBitmap()
 
 
 class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
-    def __init__(self, window, settings, size=(32, 32)):
+    def __init__(self, window, settings,
+                 size=(MAIN_TOOLBAR_ICON_SIZE_DEFAULT,) * 2):
         self.__window = window
         self.__settings = settings
         self.__visibleUICommands = list()

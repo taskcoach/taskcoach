@@ -2,6 +2,36 @@
 
 This document describes the system tray (notification area) icon implementation in Task Coach across different platforms and desktop environments.
 
+## Table of Contents
+
+- [TODO](#todo)
+- [Overview](#overview)
+- [Implementation Architecture](#implementation-architecture)
+- [Platform Behavior Matrix](#platform-behavior-matrix)
+- [Tested Configurations](#tested-configurations)
+- [References](#references)
+- [Why AppIndicator on Linux?](#why-appindicator-on-linux)
+- [Menu Contents](#menu-contents)
+- [Dependencies](#dependencies)
+- [Icon Animation](#icon-animation)
+- [Debugging](#debugging)
+- [Files](#files)
+- [Code Duplication](#code-duplication)
+- [See Also](#see-also)
+- [History](#history)
+
+---
+
+## TODO
+
+1. **Extract base class.** `TaskBarIcon` and `AppIndicatorTaskBarIcon` duplicate
+   ~100 lines of identical logic (see [Code Duplication](#code-duplication)).
+   Extract shared logic into `TaskBarIconBase(patterns.Observer)`. Subclasses
+   override only `_set_icon()` and menu handling. `TaskBarIcon` additionally
+   inherits from `wx.adv.TaskBarIcon`.
+
+---
+
 ## Overview
 
 Task Coach displays a system tray icon that allows users to:
@@ -15,12 +45,29 @@ Task Coach displays a system tray icon that allows users to:
 ### Platform Detection Flow
 
 ```
-create_taskbar_icon()
-    |
-    +-- Linux/GTK? --Yes--> Use AppIndicator (all Linux)
-    |
-    +-- No --> wx.adv.TaskBarIcon (Windows, macOS)
+create_taskbar_icon(mainwindow, taskList, settings)
+  │
+  ├─ Linux/GTK + AppIndicator available → AppIndicatorTaskBarIcon
+  │   .__setIcon()
+  │       → path = icon_catalog.get_path(icon_id, 48)
+  │       → self.__indicator.set_icon_full(path, self.__tooltipText)
+  │
+  ├─ Windows / Mac → TaskBarIcon (wx.adv.TaskBarIcon)
+  │   .__setIcon()
+  │       ├─ Mac   → size = TRAY_ICON_SIZE_MACOS (128)
+  │       └─ Other → size = LIST_ICON_SIZE (16)
+  │       → icon = icon_catalog.get_wx_icon(icon_id, size)
+  │       → self.SetIcon(icon, self.__tooltipText)
+  │
+  └─ Fallback → tries AppIndicator, then wx anyway
 ```
+
+### Icon blinking
+
+When effort tracking is active, the tray icon blinks between `nuvola_apps_clock`
+and `nuvola_apps_ktimer` each second. Both icons need tray-appropriate sizes.
+Size constants: `TRAY_ICON_SIZE_MACOS` (128) and `LIST_ICON_SIZE` (16) in
+`taskbaricon.py`.
 
 ### Classes
 
@@ -204,6 +251,51 @@ Key log messages:
 | `taskcoachlib/gui/appindicator.py` | AppIndicator/GTK bindings |
 | `taskcoachlib/gui/menu.py` | TaskBarMenu class for wx platforms |
 | `taskcoachlib/gui/icons/` | Icon files (PNG at various sizes) |
+
+## Code Duplication
+
+`TaskBarIcon` and `AppIndicatorTaskBarIcon` in `taskbaricon.py` duplicate
+~100 lines of identical logic. Only `__setIcon()` and menu handling differ.
+
+### Shared (duplicated)
+
+| Code | Description |
+|------|-------------|
+| Observer registration | `registerObserver`, `pub.subscribe` for task/tracking/due events |
+| `onTaskListChanged` | Tooltip + start/stop ticking |
+| `onTrackingChanged` | Register/remove subject observer, tooltip, start/stop |
+| `onChangeSubject` | Tooltip update |
+| `onChangeDueDateTime` | Tooltip update |
+| `onChangeDueDateTime_Deprecated` | Tooltip update |
+| `onEverySecond` | Blink setting check, toggle icon, set icon |
+| `toolTipMessages` | Status message templates |
+| `__setTooltipText` | Build tooltip from tracked tasks / status counts |
+| `__set_default_icon` | Reset icon_id to default |
+| `__toggle_tracking_icon` | Swap tick/tack icon_id |
+| `__startOrStopTicking` | Dispatch to start/stop |
+| `__startTicking` / `__stopTicking` | Clock + icon control |
+| `startClock` / `stopClock` / `_onTimerSecond` | Timer pub/sub |
+| Getters | `tooltip()`, `icon_id()`, `default_icon_id()` |
+
+### Platform-specific (different)
+
+| TaskBarIcon (Windows/Mac) | AppIndicatorTaskBarIcon (Linux) |
+|---|---|
+| `__setIcon`: `icon_catalog.get_wx_icon(id, size)` → `self.SetIcon()` | `__setIcon`: `icon_catalog.get_path(id, 128)` → `indicator.set_icon_full()` |
+| `onIdle` — wx idle loop change detection | (none — calls `__setIcon` directly) |
+| `onTaskbarClick(event)` — Mac Raise branch | `onTaskbarClick(event=None)` — simpler |
+| `setPopupMenu` — wx.Bind right-click | `setPopupMenu` — stores, builds GTK menu |
+| `popupTaskBarMenu` — wx.PopupMenu | GTK menu building + action handlers (~300 lines) |
+| wx click event binding in `__init__` | (none) |
+| `mainwindow.Bind(EVT_IDLE)` | (none) |
+| (none) | wx compatibility stubs (Bind, Unbind, ProcessEvent, UpdateWindowUI) |
+| (none) | `RemoveIcon`, `Destroy` |
+
+---
+
+## See Also
+
+- [ICON_DISPLAY.md — Tray Icons](ICON_DISPLAY.md#tray-icons) - Icon access methods and platform sizes
 
 ## History
 

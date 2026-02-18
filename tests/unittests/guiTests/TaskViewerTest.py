@@ -501,7 +501,7 @@ class CommonTestsMixin(object):
         self.task.addAttachment(att)
         self.taskList.append(self.task)
         self.showColumn("attachments")
-        self.assertIcon("paperclip_icon", column=1)
+        self.assertIcon("nuvola_status_mail-attachment", column=1)
 
     def testOneDayLeft(self):
         self.showColumn("timeLeft")
@@ -721,7 +721,7 @@ class CommonTestsMixin(object):
         self.taskFile.categories().append(
             category.Category("cat", filtered=True)
         )
-        dialog = self.viewer.newItemDialog(bitmap="new")
+        dialog = self.viewer.newItemDialog(bitmap="nuvola_actions_document-new")
         dialog._interior[4].selected()
         tree = dialog._interior[4].viewer.widget  # pylint: disable=W0212
         firstChild = tree.GetFirstChild(tree.GetRootItem())[0]
@@ -764,7 +764,7 @@ class CommonTestsMixin(object):
     def testIconUpdatesWhenEffortTrackingStarts(self):
         self.taskList.append(self.task)
         self.task.addEffort(effort.Effort(self.task))
-        self.assertIcon("clock_icon")
+        self.assertIcon("nuvola_apps_clock")
 
     def testIconUpdatesWhenEffortTrackingStops(self):
         self.taskList.append(self.task)

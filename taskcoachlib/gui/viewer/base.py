@@ -23,7 +23,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import wx
 from taskcoachlib import patterns, widgets, command, render
 from taskcoachlib.i18n import _
-from taskcoachlib.gui import uicommand, toolbar, artprovider
+from taskcoachlib.gui import uicommand, toolbar
+from taskcoachlib.gui.icons import icon_library
+from taskcoachlib.gui.icons import image_list_cache
 from wx.lib.agw import hypertreelist
 from pubsub import pub
 from taskcoachlib.widgets import ToolTipMixin
@@ -41,7 +43,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
     defaultTitle = "Subclass responsibility"
     defaultBitmap = "Subclass responsibility"
     coreObjectType = None
-    viewerImages = artprovider.itemImages
+    viewerIconIds = []  # Subclasses extend; all catalog icons prepended at runtime
 
     def __init__(self, parent, taskFile, settings, *args, **kwargs):
         patterns.Observer.__init__(self)
@@ -72,7 +74,8 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         self.widget.SetBackgroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
         )
-        self.toolbar = toolbar.ToolBar(self, settings, (16, 16))
+        self.toolbar = toolbar.ToolBar(self, settings,
+                                       (toolbar.TOOLBAR_ICON_SIZE,) * 2)
         self.initLayout()
         self.registerPresentationObservers()
         self.refresh()
@@ -272,22 +275,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         raise NotImplementedError
 
     def createImageList(self):
-        size = (16, 16)
-        imageList = wx.ImageList(*size)  # pylint: disable=W0142
-        self.imageIndex = {}  # pylint: disable=W0201
-        for index, image in enumerate(self.viewerImages):
-            try:
-                bitmap = wx.ArtProvider.GetBitmap(image, wx.ART_MENU, size)
-                if not bitmap.IsOk():
-                    from taskcoachlib.meta.debug import log_step
-                    log_step(f"ERROR: Failed to load bitmap for '{image}' size={size}", prefix="ICON")
-                    bitmap = wx.Bitmap(*size)
-                imageList.Add(bitmap)
-            except Exception:
-                print(image)
-                raise
-            self.imageIndex[image] = index
-        return imageList
+        return image_list_cache.image_list
 
     def getWidget(self):
         return self.widget
@@ -347,13 +335,13 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         self.refresh()
 
         # AFTER refresh - select next if selection became empty
-        if itemsRemoved() and not self.widget.curselection() and selectionInfo:
+        if itemsRemoved() and hasattr(self.widget, 'curselection') and not self.widget.curselection() and selectionInfo:
             self.selectNextItemsAfterRemoval(selectionInfo)
         # Center on selected item — tree views use scrollToSelectionCentered,
         # list views use ensureSelectionVisible (native wx scrollbar management)
         if hasattr(self.widget, 'scrollToSelectionCentered'):
             self.widget.scrollToSelectionCentered()
-        else:
+        elif hasattr(self.widget, 'ensureSelectionVisible'):
             self.widget.ensureSelectionVisible()
         self.sendViewerStatusEvent()
 
@@ -663,14 +651,14 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         return ()
 
     def newItemDialog(self, *args, **kwargs):
-        bitmap = kwargs.pop("bitmap")
+        icon_id = kwargs.pop("icon_id")
         newItemCommand = self.newItemCommand(*args, **kwargs)
         newItemCommand.do()
         return self.editItemDialog(
-            newItemCommand.items, bitmap, items_are_new=True
+            newItemCommand.items, icon_id, items_are_new=True
         )
 
-    def newSubItemDialog(self, bitmap):
+    def newSubItemDialog(self, icon_id):
         parents = self.curselection()
         newSubItemCommand = self.newSubItemCommand()
         newSubItemCommand.do()
@@ -678,11 +666,11 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         for parent in parents:
             parent.expand(True, context=self.settingsSection())
         return self.editItemDialog(
-            newSubItemCommand.items, bitmap, items_are_new=True
+            newSubItemCommand.items, icon_id, items_are_new=True
         )
 
     def editItemDialog(
-        self, items, bitmap, columnName="", items_are_new=False
+        self, items, icon_id, columnName="", items_are_new=False
     ):
         Editor = self.itemEditorClass()
         return Editor(
@@ -691,7 +679,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             self.settings,
             self.presentation(),
             self.taskFile,
-            bitmap=bitmap,
+            icon_id=icon_id,
             columnName=columnName,
             items_are_new=items_are_new,
         )
@@ -760,7 +748,7 @@ class CategorizableViewerMixin(object):
     def getItemTooltipData(self, item):
         return [
             (
-                "folder_blue_arrow_icon",
+                "nuvola_places_folder-downloads",
                 (
                     [
                         ", ".join(
@@ -780,7 +768,7 @@ class WithAttachmentsViewerMixin(object):
     def getItemTooltipData(self, item):
         return [
             (
-                "paperclip_icon",
+                "nuvola_status_mail-attachment",
                 sorted([str(attachment) for attachment in item.attachments()]),
             )
         ] + super().getItemTooltipData(item)
@@ -866,6 +854,8 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
 
     def _captureSelectionInfo(self):
         """Capture selection position before refresh."""
+        if not hasattr(self.widget, 'curselection'):
+            return None
         curselection = self.widget.curselection()
         if curselection and curselection[0] is not None:
             selectedItem = curselection[0]
@@ -1147,11 +1137,11 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         return self.visibleColumns()[column].hasMultiImages()
 
     def subjectImageIndices(self, item):
-        normalIcon = item.icon(recursive=True)
-        selectedIcon = item.selectedIcon(recursive=True) or normalIcon
-        normalImageIndex = self.imageIndex.get(normalIcon, -1) if normalIcon else -1
+        normal_icon_id = item.icon_id(recursive=True)
+        selected_icon_id = item.selected_icon_id(recursive=True) or normal_icon_id
+        normalImageIndex = image_list_cache.get_index(normal_icon_id) if normal_icon_id else -1
         selectedImageIndex = (
-            self.imageIndex.get(selectedIcon, -1) if selectedIcon else -1
+            image_list_cache.get_index(selected_icon_id) if selected_icon_id else -1
         )
         return {
             wx.TreeItemIcon_Normal: normalImageIndex,
@@ -1253,12 +1243,12 @@ class SortableViewerWithColumns(
                 break
 
     def showSortOrder(self):
-        self.widget.showSortOrder(self.imageIndex[self.getSortOrderImage()])
+        self.widget.showSortOrder(image_list_cache.get_index(self.getSortOrderImage()))
 
     def getSortOrderImage(self):
         # Arrow points in direction of sort: down for A→Z/old→new, up for Z→A/new→old
         return (
-            "arrow_down_icon"
+            "nuvola_actions_go-down"
             if self.isSortOrderAscending()
-            else "arrow_up_icon"
+            else "nuvola_actions_go-up"
         )

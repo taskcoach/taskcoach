@@ -30,7 +30,7 @@ from taskcoachlib.gui import (
     toolbar,
     uicommand,
     remindercontroller,
-    artprovider,
+    # artprovider removed — use icon_library directly
     windowdimensionstracker,
     idlecontroller,
     scheduler,
@@ -158,7 +158,8 @@ class MainWindow(
     def __init_window(self):
         self.__filename = self.taskFile.filename()
         self.__setTitle()
-        self.SetIcons(artprovider.iconBundle("taskcoach"))
+        from taskcoachlib.gui.icons.icon_library import icon_catalog
+        self.SetIcons(icon_catalog.get_icon_bundle("nuvola_apps_korganizer"))
 
     def __init_window_components(self):
         # Freeze to prevent flickering during AUI layout restoration

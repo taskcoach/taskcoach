@@ -1,7 +1,7 @@
 {
   "papirus": {
     "name": "Papirus",
-    "active": false,
+    "active": true,
     "url": "https://github.com/PapirusDevelopmentTeam/papirus-icon-theme",
     "license": "GPL-3.0",
     "debian_package": "papirus-icon-theme",
@@ -46,15 +46,9 @@
   },
   "taskcoach": {
     "name": "TaskCoach",
-    "active": false,
+    "active": true,
     "url": "https://github.com/taskcoach/taskcoach",
     "license": "GPL-3.0",
     "note": "New custom TaskCoach icons following XDG structure."
-  },
-  "legacy": {
-    "name": "Legacy",
-    "active": false,
-    "license": "GPL-3.0",
-    "note": "Old internal icons using flat format (*16x16.png). Will be migrated to taskcoach theme."
   }
 }

@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import command
 from taskcoachlib.domain import base, task, category, attachment
 from taskcoachlib.gui import uicommand
+from taskcoachlib.gui.icons import image_list_cache
 from taskcoachlib.i18n import _
 from pubsub import pub
 import ast
@@ -420,8 +421,8 @@ class SortableViewerForEffortMixin(SortableViewerMixin):
 
 class ManualOrderingMixin(object):
     def __init__(self, *args, **kwargs):
-        if "sort" not in self.viewerImages:
-            self.viewerImages = self.viewerImages + ["sort"]
+        if "taskcoach_actions_sort" not in self.viewerIconIds:
+            self.viewerIconIds = self.viewerIconIds + ["taskcoach_actions_sort"]
         super().__init__(*args, **kwargs)
 
     def createSortByUICommands(self):
@@ -435,7 +436,7 @@ class ManualOrderingMixin(object):
         ] + super().createSortByUICommands()
 
     def orderingImageIndices(self, item):
-        index = self.imageIndex["sort"]
+        index = image_list_cache.get_index("taskcoach_actions_sort")
         return {wx.TreeItemIcon_Normal: index, wx.TreeItemIcon_Expanded: index}
 
 
@@ -667,7 +668,7 @@ class AttachmentDropTargetMixin(object):
                     task.Task.suggestedReminderDateTime()
                 )
             newItemDialog = self.newItemDialog(
-                bitmap="new", attachments=attachments, **itemDialogKwargs
+                icon_id="nuvola_actions_document-new", attachments=attachments, **itemDialogKwargs
             )
             newItemDialog.Show()
             # Use CallAfter to ensure proper focus after drop completes
@@ -728,7 +729,7 @@ class AttachmentDropTargetMixin(object):
                 self.settings,
                 container,
                 self.taskFile,
-                bitmap="edit",
+                icon_id="nuvola_actions_edit",
                 columnName="attachments",
             )
             itemEditor.Show()
@@ -748,7 +749,7 @@ class AttachmentDropTargetMixin(object):
                     self.settings,
                     attachmentContainer,
                     self.taskFile,
-                    bitmap="edit",
+                    icon_id="nuvola_actions_edit",
                     columnName="subject",  # Open on Description tab, not Notes
                 )
                 attachmentEditor.Show()
@@ -793,11 +794,11 @@ class AttachmentDropTargetMixin(object):
 
 class NoteColumnMixin(object):
     def noteImageIndices(self, item):
-        index = self.imageIndex["note_icon"] if item.notes() else -1
+        index = image_list_cache.get_index("nuvola_apps_knotes") if item.notes() else -1
         return {wx.TreeItemIcon_Normal: index}
 
 
 class AttachmentColumnMixin(object):
     def attachmentImageIndices(self, item):  # pylint: disable=W0613
-        index = self.imageIndex["paperclip_icon"] if item.attachments() else -1
+        index = image_list_cache.get_index("nuvola_status_mail-attachment") if item.attachments() else -1
         return {wx.TreeItemIcon_Normal: index}

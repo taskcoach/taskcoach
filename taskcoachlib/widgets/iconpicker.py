@@ -20,19 +20,19 @@ import wx
 import wx.lib.buttons as buttons
 
 from taskcoachlib.meta.debug import log_step
+from taskcoachlib.gui.icons.icon_library import LIST_ICON_SIZE
 
 
 class _IconListCtrl(wx.ListCtrl):
     """List control with 5 columns: Label (with icon), Hints, Theme, Context, Key."""
 
-    ICON_SIZE = 16
     COL_ICON_ID = 4
 
     def __init__(self, parent):
         super().__init__(parent, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.BORDER_NONE)
 
         # Image list for icons
-        self._image_list = wx.ImageList(self.ICON_SIZE, self.ICON_SIZE)
+        self._image_list = wx.ImageList(LIST_ICON_SIZE, LIST_ICON_SIZE)
         self.SetImageList(self._image_list, wx.IMAGE_LIST_SMALL)
 
         # 5 columns: Label (with icon), Hints, Theme, Context, Key
@@ -78,12 +78,7 @@ class _IconListCtrl(wx.ListCtrl):
             # Add bitmap to image list if not already there
             if icon_id not in self._image_map:
                 if bmp and bmp.IsOk():
-                    if not enabled:
-                        # Greyscale for disabled items
-                        img = bmp.ConvertToImage().ConvertToGreyscale()
-                        idx = self._image_list.Add(img.ConvertToBitmap())
-                    else:
-                        idx = self._image_list.Add(bmp)
+                    idx = self._image_list.Add(bmp)
                 else:
                     idx = -1  # No image
                 self._image_map[icon_id] = idx
@@ -323,25 +318,24 @@ class _IconDialog(wx.Dialog):
             if taskFile is None:
                 return excluded
             for obj in taskFile.tasks():
-                icon = obj.icon()
-                if icon:
-                    excluded.add(icon)
+                icon_id = obj.icon_id()
+                if icon_id:
+                    excluded.add(icon_id)
             for obj in taskFile.categories():
-                icon = obj.icon()
-                if icon:
-                    excluded.add(icon)
+                icon_id = obj.icon_id()
+                if icon_id:
+                    excluded.add(icon_id)
             for obj in taskFile.notes():
-                icon = obj.icon()
-                if icon:
-                    excluded.add(icon)
+                icon_id = obj.icon_id()
+                if icon_id:
+                    excluded.add(icon_id)
             return excluded
         log_step("WARNING: Unknown exclude mode '{}'".format(self._exclude), prefix="ICON")
         return set()
 
     def _load_icons(self):
-        """Load icons from artprovider, filtered by enabled themes."""
-        from taskcoachlib.gui import artprovider
-        from taskcoachlib.gui.icons import icon_library
+        """Load icons from catalog, filtered by enabled themes."""
+        from taskcoachlib.gui.icons.icon_library import icon_catalog
 
         excluded_icons = self._get_excluded_icons()
 
@@ -356,33 +350,26 @@ class _IconDialog(wx.Dialog):
             enabled_themes.add("papirus")
         if settings.getboolean("iconpicker", "theme_breeze"):
             enabled_themes.add("breeze")
+        if settings.getboolean("iconpicker", "theme_taskcoach"):
+            enabled_themes.add("taskcoach")
 
-        # Load icons from artprovider.chooseableItems
-        # Sort by label for consistent ordering
-        image_names = sorted(
-            artprovider.chooseableItems.keys(),
-            key=lambda k: artprovider.chooseableItems[k]["label"]
+        # Load icons from catalog, sort by label
+        icon_ids = sorted(
+            icon_catalog.viewer_icon_ids(),
+            key=lambda k: (icon_catalog.get_icon(k).label or k)
         )
         items = []
-        size = (16, 16)
-        for image_name in image_names:
-            if not image_name:
-                log_step("ERROR: Empty icon_id in chooseableItems, skipping...", prefix="ICON")
+        for icon_id in icon_ids:
+            icon = icon_catalog.get_icon(icon_id)
+            if not icon or not icon.label:
                 continue
-            item_data = artprovider.chooseableItems[image_name]
-            theme_key = item_data.get("theme", "legacy")
             # Skip icons from disabled themes
-            if theme_key not in enabled_themes:
+            if icon.theme not in enabled_themes:
                 continue
-            label = item_data["label"]
-            bitmap = wx.ArtProvider.GetBitmap(image_name, wx.ART_MENU, size)
-            # Join hints array into space-separated string for search
-            hints = " ".join(item_data.get("hints", []))
-            theme_label = icon_library.get_theme_label(theme_key)
-            context_id = item_data.get("context", "")
-            context_label = icon_library.get_context_label(theme_key, context_id) if context_id else ""
-            enabled = image_name not in excluded_icons
-            items.append((image_name, label, bitmap, hints, theme_label, context_label, enabled))
+            bitmap = icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
+            hints = " ".join(icon.hints)
+            enabled = icon_id not in excluded_icons
+            items.append((icon_id, icon.label, bitmap, hints, icon.theme_label, icon.context_label, enabled))
         return items
 
 
@@ -405,7 +392,6 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
     """
 
     PADDING = 8
-    ICON_SIZE = 16  # Standard icon size for layout consistency
     NO_ICON_LABEL = _("No icon")
 
     def __init__(self, parent, currentIcon, exclude=None, noIcon=True, fixedWidth=None, *args, **kwargs):
@@ -562,7 +548,7 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
 
     def SetValue(self, icon_id):
         """Set the displayed icon by icon_id."""
-        from taskcoachlib.gui import artprovider
+        from taskcoachlib.gui.icons.icon_library import icon_catalog
 
         if icon_id == "":
             if self._noIcon:
@@ -573,11 +559,11 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
                 log_step("ERROR: Received empty icon_id but noIcon=False", prefix="ICON")
                 return
         else:
-            item_data = artprovider.chooseableItems.get(icon_id)
-            if item_data:
+            icon = icon_catalog.get_icon(icon_id)
+            if icon:
                 self._current_icon_id = icon_id
-                self._current_label = item_data["label"]
-                self._current_bmp = wx.ArtProvider.GetBitmap(icon_id, wx.ART_MENU, (16, 16))
+                self._current_label = icon.label
+                self._current_bmp = icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
             else:
                 log_step("WARNING: icon_id '{}' not found".format(icon_id), prefix="ICON")
                 self._current_icon_id = ""

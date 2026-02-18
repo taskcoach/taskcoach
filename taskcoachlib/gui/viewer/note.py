@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import command, widgets, domain
 from taskcoachlib.domain import note
 from taskcoachlib.gui import uicommand, dialog
+from taskcoachlib.gui.icons import image_list_cache
 import taskcoachlib.gui.menu
 from taskcoachlib.i18n import _
 from . import base
@@ -43,7 +44,7 @@ class BaseNoteViewer(
 ):
     SorterClass = note.NoteSorter
     defaultTitle = _("Notes")
-    defaultBitmap = "note_icon"
+    defaultBitmap = "nuvola_apps_knotes"
     coreObjectType = "notes"
 
     def __init__(self, *args, **kwargs):
@@ -94,7 +95,7 @@ class BaseNoteViewer(
         )
         if self.hasOrderingColumn():
             widget.SetMainColumn(1)
-        widget.AssignImageList(imageList)  # pylint: disable=E1101
+        widget.SetImageList(imageList)  # pylint: disable=E1101
         return widget
 
     def createFilter(self, notes):
@@ -214,7 +215,7 @@ class BaseNoteViewer(
             width=self.getColumnWidth("attachments"),
             alignment=wx.LIST_FORMAT_LEFT,
             imageIndicesCallback=self.attachmentImageIndices,  # pylint: disable=E1101
-            headerImageIndex=self.imageIndex["paperclip_icon"],
+            headerImageIndex=image_list_cache.get_index("nuvola_status_mail-attachment"),
             renderCallback=lambda note: "",
         )
         categoriesColumn = widgets.Column(

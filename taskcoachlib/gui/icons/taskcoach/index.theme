@@ -1,0 +1,19 @@
+[Icon Theme]
+Name=TaskCoach
+Comment=TaskCoach application icons
+Directories=16x16,22x22,32x32
+
+[16x16]
+Size=16
+Context=Actions
+Type=Threshold
+
+[22x22]
+Size=22
+Context=Actions
+Type=Threshold
+
+[32x32]
+Size=32
+Context=Actions
+Type=Threshold

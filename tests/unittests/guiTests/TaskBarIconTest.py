@@ -67,7 +67,7 @@ class TaskBarIconTest(TaskBarIconTestCase):
         activeTask = task.Task()
         self.taskList.append(activeTask)
         activeTask.addEffort(effort.Effort(activeTask))
-        self.assertEqual("clock_icon", self.icon.bitmap())
+        self.assertEqual("nuvola_apps_clock", self.icon.bitmap())
 
     def testStopTracking(self):
         activeTask = task.Task()

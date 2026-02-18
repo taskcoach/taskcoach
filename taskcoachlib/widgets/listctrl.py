@@ -93,23 +93,38 @@ class VirtualListCtrl(
         ]
 
     def OnGetItemText(self, rowIndex, columnIndex):
-        item = self.getItemWithIndex(rowIndex)
+        try:
+            item = self.getItemWithIndex(rowIndex)
+        except IndexError:
+            return ''
         return self.getItemText(item, columnIndex)
 
     def OnGetItemTooltipData(self, rowIndex, columnIndex):
-        item = self.getItemWithIndex(rowIndex)
+        try:
+            item = self.getItemWithIndex(rowIndex)
+        except IndexError:
+            return None
         return self.getItemTooltipData(item)
 
     def OnGetItemImage(self, rowIndex):
-        item = self.getItemWithIndex(rowIndex)
+        try:
+            item = self.getItemWithIndex(rowIndex)
+        except IndexError:
+            return -1
         return self.getItemImage(item)
 
     def OnGetItemColumnImage(self, rowIndex, columnIndex):
-        item = self.getItemWithIndex(rowIndex)
+        try:
+            item = self.getItemWithIndex(rowIndex)
+        except IndexError:
+            return -1
         return self.getItemImage(item, columnIndex)
 
     def OnGetItemAttr(self, rowIndex):
-        item = self.getItemWithIndex(rowIndex)
+        try:
+            item = self.getItemWithIndex(rowIndex)
+        except IndexError:
+            return None
         foreground_color = item.foregroundColor(recursive=True)
         background_color = item.backgroundColor(recursive=True)
         # wx.NullColour doesn't work correctly on Windows - it renders as

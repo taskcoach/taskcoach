@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import wx
 import wx.lib.agw.aui as aui
 import wx.lib.scrolledpanel as scrolledpanel
+from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 
 
 class GridCursor:
@@ -264,7 +265,7 @@ class ScrolledBookPage(scrolledpanel.ScrolledPanel):
 class BookMixin(object):
     """Mixin class for *book"""
 
-    _bitmapSize = (16, 16)
+    _bitmapSize = (LIST_ICON_SIZE, LIST_ICON_SIZE)
     pageChangedEvent = "Subclass responsibility"
 
     def __init__(self, parent, *args, **kwargs):
@@ -283,11 +284,9 @@ class BookMixin(object):
         """Can be overridden in a subclass to do something useful."""
         event.Skip()
 
-    def AddPage(self, page, name, bitmap=None):
-        """Override AddPage to allow for simply specifying the bitmap name."""
-        bitmap = wx.ArtProvider.GetBitmap(
-            bitmap, wx.ART_MENU, self._bitmapSize
-        )
+    def AddPage(self, page, name, icon_id=None):
+        """Override AddPage to allow for simply specifying the icon_id."""
+        bitmap = icon_catalog.get_bitmap(icon_id, self._bitmapSize[0])
         super().AddPage(page, name, bitmap=bitmap)
 
     def ok(self, *args, **kwargs):

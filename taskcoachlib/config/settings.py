@@ -26,6 +26,23 @@ import sys
 import wx
 import shutil
 from . import defaults
+from taskcoachlib.meta.debug import log_step
+
+# Reverse mapping: new namespaced icon IDs -> old legacy names.
+# Used only when legacystatusicons is True, to write old-format ini.
+_LEGACY_REVERSE_MAP = {
+    "nuvola_actions_ledblue": "led_blue_icon",
+    "nuvola_actions_ledpurple": "led_purple_icon",
+    "nuvola_actions_ok": "checkmark_green_icon",
+    "nuvola_actions_ledred": "led_red_icon",
+    "taskcoach_actions_led_grey_icon": "led_grey_icon",
+    "nuvola_actions_ledorange": "led_orange_icon",
+}
+
+_LEGACY_STATUS_KEYS = (
+    "activetasks", "latetasks", "completedtasks",
+    "overduetasks", "inactivetasks", "duesoontasks",
+)
 
 
 class UnicodeAwareConfigParser(configparser.ConfigParser):
@@ -299,6 +316,9 @@ class Settings(CachingConfigParser):
                 if "ordering" in columns:
                     columns.remove("ordering")
             result = str(columns)
+        if section in ("icon", "icon_dark"):
+            from taskcoachlib.gui.icons.icon_library import icon_catalog
+            result = icon_catalog.normalize_icon_id(result)
         if result != original:
             super().set(section, option, result)
         return result
@@ -379,6 +399,46 @@ class Settings(CachingConfigParser):
             )  # Ignore current value
             return evaluate(defaultValue)
 
+    def _create_legacy_writer(self):
+        """Create a ConfigParser copy with status icons converted to old names.
+
+        Returns a new ConfigParser with legacy icon names substituted,
+        or None if legacy mode is off. Original self is never modified.
+        """
+        try:
+            legacy = self.getboolean("icon", "legacystatusicons")
+        except (configparser.NoSectionError, configparser.NoOptionError):
+            return None
+        if not legacy:
+            return None
+        tmp = configparser.ConfigParser(interpolation=None)
+        for section in self.sections():
+            tmp.add_section(section)
+            for key, val in super().items(section):
+                tmp.set(section, key, val)
+        for section in ("icon", "icon_dark"):
+            for key in _LEGACY_STATUS_KEYS:
+                try:
+                    current = tmp.get(section, key)
+                except (configparser.NoSectionError,
+                        configparser.NoOptionError):
+                    continue
+                old_name = _LEGACY_REVERSE_MAP.get(current)
+                if old_name:
+                    log_step(
+                        f"Legacy save: converting '{current}' -> "
+                        f"'{old_name}' ({section}.{key})",
+                        prefix="ICON",
+                    )
+                    tmp.set(section, key, old_name)
+                else:
+                    log_step(
+                        f"Legacy save: WARNING: '{current}' has no legacy "
+                        f"equivalent for {section}.{key}, writing as-is",
+                        prefix="ICON",
+                    )
+        return tmp
+
     def save(
         self, showerror=wx.MessageBox, file=open
     ):  # pylint: disable=W0622
@@ -397,8 +457,9 @@ class Settings(CachingConfigParser):
             path = self.path()
             if not os.path.exists(path):
                 os.makedirs(path, exist_ok=True)
+            writer = self._create_legacy_writer() or self
             tmpFile = file(self.filename() + ".tmp", "w", encoding="utf-8")
-            self.write(tmpFile)
+            writer.write(tmpFile)
             tmpFile.close()
             if os.path.exists(self.filename()):
                 os.remove(self.filename())

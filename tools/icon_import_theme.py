@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Import icons from tools catalog to app library.
 
+DO NOT RUN — needs review and refactor, or removal.
+This script bulk-imports ALL icons for a theme at a given size and also
+modifies the external icon-distillery repo's icons.json.
+
 Usage:
     python tools/icon_import_theme.py <theme> <size>
 
@@ -18,6 +22,10 @@ Icons with 'inherits' field are skipped (already done), so script can resume.
 Examples:
     python tools/icon_import_theme.py nuvola 16
 """
+
+import sys
+print("ERROR: This script is disabled. Needs review and refactor, or removal.", file=sys.stderr)
+sys.exit(1)
 
 import json
 import os
@@ -147,7 +155,7 @@ def main():
 
     # Process one icon at a time
     processed = 0
-    for icon_key, icon_data in tools_icons.items():
+    for icon_id, icon_data in tools_icons.items():
         # Skip if already processed
         if "inherits" in icon_data:
             continue
@@ -161,11 +169,11 @@ def main():
         is_duplicate = "duplicate_of" in icon_data
 
         if not filename or not context:
-            print(f"ERROR: {icon_key} missing file or context - STOPPING")
+            print(f"ERROR: {icon_id} missing file or context - STOPPING")
             sys.exit(1)
 
         if not name:
-            print(f"ERROR: {icon_key} missing name field - STOPPING")
+            print(f"ERROR: {icon_id} missing name field - STOPPING")
             sys.exit(1)
 
         # Build app JSON entry
@@ -189,7 +197,7 @@ def main():
                 # Step 1: Direct copy image
                 src_path = theme_source / f"{target_size}x{target_size}" / context / filename
                 if not src_path.exists():
-                    print(f"ERROR: {icon_key} source not found: {src_path} - STOPPING")
+                    print(f"ERROR: {icon_id} source not found: {src_path} - STOPPING")
                     sys.exit(1)
                 shutil.copy2(src_path, dst_path)
                 app_entry["sizes"] = [target_size]
@@ -198,7 +206,7 @@ def main():
                 # Step 1: Resize image from smallest available
                 src_path, src_size = find_source_image(theme_source, context, filename, sizes)
                 if not src_path:
-                    print(f"ERROR: {icon_key} no source found for resize - STOPPING")
+                    print(f"ERROR: {icon_id} no source found for resize - STOPPING")
                     sys.exit(1)
                 resize_image(src_path, dst_path, target_size)
                 app_entry["sizes"] = [target_size]
@@ -209,16 +217,16 @@ def main():
                 app_entry["duplicates"] = icon_data["duplicates"]
 
         # Step 2: Add to app JSON and save
-        app_icons[icon_key] = app_entry
+        app_icons[icon_id] = app_entry
         app_data["icons"] = app_icons
         save_json_compact_arrays(app_json_path, app_data)
 
         # Step 3: Mark as done in tools JSON and save (commit marker)
-        icon_data["inherits"] = icon_key
+        icon_data["inherits"] = icon_id
         save_json_compact_arrays(tools_json_path, tools_data)
 
         processed += 1
-        print(f"[{already_done + processed}/{len(tools_icons)}] {action}: {icon_key}")
+        print(f"[{already_done + processed}/{len(tools_icons)}] {action}: {icon_id}")
 
     print(f"\n--- DONE ---")
     print(f"Processed: {processed}")

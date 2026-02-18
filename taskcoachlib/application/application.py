@@ -593,8 +593,11 @@ class Application(object, metaclass=patterns.Singleton):
             # (program starts with no file open, like a fresh start)
 
         from taskcoachlib import gui, persistence
+        from taskcoachlib.gui.mainwindow import MainWindow
+        from taskcoachlib.gui.iocontroller import IOController
 
         gui.init()
+        # Synthetic icons are now registered during gui.init() — no separate init needed
         # pylint: disable=W0201
         self.taskFile = persistence.LockedTaskFile(
             poll=self.settings.getboolean("file", "fspoll")
@@ -603,10 +606,10 @@ class Application(object, metaclass=patterns.Singleton):
         self.__auto_saver = persistence.AutoSaver(self.settings)
         self.__auto_exporter = persistence.AutoImporterExporter(self.settings)
         self.__auto_backup = persistence.AutoBackup(self.settings)
-        self.iocontroller = gui.IOController(
+        self.iocontroller = IOController(
             self.taskFile, self.displayMessage, self.settings
         )
-        self.mainwindow = gui.MainWindow(
+        self.mainwindow = MainWindow(
             self.iocontroller, self.taskFile, self.settings
         )
         self.__wx_app.SetTopWindow(self.mainwindow)

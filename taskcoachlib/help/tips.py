@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import meta
+from taskcoachlib.gui.icons.icon_library import icon_catalog, NOTIFICATION_ICON_SIZE
 from taskcoachlib.i18n import _
 from wx.lib import sized_controls
 import wx
@@ -93,9 +94,7 @@ class TipDialog(sized_controls.SizedDialog):
         pane.SetSizerType("horizontal")
         wx.StaticBitmap(
             pane,
-            bitmap=wx.ArtProvider.GetBitmap(
-                "nuvola_apps_ktip", wx.ART_MENU, (32, 32)
-            ),
+            bitmap=icon_catalog.get_bitmap("nuvola_apps_ktip", NOTIFICATION_ICON_SIZE),
         )
         tip_pane = sized_controls.SizedPanel(pane)
         self.__tip = wx.StaticText(tip_pane)

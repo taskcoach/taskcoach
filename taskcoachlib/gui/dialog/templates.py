@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.tools import wxhelper
 import wx
 from taskcoachlib.domain.task import Task
@@ -104,19 +105,19 @@ class TemplatesDialog(sized_controls.SizedDialog):
         panel = sized_controls.SizedPanel(pane)
         panel.SetSizerType("vertical")
         self._btnDelete = self.createButton(
-            panel, "cross_red_icon", self.OnDelete, enable=False
+            panel, "nuvola_status_dialog-error", self.OnDelete, enable=False
         )
         self._btnUp = self.createButton(
-            panel, "arrow_up_icon", self.OnUp, enable=False
+            panel, "nuvola_actions_go-up", self.OnUp, enable=False
         )
         self._btnDown = self.createButton(
-            panel, "arrow_down_icon", self.OnDown, enable=False
+            panel, "nuvola_actions_go-down", self.OnDown, enable=False
         )
-        self._btnAdd = self.createButton(panel, "symbol_plus_icon", self.OnAdd)
+        self._btnAdd = self.createButton(panel, "nuvola_actions_list-add", self.OnAdd)
         panel.Fit()
 
-    def createButton(self, parent, bitmapName, handler, enable=True):
-        bitmap = wx.ArtProvider.GetBitmap(bitmapName, size=(32, 32))
+    def createButton(self, parent, icon_id, handler, enable=True):
+        bitmap = icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
         button = wx.BitmapButton(parent, bitmap=bitmap)
         button.Bind(wx.EVT_BUTTON, handler)
         button.Enable(enable)

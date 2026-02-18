@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.widgets import balloontip
 import wx
 
@@ -29,9 +30,7 @@ class BalloonTipManager(balloontip.BalloonTipManager):
                 target,
                 message=message,
                 title=title,
-                bitmap=wx.ArtProvider.GetBitmap(
-                    "nuvola_apps_ktip", wx.ART_MENU, (16, 16)
-                ),
+                bitmap=icon_catalog.get_bitmap("nuvola_apps_ktip", LIST_ICON_SIZE),
                 getRect=getRect,
                 name=name,
                 settings=settings,

@@ -17,91 +17,24 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import os
 import wx
 import urllib.request, urllib.parse, urllib.error
 from taskcoachlib.mailer import thunderbird, outlook
 from taskcoachlib.i18n import _
 
-# Cached cursors for different scale factors
-_linkCursors = {}  # size -> cursor
-_homeCursors = {}  # size -> cursor
-
-
-def _getIconPath(iconName):
-    """Get the full path to an icon file."""
-    return os.path.join(
-        os.path.dirname(os.path.dirname(__file__)),
-        'gui', 'icons', iconName
-    )
-
 
 def _getLinkCursor(window=None):
-    """Get or create a link cursor for prereq/dep column drag.
-
-    Uses HiDPI-appropriate icon size based on window's content scale factor.
-    """
-    # Determine scale factor
-    scaleFactor = 1.0
-    if window:
-        try:
-            scaleFactor = window.GetContentScaleFactor()
-        except (AttributeError, RuntimeError):
-            pass
-
-    # Round to nearest supported size: 1.0->16, 1.25-1.5->22, 2.0+->32
-    if scaleFactor >= 1.75:
-        size = 32
-    elif scaleFactor >= 1.125:
-        size = 22
-    else:
-        size = 16
-
-    # Cache cursors by size
-    if size not in _linkCursors:
-        iconPath = _getIconPath(f'link_icon{size}x{size}.png')
-        image = wx.Image(iconPath)
-        # Set hotspot to center of icon
-        hotspot = size // 2
-        image.SetOption(wx.IMAGE_OPTION_CUR_HOTSPOT_X, hotspot)
-        image.SetOption(wx.IMAGE_OPTION_CUR_HOTSPOT_Y, hotspot)
-        _linkCursors[size] = wx.Cursor(image)
-
-    return _linkCursors[size]
+    """Get or create a link cursor for prereq/dep column drag."""
+    from taskcoachlib.gui.icons.icon_library import icon_catalog
+    return icon_catalog.get_cursor("synthetic_dnd_cursor_link", window)
 
 
 def _getHomeCursor(window=None):
-    """Get or create a home folder cursor for root drop locations.
+    """Get or create a home folder cursor for root drop locations."""
+    from taskcoachlib.gui.icons.icon_library import icon_catalog
+    return icon_catalog.get_cursor("synthetic_dnd_cursor_home", window)
 
-    Uses HiDPI-appropriate icon size based on window's content scale factor.
-    """
-    # Determine scale factor
-    scaleFactor = 1.0
-    if window:
-        try:
-            scaleFactor = window.GetContentScaleFactor()
-        except (AttributeError, RuntimeError):
-            pass
 
-    # Round to nearest supported size: 1.0->16, 1.25-1.5->22, 2.0+->32
-    if scaleFactor >= 1.75:
-        size = 32
-    elif scaleFactor >= 1.125:
-        size = 22
-    else:
-        size = 16
-
-    # Cache cursors by size
-    if size not in _homeCursors:
-        iconPath = _getIconPath(f'folder_home_icon{size}x{size}.png')
-        image = wx.Image(iconPath)
-        # Set hotspot to center of icon
-        hotspot = size // 2
-        image.SetOption(wx.IMAGE_OPTION_CUR_HOTSPOT_X, hotspot)
-        image.SetOption(wx.IMAGE_OPTION_CUR_HOTSPOT_Y, hotspot)
-        _homeCursors[size] = wx.Cursor(image)
-
-    return _homeCursors[size]
 
 
 class FileDropTarget(wx.FileDropTarget):

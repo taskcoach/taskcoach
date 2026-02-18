@@ -39,9 +39,12 @@ If _onSecond() ever freezes the UI with very large task files, consider:
 3. Only add yielding if there are actual cases where processing > 100-200ms
 """
 
+import time
+
 from pubsub import pub
 from taskcoachlib.domain import date as datemodule
 from taskcoachlib.domain.base.appearance import computeStyles
+from taskcoachlib.meta.debug import log_step
 import wx
 
 
@@ -160,6 +163,8 @@ class MasterScheduler:
 
         See docs/SCHEDULERS.md for full architecture documentation.
         """
+        t0 = time.monotonic()
+
         if not self._taskFile:
             return
 
@@ -222,6 +227,8 @@ class MasterScheduler:
             pub.sendMessage('scheduler.dateChange.uiRefresh', timestamp=timestamp)
         if minuteChanged:
             pub.sendMessage('scheduler.minuteChange.uiRefresh', timestamp=timestamp)
+
+
 
     # ═══════════════════════════════════════════════════════════════════
     # HELPERS

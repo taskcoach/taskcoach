@@ -7,7 +7,7 @@ Download the DMG for your Mac from the [latest release](https://github.com/taskc
 - **Apple Silicon** (M1/M2/M3/M4): `TaskCoach-<version>-macos-arm64.dmg`
 - **Intel**: `TaskCoach-<version>-macos-intel.dmg`
 
-Where `<version>` is the release version (e.g., `2.0.1.20`).
+Where `<version>` is the release version (e.g., `2.0.2.0`).
 
 Not sure which Mac you have? Click the Apple menu → "About This Mac". Look for "Chip" (Apple Silicon) or "Processor" (Intel).
 

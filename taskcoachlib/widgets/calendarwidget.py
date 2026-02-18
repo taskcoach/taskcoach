@@ -42,7 +42,7 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
         self,
         parent,
         taskList,
-        iconProvider,
+        get_selected_or_normal_icon_id,
         onSelect,
         onEdit,
         onCreate,
@@ -66,7 +66,7 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
         self.SetDropTarget(self.dropTarget)
 
         self.selectCommand = onSelect
-        self.iconProvider = iconProvider
+        self.get_selected_or_normal_icon_id = get_selected_or_normal_icon_id
         self.editCommand = onEdit
         self.createCommand = onCreate
         self.changeConfigCb = onChangeConfig
@@ -247,7 +247,7 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
                         ):
                             continue
 
-                schedule = TaskSchedule(task, self.iconProvider)
+                schedule = TaskSchedule(task, self.get_selected_or_normal_icon_id)
                 schedules.append(schedule)
                 self.taskMap[task.id()] = schedule
 
@@ -302,7 +302,7 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
                     schedule = self.taskMap[task.id()]
                     schedule.update()
                 else:
-                    schedule = TaskSchedule(task, self.iconProvider)
+                    schedule = TaskSchedule(task, self.get_selected_or_normal_icon_id)
                     self.taskMap[task.id()] = schedule
                     self.Add([schedule])
 
@@ -359,7 +359,7 @@ class Calendar(wx.Panel):
         self,
         parent,
         taskList,
-        iconProvider,
+        get_selected_or_normal_icon_id,
         onSelect,
         onEdit,
         onCreate,
@@ -375,7 +375,7 @@ class Calendar(wx.Panel):
         self._content = _CalendarContent(
             self,
             taskList,
-            iconProvider,
+            get_selected_or_normal_icon_id,
             onSelect,
             onEdit,
             onCreate,
@@ -433,13 +433,13 @@ class Calendar(wx.Panel):
 
 
 class TaskSchedule(wxSchedule):
-    def __init__(self, task, iconProvider):
+    def __init__(self, task, get_selected_or_normal_icon_id):
         super().__init__()
 
         self.__selected = False
 
         self.clientdata = task
-        self.iconProvider = iconProvider
+        self.get_selected_or_normal_icon_id = get_selected_or_normal_icon_id
         self.update()
 
     def SetSelected(self, selected):
@@ -538,11 +538,11 @@ class TaskSchedule(wxSchedule):
             )
             self.font = self.task.font(True)
 
-            self.icons = [self.iconProvider(self.task, False)]
+            self.icon_ids = [self.get_selected_or_normal_icon_id(self.task, False)]
             if self.task.attachments():
-                self.icons.append("paperclip_icon")
+                self.icon_ids.append("nuvola_status_mail-attachment")
             if self.task.notes():
-                self.icons.append("note_icon")
+                self.icon_ids.append("nuvola_apps_knotes")
 
             if self.task.percentageComplete(recursive=True):
                 # If 0, just let the default None value so the progress bar isn't drawn

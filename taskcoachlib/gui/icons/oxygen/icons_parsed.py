@@ -17,6 +17,46 @@ contexts = {
 }
 
 icons = {
+    "oxygen_actions_document-export": {
+        "label": _("Document Export"),
+        "hints": [_("export"), _("document"), _("arrow"), _("out"), _("save"), _("file"), _("send")],
+        "context": "actions",
+        "context_label": _("Actions"),
+        "file": "document-export.png",
+        "paths": {
+            16: "16x16/actions/document-export.png",
+        },
+    },
+    "oxygen_actions_document-import": {
+        "label": _("Document Import"),
+        "hints": [_("import"), _("document"), _("arrow"), _("in"), _("load"), _("file"), _("open")],
+        "context": "actions",
+        "context_label": _("Actions"),
+        "file": "document-import.png",
+        "paths": {
+            16: "16x16/actions/document-import.png",
+        },
+    },
+    "oxygen_actions_zoom-draw": {
+        "label": _("Zoom Draw"),
+        "hints": [_("zoom"), _("draw"), _("magnify"), _("search"), _("canvas"), _("document"), _("glass")],
+        "context": "actions",
+        "context_label": _("Actions"),
+        "file": "zoom-draw.png",
+        "paths": {
+            16: "16x16/actions/zoom-draw.png",
+        },
+    },
+    "oxygen_actions_zoom-fit-best": {
+        "label": _("Zoom Fit Best"),
+        "hints": [_("zoom"), _("fit"), _("best"), _("page"), _("document"), _("resize"), _("scale")],
+        "context": "actions",
+        "context_label": _("Actions"),
+        "file": "zoom-fit-best.png",
+        "paths": {
+            16: "16x16/actions/zoom-fit-best.png",
+        },
+    },
     "oxygen_emotes_face-angel": {
         "label": _("Face Angel"),
         "hints": [_("angel"), _("smiley"), _("halo"), _("innocent"), _("happy"), _("emoticon"), _("yellow"), _("good")],
@@ -125,6 +165,16 @@ icons = {
         "file": "face-wink.png",
         "paths": {
             16: "16x16/emotes/face-wink.png",
+        },
+    },
+    "oxygen_mimetypes_text-plain": {
+        "label": _("Text Plain"),
+        "hints": [_("text"), _("plain"), _("document"), _("txt"), _("file"), _("note"), _("ascii")],
+        "context": "mimetypes",
+        "context_label": _("MimeTypes"),
+        "file": "text-plain.png",
+        "paths": {
+            16: "16x16/mimetypes/text-plain.png",
         },
     },
 }

@@ -103,8 +103,8 @@ class CategorizableCompositeObject(base.CompositeObject):
         )
 
     def categoriesChangeIcon(self, categories):
-        return not self.icon() and any(
-            category.icon(recursive=True) for category in categories
+        return not self.icon_id() and any(
+            category.icon_id(recursive=True) for category in categories
         )
 
     @classmethod
@@ -246,41 +246,41 @@ class CategorizableCompositeObject(base.CompositeObject):
         else:
             return font.FontMixer.mix(*fonts)  # pylint: disable=W0142
 
-    def icon(self, recursive=False):
-        icon = super().icon()
-        if not icon and recursive:
-            icon = self.categoryIcon() or super(
+    def icon_id(self, recursive=False):
+        icon_id = super().icon_id()
+        if not icon_id and recursive:
+            icon_id = self.category_icon_id() or super(
                 CategorizableCompositeObject, self
-            ).icon(recursive=True)
-        return icon
+            ).icon_id(recursive=True)
+        return icon_id
 
-    def categoryIcon(self):
-        icon = ""
+    def category_icon_id(self):
+        icon_id = ""
         for category in self.categories():
-            icon = category.icon(recursive=True)
-            if icon:
-                return icon
+            icon_id = category.icon_id(recursive=True)
+            if icon_id:
+                return icon_id
         if self.parent():
-            return self.parent().categoryIcon()
+            return self.parent().category_icon_id()
         else:
             return ""
 
-    def selectedIcon(self, recursive=False):
-        icon = super().selectedIcon()
-        if not icon and recursive:
-            icon = self.categorySelectedIcon() or super(
+    def selected_icon_id(self, recursive=False):
+        icon_id = super().selected_icon_id()
+        if not icon_id and recursive:
+            icon_id = self.category_selected_icon_id() or super(
                 CategorizableCompositeObject, self
-            ).selectedIcon(recursive=True)
-        return icon
+            ).selected_icon_id(recursive=True)
+        return icon_id
 
-    def categorySelectedIcon(self):
-        icon = ""
+    def category_selected_icon_id(self):
+        icon_id = ""
         for category in self.categories():
-            icon = category.selectedIcon(recursive=True)
-            if icon:
-                return icon
+            icon_id = category.selected_icon_id(recursive=True)
+            if icon_id:
+                return icon_id
         if self.parent():
-            return self.parent().categorySelectedIcon()
+            return self.parent().category_selected_icon_id()
         else:
             return ""
 

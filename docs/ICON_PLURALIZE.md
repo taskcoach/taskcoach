@@ -17,42 +17,32 @@ Defined in `taskcoachlib/domain/attribute/icon/__init__.py`:
 
 | Singular (No Children) | Plural (Has Children) |
 |------------------------|-----------------------|
-| `led_blue_icon`        | `folder_blue_icon`    |
-| `led_blue_light_icon`  | `folder_blue_light_icon` |
-| `led_grey_icon`        | `folder_grey_icon`    |
-| `led_green_icon`       | `folder_green_icon`   |
-| `led_orange_icon`      | `folder_orange_icon`  |
-| `led_purple_icon`      | `folder_purple_icon`  |
-| `led_red_icon`         | `folder_red_icon`     |
-| `led_yellow_icon`      | `folder_yellow_icon`  |
+| `nuvola_actions_ledblue`        | `nuvola_mimetypes_inode-directory` |
+| `nuvola_actions_ledlightblue` | `taskcoach_actions_folder_blue_light_icon` |
+| `taskcoach_actions_led_grey_icon`        | `nuvola_places_folder-grey`    |
+| `nuvola_actions_ledgreen`       | `nuvola_places_folder-green`   |
+| `nuvola_actions_ledorange`     | `nuvola_places_folder-orange`  |
+| `nuvola_actions_ledpurple`      | `nuvola_places_folder-violet`  |
+| `nuvola_actions_ledred`         | `nuvola_places_folder-red`     |
+| `nuvola_actions_ledyellow`     | `nuvola_places_folder-yellow`  |
 
 ### Other Icons
 
 | Singular (No Children) | Plural (Has Children)          |
 |------------------------|--------------------------------|
-| `cogwheel_icon`        | `cogwheels_icon`               |
-| `envelope_icon`        | `envelopes_icon`               |
-| `checkmark_green_icon` | `checkmark_green_icon_multiple` |
-| `person_icon`          | `persons_icon`                 |
+| `nuvola_actions_ok` | `taskcoach_actions_checkmark_green_icon_multiple` |
 
 ### Reverse (Singular) Mapping
 
 The singular mapping is auto-generated as the reverse of the plural mapping.
-For example, `folder_blue_icon` → `led_blue_icon`, `persons_icon` → `person_icon`.
+For example, `nuvola_mimetypes_inode-directory` → `nuvola_actions_ledblue`, `nuvola_apps_kuser` → `nuvola_apps_preferences-desktop-user`.
 
-### Open Folder Mapping
+### Open Folder Mapping — DEPRECATED
 
-When a folder icon is in "selected" state, it maps to an open variant:
-
-| Folder Icon              | Open Variant                  |
-|--------------------------|-------------------------------|
-| `folder_blue_icon`       | `folder_blue_open_icon`       |
-| `folder_grey_icon`       | `folder_grey_open_icon`       |
-| `folder_green_icon`      | `folder_green_open_icon`      |
-| `folder_orange_icon`     | `folder_orange_open_icon`     |
-| `folder_purple_icon`     | `folder_purple_open_icon`     |
-| `folder_red_icon`        | `folder_red_open_icon`        |
-| `folder_yellow_icon`     | `folder_yellow_open_icon`     |
+Open folder icon variants (`folder_*_open_icon`) have been removed. The tree
+expand/collapse arrow already indicates whether a node is expanded, making
+separate open-folder icons redundant. The `itemImageOpen` dict and
+`getImageOpen()` function have been deleted from `domain/attribute/icon/__init__.py`.
 
 ## Pluralization Logic
 
@@ -88,10 +78,10 @@ of whether it was user-set or inherited.
 
 ## Known Issue: Category Icon Pluralization
 
-When a user sets `person_icon` on a parent category:
-- The parent (which has children) shows `persons_icon` (people) — **unexpected**
-- Child categories with children also show `persons_icon`
-- Child categories without children show `person_icon`
+When a user sets `nuvola_apps_preferences-desktop-user` on a parent category:
+- The parent (which has children) shows `nuvola_apps_kuser` (people) — **unexpected**
+- Child categories with children also show `nuvola_apps_kuser`
+- Child categories without children show `nuvola_apps_preferences-desktop-user`
 
 This happens because categories use the same `CompositeObject.icon()` path as
 tasks, which applies `pluralOrSingularIcon()`. For tasks this makes sense

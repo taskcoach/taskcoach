@@ -2302,6 +2302,21 @@ class TreeListMainWindow(CustomTreeCtrl):
                 self._findTimer.Stop()
         event.Skip()
 
+    def SetImageList(self, imageList):
+        """Override to skip eager _grayedImageList build.
+
+        The upstream CustomTreeCtrl.SetImageList iterates ALL images to build
+        greyed copies. With 3000+ icons this wastes memory and time. Since
+        PaintItem always uses _imageListNormal, the greyed list is unused.
+        """
+        if self._ownsImageListNormal:
+            del self._imageListNormal
+        self._imageListNormal = imageList
+        self._ownsImageListNormal = False
+        self._dirty = True
+        if imageList:
+            self.CalculateLineHeight()
+
     def SetBuffered(self, buffered):
         """
         Sets/unsets the double buffering for the main window.
@@ -3277,7 +3292,7 @@ class TreeListMainWindow(CustomTreeCtrl):
 
             if multi_images:
                 y = item.GetY() + img_extraH
-                imglist = self._imageListNormal if item.IsEnabled() else self._grayedImageList
+                imglist = self._imageListNormal
                 draw_x = x
                 for img_idx in multi_images:
                     if img_idx >= 0:
@@ -3288,11 +3303,7 @@ class TreeListMainWindow(CustomTreeCtrl):
                 if wcheck:
                     x += wcheck
 
-                if item.IsEnabled():
-                    imglist = self._imageListNormal
-                else:
-                    imglist = self._grayedImageList
-
+                imglist = self._imageListNormal
                 imglist.Draw(image, dc, x, y, wx.IMAGELIST_DRAW_TRANSPARENT)
 
             if wcheck:

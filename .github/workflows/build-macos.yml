@@ -257,6 +257,10 @@ jobs:
           print("Testing widget creation...")
           frame = wx.Frame(None, title="Test")
 
+          # Initialize icon system before creating widgets that use icons
+          from taskcoachlib.gui.icons import icon_library
+          icon_library.init()
+
           # Test SearchCtrl with TE_PROCESS_ENTER (caught style bug)
           from taskcoachlib.widgets import SearchCtrl
           search = SearchCtrl(frame, style=wx.TE_PROCESS_ENTER, callback=lambda x: None)
@@ -267,11 +271,10 @@ jobs:
           text = MultiLineTextCtrl(frame, style=wx.TE_MULTILINE)
           print("  MultiLineTextCtrl: OK")
 
-          # Test art provider (caught icon path bug)
-          from taskcoachlib.gui import artprovider
-          artprovider.init()
-          bitmap = wx.ArtProvider.GetBitmap("task", wx.ART_MENU, (16, 16))
-          print(f"  ArtProvider: OK (bitmap valid: {bitmap.IsOk()})")
+          # Test icon catalog directly (artprovider shim removed)
+          from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
+          bitmap = icon_catalog.get_bitmap("nuvola_apps_korganizer", LIST_ICON_SIZE)
+          print(f"  Icon catalog: OK (bitmap valid: {bitmap.IsOk()})")
 
           # Clean up
           frame.Destroy()

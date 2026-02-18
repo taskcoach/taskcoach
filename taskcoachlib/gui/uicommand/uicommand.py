@@ -50,6 +50,7 @@ from taskcoachlib.thirdparty.wxScheduler import (
     wxSCHEDULER_PREV,
     wxSCHEDULER_TODAY,
 )
+from taskcoachlib.gui.icons.icon_library import icon_catalog
 from taskcoachlib.tools import anonymize, openfile
 import wx, re, operator
 from . import base_uicommand
@@ -114,7 +115,7 @@ class FileOpen(IOCommand):
         super().__init__(
             menuText=_("&Open...\tCtrl+O"),
             helpText=help.fileOpen,
-            bitmap="fileopen",
+            icon_id="nuvola_actions_document-open",
             id=wx.ID_OPEN,
             *args,
             **kwargs
@@ -144,7 +145,7 @@ class FileMerge(IOCommand):
         super().__init__(
             menuText=_("&Merge..."),
             helpText=_("Merge tasks from another file with the current file"),
-            bitmap="merge",
+            icon_id="papirus_actions_kr_combine",
             *args,
             **kwargs
         )
@@ -158,7 +159,7 @@ class FileClose(IOCommand):
         super().__init__(
             menuText=_("&Close\tCtrl+W"),
             helpText=help.fileClose,
-            bitmap="close",
+            icon_id="nuvola_actions_dialog-close",
             id=wx.ID_CLOSE,
             *args,
             **kwargs
@@ -174,7 +175,7 @@ class FileSave(IOCommand):
         super().__init__(
             menuText=_("&Save\tCtrl+S"),
             helpText=help.fileSave,
-            bitmap="save",
+            icon_id="nuvola_devices_media-floppy",
             id=wx.ID_SAVE,
             *args,
             **kwargs
@@ -192,7 +193,7 @@ class FileMergeDiskChanges(IOCommand):
         super().__init__(
             menuText=_("Merge &disk changes\tShift-Ctrl-M"),
             helpText=help.fileMergeDiskChanges,
-            bitmap="mergedisk",
+            icon_id="nuvola_actions_go-top",
             *args,
             **kwargs
         )
@@ -209,7 +210,7 @@ class FileSaveAs(IOCommand):
         super().__init__(
             menuText=_("S&ave as...\tShift+Ctrl+S"),
             helpText=help.fileSaveAs,
-            bitmap="saveas",
+            icon_id="nuvola_actions_document-save-as",
             id=wx.ID_SAVEAS,
             *args,
             **kwargs
@@ -226,7 +227,7 @@ class FileSaveSelection(
         super().__init__(
             menuText=_("Sa&ve selected tasks to new taskfile..."),
             helpText=_("Save the selected tasks to a separate taskfile"),
-            bitmap="saveselection",
+            icon_id="nuvola_actions_document-save-as",
             *args,
             **kwargs
         )
@@ -242,7 +243,7 @@ class FileSaveSelectedTaskAsTemplate(
         super().__init__(
             menuText=_("Save selected task as &template"),
             helpText=_("Save the selected task as a task template"),
-            bitmap="saveselection",
+            icon_id="taskcoach_actions_newtmpl",
             *args,
             **kwargs
         )
@@ -256,7 +257,7 @@ class FileImportTemplate(IOCommand):
         super().__init__(
             menuText=_("&Import template..."),
             helpText=_("Import a new template from a template file"),
-            bitmap="fileopen",
+            icon_id="nuvola_actions_document-open",
             *args,
             **kwargs
         )
@@ -288,7 +289,7 @@ class FilePurgeDeletedItems(mixin_uicommand.NeedsDeletedItemsMixin, IOCommand):
         super().__init__(
             menuText=_("&Purge deleted items"),
             helpText=_("Permanently delete tasks and notes marked as deleted"),
-            bitmap="delete",
+            icon_id="nuvola_actions_edit-delete",
             *args,
             **kwargs
         )
@@ -315,7 +316,7 @@ class PrintPageSetup(
         super().__init__(
             menuText=_("&Page setup...\tShift+Ctrl+P"),
             helpText=help.printPageSetup,
-            bitmap="pagesetup",
+            icon_id="oxygen_actions_zoom-fit-best",
             id=wx.ID_PRINT_SETUP,
             *args,
             **kwargs
@@ -340,7 +341,7 @@ class PrintPreview(ViewerCommand, settings_uicommand.SettingsCommand):
         super().__init__(
             menuText=_("&Print preview..."),
             helpText=_("Show a preview of what the print will look like"),
-            bitmap="printpreview",
+            icon_id="oxygen_actions_zoom-draw",
             id=wx.ID_PREVIEW,
             *args,
             **kwargs
@@ -375,7 +376,7 @@ class Print(ViewerCommand, settings_uicommand.SettingsCommand):
         super().__init__(
             menuText=_("&Print...\tCtrl+P"),
             helpText=help.print_,
-            bitmap="print",
+            icon_id="nuvola_devices_printer",
             id=wx.ID_PRINT,
             *args,
             **kwargs
@@ -462,7 +463,7 @@ class FileExportAsHTML(FileExportCommand):
         super().__init__(
             menuText=_("Export as &HTML..."),
             helpText=_("Export items from a viewer in HTML format"),
-            bitmap="exportashtml",
+            icon_id="nuvola_mimetypes_text-html",
             *args,
             **kwargs
         )
@@ -513,7 +514,7 @@ class FileExportAsCSV(FileExportCommand):
                 "Export items from a viewer in Comma Separated Values "
                 "(CSV) format"
             ),
-            bitmap="exportascsv",
+            icon_id="nuvola_mimetypes_x-office-spreadsheet",
             *args,
             **kwargs
         )
@@ -561,7 +562,7 @@ class FileExportAsICalendar(FileExportCommand):
         super().__init__(
             menuText=_("Export as &iCalendar..."),
             helpText=_("Export items from a viewer in iCalendar format"),
-            bitmap="exportasvcal",
+            icon_id="nuvola_mimetypes_text-vcalendar",
             *args,
             **kwargs
         )
@@ -625,7 +626,7 @@ class FileExportAsTodoTxt(FileExportCommand):
                 "Export items from a viewer in Todo.txt format "
                 "(see todotxt.com)"
             ),
-            bitmap="exportascsv",
+            icon_id="oxygen_mimetypes_text-plain",
             *args,
             **kwargs
         )
@@ -673,7 +674,7 @@ class FileImportCSV(IOCommand):
             helpText=_(
                 "Import tasks from a Comma Separated Values (CSV) file"
             ),
-            bitmap="exportascsv",
+            icon_id="nuvola_mimetypes_x-office-spreadsheet",
             *args,
             **kwargs
         )
@@ -709,7 +710,7 @@ class FileImportTodoTxt(IOCommand):
         super().__init__(
             menuText=_("&Import Todo.txt..."),
             helpText=_("Import tasks from a Todo.txt (see todotxt.com) file"),
-            bitmap="exportascsv",
+            icon_id="oxygen_mimetypes_text-plain",
             *args,
             **kwargs
         )
@@ -727,7 +728,7 @@ class FileQuit(base_uicommand.UICommand):
         super().__init__(
             menuText=_("&Quit\tCtrl+Q"),
             helpText=help.fileQuit,
-            bitmap="exit",
+            icon_id="nuvola_actions_application-exit",
             id=wx.ID_EXIT,
             *args,
             **kwargs
@@ -744,7 +745,7 @@ class EditUndo(base_uicommand.UICommand):
         super().__init__(
             menuText=self.getUndoMenuText(),
             helpText=help.editUndo,
-            bitmap="undo",
+            icon_id="nuvola_actions_edit-undo",
             id=wx.ID_UNDO,
             *args,
             **kwargs
@@ -784,7 +785,7 @@ class EditRedo(base_uicommand.UICommand):
         super().__init__(
             menuText=self.getRedoMenuText(),
             helpText=help.editRedo,
-            bitmap="redo",
+            icon_id="nuvola_actions_edit-redo",
             id=wx.ID_REDO,
             *args,
             **kwargs
@@ -825,7 +826,7 @@ class EditCut(mixin_uicommand.NeedsSelectionMixin, ViewerCommand):
         super().__init__(
             menuText=_("Cu&t\tCtrl+X"),
             helpText=help.editCut,
-            bitmap="cut",
+            icon_id="nuvola_actions_edit-cut",
             *args,
             **kwargs
         )
@@ -854,7 +855,7 @@ class EditCopy(mixin_uicommand.NeedsSelectionMixin, ViewerCommand):
         super().__init__(
             menuText=_("&Copy\tCtrl+C"),
             helpText=help.editCopy,
-            bitmap="copy",
+            icon_id="nuvola_actions_edit-copy",
             *args,
             **kwargs
         )
@@ -885,7 +886,7 @@ class EditPaste(ViewerCommand):
         super().__init__(
             menuText=_("&Paste\tCtrl+V"),
             helpText=help.editPaste,
-            bitmap="paste",
+            icon_id="nuvola_actions_edit-paste",
             id=wx.ID_PASTE,
             *args,
             **kwargs
@@ -959,7 +960,7 @@ class EditPasteAsSubItem(
         super().__init__(
             menuText=self.defaultMenuText,
             helpText=help.editPasteAsSubitem,
-            bitmap="paste_subitem",
+            icon_id="taskcoach_actions_paste_subitem",
             *args,
             **kwargs
         )
@@ -1039,7 +1040,7 @@ class EditPreferences(settings_uicommand.SettingsCommand):
         super().__init__(
             menuText=_("&Preferences...\tAlt+P"),
             helpText=help.editPreferences,
-            bitmap="nuvola_actions_configure",
+            icon_id="nuvola_actions_configure",
             id=wx.ID_PREFERENCES,
             *args,
             **kwargs
@@ -1063,7 +1064,7 @@ class EditToolBarPerspective(settings_uicommand.SettingsCommand):
         self.__editorClass = editorClass
         super().__init__(
             helpText=_("Customize toolbar"),
-            bitmap="cogwheel_icon",
+            icon_id="nuvola_apps_preferences-system-session-services",
             menuText=_("Customize"),
             *args,
             **kwargs
@@ -1085,7 +1086,7 @@ class SelectAll(mixin_uicommand.NeedsItemsMixin, ViewerCommand):
         super().__init__(
             menuText=_("Select &All\tCtrl+A"),
             helpText=help.editSelectAll,
-            bitmap="selectall",
+            icon_id="taskcoach_actions_checkall",
             id=wx.ID_SELECTALL,
             *args,
             **kwargs
@@ -1113,6 +1114,7 @@ class ClearSelection(mixin_uicommand.NeedsSelectionMixin, ViewerCommand):
         super().__init__(
             menuText=_("&Deselect All\tCtrl+Shift+A"),
             helpText=_("Deselect all items"),
+            icon_id="taskcoach_actions_uncheckall",
             *args,
             **kwargs
         )
@@ -1129,7 +1131,7 @@ class ResetFilter(ViewerCommand):
         super().__init__(
             menuText=_("&Clear all filters\tShift-Ctrl-R"),
             helpText=help.resetFilter,
-            bitmap="viewalltasks",
+            icon_id="taskcoach_actions_viewalltasks",
             *args,
             **kwargs
         )
@@ -1193,7 +1195,7 @@ class ViewViewer(settings_uicommand.SettingsCommand, ViewerCommand):
     def __init__(self, *args, **kwargs):
         self.taskFile = kwargs.pop("taskFile")
         self.viewerClass = kwargs.pop("viewerClass")
-        kwargs.setdefault("bitmap", self.viewerClass.defaultBitmap)
+        kwargs.setdefault("icon_id", self.viewerClass.defaultBitmap)
         super().__init__(*args, **kwargs)
 
     def doCommand(self, event):
@@ -1220,7 +1222,7 @@ class ViewEffortViewerForSelectedTask(
 
         self.viewerClass = viewer.EffortViewerForSelectedTasks
         self.taskFile = kwargs.pop("taskFile")
-        kwargs["bitmap"] = viewer.EffortViewer.defaultBitmap
+        kwargs["icon_id"] = viewer.EffortViewer.defaultBitmap
         super().__init__(*args, **kwargs)
 
     def doCommand(self, event):
@@ -1324,7 +1326,7 @@ class ViewColumns(ViewerCommand, settings_uicommand.UICheckCommand):
 class ViewExpandAll(mixin_uicommand.NeedsTreeViewerMixin, ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            bitmap="tree_expand_all",
+            icon_id="taskcoach_actions_tree_expand_all",
             menuText=_("&Expand all\tShift+Ctrl+E"),
             helpText=help.viewExpandAll,
             *args,
@@ -1338,7 +1340,7 @@ class ViewExpandAll(mixin_uicommand.NeedsTreeViewerMixin, ViewerCommand):
 class ViewCollapseAll(mixin_uicommand.NeedsTreeViewerMixin, ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            bitmap="tree_collapse_all",
+            icon_id="taskcoach_actions_tree_collapse_all",
             menuText=_("Co&llapse all\tShift+Ctrl+C"),
             helpText=help.viewCollapseAll,
             *args,
@@ -1420,7 +1422,7 @@ class ViewerHideTasks(ViewerCommand, settings_uicommand.UICheckCommand):
         super().__init__(
             menuText=taskStatus.hideMenuText,
             helpText=taskStatus.hideHelpText,
-            bitmap=taskStatus.getHideBitmap(kwargs["settings"]),
+            icon_id="synthetic_hide_%s" % taskStatus.statusString,
             *args,
             **kwargs
         )
@@ -1466,7 +1468,7 @@ class Edit(mixin_uicommand.NeedsSelectionMixin, ViewerCommand):
         super().__init__(
             menuText=_("&Edit...\tRETURN"),
             helpText=_("Edit the selected item(s)"),
-            bitmap="edit",
+            icon_id="nuvola_actions_edit",
             *args,
             **kwargs
         )
@@ -1485,7 +1487,7 @@ class Edit(mixin_uicommand.NeedsSelectionMixin, ViewerCommand):
             columnName = ""
         # curselection() always queries widget fresh (SSOT principle)
         items = self.viewer.curselection()
-        editor = self.viewer.editItemDialog(items, self.bitmap, columnName)
+        editor = self.viewer.editItemDialog(items, self.icon_id, columnName)
         if len(items) > 1:
             # Use modal dialog for multi-item editing to prevent selection
             # changes while editing
@@ -1517,7 +1519,7 @@ class EditTrackedTasks(TaskListCommand, settings_uicommand.SettingsCommand):
         super().__init__(
             menuText=_("Edit &tracked task...\tShift-Alt-T"),
             helpText=_("Edit the currently tracked task(s)"),
-            bitmap="edit",
+            icon_id="nuvola_actions_edit",
             *args,
             **kwargs
         )
@@ -1529,7 +1531,7 @@ class EditTrackedTasks(TaskListCommand, settings_uicommand.SettingsCommand):
             self.settings,
             self.taskList,
             self.mainWindow().taskFile,
-            bitmap=self.bitmap,
+            icon_id=self.icon_id,
         )
         editTaskDialog.Show(show)
         return editTaskDialog  # for testing purposes
@@ -1543,7 +1545,7 @@ class Delete(mixin_uicommand.NeedsSelectionMixin, ViewerCommand):
         super().__init__(
             menuText=_("&Delete\tCtrl+DEL"),
             helpText=_("Delete the selected item(s)"),
-            bitmap="delete",
+            icon_id="nuvola_actions_edit-delete",
             *args,
             **kwargs
         )
@@ -1679,7 +1681,7 @@ class TaskNew(TaskListCommand, settings_uicommand.SettingsCommand):
         if "menuText" not in kwargs:  # Provide for subclassing
             kwargs["menuText"] = taskList.newItemMenuText
             kwargs["helpText"] = taskList.newItemHelpText
-        super().__init__(bitmap="new", *args, **kwargs)
+        super().__init__(icon_id="nuvola_actions_document-new", *args, **kwargs)
 
     def doCommand(self, event, show=True):  # pylint: disable=W0221
         kwargs = self.taskKeywords.copy()
@@ -1713,7 +1715,7 @@ class TaskNew(TaskListCommand, settings_uicommand.SettingsCommand):
             self.settings,
             self.taskList,
             self.mainWindow().taskFile,
-            bitmap=self.bitmap,
+            icon_id=self.icon_id,
             items_are_new=True,
         )
         newTaskDialog.Show(show)
@@ -1791,7 +1793,7 @@ class TaskNewFromTemplate(TaskNew):
             self.settings,
             self.taskList,
             self.mainWindow().taskFile,
-            bitmap=self.bitmap,
+            icon_id=self.icon_id,
             items_are_new=True,
         )
         newTaskDialog.Show(show)
@@ -1886,13 +1888,13 @@ class NewSubItem(
         super().__init__(
             menuText=self.defaultMenuText,
             helpText=_("Insert a new subitem of the selected item"),
-            bitmap="newsub",
+            icon_id="taskcoach_actions_newsub",
             *args,
             **kwargs
         )
 
     def doCommand(self, event, show=True):  # pylint: disable=W0221
-        self.viewer.newSubItemDialog(bitmap=self.bitmap).Show(show)
+        self.viewer.newSubItemDialog(icon_id=self.icon_id).Show(show)
 
     def onUpdateUI(self, event):
         super().onUpdateUI(event)
@@ -1912,7 +1914,7 @@ class TaskMarkActive(
 ):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            bitmap=task.active.getBitmap(kwargs["settings"]),
+            icon_id=task.active.getBitmap(kwargs["settings"]),
             menuText=_("Mark task &active\tAlt+RETURN"),
             helpText=_("Mark the selected task(s) active"),
             *args,
@@ -1942,7 +1944,7 @@ class TaskMarkInactive(
 ):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            bitmap=task.inactive.getBitmap(kwargs["settings"]),
+            icon_id=task.inactive.getBitmap(kwargs["settings"]),
             menuText=_("Mark task &inactive\tCtrl+Alt+RETURN"),
             helpText=_("Mark the selected task(s) inactive"),
             *args,
@@ -1970,7 +1972,7 @@ class TaskMarkCompleted(
 ):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            bitmap=task.completed.getBitmap(kwargs["settings"]),
+            icon_id=task.completed.getBitmap(kwargs["settings"]),
             menuText=_("Mark task &completed\tCtrl+RETURN"),
             helpText=_("Mark the selected task(s) completed"),
             *args,
@@ -1999,7 +2001,7 @@ class TaskMaxPriority(
         super().__init__(
             menuText=_("&Maximize priority\tShift+Ctrl+I"),
             helpText=help.taskMaxPriority,
-            bitmap="maxpriority",
+            icon_id="nuvola_actions_arrow-up-double",
             *args,
             **kwargs
         )
@@ -2018,7 +2020,7 @@ class TaskMinPriority(
         super().__init__(
             menuText=_("&Minimize priority\tShift+Ctrl+D"),
             helpText=help.taskMinPriority,
-            bitmap="minpriority",
+            icon_id="nuvola_actions_arrow-down-double",
             *args,
             **kwargs
         )
@@ -2037,7 +2039,7 @@ class TaskIncPriority(
         super().__init__(
             menuText=_("&Increase priority\tCtrl+I"),
             helpText=help.taskIncreasePriority,
-            bitmap="incpriority",
+            icon_id="nuvola_actions_arrow-up",
             *args,
             **kwargs
         )
@@ -2056,7 +2058,7 @@ class TaskDecPriority(
         super().__init__(
             menuText=_("&Decrease priority\tCtrl+D"),
             helpText=help.taskDecreasePriority,
-            bitmap="decpriority",
+            icon_id="nuvola_actions_arrow-down",
             *args,
             **kwargs
         )
@@ -2205,7 +2207,7 @@ class Mail(mixin_uicommand.NeedsSelectionMixin, ViewerCommand):
         super().__init__(
             menuText=menuText,
             helpText=help.mailItem,
-            bitmap="envelope_icon",
+            icon_id="nuvola_apps_email",
             *args,
             **kwargs
         )
@@ -2292,7 +2294,7 @@ class AddNote(
         super().__init__(
             menuText=_("Add &note...\tCtrl+B"),
             helpText=help.addNote,
-            bitmap="note_icon",
+            icon_id="nuvola_apps_knotes",
             *args,
             **kwargs
         )
@@ -2308,7 +2310,7 @@ class AddNote(
             self.settings,
             self.viewer.presentation(),
             self.mainWindow().taskFile,
-            bitmap=self.bitmap,
+            icon_id=self.icon_id,
         )
         editDialog.Show(show)
         return editDialog  # for testing purposes
@@ -2323,7 +2325,7 @@ class OpenAllNotes(
         super().__init__(
             menuText=_("Open all notes...\tShift+Ctrl+B"),
             helpText=help.openAllNotes,
-            bitmap="edit",
+            icon_id="nuvola_actions_edit",
             *args,
             **kwargs
         )
@@ -2337,7 +2339,7 @@ class OpenAllNotes(
                     self.settings,
                     self.viewer.presentation(),
                     self.mainWindow().taskFile,
-                    bitmap=self.bitmap,
+                    icon_id=self.icon_id,
                 )
                 editDialog.Show()
 
@@ -2352,7 +2354,7 @@ class EffortNew(
     def __init__(self, *args, **kwargs):
         effortList = kwargs["effortList"]
         super().__init__(
-            bitmap="new",
+            icon_id="nuvola_actions_document-new",
             menuText=effortList.newItemMenuText,
             helpText=effortList.newItemHelpText,
             *args,
@@ -2395,7 +2397,7 @@ class EffortNew(
             self.settings,
             self.effortList,
             self.mainWindow().taskFile,
-            bitmap=self.bitmap,
+            icon_id=self.icon_id,
         )
         if show:
             newEffortDialog.Show()
@@ -2417,7 +2419,7 @@ class EffortStart(
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            bitmap="clock_icon",
+            icon_id="nuvola_apps_clock",
             menuText=_("&Start tracking effort\tCtrl-T"),
             helpText=help.effortStart,
             *args,
@@ -2444,7 +2446,7 @@ class EffortStartForEffort(
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            bitmap="clock_icon",
+            icon_id="nuvola_apps_clock",
             menuText=_("&Start tracking effort"),
             helpText=_(
                 "Start tracking effort for the task(s) of the selected effort(s)"
@@ -2480,7 +2482,7 @@ class EffortStartForTask(TaskListCommand):
         self.task = kwargs.pop("task")
         subject = self.task.subject() or _("(No subject)")
         super().__init__(
-            bitmap=self.task.icon(recursive=True),
+            icon_id=self.task.icon_id(recursive=True),
             menuText="&" + subject.replace("&", "&&"),
             helpText=_("Start tracking effort for %s") % subject,
             *args,
@@ -2499,7 +2501,7 @@ class EffortStartButton(mixin_uicommand.PopupButtonMixin, TaskListCommand):
     def __init__(self, *args, **kwargs):
         kwargs["taskList"] = base.filter.DeletedFilter(kwargs["taskList"])
         super().__init__(
-            bitmap="clock_menu_icon",
+            icon_id="taskcoach_actions_clock_menu_icon",
             menuText=_("&Start tracking effort"),
             helpText=_(
                 "Select a task via the menu and start tracking effort for it"
@@ -2529,8 +2531,8 @@ class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            bitmap="clock_resume_icon",
-            bitmap2="clock_stop_icon",
+            icon_id="taskcoach_actions_clock_resume_icon",
+            icon_id2="taskcoach_actions_clock_stop_icon",
             menuText=self.defaultMenuText,
             helpText=self.defaultHelpText,
             kind=wx.ITEM_CHECK,
@@ -2542,7 +2544,7 @@ class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
             self.__tracker.subscribe(
                 self.__onEffortsChanged, "effortlisttracker%s" % subtype
             )
-        self.__currentBitmap = None  # Don't know yet what our bitmap is
+        self.__current_icon_id = None
 
     def __onEffortsChanged(self, efforts):
         self.updateUI()
@@ -2586,17 +2588,17 @@ class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
     def updateUI(self):
         paused = self.anyStoppedEfforts() and not self.anyTrackedEfforts()
         self.updateToolState(not paused)
-        bitmapName = self.bitmap if paused else self.bitmap2
+        current_icon_id = self.icon_id if paused else self.icon_id2
         menuText = self.getMenuText(paused)
-        if (bitmapName != self.__currentBitmap) or bool(
+        if (current_icon_id != self.__current_icon_id) or bool(
             [
                 item
                 for item in self.menuItems
                 if item.GetItemLabel() != menuText
             ]
         ):
-            self.__currentBitmap = bitmapName
-            self.updateToolBitmap(bitmapName)
+            self.__current_icon_id = current_icon_id
+            self.updateToolBitmap(current_icon_id)
             self.updateToolHelp()
             self.updateMenuItems(paused)
 
@@ -2606,11 +2608,11 @@ class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
         if paused != self.toolbar.GetToolState(self.id):
             self.toolbar.ToggleTool(self.id, paused)
 
-    def updateToolBitmap(self, bitmapName):
+    def updateToolBitmap(self, icon_id):
         if not self.toolbar:
             return  # Toolbar is hidden
-        bitmap = wx.ArtProvider.GetBitmap(
-            bitmapName, wx.ART_TOOLBAR, self.toolbar.GetToolBitmapSize()
+        bitmap = icon_catalog.get_bitmap(
+            icon_id, self.toolbar.GetToolBitmapSize()[0]
         )
         # On wxGTK, changing the bitmap doesn't work when the tool is
         # disabled, so we first enable it if necessary:
@@ -2681,7 +2683,7 @@ class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
 class CategoryNew(CategoriesCommand, settings_uicommand.SettingsCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            bitmap="new",
+            icon_id="nuvola_actions_document-new",
             menuText=_("New category...\tCtrl-G"),
             helpText=help.categoryNew,
             *args,
@@ -2698,7 +2700,7 @@ class CategoryNew(CategoriesCommand, settings_uicommand.SettingsCommand):
             self.settings,
             taskFile.categories(),
             taskFile,
-            bitmap=self.bitmap,
+            icon_id=self.icon_id,
         )
         newCategoryDialog.Show(show)
 
@@ -2725,7 +2727,7 @@ class CategoryCheckAll(ViewerCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            bitmap="checkall",
+            icon_id="taskcoach_actions_checkall",
             menuText=_("Check &all categories"),
             helpText=_("Check all category checkboxes"),
             *args,
@@ -2744,7 +2746,7 @@ class CategoryUncheckAll(ViewerCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            bitmap="uncheckall",
+            icon_id="taskcoach_actions_uncheckall",
             menuText=_("&Uncheck all categories"),
             helpText=_("Uncheck all category checkboxes"),
             *args,
@@ -2763,14 +2765,14 @@ class NoteNew(NotesCommand, settings_uicommand.SettingsCommand, ViewerCommand):
         super().__init__(
             menuText=self.menuText,
             helpText=self.helpText,
-            bitmap="new",
+            icon_id="nuvola_actions_document-new",
             *args,
             **kwargs
         )
 
     def doCommand(self, event, show=True):  # pylint: disable=W0221
         if self.viewer and self.viewer.isShowingNotes():
-            noteDialog = self.viewer.newItemDialog(bitmap=self.bitmap)
+            noteDialog = self.viewer.newItemDialog(icon_id=self.icon_id)
         else:
             newNoteCommand = command.NewNoteCommand(
                 self.notes, categories=self.categoriesForTheNewNote()
@@ -2782,7 +2784,7 @@ class NoteNew(NotesCommand, settings_uicommand.SettingsCommand, ViewerCommand):
                 self.settings,
                 self.notes,
                 self.mainWindow().taskFile,
-                bitmap=self.bitmap,
+                icon_id=self.icon_id,
             )
         noteDialog.Show(show)
         return noteDialog  # for testing purposes
@@ -2823,10 +2825,10 @@ class AttachmentNew(
         if "menuText" not in kwargs:
             kwargs["menuText"] = attachments.newItemMenuText
             kwargs["helpText"] = attachments.newItemHelpText
-        super().__init__(bitmap="new", *args, **kwargs)
+        super().__init__(icon_id="nuvola_actions_document-new", *args, **kwargs)
 
     def doCommand(self, event, show=True):  # pylint: disable=W0221
-        attachmentDialog = self.viewer.newItemDialog(bitmap=self.bitmap)
+        attachmentDialog = self.viewer.newItemDialog(icon_id=self.icon_id)
         attachmentDialog.Show(show)
         return attachmentDialog  # for testing purposes
 
@@ -2840,7 +2842,7 @@ class AddAttachment(
         super().__init__(
             menuText=_("&Add attachment...\tShift-Ctrl-A"),
             helpText=help.addAttachment,
-            bitmap="paperclip_icon",
+            icon_id="nuvola_status_mail-attachment",
             *args,
             **kwargs
         )
@@ -2882,7 +2884,7 @@ class AttachmentOpen(
     def __init__(self, *args, **kwargs):
         attachments = kwargs["attachments"]
         super().__init__(
-            bitmap="fileopen",
+            icon_id="nuvola_actions_document-open",
             menuText=attachments.openItemMenuText,
             helpText=attachments.openItemHelpText,
             *args,
@@ -2904,7 +2906,7 @@ class OpenAllAttachments(
         super().__init__(
             menuText=_("&Open all attachments...\tShift+Ctrl+O"),
             helpText=help.openAllAttachments,
-            bitmap="paperclip_icon",
+            icon_id="nuvola_status_mail-attachment",
             *args,
             **kwargs
         )
@@ -2933,7 +2935,7 @@ class DialogCommand(base_uicommand.UICommand):
             self._dialogTitle,
             self._dialogText,
             parent=wx.GetApp().GetTopWindow(),
-            bitmap=self.bitmap,
+            icon_id=self.icon_id,
             direction=self._direction,
         )
         for event in wx.EVT_CLOSE, wx.EVT_BUTTON:
@@ -2960,7 +2962,7 @@ class Help(DialogCommand):
         super().__init__(
             menuText=menuText,
             helpText=help.help,
-            bitmap="led_blue_questionmark_icon",
+            icon_id="nuvola_actions_help-about",
             dialogTitle=_("Help"),
             dialogText=help.helpHTML,
             id=wx.ID_HELP,
@@ -2974,7 +2976,7 @@ class Tips(settings_uicommand.SettingsCommand):
         super().__init__(
             menuText=_("&Tips"),
             helpText=_("Tips about the program"),
-            bitmap="nuvola_apps_ktip",
+            icon_id="nuvola_apps_ktip",
             *args,
             **kwargs
         )
@@ -3014,7 +3016,7 @@ class HelpAbout(DialogCommand):
             dialogTitle=_("About %s") % meta.name,
             dialogText=help.aboutHTML,
             id=wx.ID_ABOUT,
-            bitmap="led_blue_information_icon",
+            icon_id="nuvola_status_dialog-information",
             *args,
             **kwargs
         )
@@ -3028,7 +3030,7 @@ class HelpLicense(DialogCommand):
             dialogTitle=_("%s license") % meta.name,
             dialogText=meta.licenseHTML,
             direction=wx.Layout_LeftToRight,
-            bitmap="document_icon",
+            icon_id="nuvola_mimetypes_application-x-dvi",
             *args,
             **kwargs
         )
@@ -3055,7 +3057,7 @@ class FAQ(URLCommand):
         super().__init__(
             menuText=_("&Frequently asked questions"),
             helpText=_("Browse the frequently asked questions and answers"),
-            bitmap="led_blue_questionmark_icon",
+            icon_id="nuvola_actions_help-about",
             url=meta.faq_url,
             *args,
             **kwargs
@@ -3067,7 +3069,7 @@ class ReportBug(URLCommand):
         super().__init__(
             menuText=_("Report a &bug..."),
             helpText=_("Report a bug or browse known bugs"),
-            bitmap="nuvola_apps_kbugbuster",
+            icon_id="nuvola_apps_kbugbuster",
             url=meta.known_bugs_url,
             *args,
             **kwargs
@@ -3079,7 +3081,7 @@ class RequestFeature(URLCommand):
         super().__init__(
             menuText=_("Request a &feature..."),
             helpText=_("Request a new feature or vote for existing requests"),
-            bitmap="cogwheel_icon",
+            icon_id="nuvola_apps_preferences-system-session-services",
             url=meta.feature_request_url,
             *args,
             **kwargs
@@ -3091,7 +3093,7 @@ class RequestSupport(URLCommand):
         super().__init__(
             menuText=_("Request &support..."),
             helpText=_("Request user support from the developers"),
-            bitmap="life_ring_icon",
+            icon_id="nuvola_apps_help-browser",
             url=meta.support_request_url,
             *args,
             **kwargs
@@ -3103,7 +3105,7 @@ class HelpTranslate(URLCommand):
         super().__init__(
             menuText=_("Help improve &translations..."),
             helpText=_("Help improve the translations of %s") % meta.name,
-            bitmap="nuvola_categories_applications-education",
+            icon_id="nuvola_categories_applications-education-language",
             url=meta.translations_url,
             *args,
             **kwargs
@@ -3118,7 +3120,7 @@ class CheckForUpdate(URLCommand):
             menuText=_("Check for update"),
             helpText=_("Check for the availability of a new version of %s")
             % meta.name,
-            bitmap="box_icon",
+            icon_id="nuvola_apps_kpackage",
             url=meta.github_url,
             *args,
             **kwargs
@@ -3131,7 +3133,7 @@ class MainWindowRestore(base_uicommand.UICommand):
         super().__init__(
             menuText=_("&Restore"),
             helpText=_("Restore the window to its previous state"),
-            bitmap="restore",
+            icon_id="nuvola_apps_preferences-system-windows",
             *args,
             **kwargs
         )
@@ -3147,7 +3149,7 @@ class ResetWindowLayout(base_uicommand.UICommand):
         super().__init__(
             menuText=_("Reset &window layout"),
             helpText=_("Reset all panes to their default positions"),
-            bitmap="reset",
+            icon_id="nuvola_actions_view-split-left-right",
             *args,
             **kwargs
         )
@@ -3491,13 +3493,13 @@ class SquareTaskViewerOrderByOption(
 class CalendarViewerConfigure(ViewerCommand):
     menuText = _("&Configure")
     helpText = _("Configure the calendar viewer")
-    bitmap = "nuvola_actions_configure"
+    icon_id ="nuvola_actions_configure"
 
     def __init__(self, *args, **kwargs):
         super().__init__(
             menuText=self.menuText,
             helpText=self.helpText,
-            bitmap=self.bitmap,
+            icon_id=self.icon_id,
             *args,
             **kwargs
         )
@@ -3515,7 +3517,7 @@ class CalendarViewerNavigationCommand(ViewerCommand):
         super().__init__(
             menuText=self.menuText,
             helpText=self.helpText,
-            bitmap=self.bitmap,
+            icon_id=self.icon_id,
             *args,
             **kwargs
         )
@@ -3533,20 +3535,20 @@ class CalendarViewerNavigationCommand(ViewerCommand):
 class CalendarViewerNextPeriod(CalendarViewerNavigationCommand):
     menuText = _("&Next period")
     helpText = _("Show next period")
-    bitmap = "next"
+    icon_id ="nuvola_actions_go-next-document"
     calendarViewType = wxSCHEDULER_NEXT
 
 
 class HierarchicalCalendarViewerNextPeriod(ViewerCommand):
     menuText = _("&Next period")
     helpText = _("Show next period")
-    bitmap = "next"
+    icon_id ="nuvola_actions_go-next-document"
 
     def __init__(self, *args, **kwargs):
         super().__init__(
             menuText=self.menuText,
             helpText=self.helpText,
-            bitmap=self.bitmap,
+            icon_id=self.icon_id,
             *args,
             **kwargs
         )
@@ -3558,20 +3560,20 @@ class HierarchicalCalendarViewerNextPeriod(ViewerCommand):
 class CalendarViewerPreviousPeriod(CalendarViewerNavigationCommand):
     menuText = _("&Previous period")
     helpText = _("Show previous period")
-    bitmap = "prev"
+    icon_id ="nuvola_actions_go-previous-document"
     calendarViewType = wxSCHEDULER_PREV
 
 
 class HierarchicalCalendarViewerPreviousPeriod(ViewerCommand):
     menuText = _("&Previous period")
     helpText = _("Show previous period")
-    bitmap = "prev"
+    icon_id ="nuvola_actions_go-previous-document"
 
     def __init__(self, *args, **kwargs):
         super().__init__(
             menuText=self.menuText,
             helpText=self.helpText,
-            bitmap=self.bitmap,
+            icon_id=self.icon_id,
             *args,
             **kwargs
         )
@@ -3583,20 +3585,20 @@ class HierarchicalCalendarViewerPreviousPeriod(ViewerCommand):
 class CalendarViewerToday(CalendarViewerNavigationCommand):
     menuText = _("&Today")
     helpText = _("Show today")
-    bitmap = "calendar_icon"
+    icon_id ="nuvola_apps_date"
     calendarViewType = wxSCHEDULER_TODAY
 
 
 class HierarchicalCalendarViewerToday(ViewerCommand):
     menuText = _("&Today")
     helpText = _("Show today")
-    bitmap = "calendar_icon"
+    icon_id ="nuvola_apps_date"
 
     def __init__(self, *args, **kwargs):
         super().__init__(
             menuText=self.menuText,
             helpText=self.helpText,
-            bitmap=self.bitmap,
+            icon_id=self.icon_id,
             *args,
             **kwargs
         )

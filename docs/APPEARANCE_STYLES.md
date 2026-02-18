@@ -154,11 +154,11 @@ when no other source provides an icon:
 
 | Type | Default Icon | Source Label |
 |------|-------------|-------------|
-| Category | `folder_blue_icon` | `"System Theme"` |
-| Note | `note_icon` | `"System Theme"` |
-| Attachment | `paperclip_icon` | `"System Theme"` |
+| Category | `nuvola_mimetypes_inode-directory` | `"System Theme"` |
+| Note | `nuvola_apps_knotes` | `"System Theme"` |
+| Attachment | `nuvola_status_mail-attachment` | `"System Theme"` |
 
-Tasks get their default icon from status (e.g., `led_blue_icon` for active).
+Tasks get their default icon from status (e.g., `nuvola_actions_ledblue` for active).
 
 ---
 

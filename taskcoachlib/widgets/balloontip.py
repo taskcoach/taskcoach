@@ -267,35 +267,3 @@ class BalloonTipManager(object):
 
     def OnBalloonTipClosed(self, **kwargs):
         pass
-
-
-if __name__ == "__main__":
-
-    class Frame(wx.Frame):
-        def __init__(self):
-            super().__init__(None, wx.ID_ANY, "Test")
-
-            self.btn = wx.Button(self, wx.ID_ANY, "Show balloon")
-            self.btn.Bind(wx.EVT_BUTTON, self.OnClick)
-            s = wx.BoxSizer()
-            s.Add(self.btn, 1, wx.EXPAND)
-            self.SetSizer(s)
-            self.Fit()
-
-        def OnClick(self, event):
-            BalloonTip(
-                self,
-                self.btn,
-                """Your bones don't break, mine do. That's clear. Your cells react to bacteria and viruses differently than mine. You don't get sick, I do. That's also clear. But for some reason, you and I react the exact same way to water. We swallow it too fast, we choke. We get some in our lungs, we drown. However unreal it may seem, we are connected, you and I. We're on the same curve, just on opposite ends.""",
-                title="Title",
-                bitmap=wx.ArtProvider.GetBitmap(
-                    wx.ART_TIP, wx.ART_MENU, (16, 16)
-                ),
-            )
-
-    class App(wx.App):
-        def OnInit(self):
-            Frame().Show()
-            return True
-
-    App(0).MainLoop()

@@ -16,10 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from .mainwindow import MainWindow
-from .dialog.editor import TaskEditor, EffortEditor, CategoryEditor
-from .dialog.preferences import Preferences
-from .iocontroller import IOController
-from .remindercontroller import ReminderController
-from .artprovider import init, itemImages
-from .taskbaricon import TaskBarIcon
+def init():
+    """Initialize the icon system.
+
+    icon_library.init() — load themes, verify fallback.
+    image_list_cache.init() — create shared ImageList singleton.
+    """
+    from .icons import icon_library
+    from .icons import image_list_cache
+    icon_library.init()
+    image_list_cache.init()

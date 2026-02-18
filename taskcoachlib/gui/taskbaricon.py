@@ -28,7 +28,9 @@ from taskcoachlib.i18n import _
 from taskcoachlib.domain import date, task
 from pubsub import pub
 import wx.adv
-from . import artprovider
+from .icons.icon_library import icon_catalog, LIST_ICON_SIZE
+
+TRAY_ICON_SIZE_MACOS = 128
 
 # Check for AppIndicator availability on Linux/GTK
 # AppIndicator is only used when wx.adv.TaskBarIcon is not available (e.g., Wayland).
@@ -53,9 +55,9 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         mainwindow,
         taskList,
         settings,
-        defaultBitmap="taskcoach",
-        tickBitmap="clock_icon",
-        tackBitmap="clock_stopwatch_icon",
+        default_icon_id="nuvola_apps_korganizer",
+        tick_icon_id="nuvola_apps_clock",
+        tack_icon_id="nuvola_apps_ktimer",
         *args,
         **kwargs
     ):
@@ -64,12 +66,12 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         self.__window = mainwindow
         self.__taskList = taskList
         self.__settings = settings
-        self.__bitmap = self.__defaultBitmap = defaultBitmap
-        self.__currentBitmap = self.__bitmap
+        self.__icon_id = self.__default_icon_id = default_icon_id
+        self.__current_icon_id = self.__icon_id
         self.__tooltipText = ""
         self.__currentText = self.__tooltipText
-        self.__tickBitmap = tickBitmap
-        self.__tackBitmap = tackBitmap
+        self.__tick_icon_id = tick_icon_id
+        self.__tack_icon_id = tack_icon_id
         self.registerObserver(
             self.onTaskListChanged,
             eventType=taskList.addItemEventType(),
@@ -122,10 +124,10 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
     def onIdle(self, event):
         if (
             self.__currentText != self.__tooltipText
-            or self.__currentBitmap != self.__bitmap
+            or self.__current_icon_id != self.__icon_id
         ):
             self.__currentText = self.__tooltipText
-            self.__currentBitmap = self.__bitmap
+            self.__current_icon_id = self.__icon_id
             self.__setIcon()
         if event is not None:  # Unit tests
             event.Skip()
@@ -165,7 +167,7 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         if self.__settings.getboolean(
             "window", "blinktaskbariconwhentrackingeffort"
         ):
-            self.__toggleTrackingBitmap()
+            self.__toggle_tracking_icon()
             self.__setIcon()
 
     def onTaskbarClick(self, event):
@@ -200,11 +202,11 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
     def tooltip(self):
         return self.__tooltipText
 
-    def bitmap(self):
-        return self.__bitmap
+    def icon_id(self):
+        return self.__icon_id
 
-    def defaultBitmap(self):
-        return self.__defaultBitmap
+    def default_icon_id(self):
+        return self.__default_icon_id
 
     # Private methods:
 
@@ -215,7 +217,7 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
     def __startTicking(self):
         if self.__taskList.nrBeingTracked() > 0:
             self.startClock()
-            self.__toggleTrackingBitmap()
+            self.__toggle_tracking_icon()
             self.__setIcon()
 
     def startClock(self):
@@ -226,7 +228,7 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
     def __stopTicking(self):
         if self.__taskList.nrBeingTracked() == 0:
             self.stopClock()
-            self.__setDefaultBitmap()
+            self.__set_default_icon()
             self.__setIcon()
 
     def stopClock(self):
@@ -273,15 +275,21 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         if text != self.__tooltipText:
             self.__tooltipText = text
 
-    def __setDefaultBitmap(self):
-        self.__bitmap = self.__defaultBitmap
+    def __set_default_icon(self):
+        self.__icon_id = self.__default_icon_id
 
-    def __toggleTrackingBitmap(self):
-        tick, tack = self.__tickBitmap, self.__tackBitmap
-        self.__bitmap = tack if self.__bitmap == tick else tick
+    def __toggle_tracking_icon(self):
+        tick, tack = self.__tick_icon_id, self.__tack_icon_id
+        self.__icon_id = tack if self.__icon_id == tick else tick
 
     def __setIcon(self):
-        icon = artprovider.getIcon(self.__bitmap)
+        if operating_system.isMac():
+            size = TRAY_ICON_SIZE_MACOS
+        else:
+            size = LIST_ICON_SIZE
+        icon = icon_catalog.get_wx_icon(self.__icon_id, size)
+        if not icon:
+            return
         try:
             self.SetIcon(icon, self.__tooltipText)
         except Exception:
@@ -306,9 +314,9 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         mainwindow,
         taskList,
         settings,
-        defaultBitmap="taskcoach",
-        tickBitmap="clock_icon",
-        tackBitmap="clock_stopwatch_icon",
+        default_icon_id="nuvola_apps_korganizer",
+        tick_icon_id="nuvola_apps_clock",
+        tack_icon_id="nuvola_apps_ktimer",
         *args,
         **kwargs
     ):
@@ -316,17 +324,17 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         self.__window = mainwindow
         self.__taskList = taskList
         self.__settings = settings
-        self.__bitmap = self.__defaultBitmap = defaultBitmap
+        self.__icon_id = self.__default_icon_id = default_icon_id
         self.__tooltipText = ""
-        self.__tickBitmap = tickBitmap
-        self.__tackBitmap = tackBitmap
+        self.__tick_icon_id = tick_icon_id
+        self.__tack_icon_id = tack_icon_id
         self.__popupmenu = None
         self._clockRunning = False
 
         # Create the AppIndicator
         self.__indicator = _APPINDICATOR_MODULE.AppIndicatorIcon(
             app_id="taskcoach",
-            icon_name=defaultBitmap,
+            icon_path=icon_catalog.get_path(default_icon_id, TRAY_ICON_SIZE_MACOS),
             tooltip=meta.name
         )
 
@@ -395,7 +403,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         if self.__settings.getboolean(
             "window", "blinktaskbariconwhentrackingeffort"
         ):
-            self.__toggleTrackingBitmap()
+            self.__toggle_tracking_icon()
             self.__setIcon()
 
     def onTaskbarClick(self, event=None):
@@ -706,11 +714,11 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
     def tooltip(self):
         return self.__tooltipText
 
-    def bitmap(self):
-        return self.__bitmap
+    def icon_id(self):
+        return self.__icon_id
 
-    def defaultBitmap(self):
-        return self.__defaultBitmap
+    def default_icon_id(self):
+        return self.__default_icon_id
 
     # Private methods:
 
@@ -721,7 +729,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
     def __startTicking(self):
         if self.__taskList.nrBeingTracked() > 0:
             self.startClock()
-            self.__toggleTrackingBitmap()
+            self.__toggle_tracking_icon()
             self.__setIcon()
 
     def startClock(self):
@@ -732,7 +740,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
     def __stopTicking(self):
         if self.__taskList.nrBeingTracked() == 0:
             self.stopClock()
-            self.__setDefaultBitmap()
+            self.__set_default_icon()
             self.__setIcon()
 
     def stopClock(self):
@@ -779,17 +787,19 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             if self.__indicator:
                 self.__indicator.set_tooltip(text)
 
-    def __setDefaultBitmap(self):
-        self.__bitmap = self.__defaultBitmap
+    def __set_default_icon(self):
+        self.__icon_id = self.__default_icon_id
 
-    def __toggleTrackingBitmap(self):
-        tick, tack = self.__tickBitmap, self.__tackBitmap
-        self.__bitmap = tack if self.__bitmap == tick else tick
+    def __toggle_tracking_icon(self):
+        tick, tack = self.__tick_icon_id, self.__tack_icon_id
+        self.__icon_id = tack if self.__icon_id == tick else tick
 
     def __setIcon(self):
         """Update the indicator icon."""
         if self.__indicator:
-            self.__indicator.set_icon_by_name(self.__bitmap, self.__tooltipText)
+            path = icon_catalog.get_path(self.__icon_id, TRAY_ICON_SIZE_MACOS)
+            if path:
+                self.__indicator.set_icon_full(path, self.__tooltipText)
 
     # wx.adv.TaskBarIcon compatibility methods:
 

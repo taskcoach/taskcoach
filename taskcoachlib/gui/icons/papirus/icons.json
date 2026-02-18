@@ -1,4 +1,12 @@
 {
   "_comment": "Icons imported from Papirus theme. See ICON_THEME_CATALOG.json for theme metadata.",
-  "icons": {}
+  "icons": {
+    "papirus_actions_kr_combine": {
+      "label": "Kr Combine",
+      "file": "kr_combine.png",
+      "hints": ["combine", "merge", "join", "arrows", "krusader", "files", "concatenate"],
+      "context": "actions",
+      "sizes": [16]
+    }
+  }
 }

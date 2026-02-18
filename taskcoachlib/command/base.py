@@ -606,32 +606,32 @@ class EditIconCommand(BaseCommand):
     singular_name = _('Change icon "%s"')
 
     def __init__(self, *args, **kwargs):
-        self.__newIcon = icon = kwargs.pop("newValue")
-        self.__newSelectedIcon = (
-            icon[: -len("_icon")] + "_open_icon"
-            if (icon.startswith("folder") and icon.count("_") == 2)
-            else icon
+        self.__new_icon_id = new_icon_id = kwargs.pop("newValue")
+        self.__new_selected_icon_id = (
+            new_icon_id[: -len("_icon")] + "_open_icon"
+            if (new_icon_id.startswith("folder") and new_icon_id.count("_") == 2)
+            else new_icon_id
         )
         super().__init__(*args, **kwargs)
-        self.__oldIcons = [
-            (item.icon(), item.selectedIcon()) for item in self.items
+        self.__old_icon_ids = [
+            (item.icon_id(), item.selected_icon_id()) for item in self.items
         ]
 
     @patterns.eventSource
     def do_command(self, event=None):
         super().do_command()
         for item in self.items:
-            item.setIcon(self.__newIcon, event=event)
-            item.setSelectedIcon(self.__newSelectedIcon, event=event)
+            item.set_icon_id(self.__new_icon_id, event=event)
+            item.set_selected_icon_id(self.__new_selected_icon_id, event=event)
 
     @patterns.eventSource
     def undo_command(self, event=None):
         super().undo_command()
-        for item, (oldIcon, oldSelectedIcon) in zip(
-            self.items, self.__oldIcons
+        for item, (old_icon_id, old_selected_icon_id) in zip(
+            self.items, self.__old_icon_ids
         ):
-            item.setIcon(oldIcon, event=event)
-            item.setSelectedIcon(oldSelectedIcon, event=event)
+            item.set_icon_id(old_icon_id, event=event)
+            item.set_selected_icon_id(old_selected_icon_id, event=event)
 
     def redo_command(self):
         self.do_command()

@@ -7,7 +7,7 @@ Download the installer from the [latest release](https://github.com/taskcoach/ta
 - **Installer**: `TaskCoach-<version>-windows-x64-setup.exe` - Standard installation
 - **Portable**: `TaskCoach-<version>-windows-x64-portable.zip` - No installation required
 
-Where `<version>` is the release version (e.g., `2.0.1.20`).
+Where `<version>` is the release version (e.g., `2.0.2.0`).
 
 ## Security Warning
 

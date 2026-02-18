@@ -30,7 +30,6 @@ References:
 """
 
 import os
-import sys
 
 # Try to import AppIndicator (Ayatana version preferred, fallback to legacy)
 _appindicator = None
@@ -75,39 +74,6 @@ def is_wayland():
             os.environ.get('WAYLAND_DISPLAY') is not None)
 
 
-def get_icon_path(icon_name, size=48):
-    """Get the path to an icon file.
-
-    Args:
-        icon_name: Base name of the icon (e.g., 'taskcoach', 'clock_icon')
-        size: Icon size (default 48 for good visibility)
-
-    Returns:
-        Absolute path to the icon PNG file, or None if not found
-    """
-    # Determine base path for icons
-    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-        base_path = sys._MEIPASS
-    else:
-        base_path = os.path.dirname(__file__)
-
-    icon_filename = f"{icon_name}{size}x{size}.png"
-    icon_path = os.path.join(base_path, 'icons', icon_filename)
-
-    if os.path.exists(icon_path):
-        return icon_path
-
-    # Try other sizes as fallback
-    for fallback_size in [48, 32, 22, 16, 64, 128]:
-        if fallback_size == size:
-            continue
-        icon_filename = f"{icon_name}{fallback_size}x{fallback_size}.png"
-        icon_path = os.path.join(base_path, 'icons', icon_filename)
-        if os.path.exists(icon_path):
-            return icon_path
-
-    return None
-
 
 class AppIndicatorIcon:
     """System tray icon using AppIndicator/StatusNotifierItem.
@@ -116,13 +82,13 @@ class AppIndicatorIcon:
     the AppIndicator library for Wayland compatibility.
     """
 
-    def __init__(self, app_id="taskcoach", icon_name="taskcoach",
+    def __init__(self, app_id="taskcoach", icon_path=None,
                  category=None, tooltip="Task Coach"):
         """Initialize the AppIndicator icon.
 
         Args:
             app_id: Unique identifier for the indicator
-            icon_name: Name of the icon (will be looked up in icons folder)
+            icon_path: Absolute path to icon file, or None for system default
             category: AppIndicator category (defaults to APPLICATION_STATUS)
             tooltip: Tooltip text (used as title since AppIndicator has limited tooltip support)
         """
@@ -130,7 +96,6 @@ class AppIndicatorIcon:
             raise ImportError(f"AppIndicator not available: {APPINDICATOR_ERROR}")
 
         self._app_id = app_id
-        self._icon_name = icon_name
         self._tooltip = tooltip
         self._menu = None
         self._menu_items = {}
@@ -140,23 +105,11 @@ class AppIndicatorIcon:
         if category is None:
             category = _appindicator.IndicatorCategory.APPLICATION_STATUS
 
-        # Get icon path
-        icon_path = get_icon_path(icon_name)
-        if icon_path:
-            # AppIndicator needs icon path without extension for theme lookup,
-            # or full path for custom icons
-            self._indicator = _appindicator.Indicator.new(
-                app_id,
-                icon_path,  # Full path to icon
-                category
-            )
-        else:
-            # Fallback to system icon
-            self._indicator = _appindicator.Indicator.new(
-                app_id,
-                "application-default-icon",
-                category
-            )
+        self._indicator = _appindicator.Indicator.new(
+            app_id,
+            icon_path or "application-default-icon",
+            category
+        )
 
         # Set title (shown in some environments)
         self._indicator.set_title(tooltip)
@@ -177,32 +130,8 @@ class AppIndicatorIcon:
         self._menu.show_all()
         self._indicator.set_menu(self._menu)
 
-    def SetIcon(self, icon_name, tooltip=""):
-        """Set the indicator icon and tooltip.
-
-        Args:
-            icon_name: Name of the icon (or wx.Icon which will be ignored,
-                      use the string name instead)
-            tooltip: Tooltip text
-        """
-        # Handle both string icon names and wx.Icon objects
-        if isinstance(icon_name, str):
-            self._icon_name = icon_name
-            icon_path = get_icon_path(icon_name)
-            if icon_path:
-                self._indicator.set_icon_full(icon_path, tooltip or self._tooltip)
-
-        if tooltip:
-            self._tooltip = tooltip
-            self._indicator.set_title(tooltip)
-
-    def set_icon_by_name(self, icon_name, tooltip=""):
-        """Set icon by name (string).
-
-        This is the preferred method when you have the icon name as a string.
-        """
-        self._icon_name = icon_name
-        icon_path = get_icon_path(icon_name)
+    def set_icon_full(self, icon_path, tooltip=""):
+        """Set icon from a file path and tooltip."""
         if icon_path:
             self._indicator.set_icon_full(icon_path, tooltip or self._tooltip)
         if tooltip:
@@ -265,82 +194,3 @@ class AppIndicatorIcon:
     def indicator(self):
         """Access the underlying AppIndicator object."""
         return self._indicator
-
-
-def build_taskcoach_menu(Gtk, menu, mainwindow, taskFile, settings,
-                         on_click_callback=None):
-    """Build the Task Coach tray menu using GTK.
-
-    This creates a GTK menu with similar items to TaskBarMenu.
-
-    Args:
-        Gtk: The Gtk module from gi.repository
-        menu: The Gtk.Menu to populate
-        mainwindow: The main application window
-        taskFile: The task file object
-        settings: Application settings
-        on_click_callback: Callback for restore/iconize action
-    """
-    from taskcoachlib.i18n import _
-    from taskcoachlib import meta
-
-    # Show/Hide main window
-    def on_show_hide(widget):
-        if on_click_callback:
-            on_click_callback(None)
-
-    show_item = Gtk.MenuItem(label=_("Show/Hide Main Window"))
-    show_item.connect('activate', on_show_hide)
-    menu.append(show_item)
-
-    menu.append(Gtk.SeparatorMenuItem())
-
-    # New Task
-    def on_new_task(widget):
-        # Use wx.CallAfter to safely call wx code from GTK callback
-        import wx
-        wx.CallAfter(mainwindow.createNewTask)
-
-    new_task_item = Gtk.MenuItem(label=_("New task"))
-    new_task_item.connect('activate', on_new_task)
-    menu.append(new_task_item)
-
-    menu.append(Gtk.SeparatorMenuItem())
-
-    # Quit
-    def on_quit(widget):
-        import wx
-        wx.CallAfter(mainwindow.Close)
-
-    quit_item = Gtk.MenuItem(label=_("Quit"))
-    quit_item.connect('activate', on_quit)
-    menu.append(quit_item)
-
-
-def create_indicator_for_taskcoach(mainwindow, taskList, settings):
-    """Factory function to create an AppIndicator for Task Coach.
-
-    Args:
-        mainwindow: The main application window
-        taskList: The task list
-        settings: Application settings
-
-    Returns:
-        AppIndicatorIcon instance, or None if not available
-    """
-    if not APPINDICATOR_AVAILABLE:
-        return None
-
-    try:
-        indicator = AppIndicatorIcon(
-            app_id="taskcoach",
-            icon_name="taskcoach",
-            tooltip="Task Coach"
-        )
-        return indicator
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).warning(
-            f"Failed to create AppIndicator: {e}"
-        )
-        return None

@@ -59,7 +59,7 @@ class BooleanSettingsCommand(SettingsCommand):  # pylint: disable=W0223
 
 class UICheckCommand(BooleanSettingsCommand):
     def __init__(self, *args, **kwargs):
-        kwargs["bitmap"] = kwargs.get("bitmap", self.getBitmap())
+        kwargs["icon_id"] = kwargs.get("icon_id", self.getBitmap())
         super().__init__(kind=wx.ITEM_CHECK, *args, **kwargs)
 
     def isSettingChecked(self):
@@ -94,7 +94,7 @@ class UICheckCommand(BooleanSettingsCommand):
 
 class UIRadioCommand(BooleanSettingsCommand):
     def __init__(self, *args, **kwargs):
-        super().__init__(kind=wx.ITEM_RADIO, bitmap="", *args, **kwargs)
+        super().__init__(kind=wx.ITEM_RADIO, icon_id="", *args, **kwargs)
 
     def onUpdateUI(self, event):
         if self.isSettingChecked():

@@ -210,12 +210,11 @@ class NotificationFrameBase(_NotifyBase):
         the notification.
         """
 
+        from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
         return wx.BitmapButton(
             panel,
             wx.ID_ANY,
-            wx.ArtProvider.GetBitmap(
-                "cross_red_icon", wx.ART_FRAME_ICON, (16, 16)
-            ),
+            icon_catalog.get_bitmap("nuvola_status_dialog-error", LIST_ICON_SIZE),
         )
 
     def AddInnerContent(self, sizer, panel):
@@ -459,6 +458,7 @@ AbstractNotifier.register(UniversalNotifier())
 
 
 if __name__ == "__main__":
+    from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 
     class TestNotificationFrame(NotificationFrameBase):
         def AddInnerContent(self, sizer, panel):
@@ -487,16 +487,16 @@ if __name__ == "__main__":
                 "Other sample",
                 "Multi-line sample content\nfor example\nDont try this at home",
                 timeout=3,
-                icon=wx.ArtProvider.GetBitmap(
-                    "taskcoach", wx.ART_FRAME_ICON, (16, 16)
+                icon=icon_catalog.get_bitmap(
+                    "nuvola_apps_korganizer", LIST_ICON_SIZE
                 ),
             )
             NotificationCenter().Notify("Before last sample", "Spam!")
             NotificationCenter().NotifyFrame(
                 TestNotificationFrame(
                     "Test custom",
-                    icon=wx.ArtProvider.GetBitmap(
-                        "taskcoach", wx.ART_FRAME_ICON, (16, 16)
+                    icon=icon_catalog.get_bitmap(
+                        "nuvola_apps_korganizer", LIST_ICON_SIZE
                     ),
                 )
             )
@@ -510,9 +510,9 @@ if __name__ == "__main__":
 
     class App(wx.App):
         def OnInit(self):
-            from taskcoachlib.gui import artprovider
+            from taskcoachlib.gui.icons import icon_library
 
-            artprovider.init()
+            icon_library.init()
             TestFrame().Show()
             return True
 

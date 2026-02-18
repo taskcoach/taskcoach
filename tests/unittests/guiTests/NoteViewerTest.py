@@ -75,7 +75,7 @@ class NoteViewerTest(test.wxTestCase):
     def testShowAttachmentColumn(self):
         self.note.addAttachments(attachment.FileAttachment("whatever"))
         self.assertEqual(
-            self.viewer.imageIndex["paperclip_icon"],
+            self.viewer.imageIndex["nuvola_status_mail-attachment"],
             self.firstItemIcon(column=2),
         )
 

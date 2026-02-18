@@ -21,9 +21,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import meta, widgets, operating_system, render
+from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.application.application import detect_dark_theme
 from taskcoachlib.domain import date, task
-from taskcoachlib.gui import artprovider
 from taskcoachlib.meta import data
 from taskcoachlib.i18n import _
 from wx.lib.agw.hyperlink import HyperLinkCtrl
@@ -385,10 +385,7 @@ class SettingsPageBase(widgets.ScrolledBookPage):
 
     def _createIconEntry(self, exclude=None):
         """Create a searchable icon picker with fixed 120px width."""
-        iconEntry = widgets.IconPicker(self, "", exclude=exclude, fixedWidth=120)
-        # imageNames returned for backward compatibility (unused)
-        imageNames = sorted(artprovider.chooseableItems.keys(), key=lambda k: artprovider.chooseableItems[k]["label"])
-        return iconEntry, imageNames
+        return widgets.IconPicker(self, "", exclude=exclude, fixedWidth=120)
 
     def _createAppearanceControls(self, fgColorSection, fgColorSetting,
                                    bgColorSection, bgColorSetting,
@@ -410,9 +407,9 @@ class SettingsPageBase(widgets.ScrolledBookPage):
             self, font=currentFont or defaultFont, colour=currentFgColor,
             bgColour=currentBgColor, fixedWidth=75
         )
-        iconEntry, imageNames = self._createIconEntry(exclude="data")
-        currentIcon = self.gettext(iconSection, iconSetting)
-        iconEntry.SetValue(currentIcon)
+        iconEntry = self._createIconEntry(exclude="data")
+        current_icon_id = self.gettext(iconSection, iconSetting)
+        iconEntry.SetValue(current_icon_id)
 
         self._colorSettings.append((fgColorSection, fgColorSetting, fgColorButton))
         self._colorSettings.append((bgColorSection, bgColorSetting, bgColorButton))
@@ -581,8 +578,8 @@ class SettingsPageBase(widgets.ScrolledBookPage):
             )
             self.settext(section, setting, fontInfoDesc)
         for section, setting, iconEntry in self._iconSettings:
-            iconName = iconEntry.GetValue()
-            self.settext(section, setting, iconName)
+            icon_id = iconEntry.GetValue()
+            self.settext(section, setting, icon_id)
         for section, setting, btn in self._pathSettings:
             self.settext(section, setting, btn.GetPath())
         for section, setting, txt in self._textSettings:
@@ -707,7 +704,7 @@ class SettingsPage(SettingsPageBase):
 class SavePage(SettingsPage):
     pageName = "save"
     pageTitle = _("Files")
-    pageIcon = "save"
+    pageIcon = "nuvola_devices_media-floppy"
     _helpWidth = 500
 
     def __init__(self, *args, **kwargs):
@@ -782,7 +779,7 @@ class SavePage(SettingsPage):
 class WindowBehaviorPage(SettingsPage):
     pageName = "window"
     pageTitle = _("Windows")
-    pageIcon = "windows"
+    pageIcon = "nuvola_apps_window_list"
 
     def __init__(self, *args, **kwargs):
         super().__init__(columns=2, growableColumn=-1, *args, **kwargs)
@@ -835,7 +832,7 @@ class WindowBehaviorPage(SettingsPage):
 class ThemePage(SettingsPage):
     pageName = "theme"
     pageTitle = _("Theme")
-    pageIcon = "fsview_icon"
+    pageIcon = "nuvola_apps_fsview"
 
     def __init__(self, *args, **kwargs):
         super().__init__(columns=6, growableColumn=-1, *args, **kwargs)
@@ -1270,7 +1267,7 @@ class ThemePage(SettingsPage):
 class LanguagePage(SettingsPage):
     pageName = "language"
     pageTitle = _("Regional")
-    pageIcon = "nuvola_categories_applications-education"
+    pageIcon = "nuvola_categories_applications-education-language"
 
     def __init__(self, *args, **kwargs):
         super().__init__(columns=3, *args, **kwargs)
@@ -1970,6 +1967,38 @@ class StatusesPage(SettingsPage):
         noteRow = self._position.next(11)  # consume full row
         self._sizer.Add(noteText, (noteRow[0], 0), span=(1, 11),
                         flag=wx.ALL | wx.ALIGN_LEFT, border=self._borderWidth)
+        # Divider before legacy option
+        legacyLineRow = self._position.next(11)
+        self._sizer.Add(wx.StaticLine(self), (legacyLineRow[0], 0), span=(1, 11),
+                        flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=self._borderWidth)
+        # Legacy status icon support
+        legacyLabel = wx.StaticText(self, label=_("Legacy"))
+        legacyPanel = wx.Panel(self)
+        legacySizer = wx.BoxSizer(wx.HORIZONTAL)
+        legacyCheckbox = wx.CheckBox(legacyPanel)
+        legacyCheckbox.SetValue(self.getboolean("icon", "legacystatusicons"))
+        self._booleanSettings.append(("icon", "legacystatusicons", legacyCheckbox))
+        legacySizer.Add(legacyCheckbox, 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL, self._borderWidth)
+        legacyHint = wx.StaticText(legacyPanel, label=_(
+            "All statuses must be reset to their defaults and this option "
+            "must be enabled to make the INI settings file compatible with "
+            "Task Coach < 2.0.1.72. "
+            "The task data file may reference newer icons that older versions "
+            "cannot display, but it will not crash, the icons simply won't "
+            "appear in older versions of Task Coach."
+        ))
+        legacyHint.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+        legacyHint.Wrap(700)
+        legacySizer.Add(legacyHint, 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL, self._borderWidth)
+        legacyPanel.SetSizer(legacySizer)
+        legacyRow = self._position.next(11)
+        self._sizer.Add(legacyLabel, (legacyRow[0], 0), span=(1, 1),
+                        flag=wx.ALL | wx.ALIGN_CENTRE_VERTICAL | wx.ALIGN_LEFT,
+                        border=self._borderWidth)
+        self._sizer.Add(legacyPanel, (legacyRow[0], 1), span=(1, 10),
+                        flag=wx.ALL | wx.ALIGN_CENTRE_VERTICAL | wx.ALIGN_LEFT,
+                        border=self._borderWidth)
         self.fit()
 
     def _onStatusIconChanged(self, event, iconEntry):
@@ -2022,7 +2051,7 @@ class StatusesPage(SettingsPage):
 class FeaturesPage(SettingsPage):
     pageName = "features"
     pageTitle = _("Features")
-    pageIcon = "cogwheel_icon"
+    pageIcon = "nuvola_apps_preferences-system-session-services"
     _helpWidth = 500
 
     def __init__(self, *args, **kwargs):
@@ -2175,7 +2204,7 @@ class FeaturesPage(SettingsPage):
 class IconsPage(SettingsPage):
     pageName = "icons"
     pageTitle = _("Icons")
-    pageIcon = "nuvola_apps_kcoloredit"
+    pageIcon = "nuvola_apps_kview"
 
     def __init__(self, *args, **kwargs):
         super().__init__(columns=2, growableColumn=-1, *args, **kwargs)
@@ -2198,6 +2227,11 @@ class IconsPage(SettingsPage):
             "iconpicker",
             "theme_breeze",
             _("Show Breeze icons in picker"),
+        )
+        self.addBooleanSetting(
+            "iconpicker",
+            "theme_taskcoach",
+            _("Show TaskCoach icons in picker"),
         )
         self.addBooleanSetting(
             "iconpicker",
@@ -2224,7 +2258,7 @@ class IconsPage(SettingsPage):
 class TaskDatesPage(SettingsPage):
     pageName = "task"
     pageTitle = _("Task dates")
-    pageIcon = "calendar_icon"
+    pageIcon = "nuvola_apps_date"
     _helpWidth = 700
 
     def __init__(self, *args, **kwargs):
@@ -2394,7 +2428,7 @@ class DurationPresetsPage(SettingsPage):
 
     pageName = "presets"
     pageTitle = _("Durations")
-    pageIcon = "clock_icon"
+    pageIcon = "nuvola_apps_clock"
 
     def __init__(self, *args, **kwargs):
         super().__init__(columns=2, growableColumn=1, *args, **kwargs)
@@ -2438,7 +2472,7 @@ class DurationPresetsPage(SettingsPage):
 
         self.__addBtn = wx.Button(self.__addPanel, wx.ID_ANY, _("Add"))
         self.__addBtn.SetBitmap(
-            wx.ArtProvider.GetBitmap("symbol_plus_icon", wx.ART_BUTTON, (16, 16))
+            icon_catalog.get_bitmap("nuvola_actions_list-add", LIST_ICON_SIZE)
         )
         self.__addBtn.Bind(wx.EVT_BUTTON, self.__onAdd)
         self.__addSizer.Add(self.__addBtn, 0, wx.ALIGN_CENTRE_VERTICAL)
@@ -2570,7 +2604,7 @@ class DurationPresetsPage(SettingsPage):
                 style=wx.BU_EXACTFIT
             )
             deleteBtn.SetBitmap(
-                wx.ArtProvider.GetBitmap("cross_red_icon", wx.ART_BUTTON, (16, 16))
+                icon_catalog.get_bitmap("nuvola_status_dialog-error", LIST_ICON_SIZE)
             )
             deleteBtn.presetValue = value  # Store preset value on button
             deleteBtn.Bind(wx.EVT_BUTTON, self.__onDeleteButton)
@@ -2753,7 +2787,7 @@ class Preferences(widgets.NotebookDialog):
         self.settings = settings
         self.taskFile = taskFile
         kwargs.setdefault("buttonTypes", wx.OK | wx.CANCEL | wx.APPLY)
-        super().__init__(bitmap="nuvola_actions_configure", *args, **kwargs)
+        super().__init__(icon_id="nuvola_actions_configure", *args, **kwargs)
         if operating_system.isMac():
             self.CentreOnParent()
 

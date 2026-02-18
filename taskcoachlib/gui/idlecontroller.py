@@ -27,6 +27,7 @@ from taskcoachlib.patterns import Observer
 from taskcoachlib.powermgt import IdleNotifier
 from pubsub import pub
 from taskcoachlib import render
+from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 import wx
 
 
@@ -132,8 +133,8 @@ class IdleController(Observer, IdleNotifier):
                     effort,
                     self._displayed,
                     _("Notification"),
-                    icon=wx.ArtProvider.GetBitmap(
-                        "taskcoach", wx.ART_FRAME_ICON, (16, 16)
+                    icon=icon_catalog.get_bitmap(
+                        "nuvola_apps_korganizer", LIST_ICON_SIZE
                     ),
                 )
                 NotificationCenter().NotifyFrame(frm)

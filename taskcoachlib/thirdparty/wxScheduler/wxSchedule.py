@@ -49,7 +49,7 @@ class wxSchedule(wx.EvtHandler):
         self._start = wx.DateTime().Now()
         self._done = False
         self._clientdata = None
-        self._icons = []
+        self._icon_ids = []
         self._complete = None
         self._id = "%.f-%s" % (time.time(), id(self))
 
@@ -105,7 +105,7 @@ class wxSchedule(wx.EvtHandler):
             "notes",
             "start",
             "clientdata",
-            "icons",
+            "icon_ids",
             "complete",
             "id",
         ]
@@ -145,7 +145,7 @@ class wxSchedule(wx.EvtHandler):
         evt.end = self._end
         evt.notes = self._notes
         evt.start = self._start
-        evt.icons = self._icons
+        evt.icon_ids = self._icon_ids
         evt.complete = self._complete
         evt.schedule = self
         evt.layoutNeeded = layoutNeeded
@@ -314,14 +314,14 @@ class wxSchedule(wx.EvtHandler):
         self._end.Add(ts)
         self._eventNotification(True)
 
-    def GetIcons(self):
-        return self._icons
+    def GetIconIds(self):
+        return self._icon_ids
 
-    def SetIcons(self, icons):
-        layoutNeeded = (bool(icons) and not bool(self._icons)) or (
-            bool(self._icons) and not bool(icons)
+    def SetIconIds(self, icon_ids):
+        layoutNeeded = (bool(icon_ids) and not bool(self._icon_ids)) or (
+            bool(self._icon_ids) and not bool(icon_ids)
         )
-        self._icons = icons
+        self._icon_ids = icon_ids
 
         self._eventNotification(layoutNeeded)
 
@@ -357,6 +357,6 @@ class wxSchedule(wx.EvtHandler):
     end = property(GetEnd, SetEnd)
     notes = property(GetNotes, SetNotes)
     clientdata = property(GetClientData, SetClientData)
-    icons = property(GetIcons, SetIcons)
+    icon_ids = property(GetIconIds, SetIconIds)
     complete = property(GetComplete, SetComplete)
     id = property(GetId, SetId)

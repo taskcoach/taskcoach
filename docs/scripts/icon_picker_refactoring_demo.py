@@ -50,30 +50,31 @@ import wx.lib.buttons as buttons
 
 
 def load_icon_data():
-    """Load icon data from artprovider.chooseableItems (production data).
+    """Load icon data from the icon catalog (production data).
 
     Returns list of (key, label, bitmap, hints_str, enabled) tuples.
     Randomly picks 10 icons to mark as disabled for demo purposes.
-    Must be called after artprovider.init() and wx.App exists.
+    Must be called after icon_library.init() and wx.App exists.
     """
     import random
-    from taskcoachlib.gui import artprovider
+    from taskcoachlib.gui.icons.icon_library import icon_catalog
 
-    all_keys = list(artprovider.chooseableItems.keys())
+    all_keys = icon_catalog.viewer_icon_ids()
     disabled = set(random.sample(all_keys, min(10, len(all_keys))))
 
     items = []
-    # Add "No icon" option first (empty key, no bitmap) - matches artprovider behavior
     items.append(("", "No icon", wx.NullBitmap, "", True))
 
     sorted_keys = sorted(all_keys,
-                         key=lambda k: artprovider.chooseableItems[k].get("label", k))
+                         key=lambda k: (icon_catalog.get_icon(k).label or k))
     for key in sorted_keys:
-        data = artprovider.chooseableItems[key]
-        label = data.get("label", key)
-        hints_str = " ".join(str(h) for h in data.get("hints", []))
-        bitmap = wx.ArtProvider.GetBitmap(key, wx.ART_MENU, (16, 16))
-        if not bitmap.IsOk():
+        icon = icon_catalog.get_icon(key)
+        if not icon:
+            continue
+        label = icon.label or key
+        hints_str = " ".join(icon.hints)
+        bitmap = icon_catalog.get_bitmap(key, 16)
+        if not bitmap or not bitmap.IsOk():
             bitmap = wx.NullBitmap
         enabled = key not in disabled
         items.append((key, label, bitmap, hints_str, enabled))
@@ -1436,9 +1437,9 @@ class IconPickerButtonMF(buttons.ThemedGenBitmapTextButton):
 
 class DemoFrame(wx.Frame):
     def __init__(self):
-        # Initialize artprovider (must be done after wx.App exists)
-        from taskcoachlib.gui import artprovider
-        artprovider.init()
+        # Initialize icon library (must be done after wx.App exists)
+        from taskcoachlib.gui.icons import icon_library
+        icon_library.init()
 
         # Import production IconPicker here (after wx.App exists)
         # Module-level _("No icon") in iconpicker.py requires wx.App for gettext

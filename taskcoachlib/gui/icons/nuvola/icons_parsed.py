@@ -88,9 +88,8 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "arrow-left.png",
-        "paths": {
-            16: "16x16/actions/arrow-left.png",
-        },
+        "duplicate_of": "nuvola_actions_go-previous-document",
+        "paths": {},
     },
     "nuvola_actions_arrow-left-double": {
         "label": _("Arrow Left Double"),
@@ -218,7 +217,7 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "button_accept.png",
-        "duplicate_of": "nuvola_actions_dialog-ok",
+        "duplicate_of": "nuvola_actions_ok",
         "paths": {},
     },
     "nuvola_actions_camera_test": {
@@ -227,7 +226,7 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "camera_test.png",
-        "duplicate_of": "nuvola_actions_dialog-ok",
+        "duplicate_of": "nuvola_actions_ok",
         "paths": {},
     },
     "nuvola_actions_cancel": {
@@ -236,9 +235,8 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "cancel.png",
-        "paths": {
-            16: "16x16/actions/cancel.png",
-        },
+        "duplicate_of": "nuvola_status_dialog-error",
+        "paths": {},
     },
     "nuvola_actions_cd": {
         "label": _("Cd"),
@@ -343,7 +341,7 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "dialog-cancel.png",
-        "duplicate_of": "nuvola_actions_cancel",
+        "duplicate_of": "nuvola_status_dialog-error",
         "paths": {},
     },
     "nuvola_actions_dialog-close": {
@@ -362,9 +360,8 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "dialog-ok.png",
-        "paths": {
-            16: "16x16/actions/dialog-ok.png",
-        },
+        "duplicate_of": "nuvola_actions_ok",
+        "paths": {},
     },
     "nuvola_actions_dock": {
         "label": _("Dock"),
@@ -424,6 +421,8 @@ icons = {
         "file": "document-open.png",
         "paths": {
             16: "16x16/actions/document-open.png",
+            22: "22x22/actions/document-open.png",
+            32: "32x32/actions/document-open.png",
         },
     },
     "nuvola_actions_document-print": {
@@ -432,9 +431,8 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "document-print.png",
-        "paths": {
-            16: "16x16/actions/document-print.png",
-        },
+        "duplicate_of": "nuvola_devices_printer",
+        "paths": {},
     },
     "nuvola_actions_document-print-frame": {
         "label": _("Document Print Frame"),
@@ -482,9 +480,8 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "document-save.png",
-        "paths": {
-            16: "16x16/actions/document-save.png",
-        },
+        "duplicate_of": "nuvola_devices_media-floppy",
+        "paths": {},
     },
     "nuvola_actions_document-save-all": {
         "label": _("Document Save All"),
@@ -633,6 +630,8 @@ icons = {
         "file": "edit-redo.png",
         "paths": {
             16: "16x16/actions/edit-redo.png",
+            22: "22x22/actions/edit-redo.png",
+            32: "32x32/actions/edit-redo.png",
         },
     },
     "nuvola_actions_edit-undo": {
@@ -643,6 +642,8 @@ icons = {
         "file": "edit-undo.png",
         "paths": {
             16: "16x16/actions/edit-undo.png",
+            22: "22x22/actions/edit-undo.png",
+            32: "32x32/actions/edit-undo.png",
         },
     },
     "nuvola_actions_edittrash": {
@@ -680,9 +681,8 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "folder.png",
-        "paths": {
-            16: "16x16/actions/folder.png",
-        },
+        "duplicate_of": "nuvola_mimetypes_inode-directory",
+        "paths": {},
     },
     "nuvola_actions_folder-new": {
         "label": _("Folder New"),
@@ -710,7 +710,7 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "games-endturn.png",
-        "duplicate_of": "nuvola_actions_dialog-ok",
+        "duplicate_of": "nuvola_actions_ok",
         "paths": {},
     },
     "nuvola_actions_go-bottom": {
@@ -799,8 +799,9 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "go-previous-document.png",
-        "duplicate_of": "nuvola_actions_arrow-left",
-        "paths": {},
+        "paths": {
+            16: "16x16/actions/go-previous-document.png",
+        },
     },
     "nuvola_actions_go-top": {
         "label": _("Go Top"),
@@ -810,6 +811,8 @@ icons = {
         "file": "go-top.png",
         "paths": {
             16: "16x16/actions/go-top.png",
+            22: "22x22/actions/go-top.png",
+            32: "32x32/actions/go-top.png",
         },
     },
     "nuvola_actions_go-up": {
@@ -848,9 +851,8 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "homepage.png",
-        "paths": {
-            16: "16x16/actions/homepage.png",
-        },
+        "duplicate_of": "nuvola_categories_applications-internet",
+        "paths": {},
     },
     "nuvola_actions_hwinfo": {
         "label": _("Hwinfo"),
@@ -1034,9 +1036,8 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "kjobviewer.png",
-        "paths": {
-            16: "16x16/actions/kjobviewer.png",
-        },
+        "duplicate_of": "nuvola_devices_printer",
+        "paths": {},
     },
     "nuvola_actions_klipper": {
         "label": _("Klipper"),
@@ -1044,9 +1045,8 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "klipper.png",
-        "paths": {
-            16: "16x16/actions/klipper.png",
-        },
+        "duplicate_of": "nuvola_apps_klipper",
+        "paths": {},
     },
     "nuvola_actions_klipper_dock": {
         "label": _("Klipper Dock"),
@@ -1064,7 +1064,7 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "klpq.png",
-        "duplicate_of": "nuvola_actions_kjobviewer",
+        "duplicate_of": "nuvola_devices_printer",
         "paths": {},
     },
     "nuvola_actions_kmail": {
@@ -1506,9 +1506,8 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "mix_record.png",
-        "paths": {
-            16: "16x16/actions/mix_record.png",
-        },
+        "duplicate_of": "nuvola_actions_ledred",
+        "paths": {},
     },
     "nuvola_actions_mix_unknown": {
         "label": _("Mix Unknown"),
@@ -1613,9 +1612,8 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "noatunloopsong.png",
-        "paths": {
-            16: "16x16/actions/noatunloopsong.png",
-        },
+        "duplicate_of": "nuvola_actions_kaboodleloop",
+        "paths": {},
     },
     "nuvola_actions_noatunpause": {
         "label": _("Noatunpause"),
@@ -1679,8 +1677,9 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "ok.png",
-        "duplicate_of": "nuvola_actions_dialog-ok",
-        "paths": {},
+        "paths": {
+            16: "16x16/actions/ok.png",
+        },
     },
     "nuvola_actions_openterm": {
         "label": _("Openterm"),
@@ -1884,9 +1883,8 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "tool_clipboard.png",
-        "paths": {
-            16: "16x16/actions/tool_clipboard.png",
-        },
+        "duplicate_of": "nuvola_actions_klipper_dock",
+        "paths": {},
     },
     "nuvola_actions_tool_delay": {
         "label": _("Tool Delay"),
@@ -1941,9 +1939,8 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "tool_restart.png",
-        "paths": {
-            16: "16x16/actions/tool_restart.png",
-        },
+        "duplicate_of": "nuvola_actions_view-refresh",
+        "paths": {},
     },
     "nuvola_actions_tool_resume": {
         "label": _("Tool Resume"),
@@ -1961,9 +1958,8 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "tool_timer.png",
-        "paths": {
-            16: "16x16/actions/tool_timer.png",
-        },
+        "duplicate_of": "nuvola_apps_clock",
+        "paths": {},
     },
     "nuvola_actions_tool_uselastdir": {
         "label": _("Tool Uselastdir"),
@@ -1971,7 +1967,7 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "tool_uselastdir.png",
-        "duplicate_of": "nuvola_actions_folder",
+        "duplicate_of": "nuvola_mimetypes_inode-directory",
         "paths": {},
     },
     "nuvola_actions_tools-check-spelling": {
@@ -2068,9 +2064,8 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "view-history.png",
-        "paths": {
-            16: "16x16/actions/view-history.png",
-        },
+        "duplicate_of": "nuvola_apps_clock",
+        "paths": {},
     },
     "nuvola_actions_view-key-secret": {
         "label": _("View Key Secret"),
@@ -2218,9 +2213,8 @@ icons = {
         "context": "actions",
         "context_label": _("Actions"),
         "file": "zoom.png",
-        "paths": {
-            16: "16x16/actions/zoom.png",
-        },
+        "duplicate_of": "nuvola_apps_xmag",
+        "paths": {},
     },
     "nuvola_actions_zoom-fit-best": {
         "label": _("Zoom Fit Best"),
@@ -2436,6 +2430,8 @@ icons = {
         "file": "clock.png",
         "paths": {
             16: "16x16/apps/clock.png",
+            48: "48x48/apps/clock.png",
+            128: "128x128/apps/clock.png",
         },
     },
     "nuvola_apps_date": {
@@ -3176,9 +3172,8 @@ icons = {
         "context": "apps",
         "context_label": _("Applications"),
         "file": "kig.png",
-        "paths": {
-            16: "16x16/apps/kig.png",
-        },
+        "duplicate_of": "nuvola_apps_kfig",
+        "paths": {},
     },
     "nuvola_apps_kiten": {
         "label": _("Kiten"),
@@ -3421,9 +3416,8 @@ icons = {
         "context": "apps",
         "context_label": _("Applications"),
         "file": "kolourpaint.png",
-        "paths": {
-            16: "16x16/apps/kolourpaint.png",
-        },
+        "duplicate_of": "nuvola_apps_kpaint",
+        "paths": {},
     },
     "nuvola_apps_konqsidebar_mediaplayer": {
         "label": _("Konqsidebar Mediaplayer"),
@@ -3532,6 +3526,11 @@ icons = {
         "file": "korganizer.png",
         "paths": {
             16: "16x16/apps/korganizer.png",
+            22: "22x22/apps/korganizer.png",
+            32: "32x32/apps/korganizer.png",
+            48: "48x48/apps/korganizer.png",
+            64: "64x64/apps/korganizer.png",
+            128: "128x128/apps/korganizer.png",
         },
     },
     "nuvola_apps_korganizer_todo": {
@@ -3579,8 +3578,9 @@ icons = {
         "context": "apps",
         "context_label": _("Applications"),
         "file": "kpaint.png",
-        "duplicate_of": "nuvola_apps_kolourpaint",
-        "paths": {},
+        "paths": {
+            16: "16x16/apps/kpaint.png",
+        },
     },
     "nuvola_apps_kpdf": {
         "label": _("Kpdf"),
@@ -3808,6 +3808,8 @@ icons = {
         "file": "ktimer.png",
         "paths": {
             16: "16x16/apps/ktimer.png",
+            48: "48x48/apps/ktimer.png",
+            128: "128x128/apps/ktimer.png",
         },
     },
     "nuvola_apps_ktimetracker": {
@@ -3828,6 +3830,7 @@ icons = {
         "file": "ktip.png",
         "paths": {
             16: "16x16/apps/ktip.png",
+            32: "32x32/apps/ktip.png",
         },
     },
     "nuvola_apps_ktouch": {
@@ -4382,6 +4385,8 @@ icons = {
         "file": "preferences-system-session-services.png",
         "paths": {
             16: "16x16/apps/preferences-system-session-services.png",
+            22: "22x22/apps/preferences-system-session-services.png",
+            32: "32x32/apps/preferences-system-session-services.png",
         },
     },
     "nuvola_apps_preferences-system-windows": {
@@ -4470,9 +4475,8 @@ icons = {
         "context": "apps",
         "context_label": _("Applications"),
         "file": "reload.png",
-        "paths": {
-            16: "16x16/apps/reload.png",
-        },
+        "duplicate_of": "nuvola_actions_view-refresh",
+        "paths": {},
     },
     "nuvola_apps_remote": {
         "label": _("Remote"),
@@ -4956,6 +4960,8 @@ icons = {
         "file": "media-floppy.png",
         "paths": {
             16: "16x16/devices/media-floppy.png",
+            22: "22x22/devices/media-floppy.png",
+            32: "32x32/devices/media-floppy.png",
         },
     },
     "nuvola_devices_media-optical": {
@@ -5125,6 +5131,8 @@ icons = {
         "file": "printer.png",
         "paths": {
             16: "16x16/devices/printer.png",
+            22: "22x22/devices/printer.png",
+            32: "32x32/devices/printer.png",
         },
     },
     "nuvola_devices_printer1": {
@@ -5133,9 +5141,8 @@ icons = {
         "context": "devices",
         "context_label": _("Devices"),
         "file": "printer1.png",
-        "paths": {
-            16: "16x16/devices/printer1.png",
-        },
+        "duplicate_of": "nuvola_devices_printer",
+        "paths": {},
     },
     "nuvola_devices_raid": {
         "label": _("Raid"),
@@ -5528,7 +5535,7 @@ icons = {
         "context": "mimetypes",
         "context_label": _("MimeTypes"),
         "file": "application-x-rar.png",
-        "duplicate_of": "nuvola_mimetypes_application-x-zip",
+        "duplicate_of": "nuvola_apps_package",
         "paths": {},
     },
     "nuvola_mimetypes_application-x-rpm": {
@@ -5566,7 +5573,7 @@ icons = {
         "context": "mimetypes",
         "context_label": _("MimeTypes"),
         "file": "application-x-tar.png",
-        "duplicate_of": "nuvola_mimetypes_application-x-zip",
+        "duplicate_of": "nuvola_apps_package",
         "paths": {},
     },
     "nuvola_mimetypes_application-x-trash": {
@@ -5604,9 +5611,8 @@ icons = {
         "context": "mimetypes",
         "context_label": _("MimeTypes"),
         "file": "application-x-zip.png",
-        "paths": {
-            16: "16x16/mimetypes/application-x-zip.png",
-        },
+        "duplicate_of": "nuvola_apps_package",
+        "paths": {},
     },
     "nuvola_mimetypes_application-xhtml+xml": {
         "label": _("Application Xhtml Xml"),
@@ -6299,9 +6305,8 @@ icons = {
         "context": "mimetypes",
         "context_label": _("MimeTypes"),
         "file": "mime_empty.png",
-        "paths": {
-            16: "16x16/mimetypes/mime_empty.png",
-        },
+        "duplicate_of": "nuvola_mimetypes_unknown",
+        "paths": {},
     },
     "nuvola_mimetypes_mime_koffice": {
         "label": _("Mime Koffice"),
@@ -6319,9 +6324,8 @@ icons = {
         "context": "mimetypes",
         "context_label": _("MimeTypes"),
         "file": "mime_temp.png",
-        "paths": {
-            16: "16x16/mimetypes/mime_temp.png",
-        },
+        "duplicate_of": "nuvola_mimetypes_unknown",
+        "paths": {},
     },
     "nuvola_mimetypes_misc_doc": {
         "label": _("Misc Doc"),
@@ -7142,6 +7146,8 @@ icons = {
         "file": "user-home.png",
         "paths": {
             16: "16x16/places/user-home.png",
+            22: "22x22/places/user-home.png",
+            32: "32x32/places/user-home.png",
         },
     },
     "nuvola_places_user-trash": {

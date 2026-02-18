@@ -41,16 +41,6 @@ class TaskStatus(object):
             return settings.get("icon", "%stasks" % self.statusString)
         return defaults.defaults["icon"]["%stasks" % self.statusString]
 
-    def getHideBitmap(self, settings):
-        if settings.get("icon", "%stasks" % self.statusString):
-            return "%s+cross_red_icon" % settings.get(
-                "icon", "%stasks" % self.statusString
-            )
-        return (
-            "%s+cross_red_icon"
-            % defaults.defaults["icon"]["%stasks" % self.statusString]
-        )
-
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, self.statusString)
 

@@ -2,7 +2,7 @@
 
 ## Terminology
 
-- **Named Icon**: An icon entry in a catalog JSON file or artprovider.py, identified by its key (e.g., `devices/print_printer.png`). A Named Icon has metadata (sizes, hints, inherits) and corresponds to one visual concept.
+- **Named Icon**: An icon entry in the catalog, identified by its icon ID (e.g., `nuvola_devices_print_printer`). A Named Icon has metadata (sizes, hints, inherits) and corresponds to one visual concept.
 - **Icon Image**: A specific size rendering (PNG file) of a Named Icon. A single Named Icon typically has multiple Icon Images at different sizes (16x16, 22x22, 32x32, 48x48, 64x64, 128x128).
 
 ## Table of Contents
@@ -37,77 +37,63 @@
 
 **Note:** Currently only pre-colored icons are used. Breeze icons have colors (#232629 dark gray + accent colors like #da4453 red, #27ae60 green) - they are NOT monochrome. The `-symbolic` variants ARE monochrome. Only the `-symbolic` versions should be excluded until recoloring support is implemented.
 
-### 2. Duplicate Icon Review
-- [x] Document duplicates in ICON_MAPPING.json to prevent re-importing
-- [ ] Audit new icons against existing legacy icons for visual duplicates
 
-See `ICON_MAPPING.json` for documented duplicates (in the `duplicates` field of each icon entry).
+### 2. System Tray Context Menu Icons — Review
+- [ ] Right-click tray menu may not render icons on modern desktops (GTK3/Wayland/libappindicator)
+- [ ] `MainWindowRestore` declares `bitmap="restore"` but icon may never be visible
+- [ ] Audit all tray menu entries for dead icon references
+- [ ] Decide: remove bitmap= from tray-only commands, or fix tray icon rendering
 
-### 3. Refactor Overlay Icon Hack
-- [ ] Create proper pre-composed "symbolic" theme icons to replace the `+` overlay hack
-- [ ] Current `ArtProvider.CreateBitmap()` parses `main+overlay` strings to compose icons at runtime
-- [ ] This hack breaks when icon names contain `+` (e.g., `text-x-c++src` from C++ files)
-- [ ] Used by: `ViewerHideTasks` toolbar buttons (`completedtasks+cross_red_icon`, etc.)
-- [ ] Solution: Pre-compose at load time into "symbolic" theme, remove `+` parsing hack
-- [ ] See `_CreateOverlayBitmap()` in `artprovider.py`
+### 3. Refactor Overlay Icon Hack — DONE
+- [x] Replaced `+` overlay hack with SyntheticIcon system
+- [x] `synthetic_icon_generator.py` composes main icon + overlay at request time, caches per-size
+- [x] `_CreateBitmap` routes `theme="synthetic"` entries to `synthetic_icon_generator.get_bitmap()`
+- [x] 6 hide-task icons registered as `synthetic_hide_{status}` in `chooseableItems`
+- [x] Live-check cache invalidation (compares current vs last base icon ID)
+- [x] No pubsub, no `+` parsing, no `_CreateOverlayBitmap`
+- See [ICON_DISPLAY.md](ICON_DISPLAY.md) § Synthetic Icons for architecture details
+
+### 4. IMPORTANT: Stale Content Review
+A lot of information in this document is stale because of the current transition
+to icon-distillery sourced icons and the refactor to follow XDG specifications.
+Sections referencing `ICON_MAPPING.json` or legacy-only workflows may no
+longer reflect the current architecture. (`artprovider.py` has been removed;
+icon metadata now lives in `_legacy_icon_defs()` inside `icon_library.py`.)
 
 ## IMPORTANT: Complete Import Cycle
 
-**When adding a new icon, ALL FOUR steps are required:**
+### Icon-Distillery Icons
+
+**TODO: Review — this is a subset of the [Migration Procedure](#migration-procedure).**
+
+0. ***If Migration:*** Follow [Migration Procedure](#migration-procedure) instead
+1. Copy/update `index.theme` from distillery (if new theme or new size directories)
+2. Copy/update `contexts.json` from distillery (if new context)
+3. Copy/merge icon entry into app's `{theme}/icons.json`
+4. Copy required PNG files into `{theme}/...` (same paths as source)
+5. Run `python tools/generate_icons_parsed_py.py <theme>` (review/correct errors)
+
+### Legacy Icons
 
 1. **Convert SVG → PNG** (minimum 16x16):
    ```bash
    inkscape source.svg -o icons/16x16/iconname.png -w 16 -h 16
    ```
 
-2. **Add to ICON_MAPPING.json** (provenance):
+2. **Add to ICON_MAPPING.json** (provenance) — **POSSIBLY DEPRECATED/ORPHANED - TO REVIEW**:
    ```json
    "iconname": {"source": "papirus", "context": "apps", "file": "source.svg", "source_sizes": "16,22,24,32,48,64"}
    ```
    Note: `source_sizes` documents sizes available in the SOURCE library, not what we've imported.
 
-3. **Add to artprovider.py** (searchable metadata):
-   ```python
-   "iconname": {
-       "name": _("Icon Name"),
-       "hints": [_("keyword1"), _("keyword2")],
-   },
-   ```
+3. **Add to `_legacy_icon_defs()` in `icon_library.py`** (hardcoded metadata):
+   Legacy icons have no `icons.json` or `icons_parsed.py` — their definitions
+   are hardcoded in `_legacy_icon_defs()` in `icon_library.py`.
 
-4. **Update per-pack catalog** (icon browser search):
-   - Use icon-distillery (`~/Downloads/icon-distillery/`) for discovery and cataloging.
-   - If the icon has `"hints"` in the distillery catalog, review and merge relevant hints
-     into the artprovider.py hints above.
-   - Replace the hints entry with `"inherits"` pointing to the new TaskCoach icon ID:
-     ```json
-     "apps/source.svg": {"inherits": "iconname", "sizes": [16, 22, 24, 32, 48, 64]}
-     ```
-   - This is a one-way merge: hints flow from the catalog into artprovider.py,
-     then the catalog switches to `inherits` so it tracks the app's canonical hints.
-   - If no hints exist yet, just add the `"inherits"` field to the existing entry.
-
-**ICON_MAPPING.json alone does NOT make an icon usable!** It only documents where the icon came from. The PNG file and artprovider.py entry are required for the icon to appear in the picker.
+**ICON_MAPPING.json alone does NOT make an icon usable!** It only documents where the icon came from. The PNG file and a `_legacy_icon_defs()` entry in `icon_library.py` are required for the icon to appear in the picker.
 
 **View the actual icon at ALL available sizes** before writing hints - describe what you SEE, not just the filename. Small sizes (16x16) can look very different from large sizes (48x48, 128x128).
 
-### Coherence Check
-
-Run the coherence check after adding icons to verify all three components are in sync:
-
-```bash
-python taskcoachlib/gui/icons/check_icon_coherence.py
-```
-
-Reports orphan entries and missing files:
-- PNG files without ICON_MAPPING.json entry
-- PNG files without artprovider.py entry
-- ICON_MAPPING.json entries without PNG files
-- artprovider.py entries without PNG files
-- Icons with fewer than 5 hints (minimum required for good searchability)
-
-Exit code 0 = all coherent, exit code 1 = issues found.
-
-**Minimum 5 hints required** for each icon in artprovider.py to ensure searchability.
 
 ---
 
@@ -127,13 +113,13 @@ The icon system supports **two formats** (hybrid mode):
    icons/person_icon22x22.png
    ```
 
-The `ArtProvider` checks new format first, falls back to legacy. Both coexist.
+The icon catalog checks new format first, falls back to legacy. Both coexist.
 
 **Provenance tracking:**
 - `ICON_THEME_CATALOG.json` - Theme metadata (URL, license, active)
 - `ICON_MAPPING.json` - Maps icon names to theme + original filename
 
-**Metadata** (names, hints) is in `taskcoachlib/gui/artprovider.py:chooseableItems`.
+**Metadata** (names, hints) is in `_legacy_icon_defs()` inside `taskcoachlib/gui/icons/icon_library.py`.
 
 ## Two-System Architecture
 
@@ -399,9 +385,9 @@ For each icon in icons.json:
 
 **At runtime** (`build_icon_path` in `icon_library.py`):
 ```
-build_icon_path(theme="nuvola", icon_key="nuvola_devices_print_printer", size=16):
+build_icon_path(theme="nuvola", icon_id="nuvola_devices_print_printer", size=16):
 1. Import {theme}/icons_parsed.py (cached)
-2. Look up icon_key → paths dict
+2. Look up icon_id → paths dict
 3. Look up size → relative path "16x16/devices/print_printer.png"
 4. Join with theme dir → absolute path
 ```
@@ -437,7 +423,7 @@ The app only imports `icons_parsed.py` at runtime — no JSON or index.theme par
 BUILD TIME (generator)                  RUNTIME (app)
 icons.json ──┐                          icons_parsed.py ── import ──→ icon_library.py
 contexts.json ──→ generate_icons_parsed_py.py                              │
-index.theme ─┘        │                                              artprovider.py
+index.theme ─┘        │                                              icon_library.py
                        ↓                                                   │
                icons_parsed.py                                     wx.Image(path)
 ```
@@ -458,7 +444,7 @@ conversion: `[ICON] Resolving duplicate icon 'old_name' -> 'target_name'`.
 ```
 1. Module import     Import icons_parsed.py → all metadata + paths known
                      Build duplicate_map from all themes
-2. gui.init()        Push ArtProvider
+2. gui.init()        Initialize icon catalog
 3. MainWindow()      createImageList() → load PNGs from pre-computed paths
                      Failed bitmaps → empty substitution + mark_icon_failed()
 4. Task file load    XML parsed → __parse_icon() resolves:
@@ -593,7 +579,7 @@ Maps TaskCoach icon names to their source (provenance tracking):
 {
   "_naming": "NEW icons use clean names (no _icon suffix). LEGACY icons retain _icon suffix.",
 
-  "led_blue_icon": {"source": "taskcoach", "file": "led_blue.png"},
+  "_led_blue_icon_MIGRATED": "→ nuvola_actions_ledblue",
 
   "homebank": {
     "source": "papirus",
@@ -873,7 +859,7 @@ All major sets provide pixel-perfect versions for standard sizes:
 
 ## Adding New Icons
 
-**WARNING: All three steps (PNG + ICON_MAPPING.json + artprovider.py) are required!**
+**WARNING: All three steps (PNG + ICON_MAPPING.json + `_legacy_icon_defs()`) are required!**
 See "IMPORTANT: Complete Import Cycle" at the top of this document.
 
 ### From Pre-Colored Sets (e.g., Papirus)
@@ -927,7 +913,7 @@ See "IMPORTANT: Complete Import Cycle" at the top of this document.
    }
    ```
 
-8. **Add metadata to artprovider.py** (for icon picker):
+8. **Add metadata to `_legacy_icon_defs()` in `icon_library.py`** (for icon picker):
    ```python
    "homebank": {
        "name": _("HomeBank"),
@@ -1004,6 +990,206 @@ When a theme equivalent exists, the legacy icon should be retired and migrated.
 | `person_talking_icon` | `nuvola_categories_applications-education` | Person speaking/education |
 | `pencil_icon` | `nuvola_actions_draw-freehand` | Pencil |
 | `palette_icon` | `nuvola_apps_kcoloredit` | Color palette |
+| `briefcase_icon` | `nuvola_apps_preferences-desktop-user` | Briefcase |
+| `person_icon` | `nuvola_apps_preferences-desktop-user` | Person/user |
+| `persons_icon` | `nuvola_apps_kuser` | People/group |
+| `person_id_icon` | `nuvola_actions_contact-new` | Person ID card |
+| `contact_card_icon` | `nuvola_mimetypes_text-x-vcard` | Contact/business card |
+| `symbol_plus_icon` | `nuvola_actions_list-add` | Plus/add symbol |
+| `symbol_minus_icon` | `nuvola_actions_list-remove` | Minus/remove symbol |
+| `star_red_icon` | `nuvola_apps_mozilla` | Red star |
+| `sign_important_icon` | `nuvola_status_dialog-warning` | Warning/important sign |
+| `science_icon` | `nuvola_categories_applications-science` | Science flask |
+| `arrow_down_icon` | `nuvola_actions_go-down` | Down arrow |
+| `arrow_forward_icon` | `nuvola_actions_go-next` | Forward arrow |
+| `arrow_up_icon` | `nuvola_actions_go-up` | Up arrow |
+| `arrows_looped_blue_icon` | `nuvola_actions_kaboodleloop` | Blue looped arrows |
+| `arrows_looped_green_icon` | `nuvola_actions_view-refresh` | Green looped arrows |
+| `box_icon` | `nuvola_apps_kpackage` | Box/package |
+| `paperclip_icon` | `nuvola_status_mail-attachment` | Paperclip/attachment |
+| `attach_icon` | `nuvola_status_mail-attachment` | Blue paperclip/attachment |
+| `fsview_icon` | `nuvola_apps_fsview` | Color swatches/theme |
+| `print` | `nuvola_devices_printer` | Printer (main toolbar) |
+| `undo` | `nuvola_actions_edit-undo` | Undo arrow (main toolbar) |
+| `redo` | `nuvola_actions_edit-redo` | Redo arrow (main toolbar) |
+| `save` | `nuvola_devices_media-floppy` | Floppy disk/save (main toolbar) |
+| `mergedisk` | `nuvola_actions_go-top` | Merge disk changes (main toolbar) |
+| `fileopen` | `nuvola_actions_document-open` | File open folder (main toolbar) |
+| `calendar_icon` | `nuvola_apps_date` | Calendar |
+| `graph_icon` | `nuvola_apps_kchart` | Chart/graph |
+| `computer_desktop_icon` | `nuvola_devices_computer` | Desktop computer |
+| `computer_handheld_icon` | `nuvola_devices_pda` | Handheld/PDA |
+| `cookie_icon` | `nuvola_apps_preferences-web-browser-cookies` | Cookie/treat |
+| `cogwheels_icon` | `nuvola_apps_kcmsystem` | Cogwheels/gears |
+| `cogwheel_icon` | `nuvola_apps_preferences-system-session-services` | Cogwheel/gear |
+| `printer_icon` | `nuvola_devices_printer` | Printer |
+| `led_blue_questionmark_icon` | `nuvola_actions_help-about` | Question mark |
+| `reload_icon` | `nuvola_actions_view-refresh` | Reload/refresh arrows |
+| `sticky_note_icon` | `nuvola_apps_knotes` | Sticky note/post-it |
+| `magnifier_glass_icon` | `nuvola_apps_xmag` | Magnifier glass/search |
+| `life_ring_icon` | `nuvola_apps_help-browser` | Life ring/help |
+| `led_blue_information_icon` | `nuvola_status_dialog-information` | Information |
+| `calculator_icon` | `nuvola_apps_accessories-calculator` | Calculator |
+| `clock_icon` | `nuvola_apps_clock` | Blue clock (tracking/effort) |
+| `note_icon` | `nuvola_apps_knotes` | Yellow note/post-it |
+| `lock_locked_icon` | `nuvola_actions_decrypted` | Locked padlock |
+| `lock_unlocked_icon` | `nuvola_actions_encrypted` | Unlocked padlock |
+| `charts_icon` | `nuvola_apps_kchart` | Charts/statistics |
+| `cross_red_icon` | `nuvola_status_dialog-error` | Red cross/error |
+| `die_icon` | `nuvola_apps_atlantik` | Die/dice |
+| `document_icon` | `nuvola_mimetypes_application-x-dvi` | Document/file |
+| `earth_blue_icon` | `nuvola_categories_applications-internet` | Blue globe/earth |
+| `folder_important_icon` | `nuvola_places_folder-important` | Important folder |
+| `folder_green_icon` | `nuvola_places_folder-green` | Green folder |
+| `folder_grey_icon` | `nuvola_places_folder-grey` | Grey folder |
+| `folder_orange_icon` | `nuvola_places_folder-orange` | Orange folder |
+| `folder_purple_icon` | `nuvola_places_folder-violet` | Purple folder |
+| `folder_red_icon` | `nuvola_places_folder-red` | Red folder |
+| `folder_yellow_icon` | `nuvola_places_folder-yellow` | Yellow folder |
+| `folder_blue_icon` | `nuvola_mimetypes_inode-directory` | Blue folder (default category) |
+| `folder_blue_arrow_icon` | `nuvola_places_folder-downloads` | Blue folder with arrow |
+| `house_red_icon` | `nuvola_places_user-home` | Red house |
+| `house_green_icon` | `nuvola_actions_go-home` | Green house |
+| `led_blue_icon` | `nuvola_actions_ledblue` | Blue LED (active task status) |
+| `led_blue_light_icon` | `nuvola_actions_ledlightblue` | Light blue LED |
+| `led_green_icon` | `nuvola_actions_ledgreen` | Green LED |
+| `led_red_icon` | `nuvola_actions_ledred` | Red LED (overdue task status) |
+| `led_purple_icon` | `nuvola_actions_ledpurple` | Purple LED (late task status) |
+| `led_orange_icon` | `nuvola_actions_ledorange` | Orange LED (due soon task status) |
+| `led_green_light_icon` | `nuvola_actions_ledlightgreen` | Light green LED |
+| `led_yellow_icon` | `nuvola_actions_ledyellow` | Yellow LED |
+| `exit` | `nuvola_actions_application-exit` | Power/exit button (FileQuit) |
+| `new` | `nuvola_actions_document-new` | New document icon (new item commands) |
+| `copy` | `nuvola_actions_edit-copy` | Copy (EditCopy) |
+| `paste` | `nuvola_actions_edit-paste` | Paste (EditPaste) |
+| `cut` | `nuvola_actions_edit-cut` | Cut (EditCut) |
+| `saveas` | `nuvola_actions_document-save-as` | Save As (FileSaveAs) |
+| `close` | `nuvola_actions_dialog-close` | Close (FileClose) |
+| `delete` | `nuvola_actions_edit-delete` | Delete |
+| `viewnewviewer` | `nuvola_actions_tab-new-background` | New viewer menu |
+| `activatenextviewer` | `nuvola_actions_tab-duplicate` | Activate next viewer |
+| `edit` | `nuvola_actions_edit` | Edit item |
+| `incpriority` | `nuvola_actions_arrow-up` | Increase priority |
+| `decpriority` | `nuvola_actions_arrow-down` | Decrease priority |
+| `maxpriority` | `nuvola_actions_arrow-up-double` | Max priority |
+| `minpriority` | `nuvola_actions_arrow-down-double` | Min priority |
+| `error_icon` | `nuvola_status_dialog-error` | Error icon |
+| `envelope_icon` | `nuvola_apps_email` | Envelope/mail |
+| `envelopes_icon` | `nuvola_actions_mail-queue` | Multiple envelopes/mail queue |
+
+#### TaskCoach Custom Icons
+
+These icons are custom to Task Coach (not from an upstream XDG theme). They
+are maintained in icon-distillery (`~/Downloads/icon-distillery/taskcoach/`)
+and imported into the `taskcoach` theme following the same XDG structure as
+nuvola/oxygen.
+
+**Theme wiring** is already in place:
+- `ICON_THEME_CATALOG.json`: `"taskcoach"` is `"active": true`
+- `icon_library.py`: theme loop uses `get_available_themes()`
+  (reads the catalog dynamically — no code change needed for new themes)
+- `defaults.py`: `"theme_taskcoach": "True"` in `iconpicker` section
+- `preferences.py`: checkbox "Show TaskCoach icons in picker"
+- `iconpicker.py`: `theme_taskcoach` filter in enabled_themes block
+
+**Import procedure for new taskcoach icons:**
+
+1. Prepare the icon in icon-distillery (`~/Downloads/icon-distillery/taskcoach/`).
+   The distillery produces `icons.json`, `contexts.json`, `index.theme`, and
+   PNG files in `{size}x{size}/` directories.
+
+2. **Manually** update the app theme files. The distillery is a **superset**
+   — it will include icons AND sizes that TaskCoach does NOT need now.
+   Only copy and update the minimum required to migrate the **target icons**.
+   Do NOT blindly copy the full JSON/theme files. Instead:
+
+   - **`icons.json`**: Add only the target icon's entry to the app's
+     `taskcoachlib/gui/icons/taskcoach/icons.json`. Copy that single
+     entry from the distillery's `icons.json`.
+   - **`contexts.json`**: If the target icon uses a new context not yet
+     in the app's file, add that context entry. Otherwise skip.
+   - **`index.theme`**: If the target icon introduces a new size
+     directory not yet listed, add the `[NxN]` section. Otherwise skip.
+   - **PNG files**: Copy only the PNG(s) for the target icon, and only
+     the sizes it actually needs (see Size Requirements above):
+     ```
+     cp icon-distillery/taskcoach/16x16/icon_name.png  taskcoachlib/gui/icons/taskcoach/16x16/
+     cp icon-distillery/taskcoach/22x22/icon_name.png  taskcoachlib/gui/icons/taskcoach/22x22/  # only if needed
+     cp icon-distillery/taskcoach/32x32/icon_name.png  taskcoachlib/gui/icons/taskcoach/32x32/  # only if needed
+     ```
+
+3. Run the generator to produce `icons_parsed.py`:
+   ```
+   python3 tools/generate_icons_parsed_py.py taskcoach
+   ```
+
+4. Follow the standard Migration Procedure below (deprecated_icons, remove
+   from chooseableItems, update hardcoded refs, delete legacy PNGs, update docs).
+   In Step 3.1, the replacement name uses `taskcoach_{context}_{stem}` instead
+   of `nuvola_{context}_{stem}`.
+
+**Size requirements for taskcoach icons:**
+
+Main toolbar icons (see table in Step 2 below) require **16, 22, AND 32px**.
+All three sizes must be produced by the distillery and copied into the
+corresponding `{size}x{size}/` directories. The `index.theme` and `icons.json`
+from the distillery already declare these sizes.
+
+Tier 1 (user-assignable) and Tier 2 icons not on the main toolbar only need
+16px.
+
+**Completed taskcoach migrations:**
+
+| Legacy Name | Replacement | Visual Match |
+|-------------|-------------|-------------|
+| `arrow_down_with_status_icon` | `taskcoach_actions_arrow_down_with_status_icon` | Down arrow with status overlay (sort indicator) |
+| `arrow_up_with_status_icon` | `taskcoach_actions_arrow_up_with_status_icon` | Up arrow with status overlay (sort indicator) |
+| `clock_menu_icon` | `taskcoach_actions_clock_menu_icon` | Clock with dropdown triangle (effort start button, 16/22/32) |
+| `clock_resume_icon` | `taskcoach_actions_clock_resume_icon` | Clock with play overlay (effort resume, 16/22/32) |
+| `clock_stop_icon` | `taskcoach_actions_clock_stop_icon` | Clock with red stop overlay (effort stop, 16/22/32) |
+| `led_grey_icon` | `taskcoach_actions_led_grey_icon` | Grey LED circle (inactive task status, 16) |
+| `tree_collapse_all` | `taskcoach_actions_tree_collapse_all` | Collapse all tree nodes (viewer toolbar, 16) |
+| `tree_expand_all` | `taskcoach_actions_tree_expand_all` | Expand all tree nodes (viewer toolbar, 16) |
+| `paste_subitem` | `taskcoach_actions_paste_subitem` | Paste as subitem/subcategory (menu, 16) |
+| `newsub` | `taskcoach_actions_newsub` | New sub-item/subtask (menu + viewer toolbar, 16) |
+| `viewalltasks` | `taskcoach_actions_viewalltasks` | Three colored circles, clear all filters (viewer toolbar, 16) |
+| `activatepreviousviewer` | `taskcoach_actions_tab-duplicate-left` | Green window with left arrow, mirrored tab-duplicate (menu, 16) |
+| `arrow_down_right` | `taskcoach_actions_arrow_down_right` | Green arrow pointing down-right, indent/demote (menu + editor, 16) |
+| `checkall` | `taskcoach_actions_checkall` | Check all categories (editor toolbar, 16) |
+| `uncheckall` | `taskcoach_actions_uncheckall` | Uncheck all categories (editor toolbar, 16) |
+| `timer_icon` | `nuvola_apps_ktimer` | Clock with blue/red hands (user-assignable, 16) |
+| `star_yellow_icon` | `taskcoach_actions_star_yellow_icon` | Yellow star (user-assignable, 16) |
+| `folder_blue_light_icon` | `taskcoach_actions_folder_blue_light_icon` | Light blue folder (user-assignable + plural target, 16) |
+| `file_important_icon` | `taskcoach_actions_file_important_icon` | File with exclamation (user-assignable, 16) |
+| `file_locked_icon` | `taskcoach_actions_file_locked_icon` | File with lock (user-assignable, 16) |
+| `link_icon` | `taskcoach_actions_link_icon` | Blue chain link, DnD prereq/dep cursor (16/22/32) |
+| `folder_home_icon` | `nuvola_places_user-home` | House icon, DnD root-drop cursor (16/22/32 imported) |
+| `earth_green_icon` | `taskcoach_actions_earth_green_icon` | Green globe (user-assignable, 16) |
+| `next` | `nuvola_actions_go-next-document` | Right arrow, calendar/toolbar next (16) |
+| `prev` | `nuvola_actions_go-previous-document` | Left arrow, calendar/toolbar prev (16) |
+| `newtmpl` | `taskcoach_actions_newtmpl` | Orange sticky note, new template toolbar button (16) |
+| `timelineviewer` | `taskcoach_actions_timelineviewer` | Timeline/gantt chart viewer tab icon (16) |
+| `taskcoach` | `nuvola_apps_korganizer` | App identity icon — window, tray, notifications (16/22/32/48/64/128) |
+| `progress` | `nuvola_actions_go-last` | Progress bar arrow, editor progress tab icon (16) |
+| `clock_stopwatch_icon` | `nuvola_apps_ktimer` | Stopwatch, tray tack icon (16/48/128 for tray) |
+| `up` | `nuvola_actions_arrow-up` | Up arrow, toolbar reorder move up (16) |
+| `down` | `nuvola_actions_arrow-down` | Down arrow, toolbar reorder move down (16) |
+| `box_in_icon` | `taskcoach_actions_box_in_icon` | Green inbox/download box (user-assignable, 16) |
+| `box_out_icon` | `taskcoach_actions_box_out_icon` | Red outbox/upload box (user-assignable, 16) |
+| `checkmark_green_icon` | `nuvola_actions_ok` | Green checkmark, completed-tasks status default (16) |
+| `checkmark_green_icon_multiple` | `taskcoach_actions_checkmark_green_icon_multiple` | Double green checkmarks, plural variant (custom, 16) |
+| `listview` | `nuvola_actions_view-list-details` | List view icon, orphaned (16) |
+| `windows` | `nuvola_apps_window_list` | Overlapping windows, preferences page icon (16) |
+| `restore` | `nuvola_apps_preferences-system-windows` | Restore window command icon (16) |
+| `squaremapviewer` | `taskcoach_actions_squaremapviewer` | Square map/treemap viewer tab icon (custom, 16) |
+| `magnifier_glass_dropdown_icon` | `taskcoach_actions_magnifier_glass_dropdown_icon` | Search menu dropdown icon (custom, 16) |
+| `fileopen_red` | `taskcoach_actions_fileopen_red` | Red file icon, broken/missing attachment indicator (custom, 16) |
+| `exportashtml` | `nuvola_mimetypes_text-html` | HTML export menu command icon (16) |
+| `exportasvcal` | `nuvola_mimetypes_text-vcalendar` | iCalendar export menu command icon (16) |
+| `exportascsv` | `nuvola_mimetypes_x-office-spreadsheet` | CSV export menu command icon (16) |
+| `sort` | `taskcoach_actions_sort` | Manual ordering indicator in tree views (custom, 16) |
+| `cat_icon` | `nuvola_categories_applications-toys` | Cat icon, user-assignable (16) |
+| `incpriority` | `nuvola_actions_arrow-up` | Increase priority (menu submenu icon) |
 
 ### Migration Procedure
 
@@ -1015,7 +1201,7 @@ Search ALL code for the legacy icon name. Every reference must be accounted for:
 
 - **Python code**: `grep -r "icon_name" taskcoachlib/ tests/`
 - **Menus and toolbars**: hardcoded UI references in viewer/toolbar code
-- **Icon picker**: `chooseableItems` dict in `artprovider.py`
+- **Icon picker**: `icon_catalog.viewer_icon_ids()` in `icon_library.py`
 - **Defaults**: task status icons, type defaults, viewer defaults
 - **Plural/singular mappings**: `itemImagePlural` in `domain/attribute/icon/__init__.py`
 - **Documentation**: `docs/ICON_PLURALIZE.md`, `docs/ICON_LIBRARY.md`, demo scripts
@@ -1030,18 +1216,41 @@ Search ALL code for the legacy icon name. Every reference must be accounted for:
    (open/view both image files) to confirm they are the same icon
 3. **Check available sizes.** User-assignable icons (Tier 1) only need 16px —
    the tree view, icon picker, menus, and editors all request `(16, 16)`
-   via `wx.ArtProvider.GetBitmap()` → `_CreateBitmap()`. If the nuvola icon
-   has 16px, no additional sizes are needed.
+   via `icon_catalog.get_bitmap()`. Viewer toolbars are
+   also fixed at `(16, 16)` (`viewer/base.py:75`). If the nuvola icon has
+   16px, no additional sizes are needed.
 
-   **Do not confuse with `IconProvider`** (`artprovider.py:185`), which requests
-   48px on GTK and 128px on Mac — that class is only used for the **application
-   window icon** (`"taskcoach"` in the title bar/taskbar), not for user-assignable
-   icons. Legacy icons may ship with many sizes (16–128) but those extra sizes
-   were never used for Tier 1 icons.
+   **Main toolbar icons require 16, 22, AND 32px.** The main toolbar
+   (`MainToolBar`) is user-resizable via View > Toolbar menu: Small (16×16),
+   Medium (22×22, default), Large (32×32). If the migrated icon is any of
+   these 9 main toolbar commands, import all 3 sizes from the distillery:
 
-   If additional sizes are required (e.g. Tier 2 icons used in toolbars or
-   window frames), trace the actual `GetBitmap` callers to determine which
-   sizes, and import only what is needed from the distillery.
+   | # | Command class | Current bitmap= |
+   |---|---------------|-----------------|
+   | 1 | FileOpen | `fileopen` |
+   | 2 | FileSave | `save` |
+   | 3 | FileMergeDiskChanges | `mergedisk` |
+   | 4 | Print | `print` |
+   | 5 | EditUndo | `undo` |
+   | 6 | EditRedo | `redo` |
+   | 7 | EffortStartButton | `taskcoach_actions_clock_menu_icon` |
+   | 8 | EffortStop | `taskcoach_actions_clock_resume_icon` |
+   | 9 | EditToolBarPerspective | `nuvola_apps_preferences-system-session-services` |
+
+   (Defined in `mainwindow.py:434` + auto-appended at `toolbar.py:144`)
+
+   **Templates dialog** (`templates.py:119`) also requests 32×32 for its
+   BitmapButtons (go-up, go-down, list-add).
+
+   **Never generate or scale icons to create missing sizes.** Each size is
+   hand-optimized in the source theme. If a size is missing from the
+   distillery, contact the icon-distillery owner to produce it from the
+   original source (SVG or nearest size). Do not use `convert -resize`
+   or any other scaling tool.
+
+   **Do not confuse with the system tray icon path**, which
+   requests 128px on Mac — that is only for the application/tray icon,
+   not user-assignable icons.
 4. Note any duplicates pointing to the target icon
 
 #### Step 3 — Code changes
@@ -1056,7 +1265,7 @@ Search ALL code for the legacy icon name. Every reference must be accounted for:
    }
    ```
 
-2. **`artprovider.py`**: Remove the legacy entry from `chooseableItems`.
+2. **`icon_library.py`**: Remove the legacy entry from `_legacy_icon_defs()`.
    Users now see the proper nuvola icon in the picker instead.
 
 3. **`domain/attribute/icon/__init__.py`**: Remove the migrated icon's entry

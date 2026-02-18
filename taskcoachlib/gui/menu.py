@@ -22,6 +22,11 @@ from taskcoachlib.domain import task, note, base, category
 from taskcoachlib.i18n import _
 from pubsub import pub
 from taskcoachlib.gui.newid import IdProvider
+from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
+from taskcoachlib.config.defaults import (
+    MAIN_TOOLBAR_ICON_SIZE_SMALL, MAIN_TOOLBAR_ICON_SIZE_MEDIUM,
+    MAIN_TOOLBAR_ICON_SIZE_LARGE,
+)
 from . import uicommand
 import taskcoachlib.gui.viewer
 import wx
@@ -63,14 +68,14 @@ class Menu(wx.Menu, uicommand.UICommandContainerMixin):
             self._observers.append(uiCommand)
         return cmd
 
-    def appendMenu(self, text, subMenu, bitmap=None, viewer=None,
+    def appendMenu(self, text, subMenu, icon_id=None, viewer=None,
                    enableCondition=None):
         subMenuItem = wx.MenuItem(
             self, id=IdProvider.get(), text=text, subMenu=subMenu
         )
-        if bitmap:
+        if icon_id:
             subMenuItem.SetBitmap(
-                wx.ArtProvider.GetBitmap(bitmap, wx.ART_MENU, (16, 16))
+                icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
             )
         self._accels.extend(subMenu.accelerators())
         self.Append(subMenuItem)
@@ -320,11 +325,12 @@ class FileMenu(Menu):
             uicommand.Print(viewer=viewerContainer, settings=settings),
             None,
         )
-        self.appendMenu(_("&Import"), ImportMenu(mainwindow, iocontroller))
+        self.appendMenu(_("&Import"), ImportMenu(mainwindow, iocontroller),
+                        "oxygen_actions_document-import")
         self.appendMenu(
             _("&Export"),
             ExportMenu(mainwindow, iocontroller, settings),
-            "export",
+            "oxygen_actions_document-export",
         )
         self.appendUICommands(
             None,
@@ -477,14 +483,14 @@ class ViewMenu(Menu):
         self.appendMenu(
             _("&New viewer"),
             ViewViewerMenu(mainwindow, settings, viewerContainer, taskFile),
-            "viewnewviewer",
+            "nuvola_actions_tab-new-background",
         )
         activateNextViewer = uicommand.ActivateViewer(
             viewer=viewerContainer,
             menuText=_("&Activate next viewer\tCtrl+PgDn"),
             helpText=help.viewNextViewer,
             forward=True,
-            bitmap="activatenextviewer",
+            icon_id="nuvola_actions_tab-duplicate",
             id=activateNextViewerId,
         )
         activatePreviousViewer = uicommand.ActivateViewer(
@@ -492,7 +498,7 @@ class ViewMenu(Menu):
             menuText=_("Activate &previous viewer\tCtrl+PgUp"),
             helpText=help.viewPreviousViewer,
             forward=False,
-            bitmap="activatepreviousviewer",
+            icon_id="taskcoach_actions_tab-duplicate-left",
             id=activatePreviousViewerId,
         )
         self.appendUICommands(
@@ -689,22 +695,25 @@ class ToolBarMenu(Menu):
     def __init__(self, mainwindow, settings):
         super().__init__(mainwindow)
         toolbarCommands = []
+        _S = MAIN_TOOLBAR_ICON_SIZE_SMALL
+        _M = MAIN_TOOLBAR_ICON_SIZE_MEDIUM
+        _L = MAIN_TOOLBAR_ICON_SIZE_LARGE
         for value, menuText, helpText in [
             (None, _("&Hide"), _("Hide the toolbar")),
             (
-                (16, 16),
+                (_S, _S),
                 _("&Small images"),
-                _("Small images (16x16) on the toolbar"),
+                _("Small images (%dx%d) on the toolbar") % (_S, _S),
             ),
             (
-                (22, 22),
+                (_M, _M),
                 _("&Medium-sized images"),
-                _("Medium-sized images (22x22) on the toolbar"),
+                _("Medium-sized images (%dx%d) on the toolbar") % (_M, _M),
             ),
             (
-                (32, 32),
+                (_L, _L),
                 _("&Large images"),
-                _("Large images (32x32) on the toolbar"),
+                _("Large images (%dx%d) on the toolbar") % (_L, _L),
             ),
         ]:
             toolbarCommands.append(
@@ -736,7 +745,7 @@ class NewMenu(Menu):
         self.appendMenu(
             _("New task from &template"),
             TaskTemplateMenu(mainwindow, taskList=tasks, settings=settings),
-            "newtmpl",
+            "taskcoach_actions_newtmpl",
         )
         self.appendUICommands(
             None,
@@ -779,7 +788,7 @@ class ActionMenu(Menu):
             ToggleCategoryMenu(
                 mainwindow, categories=categories, viewer=viewerContainer
             ),
-            "folder_blue_arrow_icon",
+            "nuvola_places_folder-downloads",
             enableCondition=lambda: (
                 bool(viewerContainer.curselection())
                 and not viewerContainer.isShowingCategories()
@@ -806,7 +815,7 @@ class ActionMenu(Menu):
         self.appendMenu(
             _("Change task &priority"),
             TaskPriorityMenu(mainwindow, tasks, viewerContainer),
-            "incpriority",
+            "nuvola_actions_arrow-up",
             enableCondition=lambda: (
                 bool(viewerContainer.curselection())
                 and not viewerContainer.containerWidget.manager.GetPane(
@@ -872,7 +881,7 @@ class TaskBarMenu(Menu):
         self.appendMenu(
             _("New task from &template"),
             TaskTemplateMenu(taskBarIcon, taskList=tasks, settings=settings),
-            "newtmpl",
+            "taskcoach_actions_newtmpl",
         )
         self.appendUICommands(None)  # Separator
         self.appendUICommands(
@@ -891,7 +900,7 @@ class TaskBarMenu(Menu):
             StartEffortForTaskMenu(
                 taskBarIcon, base.filter.DeletedFilter(tasks), self, label
             ),
-            "clock_icon",
+            "nuvola_apps_clock",
         )
         self.appendUICommands(
             uicommand.EffortStop(
@@ -947,7 +956,7 @@ class ToggleCategoryMenu(DynamicMenu):
             if category.children():
                 subMenu = Menu(self._window)
                 self.addMenuItemsForCategories(category.children(), subMenu)
-                menu.appendMenu(category.subject(), subMenu, "arrow_down_right")
+                menu.appendMenu(category.subject(), subMenu, "taskcoach_actions_arrow_down_right")
 
     def enabled(self):
         return bool(self.categories)
@@ -1048,7 +1057,7 @@ class TaskPopupMenu(Menu):
             ToggleCategoryMenu(
                 mainwindow, categories=categories, viewer=taskViewer
             ),
-            "folder_blue_arrow_icon",
+            "nuvola_places_folder-downloads",
             viewer=taskViewer,
         )
         self.appendUICommands(
@@ -1061,7 +1070,7 @@ class TaskPopupMenu(Menu):
         self.appendMenu(
             _("&Priority"),
             TaskPriorityMenu(mainwindow, tasks, taskViewer),
-            "incpriority",
+            "nuvola_actions_arrow-up",
             viewer=taskViewer,
         )
         self.appendUICommands(
@@ -1181,7 +1190,7 @@ class NotePopupMenu(Menu):
             ToggleCategoryMenu(
                 mainwindow, categories=categories, viewer=noteViewer
             ),
-            "folder_blue_arrow_icon",
+            "nuvola_places_folder-downloads",
             viewer=noteViewer,
         )
         self.appendUICommands(None)

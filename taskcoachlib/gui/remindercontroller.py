@@ -111,7 +111,7 @@ class ReminderController(object):
                 self.settings,
                 self.taskList,
                 self.__mainWindow.taskFile,
-                bitmap="edit",
+                icon_id="nuvola_actions_edit",
             )
             editTask.Show(show)
         else:

@@ -16,7 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import wx  # For ArtProvider
+import wx
+from taskcoachlib.gui.icons.icon_library import icon_catalog, NOTIFICATION_ICON_SIZE
 
 from taskcoachlib.changes import ChangeMonitor
 from taskcoachlib.domain.note import NoteOwner
@@ -83,7 +84,7 @@ class ChangeSynchronizer(object):
         self.notifier.notify(
             _("Task Coach"),
             message,
-            wx.ArtProvider.GetBitmap("taskcoach", size=wx.Size(32, 32)),
+            icon_catalog.get_bitmap("nuvola_apps_korganizer", NOTIFICATION_ICON_SIZE),
         )
 
     def mergeObjects(self, memList, diskList):

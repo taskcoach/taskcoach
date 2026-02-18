@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 from taskcoachlib import operating_system
+from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.gui.newid import IdProvider
 from taskcoachlib.meta.debug import log_step
 
@@ -41,10 +42,10 @@ class UICommand(object):
         self,
         menuText="",
         helpText="",
-        bitmap=None,
+        icon_id=None,
         kind=wx.ITEM_NORMAL,
         id=None,
-        bitmap2=None,
+        icon_id2=None,
         *args,
         **kwargs
     ):  # pylint: disable=W0622
@@ -52,8 +53,8 @@ class UICommand(object):
         menuText = menuText or "<%s>" % _("None")
         self.menuText = menuText if "&" in menuText else "&" + menuText
         self.helpText = helpText
-        self.bitmap = bitmap
-        self.bitmap2 = bitmap2
+        self.icon_id = icon_id
+        self.icon_id2 = icon_id2
         self.kind = kind
         self.id = IdProvider.get()
         self.toolbar = None
@@ -103,22 +104,22 @@ class UICommand(object):
 
     def addBitmapToMenuItem(self, menuItem):
         if (
-            self.bitmap2
+            self.icon_id2
             and self.kind == wx.ITEM_CHECK
             and not operating_system.isGTK()
         ):
-            bitmap1 = self.__getBitmap(self.bitmap)
-            bitmap2 = self.__getBitmap(self.bitmap2)
+            bitmap1 = icon_catalog.get_bitmap(self.icon_id, LIST_ICON_SIZE)
+            bitmap2 = icon_catalog.get_bitmap(self.icon_id2, LIST_ICON_SIZE)
             menuItem.SetBitmaps(bitmap1, bitmap2)
         elif self.kind == wx.ITEM_NORMAL:
-            if self.bitmap is None:
+            if self.icon_id is None:
                 return  # No icon intended - correct, do nothing
 
-            bitmap = self.__getBitmap(self.bitmap)
+            bitmap = icon_catalog.get_bitmap(self.icon_id, LIST_ICON_SIZE)
             if not bitmap.IsOk():
-                # TRAP: bitmap name given but invalid - this is an error
-                log_step("ERROR: invalid bitmap '%s' for menu item '%s'" %
-                         (self.bitmap, menuItem.GetItemLabelText()), prefix="ICON")
+                # TRAP: icon_id given but invalid - this is an error
+                log_step("ERROR: invalid icon '%s' for menu item '%s'" %
+                         (self.icon_id, menuItem.GetItemLabelText()), prefix="ICON")
                 return
 
             menuItem.SetBitmap(bitmap)
@@ -134,8 +135,8 @@ class UICommand(object):
 
     def appendToToolBar(self, toolbar):
         self.toolbar = toolbar
-        bitmap = self.__getBitmap(
-            self.bitmap, wx.ART_TOOLBAR, toolbar.GetToolBitmapSize()
+        bitmap = icon_catalog.get_bitmap(
+            self.icon_id, toolbar.GetToolBitmapSize()[0]
         )
         toolbar.AddLabelTool(
             self.id,
@@ -213,7 +214,3 @@ class UICommand(object):
     def getHelpText(self):
         return self.helpText
 
-    def __getBitmap(
-        self, bitmapName, bitmapType=wx.ART_MENU, bitmapSize=(16, 16)
-    ):
-        return wx.ArtProvider.GetBitmap(bitmapName, bitmapType, bitmapSize)

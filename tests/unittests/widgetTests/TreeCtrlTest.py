@@ -253,11 +253,10 @@ class TreeListCtrlTest(TreeCtrlTestCase, CommonTestsMixin):
             dummy.DummyUICommand(),
             dummy.DummyUICommand(),
         )
+        from taskcoachlib.gui.icons.icon_library import icon_catalog
         imageList = wx.ImageList(16, 16)
-        for bitmapName in ["led_blue_icon", "folder_blue_icon"]:
-            imageList.Add(
-                wx.ArtProvider.GetBitmap(bitmapName, wx.ART_MENU, (16, 16))
-            )
+        for icon_id in ["nuvola_actions_ledblue", "nuvola_mimetypes_inode-directory"]:
+            imageList.Add(icon_catalog.get_bitmap(icon_id, 16))
         self.treeCtrl.AssignImageList(imageList)  # pylint: disable=E1101
 
 

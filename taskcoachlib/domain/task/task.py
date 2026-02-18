@@ -22,7 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import patterns
 from taskcoachlib.domain import date, categorizable, note, attachment, base
 from taskcoachlib.domain.base.attribute import Attribute
-from taskcoachlib.domain.attribute.icon import getImageOpen
 from pubsub import pub
 from weakref import WeakSet
 from . import status
@@ -75,7 +74,7 @@ class Task(
         # New single-source-of-truth fields (updated by computeStatus)
         self.__computed_status = None
         self.__status_text = ""
-        self.__status_icon = ""
+        self.__status_icon_id = ""
         self.__status_source = ""  # Explanation of why task has this status
         self.__dueSoonHours = self.settings.getint(
             "behavior", "duesoonhours"
@@ -126,10 +125,10 @@ class Task(
         pub.subscribe(
             self.__computeRecursiveBackgroundColor, "settings.bgcolor_dark"
         )
-        pub.subscribe(self.__computeRecursiveIcon, "settings.icon")
-        pub.subscribe(self.__computeRecursiveIcon, "settings.icon_dark")
-        pub.subscribe(self.__computeRecursiveSelectedIcon, "settings.icon")
-        pub.subscribe(self.__computeRecursiveSelectedIcon, "settings.icon_dark")
+        pub.subscribe(self.__compute_recursive_icon_id, "settings.icon")
+        pub.subscribe(self.__compute_recursive_icon_id, "settings.icon_dark")
+        pub.subscribe(self.__compute_recursive_selected_icon_id, "settings.icon")
+        pub.subscribe(self.__compute_recursive_selected_icon_id, "settings.icon_dark")
         pub.subscribe(self.__onThemeChanged, "settings.window.theme")
         pub.subscribe(
             self.onDueSoonHoursChanged, "settings.behavior.duesoonhours"
@@ -773,7 +772,7 @@ class Task(
         - recomputeAppearance() — immediate update on date changes
         - ComputeStyles._computeForObject() — per-second polling for time-based transitions
 
-        Updates __computed_status, __status_text, __status_icon, and __status_source.
+        Updates __computed_status, __status_text, __status_icon_id, and __status_source.
         Fires statusChangedEventType if status actually changed.
         """
         # Check prerequisites
@@ -799,7 +798,7 @@ class Task(
         self.__status_text = newStatus.pluralLabel.replace(
             " tasks", "").replace("tasks", "").strip()
         iconSection = self._themedSection("icon")
-        self.__status_icon = self.settings.get(iconSection, "%stasks" % newStatus)
+        self.__status_icon_id = self.settings.get(iconSection, "%stasks" % newStatus)
         self.__status_source = newSource
 
         # Fire event if status changed
@@ -813,8 +812,8 @@ class Task(
     def statusText(self):
         return self.__status_text
 
-    def statusIconName(self):
-        return self.__status_icon
+    def status_icon_id(self):
+        return self.__status_icon_id
 
     def computedStatus(self, explain=False):
         """Return the computed TaskStatus object (single source of truth).
@@ -1239,8 +1238,8 @@ class Task(
     def appearanceChangedEvent(self, event):
         self.__computeRecursiveForegroundColor()
         self.__computeRecursiveBackgroundColor()
-        self.__computeRecursiveIcon()
-        self.__computeRecursiveSelectedIcon()
+        self.__compute_recursive_icon_id()
+        self.__compute_recursive_selected_icon_id()
         super().appearanceChangedEvent(event)
         for eachEffort in self.efforts():
             eachEffort.appearanceChangedEvent(event)
@@ -1324,63 +1323,51 @@ class Task(
 
     # Icon
 
-    def icon(self, recursive=False):
+    def icon_id(self, recursive=False):
         if recursive and self.isBeingTracked():
-            return "clock_icon"
-        myIcon = super().icon()
-        if recursive and not myIcon:
+            return "nuvola_apps_clock"
+        icon_id = super().icon_id()
+        if recursive and not icon_id:
             try:
-                myIcon = self.__recursiveIcon
+                icon_id = self.__recursive_icon_id
             except AttributeError:
-                myIcon = self.__computeRecursiveIcon()
-        return self.pluralOrSingularIcon(myIcon, native=super().icon() == "")
+                icon_id = self.__compute_recursive_icon_id()
+        return self.pluralOrSingularIcon(icon_id, native=super().icon_id() == "")
 
-    def __computeRecursiveIcon(self, *args, **kwargs):  # pylint: disable=W0613
+    def __compute_recursive_icon_id(self, *args, **kwargs):  # pylint: disable=W0613
         # pylint: disable=W0201
-        self.__recursiveIcon = self.categoryIcon() or self.statusIcon()
-        return self.__recursiveIcon
+        self.__recursive_icon_id = self.category_icon_id() or self.status_icon_id()
+        return self.__recursive_icon_id
 
-    def selectedIcon(self, recursive=False):
+    def selected_icon_id(self, recursive=False):
         if recursive and self.isBeingTracked():
-            return "clock_icon"
-        myIcon = super().selectedIcon()
-        if recursive and not myIcon:
+            return "nuvola_apps_clock"
+        icon_id = super().selected_icon_id()
+        if recursive and not icon_id:
             try:
-                myIcon = self.__recursiveSelectedIcon
+                icon_id = self.__recursive_selected_icon_id
             except AttributeError:
-                myIcon = self.__computeRecursiveSelectedIcon()
+                icon_id = self.__compute_recursive_selected_icon_id()
         return self.pluralOrSingularIcon(
-            myIcon, native=super().selectedIcon == ""
+            icon_id, native=super().selected_icon_id == ""
         )
 
-    def __computeRecursiveSelectedIcon(
+    def __compute_recursive_selected_icon_id(
         self, *args, **kwargs
     ):  # pylint: disable=W0613
         # pylint: disable=W0201
-        self.__recursiveSelectedIcon = (
-            self.categorySelectedIcon() or self.statusIcon(selected=True)
+        self.__recursive_selected_icon_id = (
+            self.category_selected_icon_id() or self.status_icon_id()
         )
-        return self.__recursiveSelectedIcon
+        return self.__recursive_selected_icon_id
 
     def __onThemeChanged(self, value=None):
         """Recompute all cached appearance when the theme changes."""
         self.__computeRecursiveForegroundColor()
         self.__computeRecursiveBackgroundColor()
-        self.__computeRecursiveIcon()
-        self.__computeRecursiveSelectedIcon()
+        self.__compute_recursive_icon_id()
+        self.__compute_recursive_selected_icon_id()
 
-    def statusIcon(self, selected=False):
-        return self.__status_icon
-
-    def iconForStatus(self, taskStatus, selected=False):
-        section = self._themedSection("icon")
-        iconName = self.settings.get(
-            section, "%stasks" % taskStatus
-        )  # pylint: disable=E1101
-        iconName = self.pluralOrSingularIcon(iconName)
-        if selected and iconName.startswith("folder"):
-            iconName = getImageOpen(iconName)
-        return iconName
 
     # Note: Derived and effective appearance is now handled by the base class
     # (object.py) and ComputeStyles polling in appearance.py. The base class
@@ -1396,22 +1383,22 @@ class Task(
         try:
             previousForegroundColor = self.__recursiveForegroundColor
             previousBackgroundColor = self.__recursiveBackgroundColor
-            previousRecursiveIcon = self.__recursiveIcon
-            previousRecursiveSelectedIcon = self.__recursiveSelectedIcon
+            prev_recursive_icon_id = self.__recursive_icon_id
+            prev_recursive_selected_icon_id = self.__recursive_selected_icon_id
         except AttributeError:
             previousForegroundColor = None
             previousBackgroundColor = None
-            previousRecursiveIcon = None
-            previousRecursiveSelectedIcon = None
+            prev_recursive_icon_id = None
+            prev_recursive_selected_icon_id = None
         self.__computeRecursiveForegroundColor()
         self.__computeRecursiveBackgroundColor()
-        self.__computeRecursiveIcon()
-        self.__computeRecursiveSelectedIcon()
+        self.__compute_recursive_icon_id()
+        self.__compute_recursive_selected_icon_id()
         if (
             self.__recursiveForegroundColor != previousForegroundColor
             or self.__recursiveBackgroundColor != previousBackgroundColor
-            or self.__recursiveIcon != previousRecursiveIcon
-            or self.__recursiveSelectedIcon != previousRecursiveSelectedIcon
+            or self.__recursive_icon_id != prev_recursive_icon_id
+            or self.__recursive_selected_icon_id != prev_recursive_selected_icon_id
         ):
             event.addSource(self, type=self.appearanceChangedEventType())
         if recursive:

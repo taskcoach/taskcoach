@@ -133,6 +133,5 @@ class EditorTestCase(test.wxTestCase):
         self.assertEqual("nuvola_apps_clanbomber", self.item.icon())
 
     def testThatChangingTheItemIconAffectsTheIconEntry(self):
-        imageNames = sorted(gui.artprovider.chooseableItems.keys(), key=lambda k: gui.artprovider.chooseableItems[k]["name"])
-        self.item.setIcon(imageNames[10])
-        self.assertEqual(10, self.appearance._iconEntry.GetSelection())
+        self.item.setIcon("nuvola_apps_clanbomber")
+        self.assertEqual("nuvola_apps_clanbomber", self.appearance._iconEntry.GetValue())

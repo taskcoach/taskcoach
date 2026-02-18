@@ -1109,7 +1109,9 @@ class CalendarCanvas(wx.Panel):
                     watermark.add(rstart, rend, y + 1)
                     yMax = y + 1
                     for child in self.GetChildren(event):
-                        yMax = max(yMax, computeEvent(child))
+                        child_max = computeEvent(child)
+                        if child_max is not None:
+                            yMax = max(yMax, child_max)
                     self._coords[event] = (start, end, rstart, rend, y, yMax)
                     return yMax
 

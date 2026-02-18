@@ -25,28 +25,8 @@ This document describes the custom `IconPicker` widget used in Task Coach for se
 
 | # | Issue | Status | Notes |
 |---|-------|--------|-------|
-| 1 | Tab navigation not working for controls 2, 3, 4 | Coded/Testing | Removed CB_READONLY, EVT_CHAR_HOOK, MoveAfterInTabOrder |
-| 2 | Auto-size control smaller than content | Coded/Testing | Auto-width from longest label |
-| 3 | Icon not displayed in closed control | Coded/Testing | Custom EVT_PAINT with BufferedPaintDC |
-| 4 | Text selection highlight on popup cancel | Coded/Testing | Custom painting, no text control value |
-| 5 | Disabled items greyed-inactive | Coded/Testing | Greyscale icon + grey text |
-| 6 | Label column too wide in popup | Tests Confirmed | Calculate column widths from content |
-| 7 | Scrollbars not appearing | Tests Confirmed | Added wx.VSCROLL style to VListBox |
+| 38 | Demo picker not working and not updated | Not Started | The real icon picker is now functional in the app. The standalone demo script is not kept in sync. To be reviewed as required by future dev/testing needs. |
 
-### Closed Control Issues
-
-| # | Issue | Status | Notes |
-|---|-------|--------|-------|
-| 8 | Hover only on button, not full control | Coded/Testing | DrawPushButton for entire control with CONTROL_CURRENT |
-| 9 | Black corners from rounded edges | Tests Confirmed | Clear with parent bg first |
-| 10 | Whole control pressed when popup open | Coded/Testing | DrawPushButton with CONTROL_PRESSED |
-| 11 | Textbox should be grey/inactive | Coded/Testing | DrawPushButton gives button-like grey appearance |
-| 12 | Cursor should not appear | Coded/Testing | SetCursor(wx.CURSOR_ARROW), hide caret |
-| 13 | Cursor stuck in textbox when using search | Coded/Testing | Redirect focus, CallAfter+CallLater for search focus |
-| 14 | Heavy blue focus, should be dotted line | Coded/Testing | DrawFocusRect inside control |
-| 15 | Focus around full combo, not just textbox | Coded/Testing | DrawFocusRect on full control rect |
-| 16 | Hover incorrectly blue border | Coded/Testing | Use DrawPushButton not custom border |
-| 17 | Border doesn't follow theme | Coded/Testing | DrawPushButton handles native borders |
 
 ### Search Box Issues
 
@@ -55,41 +35,27 @@ This document describes the custom `IconPicker` widget used in Task Coach for se
 | 18 | Not getting focus | Coded/Testing | Multiple CallAfter + CallLater to force focus |
 | 19 | Cursor stuck in main textbox | Coded/Testing | Text control redirects focus events |
 
-### Dropdown List Issues
-
-| # | Issue | Status | Notes |
-|---|-------|--------|-------|
-| 20 | Hover should move selection | Coded/Testing | _on_motion now sets selection, not separate hover |
-| 21 | Single click should select and close | Coded/Testing | _on_left_down calls callback to dismiss |
-| 22 | Dropdown border not matching | Coded/Testing | BORDER_SIMPLE on popup panel |
 
 ### Feature Implementation
 
 | # | Feature | Status | Notes |
 |---|---------|--------|-------|
-| 23 | Visible SearchCtrl in popup | Coded/Testing | SearchCtrl at top of popup |
-| 24 | Search by label AND hints | Coded/Testing | FilterItems checks both fields |
-| 25 | Hints column (grey, after label) | Coded/Testing | Calculated width, right of label |
-| 26 | Disabled items unselectable | Coded/Testing | Skip in keyboard nav, ignore clicks |
-| 27 | Ellipsis for long text | Coded/Testing | wx.Control.Ellipsize used |
-| 28 | Fixed width with wide popup | Coded/Testing | fixed_width param, auto popup width |
-| 29 | Popup width based on content | Coded/Testing | GetPreferredWidth from VListBox |
+| 37 | Use shared `ImageListCache` instead of private `_image_list` | Not Started | The icon picker currently builds its own private `wx.ImageList` in `_rebuild_list()`. It should use the global `ImageListCache` singleton (`image_list_cache`) via `get_index()` for each icon, and borrow the shared list via `SetImageList()`. This means the picker shares the same `wx.ImageList` as all viewers — no separate bitmap copies. Opening the picker will lazily load all catalog icons into the cache (since the picker displays every icon); they remain cached for the app lifetime. See [ICON_DISPLAY.md — ImageListCache](ICON_DISPLAY.md#imagelistcache). |
 
 ### Integration Tasks
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
 | 30 | Create reusable widget in taskcoachlib/widgets/iconpicker.py | Done | `IconPicker` class with hints support |
-| 31 | Integrate into preferences.py | Done | Replaced BitmapOwnerDrawnComboBox, 120px fixed width |
 | 32 | Integrate into entry.py IconPicker | Done | Uses widgets.IconPicker, auto-width |
-| 33 | Add icon hints to artprovider.py | Done | `chooseableItems` dict with translatable hints arrays |
+| 33 | Add icon hints to icon_library.py | Done | `_legacy_icon_defs()` dict with translatable hints arrays |
 | 34 | Test on Windows/macOS | Not Started | Cross-platform verification |
 
 ### Transparent Empty Bitmap
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 35 | Review if `TRANSPARENT_EMPTY_ICON` is still needed | Not Started | `ArtProvider.TRANSPARENT_EMPTY_ICON` was added to centralize transparent bitmap creation (returns a real bitmap with alpha=0). The icon picker "No icon" option needs a real bitmap because `GenBitmapButton.SetBitmapLabel()` crashes on `wx.NullBitmap`. Verify whether this is still the case — if `wx.NullBitmap` works, the constant can be removed. See `artprovider.py`. |
+| 35 | Review if `TRANSPARENT_EMPTY_ICON` is still needed | Not Started | Was added to centralize transparent bitmap creation (returns a real bitmap with alpha=0). The icon picker "No icon" option needs a real bitmap because `GenBitmapButton.SetBitmapLabel()` crashes on `wx.NullBitmap`. Verify whether this is still the case — if `wx.NullBitmap` works, the constant can be removed. See `icon_library.py`. |
 
 ### Status Legend
 
@@ -106,12 +72,12 @@ The `IconPicker` widget (`taskcoachlib/widgets/iconpicker.py`) is a custom searc
 ```
 IconPicker (ThemedGenBitmapTextButton)
 ├── Button: displays one icon + label (no list-building)
-├── SetValue(icon_id) looks up artprovider.chooseableItems directly
+├── SetValue(icon_id) looks up catalog icon metadata directly
 ├── exclude parameter: None / "status" / "data" (passed to dialog)
 ├── Custom painting via DrawLabel/DrawBezel
 └── _IconDialog (wx.Dialog) — modal, input=icon_id, output=icon_id
     ├── _get_excluded_icons() — resolves exclude mode to actual icon_id set
-    ├── _load_icons() — builds item list from artprovider (fresh each open)
+    ├── _load_icons() — builds item list from catalog (fresh each open)
     ├── wx.SearchCtrl (filter input)
     └── _IconListCtrl (wx.ListCtrl)
         └── 5 columns: Label (with icon), Hints, Theme, Context, icon_id (COL_ICON_ID=4)
@@ -176,15 +142,15 @@ Icons support additional searchable text shown in a secondary column:
 **Data structure:**
 ```python
 # Item format: (icon_id, label, bitmap, hints, theme_label, context_label, enabled)
-("led_blue_icon", "LED - Blue", bitmap, "status indicator light", "Legacy", "", True)
+("nuvola_actions_ledblue", "LED - Blue", bitmap, "status indicator light", "Legacy", "", True)
 ```
 
-### Icon Data in artprovider.py
+### Icon Data in icon_library.py
 
-Icon names and hints are stored together in a single structure in `taskcoachlib/gui/artprovider.py`:
+Icon names and hints are stored in `_legacy_icon_defs()` in `taskcoachlib/gui/icons/icon_library.py`:
 
 ```python
-chooseableItems = {
+_legacy_icon_defs = {
     "calendar_icon": {
         "name": _("Calendar"),
         "hints": [_("date"), _("schedule"), _("appointment"), _("event"), _("planner")],
@@ -264,7 +230,7 @@ The `IconPicker` widget has a built-in `noIcon` parameter (default: `True`) that
 | `taskcoachlib/widgets/__init__.py` | Exports `IconPicker` class |
 | `taskcoachlib/gui/dialog/entry.py` | `IconEntry` uses `IconPicker` (auto-width) |
 | `taskcoachlib/gui/dialog/preferences.py` | Status icon pickers (120px fixed width) |
-| `taskcoachlib/gui/artprovider.py` | Icon definitions and hints |
+| `taskcoachlib/gui/icons/icon_library.py` | Icon definitions and hints |
 | `docs/scripts/icon_picker_refactoring_demo.py` | Demo/test script |
 
 ## Demo Script
@@ -682,7 +648,7 @@ SearchableIconCombo (wx.Control)
 - [x] Move to `taskcoachlib/widgets/iconpicker.py`
 - [x] Integrate into preferences.py (120px fixed width)
 - [x] Integrate into entry.py (auto-width)
-- [x] Add comprehensive hints to artprovider.py (60+ icons covered)
+- [x] Add comprehensive hints to icon_library.py (60+ icons covered)
 - [ ] Test on Windows/macOS
 
 ## Demo Script
@@ -725,7 +691,7 @@ These icons are disabled in the demo to test disabled item rendering:
 - `taskcoachlib/widgets/__init__.py` - Exports `IconPicker` class
 - `taskcoachlib/gui/dialog/preferences.py` - Uses `widgets.IconPicker` (120px fixed width)
 - `taskcoachlib/gui/dialog/entry.py` - Uses `widgets.IconPicker` (auto-width)
-- `taskcoachlib/gui/artprovider.py` - Icon definitions (`chooseableItems` dict with `name` and `hints`)
+- `taskcoachlib/gui/icons/icon_library.py` - Icon definitions (`_legacy_icon_defs()` with `name` and `hints`)
 
 ## Related Issues
 

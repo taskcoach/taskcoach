@@ -21,6 +21,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import wx
 from taskcoachlib import meta
 
+# Main toolbar icon sizes (user-selectable via View > Toolbar menu).
+# Used by: gui/toolbar.py, gui/menu.py. See also docs/TOOLBAR.md.
+MAIN_TOOLBAR_ICON_SIZE_SMALL = 16
+MAIN_TOOLBAR_ICON_SIZE_MEDIUM = 22
+MAIN_TOOLBAR_ICON_SIZE_LARGE = 32
+MAIN_TOOLBAR_ICON_SIZE_DEFAULT = MAIN_TOOLBAR_ICON_SIZE_MEDIUM
 
 defaults = {
     "balloontips": {
@@ -34,7 +40,7 @@ defaults = {
     },
     "view": {
         "statusbar": "True",
-        "toolbar": "(22, 22)",
+        "toolbar": str((MAIN_TOOLBAR_ICON_SIZE_DEFAULT,) * 2),
         "toolbarperspective": "FileOpen,Print,Separator,EditUndo,EditRedo,Separator,EffortStartButton,EffortStop",
         # Index of the active effort viewer in task editor:
         "effortviewerintaskeditor": "0",
@@ -549,12 +555,13 @@ defaults = {
         "duesoontasks": "",
     },
     "icon": {
-        "activetasks": "led_blue_icon",
-        "latetasks": "led_purple_icon",
-        "completedtasks": "checkmark_green_icon",
-        "overduetasks": "led_red_icon",
-        "inactivetasks": "led_grey_icon",
-        "duesoontasks": "led_orange_icon",
+        "activetasks": "nuvola_actions_ledblue",
+        "latetasks": "nuvola_actions_ledpurple",
+        "completedtasks": "nuvola_actions_ok",
+        "overduetasks": "nuvola_actions_ledred",
+        "inactivetasks": "taskcoach_actions_led_grey_icon",
+        "duesoontasks": "nuvola_actions_ledorange",
+        "legacystatusicons": "False",
     },
     "fgcolor_dark": {
         "activetasks": "(255, 255, 255, 255)",
@@ -581,12 +588,12 @@ defaults = {
         "duesoontasks": "",
     },
     "icon_dark": {
-        "activetasks": "led_blue_icon",
-        "latetasks": "led_purple_icon",
-        "completedtasks": "checkmark_green_icon",
-        "overduetasks": "led_red_icon",
-        "inactivetasks": "led_grey_icon",
-        "duesoontasks": "led_orange_icon",
+        "activetasks": "nuvola_actions_ledblue",
+        "latetasks": "nuvola_actions_ledpurple",
+        "completedtasks": "nuvola_actions_ok",
+        "overduetasks": "nuvola_actions_ledred",
+        "inactivetasks": "taskcoach_actions_led_grey_icon",
+        "duesoontasks": "nuvola_actions_ledorange",
     },
     "statussortpriority": {
         "inactivetasks": "2",
@@ -666,6 +673,7 @@ defaults = {
         "theme_oxygen": "True",
         "theme_papirus": "True",
         "theme_breeze": "True",
+        "theme_taskcoach": "True",
         # Search options
         "search_include_theme": "False",
         "search_include_context": "False",

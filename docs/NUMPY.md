@@ -64,7 +64,7 @@ operations:
 | `clearAlphaDataOfImage()` | Fill alpha channel with uniform value |
 | `mergeImagesWithAlpha()` | Composite overlay icon onto base icon |
 
-These are called by the icon art provider (`taskcoachlib/gui/artprovider.py`)
+These are called by the icon library (`taskcoachlib/gui/icons/icon_library.py`)
 when compositing task icons (e.g. overlaying a clock icon on a task icon
 during time tracking).
 
@@ -136,7 +136,7 @@ Failed numpy (diagnostic information for troubleshooting):
 |------|---------|
 | `taskcoachlib/tools/_numpy_probe.py` | Subprocess probe, diagnostic logging |
 | `taskcoachlib/tools/wxhelper.py` | Alpha operations using numpy |
-| `taskcoachlib/gui/artprovider.py` | Icon compositing using wxhelper + numpy |
+| `taskcoachlib/gui/icons/icon_library.py` | Icon compositing using wxhelper + numpy |
 | `taskcoachlib/application/application.py` | Triggers probe at startup |
 
 ---

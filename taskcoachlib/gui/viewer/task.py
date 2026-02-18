@@ -23,6 +23,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import math
 import wx.lib.agw.piectrl
 from taskcoachlib import operating_system
+from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
+from taskcoachlib.gui.icons import image_list_cache
 from taskcoachlib import command, widgets, domain, render
 from taskcoachlib.domain import task, date
 from taskcoachlib.gui import uicommand, dialog
@@ -198,7 +200,7 @@ class BaseTaskViewer(
 
 class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
     defaultTitle = _("Tasks")
-    defaultBitmap = "led_blue_icon"
+    defaultBitmap = "nuvola_actions_ledblue"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -225,12 +227,12 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
         return super().newItemDialog(*args, **kwargs)
 
     def editItemDialog(
-        self, items, bitmap, columnName="", items_are_new=False
+        self, items, icon_id, columnName="", items_are_new=False
     ):
         if isinstance(items[0], task.Task):
             return super().editItemDialog(
                 items,
-                bitmap,
+                icon_id,
                 columnName=columnName,
                 items_are_new=items_are_new,
             )
@@ -241,7 +243,7 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
                 self.settings,
                 self.taskFile.efforts(),
                 self.taskFile,
-                bitmap=bitmap,
+                icon_id=icon_id,
                 items_are_new=items_are_new,
             )
 
@@ -331,7 +333,7 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
             uicommand.TaskNewFromTemplateButton(
                 taskList=self.presentation(),
                 settings=self.settings,
-                bitmap="newtmpl",
+                icon_id="taskcoach_actions_newtmpl",
             ),
         ) + super().createCreationToolBarUICommands()
 
@@ -372,24 +374,24 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
         separator = (None,) if otherModeUICommands else ()
         return hideUICommands + separator + otherModeUICommands
 
-    def iconName(self, item, isSelected):
+    def get_icon_id(self, item, isSelected):
         return (
-            item.selectedIcon(recursive=True)
+            item.selected_icon_id(recursive=True)
             if isSelected
-            else item.icon(recursive=True)
+            else item.icon_id(recursive=True)
         )
 
     def getItemTooltipData(self, task):  # pylint: disable=W0621
         result = [
             (
-                self.iconName(task, task in self.curselection()),
+                self.get_icon_id(task, task in self.curselection()),
                 [self.getItemText(task)],
             )
         ]
         if task.notes():
             result.append(
                 (
-                    "note_icon",
+                    "nuvola_apps_knotes",
                     sorted([note.subject() for note in task.notes()]),
                 )
             )
@@ -492,7 +494,7 @@ class TimelineRootNode(RootNode):
 
 class TimelineViewer(BaseTaskTreeViewer):
     defaultTitle = _("Timeline")
-    defaultBitmap = "timelineviewer"
+    defaultBitmap = "taskcoach_actions_timelineviewer"
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("settingsSection", "timelineviewer")
@@ -592,8 +594,8 @@ class TimelineViewer(BaseTaskTreeViewer):
         return item.font(recursive=True)
 
     def icon(self, item, isSelected=False):
-        bitmap = self.iconName(item, isSelected)
-        return wx.ArtProvider.GetIcon(bitmap, wx.ART_MENU, (16, 16))
+        icon_id = self.get_icon_id(item, isSelected)
+        return icon_catalog.get_wx_icon(icon_id, LIST_ICON_SIZE)
 
     def now(self):
         return date.Now().toordinal()
@@ -630,7 +632,7 @@ class TimelineViewer(BaseTaskTreeViewer):
 
 class SquareTaskViewer(BaseTaskTreeViewer):
     defaultTitle = _("Task square map")
-    defaultBitmap = "squaremapviewer"
+    defaultBitmap = "taskcoach_actions_squaremapviewer"
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("settingsSection", "squaretaskviewer")
@@ -814,8 +816,8 @@ class SquareTaskViewer(BaseTaskTreeViewer):
         return task.font(recursive=True)
 
     def icon(self, task, isSelected):
-        bitmap = self.iconName(task, isSelected) or "led_blue_icon"
-        return wx.ArtProvider.GetIcon(bitmap, wx.ART_MENU, (16, 16))
+        icon_id = self.get_icon_id(task, isSelected) or "nuvola_actions_ledblue"
+        return icon_catalog.get_wx_icon(icon_id, LIST_ICON_SIZE)
 
     # Helper methods
 
@@ -829,7 +831,7 @@ class HierarchicalCalendarViewer(
     BaseTaskTreeViewer,
 ):
     defaultTitle = _("Hierarchical calendar")
-    defaultBitmap = "calendar_icon"
+    defaultBitmap = "nuvola_apps_date"
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("settingsSection", "hierarchicalcalendarviewer")
@@ -980,7 +982,7 @@ class CalendarViewer(
     BaseTaskTreeViewer,
 ):
     defaultTitle = _("Calendar")
-    defaultBitmap = "calendar_icon"
+    defaultBitmap = "nuvola_apps_date"
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("settingsSection", "calendarviewer")
@@ -1072,7 +1074,7 @@ class CalendarViewer(
         widget = widgets.Calendar(
             self,
             self.presentation(),
-            self.iconName,
+            self.get_icon_id,
             self.onSelect,
             self.onEdit,
             self.onCreate,
@@ -1294,7 +1296,7 @@ class TaskViewer(
         )
         if self.hasOrderingColumn():
             widget.SetMainColumn(1)
-        widget.AssignImageList(imageList)  # pylint: disable=E1101
+        widget.SetImageList(imageList)  # pylint: disable=E1101
         widget.Bind(wx.EVT_TREE_BEGIN_LABEL_EDIT, self.onBeginEdit)
         widget.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.onEndEdit)
         return widget
@@ -1385,7 +1387,7 @@ class TaskViewer(
                     width=self.getColumnWidth("attachments"),
                     alignment=wx.LIST_FORMAT_LEFT,
                     imageIndicesCallback=self.attachmentImageIndices,
-                    headerImageIndex=self.imageIndex["paperclip_icon"],
+                    headerImageIndex=image_list_cache.get_index("nuvola_status_mail-attachment"),
                     renderCallback=lambda task: "",
                     **kwargs
                 )
@@ -1399,7 +1401,7 @@ class TaskViewer(
                 width=self.getColumnWidth("notes"),
                 alignment=wx.LIST_FORMAT_LEFT,
                 imageIndicesCallback=self.noteImageIndices,
-                headerImageIndex=self.imageIndex["note_icon"],
+                headerImageIndex=image_list_cache.get_index("nuvola_apps_knotes"),
                 renderCallback=lambda task: "",
                 **kwargs
             )
@@ -2009,10 +2011,14 @@ class TaskViewer(
         self.showSortOrder()
 
     def getSortOrderImage(self):
-        sortOrderImage = super().getSortOrderImage()
-        if self.isSortByTaskStatusFirst():  # pylint: disable=E1101
-            sortOrderImage = sortOrderImage.rstrip("icon") + "with_status_icon"
-        return sortOrderImage
+        if self.isSortOrderAscending():
+            if self.isSortByTaskStatusFirst():  # pylint: disable=E1101
+                return "taskcoach_actions_arrow_down_with_status_icon"
+            return "nuvola_actions_go-down"
+        else:
+            if self.isSortByTaskStatusFirst():  # pylint: disable=E1101
+                return "taskcoach_actions_arrow_up_with_status_icon"
+            return "nuvola_actions_go-up"
 
     def setSearchFilter(
         self, searchString, *args, **kwargs
@@ -2122,8 +2128,8 @@ class TaskViewer(
 
     def statusImageIndices(self, task):
         """Return image index for the task's current status icon."""
-        iconName = task.statusIconName()
-        index = self.imageIndex.get(iconName, -1)
+        icon_id = task.status_icon_id()
+        index = image_list_cache.get_index(icon_id)
         return {wx.TreeItemIcon_Normal: index}
 
     def categoryIconsImageIndices(self, task):
@@ -2135,9 +2141,9 @@ class TaskViewer(
             reverse=True,
         )
         return [
-            self.imageIndex[c.effectiveIcon()]
+            image_list_cache.get_index(c.effectiveIcon())
             for c in cats
-            if c.effectiveIcon() and c.effectiveIcon() in self.imageIndex
+            if c.effectiveIcon()
         ]
 
     def onEditPlannedStartDateTime(self, item, newValue):
@@ -2234,7 +2240,7 @@ class CheckableTaskViewer(TaskViewer):  # pylint: disable=W0223
             columnPopupMenu,
             **self.widgetCreationKeywordArguments()
         )
-        widget.AssignImageList(imageList)  # pylint: disable=E1101
+        widget.SetImageList(imageList)  # pylint: disable=E1101
         return widget
 
     def onCheck(self, event, final):
@@ -2251,7 +2257,7 @@ class CheckableTaskViewer(TaskViewer):  # pylint: disable=W0223
 
 class TaskStatsViewer(BaseTaskViewer):  # pylint: disable=W0223
     defaultTitle = _("Task statistics")
-    defaultBitmap = "charts_icon"
+    defaultBitmap = "nuvola_apps_kchart"
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("settingsSection", "taskstatsviewer")
@@ -2286,7 +2292,7 @@ class TaskStatsViewer(BaseTaskViewer):  # pylint: disable=W0223
             uicommand.TaskNewFromTemplateButton(
                 taskList=self.presentation(),
                 settings=self.settings,
-                bitmap="newtmpl",
+                icon_id="taskcoach_actions_newtmpl",
             ),
         )
 
@@ -2375,7 +2381,7 @@ else:
 
     class TaskInterdepsViewer(BaseTaskViewer):
         defaultTitle = "Tasks Interdependencies"
-        defaultBitmap = "graph_icon"
+        defaultBitmap = "nuvola_apps_kchart"
 
         graphFile = tempfile.NamedTemporaryFile(suffix=".png")
 

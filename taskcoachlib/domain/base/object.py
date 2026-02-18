@@ -163,10 +163,12 @@ class Object(SynchronizedObject):
         self.__font = Attribute(
             kwargs.pop("font", None), self, self.appearanceChangedEvent
         )
-        self.__icon = Attribute(
-            kwargs.pop("icon", ""), self, self.appearanceChangedEvent
+        from taskcoachlib.gui.icons.icon_library import icon_catalog
+        self.__icon_id = Attribute(
+            icon_catalog.normalize_icon_id(kwargs.pop("icon", "")),
+            self, self.appearanceChangedEvent
         )
-        self.__selectedIcon = Attribute(
+        self.__selected_icon_id = Attribute(
             kwargs.pop("selectedIcon", ""), self, self.appearanceChangedEvent
         )
         self.__ordering = Attribute(
@@ -232,9 +234,9 @@ class Object(SynchronizedObject):
                 fgColor=self.__fgColor.get(),
                 bgColor=self.__bgColor.get(),
                 font=self.__font.get(),
-                icon=self.__icon.get(),
+                icon=self.__icon_id.get(),
                 ordering=self.__ordering.get(),
-                selectedIcon=self.__selectedIcon.get(),
+                selectedIcon=self.__selected_icon_id.get(),
             )
         )
         return state
@@ -251,8 +253,8 @@ class Object(SynchronizedObject):
         self.setForegroundColor(state["fgColor"], event=event)
         self.setBackgroundColor(state["bgColor"], event=event)
         self.setFont(state["font"], event=event)
-        self.setIcon(state["icon"], event=event)
-        self.setSelectedIcon(state["selectedIcon"], event=event)
+        self.set_icon_id(state["icon"], event=event)
+        self.set_selected_icon_id(state["selectedIcon"], event=event)
         self.setOrdering(state["ordering"], event=event)
         self.__creationDateTime = state["creationDateTime"]
         # Set modification date/time last to overwrite changes made by the
@@ -277,8 +279,8 @@ class Object(SynchronizedObject):
                 fgColor=self.__fgColor.get(),
                 bgColor=self.__bgColor.get(),
                 font=self.__font.get(),
-                icon=self.__icon.get(),
-                selectedIcon=self.__selectedIcon.get(),
+                icon=self.__icon_id.get(),
+                selectedIcon=self.__selected_icon_id.get(),
                 ordering=self.__ordering.get(),
             )
         )
@@ -452,20 +454,22 @@ class Object(SynchronizedObject):
 
     # Icons:
 
-    def icon(self):
-        return self.__icon.get()
 
-    def setIcon(self, icon, event=None):
-        self.__icon.set(icon, event=event)
+    def icon_id(self):
+        return self.__icon_id.get()
+
+    def set_icon_id(self, icon_id, event=None):
+        from taskcoachlib.gui.icons.icon_library import icon_catalog
+        self.__icon_id.set(icon_catalog.normalize_icon_id(icon_id), event=event)
         # Trigger computeEffective after SSOT update
         from . import appearance
         appearance.computeEffective(self, 'icon')
 
-    def selectedIcon(self):
-        return self.__selectedIcon.get()
+    def selected_icon_id(self):
+        return self.__selected_icon_id.get()
 
-    def setSelectedIcon(self, selectedIcon, event=None):
-        self.__selectedIcon.set(selectedIcon, event=event)
+    def set_selected_icon_id(self, icon_id, event=None):
+        self.__selected_icon_id.set(icon_id, event=event)
 
     # Event types:
 
@@ -774,25 +778,25 @@ class CompositeObject(Object, patterns.ObservableComposite):
         else:
             return myFont
 
-    def icon(self, recursive=False):
-        myIcon = super().icon()
+    def icon_id(self, recursive=False):
+        icon_id = super().icon_id()
         if not recursive:
-            return myIcon
-        if not myIcon and self.parent():
-            myIcon = self.parent().icon(recursive=True)
-        return self.pluralOrSingularIcon(myIcon, native=super().icon() == "")
+            return icon_id
+        if not icon_id and self.parent():
+            icon_id = self.parent().icon_id(recursive=True)
+        return self.pluralOrSingularIcon(icon_id, native=super().icon_id() == "")
 
-    def selectedIcon(self, recursive=False):
-        myIcon = super().selectedIcon()
+    def selected_icon_id(self, recursive=False):
+        icon_id = super().selected_icon_id()
         if not recursive:
-            return myIcon
-        if not myIcon and self.parent():
-            myIcon = self.parent().selectedIcon(recursive=True)
+            return icon_id
+        if not icon_id and self.parent():
+            icon_id = self.parent().selected_icon_id(recursive=True)
         return self.pluralOrSingularIcon(
-            myIcon, native=super().selectedIcon() == ""
+            icon_id, native=super().selected_icon_id() == ""
         )
 
-    def pluralOrSingularIcon(self, myIcon, native=True):
+    def pluralOrSingularIcon(self, icon_id, native=True):
         hasChildren = any(
             child for child in self.children() if not child.isDeleted()
         )
@@ -802,8 +806,8 @@ class CompositeObject(Object, patterns.ObservableComposite):
         # If the icon comes from the user settings, only pluralize it; this is probably
         # the Way of the Least Astonishment
         if native or hasChildren:
-            return mapping.get(myIcon, myIcon)
-        return myIcon
+            return mapping.get(icon_id, icon_id)
+        return icon_id
 
     # Event types:
 

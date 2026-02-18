@@ -24,6 +24,7 @@ from taskcoachlib import (
     speak,
 )
 from taskcoachlib.domain import date
+from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.i18n import _
 from pubsub import pub
 import wx
@@ -60,7 +61,7 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
         super().__init__(parent, *args, **kwargs)
         self._isFrozen = False
         self.SetIcon(
-            wx.ArtProvider.GetIcon("taskcoach", wx.ART_FRAME_ICON, (16, 16))
+            icon_catalog.get_wx_icon("nuvola_apps_korganizer", LIST_ICON_SIZE)
         )
         self.task = task
         self.taskList = taskList
@@ -221,11 +222,11 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
         self.setTrackingIcon()
 
     def setTrackingIcon(self):
-        icon = (
-            "clock_stop_icon" if self.task.isBeingTracked() else "clock_icon"
+        icon_id = (
+            "taskcoach_actions_clock_stop_icon" if self.task.isBeingTracked() else "nuvola_apps_clock"
         )
         self.startTracking.SetBitmapLabel(
-            wx.ArtProvider.GetBitmap(icon, wx.ART_TOOLBAR, (16, 16))
+            icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
         )
 
     def onMarkTaskCompleted(self, event):

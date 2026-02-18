@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import operating_system
+from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 import wx
 import textwrap
 
@@ -203,11 +204,11 @@ class SimpleToolTip(ToolTipBase):
     def _wrapLongLines(self, data):
         wrappedData = []
         wrapper = textwrap.TextWrapper(width=78)
-        for icon, lines in data:
+        for icon_id, lines in data:
             wrappedLines = []
             for line in lines:
                 wrappedLines.extend(wrapper.fill(line).split("\n"))
-            wrappedData.append((icon, wrappedLines))
+            wrappedData.append((icon_id, wrappedLines))
         return wrappedData
 
     def _calculateSize(self):
@@ -223,7 +224,7 @@ class SimpleToolTip(ToolTipBase):
         return wx.Size(width + 6, height + 6)
 
     def _calculateSectionSize(self, dc, sectionIndex):
-        icon, lines = self.data[sectionIndex]
+        icon_id, lines = self.data[sectionIndex]
         sectionWidth, sectionHeight = 0, 0
         for line in lines:
             lineWidth, lineHeight = self._calculateLineSize(dc, line)
@@ -231,7 +232,7 @@ class SimpleToolTip(ToolTipBase):
             sectionWidth = max(sectionWidth, lineWidth)
         if 0 < sectionIndex < len(self.data) - 1:
             sectionHeight += 3  # Horizontal space between sections
-        if icon:
+        if icon_id:
             sectionWidth += 24  # Reserve width for icon(s)
         return sectionWidth, sectionHeight
 
@@ -263,17 +264,17 @@ class SimpleToolTip(ToolTipBase):
             y = self._drawSection(dc, y, sectionIndex)
 
     def _drawSection(self, dc, y, sectionIndex):
-        icon, lines = self.data[sectionIndex]
+        icon_id, lines = self.data[sectionIndex]
         if not lines:
             return y
         x = 3
         if sectionIndex != 0:
             y = self._drawSectionSeparator(dc, x, y)
-        if icon:
-            x = self._drawIcon(dc, icon, x, y)
+        if icon_id:
+            x = self._drawIcon(dc, icon_id, x, y)
         topOfSection = y
         bottomOfSection = self._drawTextLines(dc, lines, x, y)
-        if icon:
+        if icon_id:
             self._drawIconSeparator(dc, x - 2, topOfSection, bottomOfSection)
         return bottomOfSection
 
@@ -283,8 +284,8 @@ class SimpleToolTip(ToolTipBase):
         dc.DrawLine(x, y, width - x, y)
         return y + 2
 
-    def _drawIcon(self, dc, icon, x, y):
-        bitmap = wx.ArtProvider.GetBitmap(icon, wx.ART_FRAME_ICON, (16, 16))
+    def _drawIcon(self, dc, icon_id, x, y):
+        bitmap = icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
         dc.DrawBitmap(bitmap, x, y, True)
         return 23  # New x
 

@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import operating_system
 from taskcoachlib.i18n import _
+from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from wx.lib.agw import aui
 from . import notebook
 import wx
@@ -29,7 +30,7 @@ from ..tools import wxhelper
 
 class Dialog(sized_controls.SizedDialog):
     def __init__(
-        self, parent, title, bitmap="edit", direction=None, *args, **kwargs
+        self, parent, title, icon_id="nuvola_actions_edit", direction=None, *args, **kwargs
     ):
         self._buttonTypes = kwargs.get("buttonTypes", wx.OK | wx.CANCEL)
         super().__init__(
@@ -42,7 +43,7 @@ class Dialog(sized_controls.SizedDialog):
             | wx.MINIMIZE_BOX,
         )
         self.SetIcon(
-            wx.ArtProvider.GetIcon(bitmap, wx.ART_FRAME_ICON, (16, 16))
+            icon_catalog.get_wx_icon(icon_id, LIST_ICON_SIZE)
         )
 
         if operating_system.isWindows7_OrNewer():

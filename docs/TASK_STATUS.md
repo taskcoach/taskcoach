@@ -213,11 +213,11 @@ Each status is a `TaskStatus` singleton object (`domain/task/status.py`) with th
 
 | `statusString` | Display Text | Icon | FG Color | Condition |
 |---|---|---|---|---|
-| `"inactive"` | `"Inactive"` | `led_grey_icon` | Grey (192,192,192) | No actual start, planned start in future (or has incomplete prerequisites) |
-| `"late"` | `"Late"` | `led_purple_icon` | Purple (160,32,240) | Planned start date has passed, no actual start |
-| `"active"` | `"Active"` | `led_blue_icon` | Black (0,0,0) | Actual start date has passed |
-| `"duesoon"` | `"Due soon"` | `led_orange_icon` | Orange (255,128,0) | Due date within `dueSoonHours` (default: 24h) |
-| `"overdue"` | `"Overdue"` | `led_red_icon` | Red (255,0,0) | Due date has passed |
+| `"inactive"` | `"Inactive"` | `taskcoach_actions_led_grey_icon` | Grey (192,192,192) | No actual start, planned start in future (or has incomplete prerequisites) |
+| `"late"` | `"Late"` | `nuvola_actions_ledpurple` | Purple (160,32,240) | Planned start date has passed, no actual start |
+| `"active"` | `"Active"` | `nuvola_actions_ledblue` | Black (0,0,0) | Actual start date has passed |
+| `"duesoon"` | `"Due soon"` | `nuvola_actions_ledorange` | Orange (255,128,0) | Due date within `dueSoonHours` (default: 24h) |
+| `"overdue"` | `"Overdue"` | `nuvola_actions_ledred` | Red (255,0,0) | Due date has passed |
 | `"completed"` | `"Completed"` | `checkmark_green_icon` | Green (0,255,0) | Completion date is set |
 
 Settings key for each status: `"%stasks" % statusString` (e.g., `"activetasks"`)
@@ -260,14 +260,13 @@ Transitions are time-driven (status changes as `now` passes date thresholds) or 
 
 Each task stores three computed status fields:
 - `__status_text` — Display text (e.g., `"Active"`, `"Overdue"`)
-- `__status_icon` — Icon name (e.g., `"led_blue_icon"`)
+- `__status_icon` — Icon name (e.g., `"nuvola_actions_ledblue"`)
 - `__status` — Cached TaskStatus object (used internally by `status()`)
 
 Accessor methods:
 - `task.computedStatus()` — Returns TaskStatus object (single source of truth) ✓
 - `task.statusText()` — Returns display text ✓
-- `task.statusIconName()` — Returns icon name ✓
-- `task.statusIcon()` — Returns icon name (same as statusIconName, kept for compatibility) ✓
+- `task.status_icon_id()` — Returns icon ID ✓
 - `task.status()` — Returns TaskStatus object (legacy cached method, to be removed)
 
 ### computeStatus() — Single Source of Truth (Class Method)
@@ -503,7 +502,7 @@ The cache made this O(1) after the first call, but required manual invalidation
 ### Why the New Approach Eliminates the Cache
 
 With `computeStatus()` as the sole writer:
-1. **No cache needed** — `statusText()` and `statusIconName()` are simple field reads
+1. **No cache needed** — `statusText()` and `status_icon_id()` are simple field reads
 2. **No invalidation needed** — the scheduler updates fields every second
 3. **No redundant recalculation** — doesn't matter how many consumers read the fields
 4. **Built-in change detection** — `statusChangedEventType` fires only on transitions
@@ -516,7 +515,7 @@ every consumer to potentially trigger computation. The new pattern separates wri
 ### Migration Path
 
 1. **Current state:** `computeStatus()` runs in parallel alongside legacy code.
-   New columns read `statusText()` / `statusIconName()`. Legacy consumers still
+   New columns read `statusText()` / `status_icon_id()`. Legacy consumers still
    use `status()` / `statusFgColor()` / etc.
 
 2. **In progress:** Public accessor `computedStatus()` added. Migrating legacy
@@ -626,9 +625,9 @@ The transformation depends on whether the task has children AND whether an overr
 
 | Has Children | Has Override | Transformation |
 |--------------|--------------|----------------|
-| Yes | No | Pluralize: `led_blue_icon` → `folder_blue_icon` |
+| Yes | No | Pluralize: `nuvola_actions_ledblue` → `nuvola_mimetypes_inode-directory` |
 | Yes | Yes | Pluralize: even override icons are transformed |
-| No | No | Singularize: `folder_blue_icon` → `led_blue_icon` |
+| No | No | Singularize: `nuvola_mimetypes_inode-directory` → `nuvola_actions_ledblue` |
 | No | Yes | None: override icon kept as-is |
 
 **Key insight:** Tasks with children ALWAYS show folder icons (even if you set an LED override).
@@ -638,13 +637,13 @@ Tasks without children and without override will have folder icons converted bac
 
 | Input | Output |
 |-------|--------|
-| `led_blue_icon` | `folder_blue_icon` |
-| `led_grey_icon` | `folder_grey_icon` |
-| `led_green_icon` | `folder_green_icon` |
-| `led_orange_icon` | `folder_orange_icon` |
-| `led_purple_icon` | `folder_purple_icon` |
-| `led_red_icon` | `folder_red_icon` |
-| `led_yellow_icon` | `folder_yellow_icon` |
+| `nuvola_actions_ledblue` | `nuvola_mimetypes_inode-directory` |
+| `taskcoach_actions_led_grey_icon` | `nuvola_places_folder-grey` |
+| `nuvola_actions_ledgreen` | `nuvola_places_folder-green` |
+| `nuvola_actions_ledorange` | `nuvola_places_folder-orange` |
+| `nuvola_actions_ledpurple` | `nuvola_places_folder-violet` |
+| `nuvola_actions_ledred` | `nuvola_places_folder-red` |
+| `nuvola_actions_ledyellow` | `nuvola_places_folder-yellow` |
 | `checkmark_green_icon` | `checkmark_green_icon_multiple` |
 
 **Singular mapping (Folder → LED):** The reverse of the above.

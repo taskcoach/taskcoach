@@ -72,7 +72,7 @@ OVERRIDE_METHOD = {
     'fgColor': 'foregroundColor',
     'bgColor': 'backgroundColor',
     'font': 'font',
-    'icon': 'icon',
+    'icon': 'icon_id',
 }
 
 
@@ -164,9 +164,9 @@ DERIVED_SETTERS = {
 
 # Default icons for types without status-based icons (Task gets icons from status)
 TYPE_DEFAULT_ICONS = {
-    'Category': 'folder_blue_icon',
-    'Note': 'note_icon',
-    'Attachment': 'paperclip_icon',
+    'Category': 'nuvola_mimetypes_inode-directory',
+    'Note': 'nuvola_apps_knotes',
+    'Attachment': 'nuvola_status_mail-attachment',
 }
 
 
@@ -251,7 +251,7 @@ def computeDerived(object_ref, field_type):
     if obj_type == 'Task':
         # Tracking icon: highest priority for icon field
         if field_type == 'icon' and _isBeingTracked(object_ref):
-            value = "clock_icon"
+            value = "nuvola_apps_clock"
             source = "[Tracking]"
 
         # Task sources: categories → parent → status

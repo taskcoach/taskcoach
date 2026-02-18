@@ -25,6 +25,7 @@ from taskcoachlib import command, widgets
 from taskcoachlib.domain import category
 from taskcoachlib.i18n import _
 from taskcoachlib.gui import uicommand, dialog
+from taskcoachlib.gui.icons import image_list_cache
 import taskcoachlib.gui.menu
 from . import base
 from . import mixin
@@ -44,7 +45,7 @@ class BaseCategoryViewer(
 ):
     SorterClass = category.CategorySorter
     defaultTitle = _("Categories")
-    defaultBitmap = "folder_blue_arrow_icon"
+    defaultBitmap = "nuvola_places_folder-downloads"
     coreObjectType = "categories"
 
     def __init__(self, *args, **kwargs):
@@ -92,7 +93,7 @@ class BaseCategoryViewer(
         )
         if self.hasOrderingColumn():
             widget.SetMainColumn(1)
-        widget.AssignImageList(imageList)  # pylint: disable=E1101
+        widget.SetImageList(imageList)  # pylint: disable=E1101
         return widget
 
     def createCategoryPopupMenu(self, localOnly=False):
@@ -148,7 +149,7 @@ class BaseCategoryViewer(
                 width=self.getColumnWidth("attachments"),
                 alignment=wx.LIST_FORMAT_LEFT,
                 imageIndicesCallback=self.attachmentImageIndices,
-                headerImageIndex=self.imageIndex["paperclip_icon"],
+                headerImageIndex=image_list_cache.get_index("nuvola_status_mail-attachment"),
                 renderCallback=lambda category: "",
                 **kwargs
             ),
@@ -161,7 +162,7 @@ class BaseCategoryViewer(
                 width=self.getColumnWidth("notes"),
                 alignment=wx.LIST_FORMAT_LEFT,
                 imageIndicesCallback=self.noteImageIndices,
-                headerImageIndex=self.imageIndex["note_icon"],
+                headerImageIndex=image_list_cache.get_index("nuvola_apps_knotes"),
                 renderCallback=lambda category: "",
                 **kwargs
             )

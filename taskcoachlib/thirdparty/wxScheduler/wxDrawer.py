@@ -6,6 +6,7 @@ from .wxScheduleUtils import copyDateTime
 from .wxTimeFormat import wxTimeFormat
 
 import wx, math
+from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 
 
 class wxDrawer(object):
@@ -184,12 +185,10 @@ class wxDrawer(object):
 
                 offsetY += 10 + SCHEDULE_INSIDE_MARGIN
 
-            if schedule.icons:
-                for icon in schedule.icons:
+            if schedule.icon_ids:
+                for icon_id in schedule.icon_ids:
                     if h is not None:
-                        bitmap = wx.ArtProvider.GetBitmap(
-                            icon, wx.ART_FRAME_ICON, (16, 16)
-                        )
+                        bitmap = icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
                         self.context.DrawBitmap(
                             bitmap, x + offsetX, y + offsetY, 16, 16
                         )
@@ -264,12 +263,10 @@ class wxDrawer(object):
 
                 offsetY += 10 + SCHEDULE_INSIDE_MARGIN
 
-            if schedule.icons:
-                for icon in schedule.icons:
+            if schedule.icon_ids:
+                for icon_id in schedule.icon_ids:
                     if h is not None:
-                        bitmap = wx.ArtProvider.GetBitmap(
-                            icon, wx.ART_FRAME_ICON, (16, 16)
-                        )
+                        bitmap = icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
                         self.context.DrawBitmap(
                             bitmap, x + offsetX, y + offsetY, True
                         )

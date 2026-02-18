@@ -17,28 +17,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 itemImagePlural = dict(
-    cogwheel_icon="cogwheels_icon",
-    envelope_icon="envelopes_icon",
-    led_blue_icon="folder_blue_icon",
-    led_blue_light_icon="folder_blue_light_icon",
-    led_grey_icon="folder_grey_icon",
-    led_green_icon="folder_green_icon",
-    led_orange_icon="folder_orange_icon",
-    led_purple_icon="folder_purple_icon",
-    led_red_icon="folder_red_icon",
-    led_yellow_icon="folder_yellow_icon",
-    checkmark_green_icon="checkmark_green_icon_multiple",
-    person_icon="persons_icon",
+    nuvola_actions_ledblue="nuvola_mimetypes_inode-directory",
+    nuvola_actions_ledlightblue="taskcoach_actions_folder_blue_light_icon",
+    taskcoach_actions_led_grey_icon="nuvola_places_folder-grey",
+    nuvola_actions_ledgreen="nuvola_places_folder-green",
+    nuvola_actions_ledorange="nuvola_places_folder-orange",
+    nuvola_actions_ledpurple="nuvola_places_folder-violet",
+    nuvola_actions_ledred="nuvola_places_folder-red",
+    nuvola_actions_ledyellow="nuvola_places_folder-yellow",
+    nuvola_actions_ok="taskcoach_actions_checkmark_green_icon_multiple",
 )
-
-
-itemImageOpen = dict()
-for _color in ["blue", "grey", "green", "orange", "purple", "red", "yellow"]:
-    itemImageOpen["folder_%s_icon" % _color] = "folder_%s_open_icon" % _color
-
-
-def getImageOpen(name):
-    return itemImageOpen.get(name, name)
 
 
 itemImageSingular = dict()

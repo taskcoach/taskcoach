@@ -25,6 +25,7 @@ from taskcoachlib import command, widgets
 from taskcoachlib.domain import attachment
 from taskcoachlib.i18n import _
 from taskcoachlib.gui import uicommand, dialog
+from taskcoachlib.gui.icons import image_list_cache
 import taskcoachlib.gui.menu
 from . import base, mixin
 
@@ -40,8 +41,8 @@ class AttachmentViewer(
     SorterClass = attachment.AttachmentSorter
     defaultTitle = _("Attachments")
     coreObjectType = "attachments"
-    viewerImages = base.ListViewer.viewerImages + [
-        "document_icon", "fileopen_red", "folder_blue_icon"
+    viewerIconIds = base.ListViewer.viewerIconIds + [
+        "nuvola_mimetypes_application-x-dvi", "taskcoach_actions_fileopen_red", "nuvola_mimetypes_inode-directory"
     ]
 
     # Map type_ values to human-readable names
@@ -125,7 +126,7 @@ class AttachmentViewer(
             **self.widgetCreationKeywordArguments()
         )
         widget.SetColumnWidth(0, 150)
-        widget.AssignImageList(imageList, wx.IMAGE_LIST_SMALL)
+        widget.SetImageList(imageList, wx.IMAGE_LIST_SMALL)
         return widget
 
     def _createColumns(self):
@@ -180,7 +181,7 @@ class AttachmentViewer(
                 width=self.getColumnWidth("notes"),
                 alignment=wx.LIST_FORMAT_LEFT,
                 imageIndicesCallback=self.noteImageIndices,  # pylint: disable=E1101
-                headerImageIndex=self.imageIndex["note_icon"],
+                headerImageIndex=image_list_cache.get_index("nuvola_apps_knotes"),
                 renderCallback=lambda item: "",
                 resizeCallback=self.onResizeColumn,
             ),
@@ -288,19 +289,18 @@ class AttachmentViewer(
         if anAttachment.type_ == "file":
             attachmentBase = self.settings.get("file", "attachmentbase")
             if exists(anAttachment.normalizedLocation(attachmentBase)):
-                index = self.imageIndex["document_icon"]
+                index = image_list_cache.get_index("nuvola_mimetypes_application-x-dvi")
             else:
-                index = self.imageIndex["fileopen_red"]
+                index = image_list_cache.get_index("taskcoach_actions_fileopen_red")
         elif self._isFolderUri(anAttachment):
             # Folder URI - use folder icon
-            index = self.imageIndex["folder_blue_icon"]
+            index = image_list_cache.get_index("nuvola_mimetypes_inode-directory")
         else:
             try:
-                index = self.imageIndex[
-                    {"uri": "earth_blue_icon", "mail": "envelope_icon"}[
-                        anAttachment.type_
-                    ]
-                ]
+                index = image_list_cache.get_index(
+                    {"uri": "nuvola_categories_applications-internet",
+                     "mail": "nuvola_apps_email"}[anAttachment.type_]
+                )
             except KeyError:
                 index = -1
         return {wx.TreeItemIcon_Normal: index}

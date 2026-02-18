@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import widgets
+from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
+from taskcoachlib.gui.icons.image_list_cache import image_list_cache
 from taskcoachlib.help.balloontips import BalloonTipManager
 from taskcoachlib.gui import uicommand
 from taskcoachlib.i18n import _
@@ -46,25 +48,6 @@ class _ToolBarEditorInterior(wx.Panel):
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.__imgList = wx.ImageList(16, 16)
-        self.__imgListIndex = dict()
-        empty = wx.Image(16, 16)
-        empty.Replace(0, 0, 0, 255, 255, 255)
-        self.__imgListIndex[None] = self.__imgList.Add(
-            empty.ConvertToBitmap()
-        )
-        for uiCmd in toolbar.uiCommands():
-            if (
-                uiCmd is not None
-                and not isinstance(uiCmd, int)
-                and uiCmd.bitmap is not None
-            ):
-                self.__imgListIndex[uiCmd.bitmap] = self.__imgList.Add(
-                    wx.ArtProvider.GetBitmap(
-                        uiCmd.bitmap, wx.ART_MENU, (16, 16)
-                    )
-                )
-
         # Data storage for remaining list items (visible uses self.__visible)
         self.__remainingData = []
 
@@ -74,7 +57,7 @@ class _ToolBarEditorInterior(wx.Panel):
             self,
             style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_NO_HEADER
         )
-        self.__remainingCommands.SetImageList(self.__imgList, wx.IMAGE_LIST_SMALL)
+        self.__remainingCommands.SetImageList(image_list_cache.image_list, wx.IMAGE_LIST_SMALL)
         self.__remainingCommands.InsertColumn(0, "Command", width=300)
         self.__remainingCommands.Bind(wx.EVT_SIZE, self.__OnListResize)
 
@@ -89,7 +72,7 @@ class _ToolBarEditorInterior(wx.Panel):
         self.__showButton = wx.BitmapButton(
             self,
             wx.ID_ANY,
-            wx.ArtProvider.GetBitmap("next", wx.ART_BUTTON, (16, 16)),
+            icon_catalog.get_bitmap("nuvola_actions_go-next-document", LIST_ICON_SIZE),
         )
         self.__showButton.Enable(False)
         self.__showButton.SetToolTip(
@@ -99,7 +82,7 @@ class _ToolBarEditorInterior(wx.Panel):
         self.__hideButton = wx.BitmapButton(
             self,
             wx.ID_ANY,
-            wx.ArtProvider.GetBitmap("prev", wx.ART_BUTTON, (16, 16)),
+            icon_catalog.get_bitmap("nuvola_actions_go-previous-document", LIST_ICON_SIZE),
         )
         self.__hideButton.Enable(False)
         self.__hideButton.SetToolTip(
@@ -114,7 +97,7 @@ class _ToolBarEditorInterior(wx.Panel):
             self,
             style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_NO_HEADER
         )
-        self.__visibleCommands.SetImageList(self.__imgList, wx.IMAGE_LIST_SMALL)
+        self.__visibleCommands.SetImageList(image_list_cache.image_list, wx.IMAGE_LIST_SMALL)
         self.__visibleCommands.InsertColumn(0, "Command", width=300)
         self.__visibleCommands.Bind(wx.EVT_SIZE, self.__OnListResize)
 
@@ -127,7 +110,7 @@ class _ToolBarEditorInterior(wx.Panel):
         self.__moveUpButton = wx.BitmapButton(
             self,
             wx.ID_ANY,
-            wx.ArtProvider.GetBitmap("up", wx.ART_BUTTON, (16, 16)),
+            icon_catalog.get_bitmap("nuvola_actions_arrow-up", LIST_ICON_SIZE),
         )
         self.__moveUpButton.Enable(False)
         self.__moveUpButton.SetToolTip(
@@ -137,7 +120,7 @@ class _ToolBarEditorInterior(wx.Panel):
         self.__moveDownButton = wx.BitmapButton(
             self,
             wx.ID_ANY,
-            wx.ArtProvider.GetBitmap("down", wx.ART_BUTTON, (16, 16)),
+            icon_catalog.get_bitmap("nuvola_actions_arrow-down", LIST_ICON_SIZE),
         )
         self.__moveDownButton.Enable(False)
         self.__moveDownButton.SetToolTip(
@@ -288,11 +271,11 @@ class _ToolBarEditorInterior(wx.Panel):
     def __GetItemTextAndImage(self, uiCmd):
         """Get display text and image index for a uiCommand."""
         if uiCmd is None:
-            return _("Separator"), self.__imgListIndex.get(None, -1)
+            return _("Separator"), -1
         elif isinstance(uiCmd, int):
-            return _("Spacer"), self.__imgListIndex.get(None, -1)
+            return _("Spacer"), -1
         else:
-            return uiCmd.getHelpText(), self.__imgListIndex.get(uiCmd.bitmap, -1)
+            return uiCmd.getHelpText(), image_list_cache.get_index(uiCmd.icon_id)
 
     def __UpdateRemainingItemState(self, uiCmd, enabled):
         """Update the visual state of an item in the remaining list."""

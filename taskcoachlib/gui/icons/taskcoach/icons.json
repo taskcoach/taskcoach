@@ -1,4 +1,214 @@
 {
-  "_comment": "Internal TaskCoach icons. See ICON_THEME_CATALOG.json for theme metadata.",
-  "icons": {}
+  "icons": {
+    "taskcoach_actions_arrow_down_with_status_icon": {
+      "file": "arrow_down_with_status_icon.png",
+      "sizes": [16],
+      "hints": ["arrow", "down", "sort", "descending", "status", "priority", "move"],
+      "label": "Arrow Down With Status Icon",
+      "context": "actions"
+    },
+    "taskcoach_actions_arrow_up_with_status_icon": {
+      "file": "arrow_up_with_status_icon.png",
+      "sizes": [16],
+      "hints": ["arrow", "up", "sort", "ascending", "status", "priority", "move"],
+      "label": "Arrow Up With Status Icon",
+      "context": "actions"
+    },
+    "taskcoach_actions_clock_menu_icon": {
+      "file": "clock_menu_icon.png",
+      "sizes": [16, 22, 32],
+      "hints": ["clock", "time", "tracking", "start", "dropdown", "menu", "effort"],
+      "label": "Clock Menu Icon",
+      "context": "actions"
+    },
+    "taskcoach_actions_clock_resume_icon": {
+      "file": "clock_resume_icon.png",
+      "sizes": [16, 22, 32],
+      "hints": ["clock", "time", "tracking", "resume", "play", "continue", "effort"],
+      "label": "Clock Resume Icon",
+      "context": "actions"
+    },
+    "taskcoach_actions_clock_stop_icon": {
+      "file": "clock_stop_icon.png",
+      "sizes": [16, 22, 32],
+      "hints": ["clock", "time", "tracking", "stop", "halt", "red", "effort"],
+      "label": "Clock Stop Icon",
+      "context": "actions"
+    },
+    "taskcoach_actions_led_grey_icon": {
+      "file": "led_grey_icon.png",
+      "sizes": [16],
+      "hints": ["led", "grey", "inactive", "off", "status", "indicator", "circle"],
+      "label": "Led Grey Icon",
+      "context": "actions"
+    },
+    "taskcoach_actions_tree_collapse_all": {
+      "file": "tree_collapse_all.png",
+      "sizes": [16],
+      "hints": ["tree", "collapse", "all", "fold", "close", "minimize", "hierarchy"],
+      "label": "Tree Collapse All",
+      "context": "actions"
+    },
+    "taskcoach_actions_tree_expand_all": {
+      "file": "tree_expand_all.png",
+      "sizes": [16],
+      "hints": ["tree", "expand", "all", "unfold", "open", "maximize", "hierarchy"],
+      "label": "Tree Expand All",
+      "context": "actions"
+    },
+    "taskcoach_actions_paste_subitem": {
+      "file": "paste_subitem.png",
+      "sizes": [16],
+      "hints": ["paste", "clipboard", "subtask", "child", "subitem", "hierarchy", "insert"],
+      "label": "Paste Subitem",
+      "context": "actions"
+    },
+    "taskcoach_actions_newsub": {
+      "file": "newsub.png",
+      "sizes": [16],
+      "hints": ["new", "subtask", "child", "create", "add", "sub", "task"],
+      "label": "New Sub",
+      "context": "actions"
+    },
+    "taskcoach_actions_viewalltasks": {
+      "file": "viewalltasks.png",
+      "sizes": [16],
+      "hints": ["view", "all", "tasks", "filter", "show", "circles", "list"],
+      "label": "View All Tasks",
+      "context": "actions"
+    },
+    "taskcoach_actions_tab-duplicate-left": {
+      "file": "tab-duplicate-left.png",
+      "sizes": [16],
+      "hints": ["previous", "viewer", "back", "left", "arrow", "navigate", "tab"],
+      "label": "Tab Duplicate Left",
+      "context": "actions"
+    },
+    "taskcoach_actions_arrow_down_right": {
+      "file": "arrow_down_right.png",
+      "sizes": [16],
+      "hints": ["arrow", "down", "right", "indent", "demote", "move", "green"],
+      "label": "Arrow Down Right",
+      "context": "actions"
+    },
+    "taskcoach_actions_checkall": {
+      "file": "checkall.png",
+      "sizes": [16],
+      "hints": ["check", "all", "select", "complete", "mark", "done", "list"],
+      "label": "Check All",
+      "context": "actions"
+    },
+    "taskcoach_actions_uncheckall": {
+      "file": "uncheckall.png",
+      "sizes": [16],
+      "hints": ["uncheck", "all", "deselect", "clear", "empty", "reset", "list"],
+      "label": "Uncheck All",
+      "context": "actions"
+    },
+    "taskcoach_actions_star_yellow_icon": {
+      "file": "star_yellow_icon.png",
+      "sizes": [16],
+      "hints": ["star", "yellow", "favorite", "important", "bookmark", "rating", "gold"],
+      "label": "Star Yellow Icon",
+      "context": "actions"
+    },
+    "taskcoach_actions_folder_blue_light_icon": {
+      "file": "folder_blue_light_icon.png",
+      "sizes": [16],
+      "hints": ["folder", "blue", "light", "directory", "category", "container", "project"],
+      "label": "Folder Blue Light Icon",
+      "context": "actions"
+    },
+    "taskcoach_actions_file_important_icon": {
+      "file": "file_important_icon.png",
+      "sizes": [16],
+      "hints": ["file", "important", "warning", "alert", "exclamation", "triangle", "document"],
+      "label": "File Important Icon",
+      "context": "actions"
+    },
+    "taskcoach_actions_file_locked_icon": {
+      "file": "file_locked_icon.png",
+      "sizes": [16],
+      "hints": ["file", "locked", "restricted", "blocked", "stop", "forbidden", "document"],
+      "label": "File Locked Icon",
+      "context": "actions"
+    },
+    "taskcoach_actions_link_icon": {
+      "file": "link_icon.png",
+      "sizes": [16, 22, 32],
+      "hints": ["link", "chain", "hyperlink", "url", "attachment", "connect", "blue"],
+      "label": "Link Icon",
+      "context": "actions"
+    },
+    "taskcoach_actions_earth_green_icon": {
+      "file": "earth_green_icon.png",
+      "sizes": [16],
+      "hints": ["earth", "green", "globe", "world", "planet", "environment", "web"],
+      "label": "Earth Green Icon",
+      "context": "actions"
+    },
+    "taskcoach_actions_newtmpl": {
+      "file": "newtmpl.png",
+      "sizes": [16],
+      "hints": ["template", "new", "blank", "orange", "note", "sticky", "create"],
+      "label": "New Template",
+      "context": "actions"
+    },
+    "taskcoach_actions_timelineviewer": {
+      "file": "timelineviewer.png",
+      "sizes": [16],
+      "hints": ["timeline", "gantt", "chart", "schedule", "bars", "calendar", "viewer"],
+      "label": "Timeline Viewer",
+      "context": "actions"
+    },
+    "taskcoach_actions_box_in_icon": {
+      "file": "box_in_icon.png",
+      "sizes": [16],
+      "hints": ["box", "in", "import", "inbox", "tray", "arrow", "green", "download"],
+      "label": "Box In Icon",
+      "context": "actions"
+    },
+    "taskcoach_actions_box_out_icon": {
+      "file": "box_out_icon.png",
+      "sizes": [16],
+      "hints": ["box", "out", "export", "outbox", "tray", "arrow", "red", "upload"],
+      "label": "Box Out Icon",
+      "context": "actions"
+    },
+    "taskcoach_actions_checkmark_green_icon_multiple": {
+      "file": "checkmark_green_icon_multiple.png",
+      "sizes": [16],
+      "hints": ["checkmark", "green", "multiple", "batch", "done", "complete", "all", "stacked"],
+      "label": "Checkmark Green Icon Multiple",
+      "context": "actions"
+    },
+    "taskcoach_actions_squaremapviewer": {
+      "file": "squaremapviewer.png",
+      "sizes": [16],
+      "hints": ["treemap", "squaremap", "grid", "rectangles", "blue", "viewer", "chart"],
+      "label": "Square Map Viewer",
+      "context": "actions"
+    },
+    "taskcoach_actions_magnifier_glass_dropdown_icon": {
+      "file": "magnifier_glass_dropdown_icon.png",
+      "sizes": [16],
+      "hints": ["magnifier", "search", "find", "glass", "dropdown", "menu", "filter", "lens"],
+      "label": "Magnifier Glass Dropdown Icon",
+      "context": "actions"
+    },
+    "taskcoach_actions_fileopen_red": {
+      "file": "fileopen_red.png",
+      "sizes": [16],
+      "hints": ["file", "open", "red", "folder", "browse", "load", "document"],
+      "label": "File Open Red",
+      "context": "actions"
+    },
+    "taskcoach_actions_sort": {
+      "file": "sort.png",
+      "sizes": [16],
+      "hints": ["sort", "order", "lines", "arrange", "grey", "list", "horizontal"],
+      "label": "Sort",
+      "context": "actions"
+    }
+  }
 }

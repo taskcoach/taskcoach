@@ -77,6 +77,45 @@
       "hints": ["embarrassed", "blushing", "surprised", "shocked", "red cheeks", "emoticon", "oops", "smiley"],
       "context": "emotes",
       "sizes": [16]
+    },
+    "oxygen_actions_zoom-draw": {
+      "label": "Zoom Draw",
+      "file": "zoom-draw.png",
+      "hints": ["zoom", "draw", "magnify", "search", "canvas", "document", "glass"],
+      "context": "actions",
+      "sizes": [16]
+    },
+    "oxygen_actions_zoom-fit-best": {
+      "label": "Zoom Fit Best",
+      "file": "zoom-fit-best.png",
+      "hints": ["zoom", "fit", "best", "page", "document", "resize", "scale"],
+      "duplicates": [],
+      "context": "actions",
+      "sizes": [16]
+    },
+    "oxygen_actions_document-import": {
+      "label": "Document Import",
+      "file": "document-import.png",
+      "hints": ["document", "import", "file", "arrow", "load", "open", "incoming"],
+      "duplicates": ["oxygen_actions_albumfolder-importimages"],
+      "context": "actions",
+      "sizes": [16]
+    },
+    "oxygen_actions_document-export": {
+      "label": "Document Export",
+      "file": "document-export.png",
+      "hints": ["document", "export", "arrow", "save", "out", "file", "send"],
+      "duplicates": [],
+      "context": "actions",
+      "sizes": [16]
+    },
+    "oxygen_mimetypes_text-plain": {
+      "label": "Text Plain",
+      "file": "text-plain.png",
+      "hints": ["txt", "text", "plain", "ascii", "document", "notepad", "file", "simple"],
+      "duplicates": [],
+      "context": "mimetypes",
+      "sizes": [16]
     }
   }
 }

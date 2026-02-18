@@ -149,9 +149,9 @@ class ViewerTest(test.wxTestCase):
     def testGetItemTooltipData(self):
         self.task.setDescription("Description")
         expectedData = [
-            ("led_grey_icon", ["task"]),
-            ("folder_blue_arrow_icon", []),
-            ("paperclip_icon", []),
+            ("taskcoach_actions_led_grey_icon", ["task"]),
+            ("nuvola_places_folder-downloads", []),
+            ("nuvola_status_mail-attachment", []),
             (None, ["Description"]),
         ]
         self.assertEqual(
@@ -229,7 +229,7 @@ class SortableViewerForTasksTest(test.TestCase):
         self.settings = config.Settings(load=False)
 
         class ViewerUnderTest(gui.viewer.mixin.SortableViewerForTasksMixin):
-            viewerImages = []
+            viewerIconIds = []
 
         self.viewer = ViewerUnderTest()
         self.viewer.settings = self.settings
