@@ -940,9 +940,9 @@ class TreeListHeaderWindow(wx.Window):
             params.m_labelColour = column.GetColour()
             params.m_labelFont = column.GetFont()
 
-            wCol = column.GetWidth()
+            wCol = int(column.GetWidth())
             flags = 0
-            rect = wx.Rect(x, 0, wCol, h)
+            rect = wx.Rect(int(x), 0, wCol, int(h))
             x += wCol
 
             if i == self._hotTrackCol:
@@ -969,7 +969,7 @@ class TreeListHeaderWindow(wx.Window):
 
         # Fill up any unused space to the right of the columns
         if x < w:
-            rect = wx.Rect(x, 0, w-x, h)
+            rect = wx.Rect(int(x), 0, int(w-x), int(h))
             if self._headerCustomRenderer is not None:
                self._headerCustomRenderer.DrawHeaderButton(dc, rect)
             else:
@@ -1060,8 +1060,8 @@ class TreeListHeaderWindow(wx.Window):
             width = column.GetWidth()
             idx += 1
 
-        x, dummy = self._owner.CalcScrolledPosition(x, 0)
-        self.RefreshRect(wx.Rect(x, 0, width, self.GetSize().GetHeight()))
+        x, dummy = self._owner.CalcScrolledPosition(int(x), 0)
+        self.RefreshRect(wx.Rect(int(x), 0, int(width), self.GetSize().GetHeight()))
 
 
     def OnMouse(self, event):
@@ -2032,7 +2032,7 @@ class EditCtrl(object):
             wCol = col.GetWidth()
             x += wCol
 
-        x, y = self._owner.CalcScrolledPosition(x+2, item.GetY())
+        x, y = self._owner.CalcScrolledPosition(int(x+2), int(item.GetY()))
 
         image_w = image_h = wcheck = hcheck = 0
         image = item.GetCurrentImage(column)
@@ -2964,10 +2964,10 @@ class TreeListMainWindow(CustomTreeCtrl):
         if self._dirty or self._freezeCount:
             return
         pad = self._hoverLineWidth + 1  # both lines inside row, small safety
-        x, y = self.CalcScrolledPosition(0, item.GetY())
+        x, y = self.CalcScrolledPosition(0, int(item.GetY()))
         w = self.GetClientSize().x
         h = self.GetLineHeight(item)
-        rect = wx.Rect(x, y - pad, w, h + 2 * pad)
+        rect = wx.Rect(int(x), int(y - pad), int(w), int(h + 2 * pad))
         self.Refresh(True, rect)
 
     def SetDropHighlight(self, item=None, column=-1):
@@ -3009,7 +3009,7 @@ class TreeListMainWindow(CustomTreeCtrl):
             if x < self.GetClientSize().GetWidth():
                 x_pos = 0
 
-            self.SetScrollbars(xUnit, yUnit, x//xUnit, y//yUnit, x_pos, y_pos)
+            self.SetScrollbars(xUnit, yUnit, int(x//xUnit), int(y//yUnit), x_pos, y_pos)
         else:
             self.SetScrollbars(0, 0, 0, 0)
 
@@ -3040,7 +3040,7 @@ class TreeListMainWindow(CustomTreeCtrl):
                     plus = textrect.Width - w
                     if alignment == wx.ALIGN_CENTER:
                         plus //= 2
-                    dc.DrawLabel(t, wx.Rect(textrect.X + plus, yorigin, w, yorigin+h))
+                    dc.DrawLabel(t, wx.Rect(int(textrect.X + plus), int(yorigin), int(w), int(yorigin+h)))
                     yorigin += h
                 return
             dc.DrawLabel(text, textrect)
@@ -3100,7 +3100,7 @@ class TreeListMainWindow(CustomTreeCtrl):
 
         if self.HasAGWFlag(wx.TR_FULL_ROW_HIGHLIGHT):
 
-            itemrect = wx.Rect(0, item.GetY() + off_h, total_w-1, total_h - off_h)
+            itemrect = wx.Rect(0, int(item.GetY() + off_h), int(total_w-1), int(total_h - off_h))
 
             if item == self._dragItem:
                 # Draw highlight for drag item (same as selected item)
@@ -3120,7 +3120,7 @@ class TreeListMainWindow(CustomTreeCtrl):
                 if wnd:
                     wndx, wndy = item.GetWindowSize(self._main_column)
 
-                itemrect = wx.Rect(0, item.GetY() + off_h, total_w-1, total_h - off_h)
+                itemrect = wx.Rect(0, int(item.GetY() + off_h), int(total_w-1), int(total_h - off_h))
 
                 if self._usegradients:
                     if self._gradientstyle == 0:   # Horizontal
@@ -3146,7 +3146,7 @@ class TreeListMainWindow(CustomTreeCtrl):
             # except for custom item backgrounds, works for both kinds of theme.
             elif drawItemBackground:
                 # Fix from Issue #2081 (Roland171281) - Draw full row background
-                itemrect = wx.Rect(0, item.GetY() + off_h, total_w-1, total_h - off_h)
+                itemrect = wx.Rect(0, int(item.GetY() + off_h), int(total_w-1), int(total_h - off_h))
                 dc.SetBrush(wx.Brush(colBg, wx.SOLID))
                 dc.DrawRectangle(itemrect)
                 dc.SetTextForeground(colText)
@@ -3156,7 +3156,7 @@ class TreeListMainWindow(CustomTreeCtrl):
 
         elif drawItemBackground and self.HasAGWFlag(TR_FILL_WHOLE_COLUMN_BACKGROUND):
             # Draw full row background BEFORE column loop to avoid clipping issues
-            itemrect = wx.Rect(0, item.GetY() + off_h, total_w-1, total_h - off_h)
+            itemrect = wx.Rect(0, int(item.GetY() + off_h), int(total_w-1), int(total_h - off_h))
             dc.SetBrush(wx.Brush(colBg, wx.SOLID))
             dc.SetPen(wx.TRANSPARENT_PEN)
             dc.DrawRectangle(itemrect)
@@ -3173,7 +3173,7 @@ class TreeListMainWindow(CustomTreeCtrl):
                 continue
 
             col_w = self._owner.GetHeaderWindow().GetColumnWidth(i)
-            dc.SetClippingRegion(x_colstart, item.GetY(), col_w, total_h) # only within column
+            dc.SetClippingRegion(int(x_colstart), int(item.GetY()), int(col_w), int(total_h)) # only within column
 
             image = _NO_IMAGE
             multi_images = []
@@ -3234,7 +3234,7 @@ class TreeListMainWindow(CustomTreeCtrl):
                 if i == self.GetMainColumn():
                     if item == self._dragItem:
                         # Draw highlight for drag item (same as selected item)
-                        itemrect = wx.Rect(text_x-2, item.GetY() + off_h, text_w+2*_MARGIN, total_h - off_h)
+                        itemrect = wx.Rect(int(text_x-2), int(item.GetY() + off_h), int(text_w+2*_MARGIN), int(total_h - off_h))
                         if wx.Platform in ["__WXGTK2__", "__WXMAC__"]:
                             flags = wx.CONTROL_SELECTED | wx.CONTROL_FOCUSED
                             wx.RendererNative.Get().DrawItemSelectionRect(self._owner, dc, itemrect, flags)
@@ -3244,7 +3244,7 @@ class TreeListMainWindow(CustomTreeCtrl):
 
                     elif item.IsSelected():
 
-                        itemrect = wx.Rect(text_x-2, item.GetY() + off_h, text_w+2*_MARGIN, total_h - off_h)
+                        itemrect = wx.Rect(int(text_x-2), int(item.GetY() + off_h), int(text_w+2*_MARGIN), int(total_h - off_h))
 
                         if self._usegradients:
                             if self._gradientstyle == 0:   # Horizontal
@@ -3274,7 +3274,7 @@ class TreeListMainWindow(CustomTreeCtrl):
                         if not self.HasAGWFlag(TR_FILL_WHOLE_COLUMN_BACKGROUND):
                             # Only draw per-column background if not filling whole columns
                             # (full row background was already drawn before column loop)
-                            itemrect = wx.Rect(text_x-2, item.GetY() + off_h, text_w+2*_MARGIN, total_h - off_h)
+                            itemrect = wx.Rect(int(text_x-2), int(item.GetY() + off_h), int(text_w+2*_MARGIN), int(total_h - off_h))
                             dc.SetBrush(wx.Brush(colBg))
                             dc.SetPen(wx.TRANSPARENT_PEN)
                             dc.DrawRectangle(itemrect)
@@ -3287,7 +3287,7 @@ class TreeListMainWindow(CustomTreeCtrl):
                     if not self.HasAGWFlag(TR_FILL_WHOLE_COLUMN_BACKGROUND):
                         # Only draw per-column background if not filling whole columns
                         # (full row background was already drawn before column loop)
-                        itemrect = wx.Rect(text_x-2, item.GetY() + off_h, text_w+2*_MARGIN, total_h - off_h)
+                        itemrect = wx.Rect(int(text_x-2), int(item.GetY() + off_h), int(text_w+2*_MARGIN), int(total_h - off_h))
                         colBgX = item.GetBackgroundColour(i)
 
                         if _isValidColour(colBgX) and i != 0:
@@ -3304,7 +3304,7 @@ class TreeListMainWindow(CustomTreeCtrl):
                     if not self.HasAGWFlag(TR_FILL_WHOLE_COLUMN_BACKGROUND):
                         # Only draw per-column background if not filling whole columns
                         # (full row background was already drawn before column loop)
-                        itemrect = wx.Rect(text_x-2, item.GetY() + off_h, text_w+2*_MARGIN, total_h - off_h)
+                        itemrect = wx.Rect(int(text_x-2), int(item.GetY() + off_h), int(text_w+2*_MARGIN), int(total_h - off_h))
                         colBgX = item.GetBackgroundColour(i)
 
                         if _isValidColour(colBgX):
@@ -3363,7 +3363,7 @@ class TreeListMainWindow(CustomTreeCtrl):
             text_w, text_h, dummy = dc.GetFullMultiLineTextExtent(text)
             text_extraH = (total_h > text_h and [(total_h - text_h)//2] or [0])[0]
             text_y = item.GetY() + text_extraH
-            textrect = wx.Rect(text_x, text_y, text_w, text_h)
+            textrect = wx.Rect(int(text_x), int(text_y), int(text_w), int(text_h))
 
             if not item.IsEnabled():
                 foreground = dc.GetTextForeground()
@@ -3398,7 +3398,7 @@ class TreeListMainWindow(CustomTreeCtrl):
                     else:
                         # Place window at end of text plus 2*_MARGIN (default).
                         wndx = text_x + text_w + 2*_MARGIN
-                xa, ya = self.CalcScrolledPosition(0, item.GetY())
+                xa, ya = self.CalcScrolledPosition(0, int(item.GetY()))
                 wndx += xa
                 if item.GetHeight() > item.GetWindowSize(i)[1]:
                     ya += (item.GetHeight() - item.GetWindowSize(i)[1])//2
@@ -3482,7 +3482,7 @@ class TreeListMainWindow(CustomTreeCtrl):
                     colBg = attr.GetBackgroundColour()
                     if _isValidColour(colBg):
                         width = self._owner.GetEventHandler().GetColumn(self._main_column).GetWidth()
-                        itemrect = wx.Rect(x_maincol, y-h-1, width, h+1)
+                        itemrect = wx.Rect(int(x_maincol), int(y-h-1), int(width), int(h+1))
 
                         dc.SetBrush(wx.Brush(colBg, wx.SOLID))
                         dc.SetPen(wx.TRANSPARENT_PEN)
@@ -3559,7 +3559,7 @@ class TreeListMainWindow(CustomTreeCtrl):
 
                 else: # if (HasAGWFlag(wxTR_HAS_BUTTONS))
 
-                    rect = wx.Rect(x-self._btnWidth2, y_mid-self._btnHeight2, self._btnWidth, self._btnHeight)
+                    rect = wx.Rect(int(x-self._btnWidth2), int(y_mid-self._btnHeight2), int(self._btnWidth), int(self._btnHeight))
                     flag = (item.IsExpanded() and [wx.CONTROL_EXPANDED] or [0])[0]
                     wx.RendererNative.GetDefault().DrawTreeItemButton(self, dc, rect, flag)
 
@@ -3579,7 +3579,7 @@ class TreeListMainWindow(CustomTreeCtrl):
                 row_off = 1 if draw_row_lines else 0
                 hover_w = self._owner.GetHeaderWindow().GetWidth()
                 pw = self._hoverLineWidth
-                outer = wx.Rect(0, item.GetY() + row_off, hover_w - 1, h - row_off)
+                outer = wx.Rect(0, int(item.GetY() + row_off), int(hover_w - 1), int(h - row_off))
                 inner = wx.Rect(outer)
                 inner.Deflate(pw, pw)
                 fg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
@@ -4415,7 +4415,7 @@ class TreeListMainWindow(CustomTreeCtrl):
             wnd = item.GetWindow(column)
             if wnd:
                 # move this window, if necessary.
-                xa, ya = self.CalcScrolledPosition((0, y))
+                xa, ya = self.CalcScrolledPosition((0, int(y)))
                 wndWidth, wndHeight = item.GetWindowSize(column)
                 if height > wndHeight:
                     ya += (height - wndHeight) // 2
