@@ -504,6 +504,7 @@ defaults = {
         "blinktaskbariconwhentrackingeffort": "True",
         # Theme: 'automatic' (detect from system), 'light', or 'dark'
         "theme": "automatic",
+        "hoverlinewidth": "1",
     },
     "effortdialog": {
         "size": "(-1, -1)",  # Size of the dialogs, calculated by default

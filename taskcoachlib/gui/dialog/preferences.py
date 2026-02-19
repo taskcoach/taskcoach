@@ -835,7 +835,7 @@ class ThemePage(SettingsPage):
     pageIcon = "nuvola_apps_fsview"
 
     def __init__(self, *args, **kwargs):
-        super().__init__(columns=6, growableColumn=-1, *args, **kwargs)
+        super().__init__(columns=7, growableColumn=6, *args, **kwargs)
 
         # --- Mode Dropdown ---
         is_dark = detect_dark_theme()
@@ -886,12 +886,14 @@ class ThemePage(SettingsPage):
             _("System"),
             _("Dark"),
             "",
+            "",
             flags=[
                 wx.ALL | wx.ALIGN_LEFT,
                 wx.ALL | wx.ALIGN_CENTER,
                 wx.ALL | wx.ALIGN_CENTER,
                 wx.ALL | wx.ALIGN_CENTER,
                 wx.ALL | wx.ALIGN_CENTER,
+                wx.ALL,
                 wx.ALL,
             ],
         )
@@ -935,6 +937,7 @@ class ThemePage(SettingsPage):
                 "",
                 darkPicker,
                 resetBtn,
+                "",
                 flags=[
                     wx.ALL | wx.ALIGN_LEFT | wx.ALIGN_CENTRE_VERTICAL,
                     wx.ALL | wx.ALIGN_CENTER | wx.ALIGN_CENTRE_VERTICAL,
@@ -942,6 +945,7 @@ class ThemePage(SettingsPage):
                     wx.ALL | wx.ALIGN_CENTER | wx.ALIGN_CENTRE_VERTICAL,
                     wx.ALL | wx.ALIGN_CENTER | wx.ALIGN_CENTRE_VERTICAL,
                     wx.ALL | wx.ALIGN_CENTER | wx.ALIGN_CENTRE_VERTICAL,
+                    wx.ALL,
                 ],
             )
 
@@ -1027,6 +1031,7 @@ class ThemePage(SettingsPage):
             self._otherMonthDarkCheck,
             self._otherMonthDarkPanel,
             otherMonthResetBtn,
+            "",
             flags=[
                 wx.ALL | wx.ALIGN_LEFT | wx.ALIGN_CENTRE_VERTICAL,
                 wx.ALL | wx.ALIGN_CENTER | wx.ALIGN_CENTRE_VERTICAL,
@@ -1034,6 +1039,7 @@ class ThemePage(SettingsPage):
                 wx.ALL | wx.ALIGN_CENTER | wx.ALIGN_CENTRE_VERTICAL,
                 wx.ALL | wx.ALIGN_CENTER | wx.ALIGN_CENTRE_VERTICAL,
                 wx.ALL | wx.ALIGN_CENTER | wx.ALIGN_CENTRE_VERTICAL,
+                wx.ALL,
             ],
         )
 
@@ -1065,6 +1071,7 @@ class ThemePage(SettingsPage):
                 "",
                 darkPicker,
                 resetBtn,
+                "",
                 flags=[
                     wx.ALL | wx.ALIGN_LEFT | wx.ALIGN_CENTRE_VERTICAL,
                     wx.ALL | wx.ALIGN_CENTER | wx.ALIGN_CENTRE_VERTICAL,
@@ -1072,6 +1079,7 @@ class ThemePage(SettingsPage):
                     wx.ALL | wx.ALIGN_CENTER | wx.ALIGN_CENTRE_VERTICAL,
                     wx.ALL | wx.ALIGN_CENTER | wx.ALIGN_CENTRE_VERTICAL,
                     wx.ALL | wx.ALIGN_CENTER | wx.ALIGN_CENTRE_VERTICAL,
+                    wx.ALL,
                 ],
             )
 
@@ -1087,12 +1095,14 @@ class ThemePage(SettingsPage):
             "",
             _("Dark"),
             "",
+            "",
             flags=[
                 wx.ALL | wx.ALIGN_LEFT,
                 wx.ALL,
                 wx.ALL | wx.ALIGN_CENTER,
                 wx.ALL,
                 wx.ALL | wx.ALIGN_CENTER,
+                wx.ALL,
                 wx.ALL,
             ],
         )
@@ -1129,6 +1139,7 @@ class ThemePage(SettingsPage):
             "",
             darkSquigglePicker,
             squiggleResetBtn,
+            "",
             flags=[
                 wx.ALL | wx.ALIGN_LEFT | wx.ALIGN_CENTRE_VERTICAL,
                 wx.ALL | wx.ALIGN_CENTER | wx.ALIGN_CENTRE_VERTICAL,
@@ -1136,11 +1147,32 @@ class ThemePage(SettingsPage):
                 wx.ALL | wx.ALIGN_CENTER | wx.ALIGN_CENTRE_VERTICAL,
                 wx.ALL | wx.ALIGN_CENTER | wx.ALIGN_CENTRE_VERTICAL,
                 wx.ALL | wx.ALIGN_CENTER | wx.ALIGN_CENTRE_VERTICAL,
+                wx.ALL,
             ],
         )
 
         self._colorSettings.append(("spellcheck_light", "squiggle_color", lightSquigglePicker))
         self._colorSettings.append(("spellcheck_dark", "squiggle_color", darkSquigglePicker))
+
+        self.addLine()
+
+        # --- Section: Hoverover Highlight ---
+        hoverPanel = wx.Panel(self)
+        hoverSpin = widgets.SpinCtrl(
+            hoverPanel, min=0, max=5, size=(65, -1),
+            value=self.getint("window", "hoverlinewidth"))
+        hoverHint = wx.StaticText(hoverPanel,
+            label=_("Two-tone outline thickness per line in pixels when hovering over a row (0 to disable)"))
+        hoverHint.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(hoverSpin, 0, wx.ALIGN_TOP)
+        sizer.Add(hoverHint, 1, wx.ALIGN_TOP | wx.LEFT, 8)
+        hoverPanel.SetSizer(sizer)
+        self.addEntry(_("Hoverover Highlight"), hoverPanel)
+        self._integerSettings.append(("window", "hoverlinewidth", hoverSpin))
+
+
 
         # Detect system theme changes while preferences are open
         self.Bind(wx.EVT_IDLE, self._onIdle)

@@ -231,6 +231,8 @@ class TreeListCtrl(
             **kwargs
         )
         self.bindEventHandlers(selectCommand, editCommand, dragAndDropCommand)
+        self.GetMainWindow().Bind(wx.EVT_LEAVE_WINDOW, self._onHoverLeave)
+        self._syncHoverSettings()
 
     def bindEventHandlers(
         self, selectCommand, editCommand, dragAndDropCommand
@@ -256,6 +258,18 @@ class TreeListCtrl(
         wx.PostEvent(self, wx.ChildFocusEvent(self))
         event.Skip()
 
+    def _syncHoverSettings(self):
+        """Read hover settings from config and push to main window."""
+        mw = self.GetMainWindow()
+        mw._hoverLineWidth = self.__adapter.settings.getint("window", "hoverlinewidth")
+        # Store getter so OnMouse fast-path can re-read on row change
+        if not hasattr(mw, '_hoverSettingGetter'):
+            mw._hoverSettingGetter = lambda: self.__adapter.settings.getint("window", "hoverlinewidth")
+
+    def _onHoverLeave(self, event):
+        self.GetMainWindow().SetHoverItem(None)
+        event.Skip()
+
     def getItemTooltipData(self, item):
         return self.__adapter.getItemTooltipData(item)
 
@@ -277,6 +291,7 @@ class TreeListCtrl(
             return []
 
     def RefreshAllItems(self, count=0):  # pylint: disable=W0613
+        self._syncHoverSettings()
         self.Freeze()
         self.StopEditing()
         self.__refreshing = True  # Suppress selection events during rebuild

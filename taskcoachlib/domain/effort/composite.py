@@ -57,6 +57,11 @@ class BaseCompositeEffort(base.BaseEffort):  # pylint: disable=W0223
             return duration.round(seconds=rounding, alwaysUp=roundUp)
         return duration
 
+    def timeSpent(self, now=None):
+        """Return the total time spent for this composite (no rounding).
+        Required by BaseEffort.sendDurationChangedMessage()."""
+        return self.totalTimeSpent()
+
     def totalTimeSpent(
         self, recursive=False, rounding=0, roundUp=False, consolidate=False
     ):

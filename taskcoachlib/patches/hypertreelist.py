@@ -2262,6 +2262,10 @@ class TreeListMainWindow(CustomTreeCtrl):
         self._owner = parent
         self._main_column = 0
         self._dragItem = None
+        self._hoverItem = None
+        self._hoverLineWidth = 0
+        self._dragCacheColX0 = 0
+        self._dragCacheColX1 = 0
         self._editCtrl = None  # Track the current in-place edit control
 
         self._imgWidth = self._imgWidth2 = 0
@@ -2940,6 +2944,32 @@ class TreeListMainWindow(CustomTreeCtrl):
         if self._dragItem:
             self.RefreshLine(self._dragItem)
 
+    def SetHoverItem(self, item=None):
+        """Sets the hovered item for outline drawing. Refreshes previous and new."""
+        self._readHoverSetting()
+        prevItem = self._hoverItem
+        self._hoverItem = item
+        if prevItem:
+            self._refreshHoverLine(prevItem)
+        if self._hoverItem:
+            self._refreshHoverLine(self._hoverItem)
+
+    def _readHoverSetting(self):
+        """Re-read hover border width from config (called on each row change)."""
+        if hasattr(self, '_hoverSettingGetter'):
+            self._hoverLineWidth = self._hoverSettingGetter()
+
+    def _refreshHoverLine(self, item):
+        """Like RefreshLine but inflated by pen width so the full outline is erased."""
+        if self._dirty or self._freezeCount:
+            return
+        pad = self._hoverLineWidth + 1  # both lines inside row, small safety
+        x, y = self.CalcScrolledPosition(0, item.GetY())
+        w = self.GetClientSize().x
+        h = self.GetLineHeight(item)
+        rect = wx.Rect(x, y - pad, w, h + 2 * pad)
+        self.Refresh(True, rect)
+
     def SetDropHighlight(self, item=None, column=-1):
         """
         Sets the visual feedback for drag and drop operations.
@@ -3542,7 +3572,23 @@ class TreeListMainWindow(CustomTreeCtrl):
                 dc.DrawLine(0, y_top, total_width, y_top)
                 dc.DrawLine(0, y_top+h, total_width, y_top+h)
 
-
+            # Two-tone hover outline: fgcolor inner + bgcolor outer, each
+            # _hoverLineWidth thick.  Both drawn inside the row rect so
+            # adjacent rows don't overwrite.  W3C WCAG C40 technique.
+            if self._hoverLineWidth > 0 and item == self._hoverItem and item != self._dragItem:
+                row_off = 1 if draw_row_lines else 0
+                hover_w = self._owner.GetHeaderWindow().GetWidth()
+                pw = self._hoverLineWidth
+                outer = wx.Rect(0, item.GetY() + row_off, hover_w - 1, h - row_off)
+                inner = wx.Rect(outer)
+                inner.Deflate(pw, pw)
+                fg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+                bg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+                dc.SetBrush(wx.TRANSPARENT_BRUSH)
+                dc.SetPen(wx.Pen(bg, pw))
+                dc.DrawRectangle(outer)
+                dc.SetPen(wx.Pen(fg, pw))
+                dc.DrawRectangle(inner)
 
         # restore DC objects
         dc.SetBrush(wx.WHITE_BRUSH)
@@ -3873,6 +3919,25 @@ class TreeListMainWindow(CustomTreeCtrl):
             self._hasFocus = True
             self.SetFocusIgnoringChildren()
 
+        # ── Fast path for pure mouse motion ──────────────────────────
+        if event.Moving() and not self._isDragging:
+            ux, uy = self.CalcUnscrolledPosition(event.GetX(), event.GetY())
+            cur = self._hoverItem
+            if cur is not None:
+                iy = cur.GetY()
+                ih = self.GetLineHeight(cur)
+                if iy <= uy < iy + ih:
+                    return  # Same row — zero work
+            # Row changed — need HitTest
+            flags = 0
+            item, flags, column = self._anchor.HitTest(
+                wx.Point(ux, uy), self, flags, self._curColumn, 0)
+            new_hover = item if item else None
+            if new_hover != self._hoverItem:
+                self.SetHoverItem(new_hover)
+            return
+        # ── End fast path ────────────────────────────────────────────
+
         # determine event
         p = wx.Point(event.GetX(), event.GetY())
         flags = 0
@@ -3942,6 +4007,14 @@ class TreeListMainWindow(CustomTreeCtrl):
                     # Don't highlight target items if dragging full-screen.
                     return
 
+                # Row+column bounds cache: skip HitTest if still on same cell
+                if self._dropTarget is not None:
+                    dty = self._dropTarget.GetY()
+                    dth = self.GetLineHeight(self._dropTarget)
+                    if (dty <= pt.y < dty + dth and
+                            self._dragCacheColX0 <= pt.x < self._dragCacheColX1):
+                        return  # Same cell — dragImage already moved
+
                 # Check if mouse is outside client area - don't highlight items
                 w, h = self.GetSize()
                 mouseOutside = p.x < 0 or p.x > w or p.y < 0 or p.y > h
@@ -3967,6 +4040,17 @@ class TreeListMainWindow(CustomTreeCtrl):
                         self.RefreshLine(item)
                         self._countDrag = self._countDrag + 1
                     self._dropTarget = item
+
+                    # Cache column X bounds for same-cell short-circuit
+                    if column >= 0:
+                        header = self._owner.GetHeaderWindow()
+                        x0 = sum(header.GetColumnWidth(c) for c in range(column))
+                        x1 = x0 + header.GetColumnWidth(column)
+                        self._dragCacheColX0 = x0
+                        self._dragCacheColX1 = x1
+                    else:
+                        self._dragCacheColX0 = 0
+                        self._dragCacheColX1 = 0
 
                     self.Update()
 

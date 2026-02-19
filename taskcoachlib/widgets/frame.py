@@ -71,9 +71,8 @@ class AuiManagedFrameWithDynamicCenterPane(wx.Frame):
 
         self.manager = aui.AuiManager(self, agwStyle)
 
-        # Install optimization for sash resize to reduce flickering
-        # TEMPORARILY DISABLED for testing - uncomment to re-enable
-        # _install_sash_resize_optimization(self.manager)
+        # Throttle AUI sash resize updates to ~30fps to reduce flickering
+        _install_sash_resize_optimization(self.manager)
 
         self.manager.SetAutoNotebookStyle(
             aui.AUI_NB_TOP

@@ -274,6 +274,8 @@ class _ToolBarEditorInterior(wx.Panel):
             return _("Separator"), -1
         elif isinstance(uiCmd, int):
             return _("Spacer"), -1
+        elif uiCmd.icon_id is None:
+            return uiCmd.getHelpText(), -1
         else:
             return uiCmd.getHelpText(), image_list_cache.get_index(uiCmd.icon_id)
 

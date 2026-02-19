@@ -34,6 +34,7 @@ class ToolTipMixin(object):
 
         self.__tip = None
         self.__position = (0, 0)
+        self.__pending_xy = (0, 0)
         self.__text = None
         self.__frozen = True
 
@@ -105,12 +106,9 @@ class ToolTipMixin(object):
             self.__tip = None
 
         if self.__enabled:
-            newTip = self.OnBeforeShowToolTip(x, y)
-            if newTip is not None:
-                self.__tip = newTip
-                self.__tip.Bind(wx.EVT_MOTION, self.__OnTipMotion)
-                self.__position = (x + 20, y + 10)
-                self.__timer.Start(200, True)
+            self.__position = (x + 20, y + 10)
+            self.__pending_xy = (x, y)
+            self.__timer.Start(200, True)
 
         event.Skip()
 
@@ -139,7 +137,12 @@ class ToolTipMixin(object):
             self.__timer.Stop()
 
     def __OnTimer(self, event):  # pylint: disable=W0613
-        self.ShowTip(*self.GetMainWindow().ClientToScreen(*self.__position))
+        x, y = self.__pending_xy
+        newTip = self.OnBeforeShowToolTip(x, y)
+        if newTip is not None:
+            self.__tip = newTip
+            self.__tip.Bind(wx.EVT_MOTION, self.__OnTipMotion)
+            self.ShowTip(*self.GetMainWindow().ClientToScreen(*self.__position))
 
 
 if operating_system.isWindows():
