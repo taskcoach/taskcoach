@@ -43,7 +43,7 @@ class CategoryFilterHelpersMixin(object):
         self.assertEqual(
             set(
                 [self.childTask, self.parentTask]
-                if self.treeMode
+                if self.tree_mode
                 else [self.childTask]
             ),
             set(self.filter),
@@ -57,7 +57,7 @@ class CategoryFilterHelpersMixin(object):
 
 
 class Fixture(CategoryFilterHelpersMixin):
-    treeMode = False
+    tree_mode = False
 
     def setUp(self):
         self.settings = task.Task.settings = config.Settings(load=False)
@@ -65,7 +65,7 @@ class Fixture(CategoryFilterHelpersMixin):
         self.tasks = task.TaskList(self.createTasks())
         self.categorize()
         self.filter = category.filter.CategoryFilter(
-            self.tasks, categories=self.categories, treeMode=self.treeMode
+            self.tasks, categories=self.categories, tree_mode=self.tree_mode
         )
 
     def createTasks(self):
@@ -80,19 +80,19 @@ class Fixture(CategoryFilterHelpersMixin):
     # Common tests that should pass for all fixtures
 
     def testThatFilterContainsAllItemsWhenNotFiltering(self):
-        self.assertEqual(self.filter.originalLength(), len(self.filter))
+        self.assertEqual(self.filter.original_length(), len(self.filter))
 
     def testThatFilterOriginalLengthAlwaysEqualsNumberOfTasksWhenNotFiltering(
         self,
     ):
-        self.assertEqual(self.filter.originalLength(), len(self.tasks))
+        self.assertEqual(self.filter.original_length(), len(self.tasks))
 
     def testThatFilterContainsNoItemsWhenRemovingOriginalItems(self):
         self.tasks.clear()
-        self.assertEqual(0, self.filter.originalLength())
+        self.assertEqual(0, self.filter.original_length())
 
     def testThatFilterLengthIsSmallerOrEqualThanOriginalLength(self):
-        self.assertTrue(len(self.filter) <= self.filter.originalLength())
+        self.assertTrue(len(self.filter) <= self.filter.original_length())
 
     def testThatFilterIsEmptyWhenFilteringOnACategoryWithoutCategorizables(
         self,
@@ -180,11 +180,11 @@ class OneCategoryFixture(Fixture):
 
 
 class OneCategoryFilterInListModeTest(OneCategoryFixture, test.TestCase):
-    treeMode = False
+    tree_mode = False
 
 
 class OneCategoryFilterInTreeModeTest(OneCategoryFixture, test.TestCase):
-    treeMode = True
+    tree_mode = True
 
 
 class OneCategoryAndOneTaskFixture(Fixture):
@@ -216,13 +216,13 @@ class OneCategoryAndOneTaskFixture(Fixture):
 class OneCategoryAndOneTaskInListModeTest(
     OneCategoryAndOneTaskFixture, test.TestCase
 ):
-    treeMode = False
+    tree_mode = False
 
 
 class OneCategoryAndOneTaskInTreeModeTest(
     OneCategoryAndOneTaskFixture, test.TestCase
 ):
-    treeMode = True
+    tree_mode = True
 
 
 class OneCategoryAndTwoTasksFixture(Fixture):
@@ -259,13 +259,13 @@ class OneCategoryAndTwoTasksFixture(Fixture):
 class OneCategoryAndTwoTasksInListModeTest(
     OneCategoryAndTwoTasksFixture, test.TestCase
 ):
-    treeMode = False
+    tree_mode = False
 
 
 class OneCategoryAndTwoTasksInTreeModeTest(
     OneCategoryAndTwoTasksFixture, test.TestCase
 ):
-    treeMode = True
+    tree_mode = True
 
 
 class TwoCategoriesAndOneTaskFixture(Fixture):
@@ -301,13 +301,13 @@ class TwoCategoriesAndOneTaskFixture(Fixture):
 class TwoCategoriesAndOneTaskInListModeTest(
     TwoCategoriesAndOneTaskFixture, test.TestCase
 ):
-    treeMode = False
+    tree_mode = False
 
 
 class TwoCategoriesAndOneTaskInTreeModeTest(
     TwoCategoriesAndOneTaskFixture, test.TestCase
 ):
-    treeMode = True
+    tree_mode = True
 
 
 class TwoCategoriesAndTwoTasksFixture(Fixture):
@@ -404,13 +404,13 @@ class TwoCategoriesAndTwoTasksFixture(Fixture):
 class TwoCategoriesAndTwoTasksInListModeTest(
     TwoCategoriesAndTwoTasksFixture, test.TestCase
 ):
-    treeMode = False
+    tree_mode = False
 
 
 class TwoCategoriesAndTwoTasksInTreeModeTest(
     TwoCategoriesAndTwoTasksFixture, test.TestCase
 ):
-    treeMode = True
+    tree_mode = True
 
 
 class OneCategoryAndParentAndChildTaskFixture(Fixture):
@@ -435,19 +435,19 @@ class OneCategoryAndParentAndChildTaskFixture(Fixture):
     ):
         self.link(self.category, self.childTask)
         self.category.setFiltered()
-        self.assertEqual(2 if self.treeMode else 1, len(self.filter))
+        self.assertEqual(2 if self.tree_mode else 1, len(self.filter))
 
 
 class OneCategoryAndParentAndChildTaskInListModeTest(
     OneCategoryAndParentAndChildTaskFixture, test.TestCase
 ):
-    treeMode = False
+    tree_mode = False
 
 
 class OneCategoryAndParentAndChildTaskInTreeModeTest(
     OneCategoryAndParentAndChildTaskFixture, test.TestCase
 ):
-    treeMode = True
+    tree_mode = True
 
 
 class TwoCategoriesAndParentAndChildTaskFixture(Fixture):
@@ -487,13 +487,13 @@ class TwoCategoriesAndParentAndChildTaskFixture(Fixture):
 class TwoCategoriesAndParentAndChildTaskInListModeTest(
     TwoCategoriesAndParentAndChildTaskFixture, test.TestCase
 ):
-    treeMode = False
+    tree_mode = False
 
 
 class TwoCategoriesAndParentAndChildTaskInTreeModeTest(
     TwoCategoriesAndParentAndChildTaskFixture, test.TestCase
 ):
-    treeMode = True
+    tree_mode = True
 
 
 class ParentAndChildCategoryAndParentAndChildTaskFixture(Fixture):
@@ -589,13 +589,13 @@ class ParentAndChildCategoryAndParentAndChildTaskFixture(Fixture):
 class ParentAndChildCategoryAndParentAndChildTaskInListModeTest(
     ParentAndChildCategoryAndParentAndChildTaskFixture, test.TestCase
 ):
-    treeMode = False
+    tree_mode = False
 
 
 class ParentAndChildCategoryAndParentAndChildTaskInTreeModeTest(
     ParentAndChildCategoryAndParentAndChildTaskFixture, test.TestCase
 ):
-    treeMode = True
+    tree_mode = True
 
 
 class ParentAndChildCategoryAndParentAndGrandChildTaskFixture(Fixture):
@@ -654,7 +654,7 @@ class ParentAndChildCategoryAndParentAndGrandChildTaskFixture(Fixture):
         self.link(self.childCategory, self.grandChildTask)
         self.parentCategory.setFiltered()
         self.assertEqual(
-            set(self.tasks) if self.treeMode else set([self.grandChildTask]),
+            set(self.tasks) if self.tree_mode else set([self.grandChildTask]),
             set(self.filter),
         )
 
@@ -662,13 +662,13 @@ class ParentAndChildCategoryAndParentAndGrandChildTaskFixture(Fixture):
 class ParentAndChildCategoryAndParentAndGrandChildTaskInListModeTest(
     ParentAndChildCategoryAndParentAndGrandChildTaskFixture, test.TestCase
 ):
-    treeMode = False
+    tree_mode = False
 
 
 class ParentAndChildCategoryAndParentAndGrandChildTaskInTreeModeTest(
     ParentAndChildCategoryAndParentAndGrandChildTaskFixture, test.TestCase
 ):
-    treeMode = True
+    tree_mode = True
 
 
 class TwoCategoriesAndParentAndGrandChildTaskFixture(Fixture):
@@ -696,7 +696,7 @@ class TwoCategoriesAndParentAndGrandChildTaskFixture(Fixture):
         self.category1.setFiltered()
         self.category2.setFiltered()
         self.assertEqual(
-            set(self.tasks) if self.treeMode else set([self.grandChildTask]),
+            set(self.tasks) if self.tree_mode else set([self.grandChildTask]),
             set(self.filter),
         )
 
@@ -710,13 +710,13 @@ class TwoCategoriesAndParentAndGrandChildTaskFixture(Fixture):
 class TwoCategoriesAndParentAndGrandChildTaskInListModeTest(
     TwoCategoriesAndParentAndGrandChildTaskFixture, test.TestCase
 ):
-    treeMode = False
+    tree_mode = False
 
 
 class TwoCategoriesAndParentAndGrandChildTaskInTreeModeTest(
     TwoCategoriesAndParentAndGrandChildTaskFixture, test.TestCase
 ):
-    treeMode = True
+    tree_mode = True
 
 
 class TwoCategoriesAndParentWithTwoChildTasksFixture(Fixture):
@@ -753,7 +753,7 @@ class TwoCategoriesAndParentWithTwoChildTasksFixture(Fixture):
         self.setFilterOnAnyCategory()
         self.category1.setFiltered()
         self.category2.setFiltered()
-        self.assertEqual(3 if self.treeMode else 2, len(self.filter))
+        self.assertEqual(3 if self.tree_mode else 2, len(self.filter))
 
     def testThatFilterHidesUnfilteredChild(self):
         self.category1.setFiltered()
@@ -763,13 +763,13 @@ class TwoCategoriesAndParentWithTwoChildTasksFixture(Fixture):
 class TwoCategoriesAndParentWithTwoChildTasksInListModeTest(
     TwoCategoriesAndParentWithTwoChildTasksFixture, test.TestCase
 ):
-    treeMode = False
+    tree_mode = False
 
 
 class TwoCategoriesAndParentWithTwoChildTasksInTreeModeTest(
     TwoCategoriesAndParentWithTwoChildTasksFixture, test.TestCase
 ):
-    treeMode = True
+    tree_mode = True
 
 
 class ParentAndChildCategoryAndOneTaskFixture(Fixture):
@@ -822,13 +822,13 @@ class ParentAndChildCategoryAndOneTaskFixture(Fixture):
 class ParentAndChildCategoryAndTaskInListModeTest(
     ParentAndChildCategoryAndOneTaskFixture, test.TestCase
 ):
-    treeMode = False
+    tree_mode = False
 
 
 class ParentAndChildCategoryAndTaskInTreeModeTest(
     ParentAndChildCategoryAndOneTaskFixture, test.TestCase
 ):
-    treeMode = True
+    tree_mode = True
 
 
 class CategoryFilterAndViewFilterFixtureAndCommonTestsMixin(
@@ -846,20 +846,20 @@ class CategoryFilterAndViewFilterFixtureAndCommonTestsMixin(
         self.tasks = task.TaskList([self.parent, self.child])
         self.categories = category.CategoryList([self.childCategory])
         self.viewFilter = task.filter.ViewFilter(
-            self.tasks, treeMode=self.treeMode
+            self.tasks, tree_mode=self.tree_mode
         )
         self.categoryFilter = category.filter.CategoryFilter(
-            self.viewFilter, categories=self.categories, treeMode=self.treeMode
+            self.viewFilter, categories=self.categories, tree_mode=self.tree_mode
         )
 
     def testThatParentIsHiddenWhenHiddenCompletedChildIsFiltered(self):
-        self.viewFilter.hideTaskStatus(task.status.completed)
+        self.viewFilter.hide_task_status(task.status.completed)
         self.assertEqual(1, len(self.viewFilter))
         self.childCategory.setFiltered(True)
         self.assertEqual(0, len(self.categoryFilter))
 
     def testThatParentIsShownWhenHiddenCompletedChildIsUnfiltered(self):
-        self.viewFilter.hideTaskStatus(task.status.completed)
+        self.viewFilter.hide_task_status(task.status.completed)
         self.childCategory.setFiltered(True)
         self.assertEqual(0, len(self.categoryFilter))
         self.childCategory.setFiltered(False)
@@ -868,27 +868,27 @@ class CategoryFilterAndViewFilterFixtureAndCommonTestsMixin(
     def testThatParentIsHiddenWhenFilteredCompletedChildIsHidden(self):
         self.childCategory.setFiltered(True)
         self.assertEqual(2, len(self.viewFilter))
-        self.viewFilter.hideTaskStatus(task.status.completed)
+        self.viewFilter.hide_task_status(task.status.completed)
         self.assertEqual(0, len(self.categoryFilter))
 
     def testThatParentIsShownWhenFilteredCompletedChildIsUnhidden(self):
         self.childCategory.setFiltered(True)
-        self.viewFilter.hideTaskStatus(task.status.completed)
+        self.viewFilter.hide_task_status(task.status.completed)
         self.assertEqual(0, len(self.categoryFilter))
-        self.viewFilter.hideTaskStatus(task.status.completed, False)
-        self.assertEqual(2 if self.treeMode else 1, len(self.categoryFilter))
+        self.viewFilter.hide_task_status(task.status.completed, False)
+        self.assertEqual(2 if self.tree_mode else 1, len(self.categoryFilter))
 
 
 class CategoryFilterAndViewFilterInListModeTest(
     CategoryFilterAndViewFilterFixtureAndCommonTestsMixin, test.TestCase
 ):
-    treeMode = False
+    tree_mode = False
 
 
 class CategoryFilterAndViewFilterInTreeModeTest(
     CategoryFilterAndViewFilterFixtureAndCommonTestsMixin, test.TestCase
 ):
-    treeMode = True
+    tree_mode = True
 
 
 class ViewFilterWrappingCategoryFilterFixture(CategoryFilterHelpersMixin):
@@ -908,7 +908,7 @@ class ViewFilterWrappingCategoryFilterFixture(CategoryFilterHelpersMixin):
 
     With the fix, ViewFilter's recursive cleanup removes orphan ancestors.
     """
-    treeMode = True
+    tree_mode = True
 
     def setUp(self):
         task.Task.settings = config.Settings(load=False)
@@ -925,10 +925,10 @@ class ViewFilterWrappingCategoryFilterFixture(CategoryFilterHelpersMixin):
         self.categories = category.CategoryList([self.childCategory])
         # Filter order: TaskList -> CategoryFilter -> ViewFilter (like the app)
         self.categoryFilter = category.filter.CategoryFilter(
-            self.tasks, categories=self.categories, treeMode=self.treeMode
+            self.tasks, categories=self.categories, tree_mode=self.tree_mode
         )
         self.viewFilter = task.filter.ViewFilter(
-            self.categoryFilter, treeMode=self.treeMode
+            self.categoryFilter, tree_mode=self.tree_mode
         )
 
     def testParentHiddenWhenCategoryFilteredAndChildCompleted(self):
@@ -941,24 +941,24 @@ class ViewFilterWrappingCategoryFilterFixture(CategoryFilterHelpersMixin):
         # viewFilter should also show both
         self.assertEqual(2, len(self.viewFilter))
         # Now hide completed tasks
-        self.viewFilter.hideTaskStatus(task.status.completed)
+        self.viewFilter.hide_task_status(task.status.completed)
         # viewFilter should now be empty - parent has no visible categorized children
         self.assertEqual(0, len(self.viewFilter))
 
     def testParentShownWhenChildUnhidden(self):
         """When we unhide completed tasks, parent should reappear."""
         self.childCategory.setFiltered(True)
-        self.viewFilter.hideTaskStatus(task.status.completed)
+        self.viewFilter.hide_task_status(task.status.completed)
         self.assertEqual(0, len(self.viewFilter))
         # Unhide completed tasks
-        self.viewFilter.hideTaskStatus(task.status.completed, False)
+        self.viewFilter.hide_task_status(task.status.completed, False)
         # Both should be visible again
         self.assertEqual(2, len(self.viewFilter))
 
     def testParentShownWhenCategoryUnfiltered(self):
         """When we remove category filter, parent should reappear."""
         self.childCategory.setFiltered(True)
-        self.viewFilter.hideTaskStatus(task.status.completed)
+        self.viewFilter.hide_task_status(task.status.completed)
         self.assertEqual(0, len(self.viewFilter))
         # Remove category filter
         self.childCategory.setFiltered(False)
@@ -973,13 +973,13 @@ class ViewFilterWrappingCategoryFilterFixture(CategoryFilterHelpersMixin):
 class ViewFilterWrappingCategoryFilterInTreeModeTest(
     ViewFilterWrappingCategoryFilterFixture, test.TestCase
 ):
-    treeMode = True
+    tree_mode = True
 
 
 class ViewFilterWrappingCategoryFilterInListModeTest(
     ViewFilterWrappingCategoryFilterFixture, test.TestCase
 ):
-    treeMode = False
+    tree_mode = False
 
     def testParentHiddenWhenCategoryFilteredAndChildCompleted(self):
         """In list mode, parent is not shown as ancestor, so behavior differs."""
@@ -988,15 +988,15 @@ class ViewFilterWrappingCategoryFilterInListModeTest(
         self.assertEqual(1, len(self.categoryFilter))
         self.assertEqual(1, len(self.viewFilter))
         # Hide completed tasks
-        self.viewFilter.hideTaskStatus(task.status.completed)
+        self.viewFilter.hide_task_status(task.status.completed)
         # Should be empty
         self.assertEqual(0, len(self.viewFilter))
 
     def testParentShownWhenChildUnhidden(self):
         """In list mode, only child is shown when unhidden."""
         self.childCategory.setFiltered(True)
-        self.viewFilter.hideTaskStatus(task.status.completed)
+        self.viewFilter.hide_task_status(task.status.completed)
         self.assertEqual(0, len(self.viewFilter))
-        self.viewFilter.hideTaskStatus(task.status.completed, False)
+        self.viewFilter.hide_task_status(task.status.completed, False)
         # Only child visible in list mode
         self.assertEqual(1, len(self.viewFilter))

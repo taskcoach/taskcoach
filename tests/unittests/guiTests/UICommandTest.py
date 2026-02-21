@@ -167,17 +167,36 @@ class DummyTask(object):
 
 class DummyViewer(object):
     def __init__(
-        self, selection=None, showingEffort=False, domainObjectsToView=None
+        self, selection=None, showingEffort=False, domainObjectsToView=None,
+        coreObjectType="tasks"
     ):
         self.selection = selection or []
         self.showingEffort = showingEffort
         self.domainObjects = domainObjectsToView
+        self.coreObjectType = coreObjectType
+
+    @property
+    def is_task(self):
+        return self.coreObjectType == "tasks"
+
+    @property
+    def is_note(self):
+        return self.coreObjectType == "notes"
+
+    @property
+    def is_category(self):
+        return self.coreObjectType == "categories"
+
+    @property
+    def is_effort(self):
+        return self.coreObjectType == "efforts"
+
+    @property
+    def is_attachment(self):
+        return self.coreObjectType == "attachments"
 
     def curselection(self):
         return self.selection
-
-    def curselectionIsInstanceOf(self, class_):
-        return self.selection and isinstance(self.selection[0], class_)
 
     def isShowingCategories(self):
         return self.selection and isinstance(

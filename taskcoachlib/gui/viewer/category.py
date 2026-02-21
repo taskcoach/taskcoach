@@ -64,9 +64,6 @@ class BaseCategoryViewer(
     def domainObjectsToView(self):
         return self.taskFile.categories()
 
-    def curselectionIsInstanceOf(self, class_):
-        return class_ == category.Category
-
     def getSupportedPasteTypes(self):
         return (category.Category,)
 

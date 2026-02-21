@@ -53,8 +53,6 @@ class VirtualListCtrl(
         self.SetMinSize((100, 50))
         self.__parent = parent
         self._hover_row = -1
-        self._hoverLineWidth = 0
-        self._syncHoverSettings()
         self.bindEventHandlers(selectCommand, editCommand)
 
     def bindEventHandlers(self, selectCommand, editCommand):
@@ -68,9 +66,9 @@ class VirtualListCtrl(
             self.editCommand = editCommand
             self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.onItemActivated)
         self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
-        self.Bind(wx.EVT_MOTION, self._onHoverMotion)
-        self.Bind(wx.EVT_LEAVE_WINDOW, self._onHoverLeave)
-        self.Bind(wx.EVT_PAINT, self._onPaintHover)
+        self.Bind(wx.EVT_MOTION, self._on_hover_motion)
+        self.Bind(wx.EVT_LEAVE_WINDOW, self._on_hover_leave)
+        self.Bind(wx.EVT_PAINT, self._on_paint_hover)
 
     def onSetFocus(self, event):  # pylint: disable=W0613
         # Send a child focus event to let the AuiManager know we received focus
@@ -78,50 +76,48 @@ class VirtualListCtrl(
         wx.PostEvent(self, wx.ChildFocusEvent(self))
         event.Skip()
 
-    def _syncHoverSettings(self):
-        """Read hover settings from config into local cache."""
-        self._hoverLineWidth = self.__parent.settings.getint("window", "hoverlinewidth")
-
-    def _refreshHoverRow(self, row):
+    def _refresh_hover_row(self, row):
         """Refresh a row with padding to cover pen bleed from hover outline."""
         try:
             rect = self.GetItemRect(row)
         except Exception:
             return
-        pad = self._hoverLineWidth + 1  # both lines inside row, small safety
+        from taskcoachlib.config import settings2
+        pad = settings2.window.hoverlinewidth + 1  # both lines inside row, small safety
         rect.Inflate(pad, pad)
         self.RefreshRect(rect)
 
-    def _onHoverMotion(self, event):
+    def _on_hover_motion(self, event):
         row, flags = super().HitTest(event.GetPosition())
         if row != self._hover_row:
-            self._syncHoverSettings()
+            from taskcoachlib.config import settings2
             old = self._hover_row
             self._hover_row = row
-            if self._hoverLineWidth:
+            if settings2.window.hoverlinewidth:
                 if old >= 0:
-                    self._refreshHoverRow(old)
+                    self._refresh_hover_row(old)
                 if row >= 0:
-                    self._refreshHoverRow(row)
-                wx.CallAfter(self._drawHoverOutline)
+                    self._refresh_hover_row(row)
+                wx.CallAfter(self._draw_hover_outline)
         event.Skip()
 
-    def _onHoverLeave(self, event):
+    def _on_hover_leave(self, event):
         if self._hover_row >= 0:
             old = self._hover_row
             self._hover_row = -1
-            self._refreshHoverRow(old)
+            self._refresh_hover_row(old)
         event.Skip()
 
-    def _drawHoverOutline(self):
+    def _draw_hover_outline(self):
         """Two-tone hover outline: fgcolor inner + bgcolor outer."""
-        if self._hover_row < 0 or not self._hoverLineWidth:
+        from taskcoachlib.config import settings2
+        pw = settings2.window.hoverlinewidth
+        if self._hover_row < 0 or not pw:
             return
         try:
             outer = self.GetItemRect(self._hover_row)
         except Exception:
             return
-        pw = self._hoverLineWidth
         inner = wx.Rect(outer)
         inner.Deflate(pw, pw)
         fg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
@@ -133,9 +129,9 @@ class VirtualListCtrl(
         dc.SetPen(wx.Pen(fg, pw))
         dc.DrawRectangle(inner)
 
-    def _onPaintHover(self, event):
+    def _on_paint_hover(self, event):
         event.Skip()
-        wx.CallAfter(self._drawHoverOutline)
+        wx.CallAfter(self._draw_hover_outline)
 
     def GetMainWindow(self):
         # Override to return self for drop target support.
@@ -244,7 +240,6 @@ class VirtualListCtrl(
         self.editCommand(event)
 
     def RefreshAllItems(self, count):
-        self._syncHoverSettings()
         self.SetItemCount(count)
         if count == 0:
             self.DeleteAllItems()
@@ -275,6 +270,14 @@ class VirtualListCtrl(
                     column = column_index
                     break
         return index, flags, column
+
+    @property
+    def has_selection(self):
+        return self.GetSelectedItemCount() > 0
+
+    @property
+    def has_single_selection(self):
+        return self.GetSelectedItemCount() == 1
 
     def curselection(self):
         # Guard against deleted C++ object - can happen when wx.CallAfter

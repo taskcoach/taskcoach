@@ -23,7 +23,7 @@ from taskcoachlib.domain import task, effort, date
 
 
 class CSVWriterTestCase(test.wxTestCase):
-    treeMode = "Subclass responsibility"
+    tree_mode = "Subclass responsibility"
 
     def setUp(self):
         super().setUp()
@@ -41,7 +41,7 @@ class CSVWriterTestCase(test.wxTestCase):
         self.taskFile.stop()
 
     def createViewer(self):
-        self.settings.set("taskviewer", "treemode", self.treeMode)
+        self.settings.set("taskviewer", "treemode", self.tree_mode)
         # pylint: disable=W0201
         self.viewer = gui.viewer.TaskViewer(
             self.frame, self.taskFile, self.settings
@@ -344,7 +344,7 @@ class TaskTestsMixin(object):
 
 
 class CSVListWriterTest(TaskTestsMixin, CSVWriterTestCase):
-    treeMode = "False"
+    tree_mode = "False"
 
     def testTaskDescription(self):
         self.task.setDescription("Task description")
@@ -358,7 +358,7 @@ class CSVListWriterTest(TaskTestsMixin, CSVWriterTestCase):
 
 
 class CSVTreeWriterTest(TaskTestsMixin, CSVWriterTestCase):
-    treeMode = "True"
+    tree_mode = "True"
 
 
 class EffortWriterTest(CSVWriterTestCase):

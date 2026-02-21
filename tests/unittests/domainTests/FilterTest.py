@@ -22,7 +22,7 @@ from taskcoachlib.domain import task, base
 
 
 class TestFilter(base.Filter):
-    def filterItems(self, items):
+    def filter_items(self, items):
         return [item for item in items if item > "b"]
 
 
@@ -58,7 +58,7 @@ class FilterSetTest(FilterTestsMixin, test.TestCase):
 
 
 class DummyFilter(base.Filter):
-    def filterItems(self, items):
+    def filter_items(self, items):
         return items
 
     def test(self):
@@ -83,12 +83,12 @@ class StackedFilterTest(test.TestCase):
         self.assertEqual(1, self.filter1.testcalled)
 
     def testSetTreeMode_True(self):
-        self.filter2.setTreeMode(True)
-        self.assertTrue(self.filter1.treeMode())
+        self.filter2.set_tree_mode(True)
+        self.assertTrue(self.filter1.tree_mode())
 
     def testSetTreeMode_False(self):
-        self.filter2.setTreeMode(False)
-        self.assertFalse(self.filter1.treeMode())
+        self.filter2.set_tree_mode(False)
+        self.assertFalse(self.filter1.tree_mode())
 
     def testFiltersAreCollected(self):
         filterRef = weakref.ref(self.filter1)
@@ -158,7 +158,7 @@ class SearchFilterTest(test.TestCase):
         self.assertEqual(1, len(self.filter))
 
     def testMatchChildAlsoSelectsParentWhenInTreeMode(self):
-        self.filter.setTreeMode(True)
+        self.filter.set_tree_mode(True)
         self.setSearchString("DEF")
         self.assertEqual(2, len(self.filter))
 
@@ -214,7 +214,7 @@ class SearchFilterTest(test.TestCase):
         self.assertEqual(1, len(self.filter))
 
     def testSearchDescription_MatchChildAlsoSelectsParentWhenInTreeMode(self):
-        self.filter.setTreeMode(True)
+        self.filter.set_tree_mode(True)
         self.setSearchString("child description", searchDescription=True)
         self.assertEqual(2, len(self.filter))
 

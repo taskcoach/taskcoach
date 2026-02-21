@@ -210,6 +210,12 @@ class Category(
         for categorizable in self.categorizables():
             categorizable.appearanceChangedEvent(event)
 
+    def _onEffectiveIconChanged(self, event):
+        """Propagate effective icon changes to categorizables (tasks/notes)."""
+        super()._onEffectiveIconChanged(event)
+        for categorizable in self.categorizables():
+            event.addSource(categorizable, type=categorizable.effectiveIconChangedEventType())
+
     def hasExclusiveSubcategories(self):
         return self.__exclusiveSubcategories
 

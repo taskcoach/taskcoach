@@ -7,6 +7,118 @@
       "hints": ["combine", "merge", "join", "arrows", "krusader", "files", "concatenate"],
       "context": "actions",
       "sizes": [16]
+    },
+    "papirus_apps_org.tabos.banking": {
+      "label": "Banking",
+      "file": "org.tabos.banking.png",
+      "hints": ["card", "credit", "blue", "chip", "payment", "banking", "circles", "plastic", "stripe", "rectangular"],
+      "context": "apps",
+      "sizes": [16]
+    },
+    "papirus_apps_bitcoin": {
+      "label": "Bitcoin",
+      "file": "bitcoin.png",
+      "hints": ["bitcoin", "orange", "circle", "cryptocurrency", "coin", "currency", "btc", "money", "blockchain", "finance"],
+      "context": "apps",
+      "sizes": [16]
+    },
+    "papirus_apps_gargoyle-house": {
+      "label": "Gargoyle House",
+      "file": "gargoyle-house.png",
+      "hints": ["house", "home", "building", "roof", "door", "window", "gray", "brown", "dwelling", "simple"],
+      "context": "apps",
+      "sizes": [16]
+    },
+    "papirus_apps_homebank": {
+      "label": "Homebank",
+      "file": "homebank.png",
+      "hints": ["house", "home", "orange", "gray", "circle", "silhouette", "bank", "finance", "round", "ring"],
+      "context": "apps",
+      "sizes": [16]
+    },
+    "papirus_apps_safeeyes": {
+      "label": "Safe Eyes",
+      "file": "safeeyes.png",
+      "hints": ["clock", "timer", "gray", "circle", "dark", "hands", "blue", "green", "dots", "round"],
+      "context": "apps",
+      "sizes": [16]
+    },
+    "papirus_apps_accessories-safe": {
+      "label": "Accessories Safe",
+      "file": "accessories-safe.png",
+      "hints": ["safe", "vault", "security", "gray", "lock", "dial", "password", "metal", "square", "hinges"],
+      "context": "apps",
+      "sizes": [16]
+    },
+    "papirus_apps_money-manager-ex": {
+      "label": "Money Manager Ex",
+      "file": "money-manager-ex.png",
+      "hints": ["dollar", "green", "money", "currency", "symbol", "sign", "finance", "cash", "bold", "large"],
+      "context": "apps",
+      "sizes": [16]
+    },
+    "papirus_apps_moneydance": {
+      "label": "Moneydance",
+      "file": "moneydance.png",
+      "hints": ["coins", "stack", "orange", "circle", "money", "gold", "white", "round", "finance", "currency"],
+      "context": "apps",
+      "sizes": [16]
+    },
+    "papirus_apps_kmymoney": {
+      "label": "Kmymoney",
+      "file": "kmymoney.png",
+      "hints": ["kmymoney", "finance", "money", "coin", "budget", "accounting", "kde", "gold", "orange", "round"],
+      "context": "apps",
+      "sizes": [16]
+    },
+    "papirus_apps_cryptomator": {
+      "label": "Cryptomator",
+      "file": "cryptomator.png",
+      "hints": ["cryptomator", "encrypt", "cloud", "vault", "lock", "security", "privacy", "robot", "shield", "green"],
+      "context": "apps",
+      "sizes": [16]
+    },
+    "papirus_apps_uno-calculator": {
+      "label": "Uno Calculator",
+      "file": "uno-calculator.png",
+      "hints": ["white", "rounded", "square", "blue", "plus", "minus", "multiply", "calculator", "equals", "math"],
+      "context": "apps",
+      "sizes": [16]
+    },
+    "papirus_apps_cointop": {
+      "label": "Cointop",
+      "file": "cointop.png",
+      "hints": ["cointop", "cryptocurrency", "bitcoin", "terminal", "price", "tracker", "crypto", "dark", "green", "blue"],
+      "context": "apps",
+      "sizes": [16]
+    },
+    "papirus_apps_gnome-calculator": {
+      "label": "Gnome Calculator",
+      "file": "gnome-calculator.png",
+      "hints": ["calculator", "buttons", "white", "gray", "orange", "grid", "math", "compute", "round", "arithmetic"],
+      "context": "apps",
+      "sizes": [16]
+    },
+    "papirus_apps_accessories-calculator": {
+      "label": "Accessories Calculator",
+      "file": "accessories-calculator.png",
+      "hints": ["calculator", "math", "arithmetic", "compute", "addition", "equals", "accessories", "gray", "green", "buttons"],
+      "context": "apps",
+      "sizes": [16]
+    },
+    "papirus_apps_kwalletmanager": {
+      "label": "Kwalletmanager",
+      "file": "kwalletmanager.png",
+      "hints": ["card", "ID", "wallet", "blue", "stripe", "person", "white", "credentials", "identity", "orange"],
+      "context": "apps",
+      "sizes": [16]
+    },
+    "papirus_actions_format-currency": {
+      "label": "Format Currency",
+      "file": "format-currency.png",
+      "hints": ["currency", "dollar", "money", "format", "financial", "symbol", "price", "black", "sign", "cash"],
+      "context": "actions",
+      "sizes": [16]
     }
   }
 }

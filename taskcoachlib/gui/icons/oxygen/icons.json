@@ -116,6 +116,55 @@
       "duplicates": [],
       "context": "mimetypes",
       "sizes": [16]
+    },
+    "oxygen_actions_view-bank": {
+      "label": "View Bank",
+      "file": "view-bank.png",
+      "hints": ["bank", "building", "financial", "columns", "institution", "money", "finance", "temple", "pediment", "steps"],
+      "context": "actions",
+      "sizes": [16]
+    },
+    "oxygen_actions_go-home": {
+      "label": "Go Home",
+      "file": "go-home.png",
+      "hints": ["home", "house", "roof", "door", "chimney", "windows", "building", "dwelling", "orange", "gray"],
+      "context": "actions",
+      "sizes": [16]
+    },
+    "oxygen_categories_applications-engineering": {
+      "label": "Applications Engineering",
+      "file": "applications-engineering.png",
+      "hints": ["engineering", "hardhat", "helmet", "yellow", "construction", "build", "safety", "work", "glossy", "brim"],
+      "context": "categories",
+      "sizes": [16]
+    },
+    "oxygen_status_wallet-closed": {
+      "label": "Wallet Closed",
+      "file": "wallet-closed.png",
+      "hints": ["wallet", "closed", "money", "leather", "billfold", "finance", "brown", "secure", "clasp", "flat"],
+      "context": "status",
+      "sizes": [16]
+    },
+    "oxygen_status_wallet-open": {
+      "label": "Wallet Open",
+      "file": "wallet-open.png",
+      "hints": ["wallet", "open", "money", "leather", "billfold", "finance", "brown", "cash", "bills", "clasp"],
+      "context": "status",
+      "sizes": [16]
+    },
+    "oxygen_apps_kwalletmanager": {
+      "label": "Kwalletmanager",
+      "file": "kwalletmanager.png",
+      "hints": ["wallet", "brown", "leather", "clasp", "stitching", "billfold", "closed", "money", "security", "flat"],
+      "context": "apps",
+      "sizes": [16]
+    },
+    "oxygen_apps_accessories-calculator": {
+      "label": "Accessories Calculator",
+      "file": "accessories-calculator.png",
+      "hints": ["calculator", "math", "numbers", "compute", "arithmetic", "buttons", "keypad", "accounting", "silver", "display"],
+      "context": "apps",
+      "sizes": [16]
     }
   }
 }

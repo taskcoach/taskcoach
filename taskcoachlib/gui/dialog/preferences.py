@@ -2262,6 +2262,11 @@ class IconsPage(SettingsPage):
         )
         self.addBooleanSetting(
             "iconpicker",
+            "theme_noto_emoji",
+            _("Show Noto Emoji icons in picker"),
+        )
+        self.addBooleanSetting(
+            "iconpicker",
             "theme_taskcoach",
             _("Show TaskCoach icons in picker"),
         )

@@ -117,22 +117,9 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
             event.Skip()
 
     def _updateMenuUI(self):
-        """Update enabled state of menu items based on current selection.
-
-        Menu items are bound to a window with EVT_UPDATE_UI handlers, but those
-        handlers don't fire automatically for popup menus. We manually process
-        UpdateUIEvent for each menu item to update their enabled state.
-        """
-        menuWindow = getattr(self._itemPopupMenu, '_window', None)
-        if menuWindow and self._itemPopupMenu:
-            for menuItem in self._itemPopupMenu.GetMenuItems():
-                if menuItem.IsSeparator():
-                    continue
-                itemId = menuItem.GetId()
-                event = wx.UpdateUIEvent(itemId)
-                menuWindow.ProcessEvent(event)
-                if event.GetSetEnabled():
-                    menuItem.Enable(event.GetEnabled())
+        """Update enabled state of menu items based on current selection."""
+        if hasattr(self._itemPopupMenu, '_update_menu_state'):
+            self._itemPopupMenu._update_menu_state()
 
     def onItemPopupMenu(self, event):
         """Handle popup menu for tree controls (EVT_TREE_ITEM_RIGHT_CLICK, EVT_CONTEXT_MENU)."""

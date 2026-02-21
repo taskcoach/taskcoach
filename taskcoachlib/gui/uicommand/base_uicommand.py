@@ -31,12 +31,34 @@ from taskcoachlib.meta.debug import log_step
 """  # pylint: disable=W0105
 
 
+class MenuItem(wx.MenuItem):
+    """Menu item that knows its command and can update its own enabled state."""
+
+    def __init__(self, command, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._command = command
+
+    def update_state(self):
+        enabled = bool(self._command.enabled(None))
+        self.Enable(enabled)
+        new_text = self._command.current_menu_text()
+        if new_text is not None:
+            try:
+                self.SetItemLabel(new_text)
+            except Exception:
+                pass
+        if enabled and self.IsCheckable():
+            check = self._command.checked()
+            if check is not None:
+                self.Check(check)
+
+
 class UICommand(object):
     """Base user interface command. An UICommand is some action that can be
-    associated with menu's and/or toolbars. It contains the menutext and
-    helptext to be displayed, code to deal with wx.EVT_UPDATE_UI and
-    methods to attach the command to a menu or toolbar. Subclasses should
-    implement doCommand() and optionally override enabled()."""
+    associated with menus and/or toolbars. It contains the menutext and
+    helptext to be displayed and methods to attach the command to a menu
+    or toolbar. Subclasses should implement doCommand() and optionally
+    override enabled()."""
 
     def __init__(
         self,
@@ -89,9 +111,10 @@ class UICommand(object):
             return [(flags, wx.WXK_NUMPAD_ENTER, self.id)]
         return []
 
-    def addToMenu(self, menu, window, position=None):
-        menuItem = wx.MenuItem(
-            menu, self.id, self.menuText, self.helpText, self.kind
+    def addToMenu(self, menu, window, position=None, subMenu=None):
+        menuItem = MenuItem(
+            self, menu, self.id, self.menuText, self.helpText, self.kind,
+            subMenu=subMenu
         )
         self.menuItems.append(menuItem)
         self.addBitmapToMenuItem(menuItem)
@@ -152,20 +175,15 @@ class UICommand(object):
 
     def bind(self, window, itemId):
         window.Bind(wx.EVT_MENU, self.onCommandActivate, id=itemId)
-        window.Bind(wx.EVT_UPDATE_UI, self.onUpdateUI, id=itemId)
 
     def unbind(self, window, itemId):
-        for eventType in [wx.EVT_MENU, wx.EVT_UPDATE_UI]:
-            window.Unbind(eventType, id=itemId)
+        window.Unbind(wx.EVT_MENU, id=itemId)
 
     def onCommandActivate(self, event, *args, **kwargs):
-        """For Menu's and ToolBars, activating the command is not
-        possible when not enabled, because menu items and toolbar
-        buttons are disabled through onUpdateUI. For other controls such
-        as the ListCtrl and the TreeCtrl the EVT_UPDATE_UI event is not
-        sent, so we need an explicit check here. Otherwise hitting return
-        on an empty selection in the ListCtrl would bring up the
-        TaskEditor."""
+        """For controls such as the ListCtrl and the TreeCtrl, activating
+        the command is possible even when not enabled, so we need an
+        explicit check here. Otherwise hitting return on an empty
+        selection in the ListCtrl would bring up the TaskEditor."""
         if self.enabled(event):
             return self.doCommand(event, *args, **kwargs)
 
@@ -175,14 +193,20 @@ class UICommand(object):
     def doCommand(self, event):
         raise NotImplementedError  # pragma: no cover
 
-    def onUpdateUI(self, event):
-        event.Enable(bool(self.enabled(event)))
-        if self.toolbar and (not self.helpText or self.menuText == "?"):
-            self.updateToolHelp()
-
     def enabled(self, event):  # pylint: disable=W0613
         """Can be overridden in a subclass."""
         return True
+
+    def current_menu_text(self):
+        """Return updated menu text, or None to keep current. Override in
+        subclasses whose menu text changes based on context (e.g. selection
+        type)."""
+        return None
+
+    def checked(self):
+        """Return True/False for checkable items, or None to skip.
+        Override in subclasses with ITEM_CHECK kind."""
+        return None
 
     def updateToolHelp(self):
         if not self.toolbar:

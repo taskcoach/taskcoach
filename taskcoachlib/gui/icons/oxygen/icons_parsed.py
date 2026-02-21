@@ -19,7 +19,7 @@ contexts = {
 icons = {
     "oxygen_actions_document-export": {
         "label": _("Document Export"),
-        "hints": [_("export"), _("document"), _("arrow"), _("out"), _("save"), _("file"), _("send")],
+        "hints": [_("document"), _("export"), _("arrow"), _("save"), _("out"), _("file"), _("send")],
         "context": "actions",
         "context_label": _("Actions"),
         "file": "document-export.png",
@@ -29,12 +29,32 @@ icons = {
     },
     "oxygen_actions_document-import": {
         "label": _("Document Import"),
-        "hints": [_("import"), _("document"), _("arrow"), _("in"), _("load"), _("file"), _("open")],
+        "hints": [_("document"), _("import"), _("file"), _("arrow"), _("load"), _("open"), _("incoming")],
         "context": "actions",
         "context_label": _("Actions"),
         "file": "document-import.png",
         "paths": {
             16: "16x16/actions/document-import.png",
+        },
+    },
+    "oxygen_actions_go-home": {
+        "label": _("Go Home"),
+        "hints": [_("home"), _("house"), _("roof"), _("door"), _("chimney"), _("windows"), _("building"), _("dwelling"), _("orange"), _("gray")],
+        "context": "actions",
+        "context_label": _("Actions"),
+        "file": "go-home.png",
+        "paths": {
+            16: "16x16/actions/go-home.png",
+        },
+    },
+    "oxygen_actions_view-bank": {
+        "label": _("View Bank"),
+        "hints": [_("bank"), _("building"), _("financial"), _("columns"), _("institution"), _("money"), _("finance"), _("temple"), _("pediment"), _("steps")],
+        "context": "actions",
+        "context_label": _("Actions"),
+        "file": "view-bank.png",
+        "paths": {
+            16: "16x16/actions/view-bank.png",
         },
     },
     "oxygen_actions_zoom-draw": {
@@ -55,6 +75,36 @@ icons = {
         "file": "zoom-fit-best.png",
         "paths": {
             16: "16x16/actions/zoom-fit-best.png",
+        },
+    },
+    "oxygen_apps_accessories-calculator": {
+        "label": _("Accessories Calculator"),
+        "hints": [_("calculator"), _("math"), _("numbers"), _("compute"), _("arithmetic"), _("buttons"), _("keypad"), _("accounting"), _("silver"), _("display")],
+        "context": "apps",
+        "context_label": _("Applications"),
+        "file": "accessories-calculator.png",
+        "paths": {
+            16: "16x16/apps/accessories-calculator.png",
+        },
+    },
+    "oxygen_apps_kwalletmanager": {
+        "label": _("Kwalletmanager"),
+        "hints": [_("wallet"), _("brown"), _("leather"), _("clasp"), _("stitching"), _("billfold"), _("closed"), _("money"), _("security"), _("flat")],
+        "context": "apps",
+        "context_label": _("Applications"),
+        "file": "kwalletmanager.png",
+        "paths": {
+            16: "16x16/apps/kwalletmanager.png",
+        },
+    },
+    "oxygen_categories_applications-engineering": {
+        "label": _("Applications Engineering"),
+        "hints": [_("engineering"), _("hardhat"), _("helmet"), _("yellow"), _("construction"), _("build"), _("safety"), _("work"), _("glossy"), _("brim")],
+        "context": "categories",
+        "context_label": _("Categories"),
+        "file": "applications-engineering.png",
+        "paths": {
+            16: "16x16/categories/applications-engineering.png",
         },
     },
     "oxygen_emotes_face-angel": {
@@ -169,12 +219,32 @@ icons = {
     },
     "oxygen_mimetypes_text-plain": {
         "label": _("Text Plain"),
-        "hints": [_("text"), _("plain"), _("document"), _("txt"), _("file"), _("note"), _("ascii")],
+        "hints": [_("txt"), _("text"), _("plain"), _("ascii"), _("document"), _("notepad"), _("file"), _("simple")],
         "context": "mimetypes",
         "context_label": _("MimeTypes"),
         "file": "text-plain.png",
         "paths": {
             16: "16x16/mimetypes/text-plain.png",
+        },
+    },
+    "oxygen_status_wallet-closed": {
+        "label": _("Wallet Closed"),
+        "hints": [_("wallet"), _("closed"), _("money"), _("leather"), _("billfold"), _("finance"), _("brown"), _("secure"), _("clasp"), _("flat")],
+        "context": "status",
+        "context_label": _("Status"),
+        "file": "wallet-closed.png",
+        "paths": {
+            16: "16x16/status/wallet-closed.png",
+        },
+    },
+    "oxygen_status_wallet-open": {
+        "label": _("Wallet Open"),
+        "hints": [_("wallet"), _("open"), _("money"), _("leather"), _("billfold"), _("finance"), _("brown"), _("cash"), _("bills"), _("clasp")],
+        "context": "status",
+        "context_label": _("Status"),
+        "file": "wallet-open.png",
+        "paths": {
+            16: "16x16/status/wallet-open.png",
         },
     },
 }

@@ -214,6 +214,30 @@ _DEPRECATED_ICONS = {
     "life_ring_icon": "nuvola_apps_help-browser",
     "led_blue_information_icon": "nuvola_status_dialog-information",
     "calculator_icon": "nuvola_apps_accessories-calculator",
+    "banking": "papirus_apps_org.tabos.banking",
+    "bitcoin": "papirus_apps_bitcoin",
+    "bank_building": "oxygen_actions_view-bank",
+    "bank_account": "oxygen_actions_view-bank",
+    "homebank": "papirus_apps_homebank",
+    "safeeyes": "papirus_apps_safeeyes",
+    "safe_vault": "papirus_apps_accessories-safe",
+    "money_expense": "papirus_apps_money-manager-ex",
+    "money_manager": "papirus_apps_money-manager-ex",
+    "taxes": "noto-emoji_symbols_u1f4b2",
+    "wallet_closed": "oxygen_status_wallet-closed",
+    "wallet_open": "oxygen_status_wallet-open",
+    "wallet_keys": "oxygen_apps_kwalletmanager",
+    "moneydance": "papirus_apps_moneydance",
+    "kmymoney": "papirus_apps_kmymoney",
+    "cryptomator": "papirus_apps_cryptomator",
+    "uno_calculator": "papirus_apps_uno-calculator",
+    "cointop": "papirus_apps_cointop",
+    "gnome_calculator": "papirus_apps_gnome-calculator",
+    "calculator_flat": "papirus_apps_accessories-calculator",
+    "calculator_3d": "oxygen_apps_accessories-calculator",
+    "wallet_flat": "papirus_apps_kwalletmanager",
+    "money_budget": "papirus_apps_kmymoney",
+    "currency_dollar": "papirus_actions_format-currency",
 }
 
 
@@ -603,38 +627,6 @@ class IconCatalog:
                          f"{theme_name}/icons_parsed.py", prefix="ICON")
         return themes
 
-    def _load_legacy_icons(self):
-        """Inject legacy icons (icons/16x16/*.png etc.) into the catalog.
-
-        Legacy has no icons_parsed.py — always injected from hardcoded defs.
-        Scans for available sizes on disk.
-        """
-        defs = _legacy_icon_defs()
-        for icon_id, data in defs.items():
-            paths = {}
-            for size in (16, 22, 32, 48, 64, 128):  # all possible PNG sizes on disk
-                new_path = os.path.join(_ICONS_DIR, f"{size}x{size}", f"{icon_id}.png")
-                if os.path.exists(new_path):
-                    paths[size] = new_path
-                    continue
-                flat_path = os.path.join(_ICONS_DIR, f"{icon_id}{size}x{size}.png")
-                if os.path.exists(flat_path):
-                    paths[size] = flat_path
-            if not paths:
-                log_step(f"ERROR: Legacy icon '{icon_id}' has no PNG files", prefix="ICON")
-                continue
-            self._register(Icon(
-                icon_id=icon_id,
-                label=data["label"],
-                hints=data.get("hints", []),
-                theme="legacy",
-                theme_label="Legacy",
-                context="",
-                context_label="",
-                file=f"{icon_id}.png",
-                paths=paths,
-            ))
-
     def _load_synthetic_icons(self):
         """Register synthetic icons from the routing table.
 
@@ -651,10 +643,9 @@ class IconCatalog:
     def _load_all_themes(self):
         """Load all active themes.
 
-        Hardcoded: legacy (injected) and synthetic (generated).
         File-based: themes from ICON_THEME_CATALOG.json via _load_theme().
+        Synthetic: generated icons (e.g. composite overlays).
         """
-        self._load_legacy_icons()
         for theme in self._load_theme_catalog():
             self._load_theme(theme)
         self._load_synthetic_icons()
@@ -663,117 +654,6 @@ class IconCatalog:
 
 # Module-level singleton
 icon_catalog = IconCatalog()
-
-
-# ============================================================================
-# Legacy icon definitions (moved from artprovider.py)
-# ============================================================================
-
-def _legacy_icon_defs():
-    """Return legacy icon definitions (previously artprovider.chooseableItems).
-
-    These are icons in icons/16x16/ with no icons_parsed.py.
-    Injected programmatically until fully deprecated.
-    """
-    from taskcoachlib.i18n import _
-    return {
-        "bank_account": {
-            "label": _("Bank Account"),
-            "hints": [_("bank"), _("account"), _("checking"), _("savings"), _("finance"), _("institution")],
-        },
-        "money_budget": {
-            "label": _("Money Budget"),
-            "hints": [_("money"), _("budget"), _("finance"), _("coins"), _("piggybank"), _("savings"), _("personal")],
-        },
-        "taxes": {
-            "label": _("Taxes"),
-            "hints": [_("tax"), _("taxes"), _("money"), _("dollar"), _("cash"), _("government"), _("irs"), _("percent"), _("form")],
-        },
-        "currency_dollar": {
-            "label": _("Currency"),
-            "hints": [_("currency"), _("dollar"), _("money"), _("symbol"), _("usd"), _("format"), _("price")],
-        },
-        "calculator_flat": {
-            "label": _("Calculator (Flat)"),
-            "hints": [_("calculator"), _("math"), _("compute"), _("calculate"), _("numbers"), _("flat"), _("modern")],
-        },
-        "uno_calculator": {
-            "label": _("Calculator (Uno)"),
-            "hints": [_("calculator"), _("math"), _("uno"), _("compute"), _("blue"), _("numbers"), _("arithmetic")],
-        },
-        "gnome_calculator": {
-            "label": _("Calculator (GNOME)"),
-            "hints": [_("calculator"), _("math"), _("gnome"), _("compute"), _("colorful"), _("numbers"), _("arithmetic")],
-        },
-        "safe_vault": {
-            "label": _("Safe"),
-            "hints": [_("safe"), _("vault"), _("secure"), _("lock"), _("storage"), _("protect"), _("valuables")],
-        },
-        "bitcoin": {
-            "label": _("Bitcoin"),
-            "hints": [_("bitcoin"), _("crypto"), _("cryptocurrency"), _("digital"), _("btc"), _("blockchain")],
-        },
-        "wallet_flat": {
-            "label": _("Wallet (Flat)"),
-            "hints": [_("wallet"), _("billfold"), _("money"), _("cash"), _("flat"), _("modern")],
-        },
-        "money_expense": {
-            "label": _("Money Expense"),
-            "hints": [_("expense"), _("money"), _("spending"), _("budget"), _("track"), _("manager"), _("receipt")],
-        },
-        "homebank": {
-            "label": _("HomeBank"),
-            "hints": [_("home"), _("bank"), _("finance"), _("budget"), _("personal"), _("accounting")],
-        },
-        "cointop": {
-            "label": _("CoinTop"),
-            "hints": [_("crypto"), _("cryptocurrency"), _("terminal"), _("bitcoin"), _("portfolio"), _("tracker")],
-        },
-        "cryptomator": {
-            "label": _("Cryptomator"),
-            "hints": [_("encrypt"), _("security"), _("vault"), _("cloud"), _("privacy"), _("lock")],
-        },
-        "banking": {
-            "label": _("Banking"),
-            "hints": [_("bank"), _("credit"), _("card"), _("finance"), _("payment"), _("account")],
-        },
-        "safeeyes": {
-            "label": _("Safe Eyes"),
-            "hints": [_("break"), _("rest"), _("health"), _("eye"), _("reminder"), _("timer")],
-        },
-        "kmymoney": {
-            "label": _("KMyMoney"),
-            "hints": [_("money"), _("finance"), _("personal"), _("budget"), _("accounting"), _("kde")],
-        },
-        "money_manager": {
-            "label": _("Money Manager"),
-            "hints": [_("money"), _("expense"), _("manager"), _("budget"), _("track"), _("finance")],
-        },
-        "moneydance": {
-            "label": _("Moneydance"),
-            "hints": [_("money"), _("finance"), _("personal"), _("budget"), _("banking"), _("investment")],
-        },
-        "bank_building": {
-            "label": _("Bank Building"),
-            "hints": [_("bank"), _("building"), _("institution"), _("columns"), _("finance"), _("classic")],
-        },
-        "wallet_closed": {
-            "label": _("Wallet (Closed)"),
-            "hints": [_("wallet"), _("closed"), _("locked"), _("secure"), _("billfold"), _("leather")],
-        },
-        "wallet_open": {
-            "label": _("Wallet (Open)"),
-            "hints": [_("wallet"), _("open"), _("money"), _("cash"), _("billfold"), _("spend")],
-        },
-        "calculator_3d": {
-            "label": _("Calculator (3D)"),
-            "hints": [_("calculator"), _("math"), _("compute"), _("calculate"), _("classic"), _("3d")],
-        },
-        "wallet_keys": {
-            "label": _("Wallet Keys"),
-            "hints": [_("wallet"), _("keys"), _("password"), _("secure"), _("manager"), _("keyring")],
-        },
-    }
 
 
 

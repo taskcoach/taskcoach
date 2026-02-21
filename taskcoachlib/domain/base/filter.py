@@ -37,7 +37,7 @@ class Filter(patterns.SetDecorator):
     """
 
     def __init__(self, *args, **kwargs):
-        self.__treeMode = kwargs.pop("treeMode", False)
+        self.__tree_mode = kwargs.pop("tree_mode", False)
         # Track items added as ancestors to maintain tree hierarchy, not because
         # they matched filter criteria. Used by outer filters for orphan cleanup.
         self.__filterForced = set()
@@ -49,16 +49,20 @@ class Filter(patterns.SetDecorator):
         if not self.isFrozen():
             self.reset()
 
-    def setTreeMode(self, treeMode):
-        self.__treeMode = treeMode
+    def set_tree_mode(self, tree_mode):
+        self.__tree_mode = tree_mode
         try:
-            self.observable().setTreeMode(treeMode)
+            self.observable().set_tree_mode(tree_mode)
         except AttributeError:
             pass
         self.reset()
 
-    def treeMode(self):
-        return self.__treeMode
+    def tree_mode(self):
+        return self.__tree_mode
+
+    @classmethod
+    def filter_change_event_type(cls):
+        return "filter.change"
 
     @patterns.eventSource
     def reset(self, event=None):
@@ -73,12 +77,12 @@ class Filter(patterns.SetDecorator):
             return
 
         # Get items that directly match this filter's criteria
-        directMatches = set(self.filterItems(self.observable()))
+        directMatches = set(self.filter_items(self.observable()))
         filteredItems = directMatches.copy()
 
         # Reset and rebuild filter_forced tracking
         self.__filterForced = set()
-        if self.treeMode():
+        if self.tree_mode():
             # In tree mode, include ancestors of matching items to maintain
             # tree structure. Track these as "filter_forced" since they don't
             # match criteria themselves - they're only included for hierarchy.
@@ -94,6 +98,7 @@ class Filter(patterns.SetDecorator):
         self.extendSelf(
             [item for item in filteredItems if item not in self], event=event
         )
+        patterns.Event(self.filter_change_event_type(), self).send()
 
     def getFilterForced(self):
         """Return items that were added as ancestors, not directly matched.
@@ -125,7 +130,7 @@ class Filter(patterns.SetDecorator):
             pass
         return accumulated
 
-    def filterItems(self, items):
+    def filter_items(self, items):
         """filter returns the items that pass the filter."""
         raise NotImplementedError  # pragma: no cover
 
@@ -152,7 +157,7 @@ class SelectedItemsFilter(Filter):
         if not self.__selectedItems:
             self.extendSelf(self.observable(), event)
 
-    def filterItems(self, items):
+    def filter_items(self, items):
         if self.__selectedItems:
             result = [
                 item
@@ -233,7 +238,7 @@ class SearchFilter(Filter):
         else:
             return lambda x: x.lower().find(searchString.lower()) != -1
 
-    def filterItems(self, items):
+    def filter_items(self, items):
         return (
             [
                 item
@@ -251,7 +256,7 @@ class SearchFilter(Filter):
             while parent:
                 text += self.__itemOwnText(parent)
                 parent = parent.parent()
-        if self.treeMode():
+        if self.tree_mode():
             text += " ".join(
                 [
                     self.__itemOwnText(child)
@@ -287,5 +292,5 @@ class DeletedFilter(Filter):
     def onObjectMarkedDeletedOrNot(self, event):  # pylint: disable=W0613
         self.reset()
 
-    def filterItems(self, items):
+    def filter_items(self, items):
         return [item for item in items if not item.isDeleted()]

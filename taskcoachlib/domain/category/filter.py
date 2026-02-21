@@ -56,7 +56,7 @@ class CategoryFilter(base.Filter):
         super().detach()
         self.removeObserver(self.onCategoryChanged)
 
-    def filterItems(self, categorizables):
+    def filter_items(self, categorizables):
         filteredCategories = self.__categories.filteredCategories()
         if not filteredCategories:
             return categorizables

@@ -23,7 +23,7 @@ from taskcoachlib.domain import task, category, effort, date
 
 
 class HTMLWriterTestCase(test.wxTestCase):
-    treeMode = "Subclass responsibility"
+    tree_mode = "Subclass responsibility"
     filename = "Subclass responsibility"
 
     def setUp(self):
@@ -87,7 +87,7 @@ class CommonTestsMixin(object):
 
 class TaskWriterTestCase(HTMLWriterTestCase):
     def createViewer(self):
-        self.settings.set("taskviewer", "treemode", self.treeMode)
+        self.settings.set("taskviewer", "treemode", self.tree_mode)
         return gui.viewer.TaskViewer(self.frame, self.taskFile, self.settings)
 
 
@@ -259,24 +259,24 @@ class TaskListTestsMixin(object):
 class TaskListExportTest(
     TaskTestsMixin, TaskListTestsMixin, TaskWriterTestCase
 ):
-    treeMode = "False"
+    tree_mode = "False"
     filename = "filename"
 
 
 class TaskListPrintTest(
     TaskTestsMixin, TaskListTestsMixin, TaskWriterTestCase
 ):
-    treeMode = "False"
+    tree_mode = "False"
     filename = ""
 
 
 class TaskTreeExportTest(TaskTestsMixin, TaskWriterTestCase):
-    treeMode = "True"
+    tree_mode = "True"
     filename = "filename"
 
 
 class TaskTreePrintTest(TaskTestsMixin, TaskWriterTestCase):
-    treeMode = "True"
+    tree_mode = "True"
     filename = ""
 
 

@@ -360,10 +360,10 @@ class CommonTestsMixin(object):
         self.assertEqual(now, self.effortAggregator.maxDateTime())
 
     def testNrTracking(self):
-        self.assertEqual(0, self.effortAggregator.nrBeingTracked())
+        self.assertEqual(0, self.effortAggregator.nr_being_tracked())
 
     def testOriginalLength(self):
-        self.assertEqual(0, self.effortAggregator.originalLength())
+        self.assertEqual(0, self.effortAggregator.original_length())
 
 
 class EffortPerDayTest(EffortAggregatorTestCase, CommonTestsMixin):

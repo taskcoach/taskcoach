@@ -387,7 +387,7 @@ class Task(
 
     @staticmethod
     def dueDateTimeSortFunction(**kwargs):
-        recursive = kwargs.get("treeMode", False)
+        recursive = kwargs.get("tree_mode", False)
         return lambda task: task.dueDateTime(recursive=recursive)
 
     @classmethod
@@ -437,7 +437,7 @@ class Task(
 
     @staticmethod
     def plannedStartDateTimeSortFunction(**kwargs):
-        recursive = kwargs.get("treeMode", False)
+        recursive = kwargs.get("tree_mode", False)
         return lambda task: task.plannedStartDateTime(recursive=recursive)
 
     @classmethod
@@ -451,7 +451,7 @@ class Task(
 
     @staticmethod
     def timeLeftSortFunction(**kwargs):
-        recursive = kwargs.get("treeMode", False)
+        recursive = kwargs.get("tree_mode", False)
         return lambda task: task.timeLeft(recursive=recursive)
 
     @classmethod
@@ -501,7 +501,7 @@ class Task(
 
     @staticmethod
     def actualStartDateTimeSortFunction(**kwargs):
-        recursive = kwargs.get("treeMode", False)
+        recursive = kwargs.get("tree_mode", False)
         return lambda task: task.actualStartDateTime(recursive=recursive)
 
     @classmethod
@@ -607,7 +607,7 @@ class Task(
 
     @staticmethod
     def completionDateTimeSortFunction(**kwargs):
-        recursive = kwargs.get("treeMode", False)
+        recursive = kwargs.get("tree_mode", False)
         return lambda task: task.completionDateTime(recursive=recursive)
 
     @classmethod
@@ -1042,7 +1042,7 @@ class Task(
 
     @staticmethod
     def timeSpentSortFunction(**kwargs):
-        recursive = kwargs.get("treeMode", False)
+        recursive = kwargs.get("tree_mode", False)
         return lambda task: task.timeSpent(recursive=recursive)
 
     @classmethod
@@ -1083,7 +1083,7 @@ class Task(
 
     @staticmethod
     def budgetSortFunction(**kwargs):
-        recursive = kwargs.get("treeMode", False)
+        recursive = kwargs.get("tree_mode", False)
         return lambda task: task.budget(recursive=recursive)
 
     @classmethod
@@ -1116,7 +1116,7 @@ class Task(
 
     @staticmethod
     def budgetLeftSortFunction(**kwargs):
-        recursive = kwargs.get("treeMode", False)
+        recursive = kwargs.get("tree_mode", False)
         return lambda task: task.budgetLeft(recursive=recursive)
 
     @classmethod
@@ -1218,13 +1218,8 @@ class Task(
     @classmethod
     def _themedSection(class_, section):
         try:
-            theme = class_.settings.get("window", "theme")
-            if theme == "automatic":
-                from taskcoachlib.application.application import detect_dark_theme
-                is_dark = detect_dark_theme()
-            else:
-                is_dark = (theme == "dark")
-            return section + "_dark" if is_dark else section
+            from taskcoachlib.config import settings2
+            return section + "_dark" if settings2.window.theme_is_dark else section
         except Exception:
             return section
 
@@ -1457,7 +1452,7 @@ class Task(
 
     @staticmethod
     def percentageCompleteSortFunction(**kwargs):
-        recursive = kwargs.get("treeMode", False)
+        recursive = kwargs.get("tree_mode", False)
         return lambda task: task.percentageComplete(recursive=recursive)
 
     @classmethod
@@ -1496,7 +1491,7 @@ class Task(
 
     @staticmethod
     def prioritySortFunction(**kwargs):
-        recursive = kwargs.get("treeMode", False)
+        recursive = kwargs.get("tree_mode", False)
         return lambda task: task.priority(recursive=recursive)
 
     @classmethod
@@ -1565,7 +1560,7 @@ class Task(
 
     @staticmethod
     def fixedFeeSortFunction(**kwargs):
-        recursive = kwargs.get("treeMode", False)
+        recursive = kwargs.get("tree_mode", False)
         return lambda task: task.fixedFee(recursive=recursive)
 
     @classmethod
@@ -1606,7 +1601,7 @@ class Task(
 
     @staticmethod
     def revenueSortFunction(**kwargs):
-        recursive = kwargs.get("treeMode", False)
+        recursive = kwargs.get("tree_mode", False)
         return lambda task: task.revenue(recursive=recursive)
 
     @classmethod
@@ -1676,7 +1671,7 @@ class Task(
 
     @staticmethod
     def reminderSortFunction(**kwargs):
-        recursive = kwargs.get("treeMode", False)
+        recursive = kwargs.get("tree_mode", False)
         maxDateTime = date.DateTime()
         return lambda task: task.reminder(recursive=recursive) or maxDateTime
 
@@ -1775,7 +1770,7 @@ class Task(
 
     @staticmethod
     def recurrenceSortFunction(**kwargs):
-        recursive = kwargs.get("treeMode", False)
+        recursive = kwargs.get("tree_mode", False)
         return lambda task: task.recurrence(recursive=recursive)
 
     @classmethod
@@ -1860,7 +1855,7 @@ class Task(
 
             prerequisites = task.prerequisites()
             sortedPrerequisiteSubjects = sortedSubjects(prerequisites)
-            isListMode = not kwargs.get("treeMode", False)
+            isListMode = not kwargs.get("tree_mode", False)
             childPrerequisites = (
                 task.prerequisites(recursive=True, upwards=isListMode)
                 - prerequisites
@@ -1951,7 +1946,7 @@ class Task(
 
             dependencies = task.dependencies()
             sortedDependencySubjects = sortedSubjects(dependencies)
-            isListMode = not kwargs.get("treeMode", False)
+            isListMode = not kwargs.get("tree_mode", False)
             childDependencies = (
                 task.dependencies(recursive=True, upwards=isListMode)
                 - dependencies

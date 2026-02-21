@@ -47,7 +47,6 @@ class Menu(wx.Menu, uicommand.UICommandContainerMixin):
         if menuItem.GetSubMenu():
             menuItem.GetSubMenu().clearMenu()
         self._window.Unbind(wx.EVT_MENU, id=menuItem.GetId())
-        self._window.Unbind(wx.EVT_UPDATE_UI, id=menuItem.GetId())
         super().DestroyItem(menuItem)
 
     def clearMenu(self):
@@ -63,13 +62,19 @@ class Menu(wx.Menu, uicommand.UICommandContainerMixin):
 
     def appendUICommand(self, uiCommand):
         cmd = uiCommand.addToMenu(self, self._window)
+        uiCommand.menu = self
         self._accels.extend(uiCommand.accelerators())
         if isinstance(uiCommand, patterns.Observer):
             self._observers.append(uiCommand)
         return cmd
 
-    def appendMenu(self, text, subMenu, icon_id=None, viewer=None,
-                   enableCondition=None):
+    def _update_menu_state(self):
+        """Update enabled and text state of all menu items. Called on menu open."""
+        for item in self.GetMenuItems():
+            if hasattr(item, 'update_state'):
+                item.update_state()
+
+    def appendMenu(self, text, subMenu, icon_id=None):
         subMenuItem = wx.MenuItem(
             self, id=IdProvider.get(), text=text, subMenu=subMenu
         )
@@ -79,17 +84,6 @@ class Menu(wx.Menu, uicommand.UICommandContainerMixin):
             )
         self._accels.extend(subMenu.accelerators())
         self.Append(subMenuItem)
-        # If custom condition provided, use it; otherwise check selection
-        if enableCondition is not None:
-            menuId = subMenuItem.GetId()
-            def onUpdateUI(event, cond=enableCondition):
-                event.Enable(cond())
-            self._window.Bind(wx.EVT_UPDATE_UI, onUpdateUI, id=menuId)
-        elif viewer is not None:
-            menuId = subMenuItem.GetId()
-            def onUpdateUI(event, v=viewer):
-                event.Enable(bool(v.curselection()))
-            self._window.Bind(wx.EVT_UPDATE_UI, onUpdateUI, id=menuId)
 
     def invokeMenuItem(self, menuItem):
         """Programmatically invoke the menuItem. This is mainly for testing
@@ -264,6 +258,13 @@ class MainMenu(wx.MenuBar):
             self.Append(menu, text)
             accels.extend(menu.accelerators())
         mainwindow.SetAcceleratorTable(wx.AcceleratorTable(accels))
+        mainwindow.Bind(wx.EVT_MENU_OPEN, self._on_menu_open)
+
+    def _on_menu_open(self, event):
+        event.Skip()
+        menu = event.GetMenu()
+        if menu and hasattr(menu, '_update_menu_state'):
+            menu._update_menu_state()
 
 
 class FileMenu(Menu):
@@ -789,14 +790,6 @@ class ActionMenu(Menu):
                 mainwindow, categories=categories, viewer=viewerContainer
             ),
             "nuvola_places_folder-downloads",
-            enableCondition=lambda: (
-                bool(viewerContainer.curselection())
-                and not viewerContainer.isShowingCategories()
-                and not viewerContainer.containerWidget.manager.GetPane(
-                    viewerContainer.activeViewer()).IsFloating()
-                and (viewerContainer.curselectionIsInstanceOf(task.Task)
-                     or viewerContainer.curselectionIsInstanceOf(note.Note))
-            ),
         )
         # Start of task specific actions:
         self.appendUICommands(
@@ -812,16 +805,11 @@ class ActionMenu(Menu):
             ),
             None,
         )
-        self.appendMenu(
-            _("Change task &priority"),
-            TaskPriorityMenu(mainwindow, tasks, viewerContainer),
-            "nuvola_actions_arrow-up",
-            enableCondition=lambda: (
-                bool(viewerContainer.curselection())
-                and not viewerContainer.containerWidget.manager.GetPane(
-                    viewerContainer.activeViewer()).IsFloating()
-                and viewerContainer.curselectionIsInstanceOf(task.Task)
-            ),
+        uicommand.TaskPriorityParentMenu(
+            viewer=viewerContainer
+        ).addToMenu(
+            self, self._window,
+            subMenu=TaskPriorityMenu(mainwindow, tasks, viewerContainer),
         )
         self.appendUICommands(
             None,
@@ -834,15 +822,13 @@ class ActionMenu(Menu):
 
 
 class TaskPriorityMenu(Menu):
-    def __init__(self, mainwindow, taskList, viewerContainer):
+    def __init__(self, mainwindow, task_list, viewer):
         super().__init__(mainwindow)
-        kwargs = dict(taskList=taskList, viewer=viewerContainer)
-        # pylint: disable=W0142
         self.appendUICommands(
-            uicommand.TaskIncPriority(**kwargs),
-            uicommand.TaskDecPriority(**kwargs),
-            uicommand.TaskMaxPriority(**kwargs),
-            uicommand.TaskMinPriority(**kwargs),
+            uicommand.TaskIncPriority(taskList=task_list, viewer=viewer),
+            uicommand.TaskDecPriority(taskList=task_list, viewer=viewer),
+            uicommand.TaskMaxPriority(taskList=task_list, viewer=viewer),
+            uicommand.TaskMinPriority(taskList=task_list, viewer=viewer),
         )
 
 
@@ -997,6 +983,10 @@ class StartEffortForTaskMenu(DynamicMenu):
     def updateMenuItems(self):
         self.clearMenu()
         trackableRootTasks = self._trackableRootTasks()
+        if not trackableRootTasks:
+            item = self.Append(wx.ID_ANY, _("All tasks are completed!"))
+            item.Enable(False)
+            return
         trackableRootTasks.sort(key=lambda task: task.subject())
         for trackableRootTask in trackableRootTasks:
             self.addMenuItemForTask(trackableRootTask, self)
@@ -1019,7 +1009,7 @@ class StartEffortForTaskMenu(DynamicMenu):
             menu.AppendSubMenu(subMenu, _("%s (subtasks)") % task.subject())
 
     def enabled(self):
-        return bool(self._trackableRootTasks())
+        return True
 
     def _trackableRootTasks(self):
         return [
@@ -1058,7 +1048,6 @@ class TaskPopupMenu(Menu):
                 mainwindow, categories=categories, viewer=taskViewer
             ),
             "nuvola_places_folder-downloads",
-            viewer=taskViewer,
         )
         self.appendUICommands(
             None,
@@ -1067,11 +1056,11 @@ class TaskPopupMenu(Menu):
             uicommand.TaskMarkCompleted(settings=settings, viewer=taskViewer),
             None,
         )
-        self.appendMenu(
-            _("&Priority"),
-            TaskPriorityMenu(mainwindow, tasks, taskViewer),
-            "nuvola_actions_arrow-up",
-            viewer=taskViewer,
+        uicommand.TaskPriorityParentMenu(
+            viewer=taskViewer
+        ).addToMenu(
+            self, self._window,
+            subMenu=TaskPriorityMenu(mainwindow, tasks, taskViewer),
         )
         self.appendUICommands(
             None,
@@ -1191,7 +1180,6 @@ class NotePopupMenu(Menu):
                 mainwindow, categories=categories, viewer=noteViewer
             ),
             "nuvola_places_folder-downloads",
-            viewer=noteViewer,
         )
         self.appendUICommands(None)
         if notes is not None:

@@ -40,13 +40,13 @@ class SaveTest(test.TestCase):
         self.assertEqual(nrTasks, len(self.mockApp.taskFile.tasks()))
 
     def testSave(self):
-        self.mockApp.iocontroller.saveas(self.filename)
+        self.mockApp.iocontroller.save_as(self.filename)
         self.mockApp.iocontroller.open(self.filename)
         self.assertTasksLoaded(2)
 
     def testSaveSelection_Child(self):
-        self.mockApp.iocontroller.saveas(self.filename)
-        self.mockApp.iocontroller.saveselection(
+        self.mockApp.iocontroller.save_as(self.filename)
+        self.mockApp.iocontroller.save_selection(
             [self.mockApp.child], self.filename2
         )
         self.mockApp.iocontroller.close()
@@ -54,8 +54,8 @@ class SaveTest(test.TestCase):
         self.assertTasksLoaded(1)
 
     def testSaveSelection_Parent(self):
-        self.mockApp.iocontroller.saveas(self.filename)
-        self.mockApp.iocontroller.saveselection(
+        self.mockApp.iocontroller.save_as(self.filename)
+        self.mockApp.iocontroller.save_selection(
             [self.mockApp.parent], self.filename2
         )
         self.mockApp.iocontroller.close()
@@ -65,8 +65,8 @@ class SaveTest(test.TestCase):
     def testSaveAndMerge(self):
         mockApp2 = mock.App()
         mockApp2.addTasks()
-        mockApp2.iocontroller.saveas(self.filename2)
+        mockApp2.iocontroller.save_as(self.filename2)
         self.mockApp.iocontroller.merge(self.filename2)
         self.assertTasksLoaded(4)
-        self.mockApp.iocontroller.saveas(self.filename)
+        self.mockApp.iocontroller.save_as(self.filename)
         mockApp2.quitApplication()

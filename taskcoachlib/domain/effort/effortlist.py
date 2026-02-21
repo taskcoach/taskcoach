@@ -108,8 +108,8 @@ class EffortList(
                     sender=effort,
                 )
 
-    def originalLength(self):
-        """Do not delegate originalLength to the underlying TaskList because
+    def original_length(self):
+        """Do not delegate original_length to the underlying TaskList because
         that would return a number of tasks, and not the number of effort
         records."""
         return len(self)

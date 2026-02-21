@@ -67,7 +67,7 @@ class _ViewerProxy(object):
     def visibleColumns(self):
         return self._columns
 
-    def isTreeViewer(self):
+    def is_tree_viewer(self):
         return False
 
     def visibleItems(self):

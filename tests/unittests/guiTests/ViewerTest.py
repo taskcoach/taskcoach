@@ -246,7 +246,7 @@ class SortableViewerForTasksTest(test.TestCase):
 
 
 class DummyViewer(object):
-    def isTreeViewer(self):
+    def is_tree_viewer(self):
         return False
 
     def createFilter(self, presentation):
@@ -387,14 +387,14 @@ class FilterableViewerForTasks(test.TestCase):
         return viewer
 
     def testIsNotHidingInactiveTasksByDefault(self):
-        self.assertFalse(self.viewer.isHidingTaskStatus(task.status.inactive))
+        self.assertFalse(self.viewer.is_hiding_task_status(task.status.inactive))
 
     def testHideInactiveTasks(self):
-        self.viewer.hideTaskStatus(task.status.inactive)
-        self.assertTrue(self.viewer.isHidingTaskStatus(task.status.inactive))
+        self.viewer.hide_task_status(task.status.inactive)
+        self.assertTrue(self.viewer.is_hiding_task_status(task.status.inactive))
 
     def testHideInactiveTasks_SetsSetting(self):
-        self.viewer.hideTaskStatus(task.status.inactive)
+        self.viewer.hide_task_status(task.status.inactive)
         self.assertTrue(
             self.settings.getboolean(
                 self.viewer.settingsSection(), "hideinactivetasks"
@@ -405,26 +405,26 @@ class FilterableViewerForTasks(test.TestCase):
         self.viewer.presentation().append(
             task.Task(plannedStartDateTime=date.Tomorrow())
         )
-        self.viewer.hideTaskStatus(task.status.inactive)
+        self.viewer.hide_task_status(task.status.inactive)
         self.assertFalse(self.viewer.presentation())
 
     def testUnhideInactiveTasks(self):
         self.viewer.presentation().append(
             task.Task(plannedStartDateTime=date.Tomorrow())
         )
-        self.viewer.hideTaskStatus(task.status.inactive)
-        self.viewer.hideTaskStatus(task.status.inactive, False)
+        self.viewer.hide_task_status(task.status.inactive)
+        self.viewer.hide_task_status(task.status.inactive, False)
         self.assertTrue(self.viewer.presentation())
 
     def testIsNotHidingLateTasksByDefault(self):
-        self.assertFalse(self.viewer.isHidingTaskStatus(task.status.late))
+        self.assertFalse(self.viewer.is_hiding_task_status(task.status.late))
 
     def testHideLateTasks(self):
-        self.viewer.hideTaskStatus(task.status.late)
-        self.assertTrue(self.viewer.isHidingTaskStatus(task.status.late))
+        self.viewer.hide_task_status(task.status.late)
+        self.assertTrue(self.viewer.is_hiding_task_status(task.status.late))
 
     def testHideLateTasks_SetsSetting(self):
-        self.viewer.hideTaskStatus(task.status.late)
+        self.viewer.hide_task_status(task.status.late)
         self.assertTrue(
             self.settings.getboolean(
                 self.viewer.settingsSection(), "hidelatetasks"
@@ -435,26 +435,26 @@ class FilterableViewerForTasks(test.TestCase):
         self.viewer.presentation().append(
             task.Task(plannedStartDateTime=date.Yesterday())
         )
-        self.viewer.hideTaskStatus(task.status.late)
+        self.viewer.hide_task_status(task.status.late)
         self.assertFalse(self.viewer.presentation())
 
     def testUnhideLateTasks(self):
         self.viewer.presentation().append(
             task.Task(plannedStartDateTime=date.Yesterday())
         )
-        self.viewer.hideTaskStatus(task.status.late)
-        self.viewer.hideTaskStatus(task.status.late, False)
+        self.viewer.hide_task_status(task.status.late)
+        self.viewer.hide_task_status(task.status.late, False)
         self.assertTrue(self.viewer.presentation())
 
     def testIsNotHidingDueSoonTasksByDefault(self):
-        self.assertFalse(self.viewer.isHidingTaskStatus(task.status.duesoon))
+        self.assertFalse(self.viewer.is_hiding_task_status(task.status.duesoon))
 
     def testHideDueSoonTasks(self):
-        self.viewer.hideTaskStatus(task.status.duesoon)
-        self.assertTrue(self.viewer.isHidingTaskStatus(task.status.duesoon))
+        self.viewer.hide_task_status(task.status.duesoon)
+        self.assertTrue(self.viewer.is_hiding_task_status(task.status.duesoon))
 
     def testHideDueSoonTasks_SetsSetting(self):
-        self.viewer.hideTaskStatus(task.status.duesoon)
+        self.viewer.hide_task_status(task.status.duesoon)
         self.assertTrue(
             self.settings.getboolean(
                 self.viewer.settingsSection(), "hideduesoontasks"
@@ -465,26 +465,26 @@ class FilterableViewerForTasks(test.TestCase):
         self.viewer.presentation().append(
             task.Task(dueDateTime=date.Now() + date.ONE_HOUR)
         )
-        self.viewer.hideTaskStatus(task.status.duesoon)
+        self.viewer.hide_task_status(task.status.duesoon)
         self.assertFalse(self.viewer.presentation())
 
     def testUnhideDueSoonTasks(self):
         self.viewer.presentation().append(
             task.Task(dueDateTime=date.Now() + date.ONE_HOUR)
         )
-        self.viewer.hideTaskStatus(task.status.duesoon)
-        self.viewer.hideTaskStatus(task.status.duesoon, False)
+        self.viewer.hide_task_status(task.status.duesoon)
+        self.viewer.hide_task_status(task.status.duesoon, False)
         self.assertTrue(self.viewer.presentation())
 
     def testIsNotHidingOverDueTasksByDefault(self):
-        self.assertFalse(self.viewer.isHidingTaskStatus(task.status.overdue))
+        self.assertFalse(self.viewer.is_hiding_task_status(task.status.overdue))
 
     def testHideOverDueTasks(self):
-        self.viewer.hideTaskStatus(task.status.overdue)
-        self.assertTrue(self.viewer.isHidingTaskStatus(task.status.overdue))
+        self.viewer.hide_task_status(task.status.overdue)
+        self.assertTrue(self.viewer.is_hiding_task_status(task.status.overdue))
 
     def testHideOverDueTasks_SetsSetting(self):
-        self.viewer.hideTaskStatus(task.status.overdue)
+        self.viewer.hide_task_status(task.status.overdue)
         self.assertTrue(
             self.settings.getboolean(
                 self.viewer.settingsSection(), "hideoverduetasks"
@@ -495,26 +495,26 @@ class FilterableViewerForTasks(test.TestCase):
         self.viewer.presentation().append(
             task.Task(dueDateTime=date.Yesterday())
         )
-        self.viewer.hideTaskStatus(task.status.overdue)
+        self.viewer.hide_task_status(task.status.overdue)
         self.assertFalse(self.viewer.presentation())
 
     def testUnhideOverDueTasks(self):
         self.viewer.presentation().append(
             task.Task(dueDateTime=date.Yesterday())
         )
-        self.viewer.hideTaskStatus(task.status.overdue)
-        self.viewer.hideTaskStatus(task.status.overdue, False)
+        self.viewer.hide_task_status(task.status.overdue)
+        self.viewer.hide_task_status(task.status.overdue, False)
         self.assertTrue(self.viewer.presentation())
 
     def testIsNotHidingCompletedTasksByDefault(self):
-        self.assertFalse(self.viewer.isHidingTaskStatus(task.status.completed))
+        self.assertFalse(self.viewer.is_hiding_task_status(task.status.completed))
 
     def testHideCompletedTasks(self):
-        self.viewer.hideTaskStatus(task.status.completed)
-        self.assertTrue(self.viewer.isHidingTaskStatus(task.status.completed))
+        self.viewer.hide_task_status(task.status.completed)
+        self.assertTrue(self.viewer.is_hiding_task_status(task.status.completed))
 
     def testHideCompletedTasks_SetsSetting(self):
-        self.viewer.hideTaskStatus(task.status.completed)
+        self.viewer.hide_task_status(task.status.completed)
         self.assertTrue(
             self.settings.getboolean(
                 self.viewer.settingsSection(), "hidecompletedtasks"
@@ -525,26 +525,26 @@ class FilterableViewerForTasks(test.TestCase):
         self.viewer.presentation().append(
             task.Task(completionDateTime=date.Now())
         )
-        self.viewer.hideTaskStatus(task.status.completed)
+        self.viewer.hide_task_status(task.status.completed)
         self.assertFalse(self.viewer.presentation())
 
     def testUnhideCompletedTasks(self):
         self.viewer.presentation().append(
             task.Task(completionDateTime=date.Now())
         )
-        self.viewer.hideTaskStatus(task.status.completed)
-        self.viewer.hideTaskStatus(task.status.completed, False)
+        self.viewer.hide_task_status(task.status.completed)
+        self.viewer.hide_task_status(task.status.completed, False)
         self.assertTrue(self.viewer.presentation())
 
     def testIsNotHidingCompositeTasksByDefault(self):
-        self.assertFalse(self.viewer.isHidingCompositeTasks())
+        self.assertFalse(self.viewer.is_hiding_composite_tasks())
 
     def testHideCompositeTasks(self):
-        self.viewer.hideCompositeTasks()
-        self.assertTrue(self.viewer.isHidingCompositeTasks())
+        self.viewer.hide_composite_tasks()
+        self.assertTrue(self.viewer.is_hiding_composite_tasks())
 
     def testHideCompositeTasks_SetsSettings(self):
-        self.viewer.hideCompositeTasks()
+        self.viewer.hide_composite_tasks()
         self.assertTrue(
             self.settings.getboolean(
                 self.viewer.settingsSection(), "hidecompositetasks"
@@ -552,30 +552,30 @@ class FilterableViewerForTasks(test.TestCase):
         )
 
     def testHideCompositeTasks_AffectsPresentation(self):
-        self.viewer.hideCompositeTasks()
+        self.viewer.hide_composite_tasks()
         parent = task.Task()
         child = task.Task()
         parent.addChild(child)
         self.viewer.presentation().append(parent)
         self.assertEqual([child], self.viewer.presentation())
 
-    def testUnhideCompositeTasks(self):
-        self.viewer.hideCompositeTasks()
+    def testUnhide_composite_tasks(self):
+        self.viewer.hide_composite_tasks()
         parent = task.Task()
         child = task.Task()
         parent.addChild(child)
         self.viewer.presentation().append(parent)
-        self.viewer.hideCompositeTasks(False)
+        self.viewer.hide_composite_tasks(False)
         self.assertEqual(2, len(self.viewer.presentation()))
 
     def testClearAllFilters(self):
-        self.viewer.hideCompositeTasks()
+        self.viewer.hide_composite_tasks()
         for status in task.Task.possibleStatuses():
-            self.viewer.hideTaskStatus(status)
-        self.viewer.resetFilter()
-        self.assertFalse(self.viewer.isHidingCompositeTasks())
+            self.viewer.hide_task_status(status)
+        self.viewer.reset_filter()
+        self.assertFalse(self.viewer.is_hiding_composite_tasks())
         for status in task.Task.possibleStatuses():
-            self.assertFalse(self.viewer.isHidingTaskStatus(status))
+            self.assertFalse(self.viewer.is_hiding_task_status(status))
 
     def testApplySettingsWhenCreatingViewer(self):
         self.settings.set(
@@ -605,7 +605,7 @@ class ViewerBaseClassTest(test.wxTestCase):
 
 
 class ViewerIteratorTestCase(test.wxTestCase):
-    treeMode = "Subclass responsibility"
+    tree_mode = "Subclass responsibility"
 
     def createViewer(self):
         return gui.viewer.TaskViewer(self.window, self.taskFile, self.settings)
@@ -619,7 +619,7 @@ class ViewerIteratorTestCase(test.wxTestCase):
         self.window = AuiManagedFrameWithDynamicCenterPane(self.frame)
         self.viewer = self.createViewer()
         self.settings.setboolean(
-            self.viewer.settingsSection(), "treemode", self.treeMode == "True"
+            self.viewer.settingsSection(), "treemode", self.tree_mode == "True"
         )
         self.viewer.sortBy("subject")
 
@@ -645,7 +645,7 @@ class ViewerIteratorTestsMixin(object):
         child = task.Task("A", parent=parent)
         parent.addChild(child)
         self.taskList.append(parent)
-        if self.treeMode == "True":
+        if self.tree_mode == "True":
             expectedParentAndChildOrder = [parent, child]
         else:
             expectedParentAndChildOrder = [child, parent]
@@ -674,11 +674,11 @@ class ViewerIteratorTestsMixin(object):
 
 
 class TreeViewerIteratorTest(ViewerIteratorTestCase, ViewerIteratorTestsMixin):
-    treeMode = "True"
+    tree_mode = "True"
 
 
 class ListViewerIteratorTest(ViewerIteratorTestCase, ViewerIteratorTestsMixin):
-    treeMode = "False"
+    tree_mode = "False"
 
 
 class ViewerWithColumnsTest(test.wxTestCase):

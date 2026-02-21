@@ -70,9 +70,9 @@ class IOControllerTest(test.TestCase):
         for filename in open:
             self.iocontroller.open(filename, fileExists=lambda filename: True)
         for filename in saveas:
-            self.iocontroller.saveas(filename)
+            self.iocontroller.save_as(filename)
         for filename in saveselection:
-            self.iocontroller.saveselection([], filename)
+            self.iocontroller.save_selection([], filename)
         for filename in merge:
             self.iocontroller.merge(filename)
 
@@ -123,11 +123,11 @@ class IOControllerTest(test.TestCase):
         def saveasReplacement(*args, **kwargs):  # pylint: disable=W0613
             self.saveAsCalled = True  # pylint: disable=W0201
 
-        originalSaveAs = self.iocontroller.__class__.saveas
-        self.iocontroller.__class__.saveas = saveasReplacement
+        originalSaveAs = self.iocontroller.__class__.save_as
+        self.iocontroller.__class__.save_as = saveasReplacement
         self.iocontroller.save()
         self.assertTrue(self.saveAsCalled)
-        self.iocontroller.__class__.saveas = originalSaveAs
+        self.iocontroller.__class__.save_as = originalSaveAs
 
     def testIOErrorOnSave(self):
         self.taskFile.setFilename(self.filename1)
@@ -135,8 +135,8 @@ class IOControllerTest(test.TestCase):
         def saveasReplacement(*args, **kwargs):  # pylint: disable=W0613
             self.saveAsCalled = True
 
-        originalSaveAs = self.iocontroller.__class__.saveas
-        self.iocontroller.__class__.saveas = saveasReplacement
+        originalSaveAs = self.iocontroller.__class__.save_as
+        self.iocontroller.__class__.save_as = saveasReplacement
         self.taskFile.raiseError = IOError
 
         def showerror(*args, **kwargs):  # pylint: disable=W0613
@@ -144,7 +144,7 @@ class IOControllerTest(test.TestCase):
 
         self.iocontroller.save(showerror=showerror)
         self.assertTrue(self.showerrorCalled and self.saveAsCalled)
-        self.iocontroller.__class__.saveas = originalSaveAs
+        self.iocontroller.__class__.save_as = originalSaveAs
 
     def testIOErrorOnSaveAs(self):
         self.taskFile.raiseError = IOError
@@ -152,16 +152,16 @@ class IOControllerTest(test.TestCase):
         def saveasReplacement(*args, **kwargs):  # pylint: disable=W0613
             self.saveAsCalled = True
 
-        originalSaveAs = self.iocontroller.__class__.saveas
+        originalSaveAs = self.iocontroller.__class__.save_as
 
         def showerror(*args, **kwargs):  # pylint: disable=W0613
             self.showerrorCalled = True
             # Prevent the recursive call of saveas:
-            self.iocontroller.__class__.saveas = saveasReplacement
+            self.iocontroller.__class__.save_as = saveasReplacement
 
-        self.iocontroller.saveas(filename=self.filename1, showerror=showerror)
+        self.iocontroller.save_as(filename=self.filename1, showerror=showerror)
         self.assertTrue(self.showerrorCalled and self.saveAsCalled)
-        self.iocontroller.__class__.saveas = originalSaveAs
+        self.iocontroller.__class__.save_as = originalSaveAs
 
     def testSaveSelectionAddsCategories(self):
         task1 = task.Task()
@@ -172,7 +172,7 @@ class IOControllerTest(test.TestCase):
         for eachTask in self.taskFile.tasks():
             eachTask.addCategory(aCategory)
             aCategory.addCategorizable(eachTask)
-        self.iocontroller.saveselection(
+        self.iocontroller.save_selection(
             tasks=self.taskFile.tasks(), filename=self.filename1
         )
         taskFile = persistence.TaskFile()
@@ -193,7 +193,7 @@ class IOControllerTest(test.TestCase):
         self.taskFile.categories().append(aCategory)
         task1.addCategory(aSubCategory)
         aSubCategory.addCategorizable(task1)
-        self.iocontroller.saveselection(
+        self.iocontroller.save_selection(
             tasks=self.taskFile.tasks(), filename=self.filename1
         )
         taskFile = persistence.TaskFile()
@@ -224,7 +224,7 @@ class IOControllerTest(test.TestCase):
         def openfile(*args, **kwargs):  # pylint: disable=W0613
             raise IOError
 
-        self.iocontroller.exportAsHTML(
+        self.iocontroller.export_as_html(
             None, filename="Don't ask", openfile=openfile, showerror=showerror
         )
         self.assertTrue(self.showerrorCalled)
@@ -232,28 +232,28 @@ class IOControllerTest(test.TestCase):
     def testNothingDeleted(self):
         self.taskFile.tasks().append(task.Task(subject="Task"))
         self.taskFile.notes().append(note.Note(subject="Note"))
-        self.assertFalse(self.iocontroller.hasDeletedItems())
+        self.assertFalse(self.iocontroller.has_deleted_items())
 
     def testNoteDeleted(self):
         self.taskFile.tasks().append(task.Task(subject="Task"))
         myNote = note.Note(subject="Note")
         myNote.markDeleted()
         self.taskFile.notes().append(myNote)
-        self.assertTrue(self.iocontroller.hasDeletedItems())
+        self.assertTrue(self.iocontroller.has_deleted_items())
 
     def testTaskDeleted(self):
         myTask = task.Task(subject="Task")
         myTask.markDeleted()
         self.taskFile.tasks().append(myTask)
         self.taskFile.notes().append(note.Note(subject="Note"))
-        self.assertTrue(self.iocontroller.hasDeletedItems())
+        self.assertTrue(self.iocontroller.has_deleted_items())
 
     def testPurgeNothing(self):
         myTask = task.Task(subject="Task")
         myNote = note.Note(subject="Note")
         self.taskFile.tasks().append(myTask)
         self.taskFile.notes().append(myNote)
-        self.iocontroller.purgeDeletedItems()
+        self.iocontroller.purge_deleted_items()
         self.assertEqual(self.taskFile.tasks(), [myTask])
         self.assertEqual(self.taskFile.notes(), [myNote])
 
@@ -263,7 +263,7 @@ class IOControllerTest(test.TestCase):
         self.taskFile.tasks().append(myTask)
         self.taskFile.notes().append(myNote)
         myNote.markDeleted()
-        self.iocontroller.purgeDeletedItems()
+        self.iocontroller.purge_deleted_items()
         self.assertEqual(self.taskFile.tasks(), [myTask])
         self.assertEqual(self.taskFile.notes(), [])
 
@@ -273,7 +273,7 @@ class IOControllerTest(test.TestCase):
         self.taskFile.tasks().append(myTask)
         self.taskFile.notes().append(myNote)
         myTask.markDeleted()
-        self.iocontroller.purgeDeletedItems()
+        self.iocontroller.purge_deleted_items()
         self.assertEqual(self.taskFile.tasks(), [])
         self.assertEqual(self.taskFile.notes(), [myNote])
 
@@ -351,23 +351,23 @@ class IOControllerOverwriteExistingFileTest(test.TestCase):
         super().tearDown()
 
     def testCancelSaveAsExistingFile(self):
-        self.iocontroller.saveas(fileExists=lambda filename: True)
+        self.iocontroller.save_as(fileExists=lambda filename: True)
         self.assertTrue(self.userWarned)
 
     def testCancelSaveSelectionToExistingFile(self):
-        self.iocontroller.saveselection([], fileExists=lambda filename: True)
+        self.iocontroller.save_selection([], fileExists=lambda filename: True)
         self.assertTrue(self.userWarned)
 
     def testCancelExportAsHTMLToExistingFile(self):
-        self.iocontroller.exportAsHTML(None, fileExists=lambda filename: True)
+        self.iocontroller.export_as_html(None, fileExists=lambda filename: True)
         self.assertTrue(self.userWarned)
 
     def testCancelExportAsCSVToExistingFile(self):
-        self.iocontroller.exportAsCSV(None, fileExists=lambda filename: True)
+        self.iocontroller.export_as_csv(None, fileExists=lambda filename: True)
         self.assertTrue(self.userWarned)
 
     def testCancelExportAsICalendarToExistingFile(self):
-        self.iocontroller.exportAsICalendar(
+        self.iocontroller.export_as_icalendar(
             None, fileExists=lambda filename: True
         )
         self.assertTrue(self.userWarned)

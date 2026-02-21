@@ -48,7 +48,7 @@ This document describes the custom `IconPicker` widget used in Task Coach for se
 |---|------|--------|-------|
 | 30 | Create reusable widget in taskcoachlib/widgets/iconpicker.py | Done | `IconPicker` class with hints support |
 | 32 | Integrate into entry.py IconPicker | Done | Uses widgets.IconPicker, auto-width |
-| 33 | Add icon hints to icon_library.py | Done | `_legacy_icon_defs()` dict with translatable hints arrays |
+| 33 | Add icon hints to icon_library.py | Done | Icon hints now in each theme's `icons_parsed.py` |
 | 34 | Test on Windows/macOS | Not Started | Cross-platform verification |
 
 ### Transparent Empty Bitmap
@@ -147,28 +147,16 @@ Icons support additional searchable text shown in a secondary column:
 
 ### Icon Data in icon_library.py
 
-Icon names and hints are stored in `_legacy_icon_defs()` in `taskcoachlib/gui/icons/icon_library.py`:
-
-```python
-_legacy_icon_defs = {
-    "calendar_icon": {
-        "name": _("Calendar"),
-        "hints": [_("date"), _("schedule"), _("appointment"), _("event"), _("planner")],
-    },
-    "clock_icon": {
-        "name": _("Clock"),
-        "hints": [_("time"), _("hour"), _("minute"), _("watch"), _("schedule"), _("duration")],
-    },
-    # ...
-}
-```
+Icon names and hints are stored in each theme's `icons_parsed.py` (generated from
+`icons.json` by `python tools/generate_icons_parsed_py.py <theme>`).
 
 Each hint term is individually translatable via the `_()` function. The IconPicker joins hints with spaces for search functionality.
 
 **Adding New Icons:**
 
-1. Add icon file to `taskcoachlib/gui/icons/`
-2. Add entry to `chooseableItems` with `name` and `hints` array
+1. Add icon PNG to the proper theme directory
+2. Add entry to the theme's `icons.json`
+3. Run `python tools/generate_icons_parsed_py.py <theme>`
 
 ### Disabled Items
 
@@ -691,7 +679,7 @@ These icons are disabled in the demo to test disabled item rendering:
 - `taskcoachlib/widgets/__init__.py` - Exports `IconPicker` class
 - `taskcoachlib/gui/dialog/preferences.py` - Uses `widgets.IconPicker` (120px fixed width)
 - `taskcoachlib/gui/dialog/entry.py` - Uses `widgets.IconPicker` (auto-width)
-- `taskcoachlib/gui/icons/icon_library.py` - Icon definitions (`_legacy_icon_defs()` with `name` and `hints`)
+- `taskcoachlib/gui/icons/icon_library.py` - Icon catalog, deprecated mappings, normalization
 
 ## Related Issues
 

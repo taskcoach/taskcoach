@@ -29,27 +29,27 @@ class AutoSaver(object):
         self.__settings = settings
         self.__task_files = set()
         self.__bound = False
-        pub.subscribe(self.onTaskFileDirty, "taskfile.dirty")
+        pub.subscribe(self.on_task_file_dirty, "taskfile.dirty")
 
-    def onTaskFileDirty(self, taskFile):
+    def on_task_file_dirty(self, taskFile):
         """When a task file gets dirty and auto save is on, note it so
         it can be saved during idle time."""
-        if self._needSave(taskFile):
+        if self._need_save(taskFile):
             self.__task_files.add(taskFile)
         if not self.__bound:
             self.__bound = True
             wx.GetApp().Bind(wx.EVT_IDLE, self.on_idle)
 
-    def _needSave(self, task_file):
+    def _need_save(self, task_file):
         """Return whether the task file needs to be saved."""
         return (
             task_file.filename()
-            and task_file.needSave()
+            and task_file.need_save()
             and self.__settings.getboolean("file", "autosave")
         )
 
-    def _needLoad(self, taskFile):
-        return taskFile.changedOnDisk() and self.__settings.getboolean(
+    def _need_load(self, taskFile):
+        return taskFile.changed_on_disk() and self.__settings.getboolean(
             "file", "autoload"
         )
 
@@ -60,5 +60,5 @@ class AutoSaver(object):
         self.__bound = False
         while self.__task_files:
             task_file = self.__task_files.pop()
-            if self._needSave(task_file):
+            if self._need_save(task_file):
                 task_file.save()

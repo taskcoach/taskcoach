@@ -103,10 +103,10 @@ class EffortListTest(test.TestCase):
         self.assertEqual(now, self.effortList.maxDateTime())
 
     def testNrTracking(self):
-        self.assertEqual(0, self.effortList.nrBeingTracked())
+        self.assertEqual(0, self.effortList.nr_being_tracked())
 
     def testOriginalLength(self):
-        self.assertEqual(0, self.effortList.originalLength())
+        self.assertEqual(0, self.effortList.original_length())
 
     def testRemoveItems(self):
         self.task.addEffort(self.effort)

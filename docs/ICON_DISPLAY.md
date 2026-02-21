@@ -224,8 +224,7 @@ Registry — store, retrieve, load themes, resolve duplicates.
 | `.get_path(icon_id, size)` | method | `str or None` — convenience: get_icon + path |
 | `.viewer_icon_ids()` | method | `list[str]` — icon IDs for viewer image lists (non-synthetic; future: only in-use data icons) |
 | `.normalize_icon_id(icon_id)` | method | `str` — resolve deprecated then duplicate, logs each, returns id unchanged if no match |
-| `._load_all_themes()` | method | Legacy + synthetic injected, file-based themes from icons_parsed.py |
-| `._load_legacy_icons()` | method | Inject legacy icons (hardcoded defs, disk scan for sizes) |
+| `._load_all_themes()` | method | File-based themes from icons_parsed.py + synthetic icons |
 | `._load_synthetic_icons()` | method | Create synthetic `Icon` + `SyntheticIconGenerator` instances from `get_icon_defs()` |
 | `._load_theme(theme)` | method | Load one theme's icons from icons_parsed.py |
 | `._load_theme_catalog()` | method | `list[str]` — active file-based themes from JSON (excludes legacy/synthetic) |

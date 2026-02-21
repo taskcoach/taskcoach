@@ -149,10 +149,10 @@ class _IconListCtrl(wx.ListCtrl):
         # Build searchable string based on preferences
         searchable = icon_id + " " + label + " " + hints
 
-        settings = wx.GetApp().settings
-        if settings.getboolean("iconpicker", "search_include_theme"):
+        from taskcoachlib.config import settings2
+        if settings2.iconpicker.search_include_theme:
             searchable += " " + theme
-        if settings.getboolean("iconpicker", "search_include_context"):
+        if settings2.iconpicker.search_include_context:
             searchable += " " + context
 
         return all(term in searchable for term in terms)
@@ -340,17 +340,19 @@ class _IconDialog(wx.Dialog):
         excluded_icons = self._get_excluded_icons()
 
         # Get enabled themes from settings (legacy always enabled)
+        from taskcoachlib.config import settings2
         enabled_themes = {"legacy"}
-        settings = wx.GetApp().settings
-        if settings.getboolean("iconpicker", "theme_nuvola"):
+        if settings2.iconpicker.theme_nuvola:
             enabled_themes.add("nuvola")
-        if settings.getboolean("iconpicker", "theme_oxygen"):
+        if settings2.iconpicker.theme_oxygen:
             enabled_themes.add("oxygen")
-        if settings.getboolean("iconpicker", "theme_papirus"):
+        if settings2.iconpicker.theme_papirus:
             enabled_themes.add("papirus")
-        if settings.getboolean("iconpicker", "theme_breeze"):
+        if settings2.iconpicker.theme_breeze:
             enabled_themes.add("breeze")
-        if settings.getboolean("iconpicker", "theme_taskcoach"):
+        if settings2.iconpicker.theme_noto_emoji:
+            enabled_themes.add("noto-emoji")
+        if settings2.iconpicker.theme_taskcoach:
             enabled_themes.add("taskcoach")
 
         # Load icons from catalog, sort by label

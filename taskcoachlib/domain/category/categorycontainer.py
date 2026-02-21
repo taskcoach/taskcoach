@@ -42,6 +42,10 @@ class CategoryList(base.Collection):
                 return category
         return None
 
+    @property
+    def has_category_filters(self):
+        return bool(self.filteredCategories())
+
     def filteredCategories(self):
         return [category for category in self if category.isFiltered()]
 

@@ -26,11 +26,11 @@ from . import tasklist
 class ViewFilter(tasklist.TaskListQueryMixin, base.Filter):
     def __init__(self, *args, **kwargs):
         self.__statusesToHide = set(kwargs.pop("statusesToHide", []))
-        self.__hideCompositeTasks = kwargs.pop("hideCompositeTasks", False)
-        self.registerObservers()
+        self.__hide_composite_tasks = kwargs.pop("hide_composite_tasks", False)
+        self.register_observers()
         super().__init__(*args, **kwargs)
 
-    def registerObservers(self):
+    def register_observers(self):
         registerObserver = patterns.Publisher().registerObserver
         for eventType in (
             task.Task.plannedStartDateTimeChangedEventType(),
@@ -43,45 +43,45 @@ class ViewFilter(tasklist.TaskListQueryMixin, base.Filter):
             task.Task.removeChildEventType(),
         ):
             if eventType.startswith("pubsub"):
-                pub.subscribe(self.onTaskStatusChange, eventType)
+                pub.subscribe(self.on_task_status_change, eventType)
             else:
                 registerObserver(
-                    self.onTaskStatusChange_Deprecated, eventType=eventType
+                    self.on_task_status_change_deprecated, eventType=eventType
                 )
         # Subscribe to global timer for midnight processing
         pub.subscribe(self._onDateChanged, 'timer.date')
 
     def detach(self):
         super().detach()
-        patterns.Publisher().removeObserver(self.onTaskStatusChange_Deprecated)
+        patterns.Publisher().removeObserver(self.on_task_status_change_deprecated)
         pub.unsubscribe(self._onDateChanged, 'timer.date')
 
     def _onDateChanged(self, timestamp):
         """Handle date change from global timer."""
-        self.atMidnight()
+        self.at_midnight()
 
-    def atMidnight(self):
+    def at_midnight(self):
         """Whether tasks are included in the filter or not may change at
         midnight."""
         self.reset()
 
-    def onTaskStatusChange(self, newValue, sender):  # pylint: disable=W0613
+    def on_task_status_change(self, newValue, sender):  # pylint: disable=W0613
         self.reset()
 
-    def onTaskStatusChange_Deprecated(
+    def on_task_status_change_deprecated(
         self, event=None
     ):  # pylint: disable=W0613
         self.reset()
 
-    def hideTaskStatus(self, status, hide=True):
+    def hide_task_status(self, status, hide=True):
         if hide:
             self.__statusesToHide.add(status)
         else:
             self.__statusesToHide.discard(status)
         self.reset()
 
-    def hideCompositeTasks(self, hide=True):
-        self.__hideCompositeTasks = hide
+    def hide_composite_tasks(self, hide=True):
+        self.__hide_composite_tasks = hide
         self.reset()
 
     @patterns.eventSource
@@ -109,7 +109,7 @@ class ViewFilter(tasklist.TaskListQueryMixin, base.Filter):
         # Call parent reset first (does normal filtering + ancestor addition)
         super().reset(event=event)
 
-        if not self.treeMode():
+        if not self.tree_mode():
             return
 
         # Get filter_forced items from entire filter chain (e.g., parents added
@@ -143,24 +143,24 @@ class ViewFilter(tasklist.TaskListQueryMixin, base.Filter):
         if orphans:
             self.removeItemsFromSelf(list(orphans), event=event)
 
-    def filterItems(self, tasks):
+    def filter_items(self, tasks):
         return [
-            task for task in tasks if self.filterTask(task)
+            task for task in tasks if self.filter_task(task)
         ]  # pylint: disable=W0621
 
-    def filterTask(self, task):  # pylint: disable=W0621
+    def filter_task(self, task):  # pylint: disable=W0621
         result = True
         if task.computedStatus() in self.__statusesToHide:
             result = False
         elif (
-            self.__hideCompositeTasks
-            and not self.treeMode()
+            self.__hide_composite_tasks
+            and not self.tree_mode()
             and task.children()
         ):
             result = False  # Hide composite task
         return result
 
-    def hasFilter(self):
+    def has_filter(self):
         return len(self.__statusesToHide) != 0 or (
-            self.__hideCompositeTasks and not self.treeMode()
+            self.__hide_composite_tasks and not self.tree_mode()
         )

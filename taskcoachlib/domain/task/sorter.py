@@ -32,7 +32,7 @@ class Sorter(base.TreeSorter):
     )
 
     def __init__(self, *args, **kwargs):
-        self.__treeMode = kwargs.pop("treeMode", False)
+        self.__tree_mode = kwargs.pop("tree_mode", False)
         self.__sortByTaskStatusFirst = kwargs.pop(
             "sortByTaskStatusFirst", True
         )
@@ -52,16 +52,16 @@ class Sorter(base.TreeSorter):
         """Re-sort when status sort priorities change in settings."""
         self.reset()
 
-    def setTreeMode(self, treeMode=True):
-        self.__treeMode = treeMode
+    def set_tree_mode(self, tree_mode=True):
+        self.__tree_mode = tree_mode
         try:
-            self.observable().setTreeMode(treeMode)
+            self.observable().set_tree_mode(tree_mode)
         except AttributeError:
             pass
         self.reset(forceEvent=True)
 
-    def treeMode(self):
-        return self.__treeMode
+    def tree_mode(self):
+        return self.__tree_mode
 
     def sortByTaskStatusFirst(self, sortByTaskStatusFirst):
         self.__sortByTaskStatusFirst = sortByTaskStatusFirst

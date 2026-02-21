@@ -30,6 +30,7 @@ import weakref
 class Effort(baseeffort.BaseEffort, base.Object):
 
     def __init__(self, task=None, start=None, stop=None, entryMode="standard", *args, **kwargs):
+        kwargs.pop("duration", None)  # computed field, not stored
         super().__init__(
             task, start or date.DateTime.now(), stop, *args, **kwargs
         )

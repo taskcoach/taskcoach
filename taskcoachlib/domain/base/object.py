@@ -692,7 +692,7 @@ class CompositeObject(Object, patterns.ObservableComposite):
     @staticmethod
     def subjectSortFunction(**kwargs):
         """Function to pass to list.sort when sorting by subject."""
-        recursive = kwargs.get("treeMode", False)
+        recursive = kwargs.get("tree_mode", False)
         if kwargs.get("sortCaseSensitive", False):
             return lambda item: item.subject(recursive=recursive)
         else:

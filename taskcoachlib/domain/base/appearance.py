@@ -164,7 +164,6 @@ DERIVED_SETTERS = {
 
 # Default icons for types without status-based icons (Task gets icons from status)
 TYPE_DEFAULT_ICONS = {
-    'Category': 'nuvola_mimetypes_inode-directory',
     'Note': 'nuvola_apps_knotes',
     'Attachment': 'nuvola_status_mail-attachment',
 }

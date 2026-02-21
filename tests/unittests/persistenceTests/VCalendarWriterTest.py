@@ -174,7 +174,7 @@ class VCalEffortWriterSelectionOnlyTest(
 
 
 class VCalTaskWriterTestCase(VCalTestCase):
-    treeMode = "Subclass responsibility"
+    tree_mode = "Subclass responsibility"
 
     def setUp(self):
         super().setUp()
@@ -190,7 +190,7 @@ class VCalTaskWriterTestCase(VCalTestCase):
             modificationDateTime=date.DateTime(2012, 1, 1),
         )
         self.taskFile.tasks().extend([self.task1, self.task2])
-        self.settings.set("taskviewer", "treemode", self.treeMode)
+        self.settings.set("taskviewer", "treemode", self.tree_mode)
         self.viewer = gui.viewer.TaskViewer(
             self.frame, self.taskFile, self.settings
         )
@@ -246,11 +246,11 @@ class TestSelectionOnlyMixin(VCalTaskCommonTestsMixin):
 
 
 class TestSelectionList(TestSelectionOnlyMixin, VCalTaskWriterTestCase):
-    treeMode = "False"
+    tree_mode = "False"
 
 
 class TestSelectionTree(TestSelectionOnlyMixin, VCalTaskWriterTestCase):
-    treeMode = "True"
+    tree_mode = "True"
 
 
 class TestNotSelectionOnlyMixin(VCalTaskCommonTestsMixin):
@@ -264,11 +264,11 @@ class TestNotSelectionOnlyMixin(VCalTaskCommonTestsMixin):
 
 
 class TestNotSelectionList(TestNotSelectionOnlyMixin, VCalTaskWriterTestCase):
-    treeMode = "False"
+    tree_mode = "False"
 
 
 class TestNotSelectionTree(TestNotSelectionOnlyMixin, VCalTaskWriterTestCase):
-    treeMode = "True"
+    tree_mode = "True"
 
 
 class FoldTest(test.TestCase):

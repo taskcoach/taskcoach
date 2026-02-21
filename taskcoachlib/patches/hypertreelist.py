@@ -2263,7 +2263,6 @@ class TreeListMainWindow(CustomTreeCtrl):
         self._main_column = 0
         self._dragItem = None
         self._hoverItem = None
-        self._hoverLineWidth = 0
         self._dragCacheColX0 = 0
         self._dragCacheColX1 = 0
         self._editCtrl = None  # Track the current in-place edit control
@@ -2946,24 +2945,19 @@ class TreeListMainWindow(CustomTreeCtrl):
 
     def SetHoverItem(self, item=None):
         """Sets the hovered item for outline drawing. Refreshes previous and new."""
-        self._readHoverSetting()
         prevItem = self._hoverItem
         self._hoverItem = item
         if prevItem:
-            self._refreshHoverLine(prevItem)
+            self._refresh_hover_row(prevItem)
         if self._hoverItem:
-            self._refreshHoverLine(self._hoverItem)
+            self._refresh_hover_row(self._hoverItem)
 
-    def _readHoverSetting(self):
-        """Re-read hover border width from config (called on each row change)."""
-        if hasattr(self, '_hoverSettingGetter'):
-            self._hoverLineWidth = self._hoverSettingGetter()
-
-    def _refreshHoverLine(self, item):
+    def _refresh_hover_row(self, item):
         """Like RefreshLine but inflated by pen width so the full outline is erased."""
         if self._dirty or self._freezeCount:
             return
-        pad = self._hoverLineWidth + 1  # both lines inside row, small safety
+        from taskcoachlib.config import settings2
+        pad = settings2.window.hoverlinewidth + 1  # both lines inside row, small safety
         x, y = self.CalcScrolledPosition(0, item.GetY())
         w = self.GetClientSize().x
         h = self.GetLineHeight(item)
@@ -3572,13 +3566,14 @@ class TreeListMainWindow(CustomTreeCtrl):
                 dc.DrawLine(0, y_top, total_width, y_top)
                 dc.DrawLine(0, y_top+h, total_width, y_top+h)
 
-            # Two-tone hover outline: fgcolor inner + bgcolor outer, each
-            # _hoverLineWidth thick.  Both drawn inside the row rect so
-            # adjacent rows don't overwrite.  W3C WCAG C40 technique.
-            if self._hoverLineWidth > 0 and item == self._hoverItem and item != self._dragItem:
+            # Two-tone hover outline: fgcolor inner + bgcolor outer.
+            # Both drawn inside the row rect so adjacent rows don't
+            # overwrite.  W3C WCAG C40 technique.
+            from taskcoachlib.config import settings2
+            pw = settings2.window.hoverlinewidth
+            if pw > 0 and item == self._hoverItem and item != self._dragItem:
                 row_off = 1 if draw_row_lines else 0
                 hover_w = self._owner.GetHeaderWindow().GetWidth()
-                pw = self._hoverLineWidth
                 outer = wx.Rect(0, item.GetY() + row_off, hover_w - 1, h - row_off)
                 inner = wx.Rect(outer)
                 inner.Deflate(pw, pw)

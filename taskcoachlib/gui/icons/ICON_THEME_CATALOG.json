@@ -44,6 +44,12 @@
     "url": "https://github.com/hfg-gmuend/openmoji",
     "license": "CC-BY-SA-4.0"
   },
+  "noto-emoji": {
+    "name": "Noto Color Emoji",
+    "active": true,
+    "url": "https://github.com/googlefonts/noto-emoji",
+    "license": "Apache-2.0"
+  },
   "taskcoach": {
     "name": "TaskCoach",
     "active": true,

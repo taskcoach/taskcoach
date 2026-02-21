@@ -395,15 +395,8 @@ def getCalendarColours():
         if s is None:
             from taskcoachlib.config import settings as settings_mod
             s = settings_mod.Settings()
-        theme = s.get("window", "theme")
-
-        if theme == "automatic":
-            from taskcoachlib.application.application import detect_dark_theme
-            is_dark = detect_dark_theme()
-        else:
-            is_dark = (theme == "dark")
-
-        section = "calendar_dark" if is_dark else "calendar_light"
+        from taskcoachlib.config import settings2
+        section = "calendar_dark" if settings2.window.theme_is_dark else "calendar_light"
 
         use_system = s.get(section, "other_month_bg_system") == "True"
         if use_system:

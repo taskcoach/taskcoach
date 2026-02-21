@@ -733,7 +733,7 @@ shortcuts are not configurable at the moment."""
             tr(_("Shift-Ctrl-P"), printPageSetup),
             tr(_("Ctrl-Q"), fileQuit),
             tr(_("Ctrl-R"), resetCategoryFilter),
-            tr(_("Shift-Ctrl-R"), resetFilter),
+            tr(_("Shift-Ctrl-R"), reset_filter),
             tr(_("Ctrl-S"), fileSave),
             tr(_("Shift-Ctrl-S"), fileSaveAs),
             tr(_("Ctrl-T"), effortStart),

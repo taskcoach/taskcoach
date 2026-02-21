@@ -163,17 +163,17 @@ class TreeSorter(Sorter):
         self.__rootItems = None  # Cached root items
         super().__init__(*args, **kwargs)
 
-    def treeMode(self):
+    def tree_mode(self):
         return True
 
     def createSortKeyFunction(self, key):
         """createSortKeyFunction returns a function that is passed to the
         builtin list.sort method to extract the sort key from each element
         in the list. We expect the domain object class to provide a
-        <sortKey>SortFunction(sortCaseSensitive, treeMode) method that
+        <sortKey>SortFunction(sortCaseSensitive, tree_mode) method that
         returns the sortKeyFunction for the sortKey."""
         return self._getSortKeyFunction(key)(
-            sortCaseSensitive=self._sortCaseSensitive, treeMode=self.treeMode()
+            sortCaseSensitive=self._sortCaseSensitive, tree_mode=self.tree_mode()
         )
 
     def reset(self, *args, **kwargs):  # pylint: disable=W0221
@@ -190,7 +190,7 @@ class TreeSorter(Sorter):
         self.__invalidateRootItemCache()
         # FIXME: Why is it necessary to remove all children explicitly?
         itemsToRemove = set(itemsToRemove)
-        if self.treeMode():
+        if self.tree_mode():
             for item in itemsToRemove.copy():
                 itemsToRemove.update(item.children(recursive=True))
         itemsToRemove = [item for item in itemsToRemove if item in self]

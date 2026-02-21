@@ -8,12 +8,14 @@
 4. [Multi-Window Architecture](#multi-window-architecture)
 5. [Select Next After Deletion](#select-next-after-deletion)
 6. [Status Bar Updates](#status-bar-updates)
-7. [Scroll After Rebuild (Tree Views)](#scroll-after-rebuild-tree-views)
-8. [Row Hover Outline](#row-hover-outline)
-9. [Mouse-Move Handler Inventory (Tree Views)](#mouse-move-handler-inventory-tree-views)
-10. [Vampire CPU Usage](#vampire-cpu-usage)
-11. [AUI Sash Resize Throttle](#aui-sash-resize-throttle)
-12. [Key Files](#key-files)
+7. [Selection-Driven Button Enable/Disable](#selection-driven-button-enabledisable)
+8. [Tree Mode Button Enable/Disable](#tree-mode-button-enabledisable)
+9. [Scroll After Rebuild (Tree Views)](#scroll-after-rebuild-tree-views)
+9. [Row Hover Outline](#row-hover-outline)
+10. [Mouse-Move Handler Inventory (Tree Views)](#mouse-move-handler-inventory-tree-views)
+11. [Vampire CPU Usage](#vampire-cpu-usage)
+12. [AUI Sash Resize Throttle](#aui-sash-resize-throttle)
+13. [Key Files](#key-files)
 
 ---
 
@@ -24,7 +26,7 @@
    This would provide a stronger, more accessible visual indicator for
    selection — especially on low-contrast themes or when custom row colors
    make the default selection highlight hard to see. The hover outline
-   infrastructure (`_hoverItem`, `PaintLevel`, `_refreshHoverLine`) could be
+   infrastructure (`_hoverItem`, `PaintLevel`, `_refresh_hover_row`) could be
    reused or extended to also draw around selected items using a different
    color pair (e.g. `SYS_COLOUR_HIGHLIGHT` / `SYS_COLOUR_HIGHLIGHTTEXT`).
 2. **Eliminate UpdateUI polling entirely:** See [Vampire CPU Usage](#vampire-cpu-usage)
@@ -153,6 +155,112 @@ StatusBar displays status
 
 ---
 
+## Selection-Driven Button Enable/Disable
+
+See [MENUS.md](MENUS.md) for the menu-side architecture (MenuItem subclass,
+`_update_menu_state()`, menu-level state methods).
+
+Toolbar and menu commands that depend on selection state (Edit, Delete, Cut,
+Copy, etc.) update their enabled state via Publisher signal — not polling.
+The viewer computes selection state once on selection change and fires a
+per-instance event. Each command subscribes directly.
+
+This replaces the former `EVT_UPDATE_UI` polling pattern where ~15 buttons
+called `curselection()` (walking `GetSelections()` + `GetItemPyData()`)
+every 200ms. See [Vampire CPU Usage](#vampire-cpu-usage) for the full
+problem description.
+
+### Signal Flow
+
+```
+EVT_TREE_SEL_CHANGED / EVT_LIST_ITEM_SELECTED / DESELECTED
+    └── widget.onSelect()
+        └── selectCommand() → viewer.onSelect()
+            ├── patterns.Event(selection_changed_event_type, self, has_selection).send()
+            │   └── _SelectionSync._on_selection_changed(event)
+            │       └── toolbar.EnableTool(id, command.enabled(None))
+            └── wx.CallAfter(sendViewerStatusEvent)  [existing]
+```
+
+### Design
+
+**Viewer** (`base.py`): Fires a Publisher event on selection change using
+a per-instance event type (`selection_changed_event_type()`). Same pattern as
+the tree mode toggle — see
+[ATTRIBUTE_PATTERN.md — Case Study: Tree Mode Toggle](ATTRIBUTE_PATTERN.md#case-study-tree-mode-toggle).
+
+**Helper** (`_SelectionSync` in `uicommand.py`): A small wiring object
+that subscribes to the viewer's selection signal via `registerObserver`
+and calls `command.enabled()` → `toolbar.EnableTool()` on change. Each
+command creates one in its `appendToToolBar`.
+
+**Commands**: Each selection-dependent command overrides `onUpdateUI` as
+a no-op, creates a `_SelectionSync` in `appendToToolBar`, and owns its
+`enabled()` check. Signal handlers and menu open both call
+`command.enabled()` — one source of truth.
+
+### Key Files
+
+| File | Role |
+|------|------|
+| `taskcoachlib/gui/viewer/base.py` | Cache, properties, Publisher event |
+| `taskcoachlib/gui/uicommand/uicommand.py` | `_SelectionSync`, command wiring |
+| `taskcoachlib/gui/uicommand/base_uicommand.py` | `MenuItem` subclass, `UICommand` base |
+
+---
+
+## Tree Mode Button Enable/Disable
+
+See [MENUS.md](MENUS.md) for the menu-side architecture.
+
+The Expand All and Collapse All toolbar buttons are only meaningful in tree
+mode. Their enabled state is driven by a Publisher signal from the viewer —
+the same per-instance pattern used for
+[selection-driven buttons](#selection-driven-button-enabledisable).
+
+### Signal Flow
+
+```
+Toolbar Dropdown / Menu Radio
+    └── viewer.set_tree_mode(value)  (task.py)
+        ├── settings.setboolean(...)          ← persistence
+        ├── presentation().set_tree_mode(value) ← data layer
+        └── patterns.Event(view_settings_changed_event_type, self).send()
+            ├── _ViewSettingsSync._on_view_settings_changed(event)
+            │   └── toolbar.EnableTool(id, command.enabled(None))
+            └── TaskViewerTreeOrListChoice._on_view_settings_changed(event)
+                └── setChoice(settings.getboolean(..., "treemode"))
+```
+
+### Design
+
+**Viewer** (`task.py`): `set_tree_mode(value)` writes the setting, updates
+the presentation, and fires a per-instance Publisher event via
+`view_settings_changed_event_type()` (defined in `base.py`). The event
+carries no data — receivers read current state from the viewer/settings.
+
+**Helper** (`_ViewSettingsSync` in `uicommand.py`): Sets the
+initial enabled state via `command.enabled()`, then subscribes to
+the viewer's settings event via `registerObserver`. On change, calls
+`command.enabled()` → `toolbar.EnableTool()`.
+
+**Commands**: `ViewExpandAll` and `ViewCollapseAll` each create a
+`_ViewSettingsSync` in `appendToToolBar` and override `onUpdateUI`
+as a no-op (these buttons are fully signal-driven).
+
+**Dropdown**: `TaskViewerTreeOrListChoice` subscribes to the same signal
+and reads the current treemode value from settings on change.
+
+### Key Files
+
+| File | Role |
+|------|------|
+| `taskcoachlib/gui/viewer/task.py` | `set_tree_mode()`, fires Publisher event |
+| `taskcoachlib/gui/viewer/base.py` | `view_settings_changed_event_type()` |
+| `taskcoachlib/gui/uicommand/uicommand.py` | `_ViewSettingsSync`, `ViewExpandAll`, `ViewCollapseAll`, `TaskViewerTreeOrListChoice` |
+
+---
+
 ## Scroll After Rebuild (Tree Views)
 
 ### Problem
@@ -194,17 +302,23 @@ onPresentationChanged (base.py)
 
 **Mode switch (list ↔ tree)** — fires sort event, NOT add/remove:
 ```
-onTreeListModeChanged (task.py)
-  → presentation().setTreeMode(value)
+viewer.set_tree_mode(value) (task.py)
+  → settings.setboolean(...)                 ← persistence
+  → presentation().set_tree_mode(value)
     → Sorter.reset() → fires sortEventType (NOT add/remove)
       → onSortOrderChanged (mixin.py) → refresh()
         → widget.RefreshAllItems()
           → scrollToSelection()              ← ensure-visible
   → scrollToSelectionCentered()              ← center on selected (explicit)
+  → patterns.Event(...).send()               ← Publisher event
+    → dropdown: setChoice(value)
+    → buttons: EnableTool(id, value)
 ```
 Note: `Sorter.reset()` fires `pub.sendMessage(self.sortEventType())`, not add/remove
 events, so `onPresentationChanged` does NOT fire. The centering call is explicit in
-`onTreeListModeChanged`.
+`set_tree_mode`. The Publisher event syncs the toolbar dropdown and expand/collapse
+buttons — see [ATTRIBUTE_PATTERN.md — Case Study: Tree Mode Toggle](ATTRIBUTE_PATTERN.md#case-study-tree-mode-toggle)
+for the full signal flow.
 
 ### Scroll Behavior by User Action
 
@@ -216,7 +330,7 @@ List-only viewers (effort, attachments) always use `ensureSelectionVisible` (nat
 | Toggle status filter            | Center          | `onPresentationChanged` → centered       |
 | Toggle category filter          | Center          | `onPresentationChanged` → centered       |
 | Clear/change search text        | Center          | `onPresentationChanged` → centered       |
-| Switch list ↔ tree mode         | Center          | `onTreeListModeChanged` → explicit centered |
+| Switch list ↔ tree mode         | Center          | `set_tree_mode` → explicit centered |
 | Delete selected item            | Center          | `onPresentationChanged` → centered       |
 | Add new item                    | Center          | `onPresentationChanged` → centered       |
 | Window resize                   | Center          | `EVT_SIZE` → `CallAfter` → centered     |
@@ -239,13 +353,16 @@ W3C WCAG C40 technique used by Chrome/Edge focus indicators. An inner line uses
 `SYS_COLOUR_WINDOWTEXT` and an outer line uses `SYS_COLOUR_WINDOW`, guaranteeing
 visibility on any background including selected, custom-colored, and unfocused
 rows. Line thickness is configurable via **Preferences > Theme > Hoverover
-Highlight** (default 1, 0 to disable). The setting is re-read on each row
-change, so changes take effect immediately without restart.
+Highlight** (default 1, 0 to disable). Read directly via
+`settings2.window.hoverlinewidth` at every use site — no cached attribute,
+changes take effect immediately without restart.
 
-The expensive `OnBeforeShowToolTip()` call (HitTest + full tooltip data
-extraction traversing notes, categories, attachments, descriptions) is deferred
-from every mouse-move event to a 200ms timer callback. Only the mouse position
-is stored on motion; data extraction runs once after the cursor is still.
+Tooltips are controlled by `settings2.view.descriptionpopups` (bool), read
+directly on every mouse-move in `ToolTipMixin.__OnMotion`. The expensive
+`OnBeforeShowToolTip()` call (HitTest + full tooltip data extraction traversing
+notes, categories, attachments, descriptions) is deferred to a 200ms timer
+callback. Only the mouse position is stored on motion; data extraction runs
+once after the cursor is still.
 
 ### Two-Tone Strategy (W3C WCAG C40)
 
@@ -267,11 +384,14 @@ EVT_MOUSE_EVENTS on TreeListMainWindow
     │   └── event.Moving() and not dragging?
     │       ├── Same row (Y-bounds cache hit) → return (zero work)
     │       └── New row → HitTest → SetHoverItem(item)
-    │           ├── _readHoverSetting()            ← re-read config
-    │           ├── _refreshHoverLine(prevItem)     ← erase old outline
-    │           └── _refreshHoverLine(newItem)      ← trigger repaint
+    │           ├── _refresh_hover_row(prevItem)      ← padded invalidation
+    │           │   └── settings2.window.hoverlinewidth  ← direct read
+    │           └── _refresh_hover_row(newItem)       ← padded invalidation
+    │               └── settings2.window.hoverlinewidth  ← direct read
     │
-    └── event.Skip() → tooltip __OnMotion also fires
+    └── event.Skip() → tooltip __OnMotion fires (tooltip.py)
+        └── settings2.view.descriptionpopups        ← direct read
+            └── start 200ms timer → OnBeforeShowToolTip
 ```
 
 **State:** `TreeListMainWindow._hoverItem` — the currently hovered item, or `None`.
@@ -282,7 +402,7 @@ Skipped for drag items.
 
 **Cleanup:** `EVT_LEAVE_WINDOW` → `SetHoverItem(None)`.
 
-**Ghosting prevention:** `_refreshHoverLine()` inflates the invalidation rect by
+**Ghosting prevention:** `_refresh_hover_row()` inflates the invalidation rect by
 3px (1px inner + 1px outer + safety) so the full two-tone outline is erased on
 repaint.
 
@@ -291,13 +411,17 @@ repaint.
 ```
 EVT_MOTION on VirtualListCtrl
     │
-    ├── _onHoverMotion()
-    │   └── HitTest → update _hover_row
-    │       ├── _refreshHoverRow(old)   ← padded RefreshRect
-    │       └── _refreshHoverRow(new)   ← padded RefreshRect
-    │       └── CallAfter(_drawHoverOutline)
+    ├── _on_hover_motion()
+    │   └── HitTest → row != _hover_row?
+    │       ├── settings2.window.hoverlinewidth?   ← direct read
+    │       │   ├── _refresh_hover_row(old)   ← padded invalidation
+    │       │   └── _refresh_hover_row(new)   ← padded invalidation
+    │       │   └── CallAfter(_draw_hover_outline)
+    │       │       └── settings2.window.hoverlinewidth  ← direct read
     │
-    └── event.Skip()
+    └── event.Skip() → tooltip __OnMotion fires (tooltip.py)
+        └── settings2.view.descriptionpopups        ← direct read
+            └── start 200ms timer → OnBeforeShowToolTip
 ```
 
 Native `wx.ListCtrl` has no PaintItem hook, so the outline is drawn post-paint
@@ -308,10 +432,15 @@ to survive native repaints.
 
 ### Settings
 
-`hoverlinewidth` in `[window]` — integer, default 1. 0 disables hover, >0
-enables the two-tone outline. User-facing path: **Preferences > Theme >
-Hoverover Highlight**. Read into a local cache at init, on
-`RefreshAllItems()`, and re-read on each row change via `_readHoverSetting()`.
+Both hover and tooltip settings are read directly via the `settings2` shim
+(see [SETTINGS.md](SETTINGS.md)) — no cached attributes, no getter lambdas,
+no pubsub subscriptions.
+
+- `settings2.window.hoverlinewidth` — integer, default 1. 0 disables hover,
+  >0 enables the two-tone outline. User-facing: **Preferences > Theme >
+  Hoverover Highlight**.
+- `settings2.view.descriptionpopups` — boolean, default True. Enables/disables
+  tooltip popups. User-facing: **Preferences > View > Description popups**.
 
 ---
 
@@ -321,8 +450,8 @@ Only two handlers fire on mouse motion. Both call `event.Skip()` so the chain is
 
 | Handler | File | Purpose |
 |---------|------|---------|
-| `OnMouse` fast-path | `hypertreelist.py` | Row-bounds cache → HitTest only on row change → update `_hoverItem` |
-| `__OnMotion` (ToolTipMixin) | `tooltip.py` | Store position, start 200ms timer |
+| `OnMouse` fast-path | `hypertreelist.py` | Row-bounds cache → HitTest only on row change → update `_hoverItem`, read `settings2.window.hoverlinewidth` |
+| `__OnMotion` (ToolTipMixin) | `tooltip.py` | Read `settings2.view.descriptionpopups`, store position, start 200ms timer |
 | `__OnTimer` (ToolTipMixin) | `tooltip.py` | Call `OnBeforeShowToolTip()` → build tooltip |
 
 **Hover fast-path:** `OnMouse` short-circuits for `event.Moving()` before the
@@ -337,7 +466,7 @@ traversing notes, categories, attachments, descriptions) is deferred to the time
 callback. On every mouse move, only the position is stored and the timer restarted.
 The expensive data extraction runs once after 200ms of stillness.
 
-**Removed:** `_onHoverMotion` (was in `treectrl.py`) — performed a duplicate
+**Removed:** `_on_hover_motion` (was in `treectrl.py`) — performed a duplicate
 HitTest on every pixel. Hover tracking is now integrated into `OnMouse` fast-path.
 
 ---
@@ -390,13 +519,12 @@ def curselection(self):
     return self.widget.curselection()  # walks GetSelections() on the tree
 ```
 
-So for Edit, Delete, TaskMarkInactive, TaskMarkActive, TaskMarkCompleted,
-NewSubItem, and others, every 200ms wx:
+So for NewSubItem and others still using mixin-based polling, every 200ms wx:
 
 1. Calls `widget.curselection()` → iterates all selected tree items → maps
    each to a domain object via `GetItemPyData()`
-2. Some also call `curselectionIsInstanceOf()` → iterates again with
-   `isinstance()` checks on every selected item
+2. Some also checked viewer type via `is_task`, `is_note`, etc. properties
+   (previously `curselectionIsInstanceOf()` — now removed)
 
 All to answer "should this button be greyed out?" — when nothing has changed.
 This is pure waste. The correct approach would be event-driven: update button
@@ -447,6 +575,52 @@ to `UPDATE_UI_PROCESS_SPECIFIED` mode and explicitly trigger
 `SetUpdateInterval(200)` stays as a safety fallback. This preserves the
 greyed-out visual feedback for context-sensitive buttons while eliminating the
 continuous polling overhead.
+
+### Button Inventory by Update Mechanism
+
+**Signal-driven** (no `EVT_UPDATE_UI`, no polling):
+
+| Command | Signal | What drives enable/disable |
+|---------|--------|---------------------------|
+| `EditCut` | selection | `_SelectionSync` → `command.enabled()` |
+| `EditCopy` | selection | `_SelectionSync` → `command.enabled()` |
+| `ClearSelection` | selection | `_SelectionSync` → `command.enabled()` |
+| `Edit` | selection | `_SelectionSync` → `command.enabled()` |
+| `Delete` | selection | `_SelectionSync` → `command.enabled()` |
+| `Mail` | selection | `_SelectionSync` → `command.enabled()` |
+| `ViewExpandAll` | view settings | `_ViewSettingsSync` → `command.enabled()` |
+| `ViewCollapseAll` | view settings | `_ViewSettingsSync` → `command.enabled()` |
+| `TaskMarkActive` | selection | `_SelectionSync` → `command.enabled()` |
+| `TaskMarkInactive` | selection | `_SelectionSync` → `command.enabled()` |
+| `TaskMarkCompleted` | selection | `_SelectionSync` → `command.enabled()` |
+| `EffortStart` | selection | `_SelectionSync` → `command.enabled()` |
+| `EffortStartForEffort` | selection | `_SelectionSync` → `command.enabled()` |
+| `EffortNew` | selection | `_SelectionSync` → `command.enabled()` |
+| `EditPasteAsSubItem` | selection | menu-open → `command.enabled()` |
+| `ResetFilter` | filter change | `Filter.filter_change_event_type()` → `command.enabled()` |
+| `ViewerHideTasks` | filter change | `Filter.filter_change_event_type()` → `command.checked()` |
+| `SelectAll` | selection | menu-open → `command.enabled()` |
+| `ToggleCategory` | selection | menu-open → `command.enabled()` + `checked()` |
+| `FileSave` | dirty state | `taskfile.dirty`/`taskfile.clean` pubsub → `command.enabled()` |
+| `FileMergeDiskChanges` | disk change | `taskfile.changed`/dirty/clean pubsub → `command.enabled()` |
+| `FilePurgeDeletedItems` | deleted items | menu-open → `command.enabled()` |
+| `ViewerHideCompositeTasks` | tree mode | menu-open → `command.enabled()` + `checked()` |
+| `EditTrackedTasks` | tracking | menu-open → `command.enabled()` |
+| `EditUndo` | history | `commandhistory.changed` pubsub → `command.enabled()` |
+| `EditRedo` | history | `commandhistory.changed` pubsub → `command.enabled()` |
+
+**Custom `enabled()`** (`EVT_UPDATE_UI` but no selection polling):
+
+| Command | What `enabled()` checks |
+|---------|-------------------------|
+| `EditPaste` | `TextCtrl.CanPaste()` or clipboard |
+| `RenameViewer` | `activeViewer()` |
+| `ActivateViewer` | `viewerCount() > 1` |
+| `HideCurrentColumn` | `isHideableColumn()` at mouse position |
+| `EffortStartForTask` | task not completed/tracked |
+| `EffortStartButton` | any task not completed |
+| `DialogCommand` | dialog is closed |
+| `Anonymize` | `iocontroller.filename()` |
 
 ### Additional idle handlers that fire on every cycle
 

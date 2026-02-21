@@ -148,7 +148,7 @@ class CategorizableCompositeObject(base.CompositeObject):
 
             categories = categorizable.categories()
             sortedCategorySubjects = sortedSubjects(categories)
-            isListMode = not kwargs.get("treeMode", False)
+            isListMode = not kwargs.get("tree_mode", False)
             childCategories = (
                 categorizable.categories(recursive=True, upwards=isListMode)
                 - categories

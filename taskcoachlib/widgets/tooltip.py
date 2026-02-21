@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import operating_system
+from taskcoachlib.config import settings2
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 import wx
 import textwrap
@@ -27,7 +28,6 @@ class ToolTipMixin(object):
     dynamic tooltip over a control."""
 
     def __init__(self, *args, **kwargs):
-        self.__enabled = kwargs.pop("tooltipsEnabled", True)
         super().__init__(*args, **kwargs)
 
         self.__timer = wx.Timer(self, wx.NewId())
@@ -43,9 +43,6 @@ class ToolTipMixin(object):
         self.Bind(wx.EVT_TIMER, self.__OnTimer, id=self.__timer.GetId())
         # Stop timer on window destruction to prevent crashes
         self.Bind(wx.EVT_WINDOW_DESTROY, self.__OnDestroy)
-
-    def SetToolTipsEnabled(self, enabled):
-        self.__enabled = enabled
 
     def PopupMenu(self, menu):
         self.__frozen = False
@@ -105,7 +102,7 @@ class ToolTipMixin(object):
             self.HideTip()
             self.__tip = None
 
-        if self.__enabled:
+        if settings2.view.descriptionpopups:
             self.__position = (x + 20, y + 10)
             self.__pending_xy = (x, y)
             self.__timer.Start(200, True)

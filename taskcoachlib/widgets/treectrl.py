@@ -231,8 +231,7 @@ class TreeListCtrl(
             **kwargs
         )
         self.bindEventHandlers(selectCommand, editCommand, dragAndDropCommand)
-        self.GetMainWindow().Bind(wx.EVT_LEAVE_WINDOW, self._onHoverLeave)
-        self._syncHoverSettings()
+        self.GetMainWindow().Bind(wx.EVT_LEAVE_WINDOW, self._on_hover_leave)
 
     def bindEventHandlers(
         self, selectCommand, editCommand, dragAndDropCommand
@@ -258,15 +257,7 @@ class TreeListCtrl(
         wx.PostEvent(self, wx.ChildFocusEvent(self))
         event.Skip()
 
-    def _syncHoverSettings(self):
-        """Read hover settings from config and push to main window."""
-        mw = self.GetMainWindow()
-        mw._hoverLineWidth = self.__adapter.settings.getint("window", "hoverlinewidth")
-        # Store getter so OnMouse fast-path can re-read on row change
-        if not hasattr(mw, '_hoverSettingGetter'):
-            mw._hoverSettingGetter = lambda: self.__adapter.settings.getint("window", "hoverlinewidth")
-
-    def _onHoverLeave(self, event):
+    def _on_hover_leave(self, event):
         self.GetMainWindow().SetHoverItem(None)
         event.Skip()
 
@@ -275,6 +266,14 @@ class TreeListCtrl(
 
     def getItemCTType(self, item):  # pylint: disable=W0613
         return self.ct_type
+
+    @property
+    def has_selection(self):
+        return bool(self.GetSelections())
+
+    @property
+    def has_single_selection(self):
+        return len(self.GetSelections()) == 1
 
     def curselection(self):
         # Guard against deleted C++ object - can happen when wx.CallAfter
@@ -291,7 +290,6 @@ class TreeListCtrl(
             return []
 
     def RefreshAllItems(self, count=0):  # pylint: disable=W0613
-        self._syncHoverSettings()
         self.Freeze()
         self.StopEditing()
         self.__refreshing = True  # Suppress selection events during rebuild

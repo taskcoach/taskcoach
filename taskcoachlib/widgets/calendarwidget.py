@@ -350,6 +350,14 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
 
     MainWindow = property(GetMainWindow)
 
+    @property
+    def has_selection(self):
+        return len(self.__selection) > 0
+
+    @property
+    def has_single_selection(self):
+        return len(self.__selection) == 1
+
     def curselection(self):
         return self.__selection
 

@@ -217,7 +217,7 @@ class Viewer2HTMLConverter(object):
 
     def tableBody(self, columns, selectionOnly, printing, level):
         """Returns the table body <tbody>."""
-        tree = self.viewer.isTreeViewer()
+        tree = self.viewer.is_tree_viewer()
         self.count = 0
         tableBodyContent = []
         for item in self.viewer.visibleItems():

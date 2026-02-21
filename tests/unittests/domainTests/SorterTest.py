@@ -23,11 +23,11 @@ from taskcoachlib.domain import task, effort, date, category
 
 class DummyTaskList(task.TaskList):
     def __init__(self, *args, **kwargs):
-        self.treeMode = "not set"
+        self.tree_mode = "not set"
         super().__init__(*args, **kwargs)
 
-    def setTreeMode(self, treeMode):
-        self.treeMode = treeMode
+    def set_tree_mode(self, tree_mode):
+        self.tree_mode = tree_mode
 
 
 class TaskSorterTest(test.TestCase):
@@ -350,7 +350,7 @@ class TaskSorterTreeModeTest(test.TestCase):
     def setUp(self):
         task.Task.settings = config.Settings(load=False)
         self.taskList = DummyTaskList()
-        self.sorter = task.sorter.Sorter(self.taskList, treeMode=True)
+        self.sorter = task.sorter.Sorter(self.taskList, tree_mode=True)
         self.parent1 = task.Task(subject="parent 1")
         self.child1 = task.Task(subject="child 1")
         self.parent1.addChild(self.child1)
@@ -408,19 +408,19 @@ class TaskSorterTreeModeTest(test.TestCase):
         )
 
     def testSetSorterToListMode(self):
-        self.sorter.setTreeMode(False)
+        self.sorter.set_tree_mode(False)
         self.assertEqual(
             [self.child1, self.child2, self.parent1, self.parent2],
             list(self.sorter),
         )
 
     def testTreeModeDelegation_True(self):
-        self.sorter.setTreeMode(True)
-        self.assertEqual(True, self.taskList.treeMode)
+        self.sorter.set_tree_mode(True)
+        self.assertEqual(True, self.taskList.tree_mode)
 
     def testTreeModeDelegation_False(self):
-        self.sorter.setTreeMode(False)
-        self.assertEqual(False, self.taskList.treeMode)
+        self.sorter.set_tree_mode(False)
+        self.assertEqual(False, self.taskList.tree_mode)
 
     def testSortByInvalidSortKey(self):
         self.sorter.sortBy("invalidKey")

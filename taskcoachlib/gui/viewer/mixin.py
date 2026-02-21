@@ -54,7 +54,7 @@ class SearchableViewerMixin(object):
             includeSubItems=includeSubItems,
             searchDescription=searchDescription,
             regularExpression=regularExpression,
-            treeMode=self.isTreeViewer(),
+            tree_mode=self.is_tree_viewer(),
         )
 
     def setSearchFilter(
@@ -143,11 +143,11 @@ class FilterableViewerMixin(object):
         clearUICommand = uicommand.ResetFilter(viewer=self)
         return super().createToolBarUICommands() + (clearUICommand,)
 
-    def resetFilter(self):
+    def reset_filter(self):
         self.taskFile.categories().resetAllFilteredCategories()
 
-    def hasFilter(self):
-        return bool(self.taskFile.categories().filteredCategories())
+    def has_filter(self):
+        return self.taskFile.categories().has_category_filters
 
     def createCategoryFilterCommands(self):
         categories = self.taskFile.categories()
@@ -200,7 +200,7 @@ class FilterableViewerForCategorizablesMixin(FilterableViewerMixin):
         return category.filter.CategoryFilter(
             items,
             categories=self.taskFile.categories(),
-            treeMode=self.isTreeViewer(),
+            tree_mode=self.is_tree_viewer(),
             filterOnlyWhenAllCategoriesMatch=filterOnlyWhenAllCategoriesMatch,
         )
 
@@ -209,51 +209,51 @@ class FilterableViewerForTasksMixin(FilterableViewerForCategorizablesMixin):
     def createFilter(self, taskList):
         taskList = super().createFilter(taskList)
         return task.filter.ViewFilter(
-            taskList, treeMode=self.isTreeViewer(), **self.viewFilterOptions()
+            taskList, tree_mode=self.is_tree_viewer(), **self.viewFilterOptions()
         )
 
     def viewFilterOptions(self):
         return dict(
-            hideCompositeTasks=self.isHidingCompositeTasks(),
-            statusesToHide=self.hiddenTaskStatuses(),
+            hide_composite_tasks=self.is_hiding_composite_tasks(),
+            statusesToHide=self.hidden_task_statuses(),
         )
 
-    def hideTaskStatus(self, status, hide=True):
+    def hide_task_status(self, status, hide=True):
         self.__setBooleanSetting("hide%stasks" % status, hide)
-        self.presentation().hideTaskStatus(status, hide)
+        self.presentation().hide_task_status(status, hide)
 
-    def showOnlyTaskStatus(self, status):
+    def show_only_task_status(self, status):
         for taskStatus in task.Task.possibleStatuses():
-            self.hideTaskStatus(taskStatus, hide=status != taskStatus)
+            self.hide_task_status(taskStatus, hide=status != taskStatus)
 
-    def isHidingTaskStatus(self, status):
+    def is_hiding_task_status(self, status):
         return self.__getBooleanSetting("hide%stasks" % status)
 
-    def hiddenTaskStatuses(self):
+    def hidden_task_statuses(self):
         return [
             status
             for status in task.Task.possibleStatuses()
-            if self.isHidingTaskStatus(status)
+            if self.is_hiding_task_status(status)
         ]
 
-    def hideCompositeTasks(self, hide=True):
+    def hide_composite_tasks(self, hide=True):
         self.__setBooleanSetting("hidecompositetasks", hide)
-        self.presentation().hideCompositeTasks(hide)
+        self.presentation().hide_composite_tasks(hide)
 
-    def isHidingCompositeTasks(self):
+    def is_hiding_composite_tasks(self):
         return self.__getBooleanSetting("hidecompositetasks")
 
-    def resetFilter(self):
-        super().resetFilter()
+    def reset_filter(self):
+        super().reset_filter()
         for status in task.Task.possibleStatuses():
-            self.hideTaskStatus(status, False)
-        if not self.isTreeViewer():
+            self.hide_task_status(status, False)
+        if not self.is_tree_viewer():
             # Only reset this filter when in list mode, since it only applies
             # to list mode
-            self.hideCompositeTasks(False)
+            self.hide_composite_tasks(False)
 
-    def hasFilter(self):
-        return super().hasFilter() or self.presentation().hasFilter()
+    def has_filter(self):
+        return super().has_filter() or self.presentation().has_filter()
 
     def createFilterUICommands(self):
         return (
@@ -538,7 +538,7 @@ class SortableViewerForTasksMixin(
     def sorterOptions(self):
         options = super().sorterOptions()
         options.update(
-            treeMode=self.isTreeViewer(),
+            tree_mode=self.is_tree_viewer(),
             sortByTaskStatusFirst=self.isSortByTaskStatusFirst(),
         )
         return options

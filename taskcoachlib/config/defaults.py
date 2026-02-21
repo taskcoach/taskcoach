@@ -674,6 +674,7 @@ defaults = {
         "theme_oxygen": "True",
         "theme_papirus": "True",
         "theme_breeze": "True",
+        "theme_noto_emoji": "True",
         "theme_taskcoach": "True",
         # Search options
         "search_include_theme": "False",

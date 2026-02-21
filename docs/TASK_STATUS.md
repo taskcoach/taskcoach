@@ -394,7 +394,7 @@ All subscribe to `statusChangedEventType` for refresh.
 | Icon cascade | `domain/task/task.py` | Icon fallback |
 | ViewFilter | `domain/task/filter.py` | Hide tasks by status |
 | Status bar | `gui/viewer/task.py` | Task count per status |
-| Task list counts | `domain/task/tasklist.py` | `nrOfTasksPerStatus()` |
+| Task list counts | `domain/task/tasklist.py` | `nr_of_tasks_per_status()` |
 | Taskbar tooltip | `gui/taskbaricon.py` | System tray overdue/duesoon counts |
 | Editor display | `gui/dialog/editor.py` | Shows icon + colored text in Dates tab |
 | HTML export | `persistence/html/generator.py` | CSS class per status |
@@ -534,7 +534,7 @@ every consumer to potentially trigger computation. The new pattern separates wri
    | statusBgColor() | task.py | Pending |
    | statusFont() | task.py | Pending |
    | statusIcon() | task.py | ✓ Done (now accessor) |
-   | nrOfTasksPerStatus() | tasklist.py | Pending |
+   | nr_of_tasks_per_status() | tasklist.py | Pending |
    | Editor display | editor.py | ✓ Done (uses derivedXxx/effectiveXxx) |
    | Appearance tab 3-col layout | editor.py | ✓ Done |
    | Task derivedXxx(explain) | task.py | ✓ Done |
@@ -1104,7 +1104,7 @@ Tasks have `derivedXxx()` / `derivedXxxSource()` and `effectiveXxx()` / `effecti
 | `taskcoachlib/domain/task/status.py` | TaskStatus class and 6 singleton instances |
 | `taskcoachlib/domain/task/task.py` | `status()`, color/icon/font methods, `recomputeAppearance()` |
 | `taskcoachlib/domain/task/filter.py` | ViewFilter with status-based hiding |
-| `taskcoachlib/domain/task/tasklist.py` | `nrOfTasksPerStatus()` count method |
+| `taskcoachlib/domain/task/tasklist.py` | `nr_of_tasks_per_status()` count method |
 | `taskcoachlib/gui/scheduler.py` | GlobalTimer + MasterScheduler |
 | `taskcoachlib/gui/dialog/editor.py` | Status display in Edit Task Dates tab |
 | `taskcoachlib/gui/viewer/task.py` | Status bar counts, filter UI commands |

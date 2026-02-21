@@ -736,46 +736,46 @@ class PriorityCommandTestCase(TaskCommandTestCase):
 
 
 class MaxPriorityCommandTest(PriorityCommandTestCase):
-    def maxPriority(self, tasks=None):
+    def max_priority(self, tasks=None):
         command.MaxPriorityCommand(self.taskList, tasks or []).do()
 
     def testEmptySelection(self):
-        self.maxPriority()
+        self.max_priority()
         self.assertDoUndoRedo(0, 0, 0, 0)
 
     def testOneTaskWhenBothTasksHaveSamePriority(self):
-        self.maxPriority([self.task1])
+        self.max_priority([self.task1])
         self.assertDoUndoRedo(1, 0, 0, 0)
 
     def testBothTasksWhenBothTasksHaveSamePriority(self):
-        self.maxPriority([self.task1, self.task2])
+        self.max_priority([self.task1, self.task2])
         self.assertDoUndoRedo(1, 1, 0, 0)
 
     def testMakeLowestPriorityTheMaxPriority(self):
         self.task2.setPriority(2)
-        self.maxPriority([self.task1])
+        self.max_priority([self.task1])
         self.assertDoUndoRedo(3, 2, 0, 2)
 
 
 class MinPriorityCommandTest(PriorityCommandTestCase):
-    def minPriority(self, tasks=None):
+    def min_priority(self, tasks=None):
         command.MinPriorityCommand(self.taskList, tasks or []).do()
 
     def testEmptySelection(self):
-        self.minPriority()
+        self.min_priority()
         self.assertDoUndoRedo(0, 0, 0, 0)
 
     def testOneTaskWhenBothTasksHaveSamePriority(self):
-        self.minPriority([self.task1])
+        self.min_priority([self.task1])
         self.assertDoUndoRedo(-1, 0, 0, 0)
 
     def testBothTasksWhenBothTasksHaveSamePriority(self):
-        self.minPriority([self.task1, self.task2])
+        self.min_priority([self.task1, self.task2])
         self.assertDoUndoRedo(-1, -1, 0, 0)
 
     def testMakeLowestPriorityTheMaxPriority(self):
         self.task2.setPriority(-2)
-        self.minPriority([self.task1])
+        self.min_priority([self.task1])
         self.assertDoUndoRedo(-3, -2, 0, -2)
 
 

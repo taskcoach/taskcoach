@@ -234,6 +234,8 @@ def detect_dark_theme():
     Returns True if dark theme detected, False otherwise.
     Requires wxApp to be initialized.
     """
+    if wx.GetApp() is None:
+        return False
     try:
         appearance = wx.SystemSettings.GetAppearance()
         return appearance.IsDark()
@@ -410,6 +412,7 @@ class wxApp(wx.App):
     def __init__(self, sessionCallback, reopenCallback, *args, **kwargs):
         self.sessionCallback = sessionCallback
         self.reopenCallback = reopenCallback
+        self.quitting = False
         self.__shutdownInProgress = False
         super().__init__(*args, **kwargs)
 
@@ -480,6 +483,8 @@ class Application(object, metaclass=patterns.Singleton):
         )
         # Expose settings on wxApp so wx.GetApp().settings works everywhere
         self.__wx_app.settings = self.settings
+        from taskcoachlib.config import settings2
+        settings2.wx_ready()
 
         # 4. Log wx-specific info (needs wxApp)
         _log_wx_info()
@@ -617,14 +622,21 @@ class Application(object, metaclass=patterns.Singleton):
             self.iocontroller, self.taskFile, self.settings
         )
         self.__wx_app.SetTopWindow(self.mainwindow)
+        self.mainwindow.Bind(wx.EVT_SYS_COLOUR_CHANGED,
+                             self.__on_system_theme_colour_changed)
         if not self.settings.getboolean("file", "inifileloaded"):
             self.__warn_user_that_ini_file_was_not_loaded()
         if loadTaskFile:
-            self.iocontroller.openAfterStart(self._args, self.__early_lock_result)
+            self.iocontroller.open_after_start(self._args, self.__early_lock_result)
         self.__register_signal_handlers()
         self.__create_mutex()
         self.__create_task_bar_icon()
         wx.CallAfter(self.__show_tips)
+
+    def __on_system_theme_colour_changed(self, event):
+        """Rebroadcast wx system colour change as Publisher signal."""
+        patterns.Event("system.theme_colour_changed", self).send()
+        event.Skip()
 
     def __check_file_lock_early(self):
         """Check file lock before main window creation.
@@ -686,6 +698,8 @@ Break the lock?"""
         ini_file = self._options.inifile if self._options else None
         # pylint: disable=W0201
         self.settings = config.Settings(load_settings, ini_file)
+        from taskcoachlib.config import settings2
+        settings2.init(self.settings)
 
     def __init_language(self):
         """Initialize the current translation."""
@@ -864,7 +878,7 @@ Break the lock?"""
 
     def displayMessage(self, message):
         # Guard against deleted mainwindow during shutdown
-        if getattr(self, '_quitting', False):
+        if wx.GetApp().quitting:
             return
         try:
             self.mainwindow.displayMessage(message)
@@ -945,11 +959,9 @@ Break the lock?"""
             stop_timers_in_window(window)
 
     def quitApplication(self, force=False):
-        # Prevent re-entry - quitApplication may be called multiple times
-        # (e.g., from window close, signal handler, console ctrl handler)
-        if getattr(self, '_quitting', False):
+        if wx.GetApp().quitting:
             return True
-        self._quitting = True
+        wx.GetApp().quitting = True
 
         if not self.iocontroller.close(force=force):
             return False

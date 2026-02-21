@@ -65,7 +65,7 @@ class iCalendarWriter(object):
             items = viewer.visibleItems()
             if selectionOnly:
                 selection = viewer.curselection()
-                if viewer.isTreeViewer():
+                if viewer.is_tree_viewer():
                     selection = extendedWithAncestors(selection)
                 items = [item for item in items if item in selection]
 

@@ -31,10 +31,10 @@ class TaskListTest(test.TestCase):
         self.task3 = task.Task()
 
     def nrStatus(self, status):
-        return self.taskList.nrOfTasksPerStatus()[status]
+        return self.taskList.nr_of_tasks_per_status()[status]
 
     def testNrOfTasksPerStatusOfAnEmptyTaskList(self):
-        counts = self.taskList.nrOfTasksPerStatus()
+        counts = self.taskList.nr_of_tasks_per_status()
         for status in task.Task.possibleStatuses():
             self.assertEqual(0, counts[status])
 
@@ -58,41 +58,41 @@ class TaskListTest(test.TestCase):
         self.assertEqual(1, self.nrStatus(task.status.duesoon))
 
     def testNrBeingTracked(self):
-        self.assertEqual(0, self.taskList.nrBeingTracked())
+        self.assertEqual(0, self.taskList.nr_being_tracked())
         activeTask = task.Task()
         activeTask.addEffort(effort.Effort(activeTask))
         self.taskList.append(activeTask)
-        self.assertEqual(1, self.taskList.nrBeingTracked())
+        self.assertEqual(1, self.taskList.nr_being_tracked())
 
     def testOriginalLength(self):
-        self.assertEqual(0, self.taskList.originalLength())
+        self.assertEqual(0, self.taskList.original_length())
 
     def testMinPriority_EmptyTaskList(self):
-        self.assertEqual(0, self.taskList.minPriority())
+        self.assertEqual(0, self.taskList.min_priority())
 
     def testMinPriority_OneTaskWithDefaultPriority(self):
         self.taskList.append(self.task1)
-        self.assertEqual(self.task1.priority(), self.taskList.minPriority())
+        self.assertEqual(self.task1.priority(), self.taskList.min_priority())
 
     def testMinPriority_OneTaskWithNonDefaultPriority(self):
         self.taskList.append(task.Task(priority=-5))
-        self.assertEqual(-5, self.taskList.minPriority())
+        self.assertEqual(-5, self.taskList.min_priority())
 
     def testMinPriority_TwoTasks(self):
         self.taskList.extend([task.Task(priority=3), task.Task(priority=5)])
-        self.assertEqual(3, self.taskList.minPriority())
+        self.assertEqual(3, self.taskList.min_priority())
 
     def testMaxPriority_EmptyTaskList(self):
-        self.assertEqual(0, self.taskList.maxPriority())
+        self.assertEqual(0, self.taskList.max_priority())
 
     def testMaxPriority_OneTaskWithDefaultPriority(self):
         self.taskList.append(self.task1)
-        self.assertEqual(self.task1.priority(), self.taskList.maxPriority())
+        self.assertEqual(self.task1.priority(), self.taskList.max_priority())
 
     def testMaxPriority_OneTaskWithNonDefaultPriority(self):
         self.taskList.append(task.Task(priority=-5))
-        self.assertEqual(-5, self.taskList.maxPriority())
+        self.assertEqual(-5, self.taskList.max_priority())
 
     def testMaxPriority_TwoTasks(self):
         self.taskList.extend([task.Task(priority=3), task.Task(priority=5)])
-        self.assertEqual(5, self.taskList.maxPriority())
+        self.assertEqual(5, self.taskList.max_priority())

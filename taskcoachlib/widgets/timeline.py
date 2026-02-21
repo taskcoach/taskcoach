@@ -97,6 +97,14 @@ class Timeline(tooltip.ToolTipMixin, timeline.TimeLine):
             # wrapped C/C++ object has been deleted
             pass
 
+    @property
+    def has_selection(self):
+        return len(self.__selection) > 0
+
+    @property
+    def has_single_selection(self):
+        return len(self.__selection) == 1
+
     def curselection(self):
         return self.__selection
 

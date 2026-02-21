@@ -334,6 +334,8 @@ class Settings(CachingConfigParser):
         if value != currentValue:
             super().set(section, option, value)
             patterns.Event("%s.%s" % (section, option), self, value).send()
+            from taskcoachlib.config import settings2
+            settings2.schedule_refresh()
             return True
         else:
             return False

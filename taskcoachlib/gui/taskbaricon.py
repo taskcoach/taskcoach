@@ -215,7 +215,7 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         self.__stopTicking()
 
     def __startTicking(self):
-        if self.__taskList.nrBeingTracked() > 0:
+        if self.__taskList.nr_being_tracked() > 0:
             self.startClock()
             self.__toggle_tracking_icon()
             self.__setIcon()
@@ -226,7 +226,7 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
             self._clockRunning = True
 
     def __stopTicking(self):
-        if self.__taskList.nrBeingTracked() == 0:
+        if self.__taskList.nr_being_tracked() == 0:
             self.stopClock()
             self.__set_default_icon()
             self.__setIcon()
@@ -250,7 +250,7 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         tool tip to 64 characters, so we cannot show everything we would
         like to and have to make choices."""
         textParts = []
-        trackedTasks = self.__taskList.tasksBeingTracked()
+        trackedTasks = self.__taskList.tasks_being_tracked()
         if trackedTasks:
             count = len(trackedTasks)
             if count == 1:
@@ -259,7 +259,7 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
                 tracking = _("tracking effort for %d tasks") % count
             textParts.append(tracking)
         else:
-            counts = self.__taskList.nrOfTasksPerStatus()
+            counts = self.__taskList.nr_of_tasks_per_status()
             for status, singular, plural in self.toolTipMessages:
                 count = counts[status]
                 if count == 1:
@@ -495,7 +495,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             menu.append(tracking_item)
 
         # Stop/Resume tracking - dynamic based on state
-        trackedTasks = self.__taskList.tasksBeingTracked()
+        trackedTasks = self.__taskList.tasks_being_tracked()
         if trackedTasks:
             # Currently tracking - show Stop
             if len(trackedTasks) == 1:
@@ -643,7 +643,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
 
     def _doStopTracking(self):
         """Stop tracking all efforts (called from wx main thread)."""
-        for trackedTask in self.__taskList.tasksBeingTracked():
+        for trackedTask in self.__taskList.tasks_being_tracked():
             trackedTask.stopTracking()
 
     def _onNewCategory(self, widget):
@@ -727,7 +727,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         self.__stopTicking()
 
     def __startTicking(self):
-        if self.__taskList.nrBeingTracked() > 0:
+        if self.__taskList.nr_being_tracked() > 0:
             self.startClock()
             self.__toggle_tracking_icon()
             self.__setIcon()
@@ -738,7 +738,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             self._clockRunning = True
 
     def __stopTicking(self):
-        if self.__taskList.nrBeingTracked() == 0:
+        if self.__taskList.nr_being_tracked() == 0:
             self.stopClock()
             self.__set_default_icon()
             self.__setIcon()
@@ -760,7 +760,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
     def __setTooltipText(self):
         """Update the tooltip text based on current task status."""
         textParts = []
-        trackedTasks = self.__taskList.tasksBeingTracked()
+        trackedTasks = self.__taskList.tasks_being_tracked()
         if trackedTasks:
             count = len(trackedTasks)
             if count == 1:
@@ -769,7 +769,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
                 tracking = _("tracking effort for %d tasks") % count
             textParts.append(tracking)
         else:
-            counts = self.__taskList.nrOfTasksPerStatus()
+            counts = self.__taskList.nr_of_tasks_per_status()
             for status, singular, plural in self.toolTipMessages:
                 count = counts[status]
                 if count == 1:

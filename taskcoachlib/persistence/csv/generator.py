@@ -140,7 +140,7 @@ def viewer2csv(
     indent the first value (typically the subject of the item) to
     indicate the depth of the item in the tree."""
 
-    isTree = viewer.isTreeViewer()
+    isTree = viewer.is_tree_viewer()
     columns = columns or viewer.visibleColumns()
     rowBuilder = RowBuilder(columns, isTree, separateDateAndTimeColumns)
     items = viewer.visibleItems()

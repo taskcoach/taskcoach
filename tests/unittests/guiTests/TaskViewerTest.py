@@ -25,6 +25,7 @@ from taskcoachlib import (
     render,
     operating_system,
 )
+from taskcoachlib.gui import viewer  # noqa: F401 - make gui.viewer accessible
 from taskcoachlib.domain import task, date, effort, category, attachment
 from taskcoachlib.i18n import _
 import locale
@@ -50,7 +51,7 @@ class TaskViewerUnderTest(gui.viewer.task.TaskViewer):  # pylint: disable=W0223
 
 
 class TaskViewerTestCase(test.wxTestCase):
-    treeMode = "Subclass responsibility"
+    tree_mode = "Subclass responsibility"
 
     def setUp(self):
         super().setUp()
@@ -70,7 +71,7 @@ class TaskViewerTestCase(test.wxTestCase):
         self.viewer.setSortOrderAscending()
         self.viewer.setSortByTaskStatusFirst(True)
         self.settings.setboolean(
-            self.viewer.settingsSection(), "treemode", self.treeMode
+            self.viewer.settingsSection(), "treemode", self.tree_mode
         )
         self.newColor = (100, 200, 100, 255)
         attachment.Attachment.attdir = os.getcwd()
@@ -118,7 +119,7 @@ class TaskViewerTestCase(test.wxTestCase):
             aTask, nrChildren = aTask
         else:
             nrChildren = 0
-        subject = aTask.subject(recursive=not self.viewer.isTreeViewer())
+        subject = aTask.subject(recursive=not self.viewer.is_tree_viewer())
         treeItem = self.viewer.widget.GetItemChildren(recursively=True)[index]
         self.assertEqual(subject, self.viewer.widget.GetItemText(treeItem))
         self.assertEqual(
@@ -211,7 +212,7 @@ class CommonTestsMixin(object):
         deleteItem = self.viewer.deleteItemCommand()
         deleteItem.do()
         deleteItem.undo()
-        if self.viewer.isTreeViewer():
+        if self.viewer.is_tree_viewer():
             self.assertItems((self.task, 1), self.child)
         else:
             self.assertItems(self.child, self.task)
@@ -240,7 +241,7 @@ class CommonTestsMixin(object):
         )
         self.task.addChild(child2)
         self.taskList.append(self.task)
-        if self.viewer.isTreeViewer():
+        if self.viewer.is_tree_viewer():
             self.assertItems((self.task, 2), child1, child2)
         else:
             self.assertItems(child1, child2, self.task)
@@ -248,7 +249,7 @@ class CommonTestsMixin(object):
     def testChildSubjectRendering(self):
         self.task.addChild(self.child)
         self.taskList.append(self.task)
-        if self.viewer.isTreeViewer():
+        if self.viewer.is_tree_viewer():
             self.assertItems((self.task, 1), self.child)
         else:
             self.assertItems(self.child, self.task)
@@ -257,7 +258,7 @@ class CommonTestsMixin(object):
         self.task.addChild(self.child)
         task2 = task.Task(subject="zzz")
         self.taskList.extend([self.task, task2])
-        if self.viewer.isTreeViewer():
+        if self.viewer.is_tree_viewer():
             self.assertItems((self.task, 1), self.child, task2)
         else:
             self.assertItems(self.child, self.task, task2)
@@ -279,7 +280,7 @@ class CommonTestsMixin(object):
         self.assertItems(task2, self.task)
 
     def testFilterCompletedTasks(self):
-        self.viewer.hideTaskStatus(task.status.completed)
+        self.viewer.hide_task_status(task.status.completed)
         completedChild = task.Task(
             completionDateTime=date.Now() - date.ONE_HOUR
         )
@@ -289,7 +290,7 @@ class CommonTestsMixin(object):
         self.task.addChild(notCompletedChild)
         self.task.addChild(completedChild)
         self.taskList.append(self.task)
-        if self.viewer.isTreeViewer():
+        if self.viewer.is_tree_viewer():
             self.assertItems((self.task, 1), notCompletedChild)
         else:
             self.assertItems(notCompletedChild, self.task)
@@ -298,7 +299,7 @@ class CommonTestsMixin(object):
         self.settings.setboolean(
             "behavior", "markparentcompletedwhenallchildrencompleted", True
         )
-        self.viewer.hideTaskStatus(task.status.completed)
+        self.viewer.hide_task_status(task.status.completed)
         child1 = task.Task("child1")
         child2 = task.Task("child2")
         grandChild = task.Task("grandChild")
@@ -441,7 +442,7 @@ class CommonTestsMixin(object):
         cat = category.Category(subject="Category")
         self.child.addCategory(cat)
         cat.addCategorizable(self.child)
-        expectedCategory = "(Category)" if self.viewer.isTreeViewer() else ""
+        expectedCategory = "(Category)" if self.viewer.is_tree_viewer() else ""
         self.assertEqual(
             expectedCategory, self.viewer.renderCategories(self.task)
         )
@@ -454,7 +455,7 @@ class CommonTestsMixin(object):
             self.child.addCategory(cat)
             cat.addCategorizable(self.child)
         expectedCategory = (
-            "(Category 1, Category 2)" if self.viewer.isTreeViewer() else ""
+            "(Category 1, Category 2)" if self.viewer.is_tree_viewer() else ""
         )
         self.assertEqual(
             expectedCategory, self.viewer.renderCategories(self.task)
@@ -469,7 +470,7 @@ class CommonTestsMixin(object):
             cat.addCategorizable(eachTask)
         expectedCategory = (
             "Category 0 (Category 1)"
-            if self.viewer.isTreeViewer()
+            if self.viewer.is_tree_viewer()
             else "Category 0"
         )
         self.assertEqual(
@@ -524,7 +525,7 @@ class CommonTestsMixin(object):
         )
         self.taskList.extend([self.task, task2])
         self.viewer.setSortOrderAscending(False)
-        if self.viewer.isTreeViewer():
+        if self.viewer.is_tree_viewer():
             self.assertItems(
                 task2, (self.task, 1), (self.child, 1), grandchild
             )
@@ -538,7 +539,7 @@ class CommonTestsMixin(object):
         )
         self.taskList.extend([self.task, task2])
         self.viewer.setSortOrderAscending(False)
-        if self.viewer.isTreeViewer():
+        if self.viewer.is_tree_viewer():
             self.assertItems(task2, (self.task, 1), self.child)
         else:
             self.assertItems(task2, self.task, self.child)
@@ -555,13 +556,13 @@ class CommonTestsMixin(object):
         task2.addChild(child2)
         child2.setParent(task2)
         self.taskList.extend([self.task, task2])
-        if self.viewer.isTreeViewer():
+        if self.viewer.is_tree_viewer():
             self.assertItems((self.task, 1), self.child, (task2, 1), child2)
         else:
             self.assertItems(self.child, child2, self.task, task2)
         child2.setDueDateTime(date.Now().endOfDay())
         self.viewer.sortBy("dueDateTime")
-        if self.viewer.isTreeViewer():
+        if self.viewer.is_tree_viewer():
             self.assertItems((task2, 1), child2, (self.task, 1), self.child)
         else:
             self.assertItems(child2, self.child, self.task, task2)
@@ -634,12 +635,12 @@ class CommonTestsMixin(object):
         task1_1.addCategory(cat0)
         cat0.addCategorizable(task1_1)
         self.taskList.extend([task0, task1])
-        if self.viewer.isTreeViewer():
+        if self.viewer.is_tree_viewer():
             self.assertItems(task0, (task1, 1), task1_1)
         else:
             self.assertItems(task0, task1, task1_1)
         self.viewer.sortBy("categories")
-        if self.viewer.isTreeViewer():
+        if self.viewer.is_tree_viewer():
             self.assertItems((task1, 1), task1_1, task0)
         else:
             self.assertItems(task1, task1_1, task0)
@@ -787,7 +788,7 @@ class CommonTestsMixin(object):
 
     def testModeIsSavedInSettings(self):
         self.assertEqual(
-            self.treeMode,
+            self.tree_mode,
             self.settings.getboolean(
                 self.viewer.settingsSection(), "treemode"
             ),
@@ -795,7 +796,7 @@ class CommonTestsMixin(object):
 
     def testRenderSubject(self):
         self.task.addChild(self.child)
-        expectedSubject = "child" if self.treeMode else "task -> child"
+        expectedSubject = "child" if self.tree_mode else "task -> child"
         self.assertEqual(
             expectedSubject, self.viewer.renderSubject(self.child)
         )
@@ -803,7 +804,7 @@ class CommonTestsMixin(object):
     def testItemOrder(self):
         self.task.addChild(self.child)
         self.taskList.append(self.task)
-        if self.treeMode:
+        if self.tree_mode:
             self.assertItems((self.task, 1), self.child)
         else:
             self.assertItems(self.child, self.task)
@@ -812,9 +813,9 @@ class CommonTestsMixin(object):
         self.task.addChild(self.child)
         self.taskList.append(self.task)
         self.settings.setboolean(
-            self.viewer.settingsSection(), "treemode", not self.treeMode
+            self.viewer.settingsSection(), "treemode", not self.tree_mode
         )
-        if self.treeMode:
+        if self.tree_mode:
             self.assertItems(self.child, self.task)
         else:
             self.assertItems((self.task, 1), self.child)
@@ -824,9 +825,9 @@ class CommonTestsMixin(object):
         self.taskList.append(self.task)
         self.task.setSubject("a")  # task comes before child
         self.settings.setboolean(
-            self.viewer.settingsSection(), "treemode", not self.treeMode
+            self.viewer.settingsSection(), "treemode", not self.tree_mode
         )
-        if self.treeMode:
+        if self.tree_mode:
             self.assertItems(self.task, self.child)
         else:
             self.assertItems((self.task, 1), self.child)
@@ -872,7 +873,7 @@ class CommonTestsMixin(object):
         )
         self.showColumn("timeSpent")
         timeSpent = self.getItemText(0, 3)
-        expectedTimeSpent = "(48:00:00)" if self.treeMode else "24:00:00"
+        expectedTimeSpent = "(48:00:00)" if self.tree_mode else "24:00:00"
         self.assertEqual(expectedTimeSpent, timeSpent)
 
     def testGetSelection(self):
@@ -987,7 +988,7 @@ class CommonTestsMixin(object):
         self.viewer.setSortOrderAscending(False)
         expectedAmount = (
             "(%s)" % locale.currency(300, False)
-            if self.treeMode
+            if self.tree_mode
             else locale.currency(100, False)
         )
         self.task.expand(False, context=self.viewer.settingsSection())
@@ -1003,7 +1004,7 @@ class CommonTestsMixin(object):
         self.viewer.setSortOrderAscending(False)
         expectedDateTime = (
             "(%s)" % render.dateTime(now, humanReadable=True)
-            if self.treeMode
+            if self.tree_mode
             else ""
         )
         self.task.expand(False, context=self.viewer.settingsSection())
@@ -1235,11 +1236,11 @@ class CommonTestsMixin(object):
 
 
 class TaskViewerInTreeModeTest(CommonTestsMixin, TaskViewerTestCase):
-    treeMode = True
+    tree_mode = True
 
 
 class TaskViewerInListModeTest(CommonTestsMixin, TaskViewerTestCase):
-    treeMode = False
+    tree_mode = False
 
 
 class TaskCalendarViewerTest(test.wxTestCase):

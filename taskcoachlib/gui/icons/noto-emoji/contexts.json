@@ -1,0 +1,47 @@
+{
+  "smileys-emotion": {
+    "xdg_context": "SmileysEmotion",
+    "context_label": "Smileys & Emotion",
+    "emoji_group": "Smileys & Emotion"
+  },
+  "people-body": {
+    "xdg_context": "PeopleBody",
+    "context_label": "People & Body",
+    "emoji_group": "People & Body"
+  },
+  "animals-nature": {
+    "xdg_context": "AnimalsNature",
+    "context_label": "Animals & Nature",
+    "emoji_group": "Animals & Nature"
+  },
+  "food-drink": {
+    "xdg_context": "FoodDrink",
+    "context_label": "Food & Drink",
+    "emoji_group": "Food & Drink"
+  },
+  "travel-places": {
+    "xdg_context": "TravelPlaces",
+    "context_label": "Travel & Places",
+    "emoji_group": "Travel & Places"
+  },
+  "activities": {
+    "xdg_context": "Activities",
+    "context_label": "Activities",
+    "emoji_group": "Activities"
+  },
+  "objects": {
+    "xdg_context": "Objects",
+    "context_label": "Objects",
+    "emoji_group": "Objects"
+  },
+  "symbols": {
+    "xdg_context": "Symbols",
+    "context_label": "Symbols",
+    "emoji_group": "Symbols"
+  },
+  "flags": {
+    "xdg_context": "Flags",
+    "context_label": "Flags",
+    "emoji_group": "Flags"
+  }
+}

@@ -247,7 +247,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         self.__setTitle()
 
     def __onDirtyChanged(self, taskFile):
-        self.__dirty = taskFile.isDirty()
+        self.__dirty = taskFile.is_dirty()
         self.__setTitle()
 
     def __setTitle(self):

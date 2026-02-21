@@ -101,9 +101,6 @@ class AttachmentViewer(
     def isShowingAttachments(self):
         return True
 
-    def curselectionIsInstanceOf(self, class_):
-        return class_ == attachment.Attachment
-
     def getSupportedPasteTypes(self):
         return (attachment.Attachment,)
 

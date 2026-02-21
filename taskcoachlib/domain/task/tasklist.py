@@ -26,7 +26,7 @@ from . import task
 
 
 class TaskListQueryMixin(object):
-    def nrOfTasksPerStatus(self):
+    def nr_of_tasks_per_status(self):
         statuses = [
             eachTask.status() for eachTask in self if not eachTask.isDeleted()
         ]
@@ -44,10 +44,10 @@ class TaskList(TaskListQueryMixin, categorizable.CategorizableContainer):
     )
     newItemHelpText = help.taskNew
 
-    def nrBeingTracked(self):
-        return len(self.tasksBeingTracked())
+    def nr_being_tracked(self):
+        return len(self.tasks_being_tracked())
 
-    def tasksBeingTracked(self):
+    def tasks_being_tracked(self):
         return [eachTask for eachTask in self if eachTask.isBeingTracked()]
 
     def efforts(self):
@@ -56,14 +56,14 @@ class TaskList(TaskListQueryMixin, categorizable.CategorizableContainer):
             result.extend(task.efforts())
         return result
 
-    def originalLength(self):
+    def original_length(self):
         """Provide a way for bypassing the __len__ method of decorators."""
         return len([t for t in self if not t.isDeleted()])
 
-    def minPriority(self):
+    def min_priority(self):
         return min(self.__allPriorities())
 
-    def maxPriority(self):
+    def max_priority(self):
         return max(self.__allPriorities())
 
     def __allPriorities(self):

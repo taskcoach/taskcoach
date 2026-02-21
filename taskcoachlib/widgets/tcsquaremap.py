@@ -106,6 +106,14 @@ class TcSquareMap(tooltip.ToolTipMixin, squaremap.SquareMap):
         self.SetFocus()
         self.PopupMenu(self.popupMenu)
 
+    @property
+    def has_selection(self):
+        return len(self.__selection) > 0
+
+    @property
+    def has_single_selection(self):
+        return len(self.__selection) == 1
+
     def curselection(self):
         return self.__selection
 

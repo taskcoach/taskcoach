@@ -125,6 +125,14 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
     def RefreshItems(self, *items):
         self.Refresh()
 
+    @property
+    def has_selection(self):
+        return bool(self.Selection())
+
+    @property
+    def has_single_selection(self):
+        return len(list(self.Selection())) == 1
+
     def curselection(self):
         return list(self.Selection())
 

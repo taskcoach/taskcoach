@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import command, widgets, domain, render
+from taskcoachlib import command, patterns, widgets, domain, render
 from taskcoachlib.domain import effort, date
 from taskcoachlib.domain.base import filter  # pylint: disable=W0622
 from taskcoachlib.gui import uicommand, dialog
@@ -66,20 +66,16 @@ class EffortViewer(
             eventType=effort.Effort.appearanceChangedEventType(),
         )
         pub.subscribe(
-            self.onRoundingChanged,
+            self.on_rounding_changed,
             "settings.%s.round" % self.settingsSection(),
         )
         pub.subscribe(
-            self.onRoundingChanged,
+            self.on_rounding_changed,
             "settings.%s.alwaysroundup" % self.settingsSection(),
         )
         pub.subscribe(
-            self.onRoundingChanged,
+            self.on_rounding_changed,
             "settings.%s.consolidateeffortspertask" % self.settingsSection(),
-        )
-        pub.subscribe(
-            self.on_aggregation_changed,
-            "settings.%s.aggregation" % self.settingsSection(),
         )
 
     def selectableColumns(self):
@@ -110,7 +106,7 @@ class EffortViewer(
     def tasksToShowEffortFor(self):
         return self.__tasksToShowEffortFor
 
-    def onRoundingChanged(self, value):  # pylint: disable=W0613
+    def on_rounding_changed(self, value):  # pylint: disable=W0613
         self.__initRoundingToolBarUICommands()
         self.refresh()
 
@@ -159,9 +155,6 @@ class EffortViewer(
     def isShowingEffort(self):
         return True
 
-    def curselectionIsInstanceOf(self, class_):
-        return class_ == effort.Effort
-
     def getSupportedPasteTypes(self):
         return (effort.Effort,)
 
@@ -184,15 +177,18 @@ class EffortViewer(
         # Fall back to generic paste when no specific target task
         return super().pasteItemCommand()
 
-    def on_aggregation_changed(self, value):
-        self.__show_effort_aggregation(value)
-
-    def __show_effort_aggregation(self, aggregation):
+    def set_aggregation(self, aggregation):
         """Change the aggregation mode. Can be one of 'details', 'day', 'week'
         and 'month'."""
         assert aggregation in ("details", "day", "week", "month")
+        self.settings.settext(
+            self.settingsSection(), "aggregation", aggregation
+        )
         self.aggregation = aggregation
         self._refresh()
+        patterns.Event(
+            self.view_settings_changed_event_type(), self
+        ).send()
 
     def _refresh(self, clear=False):
         if clear:
@@ -694,7 +690,7 @@ class EffortViewer(
             self.__sumTimeSpent(self.taskFile.efforts()),
         )
         status2 = (
-            _("Status: %d tracking") % self.presentation().nrBeingTracked()
+            _("Status: %d tracking") % self.presentation().nr_being_tracked()
         )
         return status1, status2
 

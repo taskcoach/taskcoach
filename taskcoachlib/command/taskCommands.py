@@ -484,7 +484,7 @@ class MaxPriorityCommand(ExtremePriorityCommand):
     delta = +1
 
     def getOldExtremePriority(self):
-        return self.list.maxPriority()
+        return self.list.max_priority()
 
 
 class MinPriorityCommand(ExtremePriorityCommand):
@@ -494,7 +494,7 @@ class MinPriorityCommand(ExtremePriorityCommand):
     delta = -1
 
     def getOldExtremePriority(self):
-        return self.list.minPriority()
+        return self.list.min_priority()
 
 
 class ChangePriorityCommand(base.BaseCommand):  # pylint: disable=W0223

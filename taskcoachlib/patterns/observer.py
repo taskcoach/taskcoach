@@ -344,10 +344,18 @@ class Publisher(object, metaclass=singleton.Singleton):
         for eventTypeAndSource in eventTypesAndSources:
             for observer in self.__observers.get(eventTypeAndSource, set()):
                 observers.setdefault(observer, set()).add(eventTypeAndSource)
+        import wx
+        if wx.GetApp() and wx.GetApp().quitting:
+            return
         for observer, eventTypesAndSources in observers.items():
             subEvent = event.subEvent(*eventTypesAndSources)
             if subEvent.types():
-                observer(subEvent)
+                try:
+                    observer(subEvent)
+                except RuntimeError:
+                    from taskcoachlib.meta.debug import log_step
+                    log_step("Observer RuntimeError: %s on %s" % (
+                        observer, subEvent.types()), prefix="OBSERVER")
 
     @unwrapObservers
     def observers(self, eventType=None):

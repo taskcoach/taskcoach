@@ -6,6 +6,7 @@ The domain model's change-detection and event-notification pattern.
 
 - [TODO](#todo)
 - [Signal Dispatch](#signal-dispatch)
+  - [Case Study: Tree Mode Toggle](#case-study-tree-mode-toggle)
 - [Overview](#overview)
 - [Attribute Class API](#attribute-class-api)
 - [SetAttribute Class API](#setattribute-class-api)
@@ -44,8 +45,10 @@ The domain model's change-detection and event-notification pattern.
    modern signal library). See [Signal Dispatch](#signal-dispatch).
    **Done:** Task priority, Attachment location, and all 16
    derived/effective appearance event types migrated to per-instance
-   dispatch (dropped `"pubsub."` prefix). **Remaining:** Task dates,
-   percentage, duration; Effort fields.
+   dispatch (dropped `"pubsub."` prefix). Tree mode toggle migrated
+   from pubsub to Publisher signaling (see
+   [Case Study: Tree Mode Toggle](#case-study-tree-mode-toggle)).
+   **Remaining:** Task dates, percentage, duration; Effort fields.
 
 ---
 
@@ -131,6 +134,93 @@ otherwise → `registerObserver`.
 New event types should **not** use the `"pubsub."` prefix. They should use
 the legacy Publisher dispatch (per-instance) until the future signal library
 migration.
+
+### Case Study: Tree Mode Toggle
+
+The tree/list mode toggle (task viewer) was migrated from pubsub to
+Publisher signaling. This is the reference example for migrating UI-level
+pubsub subscriptions to per-instance dispatch.
+
+**Before (pubsub — broadcast):**
+
+```
+dropdown/menu
+  → settings.setboolean("treemode")
+    → pub.sendMessage("settings.taskviewer.treemode")
+      → TaskViewer.onTreeListModeChanged  (subscriber 1)
+      → TaskViewerTreeOrListChoice.on_setting_changed  (subscriber 2)
+```
+
+Two independent pubsub subscribers, both keyed on the same global topic
+string. Any code writing `settings.setboolean("treemode")` triggers both.
+No per-instance filtering — a second task viewer's dropdown would also fire.
+
+**After (Publisher — per-instance):**
+
+All three entry points converge on the viewer:
+
+```
+Toolbar Dropdown ─── doChoice(choice) ──────────────┐
+Menu Radio Option ── doCommand(event) ──────────────┤
+                                                     ▼
+                                            viewer.set_tree_mode(value)
+                                                     │
+                                    ┌────────────────┼────────────────┐
+                                    ▼                ▼                ▼
+                            settings.setboolean  presentation    patterns.Event
+                            (persistence only)   .set_tree_mode()   .send()
+                                                                     │
+                                              ┌──────────────────────┤
+                                              ▼                      ▼
+                                    Dropdown syncs:          Buttons sync:
+                                    setChoice(from settings) EnableTool(id, cmd.enabled())
+                                    (_on_view_settings_changed) (_ViewSettingsSync)
+```
+
+**Design principles demonstrated:**
+
+1. **Viewer as single authority.** All entry points (toolbar dropdown, menu
+   radio) call `viewer.set_tree_mode(value)`. The viewer owns the setting
+   write, presentation update, and event dispatch. No caller writes settings
+   directly.
+
+2. **Per-instance event type.** The event type is `"viewer%s.view_settings" %
+   id(self)`, unique per viewer instance. Two task viewers have separate
+   event types — toggling one doesn't affect the other.
+
+3. **Generalized signal.** `view_settings_changed_event_type()` is shared
+   across all viewer setting changes (tree mode, aggregation, sort order,
+   etc.). The event carries no data — receivers read current state from the
+   viewer or settings. `selection_changed_event_type()` remains separate
+   because selection change is universal across all viewer types.
+
+4. **Subscribers use `registerObserver` with `eventSource`.** The dropdown
+   and button sync objects register for the specific viewer's event:
+   ```python
+   viewer.registerObserver(
+       self._on_view_settings_changed,
+       eventType=viewer.view_settings_changed_event_type(),
+       eventSource=viewer,
+   )
+   ```
+
+5. **Automatic cleanup.** `registerObserver()` (from `patterns.Observer`)
+   tracks all registered observers. When the viewer is destroyed,
+   `removeInstance()` unregisters them. No manual unsubscribe needed.
+
+6. **Settings write is inert.** `settings.setboolean()` still fires a
+   pubsub message (`"settings.taskviewer.treemode"`), but nobody subscribes
+   to it. The broadcast is harmless — all subscribers use the Publisher
+   event instead.
+
+**Files:**
+- `taskcoachlib/gui/viewer/task.py` — `TaskViewer.set_tree_mode()`
+- `taskcoachlib/gui/uicommand/uicommand.py` — `TaskViewerTreeOrListChoice`,
+  `TaskViewerTreeOrListOption`, `_ViewSettingsSync`
+- `taskcoachlib/gui/viewer/base.py` — `view_settings_changed_event_type()`
+
+See also: [LIST_MANAGEMENT.md — Scroll After Rebuild](LIST_MANAGEMENT.md#scroll-after-rebuild-tree-views)
+for the scroll behavior during mode switch.
 
 ---
 

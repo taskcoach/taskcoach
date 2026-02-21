@@ -357,7 +357,7 @@ class TaskFile(patterns.Observer):
     def lastFilename(self):
         return self.__lastFilename
 
-    def isDirty(self):
+    def is_dirty(self):
         return self.__needSave
 
     def markDirty(self, force=False):
@@ -529,7 +529,7 @@ class TaskFile(patterns.Observer):
         # everything went OK.
         self.__saving = True
         try:
-            self.mergeDiskChanges()
+            self.merge_disk_changes()
 
             if self.__needSave or not os.path.exists(self.__filename):
                 fd = self._openForWrite()
@@ -553,7 +553,7 @@ class TaskFile(patterns.Observer):
             except Exception:
                 pass  # Ignore errors from subscribers
 
-    def mergeDiskChanges(self):
+    def merge_disk_changes(self):
         self.__loading = True
         try:
             if os.path.exists(
@@ -673,10 +673,10 @@ class TaskFile(patterns.Observer):
                 categorizable.addCategory(categoryToLink)
                 categoryToLink.addCategorizable(categorizable)
 
-    def needSave(self):
+    def need_save(self):
         return not self.__loading and self.__needSave
 
-    def changedOnDisk(self):
+    def changed_on_disk(self):
         return self.__changedOnDisk
 
     def beginSync(self):
@@ -798,9 +798,9 @@ class LockedTaskFile(TaskFile):
             self.acquire_lock(self.filename())
         return super().save(**kwargs)
 
-    def mergeDiskChanges(self):
+    def merge_disk_changes(self):
         """Merge disk changes. Lock should already be held from load()."""
         # We should already hold the lock from load()
         if not self.is_locked_by_me() and self.filename():
             self.acquire_lock(self.filename())
-        super().mergeDiskChanges()
+        super().merge_disk_changes()

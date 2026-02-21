@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from . import singleton as patterns
+from pubsub import pub
 
 
 class Command(object):
@@ -41,25 +42,32 @@ class CommandHistory(object, metaclass=patterns.Singleton):
         self.__history = []
         self.__future = []
 
+    def _notify(self):
+        pub.sendMessage("commandhistory.changed")
+
     def append(self, command):
         self.__history.append(command)
         del self.__future[:]
+        self._notify()
 
     def undo(self):
         if self.__history:
             command = self.__history.pop()
             command.undo()
             self.__future.append(command)
+            self._notify()
 
     def redo(self):
         if self.__future:
             command = self.__future.pop()
             command.redo()
             self.__history.append(command)
+            self._notify()
 
     def clear(self):
         del self.__history[:]
         del self.__future[:]
+        self._notify()
 
     def hasHistory(self):
         return self.__history

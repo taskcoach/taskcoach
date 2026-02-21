@@ -66,9 +66,6 @@ class BaseNoteViewer(
             else self.notesToShow
         )
 
-    def curselectionIsInstanceOf(self, class_):
-        return class_ == note.Note
-
     def getSupportedPasteTypes(self):
         return (note.Note,)
 

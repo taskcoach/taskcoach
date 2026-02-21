@@ -25,7 +25,7 @@ import wx.lib.agw.piectrl
 from taskcoachlib import operating_system
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.gui.icons import image_list_cache
-from taskcoachlib import command, widgets, domain, render
+from taskcoachlib import command, widgets, domain, render, patterns
 from taskcoachlib.domain import task, date
 from taskcoachlib.gui import uicommand, dialog
 import taskcoachlib.gui.menu
@@ -82,11 +82,11 @@ class TaskViewerStatusMessages(object):
     def __call__(self):
         count = self.__presentation.observable(
             recursive=True
-        ).nrOfTasksPerStatus()
+        ).nr_of_tasks_per_status()
         return self.template1 % (
             len(self.__viewer.curselection()),
             self.__viewer.nrOfVisibleTasks(),
-            self.__presentation.originalLength(),
+            self.__presentation.original_length(),
         ), self.template2 % (
             count[task.status.overdue],
             count[task.status.late],
@@ -636,8 +636,8 @@ class SquareTaskViewer(BaseTaskTreeViewer):
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("settingsSection", "squaretaskviewer")
-        self.__orderBy = "revenue"
-        self.__transformTaskAttribute = lambda x: x
+        self.__order_by = "revenue"
+        self.__transform_task_attribute = lambda x: x
         self.__zero = 0
         self.renderer = dict(
             budget=render.budget,
@@ -647,14 +647,12 @@ class SquareTaskViewer(BaseTaskTreeViewer):
             priority=render.priority,
         )
         super().__init__(*args, **kwargs)
-        sortKeys = ast.literal_eval(self.settings.get(self.settingsSection(), "sortby"))
-        orderBy = sortKeys[0] if sortKeys else "budget"
-        self.orderBy(sortKeys[0] if sortKeys else "budget")
-        pub.subscribe(
-            self.on_order_by_changed,
-            "settings.%s.sortby" % self.settingsSection(),
+        sort_keys = ast.literal_eval(
+            self.settings.get(self.settingsSection(), "sortby")
         )
-        self.orderUICommand.setChoice(self.__orderBy)
+        initial_key = sort_keys[0] if sort_keys else "budget"
+        self._apply_order_by(initial_key.lstrip("-"))
+        self.orderUICommand.setChoice(self.__order_by)
         for eventType in (
             task.Task.subjectChangedEventType(),
             task.Task.dueDateTimeChangedEventType(),
@@ -667,9 +665,6 @@ class SquareTaskViewer(BaseTaskTreeViewer):
                 self.registerObserver(
                     self.onAttributeChanged_Deprecated, eventType
                 )
-
-    def curselectionIsInstanceOf(self, class_):
-        return class_ == task.Task
 
     def createWidget(self):
         itemPopupMenu = self.createTaskPopupMenu()
@@ -705,46 +700,57 @@ class SquareTaskViewer(BaseTaskTreeViewer):
             )
         ]
 
-    def on_order_by_changed(self, value):
-        self.orderBy(value)
+    @property
+    def order_by(self):
+        return self.__order_by
 
-    def orderBy(self, choice):
-        if choice == self.__orderBy:
+    def set_order_by(self, choice):
+        """Change the order-by attribute. Called by toolbar and menu."""
+        self.settings.settext(self.settingsSection(), "sortby", choice)
+        self._apply_order_by(choice)
+        patterns.Event(
+            self.view_settings_changed_event_type(), self
+        ).send()
+
+    def _apply_order_by(self, choice):
+        if choice == self.__order_by:
             return
-        oldChoice = self.__orderBy
-        self.__orderBy = choice
+        old_choice = self.__order_by
+        self.__order_by = choice
         try:
-            oldEventType = getattr(
-                task.Task, "%sChangedEventType" % oldChoice
+            old_event_type = getattr(
+                task.Task, "%sChangedEventType" % old_choice
             )()
         except AttributeError:
-            oldEventType = "task.%s" % oldChoice
-        if oldEventType.startswith("pubsub"):
+            old_event_type = "task.%s" % old_choice
+        if old_event_type.startswith("pubsub"):
             try:
-                pub.unsubscribe(self.onAttributeChanged, oldEventType)
+                pub.unsubscribe(self.onAttributeChanged, old_event_type)
             except pub.TopicNameError:
-                pass  # Can happen on first call to orderBy
+                pass  # Can happen on first call
         else:
             self.removeObserver(
-                self.onAttributeChanged_Deprecated, oldEventType
+                self.onAttributeChanged_Deprecated, old_event_type
             )
         try:
-            newEventType = getattr(task.Task, "%sChangedEventType" % choice)()
+            new_event_type = getattr(
+                task.Task, "%sChangedEventType" % choice
+            )()
         except AttributeError:
-            newEventType = "task.%s" % choice
-        if newEventType.startswith("pubsub"):
-            pub.subscribe(self.onAttributeChanged, newEventType)
+            new_event_type = "task.%s" % choice
+        if new_event_type.startswith("pubsub"):
+            pub.subscribe(self.onAttributeChanged, new_event_type)
         else:
             self.registerObserver(
-                self.onAttributeChanged_Deprecated, newEventType
+                self.onAttributeChanged_Deprecated, new_event_type
             )
         if choice in ("budget", "timeSpent"):
-            self.__transformTaskAttribute = (
+            self.__transform_task_attribute = (
                 lambda timeSpent: timeSpent.milliseconds() / 1000
             )
             self.__zero = date.TimeDelta()
         else:
-            self.__transformTaskAttribute = lambda x: x
+            self.__transform_task_attribute = lambda x: x
             self.__zero = 0
         self.refresh()
 
@@ -759,7 +765,7 @@ class SquareTaskViewer(BaseTaskTreeViewer):
             [
                 eachTask
                 for eachTask in self.presentation()
-                if getattr(eachTask, self.__orderBy)(recursive=True)
+                if getattr(eachTask, self.__order_by)(recursive=True)
                 > self.__zero
             ]
         )
@@ -768,36 +774,39 @@ class SquareTaskViewer(BaseTaskTreeViewer):
     # pylint: disable=W0621
 
     def overall(self, task):
-        return self.__transformTaskAttribute(
-            max(getattr(task, self.__orderBy)(recursive=True), self.__zero)
+        return self.__transform_task_attribute(
+            max(getattr(task, self.__order_by)(recursive=True), self.__zero)
         )
 
     def children_sum(self, children, parent):  # pylint: disable=W0613
         children_sum = sum(
             (
                 max(
-                    getattr(child, self.__orderBy)(recursive=True), self.__zero
+                    getattr(child, self.__order_by)(recursive=True),
+                    self.__zero,
                 )
                 for child in children
                 if child in self.presentation()
             ),
             self.__zero,
         )
-        return self.__transformTaskAttribute(max(children_sum, self.__zero))
+        return self.__transform_task_attribute(
+            max(children_sum, self.__zero)
+        )
 
     def empty(self, task):
         overall = self.overall(task)
         if overall:
             children_sum = self.children_sum(self.children(task), task)
             return max(
-                self.__transformTaskAttribute(self.__zero),
+                self.__transform_task_attribute(self.__zero),
                 (overall - children_sum),
             ) / float(overall)
         return 0
 
     def getItemText(self, task):
         text = super().getItemText(task)
-        value = self.render(getattr(task, self.__orderBy)(recursive=False))
+        value = self.render(getattr(task, self.__order_by)(recursive=False))
         return "%s (%s)" % (text, value) if value else text
 
     def value(self, task, parent=None):  # pylint: disable=W0613
@@ -822,7 +831,7 @@ class SquareTaskViewer(BaseTaskTreeViewer):
     # Helper methods
 
     def render(self, value):
-        return self.renderer[self.__orderBy](value)
+        return self.renderer[self.__order_by](value)
 
 
 class HierarchicalCalendarViewer(
@@ -873,7 +882,7 @@ class HierarchicalCalendarViewer(
 
     def _onDateChanged(self, timestamp):
         """Handle date change from scheduler."""
-        self.atMidnight()
+        self.at_midnight()
 
     def reconfig(self):
         self.widget.SetCalendarFormat(
@@ -922,7 +931,7 @@ class HierarchicalCalendarViewer(
         super().detach()
         pub.unsubscribe(self._onDateChanged, 'scheduler.dateChange.uiRefresh')
 
-    def atMidnight(self):
+    def at_midnight(self):
         self.widget.SetCalendarFormat(self.widget.CalendarFormat())
 
     def onLayoutAttributeChanged(self, newValue, sender):
@@ -931,7 +940,7 @@ class HierarchicalCalendarViewer(
     def onLayoutAttributeChanged_Deprecated(self, event):
         self.refresh()
 
-    def isTreeViewer(self):
+    def is_tree_viewer(self):
         return True
 
     def onEverySecond(self, event):  # pylint: disable=W0221,W0613
@@ -1033,7 +1042,7 @@ class CalendarViewer(
 
     def _onDateChanged(self, timestamp):
         """Handle date change from scheduler."""
-        self.atMidnight()
+        self.at_midnight()
 
     def _onCalendarColoursChanged(self):
         self.reconfig()
@@ -1043,13 +1052,13 @@ class CalendarViewer(
         pub.unsubscribe(self._onDateChanged, 'scheduler.dateChange.uiRefresh')
         pub.unsubscribe(self._onCalendarColoursChanged, 'calendar.colours.changed')
 
-    def isTreeViewer(self):
+    def is_tree_viewer(self):
         return False
 
     def onEverySecond(self, event):  # pylint: disable=W0221,W0613
         pass  # Too expensive
 
-    def atMidnight(self):
+    def at_midnight(self):
         if not self.settings.get(self.settingsSection(), "viewdate"):
             # User has selected the "current" date/time; it may have
             # changed now
@@ -1188,13 +1197,8 @@ class CalendarViewer(
                 self.widget.SetHighlightColor(highlightColor)
 
             # Other month days background color
-            theme = self.settings.get("window", "theme")
-            if theme == "automatic":
-                from taskcoachlib.application.application import detect_dark_theme
-                is_dark = detect_dark_theme()
-            else:
-                is_dark = (theme == "dark")
-            section = "calendar_dark" if is_dark else "calendar_light"
+            from taskcoachlib.config import settings2
+            section = "calendar_dark" if settings2.window.theme_is_dark else "calendar_light"
             use_system = self.settings.getboolean(section, "other_month_bg_system")
             if use_system:
                 self.widget.SetOtherMonthColor(None)
@@ -1235,10 +1239,6 @@ class TaskViewer(
         super().__init__(*args, **kwargs)
         if self.isVisibleColumnByName("timeLeft"):
             self.minuteRefresher.startClock()
-        pub.subscribe(
-            self.onTreeListModeChanged,
-            "settings.%s.treemode" % self.settingsSection(),
-        )
 
     def activate(self):
         if hasattr(wx.GetTopLevelParent(self), "AddBalloonTip"):
@@ -1253,13 +1253,13 @@ class TaskViewer(
                 ),
             )
 
-    def isTreeViewer(self):
+    def is_tree_viewer(self):
         # We first ask our presentation what the mode is because
         # ConfigParser.getboolean is a relatively expensive method. However,
         # when initializing, the presentation might not be created yet. So in
         # that case we get an AttributeError and we use the settings.
         try:
-            return self.presentation().treeMode()
+            return self.presentation().tree_mode()
         except AttributeError:
             return self.settings.getboolean(self.settingsSection(), "treemode")
 
@@ -1270,9 +1270,6 @@ class TaskViewer(
             else:
                 self.minuteRefresher.stopClock()
         super().showColumn(column, show, *args, **kwargs)
-
-    def curselectionIsInstanceOf(self, class_):
-        return class_ == task.Task
 
     def createWidget(self):
         imageList = self.createImageList()  # Has side-effects
@@ -1305,7 +1302,7 @@ class TaskViewer(
         """Make sure only the non-recursive part of the subject can be
         edited inline."""
         event.Skip()
-        if not self.isTreeViewer():
+        if not self.is_tree_viewer():
             # Make sure the text control only shows the non-recursive subject
             # by temporarily changing the item text into the non-recursive
             # subject. When the editing ends, we change the item text back into
@@ -1318,7 +1315,7 @@ class TaskViewer(
         """Make sure only the non-recursive part of the subject can be
         edited inline."""
         event.Skip()
-        if not self.isTreeViewer():
+        if not self.is_tree_viewer():
             # Restore the recursive subject. Here we don't care whether users
             # actually changed the subject. If they did, the subject will
             # be updated via the regular notification mechanism.
@@ -1427,7 +1424,7 @@ class TaskViewer(
                     _("Category icons"),
                     task.Task.categoryAddedEventType(),
                     task.Task.categoryRemovedEventType(),
-                    task.Task.appearanceChangedEventType(),
+                    task.Task.effectiveIconChangedEventType(),
                     width=self.getColumnWidth("categoryIcons"),
                     alignment=wx.LIST_FORMAT_LEFT,
                     multiImageIndicesCallback=self.categoryIconsImageIndices,
@@ -2027,18 +2024,22 @@ class TaskViewer(
         if searchString:
             self.expandAll()  # pylint: disable=E1101
 
-    def onTreeListModeChanged(self, value):
-        self.presentation().setTreeMode(value)
+    def set_tree_mode(self, value):
+        self.settings.setboolean(self.settingsSection(), "treemode", value)
+        self.presentation().set_tree_mode(value)
         # Mode switch goes through Sorter.reset() which fires a sort event
         # (not add/remove), so onPresentationChanged doesn't fire.
         # Center on selected item explicitly.
         if hasattr(self.widget, 'scrollToSelectionCentered'):
             self.widget.scrollToSelectionCentered()
+        patterns.Event(
+            self.view_settings_changed_event_type(), self
+        ).send()
 
     # pylint: disable=W0621
 
     def renderSubject(self, task):
-        return task.subject(recursive=not self.isTreeViewer())
+        return task.subject(recursive=not self.is_tree_viewer())
 
     def renderPlannedStartDateTime(self, task, humanReadable=True):
         return self.renderedValue(
@@ -2205,17 +2206,17 @@ class TaskViewer(
         viewer is in list mode, return all items."""
         return (
             super().getRootItems()
-            if self.isTreeViewer()
+            if self.is_tree_viewer()
             else self.presentation()
         )
 
     def getItemParent(self, item):
-        return super().getItemParent(item) if self.isTreeViewer() else None
+        return super().getItemParent(item) if self.is_tree_viewer() else None
 
     def children(self, item=None):
         return (
             super().children(item)
-            if (self.isTreeViewer() or item is None)
+            if (self.is_tree_viewer() or item is None)
             else []
         )
 
@@ -2328,7 +2329,7 @@ class TaskStatsViewer(BaseTaskViewer):  # pylint: disable=W0223
         series = self.widget._series  # pylint: disable=W0212
         tasks = self.presentation()
         total = len(tasks)
-        counts = tasks.nrOfTasksPerStatus()
+        counts = tasks.nr_of_tasks_per_status()
         for part, status in zip(series, task.Task.possibleStatuses()):
             nrTasks = counts[status]
             percentage = round(100.0 * nrTasks / total) if total else 0
@@ -2341,13 +2342,8 @@ class TaskStatsViewer(BaseTaskViewer):  # pylint: disable=W0223
 
     def getFgColor(self, status):
         try:
-            theme = self.settings.get("window", "theme")
-            if theme == "automatic":
-                from taskcoachlib.application.application import detect_dark_theme
-                is_dark = detect_dark_theme()
-            else:
-                is_dark = (theme == "dark")
-            section = "fgcolor_dark" if is_dark else "fgcolor"
+            from taskcoachlib.config import settings2
+            section = "fgcolor_dark" if settings2.window.theme_is_dark else "fgcolor"
         except Exception:
             section = "fgcolor"
         color = wx.Colour(
@@ -2366,7 +2362,7 @@ class TaskStatsViewer(BaseTaskViewer):  # pylint: disable=W0223
     def updateSelection(self, *args, **kwargs):
         pass
 
-    def isTreeViewer(self):
+    def is_tree_viewer(self):
         return False
 
     def onPieChartAngleChanged(self, value):  # pylint: disable=W0613
@@ -2516,13 +2512,8 @@ else:
 
         def getFgColor(self, status):
             try:
-                theme = self.settings.get("window", "theme")
-                if theme == "automatic":
-                    from taskcoachlib.application.application import detect_dark_theme
-                    is_dark = detect_dark_theme()
-                else:
-                    is_dark = (theme == "dark")
-                section = "fgcolor_dark" if is_dark else "fgcolor"
+                from taskcoachlib.config import settings2
+                section = "fgcolor_dark" if settings2.window.theme_is_dark else "fgcolor"
             except Exception:
                 section = "fgcolor"
             color = wx.Colour(
@@ -2538,7 +2529,7 @@ else:
         def updateSelection(self, *args, **kwargs):
             pass
 
-        def isTreeViewer(self):
+        def is_tree_viewer(self):
             return False
 
         def refreshItems(self, *items):

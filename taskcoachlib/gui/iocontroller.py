@@ -82,19 +82,19 @@ class IOController(object):
             caption=_("%s file error") % meta.name, style=wx.ICON_ERROR
         )
 
-    def needSave(self):
-        return self.__taskFile.needSave()
+    def need_save(self):
+        return self.__taskFile.need_save()
 
-    def changedOnDisk(self):
-        return self.__taskFile.changedOnDisk()
+    def changed_on_disk(self):
+        return self.__taskFile.changed_on_disk()
 
-    def hasDeletedItems(self):
+    def has_deleted_items(self):
         return bool(
             [task for task in self.__taskFile.tasks() if task.isDeleted()]
             + [note for note in self.__taskFile.notes() if note.isDeleted()]
         )
 
-    def purgeDeletedItems(self):
+    def purge_deleted_items(self):
         self.__taskFile.tasks().removeItems(
             [task for task in self.__taskFile.tasks() if task.isDeleted()]
         )
@@ -102,7 +102,7 @@ class IOController(object):
             [note for note in self.__taskFile.notes() if note.isDeleted()]
         )
 
-    def openAfterStart(self, commandLineArgs, earlyLockResult=None):
+    def open_after_start(self, commandLineArgs, earlyLockResult=None):
         """Open either the file specified on the command line, or the file
         the user was working on previously, or none at all.
 
@@ -138,19 +138,19 @@ class IOController(object):
         breakLock=False,
         lock=True,
     ):
-        if self.__taskFile.needSave():
-            if not self.__saveUnsavedChanges():
+        if self.__taskFile.need_save():
+            if not self.__save_unsaved_changes():
                 return
         if not filename:
-            filename = self.__askUserForFile(
+            filename = self.__ask_user_for_file(
                 _("Open"), self.__tskFileOpenDialogOpts
             )
         if not filename:
             return
-        self.__updateDefaultPath(filename)
+        self.__update_default_path(filename)
         if fileExists(filename):
-            self.__closeUnconditionally()
-            self.__addRecentFile(filename)
+            self.__close_unconditionally()
+            self.__add_recent_file(filename)
             try:
                 try:
                     self.__taskFile.load(
@@ -160,22 +160,22 @@ class IOController(object):
                     raise
             except persistence.LockTimeout:
                 if breakLock:
-                    if self.__askOpenUnlocked(filename):
+                    if self.__ask_open_unlocked(filename):
                         self.open(filename, showerror, lock=False)
-                elif self.__askBreakLock(filename):
+                elif self.__ask_break_lock(filename):
                     self.open(filename, showerror, breakLock=True)
                 else:
                     return
             except persistence.LockFailed:
-                if self.__askOpenUnlocked(filename):
+                if self.__ask_open_unlocked(filename):
                     self.open(filename, showerror, lock=False)
                 else:
                     return
             except persistence.xml.reader.XMLReaderTooNewException:
-                self.__showTooNewErrorMessage(filename, showerror)
+                self.__show_too_new_error_message(filename, showerror)
                 return
             except Exception:
-                self.__showGenericErrorMessage(
+                self.__show_generic_error_message(
                     filename, showerror, showBackups=True
                 )
                 return
@@ -197,11 +197,11 @@ class IOController(object):
                 )
             else:
                 showerror(errorMessage, **self.__errorMessageOptions)
-            self.__removeRecentFile(filename)
+            self.__remove_recent_file(filename)
 
     def merge(self, filename=None, showerror=wx.MessageBox):
         if not filename:
-            filename = self.__askUserForFile(
+            filename = self.__ask_user_for_file(
                 _("Merge"), self.__tskFileOpenDialogOpts
             )
         if filename:
@@ -215,35 +215,35 @@ class IOController(object):
                 )
                 return
             except persistence.xml.reader.XMLReaderTooNewException:
-                self.__showTooNewErrorMessage(filename, showerror)
+                self.__show_too_new_error_message(filename, showerror)
                 return
             except Exception:
-                self.__showGenericErrorMessage(filename, showerror)
+                self.__show_generic_error_message(filename, showerror)
                 return
             self.__messageCallback(
                 _("Merged %(filename)s") % dict(filename=filename)
             )
-            self.__addRecentFile(filename)
+            self.__add_recent_file(filename)
 
     def save(self, showerror=wx.MessageBox):
         if self.__taskFile.filename():
-            if self._saveSave(self.__taskFile, showerror):
+            if self._save_save(self.__taskFile, showerror):
                 return True
             else:
-                return self.saveas(showerror=showerror)
+                return self.save_as(showerror=showerror)
         elif not self.__taskFile.isEmpty():
-            return self.saveas(showerror=showerror)  # Ask for filename
+            return self.save_as(showerror=showerror)  # Ask for filename
         else:
             return False
 
-    def mergeDiskChanges(self):
-        self.__taskFile.mergeDiskChanges()
+    def merge_disk_changes(self):
+        self.__taskFile.merge_disk_changes()
 
-    def saveas(
+    def save_as(
         self, filename=None, showerror=wx.MessageBox, fileExists=os.path.exists
     ):
         if not filename:
-            filename = self.__askUserForFile(
+            filename = self.__ask_user_for_file(
                 _("Save as"),
                 self.__tskFileSaveDialogOpts,
                 flag=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
@@ -251,12 +251,12 @@ class IOController(object):
             )
             if not filename:
                 return False  # User didn't enter a filename, cancel save
-        if self._saveSave(self.__taskFile, showerror, filename):
+        if self._save_save(self.__taskFile, showerror, filename):
             return True
         else:
-            return self.saveas(showerror=showerror)  # Try again
+            return self.save_as(showerror=showerror)  # Try again
 
-    def saveselection(
+    def save_selection(
         self,
         tasks,
         filename=None,
@@ -265,7 +265,7 @@ class IOController(object):
         fileExists=os.path.exists,
     ):
         if not filename:
-            filename = self.__askUserForFile(
+            filename = self.__ask_user_for_file(
                 _("Save selection"),
                 self.__tskFileSaveDialogOpts,
                 flag=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
@@ -273,15 +273,15 @@ class IOController(object):
             )
             if not filename:
                 return False  # User didn't enter a filename, cancel save
-        selectionFile = self._createSelectionFile(tasks, TaskFileClass)
-        if self._saveSave(selectionFile, showerror, filename):
+        selectionFile = self._create_selection_file(tasks, TaskFileClass)
+        if self._save_save(selectionFile, showerror, filename):
             return True
         else:
-            return self.saveselection(
+            return self.save_selection(
                 tasks, showerror=showerror, TaskFileClass=TaskFileClass
             )  # Try again
 
-    def _createSelectionFile(self, tasks, TaskFileClass):
+    def _create_selection_file(self, tasks, TaskFileClass):
         selectionFile = TaskFileClass()
         # Add the selected tasks:
         selectionFile.tasks().extend(tasks)
@@ -295,7 +295,7 @@ class IOController(object):
         selectionFile.categories().extend(allCategories)
         return selectionFile
 
-    def _saveSave(self, taskFile, showerror, filename=None):
+    def _save_save(self, taskFile, showerror, filename=None):
         """Save the file and show an error message if saving fails."""
         try:
             if filename:
@@ -303,8 +303,8 @@ class IOController(object):
             else:
                 filename = taskFile.filename()
                 taskFile.save()
-            self.__showSaveMessage(taskFile)
-            self.__addRecentFile(filename)
+            self.__show_save_message(taskFile)
+            self.__add_recent_file(filename)
             return True
         except persistence.LockTimeout:
             errorMessage = _(
@@ -320,15 +320,15 @@ class IOController(object):
             showerror(errorMessage, **self.__errorMessageOptions)
             return False
 
-    def saveastemplate(self, task):
+    def save_as_template(self, task):
         templates = persistence.TemplateList(
             self.__settings.pathToTemplatesDir()
         )
         templates.addTemplate(task)
         templates.save()
 
-    def importTemplate(self, showerror=wx.MessageBox):
-        filename = self.__askUserForFile(
+    def import_template(self, showerror=wx.MessageBox):
+        filename = self.__ask_user_for_file(
             _("Import template"),
             fileDialogOpts={
                 "default_extension": "tsktmpl",
@@ -350,19 +350,19 @@ class IOController(object):
                 showerror(errorMessage, **self.__errorMessageOptions)
 
     def close(self, force=False):
-        if self.__taskFile.needSave():
+        if self.__taskFile.need_save():
             if force:
                 # No user interaction, since we're forced to close right now.
                 if self.__taskFile.filename():
-                    self._saveSave(
+                    self._save_save(
                         self.__taskFile, lambda *args, **kwargs: None
                     )
                 else:
                     pass  # No filename, we cannot ask, give up...
             else:
-                if not self.__saveUnsavedChanges():
+                if not self.__save_unsaved_changes():
                     return False
-        self.__closeUnconditionally()
+        self.__close_unconditionally()
         return True
 
     def export(
@@ -378,14 +378,14 @@ class IOController(object):
         fileExists=os.path.exists,
         **kwargs
     ):
-        filename = filename or self.__askUserForFile(
+        filename = filename or self.__ask_user_for_file(
             title,
             fileDialogOpts,
             flag=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
             fileExists=fileExists,
         )
         if filename:
-            fd = self.__openFileForWriting(filename, openfile, showerror)
+            fd = self.__open_file_for_writing(filename, openfile, showerror)
             if fd is None:
                 return False
             count = writerClass(fd, filename).write(
@@ -400,7 +400,7 @@ class IOController(object):
         else:
             return False
 
-    def exportAsHTML(
+    def export_as_html(
         self,
         viewer,
         selectionOnly=False,
@@ -430,7 +430,7 @@ class IOController(object):
             taskFile=self.__taskFile,
         )
 
-    def exportAsCSV(
+    def export_as_csv(
         self,
         viewer,
         selectionOnly=False,
@@ -454,7 +454,7 @@ class IOController(object):
             taskFile=self.__taskFile,
         )
 
-    def exportAsICalendar(
+    def export_as_icalendar(
         self, viewer, selectionOnly=False, selectedFields=None,
         defaultFilename=None, fileExists=os.path.exists
     ):
@@ -473,7 +473,7 @@ class IOController(object):
             taskFile=self.__taskFile,
         )
 
-    def exportAsTodoTxt(
+    def export_as_todo_txt(
         self, viewer, selectionOnly=False, fileExists=os.path.exists,
         defaultFilename=None,
     ):
@@ -490,12 +490,12 @@ class IOController(object):
             taskFile=self.__taskFile,
         )
 
-    def importCSV(self, **kwargs):
+    def import_csv(self, **kwargs):
         persistence.CSVReader(
             self.__taskFile.tasks(), self.__taskFile.categories()
         ).read(**kwargs)
 
-    def importTodoTxt(self, filename):
+    def import_todo_txt(self, filename):
         persistence.TodoTxtReader(
             self.__taskFile.tasks(), self.__taskFile.categories()
         ).read(filename)
@@ -503,7 +503,7 @@ class IOController(object):
     def filename(self):
         return self.__taskFile.filename()
 
-    def __openFileForWriting(
+    def __open_file_for_writing(
         self, filename, openfile, showerror, mode="w", encoding="utf-8"
     ):
         try:
@@ -516,7 +516,7 @@ class IOController(object):
             showerror(errorMessage, **self.__errorMessageOptions)
             return None
 
-    def __addRecentFile(self, fileName):
+    def __add_recent_file(self, fileName):
         recentFiles = self.__settings.getlist("file", "recentfiles")
         if fileName in recentFiles:
             recentFiles.remove(fileName)
@@ -527,13 +527,13 @@ class IOController(object):
         recentFiles = recentFiles[:maximumNumberOfRecentFiles]
         self.__settings.setlist("file", "recentfiles", recentFiles)
 
-    def __removeRecentFile(self, fileName):
+    def __remove_recent_file(self, fileName):
         recentFiles = self.__settings.getlist("file", "recentfiles")
         if fileName in recentFiles:
             recentFiles.remove(fileName)
             self.__settings.setlist("file", "recentfiles", recentFiles)
 
-    def __askUserForFile(
+    def __ask_user_for_file(
         self, title, fileDialogOpts, flag=wx.FD_OPEN, fileExists=os.path.exists
     ):
         filename = wx.FileSelector(
@@ -546,12 +546,12 @@ class IOController(object):
             if not filename.endswith(extension):
                 filename += extension
                 if fileExists(filename):
-                    return self.__askUserForOverwriteConfirmation(
+                    return self.__ask_user_for_overwrite_confirmation(
                         filename, title, fileDialogOpts
                     )
         return filename
 
-    def __askUserForOverwriteConfirmation(
+    def __ask_user_for_overwrite_confirmation(
         self, filename, title, fileDialogOpts
     ):
         result = wx.MessageBox(
@@ -573,13 +573,13 @@ class IOController(object):
                     os.remove(autoName + "-meta")
             return filename
         elif result == wx.NO:
-            return self.__askUserForFile(
+            return self.__ask_user_for_file(
                 title, fileDialogOpts, flag=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT
             )
         else:
             return None
 
-    def __saveUnsavedChanges(self):
+    def __save_unsaved_changes(self):
         result = wx.MessageBox(
             _("You have unsaved changes.\n" "Save before closing?"),
             _("%s: save changes?") % meta.name,
@@ -592,7 +592,7 @@ class IOController(object):
             return False
         return True
 
-    def __askBreakLock(self, filename):
+    def __ask_break_lock(self, filename):
         result = wx.MessageBox(
             _(
                 """Cannot open %s because it is locked.
@@ -610,7 +610,7 @@ Break the lock?"""
         )
         return result == wx.YES
 
-    def __askOpenUnlocked(self, filename):
+    def __ask_open_unlocked(self, filename):
         result = wx.MessageBox(
             _(
                 "Cannot acquire a lock because locking is not "
@@ -623,13 +623,13 @@ Break the lock?"""
         )
         return result == wx.YES
 
-    def __closeUnconditionally(self):
+    def __close_unconditionally(self):
         self.__messageCallback(_("Closed %s") % self.__taskFile.filename())
         self.__taskFile.close()
         patterns.CommandHistory().clear()
         gc.collect()
 
-    def __showSaveMessage(self, savedFile):
+    def __show_save_message(self, savedFile):
         self.__messageCallback(
             _("Saved %(nrtasks)d tasks to %(filename)s")
             % {
@@ -638,7 +638,7 @@ Break the lock?"""
             }
         )
 
-    def __showTooNewErrorMessage(self, filename, showerror):
+    def __show_too_new_error_message(self, filename, showerror):
         showerror(
             _(
                 "Cannot open %(filename)s\n"
@@ -649,7 +649,7 @@ Break the lock?"""
             **self.__errorMessageOptions
         )
 
-    def __showGenericErrorMessage(
+    def __show_generic_error_message(
         self, filename, showerror, showBackups=False
     ):
         sys.stderr.write("".join(traceback.format_exception(*sys.exc_info())))
@@ -672,7 +672,7 @@ Break the lock?"""
             finally:
                 dlg.Destroy()
 
-    def __updateDefaultPath(self, filename):
+    def __update_default_path(self, filename):
         for options in [
             self.__tskFileOpenDialogOpts,
             self.__tskFileSaveDialogOpts,

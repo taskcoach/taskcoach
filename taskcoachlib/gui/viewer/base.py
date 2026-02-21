@@ -28,7 +28,6 @@ from taskcoachlib.gui.icons import icon_library
 from taskcoachlib.gui.icons import image_list_cache
 from wx.lib.agw import hypertreelist
 from pubsub import pub
-from taskcoachlib.widgets import ToolTipMixin
 from . import mixin
 
 
@@ -90,14 +89,6 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         pub.subscribe(self.onBeginBulkOperation, "command.aboutToBulkModify")
         pub.subscribe(self.onEndBulkOperation, "command.justBulkModified")
 
-        if isinstance(self.widget, ToolTipMixin):
-            pub.subscribe(
-                self.onShowTooltipsChanged, "settings.view.descriptionpopups"
-            )
-            self.widget.SetToolTipsEnabled(
-                settings.getboolean("view", "descriptionpopups")
-            )
-
         wx.CallAfter(self.__DisplayBalloon)
 
     def __DisplayBalloon(self):
@@ -125,9 +116,6 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
                     """Click on the gear icon on the right to add buttons and rearrange them."""
                 ),
             )
-
-    def onShowTooltipsChanged(self, value):
-        self.widget.SetToolTipsEnabled(value)
 
     def onBeginIO(self, taskFile):
         self.__freezeCount += 1
@@ -240,6 +228,52 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
 
     def viewerStatusEventType(self):
         return "viewer%s.status" % id(self)
+
+    def selection_changed_event_type(self):
+        return "viewer%s.selection" % id(self)
+
+    def view_settings_changed_event_type(self):
+        return "viewer%s.view_settings" % id(self)
+
+    @property
+    def has_selection(self):
+        w = self.widget
+        if hasattr(w, 'has_selection'):
+            return w.has_selection
+        return bool(w.curselection())
+
+    @property
+    def has_single_selection(self):
+        w = self.widget
+        if hasattr(w, 'has_single_selection'):
+            return w.has_single_selection
+        return len(w.curselection()) == 1
+
+    @property
+    def is_task(self):
+        return self.coreObjectType == "tasks"
+
+    @property
+    def is_note(self):
+        return self.coreObjectType == "notes"
+
+    @property
+    def is_category(self):
+        return self.coreObjectType == "categories"
+
+    @property
+    def is_effort(self):
+        return self.coreObjectType == "efforts"
+
+    @property
+    def is_attachment(self):
+        return self.coreObjectType == "attachments"
+
+    @property
+    def has_filter(self):
+        """Whether any filter is active. Overridden by filterable viewer
+        mixins."""
+        return False
 
     def sendViewerStatusEvent(self):
         pub.sendMessage(self.viewerStatusEventType(), viewer=self)
@@ -367,6 +401,11 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
                 # deleting all items as part of the Destroy process. Ignore.
                 return
 
+            # Fire selection signal — toolbar buttons subscribe via _SelectionSync
+            patterns.Event(
+                self.selection_changed_event_type(), self
+            ).send()
+
             # Fire status event - StatusBar has its own 500ms debounce
             # No need to query selection here; status bar queries fresh when displaying
             wx.CallAfter(self.sendViewerStatusEvent)
@@ -410,12 +449,6 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         Status bar queries fresh after its 500ms debounce.
         """
         return self.widget.curselection()
-
-    def curselectionIsInstanceOf(self, class_):
-        """Return whether all items in the current selection are instances of
-        class_. Can be overridden in subclasses that show only one type
-        of items to simply check the class."""
-        return all(isinstance(item, class_) for item in self.curselection())
 
     def isselected(self, item):
         """Returns True if the given item is selected. See
@@ -775,7 +808,7 @@ class WithAttachmentsViewerMixin(object):
 
 
 class ListViewer(Viewer):  # pylint: disable=W0223
-    def isTreeViewer(self):
+    def is_tree_viewer(self):
         return False
 
     def visibleItems(self):
@@ -837,7 +870,7 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
             uicommand.ViewCollapseAll(viewer=self),
         )
 
-    def isTreeViewer(self):
+    def is_tree_viewer(self):
         return True
 
     def select(self, items):
@@ -1081,7 +1114,7 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
 
         # Ordering
 
-        if not self.isTreeViewer():
+        if not self.is_tree_viewer():
             return True
 
         # Tree mode. Only allow drag if all selected items are siblings.
@@ -1180,11 +1213,11 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         ownItems = getItems(recursive=False)
         if ownItems:
             subjects.append(self.renderSubjects(ownItems))
-        isListViewer = not self.isTreeViewer()  # pylint: disable=E1101
-        if isListViewer or self.isItemCollapsed(item):
+        is_list_viewer = not self.is_tree_viewer()  # pylint: disable=E1101
+        if is_list_viewer or self.isItemCollapsed(item):
             childItems = [
                 theItem
-                for theItem in getItems(recursive=True, upwards=isListViewer)
+                for theItem in getItems(recursive=True, upwards=is_list_viewer)
                 if theItem not in ownItems
             ]
             if childItems:
@@ -1213,7 +1246,7 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         # pylint: disable=E1101
         return (
             not self.getItemExpanded(item)
-            if self.isTreeViewer() and item.children()
+            if self.is_tree_viewer() and item.children()
             else False
         )
 

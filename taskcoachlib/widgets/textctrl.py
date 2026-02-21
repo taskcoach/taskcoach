@@ -346,13 +346,8 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         if self._settings is None:
             return wx.RED
         try:
-            theme = self._settings.get("window", "theme")
-            if theme == "automatic":
-                from taskcoachlib.application.application import detect_dark_theme
-                is_dark = detect_dark_theme()
-            else:
-                is_dark = (theme == "dark")
-            section = "spellcheck_dark" if is_dark else "spellcheck_light"
+            from taskcoachlib.config import settings2
+            section = "spellcheck_dark" if settings2.window.theme_is_dark else "spellcheck_light"
             color_tuple = self._settings.getvalue(section, "squiggle_color")
             return wx.Colour(*color_tuple)
         except Exception:
