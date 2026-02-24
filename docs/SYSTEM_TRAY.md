@@ -17,8 +17,8 @@ This document describes the system tray (notification area) icon implementation 
 - [Debugging](#debugging)
 - [Files](#files)
 - [Code Duplication](#code-duplication)
+- [Why a Separate tray/hicolor Theme?](#why-a-separate-trayhicolor-theme)
 - [See Also](#see-also)
-- [History](#history)
 
 ---
 
@@ -48,9 +48,10 @@ Task Coach displays a system tray icon that allows users to:
 create_taskbar_icon(mainwindow, taskList, settings)
   │
   ├─ Linux/GTK + AppIndicator available → AppIndicatorTaskBarIcon
+  │   .__init__()
+  │       → indicator.set_icon_theme_path(.../icons/tray)
   │   .__setIcon()
-  │       → path = icon_catalog.get_path(icon_id, 48)
-  │       → self.__indicator.set_icon_full(path, self.__tooltipText)
+  │       → self.__indicator.set_icon_full("taskcoach-app", self.__tooltipText)
   │
   ├─ Windows / Mac → TaskBarIcon (wx.adv.TaskBarIcon)
   │   .__setIcon()
@@ -64,8 +65,9 @@ create_taskbar_icon(mainwindow, taskList, settings)
 
 ### Icon blinking
 
-When effort tracking is active, the tray icon blinks between `nuvola_apps_clock`
-and `nuvola_apps_ktimer` each second. Both icons need tray-appropriate sizes.
+When effort tracking is active, the tray icon blinks between `taskcoach-clock`
+and `taskcoach-timer` each second (AppIndicator), or `nuvola_apps_clock` and
+`nuvola_apps_ktimer` (wx.adv.TaskBarIcon). Both icons need tray-appropriate sizes.
 Size constants: `TRAY_ICON_SIZE_MACOS` (128) and `LIST_ICON_SIZE` (16) in
 `taskbaricon.py`.
 
@@ -171,6 +173,34 @@ So while Wayland forces us to use AppIndicator (since XEmbed isn't available), t
 
 *Right-click broken on many desktops
 
+### Window Show/Hide on Wayland
+
+Wayland's xdg-shell has no "unminimize" request and no way to query minimized
+state — by design. GTK3's Wayland backend never sets
+`GDK_WINDOW_STATE_ICONIFIED` (`gtk_window_iconify()` is an empty stub), so
+wxGTK's `IsIconized()` always returns False. `restore()` calls
+`Iconize(False)` → `gdk_window_show()` — no-op if already mapped. `Raise()`
+calls `gtk_window_present()` which needs a valid `xdg_activation_v1` token,
+but tray clicks come through D-Bus with no input serial → ignored.
+
+The fix uses `IsActive()` to detect the Wayland case (goes False when the
+compositor minimizes, even though `IsIconized()` stays False), then forces a
+Wayland surface remap via `Hide()` + `Show()`:
+
+```python
+if IsIconized() or not IsShown():    # X11: wx knows → normal restore
+    restore(event)
+elif not IsActive():                 # Wayland: compositor minimized, wx doesn't know
+    Hide() + Show()                  # force surface remap
+else:
+    Iconize()
+```
+
+The proper fix would be KDE's `ProvideXdgActivationToken()` D-Bus method
+(what Electron uses), but libayatana-appindicator does not support it — the
+method is not in its D-Bus introspection XML, and neither does the newer
+libayatana-appindicator-glib (as of 2026-02).
+
 ## Menu Contents
 
 The AppIndicator menu provides:
@@ -221,8 +251,8 @@ GNOME Shell removed built-in system tray support. GNOME users need the [AppIndic
 ## Icon Animation
 
 When effort tracking is active, the tray icon blinks between two states:
-- `clock_icon` - Clock face
-- `clock_stopwatch_icon` - Stopwatch
+- `taskcoach-clock` - Clock face
+- `taskcoach-timer` - Stopwatch
 
 This is controlled by the setting `window.blinktaskbariconwhentrackingeffort`.
 
@@ -281,7 +311,7 @@ Key log messages:
 
 | TaskBarIcon (Windows/Mac) | AppIndicatorTaskBarIcon (Linux) |
 |---|---|
-| `__setIcon`: `icon_catalog.get_wx_icon(id, size)` → `self.SetIcon()` | `__setIcon`: `icon_catalog.get_path(id, 128)` → `indicator.set_icon_full()` |
+| `__setIcon`: `icon_catalog.get_wx_icon(id, size)` → `self.SetIcon()` | `__setIcon`: `indicator.set_icon_full("taskcoach-app", tooltip)` via tray/hicolor theme |
 | `onIdle` — wx idle loop change detection | (none — calls `__setIcon` directly) |
 | `onTaskbarClick(event)` — Mac Raise branch | `onTaskbarClick(event=None)` — simpler |
 | `setPopupMenu` — wx.Bind right-click | `setPopupMenu` — stores, builds GTK menu |
@@ -293,12 +323,52 @@ Key log messages:
 
 ---
 
+## Why a Separate tray/hicolor Theme?
+
+`set_icon_theme_path(path)` expects `path` to **contain** theme directories (like
+`/usr/share/icons/` contains `hicolor/`, `Adwaita/`). Only the current theme, its
+inheritance chain, and the `hicolor` fallback are searched during icon lookup.
+
+The original fix passed bare names (`korganizer`, `clock`, `ktimer`) with the path
+pointing at the nuvola theme directory itself — wrong level, and `nuvola` is never in
+any desktop theme's inheritance chain, so the icons were never found via theme lookup.
+
+Additionally, names like `korganizer`, `clock`, `ktimer` collide with system themes
+(KDE Breeze, GNOME Adwaita). KDE would find its own `korganizer` icon in Breeze
+before ever checking our custom path.
+
+The solution follows the Electron/Chromium pattern: create a bundled `hicolor/` theme
+with uniquely-prefixed names (`taskcoach-app`, `taskcoach-clock`, `taskcoach-timer`)
+that don't exist in any system theme. Since `hicolor` is the universal fallback —
+always searched last by both GTK (`gtk_icon_theme`) and Qt (`QIcon::fromTheme` /
+`KIconLoader`) — the icons are guaranteed to be found regardless of desktop environment.
+
+```
+taskcoachlib/gui/icons/tray/          ← set_icon_theme_path() points here
+  hicolor/                            ← universal fallback theme
+    index.theme
+    {16,22,32,48,64,128}x.../apps/
+      taskcoach-app.png               ← unique name, no collision
+      taskcoach-clock.png
+      taskcoach-timer.png
+```
+
+### Approaches tried and rejected
+
+| # | Approach | LXDE | KDE | Why it failed |
+|---|----------|------|-----|---------------|
+| 1 | **Absolute paths** via `icon_catalog.get_path()` (pre-v1, commit `a20c9164c`) | Works | Wrong icon (Breeze calendar) | KDE's SNI host extracts the stem from the absolute path and resolves it through the system theme. `/path/to/korganizer.png` → KDE looks up `korganizer` in Breeze → finds Breeze's calendar icon, not ours. |
+| 2 | **Bare names** (`korganizer`, `clock`, `ktimer`) + `set_icon_theme_path(nuvola/)` (v1 fix, commit `851cbe3fd`) | Broken (can't resolve) | Wrong icon (still Breeze) | `set_icon_theme_path` expects the **parent** of a theme dir, not the theme dir itself. And even with the correct level, `nuvola` is not in any theme's inheritance chain so it's never searched. Names also collide with system themes. |
+| 3 | **Bundled `tray/hicolor`** with unique `taskcoach-*` names (current, commit `26df25b47`) | Works | Works | `hicolor` is the universal fallback, always searched. Unique names avoid collisions. |
+
+**Do not revisit approaches #1 or #2.** They are fundamentally broken due to how
+KDE's SNI host resolves icon names through the system theme.
+
+**References:** libayatana-appindicator `app-indicator.c`, KDE
+`statusnotifieritemsource.cpp`, Electron `app_indicator_icon.cc`.
+
 ## See Also
 
 - [ICON_DISPLAY.md — Tray Icons](ICON_DISPLAY.md#tray-icons) - Icon access methods and platform sizes
 
-## History
 
-- **Original**: wx.adv.TaskBarIcon only
-- **2026-01**: Added AppIndicator support for Wayland
-- **2026-01**: Switched to AppIndicator for all Linux due to wx.adv.TaskBarIcon right-click issues

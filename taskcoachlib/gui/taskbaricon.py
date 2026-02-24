@@ -31,6 +31,7 @@ import wx.adv
 from .icons.icon_library import icon_catalog, LIST_ICON_SIZE
 
 TRAY_ICON_SIZE_MACOS = 128
+_TRAY_THEME_PATH = os.path.join(os.path.dirname(__file__), 'icons', 'tray')
 
 # Check for AppIndicator availability on Linux/GTK
 # AppIndicator is only used when wx.adv.TaskBarIcon is not available (e.g., Wayland).
@@ -314,9 +315,9 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         mainwindow,
         taskList,
         settings,
-        default_icon_id="nuvola_apps_korganizer",
-        tick_icon_id="nuvola_apps_clock",
-        tack_icon_id="nuvola_apps_ktimer",
+        default_icon_name="taskcoach-app",
+        tick_icon_name="taskcoach-clock",
+        tack_icon_name="taskcoach-timer",
         *args,
         **kwargs
     ):
@@ -324,17 +325,18 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         self.__window = mainwindow
         self.__taskList = taskList
         self.__settings = settings
-        self.__icon_id = self.__default_icon_id = default_icon_id
+        self.__icon_name = self.__default_icon_name = default_icon_name
         self.__tooltipText = ""
-        self.__tick_icon_id = tick_icon_id
-        self.__tack_icon_id = tack_icon_id
+        self.__tick_icon_name = tick_icon_name
+        self.__tack_icon_name = tack_icon_name
         self.__popupmenu = None
         self._clockRunning = False
 
         # Create the AppIndicator
         self.__indicator = _APPINDICATOR_MODULE.AppIndicatorIcon(
             app_id="taskcoach",
-            icon_path=icon_catalog.get_path(default_icon_id, TRAY_ICON_SIZE_MACOS),
+            icon_name=default_icon_name,
+            icon_theme_path=_TRAY_THEME_PATH,
             tooltip=meta.name
         )
 
@@ -407,9 +409,26 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             self.__setIcon()
 
     def onTaskbarClick(self, event=None):
-        """Handle click on indicator - show/hide main window."""
+        """Handle click on indicator - show/hide main window.
+
+        Three cases:
+        1. IsIconized() or not IsShown() — X11: wx knows the window is
+           minimized/hidden, normal restore() works.
+        2. not IsActive() — Wayland: compositor minimized the window but
+           wxGTK doesn't know (IsIconized() stays False, IsShown() stays
+           True because GTK3's Wayland backend never sets
+           GDK_WINDOW_STATE_ICONIFIED).  restore() is all no-ops, so
+           force a surface remap via Hide()+Show().
+        3. else — window is visible and active, minimize it.
+        """
         if self.__window.IsIconized() or not self.__window.IsShown():
+            # X11: wx knows the window state → normal restore
             self.__window.restore(event)
+        elif not self.__window.IsActive():
+            # Wayland: compositor minimized but wx doesn't know →
+            # force Wayland surface unmap/remap
+            self.__window.Hide()
+            self.__window.Show()
         else:
             self.__window.Iconize()
 
@@ -714,11 +733,11 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
     def tooltip(self):
         return self.__tooltipText
 
-    def icon_id(self):
-        return self.__icon_id
+    def icon_name(self):
+        return self.__icon_name
 
-    def default_icon_id(self):
-        return self.__default_icon_id
+    def default_icon_name(self):
+        return self.__default_icon_name
 
     # Private methods:
 
@@ -788,18 +807,16 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
                 self.__indicator.set_tooltip(text)
 
     def __set_default_icon(self):
-        self.__icon_id = self.__default_icon_id
+        self.__icon_name = self.__default_icon_name
 
     def __toggle_tracking_icon(self):
-        tick, tack = self.__tick_icon_id, self.__tack_icon_id
-        self.__icon_id = tack if self.__icon_id == tick else tick
+        tick, tack = self.__tick_icon_name, self.__tack_icon_name
+        self.__icon_name = tack if self.__icon_name == tick else tick
 
     def __setIcon(self):
         """Update the indicator icon."""
         if self.__indicator:
-            path = icon_catalog.get_path(self.__icon_id, TRAY_ICON_SIZE_MACOS)
-            if path:
-                self.__indicator.set_icon_full(path, self.__tooltipText)
+            self.__indicator.set_icon_full(self.__icon_name, self.__tooltipText)
 
     # wx.adv.TaskBarIcon compatibility methods:
 

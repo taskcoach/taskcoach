@@ -17,22 +17,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import wx
-from taskcoachlib.i18n import _
 
 
 class DirectoryChooser(wx.Panel):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, gap=15, helpText="", **kwargs):
         super().__init__(*args, **kwargs)
 
         self.chooser = wx.DirPickerCtrl(self, wx.ID_ANY, "")
-        self.checkbx = wx.CheckBox(self, wx.ID_ANY, _("None"))
+        self.checkbx = wx.CheckBox(self, wx.ID_ANY)
+        self.helpCtrl = wx.StaticText(self, label=helpText)
+        self.helpCtrl.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
 
-        sz = wx.BoxSizer(wx.VERTICAL)
+        sz = wx.BoxSizer(wx.HORIZONTAL)
+        sz.Add(self.checkbx, 0, wx.RIGHT, gap)
         sz.Add(self.chooser, 1, wx.EXPAND)
-        sz.Add(self.checkbx, 1)
+        sz.Add(self.helpCtrl, 0, wx.LEFT, gap)
 
         self.SetSizer(sz)
-        self.Fit()
 
         self.checkbx.Bind(wx.EVT_CHECKBOX, self.OnCheck)
 

@@ -130,6 +130,30 @@ class FontColorSyncer(object):
 
 
 class SettingsPageBase(widgets.ScrolledBookPage):
+
+    @property
+    def _columnGap(self):
+        return self._borderWidth + self._hgap + self._borderWidth
+
+    def _makeInlinePanel(self, *controls, helpText="", growable=False):
+        """Create a panel with controls and an inline help label.
+        Controls are laid out horizontally with _columnGap spacing.
+        The helpCtrl is registered for dynamic wrapping in fit().
+        If growable, the first control expands to fill the panel."""
+        panel = wx.Panel(self)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        for i, ctrl in enumerate(controls):
+            ctrl.Reparent(panel)
+            flags = wx.EXPAND if (growable and i == 0) else 0
+            sizer.Add(ctrl, 0, flags | wx.RIGHT, self._columnGap)
+        helpCtrl = wx.StaticText(panel, label=helpText)
+        helpCtrl.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+        sizer.Add(helpCtrl, 0)
+        panel.SetSizer(sizer)
+        self._inlineHelpCtrls.append((helpCtrl, panel))
+        return panel
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._booleanSettings = []
@@ -140,13 +164,14 @@ class SettingsPageBase(widgets.ScrolledBookPage):
         self._fontSettings = []
         self._iconSettings = []
         self._pathSettings = []
-        self._textSettings = []
         self._syncers = []
+        self._inlineHelpCtrls = []  # [(helpCtrl, panel)] for deferred wrapping
 
     def addBooleanSetting(self, section, setting, text, helpText="", **kwargs):
         checkBox = wx.CheckBox(self, -1)
         checkBox.SetValue(self.getboolean(section, setting))
-        self.addEntry(text, checkBox, helpText=helpText, **kwargs)
+        panel = self._makeInlinePanel(checkBox, helpText=helpText)
+        self.addEntry(text, panel, **kwargs)
         self._booleanSettings.append((section, setting, checkBox))
         return checkBox
 
@@ -168,13 +193,8 @@ class SettingsPageBase(widgets.ScrolledBookPage):
             # Force a selection if necessary:
             if choiceCtrl.GetSelection() == wx.NOT_FOUND:
                 choiceCtrl.SetSelection(0)
-        # pylint: disable=W0142
-        self.addEntry(
-            text,
-            *choiceCtrls,
-            helpText=helpText,
-            flags=kwargs.get("flags", None)
-        )
+        panel = self._makeInlinePanel(*choiceCtrls, helpText=helpText)
+        self.addEntry(text, panel, flags=kwargs.get("flags", None))
         self._choiceSettings.append((section, setting, choiceCtrls))
         return choiceCtrls
 
@@ -195,10 +215,10 @@ class SettingsPageBase(widgets.ScrolledBookPage):
         checkedNumbers = self.getlist(section, setting)
         for index, choice in enumerate(choices):
             multipleChoice.Check(index, choice[0] in checkedNumbers)
+        panel = self._makeInlinePanel(multipleChoice, helpText=helpText,
+                                       growable=kwargs.get("growable", True))
         self.addEntry(
-            text,
-            multipleChoice,
-            helpText=helpText,
+            text, panel,
             growable=kwargs.get("growable", True),
             flags=kwargs.get("flags", None),
         )
@@ -225,10 +245,11 @@ class SettingsPageBase(widgets.ScrolledBookPage):
         spin = widgets.SpinCtrl(
             self, min=minimum, max=maximum, size=(65, -1), value=intValue
         )
-        self.addEntry(text, spin, helpText=helpText, flags=flags)
+        panel = self._makeInlinePanel(spin, helpText=helpText)
+        self.addEntry(text, panel, flags=flags)
         self._integerSettings.append((section, setting, spin))
 
-    def addWorkingHoursSetting(self, text, helpText=""):
+    def addWorkingHoursSetting(self, text):
         """Add a working hours setting with start/end dropdowns and end-of-day checkbox."""
         startHour = self.getint("view", "efforthourstart")
         endHour = self.getint("view", "efforthourend")
@@ -239,44 +260,37 @@ class SettingsPageBase(widgets.ScrolledBookPage):
             endHour = 23
             endOfDay = True
 
-        # Create panel to hold the controls
-        panel = wx.Panel(self)
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-
         hours = [str(h) for h in range(24)]
+        gap = self._columnGap
 
-        # Start hour dropdown (0-23)
-        self._workingHourStartChoice = wx.Choice(panel, choices=hours)
+        self._workingHourStartChoice = wx.Choice(self, choices=hours)
         self._workingHourStartChoice.SetSelection(startHour)
         self._workingHourStartChoice.Bind(wx.EVT_CHOICE, self._onWorkingHourStartChanged)
-        sizer.Add(self._workingHourStartChoice, 0, wx.ALIGN_CENTER_VERTICAL)
-        sizer.Add(wx.StaticText(panel, label=_(" to ")), 0, wx.ALIGN_CENTER_VERTICAL)
 
-        # End hour dropdown (0-23)
-        self._workingHourEndChoice = wx.Choice(panel, choices=hours)
+        self._workingHourEndChoice = wx.Choice(self, choices=hours)
         self._workingHourEndChoice.SetSelection(endHour)
         self._workingHourEndChoice.Bind(wx.EVT_CHOICE, self._onWorkingHourEndChanged)
-        sizer.Add(self._workingHourEndChoice, 0, wx.ALIGN_CENTER_VERTICAL)
-        sizer.Add((10, -1))  # Spacer
 
-        # End of day checkbox
-        self._workingHourEndOfDayCheck = wx.CheckBox(panel, label=_("End of day"))
+        self._workingHourEndOfDayCheck = wx.CheckBox(self, label=_("End of day"))
         self._workingHourEndOfDayCheck.SetValue(endOfDay)
         self._workingHourEndOfDayCheck.Bind(wx.EVT_CHECKBOX, self._onEndOfDayChecked)
-        sizer.Add(self._workingHourEndOfDayCheck, 0, wx.ALIGN_CENTER_VERTICAL)
 
+        panel = wx.Panel(self)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self._workingHourStartChoice.Reparent(panel)
+        sizer.Add(self._workingHourStartChoice, 0, wx.RIGHT, gap)
+        sizer.Add(wx.StaticText(panel, label=_("to")), 0, wx.RIGHT, gap)
+        self._workingHourEndChoice.Reparent(panel)
+        sizer.Add(self._workingHourEndChoice, 0, wx.RIGHT, gap)
+        self._workingHourEndOfDayCheck.Reparent(panel)
+        sizer.Add(self._workingHourEndOfDayCheck, 0)
         panel.SetSizer(sizer)
 
-        # Apply initial state
         if endOfDay:
             self._workingHourEndChoice.SetSelection(23)
             self._workingHourEndChoice.Enable(False)
 
-        self.addEntry(
-            text,
-            panel,
-            helpText=helpText,
-        )
+        self.addEntry(text, panel)
 
     def _onWorkingHourStartChanged(self, event):
         """Ensure at least 1 hour gap when start hour changes."""
@@ -512,31 +526,23 @@ class SettingsPageBase(widgets.ScrolledBookPage):
         darkIcon.SetValue(defs["icon_dark"][setting])
 
     def addPathSetting(self, section, setting, text, helpText="", **kwargs):
-        pathChooser = widgets.DirectoryChooser(self, wx.ID_ANY)
+        pathChooser = widgets.DirectoryChooser(
+            self, wx.ID_ANY, gap=self._columnGap, helpText=helpText)
         pathChooser.SetPath(self.gettext(section, setting))
-        self.addEntry(text, pathChooser, helpText=helpText, **kwargs)
+        self._inlineHelpCtrls.append((pathChooser.helpCtrl, pathChooser))
+        self.addEntry(text, pathChooser, **kwargs)
         self._pathSettings.append((section, setting, pathChooser))
-
-    def addTextSetting(self, section, setting, text, helpText="", **kwargs):
-        textChooser = wx.TextCtrl(
-            self, wx.ID_ANY, self.gettext(section, setting)
-        )
-        self.addEntry(text, textChooser, helpText=helpText, **kwargs)
-        self._textSettings.append((section, setting, textChooser))
-
-    def setTextSetting(self, section, setting, value):
-        for theSection, theSetting, textChooser in self._textSettings:
-            if theSection == section and theSetting == setting:
-                textChooser.SetValue(value)
-
-    def enableTextSetting(self, section, setting, enabled):
-        for theSection, theSetting, textChooser in self._textSettings:
-            if theSection == section and theSetting == setting:
-                textChooser.Enable(enabled)
-                break
 
     def addText(self, label, text, **kwargs):
         self.addEntry(label, text, **kwargs)
+
+    def addHintRow(self, text):
+        """Add a standalone gray hint row spanning all columns."""
+        hint = wx.StaticText(self, label=text)
+        hint.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+        self._inlineHelpCtrls.append((hint, self))
+        self.addText("", hint)
 
     def ok(self):
         for section, setting, checkBox in self._booleanSettings:
@@ -582,8 +588,6 @@ class SettingsPageBase(widgets.ScrolledBookPage):
             self.settext(section, setting, icon_id)
         for section, setting, btn in self._pathSettings:
             self.settext(section, setting, btn.GetPath())
-        for section, setting, txt in self._textSettings:
-            self.settext(section, setting, txt.GetValue())
 
     def get(self, section, name):
         raise NotImplementedError
@@ -624,7 +628,7 @@ class SettingsPageBase(widgets.ScrolledBookPage):
 
 class SettingsPage(SettingsPageBase):
     _labelWidth = 300
-    _helpWidth = None  # Subclasses can set to wrap help text at fixed width
+    _maxHelpRight = 1000  # Max right edge (px from left of page) for help text
 
     def __init__(self, settings=None, taskFile=None, *args, **kwargs):
         self.settings = settings
@@ -632,34 +636,27 @@ class SettingsPage(SettingsPageBase):
         super().__init__(*args, **kwargs)
 
     def fit(self):
-        """Wrap column 0 labels at fixed width before layout."""
+        """Wrap column 0 labels and inline help texts before final layout."""
         for item in self._sizer.GetChildren():
             pos = item.GetPos()
             if pos.GetCol() == 0 and item.GetSpan().GetColspan() == 1:
                 window = item.GetWindow()
                 if window and isinstance(window, wx.StaticText):
                     window.Wrap(self._labelWidth)
+        # First layout pass to compute actual positions
         super().fit()
+        # Wrap inline help texts based on actual position
+        if self._inlineHelpCtrls:
+            for helpCtrl, panel in self._inlineHelpCtrls:
+                helpX = helpCtrl.GetScreenPosition().x - self.GetScreenPosition().x
+                wrapWidth = max(self._maxHelpRight - helpX, 100)
+                helpCtrl.SetLabel(helpCtrl.GetLabel())  # Reset any prior wrap
+                helpCtrl.Wrap(wrapWidth)
+            # Re-layout after wrapping changed control sizes
+            super().fit()
 
     def addEntry(self, text, *controls, **kwargs):  # pylint: disable=W0221
-        helpText = kwargs.pop("helpText", "")
-        if helpText == "restart":
-            helpText = (
-                _("This setting will take effect after you restart %s")
-                % meta.name
-            )
-        elif helpText == "override":
-            helpText = _(
-                "This setting can be overridden for individual tasks "
-                "in the task edit dialog."
-            )
-        if helpText:
-            helpCtrl = wx.StaticText(self, label=helpText)
-            helpCtrl.SetForegroundColour(
-                wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-            if self._helpWidth:
-                helpCtrl.Wrap(self._helpWidth)
-            controls = controls + (helpCtrl,)
+        kwargs.pop("helpText", "")  # Consumed by helpers; strip if passed
         super().addEntry(text, *controls, **kwargs)
 
     def get(self, section, name):
@@ -705,10 +702,9 @@ class SavePage(SettingsPage):
     pageName = "save"
     pageTitle = _("Files")
     pageIcon = "nuvola_devices_media-floppy"
-    _helpWidth = 500
 
     def __init__(self, *args, **kwargs):
-        super().__init__(columns=3, *args, **kwargs)
+        super().__init__(columns=2, *args, **kwargs)
         self.addBooleanSetting(
             "file",
             "autosave",
@@ -1157,20 +1153,12 @@ class ThemePage(SettingsPage):
         self.addLine()
 
         # --- Section: Hoverover Highlight ---
-        hoverPanel = wx.Panel(self)
-        hoverSpin = widgets.SpinCtrl(
-            hoverPanel, min=0, max=5, size=(65, -1),
-            value=self.getint("window", "hoverlinewidth"))
-        hoverHint = wx.StaticText(hoverPanel,
-            label=_("Two-tone outline thickness per line in pixels when hovering over a row (0 to disable)"))
-        hoverHint.SetForegroundColour(
-            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add(hoverSpin, 0, wx.ALIGN_TOP)
-        sizer.Add(hoverHint, 1, wx.ALIGN_TOP | wx.LEFT, 8)
-        hoverPanel.SetSizer(sizer)
-        self.addEntry(_("Hoverover Highlight"), hoverPanel)
-        self._integerSettings.append(("window", "hoverlinewidth", hoverSpin))
+        self.addIntegerSetting(
+            "window", "hoverlinewidth",
+            _("Hoverover Highlight"),
+            minimum=0, maximum=5,
+            helpText=_("Two-tone outline thickness per line in pixels when hovering over a row (0 to disable)"),
+        )
 
 
 
@@ -1302,7 +1290,7 @@ class LanguagePage(SettingsPage):
     pageIcon = "nuvola_categories_applications-education-language"
 
     def __init__(self, *args, **kwargs):
-        super().__init__(columns=3, *args, **kwargs)
+        super().__init__(columns=2, *args, **kwargs)
 
         # === LANGUAGE SECTION ===
         # Restart warning above the dropdown (covers language and format changes)
@@ -1542,14 +1530,9 @@ class LanguagePage(SettingsPage):
         self.addEntry("", timeDemoPanel)
 
         # Note about 12-hour mode and working hours
-        timeFormatNote = wx.StaticText(
-            self,
-            label=_("Note: In 12-hour mode, working hours (set in Features tab) are not used for hour suggestions.")
+        self.addHintRow(
+            _("Note: In 12-hour mode, working hours (set in Features tab) are not used for hour suggestions.")
         )
-        timeFormatNote.SetForegroundColour(
-            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
-        )
-        self.addEntry("", timeFormatNote)
 
         # Separator line between time format and number format sections
         self.addLine()
@@ -1662,11 +1645,13 @@ class LanguagePage(SettingsPage):
         from taskcoachlib.widgets.textctrl import SpellCheckMixin, ENCHANT_AVAILABLE
 
         # Spell check enabled checkbox
-        self._spellCheckEnabled = self.getboolean("spellcheck", "enabled")
-        self._spellCheckEnabledCheck = wx.CheckBox(self, label=_("Enable spell checking"))
-        self._spellCheckEnabledCheck.SetValue(self._spellCheckEnabled)
+        self._spellCheckEnabledCheck = self.addBooleanSetting(
+            "spellcheck", "enabled",
+            _("Spell checking"),
+            _("Enable spell checking"),
+        )
+        self._spellCheckEnabled = self._spellCheckEnabledCheck.GetValue()
         self._spellCheckEnabledCheck.Bind(wx.EVT_CHECKBOX, self._onSpellCheckEnabledChange)
-        self.addEntry(_("Spell check"), self._spellCheckEnabledCheck)
 
         # Show warning if enchant is not available
         if not ENCHANT_AVAILABLE:
@@ -1722,13 +1707,8 @@ class LanguagePage(SettingsPage):
             system = platform.system()
 
             if not availableLangs:
-                # No dictionaries found - show note
-                helpText = wx.StaticText(
-                    self,
-                    label=_("Language missing? Install hunspell packages for your language.")
-                )
-                helpText.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-                self.addEntry("", helpText)
+                self.addHintRow(
+                    _("Language missing? Install hunspell packages for your language."))
 
             # Platform-specific note combining dropdown info and install instructions
             if system == "Linux":
@@ -1737,11 +1717,7 @@ class LanguagePage(SettingsPage):
                 noteText = _("Dropdown shows installed dictionaries. Install via: brew install hunspell")
             else:  # Windows
                 noteText = _("Dropdown shows installed dictionaries. Additional languages must be prepackaged.")
-
-            dictNote = wx.StaticText(self, label=noteText)
-            dictNote.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-            dictNote.Wrap(500)
-            self.addEntry("", dictNote)
+            self.addHintRow(noteText)
 
     def _onSpellCheckEnabledChange(self, event):
         """Handle spell check enabled checkbox change."""
@@ -1938,8 +1914,7 @@ class LanguagePage(SettingsPage):
             self._currencyDpChoice.GetSelection()
         )
         self.set("view", "currency_decimal_places", selectedCurrDp)
-        # Save spell check settings
-        self.setboolean("spellcheck", "enabled", self._spellCheckEnabledCheck.IsChecked())
+        # Save spell check language (enabled checkbox saved by base ok())
         selectedSpellLang = self._spellCheckLangChoice.GetClientData(
             self._spellCheckLangChoice.GetSelection()
         )
@@ -2004,33 +1979,18 @@ class StatusesPage(SettingsPage):
         self._sizer.Add(wx.StaticLine(self), (legacyLineRow[0], 0), span=(1, 11),
                         flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=self._borderWidth)
         # Legacy status icon support
-        legacyLabel = wx.StaticText(self, label=_("Legacy"))
-        legacyPanel = wx.Panel(self)
-        legacySizer = wx.BoxSizer(wx.HORIZONTAL)
-        legacyCheckbox = wx.CheckBox(legacyPanel)
-        legacyCheckbox.SetValue(self.getboolean("icon", "legacystatusicons"))
-        self._booleanSettings.append(("icon", "legacystatusicons", legacyCheckbox))
-        legacySizer.Add(legacyCheckbox, 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL, self._borderWidth)
-        legacyHint = wx.StaticText(legacyPanel, label=_(
-            "All statuses must be reset to their defaults and this option "
-            "must be enabled to make the INI settings file compatible with "
-            "Task Coach < 2.0.1.72. "
-            "The task data file may reference newer icons that older versions "
-            "cannot display, but it will not crash, the icons simply won't "
-            "appear in older versions of Task Coach."
-        ))
-        legacyHint.SetForegroundColour(
-            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-        legacyHint.Wrap(700)
-        legacySizer.Add(legacyHint, 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL, self._borderWidth)
-        legacyPanel.SetSizer(legacySizer)
-        legacyRow = self._position.next(11)
-        self._sizer.Add(legacyLabel, (legacyRow[0], 0), span=(1, 1),
-                        flag=wx.ALL | wx.ALIGN_CENTRE_VERTICAL | wx.ALIGN_LEFT,
-                        border=self._borderWidth)
-        self._sizer.Add(legacyPanel, (legacyRow[0], 1), span=(1, 10),
-                        flag=wx.ALL | wx.ALIGN_CENTRE_VERTICAL | wx.ALIGN_LEFT,
-                        border=self._borderWidth)
+        self.addBooleanSetting(
+            "icon", "legacystatusicons",
+            _("Legacy"),
+            _(
+                "All statuses must be reset to their defaults and this option "
+                "must be enabled to make the INI settings file compatible with "
+                "Task Coach < 2.0.1.72. "
+                "The task data file may reference newer icons that older versions "
+                "cannot display, but it will not crash, the icons simply won't "
+                "appear in older versions of Task Coach."
+            ),
+        )
         self.fit()
 
     def _onStatusIconChanged(self, event, iconEntry):
@@ -2084,10 +2044,9 @@ class FeaturesPage(SettingsPage):
     pageName = "features"
     pageTitle = _("Features")
     pageIcon = "nuvola_apps_preferences-system-session-services"
-    _helpWidth = 500
 
     def __init__(self, *args, **kwargs):
-        super().__init__(columns=3, growableColumn=-1, *args, **kwargs)
+        super().__init__(columns=2, growableColumn=-1, *args, **kwargs)
         self._restartWarningBase = _("All settings on this tab require a restart of %s to take effect.") % meta.name
         self._restartWarning = wx.StaticText(self, label=self._restartWarningBase)
         self._restartWarningDefaultColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
@@ -2101,13 +2060,9 @@ class FeaturesPage(SettingsPage):
             [("monday", _("Monday")), ("sunday", _("Sunday"))],
         )
         self.addWorkingHoursSetting(_("Working hours"))
-        workingHoursNote = wx.StaticText(
-            self,
-            label=_("Note: Working hours are not used for hour suggestions when 12-hour (AM/PM) time format is selected in Regional settings.")
-        )
-        workingHoursNote.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-        workingHoursNote.Wrap(700)
-        self.addEntry("", workingHoursNote)
+        self.addHintRow(
+            _("Note: Working hours are not used for hour suggestions when "
+              "12-hour (AM/PM) time format is selected in Regional settings."))
 
         self.addBooleanSetting(
             "calendarviewer",
@@ -2280,14 +2235,12 @@ class IconsPage(SettingsPage):
             "search_include_context",
             _("Include context in icon search"),
         )
-        # Icon size dropdown - placeholder for future functionality
-        sizeChoice = wx.Choice(self, choices=["16"])
-        sizeChoice.SetSelection(0)
-        sizeChoice.Enable(False)
-        self.addEntry(
+        self.addChoiceSetting(
+            "icon", "iconsize",
             _("Icon size"),
-            sizeChoice,
-            helpText=_("More sizes will be available as icon themes are imported"),
+            _("Not yet implemented. Future: row height in tree/list views "
+              "will scale with this setting."),
+            [("16", "16")],
         )
         self.fit()
 
@@ -2296,15 +2249,15 @@ class TaskDatesPage(SettingsPage):
     pageName = "task"
     pageTitle = _("Task dates")
     pageIcon = "nuvola_apps_date"
-    _helpWidth = 700
 
     def __init__(self, *args, **kwargs):
-        super().__init__(columns=4, growableColumn=-1, *args, **kwargs)
+        super().__init__(columns=2, growableColumn=-1, *args, **kwargs)
         self.addBooleanSetting(
             "behavior",
             "markparentcompletedwhenallchildrencompleted",
             _("Mark parent task completed when all children are completed"),
-            helpText="override",
+            _("This setting can be overridden for individual tasks "
+              "in the task edit dialog."),
         )
         self.addIntegerSetting(
             "behavior",
@@ -2333,17 +2286,10 @@ class TaskDatesPage(SettingsPage):
             "",
             choices,
         )
-        datestied_hint = wx.StaticText(
-            self,
-            label=_(
-                'Deprecated: replaced by the duration mode in the task editor. '
-                'Inline editing in the task list has not yet been refactored '
-                'and still uses this legacy option. It will be removed eventually.'
-            ),
-        )
-        datestied_hint.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-        datestied_hint.Wrap(700)
-        self.addText("", datestied_hint)
+        self.addHintRow(
+            _('Deprecated: replaced by the duration mode in the task editor. '
+              'Inline editing in the task list has not yet been refactored '
+              'and still uses this legacy option. It will be removed eventually.'))
 
         check_choices = [("preset", _("Preset")), ("propose", _("Propose"))]
         day_choices = [
@@ -2410,20 +2356,13 @@ class TaskDatesPage(SettingsPage):
 
     def __add_help_text(self):
         """Add help text for the default date and time settings."""
-        help_text = wx.StaticText(
-            self,
-            label=_(
-                """New tasks start with "Preset" dates and times filled in and checked. "Proposed" dates and times are filled in, but not checked.
+        self.addHintRow(_(
+            """New tasks start with "Preset" dates and times filled in and checked. "Proposed" dates and times are filled in, but not checked.
 
 "Start of day" is midnight and "End of day" is just before midnight. When using these, task viewers hide the time and show only the date.
 
 "Start of working day" and "End of working day" use the working day as set in the Features tab of this preferences dialog."""
-            )
-            % meta.data.metaDict,
-        )
-        help_text.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-        help_text.Wrap(700)
-        self.addText("", help_text)
+        ) % meta.data.metaDict)
 
 
 class TaskReminderPage(SettingsPage):
@@ -2432,7 +2371,7 @@ class TaskReminderPage(SettingsPage):
     pageIcon = "nuvola_apps_kalarm"
 
     def __init__(self, *args, **kwargs):
-        super().__init__(columns=3, growableColumn=-1, *args, **kwargs)
+        super().__init__(columns=2, growableColumn=-1, *args, **kwargs)
         if operating_system.isMac() or operating_system.isGTK():
             self.addBooleanSetting(
                 "feature",
@@ -2472,28 +2411,20 @@ class DurationPresetsPage(SettingsPage):
 
         # Preset field configurations: (setting_key, display_name, help_text)
         self._preset_fields = [
-            (
-                "task_duration_presets",
-                _("Task Duration"),
-                _("These presets appear when setting task duration in the task editor."),
-            ),
-            (
-                "effort_duration_presets",
-                _("Effort Duration"),
-                _("These presets appear when setting effort duration in the effort editor."),
-            ),
+            ("task_duration_presets", _("Task Duration")),
+            ("effort_duration_presets", _("Effort Duration")),
         ]
 
         self.__currentFieldIndex = 0
         self.__presets = {}  # Cache for all preset lists
 
         # Load all presets
-        for setting_key, unused_name, unused_help in self._preset_fields:
+        for setting_key, unused_name in self._preset_fields:
             self.__presets[setting_key] = self.__loadPresets(setting_key)
 
         # Field selector row
         self.__fieldChoice = wx.Choice(self)
-        for unused_key, display_name, unused_help in self._preset_fields:
+        for unused_key, display_name in self._preset_fields:
             self.__fieldChoice.Append(display_name)
         self.__fieldChoice.SetSelection(0)
         self.__fieldChoice.Bind(wx.EVT_CHOICE, self.__onFieldChanged)
@@ -2536,14 +2467,11 @@ class DurationPresetsPage(SettingsPage):
         )
 
         # Help text
-        self.__helpText = wx.StaticText(self, label="")
-        self.__helpText.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-        self.__helpText.Wrap(500)
-        self.addEntry("", self.__helpText)
+        self.addHintRow(
+            _("These presets appear when setting duration in the task or effort editor."))
 
         # Populate initial list
         self.__populateList()
-        self.__updateHelpText()
 
         self.fit()
 
@@ -2605,13 +2533,6 @@ class DurationPresetsPage(SettingsPage):
         self.__addPanel.Layout()
 
         self.__populateList()
-        self.__updateHelpText()
-
-    def __updateHelpText(self):
-        unused_key, unused_name, help_text = self._preset_fields[self.__currentFieldIndex]
-        self.__helpText.SetLabel(help_text)
-        self.__helpText.Wrap(500)
-        self.Layout()
 
     def __populateList(self):
         """Rebuild the list with 3 columns: short value, description, delete button."""

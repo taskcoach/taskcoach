@@ -563,6 +563,7 @@ defaults = {
         "inactivetasks": "taskcoach_actions_led_grey_icon",
         "duesoontasks": "nuvola_actions_ledorange",
         "legacystatusicons": "False",
+        "iconsize": "16",
     },
     "fgcolor_dark": {
         "activetasks": "(255, 255, 255, 255)",

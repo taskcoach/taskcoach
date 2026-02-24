@@ -82,13 +82,18 @@ class AppIndicatorIcon:
     the AppIndicator library for Wayland compatibility.
     """
 
-    def __init__(self, app_id="taskcoach", icon_path=None,
-                 category=None, tooltip="Task Coach"):
+    def __init__(self, app_id="taskcoach", icon_name=None,
+                 icon_theme_path=None, category=None,
+                 tooltip="Task Coach"):
         """Initialize the AppIndicator icon.
 
         Args:
             app_id: Unique identifier for the indicator
-            icon_path: Absolute path to icon file, or None for system default
+            icon_name: Icon theme name (e.g. "taskcoach-app"), resolved via
+                icon_theme_path when set; or None for system default
+            icon_theme_path: Parent directory containing a hicolor/ theme with
+                the icon PNGs.  Passed to set_icon_theme_path() so the SNI
+                host finds our bundled icons instead of system-theme icons.
             category: AppIndicator category (defaults to APPLICATION_STATUS)
             tooltip: Tooltip text (used as title since AppIndicator has limited tooltip support)
         """
@@ -107,9 +112,12 @@ class AppIndicatorIcon:
 
         self._indicator = _appindicator.Indicator.new(
             app_id,
-            icon_path or "application-default-icon",
+            icon_name or "application-default-icon",
             category
         )
+
+        if icon_theme_path:
+            self._indicator.set_icon_theme_path(icon_theme_path)
 
         # Set title (shown in some environments)
         self._indicator.set_title(tooltip)
@@ -130,10 +138,10 @@ class AppIndicatorIcon:
         self._menu.show_all()
         self._indicator.set_menu(self._menu)
 
-    def set_icon_full(self, icon_path, tooltip=""):
-        """Set icon from a file path and tooltip."""
-        if icon_path:
-            self._indicator.set_icon_full(icon_path, tooltip or self._tooltip)
+    def set_icon_full(self, icon_name, tooltip=""):
+        """Set icon by theme name and tooltip."""
+        if icon_name:
+            self._indicator.set_icon_full(icon_name, tooltip or self._tooltip)
         if tooltip:
             self._tooltip = tooltip
             self._indicator.set_title(tooltip)

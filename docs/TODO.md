@@ -11,7 +11,8 @@ This document tracks planned improvements and known issues to address in future 
 - [Monkeypatches and Workarounds](#monkeypatches-and-workarounds)
 - [Text-to-Speech Modernization](#text-to-speech-modernization)
 - [GTK3 Widget Sizing Inconsistency](#gtk3-widget-sizing-inconsistency)
-- [BookPage Default Alignment Inconsistency](#bookpage-default-alignment-inconsistency)
+- [BookPage Default Alignment Inconsistency](#bookpage-default-alignment-inconsistency) *(Done)*
+- [Preferences Page Alignment Overrides](#preferences-page-alignment-overrides)
 - [Preferences Dialog: Dirty-Check and Button State](#preferences-dialog-dirty-check-and-button-state)
 - [EVT_TEXT Compatibility Shim in MultiLineTextCtrl](#evt_text-compatibility-shim-in-multilinetextctrl)
 
@@ -336,30 +337,63 @@ The custom `SpinCtrl` in `taskcoachlib/widgets/spinctrl.py` uses a `TextCtrl` + 
 
 ## BookPage Default Alignment Inconsistency
 
-The `BookPage.__defaultFlags()` method in `taskcoachlib/widgets/notebook.py` has inconsistent default alignment:
+**Status: Done** (February 2026)
 
-```python
-for columnIndex in range(len(controls)):
-    flag = wx.ALL | wx.ALIGN_CENTER_VERTICAL
-    if columnIndex == 0 and labelInFirstColumn:
-        flag |= wx.ALIGN_LEFT      # Column 0 with string label
-    else:
-        flag |= wx.ALIGN_RIGHT | wx.EXPAND   # All other columns
+The old `__defaultFlags()` had inconsistent alignment: column 0 used `ALIGN_LEFT`, all others used `ALIGN_RIGHT | EXPAND`. This was fixed by making all columns use uniform `wx.ALL | wx.ALIGN_TOP | wx.ALIGN_LEFT` in both `BookPage` and `ScrolledBookPage` (`taskcoachlib/widgets/notebook.py`).
+
+Editor pages (e.g. `TaskAppearancePage`) benefit from this fix and have clean, consistent layouts.
+
+---
+
+## Preferences Page Alignment Overrides
+
+### Problem
+
+Preferences pages inherit from `ScrolledBookPage` (via `SettingsPageBase → SettingsPage`) and share the same uniform `__defaultFlags()`. However, most preferences pages **override flags on nearly every `addEntry()` call** with per-row custom values, so the clean defaults are never used.
+
+The most common override is adding `wx.ALIGN_CENTER_VERTICAL` — the BookPage default is `ALIGN_TOP`, but label+control rows look better vertically centered. This forces every preferences page to manually specify flags.
+
+### Inheritance Chain
+
+```
+All preferences pages
+  → SettingsPage        (overrides addEntry for helpText only, no layout changes)
+    → SettingsPageBase  (adds settings tracking lists, no layout changes)
+      → ScrolledBookPage (owns __defaultFlags, addEntry, GridBagSizer)
 ```
 
-**Default behavior:**
-- Column 0 (if it's a string): LEFT aligned
-- All other columns: RIGHT aligned + EXPAND
+No class in the preferences chain overrides `__defaultFlags`.
 
-So when you call `addEntry(_("Label"), someControl)`:
-- "Label" → left-aligned
-- someControl → right-aligned, expands to fill cell
+### Current State by Page
 
-**Problem:** This creates visual inconsistency - some controls align left, some right, depending on column position.
+| Page               | Columns | Flag Overrides           |
+|--------------------|---------|--------------------------|
+| SavePage           | 3       | per-row custom           |
+| WindowBehaviorPage | 2       | minimal                  |
+| ThemePage          | 7       | every row unique         |
+| LanguagePage       | 3       | nested panels + custom   |
+| StatusesPage       | 11      | every row unique         |
+| FeaturesPage       | 3       | minimal                  |
+| TaskDatesPage      | 4       | per-row custom           |
+| TaskReminderPage   | 3       | per-row custom           |
+| IconsPage          | 2       | minimal                  |
+| DurationPresetsPage| 2       | mixed                    |
 
-**TODO:** Clean up to use consistent alignment. Either:
-1. Leave everything as default (remove custom alignment overrides throughout codebase)
-2. Change default to all LEFT-aligned (update `__defaultFlags` to use `wx.ALIGN_LEFT` for all columns)
+### Contrast with Editor Pages
+
+Editor pages like `TaskAppearancePage` define one shared `entryFlags` list and reuse it for every row — clean and consistent. Preferences pages specify flags individually per row.
+
+### Possible Approaches
+
+1. **Change BookPage default** from `ALIGN_TOP` to `ALIGN_CENTER_VERTICAL` — this would eliminate the most common override reason across all pages (both preferences and editors)
+2. **Standardize simple pages** — pages with 2-3 columns (WindowBehavior, Features, Icons, DurationPresets) could follow the editor pattern: define one `entryFlags` per page, reuse it
+3. **Leave complex pages alone** — ThemePage (7-col) and StatusesPage (11-col) have genuine table layouts that need per-row flags
+
+### Files
+
+- `taskcoachlib/widgets/notebook.py` — `BookPage.__defaultFlags()`, `ScrolledBookPage.__defaultFlags()`
+- `taskcoachlib/gui/dialog/preferences.py` — all preferences pages
+- `taskcoachlib/gui/dialog/editor.py` — editor pages (good example of clean pattern)
 
 ---
 
