@@ -124,7 +124,7 @@ When the preference starts with `"preset"`:
 
 1. **Task creation** (`uicommand.py:1691-1708`):
    ```python
-   def doCommand(self, event, show=True):
+   def do_command(self, event, show=True):
        kwargs = self.taskKeywords.copy()
        if self.__shouldPresetPlannedStartDateTime():
            kwargs["plannedStartDateTime"] = task.Task.suggestedPlannedStartDateTime()

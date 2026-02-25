@@ -22,6 +22,7 @@ import wx
 import test
 from taskcoachlib import gui, config
 from taskcoachlib.gui import uicommand
+from taskcoachlib.gui.uicommand import Separator
 from taskcoachlib.domain import task, category, date
 from pubsub import pub
 
@@ -68,18 +69,18 @@ class MockViewerContainer(object):
             uicommand.ViewerSortOrderCommand(viewer=self),
             uicommand.ViewerSortCaseSensitive(viewer=self),
             uicommand.ViewerSortByTaskStatusFirst(viewer=self),
-            None,
+            Separator(),
             uicommand.ViewerSortByCommand(
                 viewer=self,
                 value="subject",
-                menuText="Sub&ject",
-                helpText="help",
+                menu_text="Sub&ject",
+                help_text="help",
             ),
             uicommand.ViewerSortByCommand(
                 viewer=self,
                 value="description",
-                menuText="&Description",
-                helpText="help",
+                menu_text="&Description",
+                help_text="help",
             ),
         ]
 
@@ -415,7 +416,7 @@ class ToggleCategoryMenuTest(test.wxTestCase):
 
 class TaskTemplateMenuTest(test.wxTestCase):
     def testMenuIsUpdatedWhenTemplatesAreSaved(self):
-        uicommands = [None]  # Just a separator for testing purposes
+        uicommands = [Separator()]  # Just a separator for testing purposes
 
         class TaskTemplateMenu(gui.menu.TaskTemplateMenu):
             def getUICommands(self):
@@ -425,6 +426,6 @@ class TaskTemplateMenuTest(test.wxTestCase):
         taskList = task.TaskList()
         menu = TaskTemplateMenu(self.frame, taskList, settings)
         self.assertEqual(1, len(menu))
-        uicommands.append(None)  # Add another separator
+        uicommands.append(Separator())  # Add another separator
         pub.sendMessage("templates.saved")
         self.assertEqual(2, len(menu))

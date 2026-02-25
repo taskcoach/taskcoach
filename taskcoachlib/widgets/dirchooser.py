@@ -20,12 +20,12 @@ import wx
 
 
 class DirectoryChooser(wx.Panel):
-    def __init__(self, *args, gap=15, helpText="", **kwargs):
+    def __init__(self, *args, gap=15, help_text="", **kwargs):
         super().__init__(*args, **kwargs)
 
         self.chooser = wx.DirPickerCtrl(self, wx.ID_ANY, "")
         self.checkbx = wx.CheckBox(self, wx.ID_ANY)
-        self.helpCtrl = wx.StaticText(self, label=helpText)
+        self.helpCtrl = wx.StaticText(self, label=help_text)
         self.helpCtrl.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
 

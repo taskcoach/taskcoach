@@ -19,4 +19,5 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from .base_uicommand import UICommand
 from .settings_uicommand import UIRadioCommand, UICheckCommand
 from .uicommand import *
+from .uicommand import Separator, Spacer, DisabledLabel, SubMenu
 from .uicommandcontainer import UICommandContainerMixin

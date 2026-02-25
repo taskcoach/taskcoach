@@ -229,7 +229,7 @@ class SortableViewerForTasksTest(test.TestCase):
         self.settings = config.Settings(load=False)
 
         class ViewerUnderTest(gui.viewer.mixin.SortableViewerForTasksMixin):
-            viewerIconIds = []
+            pass
 
         self.viewer = ViewerUnderTest()
         self.viewer.settings = self.settings

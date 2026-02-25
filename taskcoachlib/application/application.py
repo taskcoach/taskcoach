@@ -602,10 +602,11 @@ class Application(object, metaclass=patterns.Singleton):
             # (program starts with no file open, like a fresh start)
 
         from taskcoachlib import gui, persistence
+
+        gui.init()  # Populate icon catalog before widget imports use it
+
         from taskcoachlib.gui.mainwindow import MainWindow
         from taskcoachlib.gui.iocontroller import IOController
-
-        gui.init()
         # Synthetic icons are now registered during gui.init() — no separate init needed
         # pylint: disable=W0201
         self.taskFile = persistence.LockedTaskFile(

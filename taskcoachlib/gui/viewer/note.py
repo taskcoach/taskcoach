@@ -112,46 +112,46 @@ class BaseNoteViewer(
             uicommand.ToggleAutoColumnResizing(
                 viewer=self, settings=self.settings
             ),
-            None,
+            uicommand.Separator(),
             uicommand.ViewColumn(
-                menuText=_("&Manual ordering"),
-                helpText=_("Show/hide the manual ordering column"),
+                menu_text=_("&Manual ordering"),
+                help_text=_("Show/hide the manual ordering column"),
                 setting="ordering",
                 viewer=self,
             ),
             uicommand.ViewColumn(
-                menuText=_("&Description"),
-                helpText=_("Show/hide description column"),
+                menu_text=_("&Description"),
+                help_text=_("Show/hide description column"),
                 setting="description",
                 viewer=self,
             ),
             uicommand.ViewColumn(
-                menuText=_("&Attachments"),
-                helpText=_("Show/hide attachments column"),
+                menu_text=_("&Attachments"),
+                help_text=_("Show/hide attachments column"),
                 setting="attachments",
                 viewer=self,
             ),
             uicommand.ViewColumn(
-                menuText=_("&Categories"),
-                helpText=_("Show/hide categories column"),
+                menu_text=_("&Categories"),
+                help_text=_("Show/hide categories column"),
                 setting="categories",
                 viewer=self,
             ),
             uicommand.ViewColumn(
-                menuText=_("&Creation date"),
-                helpText=_("Show/hide creation date column"),
+                menu_text=_("&Creation date"),
+                help_text=_("Show/hide creation date column"),
                 setting="creationDateTime",
                 viewer=self,
             ),
             uicommand.ViewColumn(
-                menuText=_("&Modification date"),
-                helpText=_("Show/hide last modification date column"),
+                menu_text=_("&Modification date"),
+                help_text=_("Show/hide last modification date column"),
                 setting="modificationDateTime",
                 viewer=self,
             ),
             uicommand.ViewColumn(
-                menuText=_("&ID"),
-                helpText=_("Show/hide ID column"),
+                menu_text=_("&ID"),
+                help_text=_("Show/hide ID column"),
                 setting="id",
                 viewer=self,
             ),
@@ -168,8 +168,8 @@ class BaseNoteViewer(
             sortCallback=uicommand.ViewerSortByCommand(
                 viewer=self,
                 value="ordering",
-                menuText=_("&Manual ordering"),
-                helpText=_("Sort notes manually"),
+                menu_text=_("&Manual ordering"),
+                help_text=_("Sort notes manually"),
             ),
         )
         # XXXCHECK editCallback & co
@@ -182,8 +182,8 @@ class BaseNoteViewer(
             sortCallback=uicommand.ViewerSortByCommand(
                 viewer=self,
                 value="subject",
-                menuText=_("&Subject"),
-                helpText=_("Sort notes by subject"),
+                menu_text=_("&Subject"),
+                help_text=_("Sort notes by subject"),
             ),
             imageIndicesCallback=self.subjectImageIndices,
             editCallback=self.onEditSubject,
@@ -199,8 +199,8 @@ class BaseNoteViewer(
             sortCallback=uicommand.ViewerSortByCommand(
                 viewer=self,
                 value="description",
-                menuText=_("&Description"),
-                helpText=_("Sort notes by description"),
+                menu_text=_("&Description"),
+                help_text=_("Sort notes by description"),
             ),
             editCallback=self.onEditDescription,
             editControl=inplace_editor.DescriptionCtrl,
@@ -228,8 +228,8 @@ class BaseNoteViewer(
             sortCallback=uicommand.ViewerSortByCommand(
                 viewer=self,
                 value="categories",
-                menuText=_("&Categories"),
-                helpText=_("Sort notes by categories"),
+                menu_text=_("&Categories"),
+                help_text=_("Sort notes by categories"),
             ),
         )
         creationDateTimeColumn = widgets.Column(
@@ -241,8 +241,8 @@ class BaseNoteViewer(
             sortCallback=uicommand.ViewerSortByCommand(
                 viewer=self,
                 value="creationDateTime",
-                menuText=_("&Creation date"),
-                helpText=_("Sort notes by creation date"),
+                menu_text=_("&Creation date"),
+                help_text=_("Sort notes by creation date"),
             ),
         )
         modificationDateTimeColumn = widgets.Column(
@@ -254,8 +254,8 @@ class BaseNoteViewer(
             sortCallback=uicommand.ViewerSortByCommand(
                 viewer=self,
                 value="modificationDateTime",
-                menuText=_("&Modification date"),
-                helpText=_("Sort notes by last modification date"),
+                menu_text=_("&Modification date"),
+                help_text=_("Sort notes by last modification date"),
             ),
             *note.Note.modificationEventTypes()
         )
@@ -268,8 +268,8 @@ class BaseNoteViewer(
             sortCallback=uicommand.ViewerSortByCommand(
                 viewer=self,
                 value="id",
-                menuText=_("&ID"),
-                helpText=_("Sort notes by ID"),
+                menu_text=_("&ID"),
+                help_text=_("Sort notes by ID"),
             ),
         )
         return [

@@ -176,7 +176,7 @@ This is a case where **implicit behavior changed** between wxPython versions, ca
 Added explicit minimum size after creating the SearchCtrl:
 
 ```python
-# In uicommand.py, Search.appendToToolBar()
+# In uicommand.py, Search.append_to_toolbar()
 self.searchControl = widgets.SearchCtrl(
     toolbar,
     value=searchString,

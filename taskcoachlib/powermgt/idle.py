@@ -386,14 +386,14 @@ class IdleNotifier(wx.EvtHandler, IdleQuery):
     def _check(self):
         if (
             self.state == self.STATE_AWAKE
-            and time.time() - self.lastActivity >= self.getMinIdleTime()
+            and time.time() - self.lastActivity >= self.get_min_idle_time()
         ):
             self.goneToSleep = self.lastActivity
             self.state = self.STATE_SLEEPING
             self.sleep()
         elif (
             self.state == self.STATE_SLEEPING
-            and time.time() - self.lastActivity < self.getMinIdleTime()
+            and time.time() - self.lastActivity < self.get_min_idle_time()
         ):
             self.state = self.STATE_AWAKE
             self.wake(self.goneToSleep)
@@ -423,7 +423,7 @@ class IdleNotifier(wx.EvtHandler, IdleQuery):
         self.lastActivity = time.time() - self.getIdleSeconds()
         self._check()
 
-    def getMinIdleTime(self):
+    def get_min_idle_time(self):
         """
         Should return the minimum time in seconds before going idle.
         """

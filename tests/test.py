@@ -365,7 +365,7 @@ class TestOptionParser(config.OptionParser):
 
         description = dict(dist="the platform-specific package", all="all")
 
-        def helpText(selection):
+        def help_text(selection):
             return "run %s tests" % description.get(
                 selection, "the %s" % selection
             ) + (" [default]" if selection == "unit" else "")
@@ -382,7 +382,7 @@ class TestOptionParser(config.OptionParser):
                 "--%stests" % selection,
                 default=False,
                 action="store_true",
-                help=helpText(selection),
+                help=help_text(selection),
             )
 
         return testselection

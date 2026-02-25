@@ -347,9 +347,9 @@ class Icon:
         import wx
         bundle = wx.IconBundle()
         for size in self.sizes:
-            icon = self.get_wx_icon(size)
-            if icon:
-                bundle.AddIcon(icon)
+            wx_icon = self.get_wx_icon(size)
+            if wx_icon:
+                bundle.AddIcon(wx_icon)
         return bundle
 
     @property

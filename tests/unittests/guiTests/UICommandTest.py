@@ -41,7 +41,7 @@ if desktop.get_desktop() in ("KDE", "GNOME"):  # pragma: no cover
 class UICommandTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.uicommand = dummy.DummyUICommand(menuText="undo", bitmap="undo")
+        self.uicommand = dummy.DummyUICommand(menu_text="undo", bitmap="undo")
         self.menu = wx.Menu()
         self.frame = wx.Frame(None)
         self.frame.Show(False)
@@ -54,20 +54,20 @@ class UICommandTest(test.wxTestCase):
         )
 
     def testAppendToMenu(self):
-        menuId = self.uicommand.addToMenu(self.menu, self.frame)
-        self.assertEqual(menuId, self.menu.FindItem(self.uicommand.menuText))
+        menuId = self.uicommand.add_to_menu(self.menu, self.frame)
+        self.assertEqual(menuId, self.menu.FindItem(self.uicommand.menu_text))
 
     def testAppendToToolBar(self):
-        toolId = self.uicommand.appendToToolBar(self.frame.GetToolBar())
+        toolId = self.uicommand.append_to_toolbar(self.frame.GetToolBar())
         self.assertEqual(0, self.frame.GetToolBar().GetToolPos(toolId))
 
     def testActivationFromMenu(self):
-        menuId = self.uicommand.addToMenu(self.menu, self.frame)
+        menuId = self.uicommand.add_to_menu(self.menu, self.frame)
         self.activate(self.frame, menuId)
         self.assertTrue(self.uicommand.activated)
 
     def testActivationFromToolBar(self):
-        menuId = self.uicommand.appendToToolBar(self.frame.GetToolBar())
+        menuId = self.uicommand.append_to_toolbar(self.frame.GetToolBar())
         self.activate(self.frame.GetToolBar(), menuId)
         self.assertTrue(self.uicommand.activated)
 
@@ -100,7 +100,7 @@ class NewTaskWithSelectedCategoryTest(wxTestCaseWithFrameAsTopLevelWindow):
             categories=self.categories,
             settings=self.settings,
         )
-        dialog = taskNew.doCommand(None, show=False)
+        dialog = taskNew.do_command(None, show=False)
         self.assertTrue(isinstance(dialog, TaskEditor), dialog)
         dialog._interior[4].selected()
         tree = dialog._interior[4].viewer.widget
@@ -135,7 +135,7 @@ class NewNoteWithSelectedCategoryTest(wxTestCaseWithFrameAsTopLevelWindow):
             categories=self.categories,
             settings=self.settings,
         )
-        dialog = noteNew.doCommand(None, show=False)
+        dialog = noteNew.do_command(None, show=False)
         self.assertTrue(isinstance(dialog, NoteEditor), dialog)
         dialog._interior[1].selected()
         tree = dialog._interior[1].viewer.widget
@@ -219,7 +219,7 @@ class MailTaskTest(test.TestCase):
             self.showerror = args  # pylint: disable=W0201
 
         mailTask = gui.uicommand.Mail(viewer=DummyViewer([DummyTask()]))
-        mailTask.doCommand(None, mail=mail, showerror=showerror)
+        mailTask.do_command(None, mail=mail, showerror=showerror)
         self.assertEqual("Cannot send email:\nmessage", self.showerror[0])
 
     def testBodyFormatting(self):
@@ -328,7 +328,7 @@ class TaskNewTest(wxTestCaseWithFrameAsTopLevelWindow):
         taskNew = gui.uicommand.TaskNew(
             taskList=self.taskFile.tasks(), settings=self.settings
         )
-        dialog = taskNew.doCommand(None, show=False)
+        dialog = taskNew.do_command(None, show=False)
         dialog._interior[4].selected()
         tree = dialog._interior[4].viewer.widget
         firstChild = tree.GetFirstChild(tree.GetRootItem())[0]
@@ -343,7 +343,7 @@ class TaskNewTest(wxTestCaseWithFrameAsTopLevelWindow):
         taskNew = gui.uicommand.TaskNew(
             taskList=self.taskFile.tasks(), settings=self.settings
         )
-        taskNew.doCommand(None, show=False)
+        taskNew.do_command(None, show=False)
         self.assertFalse(
             date.DateTime()
             == list(self.taskFile.tasks())[0].plannedStartDateTime()
@@ -358,7 +358,7 @@ class TaskNewTest(wxTestCaseWithFrameAsTopLevelWindow):
         taskNew = gui.uicommand.TaskNew(
             taskList=self.taskFile.tasks(), settings=self.settings
         )
-        taskNew.doCommand(None, show=False)
+        taskNew.do_command(None, show=False)
         self.assertEqual(
             date.DateTime(),
             list(self.taskFile.tasks())[0].plannedStartDateTime(),
@@ -371,7 +371,7 @@ class TaskNewTest(wxTestCaseWithFrameAsTopLevelWindow):
         taskNew = gui.uicommand.TaskNew(
             taskList=self.taskFile.tasks(), settings=self.settings
         )
-        taskNew.doCommand(None, show=False)
+        taskNew.do_command(None, show=False)
         self.assertFalse(
             date.DateTime() == list(self.taskFile.tasks())[0].dueDateTime()
         )
@@ -385,7 +385,7 @@ class TaskNewTest(wxTestCaseWithFrameAsTopLevelWindow):
         taskNew = gui.uicommand.TaskNew(
             taskList=self.taskFile.tasks(), settings=self.settings
         )
-        taskNew.doCommand(None, show=False)
+        taskNew.do_command(None, show=False)
         self.assertFalse(
             date.DateTime()
             == list(self.taskFile.tasks())[0].completionDateTime()
@@ -400,7 +400,7 @@ class TaskNewTest(wxTestCaseWithFrameAsTopLevelWindow):
         taskNew = gui.uicommand.TaskNew(
             taskList=self.taskFile.tasks(), settings=self.settings
         )
-        taskNew.doCommand(None, show=False)
+        taskNew.do_command(None, show=False)
         self.assertFalse(
             date.DateTime() == list(self.taskFile.tasks())[0].reminder()
         )
@@ -413,7 +413,7 @@ class NoteNewTest(wxTestCaseWithFrameAsTopLevelWindow):
         noteNew = gui.uicommand.NoteNew(
             notes=self.taskFile.notes(), settings=self.settings
         )
-        dialog = noteNew.doCommand(None, show=False)
+        dialog = noteNew.do_command(None, show=False)
         dialog._interior[1].selected()
         tree = dialog._interior[1].viewer.widget
         firstChild = tree.GetFirstChild(tree.GetRootItem())[0]
@@ -438,7 +438,7 @@ class EffortNewTest(wxTestCaseWithFrameAsTopLevelWindow):
             viewer=viewer,
             settings=self.settings,
         )
-        dialog = effortNew.doCommand(None, show=False)
+        dialog = effortNew.do_command(None, show=False)
         for eachEffort in dialog._items:
             self.assertEqual(task2, eachEffort.task())
 
@@ -447,7 +447,7 @@ class EditPreferencesTest(test.TestCase):
     def testEditPreferences(self):
         settings = config.Settings(load=False)
         editPreferences = gui.uicommand.EditPreferences(settings=settings)
-        editPreferences.doCommand(None, show=False)
+        editPreferences.do_command(None, show=False)
         # No assert, just checking whether it works without exceptions
 
 
@@ -496,8 +496,8 @@ class EffortViewerAggregationChoiceTest(test.TestCase):
             def AddControl(self, *args, **kwargs):
                 pass
 
-        self.choice.appendToToolBar(DummyToolBar(None))
-        self.choice.setChoice("week")
+        self.choice.append_to_toolbar(DummyToolBar(None))
+        self.choice.set_choice("week")
         self.assertEqual(
             "Effort per week", self.choice.choiceCtrl.GetStringSelection()
         )
@@ -518,14 +518,14 @@ class OpenAllAttachmentsTest(test.TestCase):
         self.errorKwargs = kwargs
 
     def testNoAttachments(self):
-        self.openAll.doCommand(None)
+        self.openAll.do_command(None)
 
     @test.skipOnPlatform("__WXMAC__")
     def testNonexistingAttachment(self):  # pragma: no cover
         self.viewer.selection[0].addAttachment(
             attachment.FileAttachment("Attachment")
         )
-        result = self.openAll.doCommand(None, showerror=self.showerror)
+        result = self.openAll.do_command(None, showerror=self.showerror)
         # Don't test the error message itself, it differs per platform
         if self.errorKwargs:
             self.assertEqual(
@@ -550,7 +550,7 @@ class OpenAllAttachmentsTest(test.TestCase):
         dummyAttachment2 = DummyAttachment()
         self.viewer.selection[0].addAttachment(dummyAttachment1)
         self.viewer.selection[0].addAttachment(dummyAttachment2)
-        self.openAll.doCommand(None)
+        self.openAll.do_command(None)
         self.assertTrue(
             dummyAttachment1.openCalled and dummyAttachment2.openCalled
         )
@@ -697,19 +697,19 @@ class EffortStopTest(test.TestCase):
     def testIgnoreCompositeEfforts(self):
         effort.reducer.EffortAggregator(self.taskList, aggregation="day")
         self.task.addEffort(self.effort1)
-        self.assertFalse("multiple tasks" in self.effortStop.getMenuText())
+        self.assertFalse("multiple tasks" in self.effortStop.get_menu_text())
 
-    # Tests of EffortStop.doCommand()
+    # Tests of EffortStop.do_command()
 
     def testDoCommandStopsTrackedEffort(self):
         self.task.addEffort(self.effort1)
-        self.effortStop.doCommand()
+        self.effortStop.do_command()
         self.assertFalse(self.effort1.isBeingTracked())
 
     def testDoCommandStopsAllTrackedEffort(self):
         self.task.addEffort(self.effort1)
         self.task.addEffort(self.effort2)
-        self.effortStop.doCommand()
+        self.effortStop.do_command()
         self.assertFalse(self.task.isBeingTracked())
 
 
@@ -740,17 +740,17 @@ class AttachmentTest(test.wxTestCase):
     def test_delete(self):
         self.select()
         cmd = gui.uicommand.Delete(viewer=self.viewer)
-        cmd.doCommand(None)
+        cmd.do_command(None)
         self.assertEqual(self.task.attachments(), [])
 
     def test_cut(self):
         self.select()
         cmd = gui.uicommand.EditCut(viewer=self.viewer)
-        cmd.doCommand(None)
+        cmd.do_command(None)
         self.assertEqual(self.task.attachments(), [])
 
     def test_cutpaste(self):
         self.test_cut()
         cmd = gui.uicommand.EditPaste(viewer=self.viewer)
-        cmd.doCommand(None)
+        cmd.do_command(None)
         self.assertEqual(self.task.attachments(), [self.attachment])

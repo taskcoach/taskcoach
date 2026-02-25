@@ -39,7 +39,7 @@ class WakeFromIdleFrame(NotificationFrameBase):
         self._lastActivity = 0
         super().__init__(*args, **kwargs)
 
-    def AddInnerContent(self, sizer, panel):
+    def add_inner_content(self, sizer, panel):
         idleTimeFormatted = render.dateTime(self._idleTime)
         sizer.Add(
             wx.StaticText(
@@ -73,19 +73,19 @@ class WakeFromIdleFrame(NotificationFrameBase):
         btnStopAt.Bind(wx.EVT_BUTTON, self.DoStopAt)
         btnStopResume.Bind(wx.EVT_BUTTON, self.DoStopResume)
 
-    def CloseButton(self, panel):
+    def close_button(self, panel):
         return None
 
     def DoNothing(self, event):
         self._displayed.remove(self._effort)
-        self.DoClose()
+        self.do_close()
 
     def DoStopAt(self, event):
         self._displayed.remove(self._effort)
         EditEffortStopDateTimeCommand(
             newValue=self._idleTime, items=[self._effort]
         ).do()
-        self.DoClose()
+        self.do_close()
 
     def DoStopResume(self, event):
         self._displayed.remove(self._effort)
@@ -93,7 +93,7 @@ class WakeFromIdleFrame(NotificationFrameBase):
             newValue=self._idleTime, items=[self._effort]
         ).do()
         NewEffortCommand(items=[self._effort.task()]).do()
-        self.DoClose()
+        self.do_close()
 
 
 class IdleController(Observer, IdleNotifier):
@@ -117,7 +117,7 @@ class IdleController(Observer, IdleNotifier):
         else:
             self.pause()
 
-    def getMinIdleTime(self):
+    def get_min_idle_time(self):
         return self._settings.getint("feature", "minidletime") * 60
 
     def wake(self, timestamp):
@@ -133,8 +133,8 @@ class IdleController(Observer, IdleNotifier):
                     effort,
                     self._displayed,
                     _("Notification"),
-                    icon=icon_catalog.get_bitmap(
+                    wx_bitmap=icon_catalog.get_bitmap(
                         "nuvola_apps_korganizer", LIST_ICON_SIZE
                     ),
                 )
-                NotificationCenter().NotifyFrame(frm)
+                NotificationCenter().notify_frame(frm)

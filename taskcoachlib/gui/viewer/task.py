@@ -349,7 +349,7 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
             # be able to stop tracking effort for tasks that are already
             # being tracked, but that might be filtered in the viewer's
             # presentation.
-            None,
+            uicommand.Separator(),
             uicommand.EffortStart(viewer=self, taskList=self.taskFile.tasks()),
             uicommand.EffortStop(
                 viewer=self,
@@ -593,8 +593,8 @@ class TimelineViewer(BaseTaskTreeViewer):
     def font(self, item, depth=0):  # pylint: disable=W0613
         return item.font(recursive=True)
 
-    def icon(self, item, isSelected=False):
-        icon_id = self.get_icon_id(item, isSelected)
+    def get_wx_icon(self, item, is_selected=False):
+        icon_id = self.get_icon_id(item, is_selected)
         return icon_catalog.get_wx_icon(icon_id, LIST_ICON_SIZE)
 
     def now(self):
@@ -652,7 +652,7 @@ class SquareTaskViewer(BaseTaskTreeViewer):
         )
         initial_key = sort_keys[0] if sort_keys else "budget"
         self._apply_order_by(initial_key.lstrip("-"))
-        self.orderUICommand.setChoice(self.__order_by)
+        self.orderUICommand.set_choice(self.__order_by)
         for eventType in (
             task.Task.subjectChangedEventType(),
             task.Task.dueDateTimeChangedEventType(),
@@ -687,14 +687,14 @@ class SquareTaskViewer(BaseTaskTreeViewer):
         return True
 
     def getModeUICommands(self):
-        return [_("Lay out tasks by"), None] + [
+        return [uicommand.DisabledLabel(_("Lay out tasks by")), uicommand.Separator()] + [
             uicommand.SquareTaskViewerOrderByOption(
-                menuText=menuText,
+                menu_text=menu_text,
                 value=value,
                 viewer=self,
                 settings=self.settings,
             )
-            for (menuText, value) in zip(
+            for (menu_text, value) in zip(
                 uicommand.SquareTaskViewerOrderChoice.choiceLabels,
                 uicommand.SquareTaskViewerOrderChoice.choiceData,
             )
@@ -920,7 +920,7 @@ class HierarchicalCalendarViewer(
         return super(
             HierarchicalCalendarViewer, self
         ).createModeToolBarUICommands() + (
-            None,
+            uicommand.Separator(),
             uicommand.HierarchicalCalendarViewerConfigure(viewer=self),
             uicommand.HierarchicalCalendarViewerPreviousPeriod(viewer=self),
             uicommand.HierarchicalCalendarViewerToday(viewer=self),
@@ -1139,7 +1139,7 @@ class CalendarViewer(
 
     def createModeToolBarUICommands(self):
         return super().createModeToolBarUICommands() + (
-            None,
+            uicommand.Separator(),
             uicommand.CalendarViewerConfigure(viewer=self),
             uicommand.CalendarViewerPreviousPeriod(viewer=self),
             uicommand.CalendarViewerToday(viewer=self),
@@ -1742,12 +1742,12 @@ class TaskViewer(
             uicommand.ToggleAutoColumnResizing(
                 viewer=self, settings=self.settings
             ),
-            None,
-            (
+            uicommand.Separator(),
+            uicommand.SubMenu(
                 _("&Dates"),
                 uicommand.ViewColumns(
-                    menuText=_("&All date columns"),
-                    helpText=_("Show/hide all date-related columns"),
+                    menu_text=_("&All date columns"),
+                    help_text=_("Show/hide all date-related columns"),
                     setting=[
                         "plannedStartDateTime",
                         "dueDateTime",
@@ -1761,59 +1761,59 @@ class TaskViewer(
                     ],
                     viewer=self,
                 ),
-                None,
+                uicommand.Separator(),
                 uicommand.ViewColumn(
-                    menuText=_("&Planned start date"),
-                    helpText=_("Show/hide planned start date column"),
+                    menu_text=_("&Planned start date"),
+                    help_text=_("Show/hide planned start date column"),
                     setting="plannedStartDateTime",
                     viewer=self,
                 ),
                 uicommand.ViewColumn(
-                    menuText=_("&Due date"),
-                    helpText=_("Show/hide due date column"),
+                    menu_text=_("&Due date"),
+                    help_text=_("Show/hide due date column"),
                     setting="dueDateTime",
                     viewer=self,
                 ),
                 uicommand.ViewColumn(
-                    menuText=_("&Actual start date"),
-                    helpText=_("Show/hide actual start date column"),
+                    menu_text=_("&Actual start date"),
+                    help_text=_("Show/hide actual start date column"),
                     setting="actualStartDateTime",
                     viewer=self,
                 ),
                 uicommand.ViewColumn(
-                    menuText=_("&Completion date"),
-                    helpText=_("Show/hide completion date column"),
+                    menu_text=_("&Completion date"),
+                    help_text=_("Show/hide completion date column"),
                     setting="completionDateTime",
                     viewer=self,
                 ),
                 uicommand.ViewColumn(
-                    menuText=_("&Time left"),
-                    helpText=_("Show/hide time left column"),
+                    menu_text=_("&Time left"),
+                    help_text=_("Show/hide time left column"),
                     setting="timeLeft",
                     viewer=self,
                 ),
                 uicommand.ViewColumn(
-                    menuText=_("&Recurrence"),
-                    helpText=_("Show/hide recurrence column"),
+                    menu_text=_("&Recurrence"),
+                    help_text=_("Show/hide recurrence column"),
                     setting="recurrence",
                     viewer=self,
                 ),
-                None,
+                uicommand.Separator(),
                 uicommand.ViewColumn(
-                    menuText=_("&Status"),
-                    helpText=_("Show/hide status text column"),
+                    menu_text=_("&Status"),
+                    help_text=_("Show/hide status text column"),
                     setting="status",
                     viewer=self,
                 ),
                 uicommand.ViewColumn(
-                    menuText=_("Status &icon"),
-                    helpText=_("Show/hide status icon column"),
+                    menu_text=_("Status &icon"),
+                    help_text=_("Show/hide status icon column"),
                     setting="statusIcon",
                     viewer=self,
                 ),
                 uicommand.ViewColumn(
-                    menuText=_("Status &combo"),
-                    helpText=_("Show/hide status combo column (icon and text)"),
+                    menu_text=_("Status &combo"),
+                    help_text=_("Show/hide status combo column (icon and text)"),
                     setting="statusIconText",
                     viewer=self,
                 ),
@@ -1821,58 +1821,58 @@ class TaskViewer(
         ]
         commands.extend(
             [
-                (
+                uicommand.SubMenu(
                     _("&Budget"),
                     uicommand.ViewColumns(
-                        menuText=_("&All budget columns"),
-                        helpText=_("Show/hide all budget-related columns"),
+                        menu_text=_("&All budget columns"),
+                        help_text=_("Show/hide all budget-related columns"),
                         setting=["budget", "timeSpent", "budgetLeft"],
                         viewer=self,
                     ),
-                    None,
+                    uicommand.Separator(),
                     uicommand.ViewColumn(
-                        menuText=_("&Budget"),
-                        helpText=_("Show/hide budget column"),
+                        menu_text=_("&Budget"),
+                        help_text=_("Show/hide budget column"),
                         setting="budget",
                         viewer=self,
                     ),
                     uicommand.ViewColumn(
-                        menuText=_("&Time spent"),
-                        helpText=_("Show/hide time spent column"),
+                        menu_text=_("&Time spent"),
+                        help_text=_("Show/hide time spent column"),
                         setting="timeSpent",
                         viewer=self,
                     ),
                     uicommand.ViewColumn(
-                        menuText=_("&Budget left"),
-                        helpText=_("Show/hide budget left column"),
+                        menu_text=_("&Budget left"),
+                        help_text=_("Show/hide budget left column"),
                         setting="budgetLeft",
                         viewer=self,
                     ),
                 ),
-                (
+                uicommand.SubMenu(
                     _("&Financial"),
                     uicommand.ViewColumns(
-                        menuText=_("&All financial columns"),
-                        helpText=_("Show/hide all finance-related columns"),
+                        menu_text=_("&All financial columns"),
+                        help_text=_("Show/hide all finance-related columns"),
                         setting=["hourlyFee", "fixedFee", "revenue"],
                         viewer=self,
                     ),
-                    None,
+                    uicommand.Separator(),
                     uicommand.ViewColumn(
-                        menuText=_("&Hourly fee"),
-                        helpText=_("Show/hide hourly fee column"),
+                        menu_text=_("&Hourly fee"),
+                        help_text=_("Show/hide hourly fee column"),
                         setting="hourlyFee",
                         viewer=self,
                     ),
                     uicommand.ViewColumn(
-                        menuText=_("&Fixed fee"),
-                        helpText=_("Show/hide fixed fee column"),
+                        menu_text=_("&Fixed fee"),
+                        help_text=_("Show/hide fixed fee column"),
                         setting="fixedFee",
                         viewer=self,
                     ),
                     uicommand.ViewColumn(
-                        menuText=_("&Revenue"),
-                        helpText=_("Show/hide revenue column"),
+                        menu_text=_("&Revenue"),
+                        help_text=_("Show/hide revenue column"),
                         setting="revenue",
                         viewer=self,
                     ),
@@ -1882,38 +1882,38 @@ class TaskViewer(
         commands.extend(
             [
                 uicommand.ViewColumn(
-                    menuText=_("&Manual ordering"),
-                    helpText=_("Show/hide the manual ordering column"),
+                    menu_text=_("&Manual ordering"),
+                    help_text=_("Show/hide the manual ordering column"),
                     setting="ordering",
                     viewer=self,
                 ),
                 uicommand.ViewColumn(
-                    menuText=_("&Description"),
-                    helpText=_("Show/hide description column"),
+                    menu_text=_("&Description"),
+                    help_text=_("Show/hide description column"),
                     setting="description",
                     viewer=self,
                 ),
                 uicommand.ViewColumn(
-                    menuText=_("&Prerequisites"),
-                    helpText=_("Show/hide prerequisites column"),
+                    menu_text=_("&Prerequisites"),
+                    help_text=_("Show/hide prerequisites column"),
                     setting="prerequisites",
                     viewer=self,
                 ),
                 uicommand.ViewColumn(
-                    menuText=_("&Dependents"),
-                    helpText=_("Show/hide dependents column"),
+                    menu_text=_("&Dependents"),
+                    help_text=_("Show/hide dependents column"),
                     setting="dependencies",
                     viewer=self,
                 ),
                 uicommand.ViewColumn(
-                    menuText=_("&Percentage complete"),
-                    helpText=_("Show/hide percentage complete column"),
+                    menu_text=_("&Percentage complete"),
+                    help_text=_("Show/hide percentage complete column"),
                     setting="percentageComplete",
                     viewer=self,
                 ),
                 uicommand.ViewColumn(
-                    menuText=_("&Attachments"),
-                    helpText=_("Show/hide attachment column"),
+                    menu_text=_("&Attachments"),
+                    help_text=_("Show/hide attachment column"),
                     setting="attachments",
                     viewer=self,
                 ),
@@ -1921,8 +1921,8 @@ class TaskViewer(
         )
         commands.append(
             uicommand.ViewColumn(
-                menuText=_("&Notes"),
-                helpText=_("Show/hide notes column"),
+                menu_text=_("&Notes"),
+                help_text=_("Show/hide notes column"),
                 setting="notes",
                 viewer=self,
             )
@@ -1930,44 +1930,44 @@ class TaskViewer(
         commands.extend(
             [
                 uicommand.ViewColumn(
-                    menuText=_("&Categories"),
-                    helpText=_("Show/hide categories column"),
+                    menu_text=_("&Categories"),
+                    help_text=_("Show/hide categories column"),
                     setting="categories",
                     viewer=self,
                 ),
                 uicommand.ViewColumn(
-                    menuText=_("Category &icons"),
-                    helpText=_("Show/hide category icons column"),
+                    menu_text=_("Category &icons"),
+                    help_text=_("Show/hide category icons column"),
                     setting="categoryIcons",
                     viewer=self,
                 ),
                 uicommand.ViewColumn(
-                    menuText=_("&Priority"),
-                    helpText=_("Show/hide priority column"),
+                    menu_text=_("&Priority"),
+                    help_text=_("Show/hide priority column"),
                     setting="priority",
                     viewer=self,
                 ),
                 uicommand.ViewColumn(
-                    menuText=_("&Reminder"),
-                    helpText=_("Show/hide reminder column"),
+                    menu_text=_("&Reminder"),
+                    help_text=_("Show/hide reminder column"),
                     setting="reminder",
                     viewer=self,
                 ),
                 uicommand.ViewColumn(
-                    menuText=_("&Creation date"),
-                    helpText=_("Show/hide creation date column"),
+                    menu_text=_("&Creation date"),
+                    help_text=_("Show/hide creation date column"),
                     setting="creationDateTime",
                     viewer=self,
                 ),
                 uicommand.ViewColumn(
-                    menuText=_("&Modification date"),
-                    helpText=_("Show/hide last modification date column"),
+                    menu_text=_("&Modification date"),
+                    help_text=_("Show/hide last modification date column"),
                     setting="modificationDateTime",
                     viewer=self,
                 ),
                 uicommand.ViewColumn(
-                    menuText=_("&ID"),
-                    helpText=_("Show/hide ID column"),
+                    menu_text=_("&ID"),
+                    help_text=_("Show/hide ID column"),
                     setting="id",
                     viewer=self,
                 ),
@@ -1985,14 +1985,14 @@ class TaskViewer(
         return True
 
     def getModeUICommands(self):
-        return [_("Show tasks as"), None] + [
+        return [uicommand.DisabledLabel(_("Show tasks as")), uicommand.Separator()] + [
             uicommand.TaskViewerTreeOrListOption(
-                menuText=menuText,
+                menu_text=menu_text,
                 value=value,
                 viewer=self,
                 settings=self.settings,
             )
-            for (menuText, value) in zip(
+            for (menu_text, value) in zip(
                 uicommand.TaskViewerTreeOrListChoice.choiceLabels,
                 uicommand.TaskViewerTreeOrListChoice.choiceData,
             )

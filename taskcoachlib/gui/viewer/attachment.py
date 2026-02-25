@@ -41,9 +41,7 @@ class AttachmentViewer(
     SorterClass = attachment.AttachmentSorter
     defaultTitle = _("Attachments")
     coreObjectType = "attachments"
-    viewerIconIds = base.ListViewer.viewerIconIds + [
-        "nuvola_mimetypes_application-x-dvi", "taskcoach_actions_fileopen_red", "nuvola_mimetypes_inode-directory"
-    ]
+
 
     # Map type_ values to human-readable names
     TYPE_NAMES = {
@@ -146,8 +144,8 @@ class AttachmentViewer(
                 sortCallback=uicommand.ViewerSortByCommand(
                     viewer=self,
                     value="subject",
-                    menuText=_("Sub&ject"),
-                    helpText=_("Sort by subject"),
+                    menu_text=_("Sub&ject"),
+                    help_text=_("Sort by subject"),
                 ),
                 width=self.getColumnWidth("subject"),
                 renderCallback=lambda item: item.subject(),
@@ -162,8 +160,8 @@ class AttachmentViewer(
                 sortCallback=uicommand.ViewerSortByCommand(
                     viewer=self,
                     value="description",
-                    menuText=_("&Description"),
-                    helpText=_("Sort by description"),
+                    menu_text=_("&Description"),
+                    help_text=_("Sort by description"),
                 ),
                 width=self.getColumnWidth("description"),
                 renderCallback=lambda item: item.description(),
@@ -190,8 +188,8 @@ class AttachmentViewer(
                 sortCallback=uicommand.ViewerSortByCommand(
                     viewer=self,
                     value="creationDateTime",
-                    menuText=_("&Creation date"),
-                    helpText=_("Sort by creation date"),
+                    menu_text=_("&Creation date"),
+                    help_text=_("Sort by creation date"),
                 ),
                 resizeCallback=self.onResizeColumn,
             ),
@@ -203,8 +201,8 @@ class AttachmentViewer(
                 sortCallback=uicommand.ViewerSortByCommand(
                     viewer=self,
                     value="modificationDateTime",
-                    menuText=_("&Modification date"),
-                    helpText=_("Sort by last modification date"),
+                    menu_text=_("&Modification date"),
+                    help_text=_("Sort by last modification date"),
                 ),
                 resizeCallback=self.onResizeColumn,
                 *attachment.Attachment.modificationEventTypes()
@@ -217,8 +215,8 @@ class AttachmentViewer(
                 sortCallback=uicommand.ViewerSortByCommand(
                     viewer=self,
                     value="id",
-                    menuText=_("&ID"),
-                    helpText=_("Sort by ID"),
+                    menu_text=_("&ID"),
+                    help_text=_("Sort by ID"),
                 ),
                 resizeCallback=self.onResizeColumn,
             ),
@@ -229,34 +227,34 @@ class AttachmentViewer(
             uicommand.ToggleAutoColumnResizing(
                 viewer=self, settings=self.settings
             ),
-            None,
+            uicommand.Separator(),
             uicommand.ViewColumn(
-                menuText=_("&Description"),
-                helpText=_("Show/hide description column"),
+                menu_text=_("&Description"),
+                help_text=_("Show/hide description column"),
                 setting="description",
                 viewer=self,
             ),
             uicommand.ViewColumn(
-                menuText=_("&Notes"),
-                helpText=_("Show/hide notes column"),
+                menu_text=_("&Notes"),
+                help_text=_("Show/hide notes column"),
                 setting="notes",
                 viewer=self,
             ),
             uicommand.ViewColumn(
-                menuText=_("&Creation date"),
-                helpText=_("Show/hide creation date column"),
+                menu_text=_("&Creation date"),
+                help_text=_("Show/hide creation date column"),
                 setting="creationDateTime",
                 viewer=self,
             ),
             uicommand.ViewColumn(
-                menuText=_("&Modification date"),
-                helpText=_("Show/hide last modification date column"),
+                menu_text=_("&Modification date"),
+                help_text=_("Show/hide last modification date column"),
                 setting="modificationDateTime",
                 viewer=self,
             ),
             uicommand.ViewColumn(
-                menuText=_("&ID"),
-                helpText=_("Show/hide ID column"),
+                menu_text=_("&ID"),
+                help_text=_("Show/hide ID column"),
                 setting="id",
                 viewer=self,
             ),

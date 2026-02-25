@@ -17,18 +17,12 @@ customization dialog.
 
 ## TODO
 
-1. **Replace sentinel types with named constants for separator/spacer.**
-   The toolbar command list uses `None` to represent a separator and the bare
-   integer `1` to represent a spacer. These sentinels are checked via
-   `uiCmd is None` and `isinstance(uiCmd, int)` in at least 6 places across
-   `toolbar.py`, `dialog/toolbar.py`, and `uicommandcontainer.py`. This is
-   fragile and unclear. Replace with named sentinel objects (e.g.
-   `SEPARATOR = object()` and `SPACER = object()`) or a small enum. The
-   convention originates in `UICommandContainerMixin.appendUICommands()` which
-   dispatches `None` to `AppendSeparator()` and `int` to
-   `AppendStretchSpacer(uiCommand)`. The perspective serialization
-   (`_filterCommands`, `perspective()`) also encodes them as the strings
-   `"Separator"` and `"Spacer"` in the comma-separated perspective format.
+1. ~~**Replace sentinel types with named constants for separator/spacer.**~~ — **DONE.**
+   Sentinel values (`None`, `1`, `str`, `tuple`) replaced with polymorphic
+   `UICommand` subclasses: `Separator`, `Spacer`, `DisabledLabel`, `SubMenu`.
+   Each renders itself via `append_to_toolbar()` / `add_to_menu()`. The old 5-way
+   dispatch in `UICommandContainerMixin` is eliminated; a compatibility shim
+   (`_coerce_ui_command`) auto-wraps any remaining legacy sentinels.
 
 ---
 
@@ -42,9 +36,9 @@ on top:
   (greyscale conversion), and manages bitmap size via `SetToolBitmapSize`.
 
 - **`ToolBar`** — the real toolbar. Owns a list of `UICommand` objects
-  (plus `None`/`int` sentinels for separator/spacer — see TODO #1). Loads
-  and saves a "perspective" string to settings. Supports runtime
-  customization via the toolbar editor dialog.
+  (including `Separator` and `Spacer` subclasses). Loads and saves a
+  "perspective" string to settings. Supports runtime customization via
+  the toolbar editor dialog.
 
 - **`MainToolBar`** — thin subclass for the AUI-managed main window toolbar.
 
@@ -85,16 +79,14 @@ has three user-selectable sizes.
 ## Perspective Serialization
 
 The toolbar's visible commands are serialized as a comma-separated string
-of command unique names, stored in settings. Special entries:
+of command unique names, stored in settings. `Separator` and `Spacer` are
+`UICommand` subclasses whose `unique_name()` returns `"Separator"` and
+`"Spacer"` respectively, so they serialize/deserialize like any other
+command — no special-case logic needed.
 
-- `"Separator"` — maps to `None` in the command list, rendered as
-  `AuiToolBar.AddSeparator()`
-- `"Spacer"` — maps to `1` (int) in the command list, rendered as
-  `AuiToolBar.AddStretchSpacer(1)`
-
-`_filterCommands()` deserializes: builds an index of command names, adds
-the two special entries, and maps each name in the perspective string to
-its command object. `perspective()` serializes back.
+`_filter_commands()` deserializes: builds an index of `(unique_name, command)`
+pairs from the full command list, then maps each name in the perspective
+string to its command object. `perspective()` serializes back.
 
 ---
 
@@ -124,6 +116,7 @@ in this dialog.
 
 - Toolbar classes: `taskcoachlib/gui/toolbar.py`
 - Customization dialog: `taskcoachlib/gui/dialog/toolbar.py`
+- Sentinel subclasses (`Separator`, `Spacer`, `DisabledLabel`, `SubMenu`): `taskcoachlib/gui/uicommand/uicommand.py`
 - UICommand container mixin: `taskcoachlib/gui/uicommand/uicommandcontainer.py`
 - Toolbar size menu: `taskcoachlib/gui/menu.py` (`ToolBarMenu`)
 - Toolbar size constants: `taskcoachlib/config/defaults.py`

@@ -51,7 +51,7 @@ class _Watermark(object):
                 r = max(r, h)
         return r
 
-    def totalHeight(self):
+    def total_height(self):
         return (
             max([h for ints, inte, h in self.__values]) if self.__values else 0
         )
@@ -66,7 +66,7 @@ def total_seconds(td):  # Method new in 2.7
     ) / 10**6
 
 
-def shortenText(gc, text, maxW):
+def shorten_text(gc, text, maxW):
     shortText = text
     idx = len(text) // 2
     while True:
@@ -127,15 +127,15 @@ class CalendarCanvas(wx.Panel):
         self._hScroll.Hide()
         self._vScroll.Hide()
 
-        self._hScroll.Bind(wx.EVT_SCROLL, self._OnScroll)
-        self._vScroll.Bind(wx.EVT_SCROLL, self._OnScroll)
-        self.Bind(wx.EVT_PAINT, self._OnPaint)
-        self.Bind(wx.EVT_SIZE, self._OnResize)
-        self.Bind(wx.EVT_LEFT_DOWN, self._OnLeftDown)
-        self.Bind(wx.EVT_LEFT_UP, self._OnLeftUp)
-        self.Bind(wx.EVT_RIGHT_DOWN, self._OnRightDown)
-        self.Bind(wx.EVT_MOTION, self._OnMotion)
-        self._Invalidate()
+        self._hScroll.Bind(wx.EVT_SCROLL, self._on_scroll)
+        self._vScroll.Bind(wx.EVT_SCROLL, self._on_scroll)
+        self.Bind(wx.EVT_PAINT, self._on_paint)
+        self.Bind(wx.EVT_SIZE, self._on_resize)
+        self.Bind(wx.EVT_LEFT_DOWN, self._on_left_down)
+        self.Bind(wx.EVT_LEFT_UP, self._on_left_up)
+        self.Bind(wx.EVT_RIGHT_DOWN, self._on_right_down)
+        self.Bind(wx.EVT_MOTION, self._on_motion)
+        self._invalidate()
 
     # Methods to override
 
@@ -182,7 +182,7 @@ class CalendarCanvas(wx.Panel):
 
     def SetPrecision(self, precision):
         self._precision = precision
-        self._Invalidate()
+        self._invalidate()
         self.Refresh()
 
     def GetEventHeight(self):
@@ -190,7 +190,7 @@ class CalendarCanvas(wx.Panel):
 
     def SetEventHeight(self, height):
         self._eventHeight = height
-        self._Invalidate()
+        self._invalidate()
         self.Refresh()
 
     def GetEventWidth(self):
@@ -198,7 +198,7 @@ class CalendarCanvas(wx.Panel):
 
     def SetEventWidth(self, width):
         self._eventWidthMin = width
-        self._Invalidate()
+        self._invalidate()
         self.Refresh()
 
     def GetMargin(self):
@@ -206,7 +206,7 @@ class CalendarCanvas(wx.Panel):
 
     def SetMargin(self, margin):
         self._margin = margin
-        self._Invalidate()
+        self._invalidate()
         self.Refresh()
 
     def OutlineColorDark(self):
@@ -236,7 +236,7 @@ class CalendarCanvas(wx.Panel):
     def SetViewSpan(self, start, end):
         self._start = start
         self._end = end
-        self._Invalidate()
+        self._invalidate()
         self.Refresh()
 
     def Selection(self):
@@ -293,7 +293,7 @@ class CalendarCanvas(wx.Panel):
             ):
                 # May be a child
                 children = []
-                self._Flatten(event, children)
+                self._flatten(event, children)
                 for candidate in reversed(children):
                     if candidate in self._coords:
                         si, ei, sir, eir, ymin, ymax = self._coords[candidate]
@@ -331,12 +331,12 @@ class CalendarCanvas(wx.Panel):
         result = _HitResult(x, y, None, dateTime)
         return result
 
-    def _Flatten(self, event, result):
+    def _flatten(self, event, result):
         result.append(event)
         for child in self.GetChildren(event):
-            self._Flatten(child, result)
+            self._flatten(child, result)
 
-    def _DrawEvent(self, gc, event):
+    def _draw_event(self, gc, event):
         if event in self._coords:
             (
                 startIndex,
@@ -347,7 +347,7 @@ class CalendarCanvas(wx.Panel):
                 yMax,
             ) = self._coords[event]
             if self.GetChildren(event):
-                self._DrawParent(
+                self._draw_parent(
                     gc,
                     startIndex,
                     endIndex,
@@ -359,7 +359,7 @@ class CalendarCanvas(wx.Panel):
                     self._eventWidth,
                 )
             else:
-                self._DrawLeaf(
+                self._draw_leaf(
                     gc,
                     startIndex,
                     endIndex,
@@ -369,9 +369,9 @@ class CalendarCanvas(wx.Panel):
                     self._eventWidth,
                 )
         for child in self.GetChildren(event):
-            self._DrawEvent(gc, child)
+            self._draw_event(gc, child)
 
-    def _OnPaint(self, event):
+    def _on_paint(self, event):
         w, h = self.GetClientSize()
         vw = max(w, self._minSize[0])
         vh = max(h, self._minSize[1])
@@ -390,17 +390,17 @@ class CalendarCanvas(wx.Panel):
             memDC.SetBackground(wx.WHITE_BRUSH)
             memDC.Clear()
             gc = wx.GraphicsContext.Create(memDC)
-            self._Draw(gc, vw, vh, dx, dy)
+            self._draw(gc, vw, vh, dx, dy)
             dc = wx.PaintDC(self)
             dc.Blit(0, 0, vw, vh, memDC, 0, 0)
         finally:
             memDC.SelectObject(wx.NullBitmap)
 
-    def _Draw(self, gc, vw, vh, dx, dy):
+    def _draw(self, gc, vw, vh, dx, dy):
         gc.PushState()
         try:
             gc.Translate(-dx, 0.0)
-            self._DrawHeader(gc, vw, vh)
+            self._draw_header(gc, vw, vh)
         finally:
             gc.PopState()
 
@@ -409,13 +409,13 @@ class CalendarCanvas(wx.Panel):
             gc.Translate(-dx, -dy)
             gc.Clip(0, self._marginTop + dy, vw, vh)
             for event in self.GetRootEvents():
-                self._DrawEvent(gc, event)
-            self._DrawNow(gc, vh + dy)
-            self._DrawDragImage(gc)
+                self._draw_event(gc, event)
+            self._draw_now(gc, vh + dy)
+            self._draw_drag_image(gc)
         finally:
             gc.PopState()
 
-    def _DrawHeader(self, gc, w, h):
+    def _draw_header(self, gc, w, h):
         gc.SetPen(wx.Pen(self._outlineColorDark))
         for startIndex, endIndex in self._daySpans:
             date = (
@@ -426,7 +426,7 @@ class CalendarCanvas(wx.Panel):
             x1 = endIndex * self._eventWidth
             if date == datetime.datetime.now().date():
                 gc.SetBrush(
-                    self._Gradient(
+                    self._gradient(
                         gc, self._todayColor, x0, self._marginTop, x1 - x0, h
                     )
                 )
@@ -434,7 +434,7 @@ class CalendarCanvas(wx.Panel):
                 gc.SetBrush(wx.WHITE_BRUSH)
             else:
                 gc.SetBrush(
-                    self._Gradient(
+                    self._gradient(
                         gc,
                         self._outlineColorDark,
                         x0,
@@ -451,7 +451,7 @@ class CalendarCanvas(wx.Panel):
             x0 = startIndex * self._eventWidth
             x1 = endIndex * self._eventWidth
             gc.SetBrush(
-                self._Gradient(
+                self._gradient(
                     gc,
                     self._outlineColorLight,
                     x0,
@@ -461,7 +461,7 @@ class CalendarCanvas(wx.Panel):
                 )
             )
             gc.DrawRectangle(x0, 0, x1 - x0, self._marginTop - 2)
-            text = shortenText(
+            text = shorten_text(
                 gc,
                 self.FormatDateTime(
                     self._start
@@ -474,7 +474,7 @@ class CalendarCanvas(wx.Panel):
                 text, x0 + (x1 - x0 - tw) // 2, (self._marginTop - 2 - th) // 2
             )
 
-    def _DrawNow(self, gc, h):
+    def _draw_now(self, gc, h):
         now = datetime.datetime.now()
         x = int(
             (now - self._start).total_seconds()
@@ -496,7 +496,7 @@ class CalendarCanvas(wx.Panel):
         path.CloseSubpath()
         gc.DrawPath(path)
 
-    def _DrawDragImage(self, gc):
+    def _draw_drag_image(self, gc):
         if self._mouseDragPos is not None:
             if self._mouseState in [self.MS_DRAG_LEFT, self.MS_DRAG_RIGHT]:
                 d1 = self._mouseDragPos
@@ -594,7 +594,7 @@ class CalendarCanvas(wx.Panel):
                     text, x0 + (x1 - x0 - tw) / 2, y0 + (y1 - y0 - th) / 2
                 )
 
-    def _GetCursorDate(self):
+    def _get_cursor_date(self):
         x, y = self.ScreenToClientXY(*wx.GetMousePosition())
         if self._hScroll.IsShown():
             x += self._hScroll.GetThumbPosition()
@@ -602,7 +602,7 @@ class CalendarCanvas(wx.Panel):
             minutes=int(self._precision * x / self._eventWidth)
         )
 
-    def _OnResize(self, event=None):
+    def _on_resize(self, event=None):
         if event is None:
             w, h = self.GetClientSize()
         else:
@@ -648,7 +648,7 @@ class CalendarCanvas(wx.Panel):
         if event is not None:
             event.Skip()
 
-    def _OnLeftDown(self, event):
+    def _on_left_down(self, event):
         result = self.HitTest(event.GetX(), event.GetY())
         if result is None:
             return
@@ -663,7 +663,7 @@ class CalendarCanvas(wx.Panel):
             else:
                 if event.ShiftDown():
                     events = []
-                    self._Flatten(result.event, events)
+                    self._flatten(result.event, events)
                 else:
                     events = [result.event]
                 events = set(events) & set(self._coords.keys())
@@ -695,7 +695,7 @@ class CalendarCanvas(wx.Panel):
             self.CaptureMouse()
             self._mouseState += self.MS_DRAG_LEFT - self.MS_HOVER_LEFT
 
-    def _OnLeftUp(self, event):
+    def _on_left_up(self, event):
         if self._mouseState in [self.MS_DRAG_LEFT, self.MS_DRAG_RIGHT]:
             self.ReleaseMouse()
             wx.SetCursor(wx.NullCursor)
@@ -733,7 +733,7 @@ class CalendarCanvas(wx.Panel):
         self._mouseDragPos = None
         self.Refresh()
 
-    def _OnRightDown(self, event):
+    def _on_right_down(self, event):
         result = self.HitTest(event.GetX(), event.GetY())
         if result is None:
             return
@@ -756,7 +756,7 @@ class CalendarCanvas(wx.Panel):
             e.SetEventObject(self)
             self.ProcessEvent(e)
 
-    def _OnMotion(self, event):
+    def _on_motion(self, event):
         result = self.HitTest(event.GetX(), event.GetY())
 
         if result is not None:
@@ -783,7 +783,7 @@ class CalendarCanvas(wx.Panel):
                     wx.SetCursor(wx.NullCursor)
 
         if self._mouseState in [self.MS_DRAG_LEFT, self.MS_DRAG_RIGHT]:
-            dateTime = self._GetCursorDate()
+            dateTime = self._get_cursor_date()
             precision = (
                 self._gridSize if event.ShiftDown() else self._precision
             )
@@ -845,11 +845,11 @@ class CalendarCanvas(wx.Panel):
             self._mouseDragPos = self.GetStart(self._mouseOrigin.event) + delta
             self.Refresh()
 
-    def _OnScroll(self, event):
+    def _on_scroll(self, event):
         self.Refresh()
         event.Skip()
 
-    def _Gradient(self, gc, color, x, y, w, h):
+    def _gradient(self, gc, color, x, y, w, h):
         r = color.Red()
         g = color.Green()
         b = color.Blue()
@@ -866,7 +866,7 @@ class CalendarCanvas(wx.Panel):
             ),
         )
 
-    def _DrawParent(
+    def _draw_parent(
         self,
         gc,
         startIndex,
@@ -890,7 +890,7 @@ class CalendarCanvas(wx.Panel):
         color = self.GetBackgroundColor(event)
 
         # Overall box
-        self._DrawBox(
+        self._draw_box(
             gc,
             event,
             x0 - self._margin / 3,
@@ -922,7 +922,7 @@ class CalendarCanvas(wx.Panel):
         path.AddLineToPoint(x0, y1 - delta)
         path.CloseSubpath()
 
-        gc.SetBrush(self._Gradient(gc, color, x0, y0, x1 - x0, y1 - y0))
+        gc.SetBrush(self._gradient(gc, color, x0, y0, x1 - x0, y1 - y0))
         gc.FillPath(path)
 
         gc.SetPen(wx.Pen(wx.Colour(*self._outlineColorDark)))
@@ -932,15 +932,15 @@ class CalendarCanvas(wx.Panel):
         x1 = min(self._maxIndex * self._eventWidth, x1)
 
         # Progress
-        x0, y0, x1, y1 = self._DrawProgress(gc, event, x0, y0, x1, y1)
+        x0, y0, x1, y1 = self._draw_progress(gc, event, x0, y0, x1, y1)
 
         y1 -= delta
 
         # Text & icons
-        x0, y0, x1, y1 = self._DrawIcons(gc, event, x0, y0, x1, y1)
-        self._DrawText(gc, event, x0, y0, x1, y1)
+        x0, y0, x1, y1 = self._draw_icons(gc, event, x0, y0, x1, y1)
+        self._draw_text(gc, event, x0, y0, x1, y1)
 
-    def _DrawLeaf(self, gc, startIndex, endIndex, yMin, yMax, event, w):
+    def _draw_leaf(self, gc, startIndex, endIndex, yMin, yMax, event, w):
         x0 = startIndex * w
         x1 = endIndex * w - 1.0
         y0 = yMin * (self._eventHeight + self._margin) + self._marginTop
@@ -951,7 +951,7 @@ class CalendarCanvas(wx.Panel):
         )
 
         # Box
-        self._DrawBox(
+        self._draw_box(
             gc, event, x0, y0, x1, y1, self.GetBackgroundColor(event)
         )
 
@@ -959,13 +959,13 @@ class CalendarCanvas(wx.Panel):
         x1 = min(self._maxIndex * self._eventWidth, x1)
 
         # Progress
-        x0, y0, x1, y1 = self._DrawProgress(gc, event, x0, y0, x1, y1)
+        x0, y0, x1, y1 = self._draw_progress(gc, event, x0, y0, x1, y1)
 
         # Text & icons
-        x0, y0, x1, y1 = self._DrawIcons(gc, event, x0, y0, x1, y1)
-        self._DrawText(gc, event, x0, y0, x1, y1)
+        x0, y0, x1, y1 = self._draw_icons(gc, event, x0, y0, x1, y1)
+        self._draw_text(gc, event, x0, y0, x1, y1)
 
-    def _DrawBox(self, gc, event, x0, y0, x1, y1, color):
+    def _draw_box(self, gc, event, x0, y0, x1, y1, color):
         outline = wx.Colour(*self._outlineColorLight)
 
         if event in self._selection:
@@ -974,13 +974,13 @@ class CalendarCanvas(wx.Panel):
 
         path = gc.CreatePath()
         path.AddRoundedRectangle(x0, y0, x1 - x0, y1 - y0, 5.0)
-        gc.SetBrush(self._Gradient(gc, color, x0, y0, x1, y1))
+        gc.SetBrush(self._gradient(gc, color, x0, y0, x1, y1))
         gc.FillPath(path)
 
         gc.SetPen(wx.Pen(outline))
         gc.DrawPath(path)
 
-    def _DrawProgress(self, gc, event, x0, y0, x1, y1):
+    def _draw_progress(self, gc, event, x0, y0, x1, y1):
         p = self.GetProgress(event)
         if p is not None:
             px0 = x0 + self._eventHeight / 2
@@ -992,7 +992,7 @@ class CalendarCanvas(wx.Panel):
             gc.DrawRectangle(px0, py0, px1 - px0, py1 - py0)
 
             gc.SetBrush(
-                self._Gradient(
+                self._gradient(
                     gc, wx.BLUE, px0, py0, px0 + (px1 - px0) * p, py1
                 )
             )
@@ -1001,7 +1001,7 @@ class CalendarCanvas(wx.Panel):
             y0 = py1
         return x0, y0, x1, y1
 
-    def _DrawText(self, gc, event, x0, y0, x1, y1):
+    def _draw_text(self, gc, event, x0, y0, x1, y1):
         gc.SetFont(
             self.GetFont(event),
             (
@@ -1010,7 +1010,7 @@ class CalendarCanvas(wx.Panel):
                 else self.GetForegroundColor(event)
             ),
         )
-        text = shortenText(gc, self.GetText(event), x1 - x0 - self._margin * 2)
+        text = shorten_text(gc, self.GetText(event), x1 - x0 - self._margin * 2)
         w, h = gc.GetTextExtent(text)
         gc.DrawText(
             text,
@@ -1020,37 +1020,37 @@ class CalendarCanvas(wx.Panel):
             + (y1 - y0 - h - 2 * self._eventHeight / 3) / 2,
         )
 
-    def _DrawIcons(self, gc, event, x0, y0, x1, y1):
+    def _draw_icons(self, gc, event, x0, y0, x1, y1):
         cx = x0
-        icons = self.GetIcons(event)
-        if icons:
+        wx_icons = self.GetIcons(event)
+        if wx_icons:
             cx += self._margin
-            for icon in icons:
-                w = icon.GetWidth()
-                h = icon.GetHeight()
-                gc.DrawIcon(icon, cx, y0 + (y1 - y0 - h) / 2, w, h)
+            for wx_icon in wx_icons:
+                w = wx_icon.GetWidth()
+                h = wx_icon.GetHeight()
+                gc.DrawIcon(wx_icon, cx, y0 + (y1 - y0 - h) / 2, w, h)
                 cx += w + self._margin
         return cx, y0, x1, y1
 
-    def _GetStartRecursive(self, event):
+    def _get_start_recursive(self, event):
         dt = self.GetStart(event)
         ls = [] if dt is None else [dt]
         for child in self.GetChildren(event):
-            dt = self._GetStartRecursive(child)
+            dt = self._get_start_recursive(child)
             if dt is not None:
                 ls.append(dt)
         return min(ls) if ls else None
 
-    def _GetEndRecursive(self, event):
+    def _get_end_recursive(self, event):
         dt = self.GetEnd(event)
         ls = [] if dt is None else [dt]
         for child in self.GetChildren(event):
-            dt = self._GetEndRecursive(child)
+            dt = self._get_end_recursive(child)
             if dt is not None:
                 ls.append(dt)
         return max(ls) if ls else None
 
-    def _Invalidate(self):
+    def _invalidate(self):
         self._coords = dict()
         watermark = _Watermark()
         self._maxIndex = int(
@@ -1060,8 +1060,8 @@ class CalendarCanvas(wx.Panel):
         def computeEvent(event):
             eventStart = self.GetStart(event)
             eventEnd = self.GetEnd(event)
-            eventRStart = self._GetStartRecursive(event)
-            eventREnd = self._GetEndRecursive(event)
+            eventRStart = self._get_start_recursive(event)
+            eventREnd = self._get_end_recursive(event)
 
             if (
                 eventRStart is not None
@@ -1153,10 +1153,10 @@ class CalendarCanvas(wx.Panel):
             self._minSize = (
                 int(max(headerWidth, self._eventWidthMin * self._maxIndex)),
                 self._marginTop
-                + (watermark.totalHeight() - 1)
+                + (watermark.total_height() - 1)
                 * (self._eventHeight + self._margin),
             )
-            self._OnResize()
+            self._on_resize()
         finally:
             memDC.SelectObject(wx.NullBitmap)
 
@@ -1168,7 +1168,7 @@ class CalendarPrintout(wx.Printout):
         self._settings = settings
         self._count = None
 
-    def _PageCount(self):
+    def _page_count(self):
         if self._count is None:
             minW, minH = self._calendar._minSize
             dc = self.GetDC()
@@ -1199,10 +1199,10 @@ class CalendarPrintout(wx.Printout):
         return self._count
 
     def GetPageInfo(self):
-        return 1, self._PageCount(), 1, 1
+        return 1, self._page_count(), 1, 1
 
     def HasPage(self, page):
-        return page <= self._PageCount()
+        return page <= self._page_count()
 
     def OnPrintPage(self, page):
         # Cannot print with a GraphicsContext...
@@ -1236,7 +1236,7 @@ class CalendarPrintout(wx.Printout):
             self._calendar._eventWidth = self._calendar._eventWidthMin
             try:
                 gc = wx.GraphicsContext.Create(memDC)
-                self._calendar._Draw(gc, cw, ch, 0, dy)
+                self._calendar._draw(gc, cw, ch, 0, dy)
             finally:
                 self._calendar._eventWidth = oldWidth
             dc.SetUserScale(dcw / cw, dch / ch)

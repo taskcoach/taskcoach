@@ -32,15 +32,15 @@ This document describes the custom `IconPicker` widget used in Task Coach for se
 
 | # | Issue | Status | Notes |
 |---|-------|--------|-------|
-| 18 | Not getting focus | Coded/Testing | Multiple CallAfter + CallLater to force focus |
-| 19 | Cursor stuck in main textbox | Coded/Testing | Text control redirects focus events |
+| 18 | ~~Not getting focus~~ | Done | Fixed with `CallAfter(self._focus_search)`. Tab order also fixed: list → Clear → Cancel → OK. |
+| 19 | ~~Cursor stuck in main textbox~~ | Done | Resolved by modal `_IconDialog` (no focus competition with main window). |
 
 
 ### Feature Implementation
 
 | # | Feature | Status | Notes |
 |---|---------|--------|-------|
-| 37 | Use shared `ImageListCache` instead of private `_image_list` | Not Started | The icon picker currently builds its own private `wx.ImageList` in `_rebuild_list()`. It should use the global `ImageListCache` singleton (`image_list_cache`) via `get_index()` for each icon, and borrow the shared list via `SetImageList()`. This means the picker shares the same `wx.ImageList` as all viewers — no separate bitmap copies. Opening the picker will lazily load all catalog icons into the cache (since the picker displays every icon); they remain cached for the app lifetime. See [ICON_DISPLAY.md — ImageListCache](ICON_DISPLAY.md#imagelistcache). |
+| 37 | ~~Use shared `ImageListCache` instead of private `_image_list`~~ | Done | Replaced private `_image_list` and `_image_map` with shared `image_list_cache` singleton. Picker now uses `image_list_cache.get_index(icon_id)` for lazy loading and `image_list_cache.image_list` via `SetImageList()` — same pattern as all viewers. Bitmap removed from item tuples (6-tuple instead of 7). |
 
 ### Integration Tasks
 
@@ -55,7 +55,7 @@ This document describes the custom `IconPicker` widget used in Task Coach for se
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 35 | Review if `TRANSPARENT_EMPTY_ICON` is still needed | Not Started | Was added to centralize transparent bitmap creation (returns a real bitmap with alpha=0). The icon picker "No icon" option needs a real bitmap because `GenBitmapButton.SetBitmapLabel()` crashes on `wx.NullBitmap`. Verify whether this is still the case — if `wx.NullBitmap` works, the constant can be removed. See `icon_library.py`. |
+| 35 | ~~Review if `TRANSPARENT_EMPTY_ICON` still needed~~ | Done | Removed. The "No icon" state sets `bmpLabel = None` directly, with a `SetBitmapLabel` guard to prevent wxPython bug #2093. |
 
 ### Status Legend
 

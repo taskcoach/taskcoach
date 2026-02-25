@@ -135,7 +135,7 @@ class SettingsPageBase(widgets.ScrolledBookPage):
     def _columnGap(self):
         return self._borderWidth + self._hgap + self._borderWidth
 
-    def _makeInlinePanel(self, *controls, helpText="", growable=False):
+    def _makeInlinePanel(self, *controls, help_text="", growable=False):
         """Create a panel with controls and an inline help label.
         Controls are laid out horizontally with _columnGap spacing.
         The helpCtrl is registered for dynamic wrapping in fit().
@@ -146,7 +146,7 @@ class SettingsPageBase(widgets.ScrolledBookPage):
             ctrl.Reparent(panel)
             flags = wx.EXPAND if (growable and i == 0) else 0
             sizer.Add(ctrl, 0, flags | wx.RIGHT, self._columnGap)
-        helpCtrl = wx.StaticText(panel, label=helpText)
+        helpCtrl = wx.StaticText(panel, label=help_text)
         helpCtrl.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
         sizer.Add(helpCtrl, 0)
@@ -167,16 +167,16 @@ class SettingsPageBase(widgets.ScrolledBookPage):
         self._syncers = []
         self._inlineHelpCtrls = []  # [(helpCtrl, panel)] for deferred wrapping
 
-    def addBooleanSetting(self, section, setting, text, helpText="", **kwargs):
+    def addBooleanSetting(self, section, setting, text, help_text="", **kwargs):
         checkBox = wx.CheckBox(self, -1)
         checkBox.SetValue(self.getboolean(section, setting))
-        panel = self._makeInlinePanel(checkBox, helpText=helpText)
+        panel = self._makeInlinePanel(checkBox, help_text=help_text)
         self.addEntry(text, panel, **kwargs)
         self._booleanSettings.append((section, setting, checkBox))
         return checkBox
 
     def addChoiceSetting(
-        self, section, setting, text, helpText, *listsOfChoices, **kwargs
+        self, section, setting, text, help_text, *listsOfChoices, **kwargs
     ):
         choiceCtrls = []
         currentValue = self.gettext(section, setting)
@@ -193,7 +193,7 @@ class SettingsPageBase(widgets.ScrolledBookPage):
             # Force a selection if necessary:
             if choiceCtrl.GetSelection() == wx.NOT_FOUND:
                 choiceCtrl.SetSelection(0)
-        panel = self._makeInlinePanel(*choiceCtrls, helpText=helpText)
+        panel = self._makeInlinePanel(*choiceCtrls, help_text=help_text)
         self.addEntry(text, panel, flags=kwargs.get("flags", None))
         self._choiceSettings.append((section, setting, choiceCtrls))
         return choiceCtrls
@@ -206,7 +206,7 @@ class SettingsPageBase(widgets.ScrolledBookPage):
                 break
 
     def addMultipleChoiceSettings(
-        self, section, setting, text, choices, helpText="", **kwargs
+        self, section, setting, text, choices, help_text="", **kwargs
     ):
         # choices is a list of (number, text) tuples.
         multipleChoice = wx.CheckListBox(
@@ -215,7 +215,7 @@ class SettingsPageBase(widgets.ScrolledBookPage):
         checkedNumbers = self.getlist(section, setting)
         for index, choice in enumerate(choices):
             multipleChoice.Check(index, choice[0] in checkedNumbers)
-        panel = self._makeInlinePanel(multipleChoice, helpText=helpText,
+        panel = self._makeInlinePanel(multipleChoice, help_text=help_text,
                                        growable=kwargs.get("growable", True))
         self.addEntry(
             text, panel,
@@ -238,14 +238,14 @@ class SettingsPageBase(widgets.ScrolledBookPage):
         text,
         minimum=0,
         maximum=100,
-        helpText="",
+        help_text="",
         flags=None,
     ):
         intValue = self.getint(section, setting)
         spin = widgets.SpinCtrl(
             self, min=minimum, max=maximum, size=(65, -1), value=intValue
         )
-        panel = self._makeInlinePanel(spin, helpText=helpText)
+        panel = self._makeInlinePanel(spin, help_text=help_text)
         self.addEntry(text, panel, flags=flags)
         self._integerSettings.append((section, setting, spin))
 
@@ -399,7 +399,7 @@ class SettingsPageBase(widgets.ScrolledBookPage):
 
     def _createIconEntry(self, exclude=None):
         """Create a searchable icon picker with fixed 120px width."""
-        return widgets.IconPicker(self, "", exclude=exclude, fixedWidth=120)
+        return widgets.IconPicker(self, "", exclude=exclude, fixed_width=120)
 
     def _createAppearanceControls(self, fgColorSection, fgColorSetting,
                                    bgColorSection, bgColorSetting,
@@ -525,9 +525,9 @@ class SettingsPageBase(widgets.ScrolledBookPage):
         darkFont.SetSelectedBgColour(dbgColor)
         darkIcon.SetValue(defs["icon_dark"][setting])
 
-    def addPathSetting(self, section, setting, text, helpText="", **kwargs):
+    def addPathSetting(self, section, setting, text, help_text="", **kwargs):
         pathChooser = widgets.DirectoryChooser(
-            self, wx.ID_ANY, gap=self._columnGap, helpText=helpText)
+            self, wx.ID_ANY, gap=self._columnGap, help_text=help_text)
         pathChooser.SetPath(self.gettext(section, setting))
         self._inlineHelpCtrls.append((pathChooser.helpCtrl, pathChooser))
         self.addEntry(text, pathChooser, **kwargs)
@@ -656,7 +656,7 @@ class SettingsPage(SettingsPageBase):
             super().fit()
 
     def addEntry(self, text, *controls, **kwargs):  # pylint: disable=W0221
-        kwargs.pop("helpText", "")  # Consumed by helpers; strip if passed
+        kwargs.pop("help_text", "")  # Consumed by helpers; strip if passed
         super().addEntry(text, *controls, **kwargs)
 
     def get(self, section, name):
@@ -748,7 +748,7 @@ class SavePage(SettingsPage):
             "autoimport",
             _("Before saving, automatically import from"),
             [("Todo.txt", _("Todo.txt format"))],
-            helpText=_(
+            help_text=_(
                 "Before saving, %s automatically imports tasks "
                 "from a Todo.txt file with the same name as the task file, "
                 "but with extension .txt"
@@ -761,7 +761,7 @@ class SavePage(SettingsPage):
             "autoexport",
             _("When saving, automatically export to"),
             [("Todo.txt", _("Todo.txt format"))],
-            helpText=_(
+            help_text=_(
                 "When saving, %s automatically exports tasks "
                 "to a Todo.txt file with the same name as the task file, "
                 "but with extension .txt"
@@ -1157,7 +1157,7 @@ class ThemePage(SettingsPage):
             "window", "hoverlinewidth",
             _("Hoverover Highlight"),
             minimum=0, maximum=5,
-            helpText=_("Two-tone outline thickness per line in pixels when hovering over a row (0 to disable)"),
+            help_text=_("Two-tone outline thickness per line in pixels when hovering over a row (0 to disable)"),
         )
 
 
@@ -2105,7 +2105,7 @@ class FeaturesPage(SettingsPage):
             "feature",
             "minidletime",
             _("Idle time notice"),
-            helpText=_(
+            help_text=_(
                 "If there is no user input for this amount of time "
                 "(in minutes), %(name)s will ask what to do about current "
                 "efforts."

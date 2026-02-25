@@ -60,13 +60,16 @@ class Menu(wx.Menu, uicommand.UICommandContainerMixin):
     def accelerators(self):
         return self._accels
 
-    def appendUICommand(self, uiCommand):
-        cmd = uiCommand.addToMenu(self, self._window)
-        uiCommand.menu = self
-        self._accels.extend(uiCommand.accelerators())
-        if isinstance(uiCommand, patterns.Observer):
-            self._observers.append(uiCommand)
+    def append_ui_command(self, ui_command):
+        cmd = ui_command.add_to_menu(self, self._window)
+        ui_command.menu = self
+        self._accels.extend(ui_command.accelerators())
+        if isinstance(ui_command, patterns.Observer):
+            self._observers.append(ui_command)
         return cmd
+
+    # Keep old name as alias
+    appendUICommand = append_ui_command
 
     def _update_menu_state(self):
         """Update enabled and text state of all menu items. Called on menu open."""
@@ -189,11 +192,11 @@ class DynamicMenu(Menu):
         return True
 
     @staticmethod
-    def __GetLabelText(menuText):
-        """Remove accelerators from the menuText. This is necessary because on
-        some platforms '&' is changed into '_' so menuTexts would compare
+    def __GetLabelText(menu_text):
+        """Remove accelerators from the menu_text. This is necessary because on
+        some platforms '&' is changed into '_' so menu_texts would compare
         different even though they are really the same."""
-        return menuText.replace("&", "").replace("_", "")
+        return menu_text.replace("&", "").replace("_", "")
 
 
 class DynamicMenuThatGetsUICommandsFromViewer(DynamicMenu):
@@ -382,14 +385,14 @@ class FileMenu(Menu):
                 index=recentFileNumber,
                 iocontroller=self.__iocontroller,
             )
-            recentFileOpenUICommand.addToMenu(
+            recentFileOpenUICommand.add_to_menu(
                 self, self._window, recentFileMenuPosition
             )
             self.__recentFileUICommands.append(recentFileOpenUICommand)
 
     def __removeRecentFileMenuItems(self):
         for recentFileUICommand in self.__recentFileUICommands:
-            recentFileUICommand.removeFromMenu(self, self._window)
+            recentFileUICommand.remove_from_menu(self, self._window)
         self.__recentFileUICommands = []
         if self.__separator:
             self.Remove(self.__separator)
@@ -488,16 +491,16 @@ class ViewMenu(Menu):
         )
         activateNextViewer = uicommand.ActivateViewer(
             viewer=viewerContainer,
-            menuText=_("&Activate next viewer\tCtrl+PgDn"),
-            helpText=help.viewNextViewer,
+            menu_text=_("&Activate next viewer\tCtrl+PgDn"),
+            help_text=help.viewNextViewer,
             forward=True,
             icon_id="nuvola_actions_tab-duplicate",
             id=activateNextViewerId,
         )
         activatePreviousViewer = uicommand.ActivateViewer(
             viewer=viewerContainer,
-            menuText=_("Activate &previous viewer\tCtrl+PgUp"),
-            helpText=help.viewPreviousViewer,
+            menu_text=_("Activate &previous viewer\tCtrl+PgUp"),
+            help_text=help.viewPreviousViewer,
             forward=False,
             icon_id="taskcoach_actions_tab-duplicate-left",
             id=activatePreviousViewerId,
@@ -529,8 +532,8 @@ class ViewMenu(Menu):
         self.appendUICommands(
             uicommand.UICheckCommand(
                 settings=settings,
-                menuText=_("Status&bar"),
-                helpText=_("Show/hide status bar"),
+                menu_text=_("Status&bar"),
+                help_text=_("Show/hide status bar"),
                 setting="statusbar",
             ),
             None,
@@ -548,14 +551,14 @@ class ViewViewerMenu(Menu):
         # pylint: disable=W0142
         viewViewerCommands = [
             ViewViewer(
-                menuText=_("&Task"),
-                helpText=_("Open a new tab with a viewer that displays tasks"),
+                menu_text=_("&Task"),
+                help_text=_("Open a new tab with a viewer that displays tasks"),
                 viewerClass=taskcoachlib.gui.viewer.TaskViewer,
                 **kwargs
             ),
             ViewViewer(
-                menuText=_("Task &statistics"),
-                helpText=_(
+                menu_text=_("Task &statistics"),
+                help_text=_(
                     "Open a new tab with a viewer that displays task statistics"
                 ),
                 viewerClass=taskcoachlib.gui.viewer.TaskStatsViewer,
@@ -566,8 +569,8 @@ class ViewViewerMenu(Menu):
         if taskcoachlib.gui.viewer.SquareTaskViewer is not None:
             viewViewerCommands.append(
                 ViewViewer(
-                    menuText=_("Task &square map"),
-                    helpText=_(
+                    menu_text=_("Task &square map"),
+                    help_text=_(
                         "Open a new tab with a viewer that displays tasks in a square map"
                     ),
                     viewerClass=taskcoachlib.gui.viewer.SquareTaskViewer,
@@ -576,56 +579,56 @@ class ViewViewerMenu(Menu):
             )
         viewViewerCommands += [
             ViewViewer(
-                menuText=_("T&imeline"),
-                helpText=_(
+                menu_text=_("T&imeline"),
+                help_text=_(
                     "Open a new tab with a viewer that displays a timeline of tasks and effort"
                 ),
                 viewerClass=taskcoachlib.gui.viewer.TimelineViewer,
                 **kwargs
             ),
             ViewViewer(
-                menuText=_("&Calendar"),
-                helpText=_(
+                menu_text=_("&Calendar"),
+                help_text=_(
                     "Open a new tab with a viewer that displays tasks in a calendar"
                 ),
                 viewerClass=taskcoachlib.gui.viewer.CalendarViewer,
                 **kwargs
             ),
             ViewViewer(
-                menuText=_("&Hierarchical calendar"),
-                helpText=_(
+                menu_text=_("&Hierarchical calendar"),
+                help_text=_(
                     "Open a new tab with a viewer that displays task hierarchy in a calendar"
                 ),
                 viewerClass=taskcoachlib.gui.viewer.HierarchicalCalendarViewer,
                 **kwargs
             ),
             ViewViewer(
-                menuText=_("&Category"),
-                helpText=_(
+                menu_text=_("&Category"),
+                help_text=_(
                     "Open a new tab with a viewer that displays categories"
                 ),
                 viewerClass=taskcoachlib.gui.viewer.CategoryViewer,
                 **kwargs
             ),
             ViewViewer(
-                menuText=_("&Effort"),
-                helpText=_(
+                menu_text=_("&Effort"),
+                help_text=_(
                     "Open a new tab with a viewer that displays efforts"
                 ),
                 viewerClass=taskcoachlib.gui.viewer.EffortViewer,
                 **kwargs
             ),
             uicommand.ViewEffortViewerForSelectedTask(
-                menuText=_("Eff&ort for selected task(s)"),
-                helpText=_(
+                menu_text=_("Eff&ort for selected task(s)"),
+                help_text=_(
                     "Open a new tab with a viewer that displays efforts for the selected task"
                 ),
                 viewerClass=taskcoachlib.gui.viewer.EffortViewer,
                 **kwargs
             ),
             ViewViewer(
-                menuText=_("&Note"),
-                helpText=_("Open a new tab with a viewer that displays notes"),
+                menu_text=_("&Note"),
+                help_text=_("Open a new tab with a viewer that displays notes"),
                 viewerClass=taskcoachlib.gui.viewer.NoteViewer,
                 **kwargs
             ),
@@ -637,8 +640,8 @@ class ViewViewerMenu(Menu):
         else:
             viewViewerCommands.append(
                 ViewViewer(
-                    menuText=_("&Dependency Graph"),
-                    helpText=_(
+                    menu_text=_("&Dependency Graph"),
+                    help_text=_(
                         "Open a new tab with a viewer that dependencies between weighted tasks over time"
                     ),
                     viewerClass=taskcoachlib.gui.viewer.TaskInterdepsViewer,
@@ -699,7 +702,7 @@ class ToolBarMenu(Menu):
         _S = MAIN_TOOLBAR_ICON_SIZE_SMALL
         _M = MAIN_TOOLBAR_ICON_SIZE_MEDIUM
         _L = MAIN_TOOLBAR_ICON_SIZE_LARGE
-        for value, menuText, helpText in [
+        for value, menu_text, help_text in [
             (None, _("&Hide"), _("Hide the toolbar")),
             (
                 (_S, _S),
@@ -722,8 +725,8 @@ class ToolBarMenu(Menu):
                     settings=settings,
                     setting="toolbar",
                     value=value,
-                    menuText=menuText,
-                    helpText=helpText,
+                    menu_text=menu_text,
+                    help_text=help_text,
                 )
             )
         # pylint: disable=W0142
@@ -807,7 +810,7 @@ class ActionMenu(Menu):
         )
         uicommand.TaskPriorityParentMenu(
             viewer=viewerContainer
-        ).addToMenu(
+        ).add_to_menu(
             self, self._window,
             subMenu=TaskPriorityMenu(mainwindow, tasks, viewerContainer),
         )
@@ -938,7 +941,7 @@ class ToggleCategoryMenu(DynamicMenu):
             uiCommand = uicommand.ToggleCategory(
                 category=category, viewer=self.viewer
             )
-            uiCommand.addToMenu(menu, self._window)
+            uiCommand.add_to_menu(menu, self._window)
             if category.children():
                 subMenu = Menu(self._window)
                 self.addMenuItemsForCategories(category.children(), subMenu)
@@ -995,7 +998,7 @@ class StartEffortForTaskMenu(DynamicMenu):
         uiCommand = uicommand.EffortStartForTask(
             task=task, taskList=self.tasks
         )
-        uiCommand.addToMenu(menu, self._window)
+        uiCommand.add_to_menu(menu, self._window)
         trackableChildren = [
             child
             for child in task.children()
@@ -1058,7 +1061,7 @@ class TaskPopupMenu(Menu):
         )
         uicommand.TaskPriorityParentMenu(
             viewer=taskViewer
-        ).addToMenu(
+        ).add_to_menu(
             self, self._window,
             subMenu=TaskPriorityMenu(mainwindow, tasks, taskViewer),
         )

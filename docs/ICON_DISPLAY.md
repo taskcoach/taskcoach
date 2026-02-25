@@ -21,25 +21,22 @@ How icons are rendered in viewer columns.
 
 ## TODO
 
-1. **Lazy viewer image lists.** Currently `icon_catalog.viewer_icon_ids()` returns
-   all non-synthetic icons, and `createImageList()` in `base.py` loads them
-   all into each viewer's `wx.ImageList`. With thousands of icons in the
-   catalog and only ~10 assigned in a typical file, this is wasteful. Future:
-   `viewer_icon_ids()` should return only icons actually assigned to items in
-   the current task file (tasks, categories, notes, attachments) plus
-   viewer-specific icons (status, attachment types). When the user assigns a
-   new icon via the picker, add it to the image list dynamically
-   (`wx.ImageList.Add()` + update `self.imageIndex`). Note: `Remove()` shifts
-   all indexes — never remove, only add. This is completely separate from
-   the icon picker, which must load all icons for browsing.
+1. ~~**Lazy viewer image lists.**~~ **Done.** Per-viewer `wx.ImageList`
+   replaced by shared `image_list_cache` singleton (`image_list_cache.py`).
+   `createImageList()` in `base.py` now returns the shared list.
+   `get_index(icon_id)` loads icons lazily on first call — viewers only
+   load icons they actually display. The icon picker also uses the shared
+   cache (TODO #37 in ICON_PICKER_REFACTORING.md). Related completed work:
+   - #2: `viewerIconIds` removed (never consumed)
+   - #4: Singleton renamed to `icon_catalog`
+   - #5: All icon_id variables audited and renamed
+   - #6: `gui.init()` moved before `MainWindow` import (circular import fix)
+   - #8: `wx.Icon`/`wx.Bitmap` variables renamed to `wx_icon`/`wx_bitmap`
 
-2. **Review and clean up `viewerIconIds`.** Only 4 icons are added via
-   `viewerIconIds` (3 in `attachment.py`, 1 in `mixin.py`), and all 4 are
-   already in the catalog — making `viewerIconIds` redundant. It creates
-   duplicate entries in the `wx.ImageList`. Either remove `viewerIconIds`
-   entirely (if all viewer-needed icons are guaranteed to be in the catalog),
-   or repurpose it as the explicit list of icons a viewer actually uses
-   (related to TODO #1 lazy loading).
+2. ~~**Review and clean up `viewerIconIds`.**~~ Done — `viewerIconIds`
+   removed from `base.py`, `attachment.py`, `mixin.py`, and test. All 4
+   icons were already in the catalog; `image_list_cache` serves the full
+   set. The attribute was never consumed by any code.
 
 3. ~~**Handle `wx.ART_FRAME_ICON` callers during ArtProvider migration.**~~
    Done — all callers migrated to `icon_catalog.get_bitmap()`.
@@ -47,21 +44,20 @@ How icons are rendered in viewer columns.
 4. ~~**Rename `catalog` singleton.**~~ Done — renamed to `icon_catalog`.
    The singleton lives in `icon_library.py` as `icon_catalog = IconCatalog()`.
 
-5. **Audit variables that should be `icon_id`.** Search the codebase for
-   variables named `icon_name`, `icon`, `bitmap`, `bitmapName`, or similar
-   that actually hold icon_id strings. Rename them to `icon_id` for
-   consistency with the new naming convention. Known examples done:
-   `iconName`, `iconTitle`, `artId`, `myIcon`, `normalIcon`, `currentIcon`,
-   `statusIconName`, `iconProvider`, `bitmap` (when holding strings).
-   Run a fresh audit periodically — new code may reintroduce old patterns.
+5. ~~**Audit variables that should be `icon_id`.**~~ **Done.** Fresh audit
+   confirmed all old names (`iconName`, `artId`, `bitmapName`, etc.) already
+   renamed. AppIndicator `_icon_name` variables renamed to `_tray_icon_id`
+   (distinct namespace — XDG theme names resolved through `tray/hicolor/`,
+   not catalog icon_ids). Icon picker `currentIcon` → `current_icon_id`.
+   PEP 8 applied to adjacent parameters (`noIcon`, `fixedWidth`,
+   `_clockRunning`).
 
-6. **Test early-imported icon callers for circular imports.** Any module
-   imported during startup (before `gui.init()`) that uses `icon_library`
-   must use lazy imports (inside methods, not at module level) to avoid
-   circular import errors. Known cases: `help/tips.py`, `changes/sync.py`,
-   `widgets/searchctrl.py`, `widgets/notebook.py`. Test by enabling all
-   optional UI features (tips, notifications, toolbar customization) and
-   verifying the app starts without `ImportError` or `NameError`.
+6. ~~**Test early-imported icon callers for circular imports.**~~ **Done.**
+   Moved `gui.init()` before `MainWindow` import in `application.py` so
+   the icon catalog is populated before any widget module grabs the
+   reference. `help/tips.py` was already safe (deferred via `CallAfter`).
+   `changes/sync.py`, `widgets/searchctrl.py`, `widgets/notebook.py` only
+   call `get_bitmap()` inside methods, never at import time.
 
 7. **Remove open/close (selected) icon logic.** The `selectedIcon` system
    provides alternate icons for expanded tree nodes (e.g. `folder_red_open_icon`
@@ -87,19 +83,16 @@ How icons are rendered in viewer columns.
    - **Icon picker:** `entry.py` `IconEntry` — only sets `icon_id`, not
      `selected_icon_id` (the auto-generation in `EditIconCommand` handles it).
 
-8. **Rename `wx.Icon` variables to `wx_icon`.** Variables named `icon` that
-   hold `wx.Icon` objects (not icon_id strings) should be renamed to `wx_icon`
-   to match the icon library naming convention (`get_wx_icon()` returns
-   `wx.Icon`). This avoids confusion with `icon_id` strings. Known locations:
-   - `viewer/task.py` — `def icon(self, item, isSelected)` returns `wx.Icon`
-   - `thirdparty/timeline/timeline.py` — `icon = self.adapter.icon(...)` local
-     holds `wx.Icon`, `def icon(self, node)` base adapter returns `wx.Icon`
-   - `notify/notifier_universal.py` — `self.icon` holds `wx.Bitmap` (used as
-     icon display); parameter `icon=None` in `__init__`
-   - `thirdparty/wxScheduler/wxDrawer.py` — `for icon in schedule.icons:`
-     iterates icon_id strings passed to `icon_catalog.get_bitmap()`
-   - Audit all `icon` variables that are NOT icon_id strings and rename to
-     `wx_icon` (for `wx.Icon`) or `bitmap` (for `wx.Bitmap`) as appropriate.
+8. ~~**Rename `wx.Icon` variables to `wx_icon`.**~~ **Done.** Variables named
+   `icon` holding `wx.Icon` objects renamed to `wx_icon`; variables holding
+   `wx.Bitmap` used as icon display renamed to `wx_bitmap`. Timeline adapter
+   `icon()` → `get_wx_icon()`. Notifier `icon=` → `wx_bitmap=`. PEP 8
+   renames applied to all related private methods and parameters in the
+   affected files (`isSelected` → `is_selected`, `isSequentialNode` →
+   `is_sequential_node`, `iconWidth` → `icon_width`).
+   `SquareTaskViewer.icon()` left unchanged (squaremap external interface).
+   `wxScheduler/wxDrawer.py` left unchanged (iterates icon_id strings, not
+   wx objects).
 
 
 ---

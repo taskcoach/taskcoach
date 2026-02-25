@@ -21,6 +21,7 @@ import wx.lib.buttons as buttons
 
 from taskcoachlib.meta.debug import log_step
 from taskcoachlib.gui.icons.icon_library import LIST_ICON_SIZE
+from taskcoachlib.gui.icons import image_list_cache
 
 
 class _IconListCtrl(wx.ListCtrl):
@@ -31,9 +32,8 @@ class _IconListCtrl(wx.ListCtrl):
     def __init__(self, parent):
         super().__init__(parent, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.BORDER_NONE)
 
-        # Image list for icons
-        self._image_list = wx.ImageList(LIST_ICON_SIZE, LIST_ICON_SIZE)
-        self.SetImageList(self._image_list, wx.IMAGE_LIST_SMALL)
+        # Shared image list (same singleton used by all viewers)
+        self.SetImageList(image_list_cache.image_list, wx.IMAGE_LIST_SMALL)
 
         # 5 columns: Label (with icon), Hints, Theme, Context, Key
         self.InsertColumn(0, _("Label"), width=200)
@@ -44,7 +44,6 @@ class _IconListCtrl(wx.ListCtrl):
 
         self._items = []
         self._all_items = []
-        self._image_map = {}  # icon_id -> image list index
         self._enabled_ids = set()
         self._current_selected_row = None
         self._on_select_callback = None
@@ -58,7 +57,7 @@ class _IconListCtrl(wx.ListCtrl):
         self.Bind(wx.EVT_KEY_DOWN, self._on_key_down)
 
     def SetItems(self, items, current_icon_id=""):
-        """Set items: list of (icon_id, label, bitmap, hints, theme, context, enabled) tuples."""
+        """Set items: list of (icon_id, label, hints, theme, context, enabled) tuples."""
         self._all_items = list(items)
         self._items = list(items)
         self._rebuild_list(current_icon_id)
@@ -70,21 +69,13 @@ class _IconListCtrl(wx.ListCtrl):
         self._current_selected_row = None
 
         for i, item in enumerate(self._items):
-            icon_id, label, bmp, hints, theme, context, enabled = item
+            icon_id, label, hints, theme, context, enabled = item
 
             if enabled:
                 self._enabled_ids.add(icon_id)
 
-            # Add bitmap to image list if not already there
-            if icon_id not in self._image_map:
-                if bmp and bmp.IsOk():
-                    idx = self._image_list.Add(bmp)
-                else:
-                    idx = -1  # No image
-                self._image_map[icon_id] = idx
-
             # Insert row: Label (with icon), Hints, Theme, Context, icon_id
-            idx = self.InsertItem(i, label, self._image_map.get(icon_id, -1))
+            idx = self.InsertItem(i, label, image_list_cache.get_index(icon_id))
             self.SetItem(idx, 1, hints or "")
             self.SetItem(idx, 2, theme or "")
             self.SetItem(idx, 3, context or "")
@@ -129,7 +120,7 @@ class _IconListCtrl(wx.ListCtrl):
 
         # Select first enabled item
         for i, item in enumerate(self._items):
-            if item[6]:  # enabled
+            if item[5]:  # enabled
                 self.Select(i)
                 self.EnsureVisible(i)
                 break
@@ -142,9 +133,9 @@ class _IconListCtrl(wx.ListCtrl):
         """
         icon_id = item[0].lower()
         label = item[1].lower()
-        hints = item[3].lower()
-        theme = item[4].lower()
-        context = item[5].lower()
+        hints = item[2].lower()
+        theme = item[3].lower()
+        context = item[4].lower()
 
         # Build searchable string based on preferences
         searchable = icon_id + " " + label + " " + hints
@@ -217,14 +208,20 @@ class _IconDialog(wx.Dialog):
         dlgSizer = wx.BoxSizer(wx.VERTICAL)
         dlgSizer.Add(panel, 1, wx.EXPAND)
 
-        # Button bar: Clear (optional) + OK + Cancel
-        btnSizer = self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL)
+        # Button bar — created manually (not CreateStdDialogButtonSizer)
+        # so all buttons are siblings and tab order can be controlled.
+        # Tab order: list → Clear → Cancel → OK
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         if allow_clear:
             self._clearBtn = wx.Button(self, wx.ID_CLEAR, _("Clear"))
-            # Insert Clear at the beginning (index 0)
-            btnSizer.Insert(0, self._clearBtn, 0, wx.LEFT | wx.RIGHT, 5)
-            btnSizer.Insert(1, (0, 0), 1)  # Stretch spacer after Clear
+            btnSizer.Add(self._clearBtn, 0, wx.LEFT | wx.RIGHT, 5)
             self.Bind(wx.EVT_BUTTON, self._on_clear, id=wx.ID_CLEAR)
+        btnSizer.AddStretchSpacer()
+        cancel_btn = wx.Button(self, wx.ID_CANCEL)
+        ok_btn = wx.Button(self, wx.ID_OK)
+        btnSizer.Add(cancel_btn, 0, wx.RIGHT, 5)
+        btnSizer.Add(ok_btn, 0, wx.RIGHT, 5)
+        ok_btn.SetDefault()
         dlgSizer.Add(btnSizer, 0, wx.EXPAND | wx.ALL, 5)
 
         self.SetSizer(dlgSizer)
@@ -368,10 +365,9 @@ class _IconDialog(wx.Dialog):
             # Skip icons from disabled themes
             if icon.theme not in enabled_themes:
                 continue
-            bitmap = icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
             hints = " ".join(icon.hints)
             enabled = icon_id not in excluded_icons
-            items.append((icon_id, icon.label, bitmap, hints, icon.theme_label, icon.context_label, enabled))
+            items.append((icon_id, icon.label, hints, icon.theme_label, icon.context_label, enabled))
         return items
 
 
@@ -388,18 +384,18 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
 
     Args:
         parent: Parent window
-        currentIcon: Currently selected icon_id (empty string for "No icon")
+        current_icon_id: Currently selected icon_id (empty string for "No icon")
         exclude: None (no exclusion), "status" (exclude status icons), "data" (exclude data icons)
-        noIcon: If True, allow clearing the icon (default: True)
+        no_icon: If True, allow clearing the icon (default: True)
     """
 
     PADDING = 8
     NO_ICON_LABEL = _("No icon")
 
-    def __init__(self, parent, currentIcon, exclude=None, noIcon=True, fixedWidth=None, *args, **kwargs):
+    def __init__(self, parent, current_icon_id, exclude=None, no_icon=True, fixed_width=None, *args, **kwargs):
         self._exclude = exclude
-        self._noIcon = noIcon
-        self._fixedWidth = fixedWidth
+        self._no_icon = no_icon
+        self._fixed_width = fixed_width
         self._current_icon_id = ""
         self._current_label = ""
         self._current_bmp = None
@@ -412,7 +408,7 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
         self.bmpLabel = None  # Clear - start with no icon
         self.SetUseFocusIndicator(True)
 
-        self.SetValue(currentIcon or "")
+        self.SetValue(current_icon_id or "")
         self._previous_icon_id = self._current_icon_id
 
         self.Bind(wx.EVT_BUTTON, self._on_click)
@@ -475,7 +471,7 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
             self.bmpDisabled = None
             self.bmpFocus = None
             self.bmpSelected = None
-        if not self._fixedWidth:
+        if not self._fixed_width:
             self.InvalidateBestSize()
             self.SetInitialSize()
             parent = self.GetParent()
@@ -528,12 +524,12 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
         dc.SetFont(self.GetFont())
         tw, th = dc.GetTextExtent(self.GetLabel())
         height = max(th, bh) + self.PADDING * 2 if bh > 0 else th + self.PADDING * 2
-        if self._fixedWidth:
-            return wx.Size(self._fixedWidth, height)
+        if self._fixed_width:
+            return wx.Size(self._fixed_width, height)
         return wx.Size(overhead + tw, height)
 
     def _on_click(self, event):
-        dialog = _IconDialog(self.GetTopLevelParent(), self._current_icon_id, self._exclude, self._noIcon)
+        dialog = _IconDialog(self.GetTopLevelParent(), self._current_icon_id, self._exclude, self._no_icon)
         if dialog.ShowModal() == wx.ID_OK:
             icon_id = dialog.GetSelectedIconId()
             if icon_id is not None:
@@ -553,7 +549,7 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
         from taskcoachlib.gui.icons.icon_library import icon_catalog
 
         if icon_id == "":
-            if self._noIcon:
+            if self._no_icon:
                 self._current_icon_id = ""
                 self._current_label = self.NO_ICON_LABEL
                 self._current_bmp = None

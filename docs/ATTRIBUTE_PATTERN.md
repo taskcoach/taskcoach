@@ -161,7 +161,7 @@ All three entry points converge on the viewer:
 
 ```
 Toolbar Dropdown ─── doChoice(choice) ──────────────┐
-Menu Radio Option ── doCommand(event) ──────────────┤
+Menu Radio Option ── do_command(event) ──────────────┤
                                                      ▼
                                             viewer.set_tree_mode(value)
                                                      │
@@ -173,7 +173,7 @@ Menu Radio Option ── doCommand(event) ────────────�
                                               ┌──────────────────────┤
                                               ▼                      ▼
                                     Dropdown syncs:          Buttons sync:
-                                    setChoice(from settings) EnableTool(id, cmd.enabled())
+                                    set_choice(from settings) EnableTool(id, cmd.enabled())
                                     (_on_view_settings_changed) (_ViewSettingsSync)
 ```
 

@@ -57,13 +57,13 @@ class UICommand(object):
     """Base user interface command. An UICommand is some action that can be
     associated with menus and/or toolbars. It contains the menutext and
     helptext to be displayed and methods to attach the command to a menu
-    or toolbar. Subclasses should implement doCommand() and optionally
+    or toolbar. Subclasses should implement do_command() and optionally
     override enabled()."""
 
     def __init__(
         self,
-        menuText="",
-        helpText="",
+        menu_text="",
+        help_text="",
         icon_id=None,
         kind=wx.ITEM_NORMAL,
         id=None,
@@ -72,15 +72,15 @@ class UICommand(object):
         **kwargs
     ):  # pylint: disable=W0622
         super().__init__()
-        menuText = menuText or "<%s>" % _("None")
-        self.menuText = menuText if "&" in menuText else "&" + menuText
-        self.helpText = helpText
+        menu_text = menu_text or "<%s>" % _("None")
+        self.menu_text = menu_text if "&" in menu_text else "&" + menu_text
+        self.help_text = help_text
         self.icon_id = icon_id
         self.icon_id2 = icon_id2
         self.kind = kind
         self.id = IdProvider.get()
         self.toolbar = None
-        self.menuItems = []  # uiCommands can be used in multiple menu's
+        self.menu_items = []  # uiCommands can be used in multiple menu's
 
     def __del__(self):
         IdProvider.put(self.id)
@@ -88,16 +88,25 @@ class UICommand(object):
     def __eq__(self, other):
         return self is other
 
-    def uniqueName(self):
+    def unique_name(self):
         return self.__class__.__name__
+
+    def is_separator(self):
+        return False
+
+    def is_spacer(self):
+        return False
+
+    def is_command(self):
+        return True
 
     def accelerators(self):
         # The ENTER and NUMPAD_ENTER keys are treated differently between platforms...
-        if "\t" in self.menuText and (
-            "ENTER" in self.menuText or "RETURN" in self.menuText
+        if "\t" in self.menu_text and (
+            "ENTER" in self.menu_text or "RETURN" in self.menu_text
         ):
             flags = wx.ACCEL_NORMAL
-            for key in self.menuText.split("\t")[1].split("+"):
+            for key in self.menu_text.split("\t")[1].split("+"):
                 if key == "Ctrl":
                     flags |= (
                         wx.ACCEL_CMD
@@ -111,13 +120,13 @@ class UICommand(object):
             return [(flags, wx.WXK_NUMPAD_ENTER, self.id)]
         return []
 
-    def addToMenu(self, menu, window, position=None, subMenu=None):
+    def add_to_menu(self, menu, window, position=None, subMenu=None):
         menuItem = MenuItem(
-            self, menu, self.id, self.menuText, self.helpText, self.kind,
+            self, menu, self.id, self.menu_text, self.help_text, self.kind,
             subMenu=subMenu
         )
-        self.menuItems.append(menuItem)
-        self.addBitmapToMenuItem(menuItem)
+        self.menu_items.append(menuItem)
+        self.add_bitmap_to_menu_item(menuItem)
         if position is None:
             menu.Append(menuItem)
         else:
@@ -125,7 +134,7 @@ class UICommand(object):
         self.bind(window, self.id)
         return self.id
 
-    def addBitmapToMenuItem(self, menuItem):
+    def add_bitmap_to_menu_item(self, menuItem):
         if (
             self.icon_id2
             and self.kind == wx.ITEM_CHECK
@@ -147,16 +156,16 @@ class UICommand(object):
 
             menuItem.SetBitmap(bitmap)
 
-    def removeFromMenu(self, menu, window):
-        for menuItem in self.menuItems:
+    def remove_from_menu(self, menu, window):
+        for menuItem in self.menu_items:
             if menuItem.GetMenu() == menu:
-                self.menuItems.remove(menuItem)
+                self.menu_items.remove(menuItem)
                 menuId = menuItem.GetId()
                 menu.Remove(menuId)
                 break
         self.unbind(window, menuId)
 
-    def appendToToolBar(self, toolbar):
+    def append_to_toolbar(self, toolbar):
         self.toolbar = toolbar
         bitmap = icon_catalog.get_bitmap(
             self.icon_id, toolbar.GetToolBitmapSize()[0]
@@ -167,30 +176,30 @@ class UICommand(object):
             bitmap,
             wx.NullBitmap,
             self.kind,
-            shortHelp=wx.MenuItem.GetLabelText(self.menuText),
-            longHelp=self.helpText,
+            shortHelp=wx.MenuItem.GetLabelText(self.menu_text),
+            longHelp=self.help_text,
         )
         self.bind(toolbar, self.id)
         return self.id
 
     def bind(self, window, itemId):
-        window.Bind(wx.EVT_MENU, self.onCommandActivate, id=itemId)
+        window.Bind(wx.EVT_MENU, self.on_command_activate, id=itemId)
 
     def unbind(self, window, itemId):
         window.Unbind(wx.EVT_MENU, id=itemId)
 
-    def onCommandActivate(self, event, *args, **kwargs):
+    def on_command_activate(self, event, *args, **kwargs):
         """For controls such as the ListCtrl and the TreeCtrl, activating
         the command is possible even when not enabled, so we need an
         explicit check here. Otherwise hitting return on an empty
         selection in the ListCtrl would bring up the TaskEditor."""
         if self.enabled(event):
-            return self.doCommand(event, *args, **kwargs)
+            return self.do_command(event, *args, **kwargs)
 
     def __call__(self, *args, **kwargs):
-        return self.onCommandActivate(*args, **kwargs)
+        return self.on_command_activate(*args, **kwargs)
 
-    def doCommand(self, event):
+    def do_command(self, event):
         raise NotImplementedError  # pragma: no cover
 
     def enabled(self, event):  # pylint: disable=W0613
@@ -208,33 +217,33 @@ class UICommand(object):
         Override in subclasses with ITEM_CHECK kind."""
         return None
 
-    def updateToolHelp(self):
+    def update_tool_help(self):
         if not self.toolbar:
             return  # Not attached to a toolbar or it's hidden
-        shortHelp = wx.MenuItem.GetLabelText(self.getMenuText())
+        shortHelp = wx.MenuItem.GetLabelText(self.get_menu_text())
         if shortHelp != self.toolbar.GetToolShortHelp(self.id):
             self.toolbar.SetToolShortHelp(self.id, shortHelp)
-        longHelp = self.getHelpText()
+        longHelp = self.get_help_text()
         if longHelp != self.toolbar.GetToolLongHelp(self.id):
             self.toolbar.SetToolLongHelp(self.id, longHelp)
 
-    def updateMenuText(self, menuText):
-        self.menuText = menuText
+    def update_menu_text(self, menu_text):
+        self.menu_text = menu_text
         # SetItemLabel works on all platforms in modern wxPython 4.x
         # The old Windows-specific code that deleted/inserted menu items
         # was causing access violations when popup menus were displayed.
-        for menuItem in self.menuItems:
+        for menuItem in self.menu_items:
             try:
-                menuItem.SetItemLabel(menuText)
+                menuItem.SetItemLabel(menu_text)
             except Exception:
                 pass  # Ignore errors from deleted menu items
 
-    def mainWindow(self):
+    def main_window(self):
         return wx.GetApp().TopWindow
 
-    def getMenuText(self):
-        return self.menuText
+    def get_menu_text(self):
+        return self.menu_text
 
-    def getHelpText(self):
-        return self.helpText
+    def get_help_text(self):
+        return self.help_text
 

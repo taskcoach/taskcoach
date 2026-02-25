@@ -228,54 +228,54 @@ class BaseCategoryViewer(
             uicommand.ToggleAutoColumnResizing(
                 viewer=self, settings=self.settings
             ),
-            None,
+            uicommand.Separator(),
             uicommand.ViewColumn(
-                menuText=_("&Manual ordering"),
-                helpText=_("Show/hide the manual ordering column"),
+                menu_text=_("&Manual ordering"),
+                help_text=_("Show/hide the manual ordering column"),
                 setting="ordering",
                 viewer=self,
             ),
             uicommand.ViewColumn(
-                menuText=_("&Description"),
-                helpText=_("Show/hide description column"),
+                menu_text=_("&Description"),
+                help_text=_("Show/hide description column"),
                 setting="description",
                 viewer=self,
             ),
             uicommand.ViewColumn(
-                menuText=_("&Attachments"),
-                helpText=_("Show/hide attachments column"),
+                menu_text=_("&Attachments"),
+                help_text=_("Show/hide attachments column"),
                 setting="attachments",
                 viewer=self,
             ),
         ]
         commands.append(
             uicommand.ViewColumn(
-                menuText=_("&Notes"),
-                helpText=_("Show/hide notes column"),
+                menu_text=_("&Notes"),
+                help_text=_("Show/hide notes column"),
                 setting="notes",
                 viewer=self,
             )
         )
         commands.append(
             uicommand.ViewColumn(
-                menuText=_("&Creation date"),
-                helpText=_("Show/hide creation date column"),
+                menu_text=_("&Creation date"),
+                help_text=_("Show/hide creation date column"),
                 setting="creationDateTime",
                 viewer=self,
             )
         )
         commands.append(
             uicommand.ViewColumn(
-                menuText=_("&Modification date"),
-                helpText=_("Show/hide last modification date column"),
+                menu_text=_("&Modification date"),
+                help_text=_("Show/hide last modification date column"),
                 setting="modificationDateTime",
                 viewer=self,
             )
         )
         commands.append(
             uicommand.ViewColumn(
-                menuText=_("&ID"),
-                helpText=_("Show/hide ID column"),
+                menu_text=_("&ID"),
+                help_text=_("Show/hide ID column"),
                 setting="id",
                 viewer=self,
             )
@@ -342,7 +342,7 @@ class BaseCategoryViewer(
 class CategoryViewer(BaseCategoryViewer):  # pylint: disable=W0223
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.filterUICommand.setChoice(
+        self.filterUICommand.set_choice(
             self.settings.getboolean("view", "categoryfiltermatchall")
         )
 

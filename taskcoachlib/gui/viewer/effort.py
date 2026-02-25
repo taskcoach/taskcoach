@@ -111,13 +111,13 @@ class EffortViewer(
         self.refresh()
 
     def __initModeToolBarUICommands(self):
-        self.aggregationUICommand.setChoice(self.aggregation)
+        self.aggregationUICommand.set_choice(self.aggregation)
         self.__initRoundingToolBarUICommands()
 
     def __initRoundingToolBarUICommands(self):
         aggregated = self.isShowingAggregatedEffort()
         rounding = self.__round_precision() if aggregated else 0
-        self.roundingUICommand.setChoice(rounding)
+        self.roundingUICommand.set_choice(rounding)
         self.roundingUICommand.enable(aggregated)
         self.alwaysRoundUpUICommand.setValue(self.__always_round_up())
         self.alwaysRoundUpUICommand.enable(aggregated and rounding != 0)
@@ -476,28 +476,28 @@ class EffortViewer(
             uicommand.ToggleAutoColumnResizing(
                 viewer=self, settings=self.settings
             ),
-            None,
+            uicommand.Separator(),
             uicommand.ViewColumn(
-                menuText=_("&Description"),
-                helpText=_("Show/hide description column"),
+                menu_text=_("&Description"),
+                help_text=_("Show/hide description column"),
                 setting="description",
                 viewer=self,
             ),
             uicommand.ViewColumn(
-                menuText=_("&Categories"),
-                helpText=_("Show/hide categories column"),
+                menu_text=_("&Categories"),
+                help_text=_("Show/hide categories column"),
                 setting="categories",
                 viewer=self,
             ),
             uicommand.ViewColumn(
-                menuText=_("&Time spent"),
-                helpText=_("Show/hide time spent column"),
+                menu_text=_("&Time spent"),
+                help_text=_("Show/hide time spent column"),
                 setting="timeSpent",
                 viewer=self,
             ),
             uicommand.ViewColumn(
-                menuText=_("&Revenue"),
-                helpText=_("Show/hide revenue column"),
+                menu_text=_("&Revenue"),
+                help_text=_("Show/hide revenue column"),
                 setting="revenue",
                 viewer=self,
             ),
@@ -506,8 +506,8 @@ class EffortViewer(
             columnUICommands.insert(
                 5,
                 uicommand.ViewColumn(
-                    menuText=_("&Total time spent"),
-                    helpText=_("Show/hide total time spent column"),
+                    menu_text=_("&Total time spent"),
+                    help_text=_("Show/hide total time spent column"),
                     setting="totalTimeSpent",
                     viewer=self,
                 ),
@@ -515,8 +515,8 @@ class EffortViewer(
             columnUICommands.insert(
                 7,
                 uicommand.ViewColumn(
-                    menuText=_("&Total revenue"),
-                    helpText=_("Show/hide total revenue column"),
+                    menu_text=_("&Total revenue"),
+                    help_text=_("Show/hide total revenue column"),
                     setting="totalRevenue",
                     viewer=self,
                 ),
@@ -524,8 +524,8 @@ class EffortViewer(
         if self.aggregation == "week":
             columnUICommands.append(
                 uicommand.ViewColumns(
-                    menuText=_("Effort per weekday"),
-                    helpText=_("Show/hide time spent per weekday columns"),
+                    menu_text=_("Effort per weekday"),
+                    help_text=_("Show/hide time spent per weekday columns"),
                     setting=[
                         "monday",
                         "tuesday",
@@ -540,8 +540,8 @@ class EffortViewer(
             )
         columnUICommands.append(
             uicommand.ViewColumn(
-                menuText=_("&ID"),
-                helpText=_("Show/hide ID column"),
+                menu_text=_("&ID"),
+                help_text=_("Show/hide ID column"),
                 setting="id",
                 viewer=self,
             )
@@ -609,12 +609,12 @@ class EffortViewer(
             ]
             + [
                 uicommand.RoundBy(
-                    menuText=menuText,
+                    menu_text=menu_text,
                     value=value,
                     viewer=self,
                     settings=self.settings,
                 )
-                for (menuText, value) in zip(
+                for (menu_text, value) in zip(
                     uicommand.RoundingPrecision.choiceLabels,
                     uicommand.RoundingPrecision.choiceData,
                 )
@@ -625,14 +625,14 @@ class EffortViewer(
         return True
 
     def getModeUICommands(self):
-        return [_("Effort aggregation"), None] + [
+        return [uicommand.DisabledLabel(_("Effort aggregation")), uicommand.Separator()] + [
             uicommand.EffortViewerAggregationOption(
-                menuText=menuText,
+                menu_text=menu_text,
                 value=value,
                 viewer=self,
                 settings=self.settings,
             )
-            for (menuText, value) in zip(
+            for (menu_text, value) in zip(
                 uicommand.EffortViewerAggregationChoice.choiceLabels,
                 uicommand.EffortViewerAggregationChoice.choiceData,
             )

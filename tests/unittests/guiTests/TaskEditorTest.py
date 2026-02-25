@@ -349,7 +349,7 @@ class EditTaskTestMixin(object):
             attachments=attachment.AttachmentList([att]),
             settings=self.settings,
         )
-        openAttachment.doCommand(None, showerror=onError)
+        openAttachment.do_command(None, showerror=onError)
         self.assertFalse(self.errorMessage)
 
     def testAddNote(self):
@@ -376,7 +376,7 @@ class EditTaskTestMixin(object):
         command = gui.uicommand.NoteNew(
             notes=viewer.presentation(), settings=self.settings, viewer=viewer
         )
-        dialog = command.doCommand(None, show=False)
+        dialog = command.do_command(None, show=False)
         dialog.ok()
         self.assertEqual(1, len(self.task.notes()))
 

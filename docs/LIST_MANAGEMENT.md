@@ -29,8 +29,10 @@
    infrastructure (`_hoverItem`, `PaintLevel`, `_refresh_hover_row`) could be
    reused or extended to also draw around selected items using a different
    color pair (e.g. `SYS_COLOUR_HIGHLIGHT` / `SYS_COLOUR_HIGHLIGHTTEXT`).
-2. **Eliminate UpdateUI polling entirely:** See [Vampire CPU Usage](#vampire-cpu-usage)
-   for Option A (all buttons always enabled) and Option B (event-driven updates).
+2. ~~**Eliminate UpdateUI polling entirely**~~: **Done.** All `EVT_UPDATE_UI`
+   bindings removed from UICommand. Replaced by signal-driven `_SelectionSync`
+   and `_ViewSettingsSync` classes. See [Vampire CPU Usage](#vampire-cpu-usage)
+   for background.
 
 ---
 
@@ -192,10 +194,10 @@ the tree mode toggle — see
 **Helper** (`_SelectionSync` in `uicommand.py`): A small wiring object
 that subscribes to the viewer's selection signal via `registerObserver`
 and calls `command.enabled()` → `toolbar.EnableTool()` on change. Each
-command creates one in its `appendToToolBar`.
+command creates one in its `append_to_toolbar`.
 
 **Commands**: Each selection-dependent command overrides `onUpdateUI` as
-a no-op, creates a `_SelectionSync` in `appendToToolBar`, and owns its
+a no-op, creates a `_SelectionSync` in `append_to_toolbar`, and owns its
 `enabled()` check. Signal handlers and menu open both call
 `command.enabled()` — one source of truth.
 
@@ -229,7 +231,7 @@ Toolbar Dropdown / Menu Radio
             ├── _ViewSettingsSync._on_view_settings_changed(event)
             │   └── toolbar.EnableTool(id, command.enabled(None))
             └── TaskViewerTreeOrListChoice._on_view_settings_changed(event)
-                └── setChoice(settings.getboolean(..., "treemode"))
+                └── set_choice(settings.getboolean(..., "treemode"))
 ```
 
 ### Design
@@ -245,7 +247,7 @@ the viewer's settings event via `registerObserver`. On change, calls
 `command.enabled()` → `toolbar.EnableTool()`.
 
 **Commands**: `ViewExpandAll` and `ViewCollapseAll` each create a
-`_ViewSettingsSync` in `appendToToolBar` and override `onUpdateUI`
+`_ViewSettingsSync` in `append_to_toolbar` and override `onUpdateUI`
 as a no-op (these buttons are fully signal-driven).
 
 **Dropdown**: `TaskViewerTreeOrListChoice` subscribes to the same signal
@@ -311,7 +313,7 @@ viewer.set_tree_mode(value) (task.py)
           → scrollToSelection()              ← ensure-visible
   → scrollToSelectionCentered()              ← center on selected (explicit)
   → patterns.Event(...).send()               ← Publisher event
-    → dropdown: setChoice(value)
+    → dropdown: set_choice(value)
     → buttons: EnableTool(id, value)
 ```
 Note: `Sorter.reset()` fires `pub.sendMessage(self.sortEventType())`, not add/remove
@@ -530,7 +532,7 @@ All to answer "should this button be greyed out?" — when nothing has changed.
 This is pure waste. The correct approach would be event-driven: update button
 states only when selection or data actually changes, not by continuous polling.
 
-### TODO: Eliminate UpdateUI polling entirely
+### ~~TODO~~: Eliminate UpdateUI polling entirely — DONE
 
 **Q1: Can we piggyback on the 1-second scheduler tick?** The global scheduler
 timer already fires every second (`scheduler.py:88`). Instead of wx polling
@@ -552,18 +554,18 @@ should either be excluded from UpdateUI entirely (don't bind `EVT_UPDATE_UI`
 for them) or their `onUpdateUI` should be a no-op that skips `event.Enable()`.
 
 **Q4: Why grey out buttons at all?** The simplest fix: keep all buttons always
-enabled and make `doCommand()` no-op when the action doesn't apply (no
+enabled and make `do_command()` no-op when the action doesn't apply (no
 selection, wrong item type, etc.). This eliminates the entire UpdateUI
 mechanism — no polling, no `enabled()` calls, no `EVT_UPDATE_UI` bindings,
 zero idle CPU. The greyed-out visual is a minor UX hint that doesn't justify
 continuous CPU polling. Clicking "Delete" with nothing selected simply does
 nothing. This is how many modern apps work (e.g. VS Code toolbar buttons
-don't grey out). The `doCommand()` methods already guard against invalid state
-in many cases via `onCommandActivate()` which checks `self.enabled(event)`.
+don't grey out). The `do_command()` methods already guard against invalid state
+in many cases via `on_command_activate()` which checks `self.enabled(event)`.
 
 **Recommended approach (Option A — simplest):** Make all buttons always enabled.
 Remove all `EVT_UPDATE_UI` bindings from `bind()` in `base_uicommand.py`. Keep
-the `enabled()` check inside `onCommandActivate()` so commands still no-op
+the `enabled()` check inside `on_command_activate()` so commands still no-op
 when they don't apply. Remove `SetUpdateInterval` since it's no longer needed.
 This is the simplest change with the largest impact — eliminates the entire
 UpdateUI polling loop in one stroke.

@@ -17,33 +17,32 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import wx
+
+def _coerce_ui_command(ui_command):
+    """Convert legacy sentinel values to UICommand subclass instances."""
+    if ui_command is None:
+        from .uicommand import Separator
+        return Separator()
+    elif isinstance(ui_command, int):
+        from .uicommand import Spacer
+        return Spacer(ui_command)
+    elif isinstance(ui_command, str):
+        from .uicommand import DisabledLabel
+        return DisabledLabel(ui_command)
+    elif isinstance(ui_command, tuple):
+        from .uicommand import SubMenu
+        title = ui_command[0]
+        commands = ui_command[1:]
+        return SubMenu(title, *commands)
+    return ui_command
 
 
 class UICommandContainerMixin(object):
     """Mixin with wx.Menu or wx.ToolBar (sub)class."""
 
-    def appendUICommands(self, *uiCommands):
-        for uiCommand in uiCommands:
-            if uiCommand is None:
-                self.AppendSeparator()
-            elif isinstance(uiCommand, int):  # Toolbars only
-                self.AppendStretchSpacer(uiCommand)
-            elif isinstance(uiCommand, str):
-                label = wx.MenuItem(self, text=uiCommand)
-                # must append item before disable to insure
-                # that internal object exists
-                self.Append(label)
-                label.Enable(False)
-            elif type(uiCommand) == type(()):  # This only works for menu's
-                menuTitle, menuUICommands = uiCommand[0], uiCommand[1:]
-                self.appendSubMenuWithUICommands(menuTitle, menuUICommands)
-            else:
-                self.appendUICommand(uiCommand)
+    def append_ui_commands(self, *ui_commands):
+        for ui_command in ui_commands:
+            self.append_ui_command(_coerce_ui_command(ui_command))
 
-    def appendSubMenuWithUICommands(self, menuTitle, uiCommands):
-        from taskcoachlib.gui import menu
-
-        subMenu = menu.Menu(self._window)
-        self.appendMenu(menuTitle, subMenu)
-        subMenu.appendUICommands(*uiCommands)  # pylint: disable=W0142
+    # Keep old name as alias during transition
+    appendUICommands = append_ui_commands

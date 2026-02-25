@@ -585,7 +585,7 @@ class CommonTestsMixin(object):
     def testDelete(self):
         self.viewer.widget.Select(0)
         self.viewer.updateSelection()
-        self.viewer.deleteUICommand.doCommand(None)
+        self.viewer.deleteUICommand.do_command(None)
         expectedNumberOfItems = self.expectedNumberOfItems - (
             1 if self.aggregation == "details" else 3
         )
@@ -698,7 +698,7 @@ class CommonTestsMixin(object):
             effortList=self.taskFile.efforts(),
             taskList=self.taskFile.tasks(),
         )
-        stopUICommand.doCommand()
+        stopUICommand.do_command()
         self.assertFalse(self.task.isBeingTracked())
 
 

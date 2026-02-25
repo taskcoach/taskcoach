@@ -142,30 +142,30 @@ class NotificationFrameBase(_NotifyBase):
 
     @ivar title: The notification title
     @type title: unicode
-    @ivar icon: An optional icon
-    @type icon: NoneType or wx.Bitmap
+    @ivar wx_bitmap: An optional icon
+    @type wx_bitmap: NoneType or wx.Bitmap
     """
 
-    def __init__(self, title, icon=None, parent=None):
+    def __init__(self, title, wx_bitmap=None, parent=None):
         self.title = title
-        self.icon = icon
-        style = self.Style() | (
+        self.wx_bitmap = wx_bitmap
+        style = self.style_flags() | (
             wx.STAY_ON_TOP if parent is None else wx.FRAME_FLOAT_ON_PARENT
         )
         super().__init__(
             parent, wx.ID_ANY, "", style=style
         )
-        self.Populate()
+        self.populate()
 
-    def Populate(self):
+    def populate(self):
         panel = wx.Panel(self, wx.ID_ANY)
 
         vsz = wx.BoxSizer(wx.VERTICAL)
         hsz = wx.BoxSizer(wx.HORIZONTAL)
 
-        if self.icon is not None:
+        if self.wx_bitmap is not None:
             hsz.Add(
-                wx.StaticBitmap(panel, wx.ID_ANY, self.icon),
+                wx.StaticBitmap(panel, wx.ID_ANY, self.wx_bitmap),
                 0,
                 wx.ALL | wx.ALIGN_CENTRE,
                 2,
@@ -182,14 +182,14 @@ class NotificationFrameBase(_NotifyBase):
         titleCtrl.SetFont(font)
         hsz.Add(titleCtrl, 1, wx.ALL | wx.ALIGN_CENTRE, 2)
 
-        btn = self.CloseButton(panel)
+        btn = self.close_button(panel)
         if btn is not None:
             hsz.Add(btn, 0, wx.ALL, 2)
-            btn.Bind(wx.EVT_BUTTON, self.DoClose)
+            btn.Bind(wx.EVT_BUTTON, self.do_close)
 
         vsz.Add(hsz, 0, wx.ALL | wx.EXPAND, 2)
 
-        self.AddInnerContent(vsz, panel)
+        self.add_inner_content(vsz, panel)
 
         panel.SetSizer(vsz)
 
@@ -202,7 +202,7 @@ class NotificationFrameBase(_NotifyBase):
         self.DestroyChildren()
         self.SetSizer(None)
 
-    def CloseButton(self, panel):
+    def close_button(self, panel):
         """
         Override this to return a button instance if you want to
         customize the close button. You may also return None but if
@@ -217,7 +217,7 @@ class NotificationFrameBase(_NotifyBase):
             icon_catalog.get_bitmap("nuvola_status_dialog-error", LIST_ICON_SIZE),
         )
 
-    def AddInnerContent(self, sizer, panel):
+    def add_inner_content(self, sizer, panel):
         """
         Use this to customize the content of the frame.
 
@@ -226,7 +226,7 @@ class NotificationFrameBase(_NotifyBase):
         @param panel: Your parent panel.
         """
 
-    def Style(self):
+    def style_flags(self):
         """Return the frame's style"""
 
         style = wx.FRAME_NO_TASKBAR | wx.TAB_TRAVERSAL
@@ -244,10 +244,10 @@ class NotificationFrameBase(_NotifyBase):
 
         return style
 
-    def DoClose(self, event=None):  # pylint: disable=W0613
+    def do_close(self, event=None):  # pylint: disable=W0613
         """Use this method instead of Close. Never use Close directly."""
 
-        NotificationCenter().HideFrame(self)  # pylint: disable=E1101
+        NotificationCenter().hide_frame(self)  # pylint: disable=E1101
 
 
 class NotificationFrame(NotificationFrameBase):
@@ -263,7 +263,7 @@ class NotificationFrame(NotificationFrameBase):
 
         super().__init__(*args, **kwargs)
 
-    def AddInnerContent(self, sizer, panel):
+    def add_inner_content(self, sizer, panel):
         sizer.Add(
             wx.StaticText(panel, wx.ID_ANY, self.message),
             1,
@@ -293,7 +293,7 @@ class _NotificationCenter(wx.EvtHandler):
         self.Bind(wx.EVT_TIMER, self.__OnTick, id=id_)
         self.__tmr.Start(1000)
 
-    def NotifyFrame(self, frm, timeout=None):
+    def notify_frame(self, frm, timeout=None):
         """
         Present a new notification frame.
 
@@ -338,21 +338,21 @@ class _NotificationCenter(wx.EvtHandler):
         waiting = self.waitingFrames
         self.waitingFrames = []
         for frm, tmo in waiting:
-            self.NotifyFrame(frm, timeout=tmo)
+            self.notify_frame(frm, timeout=tmo)
 
-    def Notify(self, title, msg, icon=None, timeout=None):
+    def notify(self, title, msg, wx_bitmap=None, timeout=None):
         """
         Present a new simple notification frame.
 
         @param title: Notification title
         @param msg: Notification message
-        @param timeout: See L{NotifyFrame}.
+        @param timeout: See L{notify_frame}.
         """
 
-        frm = NotificationFrame(msg, title, icon=icon)
-        self.NotifyFrame(frm, timeout=timeout)
+        frm = NotificationFrame(msg, title, wx_bitmap=wx_bitmap)
+        self.notify_frame(frm, timeout=timeout)
 
-    def HideFrame(self, frm):
+    def hide_frame(self, frm):
         """
         Hide a notification frame.
         """
@@ -364,7 +364,7 @@ class _NotificationCenter(wx.EvtHandler):
 
         self.CheckWaiting()
 
-    def HideAll(self):
+    def hide_all(self):
         """
         Hide all notification frames. Call this when you want to close
         your main frame, or else the wx loop won't exit.
@@ -380,7 +380,7 @@ class _NotificationCenter(wx.EvtHandler):
         """Stop the notification timer to prevent crashes during app shutdown."""
         if self.__tmr and self.__tmr.IsRunning():
             self.__tmr.Stop()
-        self.HideAll()
+        self.hide_all()
 
     def GetDisplayRect(self):
         """
@@ -449,8 +449,8 @@ class UniversalNotifier(AbstractNotifier):
         return True
 
     def notify(self, title, summary, bitmap, **kwargs):
-        NotificationCenter().Notify(
-            title, summary, icon=bitmap
+        NotificationCenter().notify(
+            title, summary, wx_bitmap=bitmap
         )  # pylint: disable=E1101
 
 
@@ -461,7 +461,7 @@ if __name__ == "__main__":
     from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 
     class TestNotificationFrame(NotificationFrameBase):
-        def AddInnerContent(self, sizer, panel):
+        def add_inner_content(self, sizer, panel):
             choice = wx.Choice(panel, wx.ID_ANY)
             choice.Append("One")
             choice.Append("Two")
@@ -473,39 +473,39 @@ if __name__ == "__main__":
             hsz.Add(wx.Button(panel, wx.ID_ANY, "Cancel"), 1, wx.ALL, 2)
             sizer.Add(hsz, 0, wx.EXPAND | wx.ALL, 5)
 
-        def CloseButton(self, panel):
+        def close_button(self, panel):
             return None
 
     class TestFrame(wx.Frame):
         def __init__(self):
             super().__init__(None, wx.ID_ANY, "Test frame")
             # pylint: disable=E1101
-            NotificationCenter().Notify(
+            NotificationCenter().notify(
                 "Sample title", "Sample content", timeout=3
             )
-            NotificationCenter().Notify(
+            NotificationCenter().notify(
                 "Other sample",
                 "Multi-line sample content\nfor example\nDont try this at home",
                 timeout=3,
-                icon=icon_catalog.get_bitmap(
+                wx_bitmap=icon_catalog.get_bitmap(
                     "nuvola_apps_korganizer", LIST_ICON_SIZE
                 ),
             )
-            NotificationCenter().Notify("Before last sample", "Spam!")
-            NotificationCenter().NotifyFrame(
+            NotificationCenter().notify("Before last sample", "Spam!")
+            NotificationCenter().notify_frame(
                 TestNotificationFrame(
                     "Test custom",
-                    icon=icon_catalog.get_bitmap(
+                    wx_bitmap=icon_catalog.get_bitmap(
                         "nuvola_apps_korganizer", LIST_ICON_SIZE
                     ),
                 )
             )
-            NotificationCenter().Notify("Last sample", "Foobar!")
+            NotificationCenter().notify("Last sample", "Foobar!")
 
             self.Bind(wx.EVT_CLOSE, self.OnClose)
 
         def OnClose(self, evt):
-            NotificationCenter().HideAll()  # pylint: disable=E1101
+            NotificationCenter().hide_all()  # pylint: disable=E1101
             evt.Skip()
 
     class App(wx.App):

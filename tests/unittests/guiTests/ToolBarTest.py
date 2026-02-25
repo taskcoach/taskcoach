@@ -20,6 +20,7 @@ import wx
 import test
 from unittests import dummy
 from taskcoachlib import gui, config
+from taskcoachlib.gui.uicommand import Separator, Spacer
 
 
 class ToolBar(gui.toolbar.ToolBar):
@@ -32,8 +33,8 @@ class ToolBarTest(test.wxTestCase):
         gui.init()
         settings = config.Settings(load=False)
         toolbar = ToolBar(self.frame, settings)
-        uiCommand = dummy.DummyUICommand(menuText="undo", bitmap="undo")
-        toolId = toolbar.appendUICommand(uiCommand)
+        uiCommand = dummy.DummyUICommand(menu_text="undo", bitmap="undo")
+        toolId = toolbar.append_ui_command(uiCommand)
         self.assertNotEqual(wx.NOT_FOUND, toolbar.GetToolPos(toolId))
 
 
@@ -64,7 +65,7 @@ class ToolBarSizeTest(test.wxTestCase):
 class ToolBarPerspectiveTest(test.wxTestCase):
     def setUp(self):
         class NoBitmapUICommand(dummy.DummyUICommand):
-            def appendToToolBar(self, toolbar):
+            def append_to_toolbar(self, toolbar):
                 pass
 
         class TestFrame(test.TestCaseFrame):
@@ -75,7 +76,7 @@ class ToolBarPerspectiveTest(test.wxTestCase):
                 class Test2(NoBitmapUICommand):
                     pass
 
-                return [Test1(), None, Test2(), 1]
+                return [Test1(), Separator(), Test2(), Spacer()]
 
         self.tbFrame = TestFrame()
         self.settings = config.Settings(load=False)

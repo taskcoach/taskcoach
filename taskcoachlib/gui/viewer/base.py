@@ -42,7 +42,6 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
     defaultTitle = "Subclass responsibility"
     defaultBitmap = "Subclass responsibility"
     coreObjectType = None
-    viewerIconIds = []  # Subclasses extend; all catalog icons prepended at runtime
 
     def __init__(self, parent, taskFile, settings, *args, **kwargs):
         patterns.Observer.__init__(self)
@@ -607,7 +606,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         modeToolBarUICommands = self.createModeToolBarUICommands()
 
         def separator(uiCommands, *otherUICommands):
-            return (None,) if (uiCommands and any(otherUICommands)) else ()
+            return (uicommand.Separator(),) if (uiCommands and any(otherUICommands)) else ()
 
         clipboardSeparator = separator(
             clipboardToolBarUICommands,

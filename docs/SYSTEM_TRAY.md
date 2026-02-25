@@ -300,12 +300,12 @@ Key log messages:
 | `onEverySecond` | Blink setting check, toggle icon, set icon |
 | `toolTipMessages` | Status message templates |
 | `__setTooltipText` | Build tooltip from tracked tasks / status counts |
-| `__set_default_icon` | Reset icon_id to default |
-| `__toggle_tracking_icon` | Swap tick/tack icon_id |
+| `__set_default_icon` | Reset icon_id / tray_icon_id to default |
+| `__toggle_tracking_icon` | Swap tick/tack icon_id / tray_icon_id |
 | `__startOrStopTicking` | Dispatch to start/stop |
 | `__startTicking` / `__stopTicking` | Clock + icon control |
 | `startClock` / `stopClock` / `_onTimerSecond` | Timer pub/sub |
-| Getters | `tooltip()`, `icon_id()`, `default_icon_id()` |
+| Getters | `tooltip()`, `icon_id()` / `tray_icon_id()`, `default_icon_id()` / `default_tray_icon_id()` |
 
 ### Platform-specific (different)
 

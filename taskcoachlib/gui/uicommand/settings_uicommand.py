@@ -43,16 +43,16 @@ class BooleanSettingsCommand(SettingsCommand):  # pylint: disable=W0223
         self.value = value
         super().__init__(*args, **kwargs)
 
-    def addToMenu(self, menu, window, position=None):
-        menuId = super().addToMenu(menu, window, position)
+    def add_to_menu(self, menu, window, position=None):
+        menuId = super().add_to_menu(menu, window, position)
         menuItem = menu.FindItemById(menuId)
-        menuItem.Check(self.isSettingChecked())
+        menuItem.Check(self.is_setting_checked())
         return menuId
 
     def checked(self):
-        return self.isSettingChecked()
+        return self.is_setting_checked()
 
-    def isSettingChecked(self):
+    def is_setting_checked(self):
         raise NotImplementedError  # pragma: no cover
 
 
@@ -61,7 +61,7 @@ class UICheckCommand(BooleanSettingsCommand):
         kwargs["icon_id"] = kwargs.get("icon_id", self.getBitmap())
         super().__init__(kind=wx.ITEM_CHECK, *args, **kwargs)
 
-    def isSettingChecked(self):
+    def is_setting_checked(self):
         return self.settings.getboolean(self.section, self.setting)
 
     def _isMenuItemChecked(self, event):
@@ -78,7 +78,7 @@ class UICheckCommand(BooleanSettingsCommand):
         except AttributeError:
             return event.IsChecked()
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.settings.setboolean(
             self.section, self.setting, self._isMenuItemChecked(event)
         )
@@ -95,8 +95,8 @@ class UIRadioCommand(BooleanSettingsCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(kind=wx.ITEM_RADIO, icon_id="", *args, **kwargs)
 
-    def isSettingChecked(self):
+    def is_setting_checked(self):
         return self.settings.get(self.section, self.setting) == str(self.value)
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.settings.setvalue(self.section, self.setting, self.value)

@@ -23,10 +23,8 @@ Duration calculations for Edit Task Dates and Edit Effort windows.
 
 ## TODO
 
-5. Add cross-references to ATTRIBUTE_PATTERN.md:
-   - Section 0.2 change-only rule is the UI-level equivalent of
-     Attribute.set()'s equality check (Layer 3 in ATTRIBUTE_PATTERN.md).
-   - No-mode safety relates to ATTRIBUTE_PATTERN.md §Value Normalization.
+5. ~~Add cross-references to ATTRIBUTE_PATTERN.md~~ — **Done.** Cross-reference
+   added to section 0.2. No-mode safety cross-ref deferred to TODO items 6/7.
 6. Add section 0.5: No-mode safety. If mode is None or invalid, sync
    functions must return immediately without entering any mode branch.
    No silent fallback to a default mode.
@@ -59,9 +57,9 @@ Duration calculations for Edit Task Dates and Edit Effort windows.
    thing bidirectionally with explicit UI in the editor. These two
    mechanisms should be unified or the legacy setting should be removed
    in favor of duration mode.
-11. Effort Logic Flow: Renumber sections 1, 2, 3 to match the task
+11. ~~Effort Logic Flow: Renumber sections 1, 2, 3 to match the task
     section pattern — consolidate x.1/x.2 mode-change rules into
-    a single x.1 note, renumber remaining items.
+    a single x.1 note, renumber remaining items.~~ — **Done.**
 
 ## Notes
 
@@ -91,6 +89,9 @@ for the next user change.
    0.2 Change-only rule. Only set or change a value if required (i.e., the
        new value differs from the current value). This is also looping
        protection.
+       See ATTRIBUTE_PATTERN.md Layer 3 (Change-Only Rule) — this is the
+       UI-level equivalent of Attribute.set()'s equality check applied to
+       widget-to-widget synchronization.
    0.3 Recursive safety.
        0.3.1 Any recursive call assumes starting at depth 0 if no depth
              received and passes depth+1 to the next call.
@@ -307,66 +308,63 @@ Start: Standard mode, Duration 0, Stop-Date disabled
 
 1. If Mode Standard
    1.1 Note: Mode changes away never come back here
-   1.2 See 1.1 and TODO item 11
-   1.3 Set Start-Date editable
-   1.4 Set Duration editable
-   1.5 Set Presets dropdown enabled [Ref1]
-   1.6 If Duration Unset-Action, Then disable Stop-Date
-   1.7 If Stop-Date Unset-Action, Then set Duration = 0
-   1.8 If Stop-Date Set-Action, Then
-       1.8.1 If Duration = 0, Then set Implicit mode, Loop
-       1.8.2 If Duration > 0, Then adj Duration
-   1.9 If Start-Date changed, Then
+   1.2 Set Start-Date editable
+   1.3 Set Duration editable
+   1.4 Set Presets dropdown enabled [Ref1]
+   1.5 If Duration Unset-Action, Then disable Stop-Date
+   1.6 If Stop-Date Unset-Action, Then set Duration = 0
+   1.7 If Stop-Date Set-Action, Then
+       1.7.1 If Duration = 0, Then set Implicit mode, Loop
+       1.7.2 If Duration > 0, Then adj Duration
+   1.8 If Start-Date changed, Then
+       1.8.1 If Duration > 0, Then
+           1.8.1.1 Set Sync-Mode [0.4]
+           1.8.1.2 Adj Stop-Date
+           1.8.1.3 Adj Duration *Impossible* TODO remove step? remove sync-mode?
+           1.8.1.4 Unset Sync-Mode
+       1.8.2 If Duration = 0, Then do nothing
+   1.9 If Duration changed and exists, Then
        1.9.1 If Duration > 0, Then
-           1.9.1.1 Set Sync-Mode [0.4]
+           1.9.1.1 Enable Stop-Date
            1.9.1.2 Adj Stop-Date
-           1.9.1.3 Adj Duration *Impossible* TODO remove step? remove sync-mode?
-           1.9.1.4 Unset Sync-Mode
-       1.9.2 If Duration = 0, Then do nothing
-   1.10 If Duration changed and exists, Then
-       1.10.1 If Duration > 0, Then
-           1.10.1.1 Enable Stop-Date
-           1.10.1.2 Adj Stop-Date
-       1.10.2 If Duration = 0, Then disable Stop-Date
-   1.11 If Stop-Date changed and exists, Then adj Duration
-   1.12 If Duration = 0, Then Autoheal, Thus
-       1.12.1 Not possible: Disable Stop-Date Conflicts [Ref3]
-   1.13 If Duration > 0, Then Autoheal, Thus
-       1.13.1 Enable Stop-Date
-       1.13.2 Adj Stop-Date
-   1.14 If Duration < 0, Then Negative Durations permitted
+       1.9.2 If Duration = 0, Then disable Stop-Date
+   1.10 If Stop-Date changed and exists, Then adj Duration
+   1.11 If Duration = 0, Then Autoheal, Thus
+       1.11.1 Not possible: Disable Stop-Date Conflicts [Ref3]
+   1.12 If Duration > 0, Then Autoheal, Thus
+       1.12.1 Enable Stop-Date
+       1.12.2 Adj Stop-Date
+   1.13 If Duration < 0, Then Negative Durations permitted
 
 2. If Mode Retroactive
    2.1 Note: Mode changes away never come back here
-   2.2 See 2.1 and TODO item 11
-   2.3 Set Start-Date read-only
-   2.4 Set Duration editable
-   2.5 Set Presets dropdown enabled [Ref1]
-   2.6 If Duration Unset-Action, Then disable Stop-Date
-   2.7 If Stop-Date Unset-Action, Then set Duration = 0
-   2.8 If Stop-Date changed and exists, Then adj Start-Date
-   2.9 If Duration changed and exists, Then
-       2.9.1 If Duration > 0, Then
-           2.9.1.1 Enable Stop-Date
-           2.9.1.2 Adj Start-Date
-       2.9.2 If Duration = 0, Then disable Stop-Date
-   2.10 If Duration = 0, Then Autoheal, Thus
-       2.10.1 Not possible: Disable Stop-Date Conflicts [Ref2]
-   2.11 If Duration > 0, Then Autoheal, Thus
-       2.11.1 Enable Stop-Date
-       2.11.2 Adj Start-Date
-   2.12 If Duration < 0, Then Negative Durations permitted
+   2.2 Set Start-Date read-only
+   2.3 Set Duration editable
+   2.4 Set Presets dropdown enabled [Ref1]
+   2.5 If Duration Unset-Action, Then disable Stop-Date
+   2.6 If Stop-Date Unset-Action, Then set Duration = 0
+   2.7 If Stop-Date changed and exists, Then adj Start-Date
+   2.8 If Duration changed and exists, Then
+       2.8.1 If Duration > 0, Then
+           2.8.1.1 Enable Stop-Date
+           2.8.1.2 Adj Start-Date
+       2.8.2 If Duration = 0, Then disable Stop-Date
+   2.9 If Duration = 0, Then Autoheal, Thus
+       2.9.1 Not possible: Disable Stop-Date Conflicts [Ref2]
+   2.10 If Duration > 0, Then Autoheal, Thus
+       2.10.1 Enable Stop-Date
+       2.10.2 Adj Start-Date
+   2.11 If Duration < 0, Then Negative Durations permitted
 
 3. If Mode Implicit
    3.1 Note: Mode changes away never come back here
-   3.2 See 3.1 and TODO item 11
-   3.3 Set Presets dropdown disabled [Ref1]
-   3.4 Set Start-Date editable
-   3.5 If Stop-Date does not exist, Disable Duration
-   3.6 If Stop-Date exists, Then
-       3.6.1 Enable Duration (Read-Only)
-       3.6.2 Adj Duration
-       3.6.3 Negative Durations permitted
+   3.2 Set Presets dropdown disabled [Ref1]
+   3.3 Set Start-Date editable
+   3.4 If Stop-Date does not exist, Disable Duration
+   3.5 If Stop-Date exists, Then
+       3.5.1 Enable Duration (Read-Only)
+       3.5.2 Adj Duration
+       3.5.3 Negative Durations permitted
 
 Glossary:
    adj          = recalculate/adjust
@@ -378,11 +376,11 @@ Glossary:
 
 References:
    [Ref1] Covered by "UI Field States" section
-   [Ref2] 2.10.1 Not possible to Disable Stop-Date because it can conflict
-          with 2.9.1.1 and 2.11.1 if the Stop-Date is the same as the
+   [Ref2] 2.9.1 Not possible to Disable Stop-Date because it can conflict
+          with 2.8.1.1 and 2.10.1 if the Stop-Date is the same as the
           Start-Date and we won't modify the values, leave as-is
-   [Ref3] 1.12.1 Not possible to Disable Stop-Date because it can conflict
-          with 1.10.1.1 and 1.13.1 if the Stop-Date is the same as the
+   [Ref3] 1.11.1 Not possible to Disable Stop-Date because it can conflict
+          with 1.9.1.1 and 1.12.1 if the Stop-Date is the same as the
           Start-Date and we won't modify the values, leave as-is
 ```
 

@@ -379,26 +379,26 @@ class SortableViewerMixin(object):
             uicommand.ViewerSortByCommand(
                 viewer=self,
                 value="subject",
-                menuText=_("Sub&ject"),
-                helpText=self.sortBySubjectHelpText,
+                menu_text=_("Sub&ject"),
+                help_text=self.sortBySubjectHelpText,
             ),
             uicommand.ViewerSortByCommand(
                 viewer=self,
                 value="description",
-                menuText=_("&Description"),
-                helpText=self.sortByDescriptionHelpText,
+                menu_text=_("&Description"),
+                help_text=self.sortByDescriptionHelpText,
             ),
             uicommand.ViewerSortByCommand(
                 viewer=self,
                 value="creationDateTime",
-                menuText=_("&Creation date"),
-                helpText=self.sortByCreationDateTimeHelpText,
+                menu_text=_("&Creation date"),
+                help_text=self.sortByCreationDateTimeHelpText,
             ),
             uicommand.ViewerSortByCommand(
                 viewer=self,
                 value="modificationDateTime",
-                menuText=_("&Modification date"),
-                helpText=self.sortByModificationDateTimeHelpText,
+                menu_text=_("&Modification date"),
+                help_text=self.sortByModificationDateTimeHelpText,
             ),
         ]
 
@@ -421,8 +421,6 @@ class SortableViewerForEffortMixin(SortableViewerMixin):
 
 class ManualOrderingMixin(object):
     def __init__(self, *args, **kwargs):
-        if "taskcoach_actions_sort" not in self.viewerIconIds:
-            self.viewerIconIds = self.viewerIconIds + ["taskcoach_actions_sort"]
         super().__init__(*args, **kwargs)
 
     def createSortByUICommands(self):
@@ -430,8 +428,8 @@ class ManualOrderingMixin(object):
             uicommand.ViewerSortByCommand(
                 viewer=self,
                 value="ordering",
-                menuText=_("&Manual ordering"),
-                helpText=self.sortByOrderingHelpText,
+                menu_text=_("&Manual ordering"),
+                help_text=self.sortByOrderingHelpText,
             )
         ] + super().createSortByUICommands()
 
@@ -463,8 +461,8 @@ class SortableViewerForCategorizablesMixin(SortableViewerMixin):
             uicommand.ViewerSortByCommand(
                 viewer=self,
                 value="categories",
-                menuText=_("&Category"),
-                helpText=self.sortByCategoryHelpText,
+                menu_text=_("&Category"),
+                help_text=self.sortByCategoryHelpText,
             )
         )
         return commands
@@ -562,7 +560,7 @@ class SortableViewerForTasksMixin(
             "fixedFee",
             "revenue",
         ]
-        for menuText, helpText, value in [
+        for menu_text, help_text, value in [
             (
                 _("&Planned start date"),
                 _("Sort tasks by planned start date"),
@@ -611,8 +609,8 @@ class SortableViewerForTasksMixin(
                     uicommand.ViewerSortByCommand(
                         viewer=self,
                         value=value,
-                        menuText=menuText,
-                        helpText=helpText,
+                        menu_text=menu_text,
+                        help_text=help_text,
                     )
                 )
         return commands

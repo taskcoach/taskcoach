@@ -19,7 +19,7 @@
 - [Icon Set Comparison](#icon-set-comparison)
 - [Notes on Icon Sets](#notes-on-icon-sets)
 - [Adding New Icons](#adding-new-icons)
-- [Migration from Legacy Icons](#migration-from-legacy-icons)
+- [Completed Icon Migrations](#migration-from-legacy-icons)
 - [Recently Added Icons](#recently-added-icons)
 - [Icon Grid Browser and Duplicates (Dev Tools)](#icon-grid-browser-and-duplicates-dev-tools)
 - [Icon Hints Worker Plan](#icon-hints-plan)
@@ -38,11 +38,9 @@
 **Note:** Currently only pre-colored icons are used. Breeze icons have colors (#232629 dark gray + accent colors like #da4453 red, #27ae60 green) - they are NOT monochrome. The `-symbolic` variants ARE monochrome. Only the `-symbolic` versions should be excluded until recoloring support is implemented.
 
 
-### 2. System Tray Context Menu Icons — Review
-- [ ] Right-click tray menu may not render icons on modern desktops (GTK3/Wayland/libappindicator)
-- [ ] `MainWindowRestore` declares `bitmap="restore"` but icon may never be visible
-- [ ] Audit all tray menu entries for dead icon references
-- [ ] Decide: remove bitmap= from tray-only commands, or fix tray icon rendering
+### 2. System Tray Context Menu Icons — Review — DONE
+Keeping icon_id on tray menu commands for Windows/macOS (wx.Menu renders them)
+and possible future revert to classic X11 tray right-click menu.
 
 ### 3. Refactor Overlay Icon Hack — DONE
 - [x] Replaced `+` overlay hack with SyntheticIcon system
@@ -53,13 +51,10 @@
 - [x] No pubsub, no `+` parsing, no `_CreateOverlayBitmap`
 - See [ICON_DISPLAY.md](ICON_DISPLAY.md) § Synthetic Icons for architecture details
 
-### 4. IMPORTANT: Stale Content Review
-A lot of information in this document is stale because of the current transition
-to icon-distillery sourced icons and the refactor to follow XDG specifications.
-Sections referencing `ICON_MAPPING.json` or legacy-only workflows may no
-longer reflect the current architecture. (`artprovider.py` has been removed;
-the legacy icon system has been fully removed — all icons now live in proper
-XDG theme directories with `icons_parsed.py` metadata.)
+### 4. Stale Content Review — DONE
+Removed legacy artifacts: deleted `ICON_MAPPING.json`, removed stale references
+to legacy icon system, `artprovider.py`, flat-file layouts. Updated directory
+diagrams and prose to reflect current XDG-only architecture.
 
 ## IMPORTANT: Complete Import Cycle
 
@@ -73,13 +68,6 @@ XDG theme directories with `icons_parsed.py` metadata.)
 3. Copy/merge icon entry into app's `{theme}/icons.json`
 4. Copy required PNG files into `{theme}/...` (same paths as source)
 5. Run `python tools/generate_icons_parsed_py.py <theme>` (review/correct errors)
-
-### Legacy Icons
-
-**The legacy icon system has been fully removed.** All icons now live in proper
-XDG theme directories. There is no longer a flat `icons/16x16/` directory or
-`_legacy_icon_defs()` function. All new icons must use the Icon-Distillery
-import procedure above.
 
 **View the actual icon at ALL available sizes** before writing hints - describe what you SEE, not just the filename. Small sizes (16x16) can look very different from large sizes (48x48, 128x128).
 
@@ -141,38 +129,19 @@ operations to ensure consistent key generation.
 | `papirus` | Papirus icons |
 | `breeze` | Breeze icons from KDE |
 | `nuvola` | Nuvola icons |
-| `taskcoach` | New custom TaskCoach icons following XDG structure |
-| `legacy` | Old internal icons using flat format (exception, see below) |
+| `taskcoach` | Custom TaskCoach icons following XDG structure |
+| `tray/hicolor` | System tray icons for AppIndicator (Wayland). See [SYSTEM_TRAY.md](SYSTEM_TRAY.md) |
 
 Note: The codebase previously used "source" and "pack" inconsistently. All new
-code should use "theme" for consistency. ICON_MAPPING.json still uses "source"
-for backward compatibility but will eventually migrate to "theme".
+code uses "theme" for consistency.
 
-### Themes Without Contexts vs Legacy Exception
+### Themes Without Contexts
 
 **Themes without contexts** still follow XDG icon theme structure:
 - Icons without a context match `index.theme` entries that have no `Context` field
 - These are indexed as `(size, None)` in the XDG lookup cache
 - Key format: `{theme}_{stem}` (e.g., `taskcoach_custom`)
 - No path pattern fallback — all resolution goes through `index.theme`
-
-**Legacy theme is a special exception:**
-- Mixed formats coexist (historical reasons):
-  1. Flat files with size in filename: `add16x16.png`, `edit22x22.png`
-  2. Some icons in sized directories: `16x16/something.png`
-- Key format: `legacy_{stem}` (e.g., `legacy_add`)
-
-**Handling the legacy exception:**
-- Legacy icons require hardcoded handling for both formats
-- Flat files: parse size from filename, reconstruct clean filename
-  - Example: `add16x16.png` → size=16, file=`add.png`
-- Sized directories: parse normally like XDG themes
-  - Example: `16x16/icon.png` → size=16, file=`icon.png`
-- This exception handling will remain until all legacy icons are migrated to taskcoach theme
-
-**Do not confuse:**
-- A theme without contexts (taskcoach) → normal XDG structure, just no context
-- The legacy theme → flat files with size in filename, requires special parsing
 
 ### Key Generation Strategy
 
@@ -220,7 +189,7 @@ External Theme Pack          Prep Tool                    App Internal Library
 
 **After import:**
 1. Icon file copied to app library
-2. Entry added to app JSON with `name`, `hints`, `context`, `file`, `source_sizes`
+2. Entry added to app JSON with `name`, `hints`, `context`, `file`, `sizes`
 3. Prep tool JSON updated: `hints` replaced with `inherits: "icon_id"`
 4. Translation .py file regenerated
 
@@ -239,45 +208,10 @@ External Theme Pack          Prep Tool                    App Internal Library
 
 ## Directory Structure
 
-### Current (Legacy) Layout
-
-Icons stored flat with size suffix:
+Per-theme subdirectories with JSON files, contexts, and index.theme:
 ```
 taskcoachlib/gui/icons/
-├── person_icon16x16.png
-├── person_icon22x22.png
-├── person_icon32x32.png
-└── ...
-```
-
-### New Layout (Hybrid Compatible)
-
-Size-based directories with provenance tracking:
-```
-taskcoachlib/gui/icons/
-├── 16x16/                    # All icons need 16x16
-│   ├── homebank.png          # New icons: no _icon suffix
-│   ├── bitcoin.png
-│   └── ...
-├── 22x22/                    # Toolbar icons
-│   └── ...
-├── 32x32/                    # Toolbar icons
-│   └── ...
-├── ICON_THEME_CATALOG.json   # Theme metadata (active, license, URL)
-├── ICON_MAPPING.json         # Icon provenance (legacy, keep during transition)
-│
-├── # Legacy icons (flat, coexist during migration)
-├── person_icon16x16.png      # Legacy: keep _icon suffix
-└── person_icon22x22.png
-```
-
-### Target Layout (Per-Theme Structure)
-
-The target structure uses per-theme subdirectories with JSON files, contexts, and index.theme:
-```
-taskcoachlib/gui/icons/
-├── ICON_THEME_CATALOG.json   # Theme metadata (active, license, URL)
-├── ICON_MAPPING.json          # Icon provenance (legacy, keep during transition)
+├── ICON_THEME_CATALOG.json    # Theme metadata (active, license, URL)
 │
 ├── nuvola/
 │   ├── icons.json              # Nuvola icons: hints, sizes, context (generator input)
@@ -300,19 +234,8 @@ taskcoachlib/gui/icons/
 │
 ├── # Per-theme icon files in subdirs:
 ├── nuvola/16x16/actions/edit-copy.png
-├── oxygen/16x16/emotes/face-angel.png
-│
-├── # Legacy (keep until fully migrated)
-├── ICON_MAPPING.json
-├── person_icon16x16.png
-└── person_icon22x22.png
+└── oxygen/16x16/emotes/face-angel.png
 ```
-
-**Migration path:**
-1. New icons go into theme-specific structure with per-theme JSON
-2. Legacy icons remain in flat structure with ICON_MAPPING.json
-3. Both coexist until all legacy icons are migrated
-4. Remove ICON_MAPPING.json and flat files when migration complete
 
 ### ICON_THEME_CATALOG.json
 
@@ -540,7 +463,7 @@ python tools/generate_icons_parsed_py.py
 python tools/generate_icons_parsed_py.py nuvola
 python tools/generate_icons_parsed_py.py oxygen
 
-# Rebuild sizes from disk and save back to icons.json (also removes source_sizes)
+# Rebuild sizes from disk and save back to icons.json
 python tools/generate_icons_parsed_py.py --update-sizes
 python tools/generate_icons_parsed_py.py --update-sizes nuvola
 ```
@@ -552,48 +475,6 @@ theme data, then generates `taskcoachlib/gui/icons/{theme}/icons_parsed.py`.
 JSON entry matches the sizes actually found on disk. Mismatches are reported as errors
 (size on disk but not in JSON, or in JSON but not on disk). Use `--update-sizes` to
 rebuild `sizes` from disk after importing new icons.
-
-### ICON_MAPPING.json
-
-Maps TaskCoach icon names to their source (provenance tracking):
-```json
-{
-  "_naming": "NEW icons use clean names (no _icon suffix). LEGACY icons retain _icon suffix.",
-
-  "_led_blue_icon_MIGRATED": "→ nuvola_actions_ledblue",
-
-  "homebank": {
-    "source": "papirus",
-    "context": "apps",
-    "file": "homebank.svg",
-    "duplicates": [
-      {"source": "papirus", "context": "apps", "file": "fr.free.Homebank.svg"}
-    ]
-  },
-  "bitcoin": {"source": "papirus", "context": "apps", "file": "bitcoin.svg", "source_sizes": "16,22,24,32,48,64"},
-  "wallet_closed": {"source": "oxygen", "context": "status", "file": "wallet-closed.png", "source_sizes": "16,22,32,48"}
-}
-```
-
-**Naming Convention:**
-- **New icons** (no suffix): Use original name or descriptive name (e.g., `homebank`, `bitcoin`, `wallet_closed`)
-
-**Fields:**
-- `source` - Theme name (must exist in ICON_THEME_CATALOG.json)
-- `context` - Subfolder in source (actions/apps/status)
-- `file` - Original filename in source repo
-- `source_sizes` - Sizes available in the SOURCE library (for provenance tracking, ICON_MAPPING.json only)
-- `duplicates` - Equivalent files in source library (same icon, different names)
-
-**Notes:**
-- `source_sizes` is only in ICON_MAPPING.json (legacy provenance). Per-theme `icons.json` files use `sizes` instead (actual files on disk).
-- Different sources can have same original filename (e.g., both have `bookmark.svg`)
-
-**Duplicates:**
-- The `duplicates` field lists equivalent source files that are NOT imported
-- Purpose: Prevent accidentally importing the same icon under a different name later
-- When checking if an icon exists, check BOTH the `file` field AND all `duplicates` entries
-- Example: `homebank.svg` is imported; `fr.free.Homebank.svg` is documented as duplicate but not imported
 
 ## Icon Format
 
@@ -609,7 +490,7 @@ wxPython has no native SVG support. All icons are pre-rendered PNGs.
 **Optional SVG archive** (separate repo or gitignored):
 ```
 icons/svg/                    # Source SVGs for regeneration
-├── person_icon.svg
+├── homebank.svg
 └── ...
 ```
 
@@ -726,10 +607,9 @@ TaskCoach defines its own icon names—source filenames are only for provenance:
 | `twemoji/2764.svg` | `heart` | Human readable |
 
 **Naming convention:**
-- **New icons:** No `_icon` suffix (clean names)
-- **Legacy icons:** Retain `_icon` suffix for backward compatibility
+- No `_icon` suffix (clean names)
 
-Different sources can have identical filenames. ICON_MAPPING.json tracks which source each TaskCoach icon came from.
+Different sources can have identical filenames. Each theme's `icons.json` tracks which icons have been imported.
 
 ### Freedesktop.org Naming Spec
 
@@ -840,7 +720,6 @@ All major sets provide pixel-perfect versions for standard sizes:
 
 ## Adding New Icons
 
-**WARNING: The legacy icon system has been removed. Use the Icon-Distillery import procedure instead.**
 See "IMPORTANT: Complete Import Cycle" at the top of this document.
 
 ### From Pre-Colored Sets (e.g., Papirus)
@@ -848,8 +727,7 @@ See "IMPORTANT: Complete Import Cycle" at the top of this document.
 1. **Choose a TaskCoach icon name** (source-agnostic):
    - Use original app name if recognizable: `homebank`, `bitcoin`, `cryptomator`
    - Use descriptive name otherwise: `wallet_closed`, `bank_building`
-   - **New icons: NO `_icon` suffix** (clean names)
-   - Legacy icons retain `_icon` suffix for backward compatibility
+   - **No `_icon` suffix** (clean names)
 
 2. **Find icon in source repo** (size-specific folder):
    - `/Papirus/16x16/apps/` - Application icons
@@ -888,23 +766,24 @@ See "IMPORTANT: Complete Import Cycle" at the top of this document.
 ### Handling Missing Sizes
 
 If icon only has 16x16 but 22x22 or 32x32 is requested at runtime:
-- Log warning: `"person_icon: missing 32x32, using scaled 16x16"`
+- Log warning: `"nuvola_apps_kuser: missing 32x32, using scaled 16x16"`
 - Return scaled version (quality degradation acceptable for rare cases)
 
 Run validation during development to identify gaps:
 ```bash
-# Find icons missing expected sizes
-for icon in 16x16/*.png; do
-  name=$(basename "$icon")
-  [ ! -f "22x22/$name" ] && echo "Missing 22x22: $name"
-  [ ! -f "32x32/$name" ] && echo "Missing 32x32: $name"
+# Find icons missing expected sizes (run from theme dir, e.g. icons/nuvola/)
+for icon in 16x16/*/*.png; do
+  relpath="${icon#16x16/}"
+  [ ! -f "22x22/$relpath" ] && echo "Missing 22x22: $relpath"
+  [ ! -f "32x32/$relpath" ] && echo "Missing 32x32: $relpath"
 done
 ```
 
 ## Migration from Legacy Icons
 
-Legacy icons (flat PNGs like `hearts_icon16x16.png`) predate the XDG theme system.
-When a theme equivalent exists, the legacy icon should be retired and migrated.
+All legacy icons have been migrated to XDG theme equivalents. The table below
+records completed migrations. The Migration Procedure is retained for any
+future icon renames or consolidations.
 
 ### Completed Migrations
 
@@ -1254,12 +1133,10 @@ Search ALL code for the legacy icon name. Every reference must be accounted for:
 
 4. **Test files**: Update any tests using the legacy icon name as test data.
 
-#### Step 4 — Delete legacy files
+#### Step 4 — Delete old files
 
-Delete the legacy PNG files from `taskcoachlib/gui/icons/`.
-Legacy icons use one of two naming conventions:
-- Flat: `name_icon{size}x{size}.png` (e.g., `bomb_icon16x16.png`)
-- Size-dir: `{size}x{size}/name.png` (e.g., `16x16/cactus.png`)
+Delete the old icon's PNG files from its theme directory in
+`taskcoachlib/gui/icons/{theme}/`.
 
 #### Step 5 — Update documentation
 
@@ -1286,7 +1163,7 @@ Legacy icons use one of two naming conventions:
 
 ## Recently Added Icons
 
-See `ICON_MAPPING.json` for the full list of imported icons with provenance.
+See each theme's `icons.json` for the full list of imported icons.
 
 ## Icon Grid Browser and Duplicates (Dev Tools)
 
@@ -1447,4 +1324,6 @@ Use icon-distillery's hints script:
 ## See Also
 
 - [ICON_PLURALIZE.md](ICON_PLURALIZE.md) - Plural/singular icon mapping
+- [ICON_DISPLAY.md](ICON_DISPLAY.md) - Icon display architecture (image lists, viewers, synthetic icons)
+- [SYSTEM_TRAY.md](SYSTEM_TRAY.md) - System tray icons and `tray/hicolor` theme
 - [TASK_STATUS.md](TASK_STATUS.md) - Status icon system

@@ -38,12 +38,19 @@
    Attachment branch in the derived/effective logic should be removed entirely,
    or whether parent-task inheritance should be added properly.
 
-2. **Note styling incomplete**: Notes now correctly derive icon from categories
-   (via `_getFromCategories`), but legacy behavior shows that Notes do not
-   derive fg/bg/font styling from their categories. The refactored
-   `computeDerived` applies `_getFromCategories` for all field types, but the
-   actual results need to be reviewed and tested to confirm that category
-   fg/bg/font values now flow through to Notes as expected.
+2. ~~**Note styling incomplete**~~: **Done.** Tested and confirmed that
+   `computeDerived` correctly flows category fg/bg/font/icon values through
+   to Notes via `_getFromCategories` for all field types.
+
+3. **Category assignment triggers filter refresh** *(deferred — wait for
+   pubsub conversion)*: Selecting a category for *assignment* (e.g. in a
+   task/note editor) incorrectly triggers the same full filter-refresh
+   event used by the category *filter* viewer. Root cause:
+   `CategoryFilter.onCategoryChanged()` in `domain/category/filter.py:91`
+   blindly calls `self.reset()` for both membership events
+   (`categorizableAdded/Removed`) and filter events (`filterChanged`).
+   With proper pubsub, these would be separate subscriptions with clean
+   separation. Current event system makes the fix messy.
 
 ---
 

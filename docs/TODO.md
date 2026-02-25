@@ -4,21 +4,21 @@ This document tracks planned improvements and known issues to address in future 
 
 ## Table of Contents
 
-- [Simultaneous Processes and Locking](#simultaneous-processes-and-locking)
-- [Configuration Naming Convention](#configuration-naming-convention)
-- [Refactoring Save Patterns](#refactoring-save-patterns)
-- [Backup Feature Review](#backup-feature-review)
-- [Monkeypatches and Workarounds](#monkeypatches-and-workarounds)
-- [Text-to-Speech Modernization](#text-to-speech-modernization)
-- [GTK3 Widget Sizing Inconsistency](#gtk3-widget-sizing-inconsistency)
-- [BookPage Default Alignment Inconsistency](#bookpage-default-alignment-inconsistency) *(Done)*
-- [Preferences Page Alignment Overrides](#preferences-page-alignment-overrides)
-- [Preferences Dialog: Dirty-Check and Button State](#preferences-dialog-dirty-check-and-button-state)
-- [EVT_TEXT Compatibility Shim in MultiLineTextCtrl](#evt_text-compatibility-shim-in-multilinetextctrl)
+1. [Simultaneous Processes and Locking](#1-simultaneous-processes-and-locking)
+2. [Configuration Naming Convention](#2-configuration-naming-convention)
+3. [Refactoring Save Patterns](#3-refactoring-save-patterns)
+4. [Backup Feature Review](#4-backup-feature-review)
+5. [Monkeypatches and Workarounds](#5-monkeypatches-and-workarounds)
+6. [Text-to-Speech Modernization](#6-text-to-speech-modernization)
+7. [GTK3 Widget Sizing Inconsistency](#7-gtk3-widget-sizing-inconsistency)
+8. [BookPage Default Alignment Inconsistency](#8-bookpage-default-alignment-inconsistency) *(Done)*
+9. [Preferences Page Alignment Overrides](#9-preferences-page-alignment-overrides) *(Done)*
+10. [Preferences Dialog: Dirty-Check and Button State](#10-preferences-dialog-dirty-check-and-button-state)
+11. [EVT_TEXT Compatibility Shim in MultiLineTextCtrl](#11-evt_text-compatibility-shim-in-multilinetextctrl)
 
 ---
 
-## Simultaneous Processes and Locking
+## 1. Simultaneous Processes and Locking
 
 ### Current Status
 
@@ -53,7 +53,7 @@ Currently, all Task Coach instances write to the same `taskcoachlog.txt` file. W
 
 ---
 
-## Configuration Naming Convention
+## 2. Configuration Naming Convention
 
 ### Current Status
 
@@ -82,7 +82,7 @@ The `defaults.py` file has a comment marking where new snake_case settings begin
 
 ---
 
-## Refactoring Save Patterns
+## 3. Refactoring Save Patterns
 
 ### Current Status
 
@@ -112,7 +112,7 @@ Refactor from **per-change with debounce** to **per-window active/lost-focus** s
 
 ---
 
-## Backup Feature Review
+## 4. Backup Feature Review
 
 ### Issues to Investigate
 
@@ -142,7 +142,7 @@ The backup/restore feature needs review - testing showed unexpected restore beha
 
 ---
 
-## Monkeypatches and Workarounds
+## 5. Monkeypatches and Workarounds
 
 **Status:** Review periodically to determine if still needed
 
@@ -227,7 +227,7 @@ The following obsolete workarounds were removed from `taskcoach.py`:
 
 ---
 
-## Text-to-Speech Modernization
+## 6. Text-to-Speech Modernization
 
 ### Current Status
 
@@ -283,7 +283,7 @@ class Speaker(metaclass=patterns.Singleton):
 
 ---
 
-## GTK3 Widget Sizing Inconsistency
+## 7. GTK3 Widget Sizing Inconsistency
 
 ### TODO: Test App
 
@@ -335,7 +335,7 @@ The custom `SpinCtrl` in `taskcoachlib/widgets/spinctrl.py` uses a `TextCtrl` + 
 
 ---
 
-## BookPage Default Alignment Inconsistency
+## 8. BookPage Default Alignment Inconsistency
 
 **Status: Done** (February 2026)
 
@@ -345,59 +345,20 @@ Editor pages (e.g. `TaskAppearancePage`) benefit from this fix and have clean, c
 
 ---
 
-## Preferences Page Alignment Overrides
+## 9. Preferences Page Alignment Overrides
 
-### Problem
+**Status: Done** (February 2026)
 
-Preferences pages inherit from `ScrolledBookPage` (via `SettingsPageBase → SettingsPage`) and share the same uniform `__defaultFlags()`. However, most preferences pages **override flags on nearly every `addEntry()` call** with per-row custom values, so the clean defaults are never used.
-
-The most common override is adding `wx.ALIGN_CENTER_VERTICAL` — the BookPage default is `ALIGN_TOP`, but label+control rows look better vertically centered. This forces every preferences page to manually specify flags.
-
-### Inheritance Chain
-
-```
-All preferences pages
-  → SettingsPage        (overrides addEntry for helpText only, no layout changes)
-    → SettingsPageBase  (adds settings tracking lists, no layout changes)
-      → ScrolledBookPage (owns __defaultFlags, addEntry, GridBagSizer)
-```
-
-No class in the preferences chain overrides `__defaultFlags`.
-
-### Current State by Page
-
-| Page               | Columns | Flag Overrides           |
-|--------------------|---------|--------------------------|
-| SavePage           | 3       | per-row custom           |
-| WindowBehaviorPage | 2       | minimal                  |
-| ThemePage          | 7       | every row unique         |
-| LanguagePage       | 3       | nested panels + custom   |
-| StatusesPage       | 11      | every row unique         |
-| FeaturesPage       | 3       | minimal                  |
-| TaskDatesPage      | 4       | per-row custom           |
-| TaskReminderPage   | 3       | per-row custom           |
-| IconsPage          | 2       | minimal                  |
-| DurationPresetsPage| 2       | mixed                    |
-
-### Contrast with Editor Pages
-
-Editor pages like `TaskAppearancePage` define one shared `entryFlags` list and reuse it for every row — clean and consistent. Preferences pages specify flags individually per row.
-
-### Possible Approaches
-
-1. **Change BookPage default** from `ALIGN_TOP` to `ALIGN_CENTER_VERTICAL` — this would eliminate the most common override reason across all pages (both preferences and editors)
-2. **Standardize simple pages** — pages with 2-3 columns (WindowBehavior, Features, Icons, DurationPresets) could follow the editor pattern: define one `entryFlags` per page, reuse it
-3. **Leave complex pages alone** — ThemePage (7-col) and StatusesPage (11-col) have genuine table layouts that need per-row flags
-
-### Files
-
-- `taskcoachlib/widgets/notebook.py` — `BookPage.__defaultFlags()`, `ScrolledBookPage.__defaultFlags()`
-- `taskcoachlib/gui/dialog/preferences.py` — all preferences pages
-- `taskcoachlib/gui/dialog/editor.py` — editor pages (good example of clean pattern)
+`ALIGN_TOP` is the correct BookPage default. Simple preferences pages
+(WindowBehavior, Features, Icons, DurationPresets) now use clean helpers
+(`addBooleanSetting`, `addChoiceSetting`, `addIntegerSetting`,
+`_makeInlinePanel`) that handle layout internally — no per-row flag
+overrides needed. Complex pages (ThemePage, StatusesPage) retain custom
+flags for their multi-column layouts, which is correct.
 
 ---
 
-## Preferences Dialog: Dirty-Check and Button State
+## 10. Preferences Dialog: Dirty-Check and Button State
 
 ### Goal
 
@@ -447,7 +408,7 @@ No need to store "original values" — the settings object is the baseline.
 
 ---
 
-## EVT_TEXT Compatibility Shim in MultiLineTextCtrl
+## 11. EVT_TEXT Compatibility Shim in MultiLineTextCtrl
 
 `MultiLineTextCtrl` (StyledTextCtrl/Scintilla) overrides `Bind()` to remap `wx.EVT_TEXT` to `stc.EVT_STC_CHANGE` for compatibility with code written for `wx.TextCtrl`. If we keep Scintilla long-term, refactor all callers to use `EVT_STC_CHANGE` directly and remove the shim. File: `taskcoachlib/widgets/textctrl.py`.
 

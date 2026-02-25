@@ -24,7 +24,7 @@ import wx
 class PopupButtonMixin(object):
     """Mix this with a UICommand for a toolbar pop-up menu."""
 
-    def doCommand(self, event):  # pylint: disable=W0613
+    def do_command(self, event):  # pylint: disable=W0613
         try:
             args = [self.__menu]
         except AttributeError:
@@ -37,17 +37,17 @@ class PopupButtonMixin(object):
                 _("No templates available. Create a template first by saving a task as a template."),
                 _("No Templates"),
                 wx.OK | wx.ICON_INFORMATION,
-                self.mainWindow()
+                self.main_window()
             )
             return
 
         if self.toolbar:
             args.append(self.menuXY())
-        self.mainWindow().PopupMenu(*args)  # pylint: disable=W0142
+        self.main_window().PopupMenu(*args)  # pylint: disable=W0142
 
     def menuXY(self):
         """Location to pop up the menu."""
-        return self.mainWindow().ScreenToClient((self.menuX(), self.menuY()))
+        return self.main_window().ScreenToClient((self.menuX(), self.menuY()))
 
     def menuX(self):
         # Get the tool's position in the toolbar

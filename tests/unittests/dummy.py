@@ -63,7 +63,7 @@ class DummyUICommand(gui.uicommand.UICommand):  # pylint: disable=W0223
     section = "view"
     setting = "setting"
 
-    def onCommandActivate(self, event):
+    def on_command_activate(self, event):
         self.activated = True  # pylint: disable=W0201
 
 

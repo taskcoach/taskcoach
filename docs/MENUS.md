@@ -15,7 +15,7 @@
 
 ## TODO
 
-1. PEP 8 renames (separate commit): `appendToToolBar`, `addToMenu`, etc.
+1. ~~PEP 8 renames (separate commit): `append_to_toolbar`, `add_to_menu`, etc.~~ — **DONE.** All UICommand methods and constructor kwargs renamed to snake_case.
 2. GTK menu width not recalculated on first open after `SetItemLabel()` changes
    text during `EVT_MENU_OPEN`. Second open sizes correctly. Affects
    `current_menu_text()` for EditUndo/EditRedo and EditPasteAsSubItem.
@@ -68,7 +68,7 @@ Right-click
 
 `MenuItem(wx.MenuItem)` in `base_uicommand.py` — each item receives its
 `UICommand` at creation (dependency injection) and owns its enabled state
-via `update_enabled_state()`. Created in `UICommand.addToMenu()`.
+via `update_enabled_state()`. Created in `UICommand.add_to_menu()`.
 
 ---
 
@@ -98,7 +98,7 @@ need to be correct when visible (on open).
 Toolbar **dropdowns** (`ToolbarChoiceCommandMixin`) also use
 `view_settings_changed_event_type()`. On signal, they read current
 state from the viewer (`viewer.aggregation`, `viewer.order_by`, etc.)
-and call `setChoice()`. Their `doChoice()` calls the viewer entry
+and call `set_choice()`. Their `doChoice()` calls the viewer entry
 point (e.g., `viewer.set_aggregation()`).
 
 See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) for toolbar signal details
@@ -222,22 +222,22 @@ See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) for toolbar signal details
 ### TaskPriorityParentMenu (parent menu item with submenu)
 
 - `enabled()`: `viewer.has_selection and viewer.is_task`
-- `doCommand()`: no-op (clicking opens the submenu, not a command action)
-- `addToMenu()` called with `subMenu=TaskPriorityMenu(...)` — creates a
+- `do_command()`: no-op (clicking opens the submenu, not a command action)
+- `add_to_menu()` called with `subMenu=TaskPriorityMenu(...)` — creates a
   `MenuItem` that is both a submenu header and a command-backed item
 - `_update_menu_state()` picks it up like any other `MenuItem` via
   `update_state()` — no special submenu handling needed
 - This is the pattern for parent menu items that need enable/disable:
   create a UICommand with `enabled()` and pass the submenu via
-  `addToMenu(menu, window, subMenu=...)`. The command owns the text,
-  icon, and enabled logic. The menu just calls `addToMenu()`.
+  `add_to_menu(menu, window, subMenu=...)`. The command owns the text,
+  icon, and enabled logic. The menu just calls `add_to_menu()`.
 
 ### EffortViewerAggregationChoice / EffortViewerAggregationOption
 
 - Toolbar dropdown (`EffortViewerAggregationChoice`): signal-driven via
   `view_settings_changed_event_type()`, reads `viewer.aggregation`
-- Menu radio (`EffortViewerAggregationOption`): `isSettingChecked()` reads
-  `viewer.aggregation`, `doCommand()` calls `viewer.set_aggregation()`
+- Menu radio (`EffortViewerAggregationOption`): `is_setting_checked()` reads
+  `viewer.aggregation`, `do_command()` calls `viewer.set_aggregation()`
 - Entry point: `EffortViewer.set_aggregation()` — writes settings, refreshes,
   fires signal
 
@@ -245,8 +245,8 @@ See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) for toolbar signal details
 
 - Toolbar dropdown (`SquareTaskViewerOrderChoice`): signal-driven via
   `view_settings_changed_event_type()`, reads `viewer.order_by`
-- Menu radio (`SquareTaskViewerOrderByOption`): `isSettingChecked()` reads
-  `viewer.order_by`, `doCommand()` calls `viewer.set_order_by()`
+- Menu radio (`SquareTaskViewerOrderByOption`): `is_setting_checked()` reads
+  `viewer.order_by`, `do_command()` calls `viewer.set_order_by()`
 - Entry point: `SquareTaskViewer.set_order_by()` — writes settings, applies
   change, fires signal
 
@@ -256,7 +256,7 @@ See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) for toolbar signal details
 
 | File | Role |
 |------|------|
-| `taskcoachlib/gui/uicommand/base_uicommand.py` | `MenuItem` subclass, `UICommand` base with `addToMenu()` |
+| `taskcoachlib/gui/uicommand/base_uicommand.py` | `MenuItem` subclass, `UICommand` base with `add_to_menu()` |
 | `taskcoachlib/gui/uicommand/uicommand.py` | Concrete commands with `enabled()` overrides |
 | `taskcoachlib/gui/uicommand/mixin_uicommand.py` | `PopupButtonMixin` (toolbar popup menu behavior) |
 | `taskcoachlib/gui/menu.py` | `Menu._update_menu_state()`, `MainMenu._on_menu_open()` |

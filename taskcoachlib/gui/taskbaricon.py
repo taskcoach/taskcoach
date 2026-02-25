@@ -116,7 +116,7 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         for event in events:
             self.Bind(event, self.onTaskbarClick)
             log_step("Bound event", event, "to onTaskbarClick", prefix="TRAY")
-        self.__setTooltipText()
+        self.__set_tooltip_text()
         mainwindow.Bind(wx.EVT_IDLE, self.onIdle)
         log_step("TaskBarIcon.__init__ completed", prefix="TRAY")
 
@@ -129,13 +129,13 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         ):
             self.__currentText = self.__tooltipText
             self.__current_icon_id = self.__icon_id
-            self.__setIcon()
+            self.__set_icon()
         if event is not None:  # Unit tests
             event.Skip()
 
     def onTaskListChanged(self, event):  # pylint: disable=W0613
-        self.__setTooltipText()
-        self.__startOrStopTicking()
+        self.__set_tooltip_text()
+        self.__start_or_stop_ticking()
 
     def onTrackingChanged(self, newValue, sender):
         if newValue:
@@ -149,27 +149,27 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
                 self.onChangeSubject,
                 eventType=sender.subjectChangedEventType(),
             )
-        self.__setTooltipText()
+        self.__set_tooltip_text()
         if newValue:
             self.__startTicking()
         else:
             self.__stopTicking()
 
     def onChangeSubject(self, event):  # pylint: disable=W0613
-        self.__setTooltipText()
+        self.__set_tooltip_text()
 
     def onChangeDueDateTime(self, newValue, sender):  # pylint: disable=W0613
-        self.__setTooltipText()
+        self.__set_tooltip_text()
 
     def onChangeDueDateTime_Deprecated(self, event):
-        self.__setTooltipText()
+        self.__set_tooltip_text()
 
     def onEverySecond(self):
         if self.__settings.getboolean(
             "window", "blinktaskbariconwhentrackingeffort"
         ):
             self.__toggle_tracking_icon()
-            self.__setIcon()
+            self.__set_icon()
 
     def onTaskbarClick(self, event):
         log_step("LEFT-CLICK on taskbar icon, event:", event, prefix="TRAY")
@@ -211,7 +211,7 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
 
     # Private methods:
 
-    def __startOrStopTicking(self):
+    def __start_or_stop_ticking(self):
         self.__startTicking()
         self.__stopTicking()
 
@@ -219,23 +219,23 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         if self.__taskList.nr_being_tracked() > 0:
             self.startClock()
             self.__toggle_tracking_icon()
-            self.__setIcon()
+            self.__set_icon()
 
     def startClock(self):
-        if not getattr(self, '_clockRunning', False):
+        if not getattr(self, '_clock_running', False):
             pub.subscribe(self._onTimerSecond, 'timer.second')
-            self._clockRunning = True
+            self._clock_running = True
 
     def __stopTicking(self):
         if self.__taskList.nr_being_tracked() == 0:
             self.stopClock()
             self.__set_default_icon()
-            self.__setIcon()
+            self.__set_icon()
 
     def stopClock(self):
-        if getattr(self, '_clockRunning', False):
+        if getattr(self, '_clock_running', False):
             pub.unsubscribe(self._onTimerSecond, 'timer.second')
-            self._clockRunning = False
+            self._clock_running = False
 
     def _onTimerSecond(self, timestamp):
         """Handle second tick from global timer."""
@@ -246,7 +246,7 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         (task.status.duesoon, _("one task due soon"), _("%d tasks due soon")),
     ]
 
-    def __setTooltipText(self):
+    def __set_tooltip_text(self):
         """Note that Windows XP and Vista limit the text shown in the
         tool tip to 64 characters, so we cannot show everything we would
         like to and have to make choices."""
@@ -283,16 +283,16 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         tick, tack = self.__tick_icon_id, self.__tack_icon_id
         self.__icon_id = tack if self.__icon_id == tick else tick
 
-    def __setIcon(self):
+    def __set_icon(self):
         if operating_system.isMac():
             size = TRAY_ICON_SIZE_MACOS
         else:
             size = LIST_ICON_SIZE
-        icon = icon_catalog.get_wx_icon(self.__icon_id, size)
-        if not icon:
+        wx_icon = icon_catalog.get_wx_icon(self.__icon_id, size)
+        if not wx_icon:
             return
         try:
-            self.SetIcon(icon, self.__tooltipText)
+            self.SetIcon(wx_icon, self.__tooltipText)
         except Exception:
             # wx assert errors on macOS but the icon still gets set... Whatever
             pass
@@ -315,9 +315,9 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         mainwindow,
         taskList,
         settings,
-        default_icon_name="taskcoach-app",
-        tick_icon_name="taskcoach-clock",
-        tack_icon_name="taskcoach-timer",
+        default_tray_icon_id="taskcoach-app",
+        tick_tray_icon_id="taskcoach-clock",
+        tack_tray_icon_id="taskcoach-timer",
         *args,
         **kwargs
     ):
@@ -325,17 +325,17 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         self.__window = mainwindow
         self.__taskList = taskList
         self.__settings = settings
-        self.__icon_name = self.__default_icon_name = default_icon_name
+        self.__tray_icon_id = self.__default_tray_icon_id = default_tray_icon_id
         self.__tooltipText = ""
-        self.__tick_icon_name = tick_icon_name
-        self.__tack_icon_name = tack_icon_name
+        self.__tick_tray_icon_id = tick_tray_icon_id
+        self.__tack_tray_icon_id = tack_tray_icon_id
         self.__popupmenu = None
-        self._clockRunning = False
+        self._clock_running = False
 
         # Create the AppIndicator
         self.__indicator = _APPINDICATOR_MODULE.AppIndicatorIcon(
             app_id="taskcoach",
-            icon_name=default_icon_name,
+            icon_name=default_tray_icon_id,
             icon_theme_path=_TRAY_THEME_PATH,
             tooltip=meta.name
         )
@@ -362,14 +362,14 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             eventType=task.Task.appearanceChangedEventType(),
         )
 
-        self.__setTooltipText()
-        self.__setIcon()
+        self.__set_tooltip_text()
+        self.__set_icon()
 
     # Event handlers:
 
     def onTaskListChanged(self, event):  # pylint: disable=W0613
-        self.__setTooltipText()
-        self.__startOrStopTicking()
+        self.__set_tooltip_text()
+        self.__start_or_stop_ticking()
         self._rebuildGtkMenu()  # Update menu with new task list
 
     def onTrackingChanged(self, newValue, sender):
@@ -384,7 +384,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
                 self.onChangeSubject,
                 eventType=sender.subjectChangedEventType(),
             )
-        self.__setTooltipText()
+        self.__set_tooltip_text()
         if newValue:
             self.__startTicking()
         else:
@@ -392,21 +392,21 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         self._rebuildGtkMenu()  # Update menu with tracking state
 
     def onChangeSubject(self, event):  # pylint: disable=W0613
-        self.__setTooltipText()
+        self.__set_tooltip_text()
         self._rebuildGtkMenu()  # Update menu with new task subject
 
     def onChangeDueDateTime(self, newValue, sender):  # pylint: disable=W0613
-        self.__setTooltipText()
+        self.__set_tooltip_text()
 
     def onChangeDueDateTime_Deprecated(self, event):
-        self.__setTooltipText()
+        self.__set_tooltip_text()
 
     def onEverySecond(self):
         if self.__settings.getboolean(
             "window", "blinktaskbariconwhentrackingeffort"
         ):
             self.__toggle_tracking_icon()
-            self.__setIcon()
+            self.__set_icon()
 
     def onTaskbarClick(self, event=None):
         """Handle click on indicator - show/hide main window.
@@ -640,7 +640,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         from taskcoachlib.gui import uicommand
         tasks = self.__window.taskFile.tasks()
         cmd = uicommand.TaskNew(taskList=tasks, settings=self.__settings)
-        cmd.doCommand(None)
+        cmd.do_command(None)
 
     def _onNewEffort(self, widget):
         """Handle New Effort menu item."""
@@ -654,7 +654,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         cmd = uicommand.EffortNew(
             effortList=efforts, taskList=tasks, settings=self.__settings
         )
-        cmd.doCommand(None)
+        cmd.do_command(None)
 
     def _onStopTracking(self, widget):
         """Handle Stop Tracking menu item."""
@@ -674,7 +674,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         from taskcoachlib.gui import uicommand
         categories = self.__window.taskFile.categories()
         cmd = uicommand.CategoryNew(categories=categories, settings=self.__settings)
-        cmd.doCommand(None)
+        cmd.do_command(None)
 
     def _onNewNote(self, widget):
         """Handle New Note menu item."""
@@ -685,7 +685,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         from taskcoachlib.gui import uicommand
         notes = self.__window.taskFile.notes()
         cmd = uicommand.NoteNew(notes=notes, settings=self.__settings)
-        cmd.doCommand(None)
+        cmd.do_command(None)
 
     def _doNewTaskFromTemplate(self, template_path):
         """Create a new task from template (called from wx main thread)."""
@@ -694,7 +694,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         cmd = uicommand.TaskNewFromTemplate(
             template_path, taskList=tasks, settings=self.__settings
         )
-        cmd.doCommand(None)
+        cmd.do_command(None)
 
     def _doStartTracking(self, task_to_track):
         """Start tracking effort for a task (called from wx main thread)."""
@@ -733,15 +733,15 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
     def tooltip(self):
         return self.__tooltipText
 
-    def icon_name(self):
-        return self.__icon_name
+    def tray_icon_id(self):
+        return self.__tray_icon_id
 
-    def default_icon_name(self):
-        return self.__default_icon_name
+    def default_tray_icon_id(self):
+        return self.__default_tray_icon_id
 
     # Private methods:
 
-    def __startOrStopTicking(self):
+    def __start_or_stop_ticking(self):
         self.__startTicking()
         self.__stopTicking()
 
@@ -749,23 +749,23 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         if self.__taskList.nr_being_tracked() > 0:
             self.startClock()
             self.__toggle_tracking_icon()
-            self.__setIcon()
+            self.__set_icon()
 
     def startClock(self):
-        if not self._clockRunning:
+        if not self._clock_running:
             pub.subscribe(self._onTimerSecond, 'timer.second')
-            self._clockRunning = True
+            self._clock_running = True
 
     def __stopTicking(self):
         if self.__taskList.nr_being_tracked() == 0:
             self.stopClock()
             self.__set_default_icon()
-            self.__setIcon()
+            self.__set_icon()
 
     def stopClock(self):
-        if self._clockRunning:
+        if self._clock_running:
             pub.unsubscribe(self._onTimerSecond, 'timer.second')
-            self._clockRunning = False
+            self._clock_running = False
 
     def _onTimerSecond(self, timestamp):
         """Handle second tick from global timer."""
@@ -776,7 +776,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         (task.status.duesoon, _("one task due soon"), _("%d tasks due soon")),
     ]
 
-    def __setTooltipText(self):
+    def __set_tooltip_text(self):
         """Update the tooltip text based on current task status."""
         textParts = []
         trackedTasks = self.__taskList.tasks_being_tracked()
@@ -807,16 +807,16 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
                 self.__indicator.set_tooltip(text)
 
     def __set_default_icon(self):
-        self.__icon_name = self.__default_icon_name
+        self.__tray_icon_id = self.__default_tray_icon_id
 
     def __toggle_tracking_icon(self):
-        tick, tack = self.__tick_icon_name, self.__tack_icon_name
-        self.__icon_name = tack if self.__icon_name == tick else tick
+        tick, tack = self.__tick_tray_icon_id, self.__tack_tray_icon_id
+        self.__tray_icon_id = tack if self.__tray_icon_id == tick else tick
 
-    def __setIcon(self):
+    def __set_icon(self):
         """Update the indicator icon."""
         if self.__indicator:
-            self.__indicator.set_icon_full(self.__icon_name, self.__tooltipText)
+            self.__indicator.set_icon_full(self.__tray_icon_id, self.__tooltipText)
 
     # wx.adv.TaskBarIcon compatibility methods:
 

@@ -60,6 +60,77 @@ from . import settings_uicommand
 from functools import reduce
 
 
+class Separator(base_uicommand.UICommand):
+    """Toolbar/menu separator — renders as a visual divider."""
+
+    def __init__(self):
+        super().__init__(menu_text="Separator")
+
+    def is_separator(self):
+        return True
+
+    def is_command(self):
+        return False
+
+    def append_to_toolbar(self, toolbar):
+        toolbar.AddSeparator()
+
+    def add_to_menu(self, menu, window, position=None):
+        menu.AppendSeparator()
+
+
+class Spacer(base_uicommand.UICommand):
+    """Toolbar spacer — pushes subsequent items to the right."""
+
+    def __init__(self, proportion=1):
+        super().__init__(menu_text="Spacer")
+        self.proportion = proportion
+
+    def is_spacer(self):
+        return True
+
+    def is_command(self):
+        return False
+
+    def append_to_toolbar(self, toolbar):
+        toolbar.AddStretchSpacer(self.proportion)
+
+
+class DisabledLabel(base_uicommand.UICommand):
+    """Menu-only disabled label — renders as greyed-out text."""
+
+    def __init__(self, text):
+        super().__init__(menu_text=text)
+        self.text = text
+
+    def is_command(self):
+        return False
+
+    def add_to_menu(self, menu, window, position=None):
+        label = wx.MenuItem(menu, text=self.text)
+        menu.Append(label)
+        label.Enable(False)
+
+
+class SubMenu(base_uicommand.UICommand):
+    """Menu-only submenu — renders as a nested menu."""
+
+    def __init__(self, title, *commands):
+        super().__init__(menu_text=title)
+        self.title = title
+        self.commands = commands
+
+    def is_command(self):
+        return False
+
+    def add_to_menu(self, menu, window, position=None):
+        from taskcoachlib.gui import menu as menu_module
+
+        sub_menu = menu_module.Menu(window)
+        menu.appendMenu(self.title, sub_menu)
+        sub_menu.append_ui_commands(*self.commands)
+
+
 class IOCommand(base_uicommand.UICommand):  # pylint: disable=W0223
     def __init__(self, *args, **kwargs):
         self.iocontroller = kwargs.pop("iocontroller", None)
@@ -114,15 +185,15 @@ class ViewerCommand(base_uicommand.UICommand):  # pylint: disable=W0223
 class FileOpen(IOCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Open...\tCtrl+O"),
-            helpText=help.fileOpen,
+            menu_text=_("&Open...\tCtrl+O"),
+            help_text=help.fileOpen,
             icon_id="nuvola_actions_document-open",
             id=wx.ID_OPEN,
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.iocontroller.open()
 
 
@@ -131,59 +202,59 @@ class RecentFileOpen(IOCommand):
         self.__filename = kwargs.pop("filename")
         index = kwargs.pop("index")
         super().__init__(
-            menuText="%d %s" % (index, self.__filename),
-            helpText=_("Open %s") % self.__filename,
+            menu_text="%d %s" % (index, self.__filename),
+            help_text=_("Open %s") % self.__filename,
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.iocontroller.open(self.__filename)
 
 
 class FileMerge(IOCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Merge..."),
-            helpText=_("Merge tasks from another file with the current file"),
+            menu_text=_("&Merge..."),
+            help_text=_("Merge tasks from another file with the current file"),
             icon_id="papirus_actions_kr_combine",
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.iocontroller.merge()
 
 
 class FileClose(IOCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Close\tCtrl+W"),
-            helpText=help.fileClose,
+            menu_text=_("&Close\tCtrl+W"),
+            help_text=help.fileClose,
             icon_id="nuvola_actions_dialog-close",
             id=wx.ID_CLOSE,
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
-        self.mainWindow().closeEditors()
+    def do_command(self, event):
+        self.main_window().closeEditors()
         self.iocontroller.close()
 
 
 class FileSave(IOCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Save\tCtrl+S"),
-            helpText=help.fileSave,
+            menu_text=_("&Save\tCtrl+S"),
+            help_text=help.fileSave,
             icon_id="nuvola_devices_media-floppy",
             id=wx.ID_SAVE,
             *args,
             **kwargs
         )
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
         pub.subscribe(self._on_dirty_changed, "taskfile.dirty")
         pub.subscribe(self._on_dirty_changed, "taskfile.clean")
 
@@ -195,7 +266,7 @@ class FileSave(IOCommand):
             pass
 
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.iocontroller.save()
 
     def enabled(self, event):
@@ -205,15 +276,15 @@ class FileSave(IOCommand):
 class FileMergeDiskChanges(IOCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Merge &disk changes\tShift-Ctrl-M"),
-            helpText=help.fileMergeDiskChanges,
+            menu_text=_("Merge &disk changes\tShift-Ctrl-M"),
+            help_text=help.fileMergeDiskChanges,
             icon_id="nuvola_actions_go-top",
             *args,
             **kwargs
         )
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
         for topic in ("taskfile.changed", "taskfile.dirty", "taskfile.clean"):
             pub.subscribe(self._on_file_state_changed, topic)
 
@@ -225,7 +296,7 @@ class FileMergeDiskChanges(IOCommand):
             pass
 
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.iocontroller.merge_disk_changes()
 
     def enabled(self, event):
@@ -235,23 +306,23 @@ class FileMergeDiskChanges(IOCommand):
 class FileSaveAs(IOCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("S&ave as...\tShift+Ctrl+S"),
-            helpText=help.fileSaveAs,
+            menu_text=_("S&ave as...\tShift+Ctrl+S"),
+            help_text=help.fileSaveAs,
             icon_id="nuvola_actions_document-save-as",
             id=wx.ID_SAVEAS,
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.iocontroller.save_as()
 
 
 class FileSaveSelection(IOCommand, ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Sa&ve selected tasks to new taskfile..."),
-            helpText=_("Save the selected tasks to a separate taskfile"),
+            menu_text=_("Sa&ve selected tasks to new taskfile..."),
+            help_text=_("Save the selected tasks to a separate taskfile"),
             icon_id="nuvola_actions_document-save-as",
             *args,
             **kwargs
@@ -261,15 +332,15 @@ class FileSaveSelection(IOCommand, ViewerCommand):
     def enabled(self, event):
         return self.viewer.has_selection and self.viewer.is_task
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.iocontroller.save_selection(self.viewer.curselection())
 
 
 class FileSaveSelectedTaskAsTemplate(IOCommand, ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Save selected task as &template"),
-            helpText=_("Save the selected task as a task template"),
+            menu_text=_("Save selected task as &template"),
+            help_text=_("Save the selected task as a task template"),
             icon_id="taskcoach_actions_newtmpl",
             *args,
             **kwargs
@@ -279,21 +350,21 @@ class FileSaveSelectedTaskAsTemplate(IOCommand, ViewerCommand):
     def enabled(self, event):
         return self.viewer.has_single_selection and self.viewer.is_task
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.iocontroller.save_as_template(self.viewer.curselection()[0])
 
 
 class FileImportTemplate(IOCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Import template..."),
-            helpText=_("Import a new template from a template file"),
+            menu_text=_("&Import template..."),
+            help_text=_("Import a new template from a template file"),
             icon_id="nuvola_actions_document-open",
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.iocontroller.import_template()
 
 
@@ -302,15 +373,15 @@ class FileEditTemplates(
 ):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Edit templates..."),
-            helpText=_("Edit existing templates"),
+            menu_text=_("Edit templates..."),
+            help_text=_("Edit existing templates"),
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         templateDialog = dialog.templates.TemplatesDialog(
-            self.settings, self.mainWindow(), title=_("Edit templates")
+            self.settings, self.main_window(), title=_("Edit templates")
         )
         templateDialog.Show()
 
@@ -318,15 +389,15 @@ class FileEditTemplates(
 class FilePurgeDeletedItems(IOCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Purge deleted items"),
-            helpText=_("Permanently delete tasks and notes marked as deleted"),
+            menu_text=_("&Purge deleted items"),
+            help_text=_("Permanently delete tasks and notes marked as deleted"),
             icon_id="nuvola_actions_edit-delete",
             *args,
             **kwargs
         )
 
 
-    def doCommand(self, event):
+    def do_command(self, event):
         if (
             wx.MessageBox(
                 _("Purging deleted items cannot be undone.\n\nDo you still want to purge?"),
@@ -349,18 +420,18 @@ class PrintPageSetup(
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Page setup...\tShift+Ctrl+P"),
-            helpText=help.printPageSetup,
+            menu_text=_("&Page setup...\tShift+Ctrl+P"),
+            help_text=help.printPageSetup,
             icon_id="oxygen_actions_zoom-fit-best",
             id=wx.ID_PRINT_SETUP,
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         printerSettings = printer.PrinterSettings(self.settings)
         pageSetupDialog = wx.PageSetupDialog(
-            self.mainWindow(), printerSettings.pageSetupData
+            self.main_window(), printerSettings.pageSetupData
         )
         result = pageSetupDialog.ShowModal()
         if result == wx.ID_OK:
@@ -374,15 +445,15 @@ class PrintPreview(ViewerCommand, settings_uicommand.SettingsCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Print preview..."),
-            helpText=_("Show a preview of what the print will look like"),
+            menu_text=_("&Print preview..."),
+            help_text=_("Show a preview of what the print will look like"),
             icon_id="oxygen_actions_zoom-draw",
             id=wx.ID_PREVIEW,
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         printout, printout2 = printer.Printout(
             self.viewer, self.settings, twoPrintouts=True
         )
@@ -398,7 +469,7 @@ class PrintPreview(ViewerCommand, settings_uicommand.SettingsCommand):
             )
             return
         previewFrame = wx.PreviewFrame(
-            preview, self.mainWindow(), _("Print preview"), size=(750, 700)
+            preview, self.main_window(), _("Print preview"), size=(750, 700)
         )
         previewFrame.Initialize()
         previewFrame.Show()
@@ -409,20 +480,20 @@ class Print(ViewerCommand, settings_uicommand.SettingsCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Print...\tCtrl+P"),
-            helpText=help.print_,
+            menu_text=_("&Print...\tCtrl+P"),
+            help_text=help.print_,
             icon_id="nuvola_devices_printer",
             id=wx.ID_PRINT,
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         printerSettings = printer.PrinterSettings(self.settings)
         printDialogData = wx.PrintDialogData(printerSettings.printData)
         printDialogData.EnableSelection(True)
         wxPrinter = wx.Printer(printDialogData)
-        if not wxPrinter.PrintDialog(self.mainWindow()):
+        if not wxPrinter.PrintDialog(self.main_window()):
             return
         printout = printer.Printout(
             self.viewer,
@@ -436,15 +507,15 @@ class Print(ViewerCommand, settings_uicommand.SettingsCommand):
             wxPrinter.PrintDialogData.ToPage = (
                 wxPrinter.PrintDialogData.MaxPage
             )
-        wxPrinter.Print(self.mainWindow(), printout, prompt=False)
+        wxPrinter.Print(self.main_window(), printout, prompt=False)
 
 
 class FileExportCommand(IOCommand, settings_uicommand.SettingsCommand):
     """Base class for export actions."""
 
-    def doCommand(self, event):
+    def do_command(self, event):
         exportDialog = self.getExportDialogClass()(
-            self.mainWindow(), settings=self.settings
+            self.main_window(), settings=self.settings
         )  # pylint: disable=E1101
         try:
             if wx.ID_OK == exportDialog.ShowModal():
@@ -471,15 +542,15 @@ class FileExportCommand(IOCommand, settings_uicommand.SettingsCommand):
 class FileManageBackups(IOCommand, settings_uicommand.SettingsCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Manage backups..."),
-            helpText=_("Manage all task file backups"),
+            menu_text=_("Manage backups..."),
+            help_text=_("Manage all task file backups"),
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         dlg = dialog.BackupManagerDialog(
-            self.mainWindow(), self.settings, self.iocontroller.filename()
+            self.main_window(), self.settings, self.iocontroller.filename()
         )
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -496,21 +567,21 @@ class FileExportAsHTML(FileExportCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Export as &HTML..."),
-            helpText=_("Export items from a viewer in HTML format"),
+            menu_text=_("Export as &HTML..."),
+            help_text=_("Export items from a viewer in HTML format"),
             icon_id="nuvola_mimetypes_text-html",
             *args,
             **kwargs
         )
         self._exportDialog = None
 
-    def doCommand(self, event):
+    def do_command(self, event):
         """Show non-modal export dialog."""
         if self._exportDialog:
             self._exportDialog.Raise()
             return
         self._exportDialog = self.getExportDialogClass()(
-            self.mainWindow(),
+            self.main_window(),
             settings=self.settings,
             exportCallback=self.exportFunction()
         )
@@ -544,8 +615,8 @@ class FileExportAsCSV(FileExportCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Export as &CSV..."),
-            helpText=_(
+            menu_text=_("Export as &CSV..."),
+            help_text=_(
                 "Export items from a viewer in Comma Separated Values "
                 "(CSV) format"
             ),
@@ -555,13 +626,13 @@ class FileExportAsCSV(FileExportCommand):
         )
         self._exportDialog = None
 
-    def doCommand(self, event):
+    def do_command(self, event):
         """Show non-modal export dialog."""
         if self._exportDialog:
             self._exportDialog.Raise()
             return
         self._exportDialog = self.getExportDialogClass()(
-            self.mainWindow(),
+            self.main_window(),
             settings=self.settings,
             exportCallback=self.exportFunction()
         )
@@ -595,15 +666,15 @@ class FileExportAsICalendar(FileExportCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Export as &iCalendar..."),
-            helpText=_("Export items from a viewer in iCalendar format"),
+            menu_text=_("Export as &iCalendar..."),
+            help_text=_("Export items from a viewer in iCalendar format"),
             icon_id="nuvola_mimetypes_text-vcalendar",
             *args,
             **kwargs
         )
         self._exportDialog = None
 
-    def doCommand(self, event):
+    def do_command(self, event):
         """Show non-modal export dialog."""
         # If dialog already open, just raise it
         if self._exportDialog:
@@ -611,7 +682,7 @@ class FileExportAsICalendar(FileExportCommand):
             return
 
         self._exportDialog = self.getExportDialogClass()(
-            self.mainWindow(),
+            self.main_window(),
             settings=self.settings,
             exportCallback=self.exportFunction()
         )
@@ -656,8 +727,8 @@ class FileExportAsTodoTxt(FileExportCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Export as &Todo.txt..."),
-            helpText=_(
+            menu_text=_("Export as &Todo.txt..."),
+            help_text=_(
                 "Export items from a viewer in Todo.txt format "
                 "(see todotxt.com)"
             ),
@@ -667,13 +738,13 @@ class FileExportAsTodoTxt(FileExportCommand):
         )
         self._exportDialog = None
 
-    def doCommand(self, event):
+    def do_command(self, event):
         """Show non-modal export dialog."""
         if self._exportDialog:
             self._exportDialog.Raise()
             return
         self._exportDialog = self.getExportDialogClass()(
-            self.mainWindow(),
+            self.main_window(),
             settings=self.settings,
             exportCallback=self.exportFunction()
         )
@@ -705,8 +776,8 @@ class FileImportCSV(IOCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Import CSV..."),
-            helpText=_(
+            menu_text=_("&Import CSV..."),
+            help_text=_(
                 "Import tasks from a Comma Separated Values (CSV) file"
             ),
             icon_id="nuvola_mimetypes_x-office-spreadsheet",
@@ -714,7 +785,7 @@ class FileImportCSV(IOCommand):
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         while True:
             filename = wx.FileSelector(_("Import CSV"), wildcard="*.csv")
             if filename:
@@ -743,14 +814,14 @@ class FileImportTodoTxt(IOCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Import Todo.txt..."),
-            helpText=_("Import tasks from a Todo.txt (see todotxt.com) file"),
+            menu_text=_("&Import Todo.txt..."),
+            help_text=_("Import tasks from a Todo.txt (see todotxt.com) file"),
             icon_id="oxygen_mimetypes_text-plain",
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         filename = wx.FileSelector(_("Import Todo.txt"), wildcard="*.txt")
         if filename:
             self.iocontroller.import_todo_txt(filename)
@@ -761,16 +832,16 @@ class FileQuit(base_uicommand.UICommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Quit\tCtrl+Q"),
-            helpText=help.fileQuit,
+            menu_text=_("&Quit\tCtrl+Q"),
+            help_text=help.fileQuit,
             icon_id="nuvola_actions_application-exit",
             id=wx.ID_EXIT,
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
-        self.mainWindow().Close(force=True)
+    def do_command(self, event):
+        self.main_window().Close(force=True)
 
 
 class EditUndo(base_uicommand.UICommand):
@@ -778,8 +849,8 @@ class EditUndo(base_uicommand.UICommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=self._undo_menu_text(),
-            helpText=help.editUndo,
+            menu_text=self._undo_menu_text(),
+            help_text=help.editUndo,
             icon_id="nuvola_actions_edit-undo",
             id=wx.ID_UNDO,
             *args,
@@ -790,8 +861,8 @@ class EditUndo(base_uicommand.UICommand):
     def _undo_menu_text():
         return "%s\tCtrl+Z" % patterns.CommandHistory().undostr(_("&Undo"))
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
         pub.subscribe(self._on_history_changed, "commandhistory.changed")
 
     def _on_history_changed(self):
@@ -802,7 +873,7 @@ class EditUndo(base_uicommand.UICommand):
             except RuntimeError:
                 pass
 
-    def doCommand(self, event):
+    def do_command(self, event):
         window_with_focus = wx.Window.FindFocus()
         if isinstance(window_with_focus, wx.TextCtrl):
             window_with_focus.Undo()
@@ -825,8 +896,8 @@ class EditRedo(base_uicommand.UICommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=self._redo_menu_text(),
-            helpText=help.editRedo,
+            menu_text=self._redo_menu_text(),
+            help_text=help.editRedo,
             icon_id="nuvola_actions_edit-redo",
             id=wx.ID_REDO,
             *args,
@@ -837,8 +908,8 @@ class EditRedo(base_uicommand.UICommand):
     def _redo_menu_text():
         return "%s\tCtrl+Y" % patterns.CommandHistory().redostr(_("&Redo"))
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
         pub.subscribe(self._on_history_changed, "commandhistory.changed")
 
     def _on_history_changed(self):
@@ -849,7 +920,7 @@ class EditRedo(base_uicommand.UICommand):
             except RuntimeError:
                 pass
 
-    def doCommand(self, event):
+    def do_command(self, event):
         window_with_focus = wx.Window.FindFocus()
         if isinstance(window_with_focus, wx.TextCtrl):
             window_with_focus.Redo()
@@ -873,19 +944,19 @@ class EditCut(ViewerCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Cu&t\tCtrl+X"),
-            helpText=help.editCut,
+            menu_text=_("Cu&t\tCtrl+X"),
+            help_text=help.editCut,
             icon_id="nuvola_actions_edit-cut",
             *args,
             **kwargs
         )
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
         self._selection_sync = _SelectionSync(self.viewer, self)
 
 
-    def doCommand(self, event):
+    def do_command(self, event):
         window_with_focus = wx.Window.FindFocus()
         if isinstance(window_with_focus, wx.TextCtrl):
             window_with_focus.Cut()
@@ -903,19 +974,19 @@ class EditCopy(ViewerCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Copy\tCtrl+C"),
-            helpText=help.editCopy,
+            menu_text=_("&Copy\tCtrl+C"),
+            help_text=help.editCopy,
             icon_id="nuvola_actions_edit-copy",
             *args,
             **kwargs
         )
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
         self._selection_sync = _SelectionSync(self.viewer, self)
 
 
-    def doCommand(self, event):
+    def do_command(self, event):
         window_with_focus = wx.Window.FindFocus()
         if isinstance(window_with_focus, wx.TextCtrl):
             window_with_focus.Copy()
@@ -935,15 +1006,15 @@ class EditPaste(ViewerCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Paste\tCtrl+V"),
-            helpText=help.editPaste,
+            menu_text=_("&Paste\tCtrl+V"),
+            help_text=help.editPaste,
             icon_id="nuvola_actions_edit-paste",
             id=wx.ID_PASTE,
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         windowWithFocus = wx.Window.FindFocus()
         if isinstance(windowWithFocus, wx.TextCtrl):
             windowWithFocus.Paste()
@@ -1002,8 +1073,8 @@ class EditPasteAsSubItem(ViewerCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=self.default_menu_text,
-            helpText=help.editPasteAsSubitem,
+            menu_text=self.default_menu_text,
+            help_text=help.editPasteAsSubitem,
             icon_id="taskcoach_actions_paste_subitem",
             *args,
             **kwargs
@@ -1020,7 +1091,7 @@ class EditPasteAsSubItem(ViewerCommand):
             return _("P&aste as subcategory") + self.shortcut
         return self.default_menu_text
 
-    def doCommand(self, event):
+    def do_command(self, event):
         viewer = self.viewer
         if viewer is None:
             window_with_focus = wx.Window.FindFocus()
@@ -1080,20 +1151,20 @@ class EditPreferences(settings_uicommand.SettingsCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Preferences...\tAlt+P"),
-            helpText=help.editPreferences,
+            menu_text=_("&Preferences...\tAlt+P"),
+            help_text=help.editPreferences,
             icon_id="nuvola_actions_configure",
             id=wx.ID_PREFERENCES,
             *args,
             **kwargs
         )
 
-    def doCommand(self, event, show=True):  # pylint: disable=W0221
+    def do_command(self, event, show=True):  # pylint: disable=W0221
         editor = dialog.preferences.Preferences(
-            parent=self.mainWindow(),
+            parent=self.main_window(),
             title=_("Preferences"),
             settings=self.settings,
-            taskFile=self.mainWindow().taskFile,
+            taskFile=self.main_window().taskFile,
         )
         editor.Show(show=show)
 
@@ -1105,18 +1176,18 @@ class EditToolBarPerspective(settings_uicommand.SettingsCommand):
         self.__toolbar = toolbar
         self.__editorClass = editorClass
         super().__init__(
-            helpText=_("Customize toolbar"),
+            help_text=_("Customize toolbar"),
             icon_id="nuvola_apps_preferences-system-session-services",
-            menuText=_("Customize"),
+            menu_text=_("Customize"),
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.__editorClass(
             self.__toolbar,
             self.settings,
-            self.mainWindow(),
+            self.main_window(),
             _("Customize toolbar"),
         ).ShowModal()
 
@@ -1126,8 +1197,8 @@ class SelectAll(ViewerCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Select &All\tCtrl+A"),
-            helpText=help.editSelectAll,
+            menu_text=_("Select &All\tCtrl+A"),
+            help_text=help.editSelectAll,
             icon_id="taskcoach_actions_checkall",
             id=wx.ID_SELECTALL,
             *args,
@@ -1135,7 +1206,7 @@ class SelectAll(ViewerCommand):
         )
 
 
-    def doCommand(self, event):
+    def do_command(self, event):
         window_with_focus = wx.Window.FindFocus()
         if self._is_text_ctrl(window_with_focus):
             window_with_focus.SetSelection(-1, -1)  # Select all text
@@ -1158,22 +1229,22 @@ class ClearSelection(ViewerCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Deselect All\tCtrl+Shift+A"),
-            helpText=_("Deselect all items"),
+            menu_text=_("&Deselect All\tCtrl+Shift+A"),
+            help_text=_("Deselect all items"),
             icon_id="taskcoach_actions_uncheckall",
             *args,
             **kwargs
         )
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
         self._selection_sync = _SelectionSync(self.viewer, self)
 
 
     def enabled(self, event):
         return self.viewer.has_selection
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.viewer.clear_selection()
 
 
@@ -1183,15 +1254,15 @@ class ResetFilter(ViewerCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Clear all filters\tShift-Ctrl-R"),
-            helpText=help.reset_filter,
+            menu_text=_("&Clear all filters\tShift-Ctrl-R"),
+            help_text=help.reset_filter,
             icon_id="taskcoach_actions_viewalltasks",
             *args,
             **kwargs
         )
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
         patterns.Publisher().registerObserver(
             self._on_filter_change,
             eventType=base.filter.Filter.filter_change_event_type(),
@@ -1205,7 +1276,7 @@ class ResetFilter(ViewerCommand):
             pass
 
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.viewer.reset_filter()
 
     def enabled(self, event):
@@ -1218,8 +1289,8 @@ class ResetCategoryFilter(CategoriesCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Reset all categories\tCtrl-R"),
-            helpText=help.resetCategoryFilter,
+            menu_text=_("&Reset all categories\tCtrl-R"),
+            help_text=help.resetCategoryFilter,
             *args,
             **kwargs
         )
@@ -1228,7 +1299,7 @@ class ResetCategoryFilter(CategoriesCommand):
     def enabled(self, event):
         return self.categories.has_category_filters
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.categories.resetAllFilteredCategories()
 
 
@@ -1249,8 +1320,8 @@ class ToggleCategoryFilter(base_uicommand.UICommand):
         # exclusive categories.
         kind = wx.ITEM_CHECK
         super().__init__(
-            menuText="&" + subject.replace("&", "&&"),
-            helpText=_("Show/hide items belonging to %s") % subject,
+            menu_text="&" + subject.replace("&", "&&"),
+            help_text=_("Show/hide items belonging to %s") % subject,
             kind=kind,
             *args,
             **kwargs
@@ -1259,7 +1330,7 @@ class ToggleCategoryFilter(base_uicommand.UICommand):
     def checked(self):
         return self.category.isFiltered()
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.category.setFiltered(event.IsChecked())
 
 
@@ -1272,7 +1343,7 @@ class ViewViewer(settings_uicommand.SettingsCommand, ViewerCommand):
         kwargs.setdefault("icon_id", self.viewerClass.defaultBitmap)
         super().__init__(*args, **kwargs)
 
-    def doCommand(self, event):
+    def do_command(self, event):
         from taskcoachlib.gui import viewer
 
         viewer.addOneViewer(
@@ -1299,7 +1370,7 @@ class ViewEffortViewerForSelectedTask(
         kwargs["icon_id"] = viewer.EffortViewer.defaultBitmap
         super().__init__(*args, **kwargs)
 
-    def doCommand(self, event):
+    def do_command(self, event):
         from taskcoachlib.gui import viewer
 
         viewer.addOneViewer(
@@ -1310,16 +1381,16 @@ class ViewEffortViewerForSelectedTask(
 class RenameViewer(ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Rename viewer..."),
-            helpText=_("Rename the selected viewer"),
+            menu_text=_("&Rename viewer..."),
+            help_text=_("Rename the selected viewer"),
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         activeViewer = self.viewer.activeViewer()
         viewerNameDialog = wx.TextEntryDialog(
-            self.mainWindow(),
+            self.main_window(),
             _("New title for the viewer:"),
             _("Rename viewer"),
             activeViewer.title(),
@@ -1337,7 +1408,7 @@ class ActivateViewer(ViewerCommand):
         self.direction = kwargs.pop("forward")
         super().__init__(*args, **kwargs)
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.viewer.containerWidget.advanceSelection(self.direction)
 
     def enabled(self, event):
@@ -1347,13 +1418,13 @@ class ActivateViewer(ViewerCommand):
 class HideCurrentColumn(ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Hide this column"),
-            helpText=_("Hide the selected column"),
+            menu_text=_("&Hide this column"),
+            help_text=_("Hide the selected column"),
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         columnPopupMenu = event.GetEventObject()
         self.viewer.hideColumn(columnPopupMenu.columnIndex)
 
@@ -1376,10 +1447,10 @@ class HideCurrentColumn(ViewerCommand):
 
 class ViewColumn(ViewerCommand, settings_uicommand.UICheckCommand):
 
-    def isSettingChecked(self):
+    def is_setting_checked(self):
         return self.viewer.isVisibleColumnByName(self.setting)
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.viewer.showColumnByName(
             self.setting, self._isMenuItemChecked(event)
         )
@@ -1387,13 +1458,13 @@ class ViewColumn(ViewerCommand, settings_uicommand.UICheckCommand):
 
 class ViewColumns(ViewerCommand, settings_uicommand.UICheckCommand):
 
-    def isSettingChecked(self):
+    def is_setting_checked(self):
         for columnName in self.setting:
             if not self.viewer.isVisibleColumnByName(columnName):
                 return False
         return True
 
-    def doCommand(self, event):
+    def do_command(self, event):
         show = self._isMenuItemChecked(event)
         for columnName in self.setting:
             self.viewer.showColumnByName(columnName, show)
@@ -1441,21 +1512,21 @@ class ViewExpandAll(ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
             icon_id="taskcoach_actions_tree_expand_all",
-            menuText=_("&Expand all\tShift+Ctrl+E"),
-            helpText=help.viewExpandAll,
+            menu_text=_("&Expand all\tShift+Ctrl+E"),
+            help_text=help.viewExpandAll,
             *args,
             **kwargs
         )
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
         self._tree_mode_sync = _ViewSettingsSync(self.viewer, self)
 
 
     def enabled(self, event):
         return self.viewer.is_tree_viewer()
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.viewer.expandAll()
 
 
@@ -1463,47 +1534,47 @@ class ViewCollapseAll(ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
             icon_id="taskcoach_actions_tree_collapse_all",
-            menuText=_("Co&llapse all\tShift+Ctrl+C"),
-            helpText=help.viewCollapseAll,
+            menu_text=_("Co&llapse all\tShift+Ctrl+C"),
+            help_text=help.viewCollapseAll,
             *args,
             **kwargs
         )
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
         self._tree_mode_sync = _ViewSettingsSync(self.viewer, self)
 
 
     def enabled(self, event):
         return self.viewer.is_tree_viewer()
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.viewer.collapseAll()
 
 
 class ViewerSortByCommand(ViewerCommand, settings_uicommand.UIRadioCommand):
 
-    def isSettingChecked(self):
+    def is_setting_checked(self):
         return self.viewer.isSortedBy(self.value)
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.viewer.sortBy(self.value)
 
 
 class ViewerSortOrderCommand(ViewerCommand, settings_uicommand.UICheckCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Ascending"),
-            helpText=_("Sort ascending (checked) or descending (unchecked)"),
+            menu_text=_("&Ascending"),
+            help_text=_("Sort ascending (checked) or descending (unchecked)"),
             *args,
             **kwargs
         )
 
 
-    def isSettingChecked(self):
+    def is_setting_checked(self):
         return self.viewer.isSortOrderAscending()
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.viewer.setSortOrderAscending(self._isMenuItemChecked(event))
 
 
@@ -1512,8 +1583,8 @@ class ViewerSortCaseSensitive(
 ):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Sort &case sensitive"),
-            helpText=_(
+            menu_text=_("Sort &case sensitive"),
+            help_text=_(
                 "When comparing text, sorting is case sensitive "
                 "(checked) or insensitive (unchecked)"
             ),
@@ -1522,10 +1593,10 @@ class ViewerSortCaseSensitive(
         )
 
 
-    def isSettingChecked(self):
+    def is_setting_checked(self):
         return self.viewer.isSortCaseSensitive()
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.viewer.setSortCaseSensitive(self._isMenuItemChecked(event))
 
 
@@ -1534,8 +1605,8 @@ class ViewerSortByTaskStatusFirst(
 ):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Sort by status &first"),
-            helpText=_(
+            menu_text=_("Sort by status &first"),
+            help_text=_(
                 "Sort tasks by status (active/inactive/completed) " "first"
             ),
             *args,
@@ -1543,10 +1614,10 @@ class ViewerSortByTaskStatusFirst(
         )
 
 
-    def isSettingChecked(self):
+    def is_setting_checked(self):
         return self.viewer.isSortByTaskStatusFirst()
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.viewer.setSortByTaskStatusFirst(self._isMenuItemChecked(event))
 
 
@@ -1554,15 +1625,15 @@ class ViewerHideTasks(ViewerCommand, settings_uicommand.UICheckCommand):
     def __init__(self, taskStatus, *args, **kwargs):
         self.__taskStatus = taskStatus
         super().__init__(
-            menuText=taskStatus.hideMenuText,
-            helpText=taskStatus.hideHelpText,
+            menu_text=taskStatus.hideMenuText,
+            help_text=taskStatus.hideHelpText,
             icon_id="synthetic_hide_%s" % taskStatus.statusString,
             *args,
             **kwargs
         )
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
         self.toolbar.ToggleTool(self.id, self.checked())
         patterns.Publisher().registerObserver(
             self._on_filter_change,
@@ -1574,13 +1645,13 @@ class ViewerHideTasks(ViewerCommand, settings_uicommand.UICheckCommand):
         self.toolbar.Refresh(False)
 
 
-    def uniqueName(self):
-        return super().uniqueName() + "_" + str(self.__taskStatus)
+    def unique_name(self):
+        return super().unique_name() + "_" + str(self.__taskStatus)
 
-    def isSettingChecked(self):
+    def is_setting_checked(self):
         return self.viewer.is_hiding_task_status(self.__taskStatus)
 
-    def doCommand(self, event):
+    def do_command(self, event):
         if wx.GetKeyState(wx.WXK_SHIFT):
             self.viewer.show_only_task_status(self.__taskStatus)
         else:
@@ -1594,17 +1665,17 @@ class ViewerHideCompositeTasks(
 ):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Hide c&omposite tasks"),
-            helpText=_("Show/hide tasks with subtasks in list mode"),
+            menu_text=_("Hide c&omposite tasks"),
+            help_text=_("Show/hide tasks with subtasks in list mode"),
             *args,
             **kwargs
         )
 
 
-    def isSettingChecked(self):
+    def is_setting_checked(self):
         return self.viewer.is_hiding_composite_tasks()
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.viewer.hide_composite_tasks(self._isMenuItemChecked(event))
 
     def enabled(self, event):
@@ -1614,19 +1685,19 @@ class ViewerHideCompositeTasks(
 class Edit(ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Edit...\tRETURN"),
-            helpText=_("Edit the selected item(s)"),
+            menu_text=_("&Edit...\tRETURN"),
+            help_text=_("Edit the selected item(s)"),
             icon_id="nuvola_actions_edit",
             *args,
             **kwargs
         )
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
         self._selection_sync = _SelectionSync(self.viewer, self)
 
 
-    def doCommand(self, event, show=True):  # pylint: disable=W0221
+    def do_command(self, event, show=True):  # pylint: disable=W0221
         window_with_focus = wx.Window.FindFocus()
         edit_ctrl = self._find_edit_ctrl(window_with_focus)
         if edit_ctrl:
@@ -1662,21 +1733,21 @@ class Edit(ViewerCommand):
 class EditTrackedTasks(TaskListCommand, settings_uicommand.SettingsCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Edit &tracked task...\tShift-Alt-T"),
-            helpText=_("Edit the currently tracked task(s)"),
+            menu_text=_("Edit &tracked task...\tShift-Alt-T"),
+            help_text=_("Edit the currently tracked task(s)"),
             icon_id="nuvola_actions_edit",
             *args,
             **kwargs
         )
 
 
-    def doCommand(self, event, show=True):
+    def do_command(self, event, show=True):
         editTaskDialog = dialog.editor.TaskEditor(
-            self.mainWindow(),
+            self.main_window(),
             self.taskList.tasks_being_tracked(),
             self.settings,
             self.taskList,
-            self.mainWindow().taskFile,
+            self.main_window().taskFile,
             icon_id=self.icon_id,
         )
         editTaskDialog.Show(show)
@@ -1689,22 +1760,22 @@ class EditTrackedTasks(TaskListCommand, settings_uicommand.SettingsCommand):
 class Delete(ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Delete\tCtrl+DEL"),
-            helpText=_("Delete the selected item(s)"),
+            menu_text=_("&Delete\tCtrl+DEL"),
+            help_text=_("Delete the selected item(s)"),
             icon_id="nuvola_actions_edit-delete",
             *args,
             **kwargs
         )
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
         self._selection_sync = _SelectionSync(self.viewer, self)
 
 
     def enabled(self, event):
         return self.viewer.has_selection
 
-    def doCommand(self, event):
+    def do_command(self, event):
         window_with_focus = wx.Window.FindFocus()
         if self._window_is_text_ctrl(window_with_focus):
             # Simulate Delete key press
@@ -1770,7 +1841,7 @@ class Delete(ViewerCommand):
         """Show a scrollable dialog listing all objects that prevent
         category deletion."""
         lines = []
-        task_file = self.mainWindow().taskFile
+        task_file = self.main_window().taskFile
 
         for cat, objects in assigned_objects.items():
             cat_name = cat.subject(recursive=True)
@@ -1781,7 +1852,7 @@ class Delete(ViewerCommand):
             lines.append("")
 
         dlg = wx.Dialog(
-            self.mainWindow(),
+            self.main_window(),
             title=_("Cannot Delete - Category In Use"),
             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
         )
@@ -1831,12 +1902,12 @@ class TaskNew(TaskListCommand, settings_uicommand.SettingsCommand):
     def __init__(self, *args, **kwargs):
         self.taskKeywords = kwargs.pop("taskKeywords", dict())
         taskList = kwargs["taskList"]
-        if "menuText" not in kwargs:  # Provide for subclassing
-            kwargs["menuText"] = taskList.newItemMenuText
-            kwargs["helpText"] = taskList.newItemHelpText
+        if "menu_text" not in kwargs:  # Provide for subclassing
+            kwargs["menu_text"] = taskList.newItemMenuText
+            kwargs["help_text"] = taskList.newItemHelpText
         super().__init__(icon_id="nuvola_actions_document-new", *args, **kwargs)
 
-    def doCommand(self, event, show=True):  # pylint: disable=W0221
+    def do_command(self, event, show=True):  # pylint: disable=W0221
         kwargs = self.taskKeywords.copy()
         if self.__shouldPresetPlannedStartDateTime():
             kwargs["plannedStartDateTime"] = (
@@ -1863,11 +1934,11 @@ class TaskNew(TaskListCommand, settings_uicommand.SettingsCommand):
         )
         newTaskCommand.do()
         newTaskDialog = dialog.editor.TaskEditor(
-            self.mainWindow(),
+            self.main_window(),
             newTaskCommand.items,
             self.settings,
             self.taskList,
-            self.mainWindow().taskFile,
+            self.main_window().taskFile,
             icon_id=self.icon_id,
             items_are_new=True,
         )
@@ -1875,7 +1946,7 @@ class TaskNew(TaskListCommand, settings_uicommand.SettingsCommand):
         return newTaskDialog  # for testing purposes
 
     def categoriesForTheNewTask(self):
-        return self.mainWindow().taskFile.categories().filteredCategories()
+        return self.main_window().taskFile.categories().filteredCategories()
 
     def prerequisitesForTheNewTask(self):
         return []
@@ -1923,14 +1994,14 @@ class TaskNewFromTemplate(TaskNew):
         super().__init__(*args, **kwargs)
         self.__filename = filename
         templateTask = self.__readTemplate()
-        self.menuText = "&" + templateTask.subject().replace(
+        self.menu_text = "&" + templateTask.subject().replace(
             "&", "&&"
         )  # pylint: disable=E1103
 
     def __readTemplate(self):
         return persistence.TemplateXMLReader(open(self.__filename, "r", encoding="utf-8")).read()
 
-    def doCommand(self, event, show=True):  # pylint: disable=W0221
+    def do_command(self, event, show=True):  # pylint: disable=W0221
         # The task template is read every time because it's the
         # TemplateXMLReader that evaluates dynamic values (Now()
         # should be evaluated at task creation for instance).
@@ -1941,11 +2012,11 @@ class TaskNewFromTemplate(TaskNew):
         newTaskCommand.do()
         # pylint: disable=W0142
         newTaskDialog = dialog.editor.TaskEditor(
-            self.mainWindow(),
+            self.main_window(),
             newTaskCommand.items,
             self.settings,
             self.taskList,
-            self.mainWindow().taskFile,
+            self.main_window().taskFile,
             icon_id=self.icon_id,
             items_are_new=True,
         )
@@ -1962,22 +2033,22 @@ class TaskNewFromTemplateButton(
         from taskcoachlib.gui import menu
 
         return menu.TaskTemplateMenu(
-            self.mainWindow(), self.taskList, self.settings
+            self.main_window(), self.taskList, self.settings
         )
 
 
-    def getMenuText(self):
+    def get_menu_text(self):
         return _("New task from &template")
 
-    def getHelpText(self):
+    def get_help_text(self):
         return _("Create a new task from a template")
 
 
 class NewTaskWithSelectedCategories(TaskNew, ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("New task with selected &categories..."),
-            helpText=_(
+            menu_text=_("New task with selected &categories..."),
+            help_text=_(
                 "Insert a new task with the selected categories checked"
             ),
             *args,
@@ -1994,8 +2065,8 @@ class NewTaskWithSelectedCategories(TaskNew, ViewerCommand):
 class NewTaskWithSelectedTasksAsPrerequisites(TaskNew, ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("New task with selected tasks as &prerequisites..."),
-            helpText=_(
+            menu_text=_("New task with selected tasks as &prerequisites..."),
+            help_text=_(
                 "Insert a new task with the selected tasks as prerequisite tasks"
             ),
             *args,
@@ -2013,8 +2084,8 @@ class NewTaskWithSelectedTasksAsPrerequisites(TaskNew, ViewerCommand):
 class NewTaskWithSelectedTasksAsDependencies(TaskNew, ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("New task with selected tasks as &dependents..."),
-            helpText=_(
+            menu_text=_("New task with selected tasks as &dependents..."),
+            help_text=_(
                 "Insert a new task with the selected tasks as dependent tasks"
             ),
             *args,
@@ -2037,19 +2108,19 @@ class NewSubItem(ViewerCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=self.defaultMenuText,
-            helpText=_("Insert a new subitem of the selected item"),
+            menu_text=self.defaultMenuText,
+            help_text=_("Insert a new subitem of the selected item"),
             icon_id="taskcoach_actions_newsub",
             *args,
             **kwargs
         )
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
         self._selection_sync = _SelectionSync(self.viewer, self)
 
 
-    def doCommand(self, event, show=True):  # pylint: disable=W0221
+    def do_command(self, event, show=True):  # pylint: disable=W0221
         self.viewer.newSubItemDialog(icon_id=self.icon_id).Show(show)
 
     def enabled(self, event):
@@ -2075,18 +2146,18 @@ class TaskMarkActive(
     def __init__(self, *args, **kwargs):
         super().__init__(
             icon_id=task.active.getBitmap(kwargs["settings"]),
-            menuText=_("Mark task &active\tAlt+RETURN"),
-            helpText=_("Mark the selected task(s) active"),
+            menu_text=_("Mark task &active\tAlt+RETURN"),
+            help_text=_("Mark the selected task(s) active"),
             *args,
             **kwargs
         )
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
         self._selection_sync = _SelectionSync(self.viewer, self)
 
 
-    def doCommand(self, event):
+    def do_command(self, event):
         command.MarkActiveCommand(
             self.viewer.presentation(), self.viewer.curselection()
         ).do()
@@ -2110,18 +2181,18 @@ class TaskMarkInactive(
     def __init__(self, *args, **kwargs):
         super().__init__(
             icon_id=task.inactive.getBitmap(kwargs["settings"]),
-            menuText=_("Mark task &inactive\tCtrl+Alt+RETURN"),
-            helpText=_("Mark the selected task(s) inactive"),
+            menu_text=_("Mark task &inactive\tCtrl+Alt+RETURN"),
+            help_text=_("Mark the selected task(s) inactive"),
             *args,
             **kwargs
         )
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
         self._selection_sync = _SelectionSync(self.viewer, self)
 
 
-    def doCommand(self, event):
+    def do_command(self, event):
         command.MarkInactiveCommand(
             self.viewer.presentation(), self.viewer.curselection()
         ).do()
@@ -2144,18 +2215,18 @@ class TaskMarkCompleted(
     def __init__(self, *args, **kwargs):
         super().__init__(
             icon_id=task.completed.getBitmap(kwargs["settings"]),
-            menuText=_("Mark task &completed\tCtrl+RETURN"),
-            helpText=_("Mark the selected task(s) completed"),
+            menu_text=_("Mark task &completed\tCtrl+RETURN"),
+            help_text=_("Mark the selected task(s) completed"),
             *args,
             **kwargs
         )
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
         self._selection_sync = _SelectionSync(self.viewer, self)
 
 
-    def doCommand(self, event):
+    def do_command(self, event):
         mark_completed_command = command.MarkCompletedCommand(
             self.viewer.presentation(), self.viewer.curselection()
         )
@@ -2173,8 +2244,8 @@ class TaskMarkCompleted(
 class TaskMaxPriority(TaskListCommand, ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Maximize priority\tShift+Ctrl+I"),
-            helpText=help.taskMaxPriority,
+            menu_text=_("&Maximize priority\tShift+Ctrl+I"),
+            help_text=help.taskMaxPriority,
             icon_id="nuvola_actions_arrow-up-double",
             *args,
             **kwargs
@@ -2184,7 +2255,7 @@ class TaskMaxPriority(TaskListCommand, ViewerCommand):
     def enabled(self, event):
         return self.viewer.has_selection and self.viewer.is_task
 
-    def doCommand(self, event):
+    def do_command(self, event):
         max_priority = command.MaxPriorityCommand(
             self.taskList, self.viewer.curselection()
         )
@@ -2194,8 +2265,8 @@ class TaskMaxPriority(TaskListCommand, ViewerCommand):
 class TaskMinPriority(TaskListCommand, ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Minimize priority\tShift+Ctrl+D"),
-            helpText=help.taskMinPriority,
+            menu_text=_("&Minimize priority\tShift+Ctrl+D"),
+            help_text=help.taskMinPriority,
             icon_id="nuvola_actions_arrow-down-double",
             *args,
             **kwargs
@@ -2205,7 +2276,7 @@ class TaskMinPriority(TaskListCommand, ViewerCommand):
     def enabled(self, event):
         return self.viewer.has_selection and self.viewer.is_task
 
-    def doCommand(self, event):
+    def do_command(self, event):
         min_priority = command.MinPriorityCommand(
             self.taskList, self.viewer.curselection()
         )
@@ -2215,8 +2286,8 @@ class TaskMinPriority(TaskListCommand, ViewerCommand):
 class TaskPriorityParentMenu(ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Priority"),
-            helpText=_("Change the priority of the selected task(s)"),
+            menu_text=_("&Priority"),
+            help_text=_("Change the priority of the selected task(s)"),
             icon_id="nuvola_actions_arrow-up",
             *args,
             **kwargs
@@ -2225,15 +2296,15 @@ class TaskPriorityParentMenu(ViewerCommand):
     def enabled(self, event):
         return self.viewer.has_selection and self.viewer.is_task
 
-    def doCommand(self, event):
+    def do_command(self, event):
         pass
 
 
 class TaskIncPriority(TaskListCommand, ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Increase priority\tCtrl+I"),
-            helpText=help.taskIncreasePriority,
+            menu_text=_("&Increase priority\tCtrl+I"),
+            help_text=help.taskIncreasePriority,
             icon_id="nuvola_actions_arrow-up",
             *args,
             **kwargs
@@ -2243,7 +2314,7 @@ class TaskIncPriority(TaskListCommand, ViewerCommand):
     def enabled(self, event):
         return self.viewer.has_selection and self.viewer.is_task
 
-    def doCommand(self, event):
+    def do_command(self, event):
         inc_priority = command.IncPriorityCommand(
             self.taskList, self.viewer.curselection()
         )
@@ -2253,8 +2324,8 @@ class TaskIncPriority(TaskListCommand, ViewerCommand):
 class TaskDecPriority(TaskListCommand, ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Decrease priority\tCtrl+D"),
-            helpText=help.taskDecreasePriority,
+            menu_text=_("&Decrease priority\tCtrl+D"),
+            help_text=help.taskDecreasePriority,
             icon_id="nuvola_actions_arrow-down",
             *args,
             **kwargs
@@ -2264,7 +2335,7 @@ class TaskDecPriority(TaskListCommand, ViewerCommand):
     def enabled(self, event):
         return self.viewer.has_selection and self.viewer.is_task
 
-    def doCommand(self, event):
+    def do_command(self, event):
         dec_priority = command.DecPriorityCommand(
             self.taskList, self.viewer.curselection()
         )
@@ -2272,12 +2343,12 @@ class TaskDecPriority(TaskListCommand, ViewerCommand):
 
 
 class DragAndDropCommand(ViewerCommand):
-    def onCommandActivate(
+    def on_command_activate(
         self, dropItem, dragItems, part, column
     ):  # pylint: disable=W0221
-        """Override onCommandActivate to be able to accept two items instead
+        """Override on_command_activate to be able to accept two items instead
         of one event."""
-        self.doCommand(
+        self.do_command(
             dropItem,
             dragItems,
             part,
@@ -2285,7 +2356,7 @@ class DragAndDropCommand(ViewerCommand):
             column,  # Pass raw column index as dropColumn
         )
 
-    def doCommand(
+    def do_command(
         self, dropItem, dragItems, part, column, dropColumn=-1
     ):  # pylint: disable=W0221
         dragAndDropCommand = self.createCommand(
@@ -2305,13 +2376,13 @@ class DragAndDropCommand(ViewerCommand):
 
 
 class OrderingDragAndDropCommand(DragAndDropCommand):
-    def doCommand(self, dropItem, dragItems, part, column, dropColumn=-1):
-        cmd = super().doCommand(dropItem, dragItems, part, column, dropColumn)
+    def do_command(self, dropItem, dragItems, part, column, dropColumn=-1):
+        cmd = super().do_command(dropItem, dragItems, part, column, dropColumn)
         if cmd is not None and cmd.isOrdering():
             sortCommand = ViewerSortByCommand(
                 viewer=self.viewer, value="ordering"
             )
-            sortCommand.doCommand(None)
+            sortCommand.do_command(None)
 
 
 class TaskDragAndDrop(OrderingDragAndDropCommand, TaskListCommand):
@@ -2349,14 +2420,14 @@ class ToggleCategory(ViewerCommand):
         # items isn't possible. Hence, we use wx.ITEM_CHECK, even for mutual
         # exclusive categories.
         super().__init__(
-            menuText="&" + subject.replace("&", "&&"),
-            helpText=_("Toggle %s") % subject,
+            menu_text="&" + subject.replace("&", "&&"),
+            help_text=_("Toggle %s") % subject,
             kind=wx.ITEM_CHECK,
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         check = command.ToggleCategoryCommand(
             category=self.category, items=self.viewer.curselection()
         )
@@ -2395,28 +2466,28 @@ class Mail(ViewerCommand):
     rx_attr = re.compile(r"(cc|to)=(.*)")
 
     def __init__(self, *args, **kwargs):
-        menuText = (
+        menu_text = (
             _("&Mail...\tShift-Ctrl-M")
             if operating_system.isMac()
             else _("&Mail...\tCtrl-M")
         )
         super().__init__(
-            menuText=menuText,
-            helpText=help.mailItem,
+            menu_text=menu_text,
+            help_text=help.mailItem,
             icon_id="nuvola_apps_email",
             *args,
             **kwargs
         )
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
         self._selection_sync = _SelectionSync(self.viewer, self)
 
 
     def enabled(self, event):
         return self.viewer.has_selection
 
-    def doCommand(
+    def do_command(
         self, event, mail=sendMail, showerror=wx.MessageBox
     ):  # pylint: disable=W0221
         items = self.viewer.curselection()
@@ -2492,8 +2563,8 @@ class Mail(ViewerCommand):
 class AddNote(ViewerCommand, settings_uicommand.SettingsCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Add &note...\tCtrl+B"),
-            helpText=help.addNote,
+            menu_text=_("Add &note...\tCtrl+B"),
+            help_text=help.addNote,
             icon_id="nuvola_apps_knotes",
             *args,
             **kwargs
@@ -2504,17 +2575,17 @@ class AddNote(ViewerCommand, settings_uicommand.SettingsCommand):
         v = self.viewer
         return v.has_selection and (v.is_task or v.is_category or v.is_attachment)
 
-    def doCommand(self, event, show=True):  # pylint: disable=W0221
+    def do_command(self, event, show=True):  # pylint: disable=W0221
         addNoteCommand = command.AddNoteCommand(
             self.viewer.presentation(), self.viewer.curselection()
         )
         addNoteCommand.do()
         editDialog = dialog.editor.NoteEditor(
-            self.mainWindow(),
+            self.main_window(),
             addNoteCommand.items,
             self.settings,
             self.viewer.presentation(),
-            self.mainWindow().taskFile,
+            self.main_window().taskFile,
             icon_id=self.icon_id,
         )
         editDialog.Show(show)
@@ -2524,8 +2595,8 @@ class AddNote(ViewerCommand, settings_uicommand.SettingsCommand):
 class OpenAllNotes(ViewerCommand, settings_uicommand.SettingsCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Open all notes...\tShift+Ctrl+B"),
-            helpText=help.openAllNotes,
+            menu_text=_("Open all notes...\tShift+Ctrl+B"),
+            help_text=help.openAllNotes,
             icon_id="nuvola_actions_edit",
             *args,
             **kwargs
@@ -2540,15 +2611,15 @@ class OpenAllNotes(ViewerCommand, settings_uicommand.SettingsCommand):
             return False
         return any(item.notes() for item in v.curselection())
 
-    def doCommand(self, event):
+    def do_command(self, event):
         for item in self.viewer.curselection():
             for note in item.notes():
                 editDialog = dialog.editor.NoteEditor(
-                    self.mainWindow(),
+                    self.main_window(),
                     [note],
                     self.settings,
                     self.viewer.presentation(),
-                    self.mainWindow().taskFile,
+                    self.main_window().taskFile,
                     icon_id=self.icon_id,
                 )
                 editDialog.Show()
@@ -2564,14 +2635,14 @@ class EffortNew(
         effort_list = kwargs["effortList"]
         super().__init__(
             icon_id="nuvola_actions_document-new",
-            menuText=effort_list.newItemMenuText,
-            helpText=effort_list.newItemHelpText,
+            menu_text=effort_list.newItemMenuText,
+            help_text=effort_list.newItemHelpText,
             *args,
             **kwargs
         )
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
         if self.viewer:
             self._selection_sync = _SelectionSync(self.viewer, self)
 
@@ -2584,7 +2655,7 @@ class EffortNew(
             return bool(self.viewer.curselection())
         return True
 
-    def doCommand(self, event, show=True):
+    def do_command(self, event, show=True):
         if (
             self.viewer
             and self.viewer.isShowingTasks()
@@ -2607,11 +2678,11 @@ class EffortNew(
         )
         new_effort_command.do()
         new_effort_dialog = dialog.editor.EffortEditor(
-            self.mainWindow(),
+            self.main_window(),
             new_effort_command.items,
             self.settings,
             self.effortList,
-            self.mainWindow().taskFile,
+            self.main_window().taskFile,
             icon_id=self.icon_id,
         )
         if show:
@@ -2633,18 +2704,18 @@ class EffortStart(ViewerCommand, TaskListCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
             icon_id="nuvola_apps_clock",
-            menuText=_("&Start tracking effort\tCtrl-T"),
-            helpText=help.effortStart,
+            menu_text=_("&Start tracking effort\tCtrl-T"),
+            help_text=help.effortStart,
             *args,
             **kwargs
         )
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
         self._selection_sync = _SelectionSync(self.viewer, self)
 
 
-    def doCommand(self, event):
+    def do_command(self, event):
         start = command.StartEffortCommand(
             self.taskList, self.viewer.curselection()
         )
@@ -2668,20 +2739,20 @@ class EffortStartForEffort(ViewerCommand, TaskListCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
             icon_id="nuvola_apps_clock",
-            menuText=_("&Start tracking effort"),
-            helpText=_(
+            menu_text=_("&Start tracking effort"),
+            help_text=_(
                 "Start tracking effort for the task(s) of the selected effort(s)"
             ),
             *args,
             **kwargs
         )
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
         self._selection_sync = _SelectionSync(self.viewer, self)
 
 
-    def doCommand(self, event):
+    def do_command(self, event):
         start = command.StartEffortCommand(
             self.taskList, self.trackable_tasks()
         )
@@ -2714,13 +2785,13 @@ class EffortStartForTask(TaskListCommand):
         subject = self.task.subject() or _("(No subject)")
         super().__init__(
             icon_id=self.task.icon_id(recursive=True),
-            menuText="&" + subject.replace("&", "&&"),
-            helpText=_("Start tracking effort for %s") % subject,
+            menu_text="&" + subject.replace("&", "&&"),
+            help_text=_("Start tracking effort for %s") % subject,
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         start = command.StartEffortCommand(self.taskList, [self.task])
         start.do()
 
@@ -2733,8 +2804,8 @@ class EffortStartButton(mixin_uicommand.PopupButtonMixin, TaskListCommand):
         kwargs["taskList"] = base.filter.DeletedFilter(kwargs["taskList"])
         super().__init__(
             icon_id="taskcoach_actions_clock_menu_icon",
-            menuText=_("&Start tracking effort"),
-            helpText=_(
+            menu_text=_("&Start tracking effort"),
+            help_text=_(
                 "Select a task via the menu and start tracking effort for it"
             ),
             *args,
@@ -2744,7 +2815,7 @@ class EffortStartButton(mixin_uicommand.PopupButtonMixin, TaskListCommand):
     def createPopupMenu(self):
         from taskcoachlib.gui import menu
 
-        return menu.StartEffortForTaskMenu(self.mainWindow(), self.taskList)
+        return menu.StartEffortForTaskMenu(self.main_window(), self.taskList)
 
 
 class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
@@ -2761,8 +2832,8 @@ class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
         super().__init__(
             icon_id="taskcoach_actions_clock_resume_icon",
             icon_id2="taskcoach_actions_clock_stop_icon",
-            menuText=self.defaultMenuText,
-            helpText=self.defaultHelpText,
+            menu_text=self.defaultMenuText,
+            help_text=self.defaultHelpText,
             kind=wx.ITEM_CHECK,
             *args,
             **kwargs
@@ -2791,7 +2862,7 @@ class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
             else self.__tracker.trackedEfforts()
         )
 
-    def doCommand(self, event=None):
+    def do_command(self, event=None):
         efforts = self.efforts()
         if efforts:
             # Stop the tracked effort(s)
@@ -2818,17 +2889,17 @@ class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
             self.toolbar.EnableTool(self.id, self.enabled(None))
         self.updateToolState(not paused)
         current_icon_id = self.icon_id if paused else self.icon_id2
-        menuText = self.getMenuText(paused)
+        menu_text = self.get_menu_text(paused)
         if (current_icon_id != self.__current_icon_id) or bool(
             [
                 item
-                for item in self.menuItems
-                if item.GetItemLabel() != menuText
+                for item in self.menu_items
+                if item.GetItemLabel() != menu_text
             ]
         ):
             self.__current_icon_id = current_icon_id
             self.updateToolBitmap(current_icon_id)
-            self.updateToolHelp()
+            self.update_tool_help()
             self.updateMenuItems(paused)
 
     def updateToolState(self, paused):
@@ -2855,14 +2926,14 @@ class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
         self.toolbar.Realize()
 
     def updateMenuItems(self, paused):
-        menuText = self.getMenuText(paused)
-        helpText = self.getHelpText(paused)
-        for menuItem in self.menuItems:
+        menu_text = self.get_menu_text(paused)
+        help_text = self.get_help_text(paused)
+        for menuItem in self.menu_items:
             menuItem.Check(paused)
-            menuItem.SetItemLabel(menuText)
-            menuItem.SetHelp(helpText)
+            menuItem.SetItemLabel(menu_text)
+            menuItem.SetHelp(help_text)
 
-    def getMenuText(self, paused=None):  # pylint: disable=W0221
+    def get_menu_text(self, paused=None):  # pylint: disable=W0221
         if self.anyTrackedEfforts():
             trackedEfforts = list(self.efforts())
             subject = (
@@ -2880,7 +2951,7 @@ class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
         else:
             return self.defaultMenuText
 
-    def getHelpText(self, paused=None):  # pylint: disable=W0221
+    def get_help_text(self, paused=None):  # pylint: disable=W0221
         if self.anyTrackedEfforts():
             return self.stopHelpText
         if paused is None:
@@ -2913,18 +2984,18 @@ class CategoryNew(CategoriesCommand, settings_uicommand.SettingsCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
             icon_id="nuvola_actions_document-new",
-            menuText=_("New category...\tCtrl-G"),
-            helpText=help.categoryNew,
+            menu_text=_("New category...\tCtrl-G"),
+            help_text=help.categoryNew,
             *args,
             **kwargs
         )
 
-    def doCommand(self, event, show=True):  # pylint: disable=W0221
+    def do_command(self, event, show=True):  # pylint: disable=W0221
         newCategoryCommand = command.NewCategoryCommand(self.categories)
         newCategoryCommand.do()
-        taskFile = self.mainWindow().taskFile
+        taskFile = self.main_window().taskFile
         newCategoryDialog = dialog.editor.CategoryEditor(
-            self.mainWindow(),
+            self.main_window(),
             newCategoryCommand.items,
             self.settings,
             taskFile.categories(),
@@ -2957,13 +3028,13 @@ class CategoryCheckAll(ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
             icon_id="taskcoach_actions_checkall",
-            menuText=_("Check &all categories"),
-            helpText=_("Check all category checkboxes"),
+            menu_text=_("Check &all categories"),
+            help_text=_("Check all category checkboxes"),
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.viewer.checkAllCategories()
 
 
@@ -2976,30 +3047,30 @@ class CategoryUncheckAll(ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
             icon_id="taskcoach_actions_uncheckall",
-            menuText=_("&Uncheck all categories"),
-            helpText=_("Uncheck all category checkboxes"),
+            menu_text=_("&Uncheck all categories"),
+            help_text=_("Uncheck all category checkboxes"),
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.viewer.uncheckAllCategories()
 
 
 class NoteNew(NotesCommand, settings_uicommand.SettingsCommand, ViewerCommand):
-    menuText = _("New note...\tCtrl-J")
-    helpText = help.noteNew
+    menu_text = _("New note...\tCtrl-J")
+    help_text = help.noteNew
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=self.menuText,
-            helpText=self.helpText,
+            menu_text=self.menu_text,
+            help_text=self.help_text,
             icon_id="nuvola_actions_document-new",
             *args,
             **kwargs
         )
 
-    def doCommand(self, event, show=True):  # pylint: disable=W0221
+    def do_command(self, event, show=True):  # pylint: disable=W0221
         if self.viewer and self.viewer.isShowingNotes():
             noteDialog = self.viewer.newItemDialog(icon_id=self.icon_id)
         else:
@@ -3008,23 +3079,23 @@ class NoteNew(NotesCommand, settings_uicommand.SettingsCommand, ViewerCommand):
             )
             newNoteCommand.do()
             noteDialog = dialog.editor.NoteEditor(
-                self.mainWindow(),
+                self.main_window(),
                 newNoteCommand.items,
                 self.settings,
                 self.notes,
-                self.mainWindow().taskFile,
+                self.main_window().taskFile,
                 icon_id=self.icon_id,
             )
         noteDialog.Show(show)
         return noteDialog  # for testing purposes
 
     def categoriesForTheNewNote(self):
-        return self.mainWindow().taskFile.categories().filteredCategories()
+        return self.main_window().taskFile.categories().filteredCategories()
 
 
 class NewNoteWithSelectedCategories(NoteNew, ViewerCommand):
-    menuText = _("New &note with selected categories...")
-    helpText = _("Insert a new note with the selected categories checked")
+    menu_text = _("New &note with selected categories...")
+    help_text = _("Insert a new note with the selected categories checked")
 
     def enabled(self, event):
         return super().enabled(event) and bool(self.viewer.curselection())
@@ -3051,12 +3122,12 @@ class AttachmentNew(
 ):
     def __init__(self, *args, **kwargs):
         attachments = kwargs["attachments"]
-        if "menuText" not in kwargs:
-            kwargs["menuText"] = attachments.newItemMenuText
-            kwargs["helpText"] = attachments.newItemHelpText
+        if "menu_text" not in kwargs:
+            kwargs["menu_text"] = attachments.newItemMenuText
+            kwargs["help_text"] = attachments.newItemHelpText
         super().__init__(icon_id="nuvola_actions_document-new", *args, **kwargs)
 
-    def doCommand(self, event, show=True):  # pylint: disable=W0221
+    def do_command(self, event, show=True):  # pylint: disable=W0221
         attachmentDialog = self.viewer.newItemDialog(icon_id=self.icon_id)
         attachmentDialog.Show(show)
         return attachmentDialog  # for testing purposes
@@ -3065,8 +3136,8 @@ class AttachmentNew(
 class AddAttachment(ViewerCommand, settings_uicommand.SettingsCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Add attachment...\tShift-Ctrl-A"),
-            helpText=help.addAttachment,
+            menu_text=_("&Add attachment...\tShift-Ctrl-A"),
+            help_text=help.addAttachment,
             icon_id="nuvola_status_mail-attachment",
             *args,
             **kwargs
@@ -3077,7 +3148,7 @@ class AddAttachment(ViewerCommand, settings_uicommand.SettingsCommand):
         v = self.viewer
         return v.has_selection and (v.is_task or v.is_category or v.is_note)
 
-    def doCommand(self, event):
+    def do_command(self, event):
         filename = widgets.AttachmentSelector()
         if not filename:
             return
@@ -3114,8 +3185,8 @@ class AttachmentOpen(
         attachments = kwargs["attachments"]
         super().__init__(
             icon_id="nuvola_actions_document-open",
-            menuText=attachments.openItemMenuText,
-            helpText=attachments.openItemHelpText,
+            menu_text=attachments.openItemMenuText,
+            help_text=attachments.openItemHelpText,
             *args,
             **kwargs
         )
@@ -3124,7 +3195,7 @@ class AttachmentOpen(
     def enabled(self, event):
         return self.viewer.has_selection and self.viewer.isShowingAttachments()
 
-    def doCommand(
+    def do_command(
         self, event, showerror=wx.MessageBox
     ):  # pylint: disable=W0221
         openAttachments(self.viewer.curselection(), self.settings, showerror)
@@ -3133,8 +3204,8 @@ class AttachmentOpen(
 class OpenAllAttachments(ViewerCommand, settings_uicommand.SettingsCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Open all attachments...\tShift+Ctrl+O"),
-            helpText=help.openAllAttachments,
+            menu_text=_("&Open all attachments...\tShift+Ctrl+O"),
+            help_text=help.openAllAttachments,
             icon_id="nuvola_status_mail-attachment",
             *args,
             **kwargs
@@ -3150,7 +3221,7 @@ class OpenAllAttachments(ViewerCommand, settings_uicommand.SettingsCommand):
             if not isinstance(item, effort.Effort)
         )
 
-    def doCommand(
+    def do_command(
         self, event, showerror=wx.MessageBox
     ):  # pylint: disable=W0221
         allAttachments = []
@@ -3167,7 +3238,7 @@ class DialogCommand(base_uicommand.UICommand):
         self.closed = True
         super().__init__(*args, **kwargs)
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.closed = False
         # pylint: disable=W0201
         self.dialog = widgets.HTMLDialog(
@@ -3194,13 +3265,13 @@ class Help(DialogCommand):
     def __init__(self, *args, **kwargs):
         if operating_system.isMac():
             # Use default keyboard shortcut for Mac OS X:
-            menuText = _("&Help contents\tCtrl+?")
+            menu_text = _("&Help contents\tCtrl+?")
         else:
             # Use a letter, because 'Ctrl-?' doesn't work on Windows:
-            menuText = _("&Help contents\tCtrl+H")
+            menu_text = _("&Help contents\tCtrl+H")
         super().__init__(
-            menuText=menuText,
-            helpText=help.help,
+            menu_text=menu_text,
+            help_text=help.help,
             icon_id="nuvola_actions_help-about",
             dialogTitle=_("Help"),
             dialogText=help.helpHTML,
@@ -3213,27 +3284,27 @@ class Help(DialogCommand):
 class Tips(settings_uicommand.SettingsCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Tips"),
-            helpText=_("Tips about the program"),
+            menu_text=_("&Tips"),
+            help_text=_("Tips about the program"),
             icon_id="nuvola_apps_ktip",
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
-        help.showTips(self.mainWindow(), self.settings)
+    def do_command(self, event):
+        help.showTips(self.main_window(), self.settings)
 
 
 class Anonymize(IOCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Anonymize"),
-            helpText=_("Anonymize a task file to attach it to a bug report"),
+            menu_text=_("Anonymize"),
+            help_text=_("Anonymize a task file to attach it to a bug report"),
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         anonymized_filename = anonymize(self.iocontroller.filename())
         wx.MessageBox(
             _("Your task file has been anonymized and saved to:")
@@ -3250,8 +3321,8 @@ class Anonymize(IOCommand):
 class HelpAbout(DialogCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&About %s") % meta.name,
-            helpText=_("Version and contact information about %s") % meta.name,
+            menu_text=_("&About %s") % meta.name,
+            help_text=_("Version and contact information about %s") % meta.name,
             dialogTitle=_("About %s") % meta.name,
             dialogText=help.aboutHTML,
             id=wx.ID_ABOUT,
@@ -3264,8 +3335,8 @@ class HelpAbout(DialogCommand):
 class HelpLicense(DialogCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&License"),
-            helpText=_("%s license") % meta.name,
+            menu_text=_("&License"),
+            help_text=_("%s license") % meta.name,
             dialogTitle=_("%s license") % meta.name,
             dialogText=meta.licenseHTML,
             direction=wx.Layout_LeftToRight,
@@ -3280,7 +3351,7 @@ class URLCommand(base_uicommand.UICommand):
         self.url = kwargs.pop("url")
         super().__init__(*args, **kwargs)
 
-    def doCommand(self, event):
+    def do_command(self, event):
         try:
             openfile.openFile(self.url)
         except Exception as reason:
@@ -3294,8 +3365,8 @@ class URLCommand(base_uicommand.UICommand):
 class FAQ(URLCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Frequently asked questions"),
-            helpText=_("Browse the frequently asked questions and answers"),
+            menu_text=_("&Frequently asked questions"),
+            help_text=_("Browse the frequently asked questions and answers"),
             icon_id="nuvola_actions_help-about",
             url=meta.faq_url,
             *args,
@@ -3306,8 +3377,8 @@ class FAQ(URLCommand):
 class ReportBug(URLCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Report a &bug..."),
-            helpText=_("Report a bug or browse known bugs"),
+            menu_text=_("Report a &bug..."),
+            help_text=_("Report a bug or browse known bugs"),
             icon_id="nuvola_apps_kbugbuster",
             url=meta.known_bugs_url,
             *args,
@@ -3318,8 +3389,8 @@ class ReportBug(URLCommand):
 class RequestFeature(URLCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Request a &feature..."),
-            helpText=_("Request a new feature or vote for existing requests"),
+            menu_text=_("Request a &feature..."),
+            help_text=_("Request a new feature or vote for existing requests"),
             icon_id="nuvola_apps_preferences-system-session-services",
             url=meta.feature_request_url,
             *args,
@@ -3330,8 +3401,8 @@ class RequestFeature(URLCommand):
 class RequestSupport(URLCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Request &support..."),
-            helpText=_("Request user support from the developers"),
+            menu_text=_("Request &support..."),
+            help_text=_("Request user support from the developers"),
             icon_id="nuvola_apps_help-browser",
             url=meta.support_request_url,
             *args,
@@ -3342,8 +3413,8 @@ class RequestSupport(URLCommand):
 class HelpTranslate(URLCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Help improve &translations..."),
-            helpText=_("Help improve the translations of %s") % meta.name,
+            menu_text=_("Help improve &translations..."),
+            help_text=_("Help improve the translations of %s") % meta.name,
             icon_id="nuvola_categories_applications-education-language",
             url=meta.translations_url,
             *args,
@@ -3356,8 +3427,8 @@ class CheckForUpdate(URLCommand):
         # Remove settings from kwargs if present (not needed for URLCommand)
         kwargs.pop("settings", None)
         super().__init__(
-            menuText=_("Check for update"),
-            helpText=_("Check for the availability of a new version of %s")
+            menu_text=_("Check for update"),
+            help_text=_("Check for the availability of a new version of %s")
             % meta.name,
             icon_id="nuvola_apps_kpackage",
             url=meta.github_url,
@@ -3370,15 +3441,15 @@ class CheckForUpdate(URLCommand):
 class MainWindowRestore(base_uicommand.UICommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Restore"),
-            helpText=_("Restore the window to its previous state"),
+            menu_text=_("&Restore"),
+            help_text=_("Restore the window to its previous state"),
             icon_id="nuvola_apps_preferences-system-windows",
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
-        self.mainWindow().restore(event)
+    def do_command(self, event):
+        self.main_window().restore(event)
 
 
 class ResetWindowLayout(base_uicommand.UICommand):
@@ -3386,22 +3457,22 @@ class ResetWindowLayout(base_uicommand.UICommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("Reset &window layout"),
-            helpText=_("Reset all panes to their default positions"),
+            menu_text=_("Reset &window layout"),
+            help_text=_("Reset all panes to their default positions"),
             icon_id="nuvola_actions_view-split-left-right",
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
-        self.mainWindow().resetWindowLayout()
+    def do_command(self, event):
+        self.main_window().resetWindowLayout()
 
 
 class Search(ViewerCommand, settings_uicommand.SettingsCommand):
     # Search can only be attached to a real viewer, not to a viewercontainer
     def __init__(self, *args, **kwargs):
         self.__bound = False
-        super().__init__(*args, helpText=_("Search"), **kwargs)
+        super().__init__(*args, help_text=_("Search"), **kwargs)
         assert self.viewer.isSearchable()
 
     def onFind(
@@ -3421,7 +3492,7 @@ class Search(ViewerCommand, settings_uicommand.SettingsCommand):
                 regularExpression,
             )
 
-    def appendToToolBar(self, toolbar):
+    def append_to_toolbar(self, toolbar):
         self.__bound = True
         (
             searchString,
@@ -3492,7 +3563,7 @@ class Search(ViewerCommand, settings_uicommand.SettingsCommand):
         else:
             event.Skip()
 
-    def doCommand(self, event):
+    def do_command(self, event):
         pass  # Not used
 
 
@@ -3501,7 +3572,7 @@ class ToolbarChoiceCommandMixin(object):
         self.choiceCtrl = None
         super().__init__(*args, **kwargs)
 
-    def appendToToolBar(self, toolbar):
+    def append_to_toolbar(self, toolbar):
         """Add our choice control to the toolbar."""
         # pylint: disable=W0201
         self.choiceCtrl = wx.Choice(toolbar, choices=self.choiceLabels)
@@ -3526,10 +3597,10 @@ class ToolbarChoiceCommandMixin(object):
     def doChoice(self, choice):
         raise NotImplementedError  # pragma: no cover
 
-    def doCommand(self, event):
+    def do_command(self, event):
         pass  # Not used
 
-    def setChoice(self, choice):
+    def set_choice(self, choice):
         """Programmatically set the current choice in the choice control."""
         if self.choiceCtrl is not None:
             index = self.choiceData.index(choice)
@@ -3555,11 +3626,11 @@ class EffortViewerAggregationChoice(
     choiceData = ["details", "day", "week", "month"]
 
     def __init__(self, **kwargs):
-        super().__init__(helpText=_("Aggregation mode"), **kwargs)
+        super().__init__(help_text=_("Aggregation mode"), **kwargs)
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
-        self.setChoice(self.viewer.aggregation)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
+        self.set_choice(self.viewer.aggregation)
         self.viewer.registerObserver(
             self._on_view_settings_changed,
             eventType=self.viewer.view_settings_changed_event_type(),
@@ -3570,17 +3641,17 @@ class EffortViewerAggregationChoice(
         self.viewer.set_aggregation(choice)
 
     def _on_view_settings_changed(self, event):
-        self.setChoice(self.viewer.aggregation)
+        self.set_choice(self.viewer.aggregation)
 
 
 class EffortViewerAggregationOption(
     settings_uicommand.UIRadioCommand, ViewerCommand
 ):
 
-    def isSettingChecked(self):
+    def is_setting_checked(self):
         return self.viewer.aggregation == self.value
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.viewer.set_aggregation(self.value)
 
 
@@ -3592,8 +3663,8 @@ class TaskViewerTreeOrListChoice(
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=self.choiceLabels[0],
-            helpText=_(
+            menu_text=self.choiceLabels[0],
+            help_text=_(
                 "When checked, show tasks as tree, "
                 "otherwise show tasks as list"
             ),
@@ -3602,9 +3673,9 @@ class TaskViewerTreeOrListChoice(
         )
 
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
-        self.setChoice(
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
+        self.set_choice(
             self.settings.getboolean(self.viewer.settingsSection(), "treemode")
         )
         self.viewer.registerObserver(
@@ -3617,7 +3688,7 @@ class TaskViewerTreeOrListChoice(
         self.viewer.set_tree_mode(choice)
 
     def _on_view_settings_changed(self, event):
-        self.setChoice(
+        self.set_choice(
             self.settings.getboolean(self.viewer.settingsSection(), "treemode")
         )
 
@@ -3626,13 +3697,13 @@ class TaskViewerTreeOrListOption(
     settings_uicommand.UIRadioCommand, ViewerCommand
 ):
 
-    def isSettingChecked(self):
+    def is_setting_checked(self):
         return (
             self.settings.getboolean(self.viewer.settingsSection(), "treemode")
             == self.value
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.viewer.set_tree_mode(self.value)
 
 
@@ -3647,8 +3718,8 @@ class CategoryViewerFilterChoice(
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=self.choiceLabels[0],
-            helpText=_(
+            menu_text=self.choiceLabels[0],
+            help_text=_(
                 "When checked, filter on all checked categories, "
                 "otherwise on any checked category"
             ),
@@ -3657,25 +3728,25 @@ class CategoryViewerFilterChoice(
         )
 
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
         pub.subscribe(
             self.on_setting_changed, "settings.view.categoryfiltermatchall"
         )
 
-    def isSettingChecked(self):
+    def is_setting_checked(self):
         return self.settings.getboolean("view", "categoryfiltermatchall")
 
     def doChoice(self, choice):
         self.settings.setboolean("view", "categoryfiltermatchall", choice)
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.settings.setboolean(
             "view", "categoryfiltermatchall", self._isMenuItemChecked(event)
         )
 
     def on_setting_changed(self, value):
-        self.setChoice(value)
+        self.set_choice(value)
 
 
 class SquareTaskViewerOrderChoice(
@@ -3693,11 +3764,11 @@ class SquareTaskViewerOrderChoice(
     choiceData = ["budget", "timeSpent", "fixedFee", "revenue", "priority"]
 
     def __init__(self, **kwargs):
-        super().__init__(helpText=_("Order choice"), **kwargs)
+        super().__init__(help_text=_("Order choice"), **kwargs)
 
-    def appendToToolBar(self, *args, **kwargs):
-        super().appendToToolBar(*args, **kwargs)
-        self.setChoice(self.viewer.order_by)
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
+        self.set_choice(self.viewer.order_by)
         self.viewer.registerObserver(
             self._on_view_settings_changed,
             eventType=self.viewer.view_settings_changed_event_type(),
@@ -3708,53 +3779,53 @@ class SquareTaskViewerOrderChoice(
         self.viewer.set_order_by(choice)
 
     def _on_view_settings_changed(self, event):
-        self.setChoice(self.viewer.order_by)
+        self.set_choice(self.viewer.order_by)
 
 
 class SquareTaskViewerOrderByOption(
     settings_uicommand.UIRadioCommand, ViewerCommand
 ):
 
-    def isSettingChecked(self):
+    def is_setting_checked(self):
         return self.viewer.order_by == self.value
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.viewer.set_order_by(self.value)
 
 
 class CalendarViewerConfigure(ViewerCommand):
-    menuText = _("&Configure")
-    helpText = _("Configure the calendar viewer")
+    menu_text = _("&Configure")
+    help_text = _("Configure the calendar viewer")
     icon_id ="nuvola_actions_configure"
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=self.menuText,
-            helpText=self.helpText,
+            menu_text=self.menu_text,
+            help_text=self.help_text,
             icon_id=self.icon_id,
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.viewer.configure()
 
 
 class HierarchicalCalendarViewerConfigure(CalendarViewerConfigure):
-    helpText = _("Configure the hierarchical calendar viewer")
+    help_text = _("Configure the hierarchical calendar viewer")
 
 
 class CalendarViewerNavigationCommand(ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=self.menuText,
-            helpText=self.helpText,
+            menu_text=self.menu_text,
+            help_text=self.help_text,
             icon_id=self.icon_id,
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.viewer.freeze()
         try:
             self.viewer.SetViewType(
@@ -3765,77 +3836,77 @@ class CalendarViewerNavigationCommand(ViewerCommand):
 
 
 class CalendarViewerNextPeriod(CalendarViewerNavigationCommand):
-    menuText = _("&Next period")
-    helpText = _("Show next period")
+    menu_text = _("&Next period")
+    help_text = _("Show next period")
     icon_id ="nuvola_actions_go-next-document"
     calendarViewType = wxSCHEDULER_NEXT
 
 
 class HierarchicalCalendarViewerNextPeriod(ViewerCommand):
-    menuText = _("&Next period")
-    helpText = _("Show next period")
+    menu_text = _("&Next period")
+    help_text = _("Show next period")
     icon_id ="nuvola_actions_go-next-document"
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=self.menuText,
-            helpText=self.helpText,
+            menu_text=self.menu_text,
+            help_text=self.help_text,
             icon_id=self.icon_id,
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.viewer.widget.Next()
 
 
 class CalendarViewerPreviousPeriod(CalendarViewerNavigationCommand):
-    menuText = _("&Previous period")
-    helpText = _("Show previous period")
+    menu_text = _("&Previous period")
+    help_text = _("Show previous period")
     icon_id ="nuvola_actions_go-previous-document"
     calendarViewType = wxSCHEDULER_PREV
 
 
 class HierarchicalCalendarViewerPreviousPeriod(ViewerCommand):
-    menuText = _("&Previous period")
-    helpText = _("Show previous period")
+    menu_text = _("&Previous period")
+    help_text = _("Show previous period")
     icon_id ="nuvola_actions_go-previous-document"
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=self.menuText,
-            helpText=self.helpText,
+            menu_text=self.menu_text,
+            help_text=self.help_text,
             icon_id=self.icon_id,
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.viewer.widget.Prev()
 
 
 class CalendarViewerToday(CalendarViewerNavigationCommand):
-    menuText = _("&Today")
-    helpText = _("Show today")
+    menu_text = _("&Today")
+    help_text = _("Show today")
     icon_id ="nuvola_apps_date"
     calendarViewType = wxSCHEDULER_TODAY
 
 
 class HierarchicalCalendarViewerToday(ViewerCommand):
-    menuText = _("&Today")
-    helpText = _("Show today")
+    menu_text = _("&Today")
+    help_text = _("Show today")
     icon_id ="nuvola_apps_date"
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=self.menuText,
-            helpText=self.helpText,
+            menu_text=self.menu_text,
+            help_text=self.help_text,
             icon_id=self.icon_id,
             *args,
             **kwargs
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.viewer.widget.Today()
 
 
@@ -3844,8 +3915,8 @@ class ToggleAutoColumnResizing(
 ):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menuText=_("&Automatic column resizing"),
-            helpText=_(
+            menu_text=_("&Automatic column resizing"),
+            help_text=_(
                 "When checked, automatically resize columns to fill"
                 " available space"
             ),
@@ -3861,17 +3932,17 @@ class ToggleAutoColumnResizing(
         try:
             widget = self.viewer.getWidget()
             if widget:
-                widget.ToggleAutoResizing(self.isSettingChecked())
+                widget.ToggleAutoResizing(self.is_setting_checked())
         except RuntimeError:
             # wrapped C/C++ object has been deleted
             pass
 
-    def isSettingChecked(self):
+    def is_setting_checked(self):
         return self.settings.getboolean(
             self.viewer.settingsSection(), "columnautoresizing"
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.settings.set(
             self.viewer.settingsSection(),
             "columnautoresizing",
@@ -3883,9 +3954,9 @@ class ToggleAutoColumnResizing(
 class ViewerPieChartAngle(ViewerCommand, settings_uicommand.SettingsCommand):
     def __init__(self, *args, **kwargs):
         self.sliderCtrl = None
-        super().__init__(helpText=_("Set pie chart angle"), *args, **kwargs)
+        super().__init__(help_text=_("Set pie chart angle"), *args, **kwargs)
 
-    def appendToToolBar(self, toolbar):
+    def append_to_toolbar(self, toolbar):
         """Add our slider control to the toolbar."""
         # pylint: disable=W0201
         self.sliderCtrl = wx.Slider(
@@ -3909,7 +3980,7 @@ class ViewerPieChartAngle(ViewerCommand, settings_uicommand.SettingsCommand):
         event.Skip()
         self.setCurrentAngle()
 
-    def doCommand(self, event):
+    def do_command(self, event):
         pass  # Not used
 
     def getCurrentAngle(self):
@@ -3938,7 +4009,7 @@ class RoundingPrecision(
     ]
 
     def __init__(self, **kwargs):
-        super().__init__(helpText=_("Rounding precision"), **kwargs)
+        super().__init__(help_text=_("Rounding precision"), **kwargs)
 
     def doChoice(self, choice):
         self.settings.setint(self.viewer.settingsSection(), "round", choice)
@@ -3946,13 +4017,13 @@ class RoundingPrecision(
 
 class RoundBy(settings_uicommand.UIRadioCommand, ViewerCommand):
 
-    def isSettingChecked(self):
+    def is_setting_checked(self):
         return (
             self.settings.getint(self.viewer.settingsSection(), "round")
             == self.value
         )
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.settings.setint(
             self.viewer.settingsSection(), "round", self.value
         )
@@ -3962,17 +4033,17 @@ class AlwaysRoundUp(settings_uicommand.UICheckCommand, ViewerCommand):
     def __init__(self, *args, **kwargs):
         self.checkboxCtrl = None
         super().__init__(
-            menuText=_("&Always round up"),
-            helpText=_("Always round up to the next rounding increment"),
+            menu_text=_("&Always round up"),
+            help_text=_("Always round up to the next rounding increment"),
             *args,
             **kwargs
         )
 
 
-    def appendToToolBar(self, toolbar):
+    def append_to_toolbar(self, toolbar):
         """Add a checkbox control to the toolbar."""
         # pylint: disable=W0201
-        self.checkboxCtrl = wx.CheckBox(toolbar, label=self.menuText)
+        self.checkboxCtrl = wx.CheckBox(toolbar, label=self.menu_text)
         self.checkboxCtrl.Bind(wx.EVT_CHECKBOX, self.onCheck)
         toolbar.AddControl(self.checkboxCtrl)
 
@@ -3982,7 +4053,7 @@ class AlwaysRoundUp(settings_uicommand.UICheckCommand, ViewerCommand):
             self.checkboxCtrl = None
         super().unbind(window, itemId)
 
-    def isSettingChecked(self):
+    def is_setting_checked(self):
         return self.settings.getboolean(
             self.viewer.settingsSection(), "alwaysroundup"
         )
@@ -3990,7 +4061,7 @@ class AlwaysRoundUp(settings_uicommand.UICheckCommand, ViewerCommand):
     def onCheck(self, event):
         self.setSetting(event.IsChecked())
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.setSetting(self._isMenuItemChecked(event))
 
     def setSetting(self, alwaysRoundUp):
@@ -4013,8 +4084,8 @@ class ConsolidateEffortsPerTask(
     def __init__(self, *args, **kwargs):
         self.checkboxCtrl = None
         super().__init__(
-            menuText=_("&Consolidate efforts per task"),
-            helpText=_(
+            menu_text=_("&Consolidate efforts per task"),
+            help_text=_(
                 "Consolidate all efforts per task to a single effort before rounding"
             ),
             *args,
@@ -4022,10 +4093,10 @@ class ConsolidateEffortsPerTask(
         )
 
 
-    def appendToToolBar(self, toolbar):
+    def append_to_toolbar(self, toolbar):
         """Add a checkbox control to the toolbar."""
         # pylint: disable=W0201
-        self.checkboxCtrl = wx.CheckBox(toolbar, label=self.menuText)
+        self.checkboxCtrl = wx.CheckBox(toolbar, label=self.menu_text)
         self.checkboxCtrl.Bind(wx.EVT_CHECKBOX, self.onCheck)
         toolbar.AddControl(self.checkboxCtrl)
 
@@ -4035,7 +4106,7 @@ class ConsolidateEffortsPerTask(
             self.checkboxCtrl = None
         super().unbind(window, itemId)
 
-    def isSettingChecked(self):
+    def is_setting_checked(self):
         return self.settings.getboolean(
             self.viewer.settingsSection(), "consolidateeffortspertask"
         )
@@ -4043,7 +4114,7 @@ class ConsolidateEffortsPerTask(
     def onCheck(self, event):
         self.setSetting(self._isMenuItemChecked(event))
 
-    def doCommand(self, event):
+    def do_command(self, event):
         self.setSetting(self._isMenuItemChecked(event))
 
     def setSetting(self, consolidateEffortsPerTask):

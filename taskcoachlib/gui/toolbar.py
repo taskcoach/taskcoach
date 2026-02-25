@@ -23,6 +23,7 @@ from taskcoachlib.meta.debug import log_step
 from wx.lib.agw import aui
 import wx
 from . import uicommand
+from .uicommand.uicommandcontainer import _coerce_ui_command
 
 # All toolbars use LIST_ICON_SIZE except the main toolbar, which has
 # user-selectable sizes defined in config/defaults.py.
@@ -97,22 +98,22 @@ class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
                  size=(MAIN_TOOLBAR_ICON_SIZE_DEFAULT,) * 2):
         self.__window = window
         self.__settings = settings
-        self.__visibleUICommands = list()
+        self.__visible_ui_commands = list()
         self.__cache = None
         super().__init__(window, style=wx.TB_FLAT | wx.TB_NODIVIDER)
         self.SetToolBitmapSize(size)
         if operating_system.isMac():
             # Extra margin needed because the search control is too high
             self.SetMargins(0, 7)
-        self.loadPerspective(window.getToolBarPerspective())
+        self.load_perspective(window.getToolBarPerspective())
 
     def Clear(self):
         """The regular Clear method does not remove controls."""
 
-        if self.__visibleUICommands:  # May be None
-            for uiCommand in self.__visibleUICommands:
-                if uiCommand is not None and not isinstance(uiCommand, int):
-                    uiCommand.unbind(self, uiCommand.id)
+        if self.__visible_ui_commands:  # May be None
+            for item in self.__visible_ui_commands:
+                if item.is_command():
+                    item.unbind(self, item.id)
 
         idx = 0
         while idx < self.GetToolCount():
@@ -127,84 +128,84 @@ class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
 
     def detach(self):
         self.Clear()
-        self.__visibleUICommands = self.__cache = None
+        self.__visible_ui_commands = self.__cache = None
 
-    def getToolIdByCommand(self, commandName):
-        if commandName == "EditToolBarPerspective":
+    def get_tool_id_by_command(self, command_name):
+        if command_name == "EditToolBarPerspective":
             return self.__customizeId
 
-        for uiCommand in self.__visibleUICommands:
-            if (
-                isinstance(uiCommand, uicommand.UICommand)
-                and uiCommand.uniqueName() == commandName
-            ):
-                return uiCommand.id
+        for item in self.__visible_ui_commands:
+            if item.is_command() and item.unique_name() == command_name:
+                return item.id
         return wx.ID_ANY
 
-    def _filterCommands(self, perspective, cache=True):
+    # Keep old name as alias for callers not yet updated
+    getToolIdByCommand = get_tool_id_by_command
+
+    def _filter_commands(self, perspective, cache=True):
         commands = list()
         if perspective:
             index = dict(
-                [
-                    (command.uniqueName(), command)
-                    for command in self.uiCommands(cache=cache)
-                    if command is not None and not isinstance(command, int)
-                ]
+                (command.unique_name(), command)
+                for command in self.uiCommands(cache=cache)
             )
-            index["Separator"] = None
-            index["Spacer"] = 1
-            for className in perspective.split(","):
-                if className in index:
-                    commands.append(index[className])
+            for class_name in perspective.split(","):
+                if class_name in index:
+                    commands.append(index[class_name])
         # If perspective is empty, return empty list (allow empty toolbars)
         return commands
 
-    def loadPerspective(self, perspective, customizable=True, cache=True):
+    def load_perspective(self, perspective, customizable=True, cache=True):
         self.Clear()
 
-        commands = self._filterCommands(perspective, cache=cache)
-        self.__visibleUICommands = commands[:]
+        commands = self._filter_commands(perspective, cache=cache)
+        self.__visible_ui_commands = commands[:]
 
         if customizable:
-            if 1 not in commands:
-                commands.append(1)
+            if not any(c.is_spacer() for c in commands):
+                commands.append(uicommand.Spacer())
             from taskcoachlib.gui.dialog.toolbar import ToolBarEditor
 
-            uiCommand = uicommand.EditToolBarPerspective(
+            ui_command = uicommand.EditToolBarPerspective(
                 self, ToolBarEditor, settings=self.__settings
             )
-            commands.append(uiCommand)
-            self.__customizeId = uiCommand.id
+            commands.append(ui_command)
+            self.__customizeId = ui_command.id
         if operating_system.isMac():
-            commands.append(None)  # Errr...
+            commands.append(uicommand.Separator())
 
-        self.appendUICommands(*commands)
+        self.append_ui_commands(*commands)
         self.Realize()
+
+    # Keep old name as alias
+    loadPerspective = load_perspective
 
     def perspective(self):
         names = list()
-        for uiCommand in self.__visibleUICommands:
-            if uiCommand is None:
-                names.append("Separator")
-            elif isinstance(uiCommand, int):
-                names.append("Spacer")
-            else:
-                names.append(uiCommand.uniqueName())
+        for item in self.__visible_ui_commands:
+            names.append(item.unique_name())
         return ",".join(names)
 
-    def savePerspective(self, perspective):
-        self.loadPerspective(perspective)
+    def save_perspective(self, perspective):
+        self.load_perspective(perspective)
         self.__window.saveToolBarPerspective(perspective)
+
+    # Keep old name as alias
+    savePerspective = save_perspective
 
     def uiCommands(self, cache=True):
         if self.__cache is None or not cache:
-            self.__cache = self.__window.createToolBarUICommands()
+            raw = self.__window.createToolBarUICommands()
+            self.__cache = [_coerce_ui_command(cmd) for cmd in raw]
         return self.__cache
 
-    def visibleUICommands(self):
-        return self.__visibleUICommands[:]
+    def visible_ui_commands(self):
+        return self.__visible_ui_commands[:]
 
-    def getDefaultPerspective(self):
+    # Keep old name as alias
+    visibleUICommands = visible_ui_commands
+
+    def get_default_perspective(self):
         """Get the default toolbar perspective from settings."""
         if hasattr(self.__window, 'settingsSection'):
             section = self.__window.settingsSection()
@@ -213,16 +214,22 @@ class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
             section = "view"
         return self.__settings.getDefault(section, "toolbarperspective")
 
+    # Keep old name as alias
+    getDefaultPerspective = get_default_perspective
+
     def AppendSeparator(self):
         """This little adapter is needed for
-        uicommand.UICommandContainerMixin.appendUICommands"""
+        uicommand.UICommandContainerMixin.append_ui_commands"""
         self.AddSeparator()
 
     def AppendStretchSpacer(self, proportion):
         self.AddStretchSpacer(proportion)
 
-    def appendUICommand(self, uiCommand):
-        return uiCommand.appendToToolBar(self)
+    def append_ui_command(self, ui_command):
+        return ui_command.append_to_toolbar(self)
+
+    # Keep old name as alias
+    appendUICommand = append_ui_command
 
 
 class MainToolBar(ToolBar):

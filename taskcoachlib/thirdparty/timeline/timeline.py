@@ -24,43 +24,43 @@ class HotMap(object):
     def __getitem__(self, node):
         return self.children[node]
 
-    def findNodeAtPosition(self, position, parent=None):
+    def find_node_at_position(self, position, parent=None):
         """Retrieve the node at the given position."""
         for node, rect in list(self.rects.items()):
             if rect.Contains(position):
-                return self[node].findNodeAtPosition(position, node)
+                return self[node].find_node_at_position(position, node)
         return parent
 
-    def firstNode(self):
+    def first_node(self):
         return self.nodes[0] if self.nodes else None
 
-    def lastNode(self, parent=None):
+    def last_node(self, parent=None):
         if self.nodes:
             last = self.nodes[-1]
-            return self[last].lastNode(last)
+            return self[last].last_node(last)
         else:
             return parent
 
-    def findNode(self, target):
+    def find_node(self, target):
         if target in self.nodes:
             return self
         for node in self.nodes:
-            result = self[node].findNode(target)
+            result = self[node].find_node(target)
             if result:
                 return result
         return None
 
-    def nextChild(self, target):
+    def next_child(self, target):
         index = self.nodes.index(target)
         index = min(index + 1, len(self.nodes) - 1)
         return self.nodes[index]
 
-    def previousChild(self, target):
+    def previous_child(self, target):
         index = self.nodes.index(target)
         index = max(index - 1, 0)
         return self.nodes[index]
 
-    def firstChild(self, target):
+    def first_child(self, target):
         children = self[target].nodes
         if children:
             return children[0]
@@ -73,8 +73,8 @@ class TimeLine(wx.Panel):
         self.model = kwargs.pop("model", [])
         self.padding = kwargs.pop("padding", 3)
         self.adapter = kwargs.pop("adapter", DefaultAdapter())
-        self.selectedNode = None
-        self.backgroundColour = wx.WHITE
+        self.selected_node = None
+        self.background_colour = wx.WHITE
         self._buffer = wx.Bitmap(20, 20)  # Have a default buffer ready
         self.DEFAULT_PEN = wx.Pen(wx.BLACK, 1, wx.SOLID)
         self.SELECTED_PEN = wx.Pen(wx.WHITE, 2, wx.SOLID)
@@ -93,7 +93,7 @@ class TimeLine(wx.Panel):
         self.OnSize(None)
 
     def SetBackgroundColour(self, colour):
-        self.backgroundColour = colour
+        self.background_colour = colour
 
     def Refresh(self):
         self.UpdateDrawing()
@@ -117,12 +117,12 @@ class TimeLine(wx.Panel):
         event.Skip()
         self.SetFocus()
         point = event.GetPosition()
-        node = self.hot_map.findNodeAtPosition(point)
+        node = self.hot_map.find_node_at_position(point)
         self.SetSelected(node, point)
 
     def OnDoubleClick(self, event):
         point = event.GetPosition()
-        node = self.hot_map.findNodeAtPosition(point)
+        node = self.hot_map.find_node_at_position(point)
         if node:
             wx.PostEvent(self, TimeLineActivationEvent(node=node, point=point))
 
@@ -131,39 +131,39 @@ class TimeLine(wx.Panel):
         if not self.hot_map:
             return
         if event.KeyCode == wx.WXK_HOME:
-            self.SetSelected(self.hot_map.firstNode())
+            self.SetSelected(self.hot_map.first_node())
             return
         elif event.KeyCode == wx.WXK_END:
-            self.SetSelected(self.hot_map.lastNode())
+            self.SetSelected(self.hot_map.last_node())
             return
-        if not self.selectedNode:
+        if not self.selected_node:
             return
         if event.KeyCode == wx.WXK_RETURN:
-            wx.PostEvent(self, TimeLineActivationEvent(node=self.selectedNode))
+            wx.PostEvent(self, TimeLineActivationEvent(node=self.selected_node))
             return
-        hot_map = self.hot_map.findNode(self.selectedNode)
+        hot_map = self.hot_map.find_node(self.selected_node)
         if hot_map is None:
-            newSelection = self.hot_map.firstNode()
+            newSelection = self.hot_map.first_node()
         elif event.KeyCode == wx.WXK_DOWN:
-            newSelection = hot_map.nextChild(self.selectedNode)
+            newSelection = hot_map.next_child(self.selected_node)
         elif event.KeyCode == wx.WXK_UP:
-            newSelection = hot_map.previousChild(self.selectedNode)
+            newSelection = hot_map.previous_child(self.selected_node)
         elif event.KeyCode == wx.WXK_RIGHT:
-            newSelection = hot_map.firstChild(self.selectedNode)
+            newSelection = hot_map.first_child(self.selected_node)
         elif event.KeyCode == wx.WXK_LEFT and hot_map.parent:
             newSelection = hot_map.parent
         else:
-            newSelection = self.selectedNode
+            newSelection = self.selected_node
         self.SetSelected(newSelection)
 
     def GetSelected(self):
-        return self.selectedNode
+        return self.selected_node
 
     def SetSelected(self, node, point=None):
         """Set the given node selected in the timeline widget"""
-        if node == self.selectedNode:
+        if node == self.selected_node:
             return
-        self.selectedNode = node
+        self.selected_node = node
         self.Refresh()
         if node:
             wx.PostEvent(self, TimeLineSelectionEvent(node=node, point=point))
@@ -175,10 +175,10 @@ class TimeLine(wx.Panel):
     def Draw(self, dc):
         """Draw the timeline on the device context."""
         self.hot_map = HotMap()
-        brush = wx.Brush(self.backgroundColour)
+        brush = wx.Brush(self.background_colour)
         dc.SetBackground(brush)
         dc.Clear()
-        dc.SetFont(self.FontForLabels(dc))
+        dc.SetFont(self.font_for_labels(dc))
         if self.model:
             bounds = self.adapter.bounds(self.model)
             self.min_start = float(min(bounds))
@@ -190,24 +190,24 @@ class TimeLine(wx.Panel):
             labelHeight = (
                 dc.GetTextExtent("ABC")[1] + 2
             )  # Leave room for time labels
-            self.DrawParallelChildren(
+            self.draw_parallel_children(
                 dc,
                 self.model,
                 labelHeight,
                 self.height - labelHeight,
                 self.hot_map,
             )
-            self.DrawNow(dc)
+            self.draw_now(dc)
 
-    def FontForLabels(self, dc):
+    def font_for_labels(self, dc):
         """Return the default GUI font, scaled for printing if necessary."""
         font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         scale = dc.GetPPI()[0] / wx.ScreenDC().GetPPI()[0]
         font.SetPointSize(int(scale * font.GetPointSize()))
         return font
 
-    def DrawBox(
-        self, dc, node, y, h, hot_map, isSequentialNode=False, depth=0
+    def draw_box(
+        self, dc, node, y, h, hot_map, is_sequential_node=False, depth=0
     ):
         if h < self.padding:
             return
@@ -217,17 +217,17 @@ class TimeLine(wx.Panel):
         if stop is None:
             stop = self.max_stop + 10
         start, stop = min(start, stop), max(start, stop)  # Sanitize input
-        x = self.scaleX(start) + 2 * depth
-        w = self.scaleWidth(stop - start) - 4 * depth
+        x = self.scale_x(start) + 2 * depth
+        w = self.scale_width(stop - start) - 4 * depth
         hot_map.append(node, (wx.Rect(int(x), int(y), int(w), int(h))))
-        self.DrawRectangle(dc, node, x, y, w, h, isSequentialNode, depth)
-        if not isSequentialNode:
-            self.DrawIconAndLabel(dc, node, x, y, w, h, depth)
+        self.draw_rectangle(dc, node, x, y, w, h, is_sequential_node, depth)
+        if not is_sequential_node:
+            self.draw_icon_and_label(dc, node, x, y, w, h, depth)
             seqHeight = min(dc.GetTextExtent("ABC")[1] + 2, h)
-            self.DrawSequentialChildren(
+            self.draw_sequential_children(
                 dc, node, y + 2, seqHeight - 4, hot_map[node], depth + 1
             )
-            self.DrawParallelChildren(
+            self.draw_parallel_children(
                 dc,
                 node,
                 y + seqHeight,
@@ -236,21 +236,21 @@ class TimeLine(wx.Panel):
                 depth + 1,
             )
 
-    def DrawRectangle(self, dc, node, x, y, w, h, isSequentialNode, depth):
-        dc = wx.GCDC(dc) if isSequentialNode else dc
+    def draw_rectangle(self, dc, node, x, y, w, h, is_sequential_node, depth):
+        dc = wx.GCDC(dc) if is_sequential_node else dc
         dc.SetClippingRegion(x, y, w, h)
-        dc.SetBrush(self.brushForNode(node, isSequentialNode, depth))
-        dc.SetPen(self.penForNode(node, isSequentialNode, depth))
+        dc.SetBrush(self.brush_for_node(node, is_sequential_node, depth))
+        dc.SetPen(self.pen_for_node(node, is_sequential_node, depth))
         rounding = (
             0
-            if isSequentialNode
+            if is_sequential_node
             and (h < self.padding * 4 or w < self.padding * 4)
             else self.padding * 2
         )
         dc.DrawRoundedRectangle(x, y, w, h, rounding)
         dc.DestroyClippingRegion()
 
-    def DrawIconAndLabel(self, dc, node, x, y, w, h, depth):
+    def draw_icon_and_label(self, dc, node, x, y, w, h, depth):
         """Draw the icon, if any, and the label, if any, of the node."""
         # Make sure the Icon and Label are visible:
         if x < 0:
@@ -259,19 +259,19 @@ class TimeLine(wx.Panel):
         dc.SetClippingRegion(
             x + 1, y + 1, w - 2, h - 2
         )  # Don't draw outside the box
-        icon = self.adapter.icon(node, node == self.selectedNode)
-        if icon and h >= icon.GetHeight() and w >= icon.GetWidth():
-            iconWidth = icon.GetWidth() + 2
-            dc.DrawIcon(icon, x + 2, y + 2)
+        wx_icon = self.adapter.get_wx_icon(node, node == self.selected_node)
+        if wx_icon and h >= wx_icon.GetHeight() and w >= wx_icon.GetWidth():
+            icon_width = wx_icon.GetWidth() + 2
+            dc.DrawIcon(wx_icon, x + 2, y + 2)
         else:
-            iconWidth = 0
+            icon_width = 0
         if h >= dc.GetTextExtent("ABC")[1]:
-            dc.SetFont(self.fontForNode(dc, node, depth))
-            dc.SetTextForeground(self.textForegroundForNode(node, depth))
-            dc.DrawText(self.adapter.label(node), x + iconWidth + 2, y + 2)
+            dc.SetFont(self.font_for_node(dc, node, depth))
+            dc.SetTextForeground(self.text_foreground_for_node(node, depth))
+            dc.DrawText(self.adapter.label(node), x + icon_width + 2, y + 2)
         dc.DestroyClippingRegion()
 
-    def DrawParallelChildren(self, dc, parent, y, h, hot_map, depth=0):
+    def draw_parallel_children(self, dc, parent, y, h, hot_map, depth=0):
         children = self.adapter.parallel_children(parent)
         if not children:
             return
@@ -295,36 +295,36 @@ class TimeLine(wx.Panel):
                 numberOfRecursiveChildren + 1
             )
             if childHeight >= self.padding:
-                self.DrawBox(
+                self.draw_box(
                     dc, child, childY, childHeight, hot_map, depth=depth
                 )
             childY += childHeight + 1
 
-    def DrawSequentialChildren(self, dc, parent, y, h, hot_map, depth=0):
+    def draw_sequential_children(self, dc, parent, y, h, hot_map, depth=0):
         for child in self.adapter.sequential_children(parent):
-            self.DrawBox(
-                dc, child, y, h, hot_map, isSequentialNode=True, depth=depth
+            self.draw_box(
+                dc, child, y, h, hot_map, is_sequential_node=True, depth=depth
             )
 
-    def DrawNow(self, dc):
+    def draw_now(self, dc):
         alpha_dc = wx.GCDC(dc)
         alpha_dc.SetPen(wx.Pen(wx.Colour(128, 200, 128, 128), width=3))
-        now = self.scaleX(self.adapter.now())
+        now = self.scale_x(self.adapter.now())
         alpha_dc.DrawLine(now, 0, now, self.height)
         label = self.adapter.nowlabel()
         textWidth = alpha_dc.GetTextExtent(label)[0]
         alpha_dc.DrawText(label, now - (textWidth // 2), 0)
 
-    def scaleX(self, x):
-        return self.scaleWidth(x - self.min_start)
+    def scale_x(self, x):
+        return self.scale_width(x - self.min_start)
 
-    def scaleWidth(self, width):
+    def scale_width(self, width):
         return int((width / self.length) * self.width)
 
-    def textForegroundForNode(self, node, depth=0):
+    def text_foreground_for_node(self, node, depth=0):
         """Determine the text foreground color to use to display the label of
         the given node"""
-        if node == self.selectedNode:
+        if node == self.selected_node:
             fg_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
         else:
             fg_color = self.adapter.foreground_color(node, depth)
@@ -334,7 +334,7 @@ class TimeLine(wx.Panel):
                 )
         return fg_color
 
-    def fontForNode(self, dc, node, depth=0):
+    def font_for_node(self, dc, node, depth=0):
         """Determine the font to use to display the label of the given node,
         scaled for printing if necessary."""
         font = self.adapter.font(node, depth)
@@ -347,9 +347,9 @@ class TimeLine(wx.Panel):
         font.SetPointSize(int(scale * font.GetPointSize()))
         return font
 
-    def brushForNode(self, node, isSequentialNode=False, depth=0):
+    def brush_for_node(self, node, is_sequential_node=False, depth=0):
         """Create brush to use to display the given node"""
-        if node == self.selectedNode:
+        if node == self.selected_node:
             color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT)
         else:
             color = self.adapter.background_color(node)
@@ -361,18 +361,18 @@ class TimeLine(wx.Panel):
                 green = 255 - ((depth * 10) % 255)
                 blue = 200
                 color = wx.Colour(red, green, blue)
-        if isSequentialNode:
+        if is_sequential_node:
             color.Set(color.Red(), color.Green(), color.Blue(), 128)
         return wx.Brush(color)
 
-    def penForNode(self, node, isSequentialNode=False, depth=0):
+    def pen_for_node(self, node, is_sequential_node=False, depth=0):
         """Determine the pen to use to display the given node"""
         pen = (
             self.SELECTED_PEN
-            if node == self.selectedNode
+            if node == self.selected_node
             else self.DEFAULT_PEN
         )
-        # style = wx.DOT if isSequentialNode else wx.SOLID
+        # style = wx.DOT if is_sequential_node else wx.SOLID
         # pen.SetStyle(style)
         return pen
 
@@ -422,7 +422,7 @@ class DefaultAdapter(object):
     def foreground_color(self, node, depth):
         return None
 
-    def icon(self, node):
+    def get_wx_icon(self, node):
         return None
 
     def now(self):
