@@ -50,6 +50,14 @@ The domain model's change-detection and event-notification pattern.
    [Case Study: Tree Mode Toggle](#case-study-tree-mode-toggle)).
    **Remaining:** Task dates, percentage, duration; Effort fields.
 
+3. **Modularize and clean up the signaling system.** The three independent
+   cleanup mechanisms (wx C++ destruction, `removeInstance()`, Python GC)
+   don't coordinate, causing zombie callbacks and 20+ silent `try/except`
+   guards. Target: a single automatic cleanup mechanism where destroying
+   an object removes all its subscriptions. See
+   [TODO.md #12 — Signaling System Cleanup](TODO.md#12-signaling-system-cleanup)
+   for the full plan and current band-aids.
+
 ---
 
 ## Signal Dispatch

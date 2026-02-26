@@ -114,6 +114,7 @@ class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
             for item in self.__visible_ui_commands:
                 if item.is_command():
                     item.unbind(self, item.id)
+                    item.removeInstance()
 
         idx = 0
         while idx < self.GetToolCount():

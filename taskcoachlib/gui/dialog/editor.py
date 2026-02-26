@@ -1099,19 +1099,22 @@ class DatesPage(ScrolledPage):
             try:
                 pub.unsubscribe(self._onStatusMayHaveChanged,
                                 self.items[0].statusChangedEventType())
-            except Exception:
-                pass
+            except Exception as e:
+                log_step("unsubscribe failed in %s.close: %s" %
+                         (self.__class__.__name__, e), prefix="DEAD-OBJ")
         if len(self.items) == 1:
             try:
                 pub.unsubscribe(self._onDomainPlannedDurationModeChanged,
                                 self.items[0].plannedDurationModeChangedEventType())
-            except Exception:
-                pass
+            except Exception as e:
+                log_step("unsubscribe failed in %s.close: %s" %
+                         (self.__class__.__name__, e), prefix="DEAD-OBJ")
             try:
                 pub.unsubscribe(self.__onTaskDurationDomainChanged,
                                 self.items[0].plannedDurationChangedEventType())
-            except Exception:
-                pass
+            except Exception as e:
+                log_step("unsubscribe failed in %s.close: %s" %
+                         (self.__class__.__name__, e), prefix="DEAD-OBJ")
         super().close()
 
     def __onPlannedStartChanged(self, value):
@@ -1957,8 +1960,9 @@ class DatesPage(ScrolledPage):
         # Unsubscribe from pubsub topics
         try:
             pub.unsubscribe(self.__onPresetsConfigChanged, "settings.feature.task_duration_presets")
-        except Exception:
-            pass
+        except Exception as e:
+            log_step("unsubscribe failed in %s.close: %s" %
+                     (self.__class__.__name__, e), prefix="DEAD-OBJ")
         super().close()
 
 
@@ -2737,7 +2741,8 @@ class PathPage(ScrolledPage):
                 if self._pathPanel.IsShownOnScreen():
                     wx.CallAfter(self._rebuildPathDisplay)
             except RuntimeError:
-                pass  # Window destroyed
+                log_step("_onAnyChange: pathPanel dead %x" % id(self),
+                         prefix="DEAD-OBJ")
 
     def _rebuildPathDisplay(self):
         """Rebuild the path display with all sections."""
@@ -2746,6 +2751,8 @@ class PathPage(ScrolledPage):
         try:
             self._pathPanel.GetName()  # Check if still valid
         except RuntimeError:
+            log_step("_rebuildPathDisplay: pathPanel dead %x" % id(self),
+                     prefix="DEAD-OBJ")
             return
 
         # Unsubscribe existing icon handlers before clearing
@@ -2947,7 +2954,8 @@ class PathPage(ScrolledPage):
                             bitmap.SetBitmap(new_bitmap)
                             bitmap.Refresh()
                 except RuntimeError:
-                    pass  # Widget destroyed
+                    log_step("_onEffectiveIconChanged: icon widget dead %x" %
+                             id(self), prefix="DEAD-OBJ")
 
     def _unsubscribeIconUpdates(self):
         """Clear icon widget tracking (subscription cleaned up on page close)."""
@@ -2994,8 +3002,9 @@ class PathPage(ScrolledPage):
                 if eventType.startswith("pubsub"):
                     try:
                         pub.unsubscribe(self._onAnyChange, eventType)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        log_step("unsubscribe failed in %s.close: %s" %
+                                 (self.__class__.__name__, e), prefix="DEAD-OBJ")
             patterns.Publisher().removeObserver(self._onAnyChange)
         super().close()
 
@@ -3521,7 +3530,9 @@ class NullableDateTimeWrapper:
                 return None
             return self._datetime_entry.GetValue()
         except RuntimeError:
-            return None  # Widget already deleted (dialog closed)
+            log_step("DateTimeEntry.GetValue: widget dead %x" % id(self),
+                     prefix="DEAD-OBJ")
+            return None
 
     def SetValue(self, value):
         """Set value - None unchecks checkbox, otherwise sets datetime."""
@@ -3534,7 +3545,8 @@ class NullableDateTimeWrapper:
                 self._datetime_entry.Enable(True)
                 self._datetime_entry.SetValue(value)
         except RuntimeError:
-            pass  # Widget already deleted (dialog closed)
+            log_step("DateTimeEntry.SetValue: widget dead %x" % id(self),
+                     prefix="DEAD-OBJ")
 
     def Bind(self, event_type, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
         """Forward bind to datetime entry."""
@@ -4384,19 +4396,22 @@ class EffortEditBook(Page):
         """Cleanup method called when dialog closes."""
         try:
             pub.unsubscribe(self.__onEffortPresetsConfigChanged, "settings.feature.effort_duration_presets")
-        except Exception:
-            pass
+        except Exception as e:
+            log_step("unsubscribe failed in %s.close_edit_book: %s" %
+                     (self.__class__.__name__, e), prefix="DEAD-OBJ")
         if len(self.items) == 1:
             try:
                 pub.unsubscribe(self.__onEffortDurationDomainChanged,
                                 self.items[0].durationChangedEventType())
-            except Exception:
-                pass
+            except Exception as e:
+                log_step("unsubscribe failed in %s.close_edit_book: %s" %
+                         (self.__class__.__name__, e), prefix="DEAD-OBJ")
             try:
                 pub.unsubscribe(self._onDomainEntryModeChanged,
                                 self.items[0].entryModeChangedEventType())
-            except Exception:
-                pass
+            except Exception as e:
+                log_step("unsubscribe failed in %s.close_edit_book: %s" %
+                         (self.__class__.__name__, e), prefix="DEAD-OBJ")
         # Stop the time spent timer
         self.__stopTimeSpentTimer()
 
@@ -4529,8 +4544,10 @@ class Editor(BalloonTipManager, widgets.Dialog):
         )
 
     def on_close_editor(self, event):
-        event.Skip()
-        # Save dialog position/size before closing
+        # DO NOT call event.Skip() — we call Destroy() explicitly below.
+        # Calling both is an anti-pattern: the default EVT_CLOSE handler
+        # would run after Destroy(), accessing the dead dialog.
+        self.Unbind(wx.EVT_CLOSE)
         self.__dimensions_tracker.save()
         self._interior.close_edit_book()
         patterns.Publisher().removeObserver(self.on_item_removed)
@@ -4542,10 +4559,43 @@ class Editor(BalloonTipManager, widgets.Dialog):
         if self.__timer is not None:
             self.__timer.Stop()
             IdProvider.put(self.__timer.GetId())
+        # Clean up UICommands created in __create_ui_commands()
+        self.__undo_command.unbind(self._interior, wx.ID_UNDO)
+        self.__undo_command.removeInstance()
+        self.__redo_command.unbind(self._interior, wx.ID_REDO)
+        self.__redo_command.removeInstance()
+        self.__new_effort_command.unbind(
+            self._interior, self.__new_effort_id)
+        self.__new_effort_command.removeInstance()
         IdProvider.put(self.__new_effort_id)
         IdProvider.put(self.__next_tab_id)
         IdProvider.put(self.__prev_tab_id)
-        self.Destroy()
+        # Close any child Editor dialogs BEFORE Destroy(). Without
+        # this, Destroy() cascades to children without sending
+        # EVT_CLOSE, so their on_close_editor never runs — leaving
+        # dangling observers, UICommands, and pubsub subscriptions
+        # that cause C++ segfaults.
+        for child in list(self.GetChildren()):
+            if isinstance(child, Editor) and child is not self:
+                child.Close()
+        # Hide first to stop GTK rendering, then destroy on next
+        # idle cycle. Direct Destroy() crashes in C++ deferred
+        # destruction with GTK popup widgets (PopupTransientWindow,
+        # GTKPopupFrame). Separating hide from destroy lets pending
+        # GTK events settle. Same pattern as PYTHON3_MIGRATION_1.md.
+        self.Hide()
+        wx.CallAfter(self._deferred_destroy)
+
+    def _deferred_destroy(self):
+        """Destroy the editor after one event loop iteration.
+        Called via wx.CallAfter from on_close_editor to let GTK
+        process pending events before C++ widget destruction."""
+        try:
+            if self:
+                self.Destroy()
+        except RuntimeError:
+            log_step("_deferred_destroy: already dead %x" % (
+                id(self)), prefix="DEAD-OBJ")
 
     def on_activate(self, event):
         event.Skip()
@@ -4565,9 +4615,12 @@ class Editor(BalloonTipManager, widgets.Dialog):
         # callback executes after window destruction (e.g., closing nested dialogs)
         try:
             if not self or self.IsBeingDeleted():
+                log_step("__close_if_item_is_deleted: dialog already dead/deleting %x" %
+                         id(self), prefix="DEAD-OBJ")
                 return
         except RuntimeError:
-            # wrapped C/C++ object has been deleted
+            log_step("__close_if_item_is_deleted: C++ object deleted %x" %
+                     id(self), prefix="DEAD-OBJ")
             return
         for item in items:
             if (

@@ -25,6 +25,34 @@ if sys.stderr is None:
 if sys.stdout is None:
     sys.stdout = open(os.devnull, 'w')
 
+# Save a duplicate of stderr's file descriptor before anything can lose it.
+# When Python hits RecursionError the stack is exhausted and even resolving
+# sys.stderr requires a Python frame, so the default excepthook prints
+# "lost sys.stderr" instead of the traceback.  Writing to the saved fd via
+# os.write() is a C-level call that needs no extra stack frames.
+_stderr_fd = os.dup(sys.stderr.fileno()) if sys.stderr and hasattr(sys.stderr, 'fileno') else None
+
+def _robust_excepthook(exc_type, exc_value, exc_tb):
+    """Write tracebacks to the saved stderr fd so they survive stack exhaustion."""
+    try:
+        lines = traceback.format_exception(exc_type, exc_value, exc_tb)
+        text = "".join(lines)
+    except Exception:
+        text = f"{exc_type.__name__}: {exc_value}\n"
+    if _stderr_fd is not None:
+        try:
+            os.write(_stderr_fd, text.encode("utf-8", errors="replace"))
+            return
+        except OSError:
+            pass
+    # Last resort: try sys.stderr normally
+    try:
+        sys.stderr.write(text)
+    except Exception:
+        pass
+
+sys.excepthook = _robust_excepthook
+
 def get_log_path():
     """Get path for startup log file."""
     log_dir = os.environ.get('LOCALAPPDATA', os.environ.get('TEMP', '.'))

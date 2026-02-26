@@ -28,6 +28,7 @@ from taskcoachlib.gui.icons import icon_library
 from taskcoachlib.gui.icons import image_list_cache
 from wx.lib.agw import hypertreelist
 from pubsub import pub
+from taskcoachlib.meta.debug import log_step
 from . import mixin
 
 
@@ -201,17 +202,16 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             else:
                 observers.append(observable)
         for observer in observers:
-            try:
+            if hasattr(observer, 'removeInstance'):
                 observer.removeInstance()
-            except AttributeError:
-                pass  # Ignore observables that are not an observer themselves
 
         for popupMenu in self._popupMenus:
             try:
                 popupMenu.clearMenu()
                 popupMenu.Destroy()
             except RuntimeError:
-                pass
+                log_step("detach: popup menu already dead %x" %
+                         id(popupMenu), prefix="DEAD-OBJ")
 
         pub.unsubscribe(self.onBeginIO, "taskfile.aboutToRead")
         pub.unsubscribe(self.onBeginIO, "taskfile.aboutToClear")
@@ -704,9 +704,16 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
     def editItemDialog(
         self, items, icon_id, columnName="", items_are_new=False
     ):
-        Editor = self.itemEditorClass()
-        return Editor(
-            wx.GetTopLevelParent(self),
+        parent = wx.GetTopLevelParent(self)
+        # If the viewer is inside an Editor dialog (e.g. EffortViewer inside
+        # TaskEditor), parent to main window instead. Otherwise Destroy() on
+        # the parent editor cascades to this editor without EVT_CLOSE, leaving
+        # dangling observers/subscriptions and causing C++ segfaults.
+        if isinstance(parent, wx.Dialog):
+            parent = wx.GetApp().TopWindow
+        EditorClass = self.itemEditorClass()
+        return EditorClass(
+            parent,
             items,
             self.settings,
             self.presentation(),
@@ -816,7 +823,10 @@ class ListViewer(Viewer):  # pylint: disable=W0223
             yield item
 
     def getItemWithIndex(self, index):
-        return self.presentation()[index]
+        try:
+            return self.presentation()[index]
+        except IndexError:
+            return None
 
     def getIndexOfItem(self, item):
         return self.presentation().index(item)

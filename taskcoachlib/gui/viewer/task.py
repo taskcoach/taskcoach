@@ -237,8 +237,13 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
                 items_are_new=items_are_new,
             )
         else:
+            parent = wx.GetTopLevelParent(self)
+            # Same fix as base.py: if viewer is inside an Editor dialog,
+            # parent to main window to avoid cascade-Destroy segfault.
+            if isinstance(parent, wx.Dialog):
+                parent = wx.GetApp().TopWindow
             return dialog.editor.EffortEditor(
-                wx.GetTopLevelParent(self),
+                parent,
                 items,
                 self.settings,
                 self.taskFile.efforts(),

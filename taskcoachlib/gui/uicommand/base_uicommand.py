@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import wx
-from taskcoachlib import operating_system
+from taskcoachlib import operating_system, patterns
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.gui.newid import IdProvider
 from taskcoachlib.meta.debug import log_step
@@ -26,8 +26,8 @@ from taskcoachlib.meta.debug import log_step
 
 """ User interface commands (subclasses of UICommand) are actions that can
     be invoked by the user via the user interface (menu's, toolbar, etc.).
-    See the Taskmaster pattern described here: 
-    http://www.objectmentor.com/resources/articles/taskmast.pdf 
+    See the Taskmaster pattern described here:
+    http://www.objectmentor.com/resources/articles/taskmast.pdf
 """  # pylint: disable=W0105
 
 
@@ -45,15 +45,16 @@ class MenuItem(wx.MenuItem):
         if new_text is not None:
             try:
                 self.SetItemLabel(new_text)
-            except Exception:
-                pass
+            except Exception as e:
+                log_step("MenuItem.update_state: dead menu item: %s" % e,
+                         prefix="DEAD-OBJ")
         if enabled and self.IsCheckable():
             check = self._command.checked()
             if check is not None:
                 self.Check(check)
 
 
-class UICommand(object):
+class UICommand(patterns.Observer):
     """Base user interface command. An UICommand is some action that can be
     associated with menus and/or toolbars. It contains the menutext and
     helptext to be displayed and methods to attach the command to a menu
@@ -120,21 +121,21 @@ class UICommand(object):
             return [(flags, wx.WXK_NUMPAD_ENTER, self.id)]
         return []
 
-    def add_to_menu(self, menu, window, position=None, subMenu=None):
-        menuItem = MenuItem(
+    def add_to_menu(self, menu, window, position=None, sub_menu=None):
+        menu_item = MenuItem(
             self, menu, self.id, self.menu_text, self.help_text, self.kind,
-            subMenu=subMenu
+            subMenu=sub_menu
         )
-        self.menu_items.append(menuItem)
-        self.add_bitmap_to_menu_item(menuItem)
+        self.menu_items.append(menu_item)
+        self.add_bitmap_to_menu_item(menu_item)
         if position is None:
-            menu.Append(menuItem)
+            menu.Append(menu_item)
         else:
-            menu.Insert(position, menuItem)
+            menu.Insert(position, menu_item)
         self.bind(window, self.id)
         return self.id
 
-    def add_bitmap_to_menu_item(self, menuItem):
+    def add_bitmap_to_menu_item(self, menu_item):
         if (
             self.icon_id2
             and self.kind == wx.ITEM_CHECK
@@ -142,7 +143,7 @@ class UICommand(object):
         ):
             bitmap1 = icon_catalog.get_bitmap(self.icon_id, LIST_ICON_SIZE)
             bitmap2 = icon_catalog.get_bitmap(self.icon_id2, LIST_ICON_SIZE)
-            menuItem.SetBitmaps(bitmap1, bitmap2)
+            menu_item.SetBitmaps(bitmap1, bitmap2)
         elif self.kind == wx.ITEM_NORMAL:
             if self.icon_id is None:
                 return  # No icon intended - correct, do nothing
@@ -151,19 +152,21 @@ class UICommand(object):
             if not bitmap.IsOk():
                 # TRAP: icon_id given but invalid - this is an error
                 log_step("ERROR: invalid icon '%s' for menu item '%s'" %
-                         (self.icon_id, menuItem.GetItemLabelText()), prefix="ICON")
+                         (self.icon_id, menu_item.GetItemLabelText()), prefix="ICON")
                 return
 
-            menuItem.SetBitmap(bitmap)
+            menu_item.SetBitmap(bitmap)
 
     def remove_from_menu(self, menu, window):
-        for menuItem in self.menu_items:
-            if menuItem.GetMenu() == menu:
-                self.menu_items.remove(menuItem)
-                menuId = menuItem.GetId()
-                menu.Remove(menuId)
+        menu_id = None
+        for menu_item in self.menu_items:
+            if menu_item.GetMenu() == menu:
+                self.menu_items.remove(menu_item)
+                menu_id = menu_item.GetId()
+                menu.Remove(menu_id)
                 break
-        self.unbind(window, menuId)
+        if menu_id is not None:
+            self.unbind(window, menu_id)
 
     def append_to_toolbar(self, toolbar):
         self.toolbar = toolbar
@@ -182,11 +185,11 @@ class UICommand(object):
         self.bind(toolbar, self.id)
         return self.id
 
-    def bind(self, window, itemId):
-        window.Bind(wx.EVT_MENU, self.on_command_activate, id=itemId)
+    def bind(self, window, item_id):
+        window.Bind(wx.EVT_MENU, self.on_command_activate, id=item_id)
 
-    def unbind(self, window, itemId):
-        window.Unbind(wx.EVT_MENU, id=itemId)
+    def unbind(self, window, item_id):
+        window.Unbind(wx.EVT_MENU, id=item_id)
 
     def on_command_activate(self, event, *args, **kwargs):
         """For controls such as the ListCtrl and the TreeCtrl, activating
@@ -220,23 +223,24 @@ class UICommand(object):
     def update_tool_help(self):
         if not self.toolbar:
             return  # Not attached to a toolbar or it's hidden
-        shortHelp = wx.MenuItem.GetLabelText(self.get_menu_text())
-        if shortHelp != self.toolbar.GetToolShortHelp(self.id):
-            self.toolbar.SetToolShortHelp(self.id, shortHelp)
-        longHelp = self.get_help_text()
-        if longHelp != self.toolbar.GetToolLongHelp(self.id):
-            self.toolbar.SetToolLongHelp(self.id, longHelp)
+        short_help = wx.MenuItem.GetLabelText(self.get_menu_text())
+        if short_help != self.toolbar.GetToolShortHelp(self.id):
+            self.toolbar.SetToolShortHelp(self.id, short_help)
+        long_help = self.get_help_text()
+        if long_help != self.toolbar.GetToolLongHelp(self.id):
+            self.toolbar.SetToolLongHelp(self.id, long_help)
 
     def update_menu_text(self, menu_text):
         self.menu_text = menu_text
         # SetItemLabel works on all platforms in modern wxPython 4.x
         # The old Windows-specific code that deleted/inserted menu items
         # was causing access violations when popup menus were displayed.
-        for menuItem in self.menu_items:
+        for menu_item in self.menu_items:
             try:
-                menuItem.SetItemLabel(menu_text)
-            except Exception:
-                pass  # Ignore errors from deleted menu items
+                menu_item.SetItemLabel(menu_text)
+            except Exception as e:
+                log_step("update_menu_text: dead menu item: %s" % e,
+                         prefix="DEAD-OBJ")
 
     def main_window(self):
         return wx.GetApp().TopWindow

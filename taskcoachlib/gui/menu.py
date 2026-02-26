@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import operating_system
 from taskcoachlib import patterns, persistence, help  # pylint: disable=W0622
+from taskcoachlib.meta.debug import log_step
 from taskcoachlib.domain import task, note, base, category
 from taskcoachlib.i18n import _
 from pubsub import pub
@@ -131,7 +132,7 @@ class DynamicMenu(Menu):
         try:  # Prepare for menu or window to be destroyed
             self.updateMenu()
         except RuntimeError:
-            pass
+            log_step("onUpdateMenu: menu/window dead", prefix="DEAD-OBJ")
 
     def onUpdateMenu_Deprecated(self, event=None):
         """This event handler should be called at the right times so that
@@ -148,7 +149,8 @@ class DynamicMenu(Menu):
         try:  # Prepare for menu or window to be destroyed
             self.updateMenu()
         except RuntimeError:
-            pass  # Menu or window may be destroyed
+            log_step("onUpdateMenu_Deprecated: menu/window dead",
+                     prefix="DEAD-OBJ")
 
     def updateMenu(self):
         """Updating the menu consists of two steps: updating the menu item
@@ -812,7 +814,7 @@ class ActionMenu(Menu):
             viewer=viewerContainer
         ).add_to_menu(
             self, self._window,
-            subMenu=TaskPriorityMenu(mainwindow, tasks, viewerContainer),
+            sub_menu=TaskPriorityMenu(mainwindow, tasks, viewerContainer),
         )
         self.appendUICommands(
             None,
@@ -1063,7 +1065,7 @@ class TaskPopupMenu(Menu):
             viewer=taskViewer
         ).add_to_menu(
             self, self._window,
-            subMenu=TaskPriorityMenu(mainwindow, tasks, taskViewer),
+            sub_menu=TaskPriorityMenu(mainwindow, tasks, taskViewer),
         )
         self.appendUICommands(
             None,

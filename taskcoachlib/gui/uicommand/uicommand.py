@@ -52,7 +52,7 @@ from taskcoachlib.thirdparty.wxScheduler import (
 )
 from taskcoachlib.gui.icons.icon_library import icon_catalog
 from taskcoachlib.tools import anonymize, openfile
-from taskcoachlib.meta.debug import log_step
+
 import wx, re, operator
 from . import base_uicommand
 from . import mixin_uicommand
@@ -1263,7 +1263,7 @@ class ResetFilter(ViewerCommand):
 
     def append_to_toolbar(self, *args, **kwargs):
         super().append_to_toolbar(*args, **kwargs)
-        patterns.Publisher().registerObserver(
+        self.registerObserver(
             self._on_filter_change,
             eventType=base.filter.Filter.filter_change_event_type(),
         )
@@ -1274,7 +1274,6 @@ class ResetFilter(ViewerCommand):
             self.toolbar.Refresh(False)
         except RuntimeError:
             pass
-
 
     def do_command(self, event):
         self.viewer.reset_filter()
@@ -1635,7 +1634,7 @@ class ViewerHideTasks(ViewerCommand, settings_uicommand.UICheckCommand):
     def append_to_toolbar(self, *args, **kwargs):
         super().append_to_toolbar(*args, **kwargs)
         self.toolbar.ToggleTool(self.id, self.checked())
-        patterns.Publisher().registerObserver(
+        self.registerObserver(
             self._on_filter_change,
             eventType=base.filter.Filter.filter_change_event_type(),
         )
@@ -1643,7 +1642,6 @@ class ViewerHideTasks(ViewerCommand, settings_uicommand.UICheckCommand):
     def _on_filter_change(self, event):
         self.toolbar.ToggleTool(self.id, self.checked())
         self.toolbar.Refresh(False)
-
 
     def unique_name(self):
         return super().unique_name() + "_" + str(self.__taskStatus)
@@ -1670,7 +1668,6 @@ class ViewerHideCompositeTasks(
             *args,
             **kwargs
         )
-
 
     def is_setting_checked(self):
         return self.viewer.is_hiding_composite_tasks()
@@ -2845,6 +2842,10 @@ class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
             )
         self.__current_icon_id = None
 
+    def removeInstance(self):
+        self._EffortStop__tracker.removeInstance()
+        super().removeInstance()
+
     def __onEffortsChanged(self, efforts):
         self.updateUI()
 
@@ -2879,7 +2880,6 @@ class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
         # untracked efforts this command will resume them. Otherwise this
         # command is disabled.
         return self.anyTrackedEfforts() or self.anyStoppedEfforts()
-
 
     def updateUI(self):
         if wx.GetApp().quitting:
@@ -3969,11 +3969,11 @@ class ViewerPieChartAngle(ViewerCommand, settings_uicommand.SettingsCommand):
         self.sliderCtrl.Bind(wx.EVT_SLIDER, self.onSlider)
         toolbar.AddControl(self.sliderCtrl)
 
-    def unbind(self, window, itemId):
+    def unbind(self, window, item_id):
         if self.sliderCtrl is not None:
             self.sliderCtrl.Unbind(wx.EVT_SLIDER)
             self.sliderCtrl = None
-        super().unbind(window, itemId)
+        super().unbind(window, item_id)
 
     def onSlider(self, event):
         """The user picked a new angle."""
@@ -4047,11 +4047,11 @@ class AlwaysRoundUp(settings_uicommand.UICheckCommand, ViewerCommand):
         self.checkboxCtrl.Bind(wx.EVT_CHECKBOX, self.onCheck)
         toolbar.AddControl(self.checkboxCtrl)
 
-    def unbind(self, window, itemId):
+    def unbind(self, window, item_id):
         if self.checkboxCtrl is not None:
             self.checkboxCtrl.Unbind(wx.EVT_CHECKBOX)
             self.checkboxCtrl = None
-        super().unbind(window, itemId)
+        super().unbind(window, item_id)
 
     def is_setting_checked(self):
         return self.settings.getboolean(
@@ -4100,11 +4100,11 @@ class ConsolidateEffortsPerTask(
         self.checkboxCtrl.Bind(wx.EVT_CHECKBOX, self.onCheck)
         toolbar.AddControl(self.checkboxCtrl)
 
-    def unbind(self, window, itemId):
+    def unbind(self, window, item_id):
         if self.checkboxCtrl is not None:
             self.checkboxCtrl.Unbind(wx.EVT_CHECKBOX)
             self.checkboxCtrl = None
-        super().unbind(window, itemId)
+        super().unbind(window, item_id)
 
     def is_setting_checked(self):
         return self.settings.getboolean(

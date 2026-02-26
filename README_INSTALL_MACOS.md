@@ -1,25 +1,35 @@
 # Installing Task Coach on macOS
 
-## Download
+## Table of Contents
+
+- [Download](#download)
+- [Installation](#installation)
+- [Security Warning](#security-warning)
+- [Launching Task Coach](#launching-task-coach)
+- [Uninstalling](#uninstalling)
+- [Troubleshooting](#troubleshooting)
+- [Why the Security Warning?](#why-the-security-warning)
+
+## <a id="download"></a>Download
 
 Download the DMG for your Mac from the [latest release](https://github.com/taskcoach/taskcoach/releases):
 
 - **Apple Silicon** (M1/M2/M3/M4): `TaskCoach-<version>-macos-arm64.dmg`
 - **Intel**: `TaskCoach-<version>-macos-intel.dmg`
 
-Where `<version>` is the release version (e.g., `2.0.2.2`).
+Where `<version>` is the release version (e.g., `2.0.2.4`).
 
 Not sure which Mac you have? Click the Apple menu → "About This Mac". Look for "Chip" (Apple Silicon) or "Processor" (Intel).
 
-## Installation
+## <a id="installation"></a>Installation
 
 1. Open the downloaded `.dmg` file
 2. Drag "Task Coach" to the "Applications" folder
 3. Eject the DMG (drag to trash or right-click → Eject)
 
-## Security Warning
+## <a id="security-warning"></a>Security Warning
 
-On first launch, macOS will block the app because it's not notarized by Apple. This is normal for open-source software - Apple charges $99/year for a developer account required for notarization.
+On first launch, macOS will block the app because it's not notarized by Apple. This is normal for open-source software - Apple charges $99/year for a developer account required for notarization. See [Why the Security Warning?](#why-the-security-warning) for details.
 
 ### Video Walkthrough
 
@@ -51,7 +61,7 @@ Click **Open** to launch Task Coach.
 
 After this one-time approval, Task Coach will open normally in the future.
 
-## Launching Task Coach
+## <a id="launching-task-coach"></a>Launching Task Coach
 
 After the initial setup, launch Task Coach from:
 
@@ -60,7 +70,7 @@ After the initial setup, launch Task Coach from:
 - Spotlight (Cmd+Space, type "Task Coach")
 - Dock (if you added it)
 
-## Uninstalling
+## <a id="uninstalling"></a>Uninstalling
 
 To uninstall Task Coach:
 
@@ -71,7 +81,7 @@ To uninstall Task Coach:
 
 Your task files (`.tsk`) are stored separately and won't be deleted.
 
-## Troubleshooting
+## <a id="troubleshooting"></a>Troubleshooting
 
 ### "Task Coach is damaged and can't be opened"
 
@@ -95,7 +105,7 @@ Try these steps:
 
 If you accidentally installed the Intel version on an Apple Silicon Mac, it may work via Rosetta 2, but you'll get better performance with the native arm64 version. Download the correct DMG and reinstall.
 
-## Why the Security Warning?
+## <a id="why-the-security-warning"></a>Why the Security Warning?
 
 Task Coach is open-source software that isn't notarized with Apple. Notarization requires:
 

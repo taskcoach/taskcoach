@@ -44,10 +44,10 @@ class BooleanSettingsCommand(SettingsCommand):  # pylint: disable=W0223
         super().__init__(*args, **kwargs)
 
     def add_to_menu(self, menu, window, position=None):
-        menuId = super().add_to_menu(menu, window, position)
-        menuItem = menu.FindItemById(menuId)
-        menuItem.Check(self.is_setting_checked())
-        return menuId
+        menu_id = super().add_to_menu(menu, window, position)
+        menu_item = menu.FindItemById(menu_id)
+        menu_item.Check(self.is_setting_checked())
+        return menu_id
 
     def checked(self):
         return self.is_setting_checked()

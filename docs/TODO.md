@@ -15,6 +15,7 @@ This document tracks planned improvements and known issues to address in future 
 9. [Preferences Page Alignment Overrides](#9-preferences-page-alignment-overrides) *(Done)*
 10. [Preferences Dialog: Dirty-Check and Button State](#10-preferences-dialog-dirty-check-and-button-state)
 11. [EVT_TEXT Compatibility Shim in MultiLineTextCtrl](#11-evt_text-compatibility-shim-in-multilinetextctrl)
+12. [Signaling System Cleanup](#12-signaling-system-cleanup)
 
 ---
 
@@ -411,6 +412,75 @@ No need to store "original values" — the settings object is the baseline.
 ## 11. EVT_TEXT Compatibility Shim in MultiLineTextCtrl
 
 `MultiLineTextCtrl` (StyledTextCtrl/Scintilla) overrides `Bind()` to remap `wx.EVT_TEXT` to `stc.EVT_STC_CHANGE` for compatibility with code written for `wx.TextCtrl`. If we keep Scintilla long-term, refactor all callers to use `EVT_STC_CHANGE` directly and remove the shim. File: `taskcoachlib/widgets/textctrl.py`.
+
+---
+
+## 12. Signaling System Cleanup
+
+### Problem
+
+The signaling/event system is fragmented across three independent mechanisms
+that don't coordinate lifecycle cleanup:
+
+1. **wx C++ destruction** — `Destroy()` frees the C++ widget tree. Python
+   wrappers become zombies (accessing them segfaults).
+2. **patterns.Observer.removeInstance()** — Removes pubsub + Publisher
+   subscriptions for a Python object. Must be called explicitly.
+3. **Python garbage collection** — Frees Python objects when refcount hits
+   zero. Triggers `__del__`.
+
+None of these know about each other. When wx destroys a widget, it doesn't
+call `removeInstance()`. When `removeInstance()` runs, it doesn't know if
+the wx widget is already dead. The result is 20+ `try/except RuntimeError:
+pass` guards scattered across the codebase — band-aids over missing lifecycle
+coordination.
+
+### Goal
+
+A single, automatic cleanup mechanism: when an object goes away, all its
+subscriptions (pubsub, Publisher, wx events) are automatically removed.
+No manual unsubscribe, no silent `except` guards, no zombie callbacks.
+
+### Current band-aids (February 2026)
+
+- `UICommand` was changed to inherit from `patterns.Observer` so
+  `removeInstance()` cleans up all subscription types automatically.
+- `toolbar.Clear()` and `menu.clearMenu()` call `removeInstance()` during
+  teardown.
+- `Editor.on_close_editor()` explicitly cleans up its UICommands.
+- 20+ `try/except RuntimeError: pass` blocks now log with `prefix="DEAD-OBJ"`
+  so zombie access is visible. These should eventually be eliminated, not
+  just logged.
+
+### Target architecture
+
+1. **Unify on one signal system.** Migrate all pypubsub usage to Publisher
+   signaling (per-instance dispatch). Then migrate Publisher to a modern
+   signal library (Blinker or psygnal) with true per-instance signals.
+   See [ATTRIBUTE_PATTERN.md — Signal Dispatch](ATTRIBUTE_PATTERN.md#signal-dispatch)
+   for the migration plan.
+
+2. **Automatic cleanup via EVT_WINDOW_DESTROY.** Hook into wx's
+   `EVT_WINDOW_DESTROY` event to call `removeInstance()` automatically when
+   a window is destroyed. This eliminates the need for manual cleanup in
+   every close handler.
+
+3. **Remove all DEAD-OBJ guards.** Once cleanup is automatic, the
+   `try/except RuntimeError` guards become dead code. Remove them.
+
+### Files involved
+
+| Area | Key files |
+|------|-----------|
+| Observer/Publisher | `taskcoachlib/patterns/observer.py` |
+| UICommand lifecycle | `taskcoachlib/gui/uicommand/base_uicommand.py` |
+| Toolbar cleanup | `taskcoachlib/gui/toolbar.py` |
+| Menu cleanup | `taskcoachlib/gui/menu.py` |
+| Editor cleanup | `taskcoachlib/gui/dialog/editor.py` |
+| Viewer cleanup | `taskcoachlib/gui/viewer/base.py` |
+| Signal dispatch design | `docs/ATTRIBUTE_PATTERN.md` |
+
+**Status:** Planned — incremental. Band-aids in place, root cause understood.
 
 ---
 
