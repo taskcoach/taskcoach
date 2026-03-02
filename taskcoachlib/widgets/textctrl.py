@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import i18n, operating_system
+from taskcoachlib.meta.debug import log_step
 import ast
 import wx
 import wx.stc as stc
@@ -66,7 +67,9 @@ class SpellCheckMixin:
             return []
         try:
             return enchant.list_languages()
-        except Exception:
+        except Exception as e:
+            log_step("enchant.list_languages() failed: %s" % e,
+                     prefix="SPELL")
             return []
 
 
@@ -265,8 +268,9 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
     def _onDestroy(self, event):
         try:
             pub.unsubscribe(self._onSquiggleColourChanged, 'spellcheck.colours.changed')
-        except Exception:
-            pass
+        except Exception as e:
+            log_step("unsubscribe squiggle colour failed: %s" % e,
+                     prefix="SPELL")
         event.Skip()
 
     def _onKeyDown(self, event):
@@ -350,7 +354,9 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
             section = "spellcheck_dark" if settings2.window.theme_is_dark else "spellcheck_light"
             color_tuple = self._settings.getvalue(section, "squiggle_color")
             return wx.Colour(*color_tuple)
-        except Exception:
+        except Exception as e:
+            log_step("squiggle colour load failed, using RED: %s" % e,
+                     prefix="SPELL")
             return wx.RED
 
     def _setupIndicators(self):
@@ -380,7 +386,9 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
             try:
                 self._spellCheckEnabled = self._settings.getboolean('spellcheck', 'enabled')
                 self._spellCheckLanguage = self._settings.get('spellcheck', 'language') or None
-            except Exception:
+            except Exception as e:
+                log_step("spellcheck settings load failed, using defaults: %s"
+                         % e, prefix="SPELL")
                 self._spellCheckEnabled = True
                 self._spellCheckLanguage = None
         else:
@@ -611,8 +619,9 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
             try:
                 spell_dict.add(word)
                 wx.CallAfter(self._performHighlighting)
-            except Exception:
-                pass
+            except Exception as e:
+                log_step("add word to dictionary failed: %s" % e,
+                         prefix="SPELL")
 
     # Compatibility methods to match wx.TextCtrl interface
     def GetValue(self):
@@ -689,8 +698,9 @@ class MultiLineTextCtrl(wx.Panel):
                 if padding.left > 0:
                     cls._nativePadding = padding.left
                     return cls._nativePadding
-            except Exception:
-                pass
+            except Exception as e:
+                log_step("GTK padding probe failed: %s" % e,
+                         prefix="TEXTCTRL")
 
         # Fallback: try wxPython GetMargins (works on Windows)
         try:
@@ -700,8 +710,9 @@ class MultiLineTextCtrl(wx.Panel):
             if margins.x > 0:
                 cls._nativePadding = margins.x
                 return cls._nativePadding
-        except Exception:
-            pass
+        except Exception as e:
+            log_step("wxPython GetMargins probe failed: %s" % e,
+                     prefix="TEXTCTRL")
 
         # Last fallback
         cls._nativePadding = 6
@@ -834,6 +845,15 @@ class MultiLineTextCtrl(wx.Panel):
                 return self._textCtrl.Bind(stc.EVT_STC_CHANGE, handler, *args, **kwargs)
             return self._textCtrl.Bind(event, handler, *args, **kwargs)
         return super().Bind(event, handler, *args, **kwargs)
+
+    def SetSelection(self, from_pos, to_pos):
+        # wx.TextCtrl convention: (-1, -1) means "select all"
+        if from_pos == -1 and to_pos == -1:
+            return self._textCtrl.SelectAll()
+        return self._textCtrl.SetSelection(from_pos, to_pos)
+
+    def SelectAll(self):
+        return self._textCtrl.SelectAll()
 
     def setSpellCheckEnabled(self, enabled):
         return self._textCtrl.setSpellCheckEnabled(enabled)

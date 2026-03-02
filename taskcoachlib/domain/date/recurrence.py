@@ -105,8 +105,8 @@ class Recurrence(object):
             first_iso = iso_weekdays[0]
             days_ahead = 7 - current_iso + first_iso
             return dateTime + timedelta.TimeDelta(days=days_ahead)
-        nrOfDays = dict(daily=1, weekly=7)[self.unit]
-        return dateTime + timedelta.TimeDelta(days=nrOfDays)
+        nr_of_days = dict(daily=1, weekly=7)[self.unit]
+        return dateTime + timedelta.TimeDelta(days=nr_of_days)
 
     def _addMonth(self, dateTime):
         year, month, day = dateTime.year, dateTime.month, dateTime.day
@@ -123,11 +123,11 @@ class Recurrence(object):
             month += 1
         if self.sameWeekday:
             weekday = dateTime.weekday()
-            weekNr = min(
+            week_nr = min(
                 3, (day - 1) / 7
             )  # In what week of the month falls aDate, allowable range 0-3
             day = (
-                weekNr * 7 + 1
+                week_nr * 7 + 1
             )  # The earliest possible day that is on the same weekday as aDate
             result = date.DateTime(year, month, day, *details)
             while result.weekday() != weekday:
@@ -150,21 +150,21 @@ class Recurrence(object):
             days = 366
         else:
             days = 365
-        newDateTime = dateTime + timedelta.TimeDelta(days=days)
+        new_dt = dateTime + timedelta.TimeDelta(days=days)
         if self.sameWeekday:
-            # Find the nearest date in newDate's year that is on the right
+            # Find the nearest date in new_dt's year that is on the right
             # weekday:
-            weekday, year = dateTime.weekday(), newDateTime.year
-            newEarlierDateTime = newLaterDateTime = newDateTime
-            while newEarlierDateTime.weekday() != weekday:
-                newEarlierDateTime = newEarlierDateTime - timedelta.ONE_DAY
-            while newLaterDateTime.weekday() != weekday:
-                newLaterDateTime = newLaterDateTime + timedelta.ONE_DAY
-            if newEarlierDateTime.year != year:
-                newDateTime = newLaterDateTime
+            weekday, year = dateTime.weekday(), new_dt.year
+            new_earlier = new_later = new_dt
+            while new_earlier.weekday() != weekday:
+                new_earlier = new_earlier - timedelta.ONE_DAY
+            while new_later.weekday() != weekday:
+                new_later = new_later + timedelta.ONE_DAY
+            if new_earlier.year != year:
+                new_dt = new_later
             else:
-                newDateTime = newEarlierDateTime
-        return newDateTime
+                new_dt = new_earlier
+        return new_dt
 
     def copy(self):
         return self.__class__(
@@ -172,6 +172,7 @@ class Recurrence(object):
             self.amount,
             self.sameWeekday,
             self.max,
+            count=self.count,
             stop_datetime=self.stop_datetime,
             recurBasedOnCompletion=self.recurBasedOnCompletion,
             weekdays=list(self.weekdays),
@@ -184,11 +185,15 @@ class Recurrence(object):
                 and self.amount == other.amount
                 and self.sameWeekday == other.sameWeekday
                 and self.max == other.max
+                and self.count == other.count
                 and self.stop_datetime == other.stop_datetime
                 and self.recurBasedOnCompletion == other.recurBasedOnCompletion
                 and self.weekdays == other.weekdays
             )
         except AttributeError:
+            from taskcoachlib.meta.debug import log_step
+            log_step("__eq__ AttributeError: self=%r other=%r" % (
+                self, other), prefix="RECUR")
             return False
 
     def __lt__(self, other):
@@ -200,6 +205,9 @@ class Recurrence(object):
                 and self.amount < other.amount
             )
         except AttributeError:
+            from taskcoachlib.meta.debug import log_step
+            log_step("__lt__ AttributeError: self=%r other=%r" % (
+                self, other), prefix="RECUR")
             return True
 
     def __bool__(self):

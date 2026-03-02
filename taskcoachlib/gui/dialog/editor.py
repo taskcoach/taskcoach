@@ -133,14 +133,15 @@ class Page(patterns.Observer, widgets.BookPage):
         can start typing over it immediately."""
         the_entry.SetFocus()
         try:
-            if operating_system.isWindows() and isinstance(
-                the_entry, wx.TextCtrl
+            if operating_system.isWindows() and hasattr(
+                the_entry, "SetInsertionPoint"
             ):
-                # Scroll to left...
+                # Scroll to left before selecting
                 the_entry.SetInsertionPoint(0)
             the_entry.SetSelection(-1, -1)  # Select all text
-        except (AttributeError, TypeError):
-            pass  # Not a TextCtrl
+        except (AttributeError, TypeError) as e:
+            log_step("SetSelection failed on %s: %s" %
+                     (type(the_entry).__name__, e), prefix="EDITOR")
 
     def close(self):
         self.removeInstance()
@@ -180,14 +181,15 @@ class ScrolledPage(patterns.Observer, widgets.ScrolledBookPage):
         can start typing over it immediately."""
         the_entry.SetFocus()
         try:
-            if operating_system.isWindows() and isinstance(
-                the_entry, wx.TextCtrl
+            if operating_system.isWindows() and hasattr(
+                the_entry, "SetInsertionPoint"
             ):
-                # Scroll to left...
+                # Scroll to left before selecting
                 the_entry.SetInsertionPoint(0)
             the_entry.SetSelection(-1, -1)  # Select all text
-        except (AttributeError, TypeError):
-            pass  # Not a TextCtrl
+        except (AttributeError, TypeError) as e:
+            log_step("SetSelection failed on %s: %s" %
+                     (type(the_entry).__name__, e), prefix="EDITOR")
 
     def close(self):
         self.removeInstance()

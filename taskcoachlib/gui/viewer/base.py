@@ -316,8 +316,9 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
     def SetFocus(self, *args, **kwargs):
         try:
             self.widget.SetFocus(*args, **kwargs)
-        except RuntimeError:
-            pass
+        except RuntimeError as e:
+            log_step("SetFocus on dead widget %s: %s" %
+                     (self.__class__.__name__, e), prefix="DEAD-OBJ")
 
     def createSorter(self, collection):
         """This method can be overridden to decorate the presentation with a
@@ -408,10 +409,9 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             # Fire status event - StatusBar has its own 500ms debounce
             # No need to query selection here; status bar queries fresh when displaying
             wx.CallAfter(self.sendViewerStatusEvent)
-        except RuntimeError:
-            # RuntimeError: wrapped C/C++ object of type EffortViewer has been deleted
-            # FIXME: It's a bug?
-            pass
+        except RuntimeError as e:
+            log_step("onSelect on dead viewer %s: %s" %
+                     (self.__class__.__name__, e), prefix="DEAD-OBJ")
 
     def updateSelection(self, sendViewerStatusEvent=True):
         """Legacy method - kept for subclass compatibility.
@@ -1094,24 +1094,24 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         )
         return column.name() not in unhideableColumns
 
-    def getColumnWidth(self, columnName):
-        columnWidths = self.settings.getdict(
+    def getColumnWidth(self, column_name):
+        column_widths = self.settings.getdict(
             self.settingsSection(), "columnwidths"
         )
-        defaultWidth = (
+        default_width = (
             28
-            if columnName == "ordering"
+            if column_name == "ordering"
             else hypertreelist._DEFAULT_COL_WIDTH
         )  # pylint: disable=W0212
-        return columnWidths.get(columnName, defaultWidth)
+        return int(column_widths.get(column_name, default_width))
 
     def onResizeColumn(self, column, width):
-        columnWidths = self.settings.getdict(
+        column_widths = self.settings.getdict(
             self.settingsSection(), "columnwidths"
         )
-        columnWidths[column.name()] = width
+        column_widths[column.name()] = int(width)
         self.settings.setdict(
-            self.settingsSection(), "columnwidths", columnWidths
+            self.settingsSection(), "columnwidths", column_widths
         )
 
     def validateDrag(self, dropItem, dragItems, columnIndex):

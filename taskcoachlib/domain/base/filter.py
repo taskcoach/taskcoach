@@ -54,7 +54,9 @@ class Filter(patterns.SetDecorator):
         try:
             self.observable().set_tree_mode(tree_mode)
         except AttributeError:
-            pass
+            from taskcoachlib.meta.debug import log_step
+            log_step("set_tree_mode: observable has no set_tree_mode",
+                     prefix="FILTER")
         self.reset()
 
     def tree_mode(self):
@@ -77,8 +79,8 @@ class Filter(patterns.SetDecorator):
             return
 
         # Get items that directly match this filter's criteria
-        directMatches = set(self.filter_items(self.observable()))
-        filteredItems = directMatches.copy()
+        direct_matches = set(self.filter_items(self.observable()))
+        filtered_items = direct_matches.copy()
 
         # Reset and rebuild filter_forced tracking
         self.__filterForced = set()
@@ -86,17 +88,17 @@ class Filter(patterns.SetDecorator):
             # In tree mode, include ancestors of matching items to maintain
             # tree structure. Track these as "filter_forced" since they don't
             # match criteria themselves - they're only included for hierarchy.
-            for item in directMatches:
+            for item in direct_matches:
                 for ancestor in item.ancestors():
-                    if ancestor not in directMatches:
+                    if ancestor not in direct_matches:
                         self.__filterForced.add(ancestor)
-                        filteredItems.add(ancestor)
+                        filtered_items.add(ancestor)
 
         self.removeItemsFromSelf(
-            [item for item in self if item not in filteredItems], event=event
+            [item for item in self if item not in filtered_items], event=event
         )
         self.extendSelf(
-            [item for item in filteredItems if item not in self], event=event
+            [item for item in filtered_items if item not in self], event=event
         )
         patterns.Event(self.filter_change_event_type(), self).send()
 
@@ -127,7 +129,9 @@ class Filter(patterns.SetDecorator):
             if hasattr(inner, 'getAccumulatedFilterForced'):
                 accumulated |= inner.getAccumulatedFilterForced()
         except AttributeError:
-            pass
+            from taskcoachlib.meta.debug import log_step
+            log_step("getAccumulatedFilterForced: AttributeError on observable",
+                     prefix="FILTER")
         return accumulated
 
     def filter_items(self, items):

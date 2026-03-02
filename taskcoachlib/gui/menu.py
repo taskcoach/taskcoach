@@ -131,7 +131,7 @@ class DynamicMenu(Menu):
         the menu has a chance to update itself."""
         try:  # Prepare for menu or window to be destroyed
             self.updateMenu()
-        except RuntimeError:
+        except (RuntimeError, wx.wxAssertionError):
             log_step("onUpdateMenu: menu/window dead", prefix="DEAD-OBJ")
 
     def onUpdateMenu_Deprecated(self, event=None):
@@ -144,11 +144,9 @@ class DynamicMenu(Menu):
             if event.GetMenu() != self._parentMenu:
                 return
 
-        # FIXME: No RuntimeError similar classes in wxPython4, so
-        # you must carefully check if the window already destroyed.
         try:  # Prepare for menu or window to be destroyed
             self.updateMenu()
-        except RuntimeError:
+        except (RuntimeError, wx.wxAssertionError):
             log_step("onUpdateMenu_Deprecated: menu/window dead",
                      prefix="DEAD-OBJ")
 
@@ -961,29 +959,10 @@ class StartEffortForTaskMenu(DynamicMenu):
         super().__init__(taskBarIcon, parentMenu, labelInParentMenu)
 
     def registerForMenuUpdate(self):
-        for eventType in (
-            self.tasks.addItemEventType(),
-            self.tasks.removeItemEventType(),
-        ):
-            patterns.Publisher().registerObserver(
-                self.onUpdateMenu_Deprecated,
-                eventType=eventType,
-                eventSource=self.tasks,
-            )
-        for eventType in (
-            task.Task.subjectChangedEventType(),
-            task.Task.trackingChangedEventType(),
-            task.Task.plannedStartDateTimeChangedEventType(),
-            task.Task.dueDateTimeChangedEventType(),
-            task.Task.actualStartDateTimeChangedEventType(),
-            task.Task.completionDateTimeChangedEventType(),
-        ):
-            if eventType.startswith("pubsub"):
-                pub.subscribe(self.onUpdateMenu, eventType)
-            else:
-                patterns.Publisher().registerObserver(
-                    self.onUpdateMenu_Deprecated, eventType
-                )
+        # No-op: menu is rebuilt on-demand in popupTaskBarMenu() instead of
+        # subscribing to every domain event.  The old approach exhausted wx
+        # menu-item IDs during recur() cascades (wxAssertionError 0x7fff).
+        pass
 
     def updateMenuItems(self):
         self.clearMenu()

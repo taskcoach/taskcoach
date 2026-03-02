@@ -195,6 +195,7 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
     def popupTaskBarMenu(self, event):  # pylint: disable=W0613
         log_step("RIGHT-CLICK on taskbar icon, showing popup menu", prefix="TRAY")
         log_step("popupmenu object:", self.popupmenu, prefix="TRAY")
+        self.popupmenu.updateMenu()
         self.PopupMenu(self.popupmenu)
         log_step("PopupMenu() returned", prefix="TRAY")
 

@@ -88,15 +88,15 @@ class Event(object):
         the type as keyword argument. If no type is specified, the source
         and values are added for a random type, i.e. only omit the type if
         the event has only one type."""
-        eventType = kwargs.pop("type", self.type())
-        currentValues = set(
-            self.__sourcesAndValuesByType.setdefault(eventType, {}).setdefault(
+        event_type = kwargs.pop("type", self.type())
+        current_values = set(
+            self.__sourcesAndValuesByType.setdefault(event_type, {}).setdefault(
                 source, tuple()
             )
         )
-        currentValues |= set(values)
-        self.__sourcesAndValuesByType.setdefault(eventType, {})[source] = (
-            tuple(currentValues)
+        current_values |= set(values)
+        self.__sourcesAndValuesByType.setdefault(event_type, {})[source] = (
+            tuple(current_values)
         )
 
     def type(self):
@@ -145,20 +145,20 @@ class Event(object):
     def subEvent(self, *typesAndSources):
         """Create a new event that contains a subset of the data of this
         event."""
-        subEvent = self.__class__()
+        sub_event = self.__class__()
         for type, source in typesAndSources:
-            sourcesToAdd = self.sources(type)
+            sources_to_add = self.sources(type)
             if source is not None:
                 # Make sure source is actually in self.sources(type):
-                sourcesToAdd &= set([source])
+                sources_to_add &= set([source])
             kwargs = dict(
                 type=type
             )  # Python doesn't allow type=type after *values
-            for eachSource in sourcesToAdd:
-                subEvent.addSource(
-                    eachSource, *self.values(eachSource, type), **kwargs
+            for each_source in sources_to_add:
+                sub_event.addSource(
+                    each_source, *self.values(each_source, type), **kwargs
                 )  # pylint: disable=W0142
-        return subEvent
+        return sub_event
 
     def send(self):
         """Send this event to observers of the type(s) of this event."""
@@ -338,24 +338,24 @@ class Publisher(object, metaclass=singleton.Singleton):
         types = event.types()
         # Include observers not registered for a specific event source:
         sources = event.sources() | set([None])
-        eventTypesAndSources = [
+        types_and_sources = [
             (type, source) for source in sources for type in types
         ]
-        for eventTypeAndSource in eventTypesAndSources:
-            for observer in self.__observers.get(eventTypeAndSource, set()):
-                observers.setdefault(observer, set()).add(eventTypeAndSource)
+        for type_and_source in types_and_sources:
+            for observer in self.__observers.get(type_and_source, set()):
+                observers.setdefault(observer, set()).add(type_and_source)
         import wx
-        if wx.GetApp() and wx.GetApp().quitting:
+        if wx.GetApp() and getattr(wx.GetApp(), 'quitting', False):
             return
-        for observer, eventTypesAndSources in observers.items():
-            subEvent = event.subEvent(*eventTypesAndSources)
-            if subEvent.types():
+        for observer, types_and_sources in observers.items():
+            sub_event = event.subEvent(*types_and_sources)
+            if sub_event.types():
                 try:
-                    observer(subEvent)
-                except RuntimeError:
+                    observer(sub_event)
+                except Exception:
                     from taskcoachlib.meta.debug import log_step
-                    log_step("Observer RuntimeError: %s on %s" % (
-                        observer, subEvent.types()), prefix="OBSERVER")
+                    log_step("Observer exception: %s on %s" % (
+                        observer, sub_event.types()), prefix="OBSERVER")
 
     @unwrapObservers
     def observers(self, eventType=None):

@@ -1220,7 +1220,9 @@ class Task(
         try:
             from taskcoachlib.config import settings2
             return section + "_dark" if settings2.window.theme_is_dark else section
-        except Exception:
+        except Exception as e:
+            from taskcoachlib.meta.debug import log_step
+            log_step("_themedSection(%s): %s" % (section, e), prefix="THEME")
             return section
 
     @classmethod
@@ -1710,59 +1712,65 @@ class Task(
 
     @patterns.eventSource
     def recur(self, completionDateTime=None, event=None):
+        from taskcoachlib.meta.debug import log_step
         completionDateTime = completionDateTime or date.Now()
         self.setCompletionDateTime(self.maxDateTime)
         recur = self.recurrence(recursive=True, upwards=True)
 
-        currentDueDateTime = self.dueDateTime()
-        currentPlannedStartDateTime = self.plannedStartDateTime()
+        if not recur.unit:
+            log_step("recur() on %r: resolved recurrence has no unit"
+                     % self.subject(), prefix="RECUR")
 
-        if currentDueDateTime != date.DateTime():
-            basisForRecurrence = (
+        current_due = self.dueDateTime()
+        current_planned_start = self.plannedStartDateTime()
+
+        if current_due != date.DateTime():
+            basis = (
                 completionDateTime
                 if recur.recurBasedOnCompletion
-                else currentDueDateTime
+                else current_due
             )
-            nextDueDateTime = recur(basisForRecurrence, next=False)
-            nextDueDateTime = nextDueDateTime.replace(
-                hour=currentDueDateTime.hour,
-                minute=currentDueDateTime.minute,
-                second=currentDueDateTime.second,
-                microsecond=currentDueDateTime.microsecond,
+            next_due = recur(basis, next=False)
+            next_due = next_due.replace(
+                hour=current_due.hour,
+                minute=current_due.minute,
+                second=current_due.second,
+                microsecond=current_due.microsecond,
             )
-            self.setDueDateTime(nextDueDateTime)
+            if next_due == current_due:
+                log_step("recur() on %r: date did not advance (%s)"
+                         % (self.subject(), current_due), prefix="RECUR")
+            self.setDueDateTime(next_due)
 
-        if currentPlannedStartDateTime != date.DateTime():
+        if current_planned_start != date.DateTime():
             if date.DateTime() not in (
-                currentPlannedStartDateTime,
-                currentDueDateTime,
+                current_planned_start,
+                current_due,
             ):
-                taskDuration = currentDueDateTime - currentPlannedStartDateTime
-                nextPlannedStartDateTime = nextDueDateTime - taskDuration
+                task_duration = current_due - current_planned_start
+                next_planned_start = next_due - task_duration
             else:
-                basisForRecurrence = (
+                basis = (
                     completionDateTime
                     if recur.recurBasedOnCompletion
-                    else currentPlannedStartDateTime
+                    else current_planned_start
                 )
-                nextPlannedStartDateTime = recur(
-                    basisForRecurrence, next=False
-                )
-            nextPlannedStartDateTime = nextPlannedStartDateTime.replace(
-                hour=currentPlannedStartDateTime.hour,
-                minute=currentPlannedStartDateTime.minute,
-                second=currentPlannedStartDateTime.second,
-                microsecond=currentPlannedStartDateTime.microsecond,
+                next_planned_start = recur(basis, next=False)
+            next_planned_start = next_planned_start.replace(
+                hour=current_planned_start.hour,
+                minute=current_planned_start.minute,
+                second=current_planned_start.second,
+                microsecond=current_planned_start.microsecond,
             )
-            self.setPlannedStartDateTime(nextPlannedStartDateTime)
+            self.setPlannedStartDateTime(next_planned_start)
 
         self.setActualStartDateTime(date.DateTime())
         self.setPercentageComplete(0)
         if self.reminder(includeSnooze=False):
-            nextReminder = recur(
+            next_reminder = recur(
                 self.reminder(includeSnooze=False), next=False
             )
-            self.setReminder(nextReminder)
+            self.setReminder(next_reminder)
         for child in self.children():
             if not child.recurrence():
                 child.recur(completionDateTime, event=event)

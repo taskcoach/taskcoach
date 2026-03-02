@@ -202,7 +202,7 @@ class AutoColumnWidthMixin(object):
     ResizeColumn = property(GetResizeColumn, SetResizeColumn)
 
     def GetAvailableWidth(self):
-        available_width = self.GetClientSize().width
+        available_width = int(self.GetClientSize().width)
         if (
             self.__is_scrollbar_visible()
             and self.__is_scrollbar_included_in_client_size()
@@ -219,7 +219,7 @@ class AutoColumnWidthMixin(object):
             if column_index == self.ResizeColumn:
                 necessary_width += self.ResizeColumnMinWidth
             else:
-                necessary_width += self.GetColumnWidth(column_index)
+                necessary_width += int(self.GetColumnWidth(column_index))
         return necessary_width
 
     NecessaryWidth = property(GetNecessaryWidth)
