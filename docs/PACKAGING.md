@@ -50,7 +50,7 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | lxml | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
 | numpy (<2) | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
 | ↳ version | 1.24.2 | 1.21.5 | 2.2.4 | 1.26.4 | 2.4.0 | 2.3.3 | 1.26.4 | 1.26.4 | 1.26.4 |
-| chardet | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
+| chardet (<5.2) | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
 | python-dateutil | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
 | keyring | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
 | pyxdg | distro | distro | distro | distro | distro | distro | bundled | — | — |
@@ -493,6 +493,14 @@ Task Coach builds native macOS .app bundles using py2app for both Intel and Appl
 3. Creates icns icon file using `iconutil`
 4. Builds .app bundle with py2app
 5. Creates DMG with Applications symlink
+
+### Known Constraints
+
+| Package | Constraint | Reason |
+|---------|-----------|--------|
+| chardet | `<5.2.0` | chardet >=5.2.0 uses mypyc-compiled C extensions with hashed filenames (`*__mypyc.cpython-*.so`) that py2app cannot discover. Results in `ModuleNotFoundError: No module named '...__mypyc'` at runtime. Pure-Python chardet (<5.2.0) works identically. |
+| setuptools | `<71.0.2` | py2app compatibility issue ([py2app#531](https://github.com/ronaldoussoren/py2app/issues/531)) |
+| numpy | `<2` | NumPy 2.x API changes; see [NUMPY.md](NUMPY.md) |
 
 ### Code Signing
 

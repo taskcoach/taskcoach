@@ -194,14 +194,15 @@ class FilterableViewerForCategorizablesMixin(FilterableViewerMixin):
         items = super(
             FilterableViewerForCategorizablesMixin, self
         ).createFilter(items)
-        filterOnlyWhenAllCategoriesMatch = self.settings.getboolean(
+        filter_on_all = self.settings.getboolean(
             "view", "categoryfiltermatchall"
         )
         return category.filter.CategoryFilter(
             items,
             categories=self.taskFile.categories(),
+            settings=self.settings,
             tree_mode=self.is_tree_viewer(),
-            filterOnlyWhenAllCategoriesMatch=filterOnlyWhenAllCategoriesMatch,
+            filterOnlyWhenAllCategoriesMatch=filter_on_all,
         )
 
 

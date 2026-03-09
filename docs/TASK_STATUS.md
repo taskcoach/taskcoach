@@ -477,7 +477,7 @@ event type strings. The viewer now uses `registerObserver` for these types,
 correctly receiving `event.addSource()` notifications via sender-filtered
 dispatch. No callback or consumer changes were needed.
 
-See [ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md) §Signal Dispatch for the
+See [PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#signal-dispatch) for the
 per-instance dispatch requirement and naming convention.
 
 ---

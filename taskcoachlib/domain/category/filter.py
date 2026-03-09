@@ -18,37 +18,38 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns
 from taskcoachlib.domain import base
-from pubsub import pub
 from .category import Category
 
 
 class CategoryFilter(base.Filter):
     def __init__(self, *args, **kwargs):
         self.__categories = kwargs.pop("categories")
+        self.__settings = kwargs.pop("settings")
         self.__filterOnlyWhenAllCategoriesMatch = kwargs.pop(
             "filterOnlyWhenAllCategoriesMatch", False
         )
-        for eventType in (
+        for event_type in (
             self.__categories.addItemEventType(),
             self.__categories.removeItemEventType(),
         ):
             patterns.Publisher().registerObserver(
                 self.onCategoryChanged,
-                eventType=eventType,
+                eventType=event_type,
                 eventSource=self.__categories,
             )
-        eventTypes = (
+        event_types = (
             Category.categorizableAddedEventType(),
             Category.categorizableRemovedEventType(),
             Category.filterChangedEventType(),
         )
-        for eventType in eventTypes:
+        for event_type in event_types:
             patterns.Publisher().registerObserver(
-                self.onCategoryChanged, eventType=eventType
+                self.onCategoryChanged, eventType=event_type
             )
-        pub.subscribe(
+        patterns.Publisher().registerObserver(
             self.onFilterMatchingChanged,
-            "settings.view.categoryfiltermatchall",
+            eventType="view.categoryfiltermatchall",
+            eventSource=self.__settings,
         )
         super().__init__(*args, **kwargs)
 
@@ -57,25 +58,25 @@ class CategoryFilter(base.Filter):
         self.removeObserver(self.onCategoryChanged)
 
     def filter_items(self, categorizables):
-        filteredCategories = self.__categories.filteredCategories()
-        if not filteredCategories:
+        filtered_categories = self.__categories.filteredCategories()
+        if not filtered_categories:
             return categorizables
 
         if self.__filterOnlyWhenAllCategoriesMatch:
-            filteredCategorizables = set(categorizables)
-            for category in filteredCategories:
-                filteredCategorizables &= (
+            filtered_categorizables = set(categorizables)
+            for category in filtered_categories:
+                filtered_categorizables &= (
                     self.__categorizablesBelongingToCategory(category)
                 )
         else:
-            filteredCategorizables = set()
-            for category in filteredCategories:
-                filteredCategorizables |= (
+            filtered_categorizables = set()
+            for category in filtered_categories:
+                filtered_categorizables |= (
                     self.__categorizablesBelongingToCategory(category)
                 )
 
-        filteredCategorizables &= self.observable()
-        return filteredCategorizables
+        filtered_categorizables &= self.observable()
+        return filtered_categorizables
 
     @staticmethod
     def __categorizablesBelongingToCategory(category):
@@ -84,8 +85,9 @@ class CategoryFilter(base.Filter):
             categorizables |= set(categorizable.children(recursive=True))
         return categorizables
 
-    def onFilterMatchingChanged(self, value):
-        self.__filterOnlyWhenAllCategoriesMatch = value
+    def onFilterMatchingChanged(self, event):  # pylint: disable=W0613
+        self.__filterOnlyWhenAllCategoriesMatch = \
+            self.__settings.getboolean("view", "categoryfiltermatchall")
         self.reset()
 
     def onCategoryChanged(self, event):  # pylint: disable=W0613

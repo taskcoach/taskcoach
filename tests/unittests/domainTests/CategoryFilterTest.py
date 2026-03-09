@@ -65,7 +65,8 @@ class Fixture(CategoryFilterHelpersMixin):
         self.tasks = task.TaskList(self.createTasks())
         self.categorize()
         self.filter = category.filter.CategoryFilter(
-            self.tasks, categories=self.categories, tree_mode=self.tree_mode
+            self.tasks, categories=self.categories,
+            settings=self.settings, tree_mode=self.tree_mode
         )
 
     def createTasks(self):
@@ -849,7 +850,8 @@ class CategoryFilterAndViewFilterFixtureAndCommonTestsMixin(
             self.tasks, tree_mode=self.tree_mode
         )
         self.categoryFilter = category.filter.CategoryFilter(
-            self.viewFilter, categories=self.categories, tree_mode=self.tree_mode
+            self.viewFilter, categories=self.categories,
+            settings=task.Task.settings, tree_mode=self.tree_mode
         )
 
     def testThatParentIsHiddenWhenHiddenCompletedChildIsFiltered(self):
@@ -925,7 +927,8 @@ class ViewFilterWrappingCategoryFilterFixture(CategoryFilterHelpersMixin):
         self.categories = category.CategoryList([self.childCategory])
         # Filter order: TaskList -> CategoryFilter -> ViewFilter (like the app)
         self.categoryFilter = category.filter.CategoryFilter(
-            self.tasks, categories=self.categories, tree_mode=self.tree_mode
+            self.tasks, categories=self.categories,
+            settings=task.Task.settings, tree_mode=self.tree_mode
         )
         self.viewFilter = task.filter.ViewFilter(
             self.categoryFilter, tree_mode=self.tree_mode

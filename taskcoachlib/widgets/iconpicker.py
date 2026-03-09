@@ -25,12 +25,19 @@ from taskcoachlib.gui.icons import image_list_cache
 
 
 class _IconListCtrl(wx.ListCtrl):
-    """List control with 5 columns: Label (with icon), Hints, Theme, Context, Key."""
+    """Virtual list control — only visible rows are rendered.
+
+    5 columns: Label (with icon), Hints, Theme, Context, Key.
+    Data lives in _items; wx asks for visible rows via OnGetItem* callbacks.
+    """
 
     COL_ICON_ID = 4
 
     def __init__(self, parent):
-        super().__init__(parent, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.BORDER_NONE)
+        super().__init__(
+            parent,
+            style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_VIRTUAL | wx.BORDER_NONE,
+        )
 
         # Shared image list (same singleton used by all viewers)
         self.SetImageList(image_list_cache.image_list, wx.IMAGE_LIST_SMALL)
@@ -42,11 +49,15 @@ class _IconListCtrl(wx.ListCtrl):
         self.InsertColumn(3, _("Context"), width=80)
         self.InsertColumn(4, _("Key"), width=150)
 
-        self._items = []
-        self._all_items = []
+        self._items = []       # currently visible items
+        self._all_items = []   # unfiltered master list
         self._enabled_ids = set()
-        self._current_selected_row = None
         self._on_select_callback = None
+
+        # Cached item attribute for disabled (greyed-out) rows
+        self._disabled_attr = wx.ItemAttr()
+        self._disabled_attr.SetTextColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
 
         # Debounce timer for search filtering
         self._filter_timer = wx.Timer(self)
@@ -56,47 +67,49 @@ class _IconListCtrl(wx.ListCtrl):
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self._on_item_activated)
         self.Bind(wx.EVT_KEY_DOWN, self._on_key_down)
 
+    # --- wx.LC_VIRTUAL callbacks (called only for visible rows) ---
+
+    def OnGetItemText(self, row, col):
+        item = self._items[row]
+        if col == 0:
+            return item[1]          # label
+        if col == 1:
+            return item[2] or ""    # hints
+        if col == 2:
+            return item[3] or ""    # theme
+        if col == 3:
+            return item[4] or ""    # context
+        if col == 4:
+            return item[0]          # icon_id
+        return ""
+
+    def OnGetItemImage(self, row):
+        return image_list_cache.get_index(self._items[row][0])
+
+    def OnGetItemAttr(self, row):
+        if not self._items[row][5]:  # not enabled
+            return self._disabled_attr
+        return None
+
+    # --- Public API ---
+
     def SetItems(self, items, current_icon_id=""):
         """Set items: list of (icon_id, label, hints, theme, context, enabled) tuples."""
         self._all_items = list(items)
         self._items = list(items)
-        self._rebuild_list(current_icon_id)
+        self._enabled_ids = {item[0] for item in items if item[5]}
+        self.SetItemCount(len(self._items))
+        self._select_icon(current_icon_id)
 
-    def _rebuild_list(self, current_icon_id=""):
-        """Rebuild the list from current _items, optionally selecting current_icon_id inline."""
-        self.DeleteAllItems()
-        self._enabled_ids = set()
-        self._current_selected_row = None
-
+    def _select_icon(self, icon_id):
+        """Select and scroll to icon_id in current list."""
+        if not icon_id:
+            return
         for i, item in enumerate(self._items):
-            icon_id, label, hints, theme, context, enabled = item
-
-            if enabled:
-                self._enabled_ids.add(icon_id)
-
-            # Insert row: Label (with icon), Hints, Theme, Context, icon_id
-            idx = self.InsertItem(i, label, image_list_cache.get_index(icon_id))
-            self.SetItem(idx, 1, hints or "")
-            self.SetItem(idx, 2, theme or "")
-            self.SetItem(idx, 3, context or "")
-            self.SetItem(idx, 4, icon_id)
-
-            # Grey out disabled items
-            if not enabled:
-                self.SetItemTextColour(idx, wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-
-            if icon_id == current_icon_id:
-                self._try_select_current(i, icon_id)
-
-    def _try_select_current(self, row_index, icon_id):
-        """Select row during _rebuild_list. Logs error on duplicate icon_id."""
-        if self._current_selected_row is None:
-            self.Select(row_index)
-            self.EnsureVisible(row_index)
-            self._current_selected_row = row_index
-        else:
-            log_step("ERROR: Duplicate icon_id '{}' at row {}, already selected at row {}".format(
-                icon_id, row_index, self._current_selected_row), prefix="ICON")
+            if item[0] == icon_id:
+                self.Select(i)
+                self.EnsureVisible(i)
+                return
 
     def FilterItems(self, filter_text):
         """Start debounced filter - waits 300ms after last keystroke."""
@@ -110,13 +123,14 @@ class _IconListCtrl(wx.ListCtrl):
         if not filter_text:
             self._items = list(self._all_items)
         else:
-            # Split into terms - ALL terms must match (AND search)
             terms = filter_text.lower().split()
             self._items = [
                 item for item in self._all_items
                 if self._matches_all_terms(item, terms)
             ]
-        self._rebuild_list()
+        self.SetItemCount(len(self._items))
+        if self._items:
+            self.RefreshItems(0, len(self._items) - 1)
 
         # Select first enabled item
         for i, item in enumerate(self._items):
@@ -137,7 +151,6 @@ class _IconListCtrl(wx.ListCtrl):
         theme = item[3].lower()
         context = item[4].lower()
 
-        # Build searchable string based on preferences
         searchable = icon_id + " " + label + " " + hints
 
         from taskcoachlib.config import settings2
@@ -153,7 +166,7 @@ class _IconListCtrl(wx.ListCtrl):
         sel = self.GetFirstSelected()
         if sel == -1:
             return ""
-        icon_id = self.GetItemText(sel, self.COL_ICON_ID)
+        icon_id = self._items[sel][0]
         if icon_id not in self._enabled_ids:
             return None
         return icon_id

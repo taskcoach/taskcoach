@@ -262,6 +262,7 @@ To add signing to GitHub Actions:
 | App won't launch on Intel Mac | ARM64-only binary | Use Intel build (`-intel.dmg`) |
 | App slow on Apple Silicon | Running Intel binary via Rosetta | Use ARM64 build (`-arm64.dmg`) |
 | Idle detection returns 0 | IOKit access issue | Check Console.app for errors |
+| `ModuleNotFoundError: ...__mypyc` | chardet >=5.2.0 mypyc extensions not bundled by py2app | Pin `chardet<5.2.0` in workflow (see [PACKAGING.md](PACKAGING.md#known-constraints)) |
 
 ---
 

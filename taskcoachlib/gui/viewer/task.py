@@ -1009,23 +1009,22 @@ class CalendarViewer(
             dt.ParseDateTime(start)
             self.widget.SetDate(dt)
 
-        self.onWeekStartChanged(self.settings.gettext("view", "weekstart"))
-        self.onWorkingHourChanged()
+        if self.settings.gettext("view", "weekstart") == "monday":
+            self.widget.SetWeekStartMonday()
+        else:
+            self.widget.SetWeekStartSunday()
+        self.widget.SetWorkHours(
+            self.settings.getint("view", "efforthourstart"),
+            self.settings.getint("view", "efforthourend"),
+        )
 
         self.reconfig()
         self.widget.SetPeriodWidth(
             self.settings.getint(self.settingsSection(), "periodwidth")
         )
 
-        for eventType in ("start", "end"):
-            pub.subscribe(
-                self.onWorkingHourChanged,
-                "settings.view.efforthour%s" % eventType,
-            )
-        pub.subscribe(self.onWeekStartChanged, "settings.view.weekstartmonday")
-
         # pylint: disable=E1101
-        for eventType in (
+        for event_type in (
             task.Task.subjectChangedEventType(),
             task.Task.plannedStartDateTimeChangedEventType(),
             task.Task.dueDateTimeChangedEventType(),
@@ -1035,11 +1034,11 @@ class CalendarViewer(
             task.Task.trackingChangedEventType(),
             task.Task.percentageCompleteChangedEventType(),
         ):
-            if eventType.startswith("pubsub"):
-                pub.subscribe(self.onAttributeChanged, eventType)
+            if event_type.startswith("pubsub"):
+                pub.subscribe(self.onAttributeChanged, event_type)
             else:
                 self.registerObserver(
-                    self.onAttributeChanged_Deprecated, eventType
+                    self.onAttributeChanged_Deprecated, event_type
                 )
         # Subscribe to scheduler's UI refresh event (fires after all data changes)
         pub.subscribe(self._onDateChanged, 'scheduler.dateChange.uiRefresh')
@@ -1069,22 +1068,9 @@ class CalendarViewer(
             # changed now
             self.SetViewType(wxSCHEDULER_TODAY)
 
-    def onWorkingHourChanged(self, value=None):  # pylint: disable=W0613
-        self.widget.SetWorkHours(
-            self.settings.getint("view", "efforthourstart"),
-            self.settings.getint("view", "efforthourend"),
-        )
-
-    def onWeekStartChanged(self, value):
-        assert value in ("monday", "sunday")
-        if value == "monday":
-            self.widget.SetWeekStartMonday()
-        else:
-            self.widget.SetWeekStartSunday()
-
     def createWidget(self):
-        itemPopupMenu = self.createTaskPopupMenu()
-        self._popupMenus.append(itemPopupMenu)
+        item_popup_menu = self.createTaskPopupMenu()
+        self._popupMenus.append(item_popup_menu)
         widget = widgets.Calendar(
             self,
             self.presentation(),
@@ -1093,7 +1079,7 @@ class CalendarViewer(
             self.onEdit,
             self.onCreate,
             self.onChangeConfig,
-            itemPopupMenu,
+            item_popup_menu,
             **self.widgetCreationKeywordArguments()
         )
 
@@ -1126,8 +1112,8 @@ class CalendarViewer(
         edit(item)
 
     def onCreate(self, dateTime, show=True):
-        plannedStartDateTime = dateTime
-        dueDateTime = (
+        planned_start = dateTime
+        due = (
             dateTime.endOfDay()
             if dateTime == dateTime.startOfDay()
             else dateTime
@@ -1136,8 +1122,8 @@ class CalendarViewer(
             taskList=self.presentation(),
             settings=self.settings,
             taskKeywords=dict(
-                plannedStartDateTime=plannedStartDateTime,
-                dueDateTime=dueDateTime,
+                plannedStartDateTime=planned_start,
+                dueDateTime=due,
             ),
         )
         return create(event=None, show=show)
@@ -1160,12 +1146,17 @@ class CalendarViewer(
             now.GetMonth(),
             now.GetDay(),
         ):
-            toSave = ""
+            to_save = ""
         else:
-            toSave = dt.Format()
-        self.settings.set(self.settingsSection(), "viewdate", toSave)
+            to_save = dt.Format()
+        self.settings.set(self.settingsSection(), "viewdate", to_save)
 
     def reconfig(self):
+        from taskcoachlib.widgets.frame import rebuild_guard
+        with rebuild_guard(self.widget):
+            self._do_reconfig()
+
+    def _do_reconfig(self):
         self.widget.Freeze()
         try:
             self.widget.SetPeriodCount(
@@ -1196,10 +1187,10 @@ class CalendarViewer(
                 self.settingsSection(), "highlightcolor"
             )
             if hcolor:
-                highlightColor = wx.Colour(
+                highlight_color = wx.Colour(
                     *tuple([int(c) for c in hcolor.split(",")])
                 )
-                self.widget.SetHighlightColor(highlightColor)
+                self.widget.SetHighlightColor(highlight_color)
 
             # Other month days background color
             from taskcoachlib.config import settings2

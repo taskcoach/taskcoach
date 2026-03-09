@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from . import singleton
 import functools
+import weakref
 from pubsub import pub
 
 # Ignore these pylint messages:
@@ -183,67 +184,87 @@ def eventSource(f):
     return decorator
 
 
-class MethodProxy(object):
-    """Wrap methods in a class that allows for comparing methods. Comparison
-    if instance methods was changed in python 2.5. In python 2.5, instance
-    methods are equal when their instances compare equal, which is not
-    the behaviour we need for callbacks. So we wrap callbacks in this class
-    to get back the old (correct, imho) behaviour."""
+class WeakMethodProxy:
+    """Weak-reference wrapper for bound methods registered as observers.
+
+    Uses weakref.WeakMethod so Publisher does not prevent GC of the
+    subscriber's owning object.  When the owner is collected, alive()
+    returns False and __call__ is a silent no-op.
+
+    Replaces the legacy MethodProxy which held strong references (a
+    workaround for a Python 2.5 bound-method comparison bug that does
+    not exist in Python 3).
+    """
+
+    __slots__ = ("_ref", "_hash")
 
     def __init__(self, method):
-        self.method = method
+        self._ref = weakref.WeakMethod(method)
+        # Cache hash — must survive after referent dies, because
+        # set.discard() needs it during cleanup.
+        self._hash = hash((
+            method.__self__.__class__,
+            id(method.__self__),
+            method.__func__,
+        ))
 
-    def __repr__(self):
-        return "MethodProxy(%s)" % self.method  # pragma: no cover
+    def alive(self):
+        return self._ref() is not None
 
     def __call__(self, *args, **kwargs):
-        return self.method(*args, **kwargs)
+        method = self._ref()
+        if method is not None:
+            return method(*args, **kwargs)
 
     def __eq__(self, other):
+        if not isinstance(other, WeakMethodProxy):
+            return NotImplemented
+        ref_self = self._ref()
+        ref_other = other._ref()
+        if ref_self is None or ref_other is None:
+            return self is other  # dead proxies only equal themselves
         return (
-            self.method.__self__.__class__ is other.method.__self__.__class__
-            and self.method.__self__ is other.method.__self__
-            and self.method.__func__ is other.method.__func__
+            ref_self.__self__.__class__ is ref_other.__self__.__class__
+            and ref_self.__self__ is ref_other.__self__
+            and ref_self.__func__ is ref_other.__func__
         )
 
     def __ne__(self, other):
         return not (self == other)
 
     def __hash__(self):
-        # Can't use self.method.__self__ for the hash, it might be mutable
-        return hash(
-            (
-                self.method.__self__.__class__,
-                id(self.method.__self__),
-                self.method.__func__,
-            )
-        )
+        return self._hash
 
-    def get_im_self(self):
-        return self.method.__self__
+    def __repr__(self):
+        method = self._ref()
+        if method is not None:
+            return "WeakMethodProxy(%s)" % method
+        return "WeakMethodProxy(<dead>)"
 
-    im_self = property(get_im_self)
-    __self__ = im_self
+    @property
+    def __self__(self):
+        method = self._ref()
+        return method.__self__ if method is not None else None
 
 
-def wrapObserver(decoratedMethod):
+def wrapObserver(decorated_method):
     """Wrap the observer argument (assumed to be the first after self) in
-    a MethodProxy class."""
+    a WeakMethodProxy."""
 
     def decorator(self, observer, *args, **kwargs):
         assert hasattr(observer, "__self__")
-        observer = MethodProxy(observer)
-        return decoratedMethod(self, observer, *args, **kwargs)
+        observer = WeakMethodProxy(observer)
+        return decorated_method(self, observer, *args, **kwargs)
 
     return decorator
 
 
-def unwrapObservers(decoratedMethod):
-    """Unwrap the returned observers from their MethodProxy class."""
+def unwrapObservers(decorated_method):
+    """Unwrap returned observers, filtering out dead weak references."""
 
     def decorator(*args, **kwargs):
-        observers = decoratedMethod(*args, **kwargs)
-        return [proxy.method for proxy in observers]
+        observers = decorated_method(*args, **kwargs)
+        return [proxy._ref() for proxy in observers if proxy.alive()]
 
     return decorator
 
@@ -322,8 +343,8 @@ class Publisher(object, metaclass=singleton.Singleton):
 
         # Next, remove observers that are registered for the event source and
         # event type we're looking for, i.e. that match:
-        matchingKeys = [key for key in self.__observers if match(*key)]
-        for key in matchingKeys:
+        matching_keys = [key for key in self.__observers if match(*key)]
+        for key in matching_keys:
             self.__observers[key].discard(observer)
             if not self.__observers[key]:
                 del self.__observers[key]
@@ -341,12 +362,22 @@ class Publisher(object, metaclass=singleton.Singleton):
         types_and_sources = [
             (type, source) for source in sources for type in types
         ]
+        dead_entries = []
         for type_and_source in types_and_sources:
             for observer in self.__observers.get(type_and_source, set()):
-                observers.setdefault(observer, set()).add(type_and_source)
+                if observer.alive():
+                    observers.setdefault(observer, set()).add(type_and_source)
+                else:
+                    dead_entries.append((type_and_source, observer))
+        # Prune dead weak references
+        for key, dead_proxy in dead_entries:
+            self.__observers.get(key, set()).discard(dead_proxy)
+            if key in self.__observers and not self.__observers[key]:
+                del self.__observers[key]
         import wx
         if wx.GetApp() and getattr(wx.GetApp(), 'quitting', False):
             return
+        failed_entries = []
         for observer, types_and_sources in observers.items():
             sub_event = event.subEvent(*types_and_sources)
             if sub_event.types():
@@ -354,8 +385,15 @@ class Publisher(object, metaclass=singleton.Singleton):
                     observer(sub_event)
                 except Exception:
                     from taskcoachlib.meta.debug import log_step
-                    log_step("Observer exception: %s on %s" % (
+                    log_step("Observer exception: %s on %s — removing" % (
                         observer, sub_event.types()), prefix="OBSERVER")
+                    for key in types_and_sources:
+                        failed_entries.append((key, observer))
+        # Prune observers that threw exceptions (dead C++ widget, etc.)
+        for key, failed_proxy in failed_entries:
+            self.__observers.get(key, set()).discard(failed_proxy)
+            if key in self.__observers and not self.__observers[key]:
+                del self.__observers[key]
 
     @unwrapObservers
     def observers(self, eventType=None):

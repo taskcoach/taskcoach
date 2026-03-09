@@ -113,7 +113,7 @@ It only rebuilds when templates actually change, not on every menu open.
 
 1. **Never modify menus during popup**: GTK3 has a bug where size allocation isn't recalculated when items are added/removed during popup. This causes scroll arrows to appear incorrectly.
 
-2. **Use pub/sub for dynamic content**: Instead of rebuilding menus on every open, subscribe to data change events and update only when data changes.
+2. **Use Publisher events for dynamic content**: Instead of rebuilding menus on every open, subscribe to data change events and update only when data changes. See [PUBLISHER_OBSERVER.md — GTK3 Dynamic Menu Item Sizing](PUBLISHER_OBSERVER.md#gtk3-dynamic-menu-item-sizing) for the general pattern and affected menus.
 
 3. **Pre-populate at init**: Build menus with their full content at initialization time so GTK sees the correct size from the start.
 

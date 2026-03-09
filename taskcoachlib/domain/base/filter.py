@@ -51,12 +51,13 @@ class Filter(patterns.SetDecorator):
 
     def set_tree_mode(self, tree_mode):
         self.__tree_mode = tree_mode
-        try:
-            self.observable().set_tree_mode(tree_mode)
-        except AttributeError:
+        observable = self.observable()
+        if isinstance(observable, Filter):
+            observable.set_tree_mode(tree_mode)
+        elif not isinstance(observable, patterns.ObservableCollection):
             from taskcoachlib.meta.debug import log_step
-            log_step("set_tree_mode: observable has no set_tree_mode",
-                     prefix="FILTER")
+            log_step("set_tree_mode: unexpected observable type %s"
+                     % type(observable).__name__, prefix="FILTER")
         self.reset()
 
     def tree_mode(self):

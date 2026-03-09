@@ -54,10 +54,13 @@ class Sorter(base.TreeSorter):
 
     def set_tree_mode(self, tree_mode=True):
         self.__tree_mode = tree_mode
-        try:
-            self.observable().set_tree_mode(tree_mode)
-        except AttributeError:
-            pass
+        observable = self.observable()
+        if isinstance(observable, base.Filter):
+            observable.set_tree_mode(tree_mode)
+        else:
+            from taskcoachlib.meta.debug import log_step
+            log_step("set_tree_mode: Sorter observable is %s, expected Filter"
+                     % type(observable).__name__, prefix="FILTER")
         self.reset(forceEvent=True)
 
     def tree_mode(self):

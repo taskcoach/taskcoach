@@ -36,199 +36,25 @@ The domain model's change-detection and event-notification pattern.
    path. See
    [Three-Layer Relationship](#three-layer-relationship), Layer 2.
 
-2. **Migrate signal dispatch to per-instance.** Some Attribute callbacks
-   (Task dates, percentage, duration; Effort fields) use pypubsub
-   (`pub.sendMessage`) which is topic-based broadcast — every subscriber
-   receives every object's changes. This is wrong for per-instance
-   Attribute signals. These fields should be migrated back to per-instance
-   dispatch (legacy `registerObserver` with `eventSource`, or a future
-   modern signal library). See [Signal Dispatch](#signal-dispatch).
-   **Done:** Task priority, Attachment location, and all 16
-   derived/effective appearance event types migrated to per-instance
-   dispatch (dropped `"pubsub."` prefix). Tree mode toggle migrated
-   from pubsub to Publisher signaling (see
-   [Case Study: Tree Mode Toggle](#case-study-tree-mode-toggle)).
-   **Remaining:** Task dates, percentage, duration; Effort fields.
+2. **Migrate signal dispatch to per-instance.** See
+   [PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#todo) for full status,
+   done/remaining items, and migration plan.
 
-3. **Modularize and clean up the signaling system.** The three independent
-   cleanup mechanisms (wx C++ destruction, `removeInstance()`, Python GC)
-   don't coordinate, causing zombie callbacks and 20+ silent `try/except`
-   guards. Target: a single automatic cleanup mechanism where destroying
-   an object removes all its subscriptions. See
-   [TODO.md #12 — Signaling System Cleanup](TODO.md#12-signaling-system-cleanup)
-   for the full plan and current band-aids.
+3. **Modularize and clean up the signaling system.** See
+   [PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#signaling-system-cleanup)
+   for full status, done/remaining items, and cleanup plan.
 
 ---
 
 ## Signal Dispatch
 
-Attribute change notifications must be **per-instance** — "this specific
-object's field changed" — not broadcast. An Attribute is always a field on
-a specific domain object. Subscribers (editors, viewers, sync handlers) care
-about specific objects, not all objects of a type.
-
-### Requirement: per-instance signals
-
-All Attribute callbacks must use **per-instance signal dispatch**: the
-subscriber connects to a specific sender, and the dispatch layer delivers
-only to subscribers of that sender. No subscriber should receive
-notifications from objects it did not subscribe to.
-
-This rules out topic-based broadcast systems (like pypubsub's
-`pub.sendMessage`) where every subscriber to a topic receives every
-notification regardless of sender, requiring handler-side filtering.
-
-### Current state (mixed, partially incorrect)
-
-The codebase has two signal dispatch systems:
-
-**Legacy Publisher** (`patterns.Publisher`, `registerObserver`/
-`notifyObservers`) — sender-filtered dispatch via a global routing table.
-Subscriber registers for a `(eventType, eventSource)` pair; dispatch does
-a dict lookup on that key and delivers only to matching observers.
-Observers registered for other senders are never touched — O(1) lookup,
-not iteration over all observers. Used by the base `Object` fields
-(subject, description, appearance, derived/effective) and collection fields
-(categories, categorizables).
-
-Note: the Publisher is a **Singleton** (one global registry), not true
-per-instance signals (where the signal object lives on the instance itself,
-e.g. `task.icon_changed.connect(handler)`). The difference is structural —
-a global routing table vs per-instance subscriber lists — not behavioral.
-The dispatch semantics are per-instance: only matching subscribers are
-invoked, no subscriber has to check "is this message for me?"
-
-**pypubsub** (`pub.sendMessage`/`pub.subscribe`) — topic-based broadcast.
-All subscribers to a topic receive all messages regardless of sender. No
-per-sender filtering at dispatch; subscribers must check the `sender` kwarg
-in the handler to decide whether to act. Used by some Task fields (dates,
-percentage, duration) and Effort fields that were migrated circa 2012.
-The migration was intended to replace the legacy system entirely but
-stalled partway.
-
-The pypubsub migration was motivated by API simplicity and weak reference
-support, but it introduced broadcast dispatch for what are inherently
-per-instance signals. This is architecturally wrong: an editor showing one
-task receives (and discards) notifications from every other task in the
-system.
-
-### Target architecture
-
-1. **Immediate:** new Attribute fields use the legacy Publisher with
-   sender-filtered `eventSource` dispatch. Dispatch semantics are correct
-   (only matching subscribers called), even though the implementation is a
-   global routing table rather than true per-instance signal objects.
-
-2. **Future:** migrate all signal dispatch to a modern signal library
-   following the Qt signals/slots pattern (e.g. Blinker or psygnal). These
-   use true per-instance signals — the signal object lives on the instance
-   (`task.icon_changed.connect(handler)`), no global registry. This would
-   replace both the legacy Publisher and pypubsub with a single system that
-   supports per-sender subscription natively, weak references, and a clean
-   API.
-
-3. **Revert pypubsub fields:** the Task and Effort fields currently using
-   `pub.sendMessage` should be migrated back to sender-filtered dispatch
-   (either legacy Publisher or the future signal library). pypubsub should
-   be removed as a dependency once all fields are migrated.
-
-### Naming convention
-
-Event type strings prefixed `"pubsub."` were introduced during the
-pypubsub migration. The viewer's `__startObserving()` in `base.py` uses
-this prefix to choose dispatch system: `"pubsub."` → `pub.subscribe`,
-otherwise → `registerObserver`.
-
-New event types should **not** use the `"pubsub."` prefix. They should use
-the legacy Publisher dispatch (per-instance) until the future signal library
-migration.
+See [PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#signal-dispatch) for the
+full signal dispatch architecture, pypubsub migration plan, and naming
+convention.
 
 ### Case Study: Tree Mode Toggle
 
-The tree/list mode toggle (task viewer) was migrated from pubsub to
-Publisher signaling. This is the reference example for migrating UI-level
-pubsub subscriptions to per-instance dispatch.
-
-**Before (pubsub — broadcast):**
-
-```
-dropdown/menu
-  → settings.setboolean("treemode")
-    → pub.sendMessage("settings.taskviewer.treemode")
-      → TaskViewer.onTreeListModeChanged  (subscriber 1)
-      → TaskViewerTreeOrListChoice.on_setting_changed  (subscriber 2)
-```
-
-Two independent pubsub subscribers, both keyed on the same global topic
-string. Any code writing `settings.setboolean("treemode")` triggers both.
-No per-instance filtering — a second task viewer's dropdown would also fire.
-
-**After (Publisher — per-instance):**
-
-All three entry points converge on the viewer:
-
-```
-Toolbar Dropdown ─── doChoice(choice) ──────────────┐
-Menu Radio Option ── do_command(event) ──────────────┤
-                                                     ▼
-                                            viewer.set_tree_mode(value)
-                                                     │
-                                    ┌────────────────┼────────────────┐
-                                    ▼                ▼                ▼
-                            settings.setboolean  presentation    patterns.Event
-                            (persistence only)   .set_tree_mode()   .send()
-                                                                     │
-                                              ┌──────────────────────┤
-                                              ▼                      ▼
-                                    Dropdown syncs:          Buttons sync:
-                                    set_choice(from settings) EnableTool(id, cmd.enabled())
-                                    (_on_view_settings_changed) (_ViewSettingsSync)
-```
-
-**Design principles demonstrated:**
-
-1. **Viewer as single authority.** All entry points (toolbar dropdown, menu
-   radio) call `viewer.set_tree_mode(value)`. The viewer owns the setting
-   write, presentation update, and event dispatch. No caller writes settings
-   directly.
-
-2. **Per-instance event type.** The event type is `"viewer%s.view_settings" %
-   id(self)`, unique per viewer instance. Two task viewers have separate
-   event types — toggling one doesn't affect the other.
-
-3. **Generalized signal.** `view_settings_changed_event_type()` is shared
-   across all viewer setting changes (tree mode, aggregation, sort order,
-   etc.). The event carries no data — receivers read current state from the
-   viewer or settings. `selection_changed_event_type()` remains separate
-   because selection change is universal across all viewer types.
-
-4. **Subscribers use `registerObserver` with `eventSource`.** The dropdown
-   and button sync objects register for the specific viewer's event:
-   ```python
-   viewer.registerObserver(
-       self._on_view_settings_changed,
-       eventType=viewer.view_settings_changed_event_type(),
-       eventSource=viewer,
-   )
-   ```
-
-5. **Automatic cleanup.** `registerObserver()` (from `patterns.Observer`)
-   tracks all registered observers. When the viewer is destroyed,
-   `removeInstance()` unregisters them. No manual unsubscribe needed.
-
-6. **Settings write is inert.** `settings.setboolean()` still fires a
-   pubsub message (`"settings.taskviewer.treemode"`), but nobody subscribes
-   to it. The broadcast is harmless — all subscribers use the Publisher
-   event instead.
-
-**Files:**
-- `taskcoachlib/gui/viewer/task.py` — `TaskViewer.set_tree_mode()`
-- `taskcoachlib/gui/uicommand/uicommand.py` — `TaskViewerTreeOrListChoice`,
-  `TaskViewerTreeOrListOption`, `_ViewSettingsSync`
-- `taskcoachlib/gui/viewer/base.py` — `view_settings_changed_event_type()`
-
-See also: [LIST_MANAGEMENT.md — Scroll After Rebuild](LIST_MANAGEMENT.md#scroll-after-rebuild-tree-views)
-for the scroll behavior during mode switch.
+See [PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#case-study-tree-mode-toggle).
 
 ---
 
@@ -316,7 +142,7 @@ Clean separation between the setter and the callback:
 Three complexity levels of callbacks:
 
 **Notification callback** — fires change signal (see
-[Signal Dispatch](#signal-dispatch)), `markDirty`,
+[PUBLISHER_OBSERVER.md — Signal Dispatch](PUBLISHER_OBSERVER.md#signal-dispatch)), `markDirty`,
 `recomputeAppearance`. Example: `_onDueDateTimeChanged`,
 `_onPlannedStartDateTimeChanged`.
 
@@ -424,8 +250,8 @@ signal subscription to handle external domain changes. This is either:
 - **Manual signal subscription** — for fields with custom controls
   (dropdowns, checkboxes) where AttributeSync doesn't fit directly.
   Currently a mix of `registerObserver` (legacy) and `pub.subscribe`
-  (pypubsub) — see [Signal Dispatch](#signal-dispatch) for target
-  architecture.
+  (pypubsub) — see [PUBLISHER_OBSERVER.md — Signal Dispatch](PUBLISHER_OBSERVER.md#signal-dispatch)
+  for target architecture.
 
 Without Layer 2, the Attribute pattern is incomplete: the domain notifies
 correctly, but no UI listens.

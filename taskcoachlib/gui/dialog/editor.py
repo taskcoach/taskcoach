@@ -1344,7 +1344,11 @@ class DatesPage(ScrolledPage):
         # Rebuild mode dropdown when focus leaves preset dropdown
         self._durationPresetsChoice.Bind(wx.EVT_KILL_FOCUS, self.__onDurationFieldKillFocus)
 
-        pub.subscribe(self.__onPresetsConfigChanged, "settings.feature.task_duration_presets")
+        self.registerObserver(
+            self.__onPresetsConfigChanged,
+            eventType="feature.task_duration_presets",
+            eventSource=self.__settings,
+        )
 
         # Mode dropdown: Automatic, Implicit, Adjust Due Date, Adjust Start Date
         self._durationModeChoices = [
@@ -1360,38 +1364,38 @@ class DatesPage(ScrolledPage):
         self._durationModeChoice.Bind(wx.EVT_CHOICE, self.__onDurationModeChanged)
 
         # Get stored mode from task, default to "automatic"
-        storedMode = (
+        stored_mode = (
             self.items[0].plannedDurationMode()
             if len(self.items) == 1
             else "automatic"
         )
         # Convert old modes if needed (backward compatibility)
-        if storedMode not in ["automatic", "implicit", "adjdue", "adjstart"]:
-            storedMode = "automatic"
-        self._currentPlannedDurationMode = storedMode
+        if stored_mode not in ["automatic", "implicit", "adjdue", "adjstart"]:
+            stored_mode = "automatic"
+        self._currentPlannedDurationMode = stored_mode
 
         # Set dropdown selection
         mode_index = 0
         for idx, (key, label) in enumerate(self._durationModeChoices):
-            if key == storedMode:
+            if key == stored_mode:
                 mode_index = idx
                 break
         self._durationModeChoice.SetSelection(mode_index)
 
         # Create panel for presets + mode in last column
-        durationRestPanel = wx.Panel(self)
-        durationRestSizer = wx.BoxSizer(wx.HORIZONTAL)
-        self._durationPresetsChoice.Reparent(durationRestPanel)
-        self._durationModeChoice.Reparent(durationRestPanel)
-        durationRestSizer.Add(self._durationPresetsChoice, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-        durationRestSizer.Add(self._durationModeChoice, 0, wx.ALIGN_CENTER_VERTICAL)
-        durationRestPanel.SetSizer(durationRestSizer)
+        duration_rest_panel = wx.Panel(self)
+        duration_rest_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self._durationPresetsChoice.Reparent(duration_rest_panel)
+        self._durationModeChoice.Reparent(duration_rest_panel)
+        duration_rest_sizer.Add(self._durationPresetsChoice, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+        duration_rest_sizer.Add(self._durationModeChoice, 0, wx.ALIGN_CENTER_VERTICAL)
+        duration_rest_panel.SetSizer(duration_rest_sizer)
 
         # Add duration row: label | duration | presets+mode (left-aligned)
         self.addEntry(
             _("Planned duration"),
             self._plannedDurationCtrl,
-            durationRestPanel,
+            duration_rest_panel,
             flags=[None, wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL | wx.ALL],
         )
 
@@ -1590,7 +1594,7 @@ class DatesPage(ScrolledPage):
         else:
             return _("%s, %s and %s") % (parts[0], parts[1], parts[2])
 
-    def __onPresetsConfigChanged(self, value=""):
+    def __onPresetsConfigChanged(self, event=None):
         """Called when duration presets change in preferences."""
         self.__populateDurationPresets()
 
@@ -1956,17 +1960,6 @@ class DatesPage(ScrolledPage):
             reminder=self._reminderDateTimeCombo.GetDateCtrl(),
             recurrence=self._recurrenceEntry,
         )
-
-    def close(self):
-        """Clean up resources when dialog closes."""
-        # Unsubscribe from pubsub topics
-        try:
-            pub.unsubscribe(self.__onPresetsConfigChanged, "settings.feature.task_duration_presets")
-        except Exception as e:
-            log_step("unsubscribe failed in %s.close: %s" %
-                     (self.__class__.__name__, e), prefix="DEAD-OBJ")
-        super().close()
-
 
 class ProgressPage(Page):
     pageName = "progress"
@@ -3669,8 +3662,8 @@ class EffortEditBook(Page):
 
         # Entry mode tracking (dropdown created in Duration row)
         # Load from effort object, default to standard
-        storedMode = self.items[0].entryMode() if len(self.items) == 1 else "standard"
-        self._effortEntryMode = {"standard": 0, "retroactive": 1, "implicit": 2}.get(storedMode, 0)
+        stored_mode = self.items[0].entryMode() if len(self.items) == 1 else "standard"
+        self._effortEntryMode = {"standard": 0, "retroactive": 1, "implicit": 2}.get(stored_mode, 0)
 
         # --- Start row: Label, DateTime row (checkbox hidden), Button ---
         current_start_date_time = self.items[0].getStart()
@@ -3781,7 +3774,11 @@ class EffortEditBook(Page):
         self.__populateEffortDurationPresets()
         self._effortDurationPresetsChoice.Bind(wx.EVT_CHOICE, self.__onEffortDurationPresetSelected)
 
-        pub.subscribe(self.__onEffortPresetsConfigChanged, "settings.feature.effort_duration_presets")
+        self.registerObserver(
+            self.__onEffortPresetsConfigChanged,
+            eventType="feature.effort_duration_presets",
+            eventSource=self._settings,
+        )
         if len(self.items) == 1:
             pub.subscribe(self.__onEffortDurationDomainChanged,
                           self.items[0].durationChangedEventType())
@@ -3792,19 +3789,19 @@ class EffortEditBook(Page):
         self._effortEntryModeChoice.Bind(wx.EVT_CHOICE, self.__onEffortEntryModeChanged)
 
         # Create panel with presets and entry mode dropdowns
-        presetsAndModePanel = wx.Panel(self)
-        presetsAndModeSizer = wx.BoxSizer(wx.HORIZONTAL)
-        self._effortDurationPresetsChoice.Reparent(presetsAndModePanel)
-        self._effortEntryModeChoice.Reparent(presetsAndModePanel)
-        presetsAndModeSizer.Add(self._effortDurationPresetsChoice, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-        presetsAndModeSizer.Add(self._effortEntryModeChoice, 0, wx.ALIGN_CENTER_VERTICAL)
-        presetsAndModePanel.SetSizer(presetsAndModeSizer)
+        presets_and_mode_panel = wx.Panel(self)
+        presets_and_mode_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self._effortDurationPresetsChoice.Reparent(presets_and_mode_panel)
+        self._effortEntryModeChoice.Reparent(presets_and_mode_panel)
+        presets_and_mode_sizer.Add(self._effortDurationPresetsChoice, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+        presets_and_mode_sizer.Add(self._effortEntryModeChoice, 0, wx.ALIGN_CENTER_VERTICAL)
+        presets_and_mode_panel.SetSizer(presets_and_mode_sizer)
 
         # Duration row: label, duration (right-aligned), presets+mode (left-aligned)
         self.addEntry(
             _("Duration"),
             self._effortDurationCtrl,
-            presetsAndModePanel,
+            presets_and_mode_panel,
             flags=[wx.ALL | wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL, wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, wx.ALL | wx.ALIGN_CENTER_VERTICAL],
         )
 
@@ -3876,9 +3873,9 @@ class EffortEditBook(Page):
     def __onEffortEntryModeChanged(self, event):
         """Handle switching between Standard and Retroactive entry modes."""
         self._effortEntryMode = self._effortEntryModeChoice.GetSelection()
-        newMode = {0: "standard", 1: "retroactive", 2: "implicit"}.get(self._effortEntryMode, "standard")
+        new_mode = {0: "standard", 1: "retroactive", 2: "implicit"}.get(self._effortEntryMode, "standard")
         command.EditEffortEntryModeCommand(
-            items=self.items, newValue=newMode
+            items=self.items, newValue=new_mode
         ).do()
         self.__applyEffortEntryMode()
 
@@ -3889,16 +3886,16 @@ class EffortEditBook(Page):
     # --- Effort helpers (mirroring task pattern) ---
 
 
-    def __setEffortEntryMode(self, newMode):
+    def __setEffortEntryMode(self, new_mode):
         """Set entry mode, update dropdown, write through command.
         Mirrors __setDurationMode for tasks."""
-        modeIndex = {"standard": 0, "retroactive": 1, "implicit": 2}[newMode]
-        if modeIndex == self._effortEntryMode:
+        mode_index = {"standard": 0, "retroactive": 1, "implicit": 2}[new_mode]
+        if mode_index == self._effortEntryMode:
             return
-        self._effortEntryMode = modeIndex
-        self._effortEntryModeChoice.SetSelection(modeIndex)
+        self._effortEntryMode = mode_index
+        self._effortEntryModeChoice.SetSelection(mode_index)
         command.EditEffortEntryModeCommand(
-            items=self.items, newValue=newMode
+            items=self.items, newValue=new_mode
         ).do()
 
     def __syncEffortState(self, sourceField=None, depth=0):
@@ -4199,7 +4196,7 @@ class EffortEditBook(Page):
         # SetDuration → EVT_VALUE_CHANGED → AttributeSync → command → pubsub → preset update
         self._effortDurationCtrl.SetDuration(date.TimeDelta(seconds=total_seconds))
 
-    def __onEffortPresetsConfigChanged(self):
+    def __onEffortPresetsConfigChanged(self, event=None):
         """Handle changes to effort preset configuration."""
         self.__populateEffortDurationPresets()
 
@@ -4396,11 +4393,6 @@ class EffortEditBook(Page):
 
     def close_edit_book(self):
         """Cleanup method called when dialog closes."""
-        try:
-            pub.unsubscribe(self.__onEffortPresetsConfigChanged, "settings.feature.effort_duration_presets")
-        except Exception as e:
-            log_step("unsubscribe failed in %s.close_edit_book: %s" %
-                     (self.__class__.__name__, e), prefix="DEAD-OBJ")
         if len(self.items) == 1:
             try:
                 pub.unsubscribe(self.__onEffortDurationDomainChanged,

@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import (
     application,
     meta,
+    patterns,
     widgets,
     operating_system,
 )  # pylint: disable=W0622
@@ -63,6 +64,7 @@ def turn_on_double_buffering_on_windows(window):
 class MainWindow(
     PowerStateMixin,
     BalloonTipManager,
+    patterns.Observer,
     widgets.AuiManagedFrameWithDynamicCenterPane,
 ):
     def __init__(
@@ -166,13 +168,11 @@ class MainWindow(
         self.Freeze()
 
         try:
-            self.showToolBar(self.settings.getvalue("view", "toolbar"))
+            self.showToolBar()
 
             # We use CallAfter because otherwise the statusbar will appear at the
             # top of the window when it is initially hidden and later shown.
-            wx.CallAfter(
-                self.showStatusBar, self.settings.getboolean("view", "statusbar")
-            )
+            wx.CallAfter(self.showStatusBar)
             self.__restore_perspective()
         finally:
             self.Thaw()
@@ -236,8 +236,16 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         pub.subscribe(self.__onFilenameChanged, "taskfile.filenameChanged")
         pub.subscribe(self.__onDirtyChanged, "taskfile.dirty")
         pub.subscribe(self.__onDirtyChanged, "taskfile.clean")
-        pub.subscribe(self.showStatusBar, "settings.view.statusbar")
-        pub.subscribe(self.showToolBar, "settings.view.toolbar")
+        self.registerObserver(
+            self.showStatusBar,
+            eventType="view.statusbar",
+            eventSource=self.settings,
+        )
+        self.registerObserver(
+            self.showToolBar,
+            eventType="view.toolbar",
+            eventSource=self.settings,
+        )
         self.Bind(aui.EVT_AUI_PANE_CLOSE, self.onCloseToolBar)
         # Detect toolbar drag-end and float-to-dock transitions to reset position
         self.manager.Bind(aui.EVT_AUI_RENDER, self._onAuiRender)
@@ -409,32 +417,34 @@ If this happens again, please make a copy of your TaskCoach.ini file """
             event.Skip()
 
     def onResize(self, event):
-        currentToolbar = self.manager.GetPane("toolbar")
-        if currentToolbar.IsOk():
+        current_toolbar = self.manager.GetPane("toolbar")
+        if current_toolbar.IsOk():
             width = event.GetSize().GetWidth()
             # Get height from toolbar's GetBestSize() - calculated during Realize()
-            best_size = currentToolbar.window.GetBestSize()
+            best_size = current_toolbar.window.GetBestSize()
             height = best_size.GetHeight()
             # Set size on the window widget for current display
-            currentToolbar.window.SetSize((width, -1))
-            currentToolbar.window.SetMinSize((width, height))
+            current_toolbar.window.SetSize((width, -1))
+            current_toolbar.window.SetMinSize((width, height))
             # Use -1 for width on pane info so SavePerspective doesn't save
             # a hard-coded width value. The toolbar width is derived from
             # window width at runtime, not a user preference to persist.
-            currentToolbar.MinSize((-1, height))
+            current_toolbar.MinSize((-1, height))
         event.Skip()
 
-    def showStatusBar(self, value=True):
+    def showStatusBar(self, event=None):
         # FIXME: First hiding the statusbar, then hiding the toolbar, then
         # showing the statusbar puts it in the wrong place (only on Linux?)
-        statusBar = self.GetStatusBar()
-        if statusBar:
-            statusBar.Show(value)
+        status_bar = self.GetStatusBar()
+        if status_bar:
+            status_bar.Show(
+                self.settings.getboolean("view", "statusbar")
+            )
             self.SendSizeEvent()
 
     def createToolBarUICommands(self):
         """UI commands to put on the toolbar of this window."""
-        uiCommands = [
+        ui_commands = [
             uicommand.FileOpen(iocontroller=self.iocontroller),
             uicommand.FileSave(iocontroller=self.iocontroller),
             uicommand.FileMergeDiskChanges(iocontroller=self.iocontroller),
@@ -443,7 +453,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
             uicommand.EditUndo(),
             uicommand.EditRedo(),
         ]
-        uiCommands.extend(
+        ui_commands.extend(
             [
                 None,
                 uicommand.EffortStartButton(taskList=self.taskFile.tasks()),
@@ -454,7 +464,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
                 ),
             ]
         )
-        return uiCommands
+        return ui_commands
 
     def getToolBarPerspective(self):
         return self.settings.get("view", "toolbarperspective")
@@ -462,11 +472,12 @@ If this happens again, please make a copy of your TaskCoach.ini file """
     def saveToolBarPerspective(self, perspective):
         self.settings.set("view", "toolbarperspective", perspective)
 
-    def showToolBar(self, value):
-        currentToolbar = self.manager.GetPane("toolbar")
-        if currentToolbar.IsOk():
-            self.manager.DetachPane(currentToolbar.window)
-            currentToolbar.window.Destroy()
+    def showToolBar(self, event=None):
+        value = self.settings.getvalue("view", "toolbar")
+        current_toolbar = self.manager.GetPane("toolbar")
+        if current_toolbar.IsOk():
+            self.manager.DetachPane(current_toolbar.window)
+            current_toolbar.window.Destroy()
         if value:
             bar = toolbar.MainToolBar(self, self.settings, size=value)
             # Use GetBestSize() for height - toolbar calculates this during Realize()

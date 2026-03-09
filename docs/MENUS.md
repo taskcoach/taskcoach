@@ -16,9 +16,14 @@
 ## TODO
 
 1. ~~PEP 8 renames (separate commit): `append_to_toolbar`, `add_to_menu`, etc.~~ — **DONE.** All UICommand methods and constructor kwargs renamed to snake_case.
-2. GTK menu width not recalculated on first open after `SetItemLabel()` changes
-   text during `EVT_MENU_OPEN`. Second open sizes correctly. Affects
-   `current_menu_text()` for EditUndo/EditRedo and EditPasteAsSubItem.
+2. ~~GTK menu width not recalculated on first open after `SetItemLabel()` changes
+   text during `EVT_MENU_OPEN`. Second open sizes correctly.~~ — **Partially fixed.**
+   EditUndo/EditRedo now update labels proactively via Publisher event from
+   `CommandHistory`; `current_menu_text()` returns `None` so `SetItemLabel` is
+   skipped during `EVT_MENU_OPEN`. **Remaining:** EditPasteAsSubItem still
+   changes label during `EVT_MENU_OPEN`.
+   See [PUBLISHER_OBSERVER.md — GTK3 Dynamic Menu Item Sizing](PUBLISHER_OBSERVER.md#gtk3-dynamic-menu-item-sizing)
+   for the full pattern.
 
 ---
 

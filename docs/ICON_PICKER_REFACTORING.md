@@ -79,9 +79,10 @@ IconPicker (ThemedGenBitmapTextButton)
     ├── _get_excluded_icons() — resolves exclude mode to actual icon_id set
     ├── _load_icons() — builds item list from catalog (fresh each open)
     ├── wx.SearchCtrl (filter input)
-    └── _IconListCtrl (wx.ListCtrl)
+    └── _IconListCtrl (wx.ListCtrl, wx.LC_VIRTUAL)
         └── 5 columns: Label (with icon), Hints, Theme, Context, icon_id (COL_ICON_ID=4)
-        └── _try_select_current() — inline selection + duplicate icon_id integrity check
+        └── Virtual: OnGetItemText/OnGetItemImage/OnGetItemAttr callbacks
+        └── SetItemCount(n) for O(1) population (only visible rows rendered)
 ```
 
 **Why Modal Dialog:**
@@ -102,7 +103,13 @@ IconPicker (ThemedGenBitmapTextButton)
 - Separation of concerns: button only displays one icon, dialog owns list-building
 - List built fresh each dialog open (no persistent list state on button)
 - `COL_ICON_ID = 4` column constant for readable list access
-- `_try_select_current()` inline selection with duplicate icon_id integrity check
+- Virtual `wx.ListCtrl` (`wx.LC_VIRTUAL`) — only visible rows are
+  rendered.  Previous non-virtual implementation was slow for large
+  icon sets (500+) because every `_rebuild_list()` call did O(n)
+  `InsertItem` + `SetItem` + `SetItemTextColour` native wx calls.
+  Now uses `SetItemCount(n)` (O(1)) and `OnGetItemText`/`OnGetItemImage`/
+  `OnGetItemAttr` callbacks for visible rows only.  Opening and filtering
+  are near-instant regardless of icon count.
 
 ## Features
 

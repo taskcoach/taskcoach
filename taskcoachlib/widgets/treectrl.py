@@ -232,6 +232,7 @@ class TreeListCtrl(
         )
         self.bindEventHandlers(selectCommand, editCommand, dragAndDropCommand)
         self.GetMainWindow().Bind(wx.EVT_LEAVE_WINDOW, self._on_hover_leave)
+        self._install_paint_debounce()
 
     def bindEventHandlers(
         self, selectCommand, editCommand, dragAndDropCommand
@@ -261,6 +262,64 @@ class TreeListCtrl(
         self.GetMainWindow().SetHoverItem(None)
         event.Skip()
 
+    def _install_paint_debounce(self):
+        """Debounce the tree widget's OnPaint during refresh only.
+
+        Only active while __refreshing is True.  During refresh, the
+        first paint goes through immediately, then subsequent cascade
+        paints are suppressed for 100ms intervals.  A deferred Refresh()
+        ensures the final state is rendered after the cascade settles.
+        Normal paints (hover, scroll, etc.) are never affected.
+        """
+        import time
+        main_win = self.GetMainWindow()
+        original_on_paint = main_win.OnPaint
+        tree_ctrl = self
+        _state = {
+            'last_paint': 0.0,
+            'suppressed': 0,
+            'deferred': False,
+        }
+
+        def _do_deferred():
+            _state['deferred'] = False
+            try:
+                main_win.Refresh()
+            except RuntimeError:
+                pass  # C++ object deleted
+
+        def debounced_on_paint(event):
+            # Only debounce during refresh — normal paints pass through
+            if not tree_ctrl.refreshing:
+                _state['last_paint'] = 0.0  # Reset for next refresh
+                original_on_paint(event)
+                return
+            now = time.monotonic()
+            elapsed = now - _state['last_paint']
+            if elapsed < 0.100:
+                # Too soon — validate the region without drawing
+                dc = wx.PaintDC(main_win)
+                del dc
+                _state['suppressed'] += 1
+                # Schedule a deferred repaint so final state is rendered
+                if not _state['deferred']:
+                    _state['deferred'] = True
+                    remaining = max(1, int((0.100 - elapsed) * 1000) + 5)
+                    wx.CallLater(remaining, _do_deferred)
+                return
+            if _state['suppressed'] > 0:
+                from taskcoachlib.meta.debug import log_step
+                log_step('Paint debounce: %d suppressed in %.0fms'
+                         % (_state['suppressed'],
+                            (now - _state['last_paint']) * 1000),
+                         prefix='REBUILD_GUARD')
+                _state['suppressed'] = 0
+            _state['last_paint'] = now
+            _state['deferred'] = False
+            original_on_paint(event)
+
+        main_win.Bind(wx.EVT_PAINT, debounced_on_paint)
+
     def getItemTooltipData(self, item):
         return self.__adapter.getItemTooltipData(item)
 
@@ -289,10 +348,24 @@ class TreeListCtrl(
             # wrapped C/C++ object has been deleted
             return []
 
+    @property
+    def refreshing(self):
+        """True while a rebuild is in progress (items being rebuilt or
+        widget still has pending layout work).  Used to debounce
+        cascade-triggered re-entries and suppress selection events."""
+        return self.__refreshing
+
     def RefreshAllItems(self, count=0):  # pylint: disable=W0613
+        from taskcoachlib.meta.debug import log_step
+        if self.__refreshing:
+            log_step('RefreshAllItems skipped — already refreshing',
+                     prefix='REBUILD_GUARD')
+            return
+        self.__refreshing = True
+        log_step('RefreshAllItems started  count=%d' % count,
+                 prefix='REBUILD_GUARD')
         self.Freeze()
         self.StopEditing()
-        self.__refreshing = True  # Suppress selection events during rebuild
         self.__selection = self.curselection()
         self.DeleteAllItems()
         self.__columns_with_images = [
@@ -305,13 +378,44 @@ class TreeListCtrl(
             root_item = self.AddRoot("Hidden root")
         self._addObjectRecursively(root_item)
         self.Thaw()
-        self.__refreshing = False
         # Restore selection AFTER Thaw - SelectItem doesn't work while Frozen
         if self.__selection:
             self.select(self.__selection)
         self.scrollToSelection()
-        # Force immediate repaint to reduce visible flicker after rebuild
-        self.GetMainWindow().Refresh(eraseBackground=False)
+        # Don't call Refresh() here — let OnInternalIdle handle the
+        # single repaint when _dirty is processed.  Calling Refresh()
+        # immediately triggers the GTK3 AUI repaint cascade.
+        #
+        # __refreshing stays True until _dirty is processed on idle.
+        # This debounces any cascade-triggered re-entries.
+        self._bind_refresh_complete()
+        log_step('RefreshAllItems items built — waiting for idle paint',
+                 prefix='REBUILD_GUARD')
+
+    def _bind_refresh_complete(self):
+        """Bind EVT_IDLE to detect when the widget has finished painting."""
+        wx.GetApp().Bind(wx.EVT_IDLE, self._on_refresh_idle)
+
+    def _on_refresh_idle(self, event):
+        """Release __refreshing when the widget is done painting."""
+        from taskcoachlib.meta.debug import log_step
+        main_win = self.GetMainWindow()
+        dirty = getattr(main_win, '_dirty', False)
+        if dirty:
+            event.RequestMore()
+            event.Skip()
+            return
+        # Widget layout is done — clear refreshing flag
+        self.__refreshing = False
+        wx.GetApp().Unbind(wx.EVT_IDLE, handler=self._on_refresh_idle)
+        log_step('RefreshAllItems complete — __refreshing cleared',
+                 prefix='REBUILD_GUARD')
+        # Trigger one clean repaint now that positions are calculated
+        try:
+            self.GetMainWindow().Refresh()
+        except RuntimeError:
+            pass
+        event.Skip()
 
     def scrollToSelection(self):
         """Scroll minimally to make first selected item visible."""

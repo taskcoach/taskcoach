@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from . import singleton as patterns
+from .observer import Event
 from pubsub import pub
 
 
@@ -43,6 +44,7 @@ class CommandHistory(object, metaclass=patterns.Singleton):
         self.__future = []
 
     def _notify(self):
+        Event("commandhistory.changed", self).send()
         pub.sendMessage("commandhistory.changed")
 
     def append(self, command):

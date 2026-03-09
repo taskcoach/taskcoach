@@ -270,33 +270,27 @@ class MainMenu(wx.MenuBar):
             menu._update_menu_state()
 
 
-class FileMenu(Menu):
+class FileMenu(Menu, patterns.Observer):
     """File menu with recent files list.
 
-    DESIGN NOTE (GTK3 Menu Size Bug Fix - December 2025):
+    DESIGN NOTE (GTK3 Dynamic Menu Item Sizing):
 
-    The recent files list is populated at init time and updated via pub/sub
-    when the settings change. This avoids the GTK3 bug where modifying menu
-    items during EVT_MENU_OPEN causes incorrect size allocation on first popup,
-    resulting in scroll arrows appearing even when there's plenty of space.
+    Menus with dynamic items (recent files, undo/redo labels) must be
+    populated at init time and updated via Publisher events when the
+    underlying data changes — never during EVT_MENU_OPEN.
 
-    See: GNOME GTK Issue #473, Stack Overflow "size-allocation issue -
-    not calculated on first-popup but is on subsequent pop-up's"
+    GTK3 calculates menu popup size from the item count at open time.
+    If items are added/removed inside EVT_MENU_OPEN, the size is wrong
+    on first popup (scroll arrows appear with plenty of space). Second
+    open sizes correctly because GTK caches the updated count.
 
-    Previous (broken) approach:
-    - Menu items were removed and re-added on every EVT_MENU_OPEN
-    - GTK calculated size for N items, then N+3 items were shown
-    - Scroll arrows appeared on first open, disappeared on second
-
-    Current (fixed) approach:
-    - Populate recent files at init (full menu size from start)
-    - Subscribe to "settings.file.recentfiles" pub/sub topic
-    - Update menu only when settings actually change
-    - Never modify menu during popup
+    See PUBLISHER_OBSERVER.md §GTK3 Dynamic Menu Item Sizing for the
+    full pattern and affected menus.
     """
 
     def __init__(self, mainwindow, settings, iocontroller, viewerContainer):
         super().__init__(mainwindow)
+        patterns.Observer.__init__(self)
         self.__settings = settings
         self.__iocontroller = iocontroller
         self.__recentFileUICommands = []
@@ -345,58 +339,52 @@ class FileMenu(Menu):
         self.__recentFilesStartPosition = len(self)
         self.appendUICommands(None, uicommand.FileQuit())
 
-        # Populate recent files at init (fixes GTK3 menu size bug)
+        # Populate recent files at init (fixes GTK3 dynamic menu sizing)
         self.__insertRecentFileMenuItems()
 
-        # Subscribe to settings changes to update recent files list
-        # This replaces the broken EVT_MENU_OPEN approach
-        pub.subscribe(self.__onRecentFilesChanged, "settings.file.recentfiles")
+        # Update recent files when settings change (Publisher, not pypubsub)
+        self.registerObserver(
+            self.__onRecentFilesChanged,
+            eventType="file.recentfiles",
+            eventSource=self.__settings,
+        )
 
-    def __onRecentFilesChanged(self, value):
-        """Update recent files menu when settings change.
-
-        Called via pub/sub when a file is opened or the recent files list
-        is modified. This is the correct way to update dynamic menu content -
-        update when data changes, not on every menu open.
-        """
+    def __onRecentFilesChanged(self, event):  # pylint: disable=W0613
+        """Update recent files menu when settings change."""
         self.__removeRecentFileMenuItems()
         self.__insertRecentFileMenuItems()
 
     def __insertRecentFileMenuItems(self):
-        recentFiles = self.__settings.getlist("file", "recentfiles")
-        if not recentFiles:
+        recent_files = self.__settings.getlist("file", "recentfiles")
+        if not recent_files:
             return
-        maximumNumberOfRecentFiles = self.__settings.getint(
-            "file", "maxrecentfiles"
-        )
-        recentFiles = recentFiles[:maximumNumberOfRecentFiles]
+        max_recent = self.__settings.getint("file", "maxrecentfiles")
+        recent_files = recent_files[:max_recent]
         self.__separator = self.InsertSeparator(
             self.__recentFilesStartPosition
         )
-        for index, recentFile in enumerate(recentFiles):
-            recentFileNumber = (
-                index + 1
-            )  # Only computer nerds start counting at 0 :-)
-            recentFileMenuPosition = (
-                self.__recentFilesStartPosition + 1 + index
-            )
-            recentFileOpenUICommand = uicommand.RecentFileOpen(
-                filename=recentFile,
-                index=recentFileNumber,
+        for index, recent_file in enumerate(recent_files):
+            file_number = index + 1
+            menu_position = self.__recentFilesStartPosition + 1 + index
+            ui_command = uicommand.RecentFileOpen(
+                filename=recent_file,
+                index=file_number,
                 iocontroller=self.__iocontroller,
             )
-            recentFileOpenUICommand.add_to_menu(
-                self, self._window, recentFileMenuPosition
-            )
-            self.__recentFileUICommands.append(recentFileOpenUICommand)
+            ui_command.add_to_menu(self, self._window, menu_position)
+            self.__recentFileUICommands.append(ui_command)
 
     def __removeRecentFileMenuItems(self):
-        for recentFileUICommand in self.__recentFileUICommands:
-            recentFileUICommand.remove_from_menu(self, self._window)
+        for ui_command in self.__recentFileUICommands:
+            ui_command.remove_from_menu(self, self._window)
         self.__recentFileUICommands = []
         if self.__separator:
             self.Remove(self.__separator)
             self.__separator = None
+
+    def clearMenu(self):
+        super().clearMenu()
+        self.removeInstance()
 
 
 class ExportMenu(Menu):
