@@ -8,6 +8,7 @@ This document describes the system tray (notification area) icon implementation 
 - [Overview](#overview)
 - [Implementation Architecture](#implementation-architecture)
 - [Platform Behavior Matrix](#platform-behavior-matrix)
+- [Windows Quit-from-Tray Safety](#windows-quit-from-tray-safety)
 - [Tested Configurations](#tested-configurations)
 - [References](#references)
 - [Why AppIndicator on Linux?](#why-appindicator-on-linux)
@@ -109,6 +110,48 @@ Size constants: `TRAY_ICON_SIZE_MACOS` (128) and `LIST_ICON_SIZE` (16) in
 
 [4] **LXDE wx broken**: Confirmed that wx.adv.TaskBarIcon does not receive right-click events on LXDE, even though `IsAvailable()` returns True. Left-click works but right-click events are never delivered.
 
+## Windows Quit-from-Tray Safety
+
+### The Problem
+
+On Windows, `PopupMenu()` runs a **modal event loop** — it blocks until the
+user dismisses the menu. When the user clicks Quit from the tray menu:
+
+1. `PopupMenu()` is still active (modal, blocking)
+2. `FileQuit.do_command()` calls `mainwindow.Close(force=True)`
+3. `onClose()` calls `quitApplication()` which destroys the tray icon
+4. `PopupMenu()` returns to a destroyed object → **segfault**
+
+### The Fix
+
+`FileQuit.do_command()` uses `wx.CallAfter()` to defer the `Close()` call:
+
+```python
+def do_command(self, event):
+    wx.CallAfter(self.main_window().Close, force=True)
+```
+
+This lets `PopupMenu()` return cleanly before `quitApplication()` tears
+down the tray icon. The AppIndicator implementation already uses this
+pattern (line 546: `lambda w: wx.CallAfter(self.__window.Close)`).
+
+### Best Practices (from wxPython docs)
+
+The wxPython documentation recommends:
+
+1. **Override `CreatePopupMenu()`** instead of calling `PopupMenu()` manually —
+   wx handles the menu lifecycle and destroys it after the user dismisses it.
+2. **Or override `GetPopupMenu()`** to reuse the same menu object without
+   automatic destruction.
+3. **`Destroy()` on TaskBarIcon schedules delayed destruction** for the next
+   event loop iteration, but this doesn't help when `quitApplication()`
+   immediately tears everything down in the same call chain.
+4. **Always defer quit actions with `wx.CallAfter`** when triggered from a
+   tray popup menu, so the modal menu loop exits first.
+
+Task Coach uses manual `PopupMenu()` + `wx.CallAfter` for the quit action,
+which is safe and avoids the need to restructure the menu system.
+
 ## Tested Configurations
 
 | OS | Distro | Desktop | Session | wx.adv.TaskBarIcon | AppIndicator |
@@ -203,9 +246,10 @@ libayatana-appindicator-glib (as of 2026-02).
 
 ## Menu Contents
 
-The AppIndicator menu provides:
+Both `TaskBarMenu` (Windows/macOS) and `AppIndicatorTaskBarIcon._buildGtkMenu`
+(Linux) provide the same items:
 
-1. **Show/Hide Task Coach** - Toggle main window visibility
+1. **Hide / Restore** - Toggle main window visibility (dynamic label)
 2. **New task...** - Create a new task
 3. **New task from template** - Submenu with saved templates
 4. **New effort...** - Create a new effort entry
@@ -218,10 +262,24 @@ The AppIndicator menu provides:
    - When no recent effort: Hidden
 9. **Quit** - Exit the application
 
-The menu rebuilds automatically when:
+The AppIndicator menu rebuilds automatically when:
 - Task list changes (tasks added/removed)
 - Tracking starts or stops
 - Task subjects change
+
+The wx `TaskBarMenu` updates dynamic submenus and state-dependent labels
+in `popupTaskBarMenu()` each time the menu is shown.
+
+### Hide / Restore Toggle
+
+`MainWindowRestore` (in `uicommand.py`) is a state-aware UICommand:
+- When the window is visible: label is **"Hide"**, action calls `Iconize()`
+- When the window is hidden/iconized: label is **"Restore"**, action calls `restore()`
+
+The label is updated dynamically via `getMenuText()` — `popupTaskBarMenu()`
+calls `item._command.getMenuText()` and applies `SetItemLabel()` before
+showing the menu. The AppIndicator GTK menu uses "Show/Hide Task Coach"
+as a static label (GTK menus don't support per-show label changes as easily).
 
 ## Dependencies
 
@@ -280,6 +338,7 @@ Key log messages:
 | `taskcoachlib/gui/taskbaricon.py` | Main implementation, factory function |
 | `taskcoachlib/gui/appindicator.py` | AppIndicator/GTK bindings |
 | `taskcoachlib/gui/menu.py` | TaskBarMenu class for wx platforms |
+| `taskcoachlib/gui/uicommand/uicommand.py` | FileQuit (deferred quit), MainWindowRestore (Hide/Restore toggle) |
 | `taskcoachlib/gui/icons/` | Icon files (PNG at various sizes) |
 
 ## Code Duplication

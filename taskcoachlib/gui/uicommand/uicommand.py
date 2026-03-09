@@ -841,7 +841,11 @@ class FileQuit(base_uicommand.UICommand):
         )
 
     def do_command(self, event):
-        self.main_window().Close(force=True)
+        # Use CallAfter so the tray popup menu can finish and release
+        # its resources before quitApplication() destroys the tray icon.
+        # Without this, Windows crashes (segfault) because PopupMenu()
+        # is modal and the tray icon is destroyed while the menu is active.
+        wx.CallAfter(self.main_window().Close, force=True)
 
 
 class EditUndo(base_uicommand.UICommand):
@@ -3441,6 +3445,8 @@ class CheckForUpdate(URLCommand):
 
 
 class MainWindowRestore(base_uicommand.UICommand):
+    """Toggle main window visibility (Hide/Restore) from the tray menu."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(
             menu_text=_("&Restore"),
@@ -3451,7 +3457,23 @@ class MainWindowRestore(base_uicommand.UICommand):
         )
 
     def do_command(self, event):
-        self.main_window().restore(event)
+        window = self.main_window()
+        if window.IsIconized() or not window.IsShown():
+            window.restore(event)
+        else:
+            window.Iconize()
+
+    def getHelpText(self):
+        window = self.main_window()
+        if window.IsIconized() or not window.IsShown():
+            return _("Restore the window to its previous state")
+        return _("Hide the main window")
+
+    def getMenuText(self):
+        window = self.main_window()
+        if window.IsIconized() or not window.IsShown():
+            return _("&Restore")
+        return _("&Hide")
 
 
 class ResetWindowLayout(base_uicommand.UICommand):

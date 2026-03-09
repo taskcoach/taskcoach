@@ -200,6 +200,11 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
             submenu = item.GetSubMenu()
             if submenu and hasattr(submenu, 'updateMenu'):
                 submenu.updateMenu()
+        # Update state-dependent labels (e.g. Hide/Restore toggle)
+        for item in self.popupmenu.GetMenuItems():
+            cmd = getattr(item, '_command', None)
+            if cmd and hasattr(cmd, 'getMenuText'):
+                item.SetItemLabel(cmd.getMenuText())
         self.PopupMenu(self.popupmenu)
 
     # Getters:
