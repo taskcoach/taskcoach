@@ -21,24 +21,24 @@ import wx.lib.agw.aui as aui
 from taskcoachlib import operating_system
 
 
-# --- Rebuild guard: block input during list/tree rebuilds ---
+# --- Rebuild guard: block motion events during list/tree rebuilds ---
 
-# Mouse and keyboard event types to eat during rebuild
-_INPUT_EVENTS = {
-    wx.wxEVT_LEFT_DOWN, wx.wxEVT_LEFT_UP, wx.wxEVT_LEFT_DCLICK,
-    wx.wxEVT_RIGHT_DOWN, wx.wxEVT_RIGHT_UP, wx.wxEVT_RIGHT_DCLICK,
-    wx.wxEVT_MIDDLE_DOWN, wx.wxEVT_MIDDLE_UP, wx.wxEVT_MIDDLE_DCLICK,
-    wx.wxEVT_MOTION, wx.wxEVT_MOUSEWHEEL,
+# Motion event types to eat during rebuild.  Only motion events are
+# suppressed - clicks, keyboard, and scroll are passed through so
+# the app remains responsive.  Motion events drive the AUI cascade
+# (OnMotion -> hover -> repaint -> repeat) and must be suppressed.
+_MOTION_EVENTS = {
+    wx.wxEVT_MOTION,
     wx.wxEVT_ENTER_WINDOW, wx.wxEVT_LEAVE_WINDOW,
-    wx.wxEVT_KEY_DOWN, wx.wxEVT_KEY_UP, wx.wxEVT_CHAR, wx.wxEVT_CHAR_HOOK,
 }
 
 
 class _RebuildInputFilter(wx.EventFilter):
-    """Silently eat mouse and keyboard events during rebuild.
+    """Silently eat mouse motion events during rebuild.
 
-    No visual effect — no gray, no disable flicker.  Just drops
-    input events so mouse movement can't drive the AUI cascade.
+    No visual effect - no gray, no disable flicker.  Just drops
+    motion events so mouse movement can't drive the AUI cascade.
+    Clicks, keyboard, and scroll events pass through normally.
     """
     active = False
     _refcount = 0
@@ -47,8 +47,7 @@ class _RebuildInputFilter(wx.EventFilter):
     def FilterEvent(self, event):
         if not self.active:
             return self.Event_Skip
-        etype = event.GetEventType()
-        if etype in _INPUT_EVENTS:
+        if event.GetEventType() in _MOTION_EVENTS:
             return self.Event_Processed
         return self.Event_Skip
 

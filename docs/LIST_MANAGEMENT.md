@@ -750,14 +750,17 @@ clean paint with correct item positions (after `CalculatePositions()`).
 `RefreshAllItems` calls can overlap.  It only drives paint suppression
 and selection event suppression.
 
-**3. EventFilter input blocking** (`frame.py`):
+**3. EventFilter motion blocking** (`frame.py`):
 `_RebuildInputFilter` is a `wx.EventFilter` that silently eats mouse
-and keyboard events at the wx level.  No visual effect (no gray, no
-flicker).  Each `RefreshAllItems` call increments a refcount via
-`acquire()`; each `_on_refresh_idle` decrements via `release()`.  When
-the last widget completes, a 1-second deferred release timer starts to
-cover the post-rebuild settling period.  If a new rebuild starts during
-the settling, the timer is cancelled and the filter stays active.
+**motion** events (MOTION, ENTER_WINDOW, LEAVE_WINDOW) at the wx level.
+Clicks, keyboard, and scroll events pass through normally so the app
+stays responsive.  Only motion events are suppressed because they drive
+the AUI cascade (OnMotion -> hover state change -> repaint -> repeat).
+Each `RefreshAllItems` call increments a refcount via `acquire()`; each
+`_on_refresh_idle` decrements via `release()`.  When the last widget
+completes, a 1-second deferred release timer starts to cover the
+post-rebuild settling period.  If a new rebuild starts during the
+settling, the timer is cancelled and the filter stays active.
 
 ### How the layers work together
 
@@ -773,7 +776,7 @@ RefreshAllItems()
     │   ├── __refreshing = False  (paint suppression deactivates)
     │   ├── _input_filter.release()  (refcount--, deferred release if 0)
     │   └── Refresh() → ONE clean paint with correct positions
-    └── 1s later: filter deactivates (mouse/keyboard resume)
+    └── 1s later: filter deactivates (motion events resume)
 ```
 
 Total elapsed: rebuild ~80ms + CalculatePositions + one paint ~280ms.
@@ -794,7 +797,8 @@ Cascade eliminated (down from 1.4+ seconds with 5+ cascade paints).
 | 9 | Remove `__refreshing` re-entry guard entirely | Empty lists on startup — legitimate refresh calls during 703ms idle wait were no longer blocked, but without `__refreshing` flag the paint debounce and selection suppression also stopped working |
 | 10 | Paint throttle 1-per-100ms during `__refreshing` | Each cascade paint takes ~280ms (291 items), so paints are always >100ms apart — throttle never triggers. Cascade runs unimpeded. Only total suppression (zero paints during refresh) breaks the cycle |
 | 11 | Per-widget EventFilter release (each `_on_refresh_idle` sets `active=False`) | First widget to finish clears the filter while other widgets still need it. Global singleton filter requires refcount + deferred release |
-| 12 | `__refreshing` as re-entry guard for `RefreshAllItems` | Blocks legitimate refresh calls for 703ms during idle wait, causing empty lists on startup. Removed re-entry guard — `__refreshing` now only drives paint suppression and selection suppression |
+| 12 | `__refreshing` as re-entry guard for `RefreshAllItems` | Blocks legitimate refresh calls for 703ms during idle wait, causing empty lists on startup. Removed re-entry guard - `__refreshing` now only drives paint suppression and selection suppression |
+| 13 | EventFilter eating ALL input (clicks, keyboard, scroll, motion) | Clicks and keyboard events lost during rebuild + 1s settling period makes the app feel unresponsive. Only motion events drive the AUI cascade; clicks and keyboard do not. Narrowed filter to motion events only |
 
 ### Resolved Questions
 
