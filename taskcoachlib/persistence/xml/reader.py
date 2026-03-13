@@ -737,13 +737,13 @@ class XMLReader(object):
                 data_node = node.find("data")
                 ext = data_node.attrib.get("extension", "") if data_node is not None else ""
                 log_step(
-                    f"WARNING: Inline attachment '{subject}' — "
+                    f"WARNING: Inline attachment '{subject}' - "
                     f"embedded file data is not supported and will be "
                     f"lost on save. Use a legacy 1.x version to extract "
                     f"and save attachments before migrating",
                     prefix="FILE",
                 )
-                location = f"(embedded {ext} — data not migrated)"
+                location = f"(embedded {ext} - data not migrated)"
 
         return self.__save_modification_datetime(
             attachment.AttachmentFactory(

@@ -1152,9 +1152,7 @@ class CalendarViewer(
         self.settings.set(self.settingsSection(), "viewdate", to_save)
 
     def reconfig(self):
-        from taskcoachlib.widgets.frame import rebuild_guard
-        with rebuild_guard(self.widget):
-            self._do_reconfig()
+        self._do_reconfig()
 
     def _do_reconfig(self):
         self.widget.Freeze()

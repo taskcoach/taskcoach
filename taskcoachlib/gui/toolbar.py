@@ -84,7 +84,7 @@ class _Toolbar(aui.AuiToolBar):
             size = self.GetToolBitmapSize()
             log_step(
                 f"ERROR: Toolbar received NullBitmap at size {size[0]}x{size[1]}. "
-                f"A toolbar icon is missing this size — import it from the "
+                f"A toolbar icon is missing this size - import it from the "
                 f"distillery and update icons.json sizes. "
                 f"See ICON_LIBRARY.md Step 2.3.",
                 prefix="ICON"

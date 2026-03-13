@@ -709,9 +709,9 @@ Break the lock?"""
 
         if i18n.Translator.hasInstance():
             log_step("FATAL ERROR: Translator already created before __init_language(). "
-                     "A module-level _() call ran before language was initialized — "
+                     "A module-level _() call ran before language was initialized - "
                      "the user's language preference was silently ignored. "
-                     "This is a programming error — fix the initialization sequence "
+                     "This is a programming error - fix the initialization sequence "
                      "so nothing calls _() before __init_language().",
                      prefix="i18n")
             sys.exit(1)

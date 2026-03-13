@@ -41,10 +41,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # =============================================================================
 
 version = "2.0.2"  # Major.Minor.Milestone
-patch = "6"  # Patch number - INCREMENT THIS for each release
-version_full = f"{version}.{patch}"  # Full version: 2.0.2.6
+patch = "7"  # Patch number - INCREMENT THIS for each release
+version_full = f"{version}.{patch}"  # Full version: 2.0.2.7
 
-release_day = "8"  # Day of the release (1-31)
+release_day = "13"  # Day of the release (1-31)
 release_month = "March"  # Month of the release
 release_year = "2026"  # Year of the release
 

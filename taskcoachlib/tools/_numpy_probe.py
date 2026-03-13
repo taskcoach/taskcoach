@@ -6,7 +6,7 @@ troubleshooting from user-submitted logs.
 
 NumPy is pinned to 1.x (>=1.26,<2) in all pip-based builds, which
 avoids the SSE4.2 baseline introduced in NumPy 2.4+. This probe is
-therefore informational only — it does not gate any runtime behavior.
+therefore informational only - it does not gate any runtime behavior.
 
 Historical context: NumPy 2.4+ requires SSE4.2 (x86_64-v2 baseline).
 On older CPUs (e.g. AMD A6-3650 with SSE4a only), importing numpy 2.4+
@@ -36,7 +36,7 @@ def _probe():
         )
         log_step(f"Subprocess returned rc={result.returncode}", prefix=_PREFIX)
         if result.returncode == 0:
-            log_step("Probe OK — numpy is functional", prefix=_PREFIX)
+            log_step("Probe OK - numpy is functional", prefix=_PREFIX)
             return True
         # POSIX: SIGILL gives returncode -4
         # Windows: nonzero returncode
@@ -46,13 +46,13 @@ def _probe():
                  prefix=_PREFIX)
         return False
     except subprocess.TimeoutExpired:
-        log_step("Probe FAILED — subprocess timed out", prefix=_PREFIX)
+        log_step("Probe FAILED - subprocess timed out", prefix=_PREFIX)
         return False
     except FileNotFoundError:
-        log_step("Probe FAILED — Python executable not found", prefix=_PREFIX)
+        log_step("Probe FAILED - Python executable not found", prefix=_PREFIX)
         return False
     except Exception as exc:
-        log_step(f"Probe FAILED — {exc}", prefix=_PREFIX)
+        log_step(f"Probe FAILED - {exc}", prefix=_PREFIX)
         return False
 
 

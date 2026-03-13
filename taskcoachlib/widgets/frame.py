@@ -16,8 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from contextlib import contextmanager
-
 import wx
 import wx.lib.agw.aui as aui
 from taskcoachlib import operating_system
@@ -41,150 +39,54 @@ class _RebuildInputFilter(wx.EventFilter):
 
     No visual effect — no gray, no disable flicker.  Just drops
     input events so mouse movement can't drive the AUI cascade.
-    Also counts events for diagnostics.
     """
     active = False
-    count_motion_eaten = 0
-    count_keys_eaten = 0
-    count_clicks_eaten = 0
-    count_paint = 0
+    _refcount = 0
+    _release_timer = None
 
     def FilterEvent(self, event):
+        if not self.active:
+            return self.Event_Skip
         etype = event.GetEventType()
-        if self.active:
-            if etype == wx.wxEVT_MOTION:
-                self.count_motion_eaten += 1
-                return self.Event_Processed
-            if etype in _INPUT_EVENTS:
-                if etype in (wx.wxEVT_KEY_DOWN, wx.wxEVT_KEY_UP,
-                             wx.wxEVT_CHAR, wx.wxEVT_CHAR_HOOK):
-                    self.count_keys_eaten += 1
-                else:
-                    self.count_clicks_eaten += 1
-                return self.Event_Processed
-            if etype == wx.wxEVT_PAINT:
-                self.count_paint += 1
+        if etype in _INPUT_EVENTS:
+            return self.Event_Processed
         return self.Event_Skip
 
-    def reset_counts(self):
-        self.count_motion_eaten = 0
-        self.count_keys_eaten = 0
-        self.count_clicks_eaten = 0
-        self.count_paint = 0
+    def acquire(self):
+        """Called at start of each RefreshAllItems."""
+        if self._release_timer is not None:
+            self._release_timer.Stop()
+            self._release_timer = None
+        self._refcount += 1
+        self.active = True
+
+    def release(self):
+        """Called when a widget's refresh idle completes.
+
+        Decrements refcount.  When all widgets done, schedules a
+        deferred deactivation (1s) to cover the post-rebuild cascade.
+        """
+        self._refcount = max(0, self._refcount - 1)
+        if self._refcount == 0:
+            self._release_timer = wx.CallLater(
+                1000, self._deferred_release,
+            )
+
+    def _deferred_release(self):
+        self._release_timer = None
+        if self._refcount == 0:
+            self.active = False
 
 
 _input_filter = _RebuildInputFilter()
 _filter_installed = False
 
-_rebuild_guard_state = {
-    'idle_bound': False,
-    'widget': None,
-    'acquire_time': 0.0,
-    'post_dirty': False,
-}
 
-
-def _rebuild_guard_on_idle(event):
-    """EVT_IDLE handler — stop blocking input when widget is done.
-
-    Waits one extra idle cycle after _dirty=False because
-    OnInternalIdle sets _dirty=False then calls Refresh() which
-    queues a paint.  The extra cycle lets that paint process before
-    we re-enable input.
-    """
-    import time
-    st = _rebuild_guard_state
-    from taskcoachlib.meta.debug import log_step
-
-    if _input_filter.active:
-        widget = st['widget']
-        elapsed_ms = (time.monotonic() - st['acquire_time']) * 1000
-
-        # Extra cycle after _dirty=False — paint from Refresh() should be done
-        if st['post_dirty']:
-            f = _input_filter
-            log_step('EVT_IDLE — releasing  elapsed=%.0fms  '
-                     'motion_eaten=%d clicks_eaten=%d keys_eaten=%d paint=%d'
-                     % (elapsed_ms, f.count_motion_eaten, f.count_clicks_eaten,
-                        f.count_keys_eaten, f.count_paint),
-                     prefix='REBUILD_GUARD')
-            _input_filter.active = False
-            st['widget'] = None
-            st['post_dirty'] = False
-        else:
-            # Check if the tree widget still has pending layout work
-            dirty = False
-            if widget is not None:
-                main_win = getattr(widget, 'GetMainWindow', lambda: None)()
-                if main_win is not None:
-                    dirty = getattr(main_win, '_dirty', False)
-                    log_step('EVT_IDLE — _dirty=%s  elapsed=%.0fms'
-                             % (dirty, elapsed_ms), prefix='REBUILD_GUARD')
-                else:
-                    log_step('EVT_IDLE — no main_win (calendar?)  elapsed=%.0fms'
-                             % elapsed_ms, prefix='REBUILD_GUARD')
-            else:
-                log_step('EVT_IDLE — no widget  elapsed=%.0fms'
-                         % elapsed_ms, prefix='REBUILD_GUARD')
-
-            if dirty:
-                event.RequestMore()
-                event.Skip()
-                return
-
-            # _dirty=False — wait one more cycle for paint to process
-            log_step('EVT_IDLE — _dirty=False, waiting one more cycle  elapsed=%.0fms'
-                     % elapsed_ms, prefix='REBUILD_GUARD')
-            st['post_dirty'] = True
-            event.RequestMore()
-            event.Skip()
-            return
-
-    if st['idle_bound']:
-        wx.GetApp().Unbind(wx.EVT_IDLE, handler=_rebuild_guard_on_idle)
-        st['idle_bound'] = False
-    event.Skip()
-
-
-@contextmanager
-def rebuild_guard(widget=None):
-    """Block input during rebuild, release when widget is done.
-
-    Activates an EventFilter that silently eats mouse and keyboard
-    events.  On exit, binds EVT_IDLE and checks the widget's _dirty
-    flag.  When _dirty is False + one extra idle cycle (for the paint
-    from OnInternalIdle's Refresh()), re-enables input.
-    No visual effect — no gray, no flicker.
-    """
-    import time
-    st = _rebuild_guard_state
-    from taskcoachlib.meta.debug import log_step
-    if not _input_filter.active:
-        global _filter_installed
-        if not _filter_installed:
-            wx.EvtHandler.AddFilter(_input_filter)
-            _filter_installed = True
-            log_step('EventFilter installed', prefix='REBUILD_GUARD')
-        _input_filter.reset_counts()
-        _input_filter.active = True
-        st['acquire_time'] = time.monotonic()
-        st['widget'] = widget
-        log_step('Input blocked  widget=%s'
-                 % (type(widget).__name__ if widget else 'None'),
-                 prefix='REBUILD_GUARD')
-    try:
-        yield
-    finally:
-        if not st['idle_bound']:
-            wx.GetApp().Bind(wx.EVT_IDLE, _rebuild_guard_on_idle)
-            st['idle_bound'] = True
-            dirty = None
-            if widget is not None:
-                main_win = getattr(widget, 'GetMainWindow', lambda: None)()
-                if main_win is not None:
-                    dirty = getattr(main_win, '_dirty', None)
-            log_step('EVT_IDLE bound — _dirty=%s  waiting for widget done'
-                     % dirty, prefix='REBUILD_GUARD')
+def _ensure_filter_installed():
+    global _filter_installed
+    if not _filter_installed:
+        wx.EvtHandler.AddFilter(_input_filter)
+        _filter_installed = True
 
 
 def _install_sash_resize_optimization(manager):
@@ -198,26 +100,26 @@ def _install_sash_resize_optimization(manager):
     import time
 
     original_on_motion = getattr(manager, 'OnMotion', None)
+    if not original_on_motion:
+        return
 
     # Throttle state
-    state = {
-        'last_update_time': 0,
-        'min_update_interval': 0.033,  # ~30fps max update rate
-    }
+    min_interval = 0.033  # ~30fps max update rate
+    last_update_time = 0
 
     # Throttle updates during sash drag
-    if original_on_motion:
-        def throttled_on_motion(event):
-            action = getattr(manager, '_action', 0)
-            # action 3 = actionResize (sash drag)
-            if action == 3:
-                now = time.time()
-                if now - state['last_update_time'] < state['min_update_interval']:
-                    # Skip this update - don't call Skip() to prevent other handlers
-                    return
-                state['last_update_time'] = now
-            return original_on_motion(event)
-        manager.OnMotion = throttled_on_motion
+    def throttled_on_motion(event):
+        nonlocal last_update_time
+        action = getattr(manager, '_action', 0)
+        # action 3 = actionResize (sash drag)
+        if action == 3:
+            now = time.time()
+            if now - last_update_time < min_interval:
+                return
+            last_update_time = now
+        return original_on_motion(event)
+
+    manager.OnMotion = throttled_on_motion
 
 
 class AuiManagedFrameWithDynamicCenterPane(wx.Frame):

@@ -70,7 +70,9 @@ class BaseHyperTreeList(hypertreelist.HyperTreeList):
                     self.scrollToSelectionCentered()
         except RuntimeError:
             # wrapped C/C++ object has been deleted
-            pass
+            from taskcoachlib.meta.debug import log_step
+            log_step('__onSize failed - widget already destroyed',
+                     prefix='DEAD-OBJ')
 
 
 class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
@@ -97,7 +99,9 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
                 self.MainWindow.Refresh()
         except RuntimeError:
             # wrapped C/C++ object has been deleted
-            pass
+            from taskcoachlib.meta.debug import log_step
+            log_step('__safeRefresh failed - widget already destroyed',
+                     prefix='DEAD-OBJ')
 
     def GetSelections(self):  # pylint: disable=C0103
         """If the root item is hidden, it should never be selected.
@@ -218,7 +222,8 @@ class TreeListCtrl(
         self.__user_double_clicked = False
         self.__columns_with_images = []
         self.__default_font = wx.NORMAL_FONT
-        self.__refreshing = False  # Flag to suppress selection events during refresh
+        self.__refreshing = False
+        self.__post_dirty = False
         kwargs.setdefault("resizeableColumn", 0)
         super().__init__(
             parent,
@@ -263,60 +268,24 @@ class TreeListCtrl(
         event.Skip()
 
     def _install_paint_debounce(self):
-        """Debounce the tree widget's OnPaint during refresh only.
+        """Suppress ALL cascade paints during refresh.
 
-        Only active while __refreshing is True.  During refresh, the
-        first paint goes through immediately, then subsequent cascade
-        paints are suppressed for 100ms intervals.  A deferred Refresh()
-        ensures the final state is rendered after the cascade settles.
-        Normal paints (hover, scroll, etc.) are never affected.
+        While __refreshing is True, every paint is suppressed with an
+        empty PaintDC (validates the GDK region to prevent infinite
+        expose loops).  When __refreshing clears, normal paints resume
+        and _on_refresh_idle triggers one clean Refresh().
         """
-        import time
         main_win = self.GetMainWindow()
         original_on_paint = main_win.OnPaint
         tree_ctrl = self
-        _state = {
-            'last_paint': 0.0,
-            'suppressed': 0,
-            'deferred': False,
-        }
-
-        def _do_deferred():
-            _state['deferred'] = False
-            try:
-                main_win.Refresh()
-            except RuntimeError:
-                pass  # C++ object deleted
 
         def debounced_on_paint(event):
-            # Only debounce during refresh — normal paints pass through
             if not tree_ctrl.refreshing:
-                _state['last_paint'] = 0.0  # Reset for next refresh
                 original_on_paint(event)
                 return
-            now = time.monotonic()
-            elapsed = now - _state['last_paint']
-            if elapsed < 0.100:
-                # Too soon — validate the region without drawing
-                dc = wx.PaintDC(main_win)
-                del dc
-                _state['suppressed'] += 1
-                # Schedule a deferred repaint so final state is rendered
-                if not _state['deferred']:
-                    _state['deferred'] = True
-                    remaining = max(1, int((0.100 - elapsed) * 1000) + 5)
-                    wx.CallLater(remaining, _do_deferred)
-                return
-            if _state['suppressed'] > 0:
-                from taskcoachlib.meta.debug import log_step
-                log_step('Paint debounce: %d suppressed in %.0fms'
-                         % (_state['suppressed'],
-                            (now - _state['last_paint']) * 1000),
-                         prefix='REBUILD_GUARD')
-                _state['suppressed'] = 0
-            _state['last_paint'] = now
-            _state['deferred'] = False
-            original_on_paint(event)
+            # During refresh: suppress ALL paints
+            dc = wx.PaintDC(main_win)
+            del dc
 
         main_win.Bind(wx.EVT_PAINT, debounced_on_paint)
 
@@ -351,19 +320,17 @@ class TreeListCtrl(
     @property
     def refreshing(self):
         """True while a rebuild is in progress (items being rebuilt or
-        widget still has pending layout work).  Used to debounce
-        cascade-triggered re-entries and suppress selection events."""
+        widget still has pending layout work).  Used by paint debounce
+        and selection suppression — NOT as a re-entry guard."""
         return self.__refreshing
 
     def RefreshAllItems(self, count=0):  # pylint: disable=W0613
-        from taskcoachlib.meta.debug import log_step
-        if self.__refreshing:
-            log_step('RefreshAllItems skipped — already refreshing',
-                     prefix='REBUILD_GUARD')
-            return
+        from taskcoachlib.widgets.frame import (
+            _input_filter, _ensure_filter_installed,
+        )
+        _ensure_filter_installed()
+        _input_filter.acquire()
         self.__refreshing = True
-        log_step('RefreshAllItems started  count=%d' % count,
-                 prefix='REBUILD_GUARD')
         self.Freeze()
         self.StopEditing()
         self.__selection = self.curselection()
@@ -382,39 +349,48 @@ class TreeListCtrl(
         if self.__selection:
             self.select(self.__selection)
         self.scrollToSelection()
-        # Don't call Refresh() here — let OnInternalIdle handle the
-        # single repaint when _dirty is processed.  Calling Refresh()
-        # immediately triggers the GTK3 AUI repaint cascade.
-        #
         # __refreshing stays True until _dirty is processed on idle.
-        # This debounces any cascade-triggered re-entries.
+        # Input filter also stays active until then.
         self._bind_refresh_complete()
-        log_step('RefreshAllItems items built — waiting for idle paint',
-                 prefix='REBUILD_GUARD')
 
     def _bind_refresh_complete(self):
         """Bind EVT_IDLE to detect when the widget has finished painting."""
         wx.GetApp().Bind(wx.EVT_IDLE, self._on_refresh_idle)
 
     def _on_refresh_idle(self, event):
-        """Release __refreshing when the widget is done painting."""
-        from taskcoachlib.meta.debug import log_step
+        """Release __refreshing and input filter when done painting.
+
+        Waits one extra idle cycle after _dirty=False because
+        OnInternalIdle sets _dirty=False then calls Refresh() which
+        queues a paint.  The extra cycle lets that paint process
+        (and motion events get filtered) before we re-enable input.
+        """
+        from taskcoachlib.widgets.frame import _input_filter
         main_win = self.GetMainWindow()
         dirty = getattr(main_win, '_dirty', False)
         if dirty:
             event.RequestMore()
             event.Skip()
             return
-        # Widget layout is done — clear refreshing flag
+        # _dirty=False — check if we already waited the extra cycle
+        if not self.__post_dirty:
+            self.__post_dirty = True
+            event.RequestMore()
+            event.Skip()
+            return
+        # Extra cycle done — this widget is done
         self.__refreshing = False
+        self.__post_dirty = False
+        _input_filter.release()
         wx.GetApp().Unbind(wx.EVT_IDLE, handler=self._on_refresh_idle)
-        log_step('RefreshAllItems complete — __refreshing cleared',
-                 prefix='REBUILD_GUARD')
-        # Trigger one clean repaint now that positions are calculated
+        # One clean paint now that positions are calculated
         try:
-            self.GetMainWindow().Refresh()
+            main_win.Refresh()
         except RuntimeError:
-            pass
+            # wrapped C/C++ object has been deleted
+            from taskcoachlib.meta.debug import log_step
+            log_step('Refresh() failed - widget already destroyed',
+                     prefix='DEAD-OBJ')
         event.Skip()
 
     def scrollToSelection(self):
@@ -587,7 +563,9 @@ class TreeListCtrl(
                 self.selectCommand()
         except RuntimeError:
             # wrapped C/C++ object has been deleted
-            pass
+            from taskcoachlib.meta.debug import log_step
+            log_step('selectCommand() failed - widget already destroyed',
+                     prefix='DEAD-OBJ')
 
     def onKeyDown(self, event):
         if event.GetKeyCode() == wx.WXK_RETURN:
@@ -620,7 +598,9 @@ class TreeListCtrl(
                     self._expandDropTarget(drop_item)
         except RuntimeError:
             # wrapped C/C++ object has been deleted
-            pass
+            from taskcoachlib.meta.debug import log_step
+            log_step('dragAndDropCommand failed - widget already destroyed',
+                     prefix='DEAD-OBJ')
 
     def _expandDropTarget(self, drop_item):
         """Expand the drop target item so the dropped children are visible."""

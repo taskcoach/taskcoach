@@ -385,7 +385,7 @@ class Publisher(object, metaclass=singleton.Singleton):
                     observer(sub_event)
                 except Exception:
                     from taskcoachlib.meta.debug import log_step
-                    log_step("Observer exception: %s on %s — removing" % (
+                    log_step("Observer exception: %s on %s - removing" % (
                         observer, sub_event.types()), prefix="OBSERVER")
                     for key in types_and_sources:
                         failed_entries.append((key, observer))

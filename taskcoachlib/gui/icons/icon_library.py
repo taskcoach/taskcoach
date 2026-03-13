@@ -383,7 +383,7 @@ class IconCatalog:
         if icon_id == _FALLBACK_ICON:
             log_step(
                 f"CRITICAL: Fallback icon '{_FALLBACK_ICON}' itself failed. "
-                f"This should never occur — the installation is broken.",
+                f"This should never occur - the installation is broken.",
                 prefix="ICON"
             )
             return None
@@ -391,7 +391,7 @@ class IconCatalog:
         if not fallback:
             log_step(
                 f"CRITICAL: Fallback icon '{_FALLBACK_ICON}' not in catalog. "
-                f"This should never occur — the installation is broken.",
+                f"This should never occur - the installation is broken.",
                 prefix="ICON"
             )
         return fallback
@@ -561,7 +561,7 @@ class IconCatalog:
         if icon.icon_id in self._icons:
             existing = self._icons[icon.icon_id]
             log_step(
-                f"ERROR: Icon ID conflict '{icon.icon_id}' — "
+                f"ERROR: Icon ID conflict '{icon.icon_id}' - "
                 f"theme '{existing.theme}' vs '{icon.theme}'. "
                 f"Keeping first, dropping second.",
                 prefix="ICON"

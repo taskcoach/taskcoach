@@ -430,9 +430,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
 
     def refresh(self):
         if self and not self.__freezeCount:
-            from taskcoachlib.widgets.frame import rebuild_guard
-            with rebuild_guard(self.widget):
-                self.widget.RefreshAllItems(len(self.presentation()))
+            self.widget.RefreshAllItems(len(self.presentation()))
 
     def refreshItems(self, *items):
         if not self.__freezeCount:

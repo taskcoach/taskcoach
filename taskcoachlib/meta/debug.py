@@ -40,7 +40,16 @@ def log_step(*args, prefix="DEBUG"):
     ms = int((t - int(t)) * 1000)
     timestamp = time.strftime("%H:%M:%S", time.localtime(t)) + ".%03d" % ms
     msg = " ".join(str(a) for a in args)
-    print("[%s] [%s] %s" % (timestamp, prefix, msg))
+    line = "[%s] [%s] %s" % (timestamp, prefix, msg)
+    try:
+        print(line)
+    except (UnicodeEncodeError, OSError):
+        # Fallback for consoles that can't encode the output (e.g. cp932
+        # on Japanese Windows when stdout is redirected or absent).
+        try:
+            print(line.encode("ascii", errors="replace").decode("ascii"))
+        except Exception:
+            pass
 
 
 def log_call(traceback_depth):

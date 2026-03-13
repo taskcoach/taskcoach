@@ -178,6 +178,13 @@ hypertreelist imported from: /path/to/.venv/lib/python3.X/site-packages/wx/lib/a
 
 ---
 
+## Coding Rules for Log Messages
+
+- **ASCII only** - never use Unicode em-dash, en-dash, or other non-ASCII
+  punctuation in log messages, comments, or strings.  Use the plain ASCII
+  hyphen-minus (`-`) instead.  Em-dashes cause encoding errors on Windows
+  consoles (e.g. cp932) and are not standard in source code.
+
 ## Log Prefixes
 
 - `[WXPYTHON_PATCH]`: wxPython background coloring patch (import hook and patched module)
