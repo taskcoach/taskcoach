@@ -2372,6 +2372,30 @@ class TaskReminderPage(SettingsPage):
 
     def __init__(self, *args, **kwargs):
         super().__init__(columns=2, growableColumn=-1, *args, **kwargs)
+        from taskcoachlib.sounds import choices as sound_choices, play
+        choice_ctrls = self.addChoiceSetting(
+            "feature",
+            "reminder_sound",
+            _("Reminder sound"),
+            "",
+            sound_choices(),
+        )
+        # Add a themed test button with icon next to the dropdown.
+        # wx.Button.SetBitmap is suppressed by GTK3's gtk-button-images,
+        # so use ThemedGenBitmapTextButton (same as IconPicker).
+        from wx.lib.buttons import ThemedGenBitmapTextButton
+        from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
+        bmp = icon_catalog.get_bitmap("nuvola_apps_knotify", LIST_ICON_SIZE)
+        parent_panel = choice_ctrls[0].GetParent()
+        test_button = ThemedGenBitmapTextButton(
+            parent_panel, wx.ID_ANY, bmp, _("Test"),
+        )
+        test_button.Bind(wx.EVT_BUTTON, lambda evt: play(
+            choice_ctrls[0].GetClientData(choice_ctrls[0].GetSelection()),
+        ))
+        parent_panel.GetSizer().Insert(
+            1, test_button, 0, wx.RIGHT, self._columnGap,
+        )
         if operating_system.isMac() or operating_system.isGTK():
             self.addBooleanSetting(
                 "feature",
@@ -2379,7 +2403,7 @@ class TaskReminderPage(SettingsPage):
                 _("Let the computer say the reminder"),
                 _("(Needs espeak)") if operating_system.isGTK() else "",
             )
-        snoozeChoices = [
+        snooze_choices = [
             (str(choice[0]), choice[1]) for choice in date.snoozeChoices
         ]
         self.addChoiceSetting(
@@ -2387,7 +2411,7 @@ class TaskReminderPage(SettingsPage):
             "defaultsnoozetime",
             _("Default snooze time to use after reminder"),
             "",
-            snoozeChoices,
+            snooze_choices,
         )
         self.addMultipleChoiceSettings(
             "view",

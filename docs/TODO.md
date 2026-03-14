@@ -233,6 +233,8 @@ The following obsolete workarounds were removed from `taskcoach.py`:
 
 ### Current Status
 
+See [REMINDERS.md](REMINDERS.md) for the full reminder system (sound, TTS, snooze).
+
 The "Let the computer say the reminder" feature uses a hand-rolled implementation:
 - Mac: subprocess call to `say` command
 - Linux: subprocess call to `espeak` command

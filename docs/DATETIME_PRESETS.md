@@ -176,6 +176,9 @@ But nothing prevents setting `"preset_..."` manually in `TaskCoach.ini`.
 
 ### Reminder Preset
 
+See also [REMINDERS.md](REMINDERS.md) for the reminder popup, sound
+playback, and snooze configuration.
+
 When `reminder` is passed to the Task constructor, `setReminder()` is not
 called, so the `reminderChangedEventType` pubsub event is not fired.
 

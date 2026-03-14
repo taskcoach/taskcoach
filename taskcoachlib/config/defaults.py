@@ -619,6 +619,7 @@ defaults = {
     },
     "feature": {
         "minidletime": "0",
+        "reminder_sound": "gentle-chime",  # Key from taskcoachlib.sounds.SOUNDS
         "sayreminder": "False",
         "task_duration_presets": "60,120,1440,2880",  # Minutes: 1h, 2h, 1 day, 2 days
         "effort_duration_presets": "300,900,1800,3600,7200",  # Seconds: 5m, 15m, 30m, 1h, 2h

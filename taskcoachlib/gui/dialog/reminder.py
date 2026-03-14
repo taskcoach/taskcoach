@@ -183,6 +183,10 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
 
         self.RequestUserAttention()
         self._freezeDialog()
+        # Play reminder sound
+        from taskcoachlib import sounds
+        sounds.play(self.settings.get("feature", "reminder_sound"))
+        # Speak the reminder text
         if self.settings.getboolean("feature", "sayreminder"):
             speak.Speaker().say('"%s: %s"' % (_("Reminder"), task.subject()))
 

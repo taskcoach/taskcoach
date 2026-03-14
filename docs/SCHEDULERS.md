@@ -119,7 +119,7 @@ Every 1 second (_onTick):
 | `timer.date` | `TaskFilter` | Re-filter tasks at midnight |
 | `scheduler.dateChange.uiRefresh` | `CalendarViewer` | Redraw calendar after midnight processing |
 | `scheduler.minuteChange.uiRefresh` | `MinuteRefresher` | Update "time left" displays |
-| `task.reminder.trigger` | `ReminderController` | Show reminder dialog |
+| `task.reminder.trigger` | `ReminderController` | Show reminder dialog (see [REMINDERS.md](REMINDERS.md)) |
 | `timer.second` | `TaskbarIcon` | Update tracking tooltip (local UI) |
 | `timer.second` | `Editor` | Update budget/revenue while tracking (local UI) |
 
@@ -128,7 +128,7 @@ Every 1 second (_onTick):
 | Component | File | How It Uses Timer |
 |-----------|------|-------------------|
 | MasterScheduler | `gui/scheduler.py` | Subscribes to `timer.second`, processes all tasks and styles |
-| Reminder Controller | `gui/remindercontroller.py` | Subscribes to `task.reminder.trigger` event |
+| Reminder Controller | `gui/remindercontroller.py` | Subscribes to `task.reminder.trigger` event (see [REMINDERS.md](REMINDERS.md)) |
 | Task Filter | `domain/task/filter.py` | Subscribes to `timer.date`, calls `reset()` |
 | Calendar Viewer | `gui/viewer/task.py` | Subscribes to `scheduler.dateChange.uiRefresh` |
 | Minute Refresher | `gui/viewer/refresher.py` | Subscribes to `scheduler.minuteChange.uiRefresh` |
