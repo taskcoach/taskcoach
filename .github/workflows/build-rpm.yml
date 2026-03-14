@@ -46,7 +46,7 @@ jobs:
           dnf install -y git rpm-build rpmdevtools dnf-plugins-core
 
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -151,7 +151,7 @@ jobs:
           ls -la artifacts/
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: taskcoach-${{ steps.version.outputs.version }}-${{ matrix.os }}-${{ matrix.osver }}
           path: artifacts/
@@ -178,7 +178,7 @@ jobs:
 
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: taskcoach-*-${{ matrix.os }}-${{ matrix.osver }}
           merge-multiple: true
@@ -226,7 +226,7 @@ jobs:
 
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: taskcoach-*
           merge-multiple: true

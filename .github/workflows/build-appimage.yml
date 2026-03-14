@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0  # Full history for version info
 
@@ -365,7 +365,7 @@ jobs:
           echo "All tests passed!"
 
       - name: Upload AppImage artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: TaskCoach-AppImage-${{ steps.version.outputs.version }}
           path: TaskCoach-*.AppImage
@@ -401,7 +401,7 @@ jobs:
 
     steps:
       - name: Download AppImage artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: TaskCoach-AppImage-*
           merge-multiple: true

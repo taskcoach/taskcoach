@@ -62,7 +62,7 @@ jobs:
           apt-get install -y git ca-certificates
 
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -178,7 +178,7 @@ jobs:
           ls -la artifacts/
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: taskcoach-${{ steps.version.outputs.version }}-${{ matrix.os }}-${{ matrix.osver }}-${{ matrix.codename }}
           path: artifacts/
@@ -212,7 +212,7 @@ jobs:
 
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: taskcoach-*-${{ matrix.os }}-${{ matrix.osver }}-${{ matrix.codename }}
           merge-multiple: true
@@ -274,7 +274,7 @@ jobs:
 
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: taskcoach-*
           merge-multiple: true

@@ -42,7 +42,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -375,7 +375,7 @@ jobs:
           ls -la build/TaskCoach/ | head -20
 
       - name: Upload installer artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: TaskCoach-windows-${{ matrix.suffix }}-installer-${{ steps.version.outputs.version }}
           path: dist/TaskCoach-*.exe
@@ -392,7 +392,7 @@ jobs:
           ls -la *.zip
 
       - name: Upload portable artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: TaskCoach-windows-${{ matrix.suffix }}-portable-${{ steps.version.outputs.version }}
           path: TaskCoach-*-portable.zip
@@ -407,7 +407,7 @@ jobs:
 
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: TaskCoach-windows-*
           merge-multiple: true
