@@ -33,18 +33,18 @@ class Sorter(base.TreeSorter):
 
     def __init__(self, *args, **kwargs):
         self.__tree_mode = kwargs.pop("tree_mode", False)
-        self.__sortByTaskStatusFirst = kwargs.pop(
+        self.__sort_by_task_status_first = kwargs.pop(
             "sortByTaskStatusFirst", True
         )
         super().__init__(*args, **kwargs)
-        for eventType in (
+        for event_type in (
             task.Task.prerequisitesChangedEventType(),
             task.Task.dueDateTimeChangedEventType(),
             task.Task.plannedStartDateTimeChangedEventType(),
             task.Task.actualStartDateTimeChangedEventType(),
             task.Task.completionDateTimeChangedEventType(),
         ):
-            pub.subscribe(self.onAttributeChanged, eventType)
+            pub.subscribe(self.onAttributeChanged, event_type)
         pub.subscribe(self._onStatusSortPriorityChanged,
                       "settings.statussortpriority.changed")
 
@@ -61,25 +61,25 @@ class Sorter(base.TreeSorter):
             from taskcoachlib.meta.debug import log_step
             log_step("set_tree_mode: Sorter observable is %s, expected Filter"
                      % type(observable).__name__, prefix="FILTER")
-        self.reset(forceEvent=True)
+        self.reset(force_event=True)
 
     def tree_mode(self):
         return self.__tree_mode
 
-    def sortByTaskStatusFirst(self, sortByTaskStatusFirst):
-        self.__sortByTaskStatusFirst = sortByTaskStatusFirst
+    def sort_by_task_status_first(self, sort_by_status_first):
+        self.__sort_by_task_status_first = sort_by_status_first
         # We don't need to invoke self.reset() here since when this property is
         # changed, the sort order also changes which in turn will cause
         # self.reset() to be called.
 
-    def createSortKeyFunction(self, sortKey):
-        statusSortKey = self.__createStatusSortKey()
-        regularSortKey = super().createSortKeyFunction(sortKey)
-        return lambda task: statusSortKey(task) + [regularSortKey(task)]
+    def create_sort_key_function(self, sort_key):
+        status_sort_key = self.__create_status_sort_key()
+        regular_sort_key = super().create_sort_key_function(sort_key)
+        return lambda task: status_sort_key(task) + [regular_sort_key(task)]
 
-    def __createStatusSortKey(self):
-        if self.__sortByTaskStatusFirst:
-            if self.isAscending():
+    def __create_status_sort_key(self):
+        if self.__sort_by_task_status_first:
+            if self.is_ascending():
                 # Negate priority so higher priority (more urgent) sorts first
                 return lambda task: [-task.computedStatus().getSortPriority(task.settings)]
             else:

@@ -185,7 +185,7 @@ class BaseTaskViewer(
     def domainObjectsToView(self):
         return self.taskFile.tasks()
 
-    def isShowingTasks(self):
+    def is_showing_tasks(self):
         return True
 
     def createFilter(self, taskList):
@@ -1999,7 +1999,7 @@ class TaskViewer(
         self, *args, **kwargs
     ):  # pylint: disable=W0221
         super().setSortByTaskStatusFirst(*args, **kwargs)
-        self.showSortOrder()
+        self.show_sort_order()
 
     def getSortOrderImage(self):
         if self.isSortOrderAscending():
@@ -2016,7 +2016,7 @@ class TaskViewer(
     ):  # pylint: disable=W0221
         super().setSearchFilter(searchString, *args, **kwargs)
         if searchString:
-            self.expandAll()  # pylint: disable=E1101
+            self.expand_all()  # pylint: disable=E1101
 
     def set_tree_mode(self, value):
         self.settings.setboolean(self.settingsSection(), "treemode", value)

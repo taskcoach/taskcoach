@@ -96,7 +96,7 @@ class AttachmentViewer(
     def domainObjectsToView(self):
         return self.attachments
 
-    def isShowingAttachments(self):
+    def is_showing_attachments(self):
         return True
 
     def getSupportedPasteTypes(self):

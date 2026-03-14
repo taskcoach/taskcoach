@@ -81,19 +81,19 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
                 self._attachPopupMenu(
                     self,
                     (wx.EVT_LIST_ITEM_RIGHT_CLICK,),
-                    self.onListItemRightClick,
+                    self.on_list_item_right_click,
                 )
                 self._attachPopupMenu(
                     self,
                     (wx.EVT_CONTEXT_MENU,),
-                    self.onListContextMenu,
+                    self.on_list_context_menu,
                 )
             else:
                 # For tree controls: use EVT_TREE_ITEM_RIGHT_CLICK and EVT_CONTEXT_MENU
                 self._attachPopupMenu(
                     self,
                     (wx.EVT_TREE_ITEM_RIGHT_CLICK, wx.EVT_CONTEXT_MENU),
-                    self.onItemPopupMenu,
+                    self.on_item_popup_menu,
                 )
                 # Also bind to MainWindow to catch right-clicks on empty space
                 self.GetMainWindow().Bind(
@@ -121,7 +121,7 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
         if hasattr(self._itemPopupMenu, '_update_menu_state'):
             self._itemPopupMenu._update_menu_state()
 
-    def onItemPopupMenu(self, event):
+    def on_item_popup_menu(self, event):
         """Handle popup menu for tree controls (EVT_TREE_ITEM_RIGHT_CLICK, EVT_CONTEXT_MENU)."""
         # Make sure the window this control is in has focus:
         try:
@@ -156,7 +156,7 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
         self._updateMenuUI()
         self.PopupMenu(self._itemPopupMenu)
 
-    def onListItemRightClick(self, event):
+    def on_list_item_right_click(self, event):
         """Handle EVT_LIST_ITEM_RIGHT_CLICK for ListCtrl controls.
 
         This event fires when right-clicking on an item and provides
@@ -165,16 +165,16 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
         """
         self.SetFocus()
         # Get the clicked item index from the event
-        itemIndex = event.GetIndex()
+        item_index = event.GetIndex()
         # Select the item if not already selected
-        if not self.IsSelected(itemIndex):
+        if not self.IsSelected(item_index):
             self.clear_selection()
-            self.Select(itemIndex, True)
+            self.Select(item_index, True)
         # Update menu and show popup
         self._updateMenuUI()
         self.PopupMenu(self._itemPopupMenu)
 
-    def onListContextMenu(self, event):
+    def on_list_context_menu(self, event):
         """Handle EVT_CONTEXT_MENU for ListCtrl controls.
 
         This handles right-clicks on empty space (EVT_LIST_ITEM_RIGHT_CLICK
@@ -184,8 +184,8 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
         pos = event.GetPosition()
         if pos != wx.DefaultPosition:
             # Mouse-triggered context menu - check if on empty space
-            clientPoint = self.ScreenToClient(pos)
-            item = self.HitTest(clientPoint)[0]
+            client_point = self.ScreenToClient(pos)
+            item = self.HitTest(client_point)[0]
             if self._itemIsOk(item):
                 # Click was on an item - EVT_LIST_ITEM_RIGHT_CLICK already handled it
                 return
@@ -207,15 +207,15 @@ class _CtrlWithColumnPopupMenuMixin(_CtrlWithPopupMenuMixin):
         super().__init__(*args, **kwargs)
         if self.__popupMenu is not None:
             self._attachPopupMenu(
-                self, [wx.EVT_LIST_COL_RIGHT_CLICK], self.onColumnPopupMenu
+                self, [wx.EVT_LIST_COL_RIGHT_CLICK], self.on_column_popup_menu
             )
 
-    def onColumnPopupMenu(self, event):
+    def on_column_popup_menu(self, event):
         # We store the columnIndex in the menu, because it's near to
         # impossible for commands in the menu to determine on what column the
         # menu was popped up.
-        columnIndex = event.GetColumn()
-        self.__popupMenu.columnIndex = columnIndex
+        column_index = event.GetColumn()
+        self.__popupMenu.columnIndex = column_index
         # Because right-clicking on column headers does not automatically give
         # focus to the control, we force the focus:
         try:
@@ -232,9 +232,9 @@ class _CtrlWithDropTargetMixin(_CtrlWithItemsMixin):
     """Control that accepts files, e-mails or URLs being dropped onto items."""
 
     def __init__(self, *args, **kwargs):
-        self.__onDropURLCallback = kwargs.pop("onDropURL", None)
-        self.__onDropFilesCallback = kwargs.pop("onDropFiles", None)
-        self.__onDropMailCallback = kwargs.pop("onDropMail", None)
+        self.__on_drop_url_callback = kwargs.pop("on_drop_url", None)
+        self.__on_drop_files_callback = kwargs.pop("on_drop_files", None)
+        self.__on_drop_mail_callback = kwargs.pop("on_drop_mail", None)
         self.__dropHighlightItem = None  # Track highlighted item during drag
         # Hover-expand timer: auto-expand collapsed items after hover delay
         self.__hoverExpandTimerId = wx.NewIdRef()
@@ -242,43 +242,43 @@ class _CtrlWithDropTargetMixin(_CtrlWithItemsMixin):
         self.__hoverExpandItem = None  # Item currently being hovered for expansion
         super().__init__(*args, **kwargs)
         if (
-            self.__onDropURLCallback
-            or self.__onDropFilesCallback
-            or self.__onDropMailCallback
+            self.__on_drop_url_callback
+            or self.__on_drop_files_callback
+            or self.__on_drop_mail_callback
         ):
-            dropTarget = draganddrop.DropTarget(
-                self.onDropURL,
-                self.onDropFiles,
-                self.onDropMail,
-                self.onDragOver,
+            drop_target = draganddrop.DropTarget(
+                self.on_drop_url,
+                self.on_drop_files,
+                self.on_drop_mail,
+                self.on_drag_over,
             )
-            self.GetMainWindow().SetDropTarget(dropTarget)
+            self.GetMainWindow().SetDropTarget(drop_target)
             # Initialize hover-expand timer
             self.__hoverExpandTimer = wx.Timer(self, self.__hoverExpandTimerId)
             self.Bind(wx.EVT_TIMER, self.__onHoverExpandTimer, id=self.__hoverExpandTimerId)
 
-    def onDropURL(self, x, y, url):
+    def on_drop_url(self, x, y, url):
         self._clearDropHighlight()  # Clear highlight on drop
         self.__stopHoverExpandTimer()  # Cancel any pending expand
         item = self.HitTest((x, y))[0]
-        if self.__onDropURLCallback:
-            self.__onDropURLCallback(self._objectBelongingTo(item), url)
+        if self.__on_drop_url_callback:
+            self.__on_drop_url_callback(self._objectBelongingTo(item), url)
 
-    def onDropFiles(self, x, y, filenames):
+    def on_drop_files(self, x, y, filenames):
         self._clearDropHighlight()  # Clear highlight on drop
         self.__stopHoverExpandTimer()  # Cancel any pending expand
         item = self.HitTest((x, y))[0]
-        if self.__onDropFilesCallback:
-            self.__onDropFilesCallback(self._objectBelongingTo(item), filenames)
+        if self.__on_drop_files_callback:
+            self.__on_drop_files_callback(self._objectBelongingTo(item), filenames)
 
-    def onDropMail(self, x, y, mail):
+    def on_drop_mail(self, x, y, mail):
         self._clearDropHighlight()  # Clear highlight on drop
         self.__stopHoverExpandTimer()  # Cancel any pending expand
         item = self.HitTest((x, y))[0]
-        if self.__onDropMailCallback:
-            self.__onDropMailCallback(self._objectBelongingTo(item), mail)
+        if self.__on_drop_mail_callback:
+            self.__on_drop_mail_callback(self._objectBelongingTo(item), mail)
 
-    def onDragOver(self, x, y, defaultResult):
+    def on_drag_over(self, x, y, defaultResult):
         item, flags = self.HitTest((x, y))[:2]
         if self._itemIsOk(item):
             # Auto-expand collapsed items on hover (modern UX behavior)
@@ -618,11 +618,11 @@ class _CtrlWithSortableColumnsMixin(_BaseCtrlWithColumnsMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.Bind(wx.EVT_LIST_COL_CLICK, self.onColumnClick)
+        self.Bind(wx.EVT_LIST_COL_CLICK, self.on_column_click)
         self.__currentSortColumn = self._getColumn(0)
         self.__currentSortImageIndex = -1
 
-    def onColumnClick(self, event):
+    def on_column_click(self, event):
         event.Skip(False)
         # Make sure the window this control is in has focus:
         try:
@@ -646,14 +646,14 @@ class _CtrlWithSortableColumnsMixin(_BaseCtrlWithColumnsMixin):
             # wrapped C/C++ object has been deleted
             pass
 
-    def showSortColumn(self, column):
+    def show_sort_column(self, column):
         if column != self.__currentSortColumn:
             self._clearSortImage()
         self.__currentSortColumn = column
         self._showSortImage()
 
-    def showSortOrder(self, imageIndex):
-        self.__currentSortImageIndex = imageIndex
+    def show_sort_order(self, image_index):
+        self.__currentSortImageIndex = image_index
         self._showSortImage()
 
     def _clearSortImage(self):
@@ -684,9 +684,9 @@ class _CtrlWithAutoResizedColumnsMixin(autowidth.AutoColumnWidthMixin):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.Bind(wx.EVT_LIST_COL_END_DRAG, self.onEndColumnResize)
+        self.Bind(wx.EVT_LIST_COL_END_DRAG, self.on_end_column_resize)
 
-    def onEndColumnResize(self, event):
+    def on_end_column_resize(self, event):
         """Save the column widths after the user did a resize."""
         for index, column in enumerate(self._visibleColumns()):
             column.setWidth(self.GetColumnWidth(index))

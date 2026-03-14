@@ -115,7 +115,7 @@ class EffortViewer(
         self.__initRoundingToolBarUICommands()
 
     def __initRoundingToolBarUICommands(self):
-        aggregated = self.isShowingAggregatedEffort()
+        aggregated = self.is_showing_aggregated_effort()
         rounding = self.__round_precision() if aggregated else 0
         self.roundingUICommand.set_choice(rounding)
         self.roundingUICommand.enable(aggregated)
@@ -152,7 +152,7 @@ class EffortViewer(
         super().detach()
         self.secondRefresher.removeInstance()
 
-    def isShowingEffort(self):
+    def is_showing_effort(self):
         return True
 
     def getSupportedPasteTypes(self):
@@ -193,11 +193,11 @@ class EffortViewer(
     def _refresh(self, clear=False):
         if clear:
             self.__domainObjectsToView = None
-        self.setPresentation(
-            self.createSorter(self.createFilter(self.domainObjectsToView()))
+        self.set_presentation(
+            self.create_sorter(self.createFilter(self.domainObjectsToView()))
         )
         self.secondRefresher.updatePresentation()
-        self.registerPresentationObservers()
+        self.register_presentation_observers()
         # Invalidate the UICommands used for the column popup menu:
         self.__columnUICommands = None
         # Clear the selection to remove the cached selection
@@ -218,7 +218,7 @@ class EffortViewer(
         self.__initRoundingToolBarUICommands()
         pub.sendMessage("effortviewer.aggregation")
 
-    def isShowingAggregatedEffort(self):
+    def is_showing_aggregated_effort(self):
         return self.aggregation != "details"
 
     def createFilter(self, taskList):
@@ -759,7 +759,7 @@ class EffortViewer(
         if anEffort.getStart() != previousEffort.getStart():
             # Starts are not equal, so period cannot be repeated
             return False
-        if self.isShowingAggregatedEffort():
+        if self.is_showing_aggregated_effort():
             # Starts and length of period are equal, so period is repeated
             return True
         # If we get here, we are in details mode and the starts are equal
@@ -776,7 +776,7 @@ class EffortViewer(
         else:
             timeSpent = anEffort.timeSpent()
         # Check for aggregation because we never round in details mode
-        if self.isShowingAggregatedEffort():
+        if self.is_showing_aggregated_effort():
             timeSpent = self.__roundTimeSpent(timeSpent)
             showSeconds = self.__show_seconds()
         else:
@@ -880,10 +880,10 @@ class EffortViewerForSelectedTasks(EffortViewer):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("settingsSection", "effortviewerforselectedtasks")
         self.__viewerContainer = kwargs.pop("viewerContainer")
-        activeViewer = self.__viewerContainer.activeViewer()
+        active_viewer = self.__viewerContainer.active_viewer()
         self.__currentTaskViewer = (
-            activeViewer
-            if activeViewer is not None and activeViewer.isShowingTasks()
+            active_viewer
+            if active_viewer is not None and active_viewer.is_showing_tasks()
             else None
         )
         pub.subscribe(self.onTaskSelectionChanged, "all.viewer.status")
@@ -897,6 +897,6 @@ class EffortViewerForSelectedTasks(EffortViewer):
         return []
 
     def onTaskSelectionChanged(self, viewer):
-        if viewer.isShowingTasks():
+        if viewer.is_showing_tasks():
             self.__currentTaskViewer = viewer
             self._refresh(clear=True)

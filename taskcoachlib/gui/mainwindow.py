@@ -123,7 +123,7 @@ class MainWindow(
             self.__create_reminder_controller()
         finally:
             self.Thaw()
-        wx.CallAfter(self.viewer.componentsCreated)
+        wx.CallAfter(self.viewer.components_created)
 
     def _create_viewer_container(self):  # Not private for test purposes
         # pylint: disable=W0201
@@ -153,9 +153,9 @@ class MainWindow(
             self, self.taskFile.tasks(), self.taskFile.efforts(), self.settings
         )
 
-    def addPane(self, page, caption, floating=False):  # pylint: disable=W0221
+    def add_pane(self, page, caption, floating=False):  # pylint: disable=W0221
         name = page.settingsSection()
-        super().addPane(page, caption, name, floating=floating)
+        super().add_pane(page, caption, name, floating=floating)
 
     def __init_window(self):
         self.__filename = self.taskFile.filename()
@@ -358,7 +358,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         # Close ALL viewers (not just floating)
         viewers_to_close = list(self.viewer.viewers)  # Copy the list
         for v in viewers_to_close:
-            self.viewer.closeViewer(v)
+            self.viewer.close_viewer(v)
             self.viewer.viewers.remove(v)
 
         # Process closures
@@ -548,7 +548,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
     # Viewers
 
     def advanceSelection(self, forward):
-        self.viewer.advanceSelection(forward)
+        self.viewer.advance_selection(forward)
 
     def viewerCount(self):
         return len(self.viewer)

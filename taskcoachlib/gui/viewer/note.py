@@ -283,7 +283,7 @@ class BaseNoteViewer(
             idColumn,
         ]
 
-    def isShowingNotes(self):
+    def is_showing_notes(self):
         return True
 
     def statusMessages(self):

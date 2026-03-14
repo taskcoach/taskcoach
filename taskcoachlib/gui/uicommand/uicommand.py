@@ -713,9 +713,9 @@ class FileExportAsICalendar(FileExportCommand):
     @staticmethod
     def exportableViewer(aViewer):
         """Return whether the viewer can be exported to iCalendar format."""
-        return aViewer.isShowingTasks() or (
-            aViewer.isShowingEffort()
-            and not aViewer.isShowingAggregatedEffort()
+        return aViewer.is_showing_tasks() or (
+            aViewer.is_showing_effort()
+            and not aViewer.is_showing_aggregated_effort()
         )
 
 
@@ -1393,19 +1393,19 @@ class RenameViewer(ViewerCommand):
         )
 
     def do_command(self, event):
-        activeViewer = self.viewer.activeViewer()
-        viewerNameDialog = wx.TextEntryDialog(
+        active_viewer = self.viewer.active_viewer()
+        viewer_name_dialog = wx.TextEntryDialog(
             self.main_window(),
             _("New title for the viewer:"),
             _("Rename viewer"),
-            activeViewer.title(),
+            active_viewer.title(),
         )
-        if viewerNameDialog.ShowModal() == wx.ID_OK:
-            activeViewer.setTitle(viewerNameDialog.GetValue())
-        viewerNameDialog.Destroy()
+        if viewer_name_dialog.ShowModal() == wx.ID_OK:
+            active_viewer.set_title(viewer_name_dialog.GetValue())
+        viewer_name_dialog.Destroy()
 
     def enabled(self, event):
-        return bool(self.viewer.activeViewer())
+        return bool(self.viewer.active_viewer())
 
 
 class ActivateViewer(ViewerCommand):
@@ -1414,7 +1414,7 @@ class ActivateViewer(ViewerCommand):
         super().__init__(*args, **kwargs)
 
     def do_command(self, event):
-        self.viewer.containerWidget.advanceSelection(self.direction)
+        self.viewer.containerWidget.advance_selection(self.direction)
 
     def enabled(self, event):
         return self.viewer.containerWidget.viewerCount() > 1
@@ -1431,7 +1431,7 @@ class HideCurrentColumn(ViewerCommand):
 
     def do_command(self, event):
         columnPopupMenu = event.GetEventObject()
-        self.viewer.hideColumn(columnPopupMenu.columnIndex)
+        self.viewer.hide_column(columnPopupMenu.columnIndex)
 
     def enabled(self, event):
         # Unfortunately the event (an UpdateUIEvent) does not give us any
@@ -1447,7 +1447,7 @@ class HideCurrentColumn(ViewerCommand):
         # don't understand why. Work around as follows:
         if columnIndex == -1:
             columnIndex = 0
-        return self.viewer.isHideableColumn(columnIndex)
+        return self.viewer.is_hideable_column(columnIndex)
 
 
 class ViewColumn(ViewerCommand, settings_uicommand.UICheckCommand):
@@ -1532,7 +1532,7 @@ class ViewExpandAll(ViewerCommand):
         return self.viewer.is_tree_viewer()
 
     def do_command(self, event):
-        self.viewer.expandAll()
+        self.viewer.expand_all()
 
 
 class ViewCollapseAll(ViewerCommand):
@@ -1554,7 +1554,7 @@ class ViewCollapseAll(ViewerCommand):
         return self.viewer.is_tree_viewer()
 
     def do_command(self, event):
-        self.viewer.collapseAll()
+        self.viewer.collapse_all()
 
 
 class ViewerSortByCommand(ViewerCommand, settings_uicommand.UIRadioCommand):
@@ -2451,7 +2451,7 @@ class ToggleCategory(ViewerCommand):
             return False
         if not (self.viewer.is_task or self.viewer.is_note):
             return False
-        if self.viewer.isShowingCategories():
+        if self.viewer.is_showing_categories():
             return False
         mutual_exclusive_ancestors = [
             ancestor
@@ -2654,18 +2654,18 @@ class EffortNew(
         if not self.taskList:
             return False
         # When viewer is showing tasks, require a task to be selected
-        if self.viewer and self.viewer.isShowingTasks():
+        if self.viewer and self.viewer.is_showing_tasks():
             return bool(self.viewer.curselection())
         return True
 
     def do_command(self, event, show=True):
         if (
             self.viewer
-            and self.viewer.isShowingTasks()
+            and self.viewer.is_showing_tasks()
             and self.viewer.curselection()
         ):
             selected_tasks = self.viewer.curselection()
-        elif self.viewer and self.viewer.isShowingEffort():
+        elif self.viewer and self.viewer.is_showing_effort():
             selected_efforts = self.viewer.curselection()
             if selected_efforts:
                 selected_tasks = [selected_efforts[0].task()]
@@ -3041,7 +3041,7 @@ class CategoryCheckAll(ViewerCommand):
         )
 
     def do_command(self, event):
-        self.viewer.checkAllCategories()
+        self.viewer.check_all_categories()
 
 
 class CategoryUncheckAll(ViewerCommand):
@@ -3060,7 +3060,7 @@ class CategoryUncheckAll(ViewerCommand):
         )
 
     def do_command(self, event):
-        self.viewer.uncheckAllCategories()
+        self.viewer.uncheck_all_categories()
 
 
 class NoteNew(NotesCommand, settings_uicommand.SettingsCommand, ViewerCommand):
@@ -3077,7 +3077,7 @@ class NoteNew(NotesCommand, settings_uicommand.SettingsCommand, ViewerCommand):
         )
 
     def do_command(self, event, show=True):  # pylint: disable=W0221
-        if self.viewer and self.viewer.isShowingNotes():
+        if self.viewer and self.viewer.is_showing_notes():
             noteDialog = self.viewer.newItemDialog(icon_id=self.icon_id)
         else:
             newNoteCommand = command.NewNoteCommand(
@@ -3199,7 +3199,7 @@ class AttachmentOpen(
 
 
     def enabled(self, event):
-        return self.viewer.has_selection and self.viewer.isShowingAttachments()
+        return self.viewer.has_selection and self.viewer.is_showing_attachments()
 
     def do_command(
         self, event, showerror=wx.MessageBox

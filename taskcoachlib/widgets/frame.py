@@ -21,24 +21,24 @@ import wx.lib.agw.aui as aui
 from taskcoachlib import operating_system
 
 
-# --- Rebuild guard: block input during list/tree rebuilds ---
+# --- Rebuild guard: block motion events during list/tree rebuilds ---
 
-# Mouse and keyboard event types to eat during rebuild
-_INPUT_EVENTS = {
-    wx.wxEVT_LEFT_DOWN, wx.wxEVT_LEFT_UP, wx.wxEVT_LEFT_DCLICK,
-    wx.wxEVT_RIGHT_DOWN, wx.wxEVT_RIGHT_UP, wx.wxEVT_RIGHT_DCLICK,
-    wx.wxEVT_MIDDLE_DOWN, wx.wxEVT_MIDDLE_UP, wx.wxEVT_MIDDLE_DCLICK,
-    wx.wxEVT_MOTION, wx.wxEVT_MOUSEWHEEL,
+# Motion event types to eat during rebuild.  Only motion events are
+# suppressed - clicks, keyboard, and scroll are passed through so
+# the app remains responsive.  Motion events drive the AUI cascade
+# (OnMotion -> hover -> repaint -> repeat) and must be suppressed.
+_MOTION_EVENTS = {
+    wx.wxEVT_MOTION,
     wx.wxEVT_ENTER_WINDOW, wx.wxEVT_LEAVE_WINDOW,
-    wx.wxEVT_KEY_DOWN, wx.wxEVT_KEY_UP, wx.wxEVT_CHAR, wx.wxEVT_CHAR_HOOK,
 }
 
 
 class _RebuildInputFilter(wx.EventFilter):
-    """Silently eat mouse and keyboard events during rebuild.
+    """Silently eat mouse motion events during rebuild.
 
-    No visual effect — no gray, no disable flicker.  Just drops
-    input events so mouse movement can't drive the AUI cascade.
+    No visual effect - no gray, no disable flicker.  Just drops
+    motion events so mouse movement can't drive the AUI cascade.
+    Clicks, keyboard, and scroll events pass through normally.
     """
     active = False
     _refcount = 0
@@ -47,8 +47,7 @@ class _RebuildInputFilter(wx.EventFilter):
     def FilterEvent(self, event):
         if not self.active:
             return self.Event_Skip
-        etype = event.GetEventType()
-        if etype in _INPUT_EVENTS:
+        if event.GetEventType() in _MOTION_EVENTS:
             return self.Event_Processed
         return self.Event_Skip
 
@@ -127,7 +126,7 @@ class AuiManagedFrameWithDynamicCenterPane(wx.Frame):
         super().__init__(*args, **kwargs)
 
         # Build AUI style flags with live resize for visual feedback when dragging sashes
-        agwStyle = (
+        agw_style = (
             aui.AUI_MGR_DEFAULT
             | aui.AUI_MGR_ALLOW_ACTIVE_PANE
             | aui.AUI_MGR_LIVE_RESIZE  # Live visual feedback when dragging sashes
@@ -135,9 +134,9 @@ class AuiManagedFrameWithDynamicCenterPane(wx.Frame):
 
         if not operating_system.isWindows():
             # With this style on Windows, you can't dock back floating frames
-            agwStyle |= aui.AUI_MGR_USE_NATIVE_MINIFRAMES
+            agw_style |= aui.AUI_MGR_USE_NATIVE_MINIFRAMES
 
-        self.manager = aui.AuiManager(self, agwStyle)
+        self.manager = aui.AuiManager(self, agw_style)
 
         # Throttle AUI sash resize updates to ~30fps to reduce flickering
         _install_sash_resize_optimization(self.manager)
@@ -148,32 +147,32 @@ class AuiManagedFrameWithDynamicCenterPane(wx.Frame):
             | aui.AUI_NB_SUB_NOTEBOOK
             | aui.AUI_NB_SCROLL_BUTTONS
         )
-        self.bindEvents()
+        self.bind_events()
 
-    def bindEvents(self):
-        for eventType in aui.EVT_AUI_PANE_CLOSE, aui.EVT_AUI_PANE_FLOATING:
-            self.manager.Bind(eventType, self.onPaneClosingOrFloating)
+    def bind_events(self):
+        for event_type in aui.EVT_AUI_PANE_CLOSE, aui.EVT_AUI_PANE_FLOATING:
+            self.manager.Bind(event_type, self.on_pane_closing_or_floating)
 
-    def onPaneClosingOrFloating(self, event):
+    def on_pane_closing_or_floating(self, event):
         pane = event.GetPane()
-        dockedPanes = self.dockedPanes()
-        if self.isCenterPane(pane) and len(dockedPanes) == 1:
+        docked_panes = self.docked_panes()
+        if self.is_center_pane(pane) and len(docked_panes) == 1:
             event.Veto()
         else:
             event.Skip()
-            if self.isCenterPane(pane):
-                if pane in dockedPanes:
-                    dockedPanes.remove(pane)
-                dockedPanes[0].Center()
+            if self.is_center_pane(pane):
+                if pane in docked_panes:
+                    docked_panes.remove(pane)
+                docked_panes[0].Center()
 
-    def addPane(self, window, caption, name, floating=False):
+    def add_pane(self, window, caption, name, floating=False):
         x, y = 0, 0
         if self.GetTopLevelParent().IsShown():
             x, y = window.GetPosition()
             x, y = window.ClientToScreen(x, y)
-        paneInfo = aui.AuiPaneInfo()
-        paneInfo = (
-            paneInfo.CloseButton(True)
+        pane_info = aui.AuiPaneInfo()
+        pane_info = (
+            pane_info.CloseButton(True)
             .Floatable(True)
             .Name(name)
             .Caption(caption)
@@ -186,17 +185,17 @@ class AuiManagedFrameWithDynamicCenterPane(wx.Frame):
             .DestroyOnClose()
         )
         if floating:
-            paneInfo.Float()
-        if not self.dockedPanes():
+            pane_info.Float()
+        if not self.docked_panes():
             # First pane goes to center
-            paneInfo = paneInfo.Center()
-        self.manager.AddPane(window, paneInfo)
+            pane_info = pane_info.Center()
+        self.manager.AddPane(window, pane_info)
         self.manager.Update()
 
-    def setPaneTitle(self, window, title):
+    def set_pane_title(self, window, title):
         self.manager.GetPane(window).Caption(title)
 
-    def dockedPanes(self):
+    def docked_panes(self):
         return [
             pane
             for pane in self.manager.GetAllPanes()
@@ -209,5 +208,5 @@ class AuiManagedFrameWithDynamicCenterPane(wx.Frame):
         self.manager.GetPane(window).Float()
 
     @staticmethod
-    def isCenterPane(pane):
+    def is_center_pane(pane):
         return pane.dock_direction_get() == aui.AUI_DOCK_CENTER

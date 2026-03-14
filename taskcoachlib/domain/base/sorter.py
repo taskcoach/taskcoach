@@ -27,8 +27,8 @@ class Sorter(patterns.ListDecorator):
         self._sortKeys = kwargs.pop("sortBy", ["subject"])
         self._sortCaseSensitive = kwargs.pop("sortCaseSensitive", True)
         super().__init__(*args, **kwargs)
-        for sortKey in self._sortKeys:
-            self._registerObserverForAttribute(sortKey.lstrip("-"))
+        for sort_key in self._sortKeys:
+            self._registerObserverForAttribute(sort_key.lstrip("-"))
         self.reset()
 
     def thaw(self):
@@ -38,11 +38,11 @@ class Sorter(patterns.ListDecorator):
 
     def detach(self):
         super().detach()
-        for sortKey in self._sortKeys:
-            self._removeObserverForAttribute(sortKey.lstrip("-"))
+        for sort_key in self._sortKeys:
+            self._removeObserverForAttribute(sort_key.lstrip("-"))
 
     @classmethod
-    def sortEventType(cls):
+    def sort_event_type(cls):
         return "pubsub.%s.sorted" % cls.__name__
 
     @patterns.eventSource
@@ -50,97 +50,108 @@ class Sorter(patterns.ListDecorator):
         super().extendSelf(items, event)
         self.reset()
 
-    def isAscending(self):
+    def is_ascending(self):
         if self._sortKeys:
             return not self._sortKeys[0].startswith("-")
         return True
 
-    def sortKeys(self):
+    def sort_keys(self):
         return self._sortKeys
 
     # We don't implement removeItemsFromSelf() because there is no need
     # to resort when items are removed since after removing items the
     # remaining items are still in the right order.
 
-    def sortBy(self, sortKey):
-        if self._sortKeys and self._sortKeys[0] == sortKey:
-            if sortKey == "ordering":
+    def sort_by(self, sort_key):
+        if self._sortKeys and self._sortKeys[0] == sort_key:
+            if sort_key == "ordering":
                 return
-            self._sortKeys[0] = "-" + sortKey
-        elif self._sortKeys and self._sortKeys[0] == "-" + sortKey:
-            self._sortKeys[0] = sortKey
-        elif self._sortKeys and sortKey in self._sortKeys:
-            self._sortKeys.remove(sortKey)
-            self._sortKeys.insert(0, sortKey)
-        elif self._sortKeys and ("-" + sortKey) in self._sortKeys:
-            self._sortKeys.remove("-" + sortKey)
-            self._sortKeys.insert(0, sortKey)
+            self._sortKeys[0] = "-" + sort_key
+        elif self._sortKeys and self._sortKeys[0] == "-" + sort_key:
+            self._sortKeys[0] = sort_key
+        elif self._sortKeys and sort_key in self._sortKeys:
+            self._sortKeys.remove(sort_key)
+            self._sortKeys.insert(0, sort_key)
+        elif self._sortKeys and ("-" + sort_key) in self._sortKeys:
+            self._sortKeys.remove("-" + sort_key)
+            self._sortKeys.insert(0, sort_key)
         else:
-            self._sortKeys.insert(0, sortKey)
-            self._registerObserverForAttribute(sortKey)
+            self._sortKeys.insert(0, sort_key)
+            self._registerObserverForAttribute(sort_key)
 
         self.reset()
 
-    def sortCaseSensitive(self, sortCaseSensitive):
-        self._sortCaseSensitive = sortCaseSensitive
+    def sort_case_sensitive(self, sort_case_sensitive):
+        self._sortCaseSensitive = sort_case_sensitive
         self.reset()
 
-    def sortAscending(self, ascending=True):
+    def sort_ascending(self, ascending=True):
         if self._sortKeys:
             if (ascending and self._sortKeys[0].startswith("-")) or (
                 not ascending and not self._sortKeys[0].startswith("-")
             ):
-                self.sortBy(self._sortKeys[0].lstrip("-"))
+                self.sort_by(self._sortKeys[0].lstrip("-"))
 
-    def reset(self, forceEvent=False):
+    def reset(self, force_event=False):
         """reset does the actual sorting. If the order of the list changes,
         observers are notified by means of the list-sorted event."""
         if self.isFrozen():
             return
 
-        oldSelf = self[:]
+        old_self = self[:]
         # XXXTODO: create only one function with all keys ? Reversing may
         # be problematic.
-        for sortKey in reversed(self._sortKeys):
+        # UUID tiebreaker first (least significant) - guarantees
+        # deterministic ordering for items with equal sort keys.
+        self.sort(key=lambda item: item.id())
+        for sort_key in reversed(self._sortKeys):
             self.sort(
-                key=self.createSortKeyFunction(sortKey.lstrip("-")),
-                reverse=sortKey.startswith("-"),
+                key=self.create_sort_key_function(sort_key.lstrip("-")),
+                reverse=sort_key.startswith("-"),
             )
-        if forceEvent or self != oldSelf:
-            pub.sendMessage(self.sortEventType(), sender=self)
+        if force_event or self != old_self:
+            pub.sendMessage(self.sort_event_type(), sender=self)
 
-    def createSortKeyFunction(self, sortKey):
-        """createSortKeyFunction returns a function that is passed to the
+    def create_sort_key_function(self, sort_key):
+        """create_sort_key_function returns a function that is passed to the
         builtin list.sort method to extract the sort key from each element
         in the list. We expect the domain object class to provide a
         <sortKey>SortFunction(sortCaseSensitive) method that returns the
         sortKeyFunction for the sortKey."""
-        return self._getSortKeyFunction(sortKey)(
+        return self._getSortKeyFunction(sort_key)(
             sortCaseSensitive=self._sortCaseSensitive
         )
 
-    def _getSortKeyFunction(self, sortKey):
+    def _getSortKeyFunction(self, sort_key):
         try:
-            return getattr(self.DomainObjectClass, "%sSortFunction" % sortKey)
+            return getattr(self.DomainObjectClass,
+                           "%sSortFunction" % sort_key)
         except AttributeError:
+            from taskcoachlib.meta.debug import log_step
+            log_step('%sSortFunction not found on %s - falling back '
+                     'to subject'
+                     % (sort_key, self.DomainObjectClass.__name__),
+                     prefix='SORTER')
             return self._getSortKeyFunction("subject")
 
     def _registerObserverForAttribute(self, attribute):
-        for eventType in self._getSortEventTypes(attribute):
-            if eventType.startswith("pubsub"):
-                pub.subscribe(self.onAttributeChanged, eventType)
+        for event_type in self._getSortEventTypes(attribute):
+            if event_type.startswith("pubsub"):
+                pub.subscribe(self.onAttributeChanged, event_type)
             else:
                 patterns.Publisher().registerObserver(
-                    self.onAttributeChanged_Deprecated, eventType=eventType
+                    self.onAttributeChanged_Deprecated,
+                    eventType=event_type,
                 )
 
     def _removeObserverForAttribute(self, attribute):
-        for eventType in self._getSortEventTypes(attribute):
-            if eventType.startswith("pubsub"):
-                pub.unsubscribe(self.onAttributeChanged, eventType)
+        for event_type in self._getSortEventTypes(attribute):
+            if event_type.startswith("pubsub"):
+                pub.unsubscribe(self.onAttributeChanged, event_type)
             else:
                 patterns.Publisher().removeObserver(
-                    self.onAttributeChanged_Deprecated, eventType=eventType
+                    self.onAttributeChanged_Deprecated,
+                    eventType=event_type,
                 )
 
     def onAttributeChanged(self, newValue, sender):  # pylint: disable=W0613
@@ -166,8 +177,8 @@ class TreeSorter(Sorter):
     def tree_mode(self):
         return True
 
-    def createSortKeyFunction(self, key):
-        """createSortKeyFunction returns a function that is passed to the
+    def create_sort_key_function(self, key):
+        """create_sort_key_function returns a function that is passed to the
         builtin list.sort method to extract the sort key from each element
         in the list. We expect the domain object class to provide a
         <sortKey>SortFunction(sortCaseSensitive, tree_mode) method that
@@ -186,15 +197,15 @@ class TreeSorter(Sorter):
         return super().extendSelf(items, event=event)
 
     @patterns.eventSource
-    def removeItemsFromSelf(self, itemsToRemove, event=None):
+    def removeItemsFromSelf(self, items_to_remove, event=None):
         self.__invalidateRootItemCache()
         # FIXME: Why is it necessary to remove all children explicitly?
-        itemsToRemove = set(itemsToRemove)
+        items_to_remove = set(items_to_remove)
         if self.tree_mode():
-            for item in itemsToRemove.copy():
-                itemsToRemove.update(item.children(recursive=True))
-        itemsToRemove = [item for item in itemsToRemove if item in self]
-        return super().removeItemsFromSelf(itemsToRemove, event=event)
+            for item in items_to_remove.copy():
+                items_to_remove.update(item.children(recursive=True))
+        items_to_remove = [item for item in items_to_remove if item in self]
+        return super().removeItemsFromSelf(items_to_remove, event=event)
 
     def rootItems(self):
         """Return the root items, i.e. items without a parent."""

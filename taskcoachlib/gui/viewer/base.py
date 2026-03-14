@@ -65,7 +65,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         # memory leakage:
         self._popupMenus = []
         # What are we presenting:
-        self.__presentation = self.createSorter(
+        self.__presentation = self.create_sorter(
             self.createFilter(self.domainObjectsToView())
         )
         # The widget used to present the presentation:
@@ -75,19 +75,17 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         )
         self.toolbar = toolbar.ToolBar(self, settings,
                                        (toolbar.TOOLBAR_ICON_SIZE,) * 2)
-        self.initLayout()
-        self.registerPresentationObservers()
+        self.init_layout()
+        self.register_presentation_observers()
         self.refresh()
 
-        pub.subscribe(self.onBeginIO, "taskfile.aboutToRead")
-        pub.subscribe(self.onBeginIO, "taskfile.aboutToClear")
-        pub.subscribe(self.onBeginIO, "taskfile.aboutToSave")
-        pub.subscribe(self.onEndIO, "taskfile.justRead")
-        pub.subscribe(self.onEndIO, "taskfile.justCleared")
-        pub.subscribe(self.onEndIO, "taskfile.justSaved")
+        pub.subscribe(self.on_begin_io, "taskfile.aboutToRead")
+        pub.subscribe(self.on_begin_io, "taskfile.aboutToClear")
+        pub.subscribe(self.on_end_io, "taskfile.justRead")
+        pub.subscribe(self.on_end_io, "taskfile.justCleared")
         # Subscribe to bulk operation signals to freeze/thaw during batch updates
-        pub.subscribe(self.onBeginBulkOperation, "command.aboutToBulkModify")
-        pub.subscribe(self.onEndBulkOperation, "command.justBulkModified")
+        pub.subscribe(self.on_begin_bulk_operation, "command.aboutToBulkModify")
+        pub.subscribe(self.on_end_bulk_operation, "command.justBulkModified")
 
         wx.CallAfter(self.__DisplayBalloon)
 
@@ -117,22 +115,22 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
                 ),
             )
 
-    def onBeginIO(self, taskFile):
+    def on_begin_io(self, taskFile):
         self.__freezeCount += 1
         self.__presentation.freeze()
 
-    def onEndIO(self, taskFile):
+    def on_end_io(self, taskFile):
         self.__freezeCount -= 1
         self.__presentation.thaw()
         if self.__freezeCount == 0:
             self.refresh()
 
-    def onBeginBulkOperation(self):
+    def on_begin_bulk_operation(self):
         """Freeze viewer and presentation to batch updates during bulk operations."""
         self.__freezeCount += 1
         self.__presentation.freeze()
 
-    def onEndBulkOperation(self):
+    def on_end_bulk_operation(self):
         """Thaw viewer and presentation after bulk operation, refresh only changed items."""
         self.__freezeCount -= 1
         self.__presentation.thaw()
@@ -176,19 +174,19 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         of objects passed to the viewer constructor."""
         raise NotImplementedError
 
-    def registerPresentationObservers(self):
-        self.removeObserver(self.onPresentationChanged)
+    def register_presentation_observers(self):
+        self.removeObserver(self.on_presentation_changed)
         self.registerObserver(
-            self.onPresentationChanged,
+            self.on_presentation_changed,
             eventType=self.presentation().addItemEventType(),
             eventSource=self.presentation(),
         )
         self.registerObserver(
-            self.onPresentationChanged,
+            self.on_presentation_changed,
             eventType=self.presentation().removeItemEventType(),
             eventSource=self.presentation(),
         )
-        self.registerObserver(self.onNewItem, eventType="newitem")
+        self.registerObserver(self.on_new_item, eventType="newitem")
 
     def detach(self):
         """Should be called by viewer.container before closing the viewer"""
@@ -205,27 +203,25 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             if hasattr(observer, 'removeInstance'):
                 observer.removeInstance()
 
-        for popupMenu in self._popupMenus:
+        for popup_menu in self._popupMenus:
             try:
-                popupMenu.clearMenu()
-                popupMenu.Destroy()
+                popup_menu.clearMenu()
+                popup_menu.Destroy()
             except RuntimeError:
                 log_step("detach: popup menu already dead %x" %
-                         id(popupMenu), prefix="DEAD-OBJ")
+                         id(popup_menu), prefix="DEAD-OBJ")
 
-        pub.unsubscribe(self.onBeginIO, "taskfile.aboutToRead")
-        pub.unsubscribe(self.onBeginIO, "taskfile.aboutToClear")
-        pub.unsubscribe(self.onBeginIO, "taskfile.aboutToSave")
-        pub.unsubscribe(self.onEndIO, "taskfile.justRead")
-        pub.unsubscribe(self.onEndIO, "taskfile.justCleared")
-        pub.unsubscribe(self.onEndIO, "taskfile.justSaved")
-        pub.unsubscribe(self.onBeginBulkOperation, "command.aboutToBulkModify")
-        pub.unsubscribe(self.onEndBulkOperation, "command.justBulkModified")
+        pub.unsubscribe(self.on_begin_io, "taskfile.aboutToRead")
+        pub.unsubscribe(self.on_begin_io, "taskfile.aboutToClear")
+        pub.unsubscribe(self.on_end_io, "taskfile.justRead")
+        pub.unsubscribe(self.on_end_io, "taskfile.justCleared")
+        pub.unsubscribe(self.on_begin_bulk_operation, "command.aboutToBulkModify")
+        pub.unsubscribe(self.on_end_bulk_operation, "command.justBulkModified")
 
         self.presentation().detach()
         self.toolbar.detach()
 
-    def viewerStatusEventType(self):
+    def viewer_status_event_type(self):
         return "viewer%s.status" % id(self)
 
     def selection_changed_event_type(self):
@@ -274,8 +270,8 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         mixins."""
         return False
 
-    def sendViewerStatusEvent(self):
-        pub.sendMessage(self.viewerStatusEventType(), viewer=self)
+    def send_viewer_status_event(self):
+        pub.sendMessage(self.viewer_status_event_type(), viewer=self)
 
     def statusMessages(self):
         return "", ""
@@ -286,15 +282,15 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             or self.defaultTitle
         )
 
-    def setTitle(self, title):
+    def set_title(self, title):
         titleToSaveInSettings = "" if title == self.defaultTitle else title
         self.settings.set(
             self.settingsSection(), "title", titleToSaveInSettings
         )
-        self.parent.setPaneTitle(self, title)
+        self.parent.set_pane_title(self, title)
         self.parent.manager.Update()
 
-    def initLayout(self):
+    def init_layout(self):
         self._sizer = wx.BoxSizer(wx.VERTICAL)  # pylint: disable=W0201
         self._sizer.Add(self.toolbar, flag=wx.EXPAND)
         self._sizer.Add(self.widget, proportion=1, flag=wx.EXPAND)
@@ -320,7 +316,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             log_step("SetFocus on dead widget %s: %s" %
                      (self.__class__.__name__, e), prefix="DEAD-OBJ")
 
-    def createSorter(self, collection):
+    def create_sorter(self, collection):
         """This method can be overridden to decorate the presentation with a
         sorter."""
         return collection
@@ -345,7 +341,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         else:
             self.refreshItems(*event.sources())
 
-    def onNewItem(self, event):
+    def on_new_item(self, event):
         self.select(
             [
                 item
@@ -354,30 +350,30 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             ]
         )
 
-    def onPresentationChanged(self, event):  # pylint: disable=W0613
+    def on_presentation_changed(self, event):  # pylint: disable=W0613
         """Whenever our presentation is changed (items added, items removed)
         the viewer refreshes itself."""
 
-        def itemsRemoved():
+        def items_removed():
             return event.type() == self.presentation().removeItemEventType()
 
         # BEFORE refresh - capture selection info while widget has old state
-        selectionInfo = None
-        if itemsRemoved():
-            selectionInfo = self._captureSelectionInfo()
+        selection_info = None
+        if items_removed():
+            selection_info = self._captureSelectionInfo()
 
         self.refresh()
 
         # AFTER refresh - select next if selection became empty
-        if itemsRemoved() and hasattr(self.widget, 'curselection') and not self.widget.curselection() and selectionInfo:
-            self.selectNextItemsAfterRemoval(selectionInfo)
+        if items_removed() and hasattr(self.widget, 'curselection') and not self.widget.curselection() and selection_info:
+            self.selectNextItemsAfterRemoval(selection_info)
         # Center on selected item — tree views use scrollToSelectionCentered,
         # list views use ensureSelectionVisible (native wx scrollbar management)
         if hasattr(self.widget, 'scrollToSelectionCentered'):
             self.widget.scrollToSelectionCentered()
         elif hasattr(self.widget, 'ensureSelectionVisible'):
             self.widget.ensureSelectionVisible()
-        self.sendViewerStatusEvent()
+        self.send_viewer_status_event()
 
     def _captureSelectionInfo(self):
         """Capture selection info before refresh. Override in subclasses."""
@@ -408,19 +404,19 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
 
             # Fire status event - StatusBar has its own 500ms debounce
             # No need to query selection here; status bar queries fresh when displaying
-            wx.CallAfter(self.sendViewerStatusEvent)
+            wx.CallAfter(self.send_viewer_status_event)
         except RuntimeError as e:
             log_step("onSelect on dead viewer %s: %s" %
                      (self.__class__.__name__, e), prefix="DEAD-OBJ")
 
-    def updateSelection(self, sendViewerStatusEvent=True):
+    def updateSelection(self, send_status_event=True):
         """Legacy method - kept for subclass compatibility.
 
         With SSOT selection (curselection() queries widget fresh),
         there's no cache to update. Just fires status event if requested.
         """
-        if sendViewerStatusEvent:
-            self.sendViewerStatusEvent()
+        if send_status_event:
+            self.send_viewer_status_event()
 
     def freeze(self):
         self.widget.Freeze()
@@ -463,9 +459,9 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         self.widget.select_all()
         # Use CallAfter to make sure we start processing selection events
         # after all selection events have been fired (and ignored):
-        wx.CallAfter(self.endOfSelectAll)
+        wx.CallAfter(self.end_of_select_all)
 
-    def endOfSelectAll(self):
+    def end_of_select_all(self):
         # Guard against deleted C++ object - can happen when wx.CallAfter
         # callback executes after window destruction (e.g., closing nested dialogs)
         try:
@@ -489,29 +485,29 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         displaying."""
         return self.__presentation
 
-    def setPresentation(self, presentation):
+    def set_presentation(self, presentation):
         """Change the presentation of the viewer."""
         self.__presentation = presentation
 
     def widgetCreationKeywordArguments(self):
         return {}
 
-    def isViewerContainer(self):
+    def is_viewer_container(self):
         return False
 
-    def isShowingTasks(self):
+    def is_showing_tasks(self):
         return False
 
-    def isShowingEffort(self):
+    def is_showing_effort(self):
         return False
 
-    def isShowingCategories(self):
+    def is_showing_categories(self):
         return False
 
-    def isShowingNotes(self):
+    def is_showing_notes(self):
         return False
 
-    def isShowingAttachments(self):
+    def is_showing_attachments(self):
         return False
 
     def visibleColumns(self):
@@ -838,13 +834,13 @@ class ListViewer(Viewer):  # pylint: disable=W0223
 class TreeViewer(Viewer):  # pylint: disable=W0223
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.widget.Bind(wx.EVT_TREE_ITEM_EXPANDED, self.onItemExpanded)
-        self.widget.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.onItemCollapsed)
+        self.widget.Bind(wx.EVT_TREE_ITEM_EXPANDED, self.on_item_expanded)
+        self.widget.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.on_item_collapsed)
 
-    def onItemExpanded(self, event):
+    def on_item_expanded(self, event):
         self.__handleExpandedOrCollapsedItem(event, expanded=True)
 
-    def onItemCollapsed(self, event):
+    def on_item_collapsed(self, event):
         self.__handleExpandedOrCollapsedItem(event, expanded=False)
 
     def __handleExpandedOrCollapsedItem(self, event, expanded):
@@ -856,7 +852,7 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
         item = self.widget.GetItemPyData(treeItem)
         item.expand(expanded, context=self.settingsSection())
 
-    def expandAll(self):
+    def expand_all(self):
         """Expand all items, recursively."""
         # Since the widget does not send EVT_TREE_ITEM_EXPANDED when expanding
         # all items, we have to do the bookkeeping ourselves:
@@ -864,7 +860,7 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
             item.expand(True, context=self.settingsSection(), notify=False)
         self.refresh()
 
-    def collapseAll(self):
+    def collapse_all(self):
         """Collapse all items, recursively."""
         # Since the widget does not send EVT_TREE_ITEM_COLLAPSED when collapsing
         # all items, we have to do the bookkeeping ourselves:
@@ -976,7 +972,7 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         self.__visibleColumns = []
         self.__columnUICommands = []
         super().__init__(*args, **kwargs)
-        self.initColumns()
+        self.init_columns()
         self.__initDone = True
         self.refresh()
 
@@ -1001,7 +997,7 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         if self and self.__initDone:
             super().refresh(*args, **kwargs)
 
-    def initColumns(self):
+    def init_columns(self):
         for column in self.columns():
             self.initColumn(column)
         if self.hasOrderingColumn():
@@ -1023,7 +1019,7 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
             self.__startObserving(column.eventTypes())
 
     def showColumnByName(self, columnName, show=True):
-        for column in self.hideableColumns():
+        for column in self.hideable_columns():
             if columnName == column.name():
                 isVisibleColumn = self.isVisibleColumn(column)
                 if (show and not isVisibleColumn) or (
@@ -1056,14 +1052,14 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         if refresh:
             self.widget.RefreshAllItems(len(self.presentation()))
 
-    def hideColumn(self, visibleColumnIndex):
+    def hide_column(self, visibleColumnIndex):
         column = self.visibleColumns()[visibleColumnIndex]
         self.showColumn(column, show=False)
 
     def columns(self):
         return self._columns
 
-    def selectableColumns(self):
+    def selectable_columns(self):
         return self._columns
 
     def isVisibleColumnByName(self, columnName):
@@ -1077,7 +1073,7 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
     def visibleColumns(self):
         return self.__visibleColumns
 
-    def hideableColumns(self):
+    def hideable_columns(self):
         return [
             column
             for column in self._columns
@@ -1087,12 +1083,12 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
             )
         ]
 
-    def isHideableColumn(self, visibleColumnIndex):
+    def is_hideable_column(self, visibleColumnIndex):
         column = self.visibleColumns()[visibleColumnIndex]
-        unhideableColumns = self.settings.getlist(
+        unhideable_columns = self.settings.getlist(
             self.settingsSection(), "columnsalwaysvisible"
         )
-        return column.name() not in unhideableColumns
+        return column.name() not in unhideable_columns
 
     def getColumnWidth(self, column_name):
         column_widths = self.settings.getdict(
@@ -1266,28 +1262,28 @@ class SortableViewerWithColumns(
     def initColumn(self, column):
         super().initColumn(column)
         if self.isSortedBy(column.name()):
-            self.widget.showSortColumn(column)
-            self.showSortOrder()
+            self.widget.show_sort_column(column)
+            self.show_sort_order()
 
     def setSortOrderAscending(self, *args, **kwargs):  # pylint: disable=W0221
         super().setSortOrderAscending(*args, **kwargs)
-        self.showSortOrder()
+        self.show_sort_order()
 
     def sortBy(self, *args, **kwargs):  # pylint: disable=W0221
         super().sortBy(*args, **kwargs)
-        self.showSortColumn()
-        self.showSortOrder()
+        self.show_sort_column()
+        self.show_sort_order()
 
-    def showSortColumn(self):
+    def show_sort_column(self):
         for column in self.columns():
             if self.isSortedBy(column.name()):
-                self.widget.showSortColumn(column)
+                self.widget.show_sort_column(column)
                 break
 
-    def showSortOrder(self):
-        self.widget.showSortOrder(image_list_cache.get_index(self.getSortOrderImage()))
+    def show_sort_order(self):
+        self.widget.show_sort_order(image_list_cache.get_index(self.get_sort_order_image()))
 
-    def getSortOrderImage(self):
+    def get_sort_order_image(self):
         # Arrow points in direction of sort: down for A→Z/old→new, up for Z→A/new→old
         return (
             "nuvola_actions_go-down"

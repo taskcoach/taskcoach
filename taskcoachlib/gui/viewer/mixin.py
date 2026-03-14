@@ -285,58 +285,58 @@ class SortableViewerMixin(object):
     def isSortable(self):
         return True
 
-    def registerPresentationObservers(self):
-        super().registerPresentationObservers()
+    def register_presentation_observers(self):
+        super().register_presentation_observers()
         pub.subscribe(
-            self.onSortOrderChanged, self.presentation().sortEventType()
+            self.on_sort_order_changed, self.presentation().sort_event_type()
         )
 
     def detach(self):
         super().detach()
         pub.unsubscribe(
-            self.onSortOrderChanged, self.presentation().sortEventType()
+            self.on_sort_order_changed, self.presentation().sort_event_type()
         )
 
-    def onSortOrderChanged(self, sender):
+    def on_sort_order_changed(self, sender):
         if sender == self.presentation():
             self.refresh()
-            self.sendViewerStatusEvent()
+            self.send_viewer_status_event()
 
-    def createSorter(self, presentation):
-        return self.SorterClass(presentation, **self.sorterOptions())
+    def create_sorter(self, presentation):
+        return self.SorterClass(presentation, **self.sorter_options())
 
-    def sorterOptions(self):
+    def sorter_options(self):
         return dict(
             sortBy=self.sortKey(), sortCaseSensitive=self.isSortCaseSensitive()
         )
 
-    def sortBy(self, sortKey):
-        self.presentation().sortBy(sortKey)
+    def sortBy(self, sort_key):
+        self.presentation().sort_by(sort_key)
         self.settings.set(
             self.settingsSection(),
             "sortby",
-            str(self.presentation().sortKeys()),
+            str(self.presentation().sort_keys()),
         )
 
-    def isSortedBy(self, sortKey):
-        sortKeys = self.presentation().sortKeys()
-        return sortKeys and (
-            sortKeys[0] == sortKey or sortKeys[0] == "-" + sortKey
+    def isSortedBy(self, sort_key):
+        sort_keys = self.presentation().sort_keys()
+        return sort_keys and (
+            sort_keys[0] == sort_key or sort_keys[0] == "-" + sort_key
         )
 
     def sortKey(self):
         return ast.literal_eval(self.settings.get(self.settingsSection(), "sortby"))
 
     def isSortOrderAscending(self):
-        sortKeys = self.presentation().sortKeys()
-        return sortKeys and not sortKeys[0].startswith("-")
+        sort_keys = self.presentation().sort_keys()
+        return sort_keys and not sort_keys[0].startswith("-")
 
     def setSortOrderAscending(self, ascending=True):
-        self.presentation().sortAscending(ascending)
+        self.presentation().sort_ascending(ascending)
         self.settings.set(
             self.settingsSection(),
             "sortby",
-            str(self.presentation().sortKeys()),
+            str(self.presentation().sort_keys()),
         )
 
     def isSortCaseSensitive(self):
@@ -344,11 +344,12 @@ class SortableViewerMixin(object):
             self.settingsSection(), "sortcasesensitive"
         )
 
-    def setSortCaseSensitive(self, sortCaseSensitive=True):
+    def setSortCaseSensitive(self, sort_case_sensitive=True):
         self.settings.set(
-            self.settingsSection(), "sortcasesensitive", str(sortCaseSensitive)
+            self.settingsSection(), "sortcasesensitive",
+            str(sort_case_sensitive),
         )
-        self.presentation().sortCaseSensitive(sortCaseSensitive)
+        self.presentation().sort_case_sensitive(sort_case_sensitive)
 
     def getSortUICommands(self):
         if not self._sortUICommands:
@@ -526,16 +527,16 @@ class SortableViewerForTasksMixin(
             self.settingsSection(), "sortbystatusfirst"
         )
 
-    def setSortByTaskStatusFirst(self, sortByTaskStatusFirst):
+    def setSortByTaskStatusFirst(self, sort_by_status_first):
         self.settings.set(
             self.settingsSection(),
             "sortbystatusfirst",
-            str(sortByTaskStatusFirst),
+            str(sort_by_status_first),
         )
-        self.presentation().sortByTaskStatusFirst(sortByTaskStatusFirst)
+        self.presentation().sort_by_task_status_first(sort_by_status_first)
 
-    def sorterOptions(self):
-        options = super().sorterOptions()
+    def sorter_options(self):
+        options = super().sorter_options()
         options.update(
             tree_mode=self.is_tree_viewer(),
             sortByTaskStatusFirst=self.isSortByTaskStatusFirst(),
@@ -624,9 +625,9 @@ class AttachmentDropTargetMixin(object):
         kwargs = super(
             AttachmentDropTargetMixin, self
         ).widgetCreationKeywordArguments()
-        kwargs["onDropURL"] = self.onDropURL
-        kwargs["onDropFiles"] = self.onDropFiles
-        kwargs["onDropMail"] = self.onDropMail
+        kwargs["on_drop_url"] = self.onDropURL
+        kwargs["on_drop_files"] = self.onDropFiles
+        kwargs["on_drop_mail"] = self.onDropMail
         return kwargs
 
     def _addAttachments(self, attachments, item, **itemDialogKwargs):

@@ -211,13 +211,13 @@ class BaseCategoryViewer(
             uicommand.NewSubItem(viewer=self),
         )
 
-    def checkAllCategories(self):
+    def check_all_categories(self):
         """Set all categories to filtered (checked) state."""
         for cat in self.presentation():
             cat.setFiltered(True)
         self.refresh()
 
-    def uncheckAllCategories(self):
+    def uncheck_all_categories(self):
         """Set all categories to unfiltered (unchecked) state."""
         for cat in self.presentation():
             cat.setFiltered(False)
@@ -303,18 +303,18 @@ class BaseCategoryViewer(
     def onCheck(self, event, final):
         categoryToFilter = self.widget.GetItemPyData(event.GetItem())
         categoryToFilter.setFiltered(event.GetItem().IsChecked())
-        self.sendViewerStatusEvent()  # Notify status observers like the status bar
+        self.send_viewer_status_event()  # Notify status observers like the status bar
 
-    def getIsItemChecked(self, item):
+    def get_is_item_checked(self, item):
         if isinstance(item, category.Category):
             return item.isFiltered()
         return False
 
-    def getItemParentHasExclusiveChildren(self, item):
+    def get_item_parent_has_exclusive_children(self, item):
         parent = item.parent()
         return parent and parent.hasExclusiveSubcategories()
 
-    def isShowingCategories(self):
+    def is_showing_categories(self):
         return True
 
     def statusMessages(self):

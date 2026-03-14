@@ -63,7 +63,7 @@ class ExportDialog(sized_controls.SizedDialog):
         return self.window.viewer
 
     def activeViewer(self):
-        return self.window.viewer.activeViewer()
+        return self.window.viewer.active_viewer()
 
     def options(self):
         result = dict()
@@ -213,7 +213,7 @@ class ColumnPicker(sized_controls.SizedPanel):
         objectType = getattr(viewer, 'coreObjectType', '')
         excluded = self.EXCLUDED_EXPORT_COLUMNS.get(objectType, set())
         headers = []
-        for column in viewer.selectableColumns():
+        for column in viewer.selectable_columns():
             if column.name() in excluded:
                 continue
             item = self.tree.AppendItem(root, column.header(), ct_type=1)

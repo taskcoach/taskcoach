@@ -55,11 +55,11 @@ You can edit this file, it will not be overwritten by %(name)s.
 class _ViewerProxy(object):
     """Lightweight viewer proxy for 'All' exports when no real viewer is available."""
 
-    def __init__(self, items, columns, title, isShowingTasks=False):
+    def __init__(self, items, columns, title, is_showing_tasks=False):
         self._items = items
         self._columns = columns
         self._title = title
-        self._isShowingTasks = isShowingTasks
+        self._is_showing_tasks = is_showing_tasks
 
     def title(self):
         return self._title
@@ -82,8 +82,8 @@ class _ViewerProxy(object):
     def isSortedBy(self, name):
         return False
 
-    def isShowingTasks(self):
-        return self._isShowingTasks
+    def is_showing_tasks(self):
+        return self._is_showing_tasks
 
 
 class HTMLWriter(object):
@@ -128,12 +128,12 @@ class HTMLWriter(object):
         """Create a viewer proxy for 'All' exports."""
         items = []
         title = "Export"
-        isShowingTasks = False
+        is_showing_tasks = False
         if taskFile:
             if viewerType == self.ALL_TASKS:
                 items = list(taskFile.tasks())
                 title = "Tasks"
-                isShowingTasks = True
+                is_showing_tasks = True
             elif viewerType == self.ALL_EFFORTS:
                 items = list(taskFile.efforts())
                 title = "Efforts"
@@ -143,7 +143,7 @@ class HTMLWriter(object):
             elif viewerType == self.ALL_NOTES:
                 items = list(taskFile.notes())
                 title = "Notes"
-        return _ViewerProxy(items, columns or [], title, isShowingTasks)
+        return _ViewerProxy(items, columns or [], title, is_showing_tasks)
 
     def _writeCSS(self, open=open):  # pylint: disable=W0622
         if not self.__cssFilename or os.path.exists(self.__cssFilename):

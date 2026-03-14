@@ -39,18 +39,18 @@ class ViewerContainer(object):
         self.viewers = []
         super().__init__(*args, **kwargs)
 
-    def componentsCreated(self):
+    def components_created(self):
         self._notifyActiveViewer = True
         # Activate the first viewer (TaskViewer) as the default at startup
         if self.viewers:
-            self.activateViewer(self.viewers[0])
+            self.activate_viewer(self.viewers[0])
 
-    def advanceSelection(self, forward):
+    def advance_selection(self, forward):
         """Activate the next viewer if forward is true else the previous
         viewer."""
         if len(self.viewers) <= 1:
             return  # Not enough viewers to advance selection
-        active_viewer = self.activeViewer()
+        active_viewer = self.active_viewer()
         current_index = (
             self.viewers.index(active_viewer) if active_viewer else 0
         )
@@ -67,19 +67,19 @@ class ViewerContainer(object):
                 if minimum_index < current_index <= maximum_index
                 else maximum_index
             )
-        self.activateViewer(self.viewers[new_index])
+        self.activate_viewer(self.viewers[new_index])
 
-    def isViewerContainer(self):
+    def is_viewer_container(self):
         """Return whether this is a viewer container or an actual viewer."""
         return True
 
     def __bind_event_handlers(self):
         """Register for pane closing, activating and floating events."""
-        self.containerWidget.Bind(aui.EVT_AUI_PANE_CLOSE, self.onPageClosed)
+        self.containerWidget.Bind(aui.EVT_AUI_PANE_CLOSE, self.on_page_closed)
         self.containerWidget.Bind(
-            aui.EVT_AUI_PANE_ACTIVATED, self.onPageChanged
+            aui.EVT_AUI_PANE_ACTIVATED, self.on_page_changed
         )
-        self.containerWidget.Bind(aui.EVT_AUI_PANE_FLOATED, self.onPageFloated)
+        self.containerWidget.Bind(aui.EVT_AUI_PANE_FLOATED, self.on_page_floated)
 
     def __getitem__(self, index):
         return self.viewers[index]
@@ -87,27 +87,27 @@ class ViewerContainer(object):
     def __len__(self):
         return len(self.viewers)
 
-    def addViewer(self, viewer, floating=False):
+    def add_viewer(self, viewer, floating=False):
         """Add a new pane with the specified viewer."""
-        self.containerWidget.addPane(viewer, viewer.title(), floating=floating)
+        self.containerWidget.add_pane(viewer, viewer.title(), floating=floating)
         self.viewers.append(viewer)
         if len(self.viewers) == 1:
-            self.activateViewer(viewer)
-        pub.subscribe(self.onStatusChanged, viewer.viewerStatusEventType())
+            self.activate_viewer(viewer)
+        pub.subscribe(self.on_status_changed, viewer.viewer_status_event_type())
 
-    def closeViewer(self, viewer):
+    def close_viewer(self, viewer):
         """Close the specified viewer."""
-        if viewer == self.activeViewer():
-            self.advanceSelection(False)
+        if viewer == self.active_viewer():
+            self.advance_selection(False)
         pane = self.containerWidget.manager.GetPane(viewer)
         self.containerWidget.manager.ClosePane(pane)
 
     def __getattr__(self, attribute):
         """Forward unknown attributes to the active viewer or the first
         viewer if there is no active viewer."""
-        return getattr(self.activeViewer() or self.viewers[0], attribute)
+        return getattr(self.active_viewer() or self.viewers[0], attribute)
 
-    def activeViewer(self):
+    def active_viewer(self):
         """Return the active (selected) viewer."""
         all_panes = self.containerWidget.manager.GetAllPanes()
         for pane in all_panes:
@@ -121,31 +121,31 @@ class ViewerContainer(object):
                     return pane.window
         return None
 
-    def activateViewer(self, viewer_to_activate):
+    def activate_viewer(self, viewer_to_activate):
         """Activate (select) the specified viewer."""
         self.containerWidget.manager.ActivatePane(viewer_to_activate)
-        paneInfo = self.containerWidget.manager.GetPane(viewer_to_activate)
-        if paneInfo.IsNotebookPage():
+        pane_info = self.containerWidget.manager.GetPane(viewer_to_activate)
+        if pane_info.IsNotebookPage():
             self.containerWidget.manager.ShowPane(viewer_to_activate, True)
-        self.sendViewerStatusEvent()
+        self.send_viewer_status_event()
 
     def __del__(self):
         pass  # Don't forward del to one of the viewers.
 
-    def onStatusChanged(self, viewer):
-        if self.activeViewer() == viewer:
-            self.sendViewerStatusEvent()
+    def on_status_changed(self, viewer):
+        if self.active_viewer() == viewer:
+            self.send_viewer_status_event()
         pub.sendMessage("all.viewer.status", viewer=viewer)
 
-    def onPageChanged(self, event):
+    def on_page_changed(self, event):
         """Handle pane activation events from AUI."""
         self.__ensure_active_viewer_has_focus()
-        self.sendViewerStatusEvent()
-        if self._notifyActiveViewer and self.activeViewer() is not None:
-            self.activeViewer().activate()
+        self.send_viewer_status_event()
+        if self._notifyActiveViewer and self.active_viewer() is not None:
+            self.active_viewer().activate()
         event.Skip()
 
-    def sendViewerStatusEvent(self):
+    def send_viewer_status_event(self):
         pub.sendMessage("viewer.status")
 
     def __ensure_active_viewer_has_focus(self):
@@ -154,7 +154,7 @@ class ViewerContainer(object):
         Simple rule: always set focus on the active viewer EXCEPT when a text
         control (search box, etc.) inside that viewer already has focus.
         """
-        viewer = self.activeViewer()
+        viewer = self.active_viewer()
         if not viewer:
             return
 
@@ -174,7 +174,7 @@ class ViewerContainer(object):
         except RuntimeError:
             pass
 
-    def onPageClosed(self, event):
+    def on_page_closed(self, event):
         if event.GetPane().IsToolbar():
             return
         window = event.GetPane().window
@@ -186,8 +186,8 @@ class ViewerContainer(object):
             # Window is a viewer, close it
             self.__close_viewer(window)
         # Make sure we have an active viewer
-        if not self.activeViewer():
-            self.activateViewer(self.viewers[0])
+        if not self.active_viewer():
+            self.activate_viewer(self.viewers[0])
         event.Skip()
 
     def __close_viewer(self, viewer):
@@ -199,13 +199,13 @@ class ViewerContainer(object):
             self.viewers.remove(viewer)
             # Unsubscribe from the viewer's status event before detaching
             try:
-                pub.unsubscribe(self.onStatusChanged, viewer.viewerStatusEventType())
+                pub.unsubscribe(self.on_status_changed, viewer.viewer_status_event_type())
             except Exception:
                 pass  # May already be unsubscribed
             viewer.detach()
 
     @staticmethod
-    def onPageFloated(event):
+    def on_page_floated(event):
         """Give floating pane accelerator keys for activating next and previous
         viewer."""
         viewer = event.GetPane().window

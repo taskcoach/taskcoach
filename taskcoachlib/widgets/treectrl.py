@@ -324,7 +324,51 @@ class TreeListCtrl(
         and selection suppression — NOT as a re-entry guard."""
         return self.__refreshing
 
+    def _snapshot_tree(self, parent_item):
+        """Return list of object IDs in depth-first order for current tree."""
+        result = []
+        child_item, cookie = self.GetFirstChild(parent_item)
+        while child_item:
+            obj = self.GetItemPyData(child_item)
+            result.append(obj.id() if obj else None)
+            result.extend(self._snapshot_tree(child_item))
+            child_item, cookie = self.GetNextChild(parent_item, cookie)
+        return result
+
+    def _snapshot_adapter(self, parent_object=None):
+        """Return list of object IDs in depth-first order from adapter."""
+        result = []
+        for child_object in self.__adapter.children(parent_object):
+            result.append(child_object.id())
+            if self.__adapter.getItemExpanded(child_object):
+                result.extend(self._snapshot_adapter(child_object))
+        return result
+
     def RefreshAllItems(self, count=0):  # pylint: disable=W0613
+        # Check if tree structure actually changed before rebuilding
+        root_item = self.GetRootItem()
+        if root_item:
+            current = self._snapshot_tree(root_item)
+            desired = self._snapshot_adapter()
+            if current and current == desired:
+                # Structure unchanged - refresh items in place
+                self._refresh_all_items_in_place(root_item)
+                return
+
+        self._do_full_rebuild()
+
+    def _refresh_all_items_in_place(self, parent_item):
+        """Refresh text, colors, font for all items without rebuilding."""
+        child_item, cookie = self.GetFirstChild(parent_item)
+        while child_item:
+            obj = self.GetItemPyData(child_item)
+            if obj is not None:
+                self._refreshObjectCompletely(child_item, obj)
+            self._refresh_all_items_in_place(child_item)
+            child_item, cookie = self.GetNextChild(parent_item, cookie)
+
+    def _do_full_rebuild(self):
+        """Full delete-and-recreate rebuild of the tree."""
         from taskcoachlib.widgets.frame import (
             _input_filter, _ensure_filter_installed,
         )
@@ -409,12 +453,12 @@ class TreeListCtrl(
             main.AdjustMyScrollbars()
             item = selections[0]
             item_y = item.GetY()
-            xUnit, yUnit = main.GetScrollPixelsPerUnit()
+            x_unit, y_unit = main.GetScrollPixelsPerUnit()
             client_h = main.GetClientSize().GetHeight()
             line_h = main.GetLineHeight(item)
             center_y = max(0, item_y - client_h // 2 + line_h // 2)
             x_pos = main.GetScrollPos(wx.HORIZONTAL)
-            main.Scroll(x_pos, center_y // yUnit if yUnit > 0 else 0)
+            main.Scroll(x_pos, center_y // y_unit if y_unit > 0 else 0)
 
     def RefreshItems(self, *objects):
         self.__selection = self.curselection()
@@ -767,9 +811,9 @@ class CheckTreeCtrl(TreeListCtrl):
             if hasattr(parent, "getIsItemCheckable")
             else lambda item: True
         )
-        self.getIsItemChecked = parent.getIsItemChecked
-        self.getItemParentHasExclusiveChildren = (
-            parent.getItemParentHasExclusiveChildren
+        self.get_is_item_checked = parent.get_is_item_checked
+        self.get_item_parent_has_exclusive_children = (
+            parent.get_item_parent_has_exclusive_children
         )
 
     def getItemCTType(self, domain_object):
@@ -779,7 +823,7 @@ class CheckTreeCtrl(TreeListCtrl):
         if self.getIsItemCheckable(domain_object):
             return (
                 2
-                if self.getItemParentHasExclusiveChildren(domain_object)
+                if self.get_item_parent_has_exclusive_children(domain_object)
                 else 1
             )
         else:
@@ -849,7 +893,7 @@ class CheckTreeCtrl(TreeListCtrl):
 
     def _refreshCheckState(self, item, domain_object):
         # Use CheckItem2 so no events get sent:
-        checked = self.getIsItemChecked(domain_object)
+        checked = self.get_is_item_checked(domain_object)
         if checked is None:
             # Mixed state - enable 3-state and set undetermined
             item.Set3State(True)

@@ -2316,7 +2316,7 @@ class LocalCategoryViewer(viewer.BaseCategoryViewer):  # pylint: disable=W0223
         for item in self.domainObjectsToView():
             item.expand(context=self.settingsSection(), notify=False)
 
-    def getIsItemChecked(self, category):  # pylint: disable=W0621
+    def get_is_item_checked(self, category):  # pylint: disable=W0621
         items_with_category = sum(
             1 for item in self.__items if category in item.categories()
         )
@@ -2585,7 +2585,7 @@ class LocalPrerequisiteViewer(
         self.__items = items
         super().__init__(*args, **kwargs)
 
-    def getIsItemChecked(self, item):
+    def get_is_item_checked(self, item):
         return item in self.__items[0].prerequisites()
 
     def getIsItemCheckable(self, item):
@@ -2594,7 +2594,7 @@ class LocalPrerequisiteViewer(
     def onCheck(self, event, final):
         item = self.widget.GetItemPyData(event.GetItem())
         is_checked = event.GetItem().IsChecked()
-        if is_checked != self.getIsItemChecked(item):
+        if is_checked != self.get_is_item_checked(item):
             checked, unchecked = ([item], []) if is_checked else ([], [item])
             command.TogglePrerequisiteCommand(
                 None,

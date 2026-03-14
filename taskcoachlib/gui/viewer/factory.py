@@ -102,7 +102,7 @@ class addViewers(object):  # pylint: disable=C0103, R0903
             viewer_instance = viewer_class(
                 *self.__viewer_init_args, **self._viewer_kwargs(viewer_class)
             )
-            self.__viewer_container.addViewer(
+            self.__viewer_container.add_viewer(
                 viewer_instance, floating=self.floating
             )
 
