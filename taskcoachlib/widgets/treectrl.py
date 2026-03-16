@@ -812,8 +812,8 @@ class CheckTreeCtrl(TreeListCtrl):
             else lambda item: True
         )
         self.get_is_item_checked = parent.get_is_item_checked
-        self.get_item_parent_has_exclusive_children = (
-            parent.get_item_parent_has_exclusive_children
+        self.getItemParentHasExclusiveChildren = (
+            parent.getItemParentHasExclusiveChildren
         )
 
     def getItemCTType(self, domain_object):
@@ -823,7 +823,7 @@ class CheckTreeCtrl(TreeListCtrl):
         if self.getIsItemCheckable(domain_object):
             return (
                 2
-                if self.get_item_parent_has_exclusive_children(domain_object)
+                if self.getItemParentHasExclusiveChildren(domain_object)
                 else 1
             )
         else:
