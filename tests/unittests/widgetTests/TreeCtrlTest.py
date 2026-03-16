@@ -39,7 +39,7 @@ class TreeCtrlTestCase(test.wxTestCase):
         self.frame.getItemImages = lambda item, column: {
             wx.TreeItemIcon_Normal: -1
         }
-        self.frame.getIsItemChecked = lambda item: False
+        self.frame.get_is_item_checked = lambda item: False
         self.frame.getItemExpanded = (
             lambda item: item not in self.collapsedItems
         )
@@ -262,7 +262,7 @@ class TreeListCtrlTest(TreeCtrlTestCase, CommonTestsMixin):
 
 class CheckTreeCtrlTest(TreeCtrlTestCase, CommonTestsMixin):
     def setUp(self):
-        self.frame.getItemParentHasExclusiveChildren = (
+        self.frame.get_item_parent_has_exclusive_children = (
             lambda item: item.subject().startswith("mutual")
         )
         super().setUp()
