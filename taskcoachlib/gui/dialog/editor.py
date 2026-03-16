@@ -2585,6 +2585,11 @@ class LocalPrerequisiteViewer(
         self.__items = items
         super().__init__(*args, **kwargs)
 
+    # Alias for snake_case compatibility with CheckTreeCtrl
+    get_item_parent_has_exclusive_children = (
+        viewer.CheckableTaskViewer.getItemParentHasExclusiveChildren
+    )
+
     def get_is_item_checked(self, item):
         return item in self.__items[0].prerequisites()
 
