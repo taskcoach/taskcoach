@@ -2241,10 +2241,10 @@ class CheckableTaskViewer(TaskViewer):  # pylint: disable=W0223
     def onCheck(self, event, final):
         pass
 
-    def getIsItemChecked(self, task):  # pylint: disable=W0613,W0621
+    def get_is_item_checked(self, task):  # pylint: disable=W0613,W0621
         return False
 
-    def getItemParentHasExclusiveChildren(
+    def get_item_parent_has_exclusive_children(
         self, task
     ):  # pylint: disable=W0613,W0621
         return False
