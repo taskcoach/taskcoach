@@ -1288,11 +1288,11 @@ class TaskViewer(
         if self.hasOrderingColumn():
             widget.SetMainColumn(1)
         widget.SetImageList(imageList)  # pylint: disable=E1101
-        widget.Bind(wx.EVT_TREE_BEGIN_LABEL_EDIT, self.onBeginEdit)
-        widget.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.onEndEdit)
+        widget.Bind(wx.EVT_TREE_BEGIN_LABEL_EDIT, self.on_begin_edit)
+        widget.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.on_end_edit)
         return widget
 
-    def onBeginEdit(self, event):
+    def on_begin_edit(self, event):
         """Make sure only the non-recursive part of the subject can be
         edited inline."""
         event.Skip()
@@ -1300,12 +1300,12 @@ class TaskViewer(
             # Make sure the text control only shows the non-recursive subject
             # by temporarily changing the item text into the non-recursive
             # subject. When the editing ends, we change the item text back into
-            # the recursive subject. See onEndEdit.
-            treeItem = event.GetItem()
-            editedTask = self.widget.GetItemPyData(treeItem)
-            self.widget.SetItemText(treeItem, editedTask.subject())
+            # the recursive subject. See on_end_edit.
+            tree_item = event.GetItem()
+            edited_task = self.widget.GetItemPyData(tree_item)
+            self.widget.SetItemText(tree_item, edited_task.subject())
 
-    def onEndEdit(self, event):
+    def on_end_edit(self, event):
         """Make sure only the non-recursive part of the subject can be
         edited inline."""
         event.Skip()
@@ -1313,10 +1313,10 @@ class TaskViewer(
             # Restore the recursive subject. Here we don't care whether users
             # actually changed the subject. If they did, the subject will
             # be updated via the regular notification mechanism.
-            treeItem = event.GetItem()
-            editedTask = self.widget.GetItemPyData(treeItem)
+            tree_item = event.GetItem()
+            edited_task = self.widget.GetItemPyData(tree_item)
             self.widget.SetItemText(
-                treeItem, editedTask.subject(recursive=True)
+                tree_item, edited_task.subject(recursive=True)
             )
 
     def _createColumns(self):
@@ -2024,8 +2024,8 @@ class TaskViewer(
         # Mode switch goes through Sorter.reset() which fires a sort event
         # (not add/remove), so onPresentationChanged doesn't fire.
         # Center on selected item explicitly.
-        if hasattr(self.widget, 'scrollToSelectionCentered'):
-            self.widget.scrollToSelectionCentered()
+        if hasattr(self.widget, 'scroll_to_selection_centered'):
+            self.widget.scroll_to_selection_centered()
         patterns.Event(
             self.view_settings_changed_event_type(), self
         ).send()

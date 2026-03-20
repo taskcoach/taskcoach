@@ -719,68 +719,49 @@ position and movement** relative to the app window.  Toolbar toggle
 is fast (mouse stays on toolbar); menu toggle varies (depends on mouse
 position after menu dismiss).
 
-### Current Solution (3 layers)
+### Current Solution (2 layers)
 
-**1. Paint suppression on TreeListCtrl** (`treectrl.py`):
-Replaces the tree widget's `OnPaint` handler.  **Only active during
-refresh** (`__refreshing=True`) — normal paints (hover, scroll, mouse
-interaction) are never affected.  During refresh, **ALL** paints are
-suppressed with an empty `wx.PaintDC` (validates the GDK region to
-prevent infinite expose loops, but draws nothing).  This completely
-breaks the AUI cascade at its source — each cascade paint of 291 items
-takes ~280ms, and without suppression 5+ cascade paints cause a
-1.4+ second freeze.  A single clean `Refresh()` is triggered when
-`__refreshing` clears, rendering the final state with correct item
-positions.
+**1. Synchronous rebuild** (`treectrl.py`):
+`_do_full_rebuild()` is synchronous: Freeze, delete, rebuild, Thaw,
+`Refresh(eraseBackground=False)`.  The `__refreshing` flag is set
+during Freeze/Thaw to suppress selection events, then cleared
+immediately after Thaw.  No paint suppression, no idle wait.
 
-**Why suppress ALL paints, not throttle?**  The cascade is
-self-sustaining: AUI paint → GDK damage on children → child repaint →
-AUI repaint → repeat.  Each tree paint takes ~280ms for a 291-item
-list, so a 100ms throttle lets every cascade paint through (they're
-always >100ms apart).  Only total suppression breaks the cycle.
-
-**2. `__refreshing` lifecycle flag** (`treectrl.py`):
-`RefreshAllItems()` sets `__refreshing=True` before rebuild.  An
-`EVT_IDLE` handler (`_on_refresh_idle`) monitors the upstream
-`_dirty` flag on the tree's main window; when `_dirty=False` + one
-extra idle cycle (for the paint from `OnInternalIdle`'s `Refresh()`),
-it clears `__refreshing` and triggers one final `Refresh()` for a
-clean paint with correct item positions (after `CalculatePositions()`).
-`__refreshing` is NOT used as a re-entry guard — multiple
-`RefreshAllItems` calls can overlap.  It only drives paint suppression
-and selection event suppression.
-
-**3. EventFilter motion blocking** (`frame.py`):
+**2. EventFilter motion blocking** (`frame.py`):
 `_RebuildInputFilter` is a `wx.EventFilter` that silently eats mouse
 **motion** events (MOTION, ENTER_WINDOW, LEAVE_WINDOW) at the wx level.
 Clicks, keyboard, and scroll events pass through normally so the app
 stays responsive.  Only motion events are suppressed because they drive
 the AUI cascade (OnMotion -> hover state change -> repaint -> repeat).
-Each `RefreshAllItems` call increments a refcount via `acquire()`; each
-`_on_refresh_idle` decrements via `release()`.  When the last widget
-completes, a 1-second deferred release timer starts to cover the
-post-rebuild settling period.  If a new rebuild starts during the
-settling, the timer is cancelled and the filter stays active.
+Each `_do_full_rebuild` call increments a refcount via `acquire()` and
+decrements via `release()`.  When the last widget completes, a
+1-second deferred release timer starts to cover the post-rebuild
+settling period.  If a new rebuild starts during the settling, the
+timer is cancelled and the filter stays active.
 
 ### How the layers work together
 
 ```
 RefreshAllItems()
+    ├── snapshot comparison: tree unchanged? -> refresh in place, return
     ├── _input_filter.acquire()  (refcount++, filter active)
-    ├── __refreshing = True  (paint suppression activates)
-    ├── Freeze → build items → Thaw → restore selection
-    ├── Thaw triggers paint → SUPPRESSED (empty PaintDC)
-    ├── AUI cascade paints → ALL SUPPRESSED (zero drawing work)
-    ├── EVT_IDLE → OnInternalIdle → CalculatePositions → _dirty=False
-    ├── _on_refresh_idle (extra idle cycle for safety)
-    │   ├── __refreshing = False  (paint suppression deactivates)
-    │   ├── _input_filter.release()  (refcount--, deferred release if 0)
-    │   └── Refresh() → ONE clean paint with correct positions
+    ├── __refreshing = True  (selection events suppressed)
+    ├── Freeze -> delete -> rebuild -> Thaw
+    ├── __refreshing = False
+    ├── restore selection, scroll
+    ├── Refresh(eraseBackground=False)  (immediate paint)
+    ├── _input_filter.release()  (refcount--, deferred release if 0)
     └── 1s later: filter deactivates (motion events resume)
 ```
 
-Total elapsed: rebuild ~80ms + CalculatePositions + one paint ~280ms.
-Cascade eliminated (down from 1.4+ seconds with 5+ cascade paints).
+The rebuild is synchronous - no blank screen, no idle wait.  The
+motion filter prevents the AUI cascade that was the original problem.
+
+**History:** v2.0.2.6-v2.0.2.8 used paint suppression (intercepting
+OnPaint with empty PaintDC during `__refreshing`) and an idle wait
+(2-3 EVT_IDLE cycles to clear `__refreshing`).  This caused the tree
+to go blank for 50-200ms per rebuild.  Removed in v2.0.2.10 because
+the motion-only input filter is sufficient to prevent the cascade.
 
 ### What was tried and abandoned
 
@@ -799,6 +780,7 @@ Cascade eliminated (down from 1.4+ seconds with 5+ cascade paints).
 | 11 | Per-widget EventFilter release (each `_on_refresh_idle` sets `active=False`) | First widget to finish clears the filter while other widgets still need it. Global singleton filter requires refcount + deferred release |
 | 12 | `__refreshing` as re-entry guard for `RefreshAllItems` | Blocks legitimate refresh calls for 703ms during idle wait, causing empty lists on startup. Removed re-entry guard - `__refreshing` now only drives paint suppression and selection suppression |
 | 13 | EventFilter eating ALL input (clicks, keyboard, scroll, motion) | Clicks and keyboard events lost during rebuild + 1s settling period makes the app feel unresponsive. Only motion events drive the AUI cascade; clicks and keyboard do not. Narrowed filter to motion events only |
+| 14 | Paint suppression (empty PaintDC during `__refreshing`) + idle wait (2-3 EVT_IDLE cycles) | Tree goes blank for 50-200ms per rebuild because ALL paints are suppressed until idle completes. Multiple rebuilds (filter + sort + presentation) stack the blank time to seconds. The motion-only input filter is sufficient to prevent the AUI cascade without paint suppression |
 
 ### Resolved Questions
 
@@ -873,22 +855,10 @@ Cascade eliminated (down from 1.4+ seconds with 5+ cascade paints).
 
 | File | Role |
 |------|------|
-| `taskcoachlib/widgets/treectrl.py` | `RefreshAllItems()`, `__refreshing` flag, paint suppression, `_on_refresh_idle` |
-| `taskcoachlib/widgets/frame.py` | `_RebuildInputFilter` (EventFilter with refcount + deferred release), sash throttle |
-| `taskcoachlib/gui/viewer/base.py` | `refresh()` — calls `RefreshAllItems` |
-| `taskcoachlib/meta/debug.py` | `log_step()` — timestamped debug logging |
-
-### Diagnostics
-
-Active diagnostics:
-
-- **`_RebuildInputFilter`** (`frame.py`, prefix `INPUT_FILTER`) — logs
-  every motion event (eaten or passed), refcount transitions, deferred
-  release timing
-- **`RefreshAllItems`** (`treectrl.py`, prefix `REBUILD_GUARD`) — logs
-  start, items built, and complete (when `__refreshing` cleared)
-- **Paint suppression** (`treectrl.py`, prefix `REBUILD_GUARD`) — logs
-  total count of suppressed paints when `__refreshing` clears
+| `taskcoachlib/widgets/treectrl.py` | `RefreshAllItems()`, snapshot comparison, synchronous rebuild |
+| `taskcoachlib/widgets/frame.py` | `_RebuildInputFilter` (motion-only EventFilter with refcount + deferred release), sash throttle |
+| `taskcoachlib/gui/viewer/base.py` | `refresh()` - calls `RefreshAllItems` |
+| `taskcoachlib/meta/debug.py` | `log_step()` - timestamped debug logging |
 
 ---
 
@@ -899,7 +869,7 @@ Active diagnostics:
 | `taskcoachlib/gui/viewer/base.py` | Base viewer with `curselection()`, `onSelect()`, `onPresentationChanged()` |
 | `taskcoachlib/gui/viewer/task.py` | `CalendarViewer.reconfig()` |
 | `taskcoachlib/gui/status.py` | Status bar with 500ms debounce |
-| `taskcoachlib/widgets/treectrl.py` | Tree widget: selection, scroll, hover, `__refreshing` debounce, paint debounce |
+| `taskcoachlib/widgets/treectrl.py` | Tree widget: selection, scroll, hover, synchronous rebuild |
 | `taskcoachlib/widgets/listctrl.py` | List widget with selection handling |
 | `taskcoachlib/widgets/iconpicker.py` | Icon picker: virtual ListCtrl (`wx.LC_VIRTUAL`) for fast population |
 | `taskcoachlib/widgets/tooltip.py` | Tooltip mixin with deferred data prep |
