@@ -103,7 +103,8 @@ class Sorter(patterns.ListDecorator):
         # be problematic.
         # UUID tiebreaker first (least significant) - guarantees
         # deterministic ordering for items with equal sort keys.
-        self.sort(key=lambda item: item.id())
+        # Some items (e.g. CompositeEffortPerPeriod) have no id().
+        self.sort(key=lambda item: item.id() if hasattr(item, 'id') else '')
         for sort_key in reversed(self._sortKeys):
             self.sort(
                 key=self.create_sort_key_function(sort_key.lstrip("-")),

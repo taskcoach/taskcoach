@@ -57,17 +57,17 @@ class BaseHyperTreeList(hypertreelist.HyperTreeList):
         """
         event.Skip()  # Let base class handle layout first
         # Schedule scrollbar adjustment after the layout is complete
-        wx.CallAfter(self.__safeAdjustScrollbars)
+        wx.CallAfter(self.__safe_adjust_scrollbars)
 
-    def __safeAdjustScrollbars(self):
+    def __safe_adjust_scrollbars(self):
         """Safely adjust scrollbars, guarding against deleted C++ objects.
         Also re-centers on selected item after resize."""
         try:
             main_win = self.GetMainWindow()
             if main_win:
                 main_win.AdjustMyScrollbars()
-                if hasattr(self, 'scrollToSelectionCentered'):
-                    self.scrollToSelectionCentered()
+                if hasattr(self, 'scroll_to_selection_centered'):
+                    self.scroll_to_selection_centered()
         except RuntimeError:
             # wrapped C/C++ object has been deleted
             from taskcoachlib.meta.debug import log_step
@@ -90,9 +90,9 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
         # On Ubuntu, when the user has scrolled to the bottom of the tree
         # and collapses an item, the tree is not redrawn correctly. Refreshing
         # solves this. See http://trac.wxwidgets.org/ticket/11704
-        wx.CallAfter(self.__safeRefresh)
+        wx.CallAfter(self.__safe_refresh)
 
-    def __safeRefresh(self):
+    def __safe_refresh(self):
         """Safely refresh the main window, guarding against deleted C++ objects."""
         try:
             if self.MainWindow:
@@ -100,7 +100,7 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
         except RuntimeError:
             # wrapped C/C++ object has been deleted
             from taskcoachlib.meta.debug import log_step
-            log_step('__safeRefresh failed - widget already destroyed',
+            log_step('__safe_refresh failed - widget already destroyed',
                      prefix='DEAD-OBJ')
 
     def GetSelections(self):  # pylint: disable=C0103
@@ -132,7 +132,7 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
             hit_test_result = (wx.TreeItemId(),) + hit_test_result[1:]
         return hit_test_result
 
-    def isClickablePartOfNodeClicked(self, event):
+    def is_clickable_part_of_node_clicked(self, event):
         """Return whether the user double clicked some part of the node that
         can also receive regular mouse clicks."""
         return self.__is_collapse_expand_button_clicked(event)
@@ -223,7 +223,6 @@ class TreeListCtrl(
         self.__columns_with_images = []
         self.__default_font = wx.NORMAL_FONT
         self.__refreshing = False
-        self.__post_dirty = False
         kwargs.setdefault("resizeableColumn", 0)
         super().__init__(
             parent,
@@ -237,7 +236,6 @@ class TreeListCtrl(
         )
         self.bindEventHandlers(selectCommand, editCommand, dragAndDropCommand)
         self.GetMainWindow().Bind(wx.EVT_LEAVE_WINDOW, self._on_hover_leave)
-        self._install_paint_debounce()
 
     def bindEventHandlers(
         self, selectCommand, editCommand, dragAndDropCommand
@@ -247,14 +245,14 @@ class TreeListCtrl(
         self.editCommand = editCommand
         self.dragAndDropCommand = dragAndDropCommand
         self.Bind(wx.EVT_TREE_SEL_CHANGED, self.onSelect)
-        self.Bind(wx.EVT_TREE_KEY_DOWN, self.onKeyDown)
-        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.onItemActivated)
+        self.Bind(wx.EVT_TREE_KEY_DOWN, self.on_key_down)
+        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_item_activated)
         # We deal with double clicks ourselves, to prevent the default behaviour
         # of collapsing or expanding nodes on double click.
-        self.GetMainWindow().Bind(wx.EVT_LEFT_DCLICK, self.onDoubleClick)
-        self.Bind(wx.EVT_TREE_BEGIN_LABEL_EDIT, self.onBeginEdit)
-        self.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.onEndEdit)
-        self.Bind(wx.EVT_TREE_ITEM_EXPANDING, self.onItemExpanding)
+        self.GetMainWindow().Bind(wx.EVT_LEFT_DCLICK, self.on_double_click)
+        self.Bind(wx.EVT_TREE_BEGIN_LABEL_EDIT, self.on_begin_edit)
+        self.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.on_end_edit)
+        self.Bind(wx.EVT_TREE_ITEM_EXPANDING, self.on_item_expanding)
         self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
 
     def onSetFocus(self, event):  # pylint: disable=W0613
@@ -267,32 +265,10 @@ class TreeListCtrl(
         self.GetMainWindow().SetHoverItem(None)
         event.Skip()
 
-    def _install_paint_debounce(self):
-        """Suppress ALL cascade paints during refresh.
-
-        While __refreshing is True, every paint is suppressed with an
-        empty PaintDC (validates the GDK region to prevent infinite
-        expose loops).  When __refreshing clears, normal paints resume
-        and _on_refresh_idle triggers one clean Refresh().
-        """
-        main_win = self.GetMainWindow()
-        original_on_paint = main_win.OnPaint
-        tree_ctrl = self
-
-        def debounced_on_paint(event):
-            if not tree_ctrl.refreshing:
-                original_on_paint(event)
-                return
-            # During refresh: suppress ALL paints
-            dc = wx.PaintDC(main_win)
-            del dc
-
-        main_win.Bind(wx.EVT_PAINT, debounced_on_paint)
-
     def getItemTooltipData(self, item):
         return self.__adapter.getItemTooltipData(item)
 
-    def getItemCTType(self, item):  # pylint: disable=W0613
+    def get_item_ct_type(self, item):  # pylint: disable=W0613
         return self.ct_type
 
     @property
@@ -316,13 +292,6 @@ class TreeListCtrl(
         except RuntimeError:
             # wrapped C/C++ object has been deleted
             return []
-
-    @property
-    def refreshing(self):
-        """True while a rebuild is in progress (items being rebuilt or
-        widget still has pending layout work).  Used by paint debounce
-        and selection suppression — NOT as a re-entry guard."""
-        return self.__refreshing
 
     def _snapshot_tree(self, parent_item):
         """Return list of object IDs in depth-first order for current tree."""
@@ -368,7 +337,12 @@ class TreeListCtrl(
             child_item, cookie = self.GetNextChild(parent_item, cookie)
 
     def _do_full_rebuild(self):
-        """Full delete-and-recreate rebuild of the tree."""
+        """Full delete-and-recreate rebuild of the tree.
+
+        Synchronous: Freeze, rebuild, Thaw, Refresh.  The motion-only
+        input filter in frame.py prevents the AUI cascade by blocking
+        mouse motion events during and after rebuild.
+        """
         from taskcoachlib.widgets.frame import (
             _input_filter, _ensure_filter_installed,
         )
@@ -389,55 +363,16 @@ class TreeListCtrl(
             root_item = self.AddRoot("Hidden root")
         self._addObjectRecursively(root_item)
         self.Thaw()
+        self.__refreshing = False
         # Restore selection AFTER Thaw - SelectItem doesn't work while Frozen
         if self.__selection:
             self.select(self.__selection)
-        self.scrollToSelection()
-        # __refreshing stays True until _dirty is processed on idle.
-        # Input filter also stays active until then.
-        self._bind_refresh_complete()
-
-    def _bind_refresh_complete(self):
-        """Bind EVT_IDLE to detect when the widget has finished painting."""
-        wx.GetApp().Bind(wx.EVT_IDLE, self._on_refresh_idle)
-
-    def _on_refresh_idle(self, event):
-        """Release __refreshing and input filter when done painting.
-
-        Waits one extra idle cycle after _dirty=False because
-        OnInternalIdle sets _dirty=False then calls Refresh() which
-        queues a paint.  The extra cycle lets that paint process
-        (and motion events get filtered) before we re-enable input.
-        """
-        from taskcoachlib.widgets.frame import _input_filter
-        main_win = self.GetMainWindow()
-        dirty = getattr(main_win, '_dirty', False)
-        if dirty:
-            event.RequestMore()
-            event.Skip()
-            return
-        # _dirty=False — check if we already waited the extra cycle
-        if not self.__post_dirty:
-            self.__post_dirty = True
-            event.RequestMore()
-            event.Skip()
-            return
-        # Extra cycle done — this widget is done
-        self.__refreshing = False
-        self.__post_dirty = False
+        self.scroll_to_selection()
+        # Immediate repaint - no blank screen
+        self.GetMainWindow().Refresh(eraseBackground=False)
         _input_filter.release()
-        wx.GetApp().Unbind(wx.EVT_IDLE, handler=self._on_refresh_idle)
-        # One clean paint now that positions are calculated
-        try:
-            main_win.Refresh()
-        except RuntimeError:
-            # wrapped C/C++ object has been deleted
-            from taskcoachlib.meta.debug import log_step
-            log_step('Refresh() failed - widget already destroyed',
-                     prefix='DEAD-OBJ')
-        event.Skip()
 
-    def scrollToSelection(self):
+    def scroll_to_selection(self):
         """Scroll minimally to make first selected item visible."""
         selections = self.GetSelections()
         if selections:
@@ -445,7 +380,7 @@ class TreeListCtrl(
             main.AdjustMyScrollbars()
             self.ScrollTo(selections[0])
 
-    def scrollToSelectionCentered(self):
+    def scroll_to_selection_centered(self):
         """Center viewport on first selected item."""
         selections = self.GetSelections()
         if selections:
@@ -487,7 +422,7 @@ class TreeListCtrl(
             child_item = self.AppendItem(
                 parent_item,
                 "",
-                self.getItemCTType(child_object),
+                self.get_item_ct_type(child_object),
                 data=child_object,
             )
             self._refreshObjectMinimally(child_item, child_object)
@@ -514,7 +449,7 @@ class TreeListCtrl(
             refresh_aspect(*args, **kwargs)
 
     def _refreshItemType(self, item, domain_object, check=False):
-        ct_type = self.getItemCTType(domain_object)
+        ct_type = self.get_item_ct_type(domain_object)
         if not check or (check and ct_type != self.GetItemType(item)):
             self.SetItemType(item, ct_type)
 
@@ -597,10 +532,10 @@ class TreeListCtrl(
             return
         # Use CallAfter to prevent handling the select while items are
         # being deleted:
-        wx.CallAfter(self.__safeSelectCommand)
+        wx.CallAfter(self.__safe_select_command)
         event.Skip()
 
-    def __safeSelectCommand(self):
+    def __safe_select_command(self):
         """Safely call selectCommand, guarding against deleted C++ objects."""
         try:
             if self:
@@ -611,7 +546,7 @@ class TreeListCtrl(
             log_step('selectCommand() failed - widget already destroyed',
                      prefix='DEAD-OBJ')
 
-    def onKeyDown(self, event):
+    def on_key_down(self, event):
         if event.GetKeyCode() == wx.WXK_RETURN:
             self.editCommand(event)
         elif event.GetKeyCode() == wx.WXK_F2 and self.GetSelections():
@@ -629,10 +564,10 @@ class TreeListCtrl(
             self.GetItemPyData(drag_item) for drag_item in drag_items
         )
         wx.CallAfter(
-            self.__safeDragAndDropCommand, drop_item, drag_items, part, column
+            self.__safe_drag_and_drop_command, drop_item, drag_items, part, column
         )
 
-    def __safeDragAndDropCommand(self, drop_item, drag_items, part, column):
+    def __safe_drag_and_drop_command(self, drop_item, drag_items, part, column):
         """Safely call dragAndDropCommand, guarding against deleted C++ objects."""
         try:
             if self:
@@ -655,21 +590,21 @@ class TreeListCtrl(
                     self.Expand(item)
                 break
 
-    def onItemExpanding(self, event):
+    def on_item_expanding(self, event):
         event.Skip()
         item = event.GetItem()
         if self.GetChildrenCount(item, recursively=False) == 0:
             domain_object = self.GetItemPyData(item)
             self._addObjectRecursively(item, domain_object)
 
-    def onDoubleClick(self, event):
+    def on_double_click(self, event):
         self.__user_double_clicked = True
-        if self.isClickablePartOfNodeClicked(event):
+        if self.is_clickable_part_of_node_clicked(event):
             event.Skip(False)
         else:
-            self.onItemActivated(event)
+            self.on_item_activated(event)
 
-    def onItemActivated(self, event):
+    def on_item_activated(self, event):
         """Attach the column clicked on to the event so we can use it
         elsewhere."""
         column_index = self.__column_under_mouse()
@@ -693,7 +628,7 @@ class TreeListCtrl(
 
     # Inline editing
 
-    def onBeginEdit(self, event):
+    def on_begin_edit(self, event):
         if self.__user_double_clicked:
             event.Veto()
             self.__user_double_clicked = False
@@ -704,7 +639,7 @@ class TreeListCtrl(
         else:
             event.Skip()
 
-    def onEndEdit(self, event):
+    def on_end_edit(self, event):
         if event._editCancelled:  # pylint: disable=W0212
             event.Skip()
             return
@@ -804,8 +739,8 @@ class CheckTreeCtrl(TreeListCtrl):
             **kwargs
         )
         self.checkCommand = checkCommand
-        self.Bind(customtree.EVT_TREE_ITEM_CHECKED, self.onItemChecked)
-        self.GetMainWindow().Bind(wx.EVT_LEFT_DOWN, self.onMouseLeftDown)
+        self.Bind(customtree.EVT_TREE_ITEM_CHECKED, self.on_item_checked)
+        self.GetMainWindow().Bind(wx.EVT_LEFT_DOWN, self.on_mouse_left_down)
         self.getIsItemCheckable = (
             parent.getIsItemCheckable
             if hasattr(parent, "getIsItemCheckable")
@@ -816,7 +751,7 @@ class CheckTreeCtrl(TreeListCtrl):
             parent.get_item_parent_has_exclusive_children
         )
 
-    def getItemCTType(self, domain_object):
+    def get_item_ct_type(self, domain_object):
         """Use radio buttons (ct_type == 2) when the object has "exclusive"
         children, meaning that only one child can be checked at a time. Use
         check boxes (ct_type == 1) otherwise."""
@@ -837,7 +772,7 @@ class CheckTreeCtrl(TreeListCtrl):
         else:
             super().CheckItem(item, checked)
 
-    def onMouseLeftDown(self, event):
+    def on_mouse_left_down(self, event):
         """By default, the HyperTreeList widget doesn't allow for unchecking
         a radio item. Since we do want to support unchecking a radio
         item, we look for mouse left down and uncheck the item and all of
@@ -910,14 +845,14 @@ class CheckTreeCtrl(TreeListCtrl):
                 break
             parent = parent.GetParent()
 
-    def refreshAllCheckStates(self):
+    def refresh_all_check_states(self):
         """Refresh the check state of all items without rebuilding the tree."""
         for item in self.GetItemChildren(recursively=True):
             domain_object = self.GetItemPyData(item)
             if domain_object is not None:
                 self._refreshCheckState(item, domain_object)
 
-    def onItemChecked(self, event):
+    def on_item_checked(self, event):
         if self.__checking:
             # Ignore checked events while we're making the tree consistent,
             # only invoke the callback:
@@ -951,10 +886,10 @@ class CheckTreeCtrl(TreeListCtrl):
         self.__checking = False
         self.checkCommand(event, final=True)
 
-    def onItemActivated(self, event):
+    def on_item_activated(self, event):
         if self.__is_double_clicked(event):
-            # Invoke super.onItemActivated to edit the item
-            super().onItemActivated(event)
+            # Invoke super.on_item_activated to edit the item
+            super().on_item_activated(event)
         else:
             # Item is activated, let another event handler deal with the event
             event.Skip()

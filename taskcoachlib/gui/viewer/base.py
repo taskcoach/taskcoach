@@ -367,10 +367,10 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         # AFTER refresh - select next if selection became empty
         if items_removed() and hasattr(self.widget, 'curselection') and not self.widget.curselection() and selection_info:
             self.selectNextItemsAfterRemoval(selection_info)
-        # Center on selected item — tree views use scrollToSelectionCentered,
+        # Center on selected item — tree views use scroll_to_selection_centered,
         # list views use ensureSelectionVisible (native wx scrollbar management)
-        if hasattr(self.widget, 'scrollToSelectionCentered'):
-            self.widget.scrollToSelectionCentered()
+        if hasattr(self.widget, 'scroll_to_selection_centered'):
+            self.widget.scroll_to_selection_centered()
         elif hasattr(self.widget, 'ensureSelectionVisible'):
             self.widget.ensureSelectionVisible()
         self.send_viewer_status_event()
