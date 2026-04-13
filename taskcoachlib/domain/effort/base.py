@@ -36,14 +36,13 @@ class BaseEffort(object):
         pass
 
     def task(self):
-        # Access _task directly to avoid potential attribute shadowing
         return None if self._task is None else self._task()
 
     def parent(self):
         # Efforts don't have real parents since they are not composite.
         # However, we pretend the parent of an effort is its task for the
         # benefit of the search filter.
-        return None if self._task is None else self._task()
+        return self.task()
 
     def getStart(self):
         return self._start.get()
@@ -52,23 +51,23 @@ class BaseEffort(object):
         return self._stop.get()
 
     def subject(self, *args, **kwargs):
-        task = self._task() if self._task else None
+        task = self.task()
         return task.subject(*args, **kwargs) if task else ""
 
     def categories(self, *args, **kwargs):
-        task = self._task() if self._task else None
+        task = self.task()
         return task.categories(*args, **kwargs) if task else set()
 
     def foregroundColor(self, recursive=False):
-        task = self._task() if self._task else None
+        task = self.task()
         return task.foregroundColor(recursive) if task else None
 
     def backgroundColor(self, recursive=False):
-        task = self._task() if self._task else None
+        task = self.task()
         return task.backgroundColor(recursive) if task else None
 
     def font(self, recursive=False):
-        task = self._task() if self._task else None
+        task = self.task()
         return task.font(recursive) if task else None
 
     def duration(self, recursive=False):

@@ -139,12 +139,52 @@ else:
     timeWithMinutesFormat = "%H:%M"
     timeWithSecondsFormat = "%H:%M:%S"
 
+# Display-only overrides applied on top of the entry-compatible date
+# format when rendering. Cannot be used for date input (no name parsing).
+_DISPLAY_ONLY_DATE_FORMATS = {
+    "LONG_DMY": "%A, %d %B %Y",      # Saturday, 28 March 2026
+    "ISO_ABBREV": "%Y-%b-%d-%a",     # 2026-Mar-28-Sat
+}
+
+
+def _get_display_override_from_settings():
+    try:
+        from taskcoachlib.config import settings
+        return settings.Settings().get("view", "dateformat_display_override")
+    except Exception as exc:
+        from taskcoachlib.meta.debug import log_step
+        log_step(
+            "could not read dateformat_display_override (%s); treating as empty"
+            % exc,
+            prefix="RENDER",
+        )
+        return ""
+
+
 try:
-    from taskcoachlib.widgets.maskedtimectrl import getEffectiveDateFormat
-    _field_order, _separator = getEffectiveDateFormat()
-    _format_map = {'year': '%Y', 'month': '%m', 'date_day': '%d'}
-    dateFormat = _separator.join(_format_map.get(f, '%Y') for f in _field_order)
-except Exception:
+    _display_override = _get_display_override_from_settings()
+    if _display_override in _DISPLAY_ONLY_DATE_FORMATS:
+        dateFormat = _DISPLAY_ONLY_DATE_FORMATS[_display_override]
+    else:
+        if _display_override:
+            from taskcoachlib.meta.debug import log_step
+            log_step(
+                "unknown dateformat_display_override %r; ignoring"
+                % _display_override,
+                prefix="RENDER",
+            )
+        from taskcoachlib.widgets.maskedtimectrl import getEffectiveDateFormat
+        _field_order, _separator = getEffectiveDateFormat()
+        _format_map = {'year': '%Y', 'month': '%m', 'date_day': '%d'}
+        dateFormat = _separator.join(
+            _format_map.get(f, '%Y') for f in _field_order
+        )
+except Exception as exc:
+    from taskcoachlib.meta.debug import log_step
+    log_step(
+        "failed to resolve dateFormat (%s); falling back to locale %%x" % exc,
+        prefix="RENDER",
+    )
     dateFormat = "%x"
 
 

@@ -62,6 +62,10 @@ defaults = {
         # Date format override: "" = automatic (detect from locale), or explicit format
         # Possible values: "", "YMD-", "MDY/", "DMY/", "DMY.", "YMD/"
         "dateformat": "",
+        # Display-only override applied on top of dateformat when rendering
+        # dates (does not affect date entry controls). "" = no override, use
+        # dateformat as-is. Possible values: "", "LONG_DMY", "ISO_ABBREV".
+        "dateformat_display_override": "",
         # Time format override: "24" = 24-hour (default), "12" = 12-hour with AM/PM, "" = automatic
         "timeformat": "24",
         # Decimal separator override: "" = automatic (from locale), "." = period, "," = comma

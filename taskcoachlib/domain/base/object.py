@@ -49,29 +49,34 @@ class SynchronizedObject(object):
         return "object.marknotdeleted"
 
     def __getstate__(self):
-        try:
-            state = super().__getstate__()
-        except AttributeError:
-            state = dict()
-
-        state["status"] = self.__status
-        return state
+        # Python 3.11 added object.__getstate__, which returns the instance's
+        # __dict__ as a live reference. Mutating that dict (as the subclass
+        # chain below does via state.update) would write shadow attributes
+        # onto self. Start from a fresh dict instead.
+        return {"status": self.__status}
 
     @patterns.eventSource
     def __setstate__(self, state, event=None):
-        try:
+        # object does not define __setstate__; only invoke super if available.
+        if hasattr(super(), "__setstate__"):
             super().__setstate__(state, event=event)
-        except AttributeError:
-            pass
-        if state["status"] != self.__status:
-            if state["status"] == self.STATUS_CHANGED:
-                self.markDirty(event=event)
-            elif state["status"] == self.STATUS_DELETED:
-                self.markDeleted(event=event)
-            elif state["status"] == self.STATUS_NEW:
-                self.markNew(event=event)
-            elif state["status"] == self.STATUS_NONE:
-                self.cleanDirty(event=event)
+        new_status = state["status"]
+        if new_status == self.__status:
+            return
+        if new_status == self.STATUS_CHANGED:
+            self.markDirty(event=event)
+        elif new_status == self.STATUS_DELETED:
+            self.markDeleted(event=event)
+        elif new_status == self.STATUS_NEW:
+            self.markNew(event=event)
+        elif new_status == self.STATUS_NONE:
+            self.cleanDirty(event=event)
+        else:
+            from taskcoachlib.meta.debug import log_step
+            log_step(
+                "unknown status value %r in __setstate__" % (new_status,),
+                prefix="SYNC-OBJ",
+            )
 
     def getStatus(self):
         return self.__status
@@ -220,10 +225,7 @@ class Object(SynchronizedObject):
         return hash(self.id())
 
     def __getstate__(self):
-        try:
-            state = super().__getstate__()
-        except AttributeError:
-            state = dict()
+        state = super().__getstate__()
         state.update(
             dict(
                 id=self.__id,
@@ -243,10 +245,7 @@ class Object(SynchronizedObject):
 
     @patterns.eventSource
     def __setstate__(self, state, event=None):
-        try:
-            super().__setstate__(state, event=event)
-        except AttributeError:
-            pass
+        super().__setstate__(state, event=event)
         self.__id = state["id"]
         self.setSubject(state["subject"], event=event)
         self.setDescription(state["description"], event=event)
@@ -266,9 +265,11 @@ class Object(SynchronizedObject):
         a copy of the object.
 
         E.g. copy = obj.__class__(**original.__getcopystate__())"""
-        try:
+        # SynchronizedObject does not define __getcopystate__; only invoke
+        # super if some other class in the MRO provides it.
+        if hasattr(super(), "__getcopystate__"):
             state = super().__getcopystate__()
-        except AttributeError:
+        else:
             state = dict()
         # Note that we don't put the id and the creation date/time in the state
         # dict, because a copy should get a new id and a new creation date/time
@@ -647,9 +648,12 @@ class Object(SynchronizedObject):
 
     @classmethod
     def modificationEventTypes(class_):
-        try:
-            eventTypes = super(Object, class_).modificationEventTypes()
-        except AttributeError:
+        # SynchronizedObject does not define modificationEventTypes; only
+        # invoke super if some other class in the MRO provides it.
+        parent = super(Object, class_)
+        if hasattr(parent, "modificationEventTypes"):
+            eventTypes = parent.modificationEventTypes()
+        else:
             eventTypes = []
         return eventTypes + [
             class_.subjectChangedEventType(),

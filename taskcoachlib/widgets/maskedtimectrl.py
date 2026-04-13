@@ -132,14 +132,15 @@ def getLocaleDateFormat(override=None):
     This mimics the approach from smartdatetimectrl.py to ensure the same
     locale-aware date formatting.
     """
-    # Check for override setting
+    # Override grammar: 3 chars from {Y, M, D} followed by a separator,
+    # e.g. "YMD-", "MDY/". Raises IndexError/KeyError on malformed input
+    # rather than silently falling back, so bad settings surface loudly.
     if override:
         field_map = {'Y': 'year', 'M': 'month', 'D': 'date_day'}
-        if len(override) >= 4:
-            order_str = override[:3].upper()
-            separator = override[3]
-            field_order = [field_map.get(c, 'year') for c in order_str]
-            return (field_order, separator)
+        order_str = override[:3].upper()
+        separator = override[3]
+        field_order = [field_map[c] for c in order_str]
+        return (field_order, separator)
 
     # Use a test date with unique values that are easy to identify:
     # year=3333, month=11, day=22 - these won't be confused with each other

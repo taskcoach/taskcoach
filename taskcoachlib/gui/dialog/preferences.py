@@ -1294,11 +1294,11 @@ class LanguagePage(SettingsPage):
 
         # === LANGUAGE SECTION ===
         # Restart warning above the dropdown (covers language and format changes)
-        self._restartWarningBase = _("Changing the language or date/time format requires a restart of %s.") % meta.name
-        self._restartWarning = wx.StaticText(self, label=self._restartWarningBase)
-        self._restartWarningDefaultColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
-        self._restartWarning.SetForegroundColour(self._restartWarningDefaultColor)
-        self.addEntry("", self._restartWarning)
+        self._restart_warning_base = _("Changing the language or date/time format requires a restart of %s.") % meta.name
+        self._restart_warning = wx.StaticText(self, label=self._restart_warning_base)
+        self._restart_warning_default_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        self._restart_warning.SetForegroundColour(self._restart_warning_default_color)
+        self.addEntry("", self._restart_warning)
 
         languages = [
             ("ar", "الْعَرَبيّة (Arabic)"),
@@ -1386,13 +1386,13 @@ class LanguagePage(SettingsPage):
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         # Locale warning - only shown when selected locale is not installed
-        self._localeWarning = wx.StaticText(
+        self._locale_warning = wx.StaticText(
             panel,
             label=_("WARNING: The selected language's locale is not installed on your system. "
                     "Some date and time formats may appear in your system's format instead.")
         )
-        self._localeWarning.SetForegroundColour(wx.Colour(180, 0, 0))
-        sizer.Add(self._localeWarning, 0, wx.BOTTOM, 10)
+        self._locale_warning.SetForegroundColour(wx.Colour(180, 0, 0))
+        sizer.Add(self._locale_warning, 0, wx.BOTTOM, 10)
 
         # Help text
         text = wx.StaticText(
@@ -1410,15 +1410,15 @@ class LanguagePage(SettingsPage):
         self.addEntry("", panel)
 
         # Store original language to detect changes
-        self._originalLanguage = self._getSelectedLanguageCode()
+        self._original_language = self._get_selected_language_code()
 
         # Check if current language has locale installed and update warning visibility
-        self._updateLocaleWarning()
+        self._update_locale_warning()
 
         # Bind to dropdown change to update warnings dynamically
         for section, setting, choiceCtrls in self._choiceSettings:
             if setting == "language_set_by_user":
-                choiceCtrls[0].Bind(wx.EVT_CHOICE, self._onLanguageChange)
+                choiceCtrls[0].Bind(wx.EVT_CHOICE, self._on_language_change)
 
         # Separator line between language and spell check sections
         self.addLine()
@@ -1431,12 +1431,12 @@ class LanguagePage(SettingsPage):
 
         # === DATE FORMAT SECTION ===
         # Date format dropdown with detected format label
-        dateFormatPanel = wx.Panel(self)
-        dateFormatSizer = wx.BoxSizer(wx.HORIZONTAL)
+        date_format_panel = wx.Panel(self)
+        date_format_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
         # Date format choices: value is the format string (e.g., "YMD-", "MDY/")
-        self._dateFormatChoice = wx.Choice(dateFormatPanel)
-        dateFormats = [
+        self._date_format_choice = wx.Choice(date_format_panel)
+        date_formats = [
             ("", _("Automatic (detect from system)")),
             ("YMD-", _("YYYY-MM-DD (ISO format)")),
             ("YMD/", _("YYYY/MM/DD (East Asian)")),
@@ -1444,90 +1444,146 @@ class LanguagePage(SettingsPage):
             ("DMY/", _("DD/MM/YYYY (European)")),
             ("DMY.", _("DD.MM.YYYY (German)")),
         ]
-        currentFormat = self.gettext("view", "dateformat")
-        selectedIdx = 0
-        for i, (value, label) in enumerate(dateFormats):
-            self._dateFormatChoice.Append(label, value)
-            if value == currentFormat:
-                selectedIdx = i
-        self._dateFormatChoice.SetSelection(selectedIdx)
-        self._dateFormatChoice.Bind(wx.EVT_CHOICE, self._onDateFormatChange)
-        dateFormatSizer.Add(self._dateFormatChoice, 0, wx.ALIGN_CENTER_VERTICAL)
+        current_format = self.gettext("view", "dateformat")
+        selected_idx = 0
+        for i, (value, label) in enumerate(date_formats):
+            self._date_format_choice.Append(label, value)
+            if value == current_format:
+                selected_idx = i
+        self._date_format_choice.SetSelection(selected_idx)
+        self._date_format_choice.Bind(wx.EVT_CHOICE, self._on_date_format_change)
+        date_format_sizer.Add(self._date_format_choice, 0, wx.ALIGN_CENTER_VERTICAL)
 
         # Detected format label
         from taskcoachlib.widgets.maskedtimectrl import getDetectedLocaleDateFormat
-        detectedOrder, detectedSep = getDetectedLocaleDateFormat()
-        detectedStr = self._formatOrderToString(detectedOrder, detectedSep)
-        self._detectedFormatLabel = wx.StaticText(
-            dateFormatPanel,
-            label=_("Detected: %s") % detectedStr
+        detected_order, detected_sep = getDetectedLocaleDateFormat()
+        detected_str = self._format_order_to_string(detected_order, detected_sep)
+        self._detected_format_label = wx.StaticText(
+            date_format_panel,
+            label=_("Detected: %s") % detected_str
         )
-        self._detectedFormatLabel.SetForegroundColour(
+        self._detected_format_label.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
-        dateFormatSizer.Add(self._detectedFormatLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 15)
+        date_format_sizer.Add(
+            self._detected_format_label,
+            0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 15,
+        )
 
-        dateFormatPanel.SetSizer(dateFormatSizer)
-        self.addEntry(_("Date format"), dateFormatPanel)
+        date_format_panel.SetSizer(date_format_sizer)
+        self.addEntry(_("Date format"), date_format_panel)
 
         # Demo DateComboRouterCtrl showing the selected format (interactive, starts with today)
-        demoPanel = wx.Panel(self)
-        demoSizer = wx.BoxSizer(wx.HORIZONTAL)
-        demoLabel = wx.StaticText(demoPanel, label=_("Preview:"))
-        demoSizer.Add(demoLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
-        demoPanel.SetSizer(demoSizer)
-        self._demoDatePanel = demoPanel
-        self._demoDateCtrl = None
-        self._rebuildDemoDateCtrl(currentFormat or None)
-        self.addEntry("", demoPanel)
+        demo_panel = wx.Panel(self)
+        demo_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        demo_label = wx.StaticText(demo_panel, label=_("Preview:"))
+        demo_sizer.Add(demo_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
+        demo_panel.SetSizer(demo_sizer)
+        self._demo_date_panel = demo_panel
+        self._demo_date_ctrl = None
+        self._rebuild_demo_date_ctrl(current_format or None)
+        self.addEntry("", demo_panel)
+
+        # === DISPLAY OVERRIDE SECTION ===
+        # Optional display-only override (does not affect date entry).
+        display_override_panel = wx.Panel(self)
+        display_override_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self._display_override_choice = wx.Choice(display_override_panel)
+        display_overrides = [
+            ("", _("None")),
+            ("LONG_DMY", _("Saturday, 28 March 2026")),
+            ("ISO_ABBREV", _("2026-Mar-28-Sat")),
+        ]
+        current_override = self.gettext("view", "dateformat_display_override")
+        selected_override_idx = 0
+        for i, (value, label) in enumerate(display_overrides):
+            self._display_override_choice.Append(label, value)
+            if value == current_override:
+                selected_override_idx = i
+        self._display_override_choice.SetSelection(selected_override_idx)
+        self._display_override_choice.Bind(
+            wx.EVT_CHOICE, self._on_display_override_change
+        )
+        display_override_sizer.Add(
+            self._display_override_choice, 0, wx.ALIGN_CENTER_VERTICAL
+        )
+        display_override_panel.SetSizer(display_override_sizer)
+        self.addEntry(_("Display override"), display_override_panel)
+
+        # Preview below the override dropdown (empty when None).
+        override_preview_panel = wx.Panel(self)
+        override_preview_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        override_preview_label = wx.StaticText(
+            override_preview_panel, label=_("Preview:")
+        )
+        override_preview_sizer.Add(
+            override_preview_label,
+            0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10,
+        )
+        override_preview_panel.SetSizer(override_preview_sizer)
+        self._display_override_preview_panel = override_preview_panel
+        self._display_override_preview_ctrl = None
+        self._rebuild_display_override_preview(current_override)
+        self.addEntry("", override_preview_panel)
 
         # === TIME FORMAT SECTION ===
         # Time format dropdown with detected format label
-        timeFormatPanel = wx.Panel(self)
-        timeFormatSizer = wx.BoxSizer(wx.HORIZONTAL)
+        time_format_panel = wx.Panel(self)
+        time_format_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self._timeFormatChoice = wx.Choice(timeFormatPanel)
-        timeFormats = [
+        self._time_format_choice = wx.Choice(time_format_panel)
+        time_formats = [
             ("", _("Automatic (detect from system)")),
             ("24", _("24-hour (14:30)")),
             ("12", _("12-hour (2:30 PM)")),
         ]
-        currentTimeFormat = self.gettext("view", "timeformat")
-        selectedTimeIdx = 0
-        for i, (value, label) in enumerate(timeFormats):
-            self._timeFormatChoice.Append(label, value)
-            if value == currentTimeFormat:
-                selectedTimeIdx = i
-        self._timeFormatChoice.SetSelection(selectedTimeIdx)
-        timeFormatSizer.Add(self._timeFormatChoice, 0, wx.ALIGN_CENTER_VERTICAL)
+        current_time_format = self.gettext("view", "timeformat")
+        selected_time_idx = 0
+        for i, (value, label) in enumerate(time_formats):
+            self._time_format_choice.Append(label, value)
+            if value == current_time_format:
+                selected_time_idx = i
+        self._time_format_choice.SetSelection(selected_time_idx)
+        time_format_sizer.Add(
+            self._time_format_choice, 0, wx.ALIGN_CENTER_VERTICAL
+        )
 
         # Detected time format label
         from taskcoachlib.widgets.maskedtimectrl import getDetectedLocaleTimeFormat
-        detectedTimeFormat = getDetectedLocaleTimeFormat()
-        detectedTimeStr = "24-hour" if detectedTimeFormat == "24" else "12-hour"
-        self._detectedTimeFormatLabel = wx.StaticText(
-            timeFormatPanel,
-            label=_("Detected: %s") % detectedTimeStr
+        detected_time_format = getDetectedLocaleTimeFormat()
+        detected_time_str = (
+            "24-hour" if detected_time_format == "24" else "12-hour"
         )
-        self._detectedTimeFormatLabel.SetForegroundColour(
+        self._detected_time_format_label = wx.StaticText(
+            time_format_panel,
+            label=_("Detected: %s") % detected_time_str
+        )
+        self._detected_time_format_label.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
-        timeFormatSizer.Add(self._detectedTimeFormatLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 15)
+        time_format_sizer.Add(
+            self._detected_time_format_label,
+            0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 15,
+        )
 
-        timeFormatPanel.SetSizer(timeFormatSizer)
-        self._timeFormatChoice.Bind(wx.EVT_CHOICE, self._onTimeFormatChange)
-        self.addEntry(_("Time format"), timeFormatPanel)
+        time_format_panel.SetSizer(time_format_sizer)
+        self._time_format_choice.Bind(wx.EVT_CHOICE, self._on_time_format_change)
+        self.addEntry(_("Time format"), time_format_panel)
 
         # Demo TimeCtrl showing the selected format (interactive, starts with current time)
-        timeDemoPanel = wx.Panel(self)
-        timeDemoSizer = wx.BoxSizer(wx.HORIZONTAL)
-        timeDemoLabel = wx.StaticText(timeDemoPanel, label=_("Preview:"))
-        timeDemoSizer.Add(timeDemoLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
-        timeDemoPanel.SetSizer(timeDemoSizer)
-        self._demoTimePanel = timeDemoPanel
-        self._demoTimeCtrl = None
-        self._rebuildDemoTimeCtrl(currentTimeFormat if currentTimeFormat else "24")
-        self.addEntry("", timeDemoPanel)
+        time_demo_panel = wx.Panel(self)
+        time_demo_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        time_demo_label = wx.StaticText(time_demo_panel, label=_("Preview:"))
+        time_demo_sizer.Add(
+            time_demo_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10
+        )
+        time_demo_panel.SetSizer(time_demo_sizer)
+        self._demo_time_panel = time_demo_panel
+        self._demo_time_ctrl = None
+        self._rebuild_demo_time_ctrl(
+            current_time_format if current_time_format else "24"
+        )
+        self.addEntry("", time_demo_panel)
 
         # Note about 12-hour mode and working hours
         self.addHintRow(
@@ -1539,104 +1595,113 @@ class LanguagePage(SettingsPage):
 
         # === NUMBER FORMAT SECTION ===
         # Decimal separator dropdown
-        decSepPanel = wx.Panel(self)
-        decSepSizer = wx.BoxSizer(wx.HORIZONTAL)
+        dec_sep_panel = wx.Panel(self)
+        dec_sep_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self._decimalSepChoice = wx.Choice(decSepPanel)
-        decimalSepFormats = [
+        self._decimal_sep_choice = wx.Choice(dec_sep_panel)
+        decimal_sep_formats = [
             ("", _("Automatic (detect from system)")),
             (".", _("Period (.)")),
             (",", _("Comma (,)")),
         ]
-        currentDecSep = self.gettext("view", "decimal_separator")
-        selectedDecSepIdx = 0
-        for i, (value, label) in enumerate(decimalSepFormats):
-            self._decimalSepChoice.Append(label, value)
-            if value == currentDecSep:
-                selectedDecSepIdx = i
-        self._decimalSepChoice.SetSelection(selectedDecSepIdx)
-        self._decimalSepChoice.Bind(wx.EVT_CHOICE, self._onDecimalSepChange)
-        decSepSizer.Add(self._decimalSepChoice, 0, wx.ALIGN_CENTER_VERTICAL)
+        current_dec_sep = self.gettext("view", "decimal_separator")
+        selected_dec_sep_idx = 0
+        for i, (value, label) in enumerate(decimal_sep_formats):
+            self._decimal_sep_choice.Append(label, value)
+            if value == current_dec_sep:
+                selected_dec_sep_idx = i
+        self._decimal_sep_choice.SetSelection(selected_dec_sep_idx)
+        self._decimal_sep_choice.Bind(wx.EVT_CHOICE, self._on_decimal_sep_change)
+        dec_sep_sizer.Add(self._decimal_sep_choice, 0, wx.ALIGN_CENTER_VERTICAL)
 
         # Detected decimal separator label
         import locale as _locale
-        detectedDecSep = _locale.localeconv().get("decimal_point", ".") or "."
-        self._detectedDecSepLabel = wx.StaticText(
-            decSepPanel,
-            label=_("Detected: %s") % ('"%s"' % detectedDecSep)
+        detected_dec_sep = _locale.localeconv().get("decimal_point", ".") or "."
+        self._detected_dec_sep_label = wx.StaticText(
+            dec_sep_panel,
+            label=_("Detected: %s") % ('"%s"' % detected_dec_sep)
         )
-        self._detectedDecSepLabel.SetForegroundColour(
+        self._detected_dec_sep_label.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
-        decSepSizer.Add(self._detectedDecSepLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 15)
+        dec_sep_sizer.Add(
+            self._detected_dec_sep_label,
+            0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 15,
+        )
 
-        decSepPanel.SetSizer(decSepSizer)
-        self.addEntry(_("Decimal separator"), decSepPanel)
+        dec_sep_panel.SetSizer(dec_sep_sizer)
+        self.addEntry(_("Decimal separator"), dec_sep_panel)
 
         # Currency decimal places dropdown
-        currDpPanel = wx.Panel(self)
-        currDpSizer = wx.BoxSizer(wx.HORIZONTAL)
+        curr_dp_panel = wx.Panel(self)
+        curr_dp_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self._currencyDpChoice = wx.Choice(currDpPanel)
-        currencyDpOptions = [
+        self._currency_dp_choice = wx.Choice(curr_dp_panel)
+        currency_dp_options = [
             ("", _("Automatic (from locale)")),
             ("0", _("0 (e.g. JPY, KRW)")),
             ("2", _("2 (e.g. USD, EUR)")),
             ("3", _("3 (e.g. BHD, KWD)")),
         ]
-        currentCurrDp = self.gettext("view", "currency_decimal_places")
-        selectedCurrDpIdx = 0
-        for i, (value, label) in enumerate(currencyDpOptions):
-            self._currencyDpChoice.Append(label, value)
-            if value == currentCurrDp:
-                selectedCurrDpIdx = i
-        self._currencyDpChoice.SetSelection(selectedCurrDpIdx)
-        self._currencyDpChoice.Bind(wx.EVT_CHOICE, self._onCurrencyDpChange)
-        currDpSizer.Add(self._currencyDpChoice, 0, wx.ALIGN_CENTER_VERTICAL)
+        current_curr_dp = self.gettext("view", "currency_decimal_places")
+        selected_curr_dp_idx = 0
+        for i, (value, label) in enumerate(currency_dp_options):
+            self._currency_dp_choice.Append(label, value)
+            if value == current_curr_dp:
+                selected_curr_dp_idx = i
+        self._currency_dp_choice.SetSelection(selected_curr_dp_idx)
+        self._currency_dp_choice.Bind(wx.EVT_CHOICE, self._on_currency_dp_change)
+        curr_dp_sizer.Add(self._currency_dp_choice, 0, wx.ALIGN_CENTER_VERTICAL)
 
         # Detected currency decimal places label
-        detectedFrac = _locale.localeconv().get("frac_digits", 2)
-        if detectedFrac == 127:
-            detectedFrac = 2
-        self._detectedCurrDpLabel = wx.StaticText(
-            currDpPanel,
-            label=_("Detected: %d") % detectedFrac
+        detected_frac = _locale.localeconv().get("frac_digits", 2)
+        if detected_frac == 127:
+            detected_frac = 2
+        self._detected_curr_dp_label = wx.StaticText(
+            curr_dp_panel,
+            label=_("Detected: %d") % detected_frac
         )
-        self._detectedCurrDpLabel.SetForegroundColour(
+        self._detected_curr_dp_label.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
-        currDpSizer.Add(self._detectedCurrDpLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 15)
+        curr_dp_sizer.Add(
+            self._detected_curr_dp_label,
+            0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 15,
+        )
 
-        currDpPanel.SetSizer(currDpSizer)
-        self.addEntry(_("Currency decimal places"), currDpPanel)
+        curr_dp_panel.SetSizer(curr_dp_sizer)
+        self.addEntry(_("Currency decimal places"), curr_dp_panel)
 
         # Demo CurrencyCtrl showing the selected decimal separator and places (live update)
         from taskcoachlib.widgets.numericctrl import NumericCtrl
-        currDemoPanel = wx.Panel(self)
-        currDemoSizer = wx.BoxSizer(wx.HORIZONTAL)
-        currDemoLabel = wx.StaticText(currDemoPanel, label=_("Preview:"))
-        currDemoSizer.Add(currDemoLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
-        # Resolve effective decimal char and places for initial demo
-        effectiveDecChar = currentDecSep or detectedDecSep
-        if currentCurrDp:
-            effectiveCurrDp = int(currentCurrDp)
-        else:
-            effectiveCurrDp = detectedFrac
-        self._demoCurrencyCtrl = NumericCtrl(
-            currDemoPanel,
-            value=1234.56,
-            decimal_places=effectiveCurrDp,
-            decimal_char=effectiveDecChar,
+        curr_demo_panel = wx.Panel(self)
+        curr_demo_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        curr_demo_label = wx.StaticText(curr_demo_panel, label=_("Preview:"))
+        curr_demo_sizer.Add(
+            curr_demo_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10
         )
-        currDemoSizer.Add(self._demoCurrencyCtrl, 0, wx.ALIGN_CENTER_VERTICAL)
-        currDemoPanel.SetSizer(currDemoSizer)
-        self.addEntry("", currDemoPanel)
+        # Resolve effective decimal char and places for initial demo
+        effective_dec_char = current_dec_sep or detected_dec_sep
+        if current_curr_dp:
+            effective_curr_dp = int(current_curr_dp)
+        else:
+            effective_curr_dp = detected_frac
+        self._demo_currency_ctrl = NumericCtrl(
+            curr_demo_panel,
+            value=1234.56,
+            decimal_places=effective_curr_dp,
+            decimal_char=effective_dec_char,
+        )
+        curr_demo_sizer.Add(self._demo_currency_ctrl, 0, wx.ALIGN_CENTER_VERTICAL)
+        curr_demo_panel.SetSizer(curr_demo_sizer)
+        self.addEntry("", curr_demo_panel)
 
         # Store original formats to detect changes
-        self._originalDateFormat = currentFormat
-        self._originalTimeFormat = currentTimeFormat
-        self._originalDecimalSep = currentDecSep
-        self._originalCurrencyDp = currentCurrDp
+        self._original_date_format = current_format
+        self._original_display_override = current_override
+        self._original_time_format = current_time_format
+        self._original_decimal_sep = current_dec_sep
+        self._original_currency_dp = current_curr_dp
 
         self.fit()
 
@@ -1726,13 +1791,13 @@ class LanguagePage(SettingsPage):
         self._spellCheckLangChoice.Enable(enabled and ENCHANT_AVAILABLE)
         event.Skip()
 
-    def _formatOrderToString(self, field_order, separator):
+    def _format_order_to_string(self, field_order, separator):
         """Convert field order and separator to a human-readable format string."""
         field_map = {'year': 'YYYY', 'month': 'MM', 'date_day': 'DD'}
         parts = [field_map.get(f, '??') for f in field_order]
         return separator.join(parts)
 
-    def _getSelectedLanguageCode(self):
+    def _get_selected_language_code(self):
         """Get the currently selected language code from the dropdown."""
         for section, setting, choiceCtrls in self._choiceSettings:
             if setting == "language_set_by_user":
@@ -1740,185 +1805,243 @@ class LanguagePage(SettingsPage):
                 return choice.GetClientData(choice.GetSelection())
         return ""
 
-    def _rebuildDemoDateCtrl(self, dateFormat):
+    def _rebuild_demo_date_ctrl(self, date_format):
         """(Re)create the demo DateComboRouterCtrl with the given format."""
         from taskcoachlib.widgets.maskedtimectrl import DateComboRouterCtrl
         import datetime
         today = datetime.date.today()
-        parent = self._demoDatePanel
+        parent = self._demo_date_panel
         sizer = parent.GetSizer()
-        if self._demoDateCtrl:
-            self._demoDateCtrl.Destroy()
-        self._demoDateCtrl = DateComboRouterCtrl(
+        if self._demo_date_ctrl:
+            self._demo_date_ctrl.Destroy()
+        self._demo_date_ctrl = DateComboRouterCtrl(
             parent,
             year=today.year, month=today.month, day=today.day,
-            dateFormat=dateFormat
+            dateFormat=date_format
         )
-        sizer.Add(self._demoDateCtrl, 0, wx.ALIGN_CENTER_VERTICAL)
+        sizer.Add(self._demo_date_ctrl, 0, wx.ALIGN_CENTER_VERTICAL)
         parent.Layout()
         parent.Fit()
 
-    def _rebuildDemoTimeCtrl(self, timeFormat):
+    def _rebuild_demo_time_ctrl(self, time_format):
         """(Re)create the demo TimeCtrl with the given format."""
         from taskcoachlib.widgets.maskedtimectrl import TimeCtrl
         import datetime
         now = datetime.datetime.now()
-        parent = self._demoTimePanel
+        parent = self._demo_time_panel
         sizer = parent.GetSizer()
-        if self._demoTimeCtrl:
-            self._demoTimeCtrl.Destroy()
-        self._demoTimeCtrl = TimeCtrl(
+        if self._demo_time_ctrl:
+            self._demo_time_ctrl.Destroy()
+        self._demo_time_ctrl = TimeCtrl(
             parent,
             hours=now.hour, minutes=now.minute,
-            timeFormat=timeFormat
+            timeFormat=time_format
         )
-        sizer.Add(self._demoTimeCtrl, 0, wx.ALIGN_CENTER_VERTICAL)
+        sizer.Add(self._demo_time_ctrl, 0, wx.ALIGN_CENTER_VERTICAL)
         parent.Layout()
         parent.Fit()
 
-    def _onDateFormatChange(self, event):
+    def _on_date_format_change(self, event):
         """Handle date format dropdown change - update demo control and restart warning."""
         choice = event.GetEventObject()
-        newFormat = choice.GetClientData(choice.GetSelection())
-        self._rebuildDemoDateCtrl(newFormat or None)
-        self._updateRestartWarning()
+        new_format = choice.GetClientData(choice.GetSelection())
+        self._rebuild_demo_date_ctrl(new_format or None)
+        self._update_restart_warning()
         event.Skip()
 
-    def _onTimeFormatChange(self, event):
+    def _rebuild_display_override_preview(self, override):
+        """(Re)build the preview for the Display Override setting.
+
+        Empty override renders no preview (clears the slot). A recognized
+        override renders a static label formatted via strftime with today.
+        An unrecognized non-empty value is logged and rendered as blank.
+        """
+        from taskcoachlib.render import _DISPLAY_ONLY_DATE_FORMATS
+        import datetime
+        parent = self._display_override_preview_panel
+        sizer = parent.GetSizer()
+        if self._display_override_preview_ctrl:
+            self._display_override_preview_ctrl.Destroy()
+            self._display_override_preview_ctrl = None
+        if override in _DISPLAY_ONLY_DATE_FORMATS:
+            self._display_override_preview_ctrl = wx.StaticText(
+                parent,
+                label=datetime.date.today().strftime(
+                    _DISPLAY_ONLY_DATE_FORMATS[override]
+                ),
+            )
+            sizer.Add(
+                self._display_override_preview_ctrl,
+                0, wx.ALIGN_CENTER_VERTICAL,
+            )
+        elif override:
+            from taskcoachlib.meta.debug import log_step
+            log_step(
+                "unknown display override %r; no preview shown" % override,
+                prefix="PREFS",
+            )
+        parent.Layout()
+        parent.Fit()
+
+    def _on_display_override_change(self, event):
+        """Handle display-override dropdown change."""
+        choice = event.GetEventObject()
+        new_override = choice.GetClientData(choice.GetSelection())
+        self._rebuild_display_override_preview(new_override)
+        self._update_restart_warning()
+        event.Skip()
+
+    def _on_time_format_change(self, event):
         """Handle time format dropdown change - update demo control and restart warning."""
         choice = event.GetEventObject()
-        newFormat = choice.GetClientData(choice.GetSelection())
-        self._rebuildDemoTimeCtrl(newFormat if newFormat else "24")
-        self._updateRestartWarning()
+        new_format = choice.GetClientData(choice.GetSelection())
+        self._rebuild_demo_time_ctrl(new_format if new_format else "24")
+        self._update_restart_warning()
         event.Skip()
 
-    def _onDecimalSepChange(self, event):
+    def _on_decimal_sep_change(self, event):
         """Handle decimal separator dropdown change - update demo and restart warning."""
-        self._updateCurrencyDemo()
-        self._updateRestartWarning()
+        self._update_currency_demo()
+        self._update_restart_warning()
         event.Skip()
 
-    def _onCurrencyDpChange(self, event):
+    def _on_currency_dp_change(self, event):
         """Handle currency decimal places dropdown change - update demo and restart warning."""
-        self._updateCurrencyDemo()
-        self._updateRestartWarning()
+        self._update_currency_demo()
+        self._update_restart_warning()
         event.Skip()
 
-    def _updateCurrencyDemo(self):
+    def _update_currency_demo(self):
         """Recreate the demo NumericCtrl with current dropdown selections."""
         import locale as _locale
         from taskcoachlib.widgets.numericctrl import NumericCtrl
 
         # Resolve effective decimal char
-        selectedDecSep = self._decimalSepChoice.GetClientData(
-            self._decimalSepChoice.GetSelection()
+        selected_dec_sep = self._decimal_sep_choice.GetClientData(
+            self._decimal_sep_choice.GetSelection()
         )
-        if not selectedDecSep:
-            selectedDecSep = _locale.localeconv().get("decimal_point", ".")
+        if not selected_dec_sep:
+            selected_dec_sep = _locale.localeconv().get("decimal_point", ".")
 
         # Resolve effective currency decimal places
-        selectedCurrDp = self._currencyDpChoice.GetClientData(
-            self._currencyDpChoice.GetSelection()
+        selected_curr_dp = self._currency_dp_choice.GetClientData(
+            self._currency_dp_choice.GetSelection()
         )
-        if selectedCurrDp:
-            effectiveDp = int(selectedCurrDp)
+        if selected_curr_dp:
+            effective_dp = int(selected_curr_dp)
         else:
-            effectiveDp = _locale.localeconv().get("frac_digits", 2)
-            if effectiveDp == 127:
-                effectiveDp = 2
+            effective_dp = _locale.localeconv().get("frac_digits", 2)
+            if effective_dp == 127:
+                effective_dp = 2
 
         # Destroy old and create new
-        parent = self._demoCurrencyCtrl.GetParent()
+        parent = self._demo_currency_ctrl.GetParent()
         sizer = parent.GetSizer()
-        self._demoCurrencyCtrl.Destroy()
-        self._demoCurrencyCtrl = NumericCtrl(
+        self._demo_currency_ctrl.Destroy()
+        self._demo_currency_ctrl = NumericCtrl(
             parent, value=1234.56,
-            decimal_places=effectiveDp, decimal_char=selectedDecSep,
+            decimal_places=effective_dp, decimal_char=selected_dec_sep,
         )
-        sizer.Add(self._demoCurrencyCtrl, 0, wx.ALIGN_CENTER_VERTICAL)
+        sizer.Add(self._demo_currency_ctrl, 0, wx.ALIGN_CENTER_VERTICAL)
         parent.Layout()
         parent.Fit()
 
-    def _onLanguageChange(self, event):
+    def _on_language_change(self, event):
         """Handle language dropdown change."""
-        self._updateLocaleWarning()
-        self._updateRestartWarning()
+        self._update_locale_warning()
+        self._update_restart_warning()
         event.Skip()
 
-    def _updateRestartWarning(self):
+    def _update_restart_warning(self):
         """Update restart warning to show change detected state."""
-        selected_lang = self._getSelectedLanguageCode()
-        selected_date_format = self._dateFormatChoice.GetClientData(
-            self._dateFormatChoice.GetSelection()
+        selected_lang = self._get_selected_language_code()
+        selected_date_format = self._date_format_choice.GetClientData(
+            self._date_format_choice.GetSelection()
         )
-        selected_time_format = self._timeFormatChoice.GetClientData(
-            self._timeFormatChoice.GetSelection()
+        selected_time_format = self._time_format_choice.GetClientData(
+            self._time_format_choice.GetSelection()
         )
 
-        selected_decimal_sep = self._decimalSepChoice.GetClientData(
-            self._decimalSepChoice.GetSelection()
+        selected_decimal_sep = self._decimal_sep_choice.GetClientData(
+            self._decimal_sep_choice.GetSelection()
         )
-        selected_currency_dp = self._currencyDpChoice.GetClientData(
-            self._currencyDpChoice.GetSelection()
+        selected_currency_dp = self._currency_dp_choice.GetClientData(
+            self._currency_dp_choice.GetSelection()
+        )
+
+        selected_display_override = self._display_override_choice.GetClientData(
+            self._display_override_choice.GetSelection()
         )
 
         # Check if any regional setting has changed
-        language_changed = selected_lang != self._originalLanguage
-        date_format_changed = selected_date_format != self._originalDateFormat
-        time_format_changed = selected_time_format != self._originalTimeFormat
-        decimal_sep_changed = selected_decimal_sep != self._originalDecimalSep
-        currency_dp_changed = selected_currency_dp != self._originalCurrencyDp
+        language_changed = selected_lang != self._original_language
+        date_format_changed = selected_date_format != self._original_date_format
+        display_override_changed = (
+            selected_display_override != self._original_display_override
+        )
+        time_format_changed = selected_time_format != self._original_time_format
+        decimal_sep_changed = selected_decimal_sep != self._original_decimal_sep
+        currency_dp_changed = selected_currency_dp != self._original_currency_dp
 
-        if language_changed or date_format_changed or time_format_changed or decimal_sep_changed or currency_dp_changed:
+        if (language_changed or date_format_changed
+                or display_override_changed or time_format_changed
+                or decimal_sep_changed or currency_dp_changed):
             # Change detected - show red warning
-            self._restartWarning.SetLabel(
-                self._restartWarningBase + " " + _("Change detected, restart required!")
+            self._restart_warning.SetLabel(
+                self._restart_warning_base + " " + _("Change detected, restart required!")
             )
-            self._restartWarning.SetForegroundColour(wx.Colour(180, 0, 0))
+            self._restart_warning.SetForegroundColour(wx.Colour(180, 0, 0))
         else:
             # Reverted to original - restore normal state
-            self._restartWarning.SetLabel(self._restartWarningBase)
-            self._restartWarning.SetForegroundColour(self._restartWarningDefaultColor)
-        self._restartWarning.Refresh()
+            self._restart_warning.SetLabel(self._restart_warning_base)
+            self._restart_warning.SetForegroundColour(self._restart_warning_default_color)
+        self._restart_warning.Refresh()
         self.Layout()
 
-    def _updateLocaleWarning(self):
+    def _update_locale_warning(self):
         """Show or hide the locale warning based on selected language's locale availability."""
         from taskcoachlib import i18n
         # Check if the selected language's locale is available on the system
-        selected_lang = self._getSelectedLanguageCode()
-        showWarning = not i18n.isLocaleAvailable(selected_lang)
-        self._localeWarning.Show(showWarning)
+        selected_lang = self._get_selected_language_code()
+        show_warning = not i18n.isLocaleAvailable(selected_lang)
+        self._locale_warning.Show(show_warning)
         self.Layout()
 
     def ok(self):
         super().ok()
         self.set("view", "language", self.get("view", "language_set_by_user"))
         # Save date format setting
-        selectedFormat = self._dateFormatChoice.GetClientData(
-            self._dateFormatChoice.GetSelection()
+        selected_format = self._date_format_choice.GetClientData(
+            self._date_format_choice.GetSelection()
         )
-        self.set("view", "dateformat", selectedFormat)
+        self.set("view", "dateformat", selected_format)
+        # Save display-only override (applies only to rendering)
+        selected_display_override = self._display_override_choice.GetClientData(
+            self._display_override_choice.GetSelection()
+        )
+        self.set(
+            "view", "dateformat_display_override", selected_display_override
+        )
         # Save time format setting
-        selectedTimeFormat = self._timeFormatChoice.GetClientData(
-            self._timeFormatChoice.GetSelection()
+        selected_time_format = self._time_format_choice.GetClientData(
+            self._time_format_choice.GetSelection()
         )
-        self.set("view", "timeformat", selectedTimeFormat)
+        self.set("view", "timeformat", selected_time_format)
         # Save decimal separator setting
-        selectedDecSep = self._decimalSepChoice.GetClientData(
-            self._decimalSepChoice.GetSelection()
+        selected_dec_sep = self._decimal_sep_choice.GetClientData(
+            self._decimal_sep_choice.GetSelection()
         )
-        self.set("view", "decimal_separator", selectedDecSep)
+        self.set("view", "decimal_separator", selected_dec_sep)
         # Save currency decimal places setting
-        selectedCurrDp = self._currencyDpChoice.GetClientData(
-            self._currencyDpChoice.GetSelection()
+        selected_curr_dp = self._currency_dp_choice.GetClientData(
+            self._currency_dp_choice.GetSelection()
         )
-        self.set("view", "currency_decimal_places", selectedCurrDp)
+        self.set("view", "currency_decimal_places", selected_curr_dp)
         # Save spell check language (enabled checkbox saved by base ok())
-        selectedSpellLang = self._spellCheckLangChoice.GetClientData(
+        selected_spell_lang = self._spellCheckLangChoice.GetClientData(
             self._spellCheckLangChoice.GetSelection()
         )
-        self.set("spellcheck", "language", selectedSpellLang)
+        self.set("spellcheck", "language", selected_spell_lang)
 
 
 class StatusesPage(SettingsPage):
@@ -2047,11 +2170,11 @@ class FeaturesPage(SettingsPage):
 
     def __init__(self, *args, **kwargs):
         super().__init__(columns=2, growableColumn=-1, *args, **kwargs)
-        self._restartWarningBase = _("All settings on this tab require a restart of %s to take effect.") % meta.name
-        self._restartWarning = wx.StaticText(self, label=self._restartWarningBase)
-        self._restartWarningDefaultColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
-        self._restartWarning.SetForegroundColour(self._restartWarningDefaultColor)
-        self.addEntry("", self._restartWarning)
+        self._restart_warning_base = _("All settings on this tab require a restart of %s to take effect.") % meta.name
+        self._restart_warning = wx.StaticText(self, label=self._restart_warning_base)
+        self._restart_warning_default_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        self._restart_warning.SetForegroundColour(self._restart_warning_default_color)
+        self.addEntry("", self._restart_warning)
         self.addChoiceSetting(
             "view",
             "weekstart",
@@ -2144,10 +2267,10 @@ class FeaturesPage(SettingsPage):
         self.fit()
 
     def _onSettingChange(self, event):
-        self._updateRestartWarning()
+        self._update_restart_warning()
         event.Skip()
 
-    def _updateRestartWarning(self):
+    def _update_restart_warning(self):
         changed = False
         for section, setting, checkBox in self._booleanSettings:
             if checkBox.IsChecked() != self._originalValues.get((section, setting)):
@@ -2171,14 +2294,14 @@ class FeaturesPage(SettingsPage):
                 changed = True
 
         if changed:
-            self._restartWarning.SetLabel(
-                self._restartWarningBase + " " + _("Change detected, restart required!")
+            self._restart_warning.SetLabel(
+                self._restart_warning_base + " " + _("Change detected, restart required!")
             )
-            self._restartWarning.SetForegroundColour(wx.Colour(180, 0, 0))
+            self._restart_warning.SetForegroundColour(wx.Colour(180, 0, 0))
         else:
-            self._restartWarning.SetLabel(self._restartWarningBase)
-            self._restartWarning.SetForegroundColour(self._restartWarningDefaultColor)
-        self._restartWarning.Refresh()
+            self._restart_warning.SetLabel(self._restart_warning_base)
+            self._restart_warning.SetForegroundColour(self._restart_warning_default_color)
+        self._restart_warning.Refresh()
 
     def ok(self):
         super().ok()

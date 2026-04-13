@@ -39,30 +39,6 @@ class Effort(baseeffort.BaseEffort, base.Object):
         )
         self.__duration = Attribute(self._computeDuration(), self, self._onDurationChanged)
 
-    def __getattribute__(self, name):
-        """Override to prevent methods from being shadowed by instance attributes.
-
-        During copy/paste operations, kwargs from __getcopystate__ can end up
-        as instance attributes that shadow the class methods. This override
-        ensures method lookups always find the class method, not instance attrs.
-        """
-        # Methods that might get shadowed - check directly to avoid recursion
-        _protected = (
-            'id', 'task', 'subject', 'description', 'font',
-            'foregroundColor', 'backgroundColor', 'icon', 'selectedIcon', 'ordering',
-            'creationDateTime', 'modificationDateTime'
-        )
-        if name in _protected:
-            # Get the method from the class, not the instance
-            for cls in type(self).__mro__:
-                if name in cls.__dict__:
-                    method = cls.__dict__[name]
-                    if callable(method):
-                        # Return bound method
-                        return method.__get__(self, type(self))
-                    break
-        return object.__getattribute__(self, name)
-
     def setTask(self, task):
         if self._task is None:
             # We haven't been fully initialised yet, so allow setting of the
@@ -71,18 +47,14 @@ class Effort(baseeffort.BaseEffort, base.Object):
             # new task itself.
             self._task = None if task is None else weakref.ref(task)
             return
-        # Get current task by dereferencing weakref directly to avoid any
-        # potential attribute lookup issues (see issue with copy/paste efforts)
-        current_task = self._task() if self._task else None
+        current_task = self.task()
         if task in (current_task, None):
             # command.PasteCommand may try to set the parent to None
             return
-        event = (
-            patterns.Event()
-        )  # Change monitor needs one event to detect task change
-        self._task().removeEffort(self)
+        event = patterns.Event()  # Change monitor needs one event
+        current_task.removeEffort(self)
         self._task = weakref.ref(task)
-        self._task().addEffort(self)
+        task.addEffort(self)
         event.send()
         pub.sendMessage(
             self.taskChangedEventType(), newValue=task, sender=self
@@ -94,41 +66,38 @@ class Effort(baseeffort.BaseEffort, base.Object):
     def monitoredAttributes(class_):
         return base.Object.monitoredAttributes() + ["start", "stop"]
 
-    # Note: task() and id() are now handled by __getattribute__ to prevent
-    # attribute shadowing issues during copy/paste operations.
-
     @classmethod
     def taskChangedEventType(class_):
         return "pubsub.effort.task"
 
     def __str__(self):
-        task = self._task() if self._task else None
-        return "Effort(%s, %s, %s)" % (task, self._start.get(), self._stop.get())
+        return "Effort(%s, %s, %s)" % (
+            self.task(), self._start.get(), self._stop.get()
+        )
 
     __repr__ = __str__
 
     def __eq__(self, other):
         if not isinstance(other, Effort):
             return NotImplemented
-        # Access _Object__id directly to avoid potential attribute shadowing
-        return self._Object__id == other._Object__id
+        return self.id() == other.id()
 
     def __lt__(self, other):
         if not isinstance(other, Effort):
             return NotImplemented
-        # Compare by start time first, then stop time, then id for total ordering
         self_stop = self._stop.get() if self._stop.get() is not None else date.DateTime.max
         other_stop = other._stop.get() if other._stop.get() is not None else date.DateTime.max
-        return (self._start.get(), self_stop, self._Object__id) < (other._start.get(), other_stop, other._Object__id)
+        return (self._start.get(), self_stop, self.id()) < (
+            other._start.get(), other_stop, other.id()
+        )
 
     def __hash__(self):
-        return hash(self._Object__id)
+        return hash(self.id())
 
     def __getstate__(self):
         state = super().__getstate__()
-        task = self._task() if self._task else None
         state.update(
-            dict(task=task, start=self._start.get(), stop=self._stop.get(),
+            dict(task=self.task(), start=self._start.get(), stop=self._stop.get(),
                  entryMode=self.__entryMode.get(), duration=self.__duration.get())
         )
         return state
@@ -144,9 +113,8 @@ class Effort(baseeffort.BaseEffort, base.Object):
 
     def __getcopystate__(self):
         state = super().__getcopystate__()
-        task = self._task() if self._task else None
         state.update(
-            dict(task=task, start=self._start.get(), stop=self._stop.get(),
+            dict(task=self.task(), start=self._start.get(), stop=self._stop.get(),
                  entryMode=self.__entryMode.get(), duration=self.__duration.get())
         )
         return state
@@ -157,7 +125,7 @@ class Effort(baseeffort.BaseEffort, base.Object):
 
     def _onDurationChanged(self, event):
         self.sendDurationChangedMessage()
-        task = self._task() if self._task else None
+        task = self.task()
         if task and task.hourlyFee():
             self.sendRevenueChangedMessage()
 
@@ -203,7 +171,7 @@ class Effort(baseeffort.BaseEffort, base.Object):
         pub.sendMessage(
             self.startChangedEventType(), newValue=self.getStart(), sender=self
         )
-        task = self._task() if self._task else None
+        task = self.task()
         if task:
             task.sendTimeSpentChangedMessage()
 
@@ -222,7 +190,7 @@ class Effort(baseeffort.BaseEffort, base.Object):
     def _onStopChanged(self, event):
         previousStop = getattr(self, '_previousStop', None)
         newStop = self._stop.get()
-        task = self._task() if self._task else None
+        task = self.task()
         if newStop is None:
             pub.sendMessage(
                 self.trackingChangedEventType(), newValue=True, sender=self
@@ -249,7 +217,7 @@ class Effort(baseeffort.BaseEffort, base.Object):
         return self._stop.get() is None
 
     def revenue(self):
-        task = self._task() if self._task else None
+        task = self.task()
         hourlyFee = task.hourlyFee() if task else 0
         return self.timeSpent().hours() * hourlyFee
 
@@ -260,7 +228,7 @@ class Effort(baseeffort.BaseEffort, base.Object):
         return lambda effort: (
             effort.getStart(),
             effort.isTotal(),
-            (effort._task().subject(recursive=True) if effort._task else ""),
+            effort.task().subject(recursive=True) if effort.task() else "",
         )
 
     @classmethod
