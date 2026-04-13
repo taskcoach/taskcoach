@@ -121,8 +121,7 @@ class EffortList(
         Since that wouldn't work we remove the efforts from the tasks by
         hand."""
         for effort in efforts:
-            # Access _task directly to avoid potential attribute shadowing
-            task = effort._task() if effort._task else None
+            task = effort.task()
             if task:
                 task.removeEffort(effort)
 
@@ -133,9 +132,7 @@ class EffortList(
         Since that wouldn't work we add the efforts to the tasks by
         hand."""
         for effort in efforts:
-            # Access _task directly to avoid potential attribute shadowing
-            # that can occur during copy/paste operations
-            task = effort._task() if effort._task else None
+            task = effort.task()
             if task:
                 task.addEffort(effort)
 

@@ -1634,12 +1634,22 @@ class TreeListItem(GenericTreeItem):
 
         column = (column is not None and [column] or [self._owner.GetMainColumn()])[0]
 
-        if len(self._text) > 0:
-            if self._owner.IsVirtual():
-                return self._owner.GetItemText(self._data, column)
-            else:
-                return self._text[column]
-
+        if len(self._text) == 0:
+            return ""
+        if self._owner.IsVirtual():
+            return self._owner.GetItemText(self._data, column)
+        if column < len(self._text):
+            return self._text[column]
+        # Invariant violation: column count and item _text length have
+        # drifted. HyperTreeList.AddColumn/InsertColumn must extend every
+        # item's _text when a column is added; if this fires, that path
+        # was bypassed.
+        from taskcoachlib.meta.debug import log_step
+        log_step(
+            "GetText column=%d out of range (len(_text)=%d) on item %r"
+            % (column, len(self._text), self),
+            prefix="TREELIST",
+        )
         return ""
 
 
@@ -5157,6 +5167,28 @@ class HyperTreeList(wx.Control):
         return self._header_win.GetColumnText(column)
 
 
+    def _extend_item_texts_for_columns(self, insert_at=None):
+        """Ensure every tree item has a _text entry for every column.
+
+        Called after adding or inserting a column so GetText() doesn't
+        index past the end of an item's _text list during repaint.
+
+        :param `insert_at`: if given, splice an empty string into each
+         item's _text at this index (for InsertColumn). If None, append
+         empty strings to reach the current column count (for AddColumn).
+        """
+        if self._main_win is None or self._main_win._anchor is None:
+            return
+        target_len = self._header_win.GetColumnCount()
+        pending = [self._main_win._anchor]
+        while pending:
+            item = pending.pop()
+            if insert_at is not None and insert_at <= len(item._text):
+                item._text.insert(insert_at, "")
+            while len(item._text) < target_len:
+                item._text.append("")
+            pending.extend(item._children)
+
     def AddColumn(self, text, width=_DEFAULT_COL_WIDTH, flag=wx.ALIGN_LEFT,
                   image=-1, shown=True, colour=None, edit=False):
         """
@@ -5175,6 +5207,7 @@ class HyperTreeList(wx.Control):
         """
 
         self._header_win.AddColumn(text, width, flag, image, shown, colour, edit)
+        self._extend_item_texts_for_columns()
         self.DoHeaderLayout()
 
 
@@ -5186,6 +5219,7 @@ class HyperTreeList(wx.Control):
         """
 
         self._header_win.AddColumnInfo(colInfo)
+        self._extend_item_texts_for_columns()
         self.DoHeaderLayout()
 
 
@@ -5199,6 +5233,7 @@ class HyperTreeList(wx.Control):
         """
 
         self._header_win.InsertColumnInfo(before, colInfo)
+        self._extend_item_texts_for_columns(insert_at=before)
         self._header_win.Refresh()
 
 
@@ -5224,6 +5259,7 @@ class HyperTreeList(wx.Control):
 
         self._header_win.InsertColumn(before, text, width, flag, image,
                                       shown, colour, edit)
+        self._extend_item_texts_for_columns(insert_at=before)
         self._header_win.Refresh()
 
 
@@ -5235,6 +5271,13 @@ class HyperTreeList(wx.Control):
         """
 
         self._header_win.RemoveColumn(column)
+        if self._main_win is not None and self._main_win._anchor is not None:
+            pending = [self._main_win._anchor]
+            while pending:
+                item = pending.pop()
+                if column < len(item._text):
+                    del item._text[column]
+                pending.extend(item._children)
         self._header_win.Refresh()
 
 
