@@ -407,7 +407,7 @@ class EffortWriterTest(CSVWriterTestCase):
             render.dateTimePeriod(
                 self.effort.getStart(), self.effort.getStop()
             ),
-            columns=self.viewer.selectableColumns(),
+            columns=self.viewer.selectable_columns(),
         )
 
     def testExportAllColumns_Split(self):
@@ -420,7 +420,7 @@ class EffortWriterTest(CSVWriterTestCase):
                 render.time(self.effort.getStop().time()),
             ),
             separateDateAndTimeColumns=True,
-            columns=self.viewer.selectableColumns(),
+            columns=self.viewer.selectable_columns(),
         )
 
 

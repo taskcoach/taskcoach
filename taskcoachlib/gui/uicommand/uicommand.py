@@ -3463,13 +3463,13 @@ class MainWindowRestore(base_uicommand.UICommand):
         else:
             window.Iconize()
 
-    def getHelpText(self):
+    def get_help_text(self):
         window = self.main_window()
         if window.IsIconized() or not window.IsShown():
             return _("Restore the window to its previous state")
         return _("Hide the main window")
 
-    def getMenuText(self):
+    def get_menu_text(self):
         window = self.main_window()
         if window.IsIconized() or not window.IsShown():
             return _("&Restore")

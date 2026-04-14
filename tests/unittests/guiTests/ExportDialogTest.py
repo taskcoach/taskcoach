@@ -50,7 +50,7 @@ class DummyViewer(object):
     def columns(self):
         return [self.col1, self.col2]
 
-    def selectableColumns(self):
+    def selectable_columns(self):
         return [self.col2]
 
 
