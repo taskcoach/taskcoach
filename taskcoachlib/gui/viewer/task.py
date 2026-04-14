@@ -2004,7 +2004,7 @@ class TaskViewer(
         super().setSortByTaskStatusFirst(*args, **kwargs)
         self.show_sort_order()
 
-    def getSortOrderImage(self):
+    def get_sort_order_image(self):
         if self.isSortOrderAscending():
             if self.isSortByTaskStatusFirst():  # pylint: disable=E1101
                 return "taskcoach_actions_arrow_down_with_status_icon"

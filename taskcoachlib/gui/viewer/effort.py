@@ -78,7 +78,7 @@ class EffortViewer(
             "settings.%s.consolidateeffortspertask" % self.settingsSection(),
         )
 
-    def selectableColumns(self):
+    def selectable_columns(self):
         columns = list()
         for column in self.columns():
             if (

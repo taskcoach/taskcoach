@@ -2336,7 +2336,7 @@ class LocalCategoryViewer(viewer.BaseCategoryViewer):  # pylint: disable=W0223
                 None, self.__items, category=category
             ).do()
 
-    def checkAllCategories(self):
+    def check_all_categories(self):
         """Assign all categories to the items being edited."""
         for cat in self.presentation():
             for item in self.__items:
@@ -2344,7 +2344,7 @@ class LocalCategoryViewer(viewer.BaseCategoryViewer):  # pylint: disable=W0223
                     item.addCategory(cat)
         self.widget.refreshAllCheckStates()
 
-    def uncheckAllCategories(self):
+    def uncheck_all_categories(self):
         """Remove all categories from the items being edited."""
         for cat in self.presentation():
             for item in self.__items:
