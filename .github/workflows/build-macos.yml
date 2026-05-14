@@ -103,7 +103,7 @@ jobs:
           python -c "
           from taskcoachlib.powermgt.idle import IdleQuery
           iq = IdleQuery()
-          idle = iq.getIdleSeconds()
+          idle = iq.get_idle_seconds()
           print(f'Idle time: {idle} seconds')
           "
 

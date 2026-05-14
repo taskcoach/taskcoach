@@ -10,8 +10,14 @@
 # Primary (single source of truth):
 #   taskcoachlib/meta/data.py - version, patch, release date, formatting docs
 #
-# Also update (manual, version in file):
-#   debian/changelog - version in header, add changelog entry
-#   build.in/fedora/taskcoach.spec - Version: line, add %changelog entry
+# Also update (visible to end users):
+#   README.md - all hardcoded version strings in download table and wget URLs
+#
+# Auto-updated by CI (do NOT bump manually):
+#   debian/changelog - overwritten by .github/workflows/build-deb.yml from
+#                      meta/data.py at build time
+#   build.in/fedora/taskcoach.spec - Version: line rewritten by
+#                                    .github/workflows/build-rpm.yml via sed
+#                                    (the %changelog section is cosmetic only)
 #
 # =============================================================================

@@ -38,6 +38,20 @@ from taskcoachlib import operating_system
 
 
 # ==============================================================================
+
+
+def _summarize_exception(exc):
+    """Compact one-line description of an exception for probe logs."""
+    try:
+        msg = str(exc)
+    except Exception:
+        msg = ""
+    if msg:
+        return "%s: %s" % (type(exc).__name__, msg.splitlines()[0][:160])
+    return type(exc).__name__
+
+
+# ==============================================================================
 # Linux/BSD
 
 if operating_system.isGTK():
@@ -67,14 +81,16 @@ if operating_system.isGTK():
 
         def __init__(self):
             self._initialized = False
-            self._method = None  # 'dbus_mutter', 'dbus_screensaver', 'x11', or None
+            # 'dbus_mutter', 'dbus_screensaver', 'x11_mit_screensaver', or None
+            self._method = None
             self._warned = False
+            self._probe_log = []  # list of (name, ok, detail)
             self.dpy = None
             self._dbus_proxy = None
             self._dbus_iface = None
 
         def _try_dbus_mutter(self):
-            """Try GNOME Mutter IdleMonitor via DBus."""
+            """Try GNOME Mutter IdleMonitor via DBus. Returns (ok, detail)."""
             try:
                 import dbus
                 bus = dbus.SessionBus()
@@ -87,12 +103,15 @@ if operating_system.isGTK():
                 iface.GetIdletime()
                 self._dbus_proxy = proxy
                 self._dbus_iface = iface
-                return True
-            except Exception:
-                return False
+                return True, None
+            except Exception as e:
+                return False, _summarize_exception(e)
 
         def _try_dbus_screensaver(self):
-            """Try freedesktop ScreenSaver via DBus (KDE)."""
+            """Try freedesktop ScreenSaver via DBus (KDE).
+
+            Returns (ok, detail).
+            """
             try:
                 import dbus
                 bus = dbus.SessionBus()
@@ -105,12 +124,12 @@ if operating_system.isGTK():
                 iface.GetSessionIdleTime()
                 self._dbus_proxy = proxy
                 self._dbus_iface = iface
-                return True
-            except Exception:
-                return False
+                return True, None
+            except Exception as e:
+                return False, _summarize_exception(e)
 
         def _try_x11_screensaver(self):
-            """Try X11 MIT-SCREEN-SAVER extension."""
+            """Try X11 MIT-SCREEN-SAVER extension. Returns (ok, detail)."""
             try:
                 _x11 = CDLL("libX11.so.6")
 
@@ -131,7 +150,7 @@ if operating_system.isGTK():
 
                 self.dpy = self.XOpenDisplay(None)
                 if not self.dpy:
-                    return False
+                    return False, "XOpenDisplay failed (no DISPLAY?)"
 
                 # Check if MIT-SCREEN-SAVER extension is available
                 major_opcode = c_int()
@@ -146,7 +165,7 @@ if operating_system.isGTK():
                 )
 
                 if not has_extension:
-                    return False
+                    return False, "MIT-SCREEN-SAVER extension not present"
 
                 _xss = CDLL("libXss.so.1")
 
@@ -158,10 +177,10 @@ if operating_system.isGTK():
                 )(("XScreenSaverQueryInfo", _xss))
 
                 self.info = self.XScreenSaverAllocInfo()
-                return True
+                return True, None
 
-            except OSError:
-                return False
+            except OSError as e:
+                return False, _summarize_exception(e)
 
         def _initialize(self):
             """Lazy initialization - try available methods in order."""
@@ -169,21 +188,38 @@ if operating_system.isGTK():
                 return
             self._initialized = True
 
-            # Try methods in order of preference
-            if self._try_dbus_mutter():
+            # Try methods in order of preference; record outcome of each.
+            ok, detail = self._try_dbus_mutter()
+            self._probe_log.append(('dbus_mutter', ok, detail))
+            if ok:
                 self._method = 'dbus_mutter'
-            elif self._try_dbus_screensaver():
+                return
+
+            ok, detail = self._try_dbus_screensaver()
+            self._probe_log.append(('dbus_screensaver', ok, detail))
+            if ok:
                 self._method = 'dbus_screensaver'
-            elif self._try_x11_screensaver():
-                self._method = 'x11'
-            else:
-                self._method = None
+                return
+
+            ok, detail = self._try_x11_screensaver()
+            self._probe_log.append(('x11_mit_screensaver', ok, detail))
+            if ok:
+                self._method = 'x11_mit_screensaver'
+                return
+
+            self._method = None
+
+        def get_backend_name(self):
+            return self._method
+
+        def get_probe_log(self):
+            return list(self._probe_log)
 
         def __del__(self):
             if self.dpy and hasattr(self, 'XCloseDisplay'):
                 self.XCloseDisplay(self.dpy)
 
-        def getIdleSeconds(self):
+        def get_idle_seconds(self):
             self._initialize()
 
             if self._method == 'dbus_mutter':
@@ -198,7 +234,7 @@ if operating_system.isGTK():
                     return self._dbus_iface.GetSessionIdleTime()
                 except Exception:
                     pass
-            elif self._method == 'x11':
+            elif self._method == 'x11_mit_screensaver':
                 self.XScreenSaverQueryInfo(
                     self.dpy, self.XRootWindow(self.dpy, 0), self.info
                 )
@@ -229,9 +265,15 @@ elif operating_system.isWindows():
             self.lastInputInfo = LASTINPUTINFO()
             self.lastInputInfo.cbSize = sizeof(self.lastInputInfo)
 
-        def getIdleSeconds(self):
+        def get_idle_seconds(self):
             self.GetLastInputInfo(byref(self.lastInputInfo))
             return (self.GetTickCount() - self.lastInputInfo.dwTime) / 1000
+
+        def get_backend_name(self):
+            return 'win32_GetLastInputInfo'
+
+        def get_probe_log(self):
+            return [('win32_GetLastInputInfo', True, None)]
 
     IdleQuery = WindowsIdleQuery
 
@@ -250,6 +292,7 @@ elif operating_system.isMac():
 
         def __init__(self):
             self._warned = False
+            self._init_error = None
             try:
                 # Load IOKit and CoreFoundation frameworks
                 self._iokit = cdll.LoadLibrary(
@@ -291,8 +334,9 @@ elif operating_system.isMac():
 
                 self._available = True
 
-            except OSError:
+            except OSError as e:
                 self._available = False
+                self._init_error = _summarize_exception(e)
 
         def __del__(self):
             if hasattr(self, '_idle_key') and self._idle_key:
@@ -301,7 +345,7 @@ elif operating_system.isMac():
                 except Exception:
                     pass
 
-        def getIdleSeconds(self):
+        def get_idle_seconds(self):
             if not self._available:
                 if not self._warned:
                     self._warned = True
@@ -347,6 +391,12 @@ elif operating_system.isMac():
             except Exception:
                 return 0
 
+        def get_backend_name(self):
+            return 'iokit_HIDIdleTime' if self._available else None
+
+        def get_probe_log(self):
+            return [('iokit_HIDIdleTime', self._available, self._init_error)]
+
     IdleQuery = MacIdleQuery
 
 
@@ -363,44 +413,44 @@ class IdleNotifier(wx.EvtHandler, IdleQuery):
         IdleQuery.__init__(self)
 
         self.state = self.STATE_AWAKE
-        self.lastActivity = time.time()
-        self.goneToSleep = None
+        self._last_activity = time.time()
+        self._gone_to_sleep = None
 
         self._bound = True
-        wx.GetApp().Bind(wx.EVT_IDLE, self._OnIdle)
+        wx.GetApp().Bind(wx.EVT_IDLE, self._on_idle)
 
     def stop(self):
         self.pause()
 
     def pause(self):
         if self._bound:
-            wx.GetApp().Unbind(wx.EVT_IDLE, handler=self._OnIdle)
+            wx.GetApp().Unbind(wx.EVT_IDLE, handler=self._on_idle)
             self._bound = False
 
     def resume(self):
         self.state = self.STATE_AWAKE
-        self.lastActivity = time.time()
+        self._last_activity = time.time()
         if not self._bound:
-            wx.GetApp().Bind(wx.EVT_IDLE, self._OnIdle)
+            wx.GetApp().Bind(wx.EVT_IDLE, self._on_idle)
 
     def _check(self):
         if (
             self.state == self.STATE_AWAKE
-            and time.time() - self.lastActivity >= self.get_min_idle_time()
+            and time.time() - self._last_activity >= self.get_min_idle_time()
         ):
-            self.goneToSleep = self.lastActivity
+            self._gone_to_sleep = self._last_activity
             self.state = self.STATE_SLEEPING
             self.sleep()
         elif (
             self.state == self.STATE_SLEEPING
-            and time.time() - self.lastActivity < self.get_min_idle_time()
+            and time.time() - self._last_activity < self.get_min_idle_time()
         ):
             self.state = self.STATE_AWAKE
-            self.wake(self.goneToSleep)
+            self.wake(self._gone_to_sleep)
 
-    def _OnIdle(self, event):
+    def _on_idle(self, event):
         self._check()
-        self.lastActivity = time.time() - self.getIdleSeconds()
+        self._last_activity = time.time() - self.get_idle_seconds()
         self._check()
         event.Skip()
 
@@ -409,7 +459,7 @@ class IdleNotifier(wx.EvtHandler, IdleQuery):
         Call this when the computer goes to sleep.
         """
         if self._bound:
-            wx.GetApp().Unbind(wx.EVT_IDLE, handler=self._OnIdle)
+            wx.GetApp().Unbind(wx.EVT_IDLE, handler=self._on_idle)
             self._bound = False
 
     def poweron(self):
@@ -417,10 +467,10 @@ class IdleNotifier(wx.EvtHandler, IdleQuery):
         Call this when the computer resumes from sleep.
         """
         if not self._bound:
-            wx.GetApp().Bind(wx.EVT_IDLE, self._OnIdle)
+            wx.GetApp().Bind(wx.EVT_IDLE, self._on_idle)
             self._bound = True
         self._check()
-        self.lastActivity = time.time() - self.getIdleSeconds()
+        self._last_activity = time.time() - self.get_idle_seconds()
         self._check()
 
     def get_min_idle_time(self):

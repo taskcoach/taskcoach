@@ -16,12 +16,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import sys
+
 from taskcoachlib.command import (
     NewEffortCommand,
     EditEffortStopDateTimeCommand,
 )
 from taskcoachlib.domain import effort, date
 from taskcoachlib.i18n import _
+from taskcoachlib.meta.debug import log_step
 from taskcoachlib.notify import NotificationFrameBase, NotificationCenter
 from taskcoachlib.patterns import Observer
 from taskcoachlib.powermgt import IdleNotifier
@@ -32,15 +35,15 @@ import wx
 
 
 class WakeFromIdleFrame(NotificationFrameBase):
-    def __init__(self, idleTime, effort, displayedEfforts, *args, **kwargs):
-        self._idleTime = idleTime
+    def __init__(self, idle_time, effort, displayed_efforts, *args, **kwargs):
+        self._idle_time = idle_time
         self._effort = effort
-        self._displayed = displayedEfforts
-        self._lastActivity = 0
+        self._displayed = displayed_efforts
+        self._last_activity = 0
         super().__init__(*args, **kwargs)
 
     def add_inner_content(self, sizer, panel):
-        idleTimeFormatted = render.dateTime(self._idleTime)
+        idle_time_formatted = render.dateTime(self._idle_time)
         sizer.Add(
             wx.StaticText(
                 panel,
@@ -48,70 +51,115 @@ class WakeFromIdleFrame(NotificationFrameBase):
                 _(
                     "No user input since %s. The following task was\nbeing tracked:"
                 )
-                % idleTimeFormatted,
+                % idle_time_formatted,
             )
         )
         sizer.Add(
             wx.StaticText(panel, wx.ID_ANY, self._effort.task().subject())
         )
 
-        btnNothing = wx.Button(panel, wx.ID_ANY, _("Do nothing"))
-        btnStopAt = wx.Button(
-            panel, wx.ID_ANY, _("Stop it at %s") % idleTimeFormatted
+        btn_nothing = wx.Button(panel, wx.ID_ANY, _("Do nothing"))
+        btn_stop_at = wx.Button(
+            panel, wx.ID_ANY, _("Stop it at %s") % idle_time_formatted
         )
-        btnStopResume = wx.Button(
+        btn_stop_resume = wx.Button(
             panel,
             wx.ID_ANY,
-            _("Stop it at %s and resume now") % idleTimeFormatted,
+            _("Stop it at %s and resume now") % idle_time_formatted,
         )
 
-        sizer.Add(btnNothing, 0, wx.EXPAND | wx.ALL, 1)
-        sizer.Add(btnStopAt, 0, wx.EXPAND | wx.ALL, 1)
-        sizer.Add(btnStopResume, 0, wx.EXPAND | wx.ALL, 1)
+        sizer.Add(btn_nothing, 0, wx.EXPAND | wx.ALL, 1)
+        sizer.Add(btn_stop_at, 0, wx.EXPAND | wx.ALL, 1)
+        sizer.Add(btn_stop_resume, 0, wx.EXPAND | wx.ALL, 1)
 
-        btnNothing.Bind(wx.EVT_BUTTON, self.DoNothing)
-        btnStopAt.Bind(wx.EVT_BUTTON, self.DoStopAt)
-        btnStopResume.Bind(wx.EVT_BUTTON, self.DoStopResume)
+        btn_nothing.Bind(wx.EVT_BUTTON, self.do_nothing)
+        btn_stop_at.Bind(wx.EVT_BUTTON, self.do_stop_at)
+        btn_stop_resume.Bind(wx.EVT_BUTTON, self.do_stop_resume)
 
     def close_button(self, panel):
         return None
 
-    def DoNothing(self, event):
+    def do_nothing(self, event):
         self._displayed.remove(self._effort)
         self.do_close()
 
-    def DoStopAt(self, event):
+    def do_stop_at(self, event):
         self._displayed.remove(self._effort)
         EditEffortStopDateTimeCommand(
-            newValue=self._idleTime, items=[self._effort]
+            newValue=self._idle_time, items=[self._effort]
         ).do()
         self.do_close()
 
-    def DoStopResume(self, event):
+    def do_stop_resume(self, event):
         self._displayed.remove(self._effort)
         EditEffortStopDateTimeCommand(
-            newValue=self._idleTime, items=[self._effort]
+            newValue=self._idle_time, items=[self._effort]
         ).do()
         NewEffortCommand(items=[self._effort.task()]).do()
         self.do_close()
 
 
 class IdleController(Observer, IdleNotifier):
-    def __init__(self, mainWindow, settings, effortList):
-        self._mainWindow = mainWindow
+    def __init__(self, main_window, settings, effort_list):
+        self._main_window = main_window
         self._settings = settings
-        self._effortList = effortList
+        self._effort_list = effort_list
         self._displayed = set()
 
         super().__init__()
 
-        self.__tracker = effort.EffortListTracker(self._effortList)
-        self.__tracker.subscribe(self.__onTrackedChanged, "effortlisttracker")
+        self._tracker = effort.EffortListTracker(self._effort_list)
+        self._tracker.subscribe(self._on_tracked_changed, "effortlisttracker")
 
         pub.subscribe(self.poweroff, "powermgt.off")
         pub.subscribe(self.poweron, "powermgt.on")
 
-    def __onTrackedChanged(self, efforts):
+        self._log_backend_if_enabled()
+
+    def _log_backend_if_enabled(self):
+        """Probe and report the idle-detection backend at startup.
+
+        Runs only when the feature is enabled (minidletime > 0). Calling
+        get_idle_seconds() also forces lazy backend selection on Linux, so
+        no separate runtime logging is needed when the dialog later fires.
+        """
+        min_time_sec = self.get_min_idle_time()
+        if min_time_sec <= 0:
+            return
+
+        log_step(
+            "Idle time notice enabled; threshold=%d min (%ds)"
+            % (min_time_sec // 60, min_time_sec),
+            prefix="IDLE",
+        )
+        log_step("Probing idle backend on %s..." % sys.platform, prefix="IDLE")
+
+        try:
+            idle_seconds = self.get_idle_seconds()
+        except Exception as e:
+            log_step("ERROR: probe raised %r" % e, prefix="IDLE")
+            return
+
+        for name, ok, detail in self.get_probe_log():
+            status = "OK" if ok else "unavailable"
+            suffix = " (%s)" % detail if detail else ""
+            log_step("  %s: %s%s" % (name, status, suffix), prefix="IDLE")
+
+        backend = self.get_backend_name()
+        if backend:
+            log_step("Selected backend: %s" % backend, prefix="IDLE")
+            log_step(
+                "Test query returned idle=%.2fs" % idle_seconds,
+                prefix="IDLE",
+            )
+        else:
+            log_step(
+                "WARNING: no backend available; "
+                "idle-time notice will not function",
+                prefix="IDLE",
+            )
+
+    def _on_tracked_changed(self, efforts):
         if len(efforts):
             self.resume()
         else:
@@ -121,15 +169,15 @@ class IdleController(Observer, IdleNotifier):
         return self._settings.getint("feature", "minidletime") * 60
 
     def wake(self, timestamp):
-        self._lastActivity = timestamp
-        self.OnWake()
+        self._last_activity = timestamp
+        self._on_wake()
 
-    def OnWake(self):
-        for effort in self.__tracker.trackedEfforts():
+    def _on_wake(self):
+        for effort in self._tracker.trackedEfforts():
             if effort not in self._displayed:
                 self._displayed.add(effort)
                 frm = WakeFromIdleFrame(
-                    date.DateTime.fromtimestamp(self._lastActivity),
+                    date.DateTime.fromtimestamp(self._last_activity),
                     effort,
                     self._displayed,
                     _("Notification"),
