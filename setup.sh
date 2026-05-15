@@ -147,6 +147,8 @@ get_system_packages() {
             fi
             # Trixie has python3-fasteners and python3-watchdog in repos
             SYSTEM_PACKAGES="$SYSTEM_PACKAGES python3-fasteners python3-watchdog python3-pubsub"
+            # python3-pywayland appeared in Debian starting with Trixie
+            SYSTEM_PACKAGES="$SYSTEM_PACKAGES python3-pywayland"
             ;;
         bookworm)
             # Bookworm needs some packages from pip (older versions in repos)
@@ -169,11 +171,13 @@ get_pip_packages() {
         bookworm)
             # Bookworm needs more packages from pip
             # Note: fasteners replaces deprecated lockfile for cross-platform file locking
-            echo "fasteners distro pypubsub 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'"
+            # Note: pywayland is not in Bookworm's apt; pip-installed for the
+            # wayland_ext_idle backend
+            echo "fasteners distro pypubsub 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0' pywayland"
             ;;
         *)
             # Default: install most from pip to be safe
-            echo "fasteners distro pypubsub 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'"
+            echo "fasteners distro pypubsub 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0' pywayland"
             ;;
     esac
 }

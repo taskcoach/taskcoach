@@ -117,7 +117,7 @@ echo -e "${BLUE}[4/7] Installing Python dependencies in venv...${NC}"
 echo "Installing: distro"
 
 source "$VENV_PATH/bin/activate"
-pip install --quiet distro
+pip install --quiet distro pywayland
 deactivate
 
 echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"

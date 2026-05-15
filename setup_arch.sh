@@ -83,6 +83,7 @@ if command -v sudo &> /dev/null; then
         python-fasteners \
         python-dbus \
         python-gobject \
+        python-pywayland \
         libxss \
         xdg-utils
 

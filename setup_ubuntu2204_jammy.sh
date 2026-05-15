@@ -115,7 +115,7 @@ source "$VENV_PATH/bin/activate"
 # Note: pyparsing>=3.1.3 required (Jammy has 3.0.7)
 # Note: watchdog>=3.0.0 for file system monitoring (Jammy has 2.1.6)
 # Note: fasteners replaces deprecated lockfile for cross-platform file locking
-pip install --quiet fasteners distro pypubsub 'pyparsing>=3.1.3' 'watchdog>=3.0.0'
+pip install --quiet fasteners distro pypubsub 'pyparsing>=3.1.3' 'watchdog>=3.0.0' pywayland
 deactivate
 
 echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"

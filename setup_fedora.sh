@@ -87,6 +87,7 @@ if command -v sudo &> /dev/null; then
         python3-pypubsub \
         python3-dbus \
         python3-gobject \
+        python3-pywayland \
         libXScrnSaver \
         xdg-utils
     echo -e "${GREEN}✓ System packages installed${NC}"
