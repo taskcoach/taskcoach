@@ -328,6 +328,11 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         ):
             event.Veto()
             self.Iconize()
+            if self.settings.getboolean("window", "hidewheniconized"):
+                # Wayland: GTK3 doesn't fire EVT_ICONIZE with IsIconized()==True,
+                # so the onIconify → Hide() chain never runs. Call Hide() directly
+                # so close-to-tray actually leaves no taskbar entry. Idempotent on X11.
+                self.Hide()
         else:
             if application.Application().quitApplication():
                 # UnInit AUI manager before window destruction to avoid

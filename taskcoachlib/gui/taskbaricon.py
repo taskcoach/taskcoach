@@ -428,7 +428,12 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
            True because GTK3's Wayland backend never sets
            GDK_WINDOW_STATE_ICONIFIED).  restore() is all no-ops, so
            force a surface remap via Hide()+Show().
-        3. else — window is visible and active, minimize it.
+        3. else — window is visible, hide it.
+
+        We call Hide() rather than Iconize() because the menu label is
+        "Hide", and because Iconize() on Wayland only reaches the taskbar
+        (the EVT_ICONIZE → onIconify → Hide() chain in mainwindow.py is
+        broken on Wayland — GTK3 never sets IsIconized()==True).
         """
         if self.__window.IsIconized() or not self.__window.IsShown():
             # X11: wx knows the window state → normal restore
@@ -439,7 +444,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             self.__window.Hide()
             self.__window.Show()
         else:
-            self.__window.Iconize()
+            self.__window.Hide()
 
     # Menu:
 

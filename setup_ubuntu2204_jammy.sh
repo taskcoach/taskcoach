@@ -76,7 +76,8 @@ if command -v sudo &> /dev/null; then
         python3-pyparsing \
         python3-xdg \
         python3-venv \
-        python3-squaremap
+        python3-squaremap \
+        gir1.2-ayatanaappindicator3-0.1
     echo -e "${GREEN}✓ System packages installed${NC}"
 else
     echo -e "${YELLOW}⚠ sudo not available, please install packages manually${NC}"
