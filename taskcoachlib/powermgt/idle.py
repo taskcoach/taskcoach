@@ -81,13 +81,21 @@ if operating_system.isGTK():
 
         def __init__(self):
             self._initialized = False
-            # 'dbus_mutter', 'dbus_screensaver', 'x11_mit_screensaver', or None
+            # 'dbus_mutter', 'dbus_screensaver', 'wayland_ext_idle',
+            # 'x11_mit_screensaver', or None
             self._method = None
             self._warned = False
             self._probe_log = []  # list of (name, ok, detail)
             self.dpy = None
             self._dbus_proxy = None
             self._dbus_iface = None
+            # Wayland ext-idle-notify-v1 state; _wl_idled_at is set by
+            # the `idled` event handler and cleared by `resumed`.
+            self._wl_display = None
+            self._wl_seat = None
+            self._wl_notifier = None
+            self._wl_notification = None
+            self._wl_idled_at = None
 
         def _try_dbus_mutter(self):
             """Try GNOME Mutter IdleMonitor via DBus. Returns (ok, detail)."""
@@ -127,6 +135,100 @@ if operating_system.isGTK():
                 return True, None
             except Exception as e:
                 return False, _summarize_exception(e)
+
+        def _try_wayland_ext_idle(self):
+            """Try Wayland ext-idle-notify-v1 protocol (KWin, wlroots,
+            COSMIC).
+
+            Returns (ok, detail).
+            """
+            import os
+            if not os.environ.get('WAYLAND_DISPLAY'):
+                # X11 session - don't even try to connect.
+                return False, "WAYLAND_DISPLAY not set"
+            try:
+                import atexit
+                from pywayland.client import Display
+                from pywayland.protocol.wayland import WlSeat
+            except ImportError as e:
+                return False, "pywayland not installed: %s" % (
+                    _summarize_exception(e)
+                )
+            try:
+                from taskcoachlib.thirdparty.pywayland_protocols import (
+                    ext_idle_notify_v1 as _ext_idle_v1,
+                )
+            except ImportError as e:
+                return False, "vendored ext_idle_notify_v1 missing: %s" % (
+                    _summarize_exception(e)
+                )
+
+            # Walk the registry once and bind both globals we need.
+            seat = notifier = None
+
+            def on_global(registry, id_, interface, version):
+                nonlocal seat, notifier
+                if interface == 'wl_seat':
+                    seat = registry.bind(id_, WlSeat, min(version, 10))
+                elif interface == 'ext_idle_notifier_v1':
+                    notifier = registry.bind(
+                        id_, _ext_idle_v1.ExtIdleNotifierV1,
+                        min(version, 2)
+                    )
+
+            try:
+                display = Display()
+                display.connect()
+                registry = display.get_registry()
+                registry.dispatcher['global'] = on_global
+                display.roundtrip()
+
+                if notifier is None:
+                    display.disconnect()
+                    return False, "ext_idle_notifier_v1 not advertised"
+                if seat is None:
+                    display.disconnect()
+                    return False, "no wl_seat advertised"
+
+                # Fixed 1 s timeout so get_idle_seconds() returns a
+                # continuously-growing value and the IdleNotifier
+                # state machine applies the real minidletime
+                # threshold. Inhibitor-aware variant chosen for
+                # parity with the polling backends on other platforms.
+                def on_idled(notification):
+                    self._wl_idled_at = time.time()
+
+                def on_resumed(notification):
+                    self._wl_idled_at = None
+
+                notification = notifier.get_idle_notification(1000, seat)
+                notification.dispatcher['idled'] = on_idled
+                notification.dispatcher['resumed'] = on_resumed
+                display.flush()
+            except Exception as e:
+                return False, _summarize_exception(e)
+
+            self._wl_display = display
+            self._wl_seat = seat
+            self._wl_notifier = notifier
+            self._wl_notification = notification
+
+            # pywayland 0.4.x segfaults on interpreter exit unless the
+            # Display is explicitly disconnected. atexit runs before
+            # the garbage collector tears down random refs, so it is
+            # safer than __del__ here.
+            atexit.register(self._wl_disconnect)
+            return True, None
+
+        def _wl_disconnect(self):
+            """atexit hook that closes the Wayland connection."""
+            display = self._wl_display
+            self._wl_display = None
+            if display is not None:
+                try:
+                    display.disconnect()
+                except Exception:
+                    pass
 
         def _try_x11_screensaver(self):
             """Try X11 MIT-SCREEN-SAVER extension. Returns (ok, detail)."""
@@ -201,6 +303,12 @@ if operating_system.isGTK():
                 self._method = 'dbus_screensaver'
                 return
 
+            ok, detail = self._try_wayland_ext_idle()
+            self._probe_log.append(('wayland_ext_idle', ok, detail))
+            if ok:
+                self._method = 'wayland_ext_idle'
+                return
+
             ok, detail = self._try_x11_screensaver()
             self._probe_log.append(('x11_mit_screensaver', ok, detail))
             if ok:
@@ -234,6 +342,26 @@ if operating_system.isGTK():
                     return self._dbus_iface.GetSessionIdleTime()
                 except Exception:
                     pass
+            elif self._method == 'wayland_ext_idle':
+                # Drain pending Wayland events without blocking. Note:
+                # pywayland's dispatch(block=False) only flushes
+                # events already in the queue - it does NOT read from
+                # the socket. We have to select() the fd ourselves
+                # and call read() before the final dispatch.
+                try:
+                    import select
+                    self._wl_display.dispatch(block=False)
+                    fd = self._wl_display.get_fd()
+                    r, _, _ = select.select([fd], [], [], 0)
+                    if r:
+                        self._wl_display.read()
+                        self._wl_display.dispatch(block=False)
+                except Exception:
+                    pass
+                # _wl_idled_at is set on `idled`, cleared on `resumed`.
+                if self._wl_idled_at is None:
+                    return 0
+                return time.time() - self._wl_idled_at
             elif self._method == 'x11_mit_screensaver':
                 self.XScreenSaverQueryInfo(
                     self.dpy, self.XRootWindow(self.dpy, 0), self.info
