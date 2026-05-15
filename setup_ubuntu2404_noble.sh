@@ -80,7 +80,9 @@ if command -v sudo &> /dev/null; then
         python3-fasteners \
         python3-watchdog \
         python3-pubsub \
-        python3-squaremap
+        python3-squaremap \
+        python3-dbus \
+        python3-gi
     echo -e "${GREEN}✓ System packages installed${NC}"
 else
     echo -e "${YELLOW}⚠ sudo not available, please install packages manually${NC}"

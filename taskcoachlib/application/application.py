@@ -837,7 +837,7 @@ Break the lock?"""
             from taskcoachlib.gui import taskbaricon, menu
 
             # Use factory function to get the appropriate icon type
-            # (AppIndicator on Wayland, wx.adv.TaskBarIcon otherwise)
+            # (direct SNI on Linux/GTK, wx.adv.TaskBarIcon otherwise)
             self.taskBarIcon = taskbaricon.create_taskbar_icon(
                 self.mainwindow,  # pylint: disable=W0201
                 self.taskFile.tasks(),

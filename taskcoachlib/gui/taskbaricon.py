@@ -33,21 +33,28 @@ from .icons.icon_library import icon_catalog, LIST_ICON_SIZE
 TRAY_ICON_SIZE_MACOS = 128
 _TRAY_THEME_PATH = os.path.join(os.path.dirname(__file__), 'icons', 'tray')
 
-# Check for AppIndicator availability on Linux/GTK
-# AppIndicator is only used when wx.adv.TaskBarIcon is not available (e.g., Wayland).
-# On X11, wx.adv.TaskBarIcon is preferred because it supports left-click events.
-_APPINDICATOR_MODULE = None
-_APPINDICATOR_AVAILABLE = False
+# Linux tray backend: direct StatusNotifierItem via dbus-python (sni.py).
+# Requires an SNI host on the session bus (KDE Plasma, GNOME with the
+# AppIndicator Support extension, XFCE statusnotifier plugin, etc.). When
+# unavailable we fall back to wx.adv.TaskBarIcon (XEmbed on older X11).
+_SNI_MODULE = None
+_SNI_AVAILABLE = False
+_Gtk = None  # gi.repository.Gtk for building the right-click menu
 
-# Pre-load AppIndicator module on GTK systems (for potential fallback)
 if operating_system.isGTK():
     try:
-        from . import appindicator as _APPINDICATOR_MODULE
-        _APPINDICATOR_AVAILABLE = _APPINDICATOR_MODULE.APPINDICATOR_AVAILABLE
+        from . import sni as _SNI_MODULE
+        _SNI_AVAILABLE = _SNI_MODULE.SNI_AVAILABLE
     except ImportError as e:
         logging.getLogger(__name__).debug(
-            f"AppIndicator module not available: {e}"
+            f"SNI module not available: {e}"
         )
+    try:
+        import gi
+        gi.require_version('Gtk', '3.0')
+        from gi.repository import Gtk as _Gtk
+    except (ImportError, ValueError) as e:
+        logging.getLogger(__name__).debug(f"Gtk 3.0 not available: {e}")
 
 
 class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
@@ -307,16 +314,13 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
             pass
 
 
-class AppIndicatorTaskBarIcon(patterns.Observer):
-    """TaskBarIcon implementation using AppIndicator for Linux.
+class SniTaskBarIcon(patterns.Observer):
+    """Linux tray icon using direct StatusNotifierItem over D-Bus.
 
-    This class provides the same interface as TaskBarIcon but uses the
-    libayatana-appindicator library instead of wx.adv.TaskBarIcon.
-
-    AppIndicator is used exclusively on Linux because:
-    - Works on Wayland via StatusNotifierItem (SNI) protocol
-    - Works on X11 via automatic XEmbed fallback
-    - Provides consistent behavior across all Linux desktop environments
+    Built on `sni.SniIcon` (sets `ItemIsMenu=False` and binds `Activate()`),
+    so left-click toggles show/hide and right-click pops up the menu —
+    behaviour libayatana-appindicator never delivered. Used on every
+    Linux/GTK system where an SNI watcher is on the session bus.
     """
 
     def __init__(
@@ -341,13 +345,18 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         self.__popupmenu = None
         self._clock_running = False
 
-        # Create the AppIndicator
-        self.__indicator = _APPINDICATOR_MODULE.AppIndicatorIcon(
+        self.__indicator = _SNI_MODULE.SniIcon(
             app_id="taskcoach",
             icon_name=default_tray_icon_id,
             icon_theme_path=_TRAY_THEME_PATH,
-            tooltip=meta.name
+            tooltip=meta.name,
         )
+        # Bounce through wx.CallAfter so the handler runs on the wx loop
+        # rather than directly inside a D-Bus method dispatch.
+        self.__indicator.set_left_click_callback(
+            lambda: wx.CallAfter(self.onTaskbarClick)
+        )
+        log_step("Tray backend: direct SNI", prefix="TRAY")
 
         # Set up observers
         self.registerObserver(
@@ -418,7 +427,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             self.__set_icon()
 
     def onTaskbarClick(self, event=None):
-        """Handle click on indicator - show/hide main window.
+        """Handle Activate/menu-Hide on the tray icon.
 
         Three cases:
         1. IsIconized() or not IsShown() — X11: wx knows the window is
@@ -428,26 +437,26 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
            True because GTK3's Wayland backend never sets
            GDK_WINDOW_STATE_ICONIFIED).  restore() is all no-ops, so
            force a surface remap via Hide()+Show().
-        3. else — window is visible and active, minimize it.
+        3. else — window is visible, hide it.
+
+        Hide() rather than Iconize() because the menu label is "Hide",
+        and because Iconize() on Wayland only minimizes to the taskbar
+        (the EVT_ICONIZE → onIconify → Hide() chain in mainwindow.py is
+        broken on Wayland — GTK3 never sets IsIconized()==True).
         """
         if self.__window.IsIconized() or not self.__window.IsShown():
-            # X11: wx knows the window state → normal restore
             self.__window.restore(event)
         elif not self.__window.IsActive():
-            # Wayland: compositor minimized but wx doesn't know →
-            # force Wayland surface unmap/remap
             self.__window.Hide()
             self.__window.Show()
         else:
-            self.__window.Iconize()
+            self.__window.Hide()
 
     # Menu:
 
     def setPopupMenu(self, menu):
-        """Set the popup menu.
-
-        For AppIndicator, we need to build a GTK menu instead of using
-        the wx.Menu directly.
+        """Store the wx menu (unused) and build the Gtk.Menu the SNI
+        DBusMenu server walks for its layout.
         """
         self.__popupmenu = menu
         self._buildGtkMenu()
@@ -462,19 +471,11 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             wx.CallAfter(self._buildGtkMenu)
 
     def _buildGtkMenu(self):
-        """Build a GTK menu for the AppIndicator."""
-        if not _APPINDICATOR_MODULE:
+        """Build the Gtk.Menu shown by SniIcon on right-click."""
+        if not _Gtk or not self.__indicator:
             return
 
-        # Check if indicator still exists (may be destroyed during shutdown)
-        if not self.__indicator:
-            return
-
-        # Import GTK from the appindicator module's cached reference
-        Gtk = _APPINDICATOR_MODULE._Gtk
-        if not Gtk:
-            return
-
+        Gtk = _Gtk
         menu = Gtk.Menu()
 
         # Show/Hide main window (acts as left-click replacement)
@@ -832,7 +833,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
     def Bind(self, event, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
         """Stub for wx.EvtHandler.Bind compatibility.
 
-        AppIndicator uses its own GTK menu, so wx event bindings are ignored.
+        SNI uses its own Gtk.Menu, so wx event bindings are ignored.
         This method exists only to prevent AttributeError when TaskBarMenu
         tries to bind events to its parent.
         """
@@ -841,14 +842,14 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
     def Unbind(self, event, source=None, id=wx.ID_ANY, id2=wx.ID_ANY, handler=None):
         """Stub for wx.EvtHandler.Unbind compatibility.
 
-        AppIndicator uses its own GTK menu, so wx event unbindings are ignored.
+        SNI uses its own Gtk.Menu, so wx event unbindings are ignored.
         """
         return True
 
     def ProcessEvent(self, event):
         """Stub for wx.EvtHandler.ProcessEvent compatibility.
 
-        AppIndicator uses its own GTK menu, so wx event processing is ignored.
+        SNI uses its own Gtk.Menu, so wx event processing is ignored.
         This method is called by Menu.invokeMenuItem() and Menu.openMenu().
         """
         return False
@@ -856,7 +857,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
     def UpdateWindowUI(self, flags=wx.UPDATE_UI_NONE):
         """Stub for wx.Window.UpdateWindowUI compatibility.
 
-        AppIndicator uses its own GTK menu, so UI updates are ignored.
+        SNI uses its own Gtk.Menu, so UI updates are ignored.
         This method is called by Menu.openMenu() before processing menu events.
         """
         pass
@@ -875,71 +876,30 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
 
 
 def _get_desktop_environment():
-    """Detect the current desktop environment."""
-    # Check XDG_CURRENT_DESKTOP first (most reliable)
+    """Detect the current desktop environment (for logging only)."""
     xdg_desktop = os.environ.get('XDG_CURRENT_DESKTOP', '').upper()
     if xdg_desktop:
         return xdg_desktop
-    # Fall back to DESKTOP_SESSION
     return os.environ.get('DESKTOP_SESSION', '').upper()
 
 
-def _needs_appindicator():
-    """Check if we need to use AppIndicator instead of wx.adv.TaskBarIcon.
-
-    wx.adv.TaskBarIcon on Linux/GTK doesn't properly receive right-click events
-    on many desktop environments (LXDE, KDE, and possibly others). AppIndicator
-    provides reliable menu functionality across all Linux desktops.
-    """
-    # Use AppIndicator on all Linux/GTK systems when available
-    # because wx.adv.TaskBarIcon right-click is broken on many desktops
-    if operating_system.isGTK():
-        return True
-    return False
-
-
 def create_taskbar_icon(mainwindow, taskList, settings):
-    """Factory function to create the appropriate taskbar icon.
+    """Pick the tray backend: direct SNI on Linux/GTK, wx-native elsewhere.
 
-    Uses wx.adv.TaskBarIcon when available (preferred for full click event support).
-    Falls back to AppIndicator on Linux when:
-    - wx.adv.TaskBarIcon is not available (e.g., Wayland)
-    - Desktop environment doesn't properly support right-click (e.g., LXDE)
-
-    Args:
-        mainwindow: The main application window
-        taskList: The task list
-        settings: Application settings
-
-    Returns:
-        TaskBarIcon or AppIndicatorTaskBarIcon instance
+    Linux/GTK with an SNI watcher on the bus: SniTaskBarIcon (direct SNI,
+    left-click works). Otherwise: TaskBarIcon (wx.adv.TaskBarIcon, XEmbed
+    on X11; the only option on Windows/macOS).
     """
     log_step("create_taskbar_icon called", prefix="TRAY")
+    log_step("Desktop environment:", _get_desktop_environment(), prefix="TRAY")
+    log_step("_SNI_AVAILABLE =", _SNI_AVAILABLE, prefix="TRAY")
+    log_step("wx.adv.TaskBarIcon.IsAvailable() =",
+             wx.adv.TaskBarIcon.IsAvailable(), prefix="TRAY")
 
-    desktop = _get_desktop_environment()
-    needs_appindicator = _needs_appindicator()
-    wx_taskbar_available = wx.adv.TaskBarIcon.IsAvailable()
+    if (operating_system.isGTK() and _SNI_AVAILABLE
+            and _SNI_MODULE.watcher_available()):
+        log_step("Using SniTaskBarIcon (direct SNI)", prefix="TRAY")
+        return SniTaskBarIcon(mainwindow, taskList, settings)
 
-    log_step("Desktop environment:", desktop, prefix="TRAY")
-    log_step("wx.adv.TaskBarIcon.IsAvailable() =", wx_taskbar_available, prefix="TRAY")
-    log_step("_APPINDICATOR_AVAILABLE =", _APPINDICATOR_AVAILABLE, prefix="TRAY")
-    log_step("needs_appindicator =", needs_appindicator, prefix="TRAY")
-
-    # Use AppIndicator if needed and available
-    if needs_appindicator and _APPINDICATOR_AVAILABLE:
-        log_step("Using AppIndicator (desktop requires it)", prefix="TRAY")
-        return AppIndicatorTaskBarIcon(mainwindow, taskList, settings)
-
-    # Use native wx.adv.TaskBarIcon if available
-    if wx_taskbar_available:
-        log_step("Using wx.adv.TaskBarIcon (native)", prefix="TRAY")
-        return TaskBarIcon(mainwindow, taskList, settings)
-
-    # Last resort: try AppIndicator on GTK
-    if operating_system.isGTK() and _APPINDICATOR_AVAILABLE:
-        log_step("Using AppIndicator (fallback)", prefix="TRAY")
-        return AppIndicatorTaskBarIcon(mainwindow, taskList, settings)
-
-    # No AppIndicator available, try wx.adv.TaskBarIcon anyway (may not work)
-    log_step("WARNING: No good tray option available, trying wx.adv.TaskBarIcon", prefix="TRAY")
+    log_step("Using TaskBarIcon (wx.adv.TaskBarIcon)", prefix="TRAY")
     return TaskBarIcon(mainwindow, taskList, settings)
