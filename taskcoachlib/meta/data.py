@@ -18,6 +18,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import datetime
+import re
+
 # pylint: disable=C0103
 
 # =============================================================================
@@ -41,10 +44,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # =============================================================================
 
 version = "2.0.2"  # Major.Minor.Milestone
-patch = "12"  # Patch number - INCREMENT THIS for each release
-version_full = f"{version}.{patch}"  # Full version: 2.0.2.12
+patch = "14"  # Patch number - INCREMENT THIS for each release
+version_full = f"{version}.{patch}"  # Full version: 2.0.2.14
 
-release_day = "13"  # Day of the release (1-31)
+release_day = "16"  # Day of the release (1-31)
 release_month = "May"  # Month of the release
 release_year = "2026"  # Year of the release
 
@@ -53,15 +56,14 @@ release_year = "2026"  # Year of the release
 # =============================================================================
 
 
-tskversion = 37  # Current version number of the task file format, changed to 37 for release 1.3.23.
+# Task file format version (37 since release 1.3.23).
+tskversion = 37
 release_status = "alpha"  # One of 'alpha', 'beta', 'stable'
 
 # Legacy: keep version_with_patch for backwards compatibility
 version_with_patch = version_full
 
 # No editing needed below this line for doing a release.
-
-import re, datetime
 
 try:
     from taskcoachlib.meta.revision import (
@@ -124,7 +126,10 @@ long_description = (
 )
 keywords = "task manager, todo list, pim, time registration, track effort"
 author_first, author_last = "Frank", "Niessink"  # Needed for PAD file
-author = "%s %s, Jerome Laheurte, Aaron Wolf, and Real Carbonneau" % (author_first, author_last)
+author = (
+    "%s %s, Jerome Laheurte, Aaron Wolf, and Real Carbonneau"
+    % (author_first, author_last)
+)
 author_unicode = "%s %s, Jérôme Laheurte, Aaron Wolf, and Réal Carbonneau" % (
     author_first,
     author_last,
@@ -140,8 +145,10 @@ faq_url = "https://answers.launchpad.net/taskcoach/+faqs"
 bug_report_url = github_url + "/issues"  # GitHub issues for bug reports
 known_bugs_url = github_url + "/issues"  # GitHub issues for known bugs
 support_request_url = github_url + "/issues"  # GitHub issues for support
-feature_request_url = github_url + "/issues"  # GitHub issues for feature requests
-translations_url = github_url + "/pulls"  # GitHub pull requests for translations
+# GitHub issues for feature requests
+feature_request_url = github_url + "/issues"
+# GitHub pull requests for translations
+translations_url = github_url + "/pulls"
 
 announcement_addresses = (
     "taskcoach@yahoogroups.com, python-announce-list@python.org"
