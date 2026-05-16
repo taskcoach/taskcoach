@@ -60,15 +60,40 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | ayatana-appindicator | distro | distro | distro | distro | distro | distro | host | — | — |
 | hypertreelist | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | bundled | **patch** | **patch** |
 | WMI | — | — | — | — | — | — | — | pip | — |
+| python3-dbus | optional | optional | optional | optional | optional | optional | — | — | — |
+| python3-pywayland | — | — | optional | — | optional | optional | — | — | — |
 
 **Key:**
 - `distro` = Installed from distribution repos (required dependency)
+- `optional` = Optional feature support, exactly like the spell-check dictionaries: `Recommends:` on deb/rpm, `optdepends` on Arch. Never a hard dependency, never bundled, never pip-installed. Pulled in where the distro packages it, silently skipped (install still succeeds) where it does not.
 - `pip` = Bundled via pip in package build (version too old or not in repos)
 - `patch` = Bundled patch in `taskcoachlib/patches/` (wxPython hypertreelist fix)
 - `bundled` = Bundled in package (thirdparty/ for .deb/.rpm, or inside AppImage)
 - `host` = Uses host system library (AppImage); install on host for Wayland tray support
 - `AUR` = Arch User Repository (rolling release)
 - `—` = Not applicable for this platform
+
+**Note: `python3-dbus` / `python3-pywayland` are optional
+idle-detection bindings**, used only by the "Idle time notice"
+feature (off by default; guarded imports, degrade silently; see
+[IDLE.md](IDLE.md) for the binding-vs-C-library distinction). Only
+**core** `python3-pywayland` is needed: distro packages ship just the
+core `wayland` protocol, so the `ext-idle-notify-v1` binding is
+vendored in-tree (`taskcoachlib/thirdparty/ext_idle_notify_v1`); no
+`wayland-protocols` runtime dependency. They
+are **never** hard dependencies and never committed as a blanket line
+in the shared `debian/control`. Fedora `.spec` and Arch `PKGBUILD`
+are per-distro files and declare them directly. For the four
+Debian/Ubuntu targets they are injected into `Recommends:` **per
+codename by the `build-deb.yml` CI step** (same `case "$CODENAME"`
+mechanism as pip-bundling): `python3-dbus` on all four;
+`python3-pywayland` only on codenames that ship a Plasma 6 desktop
+*and* package it (currently `trixie`; add future Plasma 6 codenames
+to that case arm). It is deliberately omitted on Bookworm/Jammy/Noble
+(hence `—`): they ship Plasma 5 / GNOME, already covered by the
+`dbus_*` backends. `—` for AppImage/Windows/macOS: the AppImage
+bundles its own Python; Windows/macOS use the native `win32`/`iokit`
+backends.
 
 ## Build Scripts and Workflows
 

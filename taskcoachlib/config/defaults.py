@@ -114,7 +114,7 @@ defaults = {
         "columns": "['plannedStartDateTime', 'dueDateTime']",
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'attachments': 28, 'notes': 28, 'ordering': 28}",
-        "columnautoresizing": "False",
+        "columnautoresizing": "True",
         "hideinactivetasks": "False",
         "hidelatetasks": "False",
         "hideactivetasks": "False",
@@ -172,7 +172,7 @@ defaults = {
         "'dueDateTime']",
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'attachments': 28, 'notes': 28}",
-        "columnautoresizing": "False",
+        "columnautoresizing": "True",
         "hideinactivetasks": "False",
         "hidelatetasks": "False",
         "hideduesoontasks": "False",
@@ -280,7 +280,7 @@ defaults = {
         "columns": "[]",
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'attachments': 28, 'notes': 28, 'ordering': 28}",
-        "columnautoresizing": "False",
+        "columnautoresizing": "True",
     },
     "categoryviewerintaskeditor": {
         "title": "",
@@ -295,7 +295,7 @@ defaults = {
         "columns": "[]",
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'attachments': 28, 'notes': 28, 'ordering': 28}",
-        "columnautoresizing": "False",
+        "columnautoresizing": "True",
     },
     "categoryviewerinnoteeditor": {
         "title": "",
@@ -310,7 +310,7 @@ defaults = {
         "columns": "[]",
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'attachments': 28, 'notes': 28, 'ordering': 28}",
-        "columnautoresizing": "False",
+        "columnautoresizing": "True",
     },
     "noteviewer": {
         "title": "",
@@ -326,7 +326,7 @@ defaults = {
                  'modificationDateTime']",
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'attachments': 28, 'description': 200, 'ordering': 28}",
-        "columnautoresizing": "False",
+        "columnautoresizing": "True",
     },
     "noteviewerintaskeditor": {
         "toolbarperspective": "NoteNew,NewSubItem,Separator,Edit,Delete,Separator,ViewExpandAll,ViewCollapseAll,Spacer,ResetFilter,Search",
@@ -336,7 +336,7 @@ defaults = {
                  'modificationDateTime']",
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'attachments': 28, 'description': 200, 'ordering': 28}",
-        "columnautoresizing": "False",
+        "columnautoresizing": "True",
         "searchfilterstring": "",
         "searchfiltermatchcase": "False",
         "searchfilterincludesubitems": "False",
@@ -350,7 +350,7 @@ defaults = {
         "columns": "['subject']",
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'ordering': 28}",
-        "columnautoresizing": "False",
+        "columnautoresizing": "True",
         "searchfilterstring": "",
         "searchfiltermatchcase": "False",
         "searchfilterincludesubitems": "False",
@@ -364,7 +364,7 @@ defaults = {
         "columns": "['subject']",
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'ordering': 28}",
-        "columnautoresizing": "False",
+        "columnautoresizing": "True",
         "searchfilterstring": "",
         "searchfiltermatchcase": "False",
         "searchfilterincludesubitems": "False",
@@ -382,7 +382,7 @@ defaults = {
         "columnwidths": "{'period': 160, 'monday': 70, 'tuesday': 70, "
         "'wednesday': 70, 'thursday': 70, 'friday': 70, "
         "'saturday': 70, 'sunday': 70, 'description': 200}",
-        "columnautoresizing": "False",
+        "columnautoresizing": "True",
         "searchfilterstring": "",
         "searchfiltermatchcase": "False",
         "searchfilterincludesubitems": "False",
@@ -403,7 +403,7 @@ defaults = {
         "columnwidths": "{'period': 160, 'monday': 70, 'tuesday': 70, "
         "'wednesday': 70, 'thursday': 70, 'friday': 70, "
         "'saturday': 70, 'sunday': 70, 'description': 200}",
-        "columnautoresizing": "False",
+        "columnautoresizing": "True",
         "searchfilterstring": "",
         "searchfiltermatchcase": "False",
         "searchfilterincludesubitems": "False",
@@ -423,7 +423,7 @@ defaults = {
         "columnwidths": "{'period': 160, 'monday': 70, 'tuesday': 70, "
         "'wednesday': 70, 'thursday': 70, 'friday': 70, "
         "'saturday': 70, 'sunday': 70, 'description': 200}",
-        "columnautoresizing": "False",
+        "columnautoresizing": "True",
         "searchfilterstring": "",
         "searchfiltermatchcase": "False",
         "searchfilterincludesubitems": "False",
@@ -446,7 +446,7 @@ defaults = {
         "columns": "[]",
         "columnsalwaysvisible": "['type', 'subject']",
         "columnwidths": "{'notes': 28, 'type': 28}",
-        "columnautoresizing": "False",
+        "columnautoresizing": "True",
     },
     "attachmentviewerintaskeditor": {
         "title": "",
@@ -461,7 +461,7 @@ defaults = {
         "columns": "[]",
         "columnsalwaysvisible": "['type', 'subject']",
         "columnwidths": "{'notes': 28, 'type': 28}",
-        "columnautoresizing": "False",
+        "columnautoresizing": "True",
     },
     "attachmentviewerinnoteeditor": {
         "title": "",
@@ -476,7 +476,7 @@ defaults = {
         "columns": "[]",
         "columnsalwaysvisible": "['type', 'subject']",
         "columnwidths": "{'notes': 28, 'type': 28}",
-        "columnautoresizing": "False",
+        "columnautoresizing": "True",
     },
     "attachmentviewerincategoryeditor": {
         "title": "",
@@ -491,7 +491,7 @@ defaults = {
         "columns": "[]",
         "columnsalwaysvisible": "['type', 'subject']",
         "columnwidths": "{'notes': 28, 'type': 28}",
-        "columnautoresizing": "False",
+        "columnautoresizing": "True",
     },
     "window": {
         "size": "(900, 500)",  # Default size of the main window
