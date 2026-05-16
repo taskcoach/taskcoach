@@ -39,8 +39,6 @@ optdepends=(
     'espeak-ng: Spoken reminders'
     'hunspell-en_us: English spell checking'
     'hunspell-en_gb: British English spell checking'
-    'python-dbus: idle-time detection on GNOME/KDE Plasma 5 (Idle time notice)'
-    'python-pywayland: idle-time detection on Wayland/KDE Plasma 6 (Idle time notice)'
 )
 # Note: squaremap is not in Arch repos, installed via pip at build time
 provides=('taskcoach')

@@ -135,40 +135,6 @@ jobs:
               ;;
           esac
 
-      - name: Declare per-distro idle-detection bindings
-        run: |
-          # ============================================================
-          # Optional bindings for the "Idle time notice" feature (off
-          # by default; see docs/IDLE.md). Declared as Recommends here,
-          # per distro, rather than as a blanket line in debian/control,
-          # mirroring the pip-bundling step above.
-          #
-          #   python3-dbus       all targets - GNOME Mutter and KDE
-          #                      Plasma 5 dbus idle backends
-          #   python3-pywayland  only releases that ship a Plasma 6
-          #                      desktop AND package it - the ext-idle-
-          #                      notify-v1 backend. Add new Plasma 6
-          #                      codenames to the first case arm.
-          # ============================================================
-          CODENAME="${{ matrix.codename }}"
-          H='            hunspell-en-us | hunspell-dictionary'
-
-          case "$CODENAME" in
-            trixie)
-              sed -i "s@^${H}\$@${H},\n            python3-dbus,\n            python3-pywayland@" debian/control
-              echo "Recommends += python3-dbus, python3-pywayland ($CODENAME)"
-              ;;
-            bookworm|jammy|noble)
-              sed -i "s@^${H}\$@${H},\n            python3-dbus@" debian/control
-              echo "Recommends += python3-dbus ($CODENAME); python3-pywayland not packaged / not needed here (Plasma 5 / GNOME)"
-              ;;
-            *)
-              echo "No idle-binding rule for $CODENAME; leaving debian/control unmodified"
-              ;;
-          esac
-          echo "--- debian/control Recommends ---"
-          grep -A4 '^Recommends:' debian/control
-
       - name: Build binary package
         run: |
           # Build binary package (unsigned)

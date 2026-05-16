@@ -17,8 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import logging
-import os
-import threading
+import sys
 import time
 
 import wx
@@ -72,42 +71,23 @@ if operating_system.isGTK():
 
         Tries multiple methods in order:
         1. DBus org.gnome.Mutter.IdleMonitor (GNOME on Wayland/X11)
-        2. DBus org.freedesktop.ScreenSaver (KDE Plasma 5)
-        3. ext-idle-notify-v1 Wayland protocol (KDE Plasma 6,
-           wlroots, COSMIC) via pywayland
-        4. X11 MIT-SCREEN-SAVER extension (legacy X11)
+        2. DBus org.freedesktop.ScreenSaver (KDE)
+        3. X11 MIT-SCREEN-SAVER extension (legacy X11)
 
         Uses lazy initialization to avoid loading libraries until
         actually needed. This prevents warnings when the idle detection
         feature is disabled.
         """
 
-        # Short timeout the ext-idle-notify-v1 backend arms its
-        # notification with. The compositor only reports idle in
-        # this granularity; well below any sane minidletime
-        # (minutes), so it is invisible to the state machine.
-        _WL_TIMEOUT_MS = 1000
-
         def __init__(self):
             self._initialized = False
-            # 'dbus_mutter', 'dbus_screensaver', 'ext_idle_notify',
-            # 'x11_mit_screensaver', or None
+            # 'dbus_mutter', 'dbus_screensaver', 'x11_mit_screensaver', or None
             self._method = None
             self._warned = False
             self._probe_log = []  # list of (name, ok, detail)
             self.dpy = None
             self._dbus_proxy = None
             self._dbus_iface = None
-            # ext-idle-notify-v1 state. _idle_since is the wall-clock
-            # time the compositor reported the seat went idle, or
-            # None while active; guarded by _idle_lock because it is
-            # written from the Wayland dispatch thread and read from
-            # the wx EVT_IDLE handler.
-            self._idle_lock = threading.Lock()
-            self._idle_since = None
-            self._wl_display = None
-            self._wl_notification = None
-            self._wl_thread = None
 
         def _try_dbus_mutter(self):
             """Try GNOME Mutter IdleMonitor via DBus. Returns (ok, detail)."""
@@ -147,106 +127,6 @@ if operating_system.isGTK():
                 return True, None
             except Exception as e:
                 return False, _summarize_exception(e)
-
-        def _wl_on_idled(self, notification):
-            """ext-idle-notify-v1 'idled' event (dispatch thread)."""
-            with self._idle_lock:
-                self._idle_since = time.time()
-
-        def _wl_on_resumed(self, notification):
-            """ext-idle-notify-v1 'resumed' event (dispatch thread)."""
-            with self._idle_lock:
-                self._idle_since = None
-
-        def _wl_run(self):
-            """Wayland event loop for the ext-idle-notify-v1 backend.
-
-            Runs on a daemon thread for the life of the process.
-            Blocks in dispatch() until the compositor sends an
-            idled/resumed event or the display is disconnected (on
-            shutdown), at which point dispatch() raises and the
-            thread exits.
-            """
-            display = self._wl_display
-            try:
-                while self._wl_display is not None:
-                    display.dispatch(block=True)
-            except Exception:
-                pass
-
-        def _try_ext_idle_notify(self):
-            """Try the ext-idle-notify-v1 Wayland protocol.
-
-            Covers KDE Plasma 6 (where org.freedesktop.ScreenSaver
-            GetSessionIdleTime is stubbed to NotSupported), wlroots
-            compositors and COSMIC. Returns (ok, detail).
-
-            The protocol is event-based (idled/resumed), not a
-            pollable query, so a daemon thread holds a notification
-            armed at a short timeout and records the idle timestamp;
-            get_idle_seconds() synthesises a value from it.
-            """
-            if not os.environ.get("WAYLAND_DISPLAY"):
-                return False, "no WAYLAND_DISPLAY (not a Wayland session)"
-            try:
-                from pywayland.client import Display
-                from pywayland.protocol.wayland import WlSeat
-                # Distro python3-pywayland ships only the core wayland
-                # protocol; the ext-idle-notify-v1 binding is vendored
-                # (see taskcoachlib/thirdparty/ext_idle_notify_v1).
-                from taskcoachlib.thirdparty.ext_idle_notify_v1 import (
-                    ExtIdleNotifierV1,
-                )
-            except ImportError as e:
-                return False, _summarize_exception(e)
-
-            display = None
-            try:
-                display = Display()
-                display.connect()
-
-                found = {"notifier": None, "seat": None}
-
-                def registry_global(registry, id_, interface, version):
-                    if interface == "ext_idle_notifier_v1":
-                        found["notifier"] = registry.bind(
-                            id_, ExtIdleNotifierV1, min(version, 1)
-                        )
-                    elif interface == "wl_seat":
-                        found["seat"] = registry.bind(
-                            id_, WlSeat, min(version, 1)
-                        )
-
-                registry = display.get_registry()
-                registry.dispatcher["global"] = registry_global
-                display.roundtrip()
-
-                if found["notifier"] is None or found["seat"] is None:
-                    return False, "ext_idle_notifier_v1 not advertised"
-
-                notification = found["notifier"].get_idle_notification(
-                    self._WL_TIMEOUT_MS, found["seat"]
-                )
-                notification.dispatcher["idled"] = self._wl_on_idled
-                notification.dispatcher["resumed"] = self._wl_on_resumed
-                display.roundtrip()
-            except Exception as e:
-                if display is not None:
-                    try:
-                        display.disconnect()
-                    except Exception:
-                        pass
-                return False, _summarize_exception(e)
-
-            self._wl_display = display
-            self._wl_notification = notification
-            self._wl_thread = threading.Thread(
-                target=self._wl_run,
-                name="taskcoach-idle-wayland",
-                daemon=True,
-            )
-            self._wl_thread.start()
-            return True, None
 
         def _try_x11_screensaver(self):
             """Try X11 MIT-SCREEN-SAVER extension. Returns (ok, detail)."""
@@ -289,9 +169,9 @@ if operating_system.isGTK():
 
                 _xss = CDLL("libXss.so.1")
 
-                self.XScreenSaverAllocInfo = CFUNCTYPE(
-                    POINTER(XScreenSaverInfo)
-                )(("XScreenSaverAllocInfo", _xss))
+                self.XScreenSaverAllocInfo = CFUNCTYPE(POINTER(XScreenSaverInfo))(
+                    ("XScreenSaverAllocInfo", _xss)
+                )
                 self.XScreenSaverQueryInfo = CFUNCTYPE(
                     c_int, c_ulong, c_ulong, POINTER(XScreenSaverInfo)
                 )(("XScreenSaverQueryInfo", _xss))
@@ -308,37 +188,23 @@ if operating_system.isGTK():
                 return
             self._initialized = True
 
-            # Try methods in order of preference; record outcome of
-            # each. x11_mit_screensaver is probed before the DBus
-            # screensaver because on an X11 session it queries the X
-            # server's real input idle directly, whereas KDE Plasma 6
-            # answers org.freedesktop.ScreenSaver.GetSessionIdleTime
-            # with a bogus non-zero value (instead of raising), which
-            # would otherwise be wrongly selected and make the notice
-            # fire constantly. dbus_screensaver is kept last as a
-            # fallback for the few Plasma 5 setups that rely on it.
+            # Try methods in order of preference; record outcome of each.
             ok, detail = self._try_dbus_mutter()
             self._probe_log.append(('dbus_mutter', ok, detail))
             if ok:
                 self._method = 'dbus_mutter'
                 return
 
-            ok, detail = self._try_x11_screensaver()
-            self._probe_log.append(('x11_mit_screensaver', ok, detail))
-            if ok:
-                self._method = 'x11_mit_screensaver'
-                return
-
-            ok, detail = self._try_ext_idle_notify()
-            self._probe_log.append(('ext_idle_notify', ok, detail))
-            if ok:
-                self._method = 'ext_idle_notify'
-                return
-
             ok, detail = self._try_dbus_screensaver()
             self._probe_log.append(('dbus_screensaver', ok, detail))
             if ok:
                 self._method = 'dbus_screensaver'
+                return
+
+            ok, detail = self._try_x11_screensaver()
+            self._probe_log.append(('x11_mit_screensaver', ok, detail))
+            if ok:
+                self._method = 'x11_mit_screensaver'
                 return
 
             self._method = None
@@ -352,15 +218,6 @@ if operating_system.isGTK():
         def __del__(self):
             if self.dpy and hasattr(self, 'XCloseDisplay'):
                 self.XCloseDisplay(self.dpy)
-            wl_display = getattr(self, '_wl_display', None)
-            if wl_display is not None:
-                # Disconnecting unblocks the dispatch thread, which
-                # then exits (it is a daemon anyway).
-                self._wl_display = None
-                try:
-                    wl_display.disconnect()
-                except Exception:
-                    pass
 
         def get_idle_seconds(self):
             self._initialize()
@@ -377,17 +234,6 @@ if operating_system.isGTK():
                     return self._dbus_iface.GetSessionIdleTime()
                 except Exception:
                     pass
-            elif self._method == 'ext_idle_notify':
-                with self._idle_lock:
-                    since = self._idle_since
-                if since is None:
-                    return 0
-                # The compositor only told us once the seat had been
-                # idle for _WL_TIMEOUT_MS, so add that back in.
-                return (
-                    (time.time() - since)
-                    + (self._WL_TIMEOUT_MS / 1000.0)
-                )
             elif self._method == 'x11_mit_screensaver':
                 self.XScreenSaverQueryInfo(
                     self.dpy, self.XRootWindow(self.dpy, 0), self.info
@@ -435,14 +281,13 @@ elif operating_system.isMac():
     # macOS idle time detection using IOKit via ctypes
     # Queries the HIDIdleTime property from IOHIDSystem
 
-    from ctypes import cdll, c_void_p, c_uint32, c_int32
+    from ctypes import cdll, c_void_p, c_uint32, c_int32, byref
 
     class MacIdleQuery:
         """Query idle time on macOS using IOKit.
 
-        Uses IORegistryEntryCreateCFProperty to get HIDIdleTime
-        from IOHIDSystem. This is the standard way to get system
-        idle time on macOS.
+        Uses IORegistryEntryCreateCFProperty to get HIDIdleTime from IOHIDSystem.
+        This is the standard way to get system idle time on macOS.
         """
 
         def __init__(self):
@@ -454,15 +299,12 @@ elif operating_system.isMac():
                     '/System/Library/Frameworks/IOKit.framework/IOKit'
                 )
                 self._cf = cdll.LoadLibrary(
-                    '/System/Library/Frameworks/'
-                    'CoreFoundation.framework/CoreFoundation'
+                    '/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation'
                 )
 
                 # IOKit functions
                 self._iokit.IOServiceGetMatchingService.restype = c_uint32
-                self._iokit.IOServiceGetMatchingService.argtypes = [
-                    c_uint32, c_void_p
-                ]
+                self._iokit.IOServiceGetMatchingService.argtypes = [c_uint32, c_void_p]
                 self._iokit.IOServiceMatching.restype = c_void_p
                 self._iokit.IOServiceMatching.argtypes = [c_void_p]
                 self._iokit.IORegistryEntryCreateCFProperty.restype = c_void_p
@@ -474,13 +316,9 @@ elif operating_system.isMac():
 
                 # CoreFoundation functions
                 self._cf.CFStringCreateWithCString.restype = c_void_p
-                self._cf.CFStringCreateWithCString.argtypes = [
-                    c_void_p, c_void_p, c_uint32
-                ]
+                self._cf.CFStringCreateWithCString.argtypes = [c_void_p, c_void_p, c_uint32]
                 self._cf.CFNumberGetValue.restype = c_int32
-                self._cf.CFNumberGetValue.argtypes = [
-                    c_void_p, c_int32, c_void_p
-                ]
+                self._cf.CFNumberGetValue.argtypes = [c_void_p, c_int32, c_void_p]
                 self._cf.CFRelease.restype = None
                 self._cf.CFRelease.argtypes = [c_void_p]
 
@@ -529,10 +367,8 @@ elif operating_system.isMac():
 
                 try:
                     # Get HIDIdleTime property
-                    idle_time_ref = (
-                        self._iokit.IORegistryEntryCreateCFProperty(
-                            hid_service, self._idle_key, None, 0
-                        )
+                    idle_time_ref = self._iokit.IORegistryEntryCreateCFProperty(
+                        hid_service, self._idle_key, None, 0
                     )
 
                     if not idle_time_ref:
@@ -543,9 +379,7 @@ elif operating_system.isMac():
                         from ctypes import c_int64
                         idle_ns = c_int64()
                         self._cf.CFNumberGetValue(
-                            idle_time_ref,
-                            self._kCFNumberSInt64Type,
-                            byref(idle_ns),
+                            idle_time_ref, self._kCFNumberSInt64Type, byref(idle_ns)
                         )
                         # Convert nanoseconds to seconds
                         return idle_ns.value / 1_000_000_000

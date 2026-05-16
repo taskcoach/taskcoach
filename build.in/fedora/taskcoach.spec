@@ -55,11 +55,6 @@ Requires:       xdg-utils
 # Optional dependencies
 Recommends:     espeak-ng
 Recommends:     hunspell-en-US
-# Idle-detection bindings for the optional "Idle time notice"
-# feature (guarded imports; see docs/IDLE.md). Weak deps, exactly
-# like the spell-check dictionary above.
-Recommends:     python3-dbus
-Recommends:     python3-pywayland
 
 # Bundled via pip:
 # - squaremap: not in Fedora repos
