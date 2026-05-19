@@ -29,6 +29,7 @@ _LEGACY_DEBOUNCE_MS = 1000
 
 # Sections monitored by the shim — add entries as code is migrated.
 _SETTING_SECTIONS = {
+    "feature",
     "icon",
     "iconpicker",
     "view",
@@ -38,6 +39,7 @@ _SETTING_SECTIONS = {
 # Explicit type map — add entries as code is migrated to use this shim.
 # Settings not listed here are returned as raw strings.
 _TYPES_MAP = {
+    ("feature", "decimal_time"): bool,
     ("view", "descriptionpopups"): bool,
     ("window", "hoverlinewidth"): int,
     ("icon", "legacystatusicons"): bool,

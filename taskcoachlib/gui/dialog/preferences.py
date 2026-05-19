@@ -2236,6 +2236,15 @@ class FeaturesPage(SettingsPage):
             % meta.data.metaDict,
         )
         self.addBooleanSetting(
+            "feature",
+            "decimal_time",
+            _("Use decimal times for effort entries"),
+            _(
+                "Display one hour, fifteen minutes as 1.25 instead of 1:15. "
+                "This is useful when creating invoices."
+            ),
+        )
+        self.addBooleanSetting(
             "view",
             "descriptionpopups",
             _("Hoverover popups"),

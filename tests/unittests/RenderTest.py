@@ -142,24 +142,43 @@ class RenderTimeLeftTest(test.TestCase):
 
 class RenderTimeSpentTest(test.TestCase):
     def testZeroTime(self):
-        self.assertEqual("", render.timeSpent(date.TimeDelta()))
+        self.assertEqual("", render.time_spent(date.TimeDelta()))
 
     def testOneSecond(self):
-        self.assertEqual("0:00:01", render.timeSpent(date.ONE_SECOND))
+        self.assertEqual("0:00:01", render.time_spent(date.ONE_SECOND))
 
     def testTenHours(self):
         self.assertEqual(
-            "10:00:00", render.timeSpent(date.TimeDelta(hours=10))
+            "10:00:00", render.time_spent(date.TimeDelta(hours=10))
         )
 
     def testNegativeHours(self):
         self.assertEqual(
-            "-1:00:00", render.timeSpent(date.TimeDelta(hours=-1))
+            "-1:00:00", render.time_spent(date.TimeDelta(hours=-1))
         )
 
     def testNegativeSeconds(self):
         self.assertEqual(
-            "-0:00:01", render.timeSpent(date.TimeDelta(seconds=-1))
+            "-0:00:01", render.time_spent(date.TimeDelta(seconds=-1))
+        )
+
+    def testDecimal(self):
+        self.assertEqual(
+            "0.50",
+            render.time_spent(date.TimeDelta(minutes=30), decimal=True),
+        )
+
+    def testDecimalNul(self):
+        self.assertEqual(
+            "", render.time_spent(date.TimeDelta(hours=0), decimal=True)
+        )
+
+    def testDecimalNegative(self):
+        self.assertEqual(
+            "-1.25",
+            render.time_spent(
+                date.TimeDelta(hours=-1, minutes=-15), decimal=True
+            ),
         )
 
 
