@@ -172,7 +172,7 @@ class BaseTaskViewer(
         self.statusMessages = None  # Break cycle
 
     def _renderTimeSpent(self, *args, **kwargs):
-        return render.timeSpent(*args, **kwargs)
+        return render.time_spent(*args, **kwargs)
 
     def onAppearanceSettingChange(self, value):  # pylint: disable=W0613
         if self:

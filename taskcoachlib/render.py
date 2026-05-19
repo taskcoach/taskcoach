@@ -58,21 +58,25 @@ def timeLeft(time_left, completed_task):
     return sign + days + hours_and_minutes
 
 
-def timeSpent(
-    timeSpent: datemodule.TimeDelta, showSeconds=True
+def time_spent(
+    time_spent: datemodule.TimeDelta, show_seconds=True, decimal=False
 ):
     """Render time spent (of type date.TimeDelta) as
-    "<hours>:<minutes>:<seconds>" or "<hours>:<minutes>" """
+    "<hours>:<minutes>:<seconds>" or "<hours>:<minutes>", or as
+    "<hours>.<fractional hours>" when decimal is True (e.g. one hour
+    fifteen minutes as "1.25" instead of "1:15", useful for invoices)."""
     zero = datemodule.TimeDelta()
-    if timeSpent == zero:
+    if time_spent == zero:
         return ""
     else:
-        sign = "-" if timeSpent < zero else ""
-        hours, minutes, seconds = timeSpent.hoursMinutesSeconds()
+        sign = "-" if time_spent < zero else ""
+        hours, minutes, seconds = time_spent.hoursMinutesSeconds()
+        if decimal:
+            return sign + "%.2f" % (hours + minutes / 60.0 + seconds / 3600.0)
         return (
             sign
             + "%d:%02d" % (hours, minutes)
-            + (":%02d" % seconds if showSeconds else "")
+            + (":%02d" % seconds if show_seconds else "")
         )
 
 
@@ -119,7 +123,7 @@ def recurrence(recurrence):
 def budget(aBudget):
     """Render budget (of type date.TimeDelta) as
     "<hours>:<minutes>:<seconds>"."""
-    return timeSpent(aBudget)
+    return time_spent(aBudget)
 
 
 # Date/time format constants - computed once at startup.

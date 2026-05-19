@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import command, patterns, widgets, domain, render
+from taskcoachlib.config import settings2
 from taskcoachlib.domain import effort, date
 from taskcoachlib.domain.base import filter  # pylint: disable=W0622
 from taskcoachlib.gui import uicommand, dialog
@@ -666,13 +667,16 @@ class EffortViewer(
         for effort in efforts:
             td = td + effort.timeSpent()
 
-        sumTimeSpent = render.timeSpent(
+        sumTimeSpent = render.time_spent(
             td,
-            showSeconds=self.__show_seconds(),
+            show_seconds=self.__show_seconds(),
+            decimal=settings2.feature.decimal_time,
         )
 
         if sumTimeSpent == "":
-            if self.__show_seconds():
+            if settings2.feature.decimal_time:
+                sumTimeSpent = "0.0"
+            elif self.__show_seconds():
                 sumTimeSpent = "0:00:00"
             else:
                 sumTimeSpent = "0:00"
@@ -781,9 +785,10 @@ class EffortViewer(
             showSeconds = self.__show_seconds()
         else:
             showSeconds = True
-        return render.timeSpent(
+        return render.time_spent(
             timeSpent,
-            showSeconds=showSeconds,
+            show_seconds=showSeconds,
+            decimal=settings2.feature.decimal_time,
         )
 
     def __renderTotalTimeSpent(self, anEffort):
@@ -794,9 +799,10 @@ class EffortViewer(
             roundUp=self.__always_round_up(),
             consolidate=self.__consolidate_efforts_per_task(),
         )
-        return render.timeSpent(
+        return render.time_spent(
             totalTimeSpent,
-            showSeconds=self.__show_seconds(),
+            show_seconds=self.__show_seconds(),
+            decimal=settings2.feature.decimal_time,
         )
 
     def __renderTimeSpentOnDay(self, anEffort, dayOffset):
@@ -812,9 +818,10 @@ class EffortViewer(
             )
         else:
             timeSpent = anEffort.timeSpent()
-        return render.timeSpent(
+        return render.time_spent(
             self.__roundTimeSpent(timeSpent),
-            showSeconds=self.__show_seconds(),
+            show_seconds=self.__show_seconds(),
+            decimal=settings2.feature.decimal_time,
         )
 
     def getItemTooltipData(self, item):
