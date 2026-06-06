@@ -24,6 +24,9 @@ import os
 import logging
 from taskcoachlib import meta, patterns, operating_system
 from taskcoachlib.meta.debug import log_step
+from taskcoachlib.gui.toplevelcontroller import (
+    create_toplevel_controller,
+)
 from taskcoachlib.i18n import _
 from taskcoachlib.domain import date, task
 from pubsub import pub
@@ -65,6 +68,7 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         log_step("TaskBarIcon.__init__ started (wx.adv.TaskBarIcon)", prefix="TRAY")
         super().__init__(*args, **kwargs)
         self.__window = mainwindow
+        self.__toplevel = None
         self.__taskList = taskList
         self.__settings = settings
         self.__icon_id = self.__default_icon_id = default_icon_id
@@ -172,17 +176,16 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
             self.__set_icon()
 
     def onTaskbarClick(self, event):
-        log_step("LEFT-CLICK on taskbar icon, event:", event, prefix="TRAY")
-        if self.__window.IsIconized() or not self.__window.IsShown():
-            log_step("Window is iconized/hidden, restoring", prefix="TRAY")
-            self.__window.restore(event)
+        log_step("LEFT-CLICK on taskbar icon", prefix="TRAY")
+        if self.__toplevel is None:
+            self.__toplevel = create_toplevel_controller(self.__window)
+        controller = self.__toplevel
+        if controller.is_minimized():
+            log_step("restore via", controller.backend, prefix="TRAY")
+            controller.restore()
         else:
-            if operating_system.isMac():
-                log_step("Mac: raising window", prefix="TRAY")
-                self.__window.Raise()
-            else:
-                log_step("Iconizing window", prefix="TRAY")
-                self.__window.Iconize()
+            log_step("minimize via", controller.backend, prefix="TRAY")
+            controller.minimize()
 
     # Menu:
 
@@ -332,6 +335,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
     ):
         super().__init__()
         self.__window = mainwindow
+        self.__toplevel = None
         self.__taskList = taskList
         self.__settings = settings
         self.__tray_icon_id = self.__default_tray_icon_id = default_tray_icon_id
@@ -418,28 +422,24 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             self.__set_icon()
 
     def onTaskbarClick(self, event=None):
-        """Handle click on indicator - show/hide main window.
+        """Show or hide the main window via the ToplevelController.
 
-        Three cases:
-        1. IsIconized() or not IsShown() — X11: wx knows the window is
-           minimized/hidden, normal restore() works.
-        2. not IsActive() — Wayland: compositor minimized the window but
-           wxGTK doesn't know (IsIconized() stays False, IsShown() stays
-           True because GTK3's Wayland backend never sets
-           GDK_WINDOW_STATE_ICONIFIED).  restore() is all no-ops, so
-           force a surface remap via Hide()+Show().
-        3. else — window is visible and active, minimize it.
+        The controller is selected once for the session (Native on
+        X11/Win/macOS, KDE plasma-window-management on KDE Wayland,
+        Hide/Show fallback elsewhere). It owns the
+        minimize/restore mechanism so this no longer guesses window
+        state with the unreliable IsIconized/IsShown/IsActive
+        heuristic. See docs/SYSTEM_TRAY.md.
         """
-        if self.__window.IsIconized() or not self.__window.IsShown():
-            # X11: wx knows the window state → normal restore
-            self.__window.restore(event)
-        elif not self.__window.IsActive():
-            # Wayland: compositor minimized but wx doesn't know →
-            # force Wayland surface unmap/remap
-            self.__window.Hide()
-            self.__window.Show()
+        if self.__toplevel is None:
+            self.__toplevel = create_toplevel_controller(self.__window)
+        controller = self.__toplevel
+        if controller.is_minimized():
+            log_step("restore via", controller.backend, prefix="TRAY")
+            controller.restore()
         else:
-            self.__window.Iconize()
+            log_step("minimize via", controller.backend, prefix="TRAY")
+            controller.minimize()
 
     # Menu:
 

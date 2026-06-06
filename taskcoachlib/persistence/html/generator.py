@@ -334,7 +334,7 @@ class Viewer2HTMLConverter(object):
             )
 
         renderedItem = html.escape(
-            column.render(item, humanReadable=False)
+            column.render(item, human_readable=False)
         ).replace("\n", "<br>")
         if indent:
             # Indent the subject with whitespace

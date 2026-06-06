@@ -299,7 +299,7 @@ class EffortViewer(
                         "period",
                         _("Period"),
                         effort.Effort.durationChangedEventType(),
-                        self.__renderPeriod,
+                        self.__render_period,
                         uicommand.ViewerSortByCommand(
                             viewer=self, value="period"
                         ),
@@ -344,13 +344,13 @@ class EffortViewer(
                         "timeSpent",
                         _("Time spent"),
                         effort.Effort.durationChangedEventType(),
-                        self.__renderTimeSpent,
+                        self.__render_time_spent,
                     ),
                     (
                         "totalTimeSpent",
                         _("Total time spent"),
                         effort.Effort.durationChangedEventType(),
-                        self.__renderTotalTimeSpent,
+                        self.__render_total_time_spent,
                     ),
                     (
                         "revenue",
@@ -381,43 +381,57 @@ class EffortViewer(
                         "monday",
                         _("Monday"),
                         effort.Effort.durationChangedEventType(),
-                        lambda effort: self.__renderTimeSpentOnDay(effort, 0),
+                        lambda effort: self.__render_time_spent_on_day(
+                            effort, 0
+                        ),
                     ),
                     (
                         "tuesday",
                         _("Tuesday"),
                         effort.Effort.durationChangedEventType(),
-                        lambda effort: self.__renderTimeSpentOnDay(effort, 1),
+                        lambda effort: self.__render_time_spent_on_day(
+                            effort, 1
+                        ),
                     ),
                     (
                         "wednesday",
                         _("Wednesday"),
                         effort.Effort.durationChangedEventType(),
-                        lambda effort: self.__renderTimeSpentOnDay(effort, 2),
+                        lambda effort: self.__render_time_spent_on_day(
+                            effort, 2
+                        ),
                     ),
                     (
                         "thursday",
                         _("Thursday"),
                         effort.Effort.durationChangedEventType(),
-                        lambda effort: self.__renderTimeSpentOnDay(effort, 3),
+                        lambda effort: self.__render_time_spent_on_day(
+                            effort, 3
+                        ),
                     ),
                     (
                         "friday",
                         _("Friday"),
                         effort.Effort.durationChangedEventType(),
-                        lambda effort: self.__renderTimeSpentOnDay(effort, 4),
+                        lambda effort: self.__render_time_spent_on_day(
+                            effort, 4
+                        ),
                     ),
                     (
                         "saturday",
                         _("Saturday"),
                         effort.Effort.durationChangedEventType(),
-                        lambda effort: self.__renderTimeSpentOnDay(effort, 5),
+                        lambda effort: self.__render_time_spent_on_day(
+                            effort, 5
+                        ),
                     ),
                     (
                         "sunday",
                         _("Sunday"),
                         effort.Effort.durationChangedEventType(),
-                        lambda effort: self.__renderTimeSpentOnDay(effort, 6),
+                        lambda effort: self.__render_time_spent_on_day(
+                            effort, 6
+                        ),
                     ),
                 ]
             ]
@@ -662,25 +676,25 @@ class EffortViewer(
 
         return item in super().curselection()
 
-    def __sumTimeSpent(self, efforts):
+    def __sum_time_spent(self, efforts):
         td = date.TimeDelta()
-        for effort in efforts:
-            td = td + effort.timeSpent()
+        for an_effort in efforts:
+            td = td + an_effort.timeSpent()
 
-        sumTimeSpent = render.time_spent(
+        sum_time_spent = render.time_spent(
             td,
             show_seconds=self.__show_seconds(),
             decimal=settings2.feature.decimal_time,
         )
 
-        if sumTimeSpent == "":
+        if sum_time_spent == "":
             if settings2.feature.decimal_time:
-                sumTimeSpent = "0.0"
+                sum_time_spent = "0.0"
             elif self.__show_seconds():
-                sumTimeSpent = "0:00:00"
+                sum_time_spent = "0:00:00"
             else:
-                sumTimeSpent = "0:00"
-        return sumTimeSpent
+                sum_time_spent = "0:00"
+        return sum_time_spent
 
     def statusMessages(self):
         status1 = _(
@@ -689,9 +703,9 @@ class EffortViewer(
             len(self.curselection()),
             len(self.presentation()),
             len(self.taskFile.efforts()),
-            self.__sumTimeSpent(self.curselection()),
-            self.__sumTimeSpent(self.presentation()),
-            self.__sumTimeSpent(self.taskFile.efforts()),
+            self.__sum_time_spent(self.curselection()),
+            self.__sum_time_spent(self.presentation()),
+            self.__sum_time_spent(self.taskFile.efforts()),
         )
         status2 = (
             _("Status: %d tracking") % self.presentation().nr_being_tracked()
@@ -724,43 +738,48 @@ class EffortViewer(
 
     # Rendering
 
-    periodRenderers = dict(
-        details=lambda anEffort, humanReadable=True: render.dateTimePeriod(
-            anEffort.getStart(),
-            anEffort.getStop(),
-            humanReadable=humanReadable,
+    period_renderers = dict(
+        details=lambda an_effort, human_readable=True: render.dateTimePeriod(
+            an_effort.getStart(),
+            an_effort.getStop(),
+            human_readable=human_readable,
         ),
-        day=lambda anEffort, humanReadable=True: render.date(
-            anEffort.getStart(), humanReadable=humanReadable
+        day=lambda an_effort, human_readable=True: render.date(
+            an_effort.getStart(), human_readable=human_readable
         ),
-        week=lambda anEffort, humanReadable=True: render.weekNumber(
-            anEffort.getStart()
+        week=lambda an_effort, human_readable=True: render.weekNumber(
+            an_effort.getStart()
         ),
-        month=lambda anEffort, humanReadable=True: render.month(
-            anEffort.getStart()
+        month=lambda an_effort, human_readable=True: render.month(
+            an_effort.getStart()
         ),
     )
 
-    def __renderPeriod(self, anEffort, humanReadable=True):
+    def __render_period(self, an_effort, human_readable=True):
         """Return the period the effort belongs to. This depends on the
-        current aggregation. If this period is the same as the previous
-        period, an empty string is returned."""
-        return (
-            ""
-            if self.__hasRepeatedPeriod(anEffort)
-            else self.periodRenderers[self.aggregation](
-                anEffort, humanReadable=humanReadable
-            )
+        current aggregation. When rendering for on-screen display and the
+        period is the same as the previous record, an empty string is
+        returned to avoid visual repetition. When exporting
+        (human_readable is False) the full period is always rendered, both
+        because the effort may not be part of the viewer's presentation
+        (e.g. exporting all efforts) and because blank period cells make
+        the exported data harder to process."""
+        if human_readable and self.__has_repeated_period(an_effort):
+            return ""
+        return self.period_renderers[self.aggregation](
+            an_effort, human_readable=human_readable
         )
 
-    def __hasRepeatedPeriod(self, anEffort):
+    def __has_repeated_period(self, an_effort):
         """Return whether the effort has the same period as the previous
         effort record."""
-        index = self.presentation().index(anEffort)
-        previousEffort = index > 0 and self.presentation()[index - 1] or None
-        if not previousEffort:
+        index = self.presentation().index(an_effort)
+        previous_effort = (
+            index > 0 and self.presentation()[index - 1] or None
+        )
+        if not previous_effort:
             return False
-        if anEffort.getStart() != previousEffort.getStart():
+        if an_effort.getStart() != previous_effort.getStart():
             # Starts are not equal, so period cannot be repeated
             return False
         if self.is_showing_aggregated_effort():
@@ -768,58 +787,59 @@ class EffortViewer(
             return True
         # If we get here, we are in details mode and the starts are equal
         # Period can only be repeated when the stop times are also equal
-        return anEffort.getStop() == previousEffort.getStop()
+        return an_effort.getStop() == previous_effort.getStop()
 
-    def __renderTimeSpent(self, anEffort):
+    def __render_time_spent(self, an_effort):
         """Return a rendered version of the effort time spent."""
-        if isinstance(anEffort, effort.BaseCompositeEffort):
-            timeSpent = anEffort.totalTimeSpent(
+        if isinstance(an_effort, effort.BaseCompositeEffort):
+            time_spent = an_effort.totalTimeSpent(
                 rounding=self.__round_precision(),
                 roundUp=self.__always_round_up(),
             )
         else:
-            timeSpent = anEffort.timeSpent()
+            time_spent = an_effort.timeSpent()
         # Check for aggregation because we never round in details mode
         if self.is_showing_aggregated_effort():
-            timeSpent = self.__roundTimeSpent(timeSpent)
-            showSeconds = self.__show_seconds()
+            time_spent = self.__roundTimeSpent(time_spent)
+            show_seconds = self.__show_seconds()
         else:
-            showSeconds = True
+            show_seconds = True
         return render.time_spent(
-            timeSpent,
-            show_seconds=showSeconds,
+            time_spent,
+            show_seconds=show_seconds,
             decimal=settings2.feature.decimal_time,
         )
 
-    def __renderTotalTimeSpent(self, anEffort):
-        """Return a rendered version of the total time spent (aggregated mode only)."""
-        totalTimeSpent = anEffort.totalTimeSpent(
+    def __render_total_time_spent(self, an_effort):
+        """Return a rendered version of the total time spent (aggregated
+        mode only)."""
+        total_time_spent = an_effort.totalTimeSpent(
             recursive=True,
             rounding=self.__round_precision(),
             roundUp=self.__always_round_up(),
             consolidate=self.__consolidate_efforts_per_task(),
         )
         return render.time_spent(
-            totalTimeSpent,
+            total_time_spent,
             show_seconds=self.__show_seconds(),
             decimal=settings2.feature.decimal_time,
         )
 
-    def __renderTimeSpentOnDay(self, anEffort, dayOffset):
+    def __render_time_spent_on_day(self, an_effort, day_offset):
         """Return a rendered version of the time spent on a specific day."""
         if self.aggregation != "week":
-            timeSpent = date.TimeDelta()
-        elif isinstance(anEffort, effort.BaseCompositeEffort):
-            timeSpent = anEffort.totalTimeSpentForDay(
-                dayOffset,
+            time_spent = date.TimeDelta()
+        elif isinstance(an_effort, effort.BaseCompositeEffort):
+            time_spent = an_effort.totalTimeSpentForDay(
+                day_offset,
                 rounding=self.__round_precision(),
                 roundUp=self.__always_round_up(),
                 consolidate=self.__consolidate_efforts_per_task(),
             )
         else:
-            timeSpent = anEffort.timeSpent()
+            time_spent = an_effort.timeSpent()
         return render.time_spent(
-            self.__roundTimeSpent(timeSpent),
+            self.__roundTimeSpent(time_spent),
             show_seconds=self.__show_seconds(),
             decimal=settings2.feature.decimal_time,
         )
@@ -835,9 +855,9 @@ class EffortViewer(
                         render.dateTimePeriod(
                             theEffort.getStart(),
                             theEffort.getStop(),
-                            humanReadable=True,
+                            human_readable=True,
                         ),
-                        self.__renderTimeSpent(theEffort),
+                        self.__render_time_spent(theEffort),
                     )
                 )
             result.append((None, details))

@@ -2238,10 +2238,12 @@ class FeaturesPage(SettingsPage):
         self.addBooleanSetting(
             "feature",
             "decimal_time",
-            _("Use decimal times for effort entries"),
+            _("Use decimal times for effort"),
             _(
                 "Display one hour, fifteen minutes as 1.25 instead of 1:15. "
-                "This is useful when creating invoices."
+                "This is useful when creating invoices. It applies to effort "
+                "and duration in reports, lists and exports, but not for data "
+                "entry."
             ),
         )
         self.addBooleanSetting(

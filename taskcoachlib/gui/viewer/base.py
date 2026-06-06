@@ -61,6 +61,10 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         )
         # Flag so that we don't notify observers while we're selecting all items
         self.__selectingAllItems = False
+        # Flag set once the viewer is detached, so that selection events fired
+        # by the widget while it is being destroyed (e.g. hidden viewers in the
+        # export dialog) are ignored before touching any dead wx object.
+        self.__detached = False
         # Popup menus we have to destroy before closing the viewer to prevent
         # memory leakage:
         self._popupMenus = []
@@ -190,6 +194,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
 
     def detach(self):
         """Should be called by viewer.container before closing the viewer"""
+        self.__detached = True
         observers = [self, self.presentation()]
         observable = self.presentation()
         while True:
@@ -209,7 +214,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
                 popup_menu.Destroy()
             except RuntimeError:
                 log_step("detach: popup menu already dead %x" %
-                         id(popup_menu), prefix="DEAD-OBJ")
+                         id(popup_menu), prefix="DEAD-OBJ", exc=True)
 
         pub.unsubscribe(self.on_begin_io, "taskfile.aboutToRead")
         pub.unsubscribe(self.on_begin_io, "taskfile.aboutToClear")
@@ -314,7 +319,8 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             self.widget.SetFocus(*args, **kwargs)
         except RuntimeError as e:
             log_step("SetFocus on dead widget %s: %s" %
-                     (self.__class__.__name__, e), prefix="DEAD-OBJ")
+                     (self.__class__.__name__, e), prefix="DEAD-OBJ",
+                     exc=True)
 
     def create_sorter(self, collection):
         """This method can be overridden to decorate the presentation with a
@@ -391,6 +397,14 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         """The selection of items in the widget has been changed. Notify
         our observers."""
 
+        if self.__detached or not self:
+            # The widget fired a selection event while the viewer is being
+            # torn down (e.g. hidden viewers in the export dialog). The wx
+            # object may already be gone; "not self" is False-y once the
+            # underlying C++ object is deleted, so bail out before touching
+            # it instead of raising and logging from the except below.
+            return
+
         try:
             if self.IsBeingDeleted() or self.__selectingAllItems:
                 # Some widgets change the selection and send selection events when
@@ -407,7 +421,8 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             wx.CallAfter(self.send_viewer_status_event)
         except RuntimeError as e:
             log_step("onSelect on dead viewer %s: %s" %
-                     (self.__class__.__name__, e), prefix="DEAD-OBJ")
+                     (self.__class__.__name__, e), prefix="DEAD-OBJ",
+                     exc=True)
 
     def updateSelection(self, send_status_event=True):
         """Legacy method - kept for subclass compatibility.
@@ -1235,15 +1250,15 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         return ", ".join(sorted(subjects))
 
     @staticmethod
-    def renderCreationDateTime(item, humanReadable=True):
+    def renderCreationDateTime(item, human_readable=True):
         return render.dateTime(
-            item.creationDateTime(), humanReadable=humanReadable
+            item.creationDateTime(), human_readable=human_readable
         )
 
     @staticmethod
-    def renderModificationDateTime(item, humanReadable=True):
+    def renderModificationDateTime(item, human_readable=True):
         return render.dateTime(
-            item.modificationDateTime(), humanReadable=humanReadable
+            item.modificationDateTime(), human_readable=human_readable
         )
 
     def isItemCollapsed(self, item):

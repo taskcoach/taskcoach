@@ -226,7 +226,7 @@ class TaskListTestsMixin(object):
     def testCreationDateTime(self):
         self.viewer.showColumnByName("creationDateTime")
         self.expectInHTML(
-            render.dateTime(self.task.creationDateTime(), humanReadable=False)
+            render.dateTime(self.task.creationDateTime(), human_readable=False)
         )
 
     def testMissingCreationDateTime(self):
@@ -242,7 +242,7 @@ class TaskListTestsMixin(object):
         self.viewer.showColumnByName("modificationDateTime")
         self.expectInHTML(
             render.dateTime(
-                self.task.modificationDateTime(), humanReadable=False
+                self.task.modificationDateTime(), human_readable=False
             )
         )
 
@@ -250,7 +250,7 @@ class TaskListTestsMixin(object):
         self.viewer.showColumnByName("modificationDateTime")
         self.expectInHTML(
             render.dateTime(
-                self.task.modificationDateTime(), humanReadable=False
+                self.task.modificationDateTime(), human_readable=False
             )
         )
         self.expectNotInHTML("1/1/1")

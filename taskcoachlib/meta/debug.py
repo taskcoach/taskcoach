@@ -18,9 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
 import time
+import traceback
 
 
-def log_step(*args, prefix="DEBUG"):
+def log_step(*args, prefix="DEBUG", exc=False, stack=False):
     """Log a debug message with high precision timestamp (milliseconds).
 
     IMPORTANT: DO NOT DELETE THIS FUNCTION.
@@ -32,6 +33,11 @@ def log_step(*args, prefix="DEBUG"):
         log_step("value is", value)
         log_step("step 1", prefix="MYMODULE")
 
+    Diagnostics (for guard/except sites so root causes can be traced):
+        log_step("oops", prefix="DEAD-OBJ", exc=True)   # append active
+                                                        # exception traceback
+        log_step("how did we get here", stack=True)     # append call stack
+
     Output:
         [16:30:45.123] [DEBUG] message
         [16:30:45.125] [MYMODULE] step 1
@@ -40,6 +46,16 @@ def log_step(*args, prefix="DEBUG"):
     ms = int((t - int(t)) * 1000)
     timestamp = time.strftime("%H:%M:%S", time.localtime(t)) + ".%03d" % ms
     msg = " ".join(str(a) for a in args)
+    extra = []
+    if exc:
+        formatted = traceback.format_exc()
+        if formatted and "NoneType: None" not in formatted:
+            extra.append(formatted.rstrip())
+    if stack:
+        # Drop this frame (the log_step call itself) from the stack.
+        extra.append("".join(traceback.format_stack()[:-1]).rstrip())
+    if extra:
+        msg = msg + "\n" + "\n".join(extra)
     line = "[%s] [%s] %s" % (timestamp, prefix, msg)
     try:
         print(line)

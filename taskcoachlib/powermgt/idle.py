@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 import os
-import threading
+import select
 import time
 
 import wx
@@ -100,14 +100,18 @@ if operating_system.isGTK():
             self._dbus_iface = None
             # ext-idle-notify-v1 state. _idle_since is the wall-clock
             # time the compositor reported the seat went idle, or
-            # None while active; guarded by _idle_lock because it is
-            # written from the Wayland dispatch thread and read from
-            # the wx EVT_IDLE handler.
-            self._idle_lock = threading.Lock()
+            # None while active. The idled/resumed handlers and the
+            # EVT_IDLE reader all run on the main thread (events are
+            # pumped non-blockingly in get_idle_seconds), so no lock
+            # is needed. The registry/seat/notifier proxies are held
+            # for the life of the connection so libwayland never
+            # dispatches an event against a garbage-collected proxy.
             self._idle_since = None
             self._wl_display = None
             self._wl_notification = None
-            self._wl_thread = None
+            self._wl_registry = None
+            self._wl_seat = None
+            self._wl_notifier = None
 
         def _try_dbus_mutter(self):
             """Try GNOME Mutter IdleMonitor via DBus. Returns (ok, detail)."""
@@ -149,30 +153,54 @@ if operating_system.isGTK():
                 return False, _summarize_exception(e)
 
         def _wl_on_idled(self, notification):
-            """ext-idle-notify-v1 'idled' event (dispatch thread)."""
-            with self._idle_lock:
-                self._idle_since = time.time()
+            """ext-idle-notify-v1 'idled' event (main thread)."""
+            self._idle_since = time.time()
 
         def _wl_on_resumed(self, notification):
-            """ext-idle-notify-v1 'resumed' event (dispatch thread)."""
-            with self._idle_lock:
-                self._idle_since = None
+            """ext-idle-notify-v1 'resumed' event (main thread)."""
+            self._idle_since = None
 
-        def _wl_run(self):
-            """Wayland event loop for the ext-idle-notify-v1 backend.
+        def _wl_pump(self):
+            """Drain queued ext-idle-notify-v1 events without blocking.
 
-            Runs on a daemon thread for the life of the process.
-            Blocks in dispatch() until the compositor sends an
-            idled/resumed event or the display is disconnected (on
-            shutdown), at which point dispatch() raises and the
-            thread exits.
+            Called on the main thread from get_idle_seconds(); the
+            idled/resumed handlers update _idle_since. dispatch(block=
+            False) only dispatches already-queued events and never
+            touches the fd, while pywayland's read() blocks when the fd
+            has no data, so read() is guarded by a zero-timeout select.
+            Any failure (compositor gone, protocol error) tears the
+            connection down and degrades to no idle detection rather
+            than letting a dead connection spin or crash.
             """
             display = self._wl_display
+            if display is None:
+                return
             try:
-                while self._wl_display is not None:
-                    display.dispatch(block=True)
+                display.flush()
+                if select.select([display.get_fd()], [], [], 0)[0]:
+                    display.read()
+                display.dispatch(block=False)
             except Exception:
-                pass
+                self._teardown_wl()
+
+        def _teardown_wl(self):
+            """Disconnect the ext-idle-notify-v1 side connection.
+
+            Safe to call from the main thread or __del__: no other
+            thread shares the display.
+            """
+            display = self._wl_display
+            self._wl_display = None
+            self._wl_notification = None
+            self._wl_registry = None
+            self._wl_seat = None
+            self._wl_notifier = None
+            self._idle_since = None
+            if display is not None:
+                try:
+                    display.disconnect()
+                except Exception:
+                    pass
 
         def _try_ext_idle_notify(self):
             """Try the ext-idle-notify-v1 Wayland protocol.
@@ -240,12 +268,9 @@ if operating_system.isGTK():
 
             self._wl_display = display
             self._wl_notification = notification
-            self._wl_thread = threading.Thread(
-                target=self._wl_run,
-                name="taskcoach-idle-wayland",
-                daemon=True,
-            )
-            self._wl_thread.start()
+            self._wl_registry = registry
+            self._wl_seat = found["seat"]
+            self._wl_notifier = found["notifier"]
             return True, None
 
         def _try_x11_screensaver(self):
@@ -352,15 +377,8 @@ if operating_system.isGTK():
         def __del__(self):
             if self.dpy and hasattr(self, 'XCloseDisplay'):
                 self.XCloseDisplay(self.dpy)
-            wl_display = getattr(self, '_wl_display', None)
-            if wl_display is not None:
-                # Disconnecting unblocks the dispatch thread, which
-                # then exits (it is a daemon anyway).
-                self._wl_display = None
-                try:
-                    wl_display.disconnect()
-                except Exception:
-                    pass
+            if getattr(self, '_wl_display', None) is not None:
+                self._teardown_wl()
 
         def get_idle_seconds(self):
             self._initialize()
@@ -378,8 +396,8 @@ if operating_system.isGTK():
                 except Exception:
                     pass
             elif self._method == 'ext_idle_notify':
-                with self._idle_lock:
-                    since = self._idle_since
+                self._wl_pump()
+                since = self._idle_since
                 if since is None:
                     return 0
                 # The compositor only told us once the seat had been

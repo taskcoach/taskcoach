@@ -1003,7 +1003,7 @@ class CommonTestsMixin(object):
         self.viewer.setSortByTaskStatusFirst(False)
         self.viewer.setSortOrderAscending(False)
         expectedDateTime = (
-            "(%s)" % render.dateTime(now, humanReadable=True)
+            "(%s)" % render.dateTime(now, human_readable=True)
             if self.tree_mode
             else ""
         )

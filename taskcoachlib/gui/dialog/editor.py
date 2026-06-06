@@ -271,11 +271,11 @@ class SubjectPage(Page):
         min_creation_datetime = min(creation_datetimes)
         max_creation_datetime = max(creation_datetimes)
         creation_text = render.dateTime(
-            min_creation_datetime, humanReadable=True
+            min_creation_datetime, human_readable=True
         )
         if max_creation_datetime - min_creation_datetime > date.ONE_MINUTE:
             creation_text += " - %s" % render.dateTime(
-                max_creation_datetime, humanReadable=True
+                max_creation_datetime, human_readable=True
             )
         self.addEntry(_("Creation date"), creation_text)
 
@@ -301,14 +301,14 @@ class SubjectPage(Page):
         min_modification_datetime = min(modification_datetimes)
         max_modification_datetime = max(modification_datetimes)
         modification_text = render.dateTime(
-            min_modification_datetime, humanReadable=True
+            min_modification_datetime, human_readable=True
         )
         if (
             max_modification_datetime - min_modification_datetime
             > date.ONE_MINUTE
         ):
             modification_text += " - %s" % render.dateTime(
-                max_modification_datetime, humanReadable=True
+                max_modification_datetime, human_readable=True
             )
         return modification_text
 
