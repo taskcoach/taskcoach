@@ -189,8 +189,10 @@ def _guarded_CallAfter(callableObj, *args, **kw):
     This wrapper captures the scheduling traceback and wraps the callback
     so it checks object validity before calling.
     """
-    # Capture where the CallAfter was scheduled from (for logging)
-    schedule_tb = traceback.format_stack(limit=6)[:-1]
+    # Capture where the CallAfter was scheduled from (for logging). Keep a
+    # deep slice so the root cause (not just the wx MainLoop wrappers) is
+    # visible when the guard later fires.
+    schedule_tb = traceback.format_stack(limit=25)[:-1]
 
     # Check if this is a bound method on a wx object
     obj = getattr(callableObj, '__self__', None)
@@ -218,7 +220,7 @@ def _guarded_CallAfter(callableObj, *args, **kw):
                     caller = "%s.%s" % (type(obj).__name__,
                                         getattr(callableObj, '__name__', '?'))
                     log_step("RuntimeError calling %s:" % caller, e,
-                             prefix="CRASH_GUARD")
+                             prefix="CRASH_GUARD", exc=True)
                     log_step("Originally scheduled from:",
                              prefix="CRASH_GUARD")
                     for line in schedule_tb:

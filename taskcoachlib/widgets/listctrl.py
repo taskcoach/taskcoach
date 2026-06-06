@@ -131,7 +131,12 @@ class VirtualListCtrl(
 
     def _on_paint_hover(self, event):
         event.Skip()
-        wx.CallAfter(self._draw_hover_outline)
+        # Only schedule a redraw when a row is actually hovered. Otherwise
+        # every paint (including those on hidden, never-hovered controls such
+        # as the export dialog's temporary viewers) would queue a CallAfter
+        # that fires after the control is destroyed.
+        if self._hover_row >= 0:
+            wx.CallAfter(self._draw_hover_outline)
 
     def GetMainWindow(self):
         # Override to return self for drop target support.

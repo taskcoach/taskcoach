@@ -120,10 +120,11 @@ def recurrence(recurrence):
     return result
 
 
-def budget(aBudget):
+def budget(budget, decimal=False):
     """Render budget (of type date.TimeDelta) as
-    "<hours>:<minutes>:<seconds>"."""
-    return time_spent(aBudget)
+    "<hours>:<minutes>:<seconds>", or as "<hours>.<fractional hours>"
+    when decimal is True."""
+    return time_spent(budget, decimal=decimal)
 
 
 # Date/time format constants - computed once at startup.
@@ -208,8 +209,8 @@ def rawDateFunc(dt=None):
     )
 
 
-def dateFunc(dt=None, humanReadable=False):
-    if humanReadable:
+def dateFunc(dt=None, human_readable=False):
+    if human_readable:
         theDate = dt.date()
         if theDate == datemodule.Now().date():
             return _("Today")
@@ -274,30 +275,30 @@ timeFunc = lambda dt, minutes=True, seconds=False: operating_system.decodeSystem
     rawTimeFunc(dt, minutes=minutes, seconds=seconds)
 )
 
-def dateTimeFunc(dt=None, humanReadable=False):
+def dateTimeFunc(dt=None, human_readable=False):
     """Format date and time together. Uses time() to avoid Windows timezone issues."""
     return "%s %s" % (
-        dateFunc(dt, humanReadable=humanReadable),
+        dateFunc(dt, human_readable=human_readable),
         time(dt),
     )
 
 
-def date(aDateTime, humanReadable=False):
+def date(aDateTime, human_readable=False):
     """Render a date/time as date."""
     if str(aDateTime) == "":
         return ""
     year = aDateTime.year
     if year >= 1900:
-        return dateFunc(aDateTime, humanReadable=humanReadable)
+        return dateFunc(aDateTime, human_readable=human_readable)
     else:
         result = date(
             datemodule.DateTime(year + 1900, aDateTime.month, aDateTime.day),
-            humanReadable=humanReadable,
+            human_readable=human_readable,
         )
         return re.sub(str(year + 1900), str(year), result)
 
 
-def dateTime(aDateTime, humanReadable=False):
+def dateTime(aDateTime, human_readable=False):
     if (
         not aDateTime
         or aDateTime == datemodule.DateTime()
@@ -308,33 +309,33 @@ def dateTime(aDateTime, humanReadable=False):
     year = aDateTime.year
     if year >= 1900:
         return (
-            dateFunc(aDateTime, humanReadable=humanReadable)
+            dateFunc(aDateTime, human_readable=human_readable)
             if timeIsMidnight
-            else dateTimeFunc(aDateTime, humanReadable=humanReadable)
+            else dateTimeFunc(aDateTime, human_readable=human_readable)
         )
     else:
         result = dateTime(
-            aDateTime.replace(year=year + 1900), humanReadable=humanReadable
+            aDateTime.replace(year=year + 1900), human_readable=human_readable
         )
         return re.sub(str(year + 1900), str(year), result)
 
 
-def dateTimePeriod(start, stop, humanReadable=False):
+def dateTimePeriod(start, stop, human_readable=False):
     if stop is None:
         return "%s - %s" % (
-            dateTime(start, humanReadable=humanReadable),
+            dateTime(start, human_readable=human_readable),
             _("now"),
         )
     elif start.date() == stop.date():
         return "%s %s - %s" % (
-            date(start, humanReadable=humanReadable),
+            date(start, human_readable=human_readable),
             time(start),
             time(stop),
         )
     else:
         return "%s - %s" % (
-            dateTime(start, humanReadable=humanReadable),
-            dateTime(stop, humanReadable=humanReadable),
+            dateTime(start, human_readable=human_readable),
+            dateTime(stop, human_readable=human_readable),
         )
 
 

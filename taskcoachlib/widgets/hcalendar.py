@@ -240,7 +240,7 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
         if self.__hdrFormat & self.HDR_WEEKNUMBER:
             components.append(render.weekNumber(dateTime))
         if self.__hdrFormat & self.HDR_DATE:
-            components.append(render.date(dateTime, humanReadable=True))
+            components.append(render.date(dateTime, human_readable=True))
         return " - ".join(components)
 
     def _DrawNow(self, gc, h):

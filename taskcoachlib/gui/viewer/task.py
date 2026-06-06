@@ -26,6 +26,7 @@ from taskcoachlib import operating_system
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.gui.icons import image_list_cache
 from taskcoachlib import command, widgets, domain, render, patterns
+from taskcoachlib.config import settings2
 from taskcoachlib.domain import task, date
 from taskcoachlib.gui import uicommand, dialog
 import taskcoachlib.gui.menu
@@ -171,8 +172,13 @@ class BaseTaskViewer(
         super().detach()
         self.statusMessages = None  # Break cycle
 
-    def _renderTimeSpent(self, *args, **kwargs):
+    def _render_time_spent(self, *args, **kwargs):
+        kwargs.setdefault("decimal", settings2.feature.decimal_time)
         return render.time_spent(*args, **kwargs)
+
+    def _render_budget(self, *args, **kwargs):
+        kwargs.setdefault("decimal", settings2.feature.decimal_time)
+        return render.budget(*args, **kwargs)
 
     def onAppearanceSettingChange(self, value):  # pylint: disable=W0613
         if self:
@@ -617,7 +623,7 @@ class TimelineViewer(BaseTaskTreeViewer):
                     None,
                     [
                         render.dateTimePeriod(
-                            item.getStart(), item.getStop(), humanReadable=True
+                            item.getStart(), item.getStop(), human_readable=True
                         )
                     ],
                 )
@@ -645,8 +651,8 @@ class SquareTaskViewer(BaseTaskTreeViewer):
         self.__transform_task_attribute = lambda x: x
         self.__zero = 0
         self.renderer = dict(
-            budget=render.budget,
-            timeSpent=self._renderTimeSpent,
+            budget=self._render_budget,
+            timeSpent=self._render_time_spent,
             fixedFee=render.monetaryAmount,
             revenue=render.monetaryAmount,
             priority=render.priority,
@@ -2038,32 +2044,32 @@ class TaskViewer(
     def renderSubject(self, task):
         return task.subject(recursive=not self.is_tree_viewer())
 
-    def renderPlannedStartDateTime(self, task, humanReadable=True):
+    def renderPlannedStartDateTime(self, task, human_readable=True):
         return self.renderedValue(
             task,
             task.plannedStartDateTime,
-            lambda x: render.dateTime(x, humanReadable=humanReadable),
+            lambda x: render.dateTime(x, human_readable=human_readable),
         )
 
-    def renderDueDateTime(self, task, humanReadable=True):
+    def renderDueDateTime(self, task, human_readable=True):
         return self.renderedValue(
             task,
             task.dueDateTime,
-            lambda x: render.dateTime(x, humanReadable=humanReadable),
+            lambda x: render.dateTime(x, human_readable=human_readable),
         )
 
-    def renderActualStartDateTime(self, task, humanReadable=True):
+    def renderActualStartDateTime(self, task, human_readable=True):
         return self.renderedValue(
             task,
             task.actualStartDateTime,
-            lambda x: render.dateTime(x, humanReadable=humanReadable),
+            lambda x: render.dateTime(x, human_readable=human_readable),
         )
 
-    def renderCompletionDateTime(self, task, humanReadable=True):
+    def renderCompletionDateTime(self, task, human_readable=True):
         return self.renderedValue(
             task,
             task.completionDateTime,
-            lambda x: render.dateTime(x, humanReadable=humanReadable),
+            lambda x: render.dateTime(x, human_readable=human_readable),
         )
 
     def renderRecurrence(self, task):
@@ -2081,13 +2087,17 @@ class TaskViewer(
         )
 
     def renderTimeSpent(self, task):
-        return self.renderedValue(task, task.timeSpent, self._renderTimeSpent)
+        return self.renderedValue(
+            task, task.timeSpent, self._render_time_spent
+        )
 
     def renderBudget(self, task):
-        return self.renderedValue(task, task.budget, render.budget)
+        return self.renderedValue(task, task.budget, self._render_budget)
 
     def renderBudgetLeft(self, task):
-        return self.renderedValue(task, task.budgetLeft, render.budget)
+        return self.renderedValue(
+            task, task.budgetLeft, self._render_budget
+        )
 
     def renderRevenue(self, task):
         return self.renderedValue(task, task.revenue, render.monetaryAmount)
@@ -2107,11 +2117,11 @@ class TaskViewer(
     def renderPriority(self, task):
         return self.renderedValue(task, task.priority, render.priority) + " "
 
-    def renderReminder(self, task, humanReadable=True):
+    def renderReminder(self, task, human_readable=True):
         return self.renderedValue(
             task,
             task.reminder,
-            lambda x: render.dateTime(x, humanReadable=humanReadable),
+            lambda x: render.dateTime(x, human_readable=human_readable),
         )
 
     def renderedValue(self, item, getValue, renderValue, *extraRenderArgs):

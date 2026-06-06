@@ -125,7 +125,7 @@ class BackupManagerDialog(wx.Dialog):
         backups = self.__manifest.listBackups(self.__filenames[event.GetIndex()])
         for index, dateTime in enumerate(backups):
             self.__backups.InsertItem(
-                index, render.dateTime(dateTime, humanReadable=True)
+                index, render.dateTime(dateTime, human_readable=True)
             )
         # Size column to max of header width and content width
         self.__backups.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)

@@ -218,31 +218,219 @@ So while Wayland forces us to use AppIndicator (since XEmbed isn't available), t
 
 ### Window Show/Hide on Wayland
 
-Wayland's xdg-shell has no "unminimize" request and no way to query minimized
-state — by design. GTK3's Wayland backend never sets
-`GDK_WINDOW_STATE_ICONIFIED` (`gtk_window_iconify()` is an empty stub), so
-wxGTK's `IsIconized()` always returns False. `restore()` calls
-`Iconize(False)` → `gdk_window_show()` — no-op if already mapped. `Raise()`
-calls `gtk_window_present()` which needs a valid `xdg_activation_v1` token,
-but tray clicks come through D-Bus with no input serial → ignored.
+#### What Wayland actually tells the client
 
-The fix uses `IsActive()` to detect the Wayland case (goes False when the
-compositor minimizes, even though `IsIconized()` stays False), then forces a
-Wayland surface remap via `Hide()` + `Show()`:
+`xdg_toplevel.configure` reports a `states` array on every change,
+including compositor/WM-initiated ones: `maximized`, `fullscreen`,
+`activated` (focus), `resizing`, `tiled_*`, `suspended`, and
+`constrained_*`. So **maximize, fullscreen and focus are knowable**
+even when the WM triggers them.
 
-```python
-if IsIconized() or not IsShown():    # X11: wx knows → normal restore
-    restore(event)
-elif not IsActive():                 # Wayland: compositor minimized, wx doesn't know
-    Hide() + Show()                  # force surface remap
-else:
-    Iconize()
-```
+There is **no `minimized` state**. The xdg-shell spec says verbatim
+of `set_minimized`: *"Request that the compositor minimize your
+surface. There is no way to know if the surface is currently
+minimized, nor is there any way to unset minimization on this
+surface."* It is a one-way client to compositor request with zero
+feedback. So **no Wayland client of any toolkit can detect a
+WM-initiated minimize via core xdg-shell** - this is the protocol,
+not a Task Coach or GTK bug (KeePassXC #6502 and others hit the same
+wall). The only indirect hints are `wl_surface.frame` callbacks
+stopping, or the newer `xdg_toplevel.suspended` state, both of which
+mean "not currently being painted / not visible" (occlusion, screen
+off, alt-tab), which is coarser than and not equivalent to
+"minimized" - and GTK3 does not surface either.
 
-The proper fix would be KDE's `ProvideXdgActivationToken()` D-Bus method
-(what Electron uses), but libayatana-appindicator does not support it — the
-method is not in its D-Bus introspection XML, and neither does the newer
-libayatana-appindicator-glib (as of 2026-02).
+Toolkit angle: GTK3 (frozen at 3.24) never sets
+`GDK_WINDOW_STATE_ICONIFIED` on Wayland and predates `suspended`;
+GTK4 does expose `GDK_TOPLEVEL_STATE_MINIMIZED` /
+`GDK_TOPLEVEL_STATE_SUSPENDED`. wxPython 4.2 is wxGTK-on-GTK3, so
+`IsIconized()` is permanently False on Wayland and `IsActive()` /
+`IsShown()` are unreliable there.
+
+#### Why the old `IsActive()` heuristic was wrong
+
+The previous code treated `not IsActive()` as "Wayland minimized" and
+did `Hide()+Show()`. But the tray Show/Hide is driven by the GTK menu
+item, and opening that menu **deactivates the main window**, so
+`IsActive()` is False whenever the callback runs. Execution therefore
+hit the `not IsActive()` branch and did `Hide()+Show()` - hiding then
+instantly re-showing the window. Net effect: minimize appeared to do
+nothing. That heuristic *was* the reported "appindicator minimize
+does not work" bug.
+
+#### Correct design for the tray toggle
+
+For the tray "Show/Hide", Task Coach *initiates* the visibility
+change, so it must not query unreliable window state at all. Track
+intended visibility ourselves and toggle deterministically: if
+believed-shown -> `Hide()`; if believed-hidden -> `Show()` +
+`Raise()`. (`Raise()` / `gtk_window_present()` still needs a valid
+`xdg_activation_v1` token to actually focus-raise; tray actions
+arrive over D-Bus with no input serial, so raise is best-effort -
+KDE's SNI host passes an activation token in some cases, but it is
+not guaranteed. This is a Wayland-wide constraint, see
+[KDE - On Window Activation](https://planet.kde.org/kai-uwe-broulik-2025-08-04-on-window-activation/).)
+
+#### Out-of-band detection (the SNI-analogous channel)
+
+Detecting a *WM-initiated* minimize (e.g. the titlebar minimize
+button) is impossible via xdg-shell, but it *is* possible out-of-band
+via window-management protocols, exactly as SNI is an out-of-band
+D-Bus channel for the tray icon:
+
+- **KDE: `org_kde_plasma_window_management`** - exposes an explicit
+  `minimized` state per toplevel plus a state-changed event. This is
+  what the Plasma taskbar uses.
+- **wlroots: `wlr-foreign-toplevel-management-unstable-v1` +
+  `ext-foreign-toplevel-list-v1`** - enumerate toplevels, read/track
+  `minimized`, request (un)minimize.
+
+Real "minimize to tray on Wayland" tools confirm this: `kwin-minimize2tray`
+and `WKDocker` work via a **KWin script** (compositor-side, where
+state is fully known) plus a helper; `KDocker` is X11-only and does
+not support Wayland.
+
+For Task Coach this would mean the same pattern as the idle
+`ext-idle-notify-v1` backend: optional `pywayland` + a vendored
+`plasma-window-management` binding, opening a side Wayland connection
+and matching our own toplevel by `app_id`/title. It is KDE-specific
+(GNOME implements none of these; wlroots needs the `wlr`/`ext`
+variant), non-trivial, and only needed for the titlebar-minimize ->
+tray path; the tray Show/Hide toggle needs none of it.
+
+References: [xdg-shell protocol](https://wayland.app/protocols/xdg-shell),
+[KDE plasma-window-management](https://wayland.app/protocols/kde-plasma-window-management),
+[wlr-foreign-toplevel-management](https://wayland.app/protocols/wlr-foreign-toplevel-management-unstable-v1),
+[kwin-minimize2tray](https://github.com/luisbocanegra/kwin-minimize2tray),
+[KeePassXC #6502](https://github.com/keepassxreboot/keepassxc/issues/6502).
+
+#### Why Wayland is designed this way
+
+This is not primarily a security restriction; it is the core Wayland
+principle that **the compositor owns window management**. In X11 any
+client could raise itself, grab focus, and query/move/minimize any
+window, which produced focus-stealing and cross-app snooping. Under
+Wayland the client describes *content*; the compositor and user decide
+*presentation* (stacking, focus, minimize, placement).
+
+Consequences:
+
+- **Minimize is a window-management policy decision, so it belongs to
+  the compositor.** An app may *request* `set_minimized` (a hint); it
+  is deliberately not told it happened and cannot un-minimize itself.
+- The security/anti-focus-stealing aspect is real but secondary:
+  restore requires an `xdg_activation_v1` token the compositor can
+  reject, specifically to end X11-style focus-stealing. Seeing *other*
+  windows is the genuine privacy concern, which is why those are
+  separate compositor-gated protocols.
+
+Reframe: there is no single "minimize" concept that the app fakes with
+a hide. There are two things X11 conflated:
+
+1. **Minimize** (titlebar button) - the compositor's job; the app
+   should not intercept it.
+2. **Run in background with no window** - an application-lifecycle
+   choice the app legitimately owns: unmap its own surface (`Hide`)
+   and offer the SNI tray icon to return. An app is always allowed to
+   not show a window.
+
+For the "stop rendering when not visible" use case, Wayland's honest
+signal is the absence of `wl_surface.frame` callbacks / the
+`suspended` state ("you are not being painted"), which is more
+accurate than a minimized flag because it also covers occlusion and
+other-workspace.
+
+#### Modern best practice (2025-2026)
+
+Synthesis of current upstream guidance (KDE, freedesktop):
+
+| Concern | Best practice | Task Coach status |
+|---------|---------------|-------------------|
+| Tray presence | StatusNotifierItem over D-Bus | Have it (libayatana) |
+| Going hidden | App owns hide/show itself (self-tracked); prefer **close-to-background** over intercepting the minimize button (the latter is now an anti-pattern, flagged for GNOME) | The self-tracked tray Show/Hide toggle is exactly this |
+| "Running in background" declaration | `org.freedesktop.portal.Background` (XDG portal; KDE/GNOME/Cinnamon/Deepin). Future-proof, but *indication only* - it does **not** restore the window | Optional future add-on; does not solve restore |
+| Restore / raise | Use the `xdg-activation-v1` token the SNI host passes on tray `Activate` | Limited: libayatana is menu-centric and does not forward the token, so `Raise()` is best-effort. Full compliance needs raw-SNI or Qt/KStatusNotifierItem, not GTK3+libayatana |
+
+Conclusion: the self-tracked Show/Hide toggle is the modern-correct
+approach for the hide side (Wayland has no minimize, so every app must
+own this). Intercepting the titlebar minimize button should be dropped
+as an anti-pattern rather than "fixed". The fully-correct restore path
+(activation token) is gated by the libayatana toolkit - an honest
+limitation shared by all GTK3+libayatana apps (KeePassXC #6502 is the
+canonical example).
+
+Best-practice references:
+[KDE - On Window Activation (Broulik, 2025)](https://blog.broulik.de/2025/08/on-window-activation/),
+[Betterbird - System tray on Linux/Wayland (2026)](https://blog.betterbird.eu/2026/01/system-tray-support-on-linux-and-windows-and-wayland),
+[Liferea - use the Background portal](https://github.com/lwindolf/liferea/issues/1418),
+[Spotube - minimize-to-tray anti-pattern](https://github.com/KRTirtho/spotube/issues/1330).
+
+#### Coverage matrix: where "minimize to tray, keep taskbar entry" can work
+
+The two factors are **independent**: whether a taskbar/window-list is
+present (configurable on GNOME and bare wlroots), and whether the
+session exposes a *client-usable* window-management protocol (a
+property of the compositor, not the panel). Every row states the
+session type explicitly.
+
+| Session | Taskbar present? | Client window-mgmt protocol | Keep entry + restore from tray? |
+|---------|------------------|-----------------------------|----------------------------------|
+| **X11** (any DE) | yes (WM-provided) | n/a, native | Yes - native `Iconize()` / `restore()` |
+| **Windows / macOS** | yes (native) | n/a, native | Yes - native |
+| **KDE Plasma, Wayland** | yes (default) | `org_kde_plasma_window_management` | Yes - out-of-band backend |
+| **COSMIC, Wayland** | yes (default) | `cosmic-toplevel` (or `wlr`) | Yes - out-of-band backend |
+| **wlroots (Sway/Hyprland/river/niri/…), Wayland, with a Waybar taskbar** | yes (user-added) | `wlr-foreign-toplevel-management` | Yes - out-of-band backend |
+| **wlroots, Wayland, no taskbar configured** | no | (present, irrelevant) | N/A - plain Hide/Show is fine (nothing to lose) |
+| **GNOME (Mutter), Wayland, default** | no | none (by GNOME design) | N/A - plain Hide/Show is fine (nothing to lose) |
+| **GNOME (Mutter), Wayland, + taskbar extension (Dash to Panel, Window List, …)** | **yes (user-added)** | **none** | **No app-side solution** |
+
+The last row is the single irreducible dead end: the user has a
+taskbar, but Mutter exposes no client window-management protocol and
+its extension taskbars are driven by GNOME Shell's internal JS APIs
+that an external app cannot reach (and GTK3 `Iconize()` is a no-op on
+Wayland anyway). It cannot be solved from application code; it is
+documented here as a known limitation. On that configuration the tray
+"Hide" is unavoidably tray-only, by Mutter's design - not a Task
+Coach defect.
+
+Consequence for implementation: a single "out-of-band toplevel
+manager" abstraction with two protocol backends
+(`org_kde_plasma_window_management` for KDE,
+`wlr-foreign-toplevel-management` for wlroots/COSMIC, same vendored
+pattern as the idle backend) covers every session that has both a
+taskbar and a protocol; native `Iconize()`/`restore()` covers
+X11/Windows/macOS; plain Hide/Show is correct where there is no
+taskbar; only GNOME-with-a-taskbar-extension is unsupported and
+documented as such.
+
+#### Implementation
+
+`taskcoachlib/gui/toplevelcontroller.py` implements this:
+
+- `ToplevelController` - abstract `is_minimized()` / `minimize()` /
+  `restore()`.
+- `NativeController` - X11/Windows/macOS; wx `Iconize()`/`restore()`
+  (preserves the macOS raise behaviour).
+- `KdePlasmaController` - KDE Wayland; on-demand side connection via
+  the vendored `org_kde_plasma_window_management` binding
+  (`taskcoachlib/thirdparty/plasma_window_management`), matches our
+  own toplevel by PID then title, and `set_state`s minimized /
+  unminimized+active. Any failure falls back to `HideShowController`.
+- `HideShowController` - universal fallback (`Hide()`/`Show()`).
+- `create_toplevel_controller()` - the startup probe selecting the
+  backend (mirrors the idle backend probe).
+
+Both `TaskBarIcon.onTaskbarClick` and
+`AppIndicatorTaskBarIcon.onTaskbarClick` (and the "Show/Hide" menu
+item, which calls `onTaskbarClick`) now delegate to the controller:
+`controller.restore()` if `is_minimized()` else
+`controller.minimize()`. The previous
+`IsIconized()/IsShown()/IsActive()` heuristic is removed.
+
+The wlroots/COSMIC backend (`wlr-foreign-toplevel-management`) is
+follow-up work; until it lands those sessions use the Hide/Show
+fallback. KDE Wayland runtime behaviour requires on-box verification
+(no compositor in CI), the same caveat as the idle backend.
 
 ## Menu Contents
 
@@ -276,7 +464,7 @@ in `popupTaskBarMenu()` each time the menu is shown.
 - When the window is visible: label is **"Hide"**, action calls `Iconize()`
 - When the window is hidden/iconized: label is **"Restore"**, action calls `restore()`
 
-The label is updated dynamically via `getMenuText()` — `popupTaskBarMenu()`
+The label is updated dynamically via `getMenuText()`: `popupTaskBarMenu()`
 calls `item._command.getMenuText()` and applies `SetItemLabel()` before
 showing the menu. The AppIndicator GTK menu uses "Show/Hide Task Coach"
 as a static label (GTK menus don't support per-show label changes as easily).
