@@ -150,6 +150,9 @@ copy_application() {
     # Copy TaskCoach source
     cp -r "$PROJECT_ROOT/taskcoachlib" "$APPDIR/usr/share/taskcoach/"
     cp "$PROJECT_ROOT/taskcoach.py" "$APPDIR/usr/share/taskcoach/"
+    # Default "Welcome" document. settings.pathToSystemWelcomeFile() finds it
+    # via dirname(sys.argv[0])/Welcome.tsk and opens it on first run.
+    cp "$PROJECT_ROOT/Welcome.tsk" "$APPDIR/usr/share/taskcoach/"
 
     # Copy icons
     mkdir -p "$APPDIR/usr/share/icons/hicolor/256x256/apps"

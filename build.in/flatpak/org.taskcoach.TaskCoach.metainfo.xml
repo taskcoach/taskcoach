@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2013-2026 Task Coach developers -->
+<component type="desktop-application">
+  <id>org.taskcoach.TaskCoach</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Task Coach</name>
+  <summary>Your friendly task manager</summary>
+  <developer id="org.taskcoach">
+    <name>Task Coach developers</name>
+  </developer>
+
+  <description>
+    <p>
+      Task Coach is a free open source todo manager to manage personal tasks
+      and todo lists. It grew out of frustration about other programs not
+      handling composite tasks well.
+    </p>
+    <p>
+      In addition to flexible composite tasks, Task Coach has grown to include
+      prerequisites, prioritizing, effort tracking against a budget per task,
+      category tags, notes, and many other features. Users are not forced to
+      use all of them; Task Coach can be as simple or as complex as needed.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">org.taskcoach.TaskCoach.desktop</launchable>
+
+  <!-- Flathub requires at least one screenshot with a resolvable image URL.
+       Replace this placeholder with real hosted screenshots before submitting. -->
+  <screenshots>
+    <screenshot type="default">
+      <caption>The Task Coach main window</caption>
+      <image>https://raw.githubusercontent.com/taskcoach/taskcoach/master/website.in/screenshots/main.png</image>
+    </screenshot>
+  </screenshots>
+
+  <url type="homepage">https://github.com/taskcoach/taskcoach</url>
+  <url type="bugtracker">https://github.com/taskcoach/taskcoach/issues</url>
+  <url type="faq">https://answers.launchpad.net/taskcoach/+faqs</url>
+
+  <content_rating type="oars-1.1" />
+
+  <!-- CI rewrites the <releases> version/date from meta/data.py at build time. -->
+  <releases>
+    <release version="2.0.2.17" date="2026-06-07"/>
+  </releases>
+</component>

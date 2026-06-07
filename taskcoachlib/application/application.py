@@ -837,12 +837,17 @@ Break the lock?"""
             from taskcoachlib.gui import taskbaricon, menu
 
             # Use factory function to get the appropriate icon type
-            # (AppIndicator on Wayland, wx.adv.TaskBarIcon otherwise)
-            self.taskBarIcon = taskbaricon.create_taskbar_icon(
-                self.mainwindow,  # pylint: disable=W0201
+            # (AppIndicator on Wayland, wx.adv.TaskBarIcon otherwise). Returns
+            # None when no tray backend can work on this system; in that case
+            # we run without a tray icon rather than create a broken one.
+            task_bar_icon = taskbaricon.create_taskbar_icon(
+                self.mainwindow,
                 self.taskFile.tasks(),
                 self.settings,
             )
+            if task_bar_icon is None:
+                return
+            self.taskBarIcon = task_bar_icon  # pylint: disable=W0201
             self.taskBarIcon.setPopupMenu(
                 menu.TaskBarMenu(
                     self.taskBarIcon,
@@ -891,7 +896,8 @@ Break the lock?"""
         self.quitApplication(force=True)
 
     def on_reopen_app(self):
-        self.taskBarIcon.onTaskbarClick(None)
+        if hasattr(self, "taskBarIcon"):
+            self.taskBarIcon.onTaskbarClick(None)
 
     def save_all_settings(self):
         """Save all settings to disk. Called on normal exit and signal handlers.

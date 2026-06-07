@@ -1,0 +1,78 @@
+name: Build Flatpak
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - 'claude/**'
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-flatpak:
+    name: Build Flatpak
+    runs-on: ubuntu-22.04
+    # The flatpak-github-actions image ships flatpak, flatpak-builder and the
+    # GNOME SDK/runtime, so the multi-GB runtime is not re-downloaded each run.
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-50
+      options: --privileged
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          # build.in/flatpak/shared-modules (libappindicator chain) is a submodule.
+          submodules: recursive
+
+      - name: Get version info
+        id: version
+        run: |
+          VERSION=$(python3 -c "import sys; sys.path.insert(0, '.'); from taskcoachlib.meta import data; print(data.version_full)")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      # No source-generation step: the manifest's python modules use
+      # --share=network and pip3 directly, so flatpak-builder fetches wxPython,
+      # wxWidgets and the pure-Python deps itself during the build. (The
+      # offline flatpak-pip-generator path is only needed for a Flathub
+      # submission; see docs/FLATPAK.md.)
+      - name: Build Flatpak bundle
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          # The action appends "-<arch>" to the bundle name itself, so do not
+          # add it here (otherwise the file ends up "...-x86_64-x86_64.flatpak").
+          bundle: TaskCoach-${{ steps.version.outputs.version }}.flatpak
+          manifest-path: build.in/flatpak/org.taskcoach.TaskCoach.yaml
+          cache-key: flatpak-builder-${{ github.sha }}
+          # x86_64 only here; Flathub builds aarch64 separately.
+          arch: x86_64
+          # Upload via our own step below (one artifact, named like the others).
+          upload-artifact: false
+
+      - name: Upload Flatpak artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: TaskCoach-Flatpak-${{ steps.version.outputs.version }}
+          path: TaskCoach-*.flatpak
+          retention-days: 30
+
+      - name: Create Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: TaskCoach-*.flatpak
+          draft: false
+          prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
