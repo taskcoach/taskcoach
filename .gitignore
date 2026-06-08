@@ -33,3 +33,8 @@ __pycache__
 venv
 Welcome.tsk.lock
 test screenshots/
+
+# Flatpak: generated pinned sources and build output (see docs/FLATPAK.md)
+build.in/flatpak/python3-sources.json
+build.in/flatpak/.flatpak-builder/
+*.flatpak

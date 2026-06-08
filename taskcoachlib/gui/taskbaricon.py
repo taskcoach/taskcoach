@@ -940,6 +940,15 @@ def create_taskbar_icon(mainwindow, taskList, settings):
         log_step("Using AppIndicator (fallback)", prefix="TRAY")
         return AppIndicatorTaskBarIcon(mainwindow, taskList, settings)
 
-    # No AppIndicator available, try wx.adv.TaskBarIcon anyway (may not work)
-    log_step("WARNING: No good tray option available, trying wx.adv.TaskBarIcon", prefix="TRAY")
-    return TaskBarIcon(mainwindow, taskList, settings)
+    # No working tray backend: the native tray is unavailable (e.g. GNOME on
+    # Wayland, which has no XEmbed system tray) and the AppIndicator bindings
+    # are not present. Creating a wx.adv.TaskBarIcon here produces a
+    # non-functional icon whose every SetIcon() trips GTK 'GTK_IS_WIDGET'
+    # assertions, spamming the log once per second while tracking effort.
+    # Run without a tray icon instead.
+    log_step(
+        "No working tray backend available (native tray unavailable and "
+        "AppIndicator missing); running without a tray icon",
+        prefix="TRAY",
+    )
+    return None

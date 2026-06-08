@@ -1,0 +1,152 @@
+# Flatpak manifest for Task Coach.
+#
+# wxPython is built FROM SOURCE (the sdist) rather than from a binary wheel
+# that may not match the runtime GTK. We let wxPython compile its OWN bundled
+# wxWidgets (shipped in the sdist) rather than using --use_syswx against a
+# separate wxWidgets module: wxPython 4.2.5's pre-generated bindings expect the
+# exact wxWidgets snapshot it bundles, so building against a different version
+# (e.g. 3.2.6) fails with 'wxWARN_UNUSED was not declared'. See docs/FLATPAK.md.
+#
+# Network during build: the python modules use --share=network so pip can
+# fetch build backends (setuptools/sip) and pure-Python deps. This is fine for
+# our own CI/local bundles. For a FLATHUB submission, builds must be offline:
+# drop --share=network and provide pinned sources via flatpak-pip-generator
+# (build.in/flatpak/generate-pip-sources.sh). See docs/FLATPAK.md.
+#
+# Runtime is GNOME (not freedesktop) because it provides GTK3 + PyGObject +
+# gobject-introspection as one consistent set, which wxPython (gtk3) and the
+# PyGObject tray backend (taskcoachlib/gui/appindicator.py) both need.
+
+app-id: org.taskcoach.TaskCoach
+runtime: org.gnome.Platform
+# Use the current stable GNOME runtime and bump it as runtimes reach EOL
+# (48 went EOL 2026-03-24). Keep this in sync with the CI container image tag
+# in .github/workflows/build-flatpak.yml and RUNTIME_VERSION in
+# scripts/build-flatpak.sh.
+runtime-version: '50'
+sdk: org.gnome.Sdk
+command: taskcoach
+
+finish-args:
+  # Windowing.
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  # Read and write task (.tsk) files anywhere the user keeps them. wx uses its
+  # own file dialogs rather than the portal, so a broad home grant is needed.
+  # Flathub reviewers may ask to narrow this; revisit if portal dialogs land.
+  - --filesystem=home
+  # Reminders / desktop notifications.
+  - --talk-name=org.freedesktop.Notifications
+  # System tray (StatusNotifierItem). Lets the PyGObject AppIndicator backend
+  # publish the tray icon; the desktop still needs an SNI host (e.g. the GNOME
+  # AppIndicator extension) for it to appear.
+  - --talk-name=org.kde.StatusNotifierWatcher
+  # Idle-time detection (optional feature, off by default; see docs/IDLE.md).
+  - --talk-name=org.freedesktop.ScreenSaver
+  - --talk-name=org.gnome.Mutter.IdleMonitor
+  # keyring storage.
+  - --talk-name=org.freedesktop.secrets
+
+cleanup:
+  - '*.a'
+  - '*.la'
+  - /include
+  - /lib/pkgconfig
+  - /share/man
+
+modules:
+  # GLU (libGLU/glu.h). The GNOME SDK ships libGL but not the legacy GLU, which
+  # wxWidgets needs for its OpenGL (glcanvas) support.
+  - name: glu
+    buildsystem: meson
+    sources:
+      - type: archive
+        url: https://archive.mesa3d.org/glu/glu-9.0.3.tar.xz
+        sha256: bd43fe12f374b1192eb15fe20e45ff456b9bc26ab57f0eee919f96ca0f8a330f
+    cleanup:
+      - /include
+      - /lib/pkgconfig
+      - '*.a'
+
+  # System-tray support via Flathub's maintained shared-modules - the robust,
+  # CI-tested way rather than a hand-rolled chain. This one module file bundles
+  # the whole intltool -> dbus-glib -> libdbusmenu -> libappindicator chain, and
+  # Flathub keeps it building against current and oldstable SDKs. The
+  # -introspection- variant ships the AppIndicator3-0.1 typelib, which the
+  # PyGObject backend in taskcoachlib/gui/appindicator.py picks up via its
+  # AppIndicator3 fallback (flatpak puts /app/lib/girepository-1.0 on the GI
+  # path). shared-modules is a git submodule at build.in/flatpak/shared-modules;
+  # CI checks it out with submodules and scripts/build-flatpak.sh inits it.
+  - shared-modules/libappindicator/libappindicator-gtk3-introspection-12.10.json
+
+  # wxPython, built from the sdist. We let wxPython compile its OWN bundled
+  # wxWidgets (shipped in the sdist) instead of using --use_syswx against a
+  # separately built wxWidgets: wxPython 4.2.5's pre-generated bindings expect
+  # the exact wxWidgets snapshot it bundles, and building them against
+  # wxWidgets 3.2.6 fails (e.g. 'wxWARN_UNUSED was not declared'). Building the
+  # bundled wxWidgets guarantees the versions match. This is the slow step.
+  - name: python3-wxpython
+    buildsystem: simple
+    build-options:
+      build-args:
+        - --share=network
+      env:
+        WXPYTHON_BUILD_ARGS: '--nodoc'
+    build-commands:
+      - pip3 install --prefix=${FLATPAK_DEST} --verbose wxpython-4.2.5.tar.gz
+    sources:
+      - type: file
+        url: https://files.pythonhosted.org/packages/22/43/81657a6b126ffc19163500a8184d683cec08eb4e1d06905cd0c371c702d0/wxpython-4.2.5.tar.gz
+        sha256: 44e836d1bccd99c38790bb034b6ecf70d9060f6734320560f7c4b0d006144793
+
+  # The remaining Python dependencies (the AppImage set plus dbus-python, which
+  # enables the optional idle-time detection feature - its D-Bus backend does
+  # `import dbus`, and the org.freedesktop.ScreenSaver / org.gnome.Mutter
+  # talk-name grants are already in finish-args).
+  # --ignore-installed is required: the build runs against org.gnome.Sdk, which
+  # ships some of these (e.g. python3-lxml). Without it, pip sees them "already
+  # satisfied" from the SDK and skips installing them into /app, so they are
+  # MISSING at runtime against org.gnome.Platform (which lacks them).
+  - name: python3-deps
+    buildsystem: simple
+    build-options:
+      build-args:
+        - --share=network
+    build-commands:
+      - pip3 install --prefix=${FLATPAK_DEST} --ignore-installed
+        "six>=1.16.0" pypubsub "watchdog>=3.0.0" "chardet>=5.2.0"
+        "python-dateutil>=2.9.0" "pyparsing>=3.1.3" lxml pyxdg keyring
+        "numpy>=1.26,<2" "fasteners>=0.19" "squaremap>=1.0.5"
+        "pyenchant>=3.2.0" "dbus-python>=1.3.2" distro
+
+  # Task Coach itself.
+  - name: taskcoach
+    buildsystem: simple
+    build-commands:
+      - install -d /app/share/taskcoach
+      - cp -r taskcoachlib /app/share/taskcoach/
+      - cp taskcoach.py /app/share/taskcoach/
+      # Default "Welcome" document. settings.pathToSystemWelcomeFile() finds it
+      # via dirname(sys.argv[0])/Welcome.tsk and, on first run, copies it into
+      # the user's Documents folder and opens it.
+      - cp Welcome.tsk /app/share/taskcoach/
+      - install -Dm644 icons.in/taskcoach.png
+        /app/share/icons/hicolor/256x256/apps/org.taskcoach.TaskCoach.png
+      - install -Dm644 build.in/flatpak/org.taskcoach.TaskCoach.desktop
+        /app/share/applications/org.taskcoach.TaskCoach.desktop
+      - install -Dm644 build.in/flatpak/org.taskcoach.TaskCoach.metainfo.xml
+        /app/share/metainfo/org.taskcoach.TaskCoach.metainfo.xml
+      - |
+        cat > /app/bin/taskcoach <<'LAUNCH'
+        #!/bin/bash
+        export PYTHONPATH="/app/share/taskcoach:${PYTHONPATH}"
+        exec python3 /app/share/taskcoach/taskcoach.py "$@"
+        LAUNCH
+        chmod +x /app/bin/taskcoach
+    sources:
+      # Local builds and CI build from the checked-out tree. For a Flathub
+      # submission, replace this with a pinned `git`/`archive` source.
+      - type: dir
+        path: ../..

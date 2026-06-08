@@ -18,19 +18,20 @@ Download the package for your system from the [latest release](https://github.co
 
 | Platform | Package |
 |----------|---------|
-| [Any Linux (x86_64)](#appimage) | `TaskCoach-2.0.2.16-x86_64.AppImage` |
-| [Arch Linux / Manjaro](#arch-linux--manjaro) | `taskcoach-2.0.2.16-arch.pkg.tar.zst` |
-| [Debian 12 (Bookworm)](#debian--ubuntu) | `taskcoach_2.0.2.16_debian-12-bookworm.deb` |
-| [Debian 13 (Trixie)](#debian--ubuntu) | `taskcoach_2.0.2.16_debian-13-trixie.deb` |
-| [Debian Sid](#debian--ubuntu) | `taskcoach_2.0.2.16_debian-sid.deb` |
-| [Fedora 42/43](#fedora) | `taskcoach-2.0.2.16-fedora43.rpm` |
+| [Any Linux (x86_64)](#appimage) | `TaskCoach-2.0.2.17-x86_64.AppImage` |
+| [Arch Linux / Manjaro](#arch-linux--manjaro) | `taskcoach-2.0.2.17-arch.pkg.tar.zst` |
+| [Debian 12 (Bookworm)](#debian--ubuntu) | `taskcoach_2.0.2.17_debian-12-bookworm.deb` |
+| [Debian 13 (Trixie)](#debian--ubuntu) | `taskcoach_2.0.2.17_debian-13-trixie.deb` |
+| [Debian Sid](#debian--ubuntu) | `taskcoach_2.0.2.17_debian-sid.deb` |
+| [Fedora 42/43](#fedora) | `taskcoach-2.0.2.17-fedora43.rpm` |
+| [Flatpak (any Linux)](#flatpak) | `TaskCoach-2.0.2.17-x86_64.flatpak` |
 | [Linux Mint](#debian--ubuntu) | Use Ubuntu `.deb` (Mint is Ubuntu-based) |
-| [macOS (Apple Silicon)](#macos) | `TaskCoach-2.0.2.16-macos-arm64.dmg` |
-| [macOS (Intel)](#macos) | `TaskCoach-2.0.2.16-macos-intel.dmg` |
-| [Ubuntu 22.04 (Jammy)](#debian--ubuntu) | `taskcoach_2.0.2.16_ubuntu-22.04-jammy.deb` |
-| [Ubuntu 24.04 (Noble)](#debian--ubuntu) | `taskcoach_2.0.2.16_ubuntu-24.04-noble.deb` |
-| [Windows](#windows) | `TaskCoach-2.0.2.16-windows-x64-setup.exe` |
-| [Windows (portable)](#windows) | `TaskCoach-2.0.2.16-windows-x64-portable.zip` |
+| [macOS (Apple Silicon)](#macos) | `TaskCoach-2.0.2.17-macos-arm64.dmg` |
+| [macOS (Intel)](#macos) | `TaskCoach-2.0.2.17-macos-intel.dmg` |
+| [Ubuntu 22.04 (Jammy)](#debian--ubuntu) | `taskcoach_2.0.2.17_ubuntu-22.04-jammy.deb` |
+| [Ubuntu 24.04 (Noble)](#debian--ubuntu) | `taskcoach_2.0.2.17_ubuntu-24.04-noble.deb` |
+| [Windows](#windows) | `TaskCoach-2.0.2.17-windows-x64-setup.exe` |
+| [Windows (portable)](#windows) | `TaskCoach-2.0.2.17-windows-x64-portable.zip` |
 
 After installing, Task Coach should be in normal system launchers (Applications → Office → Task Coach). For CLI, the launch command is `taskcoach.py`.
 
@@ -42,8 +43,8 @@ Install instructions for Debian Trixie (similar for other Debian/Ubuntu systems,
 
 ```bash
 cd ~/Downloads
-wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach_2.0.2.16_debian-13-trixie.deb
-sudo apt install ./taskcoach_2.0.2.16_debian-13-trixie.deb
+wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach_2.0.2.17_debian-13-trixie.deb
+sudo apt install ./taskcoach_2.0.2.17_debian-13-trixie.deb
 ```
 
 To uninstall:
@@ -56,8 +57,8 @@ sudo apt autoremove  # optional: remove unused dependencies
 
 ```bash
 cd ~/Downloads
-wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach-2.0.2.16-arch.pkg.tar.zst
-sudo pacman -U taskcoach-2.0.2.16-arch.pkg.tar.zst
+wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach-2.0.2.17-arch.pkg.tar.zst
+sudo pacman -U taskcoach-2.0.2.17-arch.pkg.tar.zst
 ```
 
 To uninstall:
@@ -70,8 +71,8 @@ sudo pacman -Qdtq | sudo pacman -Rs -  # optional: remove orphaned dependencies
 
 ```bash
 cd ~/Downloads
-wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach-2.0.2.16-fedora43.rpm
-sudo dnf install ./taskcoach-2.0.2.16-fedora43.rpm
+wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach-2.0.2.17-fedora43.rpm
+sudo dnf install ./taskcoach-2.0.2.17-fedora43.rpm
 ```
 
 To uninstall:
@@ -86,16 +87,37 @@ Run on any Linux without installation:
 
 ```bash
 cd ~/Downloads
-wget https://github.com/taskcoach/taskcoach/releases/latest/download/TaskCoach-2.0.2.16-x86_64.AppImage
-chmod +x TaskCoach-2.0.2.16-x86_64.AppImage
+wget https://github.com/taskcoach/taskcoach/releases/latest/download/TaskCoach-2.0.2.17-x86_64.AppImage
+chmod +x TaskCoach-2.0.2.17-x86_64.AppImage
 ```
 
 To launch the AppImage, open the file or run:
 ```
-./TaskCoach-2.0.2.16-x86_64.AppImage
+./TaskCoach-2.0.2.17-x86_64.AppImage
 ```
 
 To remove: simply delete the AppImage file.
+
+#### Flatpak
+
+A single-file Flatpak bundle is also published. It needs `flatpak` installed;
+the first install pulls the GNOME runtime from Flathub.
+
+```bash
+cd ~/Downloads
+wget https://github.com/taskcoach/taskcoach/releases/latest/download/TaskCoach-2.0.2.17-x86_64.flatpak
+flatpak install ./TaskCoach-2.0.2.17-x86_64.flatpak
+flatpak run org.taskcoach.TaskCoach
+```
+
+To remove:
+```bash
+flatpak uninstall org.taskcoach.TaskCoach
+```
+
+The Flatpak bundles its own libayatana-appindicator, so the system-tray icon
+works without host packages (on GNOME you still need the AppIndicator extension,
+as noted below).
 
 #### Linux System Tray
 
@@ -188,7 +210,9 @@ Key packages:
 - [README_INSTALL_MACOS.md](README_INSTALL_MACOS.md) - macOS installation with security bypass
 - [README_INSTALL_WINDOWS.md](README_INSTALL_WINDOWS.md) - Windows installation with SmartScreen bypass
 - [DEBIAN_BOOKWORM_SETUP.md](docs/DEBIAN_BOOKWORM_SETUP.md) - Detailed installation and setup
-- [PACKAGING.md](docs/PACKAGING.md) - Building .deb packages
+- [PACKAGING.md](docs/PACKAGING.md) - Packaging across all platforms (deb, rpm, Arch, AppImage, Flatpak, Windows, macOS)
+- [APPIMAGE.md](docs/APPIMAGE.md) - AppImage build details
+- [FLATPAK.md](docs/FLATPAK.md) - Flatpak build details
 - [CRITICAL_WXPYTHON_PATCH.md](docs/CRITICAL_WXPYTHON_PATCH.md) - wxPython compatibility patch details
 
 ## Support

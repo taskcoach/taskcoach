@@ -1,6 +1,6 @@
 # Packaging Guide for Task Coach
 
-This document describes the packaging setup for Task Coach on Linux (Debian, Ubuntu, Linux Mint, Arch Linux, Manjaro, Fedora, AppImage), Windows, and macOS.
+This document describes the packaging setup for Task Coach on Linux (Debian, Ubuntu, Linux Mint, Arch Linux, Manjaro, Fedora, AppImage, Flatpak), Windows, and macOS.
 
 ## Table of Contents
 
@@ -14,6 +14,7 @@ This document describes the packaging setup for Task Coach on Linux (Debian, Ubu
 - [Arch Linux / Manjaro Packaging](#arch-linux--manjaro-packaging)
 - [Fedora Packaging](#fedora-packaging)
 - [AppImage Packaging](#appimage-packaging)
+- [Flatpak Packaging](#flatpak-packaging)
 - [Windows Packaging](#windows-packaging)
 - [macOS Packaging](#macos-packaging)
 
@@ -39,36 +40,36 @@ This document describes the packaging setup for Task Coach on Linux (Debian, Ubu
 
 This table shows how dependencies are handled in **built packages** and **setup scripts**.
 
-| Package | debian12 | ubuntu22 | debian13 | ubuntu24 | arch | fedora | appimage | windows | macos |
-|---------|:--------:|:--------:|:--------:|:--------:|:----:|:------:|:--------:|:-------:|:-----:|
-| wxpython | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
-| pypubsub | distro | distro | distro | distro | AUR | distro | bundled | pip | pip |
-| pyparsing | **pip** | **pip** | distro | distro | distro | **pip** | bundled | pip | pip |
-| watchdog | **pip** | **pip** | distro | distro | distro | distro | bundled | pip | pip |
-| squaremap | distro | distro | distro | distro | **pip** | **pip** | bundled | pip | pip |
-| six | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
-| lxml | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
-| numpy (<2) | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
-| ↳ version | 1.24.2 | 1.21.5 | 2.2.4 | 1.26.4 | 2.4.0 | 2.3.3 | 1.26.4 | 1.26.4 | 1.26.4 |
-| chardet (<5.2) | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
-| python-dateutil | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
-| keyring | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
-| pyxdg | distro | distro | distro | distro | distro | distro | bundled | — | — |
-| fasteners | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
-| pyenchant | distro | distro | distro | distro | distro | distro | bundled | pip | pip |
-| hunspell-en-us | optional | optional | optional | optional | optional | optional | optional | — | — |
-| ayatana-appindicator | distro | distro | distro | distro | distro | distro | host | — | — |
-| hypertreelist | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | bundled | **patch** | **patch** |
-| WMI | — | — | — | — | — | — | — | pip | — |
-| python3-dbus | optional | optional | optional | optional | optional | optional | — | — | — |
-| python3-pywayland | — | — | optional | — | optional | optional | — | — | — |
+| Package | debian12 | ubuntu22 | debian13 | ubuntu24 | arch | fedora | appimage | flatpak | windows | macos |
+|---------|:--------:|:--------:|:--------:|:--------:|:----:|:------:|:--------:|:-------:|:-------:|:-----:|
+| wxpython | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
+| pypubsub | distro | distro | distro | distro | AUR | distro | bundled | bundled | pip | pip |
+| pyparsing | **pip** | **pip** | distro | distro | distro | **pip** | bundled | bundled | pip | pip |
+| watchdog | **pip** | **pip** | distro | distro | distro | distro | bundled | bundled | pip | pip |
+| squaremap | distro | distro | distro | distro | **pip** | **pip** | bundled | bundled | pip | pip |
+| six | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
+| lxml | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
+| numpy (<2) | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
+| ↳ version | 1.24.2 | 1.21.5 | 2.2.4 | 1.26.4 | 2.4.0 | 2.3.3 | 1.26.4 | 1.26.4 | 1.26.4 | 1.26.4 |
+| chardet (<5.2) | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
+| python-dateutil | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
+| keyring | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
+| pyxdg | distro | distro | distro | distro | distro | distro | bundled | bundled | — | — |
+| fasteners | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
+| pyenchant | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
+| hunspell-en-us | optional | optional | optional | optional | optional | optional | optional | optional | — | — |
+| ayatana-appindicator | distro | distro | distro | distro | distro | distro | host | bundled | — | — |
+| hypertreelist | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | bundled | bundled | **patch** | **patch** |
+| WMI | — | — | — | — | — | — | — | — | pip | — |
+| python3-dbus | optional | optional | optional | optional | optional | optional | — | bundled | — | — |
+| python3-pywayland | — | — | optional | — | optional | optional | — | — | — | — |
 
 **Key:**
 - `distro` = Installed from distribution repos (required dependency)
 - `optional` = Optional feature support, exactly like the spell-check dictionaries: `Recommends:` on deb/rpm, `optdepends` on Arch. Never a hard dependency, never bundled, never pip-installed. Pulled in where the distro packages it, silently skipped (install still succeeds) where it does not.
 - `pip` = Bundled via pip in package build (version too old or not in repos)
 - `patch` = Bundled patch in `taskcoachlib/patches/` (wxPython hypertreelist fix)
-- `bundled` = Bundled in package (thirdparty/ for .deb/.rpm, or inside AppImage)
+- `bundled` = Bundled in package (thirdparty/ for .deb/.rpm, inside the AppImage, or built into the Flatpak). For Flatpak this means pip-installed or built as a manifest module at build time; the base Python, GTK and PyGObject come from the GNOME runtime, not from these rows.
 - `host` = Uses host system library (AppImage); install on host for Wayland tray support
 - `AUR` = Arch User Repository (rolling release)
 - `—` = Not applicable for this platform
@@ -107,6 +108,7 @@ backends.
 | [Manjaro](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap; pypubsub from AUR |
 | [Fedora 43](#fedora-packaging) | fedora43 | 3.13 | 4.2.2 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap, pyparsing |
 | [**AppImage**](#appimage-packaging) | appimage | **3.11** | **4.2.4** | — | `build-appimage.yml` | Bundles Python + all deps |
+| [**Flatpak**](#flatpak-packaging) | flatpak | runtime | **source** | `scripts/build-flatpak.sh` | `build-flatpak.yml` | GNOME runtime; wxPython from sdist (builds its own bundled wxWidgets) |
 | [**Windows**](#windows-packaging) | windows | **3.11** | **4.2.x** | — | `build-windows.yml` | Python embed + Inno Setup |
 | [**macOS**](#macos-packaging) | macos | **3.11** | **4.2.x** | — | `build-macos.yml` | py2app + DMG (Intel & ARM64) |
 
@@ -474,6 +476,38 @@ The AppImage build creates a portable, self-contained Linux executable that bund
 **Minimum requirements:** glibc 2.28+ (Debian Bookworm, Ubuntu 22.04+, Fedora 40+)
 
 For detailed AppImage documentation including library bundling strategy, design decisions, build process, and troubleshooting, see **[APPIMAGE.md](APPIMAGE.md)**.
+
+---
+
+## Flatpak Packaging
+
+- **Flatpak:** [docs](https://docs.flatpak.org/) | [flatpak-builder](https://docs.flatpak.org/en/latest/flatpak-builder.html) | [Flathub submission](https://docs.flathub.org/docs/for-app-authors/submission) | [flatpak-builder-tools](https://github.com/flatpak/flatpak-builder-tools)
+- **Project files:** [FLATPAK.md](FLATPAK.md) | [`build.in/flatpak/`](../build.in/flatpak/) | [`build-flatpak.sh`](../scripts/build-flatpak.sh) | [`build-flatpak.yml`](../.github/workflows/build-flatpak.yml)
+
+The Flatpak build is offered **in addition to** the AppImage. It runs against the **GNOME runtime** (`org.gnome.Platform`), which supplies a consistent GTK / glib / PyGObject stack, so the library-bundling and ABI problems the AppImage fights do not exist here. The trade is that users need `flatpak` installed and the runtime is fetched on first install.
+
+### Available Builds
+
+| Build | Runtime | Architecture | Target |
+|-------|---------|--------------|--------|
+| `TaskCoach-X.Y.Z.W-x86_64.flatpak` | `org.gnome.Platform//50` | x86_64 | Direct install or Flathub |
+
+**Requirements:** `flatpak` installed; first install pulls the GNOME runtime from Flathub.
+
+### Why the GNOME runtime
+
+The GNOME runtime bundles GTK3, PyGObject and gobject-introspection. Task Coach needs all three (wxPython gtk3 plus the PyGObject backend), and inside the runtime they are one consistent set, which is exactly the property the AppImage cannot guarantee. System-tray support comes from Flathub's maintained `shared-modules` (referenced as a git submodule), so the appindicator chain is the CI-tested upstream one rather than a hand-rolled set of tarballs. See [FLATPAK.md](FLATPAK.md).
+
+### Distribution
+
+- **Direct bundle:** attach the `.flatpak` to a GitHub Release; users run `flatpak install ./TaskCoach-*.flatpak`. Self-contained for the app, but the runtime is fetched on first install and the bundle does not auto-update.
+- **Flathub:** submit the manifest via a PR to [`flathub/flathub`](https://github.com/flathub/flathub); Flathub's own buildbot then builds and publishes with managed auto-updates.
+
+### Status
+
+wxPython is built from the sdist, letting it compile its own bundled wxWidgets (guaranteeing the version matches its pre-generated bindings), with checksums verified against the official artifacts. System-tray support comes from Flathub's `shared-modules` libappindicator (git submodule), and optional idle detection from bundled `dbus-python`. For a Flathub submission, builds must additionally be made offline (drop `--share=network`, generate pinned sources) and the placeholder screenshots replaced.
+
+For detailed Flatpak documentation including the runtime choice, permission rationale, offline pinned-source generation, the wxPython risk, build process, and Flathub submission, see **[FLATPAK.md](FLATPAK.md)**.
 
 ---
 

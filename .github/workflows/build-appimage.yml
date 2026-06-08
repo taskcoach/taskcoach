@@ -184,6 +184,9 @@ jobs:
           # Copy TaskCoach source
           cp -r ${{ github.workspace }}/taskcoachlib usr/share/taskcoach/
           cp ${{ github.workspace }}/taskcoach.py usr/share/taskcoach/
+          # Default "Welcome" document, opened on first run
+          # (settings.pathToSystemWelcomeFile finds it next to taskcoach.py).
+          cp ${{ github.workspace }}/Welcome.tsk usr/share/taskcoach/
 
           # Copy icons
           mkdir -p usr/share/icons/hicolor/256x256/apps
