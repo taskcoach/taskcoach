@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  MIME definition for Task Coach task files (.tsk), installed to
+  /app/share/mime/packages so the desktop's MimeType=application/x-taskcoach
+  association resolves. flatpak-builder regenerates the mime cache at export.
+  This registration is Flatpak-only; the other packages do not associate .tsk.
+-->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-taskcoach">
+    <comment>Task Coach task file</comment>
+    <glob pattern="*.tsk"/>
+  </mime-type>
+</mime-info>

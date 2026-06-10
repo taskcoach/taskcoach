@@ -947,7 +947,7 @@ class StartEffortForTaskMenu(DynamicMenu):
         super().__init__(taskBarIcon, parentMenu, labelInParentMenu)
 
     def registerForMenuUpdate(self):
-        # No-op: menu is rebuilt on-demand in popupTaskBarMenu() instead of
+        # No-op: menu is rebuilt on-demand in popup_taskbar_menu() instead of
         # subscribing to every domain event.  The old approach exhausted wx
         # menu-item IDs during recur() cascades (wxAssertionError 0x7fff).
         pass

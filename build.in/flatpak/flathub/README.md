@@ -1,0 +1,60 @@
+# Flathub submission reference
+
+These files are a **reference** for submitting Task Coach to
+[Flathub](https://flathub.org). They are **not** built by this repo's CI - the
+CI builds the dev manifest at `../io.github.taskcoach.TaskCoach.yaml` (which uses
+a local `type: dir` source). For Flathub the app source must be a pinned
+`type: git`, which is the only difference in the manifest here.
+
+Full step-by-step is in [docs/FLATPAK.md](../../../docs/FLATPAK.md); this is the
+quick checklist.
+
+## What goes in the Flathub repo
+
+The submission is a PR to [`flathub/flathub`](https://github.com/flathub/flathub)
+against the **`new-pr`** branch. At the **root** of your branch, place:
+
+| File | Where it comes from |
+|------|---------------------|
+| `io.github.taskcoach.TaskCoach.yaml` | this dir (fill in the `commit:` SHA) |
+| `python3-sources.json` | the `flatpak-pip-sources` CI artifact |
+| `python3-build-deps.json` | the `flatpak-pip-sources` CI artifact |
+| `shared-modules/` | `git submodule add https://github.com/flathub/shared-modules.git` |
+
+The metainfo, desktop file, MIME definition and icons are **not** copied here -
+the manifest installs them from the pinned app source (`type: git`) during the
+build.
+
+## Steps
+
+1. Tag the release on `master` and note the commit:
+
+   ```bash
+   git tag v2.0.2.18 && git push origin v2.0.2.18
+   git rev-parse v2.0.2.18
+   ```
+
+2. In `io.github.taskcoach.TaskCoach.yaml` here, replace
+   `REPLACE_WITH_v2.0.2.18_COMMIT_SHA` with that SHA.
+
+3. Download the latest **`flatpak-pip-sources`** artifact from the Flatpak CI run
+   and extract `python3-sources.json` + `python3-build-deps.json`.
+
+4. Fork `flathub/flathub`, branch off `new-pr`, add the four items above at the
+   repo root, and open a PR titled `Add io.github.taskcoach.TaskCoach`.
+
+   > Flathub bans AI-generated submission PRs - write the PR text and all review
+   > replies yourself.
+
+5. Prove ID ownership: sign in to flathub.org with the `github.com/taskcoach`
+   account (2FA required).
+
+6. Expected review point: `--filesystem=home`. The justification is in
+   [docs/FLATPAK.md](../../../docs/FLATPAK.md) (file-centric app, wx uses its own
+   dialogs, not the XDG portal).
+
+## Keeping it in sync
+
+If the dev manifest (`../io.github.taskcoach.TaskCoach.yaml`) changes, re-copy it
+over the manifest here and re-apply the `type: git` source block, so this
+reference does not drift.

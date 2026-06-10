@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Copyright 2013-2026 Task Coach developers -->
 <component type="desktop-application">
-  <id>org.taskcoach.TaskCoach</id>
+  <id>io.github.taskcoach.TaskCoach</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
   <name>Task Coach</name>
   <summary>Your friendly task manager</summary>
-  <developer id="org.taskcoach">
+  <developer id="io.github.taskcoach">
     <name>Task Coach developers</name>
   </developer>
 
@@ -24,14 +24,24 @@
     </p>
   </description>
 
-  <launchable type="desktop-id">org.taskcoach.TaskCoach.desktop</launchable>
+  <launchable type="desktop-id">io.github.taskcoach.TaskCoach.desktop</launchable>
 
-  <!-- Flathub requires at least one screenshot with a resolvable image URL.
-       Replace this placeholder with real hosted screenshots before submitting. -->
+  <!-- Task Coach opens its own .tsk task files; see the bundled MIME
+       definition (io.github.taskcoach.TaskCoach.mime.xml). -->
+  <provides>
+    <mediatype>application/x-taskcoach</mediatype>
+  </provides>
+
+  <!-- Committed 2.x screenshots. The raw URLs resolve once this branch is
+       merged to master; Flathub mirrors them at submission time. -->
   <screenshots>
     <screenshot type="default">
-      <caption>The Task Coach main window</caption>
-      <image>https://raw.githubusercontent.com/taskcoach/taskcoach/master/website.in/screenshots/main.png</image>
+      <caption>The main window: tasks colour-coded by status, with categories and task editors</caption>
+      <image>https://raw.githubusercontent.com/taskcoach/taskcoach/master/website.in/screenshots/taskcoach-main-window.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Managing task dependencies and prerequisites</caption>
+      <image>https://raw.githubusercontent.com/taskcoach/taskcoach/master/website.in/screenshots/taskcoach-dependencies.png</image>
     </screenshot>
   </screenshots>
 
@@ -41,8 +51,11 @@
 
   <content_rating type="oars-1.1" />
 
-  <!-- CI rewrites the <releases> version/date from meta/data.py at build time. -->
   <releases>
-    <release version="2.0.2.17" date="2026-06-07"/>
+    <release version="2.0.2.18" date="2026-06-09">
+      <description>
+        <p>Adds a Flatpak package, plus bug fixes and packaging improvements.</p>
+      </description>
+    </release>
   </releases>
 </component>

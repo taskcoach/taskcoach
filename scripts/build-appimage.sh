@@ -228,7 +228,7 @@ Categories=Office;Calendar;ProjectManagement;
 Keywords=task;todo;reminder;project;gtd;
 MimeType=application/x-taskcoach;
 StartupNotify=true
-StartupWMClass=TaskCoach
+StartupWMClass=taskcoach
 DESKTOP_EOF
 
     mkdir -p "$APPDIR/usr/share/applications"
@@ -243,7 +243,7 @@ create_appdata() {
     cat > "$APPDIR/usr/share/metainfo/taskcoach.appdata.xml" << 'APPDATA_EOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>org.taskcoach.TaskCoach</id>
+  <id>io.github.taskcoach.TaskCoach</id>
   <name>Task Coach</name>
   <summary>Your friendly task manager</summary>
   <metadata_license>CC0-1.0</metadata_license>

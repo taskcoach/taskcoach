@@ -505,7 +505,7 @@ The GNOME runtime bundles GTK3, PyGObject and gobject-introspection. Task Coach 
 
 ### Status
 
-wxPython is built from the sdist, letting it compile its own bundled wxWidgets (guaranteeing the version matches its pre-generated bindings), with checksums verified against the official artifacts. System-tray support comes from Flathub's `shared-modules` libappindicator (git submodule), and optional idle detection from bundled `dbus-python`. For a Flathub submission, builds must additionally be made offline (drop `--share=network`, generate pinned sources) and the placeholder screenshots replaced.
+The single manifest builds **offline**, the way Flathub builds: no `--share=network`, with every Python dependency pinned (`generate-pip-sources.sh`). wxPython is built from the sdist, letting it compile its own bundled wxWidgets (guaranteeing the version matches its pre-generated bindings, since no prebuilt wxPython wheel works under the runtime), with checksums verified against the official artifacts. System-tray support comes from Flathub's `shared-modules` libappindicator (git submodule), and optional idle detection from bundled `dbus-python`. X11 is prioritized over Wayland (wxPython AUI docking is unusable on Wayland). Remaining for a Flathub submission: pin the app source (`type: dir` -> `git`/`archive`) and narrow `--filesystem=home`.
 
 For detailed Flatpak documentation including the runtime choice, permission rationale, offline pinned-source generation, the wxPython risk, build process, and Flathub submission, see **[FLATPAK.md](FLATPAK.md)**.
 

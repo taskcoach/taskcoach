@@ -260,7 +260,7 @@ jobs:
             'Keywords=task;todo;reminder;project;gtd;' \
             'MimeType=application/x-taskcoach;' \
             'StartupNotify=true' \
-            'StartupWMClass=TaskCoach' \
+            'StartupWMClass=taskcoach' \
             > TaskCoach.AppDir/taskcoach.desktop
           mkdir -p TaskCoach.AppDir/usr/share/applications
           cp TaskCoach.AppDir/taskcoach.desktop TaskCoach.AppDir/usr/share/applications/
@@ -270,7 +270,7 @@ jobs:
           mkdir -p TaskCoach.AppDir/usr/share/metainfo
           printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>' \
             '<component type="desktop-application">' \
-            '  <id>org.taskcoach.TaskCoach</id>' \
+            '  <id>io.github.taskcoach.TaskCoach</id>' \
             '  <name>Task Coach</name>' \
             '  <summary>Your friendly task manager</summary>' \
             '  <metadata_license>CC0-1.0</metadata_license>' \

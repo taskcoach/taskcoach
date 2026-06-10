@@ -41,27 +41,33 @@ APPINDICATOR_ERROR = None
 
 try:
     import gi
+
     _gi = gi
-    gi.require_version('Gtk', '3.0')
+    gi.require_version("Gtk", "3.0")
     from gi.repository import Gtk, GLib
+
     _Gtk = Gtk
     _GLib = GLib
 
     # Try Ayatana first (actively maintained)
     try:
-        gi.require_version('AyatanaAppIndicator3', '0.1')
+        gi.require_version("AyatanaAppIndicator3", "0.1")
         from gi.repository import AyatanaAppIndicator3 as appindicator
+
         _appindicator = appindicator
         APPINDICATOR_AVAILABLE = True
     except (ValueError, ImportError):
         # Fallback to legacy AppIndicator3
         try:
-            gi.require_version('AppIndicator3', '0.1')
+            gi.require_version("AppIndicator3", "0.1")
             from gi.repository import AppIndicator3 as appindicator
+
             _appindicator = appindicator
             APPINDICATOR_AVAILABLE = True
         except (ValueError, ImportError):
-            APPINDICATOR_ERROR = "Neither AyatanaAppIndicator3 nor AppIndicator3 available"
+            APPINDICATOR_ERROR = (
+                "Neither AyatanaAppIndicator3 nor AppIndicator3 available"
+            )
 except ImportError as e:
     APPINDICATOR_ERROR = f"GObject introspection not available: {e}"
 except Exception as e:
@@ -70,9 +76,10 @@ except Exception as e:
 
 def is_wayland():
     """Check if running on Wayland."""
-    return (os.environ.get('XDG_SESSION_TYPE') == 'wayland' or
-            os.environ.get('WAYLAND_DISPLAY') is not None)
-
+    return (
+        os.environ.get("XDG_SESSION_TYPE") == "wayland"
+        or os.environ.get("WAYLAND_DISPLAY") is not None
+    )
 
 
 class AppIndicatorIcon:
@@ -82,9 +89,14 @@ class AppIndicatorIcon:
     the AppIndicator library for Wayland compatibility.
     """
 
-    def __init__(self, app_id="taskcoach", icon_name=None,
-                 icon_theme_path=None, category=None,
-                 tooltip="Task Coach"):
+    def __init__(
+        self,
+        app_id="taskcoach",
+        icon_name=None,
+        icon_theme_path=None,
+        category=None,
+        tooltip="Task Coach",
+    ):
         """Initialize the AppIndicator icon.
 
         Args:
@@ -98,7 +110,9 @@ class AppIndicatorIcon:
             tooltip: Tooltip text (used as title since AppIndicator has limited tooltip support)
         """
         if not APPINDICATOR_AVAILABLE:
-            raise ImportError(f"AppIndicator not available: {APPINDICATOR_ERROR}")
+            raise ImportError(
+                f"AppIndicator not available: {APPINDICATOR_ERROR}"
+            )
 
         self._app_id = app_id
         self._tooltip = tooltip
@@ -111,9 +125,7 @@ class AppIndicatorIcon:
             category = _appindicator.IndicatorCategory.APPLICATION_STATUS
 
         self._indicator = _appindicator.Indicator.new(
-            app_id,
-            icon_name or "application-default-icon",
-            category
+            app_id, icon_name or "application-default-icon", category
         )
 
         if icon_theme_path:
@@ -195,8 +207,11 @@ class AppIndicatorIcon:
 
     def IsAvailable(self):
         """Check if the indicator is available and active."""
-        return (self._indicator is not None and
-                self._indicator.get_status() == _appindicator.IndicatorStatus.ACTIVE)
+        return (
+            self._indicator is not None
+            and self._indicator.get_status()
+            == _appindicator.IndicatorStatus.ACTIVE
+        )
 
     @property
     def indicator(self):
