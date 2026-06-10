@@ -53,8 +53,32 @@ build.
    [docs/FLATPAK.md](../../../docs/FLATPAK.md) (file-centric app, wx uses its own
    dialogs, not the XDG portal).
 
+## Updates after the first submission (automated)
+
+The initial submission above is a one-time manual step (Flathub bans automated
+submission PRs). **Every release after that is automated by Flathub**, so there
+is no GitHub Action to build on our side.
+
+The `type: git` source carries an `x-checker-data` block (a `git` checker with
+`tag-pattern: '^v([\d.]+)$'`). Flathub runs
+[flatpak-external-data-checker](https://github.com/flathub-infra/flatpak-external-data-checker)
+hourly against the app repo; when it sees a newer `v*` tag here, `flathubbot`
+opens an update PR in the Flathub repo with the new tag + commit. So the release
+flow is just:
+
+1. Push a new `vX.Y.Z` tag in this repo (the existing release workflow does the
+   GitHub release + bundle).
+2. `flathubbot` opens the update PR in the Flathub repo within the hour.
+3. Merge it (or set `automerge-flathubbot-prs: true` in the Flathub repo's
+   `flathub.json` to skip the click). Flathub builds and publishes.
+
+If the **pip dependencies** changed (a new dep or version, not just app code),
+regenerate `python3-sources.json` / `python3-build-deps.json` (download them from
+the release build's `flatpak-pip-sources` artifact) and include them in that PR;
+for code-only releases the checker's app-source bump is enough.
+
 ## Keeping it in sync
 
 If the dev manifest (`../io.github.taskcoach.TaskCoach.yaml`) changes, re-copy it
-over the manifest here and re-apply the `type: git` source block, so this
-reference does not drift.
+over the manifest here and re-apply the `type: git` source block (with its
+`x-checker-data`), so this reference does not drift.
