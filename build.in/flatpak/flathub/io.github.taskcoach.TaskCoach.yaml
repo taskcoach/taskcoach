@@ -187,3 +187,10 @@ modules:
         url: https://github.com/taskcoach/taskcoach
         tag: v2.0.2.18
         commit: REPLACE_WITH_v2.0.2.18_COMMIT_SHA
+        # Auto-update: once on Flathub, flatpak-external-data-checker (run hourly
+        # by Flathub) watches for newer v* tags here and flathubbot opens an
+        # update PR in the Flathub repo. Pushing a new vX.Y.Z tag in this repo is
+        # then all that is needed; merge the bot's PR to publish.
+        x-checker-data:
+          type: git
+          tag-pattern: '^v([\d.]+)$'
