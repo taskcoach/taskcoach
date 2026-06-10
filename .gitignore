@@ -36,5 +36,7 @@ test screenshots/
 
 # Flatpak: generated pinned sources and build output (see docs/FLATPAK.md)
 build.in/flatpak/python3-sources.json
+build.in/flatpak/python3-build-deps.json
+build.in/flatpak/io.github.taskcoach.TaskCoach.offline.yaml
 build.in/flatpak/.flatpak-builder/
 *.flatpak

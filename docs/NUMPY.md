@@ -44,6 +44,13 @@ The version pin is applied in the **pip-based build workflows only**:
 | `.github/workflows/build-windows.yml` | `"numpy>=1.26,<2"` |
 | `.github/workflows/build-appimage.yml` | `"numpy>=1.26,<2"` |
 | `.github/workflows/build-macos.yml` | `"numpy>=1.26,<2"` |
+| `build.in/flatpak/generate-pip-sources.sh` | `"numpy>=1.26,<2.4"` |
+
+The Flatpak uses a different upper bound on purpose. Its runtime is
+**Python 3.13**, for which numpy 1.26.4 has no wheels, so `<2` is
+unsatisfiable there. The actual hazard is numpy **2.4+** (the SSE4.2 baseline),
+so the Flatpak pins `<2.4`: numpy 2.1-2.3 have cp313 wheels and keep the old
+CPU baseline, preserving old-CPU support while building on Python 3.13.
 
 The pin is intentionally **not** in `setup.py` because `setup.py` dependencies
 are auto-converted to RPM/deb package requirements. Distro builds use system

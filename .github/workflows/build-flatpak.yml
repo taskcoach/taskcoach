@@ -1,11 +1,26 @@
 name: Build Flatpak
 
+# Single, Flathub-compatible build: the manifest builds OFFLINE (no
+# --share=network in any module), exactly the way Flathub builds. The only
+# network step is generating the pinned pip sources up front (the same thing a
+# maintainer does with flatpak-pip-generator and commits); the flatpak-builder
+# run itself fetches only declared, hashed sources and compiles with no network.
+#
+# wxPython is compiled from its sdist (no usable prebuilt wheel exists for the
+# runtime) and is the slow module. We cache the flatpak-builder state-dir with
+# actions/cache (not the builder action's own caching, which only saves on
+# success) so partial progress persists across runs INCLUDING failures: a run
+# that dies partway still uploads every module it built, and the next run
+# resumes instead of recompiling wxWidgets from scratch. See docs/FLATPAK.md.
+
 on:
   push:
     branches:
       - main
       - master
       - 'claude/**'
+      - 'fix/**'
+      - 'feat/**'
     tags:
       - 'v*'
   pull_request:
@@ -21,8 +36,8 @@ jobs:
   build-flatpak:
     name: Build Flatpak
     runs-on: ubuntu-22.04
-    # The flatpak-github-actions image ships flatpak, flatpak-builder and the
-    # GNOME SDK/runtime, so the multi-GB runtime is not re-downloaded each run.
+    # Ships flatpak, flatpak-builder, the GNOME SDK/Platform and
+    # flatpak-builder-lint, so none of the multi-GB runtime is re-downloaded.
     container:
       image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-50
       options: --privileged
@@ -42,23 +57,53 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
 
-      # No source-generation step: the manifest's python modules use
-      # --share=network and pip3 directly, so flatpak-builder fetches wxPython,
-      # wxWidgets and the pure-Python deps itself during the build. (The
-      # offline flatpak-pip-generator path is only needed for a Flathub
-      # submission; see docs/FLATPAK.md.)
-      - name: Build Flatpak bundle
+      # Generate the pinned pip sources the manifest includes
+      # (python3-sources.json + python3-build-deps.json). This is the
+      # one step that uses the network; the build below is fully offline.
+      - name: Generate pinned pip sources
+        run: |
+          set -eux
+          build.in/flatpak/generate-pip-sources.sh
+
+      # Persist the flatpak-builder state-dir across runs, INCLUDING failed ones.
+      # actions/cache saves in a post-job step that runs on failure too, so a
+      # build that dies partway keeps the modules it already compiled (glu, the
+      # tray chain, wxPython, the deps built so far) and the next run rebuilds
+      # only what changed. Unique key per commit so a fresh cache is always
+      # saved; the prefix restore-key restores the most recent prior cache.
+      - name: Cache flatpak-builder state
+        uses: actions/cache@v4
+        with:
+          path: .flatpak-builder
+          key: flatpak-builder-x86_64-${{ github.sha }}
+          restore-keys: |
+            flatpak-builder-x86_64-
+
+      - name: Build Flatpak bundle (offline)
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
-          # The action appends "-<arch>" to the bundle name itself, so do not
-          # add it here (otherwise the file ends up "...-x86_64-x86_64.flatpak").
+          # The action appends "-<arch>" to the bundle name itself.
           bundle: TaskCoach-${{ steps.version.outputs.version }}.flatpak
-          manifest-path: build.in/flatpak/org.taskcoach.TaskCoach.yaml
-          cache-key: flatpak-builder-${{ github.sha }}
-          # x86_64 only here; Flathub builds aarch64 separately.
+          manifest-path: build.in/flatpak/io.github.taskcoach.TaskCoach.yaml
           arch: x86_64
-          # Upload via our own step below (one artifact, named like the others).
           upload-artifact: false
+          # We own the cache via actions/cache above (so it persists on failure);
+          # disable the action's own success-only caching to avoid conflicts.
+          cache: false
+          restore-cache: false
+
+      - name: flatpak-builder-lint (manifest + appstream + repo)
+        if: always()
+        run: |
+          set -eux
+          LINT="flatpak-builder-lint"
+          command -v flatpak-builder-lint >/dev/null 2>&1 || \
+            LINT="flatpak run --command=flatpak-builder-lint org.flatpak.Builder"
+          $LINT --gha-format manifest \
+            build.in/flatpak/io.github.taskcoach.TaskCoach.yaml || true
+          $LINT --gha-format appstream \
+            build.in/flatpak/io.github.taskcoach.TaskCoach.metainfo.xml || true
+          test -d repo && $LINT --gha-format repo repo || true
 
       - name: Upload Flatpak artifact
         uses: actions/upload-artifact@v7
@@ -66,6 +111,18 @@ jobs:
           name: TaskCoach-Flatpak-${{ steps.version.outputs.version }}
           path: TaskCoach-*.flatpak
           retention-days: 30
+
+      # The pinned sources, so they can be committed into the Flathub repo
+      # (where the build is offline and nothing is generated at build time).
+      - name: Upload generated pip sources
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: flatpak-pip-sources
+          path: |
+            build.in/flatpak/python3-sources.json
+            build.in/flatpak/python3-build-deps.json
+          retention-days: 14
 
       - name: Create Release (on tag)
         if: startsWith(github.ref, 'refs/tags/')

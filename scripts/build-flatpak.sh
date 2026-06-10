@@ -14,9 +14,9 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 FLATPAK_DIR="$PROJECT_ROOT/build.in/flatpak"
-MANIFEST="$FLATPAK_DIR/org.taskcoach.TaskCoach.yaml"
+MANIFEST="$FLATPAK_DIR/io.github.taskcoach.TaskCoach.yaml"
 BUILD_DIR="$PROJECT_ROOT/build/flatpak"
-APP_ID="org.taskcoach.TaskCoach"
+APP_ID="io.github.taskcoach.TaskCoach"
 RUNTIME_VERSION="50"
 
 echo "=========================================="
@@ -46,9 +46,10 @@ flatpak install --user -y flathub \
     "org.gnome.Platform//$RUNTIME_VERSION" \
     "org.gnome.Sdk//$RUNTIME_VERSION"
 
-# The manifest's python modules fetch wxPython/wxWidgets/deps themselves via
-# pip with --share=network, so there is nothing to pre-generate here. (The
-# offline flatpak-pip-generator path is only for a Flathub submission.)
+# The manifest builds offline and includes pinned pip sources, so generate them
+# first. This is the one step that needs the network; the build itself does not.
+# Requires the GNOME Sdk installed just above (for --runtime ABI detection).
+"$FLATPAK_DIR/generate-pip-sources.sh"
 
 # Build, install for the current user, and export a repo.
 rm -rf "$BUILD_DIR"

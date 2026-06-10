@@ -251,6 +251,94 @@ def detect_dark_theme():
             return False
 
 
+def _log_linux_tray_diagnostics():
+    """Log system-tray / AppIndicator diagnostics (Linux only).
+
+    The tray icon is painted by a StatusNotifierItem host running OUTSIDE the
+    process (and, under Flatpak, outside the sandbox), so a generic/wrong tray
+    icon almost always means the host could not resolve our icon name. These
+    lines capture what the host needs. Call only after wxApp exists: importing
+    gi's Gtk before wxApp breaks GTK init (see _log_wx_info).
+    """
+    # Route these diagnostics through log_step so they get millisecond
+    # timestamps and a [TRAY] prefix like the other startup log lines.
+    from taskcoachlib.meta.debug import log_step
+
+    def log_message(msg):
+        log_step(msg, prefix="TRAY")
+
+    log_message("System tray / AppIndicator:")
+    log_message(
+        "  XDG_CURRENT_DESKTOP: %s"
+        % os.environ.get("XDG_CURRENT_DESKTOP", "not set")
+    )
+
+    # SNI backend (libayatana/AppIndicator) availability in this process.
+    try:
+        from taskcoachlib.gui import appindicator
+        if appindicator.APPINDICATOR_AVAILABLE:
+            log_message("  AppIndicator backend: available")
+        else:
+            log_message(
+                "  AppIndicator backend: NOT available (%s)"
+                % appindicator.APPINDICATOR_ERROR
+            )
+    except Exception as e:
+        log_message("  AppIndicator backend: import failed (%s)" % e)
+
+    # Is an SNI host registered? Without one there is no tray at all (e.g.
+    # GNOME with no AppIndicator extension).
+    try:
+        import dbus
+        owned = dbus.SessionBus().name_has_owner(
+            "org.kde.StatusNotifierWatcher"
+        )
+        log_message("  StatusNotifierWatcher present: %s" % owned)
+    except Exception as e:
+        log_message("  StatusNotifierWatcher check failed: %s" % e)
+
+    # Flatpak-only: the tray icons must be installed under the app-id namespace
+    # so Flatpak exports them to the host icon theme (the host cannot read the
+    # in-sandbox theme path). Confirm they actually reached /app/share/icons.
+    flatpak_id = os.environ.get("FLATPAK_ID")
+    if os.path.exists("/.flatpak-info") or flatpak_id:
+        app_id = flatpak_id or "io.github.taskcoach.TaskCoach"
+        log_message(
+            "  Flatpak: yes (FLATPAK_ID=%s)" % (flatpak_id or "not set")
+        )
+        icons_root = "/app/share/icons/hicolor"
+        for variant in ("", ".clock", ".timer"):
+            name = app_id + variant
+            sizes = []
+            for size in ("16x16", "48x48", "256x256", "scalable"):
+                ext = "svg" if size == "scalable" else "png"
+                path = os.path.join(
+                    icons_root, size, "apps", name + "." + ext
+                )
+                if os.path.exists(path):
+                    sizes.append(size)
+            status = (
+                "installed [%s]" % ", ".join(sizes) if sizes else "MISSING"
+            )
+            log_message("  tray icon %s: %s" % (name, status))
+
+        # What libayatana does to build the tray icon: resolve the name in the
+        # in-process GTK icon theme. If this is False, the SNI host cannot show
+        # it either, regardless of the export.
+        try:
+            import gi
+            gi.require_version("Gtk", "3.0")
+            from gi.repository import Gtk
+            theme = Gtk.IconTheme.get_default()
+            for variant in ("", ".clock", ".timer"):
+                nm = app_id + variant
+                log_message(
+                    "  GTK theme resolves %s: %s" % (nm, theme.has_icon(nm))
+                )
+        except Exception as e:
+            log_message("  GTK icon theme check failed: %s" % e)
+
+
 def _log_wx_info():
     """Log wx-specific info after wxApp is created.
 
@@ -258,6 +346,13 @@ def _log_wx_info():
     GTK version is logged here because importing gi.repository.Gtk before
     wxApp would cause 'gtk_disable_setlocale() must be called before gtk_init()'.
     """
+    # Route these diagnostics through log_step so they get millisecond
+    # timestamps and a [DISPLAY] prefix like the other startup log lines.
+    from taskcoachlib.meta.debug import log_step
+
+    def log_message(msg):
+        log_step(msg, prefix="DISPLAY")
+
     # Log GTK version (must be after wxApp creates GTK context)
     if sys.platform == 'linux':
         try:
@@ -268,9 +363,7 @@ def _log_wx_info():
         except Exception:
             pass
 
-    log_message("=" * 60)
     log_message("WX DISPLAY INFO")
-    log_message("=" * 60)
 
     # wx platform details
     log_message(f"wx.PlatformInfo: {wx.PlatformInfo}")
@@ -310,7 +403,11 @@ def _log_wx_info():
     is_dark = detect_dark_theme()
     log_message(f"Dark theme detected: {is_dark}")
 
-    log_message("=" * 60)
+    if sys.platform == 'linux':
+        try:
+            _log_linux_tray_diagnostics()
+        except Exception as e:
+            log_message("Tray diagnostics failed: %s" % e)
 
 
 def _log_windows_environment():
@@ -848,7 +945,7 @@ Break the lock?"""
             if task_bar_icon is None:
                 return
             self.taskBarIcon = task_bar_icon  # pylint: disable=W0201
-            self.taskBarIcon.setPopupMenu(
+            self.taskBarIcon.set_popup_menu(
                 menu.TaskBarMenu(
                     self.taskBarIcon,
                     self.settings,
@@ -897,7 +994,7 @@ Break the lock?"""
 
     def on_reopen_app(self):
         if hasattr(self, "taskBarIcon"):
-            self.taskBarIcon.onTaskbarClick(None)
+            self.taskBarIcon.on_taskbar_click(None)
 
     def save_all_settings(self):
         """Save all settings to disk. Called on normal exit and signal handlers.

@@ -1,0 +1,8 @@
+[flake8]
+# Keep flake8 in step with black (configured in pyproject.toml, line-length 79)
+# and PEP 8. flake8 does not read pyproject.toml, so its config lives here.
+max-line-length = 79
+# E203: black puts spaces around the colon in complex slices; black is the
+#       PEP 8-correct one, pycodestyle's E203 is the false positive.
+# W503: black breaks lines before binary operators, which modern PEP 8 prefers.
+extend-ignore = E203, W503
