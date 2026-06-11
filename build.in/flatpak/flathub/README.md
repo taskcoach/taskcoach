@@ -9,6 +9,18 @@ a local `type: dir` source). For Flathub the app source must be a pinned
 Full step-by-step is in [docs/FLATPAK.md](../../../docs/FLATPAK.md); this is the
 quick checklist.
 
+> **Postponed (2026).** Flathub blanket-rejects submissions it deems "AI slop"
+> and **rejected this one** (prior review notes:
+> <https://github.com/flathub/flathub/pull/8938>), so complying with its required
+> changes is no longer relevant; the `.flatpak` is distributed **directly from
+> this project's GitHub releases** instead. The external `flathub/…` fork has been
+> removed; these files are kept as a reference for if/when it is revisited. The
+> main blocker Flathub pushed for — the `--filesystem=home` → portal migration —
+> is documented in [docs/FLATPAK.md](../../../docs/FLATPAK.md) (File access) and
+> will likely resolve automatically with wxPython 3.3. The automated dev-vs-Flathub
+> manifest parity check was removed; if revived, keep the two manifests in sync
+> manually (see "Keeping it in sync" below).
+
 ## What goes in the Flathub repo
 
 The submission is a PR to [`flathub/flathub`](https://github.com/flathub/flathub)
@@ -49,9 +61,12 @@ build.
 5. Prove ID ownership: sign in to flathub.org with the `github.com/taskcoach`
    account (2FA required).
 
-6. Expected review point: `--filesystem=home`. The justification is in
-   [docs/FLATPAK.md](../../../docs/FLATPAK.md) (file-centric app, wx uses its own
-   dialogs, not the XDG portal).
+6. Likely review points (justifications in
+   [docs/FLATPAK.md](../../../docs/FLATPAK.md)): the **X11-only** display (runs via
+   XWayland on Wayland); the idle `--talk-name` grants
+   (`org.freedesktop.ScreenSaver` / `org.gnome.Mutter.IdleMonitor`) — there is no
+   idle portal; and **`--filesystem=home`** (the portal migration that would drop
+   it is postponed — see the File access section in docs/FLATPAK.md).
 
 ## Updates after the first submission (automated)
 
