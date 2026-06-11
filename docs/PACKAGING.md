@@ -40,7 +40,7 @@ This document describes the packaging setup for Task Coach on Linux (Debian, Ubu
 
 This table shows how dependencies are handled in **built packages** and **setup scripts**.
 
-| Package | debian12 | ubuntu22 | debian13 | ubuntu24 | arch | fedora | appimage | flatpak | windows | macos |
+| Package | debian12 | ubuntu22 | debian13 | ubuntu24 | arch | fedora | appimage | ~~flatpak~~ | windows | macos |
 |---------|:--------:|:--------:|:--------:|:--------:|:----:|:------:|:--------:|:-------:|:-------:|:-----:|
 | wxpython | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | pypubsub | distro | distro | distro | distro | AUR | distro | bundled | bundled | pip | pip |
@@ -70,6 +70,7 @@ This table shows how dependencies are handled in **built packages** and **setup 
 - `pip` = Bundled via pip in package build (version too old or not in repos)
 - `patch` = Bundled patch in `taskcoachlib/patches/` (wxPython hypertreelist fix)
 - `bundled` = Bundled in package (thirdparty/ for .deb/.rpm, inside the AppImage, or built into the Flatpak). For Flatpak this means pip-installed or built as a manifest module at build time; the base Python, GTK and PyGObject come from the GNOME runtime, not from these rows.
+- ~~`flatpak`~~ (struck through) = **Flathub release postponed** (2026); the Flatpak build still works for a direct `.flatpak` install but is not actively published — see [Flatpak Packaging](#flatpak-packaging).
 - `host` = Uses host system library (AppImage); install on host for Wayland tray support
 - `AUR` = Arch User Repository (rolling release)
 - `—` = Not applicable for this platform
@@ -108,7 +109,7 @@ backends.
 | [Manjaro](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap; pypubsub from AUR |
 | [Fedora 43](#fedora-packaging) | fedora43 | 3.13 | 4.2.2 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap, pyparsing |
 | [**AppImage**](#appimage-packaging) | appimage | **3.11** | **4.2.4** | — | `build-appimage.yml` | Bundles Python + all deps |
-| [**Flatpak**](#flatpak-packaging) | flatpak | runtime | **source** | `scripts/build-flatpak.sh` | `build-flatpak.yml` | GNOME runtime; wxPython from sdist (builds its own bundled wxWidgets) |
+| [~~**Flatpak**~~](#flatpak-packaging) | flatpak | runtime | **source** | `scripts/build-flatpak.sh` | `build-flatpak.yml` | **Flathub release postponed**; GNOME runtime; wxPython from sdist (builds its own bundled wxWidgets) |
 | [**Windows**](#windows-packaging) | windows | **3.11** | **4.2.x** | — | `build-windows.yml` | Python embed + Inno Setup |
 | [**macOS**](#macos-packaging) | macos | **3.11** | **4.2.x** | — | `build-macos.yml` | py2app + DMG (Intel & ARM64) |
 
@@ -486,6 +487,8 @@ For detailed AppImage documentation including library bundling strategy, design 
 
 The Flatpak build is offered **in addition to** the AppImage. It runs against the **GNOME runtime** (`org.gnome.Platform`), which supplies a consistent GTK / glib / PyGObject stack, so the library-bundling and ABI problems the AppImage fights do not exist here. The trade is that users need `flatpak` installed and the runtime is fetched on first install.
 
+> **Flathub release postponed (2026).** Flathub has been blanket-rejecting submissions it deems "AI slop" and **rejected this one**, so complying with its required changes is no longer relevant — and we didn't want its main ask anyway (dropping `--filesystem=home` for the portal changes file access for all users on every OS; too risky, and wxPython 3.3 should deliver the portal automatically). The `.flatpak` is available **directly from this project's GitHub releases**, so Flathub is not required. Details and prior review notes: [FLATPAK.md](FLATPAK.md).
+
 ### Available Builds
 
 | Build | Runtime | Architecture | Target |
@@ -505,7 +508,7 @@ The GNOME runtime bundles GTK3, PyGObject and gobject-introspection. Task Coach 
 
 ### Status
 
-The single manifest builds **offline**, the way Flathub builds: no `--share=network`, with every Python dependency pinned (`generate-pip-sources.sh`). wxPython is built from the sdist, letting it compile its own bundled wxWidgets (guaranteeing the version matches its pre-generated bindings, since no prebuilt wxPython wheel works under the runtime), with checksums verified against the official artifacts. System-tray support comes from Flathub's `shared-modules` libappindicator (git submodule), and optional idle detection from bundled `dbus-python`. X11 is prioritized over Wayland (wxPython AUI docking is unusable on Wayland). Remaining for a Flathub submission: pin the app source (`type: dir` -> `git`/`archive`) and narrow `--filesystem=home`.
+The single manifest builds **offline**, the way Flathub builds: no `--share=network`, with every Python dependency pinned (`generate-pip-sources.sh`). wxPython is built from the sdist, letting it compile its own bundled wxWidgets (guaranteeing the version matches its pre-generated bindings, since no prebuilt wxPython wheel works under the runtime), with checksums verified against the official artifacts. System-tray support comes from Flathub's `shared-modules` libappindicator (git submodule), and optional idle detection from bundled `dbus-python`. X11 is prioritized over Wayland (wxPython AUI docking is unusable on Wayland). File access uses `--filesystem=home`; migrating it to the XDG FileChooser portal is a postponed TODO (likely automatic with wxPython 3.3). **The Flathub release is postponed** — remaining work and prior review notes are in [FLATPAK.md](FLATPAK.md).
 
 For detailed Flatpak documentation including the runtime choice, permission rationale, offline pinned-source generation, the wxPython risk, build process, and Flathub submission, see **[FLATPAK.md](FLATPAK.md)**.
 

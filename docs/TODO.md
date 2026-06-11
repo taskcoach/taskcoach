@@ -15,6 +15,7 @@ This document tracks planned improvements and known issues to address in future 
 9. [Preferences Page Alignment Overrides](#9-preferences-page-alignment-overrides) *(Done)*
 10. [Preferences Dialog: Dirty-Check and Button State](#10-preferences-dialog-dirty-check-and-button-state)
 11. [EVT_TEXT Compatibility Shim in MultiLineTextCtrl](#11-evt_text-compatibility-shim-in-multilinetextctrl)
+12. [Thunderbird/IMAP Mail Integration Review](#12-thunderbirdimap-mail-integration-review)
 Signaling system cleanup has moved to
 [PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#signaling-system-cleanup).
 
@@ -418,4 +419,56 @@ No need to store "original values" — the settings object is the baseline.
 
 ---
 
-**Last Updated:** March 2026
+## 12. Thunderbird/IMAP Mail Integration Review
+
+There seems to be a legacy Thunderbird email-drop integration that is likely
+non-functional and/or dead code. It needs review and, if confirmed dead,
+removal.
+
+### What it is
+
+- `taskcoachlib/mailer/thunderbird.py` retrieves a dropped Thunderbird message
+  over **IMAP** (`imaplib.IMAP4_SSL`).
+- To authenticate it calls `GetPassword()` (`taskcoachlib/widgets/password.py`),
+  which stores/reads the mail-account password in the system keyring via the
+  `keyring` module → the freedesktop Secret Service.
+- This is the **only** live consumer of the keyring/secrets path
+  (`iocontroller.py` imports `GetPassword` but never calls it; no other caller
+  exists).
+
+### Questions to answer
+
+1. Is the "drag a Thunderbird email onto a task" feature still wired into the UI
+   and working against current Thunderbird (URL format, IMAP, modern auth)?
+2. Is the IMAP/keyring path ever reached in practice, or is it dead?
+3. If dead: remove the IMAP path in `thunderbird.py`, the keyring usage in
+   `password.py`, and the optional `keyring` / `python3-dbus` dependencies.
+
+### Flatpak cross-reference
+
+The Flatpak build deliberately grants **neither** `--share=network` **nor**
+`--talk-name=org.freedesktop.secrets`, because this likely-dead mail feature is
+their only consumer — see [FLATPAK.md](FLATPAK.md) (finish-args). If the feature
+is revived, secret handling must go through the **Secret portal**
+(`org.freedesktop.portal.Secret`), **not** a direct
+`--talk-name=org.freedesktop.secrets` grant; the network access would also need a
+fresh review.
+
+### Related references
+
+- [PYTHON3_MIGRATION_2.md](PYTHON3_MIGRATION_2.md) kept the NTLM/IMAP auth code
+  (`thirdparty/ntlm/IMAPNtlmAuthHandler.py`) as "actively used" by
+  `thunderbird.py` (Nov 2025). That is **import-level** reachability, not a
+  verification that the drag-an-email feature actually works for a user today —
+  which is exactly what this review must establish.
+- A separate **outgoing** "Mail" command (mail a task) exists
+  ([MENUS.md](MENUS.md), [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md)); it is
+  distinct from this **incoming** IMAP email-drop and uses neither IMAP nor the
+  keyring. Don't conflate the two when reviewing.
+- macOS Thunderbird-profile path logic exists ([MACOS.md](MACOS.md)).
+
+**Status:** Needs investigation
+
+---
+
+**Last Updated:** June 2026

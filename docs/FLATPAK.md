@@ -49,16 +49,101 @@ Flathub review:
 | Grant | Why |
 |-------|-----|
 | `--socket=x11`, `--share=ipc`, `--device=dri`, `--env=GDK_BACKEND=x11` | Display and rendering. X11-only: wxPython's AUI docking is unusable on native Wayland ([AUI_WAYLAND_ISSUES.md](AUI_WAYLAND_ISSUES.md)), so Task Coach declares as an X11 app and runs via XWayland on Wayland sessions. Per Flathub, an app without native Wayland support uses `--socket=x11`; also granting `--socket=wayland` is a lint error (`finish-args-contains-both-x11-and-wayland`) and would not provide X11 on Wayland anyway. |
-| `--filesystem=home` | Read/write `.tsk` task files anywhere; wx uses its own file dialogs, not the portal. Reviewers may push to narrow this. |
+| `--filesystem=home` | Read/write `.tsk` files (plus attachments and HTML/CSV/iCal exports) at arbitrary paths; wx 3.2.x's file dialogs don't use the XDG portal. Migrating to the portal to drop this is a **postponed** TODO — see [File access and the file-chooser portal](#file-access-and-the-file-chooser-portal). |
 | `--talk-name=org.kde.StatusNotifierWatcher` | System-tray icon |
 | `--talk-name=org.freedesktop.ScreenSaver`, `--talk-name=org.gnome.Mutter.IdleMonitor` | Optional idle detection ([IDLE.md](IDLE.md)) |
-| `--talk-name=org.freedesktop.secrets` | keyring |
+
+**Not granted: `--share=network` and `--talk-name=org.freedesktop.secrets`.**
+Their only consumer is a likely-dead Thunderbird/IMAP mail integration; on those
+grounds neither is granted — see
+[TODO.md §12](TODO.md#12-thunderbirdimap-mail-integration-review).
 
 There is intentionally **no** `org.freedesktop.Notifications` grant: reminders
 and idle alerts are in-app `wx` popups, so the app never calls the host
 notification service. If real desktop notifications are added later, route them
 through the freedesktop **notification portal** (which needs no `talk-name`),
 not a direct grant.
+
+### File access and the file-chooser portal
+
+> **Status: postponed.** The Flatpak build retains `--filesystem=home`. The
+> portal migration described here is a future Flathub-cleanup TODO — a prototype
+> was implemented and then **reverted**; it will most likely arrive automatically
+> with wxPython 3.3 (see the end of this section). This is the **only** place this
+> TODO is tracked, because it is relevant only to the Flatpak build.
+
+Task Coach reads and writes user-chosen files in **one** place:
+`__askUserForFile()` in `taskcoachlib/gui/iocontroller.py`, which calls
+`wx.FileSelector` (a thin wrapper over `wxFileDialog`). Everything funnels
+through it — open / save / save-as / save-selection / save-as-template and **all**
+exports (`exportAsHTML` / `exportAsCSV` / `exportAsICalendar` / `exportAsTodoTxt`
+all call `export()` -> `__askUserForFile`). The only other file dialog is the
+Backup Manager's own `wx.FileDialog` in
+`taskcoachlib/gui/dialog/backupmanager.py`. So file access is effectively **two
+call sites**, not a scattered concern.
+
+**Why the portal is needed.** On GTK, `wxFileDialog` in wxWidgets **3.2.x**
+(what wxPython 4.2.5 bundles — wxWidgets **3.2.9**) is built with
+`gtk_file_chooser_dialog_new()` — the legacy **`GtkFileChooserDialog`**, which does
+**not** route through the XDG file-chooser portal. With no filesystem grant it can
+only browse the app's private `~/.var/app/<id>/` tree, so a `.tsk` (or an export
+target) anywhere else is unreachable. Without the portal, that is the only reason
+a broad `--filesystem` grant would be needed — to give wx's own dialog something
+real to browse. `GTK_USE_PORTAL=1` does **not** help — that env var is honoured
+only by `GtkFileChooserNative`, which wx 3.2.x never instantiates.
+
+**This is a 20-year-old code path, not a portal decision.** The `wx.FileSelector`
+pattern dates to the project's earliest recorded commit (a 2005 `cvs2svn`
+migration; export-to-CSV was added 2006) — roughly **11 years before**
+`xdg-desktop-portal` and `GtkFileChooserNative` existed (GTK 3.20, 2016). wx
+simply predates the sandbox/portal layer and the call site was carried forward
+unchanged (the only recent touch to `iocontroller.py` is a 2024 source-tree move).
+
+**wxWidgets 3.3 fixes it upstream — but no released wxPython has it yet.**
+wxWidgets **3.3.0** instantiates `GtkFileChooserNative` (when GTK >= 3.20 and
+`wxFD_PREVIEW` is not requested), which **auto-routes through the portal** in a
+sandbox. Task Coach's dialogs request no preview, so on a 3.3-based build
+`wx.FileSelector` would become a real portal picker with **zero app changes** and
+the grant could be dropped. But stable wxPython is still on wxWidgets 3.2.x
+(4.2.5 -> 3.2.9, Feb 2026); only wxPython *master* tracks 3.3, and no release
+bundles it. So the free path is a wait, not an upgrade we can take today.
+
+**TODO (postponed): migrate file access to the portal.** The fix for a future
+Flathub effort is to call the portal ourselves at the two chokepoints — what GTK
+apps did directly years ago (e.g. Pinta, revolt). A helper (e.g.
+`taskcoachlib/gui/filechooser.py`) wired into `iocontroller.__ask_user_for_file`
+and `backupmanager._OnRestore` would:
+
+- In a sandbox (detected via `os.path.exists('/.flatpak-info')`), invoke
+  **`org.freedesktop.portal.FileChooser`** over D-Bus (via PyGObject / `Gio` —
+  already a dependency for the tray, so no new runtime dep) and return the chosen
+  path (a `/run/user/<uid>/doc/...` document-portal path).
+- Otherwise (Windows, macOS, or Linux outside a sandbox), fall back to
+  **`wx.FileSelector`** — wx's native dialogs are correct there.
+
+That would let the manifest drop `--filesystem=home` (the portal grants access
+per file the user picks) and clear the `finish-args-home-filesystem-access` lint,
+without making any `.tsk` unopenable.
+
+**Why it is postponed.** This shim was prototyped and then **reverted** (2026): it
+changes the single file-dialog code path that *every* user goes through on
+*every* OS — real regression risk — for a benefit that only matters inside the
+Flatpak sandbox. With the Flathub release postponed, that risk isn't worth it.
+
+**The likely free fix: wxWidgets 3.3.** When a wxPython release bundles wxWidgets
+3.3, `wx.FileSelector` will route through the portal **on its own** (no app code),
+because 3.3 uses `GtkFileChooserNative` (GTK >= 3.20, no `wxFD_PREVIEW` — which
+Task Coach's dialogs never set). At that point this TODO resolves for free and
+`--filesystem=home` can simply be dropped. So the preferred plan is to **wait for
+wx 3.3** rather than carry a hand-written shim.
+
+Sources: wxWidgets `src/gtk/filedlg.cpp` —
+[v3.2.6 (dialog only)](https://github.com/wxWidgets/wxWidgets/blob/v3.2.6/src/gtk/filedlg.cpp)
+vs [v3.3.0 (native chooser)](https://github.com/wxWidgets/wxWidgets/blob/v3.3.0/src/gtk/filedlg.cpp);
+[GtkFileChooserNative](https://docs.gtk.org/gtk3/class.FileChooserNative.html);
+[Portal support in GTK](https://docs.flatpak.org/en/latest/portals.html);
+[FileChooser portal](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.FileChooser.html);
+[wxPython tracking wxWidgets 3.3](https://discuss.wxpython.org/t/wxpython-master-branch-now-tracking-wxwidgets-3-3/40403).
 
 ### System tray (via Flathub shared-modules)
 
@@ -240,6 +325,21 @@ the Flathub
 [submission](https://docs.flathub.org/docs/for-app-authors/submission) and
 [requirements](https://docs.flathub.org/docs/for-app-authors/requirements) docs.
 
+> **Flathub release postponed (2026)** — two independent reasons:
+>
+> 1. **Flathub rejected the submission.** Flathub has been blanket-rejecting
+>    submissions it deems "AI slop," and rejected this one (prior review notes:
+>    <https://github.com/flathub/flathub/pull/8938>). So adapting the code to
+>    Flathub's required changes is **no longer relevant**.
+> 2. **We didn't want Flathub's main ask anyway.** Dropping `--filesystem=home`
+>    for the portal changes the file-dialog code path for every user on every OS
+>    (too risky), and wxPython 3.3 will likely deliver the portal for free (see
+>    [File access](#file-access-and-the-file-chooser-portal)).
+>
+> Users can install the `.flatpak` **directly from this project's GitHub
+> releases** — Flathub is not required. The prerequisites below are retained only
+> for if/when Flathub is revisited.
+
 ### Already satisfied
 
 - **App ID** `io.github.taskcoach.TaskCoach`: valid `io.github.` code-hosting
@@ -256,11 +356,14 @@ the Flathub
   (`.mime.xml` + metainfo `<provides>`), so `.tsk` files open the app.
 - **Metainfo**: id, license, developer, `content_rating`, `url`s, current 2.x
   screenshots, and a `<releases>` entry with notes.
-- **Permissions**: no notification grant; only tray, idle, and keyring
-  talk-names. Display is **X11-only** (`--socket=x11`, no wayland socket) so the
+- **Permissions**: no notification grant; only tray and idle talk-names (no
+  network, no secrets — see
+  [TODO.md §12](TODO.md#12-thunderbirdimap-mail-integration-review)). File access
+  uses **`--filesystem=home`** (the portal migration that would drop it is a
+  postponed TODO — see [File access](#file-access-and-the-file-chooser-portal)).
+  Display is **X11-only** (`--socket=x11`, no wayland socket) so the
   `finish-args-contains-both-x11-and-wayland` lint error does not apply; see the
-  finish-args table above. `--filesystem=home` is a deliberate, justified grant
-  (item 2).
+  finish-args table above.
 - **shared-modules**: pinned as a git submodule, as Flathub expects for deps.
 
 ### Required before submission
@@ -270,28 +373,21 @@ the Flathub
    pinned `type: git` (tag plus commit) or `type: archive` (release tarball plus
    `sha256`) from `github.com/taskcoach/taskcoach`. Also commit the two generated
    `python3-*.json` files there (Flathub does not generate at build time).
-2. **Justify `--filesystem=home` in review (decided: keep it).** The
-   `finish-args-home-filesystem-access` lint error is not an auto-reject; it
-   triggers reviewer discussion. We keep the grant because Task Coach is a
-   file-centric app: users open/save `.tsk` files (plus attachments and
-   HTML/CSV/iCal exports) at arbitrary paths, and wx uses its own file dialogs
-   rather than the XDG file-chooser portal, so a narrowed grant (e.g.
-   `--filesystem=xdg-documents`) would make any `.tsk` outside that folder
-   unopenable. The portal route is an upstream wx change, not a packaging tweak.
-   If a reviewer insists, narrowing is the fallback then.
-3. **Remaining lint is understood.** CI runs the `manifest`, `appstream`, and
-   `repo` checks (the same ones Flathub runs). After the X11-only change the
-   open items are exactly two: `finish-args-home-filesystem-access` (intentional,
-   item 2) and the `appstream` screenshot errors, which only fire because the
-   metainfo screenshot URLs point at `master` where the images land on merge.
-   Reproduce locally with:
+2. **Remaining lint is understood.** CI runs the `manifest`, `appstream`, and
+   `repo` checks (the same ones Flathub runs). After the X11-only change the open
+   items are: `finish-args-home-filesystem-access` (the intentional
+   `--filesystem=home` grant — not an auto-reject; it triggers reviewer
+   discussion, and the portal migration that would remove it is postponed, see
+   [File access](#file-access-and-the-file-chooser-portal)), and the `appstream`
+   screenshot errors, which only fire because the metainfo screenshot URLs point
+   at `master` where the images land on merge. Reproduce locally with:
    ```bash
    flatpak install -y flathub org.flatpak.Builder
    flatpak run --command=flatpak-builder-lint org.flatpak.Builder \
        manifest build.in/flatpak/io.github.taskcoach.TaskCoach.yaml
    flatpak run --command=flatpak-builder-lint org.flatpak.Builder repo repo
    ```
-4. **Verify ID ownership.** Ownership of `io.github.taskcoach.*` is proven by
+3. **Verify ID ownership.** Ownership of `io.github.taskcoach.*` is proven by
    signing into Flathub with the GitHub account that controls
    `github.com/taskcoach`. That account needs **2FA** enabled (required to accept
    write access to the per-app repo after merge).
