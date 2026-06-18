@@ -11,7 +11,8 @@
 7. [Selection-Driven Button Enable/Disable](#selection-driven-button-enabledisable)
 8. [Tree Mode Button Enable/Disable](#tree-mode-button-enabledisable)
 9. [Scroll After Rebuild (Tree Views)](#scroll-after-rebuild-tree-views)
-9. [Row Hover Outline](#row-hover-outline)
+10. [Windows: Scrollbar Adjustment on Content Changes](#windows-scrollbar-adjustment-on-content-changes)
+11. [Row Hover Outline](#row-hover-outline)
 10. [Mouse-Move Handler Inventory (Tree Views)](#mouse-move-handler-inventory-tree-views)
 11. [Vampire CPU Usage](#vampire-cpu-usage)
 12. [AUI Sash Resize Throttle](#aui-sash-resize-throttle)
@@ -282,45 +283,48 @@ This is an upstream design limitation (same in wxPython 4.2.0 and current master
 
 Both methods live on the tree control subclass in `treectrl.py`. Both call `AdjustMyScrollbars()` before scrolling to fix the stale range.
 
-**`scrollToSelection()`** — Minimal scroll to make first selected item visible.
-- Called from: `treectrl.py:RefreshAllItems()` — fires for ALL callers (init, file load, expand/collapse, sort, etc.)
-- Reference: `treectrl.py:TreeListCtrl.scrollToSelection`
+**`scroll_to_selection()`** - Minimal scroll to make first selected item visible.
+- Called from: `treectrl.py:RefreshAllItems()` - fires for ALL callers (init, file load, expand/collapse, sort, etc.)
+- Reference: `treectrl.py:TreeListCtrl.scroll_to_selection`
 
-**`scrollToSelectionCentered()`** — Centers viewport on first selected item.
-- Called from: `base.py:onPresentationChanged()` — fires only on add/remove events (filter toggle, search, category filter), batched by `@eventSource`
-- Overrides the position set by `scrollToSelection()` in the same flow
-- Reference: `treectrl.py:TreeListCtrl.scrollToSelectionCentered`
+**`scroll_to_selection_centered()`** - Centers viewport on first selected item.
+- Called from: `base.py:on_presentation_changed()` - fires only on add/remove events (filter toggle, search, category filter)
+- Overrides the position set by `scroll_to_selection()` in the same flow
+- Reference: `treectrl.py:TreeListCtrl.scroll_to_selection_centered`
 
 ### Flow
 
 **Filter toggle / search / category filter / add / delete** — fires add/remove events:
 ```
-onPresentationChanged (base.py)
-  → refresh()
-    → widget.RefreshAllItems() (treectrl.py)
-      → Freeze → DeleteAll → Add → Thaw → restore selection
-      → scrollToSelection()                    ← ensure-visible
-  → scrollToSelectionCentered()                ← center on selected
+on_presentation_changed (base.py)
+  -> refresh()
+    -> widget.RefreshAllItems() (treectrl.py)
+      -> Freeze -> DeleteAll -> Add -> Thaw -> restore selection
+      -> scroll_to_selection()                 (ensure-visible)
+  -> scroll_to_selection_centered()            (center on selected)
 ```
 
-**Mode switch (list ↔ tree)** — fires sort event, NOT add/remove:
+**Mode switch (list <-> tree)** - fires sort event, NOT add/remove:
 ```
 viewer.set_tree_mode(value) (task.py)
-  → settings.setboolean(...)                 ← persistence
-  → presentation().set_tree_mode(value)
-    → Sorter.reset() → fires sortEventType (NOT add/remove)
-      → onSortOrderChanged (mixin.py) → refresh()
-        → widget.RefreshAllItems()
-          → scrollToSelection()              ← ensure-visible
-  → scrollToSelectionCentered()              ← center on selected (explicit)
-  → patterns.Event(...).send()               ← Publisher event
-    → dropdown: set_choice(value)
-    → buttons: EnableTool(id, value)
+  -> settings.setboolean(...)                (persistence)
+  -> presentation().set_tree_mode(value)
+    -> Sorter.reset() -> fires sort_event_type (NOT add/remove)
+      -> on_sort_order_changed (mixin.py) -> refresh()
+        -> widget.RefreshAllItems()
+          -> scroll_to_selection()           (ensure-visible, selection-gated)
+  -> widget._schedule_scrollbar_adjustment() (recompute range, deferred on Windows)
+  -> scroll_to_selection_centered()          (center on selected, selection-gated)
+  -> patterns.Event(...).send()              (Publisher event)
+    -> dropdown: set_choice(value)
+    -> buttons: EnableTool(id, value)
 ```
-Note: `Sorter.reset()` fires `pub.sendMessage(self.sortEventType())`, not add/remove
-events, so `onPresentationChanged` does NOT fire. The centering call is explicit in
-`set_tree_mode`. The Publisher event syncs the toolbar dropdown and expand/collapse
-buttons — see [PUBLISHER_OBSERVER.md — Case Study: Tree Mode Toggle](PUBLISHER_OBSERVER.md#case-study-tree-mode-toggle)
+Note: `Sorter.reset()` fires `pub.sendMessage(self.sort_event_type())`, not add/remove
+events, so `on_presentation_changed` does NOT fire. Because the rebuild's own recompute
+(`scroll_to_selection`) is synchronous and gated on a non-empty selection, `set_tree_mode`
+also calls `_schedule_scrollbar_adjustment()` to recompute the scrollbar range
+unconditionally (deferred on Windows). The Publisher event syncs the toolbar dropdown and
+expand/collapse buttons, see [PUBLISHER_OBSERVER.md - Case Study: Tree Mode Toggle](PUBLISHER_OBSERVER.md#case-study-tree-mode-toggle)
 for the full signal flow.
 
 ### Scroll Behavior by User Action
@@ -330,22 +334,71 @@ List-only viewers (effort, attachments) always use `ensureSelectionVisible` (nat
 
 | User Action                     | Scroll Behavior | Path                                     |
 |---------------------------------|-----------------|------------------------------------------|
-| Toggle status filter            | Center          | `onPresentationChanged` → centered       |
-| Toggle category filter          | Center          | `onPresentationChanged` → centered       |
-| Clear/change search text        | Center          | `onPresentationChanged` → centered       |
-| Switch list ↔ tree mode         | Center          | `set_tree_mode` → explicit centered |
-| Delete selected item            | Center          | `onPresentationChanged` → centered       |
-| Add new item                    | Center          | `onPresentationChanged` → centered       |
-| Window resize                   | Center          | `EVT_SIZE` → `CallAfter` → centered     |
-| Sort change                     | Ensure-visible  | `refresh()` only, no `onPresentationChanged` |
-| Expand all / Collapse all       | Ensure-visible  | `refresh()` only, no `onPresentationChanged` |
+| Toggle status filter            | Center          | `on_presentation_changed` -> centered    |
+| Toggle category filter          | Center          | `on_presentation_changed` -> centered    |
+| Clear/change search text        | Center          | `on_presentation_changed` -> centered    |
+| Switch list <-> tree mode       | Center          | `set_tree_mode` -> `_schedule_scrollbar_adjustment` (range) + centered |
+| Delete selected item            | Center          | `on_presentation_changed` -> centered    |
+| Add new item                    | Center          | `on_presentation_changed` -> centered    |
+| Window resize                   | Center          | `EVT_SIZE` -> `CallAfter` -> centered    |
+| Sort change                     | Ensure-visible  | `refresh()` only, no `on_presentation_changed` |
+| Expand all / Collapse all       | Ensure-visible  | `refresh()` only, no `on_presentation_changed` |
 | Item edit (attribute change)    | No scroll       | `RefreshItems()`, not `RefreshAllItems`  |
 | File load                       | Ensure-visible  | `onEndIO` → `refresh()` only             |
 | Initial startup                 | Ensure-visible  | `__init__` → `refresh()` only            |
 
-**Center** = `scrollToSelectionCentered()` — viewport centers on first selected item
-**Ensure-visible** = `scrollToSelection()` — minimal scroll, just makes item visible
+**Center** = `scroll_to_selection_centered()` - viewport centers on first selected item
+**Ensure-visible** = `scroll_to_selection()` - minimal scroll, just makes item visible
 **No scroll** = individual rows refreshed in place, no scroll change
+
+---
+
+## Windows: Scrollbar Adjustment on Content Changes
+
+### Problem
+
+On Windows, tree/list viewer scrollbars do not update when expanding/collapsing/adding/deleting tasks, or switching between tree and list views. Scrollbars only update on window resize. This does not occur on Linux/GTK or macOS.
+
+### Root Cause
+
+The scrollbar range is only ever recomputed by `AdjustMyScrollbars()`, and that recompute is gated. On the expand path it runs only through the upstream `RefreshSubtree()`, which returns early when the tree is marked dirty or frozen. `AdjustMyScrollbars()` itself becomes a no-op (it just sets the dirty flag) while frozen, and the dirty flag is cleared only by the upstream `OnInternalIdle()`. On a settled GTK tree the recompute fires synchronously, which is why Linux is unaffected. On Windows the recompute is missed when content changes while the tree is dirty or frozen, or before idle runs, and a synchronous `AdjustMyScrollbars()` does not reliably take effect until after the layout cycle. Deferring the call (see below) lets it run after that dirty/frozen state has cleared.
+
+### Fix: Deferred Scrollbar Adjustment
+
+A new method `_schedule_scrollbar_adjustment()` on `TreeListCtrl` (`treectrl.py`) handles the platform difference:
+
+- **Windows**: Uses `wx.CallAfter()` to defer scrollbar adjustment until after the event queue empties and the layout/idle cycle has cleared the dirty/frozen state
+- **Other platforms**: Adjusts immediately (the deferral is harmless and ensures consistency)
+
+Called from:
+- `_expandDropTarget()` — after explicit expand on drag-drop
+- `on_item_expanding()` — after lazy-loading children when item expands
+- `TreeViewer.on_item_expanded()` / `on_item_collapsed()` — after individual expand/collapse events
+- `TreeViewer.expand_all()` / `collapse_all()` — after bulk expand/collapse operations
+- `_refresh_all_items_in_place()` — after in-place content refresh without tree rebuild
+- `TaskViewer.set_tree_mode()` — after a tree<->list switch (see note below)
+
+#### Why the tree<->list switch needs its own call
+
+Switching mode rebuilds the widget through `_do_full_rebuild()`, whose only scrollbar recompute is `scroll_to_selection()` / `scroll_to_selection_centered()`. Both are **synchronous** and **gated on `if selections:`** (`treectrl.py`), so on Windows the range is not recomputed reliably (synchronous adjustment misses the post-layout cycle, and an empty selection skips it entirely). Unlike add/delete, the switch fires a sort event rather than an add/remove event, so `on_presentation_changed()` never runs and never supplies its own adjustment. `set_tree_mode()` therefore calls `_schedule_scrollbar_adjustment()` explicitly — the deferred, unconditional adjustment that already fixes the other cases. This was the one path that remained broken on Windows after the initial fix; confirmed fixed by Windows testing.
+
+### Scroll Behavior (Updated Table)
+
+All tree-based viewers now adjust scrollbars consistently on all platforms:
+
+| User Action                     | Scroll Behavior | Windows | Other Platforms |
+|---------------------------------|-----------------|---------|-----------------|
+| Expand single item              | Ensure-visible  | Deferred via `CallAfter` | Immediate |
+| Collapse single item            | Ensure-visible  | Deferred via `CallAfter` | Immediate |
+| Expand all                      | Ensure-visible  | Deferred via `CallAfter` | Immediate |
+| Collapse all                    | Ensure-visible  | Deferred via `CallAfter` | Immediate |
+| Switch tree <-> list            | Center          | Deferred via `CallAfter` | Immediate |
+
+(Other scroll behaviors unchanged — see previous table above)
+
+### Related Issues
+
+See [Scroll After Rebuild (Tree Views)](#scroll-after-rebuild-tree-views) for scrollbar stale-range issues after freeze/thaw rebuild cycles.
 
 ---
 

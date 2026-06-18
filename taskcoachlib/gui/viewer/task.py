@@ -2031,8 +2031,15 @@ class TaskViewer(
         self.settings.setboolean(self.settingsSection(), "treemode", value)
         self.presentation().set_tree_mode(value)
         # Mode switch goes through Sorter.reset() which fires a sort event
-        # (not add/remove), so onPresentationChanged doesn't fire.
-        # Center on selected item explicitly.
+        # (not add/remove), so onPresentationChanged doesn't fire. The rebuild
+        # recomputes scrollbars only through scroll_to_selection, which is
+        # gated on there being a selection and runs synchronously. On Windows
+        # the range must be recomputed unconditionally and after the layout
+        # settles, so reuse the same deferred adjustment that fixes
+        # expand/collapse/add/delete.
+        if hasattr(self.widget, "_schedule_scrollbar_adjustment"):
+            self.widget._schedule_scrollbar_adjustment()
+        # Center on selected item explicitly (no-op if nothing is selected).
         if hasattr(self.widget, 'scroll_to_selection_centered'):
             self.widget.scroll_to_selection_centered()
         patterns.Event(

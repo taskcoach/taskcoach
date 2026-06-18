@@ -21,7 +21,6 @@ from wx.lib.agw import customtreectrl as customtree, hypertreelist
 from taskcoachlib.widgets import itemctrl, draganddrop
 import wx
 
-
 # pylint: disable=E1101,E1103
 
 
@@ -37,7 +36,7 @@ class BaseHyperTreeList(hypertreelist.HyperTreeList):
         validator=wx.DefaultValidator,
         name="HyperTreeList",
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             parent, id, pos, size, style, agwStyle, validator, name
@@ -66,13 +65,43 @@ class BaseHyperTreeList(hypertreelist.HyperTreeList):
             main_win = self.GetMainWindow()
             if main_win:
                 main_win.AdjustMyScrollbars()
-                if hasattr(self, 'scroll_to_selection_centered'):
+                if hasattr(self, "scroll_to_selection_centered"):
                     self.scroll_to_selection_centered()
         except RuntimeError:
             # wrapped C/C++ object has been deleted
             from taskcoachlib.meta.debug import log_step
-            log_step('__onSize failed - widget already destroyed',
-                     prefix='DEAD-OBJ')
+
+            log_step(
+                "__onSize failed - widget already destroyed", prefix="DEAD-OBJ"
+            )
+
+    def _schedule_scrollbar_adjustment(self):
+        """Schedule scrollbar adjustment for after event processing completes.
+
+        On Windows, content changes (expand/collapse/add/delete) that don't
+        trigger window resize don't update scrollbars. Use wx.CallAfter to
+        defer adjustment until after the event cycle completes. Other platforms
+        handle this automatically through their event processing, but the
+        deferred call is harmless and ensures consistency.
+        """
+        if operating_system.isWindows():
+            wx.CallAfter(self.__safe_adjust_scrollbars_content_change)
+        else:
+            self.__safe_adjust_scrollbars_content_change()
+
+    def __safe_adjust_scrollbars_content_change(self):
+        """Safely adjust scrollbars after content changes without re-centering."""
+        try:
+            main_win = self.GetMainWindow()
+            if main_win:
+                main_win.AdjustMyScrollbars()
+        except RuntimeError:
+            from taskcoachlib.meta.debug import log_step
+
+            log_step(
+                "scrollbar adjustment failed - widget already destroyed",
+                prefix="DEAD-OBJ",
+            )
 
 
 class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
@@ -100,8 +129,11 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
         except RuntimeError:
             # wrapped C/C++ object has been deleted
             from taskcoachlib.meta.debug import log_step
-            log_step('__safe_refresh failed - widget already destroyed',
-                     prefix='DEAD-OBJ')
+
+            log_step(
+                "__safe_refresh failed - widget already destroyed",
+                prefix="DEAD-OBJ",
+            )
 
     def GetSelections(self):  # pylint: disable=C0103
         """If the root item is hidden, it should never be selected.
@@ -148,7 +180,8 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
         Note: UnselectAll() is required before SelectItem() after a tree rebuild.
         This appears to be a HyperTreeList quirk/bug - SelectItem() silently fails
         without it, even though DoSelectItem has unselect_others=True by default.
-        See: https://github.com/wxWidgets/Phoenix/issues/1164 for related issues."""
+        See: https://github.com/wxWidgets/Phoenix/issues/1164 for related issues.
+        """
         first_selected_item = None
         self.UnselectAll()
         for item in self.GetItemChildren(recursively=True):
@@ -167,7 +200,6 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
         if self.GetItemCount() > 0:
             self.SelectAll()
         self.selectCommand()
-
 
     def IsLabelBeingEdited(self):
         return bool(self.GetLabelTextCtrl())
@@ -215,7 +247,7 @@ class TreeListCtrl(
         itemPopupMenu=None,
         columnPopupMenu=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         self.__adapter = parent
         self.__selection = []
@@ -232,7 +264,7 @@ class TreeListCtrl(
             itemPopupMenu=itemPopupMenu,
             columnPopupMenu=columnPopupMenu,
             *args,
-            **kwargs
+            **kwargs,
         )
         self.bindEventHandlers(selectCommand, editCommand, dragAndDropCommand)
         self.GetMainWindow().Bind(wx.EVT_LEAVE_WINDOW, self._on_hover_leave)
@@ -286,7 +318,8 @@ class TreeListCtrl(
             # Filter out None values - GetItemPyData can return None for some items
             # (e.g., root items or items without associated PyData)
             return [
-                data for item in self.GetSelections()
+                data
+                for item in self.GetSelections()
                 if (data := self.GetItemPyData(item)) is not None
             ]
         except RuntimeError:
@@ -332,9 +365,13 @@ class TreeListCtrl(
         while child_item:
             obj = self.GetItemPyData(child_item)
             if obj is not None:
-                self._refreshObjectCompletely(child_item, obj)
+                self._refresh_object_completely(child_item, obj)
             self._refresh_all_items_in_place(child_item)
             child_item, cookie = self.GetNextChild(parent_item, cookie)
+        # After refreshing all items, ensure scrollbars reflect current content
+        # on Windows where content changes may not trigger scrollbar updates
+        if parent_item == self.GetRootItem():
+            self._schedule_scrollbar_adjustment()
 
     def _do_full_rebuild(self):
         """Full delete-and-recreate rebuild of the tree.
@@ -344,8 +381,10 @@ class TreeListCtrl(
         mouse motion events during and after rebuild.
         """
         from taskcoachlib.widgets.frame import (
-            _input_filter, _ensure_filter_installed,
+            _input_filter,
+            _ensure_filter_installed,
         )
+
         _ensure_filter_installed()
         _input_filter.acquire()
         self.__refreshing = True
@@ -361,7 +400,7 @@ class TreeListCtrl(
         root_item = self.GetRootItem()
         if not root_item:
             root_item = self.AddRoot("Hidden root")
-        self._addObjectRecursively(root_item)
+        self._add_object_recursively(root_item)
         self.Thaw()
         self.__refreshing = False
         # Restore selection AFTER Thaw - SelectItem doesn't work while Frozen
@@ -397,27 +436,27 @@ class TreeListCtrl(
 
     def RefreshItems(self, *objects):
         self.__selection = self.curselection()
-        self._refreshTargetObjects(self.GetRootItem(), *objects)
+        self._refresh_target_objects(self.GetRootItem(), *objects)
 
-    def _refreshTargetObjects(self, parent_item, *target_objects):
+    def _refresh_target_objects(self, parent_item, *target_objects):
         child_item, cookie = self.GetFirstChild(parent_item)
         while child_item:
             item_object = self.GetItemPyData(child_item)
             if item_object in target_objects:
-                self._refreshObjectCompletely(child_item, item_object)
-            self._refreshTargetObjects(child_item, *target_objects)
+                self._refresh_object_completely(child_item, item_object)
+            self._refresh_target_objects(child_item, *target_objects)
             child_item, cookie = self.GetNextChild(parent_item, cookie)
 
-    def _refreshObjectCompletely(self, item, *args):
+    def _refresh_object_completely(self, item, *args):
         self.__refresh_aspects(
-            ("ItemType", "Columns", "Font", "Colors", "Selection"),
+            ("item_type", "columns", "font", "colors", "selection"),
             item,
             check=True,
-            *args
+            *args,
         )
         self.GetMainWindow().RefreshLine(item)
 
-    def _addObjectRecursively(self, parent_item, parent_object=None):
+    def _add_object_recursively(self, parent_item, parent_object=None):
         for child_object in self.__adapter.children(parent_object):
             child_item = self.AppendItem(
                 parent_item,
@@ -425,10 +464,10 @@ class TreeListCtrl(
                 self.get_item_ct_type(child_object),
                 data=child_object,
             )
-            self._refreshObjectMinimally(child_item, child_object)
+            self._refresh_object_minimally(child_item, child_object)
             expanded = self.__adapter.getItemExpanded(child_object)
             if expanded:
-                self._addObjectRecursively(child_item, child_object)
+                self._add_object_recursively(child_item, child_object)
                 # Call Expand on the item instead of on the tree
                 # (self.Expand(childItem)) to prevent lots of events
                 # (EVT_TREE_ITEM_EXPANDING/EXPANDED) being sent
@@ -438,45 +477,49 @@ class TreeListCtrl(
                     child_item, self.__adapter.children(child_object)
                 )
 
-    def _refreshObjectMinimally(self, *args, **kwargs):
+    def _refresh_object_minimally(self, *args, **kwargs):
         self.__refresh_aspects(
-            ("Columns", "Colors", "Font", "Selection"), *args, **kwargs
+            ("columns", "colors", "font", "selection"), *args, **kwargs
         )
 
     def __refresh_aspects(self, aspects, *args, **kwargs):
         for aspect in aspects:
-            refresh_aspect = getattr(self, "_refresh%s" % aspect)
+            refresh_aspect = getattr(self, "_refresh_%s" % aspect)
             refresh_aspect(*args, **kwargs)
 
-    def _refreshItemType(self, item, domain_object, check=False):
+    def _refresh_item_type(self, item, domain_object, check=False):
         ct_type = self.get_item_ct_type(domain_object)
         if not check or (check and ct_type != self.GetItemType(item)):
             self.SetItemType(item, ct_type)
 
-    def _refreshColumns(self, item, domain_object, check=False):
+    def _refresh_columns(self, item, domain_object, check=False):
         for column_index in range(self.GetColumnCount()):
-            self._refreshColumn(item, domain_object, column_index, check=check)
+            self._refresh_column(
+                item, domain_object, column_index, check=check
+            )
 
-    def _refreshColumn(self, item, domain_object, column_index, check=False):
+    def _refresh_column(self, item, domain_object, column_index, check=False):
         aspects = (
-            ("Text", "Image")
+            ("text", "image")
             if column_index in self.__columns_with_images
-            else ("Text",)
+            else ("text",)
         )
         self.__refresh_aspects(
             aspects, item, domain_object, column_index, check=check
         )
 
-    def _refreshText(self, item, domain_object, column_index, check=False):
+    def _refresh_text(self, item, domain_object, column_index, check=False):
         text = self.__adapter.getItemText(domain_object, column_index)
         if text.count("\n") > 3:
             text = "\n".join(text.split("\n")[:4]) + " ..."
         if not check or (check and text != item.GetText(column_index)):
             item.SetText(column_index, text)
 
-    def _refreshImage(self, item, domain_object, column_index, check=False):
+    def _refresh_image(self, item, domain_object, column_index, check=False):
         if self.__adapter.hasColumnMultiImages(column_index):
-            images = self.__adapter.getItemMultiImages(domain_object, column_index)
+            images = self.__adapter.getItemMultiImages(
+                domain_object, column_index
+            )
             if not check or (check and images != item.GetImages(column_index)):
                 item.SetImages(column_index, images)
             return
@@ -488,7 +531,7 @@ class TreeListCtrl(
             ):
                 item.SetImage(column_index, image, which)
 
-    def _refreshColors(self, item, domain_object, check=False):
+    def _refresh_colors(self, item, domain_object, check=False):
         bg_color = domain_object.backgroundColor(recursive=True)
         fg_color = domain_object.foregroundColor(recursive=True)
         if bg_color is None:
@@ -505,18 +548,20 @@ class TreeListCtrl(
             self.SetItemBackgroundColour(item, bg_color)
         if fg_color is None:
             if operating_system.isWindows():
-                fg_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+                fg_color = wx.SystemSettings.GetColour(
+                    wx.SYS_COLOUR_WINDOWTEXT
+                )
             else:
                 fg_color = wx.NullColour
         if not check or (check and fg_color != self.GetItemTextColour(item)):
             self.SetItemTextColour(item, fg_color)
 
-    def _refreshFont(self, item, domain_object, check=False):
+    def _refresh_font(self, item, domain_object, check=False):
         font = domain_object.font(recursive=True) or self.__default_font
         if not check or (check and font != self.GetItemFont(item)):
             self.SetItemFont(item, font)
 
-    def _refreshSelection(self, item, domain_object, check=False):
+    def _refresh_selection(self, item, domain_object, check=False):
         select = domain_object in self.__selection
         if not check or (check and select != item.IsSelected()):
             # Use SetHilight for visual highlighting during tree construction.
@@ -543,8 +588,11 @@ class TreeListCtrl(
         except RuntimeError:
             # wrapped C/C++ object has been deleted
             from taskcoachlib.meta.debug import log_step
-            log_step('selectCommand() failed - widget already destroyed',
-                     prefix='DEAD-OBJ')
+
+            log_step(
+                "selectCommand() failed - widget already destroyed",
+                prefix="DEAD-OBJ",
+            )
 
     def on_key_down(self, event):
         if event.GetKeyCode() == wx.WXK_RETURN:
@@ -564,30 +612,42 @@ class TreeListCtrl(
             self.GetItemPyData(drag_item) for drag_item in drag_items
         )
         wx.CallAfter(
-            self.__safe_drag_and_drop_command, drop_item, drag_items, part, column
+            self.__safe_drag_and_drop_command,
+            drop_item,
+            drag_items,
+            part,
+            column,
         )
 
-    def __safe_drag_and_drop_command(self, drop_item, drag_items, part, column):
+    def __safe_drag_and_drop_command(
+        self, drop_item, drag_items, part, column
+    ):
         """Safely call dragAndDropCommand, guarding against deleted C++ objects."""
         try:
             if self:
                 self.dragAndDropCommand(drop_item, drag_items, part, column)
                 # Expand the drop target if items were dropped on it
                 if drop_item is not None:
-                    self._expandDropTarget(drop_item)
+                    self._expand_drop_target(drop_item)
         except RuntimeError:
             # wrapped C/C++ object has been deleted
             from taskcoachlib.meta.debug import log_step
-            log_step('dragAndDropCommand failed - widget already destroyed',
-                     prefix='DEAD-OBJ')
 
-    def _expandDropTarget(self, drop_item):
+            log_step(
+                "dragAndDropCommand failed - widget already destroyed",
+                prefix="DEAD-OBJ",
+            )
+
+    def _expand_drop_target(self, drop_item):
         """Expand the drop target item so the dropped children are visible."""
         # Find the tree item for the drop target
         for item in self.GetItemChildren(recursively=True):
             if self.GetItemPyData(item) == drop_item:
-                if self.GetChildrenCount(item, recursively=False) > 0 or self.ItemHasChildren(item):
+                if self.GetChildrenCount(
+                    item, recursively=False
+                ) > 0 or self.ItemHasChildren(item):
                     self.Expand(item)
+                    self._schedule_scrollbar_adjustment()
                 break
 
     def on_item_expanding(self, event):
@@ -595,7 +655,8 @@ class TreeListCtrl(
         item = event.GetItem()
         if self.GetChildrenCount(item, recursively=False) == 0:
             domain_object = self.GetItemPyData(item)
-            self._addObjectRecursively(item, domain_object)
+            self._add_object_recursively(item, domain_object)
+            self._schedule_scrollbar_adjustment()
 
     def on_double_click(self, event):
         self.__user_double_clicked = True
@@ -725,7 +786,7 @@ class CheckTreeCtrl(TreeListCtrl):
         dragAndDropCommand,
         itemPopupMenu=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         self.__checking = False
         super().__init__(
@@ -736,7 +797,7 @@ class CheckTreeCtrl(TreeListCtrl):
             dragAndDropCommand,
             itemPopupMenu,
             *args,
-            **kwargs
+            **kwargs,
         )
         self.checkCommand = checkCommand
         self.Bind(customtree.EVT_TREE_ITEM_CHECKED, self.on_item_checked)
@@ -818,15 +879,15 @@ class CheckTreeCtrl(TreeListCtrl):
         event.SetEventObject(self)
         self.GetEventHandler().ProcessEvent(event)
 
-    def _refreshObjectCompletely(self, item, domain_object):
-        super()._refreshObjectCompletely(item, domain_object)
-        self._refreshCheckState(item, domain_object)
+    def _refresh_object_completely(self, item, domain_object):
+        super()._refresh_object_completely(item, domain_object)
+        self._refresh_check_state(item, domain_object)
 
-    def _refreshObjectMinimally(self, item, domain_object):
-        super()._refreshObjectMinimally(item, domain_object)
-        self._refreshCheckState(item, domain_object)
+    def _refresh_object_minimally(self, item, domain_object):
+        super()._refresh_object_minimally(item, domain_object)
+        self._refresh_check_state(item, domain_object)
 
-    def _refreshCheckState(self, item, domain_object):
+    def _refresh_check_state(self, item, domain_object):
         # Use CheckItem2 so no events get sent:
         checked = self.get_is_item_checked(domain_object)
         if checked is None:
@@ -850,7 +911,7 @@ class CheckTreeCtrl(TreeListCtrl):
         for item in self.GetItemChildren(recursively=True):
             domain_object = self.GetItemPyData(item)
             if domain_object is not None:
-                self._refreshCheckState(item, domain_object)
+                self._refresh_check_state(item, domain_object)
 
     def on_item_checked(self, event):
         if self.__checking:

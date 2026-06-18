@@ -77,8 +77,9 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         self.widget.SetBackgroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
         )
-        self.toolbar = toolbar.ToolBar(self, settings,
-                                       (toolbar.TOOLBAR_ICON_SIZE,) * 2)
+        self.toolbar = toolbar.ToolBar(
+            self, settings, (toolbar.TOOLBAR_ICON_SIZE,) * 2
+        )
         self.init_layout()
         self.register_presentation_observers()
         self.refresh()
@@ -88,7 +89,9 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         pub.subscribe(self.on_end_io, "taskfile.justRead")
         pub.subscribe(self.on_end_io, "taskfile.justCleared")
         # Subscribe to bulk operation signals to freeze/thaw during batch updates
-        pub.subscribe(self.on_begin_bulk_operation, "command.aboutToBulkModify")
+        pub.subscribe(
+            self.on_begin_bulk_operation, "command.aboutToBulkModify"
+        )
         pub.subscribe(self.on_end_bulk_operation, "command.justBulkModified")
 
         wx.CallAfter(self.__DisplayBalloon)
@@ -140,8 +143,11 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         self.__presentation.thaw()
         if self.__freezeCount == 0 and self.__pendingRefreshItems:
             # Refresh only items that changed during the bulk operation
-            items = [item for item in self.__pendingRefreshItems
-                     if item in self.presentation()]
+            items = [
+                item
+                for item in self.__pendingRefreshItems
+                if item in self.presentation()
+            ]
             self.__pendingRefreshItems.clear()
             if items:
                 self.widget.RefreshItems(*items)
@@ -205,7 +211,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             else:
                 observers.append(observable)
         for observer in observers:
-            if hasattr(observer, 'removeInstance'):
+            if hasattr(observer, "removeInstance"):
                 observer.removeInstance()
 
         for popup_menu in self._popupMenus:
@@ -213,14 +219,19 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
                 popup_menu.clearMenu()
                 popup_menu.Destroy()
             except RuntimeError:
-                log_step("detach: popup menu already dead %x" %
-                         id(popup_menu), prefix="DEAD-OBJ", exc=True)
+                log_step(
+                    "detach: popup menu already dead %x" % id(popup_menu),
+                    prefix="DEAD-OBJ",
+                    exc=True,
+                )
 
         pub.unsubscribe(self.on_begin_io, "taskfile.aboutToRead")
         pub.unsubscribe(self.on_begin_io, "taskfile.aboutToClear")
         pub.unsubscribe(self.on_end_io, "taskfile.justRead")
         pub.unsubscribe(self.on_end_io, "taskfile.justCleared")
-        pub.unsubscribe(self.on_begin_bulk_operation, "command.aboutToBulkModify")
+        pub.unsubscribe(
+            self.on_begin_bulk_operation, "command.aboutToBulkModify"
+        )
         pub.unsubscribe(self.on_end_bulk_operation, "command.justBulkModified")
 
         self.presentation().detach()
@@ -238,14 +249,14 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
     @property
     def has_selection(self):
         w = self.widget
-        if hasattr(w, 'has_selection'):
+        if hasattr(w, "has_selection"):
             return w.has_selection
         return bool(w.curselection())
 
     @property
     def has_single_selection(self):
         w = self.widget
-        if hasattr(w, 'has_single_selection'):
+        if hasattr(w, "has_single_selection"):
             return w.has_single_selection
         return len(w.curselection()) == 1
 
@@ -299,7 +310,9 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         self._sizer = wx.BoxSizer(wx.VERTICAL)  # pylint: disable=W0201
         self._sizer.Add(self.toolbar, flag=wx.EXPAND)
         self._sizer.Add(self.widget, proportion=1, flag=wx.EXPAND)
-        self.SetSizer(self._sizer)  # Changed from SetSizerAndFit to prevent locking MinSize
+        self.SetSizer(
+            self._sizer
+        )  # Changed from SetSizerAndFit to prevent locking MinSize
         # Prevent GetEffectiveMinSize() from returning child's BestSize
         self.SetMinSize((100, 50))
         # Bind click events to activate pane when clicking on toolbar/empty space
@@ -318,9 +331,12 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         try:
             self.widget.SetFocus(*args, **kwargs)
         except RuntimeError as e:
-            log_step("SetFocus on dead widget %s: %s" %
-                     (self.__class__.__name__, e), prefix="DEAD-OBJ",
-                     exc=True)
+            log_step(
+                "SetFocus on dead widget %s: %s"
+                % (self.__class__.__name__, e),
+                prefix="DEAD-OBJ",
+                exc=True,
+            )
 
     def create_sorter(self, collection):
         """This method can be overridden to decorate the presentation with a
@@ -371,13 +387,18 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         self.refresh()
 
         # AFTER refresh - select next if selection became empty
-        if items_removed() and hasattr(self.widget, 'curselection') and not self.widget.curselection() and selection_info:
+        if (
+            items_removed()
+            and hasattr(self.widget, "curselection")
+            and not self.widget.curselection()
+            and selection_info
+        ):
             self.selectNextItemsAfterRemoval(selection_info)
         # Center on selected item — tree views use scroll_to_selection_centered,
         # list views use ensureSelectionVisible (native wx scrollbar management)
-        if hasattr(self.widget, 'scroll_to_selection_centered'):
+        if hasattr(self.widget, "scroll_to_selection_centered"):
             self.widget.scroll_to_selection_centered()
-        elif hasattr(self.widget, 'ensureSelectionVisible'):
+        elif hasattr(self.widget, "ensureSelectionVisible"):
             self.widget.ensureSelectionVisible()
         self.send_viewer_status_event()
 
@@ -412,17 +433,18 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
                 return
 
             # Fire selection signal — toolbar buttons subscribe via _SelectionSync
-            patterns.Event(
-                self.selection_changed_event_type(), self
-            ).send()
+            patterns.Event(self.selection_changed_event_type(), self).send()
 
             # Fire status event - StatusBar has its own 500ms debounce
             # No need to query selection here; status bar queries fresh when displaying
             wx.CallAfter(self.send_viewer_status_event)
         except RuntimeError as e:
-            log_step("onSelect on dead viewer %s: %s" %
-                     (self.__class__.__name__, e), prefix="DEAD-OBJ",
-                     exc=True)
+            log_step(
+                "onSelect on dead viewer %s: %s"
+                % (self.__class__.__name__, e),
+                prefix="DEAD-OBJ",
+                exc=True,
+            )
 
     def updateSelection(self, send_status_event=True):
         """Legacy method - kept for subclass compatibility.
@@ -617,7 +639,11 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         modeToolBarUICommands = self.createModeToolBarUICommands()
 
         def separator(uiCommands, *otherUICommands):
-            return (uicommand.Separator(),) if (uiCommands and any(otherUICommands)) else ()
+            return (
+                (uicommand.Separator(),)
+                if (uiCommands and any(otherUICommands))
+                else ()
+            )
 
         clipboardSeparator = separator(
             clipboardToolBarUICommands,
@@ -768,9 +794,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         return command.CutCommand
 
     def pasteItemCommand(self):
-        return self.pasteItemCommandClass()(
-            self.presentation()
-        )
+        return self.pasteItemCommandClass()(self.presentation())
 
     def pasteItemCommandClass(self):
         return command.PasteCommand
@@ -854,9 +878,11 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
 
     def on_item_expanded(self, event):
         self.__handleExpandedOrCollapsedItem(event, expanded=True)
+        self.widget._schedule_scrollbar_adjustment()
 
     def on_item_collapsed(self, event):
         self.__handleExpandedOrCollapsedItem(event, expanded=False)
+        self.widget._schedule_scrollbar_adjustment()
 
     def __handleExpandedOrCollapsedItem(self, event, expanded):
         event.Skip()
@@ -874,6 +900,7 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
         for item in self.visibleItems():
             item.expand(True, context=self.settingsSection(), notify=False)
         self.refresh()
+        self.widget._schedule_scrollbar_adjustment()
 
     def collapse_all(self):
         """Collapse all items, recursively."""
@@ -882,7 +909,7 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
         for item in self.visibleItems():
             item.expand(False, context=self.settingsSection(), notify=False)
         self.refresh()
-
+        self.widget._schedule_scrollbar_adjustment()
 
     def createModeToolBarUICommands(self):
         return super().createModeToolBarUICommands() + (
@@ -907,31 +934,31 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
 
     def _captureSelectionInfo(self):
         """Capture selection position before refresh."""
-        if not hasattr(self.widget, 'curselection'):
+        if not hasattr(self.widget, "curselection"):
             return None
         curselection = self.widget.curselection()
         if curselection and curselection[0] is not None:
             selectedItem = curselection[0]
             parent = self.getItemParent(selectedItem)
             siblings = self.children(parent)
-            index = siblings.index(selectedItem) if selectedItem in siblings else 0
-            return {'parent': parent, 'index': index}
+            index = (
+                siblings.index(selectedItem) if selectedItem in siblings else 0
+            )
+            return {"parent": parent, "index": index}
         return None
 
     def selectNextItemsAfterRemoval(self, selectionInfo):
         """Select next item using position captured before refresh."""
         if not selectionInfo:
             return
-        parent = selectionInfo['parent']
-        index = selectionInfo['index']
+        parent = selectionInfo["parent"]
+        index = selectionInfo["index"]
         # Parent might have been deleted too - check if still in presentation
         if parent is not None and parent not in self.presentation():
             parent = None
         siblings = self.children(parent)
         newSelection = (
-            siblings[min(len(siblings) - 1, index)]
-            if siblings
-            else parent
+            siblings[min(len(siblings) - 1, index)] if siblings else parent
         )
         if newSelection:
             self.select([newSelection])
@@ -1191,10 +1218,18 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
 
     def subjectImageIndices(self, item):
         normal_icon_id = item.icon_id(recursive=True)
-        selected_icon_id = item.selected_icon_id(recursive=True) or normal_icon_id
-        normalImageIndex = image_list_cache.get_index(normal_icon_id) if normal_icon_id else -1
+        selected_icon_id = (
+            item.selected_icon_id(recursive=True) or normal_icon_id
+        )
+        normalImageIndex = (
+            image_list_cache.get_index(normal_icon_id)
+            if normal_icon_id
+            else -1
+        )
         selectedImageIndex = (
-            image_list_cache.get_index(selected_icon_id) if selected_icon_id else -1
+            image_list_cache.get_index(selected_icon_id)
+            if selected_icon_id
+            else -1
         )
         return {
             wx.TreeItemIcon_Normal: normalImageIndex,
@@ -1296,7 +1331,9 @@ class SortableViewerWithColumns(
                 break
 
     def show_sort_order(self):
-        self.widget.show_sort_order(image_list_cache.get_index(self.get_sort_order_image()))
+        self.widget.show_sort_order(
+            image_list_cache.get_index(self.get_sort_order_image())
+        )
 
     def get_sort_order_image(self):
         # Arrow points in direction of sort: down for A→Z/old→new, up for Z→A/new→old
