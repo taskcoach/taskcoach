@@ -1,16 +1,11 @@
 # Contributing
 
-## Code style
+## Development standards
 
-- **Format the files you touch with [black](https://github.com/psf/black)**,
-  line-length 79 (configured in `pyproject.toml`, `[tool.black]`). black output
-  is PEP 8 compliant; running it is the standard way to fix whitespace and
-  wrapping.
-- **Lint with flake8.** Some codes are expected and must NOT be "fixed" — e.g.
-  `N802/N803/N812/N813` on wxPython's mixed-case method/argument names.
-
-Rationale and the full fix-vs-ignore list:
-[docs/PEP8_MIGRATION.md](docs/PEP8_MIGRATION.md).
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for the standing
+standards: code style and naming, how to verify changes (run the full
+app with debug logging), documentation expectations, and commit
+conventions.
 
 ## Building and packaging
 

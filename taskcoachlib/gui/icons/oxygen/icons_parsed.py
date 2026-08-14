@@ -17,6 +17,19 @@ contexts = {
 }
 
 icons = {
+    "oxygen_actions_align-vertical-center": {
+        "label": _("Align Vertical Center"),
+        "hints": [_("align"), _("vertical"), _("center"), _("middle"), _("layout"), _("arrange"), _("position"), _("rectangles"), _("objects"), _("distribute")],
+        "context": "actions",
+        "context_label": _("Actions"),
+        "file": "align-vertical-center.png",
+        "paths": {
+            16: "16x16/actions/align-vertical-center.png",
+            22: "22x22/actions/align-vertical-center.png",
+            32: "32x32/actions/align-vertical-center.png",
+            48: "48x48/actions/align-vertical-center.png",
+        },
+    },
     "oxygen_actions_document-export": {
         "label": _("Document Export"),
         "hints": [_("document"), _("export"), _("arrow"), _("save"), _("out"), _("file"), _("send")],

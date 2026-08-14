@@ -4,6 +4,10 @@ Key guidance for the ongoing PEP 8 migration. Read this before "fixing" style
 warnings, especially CamelCase names. This is intentionally short: guidance,
 not a changelog.
 
+Standing development standards (style, verification, docs, commits) live in
+[DEVELOPMENT.md](DEVELOPMENT.md); this document keeps the migration-specific
+details.
+
 ## Formatter and line length
 
 - Formatter: **black, line-length 79** (configured in `pyproject.toml`,

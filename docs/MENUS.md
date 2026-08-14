@@ -210,6 +210,17 @@ See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) for toolbar signal details
 - `checked()`: via `BooleanSettingsCommand.checked()`
 - Menu-only (no toolbar) — updated via `_update_menu_state()` on menu open
 
+### ToggleAutoScroll (auto-scroll to selection)
+
+- No `EVT_UPDATE_UI` polling
+- Global boolean setting `view.autoscrollselection` via `UICheckCommand`
+- Toolbar: stay-pressed check button on the main toolbar and the task
+  viewer toolbar; all instances sync via Publisher dispatch
+  (`registerObserver`, event type `view.autoscrollselection`,
+  `eventSource=settings`) -> `ToggleTool(checked())`; not pypubsub
+- Menu: View menu check item, updated via `_update_menu_state()` on open
+- See LIST_MANAGEMENT.md "Auto-Scroll Toggle" for what the setting gates
+
 ### EditTrackedTasks
 
 - No `EVT_UPDATE_UI` polling

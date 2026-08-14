@@ -37,7 +37,7 @@ class VirtualListCtrl(
         columnPopupMenu=None,
         resizeableColumn=0,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             parent,
@@ -47,30 +47,31 @@ class VirtualListCtrl(
             itemPopupMenu=itemPopupMenu,
             columnPopupMenu=columnPopupMenu,
             *args,
-            **kwargs
+            **kwargs,
         )
-        # Override GetEffectiveMinSize() which returns BestSize - allows sizer to shrink widget
+        # Override GetEffectiveMinSize() which returns BestSize -
+        # allows sizer to shrink widget
         self.SetMinSize((100, 50))
         self.__parent = parent
         self._hover_row = -1
-        self.bindEventHandlers(selectCommand, editCommand)
+        self.bind_event_handlers(selectCommand, editCommand)
 
-    def bindEventHandlers(self, selectCommand, editCommand):
+    def bind_event_handlers(self, selectCommand, editCommand):
         # pylint: disable=W0201
         if selectCommand:
             self.selectCommand = selectCommand
-            self.Bind(wx.EVT_LIST_ITEM_FOCUSED, self.onSelect)
-            self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onSelect)
-            self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.onSelect)
+            self.Bind(wx.EVT_LIST_ITEM_FOCUSED, self.on_select)
+            self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_select)
+            self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.on_select)
         if editCommand:
             self.editCommand = editCommand
-            self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.onItemActivated)
-        self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
+            self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_item_activated)
+        self.Bind(wx.EVT_SET_FOCUS, self.on_set_focus)
         self.Bind(wx.EVT_MOTION, self._on_hover_motion)
         self.Bind(wx.EVT_LEAVE_WINDOW, self._on_hover_leave)
         self.Bind(wx.EVT_PAINT, self._on_paint_hover)
 
-    def onSetFocus(self, event):  # pylint: disable=W0613
+    def on_set_focus(self, event):  # pylint: disable=W0613
         # Send a child focus event to let the AuiManager know we received focus
         # so it will activate our pane
         wx.PostEvent(self, wx.ChildFocusEvent(self))
@@ -83,7 +84,10 @@ class VirtualListCtrl(
         except Exception:
             return
         from taskcoachlib.config import settings2
-        pad = settings2.window.hoverlinewidth + 1  # both lines inside row, small safety
+
+        pad = (
+            settings2.window.hoverlinewidth + 1
+        )  # both lines inside row, small safety
         rect.Inflate(pad, pad)
         self.RefreshRect(rect)
 
@@ -91,6 +95,7 @@ class VirtualListCtrl(
         row, flags = super().HitTest(event.GetPosition())
         if row != self._hover_row:
             from taskcoachlib.config import settings2
+
             old = self._hover_row
             self._hover_row = row
             if settings2.window.hoverlinewidth:
@@ -111,6 +116,7 @@ class VirtualListCtrl(
     def _draw_hover_outline(self):
         """Two-tone hover outline: fgcolor inner + bgcolor outer."""
         from taskcoachlib.config import settings2
+
         pw = settings2.window.hoverlinewidth
         if self._hover_row < 0 or not pw:
             return
@@ -162,7 +168,7 @@ class VirtualListCtrl(
         try:
             item = self.getItemWithIndex(rowIndex)
         except IndexError:
-            return ''
+            return ""
         return self.getItemText(item, columnIndex)
 
     def OnGetItemTooltipData(self, rowIndex, columnIndex):
@@ -222,11 +228,11 @@ class VirtualListCtrl(
         )  # pylint: disable=W0142,W0201
         return self.__item_attribute
 
-    def onSelect(self, event):
+    def on_select(self, event):
         event.Skip()
         self.selectCommand(event)
 
-    def onItemActivated(self, event):
+    def on_item_activated(self, event):
         """Override default behavior to attach the column clicked on
         to the event so we can use it elsewhere."""
         window = self.GetMainWindow()
@@ -263,7 +269,7 @@ class VirtualListCtrl(
 
     def HitTest(self, xxx_todo_changeme, *args, **kwargs):
         """Always return a three-tuple (item, flag, column)."""
-        (x, y) = xxx_todo_changeme
+        x, y = xxx_todo_changeme
         index, flags = super().HitTest((x, y), *args, **kwargs)
         column = 0
         if self.InReportView():
@@ -286,11 +292,14 @@ class VirtualListCtrl(
 
     def curselection(self):
         # Guard against deleted C++ object - can happen when wx.CallAfter
-        # callback executes after window destruction (e.g., closing nested dialogs)
+        # callback executes after window destruction (e.g., closing
+        # nested dialogs)
         try:
-            # Filter out None values - getItemWithIndex can return None for some indices
+            # Filter out None values - getItemWithIndex can return None
+            # for some indices
             return [
-                item for index in self.__curselection_indices()
+                item
+                for index in self.__curselection_indices()
                 if (item := self.getItemWithIndex(index)) is not None
             ]
         except RuntimeError:
@@ -304,7 +313,17 @@ class VirtualListCtrl(
         if self.curselection():
             self.Focus(self.GetFirstSelected())
 
+    def _auto_scroll_enabled(self):
+        """Whether the view may scroll by itself to follow the
+        selection."""
+        settings = getattr(self.__parent, "settings", None)
+        if settings is None:
+            return True
+        return settings.getboolean("view", "autoscrollselection")
+
     def ensureSelectionVisible(self):
+        if not self._auto_scroll_enabled():
+            return
         first = self.GetFirstSelected()
         if first != -1:
             self.EnsureVisible(first)

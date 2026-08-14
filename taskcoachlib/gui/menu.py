@@ -25,7 +25,8 @@ from pubsub import pub
 from taskcoachlib.gui.newid import IdProvider
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.config.defaults import (
-    MAIN_TOOLBAR_ICON_SIZE_SMALL, MAIN_TOOLBAR_ICON_SIZE_MEDIUM,
+    MAIN_TOOLBAR_ICON_SIZE_SMALL,
+    MAIN_TOOLBAR_ICON_SIZE_MEDIUM,
     MAIN_TOOLBAR_ICON_SIZE_LARGE,
 )
 from . import uicommand
@@ -75,7 +76,7 @@ class Menu(wx.Menu, uicommand.UICommandContainerMixin):
     def _update_menu_state(self):
         """Update enabled and text state of all menu items. Called on menu open."""
         for item in self.GetMenuItems():
-            if hasattr(item, 'update_state'):
+            if hasattr(item, "update_state"):
                 item.update_state()
 
     def appendMenu(self, text, subMenu, icon_id=None):
@@ -147,8 +148,9 @@ class DynamicMenu(Menu):
         try:  # Prepare for menu or window to be destroyed
             self.updateMenu()
         except (RuntimeError, wx.wxAssertionError):
-            log_step("onUpdateMenu_Deprecated: menu/window dead",
-                     prefix="DEAD-OBJ")
+            log_step(
+                "onUpdateMenu_Deprecated: menu/window dead", prefix="DEAD-OBJ"
+            )
 
     def updateMenu(self):
         """Updating the menu consists of two steps: updating the menu item
@@ -266,7 +268,7 @@ class MainMenu(wx.MenuBar):
     def _on_menu_open(self, event):
         event.Skip()
         menu = event.GetMenu()
-        if menu and hasattr(menu, '_update_menu_state'):
+        if menu and hasattr(menu, "_update_menu_state"):
             menu._update_menu_state()
 
 
@@ -323,8 +325,11 @@ class FileMenu(Menu, patterns.Observer):
             uicommand.Print(viewer=viewerContainer, settings=settings),
             None,
         )
-        self.appendMenu(_("&Import"), ImportMenu(mainwindow, iocontroller),
-                        "oxygen_actions_document-import")
+        self.appendMenu(
+            _("&Import"),
+            ImportMenu(mainwindow, iocontroller),
+            "oxygen_actions_document-import",
+        )
         self.appendMenu(
             _("&Export"),
             ExportMenu(mainwindow, iocontroller, settings),
@@ -463,8 +468,6 @@ class EditMenu(Menu):
         )
 
 
-
-
 activateNextViewerId = wx.NewId()
 activatePreviousViewerId = wx.NewId()
 
@@ -524,6 +527,7 @@ class ViewMenu(Menu):
                 help_text=_("Show/hide status bar"),
                 setting="statusbar",
             ),
+            uicommand.ToggleAutoScroll(settings=settings),
             None,
             uicommand.ResetWindowLayout(),
         )
@@ -540,7 +544,9 @@ class ViewViewerMenu(Menu):
         viewViewerCommands = [
             ViewViewer(
                 menu_text=_("&Task"),
-                help_text=_("Open a new tab with a viewer that displays tasks"),
+                help_text=_(
+                    "Open a new tab with a viewer that displays tasks"
+                ),
                 viewerClass=taskcoachlib.gui.viewer.TaskViewer,
                 **kwargs
             ),
@@ -616,7 +622,9 @@ class ViewViewerMenu(Menu):
             ),
             ViewViewer(
                 menu_text=_("&Note"),
-                help_text=_("Open a new tab with a viewer that displays notes"),
+                help_text=_(
+                    "Open a new tab with a viewer that displays notes"
+                ),
                 viewerClass=taskcoachlib.gui.viewer.NoteViewer,
                 **kwargs
             ),
@@ -796,10 +804,9 @@ class ActionMenu(Menu):
             ),
             None,
         )
-        uicommand.TaskPriorityParentMenu(
-            viewer=viewerContainer
-        ).add_to_menu(
-            self, self._window,
+        uicommand.TaskPriorityParentMenu(viewer=viewerContainer).add_to_menu(
+            self,
+            self._window,
             sub_menu=TaskPriorityMenu(mainwindow, tasks, viewerContainer),
         )
         self.appendUICommands(
@@ -821,7 +828,6 @@ class TaskPriorityMenu(Menu):
             uicommand.TaskMaxPriority(taskList=task_list, viewer=viewer),
             uicommand.TaskMinPriority(taskList=task_list, viewer=viewer),
         )
-
 
 
 class HelpMenu(Menu):
@@ -933,7 +939,11 @@ class ToggleCategoryMenu(DynamicMenu):
             if category.children():
                 subMenu = Menu(self._window)
                 self.addMenuItemsForCategories(category.children(), subMenu)
-                menu.appendMenu(category.subject(), subMenu, "taskcoach_actions_arrow_down_right")
+                menu.appendMenu(
+                    category.subject(),
+                    subMenu,
+                    "taskcoach_actions_arrow_down_right",
+                )
 
     def enabled(self):
         return bool(self.categories)
@@ -1028,10 +1038,9 @@ class TaskPopupMenu(Menu):
             uicommand.TaskMarkCompleted(settings=settings, viewer=taskViewer),
             None,
         )
-        uicommand.TaskPriorityParentMenu(
-            viewer=taskViewer
-        ).add_to_menu(
-            self, self._window,
+        uicommand.TaskPriorityParentMenu(viewer=taskViewer).add_to_menu(
+            self,
+            self._window,
             sub_menu=TaskPriorityMenu(mainwindow, tasks, taskViewer),
         )
         self.appendUICommands(
@@ -1129,7 +1138,9 @@ class CategoryPopupMenu(Menu):
 
 
 class NotePopupMenu(Menu):
-    def __init__(self, mainwindow, settings, categories, noteViewer, notes=None):
+    def __init__(
+        self, mainwindow, settings, categories, noteViewer, notes=None
+    ):
         super().__init__(mainwindow)
         self.appendUICommands(
             uicommand.EditCut(viewer=noteViewer),
@@ -1156,7 +1167,9 @@ class NotePopupMenu(Menu):
         self.appendUICommands(None)
         if notes is not None:
             self.appendUICommands(
-                uicommand.NoteNew(notes=notes, settings=settings, viewer=noteViewer),
+                uicommand.NoteNew(
+                    notes=notes, settings=settings, viewer=noteViewer
+                ),
             )
         self.appendUICommands(uicommand.NewSubItem(viewer=noteViewer))
 

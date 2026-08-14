@@ -351,6 +351,36 @@ List-only viewers (effort, attachments) always use `ensureSelectionVisible` (nat
 **Ensure-visible** = `scroll_to_selection()` - minimal scroll, just makes item visible
 **No scroll** = individual rows refreshed in place, no scroll change
 
+### Auto-Scroll Toggle
+
+Every behavior in the table above is gated by the global boolean setting
+`view.autoscrollselection` (default `True`), toggled by the
+`ToggleAutoScroll` UI command: a stay-pressed check button on the main
+toolbar and the task viewer toolbar (icon
+`oxygen_actions_align-vertical-center`) plus a check item in the View
+menu.
+
+When the setting is `False` ("stable" mode, the view never scrolls by
+itself):
+
+- `scroll_to_selection_centered()` returns early. This covers the
+  presentation-change, tree/list mode switch, and window resize paths.
+- `_do_full_rebuild()` saves `GetViewStart()` before the rebuild and
+  restores it afterwards instead of calling `scroll_to_selection()`.
+  The restore also cancels the implicit `EnsureVisible` that restoring
+  the selection triggers in upstream `customtreectrl`.
+- `VirtualListCtrl.ensureSelectionVisible()` returns early (list views).
+
+User-initiated scrolling (mouse click, keyboard navigation) is not
+affected. When the setting is turned back on, each viewer re-centers
+its widget on the selection immediately
+(`Viewer.on_auto_scroll_changed` in `viewer/base.py`). The toolbar
+buttons stay in sync with each other and with the menu the same way
+(`ToggleAutoScroll._on_setting_change`). Both use legacy Publisher
+dispatch (`registerObserver` on event type `view.autoscrollselection`
+with the settings object as source), not pypubsub; see
+PUBLISHER_OBSERVER.md for why new signals must not use pubsub.
+
 ---
 
 ## Windows: Scrollbar Adjustment on Content Changes

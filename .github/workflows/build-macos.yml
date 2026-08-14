@@ -5,7 +5,6 @@ on:
     branches:
       - main
       - master
-      - 'claude/**'
     tags:
       - 'v*'
   pull_request:
@@ -13,6 +12,12 @@ on:
       - main
       - master
   workflow_dispatch:
+
+# Cancel superseded runs when a branch or PR is force-pushed; never
+# cancel tag (release) builds.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 permissions:
   contents: write

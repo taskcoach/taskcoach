@@ -44,9 +44,9 @@ class BaseHyperTreeList(hypertreelist.HyperTreeList):
         # Bind our own size handler to fix scrollbar issues on Windows.
         # The base HyperTreeList.OnSize only calls DoHeaderLayout() which
         # repositions child windows but doesn't recalculate scrollbars.
-        self.Bind(wx.EVT_SIZE, self.__onSize)
+        self.Bind(wx.EVT_SIZE, self.__on_size)
 
-    def __onSize(self, event):
+    def __on_size(self, event):
         """Handle size events to ensure scrollbars are recalculated.
 
         On Windows, side-docked AUI panes don't get scrollbars when the content
@@ -72,7 +72,8 @@ class BaseHyperTreeList(hypertreelist.HyperTreeList):
             from taskcoachlib.meta.debug import log_step
 
             log_step(
-                "__onSize failed - widget already destroyed", prefix="DEAD-OBJ"
+                "__on_size failed - widget already destroyed",
+                prefix="DEAD-OBJ",
             )
 
     def _schedule_scrollbar_adjustment(self):
@@ -90,7 +91,8 @@ class BaseHyperTreeList(hypertreelist.HyperTreeList):
             self.__safe_adjust_scrollbars_content_change()
 
     def __safe_adjust_scrollbars_content_change(self):
-        """Safely adjust scrollbars after content changes without re-centering."""
+        """Safely adjust scrollbars after content changes without
+        re-centering."""
         try:
             main_win = self.GetMainWindow()
             if main_win:
@@ -122,7 +124,8 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
         wx.CallAfter(self.__safe_refresh)
 
     def __safe_refresh(self):
-        """Safely refresh the main window, guarding against deleted C++ objects."""
+        """Safely refresh the main window, guarding against deleted
+        C++ objects."""
         try:
             if self.MainWindow:
                 self.MainWindow.Refresh()
@@ -177,10 +180,12 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
         """Select items whose PyData is in the selection list.
         Returns the first selected tree item (for scrolling).
 
-        Note: UnselectAll() is required before SelectItem() after a tree rebuild.
-        This appears to be a HyperTreeList quirk/bug - SelectItem() silently fails
-        without it, even though DoSelectItem has unselect_others=True by default.
-        See: https://github.com/wxWidgets/Phoenix/issues/1164 for related issues.
+        Note: UnselectAll() is required before SelectItem() after a
+        tree rebuild. This appears to be a HyperTreeList quirk/bug -
+        SelectItem() silently fails without it, even though
+        DoSelectItem has unselect_others=True by default. See:
+        https://github.com/wxWidgets/Phoenix/issues/1164 for related
+        issues.
         """
         first_selected_item = None
         self.UnselectAll()
@@ -226,10 +231,11 @@ class TreeListCtrl(
     itemctrl.CtrlWithToolTipMixin,
     HyperTreeList,
 ):
-    # TreeListCtrl uses ALIGN_LEFT, ..., ListCtrl uses LIST_FORMAT_LEFT, ... for
-    # specifying alignment of columns. This dictionary allows us to map from the
-    # ListCtrl constants to the TreeListCtrl constants:
-    alignmentMap = {
+    # TreeListCtrl uses ALIGN_LEFT, ..., ListCtrl uses
+    # LIST_FORMAT_LEFT, ... for specifying alignment of columns. This
+    # dictionary allows us to map from the ListCtrl constants to the
+    # TreeListCtrl constants:
+    alignment_map = {
         wx.LIST_FORMAT_LEFT: wx.ALIGN_LEFT,
         wx.LIST_FORMAT_CENTRE: wx.ALIGN_CENTRE,
         wx.LIST_FORMAT_CENTER: wx.ALIGN_CENTER,
@@ -266,28 +272,30 @@ class TreeListCtrl(
             *args,
             **kwargs,
         )
-        self.bindEventHandlers(selectCommand, editCommand, dragAndDropCommand)
+        self.bind_event_handlers(
+            selectCommand, editCommand, dragAndDropCommand
+        )
         self.GetMainWindow().Bind(wx.EVT_LEAVE_WINDOW, self._on_hover_leave)
 
-    def bindEventHandlers(
+    def bind_event_handlers(
         self, selectCommand, editCommand, dragAndDropCommand
     ):
         # pylint: disable=W0201
         self.selectCommand = selectCommand
         self.editCommand = editCommand
         self.dragAndDropCommand = dragAndDropCommand
-        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.onSelect)
+        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_select)
         self.Bind(wx.EVT_TREE_KEY_DOWN, self.on_key_down)
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_item_activated)
-        # We deal with double clicks ourselves, to prevent the default behaviour
-        # of collapsing or expanding nodes on double click.
+        # We deal with double clicks ourselves, to prevent the default
+        # behaviour of collapsing or expanding nodes on double click.
         self.GetMainWindow().Bind(wx.EVT_LEFT_DCLICK, self.on_double_click)
         self.Bind(wx.EVT_TREE_BEGIN_LABEL_EDIT, self.on_begin_edit)
         self.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.on_end_edit)
         self.Bind(wx.EVT_TREE_ITEM_EXPANDING, self.on_item_expanding)
-        self.Bind(wx.EVT_SET_FOCUS, self.onSetFocus)
+        self.Bind(wx.EVT_SET_FOCUS, self.on_set_focus)
 
-    def onSetFocus(self, event):  # pylint: disable=W0613
+    def on_set_focus(self, event):  # pylint: disable=W0613
         # Send a child focus event to let the AuiManager know we received focus
         # so it will activate our pane
         wx.PostEvent(self, wx.ChildFocusEvent(self))
@@ -313,9 +321,11 @@ class TreeListCtrl(
 
     def curselection(self):
         # Guard against deleted C++ object - can happen when wx.CallAfter
-        # callback executes after window destruction (e.g., closing nested dialogs)
+        # callback executes after window destruction (e.g., closing
+        # nested dialogs)
         try:
-            # Filter out None values - GetItemPyData can return None for some items
+            # Filter out None values - GetItemPyData can return None
+            # for some items
             # (e.g., root items or items without associated PyData)
             return [
                 data
@@ -387,6 +397,10 @@ class TreeListCtrl(
 
         _ensure_filter_installed()
         _input_filter.acquire()
+        auto_scroll = self._auto_scroll_enabled()
+        saved_view = (
+            None if auto_scroll else self.GetMainWindow().GetViewStart()
+        )
         self.__refreshing = True
         self.Freeze()
         self.StopEditing()
@@ -406,10 +420,26 @@ class TreeListCtrl(
         # Restore selection AFTER Thaw - SelectItem doesn't work while Frozen
         if self.__selection:
             self.select(self.__selection)
-        self.scroll_to_selection()
+        if auto_scroll:
+            self.scroll_to_selection()
+        else:
+            # Keep the viewport where the user left it. This also undoes
+            # the implicit EnsureVisible triggered by restoring the
+            # selection.
+            main = self.GetMainWindow()
+            main.AdjustMyScrollbars()
+            main.Scroll(*saved_view)
         # Immediate repaint - no blank screen
         self.GetMainWindow().Refresh(eraseBackground=False)
         _input_filter.release()
+
+    def _auto_scroll_enabled(self):
+        """Whether the view may scroll by itself to follow the
+        selection."""
+        settings = getattr(self.__adapter, "settings", None)
+        if settings is None:
+            return True
+        return settings.getboolean("view", "autoscrollselection")
 
     def scroll_to_selection(self):
         """Scroll minimally to make first selected item visible."""
@@ -421,6 +451,8 @@ class TreeListCtrl(
 
     def scroll_to_selection_centered(self):
         """Center viewport on first selected item."""
+        if not self._auto_scroll_enabled():
+            return
         selections = self.GetSelections()
         if selections:
             main = self.GetMainWindow()
@@ -570,7 +602,7 @@ class TreeListCtrl(
 
     # Event handlers
 
-    def onSelect(self, event):
+    def on_select(self, event):
         # Skip selection events during refresh to avoid spurious updates
         if self.__refreshing:
             event.Skip()
@@ -622,7 +654,8 @@ class TreeListCtrl(
     def __safe_drag_and_drop_command(
         self, drop_item, drag_items, part, column
     ):
-        """Safely call dragAndDropCommand, guarding against deleted C++ objects."""
+        """Safely call dragAndDropCommand, guarding against deleted
+        C++ objects."""
         try:
             if self:
                 self.dragAndDropCommand(drop_item, drag_items, part, column)
@@ -756,7 +789,7 @@ class TreeListCtrl(
         self.RemoveColumn(column_index)
 
     def InsertColumn(self, column_index, column_header, *args, **kwargs):
-        alignment = self.alignmentMap[
+        alignment = self.alignment_map[
             kwargs.pop("format", wx.LIST_FORMAT_LEFT)
         ]
         if column_index == self.GetColumnCount():

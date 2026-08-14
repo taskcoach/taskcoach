@@ -38,6 +38,10 @@ relationship) — signal dispatch exists to serve Attribute change notification.
    `view.statusbar` and `view.toolbar` migrated from pubsub to Publisher —
    `MainWindow` now subscribes via `registerObserver` on the settings
    instance (added `patterns.Observer` to MRO).
+   `view.autoscrollselection` (auto-scroll toggle) uses Publisher
+   dispatch from the start: `ToggleAutoScroll` (toolbar button sync)
+   and `Viewer.on_auto_scroll_changed` (re-center on enable) both
+   subscribe via `registerObserver` on the settings instance.
    **Remaining:** Task dates, percentage, duration; Effort fields.
 
 2. **Modularize and clean up the signaling system.** The three independent
