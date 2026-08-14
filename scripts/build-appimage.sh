@@ -56,8 +56,20 @@ clean_build() {
 download_python_appimage() {
     echo "Downloading Python 3.11 AppImage base..."
 
-    # Python 3.11 with manylinux_2_28 (glibc 2.28+, compatible with Debian Bookworm)
-    local url="https://github.com/niess/python-appimage/releases/download/python3.11/python3.11.14-cp311-cp311-manylinux_2_28_x86_64.AppImage"
+    # Python 3.11 with manylinux_2_28 (glibc 2.28+, compatible with Debian
+    # Bookworm). Upstream replaces the assets of the python3.11 release tag
+    # on every micro release, so the exact filename cannot be pinned;
+    # resolve the current cp311 manylinux_2_28 x86_64 asset instead.
+    local url
+    url=$(curl -sf \
+        https://api.github.com/repos/niess/python-appimage/releases/tags/python3.11 \
+        | grep -o 'https://[^"]*cp311-manylinux_2_28_x86_64\.AppImage' \
+        | head -1)
+    if [ -z "$url" ]; then
+        echo "ERROR: could not resolve Python AppImage download URL" >&2
+        exit 1
+    fi
+    echo "Resolved Python AppImage: $url"
 
     wget -q --show-progress "$url" -O "$BUILD_DIR/python.AppImage"
     chmod +x "$BUILD_DIR/python.AppImage"
@@ -89,10 +101,16 @@ install_dependencies() {
     # Upgrade pip
     $PYTHON -m pip install --upgrade pip setuptools wheel
 
-    # Install wxPython - use pre-built wheels from wxPython extras repository
+    # Install wxPython from the pre-built wheel in the wxPython extras
+    # repository. Pin to the newest cp311 wheel available there and
+    # refuse sdists: PyPI has no Linux wheels, so an unpinned install
+    # resolves to the newest PyPI sdist (4.3+) and tries to compile
+    # wxWidgets from source, which fails on the bundled AppImage Python
+    # (no python-config/headers).
     echo "Installing wxPython..."
-    $PYTHON -m pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython || \
-        $PYTHON -m pip install wxPython --prefer-binary
+    $PYTHON -m pip install --only-binary wxPython \
+        -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 \
+        "wxPython==4.2.2"
 
     # Install TaskCoach dependencies
     echo "Installing TaskCoach dependencies..."

@@ -82,6 +82,13 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         )
         self.init_layout()
         self.register_presentation_observers()
+        # Re-center when auto-scroll is turned back on. Publisher
+        # dispatch, not pypubsub; see PUBLISHER_OBSERVER.md.
+        self.registerObserver(
+            self.on_auto_scroll_changed,
+            eventType="view.autoscrollselection",
+            eventSource=self.settings,
+        )
         self.refresh()
 
         pub.subscribe(self.on_begin_io, "taskfile.aboutToRead")
@@ -401,6 +408,19 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         elif hasattr(self.widget, "ensureSelectionVisible"):
             self.widget.ensureSelectionVisible()
         self.send_viewer_status_event()
+
+    def on_auto_scroll_changed(self, event=None):
+        """Re-center on the selection when auto-scroll is turned back
+        on."""
+        if not self.settings.getboolean("view", "autoscrollselection"):
+            return
+        try:
+            if hasattr(self.widget, "scroll_to_selection_centered"):
+                self.widget.scroll_to_selection_centered()
+            elif hasattr(self.widget, "ensureSelectionVisible"):
+                self.widget.ensureSelectionVisible()
+        except RuntimeError:
+            pass  # wrapped C/C++ object has been deleted
 
     def _captureSelectionInfo(self):
         """Capture selection info before refresh. Override in subclasses."""

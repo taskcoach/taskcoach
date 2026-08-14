@@ -72,8 +72,8 @@ class MainWindow(
     ):
         # Initialize with valid default size to prevent GTK warnings
         # The WindowDimensionsTracker will set the actual saved size/position
-        if 'size' not in kwargs:
-            kwargs['size'] = (800, 600)
+        if "size" not in kwargs:
+            kwargs["size"] = (800, 600)
         super().__init__(None, -1, "", *args, **kwargs)
         # This prevents the viewers from flickering on Windows 7 when refreshed:
         if operating_system.isWindows7_OrNewer():
@@ -161,6 +161,7 @@ class MainWindow(
         self.__filename = self.taskFile.filename()
         self.__setTitle()
         from taskcoachlib.gui.icons.icon_library import icon_catalog
+
         self.SetIcons(icon_catalog.get_icon_bundle("nuvola_apps_korganizer"))
 
     def __init_window_components(self):
@@ -309,9 +310,9 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         currentDark = detect_dark_theme()
         if currentDark != self._lastDetectedDark:
             self._lastDetectedDark = currentDark
-            pub.sendMessage('system.appearance.changed')
+            pub.sendMessage("system.appearance.changed")
             if self.settings.get("window", "theme") == "automatic":
-                pub.sendMessage('settings.window.theme')
+                pub.sendMessage("settings.window.theme")
         event.Skip()
 
     def onClose(self, event):
@@ -336,7 +337,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
                 event.Skip()
                 self.taskFile.stop()
                 self._idleController.stop()
-                if hasattr(self, '_masterScheduler'):
+                if hasattr(self, "_masterScheduler"):
                     self._masterScheduler.shutdown()
 
     def restore(self, event):  # pylint: disable=W0613
@@ -366,8 +367,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
 
         # Detach and close any remaining non-toolbar panes (e.g., notebook controls)
         leftover_panes = [
-            pane for pane in self.manager.GetAllPanes()
-            if not pane.IsToolbar()
+            pane for pane in self.manager.GetAllPanes() if not pane.IsToolbar()
         ]
         for pane in leftover_panes:
             if pane.window:
@@ -399,7 +399,11 @@ If this happens again, please make a copy of your TaskCoach.ini file """
             if pane.IsToolbar():
                 continue
             name = pane.name
-            if "taskviewer" in name and "stats" not in name and "interdeps" not in name:
+            if (
+                "taskviewer" in name
+                and "stats" not in name
+                and "interdeps" not in name
+            ):
                 pane.dock_direction = aui.AUI_DOCK_CENTER
                 pane.dock_layer = 0
                 pane.dock_row = 0
@@ -437,9 +441,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         # showing the statusbar puts it in the wrong place (only on Linux?)
         status_bar = self.GetStatusBar()
         if status_bar:
-            status_bar.Show(
-                self.settings.getboolean("view", "statusbar")
-            )
+            status_bar.Show(self.settings.getboolean("view", "statusbar"))
             self.SendSizeEvent()
 
     def createToolBarUICommands(self):
@@ -462,6 +464,8 @@ If this happens again, please make a copy of your TaskCoach.ini file """
                     effortList=self.taskFile.efforts(),
                     taskList=self.taskFile.tasks(),
                 ),
+                None,
+                uicommand.ToggleAutoScroll(settings=self.settings),
             ]
         )
         return ui_commands
@@ -526,8 +530,8 @@ If this happens again, please make a copy of your TaskCoach.ini file """
 
     def _onAuiRender(self, event):
         """Detect toolbar drag-end and float-to-dock to reset position."""
-        action = getattr(self.manager, '_action', 0)
-        prev_action = getattr(self, '_prev_manager_action', 0)
+        action = getattr(self.manager, "_action", 0)
+        prev_action = getattr(self, "_prev_manager_action", 0)
 
         # Detect transition from dragging to idle
         if prev_action != 0 and action == 0:
@@ -536,7 +540,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         # Detect floating->docked transition
         pane = self.manager.GetPane("toolbar")
         if pane.IsOk():
-            was_floating = getattr(self, '_toolbar_was_floating', False)
+            was_floating = getattr(self, "_toolbar_was_floating", False)
             is_floating = pane.IsFloating()
             if was_floating and not is_floating:
                 wx.CallAfter(self._resetToolbarPosition)

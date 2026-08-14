@@ -5,7 +5,6 @@ on:
     branches:
       - main
       - master
-      - 'claude/**'
     tags:
       - 'v*'
   pull_request:
@@ -13,6 +12,12 @@ on:
       - main
       - master
   workflow_dispatch:
+
+# Cancel superseded runs when a branch or PR is force-pushed; never
+# cancel tag (release) builds.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 permissions:
   contents: write
@@ -60,10 +65,20 @@ jobs:
 
       - name: Download Python AppImage base
         run: |
-          # Download pre-built Python 3.11 AppImage from python-appimage project
-          # URL from https://github.com/niess/python-appimage/releases
-          PYTHON_APPIMAGE_URL="https://github.com/niess/python-appimage/releases/download/python3.11/python3.11.14-cp311-cp311-manylinux_2_28_x86_64.AppImage"
-
+          # Download the pre-built Python 3.11 AppImage from the
+          # python-appimage project. Upstream replaces the assets of the
+          # python3.11 release tag on every micro release, so the exact
+          # filename cannot be pinned; resolve the current cp311
+          # manylinux_2_28 x86_64 asset from the release instead.
+          PYTHON_APPIMAGE_URL=$(curl -sf \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/niess/python-appimage/releases/tags/python3.11 \
+            | jq -r '.assets[].browser_download_url' \
+            | grep 'cp311-manylinux_2_28_x86_64\.AppImage$')
+          if [ -z "$PYTHON_APPIMAGE_URL" ]; then
+            echo "Could not resolve Python AppImage download URL" >&2
+            exit 1
+          fi
           echo "Downloading Python AppImage from: $PYTHON_APPIMAGE_URL"
           wget -q "$PYTHON_APPIMAGE_URL" -O python.AppImage
           chmod +x python.AppImage
@@ -95,10 +110,16 @@ jobs:
           # Upgrade pip first
           $PYTHON -m pip install --upgrade pip setuptools wheel
 
-          # Install wxPython - use pre-built wheels from wxPython extras repository
+          # Install wxPython from the pre-built wheel in the wxPython
+          # extras repository. Pin to the newest cp311 wheel available
+          # there and refuse sdists: PyPI has no Linux wheels, so an
+          # unpinned install resolves to the newest PyPI sdist (4.3+)
+          # and tries to compile wxWidgets from source, which fails on
+          # the bundled AppImage Python (no python-config/headers).
           echo "Installing wxPython..."
-          $PYTHON -m pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython || \
-            $PYTHON -m pip install wxPython --prefer-binary
+          $PYTHON -m pip install --only-binary wxPython \
+            -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 \
+            "wxPython==4.2.2"
 
           # Install all TaskCoach dependencies
           echo "Installing TaskCoach dependencies..."

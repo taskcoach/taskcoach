@@ -165,6 +165,13 @@
       "hints": ["calculator", "math", "numbers", "compute", "arithmetic", "buttons", "keypad", "accounting", "silver", "display"],
       "context": "apps",
       "sizes": [16]
+    },
+    "oxygen_actions_align-vertical-center": {
+      "label": "Align Vertical Center",
+      "file": "align-vertical-center.png",
+      "hints": ["align", "vertical", "center", "middle", "layout", "arrange", "position", "rectangles", "objects", "distribute"],
+      "context": "actions",
+      "sizes": [16, 22, 32, 48]
     }
   }
 }

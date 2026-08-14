@@ -40,6 +40,7 @@ from taskcoachlib.widgets import (
     CalendarConfigDialog,
     HierarchicalCalendarConfigDialog,
 )
+
 # NOTE (Twisted Removal - 2024): Replaced deferToThread/inlineCallbacks with
 # concurrent.futures ThreadPoolExecutor. This provides the same async thread
 # execution without Twisted reactor dependency.
@@ -64,6 +65,7 @@ class DueDateTimeCtrl(inplace_editor.DateTimeCtrl):
     stores the user's custom duration choices. For now, due dates are edited as
     absolute datetime values only.
     """
+
     def __init__(self, parent, wxId, item, column, owner, value, **kwargs):
         # Pass relative info for future implementation
         kwargs["relative"] = True
@@ -141,8 +143,16 @@ class BaseTaskViewer(
             )
 
     def __registerForAppearanceChanges(self):
-        for appearance in ("font", "fgcolor", "bgcolor", "icon",
-                           "font_dark", "fgcolor_dark", "bgcolor_dark", "icon_dark"):
+        for appearance in (
+            "font",
+            "fgcolor",
+            "bgcolor",
+            "icon",
+            "font_dark",
+            "fgcolor_dark",
+            "bgcolor_dark",
+            "icon_dark",
+        ):
             appearanceSettings = [
                 "settings.%s.%s" % (appearance, setting)
                 for setting in (
@@ -383,7 +393,12 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
             BaseTaskTreeViewer, self
         ).createModeToolBarUICommands()
         separator = (None,) if otherModeUICommands else ()
-        return hideUICommands + separator + otherModeUICommands
+        return (
+            hideUICommands
+            + separator
+            + otherModeUICommands
+            + (uicommand.ToggleAutoScroll(settings=self.settings),)
+        )
 
     def get_icon_id(self, item, isSelected):
         return (
@@ -623,7 +638,9 @@ class TimelineViewer(BaseTaskTreeViewer):
                     None,
                     [
                         render.dateTimePeriod(
-                            item.getStart(), item.getStop(), human_readable=True
+                            item.getStart(),
+                            item.getStop(),
+                            human_readable=True,
                         )
                     ],
                 )
@@ -698,7 +715,10 @@ class SquareTaskViewer(BaseTaskTreeViewer):
         return True
 
     def getModeUICommands(self):
-        return [uicommand.DisabledLabel(_("Lay out tasks by")), uicommand.Separator()] + [
+        return [
+            uicommand.DisabledLabel(_("Lay out tasks by")),
+            uicommand.Separator(),
+        ] + [
             uicommand.SquareTaskViewerOrderByOption(
                 menu_text=menu_text,
                 value=value,
@@ -719,9 +739,7 @@ class SquareTaskViewer(BaseTaskTreeViewer):
         """Change the order-by attribute. Called by toolbar and menu."""
         self.settings.settext(self.settingsSection(), "sortby", choice)
         self._apply_order_by(choice)
-        patterns.Event(
-            self.view_settings_changed_event_type(), self
-        ).send()
+        patterns.Event(self.view_settings_changed_event_type(), self).send()
 
     def _apply_order_by(self, choice):
         if choice == self.__order_by:
@@ -801,9 +819,7 @@ class SquareTaskViewer(BaseTaskTreeViewer):
             ),
             self.__zero,
         )
-        return self.__transform_task_attribute(
-            max(children_sum, self.__zero)
-        )
+        return self.__transform_task_attribute(max(children_sum, self.__zero))
 
     def empty(self, task):
         overall = self.overall(task)
@@ -836,7 +852,9 @@ class SquareTaskViewer(BaseTaskTreeViewer):
         return task.font(recursive=True)
 
     def icon(self, task, isSelected):
-        icon_id = self.get_icon_id(task, isSelected) or "nuvola_actions_ledblue"
+        icon_id = (
+            self.get_icon_id(task, isSelected) or "nuvola_actions_ledblue"
+        )
         return icon_catalog.get_wx_icon(icon_id, LIST_ICON_SIZE)
 
     # Helper methods
@@ -889,7 +907,7 @@ class HierarchicalCalendarViewer(
         self.reconfig()
 
         # Subscribe to scheduler's UI refresh event (fires after all data changes)
-        pub.subscribe(self._onDateChanged, 'scheduler.dateChange.uiRefresh')
+        pub.subscribe(self._onDateChanged, "scheduler.dateChange.uiRefresh")
 
     def _onDateChanged(self, timestamp):
         """Handle date change from scheduler."""
@@ -940,7 +958,7 @@ class HierarchicalCalendarViewer(
 
     def detach(self):
         super().detach()
-        pub.unsubscribe(self._onDateChanged, 'scheduler.dateChange.uiRefresh')
+        pub.unsubscribe(self._onDateChanged, "scheduler.dateChange.uiRefresh")
 
     def at_midnight(self):
         self.widget.SetCalendarFormat(self.widget.CalendarFormat())
@@ -1047,8 +1065,10 @@ class CalendarViewer(
                     self.onAttributeChanged_Deprecated, event_type
                 )
         # Subscribe to scheduler's UI refresh event (fires after all data changes)
-        pub.subscribe(self._onDateChanged, 'scheduler.dateChange.uiRefresh')
-        pub.subscribe(self._onCalendarColoursChanged, 'calendar.colours.changed')
+        pub.subscribe(self._onDateChanged, "scheduler.dateChange.uiRefresh")
+        pub.subscribe(
+            self._onCalendarColoursChanged, "calendar.colours.changed"
+        )
 
     def _onDateChanged(self, timestamp):
         """Handle date change from scheduler."""
@@ -1059,8 +1079,10 @@ class CalendarViewer(
 
     def detach(self):
         super().detach()
-        pub.unsubscribe(self._onDateChanged, 'scheduler.dateChange.uiRefresh')
-        pub.unsubscribe(self._onCalendarColoursChanged, 'calendar.colours.changed')
+        pub.unsubscribe(self._onDateChanged, "scheduler.dateChange.uiRefresh")
+        pub.unsubscribe(
+            self._onCalendarColoursChanged, "calendar.colours.changed"
+        )
 
     def is_tree_viewer(self):
         return False
@@ -1198,8 +1220,15 @@ class CalendarViewer(
 
             # Other month days background color
             from taskcoachlib.config import settings2
-            section = "calendar_dark" if settings2.window.theme_is_dark else "calendar_light"
-            use_system = self.settings.getboolean(section, "other_month_bg_system")
+
+            section = (
+                "calendar_dark"
+                if settings2.window.theme_is_dark
+                else "calendar_light"
+            )
+            use_system = self.settings.getboolean(
+                section, "other_month_bg_system"
+            )
             if use_system:
                 self.widget.SetOtherMonthColor(None)
             else:
@@ -1384,7 +1413,9 @@ class TaskViewer(
                     width=self.getColumnWidth("attachments"),
                     alignment=wx.LIST_FORMAT_LEFT,
                     imageIndicesCallback=self.attachmentImageIndices,
-                    headerImageIndex=image_list_cache.get_index("nuvola_status_mail-attachment"),
+                    headerImageIndex=image_list_cache.get_index(
+                        "nuvola_status_mail-attachment"
+                    ),
                     renderCallback=lambda task: "",
                     **kwargs
                 )
@@ -1398,7 +1429,9 @@ class TaskViewer(
                 width=self.getColumnWidth("notes"),
                 alignment=wx.LIST_FORMAT_LEFT,
                 imageIndicesCallback=self.noteImageIndices,
-                headerImageIndex=image_list_cache.get_index("nuvola_apps_knotes"),
+                headerImageIndex=image_list_cache.get_index(
+                    "nuvola_apps_knotes"
+                ),
                 renderCallback=lambda task: "",
                 **kwargs
             )
@@ -1815,7 +1848,9 @@ class TaskViewer(
                 ),
                 uicommand.ViewColumn(
                     menu_text=_("Status &combo"),
-                    help_text=_("Show/hide status combo column (icon and text)"),
+                    help_text=_(
+                        "Show/hide status combo column (icon and text)"
+                    ),
                     setting="statusIconText",
                     viewer=self,
                 ),
@@ -1988,7 +2023,10 @@ class TaskViewer(
         return True
 
     def getModeUICommands(self):
-        return [uicommand.DisabledLabel(_("Show tasks as")), uicommand.Separator()] + [
+        return [
+            uicommand.DisabledLabel(_("Show tasks as")),
+            uicommand.Separator(),
+        ] + [
             uicommand.TaskViewerTreeOrListOption(
                 menu_text=menu_text,
                 value=value,
@@ -2040,11 +2078,9 @@ class TaskViewer(
         if hasattr(self.widget, "_schedule_scrollbar_adjustment"):
             self.widget._schedule_scrollbar_adjustment()
         # Center on selected item explicitly (no-op if nothing is selected).
-        if hasattr(self.widget, 'scroll_to_selection_centered'):
+        if hasattr(self.widget, "scroll_to_selection_centered"):
             self.widget.scroll_to_selection_centered()
-        patterns.Event(
-            self.view_settings_changed_event_type(), self
-        ).send()
+        patterns.Event(self.view_settings_changed_event_type(), self).send()
 
     # pylint: disable=W0621
 
@@ -2102,9 +2138,7 @@ class TaskViewer(
         return self.renderedValue(task, task.budget, self._render_budget)
 
     def renderBudgetLeft(self, task):
-        return self.renderedValue(
-            task, task.budgetLeft, self._render_budget
-        )
+        return self.renderedValue(task, task.budgetLeft, self._render_budget)
 
     def renderRevenue(self, task):
         return self.renderedValue(task, task.revenue, render.monetaryAmount)
@@ -2357,7 +2391,10 @@ class TaskStatsViewer(BaseTaskViewer):  # pylint: disable=W0223
     def getFgColor(self, status):
         try:
             from taskcoachlib.config import settings2
-            section = "fgcolor_dark" if settings2.window.theme_is_dark else "fgcolor"
+
+            section = (
+                "fgcolor_dark" if settings2.window.theme_is_dark else "fgcolor"
+            )
         except Exception:
             section = "fgcolor"
         color = wx.Colour(
@@ -2527,11 +2564,18 @@ else:
         def getFgColor(self, status):
             try:
                 from taskcoachlib.config import settings2
-                section = "fgcolor_dark" if settings2.window.theme_is_dark else "fgcolor"
+
+                section = (
+                    "fgcolor_dark"
+                    if settings2.window.theme_is_dark
+                    else "fgcolor"
+                )
             except Exception:
                 section = "fgcolor"
             color = wx.Colour(
-                *ast.literal_eval(self.settings.get(section, "%stasks" % status))
+                *ast.literal_eval(
+                    self.settings.get(section, "%stasks" % status)
+                )
             )
             if status == task.status.active and color == wx.BLACK:
                 color = wx.BLUE
@@ -2577,9 +2621,7 @@ else:
                     def do_plot():
                         try:
                             igraph.plot(
-                                graph,
-                                self.graphFile.name,
-                                **visual_style
+                                graph, self.graphFile.name, **visual_style
                             )
                         finally:
                             self._updating = False

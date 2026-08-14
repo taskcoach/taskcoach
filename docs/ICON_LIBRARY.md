@@ -1084,7 +1084,7 @@ Search ALL code for the legacy icon name. Every reference must be accounted for:
    **Main toolbar icons require 16, 22, AND 32px.** The main toolbar
    (`MainToolBar`) is user-resizable via View > Toolbar menu: Small (16×16),
    Medium (22×22, default), Large (32×32). If the migrated icon is any of
-   these 9 main toolbar commands, import all 3 sizes from the distillery:
+   these 10 main toolbar commands, import all 3 sizes from the distillery:
 
    | # | Command class | Current bitmap= |
    |---|---------------|-----------------|
@@ -1097,6 +1097,7 @@ Search ALL code for the legacy icon name. Every reference must be accounted for:
    | 7 | EffortStartButton | `taskcoach_actions_clock_menu_icon` |
    | 8 | EffortStop | `taskcoach_actions_clock_resume_icon` |
    | 9 | EditToolBarPerspective | `nuvola_apps_preferences-system-session-services` |
+   | 10 | ToggleAutoScroll | `oxygen_actions_align-vertical-center` (16/22/32/48 imported) |
 
    (Defined in `mainwindow.py:434` + auto-appended at `toolbar.py:144`)
 

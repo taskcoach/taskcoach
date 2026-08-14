@@ -40,8 +40,11 @@ defaults = {
     },
     "view": {
         "statusbar": "True",
+        # Automatically scroll/center the selected item when list content
+        # changes; when False the scroll position never moves by itself:
+        "autoscrollselection": "True",
         "toolbar": str((MAIN_TOOLBAR_ICON_SIZE_DEFAULT,) * 2),
-        "toolbarperspective": "FileOpen,Print,Separator,EditUndo,EditRedo,Separator,EffortStartButton,EffortStop",
+        "toolbarperspective": "FileOpen,Print,Separator,EditUndo,EditRedo,Separator,EffortStartButton,EffortStop,Separator,ToggleAutoScroll",
         # Index of the active effort viewer in task editor:
         "effortviewerintaskeditor": "0",
         "taskviewercount": "1",  # Number of task viewers in main window
@@ -101,7 +104,7 @@ defaults = {
     },
     "taskviewer": {
         "title": "",  # User supplied viewer title
-        "toolbarperspective": "TaskNew,NewSubItem,TaskNewFromTemplateButton,Separator,Edit,Delete,Separator,TaskMarkInactive,TaskMarkActive,TaskMarkCompleted,Separator,EffortStart,EffortStop,Separator,ViewExpandAll,ViewCollapseAll,Spacer,ViewerHideTasks_completed,ViewerHideTasks_inactive,ResetFilter,TaskViewerTreeOrListChoice,Search",
+        "toolbarperspective": "TaskNew,NewSubItem,TaskNewFromTemplateButton,Separator,Edit,Delete,Separator,TaskMarkInactive,TaskMarkActive,TaskMarkCompleted,Separator,EffortStart,EffortStop,Separator,ViewExpandAll,ViewCollapseAll,ToggleAutoScroll,Spacer,ViewerHideTasks_completed,ViewerHideTasks_inactive,ResetFilter,TaskViewerTreeOrListChoice,Search",
         "treemode": "True",  # True = tree mode, False = list mode
         "sortby": '["dueDateTime"]',
         "sortbystatusfirst": "True",
