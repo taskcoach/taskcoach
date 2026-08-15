@@ -39,7 +39,6 @@ class WakeFromIdleFrame(NotificationFrameBase):
         self._idle_time = idle_time
         self._effort = effort
         self._displayed = displayed_efforts
-        self._last_activity = 0
         super().__init__(*args, **kwargs)
 
     def add_inner_content(self, sizer, panel):
@@ -105,6 +104,7 @@ class IdleController(Observer, IdleNotifier):
         self._settings = settings
         self._effort_list = effort_list
         self._displayed = set()
+        self._went_idle_at = None
 
         super().__init__()
 
@@ -168,17 +168,30 @@ class IdleController(Observer, IdleNotifier):
     def get_min_idle_time(self):
         return self._settings.getint("feature", "minidletime") * 60
 
+    def sleep(self):
+        log_step("Idle threshold reached while tracking effort", prefix="IDLE")
+
     def wake(self, timestamp):
-        self._last_activity = timestamp
+        # Keep the went-idle timestamp in its own attribute. Storing it
+        # in _last_activity overwrote the IdleNotifier state machine's
+        # activity clock with a stale time, which made _check() cycle
+        # through sleep/wake on every wx idle event and reopen the
+        # notification endlessly after "Do nothing".
+        self._went_idle_at = timestamp
+        log_step(
+            "Wake from idle; idle since %s"
+            % date.DateTime.fromtimestamp(timestamp),
+            prefix="IDLE",
+        )
         self._on_wake()
 
     def _on_wake(self):
-        for effort in self._tracker.trackedEfforts():
-            if effort not in self._displayed:
-                self._displayed.add(effort)
+        for tracked_effort in self._tracker.trackedEfforts():
+            if tracked_effort not in self._displayed:
+                self._displayed.add(tracked_effort)
                 frm = WakeFromIdleFrame(
-                    date.DateTime.fromtimestamp(self._last_activity),
-                    effort,
+                    date.DateTime.fromtimestamp(self._went_idle_at),
+                    tracked_effort,
                     self._displayed,
                     _("Notification"),
                     wx_bitmap=icon_catalog.get_bitmap(
