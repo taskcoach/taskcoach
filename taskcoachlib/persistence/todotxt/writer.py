@@ -33,7 +33,7 @@ class TodoTxtWriter(object):
         if isinstance(viewer, str) and viewer == self.ALL_TASKS:
             tasks = list(taskFile.tasks()) if taskFile else []
         else:
-            tasks = viewer.visibleItems()
+            tasks = viewer.visible_items()
             if selectionOnly:
                 tasks = [task for task in tasks if viewer.isselected(task)]
         return self.writeTasks(tasks)

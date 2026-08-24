@@ -2249,17 +2249,17 @@ class TaskViewer(
         ):
             super().onEverySecond(event)
 
-    def getRootItems(self):
+    def get_root_items(self):
         """If the viewer is in tree mode, return the real root items. If the
         viewer is in list mode, return all items."""
         return (
-            super().getRootItems()
+            super().get_root_items()
             if self.is_tree_viewer()
             else self.presentation()
         )
 
-    def getItemParent(self, item):
-        return super().getItemParent(item) if self.is_tree_viewer() else None
+    def get_item_parent(self, item):
+        return super().get_item_parent(item) if self.is_tree_viewer() else None
 
     def children(self, item=None):
         return (

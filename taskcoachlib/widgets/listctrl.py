@@ -150,8 +150,8 @@ class VirtualListCtrl(
         # doesn't properly receive drag/drop events.
         return self
 
-    def getItemWithIndex(self, rowIndex):
-        return self.__parent.getItemWithIndex(rowIndex)
+    def get_item_with_index(self, rowIndex):
+        return self.__parent.get_item_with_index(rowIndex)
 
     def getItemText(self, domainObject, columnIndex):
         return self.__parent.getItemText(domainObject, columnIndex)
@@ -166,35 +166,35 @@ class VirtualListCtrl(
 
     def OnGetItemText(self, rowIndex, columnIndex):
         try:
-            item = self.getItemWithIndex(rowIndex)
+            item = self.get_item_with_index(rowIndex)
         except IndexError:
             return ""
         return self.getItemText(item, columnIndex)
 
     def OnGetItemTooltipData(self, rowIndex, columnIndex):
         try:
-            item = self.getItemWithIndex(rowIndex)
+            item = self.get_item_with_index(rowIndex)
         except IndexError:
             return None
         return self.getItemTooltipData(item)
 
     def OnGetItemImage(self, rowIndex):
         try:
-            item = self.getItemWithIndex(rowIndex)
+            item = self.get_item_with_index(rowIndex)
         except IndexError:
             return -1
         return self.getItemImage(item)
 
     def OnGetItemColumnImage(self, rowIndex, columnIndex):
         try:
-            item = self.getItemWithIndex(rowIndex)
+            item = self.get_item_with_index(rowIndex)
         except IndexError:
             return -1
         return self.getItemImage(item, columnIndex)
 
     def OnGetItemAttr(self, rowIndex):
         try:
-            item = self.getItemWithIndex(rowIndex)
+            item = self.get_item_with_index(rowIndex)
         except IndexError:
             return None
         foreground_color = item.foregroundColor(recursive=True)
@@ -263,7 +263,7 @@ class VirtualListCtrl(
         """Refresh specific items."""
         if len(items) <= 7:
             for item in items:
-                self.RefreshItem(self.__parent.getIndexOfItem(item))
+                self.RefreshItem(self.__parent.get_index_of_item(item))
         else:
             self.RefreshAllItems(self.GetItemCount())
 
@@ -295,19 +295,19 @@ class VirtualListCtrl(
         # callback executes after window destruction (e.g., closing
         # nested dialogs)
         try:
-            # Filter out None values - getItemWithIndex can return None
+            # Filter out None values - get_item_with_index can return None
             # for some indices
             return [
                 item
                 for index in self.__curselection_indices()
-                if (item := self.getItemWithIndex(index)) is not None
+                if (item := self.get_item_with_index(index)) is not None
             ]
         except RuntimeError:
             # wrapped C/C++ object has been deleted
             return []
 
     def select(self, items):
-        indices = [self.__parent.getIndexOfItem(item) for item in items]
+        indices = [self.__parent.get_index_of_item(item) for item in items]
         for index in range(self.GetItemCount()):
             self.Select(index, index in indices)
         if self.curselection():

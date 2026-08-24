@@ -26,8 +26,8 @@ class VirtualListCtrlTestCase(test.wxTestCase):
     onSelect = lambda *args: None
 
     def createListCtrl(self):
-        self.frame.getItemWithIndex = lambda index: index
-        self.frame.getIndexOfItem = lambda item: (
+        self.frame.get_item_with_index = lambda index: index
+        self.frame.get_index_of_item = lambda item: (
             item if type(item) == type(0) else 0
         )
         self.frame.getItemText = lambda item, column: ""

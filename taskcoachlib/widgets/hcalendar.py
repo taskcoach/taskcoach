@@ -184,7 +184,7 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
         return self.__drawNow
 
     def SetTodayColor(self, xxx_todo_changeme):
-        (r, g, b) = xxx_todo_changeme
+        r, g, b = xxx_todo_changeme
         super().SetTodayColor(wx.Colour(r, g, b))
 
     def TodayColor(self):
@@ -248,7 +248,7 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
             super()._DrawNow(gc, h)
 
     def GetRootEvents(self):
-        return self.__adapter.getRootItems()
+        return self.__adapter.get_root_items()
 
     def GetChildren(self, task):
         return self.__adapter.children(task)

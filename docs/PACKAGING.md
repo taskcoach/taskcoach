@@ -8,6 +8,7 @@ This document describes the packaging setup for Task Coach on Linux (Debian, Ubu
 - [Minimum Version Requirements](#minimum-version-requirements)
 - [Install Overview by Build Target](#install-overview-by-build-target)
 - [Build Scripts and Workflows](#build-scripts-and-workflows)
+  - [Workflow Triggers](#workflow-triggers)
 
 **Packaging by Platform**
 - [Debian/Ubuntu Packaging](#debianubuntu-packaging)
@@ -115,7 +116,50 @@ backends.
 
 **AppImage note:** Uses Python 3.11 (not 3.12) for wxPython wheel availability. See [AppImage Packaging](#appimage-packaging) section for details.
 
-**pip packages are bundled at build time** - users just install the package, no pip runs at install.
+### Workflow Triggers
+
+Every build workflow above uses the same triggers. Keep them identical
+when adding a target or editing one.
+
+| Trigger | Refs | Purpose |
+|---------|------|---------|
+| `pull_request` | targeting `master` | Every PR, every push to it, and leaving draft |
+| `push` | `master` | Merge to the default branch, and any direct push |
+| `push` (tags) | `v[0-9]+.[0-9]+.[0-9]+.[0-9]+` | Release; the only refs that attach artifacts to a GitHub Release |
+| `workflow_dispatch` | any ref | Manual run |
+
+Nothing triggers on branch-name patterns. Work in progress is verified
+by its pull request, so a build never depends on how a branch happens to
+be named, and pushing a branch with no PR costs nothing. `master` is the
+only long-lived branch; there is no `main`.
+
+The `pull_request` types are `opened`, `synchronize`, `reopened`,
+`ready_for_review`. The first three are the GitHub default; the fourth is
+added so that marking a draft ready rebuilds instead of relying on runs
+from while it was a draft.
+
+The tag pattern matches the four-part version scheme in
+[`meta/data.py`](../taskcoachlib/meta/data.py) and nothing else. In this
+filter syntax `+` means "one or more of the preceding character class",
+so the pattern accepts `v2.0.2.21` and rejects unrelated tags that merely
+start with `v` (the repository carries one, `v1.5.0-starofrainnight`).
+A plain `v*` would match those and fire a full release build. **Release
+candidate and three-part tags do not build.** Widen the pattern first if
+that scheme ever changes.
+
+Two consequences worth knowing: a release must start from a *pushed tag*,
+since creating a Release in the web UI from a tag that already exists
+raises no `push` event; and deleting a branch or tag builds nothing,
+because deletions raise `delete`, not `push`.
+
+All seven also share a `concurrency` group that cancels superseded runs
+on a branch or PR but never on a tag.
+
+`build-flatpak.yml` additionally runs on a weekly `schedule`. That adds
+no build ref of its own: it exists solely because GitHub evicts the
+Flatpak cache after 7 days of disuse and a cold cache recompiles
+wxWidgets from source, which takes hours. See
+[FLATPAK.md](FLATPAK.md#wxpython-build-from-source-let-it-build-its-own-wxwidgets).
 
 ### Estimated Desktop User Base
 

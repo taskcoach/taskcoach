@@ -62,7 +62,7 @@ class iCalendarWriter(object):
             items = list(taskFile.efforts())
         else:
             # Normal viewer-based export
-            items = viewer.visibleItems()
+            items = viewer.visible_items()
             if selectionOnly:
                 selection = viewer.curselection()
                 if viewer.is_tree_viewer():

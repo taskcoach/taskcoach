@@ -220,7 +220,7 @@ class Viewer2HTMLConverter(object):
         tree = self.viewer.is_tree_viewer()
         self.count = 0
         tableBodyContent = []
-        for item in self.viewer.visibleItems():
+        for item in self.viewer.visible_items():
             if selectionOnly and not self.viewer.isselected(item):
                 continue
             self.count += 1

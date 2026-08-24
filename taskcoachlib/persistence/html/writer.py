@@ -70,7 +70,7 @@ class _ViewerProxy(object):
     def is_tree_viewer(self):
         return False
 
-    def visibleItems(self):
+    def visible_items(self):
         return self._items
 
     def isselected(self, item):

@@ -3,13 +3,17 @@ name: Build macOS Package
 on:
   push:
     branches:
-      - main
       - master
     tags:
-      - 'v*'
+      # Release tags only: Major.Minor.Milestone.Patch (see meta/data.py).
+      # '+' means one or more of the preceding class, so this excludes
+      # stray tags such as v1.5.0-starofrainnight.
+      - 'v[0-9]+.[0-9]+.[0-9]+.[0-9]+'
   pull_request:
+    # Defaults are opened/synchronize/reopened; ready_for_review is added
+    # so leaving draft rebuilds rather than relying on the draft's runs.
+    types: [opened, synchronize, reopened, ready_for_review]
     branches:
-      - main
       - master
   workflow_dispatch:
 

@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import operating_system
 from wx.lib.agw import customtreectrl as customtree, hypertreelist
 from taskcoachlib.widgets import itemctrl, draganddrop
+import contextlib
 import wx
 
 # pylint: disable=E1101,E1103
@@ -206,6 +207,93 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
             self.SelectAll()
         self.selectCommand()
 
+    def _recalculated_main_window(self):
+        """Return the main window with item positions up to date.
+
+        Item positions drive both the scrollbar range and GetY(), but
+        AdjustMyScrollbars() never recalculates them; only ScrollTo()
+        does, guarded on the _dirty flag. Both it and CalculatePositions()
+        also return early while the window is frozen, so after a
+        freeze/thaw rebuild the positions are still stale and anything
+        reading them silently works off the old layout.
+
+        The flag is deliberately left set, exactly as upstream ScrollTo()
+        leaves it: customtreectrl only ever sets _dirty, it never clears
+        it, so clearing it here would suppress recalculations upstream
+        still expects to happen.
+        """
+        main = self.GetMainWindow()
+        if getattr(main, "_dirty", False):
+            main.CalculatePositions()
+        return main
+
+    def selection_neighbours(self):
+        """Return the objects displayed around the current selection.
+
+        The result is a tuple (above, below).  "above" holds the objects
+        displayed above the topmost selected row, nearest row first;
+        "below" holds the objects displayed below the bottommost
+        selected row, again nearest row first.  Callers use this to pick
+        a replacement selection when the selected rows disappear.
+
+        Rows scrolled out of the viewport count as neighbours, which is
+        why this walks the tree itself instead of using upstream
+        GetPrevVisible/GetNextVisible: those also test whether the row
+        is on screen.
+        """
+        try:
+            selections = self.GetSelections()
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            return [], []
+        if not selections:
+            return [], []
+        # GetY() drives the ordering, so make sure positions are current
+        self._recalculated_main_window()
+        rows = sorted(selections, key=lambda item: item.GetY())
+        return (
+            list(self.__walk_rows(rows[0], self.__row_above)),
+            list(self.__walk_rows(rows[-1], self.__row_below)),
+        )
+
+    def __walk_rows(self, item, step):
+        """Yield the objects of the rows reached by repeating step."""
+        root_item = self.GetRootItem()
+        item = step(item)
+        while item is not None and item != root_item:
+            data = self.GetItemPyData(item)
+            if data is not None:
+                yield data
+            item = step(item)
+
+    def __row_above(self, item):
+        """Return the row displayed directly above item, or None."""
+        sibling = self.GetPrevSibling(item)
+        if sibling is None:
+            parent = self.GetItemParent(item)
+            return None if parent == self.GetRootItem() else parent
+        # The row above a sibling is that sibling's last open descendant
+        while self.IsExpanded(sibling):
+            last_child = self.GetLastChild(sibling)
+            if last_child is None:
+                break
+            sibling = last_child
+        return sibling
+
+    def __row_below(self, item):
+        """Return the row displayed directly below item, or None."""
+        if self.IsExpanded(item):
+            first_child = self.GetFirstChild(item)[0]
+            if first_child is not None:
+                return first_child
+        root_item = self.GetRootItem()
+        while item is not None and item != root_item:
+            sibling = self.GetNextSibling(item)
+            if sibling is not None:
+                return sibling
+            item = self.GetItemParent(item)
+        return None
+
     def IsLabelBeingEdited(self):
         return bool(self.GetLabelTextCtrl())
 
@@ -352,7 +440,7 @@ class TreeListCtrl(
         result = []
         for child_object in self.__adapter.children(parent_object):
             result.append(child_object.id())
-            if self.__adapter.getItemExpanded(child_object):
+            if self.__adapter.get_item_expanded(child_object):
                 result.extend(self._snapshot_adapter(child_object))
         return result
 
@@ -426,7 +514,7 @@ class TreeListCtrl(
             # Keep the viewport where the user left it. This also undoes
             # the implicit EnsureVisible triggered by restoring the
             # selection.
-            main = self.GetMainWindow()
+            main = self._recalculated_main_window()
             main.AdjustMyScrollbars()
             main.Scroll(*saved_view)
         # Immediate repaint - no blank screen
@@ -440,6 +528,27 @@ class TreeListCtrl(
         if settings is None:
             return True
         return settings.getboolean("view", "autoscrollselection")
+
+    @contextlib.contextmanager
+    def stable_viewport(self):
+        """Keep the viewport where it is while the block runs.
+
+        Selecting an item makes upstream customtreectrl call
+        EnsureVisible, so any programmatic selection scrolls the view.
+        When auto-scroll is off the viewport has to be put back
+        afterwards, the same way _do_full_rebuild does once it has
+        restored its own selection.
+        """
+        if self._auto_scroll_enabled():
+            yield
+            return
+        saved_view = self.GetMainWindow().GetViewStart()
+        try:
+            yield
+        finally:
+            main = self._recalculated_main_window()
+            main.AdjustMyScrollbars()
+            main.Scroll(*saved_view)
 
     def scroll_to_selection(self):
         """Scroll minimally to make first selected item visible."""
@@ -497,7 +606,7 @@ class TreeListCtrl(
                 data=child_object,
             )
             self._refresh_object_minimally(child_item, child_object)
-            expanded = self.__adapter.getItemExpanded(child_object)
+            expanded = self.__adapter.get_item_expanded(child_object)
             if expanded:
                 self._add_object_recursively(child_item, child_object)
                 # Call Expand on the item instead of on the tree

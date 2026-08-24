@@ -41,7 +41,7 @@ class _CtrlWithItemsMixin(object):
         try:
             return self.GetItemPyData(item)  # TreeListCtrl
         except AttributeError:
-            return self.getItemWithIndex(item)  # ListCtrl
+            return self.get_item_with_index(item)  # ListCtrl
 
     def SelectItem(self, item, *args, **kwargs):
         try:
