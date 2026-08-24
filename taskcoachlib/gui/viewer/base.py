@@ -20,6 +20,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import contextlib
 import wx
 from taskcoachlib import patterns, widgets, command, render
 from taskcoachlib.i18n import _
@@ -389,7 +390,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         # BEFORE refresh - capture selection info while widget has old state
         selection_info = None
         if items_removed():
-            selection_info = self._captureSelectionInfo()
+            selection_info = self._capture_selection_info()
 
         self.refresh()
 
@@ -400,7 +401,12 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             and not self.widget.curselection()
             and selection_info
         ):
-            self.selectNextItemsAfterRemoval(selection_info)
+            # Selecting scrolls the widget, which "stable" mode must not
+            keep_viewport = getattr(
+                self.widget, "stable_viewport", contextlib.nullcontext
+            )
+            with keep_viewport():
+                self.select_next_items_after_removal(selection_info)
         # Center on selected item — tree views use scroll_to_selection_centered,
         # list views use ensureSelectionVisible (native wx scrollbar management)
         if hasattr(self.widget, "scroll_to_selection_centered"):
@@ -422,15 +428,16 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         except RuntimeError:
             pass  # wrapped C/C++ object has been deleted
 
-    def _captureSelectionInfo(self):
+    def _capture_selection_info(self):
         """Capture selection info before refresh. Override in subclasses."""
         return None
 
-    def selectNextItemsAfterRemoval(self, selectionInfo):
+    def select_next_items_after_removal(self, selection_info):
         """Select the next item after items were removed.
 
         Args:
-            selectionInfo: Selection state captured before refresh (parent + index)
+            selection_info: Selection state captured before the
+                refresh, while the widget still showed the old rows.
         """
         raise NotImplementedError
 
@@ -872,21 +879,21 @@ class ListViewer(Viewer):  # pylint: disable=W0223
     def is_tree_viewer(self):
         return False
 
-    def visibleItems(self):
+    def visible_items(self):
         """Iterate over the items in the presentation."""
         for item in self.presentation():
             yield item
 
-    def getItemWithIndex(self, index):
+    def get_item_with_index(self, index):
         try:
             return self.presentation()[index]
         except IndexError:
             return None
 
-    def getIndexOfItem(self, item):
+    def get_index_of_item(self, item):
         return self.presentation().index(item)
 
-    def selectNextItemsAfterRemoval(self, selectionInfo):
+    def select_next_items_after_removal(self, selection_info):
         pass  # Done automatically by list controls
 
 
@@ -917,7 +924,7 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
         """Expand all items, recursively."""
         # Since the widget does not send EVT_TREE_ITEM_EXPANDED when expanding
         # all items, we have to do the bookkeeping ourselves:
-        for item in self.visibleItems():
+        for item in self.visible_items():
             item.expand(True, context=self.settingsSection(), notify=False)
         self.refresh()
         self.widget._schedule_scrollbar_adjustment()
@@ -926,7 +933,7 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
         """Collapse all items, recursively."""
         # Since the widget does not send EVT_TREE_ITEM_COLLAPSED when collapsing
         # all items, we have to do the bookkeeping ourselves:
-        for item in self.visibleItems():
+        for item in self.visible_items():
             item.expand(False, context=self.settingsSection(), notify=False)
         self.refresh()
         self.widget._schedule_scrollbar_adjustment()
@@ -942,73 +949,106 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
 
     def select(self, items):
         for item in items:
-            self.__expandItemRecursively(item)
+            self.__expand_item_recursively(item)
         self.refresh()
         super().select(items)
 
-    def __expandItemRecursively(self, item):
-        parent = self.getItemParent(item)
+    def __expand_item_recursively(self, item):
+        parent = self.get_item_parent(item)
         if parent:
             parent.expand(True, context=self.settingsSection(), notify=False)
-            self.__expandItemRecursively(parent)
+            self.__expand_item_recursively(parent)
 
-    def _captureSelectionInfo(self):
-        """Capture selection position before refresh."""
+    def _capture_selection_info(self):
+        """Capture the rows around the selection before refresh.
+
+        The removed items are already gone from the presentation by the
+        time this runs, so the neighbouring rows can only be read from
+        the widget, which still shows the old contents.
+        """
         if not hasattr(self.widget, "curselection"):
+            return None
+        if hasattr(self.widget, "selection_neighbours"):
+            above, below = self.widget.selection_neighbours()
+            if above or below:
+                return {"above": above, "below": below}
             return None
         curselection = self.widget.curselection()
         if curselection and curselection[0] is not None:
-            selectedItem = curselection[0]
-            parent = self.getItemParent(selectedItem)
+            selected_item = curselection[0]
+            parent = self.get_item_parent(selected_item)
             siblings = self.children(parent)
             index = (
-                siblings.index(selectedItem) if selectedItem in siblings else 0
+                siblings.index(selected_item)
+                if selected_item in siblings
+                else 0
             )
             return {"parent": parent, "index": index}
         return None
 
-    def selectNextItemsAfterRemoval(self, selectionInfo):
-        """Select next item using position captured before refresh."""
-        if not selectionInfo:
+    def select_next_items_after_removal(self, selection_info):
+        """Select the row that took the place of the removed rows.
+
+        The row above the removed ones is preferred, so that deleting
+        several items in a row keeps walking up the list. Only when the
+        removed row was the topmost one does the selection move down
+        instead.
+        """
+        if not selection_info:
             return
-        parent = selectionInfo["parent"]
-        index = selectionInfo["index"]
+        if "above" in selection_info:
+            new_selection = self.__first_survivor(
+                selection_info["above"]
+            ) or self.__first_survivor(selection_info["below"])
+            if new_selection:
+                self.select([new_selection])
+            return
+        parent = selection_info["parent"]
+        index = selection_info["index"]
         # Parent might have been deleted too - check if still in presentation
         if parent is not None and parent not in self.presentation():
             parent = None
         siblings = self.children(parent)
-        newSelection = (
+        new_selection = (
             siblings[min(len(siblings) - 1, index)] if siblings else parent
         )
-        if newSelection:
-            self.select([newSelection])
+        if new_selection:
+            self.select([new_selection])
 
-    def visibleItems(self):
+    def __first_survivor(self, items):
+        """Return the first of items that is still in the presentation."""
+        presentation = self.presentation()
+        for item in items:
+            if item in presentation:
+                return item
+        return None
+
+    def visible_items(self):
         """Iterate over the items in the presentation."""
 
-        def yieldItemsAndChildren(items):
-            sortedItems = [
+        def yield_items_and_children(items):
+            sorted_items = [
                 item for item in self.presentation() if item in items
             ]
-            for item in sortedItems:
+            for item in sorted_items:
                 yield item
                 children = self.children(item)
                 if children:
-                    for child in yieldItemsAndChildren(children):
+                    for child in yield_items_and_children(children):
                         yield child
 
-        for item in yieldItemsAndChildren(self.getRootItems()):
+        for item in yield_items_and_children(self.get_root_items()):
             yield item
 
-    def getRootItems(self):
+    def get_root_items(self):
         """Allow for overriding what the rootItems are."""
         return self.presentation().rootItems()
 
-    def getItemParent(self, item):
+    def get_item_parent(self, item):
         """Allow for overriding what the parent of an item is."""
         return item.parent() if item is not None else None
 
-    def getItemExpanded(self, item):
+    def get_item_expanded(self, item):
         return item.isExpanded(context=self.settingsSection())
 
     def children(self, parent=None):
@@ -1021,7 +1061,7 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
             else:
                 return []
         else:
-            return self.getRootItems()
+            return self.get_root_items()
 
     def getItemText(self, item):
         return item.subject()
@@ -1320,7 +1360,7 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         # pylint: disable=E1101
         # pylint: disable=E1101
         return (
-            not self.getItemExpanded(item)
+            not self.get_item_expanded(item)
             if self.is_tree_viewer() and item.children()
             else False
         )

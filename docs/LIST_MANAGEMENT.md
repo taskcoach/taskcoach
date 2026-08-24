@@ -11,7 +11,8 @@
 7. [Selection-Driven Button Enable/Disable](#selection-driven-button-enabledisable)
 8. [Tree Mode Button Enable/Disable](#tree-mode-button-enabledisable)
 9. [Scroll After Rebuild (Tree Views)](#scroll-after-rebuild-tree-views)
-10. [Windows: Scrollbar Adjustment on Content Changes](#windows-scrollbar-adjustment-on-content-changes)
+10. [Stale Item Positions After Rebuild](#stale-item-positions-after-rebuild)
+11. [Windows: Scrollbar Adjustment on Content Changes](#windows-scrollbar-adjustment-on-content-changes)
 11. [Row Hover Outline](#row-hover-outline)
 10. [Mouse-Move Handler Inventory (Tree Views)](#mouse-move-handler-inventory-tree-views)
 11. [Vampire CPU Usage](#vampire-cpu-usage)
@@ -89,10 +90,10 @@ When items are deleted and the selection becomes empty, select the "next" item f
 ### The Timing Problem
 
 ```
-onPresentationChanged(event):
+on_presentation_changed(event):
     │
     ├── BEFORE refresh(): Widget has old state (deleted items still visible)
-    │   └── Can query: selected items, their positions
+    │   └── Can query: selected items, the rows around them
     │
     ├── refresh(): Widget updates
     │
@@ -100,30 +101,82 @@ onPresentationChanged(event):
         └── Cannot determine where deleted items were
 ```
 
-### Solution: Capture State Before Refresh
+### Which Row Gets Selected
 
-**Reference:** `base.py:onPresentationChanged()`, `_captureSelectionInfo()`, `selectNextItemsAfterRemoval()`
+The row **above** the deleted one, so that repeated deletes keep walking
+up the list. Only when the deleted row was the topmost one does the
+selection move **down** to the row that took its place.
+
+"Above" and "below" mean adjacent *rows*, not adjacent siblings: the row
+above a top-level task is the last open descendant of the previous
+top-level task, and the row above a first child is its parent.
+
+### Solution: Capture Neighbouring Rows Before Refresh
+
+**Reference:** `base.py:on_presentation_changed()`, `_capture_selection_info()`, `select_next_items_after_removal()`, `treectrl.py:selection_neighbours()`
+
+The index of the deleted row cannot be recovered from the presentation:
+by the time `on_presentation_changed` fires, the domain layer has
+already removed the item, so `children(parent)` no longer contains it.
+Only the widget still holds the old order. `selection_neighbours()`
+therefore walks the widget's tree and returns the two chains of objects
+around the selection, nearest row first.
 
 Flow:
-1. BEFORE refresh: call `_captureSelectionInfo()` to get parent and index
+1. BEFORE refresh: `_capture_selection_info()` calls
+   `widget.selection_neighbours()` -> `{"above": [...], "below": [...]}`
 2. Call `refresh()` - widget updates, deleted items gone
-3. AFTER refresh: if selection empty, call `selectNextItemsAfterRemoval(selectionInfo)`
+3. AFTER refresh: if selection empty, `select_next_items_after_removal()`
+   selects the first entry of `above` that is still in the presentation,
+   falling back to the first surviving entry of `below`
+
+Walking chains rather than picking a single neighbour handles
+multi-select deletes: the rows between the survivors are skipped because
+they are no longer in the presentation.
+
+`selection_neighbours()` does its own tree walk instead of calling
+upstream `GetPrevVisible`/`GetNextVisible`, because those also test
+whether the row is scrolled on screen and would skip off-screen rows.
 
 ### Edge Cases
 
-**Deleted from bottom of list:**
-- Selected item was at index N
-- After deletion, list only has M items where M < N
-- Select last item: `min(len(siblings) - 1, index)` = last item
+**Deleted from top of list:**
+- Nothing above, so the first surviving row below is selected
+
+**Deleted the only row / whole list emptied:**
+- Both chains are empty, nothing is selected
 
 **Parent also deleted:**
-- Check if parent still in presentation
-- If not, look for siblings at root level
+- The parent is not in the presentation, so it is skipped like any other
+  removed row and the walk continues outward
+
+**Widgets without a row order** (timeline, calendar, square map):
+- These have no `selection_neighbours()`; they keep the older
+  parent-plus-index capture, where "next" means `min(len(siblings) - 1,
+  index)`
 
 **Benefits:**
 - No cache maintained on every selection change
 - State captured only when needed (before refresh on removal)
 - Each window captures its own state independently
+
+### Scrolling
+
+The new selection is adjacent to the deleted row, so
+`on_presentation_changed` then runs the usual
+`scroll_to_selection_centered()` for the "Delete selected item" row of
+the [scroll behavior table](#scroll-behavior-by-user-action), gated by
+`view.autoscrollselection` like every other path.
+
+Restoring the viewport needs one extra step, though. See
+[Stale Item Positions After Rebuild](#stale-item-positions-after-rebuild).
+
+### List Viewers
+
+`ListViewer.select_next_items_after_removal` is still a no-op: native list
+controls keep the selection at the same *index*, which lands on the row
+**below** the deleted one. Effort and attachment viewers therefore do
+not follow the rule above.
 
 ---
 
@@ -382,6 +435,51 @@ with the settings object as source), not pypubsub; see
 PUBLISHER_OBSERVER.md for why new signals must not use pubsub.
 
 ---
+
+## Stale Item Positions After Rebuild
+
+### Problem
+
+With auto-scroll off, deleting a task sent the view back to the top even
+though `_do_full_rebuild()` saves `GetViewStart()` and restores it.
+
+### Root Cause
+
+`AdjustMyScrollbars()` (upstream, in `hypertreelist.py`) derives the
+scrollbar range from `self._anchor.GetSize(...)`, that is from the item
+positions, but it never recalculates them. `ScrollTo()` does guard on
+`self._dirty` and call `CalculatePositions()`; `AdjustMyScrollbars()`
+has no such guard.
+
+Both `CalculatePositions()` and `AdjustMyScrollbars()` also return early
+while the window is frozen, only setting `_dirty`. A rebuild runs inside
+Freeze/Thaw, so when the restore executes the positions are still dirty,
+the computed range is stale, and the following `Scroll()` is clamped -
+usually to 0, which reads as "the list jumped to the top".
+
+### Fix
+
+`HyperTreeList._recalculated_main_window()` calls `CalculatePositions()`
+when `_dirty` and returns the main window. Used by the viewport restore
+in `_do_full_rebuild()` and by `stable_viewport()`, both of which call
+`AdjustMyScrollbars()` + `Scroll()` on a freshly rebuilt tree, and by
+`selection_neighbours()`, which orders the selected rows by `GetY()`.
+
+It deliberately leaves `_dirty` set, exactly as upstream `ScrollTo()`
+does. `customtreectrl` only ever *sets* that flag - nothing but
+`__init__` clears it - so clearing it here would suppress
+recalculations upstream still expects to perform.
+
+### Known Implicit Dependency
+
+`scroll_to_selection_centered()` reads `item.GetY()` and
+`GetLineHeight(item)` without recalculating first. It is correct today
+only because something upstream in the same flow already recalculated:
+selecting an item triggers `EnsureVisible()` -> `ScrollTo()` ->
+`CalculatePositions()` in upstream `customtreectrl`. If that chain ever
+stops firing before the centering call, centering will compute from
+stale positions. Route it through `_recalculated_main_window()` if that
+happens.
 
 ## Windows: Scrollbar Adjustment on Content Changes
 

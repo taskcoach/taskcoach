@@ -143,7 +143,7 @@ def viewer2csv(
     isTree = viewer.is_tree_viewer()
     columns = columns or viewer.visibleColumns()
     rowBuilder = RowBuilder(columns, isTree, separateDateAndTimeColumns)
-    items = viewer.visibleItems()
+    items = viewer.visible_items()
     if selectionOnly:
         items = [item for item in items if viewer.isselected(item)]
         if isTree:

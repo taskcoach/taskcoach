@@ -371,14 +371,14 @@ class RoundingTestsMixin(object):
         self.assertEqual(
             self.expectedPeriodRendering,
             self.viewer.widget.getItemText(
-                self.viewer.widget.getItemWithIndex(0), 3
+                self.viewer.widget.get_item_with_index(0), 3
             ),
         )
         if self.aggregation != "details":
             self.assertEqual(
                 self.expectedTotalPeriodRendering,
                 self.viewer.widget.getItemText(
-                    self.viewer.widget.getItemWithIndex(0), 4
+                    self.viewer.widget.get_item_with_index(0), 4
                 ),
             )
 

@@ -629,7 +629,7 @@ class ViewerIteratorTestCase(test.wxTestCase):
         self.taskFile.stop()
 
     def getItemsFromIterator(self):
-        return list(self.viewer.visibleItems())  # pylint: disable=E1101
+        return list(self.viewer.visible_items())  # pylint: disable=E1101
 
 
 class ViewerIteratorTestsMixin(object):

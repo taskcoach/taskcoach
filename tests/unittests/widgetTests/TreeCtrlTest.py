@@ -40,7 +40,7 @@ class TreeCtrlTestCase(test.wxTestCase):
             wx.TreeItemIcon_Normal: -1
         }
         self.frame.getIsItemChecked = lambda item: False
-        self.frame.getItemExpanded = (
+        self.frame.get_item_expanded = (
             lambda item: item not in self.collapsedItems
         )
         self.item0 = DummyDomainObject("item 0")
