@@ -5,6 +5,8 @@ This document covers AUI-related topics for Task Coach, which uses wxPython's AG
 ## Contents
 
 1. [Layout Persistence](#layout-persistence)
+   - [Pane Names Carry Instance Numbers](#pane-names-carry-instance-numbers)
+   - [AUI-Generated Panes](#aui-generated-panes)
 2. [Sash Cursor Seep-Through Fix](#sash-cursor-seep-through-fix)
 3. [Related Documentation](#related-documentation)
 
@@ -75,6 +77,65 @@ def __restore_perspective(self):
         self.manager.LoadPerspective("")  # Fall back to default
 ```
 
+### Pane Names Carry Instance Numbers
+
+A pane's name is `viewer.settingsSection()`, which appends the viewer's
+instance number for every instance after the first: `taskviewer`,
+`taskviewer1`, `taskviewer2`. `NumberedInstances` (in
+`patterns/metaclass.py`) hands out the lowest number not held by a live
+instance.
+
+This matters because the layout is persisted in two places that encode
+different things:
+
+| What | Where | Encodes |
+|------|-------|---------|
+| Pane layout | `[view] perspective` | Pane **names**, so instance numbers |
+| Viewer set | `[view] <type>count` | **Cardinality** only |
+
+Closing any viewer other than the highest-numbered one leaves a gap in
+the names. Close `taskviewer1` of three and the surviving panes are
+`taskviewer` and `taskviewer2`, while the count is 2. A count cannot
+express a gap, so recreating from it alone yields `taskviewer` and
+`taskviewer1`: AUI then ignores the saved `taskviewer2` (no window with
+that name) and leaves the new `taskviewer1` at its default position.
+Part of the layout silently fails to restore.
+
+**Therefore: the perspective is the source of truth for which instance
+numbers to recreate**, not the count.
+`addViewers._instance_numbers_to_add()` reads the numbers back out of
+the perspective and passes each one explicitly to the viewer
+constructor; `NumberedInstances` honours an explicitly supplied
+`instanceNumber` instead of assigning the lowest unused one. The count
+remains only as a fallback for viewer types the perspective has no panes
+for, such as on a first run.
+
+The name match is anchored on the separator (`name=<section>(\d*)`
+followed by `;`, `|`, or end of string) so that `effortviewer` does not
+also match `effortviewerforselectedtasks`. That substring collision is
+the same trap described in "Why Custom Validation Is Harmful" above.
+
+### AUI-Generated Panes
+
+Dragging panes together creates a tab group, and AUI adds a pane of its
+own named `__notebook_0`, `__notebook_1`, and so on, with the tabbed
+viewers becoming notebook pages referring to it by `notebook_id`. These
+names appear in the saved perspective but match no window we create.
+
+**They are recreated by `LoadPerspective` itself and need no handling.**
+Verified against wxPython 4.2.0 / AGW: a 13-pane layout containing an
+auto-notebook restored with every pane's dock direction, layer, row,
+position, proportion and size identical to what was saved. The manager
+gained the `__notebook_0` pane during the load.
+
+This is worth stating because upstream reports say otherwise. A
+[wxPython-users thread](https://groups.google.com/g/wxpython-users/c/HmNe0lvnwMY)
+describes panes dragged into a spontaneously generated notebook
+disappearing on restore, and the AGW maintainer confirmed it as a bug.
+That does not reproduce on the version in use here, so do not spend time
+working around it, and do not treat `__notebook_*` entries with no
+matching window as evidence of a problem.
+
 ### Perspective String Format
 
 The perspective string uses this format:
@@ -108,8 +169,10 @@ The name is determined by `viewer.settingsSection()` in `taskcoachlib/gui/viewer
 
 | File | Purpose |
 |------|---------|
-| `taskcoachlib/gui/mainwindow.py` | `__restore_perspective()`, `__save_perspective()` |
+| `taskcoachlib/gui/mainwindow.py` | `__restore_perspective()`, `__save_perspective()`, `__save_viewer_counts()` |
 | `taskcoachlib/gui/viewer/base.py` | `settingsSection()` - generates unique pane names |
+| `taskcoachlib/gui/viewer/factory.py` | `_instance_numbers_to_add()` - reads instance numbers back from the perspective |
+| `taskcoachlib/patterns/metaclass.py` | `NumberedInstances` - assigns instance numbers, honours an explicit one |
 | `taskcoachlib/gui/viewer/container.py` | `addViewer()` - adds panes to AUI manager |
 | `taskcoachlib/widgets/frame.py` | `addPane()` - configures AuiPaneInfo |
 | `taskcoachlib/config/settings.py` | Stores perspective in INI file |
