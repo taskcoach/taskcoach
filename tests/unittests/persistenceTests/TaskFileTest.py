@@ -16,7 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import os, wx
+import os
+import wx
 import test
 from taskcoachlib import persistence, config
 from taskcoachlib.domain import (
@@ -82,6 +83,8 @@ class TaskFileTestCase(test.TestCase):
             self.filename2,
             self.filename + ".delta",
             self.filename2 + ".delta",
+            self.filename + ".lock",
+            self.filename2 + ".lock",
         )
 
     def remove(self, *filenames):
@@ -972,52 +975,46 @@ class LockedTaskFileLockTest(TaskFileTestCase):
         self.emptyTaskFile.close()
         super().tearDown()
 
-    def testFileIsNotLockedInitially(self):
+    def test_file_is_not_locked_initially(self):
         self.assertFalse(self.taskFile.is_locked())
         self.assertFalse(self.emptyTaskFile.is_locked())
 
-    def testFileIsNotLockedAfterLoading(self):
-        self.taskFile.load(self.filename)
-        self.assertFalse(self.taskFile.is_locked())
-
-    def testFileIsNotLockedAfterClosing(self):
-        self.taskFile.close()
-        self.assertFalse(self.taskFile.is_locked())
-
-    def testFileIsnotLockedAfterLoadingAndClosing(self):
-        self.taskFile.load(self.filename)
-        self.taskFile.close()
-        self.assertFalse(self.taskFile.is_locked())
-
-    def testFileIsNotLockedAfterSaving(self):
+    def test_file_is_locked_after_saving(self):
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
-        self.assertFalse(self.taskFile.is_locked())
+        self.assertTrue(self.taskFile.is_locked())
 
-    def testFileIsNotLockedAfterSavingAndClosing(self):
+    def test_file_is_locked_after_loading(self):
+        self.taskFile.setFilename(self.filename)
+        self.taskFile.save()
+        self.taskFile.close()
+        self.emptyTaskFile.load(self.filename)
+        self.assertTrue(self.emptyTaskFile.is_locked())
+
+    def test_file_is_not_locked_after_saving_and_closing(self):
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.taskFile.close()
         self.assertFalse(self.taskFile.is_locked())
 
-    def testFileIsNotLockedAfterSaveAs(self):
-        self.taskFile.saveas(self.filename)
-        self.assertFalse(self.taskFile.is_locked())
-
-    def testFileIsNotLockedAfterSaveAndSaveAs(self):
+    def test_save_as_moves_the_lock(self):
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.taskFile.saveas(self.filename2)
-        self.assertFalse(self.taskFile.is_locked())
+        self.assertTrue(self.taskFile.is_locked())
+        with open(self.filename + ".lock", "rb") as lock_file:
+            self.assertEqual(b"", lock_file.read())
+        with open(self.filename2 + ".lock", "rb") as lock_file:
+            self.assertIn(b"pid=%d" % os.getpid(), lock_file.read())
 
-    def testFileCanBeLoadedAfterClose(self):
+    def test_file_can_be_loaded_after_close(self):
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.taskFile.close()
         self.emptyTaskFile.load(self.filename)
         self.assertEqual(1, len(self.emptyTaskFile.tasks()))
 
-    def testOriginalFileCanBeLoadedAfterSaveAs(self):
+    def test_original_file_can_be_loaded_after_save_as(self):
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.taskFile.saveas(self.filename2)

@@ -45,7 +45,8 @@ from taskcoachlib.config.settings import Settings
 from taskcoachlib.meta.debug import log_step
 import re
 import wx.lib.agw.aui as aui
-import wx, ctypes
+import wx
+import ctypes
 
 
 def turn_on_double_buffering_on_windows(window):
@@ -56,7 +57,8 @@ def turn_on_double_buffering_on_windows(window):
     ret = wintypes.BOOL()
     if dll.DwmIsCompositionEnabled(ctypes.pointer(ret)) == 0 and ret.value:
         return
-    import win32gui, win32con  # pylint: disable=F0401
+    import win32gui  # pylint: disable=F0401
+    import win32con  # pylint: disable=F0401
 
     exstyle = win32gui.GetWindowLong(window.GetHandle(), win32con.GWL_EXSTYLE)
     exstyle |= win32con.WS_EX_COMPOSITED
@@ -364,7 +366,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
             event.Veto()
             self.Iconize()
         else:
-            if application.Application().quitApplication():
+            if application.Application().quit_application():
                 # UnInit AUI manager before window destruction to avoid
                 # wxAssertionError about pushed event handlers
                 self.manager.UnInit()

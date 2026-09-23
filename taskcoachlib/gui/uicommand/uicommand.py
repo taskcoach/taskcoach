@@ -26,7 +26,6 @@ from taskcoachlib import (
     help,
     widgets,
     persistence,
-    thirdparty,
     render,
     operating_system,
 )  # pylint: disable=W0622
@@ -53,7 +52,9 @@ from taskcoachlib.thirdparty.wxScheduler import (
 from taskcoachlib.gui.icons.icon_library import icon_catalog
 from taskcoachlib.tools import anonymize, openfile
 
-import wx, re, operator
+import wx
+import re
+import operator
 from . import base_uicommand
 from . import mixin_uicommand
 from . import settings_uicommand
@@ -829,7 +830,7 @@ class FileQuit(base_uicommand.UICommand):
 
     def do_command(self, event):
         # Use CallAfter so the tray popup menu can finish and release
-        # its resources before quitApplication() destroys the tray icon.
+        # its resources before quit_application() destroys the tray icon.
         # Without this, Windows crashes (segfault) because PopupMenu()
         # is modal and the tray icon is destroyed while the menu is active.
         wx.CallAfter(self.main_window().Close, force=True)
@@ -2631,16 +2632,16 @@ class OpenAllNotes(ViewerCommand, settings_uicommand.SettingsCommand):
 
     def do_command(self, event):
         for item in self.viewer.curselection():
-            for note in item.notes():
-                editDialog = dialog.editor.NoteEditor(
+            for item_note in item.notes():
+                edit_dialog = dialog.editor.NoteEditor(
                     self.main_window(),
-                    [note],
+                    [item_note],
                     self.settings,
                     self.viewer.presentation(),
                     self.main_window().taskFile,
                     icon_id=self.icon_id,
                 )
-                editDialog.Show()
+                edit_dialog.Show()
 
 
 class EffortNew(

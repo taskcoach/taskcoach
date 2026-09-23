@@ -40,8 +40,12 @@ _LEGACY_REVERSE_MAP = {
 }
 
 _LEGACY_STATUS_KEYS = (
-    "activetasks", "latetasks", "completedtasks",
-    "overduetasks", "inactivetasks", "duesoontasks",
+    "activetasks",
+    "latetasks",
+    "completedtasks",
+    "overduetasks",
+    "inactivetasks",
+    "duesoontasks",
 )
 
 
@@ -83,7 +87,9 @@ class Settings(CachingConfigParser):
         self.initializeWithDefaults()
         self.__loadAndSave = load
         self.__iniFileSpecifiedOnCommandLine = iniFile
-        self.__ini_lock = None  # Lock for ini file to prevent concurrent access
+        self.__ini_lock = (
+            None  # Lock for ini file to prevent concurrent access
+        )
 
         self.migrateConfigurationFiles()
 
@@ -98,7 +104,6 @@ class Settings(CachingConfigParser):
                     self.filename(forceProgramDir=True), encoding="utf-8"
                 ):
                     self.read(self.filename(), encoding="utf-8")
-                errorMessage = ""
                 self._migrateOldSettingNames()
             except configparser.ParsingError as errorMessage:
                 # Ignore exceptions and simply use default values.
@@ -118,43 +123,41 @@ class Settings(CachingConfigParser):
         )
 
     def acquire_ini_lock(self):
-        """Acquire lock on ini file to prevent multiple instances from
-        corrupting config. Shows error and exits if another instance has lock.
+        """Lock the ini file so only one Task Coach uses it. Shows an
+        error and exits if another instance holds it.
 
         Note: This must be called after wxApp is created, as it may display
         a wx.MessageBox on failure."""
+        from taskcoachlib.filesystem import resourcelock
+
         try:
-            import fasteners
-            lock_path = self.filename() + ".lock"
-            self.__ini_lock = fasteners.InterProcessLock(lock_path)
-            acquired = self.__ini_lock.acquire(blocking=False)
-            if not acquired:
-                # Another instance has the lock
-                wx.MessageBox(
-                    _("Another instance of %s is already running with the same "
-                      "configuration file.\n\n"
-                      "You can run multiple instances with different configuration "
-                      "files using the --ini option:\n"
-                      "  taskcoach --ini=/path/to/other.ini\n\n"
-                      "The program will now exit.") % meta.name,
-                    _("%s: configuration locked") % meta.name,
-                    style=wx.OK | wx.ICON_ERROR,
+            self.__ini_lock = resourcelock.acquire(self.filename(), "settings")
+        except resourcelock.LockInUse as in_use:
+            message = (
+                _(
+                    "Another instance of %s is already running with the same "
+                    "configuration file.\n\n"
+                    "You can run multiple instances with different "
+                    "configuration files using the --ini option:\n"
+                    "  taskcoach --ini=/path/to/other.ini\n\n"
+                    "The program will now exit."
                 )
-                sys.exit(1)
-        except ImportError:
-            # fasteners not available - skip locking
-            pass
-        except Exception:
-            # Lock failed for other reasons (permissions, etc.) - continue without lock
-            pass
+                % meta.name
+            )
+            summary = resourcelock.owner_summary(in_use.owner)
+            if summary:
+                message += "\n\n" + _("In use by: %s") % summary
+            wx.MessageBox(
+                message,
+                _("%s: configuration locked") % meta.name,
+                style=wx.OK | wx.ICON_ERROR,
+            )
+            sys.exit(1)
 
     def release_ini_lock(self):
         """Release the ini file lock. Call this on application shutdown."""
         if self.__ini_lock is not None:
-            try:
-                self.__ini_lock.release()
-            except Exception:
-                pass  # Ignore errors during cleanup
+            self.__ini_lock.release()
             self.__ini_lock = None
 
     def onSettingsFileLocationChanged(self, value):
@@ -268,10 +271,13 @@ class Settings(CachingConfigParser):
             try:
                 ast.literal_eval(result)
             except (ValueError, SyntaxError):
-                sortKeys = [result]
                 try:
                     ascending = self.getboolean(section, "sortascending")
-                except (ValueError, configparser.NoOptionError, configparser.NoSectionError):
+                except (
+                    ValueError,
+                    configparser.NoOptionError,
+                    configparser.NoSectionError,
+                ):
                     ascending = True
                 result = '["%s%s"]' % (("" if ascending else "-"), result)
         elif option == "columns":
@@ -302,8 +308,12 @@ class Settings(CachingConfigParser):
         elif section == "editor" and option == "preferencespages":
             # Migrate legacy page names saved in .ini files from older versions.
             # Each step must be kept so upgrades from any prior version work.
-            result = result.replace("colors", "appearance")  # pre-1.x "colors" tab
-            result = result.replace("appearance", "statuses")  # renamed to "Statuses" tab
+            result = result.replace(
+                "colors", "appearance"
+            )  # pre-1.x "colors" tab
+            result = result.replace(
+                "appearance", "statuses"
+            )  # renamed to "Statuses" tab
         elif section in orderingViewers and option == "columnsalwaysvisible":
             # XXX: remove 'ordering' from always visible columns. This wasn't in any official release
             # but I need it so that people can test without resetting their .ini file...
@@ -318,6 +328,7 @@ class Settings(CachingConfigParser):
             result = str(columns)
         if section in ("icon", "icon_dark"):
             from taskcoachlib.gui.icons.icon_library import icon_catalog
+
             result = icon_catalog.normalize_icon_id(result)
         if result != original:
             super().set(section, option, result)
@@ -335,6 +346,7 @@ class Settings(CachingConfigParser):
             super().set(section, option, value)
             patterns.Event("%s.%s" % (section, option), self, value).send()
             from taskcoachlib.config import settings2
+
             settings2.schedule_refresh()
             return True
         else:
@@ -374,7 +386,11 @@ class Settings(CachingConfigParser):
             )
 
     def getEvaluatedValue(
-        self, section, option, evaluate=ast.literal_eval, showerror=wx.MessageBox
+        self,
+        section,
+        option,
+        evaluate=ast.literal_eval,
+        showerror=wx.MessageBox,
     ):
         stringValue = self.get(section, option)
         try:
@@ -422,8 +438,10 @@ class Settings(CachingConfigParser):
             for key in _LEGACY_STATUS_KEYS:
                 try:
                     current = tmp.get(section, key)
-                except (configparser.NoSectionError,
-                        configparser.NoOptionError):
+                except (
+                    configparser.NoSectionError,
+                    configparser.NoOptionError,
+                ):
                     continue
                 old_name = _LEGACY_REVERSE_MAP.get(current)
                 if old_name:
@@ -533,10 +551,9 @@ class Settings(CachingConfigParser):
 
     def _iniFileExists(self):
         """Check if INI file exists in either program dir or config dir."""
-        return (
-            os.path.exists(self.filename(forceProgramDir=True))
-            or os.path.exists(self.filename())
-        )
+        return os.path.exists(
+            self.filename(forceProgramDir=True)
+        ) or os.path.exists(self.filename())
 
     @staticmethod
     def pathToSystemWelcomeFile():
@@ -553,7 +570,9 @@ class Settings(CachingConfigParser):
             candidates = [
                 os.path.join(
                     os.path.dirname(sys.executable),
-                    "..", "Resources", "Welcome.tsk"
+                    "..",
+                    "Resources",
+                    "Welcome.tsk",
                 ),
                 os.path.join(os.path.dirname(sys.argv[0]), "Welcome.tsk"),
             ]
@@ -633,8 +652,7 @@ class Settings(CachingConfigParser):
             path = BaseDirectory.save_data_path(meta.name)
         elif operating_system.isMac():
             path = os.path.join(
-                os.path.expanduser("~/Library/Application Support"),
-                meta.name
+                os.path.expanduser("~/Library/Application Support"), meta.name
             )
         elif operating_system.isWindows():
             if self.__iniFileSpecifiedOnCommandLine and not forceGlobal:

@@ -170,7 +170,8 @@ Raw strings treat backslashes as literal characters, avoiding the warning while 
 ## File Locking: lockfile → fasteners Migration
 
 **Date:** December 2025
-**Status:** Complete
+**Status:** Superseded in 2.0.2.24 by Task Coach's own locking module; see
+[FILE_LOCKING.md](FILE_LOCKING.md) for the current design.
 
 ### Background
 
@@ -232,7 +233,9 @@ These are exported from `taskcoachlib/persistence/__init__.py` and used by `ioco
 
 ### Why Lock File Pattern (Not flock)
 
-The lock file pattern (existence of `.lock` file indicates lock) was preserved because:
+Correction: fasteners does not use the existence of the `.lock` file as the
+lock. It takes an OS lock (`msvcrt.locking` / `fcntl.lockf`) on that file, and
+the file itself stays behind after release. The original reasoning was:
 - Works reliably on **network drives** (NFS, SMB) where `flock()` may not work
 - Cross-platform compatibility
 - Safer for document-oriented applications

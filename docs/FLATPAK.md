@@ -68,8 +68,9 @@ not a direct grant.
 
 > **Status: postponed.** The Flatpak build retains `--filesystem=home`. The
 > portal migration described here is a future Flathub-cleanup TODO — a prototype
-> was implemented and then **reverted**; it will most likely arrive automatically
-> with wxPython 3.3 (see the end of this section). This is the **only** place this
+> was implemented and then **reverted**. The Flatpak now builds wxPython 4.3.1
+> (wxWidgets 3.3), which should provide the portal automatically; dropping the
+> grant is pending a sandbox test (see the end of this section). This is the **only** place this
 > TODO is tracked, because it is relevant only to the Flatpak build.
 
 Task Coach reads and writes user-chosen files in **one** place:
@@ -83,7 +84,7 @@ Backup Manager's own `wx.FileDialog` in
 call sites**, not a scattered concern.
 
 **Why the portal is needed.** On GTK, `wxFileDialog` in wxWidgets **3.2.x**
-(what wxPython 4.2.5 bundles — wxWidgets **3.2.9**) is built with
+(what wxPython 4.2.x bundles, e.g. 4.2.5 with wxWidgets **3.2.9**) is built with
 `gtk_file_chooser_dialog_new()` — the legacy **`GtkFileChooserDialog`**, which does
 **not** route through the XDG file-chooser portal. With no filesystem grant it can
 only browse the app's private `~/.var/app/<id>/` tree, so a `.tsk` (or an export
@@ -99,14 +100,13 @@ migration; export-to-CSV was added 2006) — roughly **11 years before**
 simply predates the sandbox/portal layer and the call site was carried forward
 unchanged (the only recent touch to `iocontroller.py` is a 2024 source-tree move).
 
-**wxWidgets 3.3 fixes it upstream — but no released wxPython has it yet.**
+**wxWidgets 3.3 fixes it upstream, and the Flatpak now bundles it.**
 wxWidgets **3.3.0** instantiates `GtkFileChooserNative` (when GTK >= 3.20 and
 `wxFD_PREVIEW` is not requested), which **auto-routes through the portal** in a
 sandbox. Task Coach's dialogs request no preview, so on a 3.3-based build
 `wx.FileSelector` would become a real portal picker with **zero app changes** and
-the grant could be dropped. But stable wxPython is still on wxWidgets 3.2.x
-(4.2.5 -> 3.2.9, Feb 2026); only wxPython *master* tracks 3.3, and no release
-bundles it. So the free path is a wait, not an upgrade we can take today.
+the grant could be dropped. wxPython 4.3.0 (July 2026) was the first release
+built on wxWidgets 3.3, and the Flatpak manifest builds 4.3.1 from its sdist.
 
 **TODO (postponed): migrate file access to the portal.** The fix for a future
 Flathub effort is to call the portal ourselves at the two chokepoints — what GTK
@@ -130,12 +130,14 @@ changes the single file-dialog code path that *every* user goes through on
 *every* OS — real regression risk — for a benefit that only matters inside the
 Flatpak sandbox. With the Flathub release postponed, that risk isn't worth it.
 
-**The likely free fix: wxWidgets 3.3.** When a wxPython release bundles wxWidgets
-3.3, `wx.FileSelector` will route through the portal **on its own** (no app code),
-because 3.3 uses `GtkFileChooserNative` (GTK >= 3.20, no `wxFD_PREVIEW` — which
-Task Coach's dialogs never set). At that point this TODO resolves for free and
-`--filesystem=home` can simply be dropped. So the preferred plan is to **wait for
-wx 3.3** rather than carry a hand-written shim.
+**The free fix: wxWidgets 3.3.** On wxWidgets 3.3, `wx.FileSelector` routes
+through the portal **on its own** (no app code), because 3.3 uses
+`GtkFileChooserNative` (GTK >= 3.20, no `wxFD_PREVIEW`, which Task Coach's
+dialogs never set). The Flatpak now builds wxPython 4.3.1 (wxWidgets 3.3), so
+the open/save dialogs are the desktop's portal picker even though
+`--filesystem=home` is still granted. **Remaining TODO:** build once without
+`--filesystem=home` and confirm that opening, saving and exporting a `.tsk`
+outside the home directory work through the portal; if so, drop the grant.
 
 Sources: wxWidgets `src/gtk/filedlg.cpp` —
 [v3.2.6 (dialog only)](https://github.com/wxWidgets/wxWidgets/blob/v3.2.6/src/gtk/filedlg.cpp)
@@ -333,7 +335,8 @@ the Flathub
 >    Flathub's required changes is **no longer relevant**.
 > 2. **We didn't want Flathub's main ask anyway.** Dropping `--filesystem=home`
 >    for the portal changes the file-dialog code path for every user on every OS
->    (too risky), and wxPython 3.3 will likely deliver the portal for free (see
+>    (too risky), and wxWidgets 3.3, now bundled through wxPython 4.3.1, delivers
+>    the portal for free (see
 >    [File access](#file-access-and-the-file-chooser-portal)).
 >
 > Users can install the `.flatpak` **directly from this project's GitHub

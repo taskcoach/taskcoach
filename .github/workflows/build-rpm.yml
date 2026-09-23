@@ -89,8 +89,7 @@ jobs:
             python3-lxml \
             python3-pyxdg \
             python3-keyring \
-            python3-numpy \
-            python3-fasteners
+            python3-numpy
 
           # NOT in Fedora repos - install via pip during RPM build:
           # - squaremap (bundled in RPM via pip install in spec file)

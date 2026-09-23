@@ -17,7 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import os
-import test, mock
+import test
+import mock
 
 
 class SaveTest(test.TestCase):
@@ -29,7 +30,7 @@ class SaveTest(test.TestCase):
 
     def tearDown(self):
         self.mockApp.iocontroller.save()
-        self.mockApp.quitApplication()
+        self.mockApp.quit_application()
         for filename in [self.filename, self.filename2]:
             if os.path.isfile(filename):
                 os.remove(filename)
@@ -69,4 +70,4 @@ class SaveTest(test.TestCase):
         self.mockApp.iocontroller.merge(self.filename2)
         self.assertTasksLoaded(4)
         self.mockApp.iocontroller.save_as(self.filename)
-        mockApp2.quitApplication()
+        mockApp2.quit_application()

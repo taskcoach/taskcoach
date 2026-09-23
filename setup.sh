@@ -145,8 +145,8 @@ get_system_packages() {
             if [ "$PYTHON_CMD" = "python3.12" ]; then
                 SYSTEM_PACKAGES="$SYSTEM_PACKAGES python3.12-venv"
             fi
-            # Trixie has python3-fasteners and python3-watchdog in repos
-            SYSTEM_PACKAGES="$SYSTEM_PACKAGES python3-fasteners python3-watchdog python3-pubsub"
+            # Trixie has python3-watchdog in repos
+            SYSTEM_PACKAGES="$SYSTEM_PACKAGES python3-watchdog python3-pubsub"
             ;;
         bookworm)
             # Bookworm needs some packages from pip (older versions in repos)
@@ -168,12 +168,11 @@ get_pip_packages() {
             ;;
         bookworm)
             # Bookworm needs more packages from pip
-            # Note: fasteners replaces deprecated lockfile for cross-platform file locking
-            echo "fasteners distro pypubsub 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'"
+            echo "distro pypubsub 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'"
             ;;
         *)
             # Default: install most from pip to be safe
-            echo "fasteners distro pypubsub 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'"
+            echo "distro pypubsub 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'"
             ;;
     esac
 }
@@ -311,7 +310,7 @@ main() {
     # Test 3: Test key packages
     echo "Testing key packages..."
     FAILED=0
-    for pkg in "fasteners" "desktop" "distro"; do
+    for pkg in "desktop" "distro"; do
         echo -n "  - $pkg... "
         if $PYTHON_CMD -c "import $pkg" 2>/dev/null; then
             echo -e "${GREEN}✓${NC}"

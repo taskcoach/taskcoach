@@ -110,7 +110,7 @@ install_dependencies() {
     echo "Installing wxPython..."
     $PYTHON -m pip install --only-binary wxPython \
         -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 \
-        "wxPython==4.2.2"
+        "wxPython==4.2.5"
 
     # Install TaskCoach dependencies
     echo "Installing TaskCoach dependencies..."
@@ -125,7 +125,6 @@ install_dependencies() {
         pyxdg \
         keyring \
         numpy \
-        "fasteners>=0.19" \
         "squaremap>=1.0.5" \
         distro
 

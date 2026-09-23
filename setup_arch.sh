@@ -80,7 +80,6 @@ if command -v sudo &> /dev/null; then
         python-pyparsing \
         python-pyxdg \
         python-watchdog \
-        python-fasteners \
         libayatana-appindicator \
         libxss \
         xdg-utils
@@ -234,7 +233,7 @@ fi
 echo "Testing key packages..."
 FAILED=0
 
-for pkg in "fasteners" "desktop" "distro" "watchdog"; do
+for pkg in "desktop" "distro" "watchdog"; do
     echo -n "  - $pkg... "
     if python3 -c "import $pkg" 2>/dev/null; then
         echo -e "${GREEN}✓${NC}"
@@ -275,7 +274,7 @@ echo -e "${GREEN}Setup completed successfully!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo
 echo "TaskCoach has been set up for Arch/Manjaro Linux with:"
-echo "  • System packages from official repos (wxPython, numpy, lxml, fasteners, watchdog, etc.)"
+echo "  • System packages from official repos (wxPython, numpy, lxml, watchdog, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
 echo "  • Additional packages in venv (distro)"
 echo "  • wxPython background color patch (for category row coloring)"

@@ -21,7 +21,6 @@ depends=(
     'python-pyxdg'
     'python-keyring'
     'python-numpy'
-    'python-fasteners>=0.19'
     'python-pyenchant'
     'libayatana-appindicator'
     'libxss'

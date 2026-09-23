@@ -44,11 +44,11 @@ import re
 # =============================================================================
 
 version = "2.0.2"  # Major.Minor.Milestone
-patch = "23"  # Patch number - INCREMENT THIS for each release
-version_full = f"{version}.{patch}"  # Full version: 2.0.2.23
+patch = "24"  # Patch number - INCREMENT THIS for each release
+version_full = f"{version}.{patch}"  # Full version: 2.0.2.24
 
-release_day = "24"  # Day of the release (1-31)
-release_month = "August"  # Month of the release
+release_day = "23"  # Day of the release (1-31)
+release_month = "September"  # Month of the release
 release_year = "2026"  # Year of the release
 
 # =============================================================================
@@ -116,19 +116,19 @@ name = "Task Coach"
 description = "Your friendly task manager"
 long_description = (
     "%(name)s is a free open source todo manager. It grew "
-    "out of frustration about other programs not handling composite tasks well. "
-    "In addition to flexible composite tasks, %(name)s has grown to include "
-    "prerequisites, prioritizing, effort tracking, category tags, budgets, "
-    "notes, and many other features. However, users are not forced to use all "
-    "these features; %(name)s can be as simple or complex as you need it to be. "
-    "%(name)s is available for Windows, Mac OS X, and GNU/Linux; and there is a "
-    "companion iOS app." % dict(name=name)
+    "out of frustration about other programs not handling composite tasks "
+    "well. In addition to flexible composite tasks, %(name)s has grown to "
+    "include prerequisites, prioritizing, effort tracking, category tags, "
+    "budgets, notes, and many other features. However, users are not forced "
+    "to use all these features; %(name)s can be as simple or complex as you "
+    "need it to be. %(name)s is available for Windows, Mac OS X, and "
+    "GNU/Linux; and there is a companion iOS app." % dict(name=name)
 )
 keywords = "task manager, todo list, pim, time registration, track effort"
 author_first, author_last = "Frank", "Niessink"  # Needed for PAD file
-author = (
-    "%s %s, Jerome Laheurte, Aaron Wolf, and Real Carbonneau"
-    % (author_first, author_last)
+author = "%s %s, Jerome Laheurte, Aaron Wolf, and Real Carbonneau" % (
+    author_first,
+    author_last,
 )
 author_unicode = "%s %s, Jérôme Laheurte, Aaron Wolf, and Réal Carbonneau" % (
     author_first,
@@ -257,14 +257,17 @@ languages = {
 languages_list = ",".join(list(languages.keys()))
 
 
-def __createDict(localsDict):
+def __create_dict(locals_dict):
     """Provide the local variables as a dictionary for use in string
     formatting."""
-    metaDict = {}  # pylint: disable=W0621
-    for key in localsDict:
+    meta_dict = {}
+    for key in locals_dict:
         if not key.startswith("__"):
-            metaDict[key] = localsDict[key]
-    return metaDict
+            meta_dict[key] = locals_dict[key]
+    return meta_dict
 
 
-metaDict = __createDict(locals())
+# metaDict is used as a %-format mapping across the codebase and in
+# the website and legacy build scripts; renaming it is a separate
+# change.
+metaDict = __create_dict(locals())  # noqa: N816

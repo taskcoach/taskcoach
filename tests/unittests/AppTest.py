@@ -45,7 +45,7 @@ class AppTests(test.TestCase):
 
         if locale.getdefaultlocale()[0] != "en_US":
             # Somehow wx displays an error dialog box if en_US is not installed, when
-            # quitApplication() calls ProcessIdle and I don't know how to get rid of it.
+            # quit_application() calls ProcessIdle and I don't know how to get rid of it.
             # I don't know how to find out if en_US is installed either, so skip if
             # it's not the default.
             self.skipTest("Locale is not en_US")
@@ -53,13 +53,13 @@ class AppTests(test.TestCase):
             # Normally I prefer one assert per test, but creating the app is
             # expensive, so we do all the queries in one test method.
             app = application.Application(
-                loadSettings=False, loadTaskFile=False
+                load_settings=False, load_task_file=False
             )
             wxApp = wx.GetApp()
             self.assertEqual(meta.name, wxApp.GetAppName())
             self.assertEqual(meta.author, wxApp.GetVendorName())
             app.mainwindow._idleController.stop()
-            app.quitApplication()
+            app.quit_application()
             app.mainwindow.Destroy()
             application.Application.deleteInstance()
 

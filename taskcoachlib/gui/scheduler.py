@@ -14,9 +14,7 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""
 
-"""
 MasterScheduler - Consolidated timer and per-second processing.
 
 All periodic processing in one place:
@@ -39,12 +37,9 @@ If _onSecond() ever freezes the UI with very large task files, consider:
 3. Only add yielding if there are actual cases where processing > 100-200ms
 """
 
-import time
-
 from pubsub import pub
 from taskcoachlib.domain import date as datemodule
 from taskcoachlib.domain.base.appearance import computeStyles
-from taskcoachlib.meta.debug import log_step
 import wx
 
 
@@ -80,8 +75,8 @@ class GlobalTimer:
         parent.Bind(wx.EVT_TIMER, self._onTick, self._timer)
 
         # State tracking - None means first run
-        self._lastDate = None        # (year, month, day) tuple or None
-        self._lastMinute = None      # (hour, minute) tuple or None
+        self._lastDate = None  # (year, month, day) tuple or None
+        self._lastMinute = None  # (hour, minute) tuple or None
 
     def start(self):
         """Start the global timer."""
@@ -91,14 +86,14 @@ class GlobalTimer:
         """Stop the global timer."""
         self._timer.Stop()
 
-    # Alias for compatibility with _stopAllTimers in application.py
+    # Alias for compatibility with _stop_all_timers in application.py
     Stop = stop
 
     def isRunning(self):
         """Check if timer is running."""
         return self._timer.IsRunning()
 
-    # Alias for compatibility with _stopAllTimers in application.py
+    # Alias for compatibility with _stop_all_timers in application.py
     IsRunning = isRunning
 
     def _onTick(self, event):
@@ -121,17 +116,17 @@ class GlobalTimer:
         # Runs on first tick (lastDate is None) or when date changes
         if self._lastDate != currentDate:
             self._lastDate = currentDate
-            pub.sendMessage('timer.date', timestamp=now)
+            pub.sendMessage("timer.date", timestamp=now)
 
         # === MINUTE CHANGE CHECK ===
         # Runs when minute changes
         if self._lastMinute != currentMinute:
             self._lastMinute = currentMinute
-            pub.sendMessage('timer.minute', timestamp=now)
+            pub.sendMessage("timer.minute", timestamp=now)
 
         # === EVERY SECOND ===
         # Always runs - listeners decide if they need to act
-        pub.sendMessage('timer.second', timestamp=now)
+        pub.sendMessage("timer.second", timestamp=now)
 
 
 class MasterScheduler:
@@ -156,15 +151,13 @@ class MasterScheduler:
         self._taskFile = taskFile
         self._lastDate = None
         self._lastMinute = None
-        pub.subscribe(self._onSecond, 'timer.second')
+        pub.subscribe(self._onSecond, "timer.second")
 
     def _onSecond(self, timestamp):
         """Master function called every second.
 
         See docs/SCHEDULERS.md for full architecture documentation.
         """
-        t0 = time.monotonic()
-
         if not self._taskFile:
             return
 
@@ -196,7 +189,7 @@ class MasterScheduler:
 
             # Status updates (separate methods for legacy/modern)
             task.recomputeLegacyStatus(timestamp)  # Legacy: __status
-            task.computeStoredStatus()              # Modern: __computed_status
+            task.computeStoredStatus()  # Modern: __computed_status
 
             # Reminders
             task.processReminder(timestamp)
@@ -224,11 +217,13 @@ class MasterScheduler:
         # ═══════════════════════════════════════════════════════════════
 
         if dateChanged:
-            pub.sendMessage('scheduler.dateChange.uiRefresh', timestamp=timestamp)
+            pub.sendMessage(
+                "scheduler.dateChange.uiRefresh", timestamp=timestamp
+            )
         if minuteChanged:
-            pub.sendMessage('scheduler.minuteChange.uiRefresh', timestamp=timestamp)
-
-
+            pub.sendMessage(
+                "scheduler.minuteChange.uiRefresh", timestamp=timestamp
+            )
 
     # ═══════════════════════════════════════════════════════════════════
     # HELPERS
@@ -252,4 +247,4 @@ class MasterScheduler:
 
     def shutdown(self):
         """Cleanup on application close."""
-        pub.unsubscribe(self._onSecond, 'timer.second')
+        pub.unsubscribe(self._onSecond, "timer.second")

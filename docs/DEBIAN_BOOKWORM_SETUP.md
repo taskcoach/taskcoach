@@ -160,7 +160,7 @@ python3 -m venv --system-site-packages .venv
 source .venv/bin/activate
 
 # Install remaining dependencies
-pip install fasteners distro pypubsub 'pyparsing>=3.1.3' 'watchdog>=3.0.0'
+pip install distro pypubsub 'pyparsing>=3.1.3' 'watchdog>=3.0.0'
 
 # Deactivate when done
 deactivate
@@ -290,7 +290,6 @@ dpkg -l | grep python3-lxml
 
 ### From PyPI (pip in venv, for development):
 - 📦
-- 📦 fasteners
 - 📦 distro
 - 📦 pypubsub
 - 📦 pyparsing>=3.1.3 (Bookworm's 3.0.9 is too old)
