@@ -88,7 +88,6 @@ def majorAndMinorPythonVersion():
 # IMPORTANT: Some packages have minimum version requirements:
 # - pyparsing>=3.1.3: Required for pp.Tag() in delta_time.py
 # - watchdog>=3.0.0: Required for file monitoring API
-# - fasteners>=0.19: Required for file locking API
 #
 # Debian Bookworm note: pyparsing (3.0.9) and watchdog (2.2.1) are too old,
 # must pip install newer versions. See docs/DEBIAN_BOOKWORM_SETUP.md
@@ -107,7 +106,6 @@ install_requires = [
     "pyxdg",
     "keyring",
     "numpy",  # Pinned to 1.x in pip-based builds only (see build workflows)
-    "fasteners>=0.19",  # File locking
     "pyenchant>=3.2.0",  # Spell checking for text fields
 ]
 
@@ -147,7 +145,9 @@ setupOptions = {
     "install_requires": install_requires,
     "extras_require": extras_require,
     "tests_require": tests_requires,
-    "packages": find_namespace_packages(include=["taskcoachlib", "taskcoachlib.*"]),
+    "packages": find_namespace_packages(
+        include=["taskcoachlib", "taskcoachlib.*"]
+    ),
     "include_package_data": True,
     "scripts": ["taskcoach.py"],
     "classifiers": [
@@ -203,7 +203,7 @@ elif system == "Windows":
             import py2exe.mf as modulefinder
         except ImportError:
             import modulefinder
-        import win32com, sys
+        import win32com
 
         for p in win32com.__path__[1:]:
             modulefinder.AddPackagePath("win32com", p)
@@ -229,8 +229,8 @@ elif system == "Darwin":
         0, os.path.join("extension", "macos", "bin-ia%s" % wordSize)
     )
     # pylint: disable=F0401,W0611
-    import _powermgt
-    import _idle
+    import _powermgt  # noqa: F401
+    import _idle  # noqa: F401
 
 
 if __name__ == "__main__":

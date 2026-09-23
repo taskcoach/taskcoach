@@ -119,7 +119,7 @@ user dismisses the menu. When the user clicks Quit from the tray menu:
 
 1. `PopupMenu()` is still active (modal, blocking)
 2. `FileQuit.do_command()` calls `mainwindow.Close(force=True)`
-3. `onClose()` calls `quitApplication()` which destroys the tray icon
+3. `onClose()` calls `quit_application()` which destroys the tray icon
 4. `PopupMenu()` returns to a destroyed object → **segfault**
 
 ### The Fix
@@ -131,7 +131,7 @@ def do_command(self, event):
     wx.CallAfter(self.main_window().Close, force=True)
 ```
 
-This lets `PopupMenu()` return cleanly before `quitApplication()` tears
+This lets `PopupMenu()` return cleanly before `quit_application()` tears
 down the tray icon. The AppIndicator implementation already uses this
 pattern (line 546: `lambda w: wx.CallAfter(self.__window.Close)`).
 
@@ -144,7 +144,7 @@ The wxPython documentation recommends:
 2. **Or override `GetPopupMenu()`** to reuse the same menu object without
    automatic destruction.
 3. **`Destroy()` on TaskBarIcon schedules delayed destruction** for the next
-   event loop iteration, but this doesn't help when `quitApplication()`
+   event loop iteration, but this doesn't help when `quit_application()`
    immediately tears everything down in the same call chain.
 4. **Always defer quit actions with `wx.CallAfter`** when triggered from a
    tray popup menu, so the modal menu loop exits first.

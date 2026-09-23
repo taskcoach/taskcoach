@@ -47,7 +47,6 @@ REQUIREMENTS=(
     # 2.1-2.3 have cp313 wheels and keep the old baseline, and Task Coach's use
     # (uint8 array ops) is numpy-2.x-safe, so pin <2.4 for the flatpak.
     "numpy>=1.26,<2.4"
-    "fasteners>=0.19"
     "squaremap>=1.0.5"
     "pyenchant>=3.2.0"
     "dbus-python>=1.3.2"
@@ -58,7 +57,7 @@ REQUIREMENTS=(
 # under --no-build-isolation. They are installed (as python3-build-deps.json)
 # before any module that builds from an sdist:
 #   - wxPython: setuptools/wheel/cython/sip/requests (its build-system.requires;
-#     keep these in sync with wxpython-4.2.5).
+#     keep these in sync with wxpython-4.3.1).
 #   - dbus-python 1.4.x: meson-python (it builds with meson; meson and ninja
 #     themselves come from the Sdk, only the Python backend is missing), plus
 #     patchelf, which meson-python shells out to for fixing the built C

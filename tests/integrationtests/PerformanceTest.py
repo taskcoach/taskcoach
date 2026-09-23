@@ -16,8 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import time, os
-import test, mock
+import time
+import os
+import test
+import mock
 from taskcoachlib import persistence, config
 from taskcoachlib.domain import task, category, note
 
@@ -55,4 +57,4 @@ class PerformanceTest(test.TestCase):
         end = time.time()
         self.assertEqual(self.nrTasks, len(mockApp.taskFile.tasks()))
         self.assertTrue(end - start < self.nrTasks / 10)
-        mockApp.quitApplication()
+        mockApp.quit_application()

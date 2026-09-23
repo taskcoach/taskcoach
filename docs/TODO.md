@@ -27,8 +27,8 @@ Signaling system cleanup has moved to
 
 | Resource | Locking | Status |
 |----------|---------|--------|
-| Task files (`.tsk`) | `fasteners.InterProcessLock` | ✅ Safe - uses `filename.tsk.lock` |
-| INI file (`taskcoach.ini`) | `fasteners.InterProcessLock` | ✅ Safe - uses `taskcoach.ini.lock` |
+| Task files (`.tsk`) | `resourcelock` ([FILE_LOCKING.md](FILE_LOCKING.md)) | ✅ Safe - uses `filename.tsk.lock` |
+| INI file (`taskcoach.ini`) | `resourcelock` ([FILE_LOCKING.md](FILE_LOCKING.md)) | ✅ Safe - uses `taskcoach.ini.lock` |
 | Log file (`taskcoachlog.txt`) | None | ⚠️ Shared between instances |
 
 ### TODO: Per-Process Log Files
@@ -51,7 +51,7 @@ Currently, all Task Coach instances write to the same `taskcoachlog.txt` file. W
 
 **Implementation Notes:**
 - Would need to detect if log file is already in use by another instance
-- Could use `fasteners.InterProcessLock` on the log file to detect conflicts
+- Could use `resourcelock` on the log file to detect conflicts
 - Instance number could be determined by trying locks sequentially
 
 ---

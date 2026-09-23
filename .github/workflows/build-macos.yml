@@ -71,9 +71,10 @@ jobs:
           # See: https://github.com/ronaldoussoren/py2app/issues/531
           python -m pip install --upgrade pip "setuptools<71.0.2" wheel
 
-          # Install wxPython (pre-built wheel)
+          # Install wxPython (pre-built wheel), pinned so a new release
+          # cannot silently change the build
           echo "Installing wxPython..."
-          python -m pip install wxPython
+          python -m pip install "wxPython==4.3.1"
 
           # Install all TaskCoach dependencies
           echo "Installing TaskCoach dependencies..."
@@ -87,7 +88,6 @@ jobs:
             lxml \
             keyring \
             "numpy>=1.26,<2" \
-            "fasteners>=0.19" \
             "squaremap>=1.0.5" \
             "pyenchant>=3.2.0" \
             distro
@@ -159,7 +159,7 @@ jobs:
                       }
                   ],
               },
-              'packages': ['taskcoachlib', 'wx', 'pubsub', 'watchdog', 'lxml', 'keyring', 'numpy', 'dateutil', 'chardet', 'pyparsing', 'fasteners', 'squaremap'],
+              'packages': ['taskcoachlib', 'wx', 'pubsub', 'watchdog', 'lxml', 'keyring', 'numpy', 'dateutil', 'chardet', 'pyparsing', 'squaremap'],
               'includes': ['ctypes', 'ctypes.util'],
               'excludes': ['tkinter', 'test'],  # unittest needed by pyparsing.testing import
           }

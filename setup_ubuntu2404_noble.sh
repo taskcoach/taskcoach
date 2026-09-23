@@ -77,7 +77,6 @@ if command -v sudo &> /dev/null; then
         python3-pyparsing \
         python3-xdg \
         python3-venv \
-        python3-fasteners \
         python3-watchdog \
         python3-pubsub \
         python3-squaremap
@@ -165,7 +164,7 @@ fi
 echo "Testing key packages..."
 FAILED=0
 
-for pkg in "fasteners" "desktop" "distro" "watchdog"; do
+for pkg in "desktop" "distro" "watchdog"; do
     echo -n "  - $pkg... "
     if python3 -c "import $pkg" 2>/dev/null; then
         echo -e "${GREEN}✓${NC}"
@@ -220,7 +219,7 @@ echo -e "${GREEN}Setup completed successfully!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo
 echo "TaskCoach has been set up for Ubuntu 24.04 (Noble) with:"
-echo "  • System packages from Ubuntu repos (wxPython, numpy, lxml, fasteners, watchdog, squaremap, etc.)"
+echo "  • System packages from Ubuntu repos (wxPython, numpy, lxml, watchdog, squaremap, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
 echo "  • Additional packages in venv (distro)"
 echo "  • wxPython background color patch (for category row coloring)"

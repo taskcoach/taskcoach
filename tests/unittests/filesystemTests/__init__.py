@@ -1,6 +1,6 @@
 """
 Task Coach - Your friendly task manager
-Copyright (C) 2013 Task Coach developers <developers@taskcoach.org>
+Copyright (C) 2004-2016 Task Coach developers <developers@taskcoach.org>
 
 Task Coach is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -15,26 +15,3 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
-import test
-import mock
-import os
-
-
-class LeakTest(test.TestCase):
-    def setUp(self):
-        self.mockApp = mock.App()
-        self.mockApp.addTask()
-
-    def tearDown(self):
-        self.mockApp.iocontroller.save_as("Test.tsk")
-        os.remove("Test.tsk")
-        self.mockApp.quit_application()
-        mock.App.deleteInstance()
-        super().tearDown()
-
-    def testClear(self):
-        """taskRef = weakref.ref(self.mockApp.task)
-        del self.mockApp.task
-        self.mockApp.taskFile.clear()
-        self.failUnless(taskRef() is None)"""

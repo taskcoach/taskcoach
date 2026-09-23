@@ -148,6 +148,40 @@ A subprocess probe (`taskcoachlib/tools/_numpy_probe.py`) runs at startup and lo
 health with `[NUMPY]` prefix for diagnostic traceability. See [NUMPY.md](NUMPY.md) for
 full details.
 
+## Dark Mode
+
+Native Windows controls are light unless the app opts in. wxPython 4.3
+(wxWidgets 3.3) added that opt-in, so `build-windows.yml` pins
+`wxPython==4.3.1`. The pin also keeps a new wxPython release from
+silently changing the build. Before the pin the workflow installed the
+newest wxPython, so release 2.0.2.22 already shipped 4.3.1 (check
+`python/Lib/site-packages/wxpython-*.dist-info` in the portable zip);
+the pin locks in the version that is known to build and run.
+
+`apply_native_appearance()` in `taskcoachlib/application/application.py`
+calls `wx.App.SetAppearance()` right after the `wx.App` is created,
+before any window or dialog exists, mapping the **Edit > Preferences >
+Theme > Mode** setting:
+
+| Mode setting | `SetAppearance()` | Native controls |
+|--------------|-------------------|-----------------|
+| Automatic | `System` | Follow the Windows app mode |
+| Dark Theme (Forced) | `Dark` | Always dark |
+| Light Theme (Forced) | `Light` | Always light |
+
+Windows only honours the request before the first window exists, so a
+Mode change applies on the next start. The Theme page says so under
+Mode, and the note turns red ("Change detected, restart required!")
+while the selection differs from the Mode applied at startup. The note
+is shown only when the request was made (Windows with wxPython 4.3+);
+elsewhere Mode changes apply immediately. The result is logged with the
+`[THEME]` prefix. With wxPython older than 4.3 the call is skipped and
+controls stay light. wxWidgets still labels MSW dark mode experimental:
+some native controls may not be fully themed.
+
+GTK and macOS already draw native controls in the system appearance, so
+the function does nothing there.
+
 ## Windows Exit/Shutdown Behavior
 
 wxPython applications on Windows require special handling for clean shutdown, particularly when launched from a console vs from the Start Menu.
@@ -185,7 +219,7 @@ The shutdown must:
 3. **Call ExitMainLoop()** - Force the event loop to exit
 4. **Detach from console** - Call `FreeConsole()` and redirect stderr to `os.devnull`
 
-See `taskcoachlib/application/application.py` `quitApplication()` method for the implementation.
+See `taskcoachlib/application/application.py` `quit_application()` method for the implementation.
 
 ### Power Management Events
 

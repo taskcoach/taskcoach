@@ -30,12 +30,12 @@ This document describes the packaging setup for Task Coach on Linux (Debian, Ubu
 | Python | >=3.8 | Type hints, f-strings, walrus operator | — |
 | wxPython | >=4.2.0 | HyperTreeList stability | — |
 | wxPython | >=4.2.4 | hypertreelist row background fix (PR #2088) | All current (Bookworm 4.2.0, Trixie 4.2.3) |
+| wxPython | >=4.3.0 | Native dark mode on Windows (optional, see [WINDOWS.md](WINDOWS.md#dark-mode)) | Windows builds pin 4.3.1 |
 | pyparsing | >=3.1.3 | `pp.Tag()` API | Debian Bookworm (3.0.9) |
 | watchdog | >=3.0.0 | File monitoring API | Debian Bookworm (2.2.1) |
 | numpy | >=1.26,<2 | NumPy 2.4+ requires SSE4.2 (crashes old CPUs, see [NUMPY.md](NUMPY.md)) | — |
-| fasteners | >=0.19 | File locking API | — |
 
-**Note**: wxPython 4.2.4 was released October 28, 2025 but is not yet packaged for any distro. Until then, a bundled patch in `taskcoachlib/patches/` is used (see [CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md)).
+**Note**: wxPython 4.2.4 was released October 28, 2025. Of the distros, only Arch (4.2.5) and Fedora 43 (4.2.4) ship it so far. Until the others do, a bundled patch in `taskcoachlib/patches/` is used (see [CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md)).
 
 ## Install Overview by Build Target
 
@@ -56,7 +56,6 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | python-dateutil | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | keyring | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | pyxdg | distro | distro | distro | distro | distro | distro | bundled | bundled | — | — |
-| fasteners | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | pyenchant | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | hunspell-en-us | optional | optional | optional | optional | optional | optional | optional | optional | — | — |
 | ayatana-appindicator | distro | distro | distro | distro | distro | distro | host | bundled | — | — |
@@ -108,11 +107,11 @@ backends.
 | [Ubuntu 24.04 Noble](#debianubuntu-packaging) | ubuntu24 | 3.12 | 4.2.1 | `setup_ubuntu2404_noble.sh` | `build-deb.yml` | Distro deps sufficient |
 | [Arch Linux](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap; pypubsub from AUR |
 | [Manjaro](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap; pypubsub from AUR |
-| [Fedora 43](#fedora-packaging) | fedora43 | 3.13 | 4.2.2 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap, pyparsing |
-| [**AppImage**](#appimage-packaging) | appimage | **3.11** | **4.2.4** | — | `build-appimage.yml` | Bundles Python + all deps |
-| [~~**Flatpak**~~](#flatpak-packaging) | flatpak | runtime | **source** | `scripts/build-flatpak.sh` | `build-flatpak.yml` | **Flathub release postponed**; GNOME runtime; wxPython from sdist (builds its own bundled wxWidgets) |
-| [**Windows**](#windows-packaging) | windows | **3.11** | **4.2.x** | — | `build-windows.yml` | Python embed + Inno Setup |
-| [**macOS**](#macos-packaging) | macos | **3.11** | **4.2.x** | — | `build-macos.yml` | py2app + DMG (Intel & ARM64) |
+| [Fedora 43](#fedora-packaging) | fedora43 | 3.13 | 4.2.4 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap, pyparsing |
+| [**AppImage**](#appimage-packaging) | appimage | **3.11** | **4.2.5** | — | `build-appimage.yml` | Bundles Python + all deps |
+| [~~**Flatpak**~~](#flatpak-packaging) | flatpak | runtime | **4.3.1 (source)** | `scripts/build-flatpak.sh` | `build-flatpak.yml` | **Flathub release postponed**; GNOME runtime; wxPython from sdist (builds its own bundled wxWidgets) |
+| [**Windows**](#windows-packaging) | windows | **3.11** | **4.3.1** | — | `build-windows.yml` | Python embed + Inno Setup |
+| [**macOS**](#macos-packaging) | macos | **3.11** | **4.3.1** | — | `build-macos.yml` | py2app + DMG (Intel & ARM64) |
 
 **AppImage note:** Uses Python 3.11 (not 3.12) for wxPython wheel availability. See [AppImage Packaging](#appimage-packaging) section for details.
 
@@ -510,7 +509,7 @@ See `taskcoach.spec` (linked above) for runtime, build, and optional dependencie
 - **AppImage:** [python-appimage](https://github.com/niess/python-appimage) | [wxPython extras](https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04) | [AppImage docs](https://docs.appimage.org/)
 - **Project files:** [APPIMAGE.md](APPIMAGE.md) | [`build-appimage.yml`](../.github/workflows/build-appimage.yml)
 
-The AppImage build creates a portable, self-contained Linux executable that bundles Python 3.11, wxPython 4.2.4, and all dependencies into a single file.
+The AppImage build creates a portable, self-contained Linux executable that bundles Python 3.11, wxPython 4.2.5, and all dependencies into a single file.
 
 ### Available Builds
 
@@ -531,7 +530,7 @@ For detailed AppImage documentation including library bundling strategy, design 
 
 The Flatpak build is offered **in addition to** the AppImage. It runs against the **GNOME runtime** (`org.gnome.Platform`), which supplies a consistent GTK / glib / PyGObject stack, so the library-bundling and ABI problems the AppImage fights do not exist here. The trade is that users need `flatpak` installed and the runtime is fetched on first install.
 
-> **Flathub release postponed (2026).** Flathub has been blanket-rejecting submissions it deems "AI slop" and **rejected this one**, so complying with its required changes is no longer relevant — and we didn't want its main ask anyway (dropping `--filesystem=home` for the portal changes file access for all users on every OS; too risky, and wxPython 3.3 should deliver the portal automatically). The `.flatpak` is available **directly from this project's GitHub releases**, so Flathub is not required. Details and prior review notes: [FLATPAK.md](FLATPAK.md).
+> **Flathub release postponed (2026).** Flathub has been blanket-rejecting submissions it deems "AI slop" and **rejected this one**, so complying with its required changes is no longer relevant — and we didn't want its main ask anyway (dropping `--filesystem=home` for the portal changes file access for all users on every OS; too risky, and wxWidgets 3.3, now bundled through wxPython 4.3.1, delivers the portal automatically). The `.flatpak` is available **directly from this project's GitHub releases**, so Flathub is not required. Details and prior review notes: [FLATPAK.md](FLATPAK.md).
 
 ### Available Builds
 
@@ -552,7 +551,7 @@ The GNOME runtime bundles GTK3, PyGObject and gobject-introspection. Task Coach 
 
 ### Status
 
-The single manifest builds **offline**, the way Flathub builds: no `--share=network`, with every Python dependency pinned (`generate-pip-sources.sh`). wxPython is built from the sdist, letting it compile its own bundled wxWidgets (guaranteeing the version matches its pre-generated bindings, since no prebuilt wxPython wheel works under the runtime), with checksums verified against the official artifacts. System-tray support comes from Flathub's `shared-modules` libappindicator (git submodule), and optional idle detection from bundled `dbus-python`. X11 is prioritized over Wayland (wxPython AUI docking is unusable on Wayland). File access uses `--filesystem=home`; migrating it to the XDG FileChooser portal is a postponed TODO (likely automatic with wxPython 3.3). **The Flathub release is postponed** — remaining work and prior review notes are in [FLATPAK.md](FLATPAK.md).
+The single manifest builds **offline**, the way Flathub builds: no `--share=network`, with every Python dependency pinned (`generate-pip-sources.sh`). wxPython is built from the sdist, letting it compile its own bundled wxWidgets (guaranteeing the version matches its pre-generated bindings, since no prebuilt wxPython wheel works under the runtime), with checksums verified against the official artifacts. System-tray support comes from Flathub's `shared-modules` libappindicator (git submodule), and optional idle detection from bundled `dbus-python`. X11 is prioritized over Wayland (wxPython AUI docking is unusable on Wayland). File access uses `--filesystem=home`; the bundled wxPython 4.3.1 (wxWidgets 3.3) already opens file dialogs through the XDG FileChooser portal, and dropping the grant is a postponed TODO pending a sandbox test. **The Flathub release is postponed** — remaining work and prior review notes are in [FLATPAK.md](FLATPAK.md).
 
 For detailed Flatpak documentation including the runtime choice, permission rationale, offline pinned-source generation, the wxPython risk, build process, and Flathub submission, see **[FLATPAK.md](FLATPAK.md)**.
 

@@ -42,6 +42,7 @@ jobs:
             suffix: "x64"
           # 32-bit build with Python 3.9 (for older Windows/VM compatibility)
           # DISABLED: No current users require 32-bit builds. Uncomment to reactivate.
+          # Needs Python 3.10+ first: the pinned wxPython has no cp39 wheels.
           # - arch: x86
           #   python_version: "3.9.13"
           #   python_arch: "win32"
@@ -166,9 +167,11 @@ jobs:
         run: |
           $pythonExe = "build\TaskCoach\python\python.exe"
 
-          # Install wxPython (pre-built wheel)
+          # Install wxPython (pre-built wheel), pinned so a new release
+          # cannot silently change the build. 4.3+ is required for native
+          # dark mode on Windows; it ships wheels for Python 3.10+ only.
           Write-Host "Installing wxPython..."
-          & $pythonExe -m pip install wxPython --no-warn-script-location
+          & $pythonExe -m pip install "wxPython==4.3.1" --no-warn-script-location
 
           # Install all TaskCoach dependencies
           Write-Host "Installing TaskCoach dependencies..."
@@ -182,7 +185,6 @@ jobs:
             lxml `
             keyring `
             "numpy>=1.26,<2" `
-            "fasteners>=0.19" `
             "squaremap>=1.0.5" `
             "pyenchant>=3.2.0" `
             distro `

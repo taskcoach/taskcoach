@@ -10,7 +10,7 @@ The AppImage build system creates a portable, self-contained Linux executable th
 | Component | Version | Source |
 |-----------|---------|--------|
 | Python | 3.11.x (latest from the python3.11 release tag, resolved at build time) | python-appimage (manylinux_2_28) |
-| wxPython | 4.2.2 (pinned, newest cp311 wheel in extras) | wxPython extras (Ubuntu 22.04) |
+| wxPython | 4.2.5 (pinned, newest cp311 wheel in extras) | wxPython extras (Ubuntu 22.04) |
 | wxWidgets | 3.2.6 | Bundled with wxPython |
 | Image libs | libjpeg, libpng, libtiff, libjbig, libwebp | Copied from build system |
 
@@ -83,9 +83,9 @@ If users report "cannot open shared object file" errors on specific distribution
 
 **Future consideration:** When wxPython wheels are reliably available for Python 3.12+, upgrading is straightforward - just change the URL in `build-appimage.yml`.
 
-### Why wxPython is pinned to 4.2.2
+### Why wxPython is pinned to 4.2.5
 
-The wxPython extras repository for Ubuntu 22.04 provides cp311 wheels only up to 4.2.2, and PyPI ships no Linux wheels at all. An unpinned `pip install wxPython` therefore resolves to the newest PyPI sdist (4.3+) and tries to compile wxWidgets from source, which fails on the bundled AppImage Python (no python-config or headers) after several minutes. The build pins `wxPython==4.2.2` with `--only-binary wxPython` so it always installs the pre-built wheel and fails fast if that wheel ever disappears. To upgrade wxPython, check the extras repository for a newer cp311 wheel first and bump the pin.
+The wxPython extras repository for Ubuntu 22.04 provides cp311 wheels only up to 4.2.5 (no 4.3 Linux wheels exist), and PyPI ships no Linux wheels at all. An unpinned `pip install wxPython` therefore resolves to the newest PyPI sdist (4.3+) and tries to compile wxWidgets from source, which fails on the bundled AppImage Python (no python-config or headers) after several minutes. The build pins `wxPython==4.2.5` with `--only-binary wxPython` so it always installs the pre-built wheel and fails fast if that wheel ever disappears. To upgrade wxPython, check the extras repository for a newer cp311 wheel first and bump the pin.
 
 ### Why manylinux_2_28?
 

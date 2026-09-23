@@ -18,9 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import gui, config, persistence
 from taskcoachlib.domain import task, note, category
+from taskcoachlib.filesystem import resourcelock
 from unittests import dummy
 import os
-import shutil
 import wx
 import test
 
@@ -42,7 +42,7 @@ class IOControllerTest(test.TestCase):
             if os.path.exists(filename):
                 os.remove(filename)
             if os.path.exists(filename + ".lock"):
-                shutil.rmtree(filename + ".lock")  # pragma: no cover
+                os.remove(filename + ".lock")
             if os.path.exists(filename + ".delta"):
                 os.remove(filename + ".delta")
         super().tearDown()
@@ -68,7 +68,7 @@ class IOControllerTest(test.TestCase):
         self, open, saveas, saveselection, merge
     ):  # pylint: disable=W0622
         for filename in open:
-            self.iocontroller.open(filename, fileExists=lambda filename: True)
+            self.iocontroller.open(filename, file_exists=lambda filename: True)
         for filename in saveas:
             self.iocontroller.save_as(filename)
         for filename in saveselection:
@@ -298,29 +298,17 @@ class IOControllerTest(test.TestCase):
             targetFile.close()
             targetFile.stop()
 
-    def testOpenWhenLockFailed(self):
-        self.taskFile.raiseError = persistence.LockFailed
-
-        def askOpenUnlocked(*args, **kwargs):  # pylint: disable=W0613
-            self.askOpenUnlockedCalled = True
-
-        self.iocontroller._IOController__askOpenUnlocked = askOpenUnlocked
-        self.iocontroller.open(
-            self.filename1, fileExists=lambda filename: True
+    def test_open_when_in_use(self):
+        self.taskFile.raiseError = resourcelock.LockInUse(
+            self.filename1, {"pid": "4321"}
         )
-        self.assertTrue(self.askOpenUnlockedCalled)
-
-    def testOpenWhenAlreadyLocked(self):
-        self.taskFile.raiseError = persistence.LockTimeout
-
-        def askBreakLock(*args, **kwargs):  # pylint: disable=W0613
-            self.askBreakLockCalled = True
-
-        self.iocontroller._IOController__askBreakLock = askBreakLock
+        messages = []
         self.iocontroller.open(
-            self.filename1, fileExists=lambda filename: True
+            self.filename1,
+            showerror=lambda message, **kwargs: messages.append(message),
+            file_exists=lambda filename: True,
         )
-        self.assertTrue(self.askBreakLockCalled)
+        self.assertIn("4321", messages[0])
 
 
 class IOControllerOverwriteExistingFileTest(test.TestCase):
@@ -351,23 +339,27 @@ class IOControllerOverwriteExistingFileTest(test.TestCase):
         super().tearDown()
 
     def testCancelSaveAsExistingFile(self):
-        self.iocontroller.save_as(fileExists=lambda filename: True)
+        self.iocontroller.save_as(file_exists=lambda filename: True)
         self.assertTrue(self.userWarned)
 
     def testCancelSaveSelectionToExistingFile(self):
-        self.iocontroller.save_selection([], fileExists=lambda filename: True)
+        self.iocontroller.save_selection([], file_exists=lambda filename: True)
         self.assertTrue(self.userWarned)
 
     def testCancelExportAsHTMLToExistingFile(self):
-        self.iocontroller.export_as_html(None, fileExists=lambda filename: True)
+        self.iocontroller.export_as_html(
+            None, file_exists=lambda filename: True
+        )
         self.assertTrue(self.userWarned)
 
     def testCancelExportAsCSVToExistingFile(self):
-        self.iocontroller.export_as_csv(None, fileExists=lambda filename: True)
+        self.iocontroller.export_as_csv(
+            None, file_exists=lambda filename: True
+        )
         self.assertTrue(self.userWarned)
 
     def testCancelExportAsICalendarToExistingFile(self):
         self.iocontroller.export_as_icalendar(
-            None, fileExists=lambda filename: True
+            None, file_exists=lambda filename: True
         )
         self.assertTrue(self.userWarned)

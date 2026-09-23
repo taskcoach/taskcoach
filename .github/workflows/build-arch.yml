@@ -80,7 +80,6 @@ jobs:
             python-pyparsing \
             python-pyxdg \
             python-watchdog \
-            python-fasteners \
             python-distro \
             libxss \
             xdg-utils

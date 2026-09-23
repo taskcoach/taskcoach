@@ -16,8 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import os, wx
-import test, mock
+import os
+import wx
+import test
+import mock
 
 
 class LoadTest(test.TestCase):
@@ -37,7 +39,7 @@ class LoadTest(test.TestCase):
 
     def tearDown(self):
         wx.CallAfter = self.oldCallAfter
-        self.mockApp.quitApplication()
+        self.mockApp.quit_application()
         if os.path.isfile(self.filename):
             os.remove(self.filename)
         mock.App.deleteInstance()
@@ -60,7 +62,7 @@ class LoadTest(test.TestCase):
         self.mockApp.iocontroller.open(
             "I don't exist.tsk",
             showerror=self.mockErrorDialog,
-            fileExists=lambda filename: False,
+            file_exists=lambda filename: False,
         )
         wx.GetApp().Yield()  # io.open uses wx.CallAfter
         self.assertTrue(self.errorDialogCalled)

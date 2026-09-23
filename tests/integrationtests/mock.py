@@ -59,7 +59,7 @@ class App(application.Application):
         pass
 
     def init(self):  # pylint: disable=W0221
-        super().init(loadSettings=False, loadTaskFile=False)
+        super().init(load_settings=False, load_task_file=False)
 
     def addTask(self):
         self.task = task.Task("Task")

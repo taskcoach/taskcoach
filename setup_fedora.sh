@@ -82,7 +82,6 @@ if command -v sudo &> /dev/null; then
         python3-keyring \
         python3-pyparsing \
         python3-pyxdg \
-        python3-fasteners \
         python3-watchdog \
         python3-pypubsub \
         libayatana-appindicator-gtk3 \
@@ -174,7 +173,7 @@ fi
 echo "Testing key packages..."
 FAILED=0
 
-for pkg in "fasteners" "distro" "watchdog" "squaremap"; do
+for pkg in "distro" "watchdog" "squaremap"; do
     echo -n "  - $pkg... "
     if $PYTHON_CMD -c "import $pkg" 2>/dev/null; then
         echo -e "${GREEN}✓${NC}"
