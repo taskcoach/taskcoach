@@ -42,6 +42,8 @@ from taskcoachlib.powermgt import PowerStateMixin
 from taskcoachlib.help.balloontips import BalloonTipManager
 from pubsub import pub
 from taskcoachlib.config.settings import Settings
+from taskcoachlib.meta.debug import log_step
+import re
 import wx.lib.agw.aui as aui
 import wx, ctypes
 
@@ -185,8 +187,40 @@ class MainWindow(
         # events from AUI LoadPerspective() and GTK window realization.
         # Events are bound immediately in __init__, no manual start needed.
 
+    @staticmethod
+    def __unmatched_pane_names(perspective, panes):
+        """Pane names that cannot be matched between saved and existing.
+
+        A name in the perspective with no window is ignored by AUI, and a
+        window with no entry in the perspective keeps its default
+        position. Either way part of the layout silently fails to
+        restore, so it is worth a line in the log. __notebook_N panes are
+        excluded because AUI creates those itself while loading the
+        perspective; they are legitimately absent beforehand.
+        """
+        saved = [
+            name
+            for name in re.findall(r"name=([^;|]+)", perspective or "")
+            if not name.startswith("__notebook_")
+        ]
+        existing = [pane.name for pane in panes]
+        return (
+            [name for name in saved if name not in existing],
+            [name for name in existing if name not in saved],
+        )
+
     def __restore_perspective(self):
         perspective = self.settings.get("view", "perspective")
+        no_window, no_entry = self.__unmatched_pane_names(
+            perspective, self.manager.GetAllPanes()
+        )
+        if no_window or no_entry:
+            log_step(
+                "layout will not fully restore. Saved panes with no "
+                "window: %s. Panes with no saved entry: %s"
+                % (no_window or "none", no_entry or "none"),
+                prefix="AUI",
+            )
         # Note: We intentionally do NOT validate viewer counts before loading.
         # AUI's LoadPerspective handles mismatches gracefully:
         # - Panes in perspective without matching windows are ignored
@@ -279,7 +313,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
 
     def __save_viewer_counts(self):
         """Save the number of viewers for each viewer type."""
-        for viewer_type in viewer.viewerTypes():
+        for viewer_type in viewer.viewer_types():
 
             if hasattr(self, "viewer"):
                 count = len(

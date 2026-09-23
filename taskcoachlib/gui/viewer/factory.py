@@ -16,6 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import re
+
 from taskcoachlib import operating_system
 
 from . import effort
@@ -24,7 +26,7 @@ from . import category
 from . import note
 
 
-def viewerTypes():
+def viewer_types():
     """Return the available viewer types, using the names as used in the
     settings."""
     types = [
@@ -97,14 +99,45 @@ class addViewers(object):  # pylint: disable=C0103, R0903
     def __add_viewers(self, viewer_class):
         """Open viewers of the specified viewer class as saved previously in
         the settings."""
-        number_of_viewers_to_add = self._number_of_viewers_to_add(viewer_class)
-        for _ in range(number_of_viewers_to_add):
-            viewer_instance = viewer_class(
-                *self.__viewer_init_args, **self._viewer_kwargs(viewer_class)
-            )
+        for instance_number in self._instance_numbers_to_add(viewer_class):
+            kwargs = self._viewer_kwargs(viewer_class)
+            if instance_number is not None:
+                kwargs["instanceNumber"] = instance_number
+            viewer_instance = viewer_class(*self.__viewer_init_args, **kwargs)
             self.__viewer_container.add_viewer(
                 viewer_instance, floating=self.floating
             )
+
+    def _instance_numbers_to_add(self, viewer_class):
+        """Return the instance numbers to recreate for this viewer class.
+
+        The pane names in the saved perspective embed these numbers, and
+        closing any viewer other than the highest-numbered one leaves a
+        gap in them: closing taskviewer1 of three leaves taskviewer and
+        taskviewer2. A count cannot express that gap, so recreating from
+        the count alone would produce taskviewer and taskviewer1, and
+        AUI would match neither pane by name - it ignores the saved
+        taskviewer2 and leaves the new taskviewer1 at its default
+        position. Take the numbers from the perspective, which is the
+        only place that records them.
+
+        Falls back to the count when the perspective has no panes for
+        this class, which is the case on a first run and for a viewer
+        type the user has never opened.
+        """
+        section = viewer_class.__name__.lower()
+        perspective = self.__settings.get("view", "perspective")
+        # Anchored on the name separator so that effortviewer does not
+        # also match effortviewerforselectedtasks.
+        numbers = sorted(
+            int(match.group(1) or 0)
+            for match in re.finditer(
+                r"name=%s(\d*)(?=[;|]|$)" % re.escape(section), perspective
+            )
+        )
+        if numbers:
+            return numbers
+        return list(range(self._number_of_viewers_to_add(viewer_class)))
 
     def _number_of_viewers_to_add(self, viewer_class):
         """Return the number of viewers of the specified viewer class the
@@ -136,8 +169,10 @@ class addOneViewer(addViewers):  # pylint: disable=C0103, R0903
         self.__kwargs = kwargs
         super().__init__(viewer_container, task_file, settings)
 
-    def _number_of_viewers_to_add(self, viewer_class):
-        return 1 if viewer_class == self.__viewer_class else 0
+    def _instance_numbers_to_add(self, viewer_class):
+        # A brand new viewer, not a restored one: None lets the metaclass
+        # pick the lowest free number rather than reusing a saved one.
+        return [None] if viewer_class == self.__viewer_class else []
 
     def _viewer_kwargs(self, viewer_class):
         kwargs = super()._viewer_kwargs(viewer_class)

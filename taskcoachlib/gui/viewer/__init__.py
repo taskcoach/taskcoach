@@ -35,7 +35,7 @@ from .effort import EffortViewer, EffortViewerForSelectedTasks
 from .note import NoteViewer, BaseNoteViewer
 from .attachment import AttachmentViewer
 from .container import ViewerContainer
-from .factory import viewerTypes, addViewers, addOneViewer
+from .factory import viewer_types, addViewers, addOneViewer
 
 from taskcoachlib import operating_system
 

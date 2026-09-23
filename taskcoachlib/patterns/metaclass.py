@@ -27,22 +27,29 @@ class NumberedInstances(type):
     class Numbered:
         __metaclass__ = NumberedInstances
     Each instance of class Numbered will have an attribute instanceNumber
-    that is unique."""
+    that is unique.
+
+    Callers may pass an explicit instanceNumber to reuse a specific
+    number instead of the lowest unused one. Restoring a saved layout
+    needs that: the numbers it has to reproduce may contain a gap, which
+    lowest_unused_number would fill in and thereby rename the pane."""
 
     count = dict()
 
     def __call__(cls, *args, **kwargs):
         if cls not in NumberedInstances.count:
             NumberedInstances.count[cls] = weakref.WeakKeyDictionary()
-        instanceNumber = NumberedInstances.lowestUnusedNumber(cls)
-        kwargs["instanceNumber"] = instanceNumber
+        instance_number = kwargs.get("instanceNumber")
+        if instance_number is None:
+            instance_number = NumberedInstances.lowest_unused_number(cls)
+        kwargs["instanceNumber"] = instance_number
         instance = super(NumberedInstances, cls).__call__(*args, **kwargs)
-        NumberedInstances.count[cls][instance] = instanceNumber
+        NumberedInstances.count[cls][instance] = instance_number
         return instance
 
-    def lowestUnusedNumber(cls):
-        usedNumbers = sorted(NumberedInstances.count[cls].values())
-        for index, usedNumber in enumerate(usedNumbers):
-            if usedNumber != index:
+    def lowest_unused_number(cls):
+        used_numbers = sorted(NumberedInstances.count[cls].values())
+        for index, used_number in enumerate(used_numbers):
+            if used_number != index:
                 return index
-        return len(usedNumbers)
+        return len(used_numbers)
