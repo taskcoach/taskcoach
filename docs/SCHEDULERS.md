@@ -11,6 +11,7 @@
 5. [Performance Considerations](#performance-considerations)
 6. [Historical Context](#historical-context)
 7. [Benefits of New Architecture](#benefits-of-new-architecture)
+8. [Planned Refactoring](#planned-refactoring)
 
 ---
 
@@ -281,4 +282,122 @@ The old system used a custom `Scheduler` class (`domain/date/scheduler.py`) that
 
 ---
 
+## Planned Refactoring
 
+**Status:** research started 2026-09-25, paused. Goal: do per-second
+work only when something is due or has changed, instead of recomputing
+every task each second.
+
+### Cost Today
+
+Time of one `MasterScheduler._on_second()`, measured in a scratch copy
+of the app under Xvfb with generated files (parents with 9 subtasks,
+20 categories, 50 notes):
+
+| Tasks | Median | Max |
+|-------|--------|-----|
+| 200 | 62 ms | 78 ms |
+| 2000 | 246 ms | 498 ms |
+| 5000 | 607 ms | 1281 ms |
+
+It runs on the UI thread every second: with 2000 tasks the UI is
+blocked a quarter of the time, so typing, scrolling and window
+resizing stutter ("Efficient" above holds only for small files).
+Profile at 2000 tasks: `computeStyles` 69%, `computeStoredStatus` 17%,
+`recomputeLegacyStatus` 8%. Nearly all of it recomputes unchanged
+values; the style setters alone create and send about 40,000 `Event`
+objects per tick when nothing changed (28% of the tick).
+
+### What Changes With Time
+
+Status is a pure function of the task's dates, now, the due soon hours
+and its prerequisites' completion (`Task.compute_status()`). Time
+changes it only at known instants:
+
+- planned start (late), actual start (active), due minus due soon hours
+  (due soon), due (overdue)
+- reminder, including snooze
+- midnight (`scheduler.date`) and each minute (`scheduler.minute`)
+
+Styles change with time only through status. Everything else changes
+through data: dates, completion, prerequisites, categories, parent,
+overrides, tracking, settings, theme.
+
+### Proposed Design
+
+A time queue and a dirty set, processed on the existing 1-second tick:
+
+- **Queue:** a heap of (time, task id, generation). A task's entry is
+  its next transition time, computed from its state by one function.
+  When the task changes, its generation goes up and a new entry is
+  pushed; stale entries are skipped when popped. Midnight and the next
+  minute are entries too.
+- **Tick:** compare the head with now, O(1) when nothing is due. Due
+  entries mark their tasks dirty.
+- **Dirty set:** data changes mark objects dirty as well, from one hook
+  where attributes change, not from each setter. The tick recomputes
+  status, then styles, parents and categories before their children,
+  and marks the dependants of every changed effective value (children,
+  categorized items, subcategories) until the set is empty. The
+  dependencies form a tree plus categories, so this ends; today a
+  parent's change can need one tick per level to reach its children.
+- **Full rebuild** (all dirty, queue rebuilt) on file load or merge,
+  undo and redo, due soon hours, theme or colour setting changes, and a
+  clock jump (now before the last tick, or more than a few seconds
+  after it, as after a suspend).
+
+Why one queue on the tick, not one timer per event. The two are the
+same idea, and it was tried: the scheduler removed in January 2026
+kept a sorted job list with one `wx.CallLater` for the next job (see
+[Historical Context](#historical-context)). The design above avoids
+its failures:
+
+- Entries are keyed by task id and generation, not by bound methods,
+  so no unschedule can miss.
+- The next time is recomputed from state, never adjusted in each
+  setter. The old setters missed cases: tasks loaded from a file bypass
+  the setters ([DATETIME_PRESETS.md](DATETIME_PRESETS.md#reminder-scheduling-on-load)).
+- No timer of its own, so nothing fires while dialogs are created or
+  destroyed, and no timer outlives its owner
+  ([CRASH_GUARD.md](CRASH_GUARD.md)).
+- Comparing wall-clock time each tick handles suspend and clock
+  changes; a relative timer fires at the wrong wall time.
+- The queue can be listed and logged.
+
+The risk polling was chosen to avoid
+([TASK_STATUS.md](TASK_STATUS.md#computestyles-polling-new-architecture)):
+a missed trigger leaves a stale value. Mitigations: mark dirty in one
+place, rebuild on the global changes above, and a debug option that
+runs the full pass and logs every difference.
+
+Reminders re-trigger every second while due today, and
+`ReminderController` deduplicates. With the queue, decide how a
+reminder that is still due re-fires after its dialog closes.
+
+### Steps
+
+Each can ship on its own:
+
+1. Quick wins in the current loop: no `Event` when an attribute value
+   is unchanged; drop the legacy status (`recomputeLegacyStatus()`,
+   `status()`), moving `statusFgColor()`, `statusBgColor()` and
+   `statusFont()` to `computedStatus()` (see
+   [TASK_STATUS.md](TASK_STATUS.md#migration-path)). The legacy
+   recursive colours and icons that `recomputeAppearance()` still
+   computes next to the derived and effective styles are the same kind
+   of leftover; `Task.onDailyChange()` is an empty placeholder called
+   for every task at midnight.
+2. One dirty flag: run today's full pass only when something changed or
+   a queue entry is due. Same correctness, almost no cost per second.
+3. Per-object dirty set with the ordered cascade. Recursive priority
+   ([TODO](#todo) 1) fits the same cascade.
+4. Reminders, midnight and minute from the queue.
+
+### How It Was Measured
+
+A copy of the app with `_on_second()` wrapped in
+`time.perf_counter()` and one tick run under `cProfile`, opened with
+generated task files under Xvfb. Repeat after each step with the same
+files to compare.
+
+---

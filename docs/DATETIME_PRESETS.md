@@ -182,12 +182,10 @@ playback, and snooze configuration.
 When `reminder` is passed to the Task constructor, `setReminder()` is not
 called, so the `reminderChangedEventType` pubsub event is not fired.
 
-This is **not a problem** because the `ReminderController` uses polling —
-it iterates all tasks every second and checks `task.reminder()` directly.
-It does not rely on pubsub events to discover reminders, only to clear
-its "already shown" set when a reminder is snoozed.
-
-**File:** `taskcoachlib/gui/remindercontroller.py:63-98`
+This is **not a problem** because reminders are polled:
+`MasterScheduler` calls `task.processReminder()` for every task each
+second (see [SCHEDULERS.md](SCHEDULERS.md)), which reads
+`task.reminder()` directly.
 
 ---
 
@@ -329,16 +327,10 @@ When a `.tsk` file is loaded, tasks are reconstructed via `__init__` with
 reminder values from XML. The reminder is stored directly in `self.__reminder`
 (not through `setReminder()`), so no pubsub event fires.
 
-This works because `ReminderController` uses **polling** (checks all tasks
-every second via `timer.second`), not event-driven scheduling. It reads
-`task.reminder()` directly and doesn't need a pubsub notification to
-discover reminders.
-
-The pubsub subscription (`_onReminderChanged`) is only used to clear the
-"already shown" set when a reminder is snoozed — so it can fire again at the
-new snooze time.
-
-**File:** `taskcoachlib/gui/remindercontroller.py`
+This works because reminders are polled (see
+[Reminder Preset](#reminder-preset)). A planned time queue must add
+loaded tasks itself, since no event announces them (see
+[SCHEDULERS.md: Planned Refactoring](SCHEDULERS.md#planned-refactoring)).
 
 ---
 

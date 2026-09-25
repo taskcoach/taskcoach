@@ -441,6 +441,145 @@ File a feature request to add `GDK_HINT_USER_POS` support:
 
 ---
 
+# Part 6: Planned Refactoring
+
+**Status:** research started 2026-09-25, paused. Goal: reopen the main
+window, the editors and floating panes at their last size and position
+without visible jumps, and adapt to monitor changes the way current
+desktop apps do.
+
+## Findings
+
+Measured on Linux with openbox (the LXDE window manager) under Xvfb, in
+a scratch copy of the app with the tracker's debug logging on:
+
+| Case | What the user sees today |
+|------|--------------------------|
+| Normal start | Two states: mapped at the 600x400 minimum, then the saved size about 30 ms later. The tracker sends 5 corrections before ready (0.5 s). |
+| Saved maximized | Four states in 180 ms: minimum size where the WM puts it, moved, resized, maximized. |
+| Editor reopened | Saved position and size in one step. |
+| Editor, first open of a tab set | 400x300 (the tracker minimum) instead of the fitted size, tabs scrolled and fields cut off. |
+| Saved monitor gone | Saved size and maximized state dropped: 600x400 where the WM puts it. |
+| Saved size larger than the monitor | Same: dropped to the minimum. |
+
+Causes:
+
+- The tracker's `SetMinSize((600, 400))` before the first `Show()`
+  makes wxGTK map the window at that size and resize it afterwards.
+  Without it, the window maps at the saved size directly.
+- Openbox ignores the position of a normal window at map time: GTK
+  sends it as "program specified", never `USPosition` (Part 4). Adding
+  `USER_POS` from Python with `gtk_window_parse_geometry()` just before
+  `Show()` does not reach the X server: wxGTK rewrites the size hints
+  (checked with `xprop WM_NORMAL_HINTS`). Only a wxGTK change can set
+  it.
+- `Maximize()` before the first `Show()` shows the window maximized at
+  once, but un-maximizing then gives GTK's natural size (269x27, or the
+  minimum size when set), not the saved size. On X11 the normal
+  geometry has to exist before maximizing (Part 1, rule 6).
+- `load()` turns a missing dialog size (-1) into the minimum before the
+  dialog rules run, so rule 2 (let the system decide) never applies and
+  the fitted size is lost.
+- Invalid saved geometry is dropped instead of adapted.
+
+Also:
+
+- Settings never used: `iconized` (window) is never read,
+  `parent_offset` (editor sections) is written but never read,
+  `monitor_index` is read by `wxhelper.centerOnAppMonitor()` but never
+  written.
+- The debug position logger runs a 50 ms `wx.CallLater` chain for
+  every tracked window until ready, even with `_DEBUG_WINDOW_TRACKING`
+  off.
+- Corrections run until the window is active, so a move or resize
+  before activation is reverted.
+- The per-second scheduler blocks the UI thread 60 ms (200 tasks) to
+  600 ms (5000 tasks) every second, so interactive resizing stutters
+  with large files whatever the geometry code does (see
+  [SCHEDULERS.md: Planned Refactoring](SCHEDULERS.md#planned-refactoring)).
+
+Already tried and documented, do not repeat:
+
+- Saving on every `EVT_MOVE`/`EVT_SIZE`: records spurious values from
+  `LoadPerspective()`, `SendSizeEvent()` and GTK realization
+  ([PYTHON3_MIGRATION_2.md](PYTHON3_MIGRATION_2.md#window-position-tracking-with-aui)).
+- Delays with magic numbers (`wx.CallLater(500, ...)`): rejected, same
+  section.
+- `SetMinSize()`/`SetSizerAndFit()` locking editor sizes
+  ([PYTHON3_MIGRATION_1.md](PYTHON3_MIGRATION_1.md)).
+- Resize and sash drag cost: toolbar size loop, AUI live resize
+  throttling, deferred column resize
+  ([PYTHON3_MIGRATION_3.md](PYTHON3_MIGRATION_3.md#aui-divider-drag-visual-feedback)).
+
+## Proposed Design
+
+One placement model and one pure restore function for all windows:
+
+- **Stored per window:** normal rect (x, y, w, h) and maximized. The
+  normal rect is updated only while the window is shown, not maximized
+  or iconized, and after its restore step has finished. That ignores
+  the spurious construction and realization events without the ready,
+  confirmed and idle state machine.
+- **`restore_rect(saved, work_areas, fallback)`**, no wx, unit tested:
+  1. Monitor: the one overlapping the saved rect most. None: the
+     parent's monitor (dialogs) or the primary one (main window), with
+     the saved size centered on it.
+  2. Clamp the size to that work area instead of dropping it; keep the
+     minimum.
+  3. Shift the position so the window lies inside the work area.
+  4. Keep maximized.
+- **Apply:**
+  - Before the first `Show()`: `SetSize(rect)`. Set the minimum size
+    after the first show.
+  - X11 main window: after the first map, one `SetPosition()` if the WM
+    put it elsewhere, then `Maximize()` if saved maximized. No loop;
+    later WM decisions win.
+  - Windows and macOS: position and maximized before `Show()` (to
+    verify).
+  - Wayland: size and maximized only.
+- **Dialogs:** the same function, with the parent's monitor as
+  fallback; with no saved size the fitted size stays.
+- **Floating panes:** after `LoadPerspective()`, clamp each floating
+  pane's position and size with the same function.
+- **DPI:** check which DPI awareness the Windows builds run with
+  (`application.py` only logs it). If per-monitor, store sizes in DIPs
+  (`ToDIP()`/`FromDIP()`) so a window moved between monitors with
+  different scaling keeps its size. GTK already uses logical pixels.
+- Remove the unused settings keys and the debug `wx.CallLater` chain.
+
+## Not Yet Examined
+
+- Jitter while dragging a window border was not measured; the
+  findings above are about reopening. Candidates: the scheduler
+  blocking above, and `MainWindow.onResize()`, which sets the toolbar's
+  size and minimum sizes on every `EVT_SIZE`.
+- Xvfb has no compositor and faster timing than a real desktop;
+  repeat the table on LXDE before relying on the exact counts.
+- Seen once under Xvfb only: opening an editor left a small window
+  showing a "Description" tab at the top left of the screen. Check on
+  a real desktop.
+
+## How It Was Measured
+
+Set `_DEBUG_WINDOW_TRACKING = True` in a copy of the app, run it with
+`--ini` and its own `XDG_CONFIG_HOME` under `Xvfb` plus `openbox`,
+reset the `[window]` section before each run (the app saves its
+geometry on exit), and poll `xwininfo -id <window>` every 10 ms for the
+visible states. `xprop WM_NORMAL_HINTS` shows which position hint
+reached the X server.
+
+## Next Steps
+
+1. Ask upstream for `USPosition` on positions set before show (or
+   check newer wxWidgets): it would remove the one visible move on X11.
+2. Implement `restore_rect()` with unit tests; move the main window,
+   editors and floating panes to it.
+3. Test on the real desktop (LXDE/openbox) and on Windows: normal,
+   maximized, un-maximize, monitor unplugged, smaller monitor, editor
+   first and second open, floating pane on a removed monitor.
+
+---
+
 ## References
 
 - [wxWidgets/Phoenix Issue #2214](https://github.com/wxWidgets/Phoenix/issues/2214) - Frame position problem on Linux
@@ -451,4 +590,4 @@ File a feature request to add `GDK_HINT_USER_POS` support:
 ---
 
 *Document created: 2025-11-23*
-*Last updated: 2025-11-24*
+*Last updated: 2026-09-25*
