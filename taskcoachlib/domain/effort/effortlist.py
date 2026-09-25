@@ -136,10 +136,6 @@ class EffortList(
             if task:
                 task.addEffort(effort)
 
-    @classmethod
-    def sortEventType(class_):
-        return "this event type is not used"
-
 
 class EffortListTracker(patterns.Observer, Publisher):
     """EffortListTracker observes an EffortList and keeps track of

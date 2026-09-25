@@ -97,9 +97,6 @@ defaults = {
         "defaultactualstartdatetime": "propose_today_currenttime",
         "defaultcompletiondatetime": "propose_today_currenttime",
         "defaultreminderdatetime": "propose_tomorrow_startofworkingday",
-        # Show messages from the developers downloaded from the website:
-        "developermessages": "True",
-        "lastdevelopermessage": "",
         "descriptionpopups": "True",
     },
     "taskviewer": {

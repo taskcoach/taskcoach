@@ -3,14 +3,16 @@
 import sys
 import os
 import inspect
+import weakref
 
 # =============================================================================
 # wxPython hypertreelist Import Hook
 # =============================================================================
-# This import hook redirects imports of wx.lib.agw.hypertreelist to our bundled
-# patched version. This is needed because wxPython < 4.2.4 has bugs in
-# TR_FULL_ROW_HIGHLIGHT and TR_FILL_WHOLE_COLUMN_BACKGROUND that break
-# background coloring in tree list widgets.
+# This import hook redirects imports of wx.lib.agw.hypertreelist to
+# our bundled copy, on every wxPython version: it has the row
+# background fixes that wxPython < 4.2.4 lacks (TR_FULL_ROW_HIGHLIGHT,
+# TR_FILL_WHOLE_COLUMN_BACKGROUND) and Task Coach's own changes, such
+# as the macOS colour checks and column resizing.
 #
 # The patched file is bundled at: taskcoachlib/patches/hypertreelist.py
 # This works for all installation methods (pip, deb, rpm, Windows, macOS).
@@ -75,6 +77,7 @@ _install_hypertreelist_hook()
 # =============================================================================
 
 import wx
+import wx.siplib
 from collections import namedtuple
 from wx.core import Window
 
@@ -195,7 +198,7 @@ def _guarded_CallAfter(callableObj, *args, **kw):
     schedule_tb = traceback.format_stack(limit=25)[:-1]
 
     # Check if this is a bound method on a wx object
-    obj = getattr(callableObj, '__self__', None)
+    obj = getattr(callableObj, "__self__", None)
     is_wx_obj = isinstance(obj, wx.Object)
 
     if is_wx_obj:
@@ -204,27 +207,40 @@ def _guarded_CallAfter(callableObj, *args, **kw):
             try:
                 # bool(wxObject) returns False if C++ object is deleted
                 if not obj:
-                    caller = "%s.%s" % (type(obj).__name__,
-                                        getattr(callableObj, '__name__', '?'))
-                    log_step("Blocked CallAfter to destroyed object:", caller,
-                             prefix="CRASH_GUARD")
-                    log_step("Originally scheduled from:",
-                             prefix="CRASH_GUARD")
+                    caller = "%s.%s" % (
+                        type(obj).__name__,
+                        getattr(callableObj, "__name__", "?"),
+                    )
+                    log_step(
+                        "Blocked CallAfter to destroyed object:",
+                        caller,
+                        prefix="CRASH_GUARD",
+                    )
+                    log_step(
+                        "Originally scheduled from:", prefix="CRASH_GUARD"
+                    )
                     for line in schedule_tb:
-                        for part in line.rstrip().split('\n'):
+                        for part in line.rstrip().split("\n"):
                             log_step("  " + part, prefix="CRASH_GUARD")
                     return
                 callableObj(*a, **k)
             except RuntimeError as e:
                 if "C/C++ object" in str(e) or "deleted" in str(e):
-                    caller = "%s.%s" % (type(obj).__name__,
-                                        getattr(callableObj, '__name__', '?'))
-                    log_step("RuntimeError calling %s:" % caller, e,
-                             prefix="CRASH_GUARD", exc=True)
-                    log_step("Originally scheduled from:",
-                             prefix="CRASH_GUARD")
+                    caller = "%s.%s" % (
+                        type(obj).__name__,
+                        getattr(callableObj, "__name__", "?"),
+                    )
+                    log_step(
+                        "RuntimeError calling %s:" % caller,
+                        e,
+                        prefix="CRASH_GUARD",
+                        exc=True,
+                    )
+                    log_step(
+                        "Originally scheduled from:", prefix="CRASH_GUARD"
+                    )
                     for line in schedule_tb:
-                        for part in line.rstrip().split('\n'):
+                        for part in line.rstrip().split("\n"):
                             log_step("  " + part, prefix="CRASH_GUARD")
                 else:
                     raise
@@ -235,3 +251,144 @@ def _guarded_CallAfter(callableObj, *args, **kw):
 
 
 wx.CallAfter = _guarded_CallAfter
+
+
+# =============================================================================
+# wx.Timer Owner Crash Guard
+# =============================================================================
+# A wx.Timer created with an owner window keeps a raw C++ pointer to
+# that owner and delivers every tick to it. If the owner is destroyed
+# while the timer is still running, the next tick is dispatched into
+# freed memory. That crash happens entirely in C++, so the CallAfter
+# guard and OnExceptionInMainLoop never see it and faulthandler shows
+# only MainLoop. This guard records where each window-owned timer was
+# started and, when the owner is destroyed, moves the timer to a
+# harmless sink owner. wx runs later-bound handlers first, so the
+# owner's own destroy handler may still stop the timer after this; only
+# a tick that actually reaches the sink is logged, with the stack the
+# timer was started from.
+#
+# For details, see: docs/CRASH_GUARD.md
+# =============================================================================
+
+_wx_timer_start_original = wx.Timer.Start
+_wx_timer_set_owner_original = wx.Timer.SetOwner
+
+
+def _capture_stack():
+    """Capture the stack of the caller of the guarded method. Source
+    lines are only looked up if the stack is logged."""
+    stack = traceback.StackSummary.extract(
+        traceback.walk_stack(sys._getframe(2)), limit=25, lookup_lines=False
+    )
+    stack.reverse()
+    return stack
+
+
+def _log_stack(title, stack):
+    log_step(title, prefix="CRASH_GUARD")
+    for line in stack.format():
+        for part in line.rstrip().split("\n"):
+            log_step("  " + part, prefix="CRASH_GUARD")
+
+
+class _OrphanedTimerSink(wx.EvtHandler):
+    """Owner of a timer whose window was destroyed. Receiving a tick
+    means the timer outlived its window: stop it and log where it was
+    started."""
+
+    def __init__(self, owner_name, start_stack):
+        super().__init__()
+        self._owner_name = owner_name
+        self._start_stack = start_stack
+        self.Bind(wx.EVT_TIMER, self._on_tick)
+
+    def _on_tick(self, event):
+        timer = event.GetTimer()
+        timer.Stop()
+        log_step(
+            "Stopped timer still running after its owner window was "
+            "destroyed: owner=%s timer_id=%d"
+            % (self._owner_name, timer.GetId()),
+            prefix="CRASH_GUARD",
+        )
+        log_step(
+            "Without this guard this tick would have been dispatched to "
+            "the freed owner (native crash).",
+            prefix="CRASH_GUARD",
+        )
+        _log_stack("Timer was last started from:", self._start_stack)
+
+
+def _watch_timer_owner(timer, owner, owner_addr):
+    """Move the timer to a sink owner when its owner window is
+    destroyed. Only a weak reference to the timer is kept, so timer
+    lifetimes are unchanged."""
+    timer_ref = weakref.ref(timer)
+    owner_name = type(owner).__name__
+
+    def _on_owner_destroy(event):
+        event.Skip()
+        # Compare C++ addresses: destroy events of child windows may
+        # propagate here, and the Python proxy of the event object is
+        # not always the same object as the one seen at Start() time.
+        try:
+            destroyed_addr = wx.siplib.unwrapinstance(event.GetEventObject())
+        except (TypeError, RuntimeError):
+            return
+        if destroyed_addr != owner_addr:
+            return
+        timer = timer_ref()
+        if timer is None:
+            return  # Timer already deleted, nothing can tick
+        if getattr(timer, "_crash_guard_owner_addr", None) != owner_addr:
+            return  # Timer was given another owner since
+        timer._crash_guard_owner_destroyed = True
+        # The sink lives as long as the timer's Python object, which
+        # owns the C++ timer.
+        timer._crash_guard_sink = _OrphanedTimerSink(
+            owner_name, timer._crash_guard_start_stack
+        )
+        _wx_timer_set_owner_original(
+            timer, timer._crash_guard_sink, timer.GetId()
+        )
+
+    wx.EvtHandler.Bind(owner, wx.EVT_WINDOW_DESTROY, _on_owner_destroy)
+
+
+def _guarded_timer_start(self, *args, **kw):
+    """Wrapper around wx.Timer.Start that watches window owners."""
+    if getattr(self, "_crash_guard_owner_destroyed", False):
+        # Do not call GetOwner() here: converting the dangling owner
+        # pointer to a Python object would itself crash.
+        log_step(
+            "Blocked Start() of timer whose owner window was destroyed: "
+            "timer_id=%d" % self.GetId(),
+            prefix="CRASH_GUARD",
+        )
+        _log_stack("Start() called from:", _capture_stack())
+        return False
+    owner = self.GetOwner()
+    if isinstance(owner, wx.Window):
+        owner_addr = wx.siplib.unwrapinstance(owner)
+        if getattr(self, "_crash_guard_owner_addr", None) != owner_addr:
+            self._crash_guard_owner_addr = owner_addr
+            _watch_timer_owner(self, owner, owner_addr)
+        self._crash_guard_start_stack = _capture_stack()
+    return _wx_timer_start_original(self, *args, **kw)
+
+
+def _guarded_timer_start_once(self, milliseconds=-1):
+    return self.Start(milliseconds, wx.TIMER_ONE_SHOT)
+
+
+def _guarded_timer_set_owner(self, *args, **kw):
+    """A new owner makes the timer safe to start again."""
+    self._crash_guard_owner_destroyed = False
+    self._crash_guard_owner_addr = None
+    return _wx_timer_set_owner_original(self, *args, **kw)
+
+
+wx.Timer.Start = _guarded_timer_start
+wx.Timer.StartOnce = _guarded_timer_start_once
+wx.Timer.SetOwner = _guarded_timer_set_owner

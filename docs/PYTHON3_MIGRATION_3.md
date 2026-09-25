@@ -93,15 +93,9 @@ class FileMenu(Menu):
 
 ### Why TaskTemplateMenu Works Correctly
 
-`TaskTemplateMenu` was already using the correct pattern:
-
-```python
-class TaskTemplateMenu(DynamicMenu):
-    def registerForMenuUpdate(self):
-        pub.subscribe(self.onTemplatesSaved, "templates.saved")
-```
-
-It only rebuilds when templates actually change, not on every menu open.
+`TaskTemplateMenu` is a submenu: it refills when its parent (New) opens,
+before it is shown itself, so GTK sizes it correctly. See
+[PUBLISHER_OBSERVER.md: GTK3 Dynamic Menu Item Sizing](PUBLISHER_OBSERVER.md#gtk3-dynamic-menu-item-sizing).
 
 ### Files Modified
 
@@ -119,7 +113,7 @@ It only rebuilds when templates actually change, not on every menu open.
 
 4. **The `EVT_MENU_OPEN` trap**: It's tempting to use EVT_MENU_OPEN for updating dynamic content, but this triggers the GTK bug. Use data change notifications instead.
 
-5. **Submenus may be less affected**: The DynamicMenuThatGetsUICommandsFromViewer submenus (ModeMenu, FilterMenu, etc.) use EVT_MENU_OPEN but are smaller and may not trigger visible scroll arrows.
+5. **Submenus are not affected** when they refill on their *parent's* EVT_MENU_OPEN (ModeMenu, FilterMenu, etc., TaskTemplateMenu): they are not shown yet, so GTK sizes them when they open (verified).
 
 ### Testing Checklist
 

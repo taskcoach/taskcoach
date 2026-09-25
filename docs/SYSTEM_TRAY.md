@@ -51,15 +51,15 @@ create_taskbar_icon(mainwindow, taskList, settings)
   ├─ Linux/GTK + AppIndicator available → AppIndicatorTaskBarIcon
   │   .__init__()
   │       → indicator.set_icon_theme_path(.../icons/tray)
-  │   .__setIcon()
-  │       → self.__indicator.set_icon_full("taskcoach-app", self.__tooltipText)
+  │   .__set_icon()
+  │       → self.__indicator.set_icon_full("taskcoach-app", self.__tooltip_text)
   │
   ├─ Windows / Mac → TaskBarIcon (wx.adv.TaskBarIcon)
-  │   .__setIcon()
+  │   .__set_icon()
   │       ├─ Mac   → size = TRAY_ICON_SIZE_MACOS (128)
   │       └─ Other → size = LIST_ICON_SIZE (16)
   │       → icon = icon_catalog.get_wx_icon(icon_id, size)
-  │       → self.SetIcon(icon, self.__tooltipText)
+  │       → self.SetIcon(icon, self.__tooltip_text)
   │
   └─ Fallback → tries AppIndicator, then wx anyway
 ```
@@ -420,9 +420,9 @@ documented as such.
 - `create_toplevel_controller()` - the startup probe selecting the
   backend (mirrors the idle backend probe).
 
-Both `TaskBarIcon.onTaskbarClick` and
-`AppIndicatorTaskBarIcon.onTaskbarClick` (and the "Show/Hide" menu
-item, which calls `onTaskbarClick`) now delegate to the controller:
+Both `TaskBarIcon.on_taskbar_click` and
+`AppIndicatorTaskBarIcon.on_taskbar_click` (and the "Show/Hide" menu
+item, which calls `on_taskbar_click`) now delegate to the controller:
 `controller.restore()` if `is_minimized()` else
 `controller.minimize()`. The previous
 `IsIconized()/IsShown()/IsActive()` heuristic is removed.
@@ -456,7 +456,7 @@ The AppIndicator menu rebuilds automatically when:
 - Task subjects change
 
 The wx `TaskBarMenu` updates dynamic submenus and state-dependent labels
-in `popupTaskBarMenu()` each time the menu is shown.
+in `popup_taskbar_menu()` each time the menu is shown.
 
 ### Hide / Restore Toggle
 
@@ -464,8 +464,8 @@ in `popupTaskBarMenu()` each time the menu is shown.
 - When the window is visible: label is **"Hide"**, action calls `Iconize()`
 - When the window is hidden/iconized: label is **"Restore"**, action calls `restore()`
 
-The label is updated dynamically via `getMenuText()`: `popupTaskBarMenu()`
-calls `item._command.getMenuText()` and applies `SetItemLabel()` before
+The label is updated dynamically via `get_menu_text()`: `popup_taskbar_menu()`
+calls `item._command.get_menu_text()` and applies `SetItemLabel()` before
 showing the menu. The AppIndicator GTK menu uses "Show/Hide Task Coach"
 as a static label (GTK menus don't support per-show label changes as easily).
 
@@ -532,37 +532,37 @@ Key log messages:
 ## Code Duplication
 
 `TaskBarIcon` and `AppIndicatorTaskBarIcon` in `taskbaricon.py` duplicate
-~100 lines of identical logic. Only `__setIcon()` and menu handling differ.
+~100 lines of identical logic. Only `__set_icon()` and menu handling differ.
 
 ### Shared (duplicated)
 
 | Code | Description |
 |------|-------------|
 | Observer registration | `registerObserver`, `pub.subscribe` for task/tracking/due events |
-| `onTaskListChanged` | Tooltip + start/stop ticking |
-| `onTrackingChanged` | Register/remove subject observer, tooltip, start/stop |
-| `onChangeSubject` | Tooltip update |
-| `onChangeDueDateTime` | Tooltip update |
-| `onChangeDueDateTime_Deprecated` | Tooltip update |
-| `onEverySecond` | Blink setting check, toggle icon, set icon |
-| `toolTipMessages` | Status message templates |
-| `__setTooltipText` | Build tooltip from tracked tasks / status counts |
+| `on_task_list_changed` | Tooltip + start/stop ticking |
+| `on_tracking_changed` | Register/remove subject observer, tooltip, start/stop |
+| `on_change_subject` | Tooltip update |
+| `on_change_due_date_time` | Tooltip update |
+| `on_change_due_date_time_deprecated` | Tooltip update |
+| `on_every_second` | Blink setting check, toggle icon, set icon |
+| `tool_tip_messages` | Status message templates |
+| `__set_tooltip_text` | Build tooltip from tracked tasks / status counts |
 | `__set_default_icon` | Reset icon_id / tray_icon_id to default |
 | `__toggle_tracking_icon` | Swap tick/tack icon_id / tray_icon_id |
-| `__startOrStopTicking` | Dispatch to start/stop |
-| `__startTicking` / `__stopTicking` | Clock + icon control |
-| `startClock` / `stopClock` / `_onTimerSecond` | Timer pub/sub |
+| `__start_or_stop_ticking` | Dispatch to start/stop |
+| `__start_ticking` / `__stop_ticking` | Clock + icon control |
+| `start_clock` / `stop_clock` / `_on_timer_second` | `timer.second` subscription |
 | Getters | `tooltip()`, `icon_id()` / `tray_icon_id()`, `default_icon_id()` / `default_tray_icon_id()` |
 
 ### Platform-specific (different)
 
 | TaskBarIcon (Windows/Mac) | AppIndicatorTaskBarIcon (Linux) |
 |---|---|
-| `__setIcon`: `icon_catalog.get_wx_icon(id, size)` → `self.SetIcon()` | `__setIcon`: `indicator.set_icon_full("taskcoach-app", tooltip)` via tray/hicolor theme |
-| `onIdle` — wx idle loop change detection | (none — calls `__setIcon` directly) |
-| `onTaskbarClick(event)` — Mac Raise branch | `onTaskbarClick(event=None)` — simpler |
-| `setPopupMenu` — wx.Bind right-click | `setPopupMenu` — stores, builds GTK menu |
-| `popupTaskBarMenu` — wx.PopupMenu | GTK menu building + action handlers (~300 lines) |
+| `__set_icon`: `icon_catalog.get_wx_icon(id, size)` → `self.SetIcon()` | `__set_icon`: `indicator.set_icon_full("taskcoach-app", tooltip)` via tray/hicolor theme |
+| `on_idle`: wx idle loop change detection | (none; calls `__set_icon` directly) |
+| `on_taskbar_click(event)`: Mac Raise branch | `on_taskbar_click(event=None)`: simpler |
+| `set_popup_menu`: wx.Bind right-click | `set_popup_menu`: stores, builds GTK menu |
+| `popup_taskbar_menu` (wx.PopupMenu) | GTK menu building + action handlers (~300 lines) |
 | wx click event binding in `__init__` | (none) |
 | `mainwindow.Bind(EVT_IDLE)` | (none) |
 | (none) | wx compatibility stubs (Bind, Unbind, ProcessEvent, UpdateWindowUI) |

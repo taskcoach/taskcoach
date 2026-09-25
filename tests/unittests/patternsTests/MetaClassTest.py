@@ -67,6 +67,21 @@ class NumberedInstancesTestsMixin(object):
         instance10 = self.classUnderTest()
         self.assertEqual(10, instance10.instanceNumber)
 
+    def test_duplicate_explicit_number_is_not_handed_out_again(self):
+        # Resetting the window layout recreates viewer 0 while the old
+        # viewer 0 is still registered.
+        old = self.classUnderTest(instanceNumber=0)
+        new = self.classUnderTest(instanceNumber=0)
+        first = self.classUnderTest()
+        second = self.classUnderTest()
+        self.assertEqual(
+            [0, 0, 1, 2],
+            [
+                instance.instanceNumber
+                for instance in (old, new, first, second)
+            ],
+        )
+
 
 class NumberedInstancesTest(NumberedInstancesTestsMixin, test.TestCase):
     classUnderTest = Numbered

@@ -22,7 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
 import wx.lib.agw.piectrl
-from taskcoachlib import operating_system
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.gui.icons import image_list_cache
 from taskcoachlib import command, widgets, domain, render, patterns
@@ -153,7 +152,7 @@ class BaseTaskViewer(
             "bgcolor_dark",
             "icon_dark",
         ):
-            appearanceSettings = [
+            appearance_settings = [
                 "settings.%s.%s" % (appearance, setting)
                 for setting in (
                     "activetasks",
@@ -164,11 +163,13 @@ class BaseTaskViewer(
                     "latetasks",
                 )
             ]
-            for appearanceSetting in appearanceSettings:
+            for appearance_setting in appearance_settings:
                 pub.subscribe(
-                    self.onAppearanceSettingChange, appearanceSetting
+                    self.on_appearance_setting_change, appearance_setting
                 )
-        pub.subscribe(self.onAppearanceSettingChange, "settings.window.theme")
+        pub.subscribe(
+            self.on_appearance_setting_change, "settings.window.theme"
+        )
         self.registerObserver(
             self.onAttributeChanged_Deprecated,
             eventType=task.Task.appearanceChangedEventType(),
@@ -176,7 +177,10 @@ class BaseTaskViewer(
         pub.subscribe(
             self.onAttributeChanged, task.Task.prerequisitesChangedEventType()
         )
-        pub.subscribe(self.refresh, "powermgt.on")
+        self.registerObserver(self._on_power_on, eventType="powermgt.on")
+
+    def _on_power_on(self, event):  # pylint: disable=W0613
+        self.refresh()
 
     def detach(self):
         super().detach()
@@ -190,7 +194,11 @@ class BaseTaskViewer(
         kwargs.setdefault("decimal", settings2.feature.decimal_time)
         return render.budget(*args, **kwargs)
 
-    def onAppearanceSettingChange(self, value):  # pylint: disable=W0613
+    # value is optional, as in Task's listeners on these topics:
+    # pypubsub takes a topic's signature from its first listener
+    def on_appearance_setting_change(
+        self, value=None
+    ):  # pylint: disable=W0613
         if self:
             wx.CallAfter(
                 self.refresh
@@ -221,22 +229,22 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if kwargs.get("doRefresh", True):
-            self.secondRefresher = refresher.SecondRefresher(
+            self.second_refresher = refresher.SecondRefresher(
                 self, task.Task.trackingChangedEventType()
             )
-            self.minuteRefresher = refresher.MinuteRefresher(self)
+            self.minute_refresher = refresher.MinuteRefresher(self)
         else:
-            self.secondRefresher = self.minuteRefresher = None
+            self.second_refresher = self.minute_refresher = None
 
     def detach(self):
         super().detach()
-        if hasattr(self, "secondRefresher") and self.secondRefresher:
-            self.secondRefresher.stopClock()
-            self.secondRefresher.removeInstance()
-            del self.secondRefresher
-        if hasattr(self, "minuteRefresher") and self.minuteRefresher:
-            self.minuteRefresher.stopClock()
-            del self.minuteRefresher
+        if hasattr(self, "second_refresher") and self.second_refresher:
+            self.second_refresher.stop_clock()
+            self.second_refresher.removeInstance()
+            del self.second_refresher
+        if hasattr(self, "minute_refresher") and self.minute_refresher:
+            self.minute_refresher.stop_clock()
+            del self.minute_refresher
 
     def newItemDialog(self, *args, **kwargs):
         kwargs["categories"] = self.taskFile.categories().filteredCategories()
@@ -279,48 +287,48 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
 
     def newSubItemCommand(self):
         kwargs = dict()
-        if self.__shouldPresetPlannedStartDateTime():
+        if self.__should_preset_planned_start_date_time():
             kwargs["plannedStartDateTime"] = (
                 task.Task.suggestedPlannedStartDateTime()
             )
-        if self.__shouldPresetDueDateTime():
+        if self.__should_preset_due_date_time():
             kwargs["dueDateTime"] = task.Task.suggestedDueDateTime()
-        if self.__shouldPresetActualStartDateTime():
+        if self.__should_preset_actual_start_date_time():
             kwargs["actualStartDateTime"] = (
                 task.Task.suggestedActualStartDateTime()
             )
-        if self.__shouldPresetCompletionDateTime():
+        if self.__should_preset_completion_date_time():
             kwargs["completionDateTime"] = (
                 task.Task.suggestedCompletionDateTime()
             )
-        if self.__shouldPresetReminderDateTime():
+        if self.__should_preset_reminder_date_time():
             kwargs["reminder"] = task.Task.suggestedReminderDateTime()
         # pylint: disable=W0142
         return self.newSubItemCommandClass()(
             self.presentation(), self.curselection(), **kwargs
         )
 
-    def __shouldPresetPlannedStartDateTime(self):
+    def __should_preset_planned_start_date_time(self):
         return self.settings.get(
             "view", "defaultplannedstartdatetime"
         ).startswith("preset")
 
-    def __shouldPresetDueDateTime(self):
+    def __should_preset_due_date_time(self):
         return self.settings.get("view", "defaultduedatetime").startswith(
             "preset"
         )
 
-    def __shouldPresetActualStartDateTime(self):
+    def __should_preset_actual_start_date_time(self):
         return self.settings.get(
             "view", "defaultactualstartdatetime"
         ).startswith("preset")
 
-    def __shouldPresetCompletionDateTime(self):
+    def __should_preset_completion_date_time(self):
         return self.settings.get(
             "view", "defaultcompletiondatetime"
         ).startswith("preset")
 
-    def __shouldPresetReminderDateTime(self):
+    def __should_preset_reminder_date_time(self):
         return self.settings.get("view", "defaultreminderdatetime").startswith(
             "preset"
         )
@@ -359,13 +367,13 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
         ) + super().createCreationToolBarUICommands()
 
     def createActionToolBarUICommands(self):
-        uiCommands = (
+        ui_commands = (
             uicommand.AddNote(settings=self.settings, viewer=self),
             uicommand.TaskMarkInactive(settings=self.settings, viewer=self),
             uicommand.TaskMarkActive(settings=self.settings, viewer=self),
             uicommand.TaskMarkCompleted(settings=self.settings, viewer=self),
         )
-        uiCommands += (
+        ui_commands += (
             # EffortStart needs a reference to the original (task) list to
             # be able to stop tracking effort for tasks that are already
             # being tracked, but that might be filtered in the viewer's
@@ -378,10 +386,10 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
                 taskList=self.taskFile.tasks(),
             ),
         )
-        return uiCommands + super().createActionToolBarUICommands()
+        return ui_commands + super().createActionToolBarUICommands()
 
     def createModeToolBarUICommands(self):
-        hideUICommands = tuple(
+        hide_ui_commands = tuple(
             [
                 uicommand.ViewerHideTasks(
                     taskStatus=status, settings=self.settings, viewer=self
@@ -389,21 +397,21 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
                 for status in task.Task.possibleStatuses()
             ]
         )
-        otherModeUICommands = super(
+        other_mode_ui_commands = super(
             BaseTaskTreeViewer, self
         ).createModeToolBarUICommands()
-        separator = (None,) if otherModeUICommands else ()
+        separator = (None,) if other_mode_ui_commands else ()
         return (
-            hideUICommands
+            hide_ui_commands
             + separator
-            + otherModeUICommands
+            + other_mode_ui_commands
             + (uicommand.ToggleAutoScroll(settings=self.settings),)
         )
 
-    def get_icon_id(self, item, isSelected):
+    def get_icon_id(self, item, is_selected):
         return (
             item.selected_icon_id(recursive=True)
-            if isSelected
+            if is_selected
             else item.icon_id(recursive=True)
         )
 
@@ -890,7 +898,8 @@ class HierarchicalCalendarViewer(
                     self.onAttributeChanged_Deprecated, eventType
                 )
 
-        # Dates are treated separately because the layout may change (_Invalidate)
+        # Dates are treated separately: the layout may change
+        # (_invalidate)
         # pylint: disable=E1101
         for eventType in (
             task.Task.plannedStartDateTimeChangedEventType(),
@@ -906,12 +915,23 @@ class HierarchicalCalendarViewer(
 
         self.reconfig()
 
-        # Subscribe to scheduler's UI refresh event (fires after all data changes)
-        pub.subscribe(self._onDateChanged, "scheduler.dateChange.uiRefresh")
+        # Sent after the scheduler's processing; removed by detach()
+        self.registerObserver(
+            self._on_date_changed, eventType="scheduler.date"
+        )
+        self.registerObserver(
+            self._on_minute_changed, eventType="scheduler.minute"
+        )
 
-    def _onDateChanged(self, timestamp):
-        """Handle date change from scheduler."""
+    def _on_date_changed(self, event):  # pylint: disable=W0613
         self.at_midnight()
+
+    def _on_minute_changed(self, event):  # pylint: disable=W0613
+        self.widget.refresh_now_line()
+
+    def needs_second_refresh(self):
+        # Nothing shown changes every second while tracking
+        return False
 
     def reconfig(self):
         self.widget.SetCalendarFormat(
@@ -956,10 +976,6 @@ class HierarchicalCalendarViewer(
             uicommand.HierarchicalCalendarViewerNextPeriod(viewer=self),
         )
 
-    def detach(self):
-        super().detach()
-        pub.unsubscribe(self._onDateChanged, "scheduler.dateChange.uiRefresh")
-
     def at_midnight(self):
         self.widget.SetCalendarFormat(self.widget.CalendarFormat())
 
@@ -971,9 +987,6 @@ class HierarchicalCalendarViewer(
 
     def is_tree_viewer(self):
         return True
-
-    def onEverySecond(self, event):  # pylint: disable=W0221,W0613
-        pass
 
     def createWidget(self):
         itemPopupMenu = self.createTaskPopupMenu()
@@ -1064,31 +1077,29 @@ class CalendarViewer(
                 self.registerObserver(
                     self.onAttributeChanged_Deprecated, event_type
                 )
-        # Subscribe to scheduler's UI refresh event (fires after all data changes)
-        pub.subscribe(self._onDateChanged, "scheduler.dateChange.uiRefresh")
-        pub.subscribe(
-            self._onCalendarColoursChanged, "calendar.colours.changed"
+        # Sent after the scheduler's processing; removed by detach()
+        self.registerObserver(
+            self._on_date_changed, eventType="scheduler.date"
+        )
+        self.registerObserver(
+            self._on_minute_changed, eventType="scheduler.minute"
+        )
+        self.registerObserver(
+            self._on_calendar_colours_changed,
+            eventType="calendar.colours.changed",
         )
 
-    def _onDateChanged(self, timestamp):
-        """Handle date change from scheduler."""
+    def _on_date_changed(self, event):  # pylint: disable=W0613
         self.at_midnight()
 
-    def _onCalendarColoursChanged(self):
-        self.reconfig()
+    def _on_minute_changed(self, event):  # pylint: disable=W0613
+        self.widget.refresh_now_line()
 
-    def detach(self):
-        super().detach()
-        pub.unsubscribe(self._onDateChanged, "scheduler.dateChange.uiRefresh")
-        pub.unsubscribe(
-            self._onCalendarColoursChanged, "calendar.colours.changed"
-        )
+    def _on_calendar_colours_changed(self, event):  # pylint: disable=W0613
+        self.reconfig()
 
     def is_tree_viewer(self):
         return False
-
-    def onEverySecond(self, event):  # pylint: disable=W0221,W0613
-        pass  # Too expensive
 
     def at_midnight(self):
         if not self.settings.get(self.settingsSection(), "viewdate"):
@@ -1267,7 +1278,7 @@ class TaskViewer(
         kwargs.setdefault("settingsSection", "taskviewer")
         super().__init__(*args, **kwargs)
         if self.isVisibleColumnByName("timeLeft"):
-            self.minuteRefresher.startClock()
+            self.minute_refresher.start_clock()
 
     def activate(self):
         if hasattr(wx.GetTopLevelParent(self), "AddBalloonTip"):
@@ -1295,9 +1306,9 @@ class TaskViewer(
     def showColumn(self, column, show=True, *args, **kwargs):
         if column.name() == "timeLeft":
             if show:
-                self.minuteRefresher.startClock()
+                self.minute_refresher.start_clock()
             else:
-                self.minuteRefresher.stopClock()
+                self.minute_refresher.stop_clock()
         super().showColumn(column, show, *args, **kwargs)
 
     def createWidget(self):
@@ -2239,15 +2250,12 @@ class TaskViewer(
     def onEditFixedFee(self, item, newValue):
         command.EditFixedFeeCommand(items=[item], newValue=newValue).do()
 
-    def onEverySecond(self, event):
-        # Only update when a column is visible that changes every second
-        if any(
-            [
-                self.isVisibleColumnByName(column)
-                for column in ("timeSpent", "budgetLeft", "revenue")
-            ]
-        ):
-            super().onEverySecond(event)
+    def needs_second_refresh(self):
+        # Only these columns change every second while tracking
+        return any(
+            self.isVisibleColumnByName(column)
+            for column in ("timeSpent", "budgetLeft", "revenue")
+        )
 
     def get_root_items(self):
         """If the viewer is in tree mode, return the real root items. If the

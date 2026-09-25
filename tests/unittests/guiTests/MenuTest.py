@@ -24,7 +24,6 @@ from taskcoachlib import gui, config
 from taskcoachlib.gui import uicommand
 from taskcoachlib.gui.uicommand import Separator
 from taskcoachlib.domain import task, category, date
-from pubsub import pub
 
 
 class MockViewerContainer(object):
@@ -40,7 +39,7 @@ class MockViewerContainer(object):
     def curselection(self):
         return self.selection  # pragma: no cover
 
-    def isShowingCategories(self):
+    def is_showing_categories(self):
         return self.showingCategories  # pragma: no cover
 
     def isSortable(self):
@@ -209,10 +208,10 @@ class RecentFilesMenuTest(test.wxTestCase):
             )
             # Apparently the '&' can also be a '_' (seen on Ubuntu)
             expectedLabel = "&%d %s" % (index + 1, expectedFilename)
-            self.assertEqual(expectedLabel[1:], menuItem.GetText()[1:])
+            self.assertEqual(expectedLabel[1:], menuItem.GetItemLabel()[1:])
 
     def openMenu(self):
-        self.menu.onOpenMenu(wx.MenuEvent(menu=self.menu))
+        pass  # The menu updates itself when the recent files change
 
     def testNoRecentFiles(self):
         self.setRecentFilesAndCreateMenu()
@@ -246,8 +245,9 @@ class RecentFilesMenuTest(test.wxTestCase):
         self.assertTrue(self.ioController.openCalled)
 
     def testNeverShowMoreThanTheMaximumNumberAllowed(self):
-        self.setRecentFilesAndCreateMenu(self.filename1, self.filename2)
+        # Read when the menu is built; it has no Preferences setting
         self.settings.set("file", "maxrecentfiles", "1")
+        self.setRecentFilesAndCreateMenu(self.filename1, self.filename2)
         self.assertRecentFileMenuItems(self.filename1)
 
 
@@ -269,29 +269,29 @@ class ViewMenuTestCase(test.wxTestCase):
         menu.updateMenu()
         return menu
 
+    def open_menu(self):
+        # What MainMenu does on EVT_MENU_OPEN
+        self.menu._update_menu_state()
+
     def testSortOrderAscending(self):
         self.viewerContainer.setSortOrderAscending(True)
-        self.menu.UpdateUI()
-        self.menu.openMenu()
+        self.open_menu()
         self.assertTrue(self.menu.FindItemByPosition(0).IsChecked())
 
     def testSortOrderDescending(self):
         self.viewerContainer.setSortOrderAscending(False)
-        self.menu.UpdateUI()
-        self.menu.openMenu()
+        self.open_menu()
         self.assertFalse(self.menu.FindItemByPosition(0).IsChecked())
 
     def testSortBySubject(self):
         self.viewerContainer.sortBy("subject")
-        self.menu.UpdateUI()
-        self.menu.openMenu()
+        self.open_menu()
         self.assertTrue(self.menu.FindItemByPosition(4).IsChecked())
         self.assertFalse(self.menu.FindItemByPosition(5).IsChecked())
 
     def testSortByDescription(self):
         self.viewerContainer.sortBy("description")
-        self.menu.UpdateUI()
-        self.menu.openMenu()
+        self.open_menu()
         self.assertFalse(self.menu.FindItemByPosition(4).IsChecked())
         self.assertTrue(self.menu.FindItemByPosition(5).IsChecked())
 
@@ -315,26 +315,52 @@ class StartEffortForTaskMenuTest(test.wxTestCase):
         parent.addChild(child)
         return parent, child
 
-    def testMenuIsEmptyInitially(self):
-        self.assertEqual(0, len(self.menu))
+    def item_labels(self):
+        # Rebuilt when the tray menu pops up, not on task changes
+        self.menu.updateMenuItems()
+        return [item.GetItemLabelText() for item in self.menu.GetMenuItems()]
+
+    def test_placeholder_when_nothing_to_track(self):
+        self.assertEqual(["All tasks are completed!"], self.item_labels())
 
     def testNewTasksAreAdded(self):
         self.addTask()
-        self.assertEqual(1, len(self.menu))
+        self.assertEqual(["Subject"], self.item_labels())
 
     def testDeletedTasksAreRemoved(self):
         newTask = self.addTask()
         self.tasks.remove(newTask)
-        self.assertEqual(0, len(self.menu))
+        self.assertEqual(["All tasks are completed!"], self.item_labels())
 
     def testNewChildTasksAreAdded(self):
-        self.addParentAndChild()
-        self.assertEqual(2, len(self.menu))
+        self.addParentAndChild(childSubject="Child")
+        # The parent's line, then an arrow line with its subtasks
+        self.assertEqual(["Subject", "Subject"], self.item_labels())
+        sub_menu = self.menu.GetMenuItems()[1].GetSubMenu()
+        self.assertEqual(
+            ["Child"], [i.GetItemLabelText() for i in sub_menu.GetMenuItems()]
+        )
 
     def testDeletedChildTasksAreRemoved(self):
         child = self.addParentAndChild()[1]
         self.tasks.remove(child)
-        self.assertEqual(1, len(self.menu))
+        self.assertEqual(["Subject"], self.item_labels())
+
+    def test_completed_parent_only_holds_its_open_subtasks(self):
+        # Reopening a subtask reopens its parent, so build it as the
+        # XML reader does, e.g. for a file from an older version
+        child = task.Task(subject="Child")
+        parent = task.Task(
+            subject="Subject", completionDateTime=date.Now(), children=[child]
+        )
+        self.tasks.append(parent)
+        self.assertEqual(["Subject"], self.item_labels())
+        self.assertTrue(self.menu.GetMenuItems()[0].GetSubMenu())
+
+    def test_tasks_are_sorted_ignoring_case(self):
+        for subject in ("b", "A", "c"):
+            self.addTask(subject)
+        self.assertEqual(["A", "b", "c"], self.item_labels())
 
     def testTaskWithNonAsciiSubject(self):
         self.addParentAndChild("Jérôme", "Jîrôme")
@@ -356,8 +382,9 @@ class ToggleCategoryMenuTest(test.wxTestCase):
         self.category1.addChild(self.category2)
         self.categories.append(self.category1)
 
-    def testMenuInitiallyEmpty(self):
-        self.assertEqual(0, len(self.menu))
+    def test_placeholder_when_no_categories(self):
+        labels = [item.GetItemLabelText() for item in self.menu.GetMenuItems()]
+        self.assertEqual(["(No categories defined yet)"], labels)
 
     def testOneCategory(self):
         self.categories.append(self.category1)
@@ -369,19 +396,20 @@ class ToggleCategoryMenuTest(test.wxTestCase):
 
     def testSubcategory(self):
         self.setUpSubcategories()
-        self.assertEqual(3, len(self.menu))
+        # The category's toggle, then a submenu for its subcategories
+        self.assertEqual(2, len(self.menu))
 
     def testSubcategorySubmenuLabel(self):
         self.setUpSubcategories()
         self.assertEqual(
-            gui.menu.ToggleCategoryMenu.subMenuLabel(self.category1),
-            self.menu.GetMenuItems()[2].GetLabel(),
+            self.category1.subject(),
+            self.menu.GetMenuItems()[1].GetItemLabelText(),
         )
 
     def testSubcategorySubmenuItemLabel(self):
         self.setUpSubcategories()
-        subMenu = self.menu.GetMenuItems()[2].GetSubMenu()
-        label = subMenu.GetMenuItems()[0].GetLabel()
+        sub_menu = self.menu.GetMenuItems()[1].GetSubMenu()
+        label = sub_menu.GetMenuItems()[0].GetItemLabelText()
         self.assertEqual(self.category2.subject(), label)
 
     def testMutualExclusiveSubcategories_AreCheckItems(self):
@@ -389,18 +417,20 @@ class ToggleCategoryMenuTest(test.wxTestCase):
         self.setUpSubcategories()
         category3 = category.Category("Category 3")
         self.category1.addChild(category3)
-        subMenu = self.menu.GetMenuItems()[2].GetSubMenu()
-        for subMenuItem in subMenu.GetMenuItems():
-            self.assertEqual(wx.ITEM_CHECK, subMenuItem.GetKind())
+        sub_menu = self.menu.GetMenuItems()[1].GetSubMenu()
+        for sub_menu_item in sub_menu.GetMenuItems():
+            self.assertEqual(wx.ITEM_CHECK, sub_menu_item.GetKind())
 
     def testMutualExclusiveSubcategories_NoneChecked(self):
         self.category1.makeSubcategoriesExclusive()
         self.setUpSubcategories()
         category3 = category.Category("Category 3")
         self.category1.addChild(category3)
-        subMenuItems = self.menu.GetMenuItems()[2].GetSubMenu().GetMenuItems()
-        checkedItems = [item for item in subMenuItems if item.IsChecked()]
-        self.assertFalse(checkedItems)
+        sub_menu_items = (
+            self.menu.GetMenuItems()[1].GetSubMenu().GetMenuItems()
+        )
+        checked_items = [item for item in sub_menu_items if item.IsChecked()]
+        self.assertFalse(checked_items)
 
     def testMutualExclusiveSubcategoriesWithSubcategories(self):
         self.category1.makeSubcategoriesExclusive()
@@ -409,23 +439,44 @@ class ToggleCategoryMenuTest(test.wxTestCase):
         self.category1.addChild(category3)
         category4 = category.Category("Category 4")
         category3.addChild(category4)
-        subMenuItems = self.menu.GetMenuItems()[2].GetSubMenu().GetMenuItems()
-        checkedItems = [item for item in subMenuItems if item.IsChecked()]
-        self.assertFalse(checkedItems)
+        sub_menu_items = (
+            self.menu.GetMenuItems()[1].GetSubMenu().GetMenuItems()
+        )
+        checked_items = [item for item in sub_menu_items if item.IsChecked()]
+        self.assertFalse(checked_items)
 
 
 class TaskTemplateMenuTest(test.wxTestCase):
-    def testMenuIsUpdatedWhenTemplatesAreSaved(self):
-        uicommands = [Separator()]  # Just a separator for testing purposes
+    def setUp(self):
+        super().setUp()
+        self.uicommands = [Separator()]  # Stands in for a template
+        uicommands = self.uicommands
 
         class TaskTemplateMenu(gui.menu.TaskTemplateMenu):
             def getUICommands(self):
                 return uicommands
 
-        settings = config.Settings(load=False)
-        taskList = task.TaskList()
-        menu = TaskTemplateMenu(self.frame, taskList, settings)
-        self.assertEqual(1, len(menu))
-        uicommands.append(Separator())  # Add another separator
-        pub.sendMessage("templates.saved")
+        self.menu_class = TaskTemplateMenu
+        self.settings = config.Settings(load=False)
+
+    def open_menu(self, menu):
+        self.frame.ProcessEvent(wx.MenuEvent(wx.wxEVT_MENU_OPEN, menu=menu))
+
+    def test_menu_is_refilled_when_its_parent_opens(self):
+        parent = wx.Menu()
+        menu = self.menu_class(
+            self.frame, task.TaskList(), self.settings, parent, "Templates"
+        )
+        parent.AppendSubMenu(menu, "Templates")
+        self.uicommands.append(Separator())  # A template was added
+        self.open_menu(parent)
         self.assertEqual(2, len(menu))
+
+    def test_menu_is_not_refilled_when_another_menu_opens(self):
+        parent = wx.Menu()
+        menu = self.menu_class(
+            self.frame, task.TaskList(), self.settings, parent, "Templates"
+        )
+        self.uicommands.append(Separator())
+        self.open_menu(wx.Menu())
+        self.assertEqual(1, len(menu))

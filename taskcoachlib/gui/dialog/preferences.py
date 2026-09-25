@@ -20,14 +20,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import meta, widgets, operating_system
+from taskcoachlib import meta, patterns, widgets, operating_system
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
-from taskcoachlib.application.application import detect_dark_theme
+from taskcoachlib.application.application import (
+    detect_dark_theme,
+    detect_system_dark_theme,
+)
 from taskcoachlib.domain import date, task
 from taskcoachlib.meta import data
 from taskcoachlib.i18n import _
 from wx.lib.agw.hyperlink import HyperLinkCtrl
-from pubsub import pub
 import ast
 import wx
 import calendar
@@ -913,12 +915,6 @@ class WindowBehaviorPage(SettingsPage):
             % meta.data.metaDict,
         )
         self.addBooleanSetting(
-            "view",
-            "developermessages",
-            _("Check for messages from the %(name)s developers on startup")
-            % meta.data.metaDict,
-        )
-        self.addBooleanSetting(
             "window",
             "hidewheniconized",
             _("Hide main window when iconized"),
@@ -945,9 +941,10 @@ class ThemePage(SettingsPage):
         super().__init__(columns=7, growableColumn=6, *args, **kwargs)
 
         # --- Mode Dropdown ---
-        is_dark = detect_dark_theme()
-        self._is_dark = is_dark
-        detected = _("Dark") if is_dark else _("Light")
+        # Colours as drawn now; the label shows the system setting,
+        # which on Windows applies after a restart
+        self._is_dark = detect_dark_theme()
+        detected = _("Dark") if detect_system_dark_theme() else _("Light")
 
         theme_choice = wx.Choice(self)
         current_theme = self.gettext("window", "theme")
@@ -1404,15 +1401,19 @@ class ThemePage(SettingsPage):
             ),
         )
 
-        # Detect system theme changes while preferences are open
-        self.Bind(wx.EVT_IDLE, self._on_idle)
+        # Follow system light/dark switches while preferences are open
+        patterns.Publisher().registerObserver(
+            self._on_system_theme_changed,
+            eventType="system.theme_colour_changed",
+        )
+        self.Bind(wx.EVT_WINDOW_DESTROY, self._on_destroy)
 
         self.fit()
 
     def _on_colour_changed(self, section, key, picker):
         colour = picker.GetColour()
         self.setvalue(section, key, colour)
-        pub.sendMessage("calendar.colours.changed")
+        patterns.Event("calendar.colours.changed", self.settings).send()
 
     def _on_reset(
         self, light_picker, dark_picker, light_default, dark_default, key
@@ -1421,7 +1422,7 @@ class ThemePage(SettingsPage):
         dark_picker.SetColour(wx.Colour(*dark_default))
         self.setvalue("calendar_light", key, light_picker.GetColour())
         self.setvalue("calendar_dark", key, dark_picker.GetColour())
-        pub.sendMessage("calendar.colours.changed")
+        patterns.Event("calendar.colours.changed", self.settings).send()
 
     def _on_other_month_system_toggle(self, theme):
         if theme == "light":
@@ -1450,7 +1451,7 @@ class ThemePage(SettingsPage):
                     wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
                 )
             self._other_month_dark_panel.Layout()
-        pub.sendMessage("calendar.colours.changed")
+        patterns.Event("calendar.colours.changed", self.settings).send()
 
     def _on_other_month_color_picked(self, theme):
         if theme == "light":
@@ -1463,7 +1464,7 @@ class ThemePage(SettingsPage):
             self._other_month_dark_check.SetValue(False)
             self.setboolean("calendar_dark", "other_month_bg_system", False)
             self.setvalue("calendar_dark", "other_month_bg", picked)
-        pub.sendMessage("calendar.colours.changed")
+        patterns.Event("calendar.colours.changed", self.settings).send()
 
     def _on_reset_other_month(self, event):
         from taskcoachlib.config import defaults as defaults_mod
@@ -1496,12 +1497,12 @@ class ThemePage(SettingsPage):
         self._other_month_dark_picker.Show()
         self._other_month_dark_na.Hide()
         self._other_month_dark_panel.Layout()
-        pub.sendMessage("calendar.colours.changed")
+        patterns.Event("calendar.colours.changed", self.settings).send()
 
     def _on_squiggle_colour_changed(self, section, key, picker):
         colour = picker.GetColour()
         self.setvalue(section, key, colour)
-        pub.sendMessage("spellcheck.colours.changed")
+        patterns.Event("spellcheck.colours.changed", self.settings).send()
 
     def _on_reset_squiggle(
         self, light_picker, dark_picker, light_default, dark_default
@@ -1514,7 +1515,7 @@ class ThemePage(SettingsPage):
         self.setvalue(
             "spellcheck_dark", "squiggle_color", dark_picker.GetColour()
         )
-        pub.sendMessage("spellcheck.colours.changed")
+        patterns.Event("spellcheck.colours.changed", self.settings).send()
 
     def _add_restart_note(self, theme_choice):
         """Add the restart note below Mode, if a restart is ever needed.
@@ -1577,16 +1578,21 @@ class ThemePage(SettingsPage):
         self._restart_note.Refresh()
         self.Layout()
 
-    def _on_idle(self, event):
-        """Check if system theme changed and update UI accordingly."""
-        from taskcoachlib.application.application import detect_dark_theme
+    def _on_destroy(self, event):
+        if event.GetEventObject() is self:
+            patterns.Publisher().removeObserver(
+                self._on_system_theme_changed,
+                eventType="system.theme_colour_changed",
+            )
+        event.Skip()
 
+    def _on_system_theme_changed(self, event):  # pylint: disable=W0613
+        """Update the detected theme and system colour pickers."""
+        detected = _("Dark") if detect_system_dark_theme() else _("Light")
+        self._detected_theme_label.SetLabel(_("(Detected: %s)") % detected)
         current_dark = detect_dark_theme()
         if current_dark != self._is_dark:
             self._is_dark = current_dark
-            # Update detected label
-            detected = _("Dark") if self._is_dark else _("Light")
-            self._detected_theme_label.SetLabel(_("(Detected: %s)") % detected)
             # Update Other Month picker/N/A visibility
             light_checked = self._other_month_light_check.IsChecked()
             dark_checked = self._other_month_dark_check.IsChecked()
@@ -1606,7 +1612,6 @@ class ThemePage(SettingsPage):
                     wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
                 )
             self._other_month_dark_panel.Layout()
-        event.Skip()
 
 
 class LanguagePage(SettingsPage):
@@ -2639,7 +2644,9 @@ class StatusesPage(SettingsPage):
         for setting, ctrl in self._priorityChoices:
             value = str(ctrl.GetSelection() + 1)
             self.set("statussortpriority", setting, value)
-        pub.sendMessage("settings.statussortpriority.changed")
+        patterns.Event(
+            "settings.statussortpriority.changed", self.settings
+        ).send()
         super().ok()
 
 
@@ -3469,7 +3476,7 @@ class DurationPresetsPage(SettingsPage):
 
 
 class Preferences(widgets.NotebookDialog):
-    allPageNames = [
+    all_page_names = [
         "window",
         "save",
         "language",
@@ -3510,7 +3517,7 @@ class Preferences(widgets.NotebookDialog):
         )
         height = min(650, int(screenHeight * 0.9))
         self._interior.SetMinSize((1250, height))
-        for page_name in self.allPageNames:
+        for page_name in self.all_page_names:
             page = self.createPage(page_name)
             self._interior.AddPage(page, page.pageTitle, page.pageIcon)
 

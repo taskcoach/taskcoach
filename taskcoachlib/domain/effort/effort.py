@@ -29,15 +29,23 @@ import weakref
 @functools.total_ordering
 class Effort(baseeffort.BaseEffort, base.Object):
 
-    def __init__(self, task=None, start=None, stop=None, entryMode="standard", *args, **kwargs):
+    def __init__(
+        self,
+        task=None,
+        start=None,
+        stop=None,
+        entryMode="standard",
+        *args,
+        **kwargs
+    ):
         kwargs.pop("duration", None)  # computed field, not stored
         super().__init__(
             task, start or date.DateTime.now(), stop, *args, **kwargs
         )
-        self.__entryMode = Attribute(
-            entryMode, self, self._onEntryModeChanged
+        self.__entryMode = Attribute(entryMode, self, self._onEntryModeChanged)
+        self.__duration = Attribute(
+            self._computeDuration(), self, self._onDurationChanged
         )
-        self.__duration = Attribute(self._computeDuration(), self, self._onDurationChanged)
 
     def setTask(self, task):
         if self._task is None:
@@ -48,8 +56,10 @@ class Effort(baseeffort.BaseEffort, base.Object):
             self._task = None if task is None else weakref.ref(task)
             return
         current_task = self.task()
-        if task in (current_task, None):
-            # command.PasteCommand may try to set the parent to None
+        # Identity, not ==: domain objects compare equal by id, so a
+        # twin read from disk would count as the current task.
+        # command.PasteCommand may try to set the parent to None.
+        if task is None or task is current_task:
             return
         event = patterns.Event()  # Change monitor needs one event
         current_task.removeEffort(self)
@@ -59,6 +69,15 @@ class Effort(baseeffort.BaseEffort, base.Object):
         pub.sendMessage(
             self.taskChangedEventType(), newValue=task, sender=self
         )
+
+    def replace_task(self, task):
+        """Move the effort to task, the twin (same id) of the task it
+        was read from disk with, which is then discarded. Unlike
+        setTask(), the discarded task is not told: listeners match tasks
+        by id and would take its messages (e.g. tracking stopped) for
+        task's."""
+        self._task = weakref.ref(task)
+        task.addEffort(self)
 
     setParent = setTask  # FIXME: should we create a common superclass for Effort and Task?
 
@@ -72,7 +91,9 @@ class Effort(baseeffort.BaseEffort, base.Object):
 
     def __str__(self):
         return "Effort(%s, %s, %s)" % (
-            self.task(), self._start.get(), self._stop.get()
+            self.task(),
+            self._start.get(),
+            self._stop.get(),
         )
 
     __repr__ = __str__
@@ -85,10 +106,20 @@ class Effort(baseeffort.BaseEffort, base.Object):
     def __lt__(self, other):
         if not isinstance(other, Effort):
             return NotImplemented
-        self_stop = self._stop.get() if self._stop.get() is not None else date.DateTime.max
-        other_stop = other._stop.get() if other._stop.get() is not None else date.DateTime.max
+        self_stop = (
+            self._stop.get()
+            if self._stop.get() is not None
+            else date.DateTime.max
+        )
+        other_stop = (
+            other._stop.get()
+            if other._stop.get() is not None
+            else date.DateTime.max
+        )
         return (self._start.get(), self_stop, self.id()) < (
-            other._start.get(), other_stop, other.id()
+            other._start.get(),
+            other_stop,
+            other.id(),
         )
 
     def __hash__(self):
@@ -97,8 +128,13 @@ class Effort(baseeffort.BaseEffort, base.Object):
     def __getstate__(self):
         state = super().__getstate__()
         state.update(
-            dict(task=self.task(), start=self._start.get(), stop=self._stop.get(),
-                 entryMode=self.__entryMode.get(), duration=self.__duration.get())
+            dict(
+                task=self.task(),
+                start=self._start.get(),
+                stop=self._stop.get(),
+                entryMode=self.__entryMode.get(),
+                duration=self.__duration.get(),
+            )
         )
         return state
 
@@ -114,8 +150,13 @@ class Effort(baseeffort.BaseEffort, base.Object):
     def __getcopystate__(self):
         state = super().__getcopystate__()
         state.update(
-            dict(task=self.task(), start=self._start.get(), stop=self._stop.get(),
-                 entryMode=self.__entryMode.get(), duration=self.__duration.get())
+            dict(
+                task=self.task(),
+                start=self._start.get(),
+                stop=self._stop.get(),
+                entryMode=self.__entryMode.get(),
+                duration=self.__duration.get(),
+            )
         )
         return state
 
@@ -139,6 +180,7 @@ class Effort(baseeffort.BaseEffort, base.Object):
         """
         stored = self.__duration.get()
         from pubsub import pub
+
         pub.sendMessage(
             self.durationChangedEventType(),
             newValue=stored,
@@ -155,7 +197,11 @@ class Effort(baseeffort.BaseEffort, base.Object):
     def duration(self, now=date.DateTime.now):
         """DEPRECATED: use timeSpent() instead."""
         from taskcoachlib.meta.debug import log_step
-        log_step("DEPRECATED effort.duration() called, use timeSpent()", prefix="DEPRECATION")
+
+        log_step(
+            "DEPRECATED effort.duration() called, use timeSpent()",
+            prefix="DEPRECATION",
+        )
         return
 
     def setDuration(self, newDuration, event=None):
@@ -184,20 +230,20 @@ class Effort(baseeffort.BaseEffort, base.Object):
             newStop = date.DateTime.now()
         elif newStop == date.DateTime.max or newStop == date.DateTime():
             newStop = None
-        self._previousStop = self._stop.get()
+        self._previous_stop = self._stop.get()
         self._stop.set(newStop, event=event)
 
     def _onStopChanged(self, event):
-        previousStop = getattr(self, '_previousStop', None)
-        newStop = self._stop.get()
+        previous_stop = getattr(self, "_previous_stop", None)
+        new_stop = self._stop.get()
         task = self.task()
-        if newStop is None:
+        if new_stop is None:
             pub.sendMessage(
                 self.trackingChangedEventType(), newValue=True, sender=self
             )
             if task:
                 task.sendTrackingChangedMessage(tracking=True)
-        elif previousStop is None:
+        elif previous_stop is None:
             pub.sendMessage(
                 self.trackingChangedEventType(), newValue=False, sender=self
             )
@@ -206,7 +252,7 @@ class Effort(baseeffort.BaseEffort, base.Object):
         if task:
             task.sendTimeSpentChangedMessage()
         pub.sendMessage(
-            self.stopChangedEventType(), newValue=newStop, sender=self
+            self.stopChangedEventType(), newValue=new_stop, sender=self
         )
 
     @classmethod

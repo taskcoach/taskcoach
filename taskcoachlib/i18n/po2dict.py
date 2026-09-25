@@ -119,6 +119,7 @@ def make(filename, outfile=None):
 
     section = None
     fuzzy = 0
+    msgid = msgstr = ""
 
     # Parse the catalog
     lno = 0
@@ -126,7 +127,7 @@ def make(filename, outfile=None):
         lno += 1
         # If we get a comment line after a msgstr, this is a new entry
         if l[0] == "#" and section == STR:
-            add(msgid, msgstr, fuzzy)  # pylint: disable=E0601
+            add(msgid, msgstr, fuzzy)
             section = None
             fuzzy = 0
         # Record a fuzzy mark

@@ -16,26 +16,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import subprocess
 import wx
 import test
+from unittest import mock
 from unittests import dummy
 from taskcoachlib import gui, config, persistence
 from taskcoachlib.domain import task, category, date, attachment, effort
-from taskcoachlib.thirdparty import desktop
 from taskcoachlib.gui.dialog.editor import NoteEditor, TaskEditor
-
-
-if desktop.get_desktop() in ("KDE", "GNOME"):  # pragma: no cover
-    # On a KDE desktop, kfmclient insists on showing an error message for
-    # non-existing files, even when passing --noninteractive, so we make sure
-    # kfmclient is not invoked at all.
-    # On a GNOME desktop, this launch replacement prevents an error message
-    # to stderr when the file doesn't exist.
-    import os
-
-    os.environ["DESKTOP_LAUNCH"] = (
-        'python -c "import sys, os; sys.exit(0 if os.path.exists(sys.argv[1]) else 1)"'
-    )
+from taskcoachlib.tools import openfile
 
 
 class UICommandTest(test.wxTestCase):
@@ -167,13 +156,16 @@ class DummyTask(object):
 
 class DummyViewer(object):
     def __init__(
-        self, selection=None, showingEffort=False, domainObjectsToView=None,
-        coreObjectType="tasks"
+        self,
+        selection=None,
+        showing_effort=False,
+        domain_objects_to_view=None,
+        core_object_type="tasks",
     ):
         self.selection = selection or []
-        self.showingEffort = showingEffort
-        self.domainObjects = domainObjectsToView
-        self.coreObjectType = coreObjectType
+        self.showingEffort = showing_effort
+        self.domainObjects = domain_objects_to_view
+        self.coreObjectType = core_object_type
 
     @property
     def is_task(self):
@@ -198,15 +190,15 @@ class DummyViewer(object):
     def curselection(self):
         return self.selection
 
-    def isShowingCategories(self):
+    def is_showing_categories(self):
         return self.selection and isinstance(
             self.selection[0], category.Category
         )
 
-    def isShowingTasks(self):
+    def is_showing_tasks(self):
         return False
 
-    def isShowingEffort(self):
+    def is_showing_effort(self):
         return self.showingEffort
 
 
@@ -429,8 +421,8 @@ class EffortNewTest(wxTestCaseWithFrameAsTopLevelWindow):
         self.taskFile.tasks().extend([task1, task2])
         viewer = DummyViewer(
             task2.efforts(),
-            showingEffort=True,
-            domainObjectsToView=self.taskFile.tasks(),
+            showing_effort=True,
+            domain_objects_to_view=self.taskFile.tasks(),
         )
         effortNew = gui.uicommand.EffortNew(
             effortList=self.taskFile.efforts(),
@@ -446,6 +438,7 @@ class EffortNewTest(wxTestCaseWithFrameAsTopLevelWindow):
 class EditPreferencesTest(test.TestCase):
     def testEditPreferences(self):
         settings = config.Settings(load=False)
+        self.set_main_window_task_file()
         editPreferences = gui.uicommand.EditPreferences(settings=settings)
         editPreferences.do_command(None, show=False)
         # No assert, just checking whether it works without exceptions
@@ -470,6 +463,21 @@ class EffortViewerAggregationChoiceTest(test.TestCase):
 
     def settingsSection(self):
         return "effortviewer"
+
+    # The viewer interface EffortViewerAggregationChoice uses:
+
+    aggregation = "details"
+
+    def set_aggregation(self, aggregation):
+        self.settings.settext(
+            self.settingsSection(), "aggregation", aggregation
+        )
+
+    def registerObserver(self, *args, **kwargs):
+        pass
+
+    def view_settings_changed_event_type(self):
+        return "view.settings"
 
     def testUserPicksEffortPerDay(self):
         self.choice.onChoice(self.DummyEvent(1))
@@ -525,15 +533,18 @@ class OpenAllAttachmentsTest(test.TestCase):
         self.viewer.selection[0].addAttachment(
             attachment.FileAttachment("Attachment")
         )
-        result = self.openAll.do_command(None, showerror=self.showerror)
+        # xdg-open's status for a missing file; running it would open a
+        # file manager on some desktops
+        missing = subprocess.CompletedProcess([], returncode=2)
+        with mock.patch.object(
+            openfile.subprocess, "run", return_value=missing
+        ):
+            self.openAll.do_command(None, showerror=self.showerror)
         # Don't test the error message itself, it differs per platform
-        if self.errorKwargs:
-            self.assertEqual(
-                dict(caption="Error opening attachment", style=wx.ICON_ERROR),
-                self.errorKwargs,
-            )
-        else:
-            self.assertNotEqual(0, result)
+        self.assertEqual(
+            dict(caption="Error opening attachment", style=wx.ICON_ERROR),
+            self.errorKwargs,
+        )
 
     def testMultipleAttachments(self):
         class DummyAttachment(object):
@@ -753,4 +764,8 @@ class AttachmentTest(test.wxTestCase):
         self.test_cut()
         cmd = gui.uicommand.EditPaste(viewer=self.viewer)
         cmd.do_command(None)
-        self.assertEqual(self.task.attachments(), [self.attachment])
+        # A pasted attachment is a copy: compare locations
+        self.assertEqual(
+            [self.attachment.location()],
+            [each.location() for each in self.task.attachments()],
+        )

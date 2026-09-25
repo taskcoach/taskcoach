@@ -39,8 +39,12 @@ class iCalendarWriter(object):
         self.__fd = fd
 
     def write(
-        self, viewer, settings, selectionOnly=False, selectedFields=None,
-        taskFile=None
+        self,
+        viewer,
+        settings,
+        selectionOnly=False,
+        selectedFields=None,
+        taskFile=None,
     ):  # pylint: disable=W0613
         """Write items to iCalendar format.
 
@@ -84,11 +88,15 @@ class iCalendarWriter(object):
         for item in items:
             if isinstance(item, task.Task):
                 self.__fd.write(
-                    ical.VCalFromTask(item, encoding=False, selectedFields=selectedFields)
+                    ical.vcal_from_task(
+                        item, encoding=False, selected_fields=selectedFields
+                    )
                 )
             else:
                 self.__fd.write(
-                    ical.VCalFromEffort(item, encoding=False, selectedFields=selectedFields)
+                    ical.vcal_from_effort(
+                        item, encoding=False, selected_fields=selectedFields
+                    )
                 )
             count += 1
         self.__fd.write("END:VCALENDAR\r\n")

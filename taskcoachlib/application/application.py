@@ -264,6 +264,17 @@ def detect_dark_theme():
             return False
 
 
+def detect_system_dark_theme():
+    """Whether the system setting is dark. On Windows this can differ
+    from detect_dark_theme(), which there follows the Mode applied to
+    the native controls at startup, as Task Coach's own colours must."""
+    if operating_system.isWindows() and wx.GetApp() is not None:
+        appearance = wx.SystemSettings.GetAppearance()
+        if hasattr(appearance, "AreAppsDark"):
+            return appearance.AreAppsDark()
+    return detect_dark_theme()
+
+
 def apply_native_appearance(wx_app, theme):
     """Request light or dark native controls to match the theme setting.
 
@@ -294,7 +305,11 @@ def apply_native_appearance(wx_app, theme):
     # depending on how the binding exposes the scoped C++ enum.
     appearance = getattr(getattr(wx.App, "Appearance", wx.App), name)
     result = wx_app.SetAppearance(appearance)
-    wx_app.native_appearance_theme = theme
+    # Only a successful request takes effect after a restart; it fails,
+    # e.g., on Windows versions without dark mode support.
+    ok = getattr(getattr(wx.App, "AppearanceResult", wx.App), "Ok", None)
+    if ok is None or result == ok:
+        wx_app.native_appearance_theme = theme
     log_step(
         "SetAppearance(%s) for theme=%r: %s"
         % (name, theme, getattr(result, "name", result)),
@@ -719,11 +734,6 @@ class Application(object, metaclass=patterns.Singleton):
         if self.settings.getboolean("version", "notify"):
             self.__version_checker = meta.VersionChecker(self.settings)
             self.__version_checker.start()
-        if self.settings.getboolean("view", "developermessages"):
-            self.__message_checker = meta.DeveloperMessageChecker(
-                self.settings
-            )
-            self.__message_checker.start()
         self.__copy_default_templates()
 
         # Redirect wx log messages to stderr instead of popup dialogs
@@ -745,12 +755,6 @@ class Application(object, metaclass=patterns.Singleton):
             # Explicitly clean up wx.App to prevent crashes during Python
             # shutdown
             # See: https://github.com/wxWidgets/Phoenix/issues/429
-            if (
-                hasattr(self, "_signal_check_timer")
-                and self._signal_check_timer
-            ):
-                self._signal_check_timer.Stop()
-
             # On Windows with console (python.exe), detach from console
             # before cleanup. The crash only happens with python.exe
             # (console subsystem), not pythonw.exe (GUI subsystem). This
@@ -819,13 +823,12 @@ class Application(object, metaclass=patterns.Singleton):
         # window creation causes GTK focus fighting and dialog disappearing
         # issues.
         # Note: INI file lock is already checked in __init_config() above
-        # None=no file, 'ok'=proceed, 'break'=break lock, 'skip'=don't open
+        # None=no file, 'ok'=locked, 'skip'=in use elsewhere, don't open
         self.__early_lock_result = None
         if load_task_file:
             self.__check_file_lock_early()
-            # If user said "No" to break lock, we continue but don't open
-            # the file
-            # (program starts with no file open, like a fresh start)
+            # A file in use elsewhere is not opened: the program starts
+            # with no file open, like a fresh start
 
         from taskcoachlib import gui, persistence
 
@@ -851,9 +854,6 @@ class Application(object, metaclass=patterns.Singleton):
             self.iocontroller, self.taskFile, self.settings
         )
         self.__wx_app.SetTopWindow(self.mainwindow)
-        self.mainwindow.Bind(
-            wx.EVT_SYS_COLOUR_CHANGED, self.__on_system_theme_colour_changed
-        )
         if not self.settings.getboolean("file", "inifileloaded"):
             self.__warn_user_that_ini_file_was_not_loaded()
         if load_task_file:
@@ -864,11 +864,6 @@ class Application(object, metaclass=patterns.Singleton):
         self.__create_mutex()
         self.__create_task_bar_icon()
         wx.CallAfter(self.__show_tips)
-
-    def __on_system_theme_colour_changed(self, event):
-        """Rebroadcast wx system colour change as Publisher signal."""
-        patterns.Event("system.theme_colour_changed", self).send()
-        event.Skip()
 
     def __check_file_lock_early(self):
         """Check file lock before main window creation.
@@ -896,10 +891,12 @@ class Application(object, metaclass=patterns.Singleton):
             resourcelock.acquire(filename, "task file")
             self.__early_lock_result = "ok"
         except resourcelock.LockInUse as in_use:
+            # No window exists yet: without STAY_ON_TOP the box can open
+            # behind the focused window, with no taskbar entry
             wx.MessageBox(
                 resourcelock.in_use_message(filename, in_use.owner),
                 _("%s: file in use") % meta.name,
-                style=wx.OK | wx.ICON_INFORMATION,
+                style=wx.OK | wx.ICON_INFORMATION | wx.STAY_ON_TOP,
             )
             self.__early_lock_result = "skip"
 
@@ -1010,7 +1007,10 @@ class Application(object, metaclass=patterns.Singleton):
 
         Solution:
         - Custom signal handler uses wx.CallAfter for clean shutdown
-        - Periodic timer wakes event loop so Python can check signals
+        - The GlobalTimer tick runs Python code every second (from
+          before these handlers are registered), which lets Python run
+          a pending signal handler, so no separate wake-up timer is
+          needed
         """
         import signal
 
@@ -1024,11 +1024,6 @@ class Application(object, metaclass=patterns.Singleton):
         if not operating_system.isWindows():
             signal.signal(signal.SIGINT, handle_signal)
             signal.signal(signal.SIGTERM, handle_signal)
-
-            # Start a timer to periodically wake the event loop
-            # This allows Python to check for pending signals
-            self._signal_check_timer = wx.Timer()
-            self._signal_check_timer.Start(500)  # Check every 500ms
 
         # NOTE: We intentionally do NOT use SetConsoleCtrlHandler on Windows.
         # According to Microsoft docs, if an app loads gdi32.dll or user32.dll
@@ -1143,12 +1138,6 @@ class Application(object, metaclass=patterns.Singleton):
         the program ends, causing access violations on Windows.
         See: https://github.com/wxWidgets/Phoenix/issues/429
         """
-        # Stop signal check timer
-        if hasattr(self, "_signal_check_timer") and self._signal_check_timer:
-            try:
-                self._signal_check_timer.Stop()
-            except Exception:
-                pass
 
         # Stop all wx.Timer instances we can find
         # Walk through all top-level windows and their children
@@ -1161,7 +1150,6 @@ class Application(object, metaclass=patterns.Singleton):
                 "_timer",
                 "timer",
                 "_sizeTimer",
-                "_refreshTimer",
                 "_dragTimer",
                 "_findTimer",
                 "_editTimer",
@@ -1169,8 +1157,14 @@ class Application(object, metaclass=patterns.Singleton):
                 "scheduledStatusDisplay",
                 "_globalTimer",
             ]:
-                # Try both public and name-mangled private attributes
-                for prefix in ["", "_" + window.__class__.__name__]:
+                # Try public and name-mangled private attributes;
+                # private names are mangled with the defining class,
+                # which may be a base class of the window.
+                prefixes = [""] + [
+                    "_" + cls.__name__.lstrip("_")
+                    for cls in type(window).__mro__
+                ]
+                for prefix in prefixes:
                     full_name = prefix + attr_name
                     timer = getattr(window, full_name, None)
                     if timer is not None and hasattr(timer, "Stop"):
@@ -1200,6 +1194,9 @@ class Application(object, metaclass=patterns.Singleton):
         wx.GetApp().quitting = True
 
         if not self.iocontroller.close(force=force):
+            # Quit cancelled (e.g. at "Save changes?"): the Publisher,
+            # and with it the per-second tick, is paused while quitting
+            wx.GetApp().quitting = False
             return False
         self.save_all_settings()
         if hasattr(self, "taskBarIcon"):

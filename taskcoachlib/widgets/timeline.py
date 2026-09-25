@@ -66,7 +66,7 @@ class Timeline(tooltip.ToolTipMixin, timeline.TimeLine):
         event.Skip()
 
     def OnBeforeShowToolTip(self, x, y):
-        item = self.hot_map.findNodeAtPosition((x, y))
+        item = self.hot_map.find_node_at_position((x, y))
         if item is None or item == self.model:
             return None
         tooltipData = self.getItemTooltipData(item)

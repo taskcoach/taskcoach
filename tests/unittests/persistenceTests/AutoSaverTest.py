@@ -16,11 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import persistence, config
-from taskcoachlib.domain import task, category
+from taskcoachlib import persistence, config, patterns
+from taskcoachlib.domain import task, category, date
 from unittests import dummy
 import test
-from taskcoachlib.changes import ChangeMonitor
 
 
 class DummyFile(object):
@@ -37,6 +36,7 @@ class DummyFile(object):
 class DummyTaskFile(persistence.TaskFile):
     def __init__(self, *args, **kwargs):
         self.saveCalled = 0
+        self.failing_saves = 0
         self._throw = False
         super().__init__(*args, **kwargs)
 
@@ -44,7 +44,7 @@ class DummyTaskFile(persistence.TaskFile):
         if self._throw:
             raise IOError
         else:
-            return (
+            content = (
                 [task.Task()],
                 [category.Category("category")],
                 [],
@@ -52,6 +52,7 @@ class DummyTaskFile(persistence.TaskFile):
                 {self.monitor().guid(): self.monitor()},
                 None,
             )
+            return content, []  # No duplicate ids
 
     def exists(self, *args, **kwargs):  # pylint: disable=W0613
         return True
@@ -65,6 +66,9 @@ class DummyTaskFile(persistence.TaskFile):
     def save(self, *args, **kwargs):
         if kwargs.get("doNotify", True):
             self.saveCalled += 1
+        if self.failing_saves:
+            self.failing_saves -= 1
+            raise IOError("disk full")
         super().save(*args, **kwargs)
 
     def load(
@@ -152,3 +156,56 @@ class AutoSaverTestCase(test.TestCase):
         self.taskFile.merge("another-non-existing-file.tsk")
         self.autoSaver.on_idle(dummy.Event())
         self.assertEqual(1, self.taskFile.saveCalled)
+
+
+class AutoSaverRetryTest(test.TestCase):
+    def setUp(self):
+        super().setUp()
+        task.Task.settings = self.settings = config.Settings(load=False)
+        self.taskFile = DummyTaskFile()
+        self.autoSaver = persistence.AutoSaver(self.settings)
+        self.autoSaver.RETRY_SECONDS = 0
+        self.messages = []
+        self.autoSaver._tell_user = self.messages.append
+        self.settings.set("file", "autosave", "True")
+        self.taskFile.setFilename("whatever.tsk")
+
+    def tearDown(self):
+        super().tearDown()
+        self.taskFile.close()
+        self.taskFile.stop()
+
+    def autosave(self):
+        self.autoSaver.on_idle(dummy.Event())
+
+    def next_second(self):
+        # The Publisher drops events without a source
+        patterns.Event("timer.second", self, date.DateTime.now()).send()
+        self.autosave()
+
+    def test_failed_autosave_is_tried_again(self):
+        self.taskFile.failing_saves = 1
+        self.taskFile.tasks().append(task.Task())
+        self.autosave()
+        self.next_second()
+        self.assertEqual(2, self.taskFile.saveCalled)
+        self.assertFalse(self.taskFile.need_save())
+
+    def test_user_is_told_once_when_autosave_keeps_failing(self):
+        self.taskFile.failing_saves = 3
+        self.taskFile.tasks().append(task.Task())
+        self.autosave()
+        self.assertEqual([], self.messages)
+        self.next_second()
+        self.next_second()
+        self.assertEqual(1, len(self.messages))
+        self.assertIn("disk full", self.messages[0])
+
+    def test_no_retry_after_saving_by_hand(self):
+        self.taskFile.failing_saves = 1
+        self.taskFile.tasks().append(task.Task())
+        self.autosave()
+        self.taskFile.save()
+        self.next_second()
+        self.next_second()
+        self.assertEqual(2, self.taskFile.saveCalled)

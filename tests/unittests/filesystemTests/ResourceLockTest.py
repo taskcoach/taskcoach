@@ -108,6 +108,25 @@ class ResourceLockTest(test.TestCase):
         first = resourcelock.acquire(self.path, "task file")
         self.assertIs(first, resourcelock.acquire(self.path, "task file"))
 
+    def test_holding_releases_a_lock_it_took(self):
+        with resourcelock.holding(self.path, "task file") as lock:
+            self.assertIn(b"pid=%d" % os.getpid(), self.read_lock_file())
+        self.assertEqual(b"", self.read_lock_file())
+        self.assertIsNot(lock, resourcelock.acquire(self.path, "task file"))
+
+    def test_holding_keeps_a_lock_already_held(self):
+        held = resourcelock.acquire(self.path, "task file")
+        with resourcelock.holding(self.path, "task file") as lock:
+            self.assertIs(held, lock)
+        self.assertIs(held, resourcelock.acquire(self.path, "task file"))
+        self.assertIn(b"pid=%d" % os.getpid(), self.read_lock_file())
+
+    def test_holding_a_lock_in_use_elsewhere_runs_nothing(self):
+        self.hold_in_other_process(HOLD_NEW_LOCK)
+        with self.assertRaises(resourcelock.LockInUse):
+            with resourcelock.holding(self.path, "task file"):
+                self.fail("ran without the lock")
+
     def test_lock_held_by_other_process_is_in_use(self):
         other = self.hold_in_other_process(HOLD_NEW_LOCK)
         with self.assertRaises(resourcelock.LockInUse) as context:
@@ -164,7 +183,7 @@ class ResourceLockTest(test.TestCase):
 
     def test_unwritable_location_is_used_unlocked(self):
         if os.name == "nt" or os.geteuid() == 0:
-            return
+            self.skipTest("needs POSIX permissions, which root ignores")
         os.chmod(self.directory, 0o500)
         try:
             lock = resourcelock.acquire(self.path, "task file")
@@ -229,3 +248,48 @@ class ResourceLockTest(test.TestCase):
             self.path, {"pid": "4321", "since": "2026-09-23 14:05:03"}
         )
         self.assertIn("4321", message)
+
+    def test_symlinked_lock_file_is_not_followed(self):
+        if os.name == "nt":
+            self.skipTest("needs POSIX symbolic links")
+        target = os.path.join(self.directory, "other.txt")
+        with open(target, "wb") as target_file:
+            target_file.write(b"x" * 2800)
+        os.symlink(target, self.lock_path)
+        resourcelock.acquire(self.path, "task file").release()
+        with open(target, "rb") as target_file:
+            self.assertEqual(b"x" * 2800, target_file.read())
+
+    def test_symlinked_lock_folder_is_not_emptied(self):
+        if os.name == "nt":
+            self.skipTest("needs POSIX symbolic links")
+        folder = os.path.join(self.directory, "folder")
+        os.mkdir(folder)
+        kept = os.path.join(folder, "kept.txt")
+        open(kept, "w").close()
+        os.symlink(folder, self.lock_path)
+        resourcelock.acquire(self.path, "task file")
+        self.assertTrue(os.path.exists(kept))
+
+    def test_unwritable_lock_file_held_elsewhere_is_in_use(self):
+        if os.name == "nt" or os.geteuid() == 0:
+            self.skipTest("needs POSIX permissions, which root ignores")
+        self.hold_in_other_process(HOLD_NEW_LOCK)
+        os.chmod(self.lock_path, 0o444)
+        with self.assertRaises(resourcelock.LockInUse):
+            resourcelock.acquire(self.path, "task file")
+
+    def test_unwritable_free_lock_file_is_locked_read_only(self):
+        if os.name == "nt" or os.geteuid() == 0:
+            self.skipTest("needs POSIX permissions, which root ignores")
+        resourcelock.acquire(self.path, "task file").release()
+        os.chmod(self.lock_path, 0o444)
+        lock = resourcelock.acquire(self.path, "task file")
+        self.assertEqual("os-read-only", lock.mode)
+
+    def test_releasing_an_old_lock_keeps_the_newer_one_registered(self):
+        old = resourcelock.acquire(self.path, "task file")
+        old.release()
+        new = resourcelock.acquire(self.path, "task file")
+        old.release()
+        self.assertIs(new, resourcelock.acquire(self.path, "task file"))

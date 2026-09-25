@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import test, wx
 from taskcoachlib import patterns
-from taskcoachlib.domain import category, categorizable, date
+from taskcoachlib.domain import category, categorizable
 
 
 class CategorizableCompositeObjectTest(test.TestCase):
@@ -328,7 +328,7 @@ class CategorizableCompositeObjectTest(test.TestCase):
         self.categorizable.addCategory(self.category)
         self.category.addCategorizable(self.categorizable)
         self.registerObserver(self.appearanceChangedEventType)
-        self.category.setIcon("icon")
+        self.category.set_icon_id("icon")
         self.assertEqual(1, len(self.events))
 
     def testForegroundColorChanged_NotifySubItemsToo(self):
@@ -372,7 +372,7 @@ class CategorizableCompositeObjectTest(test.TestCase):
         )
         self.categorizable.addCategory(self.category)
         self.category.addCategorizable(self.categorizable)
-        self.category.setIcon("icon")
+        self.category.set_icon_id("icon")
         self.assertEqual(1, len(self.events))
 
     def testCategorizableDoesNotNotifyWhenItHasItsOwnForegroundColor(self):
@@ -398,9 +398,9 @@ class CategorizableCompositeObjectTest(test.TestCase):
 
     def testCategorizableDoesNotNotifyWhenItHasItsOwnIcon(self):
         self.categorizable.addCategory(self.category)
-        self.categorizable.setIcon("icon")
+        self.categorizable.set_icon_id("icon")
         self.registerObserver(self.categorizable.appearanceChangedEventType())
-        self.category.setIcon("another icon")
+        self.category.set_icon_id("another icon")
         self.assertFalse(self.events)
 
     def testParentForegroundColorChanged(self):
@@ -440,7 +440,7 @@ class CategorizableCompositeObjectTest(test.TestCase):
         subCategory.setParent(self.category)
         self.categorizable.addCategory(subCategory)
         subCategory.addCategorizable(self.categorizable)
-        self.category.setIcon("icon")
+        self.category.set_icon_id("icon")
         self.assertEqual(1, len(self.events))
 
     def testAddCategoryWithForegroundColor(self):
@@ -467,7 +467,7 @@ class CategorizableCompositeObjectTest(test.TestCase):
     def testAddCategoryWithIcon(self):
         self.registerObserver(self.appearanceChangedEventType)
         newCategory = category.Category("New category")
-        newCategory.setIcon("icon")
+        newCategory.set_icon_id("icon")
         self.categorizable.addCategory(newCategory)
         self.assertEqual(1, len(self.events))
 
@@ -504,7 +504,7 @@ class CategorizableCompositeObjectTest(test.TestCase):
     def testAddCategoryWithParentWithIcon(self):
         self.registerObserver(self.appearanceChangedEventType)
         parentCategory = category.Category("Parent")
-        parentCategory.setIcon("icon")
+        parentCategory.set_icon_id("icon")
         childCategory = category.Category("Child")
         parentCategory.addChild(childCategory)
         childCategory.setParent(parentCategory)
@@ -534,7 +534,7 @@ class CategorizableCompositeObjectTest(test.TestCase):
 
     def testRemoveCategoryWithIcon(self):
         self.categorizable.addCategory(self.category)
-        self.category.setIcon("icon")
+        self.category.set_icon_id("icon")
         self.registerObserver(self.appearanceChangedEventType)
         self.categorizable.removeCategory(self.category)
         self.assertEqual(1, len(self.events))
@@ -566,8 +566,8 @@ class CategorizableCompositeObjectTest(test.TestCase):
     def testIconWhenOneOutOfTwoCategoriesHasIcon(self):
         self.categorizable.addCategory(self.category)
         self.categorizable.addCategory(category.Category("Another category"))
-        self.category.setIcon("icon")
-        self.assertEqual("icon", self.categorizable.icon(recursive=True))
+        self.category.set_icon_id("icon")
+        self.assertEqual("icon", self.categorizable.icon_id(recursive=True))
 
     def testForegroundColorWhenBothCategoriesHaveSameForegroundColor(self):
         self.categorizable.addCategory(self.category)
@@ -604,8 +604,8 @@ class CategorizableCompositeObjectTest(test.TestCase):
         anotherCategory = category.Category("Another category")
         self.categorizable.addCategory(anotherCategory)
         for cat in [self.category, anotherCategory]:
-            cat.setIcon("icon")
-        self.assertEqual("icon", self.categorizable.icon(recursive=True))
+            cat.set_icon_id("icon")
+        self.assertEqual("icon", self.categorizable.icon_id(recursive=True))
 
     def testForegroundColorWhenBothCategoriesHaveDifferentForegroundColors(
         self,
@@ -658,69 +658,72 @@ class CategorizableCompositeObjectTest(test.TestCase):
         self.categorizable.addCategory(self.category)
         anotherCategory = category.Category("Another category")
         self.categorizable.addCategory(anotherCategory)
-        self.category.setIcon("icon")
-        anotherCategory.setIcon("another_icon")
+        self.category.set_icon_id("icon")
+        anotherCategory.set_icon_id("another_icon")
         self.assertTrue(
-            self.categorizable.icon(recursive=True) in ["icon", "another_icon"]
+            self.categorizable.icon_id(recursive=True)
+            in ["icon", "another_icon"]
         )
 
     def testUseCategoryIcon(self):
-        self.category.setIcon("categoryIcon")
+        self.category.set_icon_id("categoryIcon")
         self.categorizable.addCategory(self.category)
         self.assertEqual(
-            "categoryIcon", self.categorizable.icon(recursive=True)
+            "categoryIcon", self.categorizable.icon_id(recursive=True)
         )
 
     def testDontUseCategoryIconWhenCategorizableHasItsOwnIcon(self):
-        self.category.setIcon("categoryIcon")
-        self.categorizable.setIcon("icon")
+        self.category.set_icon_id("categoryIcon")
+        self.categorizable.set_icon_id("icon")
         self.categorizable.addCategory(self.category)
-        self.assertEqual("icon", self.categorizable.icon(recursive=True))
+        self.assertEqual("icon", self.categorizable.icon_id(recursive=True))
 
     def testDontUseCategoryIconWhenNotRecursive(self):
-        self.category.setIcon("categoryIcon")
+        self.category.set_icon_id("categoryIcon")
         self.categorizable.addCategory(self.category)
-        self.assertFalse(self.categorizable.icon(recursive=False))
+        self.assertFalse(self.categorizable.icon_id(recursive=False))
 
     def testUseCategoryIconEvenWhenCategorizableHasARecursiveIcon(self):
         child = categorizable.CategorizableCompositeObject(subject="child")
         self.categorizable.addChild(child)
-        self.categorizable.setIcon("icon")
-        self.category.setIcon("categoryIcon")
+        self.categorizable.set_icon_id("icon")
+        self.category.set_icon_id("categoryIcon")
         child.addCategory(self.category)
-        self.assertEqual("categoryIcon", child.icon(recursive=True))
+        self.assertEqual("categoryIcon", child.icon_id(recursive=True))
 
     def testUseCategorySelectedIcon(self):
-        self.category.setSelectedIcon("categoryIcon")
+        self.category.set_selected_icon_id("categoryIcon")
         self.categorizable.addCategory(self.category)
         self.assertEqual(
-            "categoryIcon", self.categorizable.selectedIcon(recursive=True)
+            "categoryIcon", self.categorizable.selected_icon_id(recursive=True)
         )
 
     def testDontUseCategorySelectedIconWhenCategorizableHasItsOwnSelectedIcon(
         self,
     ):
-        self.category.setSelectedIcon("categoryIcon")
-        self.categorizable.setSelectedIcon("icon")
+        self.category.set_selected_icon_id("categoryIcon")
+        self.categorizable.set_selected_icon_id("icon")
         self.categorizable.addCategory(self.category)
         self.assertEqual(
-            "icon", self.categorizable.selectedIcon(recursive=True)
+            "icon", self.categorizable.selected_icon_id(recursive=True)
         )
 
     def testDontUseCategorySelectedIconWhenNotRecursive(self):
-        self.category.setSelectedIcon("categoryIcon")
+        self.category.set_selected_icon_id("categoryIcon")
         self.categorizable.addCategory(self.category)
-        self.assertFalse(self.categorizable.selectedIcon(recursive=False))
+        self.assertFalse(self.categorizable.selected_icon_id(recursive=False))
 
     def testUseCategorySelectedIconEvenWhenCategorizableHasARecursiveSelectedIcon(
         self,
     ):
         child = categorizable.CategorizableCompositeObject(subject="child")
         self.categorizable.addChild(child)
-        self.categorizable.setSelectedIcon("icon")
-        self.category.setSelectedIcon("categoryIcon")
+        self.categorizable.set_selected_icon_id("icon")
+        self.category.set_selected_icon_id("categoryIcon")
         child.addCategory(self.category)
-        self.assertEqual("categoryIcon", child.selectedIcon(recursive=True))
+        self.assertEqual(
+            "categoryIcon", child.selected_icon_id(recursive=True)
+        )
 
     def testParentCategoryIncludedInChildUpwardRecursiveCategories(self):
         self.categorizable.addCategory(self.category)

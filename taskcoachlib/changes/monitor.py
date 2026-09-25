@@ -80,10 +80,11 @@ class ChangeMonitor(Observer):
                 )
             if issubclass(klass, Task):
                 pub.subscribe(
-                    self.onEffortAddedOrRemoved, Task.effortsChangedEventType()
+                    self.on_effort_added_or_removed,
+                    Task.effortsChangedEventType(),
                 )
                 pub.subscribe(
-                    self.onPrerequisitesChanged,
+                    self.on_prerequisites_changed,
                     Task.prerequisitesChangedEventType(),
                 )
             if issubclass(klass, NoteOwner):
@@ -103,7 +104,7 @@ class ChangeMonitor(Observer):
                 )
             if issubclass(klass, Effort):
                 pub.subscribe(
-                    self.onEffortTaskChanged, Effort.taskChangedEventType()
+                    self.on_effort_task_changed, Effort.taskChangedEventType()
                 )
 
     def unmonitorClass(self, klass):
@@ -132,10 +133,11 @@ class ChangeMonitor(Observer):
                 )
             if issubclass(klass, Task):
                 pub.unsubscribe(
-                    self.onEffortAddedOrRemoved, Task.effortsChangedEventType()
+                    self.on_effort_added_or_removed,
+                    Task.effortsChangedEventType(),
                 )
                 pub.unsubscribe(
-                    self.onPrerequisitesChanged,
+                    self.on_prerequisites_changed,
                     Task.prerequisitesChangedEventType(),
                 )
             if issubclass(klass, NoteOwner):
@@ -155,7 +157,7 @@ class ChangeMonitor(Observer):
                 )
             if issubclass(klass, Effort):
                 pub.unsubscribe(
-                    self.onEffortTaskChanged, Effort.taskChangedEventType()
+                    self.on_effort_task_changed, Effort.taskChangedEventType()
                 )
             self._classes.remove(klass)
 
@@ -278,18 +280,26 @@ class ChangeMonitor(Observer):
 
         self._objectsRemoved(event)
 
-    def onEffortAddedOrRemoved(self, newValue, sender):
-        efforts, oldValue = newValue
-        effortsToAdd = [effort for effort in efforts if effort not in oldValue]
-        effortsToRemove = [
-            effort for effort in oldValue if effort not in efforts
+    def on_effort_added_or_removed(self, newValue, sender):
+        # Like every handler: ignore changes while merging from disk,
+        # where the objects read from disk share ids with ours.
+        if self.__frozen:
+            return
+        efforts, old_value = newValue
+        efforts_to_add = [
+            effort for effort in efforts if effort not in old_value
         ]
-        for effort in effortsToAdd:
+        efforts_to_remove = [
+            effort for effort in old_value if effort not in efforts
+        ]
+        for effort in efforts_to_add:
             self._objectAdded(effort)
-        for effort in effortsToRemove:
+        for effort in efforts_to_remove:
             self._objectRemoved(effort)
 
-    def onEffortTaskChanged(self, newValue, sender):
+    def on_effort_task_changed(self, newValue, sender):
+        if self.__frozen:
+            return
         changes = self._changes.get(sender.id(), None)
         if changes is not None:
             changes.add("__task__")
@@ -326,9 +336,11 @@ class ChangeMonitor(Observer):
                     else:
                         self._changes[obj.id()].add("__del" + name)
 
-    def onPrerequisitesChanged(
+    def on_prerequisites_changed(
         self, newValue, sender
     ):  # pylint: disable-msg=W0613
+        if self.__frozen:
+            return
         # Need to check whether the sender is actually in one of the collections we monitor
         # Is this really the best way?
         for collection in self.__collections:
@@ -379,8 +391,27 @@ class ChangeMonitor(Observer):
     def empty(self):
         self._changes = dict()
 
+    def snapshot(self):
+        """Copy of the recorded changes, for restore()."""
+        return {
+            id_: (set(changes) if changes is not None else None)
+            for id_, changes in self._changes.items()
+        }
+
+    def restore(self, snapshot):
+        """Put back the changes recorded in snapshot. Records made since
+        (e.g. for objects a merge brought in) are kept."""
+        changes = dict(self._changes)
+        changes.update(snapshot)
+        self._changes = changes
+
     def merge(self, monitor):
+        self.merge_changes(monitor._changes)
+
+    def merge_changes(self, changes_by_id):
+        """Add the changes in changes_by_id (as from snapshot()) to the
+        objects recorded here."""
         for id_, changes in list(self._changes.items()):
-            theirChanges = monitor._changes.get(id_, None)
-            if theirChanges is not None:
-                changes.update(theirChanges)
+            their_changes = changes_by_id.get(id_, None)
+            if their_changes is not None:
+                changes.update(their_changes)

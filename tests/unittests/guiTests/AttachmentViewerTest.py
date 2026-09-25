@@ -16,7 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import test, wx
+import test
+import wx
 from taskcoachlib import gui, config, persistence
 from taskcoachlib.domain import attachment
 
@@ -47,20 +48,26 @@ class AttachmentViewerTest(test.wxTestCase):
             ],
         )
 
+    @test.stale("imageIndex was replaced by image_list_cache")
     def testTypeImageIndex_WhenFileDoesNotExist(self):
         fileAttachment = attachment.FileAttachment("whatever")
         self.assertIcon("fileopen_red", fileAttachment)
 
+    @test.stale("imageIndex was replaced by image_list_cache")
     def testTypeImageIndex_WhenFileDoesExist(self):
         fileAttachment = attachment.FileAttachment("whatever")
         self.assertIcon(
             "fileopen", fileAttachment, exists=lambda filename: True
         )
 
+    @test.stale("imageIndex was replaced by image_list_cache")
     def testTypeImageIndex_UriAttachment(self):
         uriAttachment = attachment.URIAttachment("http://whatever.we")
-        self.assertIcon("nuvola_categories_applications-internet", uriAttachment)
+        self.assertIcon(
+            "nuvola_categories_applications-internet", uriAttachment
+        )
 
+    @test.stale("imageIndex was replaced by image_list_cache")
     def testTypeImgeIndex_MailAttachment(self):
         mailAttachment = attachment.MailAttachment(
             "", readMail=lambda location: ("", "")

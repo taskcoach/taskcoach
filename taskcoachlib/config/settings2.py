@@ -63,12 +63,24 @@ class _Settings2:
     _initialized = False
     _debounce_timer = None
 
+    def refresh_now(self):
+        """Refresh at once, for a setting that a computed setting is
+        derived from: listeners of that setting read the computed value
+        right away (window.theme -> window.theme_is_dark). No-op before
+        init()."""
+        if not self._initialized:
+            return
+        self._refresh(build=False)
+        self._notify_changed()
+
     def schedule_refresh(self):
         """Reset debounce timer. No-op before init()."""
         if not self._initialized:
             return
         if self._debounce_timer is None:
-            self._debounce_timer = wx.CallLater(_LEGACY_DEBOUNCE_MS, self._on_debounce)
+            self._debounce_timer = wx.CallLater(
+                _LEGACY_DEBOUNCE_MS, self._on_debounce
+            )
         else:
             self._debounce_timer.Restart(_LEGACY_DEBOUNCE_MS)
 
@@ -137,9 +149,14 @@ class _Settings2:
                         )
                     else:
                         raw = settings.get(settings_section_id, option_id)
-                        setattr(options, option_id, self._parse_value(settings_section_id, option_id, raw))
+                        setattr(
+                            options,
+                            option_id,
+                            self._parse_value(
+                                settings_section_id, option_id, raw
+                            ),
+                        )
         self._compute_settings_all()
-
 
     def _compute_settings_all(self):
         """Compute all computed settings from snapshotted values."""
@@ -156,9 +173,11 @@ class _Settings2:
                 window.theme_is_dark = False
             else:
                 # "automatic" — detect from system
-                from taskcoachlib.application.application import detect_dark_theme
-                window.theme_is_dark = detect_dark_theme()
+                from taskcoachlib.application.application import (
+                    detect_dark_theme,
+                )
 
+                window.theme_is_dark = detect_dark_theme()
 
     def _get_default(self, settings_section_id, option_id):
         """Return the default value for a setting, converted to its mapped type."""
@@ -224,4 +243,3 @@ def wx_ready():
         _instance._on_system_theme_colour_changed,
         eventType="system.theme_colour_changed",
     )
-

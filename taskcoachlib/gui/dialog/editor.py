@@ -24,8 +24,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import widgets, patterns, command, operating_system, render
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.meta.debug import log_step
-from taskcoachlib.domain import task, category, date, note, attachment, effort, base
-from taskcoachlib.domain.task import status
+from taskcoachlib.domain import (
+    task,
+    date,
+    note,
+    attachment,
+    base,
+)
 from taskcoachlib.gui import viewer, uicommand, windowdimensionstracker
 from taskcoachlib.gui.dialog import entry, attributesync
 from taskcoachlib.gui.dialog.entry import (
@@ -41,10 +46,10 @@ import datetime
 import os.path
 import wx
 
-
 # --- System Theme Resolution Helpers ---
 # Single point for converting domain symbolic constants to wx values.
 # Domain SSOT methods return these constants; UI uses these helpers to resolve.
+
 
 def resolve_color(value):
     """Convert domain color value to wx.Colour.
@@ -65,10 +70,14 @@ def resolve_color(value):
         return value
     else:
         import inspect
+
         caller = inspect.stack()[1]
-        log_step("resolve_color: unhandled value", repr(value),
-                 "from %s:%d in %s" % (caller[1], caller[2], caller[3]),
-                 prefix="APPEARANCE-BUG")
+        log_step(
+            "resolve_color: unhandled value",
+            repr(value),
+            "from %s:%d in %s" % (caller[1], caller[2], caller[3]),
+            prefix="APPEARANCE-BUG",
+        )
         return wx.NullColour
 
 
@@ -87,16 +96,24 @@ def resolve_font(value):
         return value
     else:
         import inspect
+
         caller = inspect.stack()[1]
-        log_step("resolve_font: unhandled value", repr(value),
-                 "from %s:%d in %s" % (caller[1], caller[2], caller[3]),
-                 prefix="APPEARANCE-BUG")
+        log_step(
+            "resolve_font: unhandled value",
+            repr(value),
+            "from %s:%d in %s" % (caller[1], caller[2], caller[3]),
+            prefix="APPEARANCE-BUG",
+        )
         return wx.NullFont
 
 
 def is_system_theme(value):
     """Check if value is a system theme symbolic constant."""
-    return value in (base.SYSTEM_FG_COLOR, base.SYSTEM_BG_COLOR, base.SYSTEM_FONT)
+    return value in (
+        base.SYSTEM_FG_COLOR,
+        base.SYSTEM_BG_COLOR,
+        base.SYSTEM_FONT,
+    )
 
 
 class Page(patterns.Observer, widgets.BookPage):
@@ -105,6 +122,11 @@ class Page(patterns.Observer, widgets.BookPage):
     def __init__(self, items, *args, **kwargs):
         self.items = items
         super().__init__(columns=self.columns, *args, **kwargs)
+        # Remove this page's Publisher and pubsub subscriptions when it
+        # is destroyed, however that happens (close handler, parent
+        # destroy, app exit), so none can outlive the page. See
+        # docs/PUBLISHER_OBSERVER.md, Signaling System Cleanup.
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.__on_destroy)
         self.addEntries()
         self.fit()
 
@@ -140,8 +162,16 @@ class Page(patterns.Observer, widgets.BookPage):
                 the_entry.SetInsertionPoint(0)
             the_entry.SetSelection(-1, -1)  # Select all text
         except (AttributeError, TypeError) as e:
-            log_step("SetSelection failed on %s: %s" %
-                     (type(the_entry).__name__, e), prefix="EDITOR")
+            log_step(
+                "SetSelection failed on %s: %s"
+                % (type(the_entry).__name__, e),
+                prefix="EDITOR",
+            )
+
+    def __on_destroy(self, event):
+        if event.GetEventObject() is self:
+            self.removeInstance()
+        event.Skip()
 
     def close(self):
         self.removeInstance()
@@ -149,11 +179,17 @@ class Page(patterns.Observer, widgets.BookPage):
 
 class ScrolledPage(patterns.Observer, widgets.ScrolledBookPage):
     """A scrollable page for dialogs with lots of content (e.g., Appearance tab)."""
+
     columns = 2
 
     def __init__(self, items, *args, **kwargs):
         self.items = items
         super().__init__(columns=self.columns, *args, **kwargs)
+        # Remove this page's Publisher and pubsub subscriptions when it
+        # is destroyed, however that happens (close handler, parent
+        # destroy, app exit), so none can outlive the page. See
+        # docs/PUBLISHER_OBSERVER.md, Signaling System Cleanup.
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.__on_destroy)
         self.addEntries()
         self.fit()
 
@@ -188,8 +224,16 @@ class ScrolledPage(patterns.Observer, widgets.ScrolledBookPage):
                 the_entry.SetInsertionPoint(0)
             the_entry.SetSelection(-1, -1)  # Select all text
         except (AttributeError, TypeError) as e:
-            log_step("SetSelection failed on %s: %s" %
-                     (type(the_entry).__name__, e), prefix="EDITOR")
+            log_step(
+                "SetSelection failed on %s: %s"
+                % (type(the_entry).__name__, e),
+                prefix="EDITOR",
+            )
+
+    def __on_destroy(self, event):
+        if event.GetEventObject() is self:
+            self.removeInstance()
+        event.Skip()
 
     def close(self):
         self.removeInstance()
@@ -217,7 +261,7 @@ class SubjectPage(Page):
             if len(self.items) == 1
             else _("Edit to change all subjects")
         )
-        self._subjectEntry = widgets.SingleLineTextCtrl(
+        self._subjectEntry = widgets.single_line_text_ctrl(
             self, current_subject, settings=self._settings
         )
         self._subjectSync = attributesync.AttributeSync(
@@ -385,25 +429,30 @@ class CategorySubjectPage(SubjectPage):
 
     def addExclusiveSubcategoriesEntry(self):
         # pylint: disable=W0201
-        currentExclusivity = (
+        current_exclusivity = (
             self.items[0].hasExclusiveSubcategories()
             if len(self.items) == 1
             else False
         )
         panel = wx.Panel(self)
-        panelSizer = wx.BoxSizer(wx.HORIZONTAL)
+        panel_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self._exclusiveSubcategoriesCheckBox = wx.CheckBox(panel)
-        self._exclusiveSubcategoriesCheckBox.SetValue(currentExclusivity)
-        panelSizer.Add(self._exclusiveSubcategoriesCheckBox, 0, wx.ALIGN_CENTER_VERTICAL)
-        hintText = wx.StaticText(panel, label=_("Subcategories are mutually exclusive"))
-        hintText.SetForegroundColour(
-            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-        panelSizer.Add(hintText, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        panel.SetSizer(panelSizer)
+        self._exclusiveSubcategoriesCheckBox.SetValue(current_exclusivity)
+        panel_sizer.Add(
+            self._exclusiveSubcategoriesCheckBox, 0, wx.ALIGN_CENTER_VERTICAL
+        )
+        hint_text = wx.StaticText(
+            panel, label=_("Subcategories are mutually exclusive")
+        )
+        hint_text.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
+        panel_sizer.Add(hint_text, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        panel.SetSizer(panel_sizer)
         self._exclusiveSubcategoriesSync = attributesync.AttributeSync(
             "hasExclusiveSubcategories",
             self._exclusiveSubcategoriesCheckBox,
-            currentExclusivity,
+            current_exclusivity,
             self.items,
             command.EditExclusiveSubcategoriesCommand,
             wx.EVT_CHECKBOX,
@@ -449,6 +498,7 @@ class AttachmentSubjectPage(SubjectPage):
         if location.startswith("file://"):
             import urllib.request
             import os
+
             try:
                 path = urllib.request.url2pathname(location[7:])
                 return os.path.isdir(path)
@@ -468,6 +518,7 @@ class AttachmentSubjectPage(SubjectPage):
     def addTypeEntry(self):
         """Add a read-only type field with icon."""
         import os
+
         if len(self.items) == 1:
             item = self.items[0]
             if self._isFolderUri(item):
@@ -479,8 +530,12 @@ class AttachmentSubjectPage(SubjectPage):
                 )
                 # Check if file exists for file attachments
                 if item_type == "file":
-                    attachmentBase = self._settings.get("file", "attachmentbase")
-                    if not os.path.exists(item.normalizedLocation(attachmentBase)):
+                    attachment_base = self._settings.get(
+                        "file", "attachmentbase"
+                    )
+                    if not os.path.exists(
+                        item.normalizedLocation(attachment_base)
+                    ):
                         icon_id = "taskcoach_actions_fileopen_red"
         else:
             # Multiple items - show type if all same, otherwise "Mixed"
@@ -515,8 +570,10 @@ class AttachmentSubjectPage(SubjectPage):
             if len(self.items) == 1
             else _("Edit to change location of all attachments")
         )
-        self._locationEntry = widgets.SingleLineTextCtrl(
-            panel, current_location, spellCheck=False  # File paths/URLs shouldn't be spell checked
+        self._locationEntry = widgets.single_line_text_ctrl(
+            panel,
+            current_location,
+            spell_check=False,  # File paths/URLs shouldn't be spell checked
         )
         self._locationSync = attributesync.AttributeSync(
             "location",
@@ -559,6 +616,7 @@ class AttachmentSubjectPage(SubjectPage):
 
 class TaskAppearancePage(ScrolledPage):
     """Appearance tab with scrollbar support for all domain object types."""
+
     pageName = "appearance"
     pageTitle = _("Appearance")
     pageIcon = "nuvola_apps_kcoloredit"
@@ -586,13 +644,23 @@ class TaskAppearancePage(ScrolledPage):
         header = wx.StaticText(self, label=title)
         header.SetFont(header.GetFont().Bold())
         flag = wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT
-        self._sizer.Add(header, self._position.next(2), span=(1, 2),
-                        flag=flag, border=self._borderWidth)
+        self._sizer.Add(
+            header,
+            self._position.next(2),
+            span=(1, 2),
+            flag=flag,
+            border=self._borderWidth,
+        )
         if sourceLabel:
             source = wx.StaticText(self, label=sourceLabel)
             source.SetFont(source.GetFont().Bold())
-            self._sizer.Add(source, self._position.next(1), span=(1, 1),
-                            flag=flag, border=self._borderWidth)
+            self._sizer.Add(
+                source,
+                self._position.next(1),
+                span=(1, 1),
+                flag=flag,
+                border=self._borderWidth,
+            )
         else:
             self._sizer.Add((0, 0), self._position.next(1), span=(1, 1))
 
@@ -610,7 +678,7 @@ class TaskAppearancePage(ScrolledPage):
         item = self.items[0]
 
         self.addSectionHeader(_("Derived values"), _("Source"))
-        entryFlags = [
+        entry_flags = [
             wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,  # Label
             wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,  # Control
             wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,  # Source
@@ -619,67 +687,105 @@ class TaskAppearancePage(ScrolledPage):
         # Icon - panel with both bitmap and "N/A" text (show one or the other)
         def rejectNav(evt):
             evt.GetEventObject().Navigate(evt.GetDirection())
+
         def rejectFocus(evt):
             forward = not wx.GetKeyState(wx.WXK_SHIFT)
             wx.CallAfter(evt.GetEventObject().Navigate, forward)
+
         self._derivedIconPanel = wx.Panel(self, style=0)
         self._derivedIconPanel.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
         self._derivedIconPanel.Bind(wx.EVT_SET_FOCUS, rejectFocus)
-        iconSizer = wx.BoxSizer(wx.HORIZONTAL)
+        icon_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self._derivedIconDisplay = wx.StaticBitmap(self._derivedIconPanel)
         self._derivedIconDisplay.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
         self._derivedIconDisplay.Bind(wx.EVT_SET_FOCUS, rejectFocus)
         self._derivedIconName = wx.StaticText(self._derivedIconPanel, label="")
         self._derivedIconName.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
         self._derivedIconName.Bind(wx.EVT_SET_FOCUS, rejectFocus)
-        self._derivedIconNA = wx.StaticText(self._derivedIconPanel, label=_("N/A"))
+        self._derivedIconNA = wx.StaticText(
+            self._derivedIconPanel, label=_("N/A")
+        )
         self._derivedIconNA.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
         self._derivedIconNA.Bind(wx.EVT_SET_FOCUS, rejectFocus)
         self._derivedIconNA.SetForegroundColour(
-            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-        iconSizer.Add(self._derivedIconDisplay, 0, wx.ALIGN_CENTER_VERTICAL)
-        iconSizer.Add(self._derivedIconName, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        iconSizer.Add(self._derivedIconNA, 0, wx.ALIGN_CENTER_VERTICAL)
-        self._derivedIconPanel.SetSizer(iconSizer)
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
+        icon_sizer.Add(self._derivedIconDisplay, 0, wx.ALIGN_CENTER_VERTICAL)
+        icon_sizer.Add(
+            self._derivedIconName, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5
+        )
+        icon_sizer.Add(self._derivedIconNA, 0, wx.ALIGN_CENTER_VERTICAL)
+        self._derivedIconPanel.SetSizer(icon_sizer)
         self._derivedIconSource = wx.StaticText(self, label="")
         self._derivedIconSource.SetForegroundColour(
-            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-        self.addEntry(_("Icon"), self._derivedIconPanel, self._derivedIconSource, flags=entryFlags)
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
+        self.addEntry(
+            _("Icon"),
+            self._derivedIconPanel,
+            self._derivedIconSource,
+            flags=entry_flags,
+        )
 
         # Foreground
-        self._derivedFgPicker = widgets.ColourPickerCtrl(self, colour=wx.BLACK, readOnly=True)
+        self._derivedFgPicker = widgets.ColourPickerCtrl(
+            self, colour=wx.BLACK, readOnly=True
+        )
         self._derivedFgSource = wx.StaticText(self, label="")
         self._derivedFgSource.SetForegroundColour(
-            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-        self.addEntry(_("Foreground"), self._derivedFgPicker, self._derivedFgSource, flags=entryFlags)
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
+        self.addEntry(
+            _("Foreground"),
+            self._derivedFgPicker,
+            self._derivedFgSource,
+            flags=entry_flags,
+        )
 
         # Background
-        self._derivedBgPicker = widgets.ColourPickerCtrl(self, colour=wx.WHITE, readOnly=True)
+        self._derivedBgPicker = widgets.ColourPickerCtrl(
+            self, colour=wx.WHITE, readOnly=True
+        )
         self._derivedBgSource = wx.StaticText(self, label="")
         self._derivedBgSource.SetForegroundColour(
-            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-        self.addEntry(_("Background"), self._derivedBgPicker, self._derivedBgSource, flags=entryFlags)
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
+        self.addEntry(
+            _("Background"),
+            self._derivedBgPicker,
+            self._derivedBgSource,
+            flags=entry_flags,
+        )
 
         # Font
-        defaultFont = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        default_font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         self._derivedFontPicker = widgets.FontPickerCtrl(
-            self, font=defaultFont, colour=(0, 0, 0, 255), readOnly=True)
+            self, font=default_font, colour=(0, 0, 0, 255), readOnly=True
+        )
         self._derivedFontSource = wx.StaticText(self, label="")
         self._derivedFontSource.SetForegroundColour(
-            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-        self.addEntry(_("Font"), self._derivedFontPicker, self._derivedFontSource, flags=entryFlags)
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
+        self.addEntry(
+            _("Font"),
+            self._derivedFontPicker,
+            self._derivedFontSource,
+            flags=entry_flags,
+        )
 
         # Note: _updateDerivedValues() is called at end of addEntries() after all widgets exist
 
         # Subscribe to SSOT derived change events for automatic updates
-        for eventType in (item.derivedFgColorChangedEventType(),
-                          item.derivedBgColorChangedEventType(),
-                          item.derivedIconChangedEventType(),
-                          item.derivedFontChangedEventType()):
+        for event_type in (
+            item.derivedFgColorChangedEventType(),
+            item.derivedBgColorChangedEventType(),
+            item.derivedIconChangedEventType(),
+            item.derivedFontChangedEventType(),
+        ):
             self.registerObserver(
                 self._onDerivedAppearanceChanged,
-                eventType=eventType,
-                eventSource=item
+                eventType=event_type,
+                eventSource=item,
             )
 
     def _onDerivedAppearanceChanged(self, event):
@@ -699,46 +805,97 @@ class TaskAppearancePage(ScrolledPage):
             return
 
         # Get derived values based on item type
-        iconValue, iconSource, fgValue, fgSource, bgValue, bgSource, fontValue, fontSource = \
-            self._getDerivedValuesForItem(self.items[0])
+        (
+            icon_value,
+            icon_source,
+            fg_value,
+            fg_source,
+            bg_value,
+            bg_source,
+            font_value,
+            font_source,
+        ) = self._getDerivedValuesForItem(self.items[0])
 
         # Display derived values (unified for all item types)
-        self._displayDerivedValues(iconValue, iconSource, fgValue, fgSource,
-                                   bgValue, bgSource, fontValue, fontSource)
+        self._display_derived_values(
+            icon_value,
+            icon_source,
+            fg_value,
+            fg_source,
+            bg_value,
+            bg_source,
+            font_value,
+            font_source,
+        )
 
     def _getDerivedValuesForItem(self, item):
         """Get derived appearance values from SSOT accessors.
 
-        Returns: (iconValue, iconSource, fgValue, fgSource, bgValue, bgSource, fontValue, fontSource)
+        Returns: (icon_value, icon_source, fg_value, fg_source,
+        bg_value, bg_source, font_value, font_source)
 
         Uses separate derivedXxx() and derivedXxxSource() accessors.
         """
         # Get derived values and sources using separate accessors
-        iconActual = item.derivedIcon()
-        iconSource = item.derivedIconSource()
-        fgActual = item.derivedFgColor()
-        fgSource = item.derivedFgColorSource()
-        bgActual = item.derivedBgColor()
-        bgSource = item.derivedBgColorSource()
-        fontActual = item.derivedFont()
-        fontSource = item.derivedFontSource()
+        icon_actual = item.derivedIcon()
+        icon_source = item.derivedIconSource()
+        fg_actual = item.derivedFgColor()
+        fg_source = item.derivedFgColorSource()
+        bg_actual = item.derivedBgColor()
+        bg_source = item.derivedBgColorSource()
+        font_actual = item.derivedFont()
+        font_source = item.derivedFontSource()
 
         # Get defaults for fallback
-        iconDefault = item.effectiveIconDefault() if hasattr(item, 'effectiveIconDefault') else ""
-        fgDefault = item.effectiveFgColorDefault() if hasattr(item, 'effectiveFgColorDefault') else base.SYSTEM_FG_COLOR
-        bgDefault = item.effectiveBgColorDefault() if hasattr(item, 'effectiveBgColorDefault') else base.SYSTEM_BG_COLOR
-        fontDefault = item.effectiveFontDefault() if hasattr(item, 'effectiveFontDefault') else base.SYSTEM_FONT
+        icon_default = (
+            item.effectiveIconDefault()
+            if hasattr(item, "effectiveIconDefault")
+            else ""
+        )
+        fg_default = (
+            item.effectiveFgColorDefault()
+            if hasattr(item, "effectiveFgColorDefault")
+            else base.SYSTEM_FG_COLOR
+        )
+        bg_default = (
+            item.effectiveBgColorDefault()
+            if hasattr(item, "effectiveBgColorDefault")
+            else base.SYSTEM_BG_COLOR
+        )
+        font_default = (
+            item.effectiveFontDefault()
+            if hasattr(item, "effectiveFontDefault")
+            else base.SYSTEM_FONT
+        )
 
         # Resolve to wx values: use actual if set, otherwise default
-        iconValue = iconActual if iconActual else iconDefault
-        fgValue = resolve_color(fgActual if fgActual else fgDefault)
-        bgValue = resolve_color(bgActual if bgActual else bgDefault)
-        fontValue = resolve_font(fontActual if fontActual else fontDefault)
+        icon_value = icon_actual if icon_actual else icon_default
+        fg_value = resolve_color(fg_actual if fg_actual else fg_default)
+        bg_value = resolve_color(bg_actual if bg_actual else bg_default)
+        font_value = resolve_font(font_actual if font_actual else font_default)
 
-        return (iconValue, iconSource, fgValue, fgSource, bgValue, bgSource, fontValue, fontSource)
+        return (
+            icon_value,
+            icon_source,
+            fg_value,
+            fg_source,
+            bg_value,
+            bg_source,
+            font_value,
+            font_source,
+        )
 
-    def _displayDerivedValues(self, iconValue, iconSource, fgValue, fgSource,
-                              bgValue, bgSource, fontValue, fontSource):
+    def _display_derived_values(
+        self,
+        icon_value,
+        icon_source,
+        fg_value,
+        fg_source,
+        bg_value,
+        bg_source,
+        font_value,
+        font_source,
+    ):
         """Display derived values in the UI.
 
         Domain SSOT methods (derivedXxx) return:
@@ -753,16 +910,21 @@ class TaskAppearancePage(ScrolledPage):
         """
         # --- Icon ---
         # Icons have no system theme - show "N/A" when no inherited value
-        if iconValue:
+        if icon_value:
             from taskcoachlib.gui.icons.icon_library import icon_catalog
-            icon_id = iconValue  # iconValue follows the *Value/*Source pattern
-            self._derivedIconDisplay.SetBitmap(icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE))
+
+            icon_id = icon_value
+            self._derivedIconDisplay.SetBitmap(
+                icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
+            )
             self._derivedIconDisplay.Show()
             icon = icon_catalog.get_icon(icon_id)
             self._derivedIconName.SetLabel(icon.label if icon else icon_id)
             self._derivedIconName.Show()
             self._derivedIconNA.Hide()
-            self._derivedIconSource.SetLabel(iconSource or _("Initializing..."))
+            self._derivedIconSource.SetLabel(
+                icon_source or _("Initializing...")
+            )
         else:
             self._derivedIconDisplay.Hide()
             self._derivedIconName.Hide()
@@ -771,32 +933,32 @@ class TaskAppearancePage(ScrolledPage):
         self._derivedIconPanel.Layout()
 
         # --- Foreground Color ---
-        # fgValue is either a color tuple or base.SYSTEM_FG_COLOR constant
+        # fg_value is either a color tuple or base.SYSTEM_FG_COLOR
         # fgSource is either "[Category] Name" or "System Theme"
-        derivedFgColour = resolve_color(fgValue)
-        self._derivedFgPicker.SetColour(derivedFgColour)
+        derived_fg_colour = resolve_color(fg_value)
+        self._derivedFgPicker.SetColour(derived_fg_colour)
         self._derivedFgPicker.Show()
-        self._derivedFgSource.SetLabel(fgSource or _("Initializing..."))
+        self._derivedFgSource.SetLabel(fg_source or _("Initializing..."))
 
         # --- Background Color ---
-        # bgValue is either a color tuple or base.SYSTEM_BG_COLOR constant
+        # bg_value is either a color tuple or base.SYSTEM_BG_COLOR
         # bgSource is either "[Category] Name" or "System Theme"
-        derivedBgColour = resolve_color(bgValue)
-        self._derivedBgPicker.SetColour(derivedBgColour)
+        derived_bg_colour = resolve_color(bg_value)
+        self._derivedBgPicker.SetColour(derived_bg_colour)
         self._derivedBgPicker.Show()
-        self._derivedBgSource.SetLabel(bgSource or _("Initializing..."))
+        self._derivedBgSource.SetLabel(bg_source or _("Initializing..."))
 
         # --- Font ---
-        # fontValue is either a wx.Font or base.SYSTEM_FONT constant
+        # font_value is either a wx.Font or base.SYSTEM_FONT
         # fontSource is either "[Category] Name" or "System Theme"
-        derivedFont = resolve_font(fontValue)
-        self._derivedFontPicker.SetSelectedFont(derivedFont)
+        derived_font = resolve_font(font_value)
+        self._derivedFontPicker.SetSelectedFont(derived_font)
         self._derivedFontPicker.Show()
-        self._derivedFontSource.SetLabel(fontSource or _("Initializing..."))
+        self._derivedFontSource.SetLabel(font_source or _("Initializing..."))
 
         # Update font picker demo colors to match derived colors
-        self._derivedFontPicker.SetSelectedColour(derivedFgColour)
-        self._derivedFontPicker.SetSelectedBgColour(derivedBgColour)
+        self._derivedFontPicker.SetSelectedColour(derived_fg_colour)
+        self._derivedFontPicker.SetSelectedBgColour(derived_bg_colour)
 
         # Note: override entries now track effective values, not derived
         # (updated in _updateEffectiveValues)
@@ -826,37 +988,61 @@ class TaskAppearancePage(ScrolledPage):
             self.items[0].appearanceChangedEventType(),
         )
         setattr(self, "_%sColorSync" % colorType, colorSync)
-        self.addEntry(labelText, colorEntry, flags=[None, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT])
+        self.addEntry(
+            labelText,
+            colorEntry,
+            flags=[None, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT],
+        )
 
     def addFontEntry(self):
         # pylint: disable=W0201,E1101
-        currentFont = self.items[0].font() if len(self.items) == 1 else None
+        current_font = self.items[0].font() if len(self.items) == 1 else None
         # Use override color if set, otherwise use effective/inherited color
         # Tasks and Categories have effectiveFgColor() (SSOT)
         # Notes/Efforts/Attachments use foregroundColor(recursive=True)
-        overrideFgColor = self._foregroundColorEntry.GetValue()
-        overrideBgColor = self._backgroundColorEntry.GetValue()
+        override_fg_color = self._foregroundColorEntry.GetValue()
+        override_bg_color = self._backgroundColorEntry.GetValue()
         if len(self.items) == 1:
             item = self.items[0]
-            if hasattr(item, 'effectiveFgColor'):
+            if hasattr(item, "effectiveFgColor"):
                 # Tasks and Categories use SSOT effective methods
-                currentColor = overrideFgColor if overrideFgColor else item.effectiveFgColor()
-                currentBgColor = overrideBgColor if overrideBgColor else item.effectiveBgColor()
+                current_color = (
+                    override_fg_color
+                    if override_fg_color
+                    else item.effectiveFgColor()
+                )
+                current_bg_color = (
+                    override_bg_color
+                    if override_bg_color
+                    else item.effectiveBgColor()
+                )
             else:
                 # Notes inherit from parent notes, Efforts/Attachments have no inheritance
-                currentColor = overrideFgColor if overrideFgColor else item.foregroundColor(recursive=True)
-                currentBgColor = overrideBgColor if overrideBgColor else item.backgroundColor(recursive=True)
+                current_color = (
+                    override_fg_color
+                    if override_fg_color
+                    else item.foregroundColor(recursive=True)
+                )
+                current_bg_color = (
+                    override_bg_color
+                    if override_bg_color
+                    else item.backgroundColor(recursive=True)
+                )
         else:
-            currentColor = overrideFgColor
-            currentBgColor = overrideBgColor
+            current_color = override_fg_color
+            current_bg_color = override_bg_color
         # Convert to wx.Colour using generic resolve helper (handles tuples and symbolic constants)
-        currentColor = resolve_color(currentColor) if currentColor else None
-        currentBgColor = resolve_color(currentBgColor) if currentBgColor else None
-        self._fontEntry = entry.FontEntry(self, currentFont, currentColor, currentBgColor)
+        current_color = resolve_color(current_color) if current_color else None
+        current_bg_color = (
+            resolve_color(current_bg_color) if current_bg_color else None
+        )
+        self._fontEntry = entry.FontEntry(
+            self, current_font, current_color, current_bg_color
+        )
         self._fontSync = attributesync.AttributeSync(
             "font",
             self._fontEntry,
-            currentFont,
+            current_font,
             self.items,
             command.EditFontCommand,
             entry.EVT_FONTENTRY,
@@ -865,14 +1051,16 @@ class TaskAppearancePage(ScrolledPage):
         self._fontColorSync = attributesync.FontColorSync(
             "foregroundColor",
             self._fontEntry,
-            currentColor,
+            current_color,
             self.items,
             command.EditForegroundColorCommand,
             entry.EVT_FONTENTRY,
             self.items[0].appearanceChangedEventType(),
         )
         self.addEntry(
-            _("Font"), self._fontEntry, flags=[None, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT]
+            _("Font"),
+            self._fontEntry,
+            flags=[None, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT],
         )
 
     def addEffectiveSection(self):
@@ -889,7 +1077,7 @@ class TaskAppearancePage(ScrolledPage):
 
         self.addLine()
         self.addSectionHeader(_("Effective values"), _("Source"))
-        entryFlags = [
+        entry_flags = [
             wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,  # Label
             wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,  # Control
             wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,  # Source
@@ -898,32 +1086,47 @@ class TaskAppearancePage(ScrolledPage):
         # Icon - panel with bitmap and "N/A" text (show one or the other)
         def rejectNav(evt):
             evt.GetEventObject().Navigate(evt.GetDirection())
+
         def rejectFocus(evt):
             forward = not wx.GetKeyState(wx.WXK_SHIFT)
             wx.CallAfter(evt.GetEventObject().Navigate, forward)
+
         self._effectiveIconPanel = wx.Panel(self, style=0)
         self._effectiveIconPanel.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
         self._effectiveIconPanel.Bind(wx.EVT_SET_FOCUS, rejectFocus)
-        iconSizer = wx.BoxSizer(wx.HORIZONTAL)
+        icon_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self._effectiveIconDisplay = wx.StaticBitmap(self._effectiveIconPanel)
         self._effectiveIconDisplay.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
         self._effectiveIconDisplay.Bind(wx.EVT_SET_FOCUS, rejectFocus)
-        self._effectiveIconName = wx.StaticText(self._effectiveIconPanel, label="")
+        self._effectiveIconName = wx.StaticText(
+            self._effectiveIconPanel, label=""
+        )
         self._effectiveIconName.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
         self._effectiveIconName.Bind(wx.EVT_SET_FOCUS, rejectFocus)
-        self._effectiveIconNA = wx.StaticText(self._effectiveIconPanel, label=_("N/A"))
+        self._effectiveIconNA = wx.StaticText(
+            self._effectiveIconPanel, label=_("N/A")
+        )
         self._effectiveIconNA.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
         self._effectiveIconNA.Bind(wx.EVT_SET_FOCUS, rejectFocus)
         self._effectiveIconNA.SetForegroundColour(
-            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-        iconSizer.Add(self._effectiveIconDisplay, 0, wx.ALIGN_CENTER_VERTICAL)
-        iconSizer.Add(self._effectiveIconName, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        iconSizer.Add(self._effectiveIconNA, 0, wx.ALIGN_CENTER_VERTICAL)
-        self._effectiveIconPanel.SetSizer(iconSizer)
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
+        icon_sizer.Add(self._effectiveIconDisplay, 0, wx.ALIGN_CENTER_VERTICAL)
+        icon_sizer.Add(
+            self._effectiveIconName, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5
+        )
+        icon_sizer.Add(self._effectiveIconNA, 0, wx.ALIGN_CENTER_VERTICAL)
+        self._effectiveIconPanel.SetSizer(icon_sizer)
         self._effectiveIconSource = wx.StaticText(self, label="")
         self._effectiveIconSource.SetForegroundColour(
-            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-        self.addEntry(_("Icon"), self._effectiveIconPanel, self._effectiveIconSource, flags=entryFlags)
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
+        self.addEntry(
+            _("Icon"),
+            self._effectiveIconPanel,
+            self._effectiveIconSource,
+            flags=entry_flags,
+        )
 
         # Foreground - read-only color picker with source
         self._effectiveFgPicker = widgets.ColourPickerCtrl(
@@ -931,8 +1134,14 @@ class TaskAppearancePage(ScrolledPage):
         )
         self._effectiveFgSource = wx.StaticText(self, label="")
         self._effectiveFgSource.SetForegroundColour(
-            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-        self.addEntry(_("Foreground"), self._effectiveFgPicker, self._effectiveFgSource, flags=entryFlags)
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
+        self.addEntry(
+            _("Foreground"),
+            self._effectiveFgPicker,
+            self._effectiveFgSource,
+            flags=entry_flags,
+        )
 
         # Background - read-only color picker with source
         self._effectiveBgPicker = widgets.ColourPickerCtrl(
@@ -940,34 +1149,49 @@ class TaskAppearancePage(ScrolledPage):
         )
         self._effectiveBgSource = wx.StaticText(self, label="")
         self._effectiveBgSource.SetForegroundColour(
-            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-        self.addEntry(_("Background"), self._effectiveBgPicker, self._effectiveBgSource, flags=entryFlags)
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
+        self.addEntry(
+            _("Background"),
+            self._effectiveBgPicker,
+            self._effectiveBgSource,
+            flags=entry_flags,
+        )
 
         # Font - read-only font picker with source
-        defaultFont = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        default_font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         self._effectiveFontPicker = widgets.FontPickerCtrl(
-            self, font=defaultFont,
+            self,
+            font=default_font,
             colour=wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT),
             bgColour=wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW),
-            readOnly=True
+            readOnly=True,
         )
         self._effectiveFontSource = wx.StaticText(self, label="")
         self._effectiveFontSource.SetForegroundColour(
-            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
-        self.addEntry(_("Font"), self._effectiveFontPicker, self._effectiveFontSource, flags=entryFlags)
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
+        self.addEntry(
+            _("Font"),
+            self._effectiveFontPicker,
+            self._effectiveFontSource,
+            flags=entry_flags,
+        )
 
         # Initial update
         self._updateEffectiveValues()
 
         # Subscribe to SSOT effective change events for automatic updates
-        for eventType in (item.effectiveFgColorChangedEventType(),
-                          item.effectiveBgColorChangedEventType(),
-                          item.effectiveIconChangedEventType(),
-                          item.effectiveFontChangedEventType()):
+        for event_type in (
+            item.effectiveFgColorChangedEventType(),
+            item.effectiveBgColorChangedEventType(),
+            item.effectiveIconChangedEventType(),
+            item.effectiveFontChangedEventType(),
+        ):
             self.registerObserver(
                 self._onEffectiveAppearanceChanged,
-                eventType=eventType,
-                eventSource=item
+                eventType=event_type,
+                eventSource=item,
             )
 
     def _onEffectiveAppearanceChanged(self, event):
@@ -983,7 +1207,7 @@ class TaskAppearancePage(ScrolledPage):
         """
         if len(self.items) != 1:
             return
-        if not hasattr(self, '_effectiveIconDisplay'):
+        if not hasattr(self, "_effectiveIconDisplay"):
             return
         item = self.items[0]
 
@@ -994,14 +1218,19 @@ class TaskAppearancePage(ScrolledPage):
         iconValue = iconActual if iconActual else ""
         if iconValue:
             from taskcoachlib.gui.icons.icon_library import icon_catalog
+
             icon_id = iconValue  # iconValue follows the *Value/*Source pattern
-            self._effectiveIconDisplay.SetBitmap(icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE))
+            self._effectiveIconDisplay.SetBitmap(
+                icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
+            )
             self._effectiveIconDisplay.Show()
             icon = icon_catalog.get_icon(icon_id)
             self._effectiveIconName.SetLabel(icon.label if icon else icon_id)
             self._effectiveIconName.Show()
             self._effectiveIconNA.Hide()
-            self._effectiveIconSource.SetLabel(iconSource or _("Initializing..."))
+            self._effectiveIconSource.SetLabel(
+                iconSource or _("Initializing...")
+            )
         else:
             self._effectiveIconDisplay.Hide()
             self._effectiveIconName.Hide()
@@ -1029,7 +1258,9 @@ class TaskAppearancePage(ScrolledPage):
         fontActual = item.effectiveFont()
         fontDefault = item.effectiveFontDefault()
         fontSource = item.effectiveFontSource()
-        self._effectiveFontPicker.SetSelectedFont(resolve_font(fontActual if fontActual else fontDefault))
+        self._effectiveFontPicker.SetSelectedFont(
+            resolve_font(fontActual if fontActual else fontDefault)
+        )
         self._effectiveFontSource.SetLabel(fontSource or _("Initializing..."))
 
         # Update font picker demo colors
@@ -1039,27 +1270,37 @@ class TaskAppearancePage(ScrolledPage):
         # Update override entries to track effective values
         # (shown when override checkbox is unchecked; always for colors on font picker)
         effectiveFont = resolve_font(fontActual if fontActual else fontDefault)
-        if hasattr(self, '_foregroundColorEntry'):
+        if hasattr(self, "_foregroundColorEntry"):
             self._foregroundColorEntry.setEffectiveColor(effectiveFgColour)
-        if hasattr(self, '_backgroundColorEntry'):
+        if hasattr(self, "_backgroundColorEntry"):
             self._backgroundColorEntry.setEffectiveColor(effectiveBgColour)
-        if hasattr(self, '_fontEntry'):
+        if hasattr(self, "_fontEntry"):
             self._fontEntry.setEffectiveFont(effectiveFont)
 
     def _updateFontDemoColors(self):
         if len(self.items) != 1:
             return
         item = self.items[0]
-        self._fontEntry.SetColor(resolve_color(
-            item.effectiveFgColor() or item.effectiveFgColorDefault()))
-        self._fontEntry.SetBgColor(resolve_color(
-            item.effectiveBgColor() or item.effectiveBgColorDefault()))
+        self._fontEntry.SetColor(
+            resolve_color(
+                item.effectiveFgColor() or item.effectiveFgColorDefault()
+            )
+        )
+        self._fontEntry.SetBgColor(
+            resolve_color(
+                item.effectiveBgColor() or item.effectiveBgColorDefault()
+            )
+        )
 
     def addIconEntry(self):
         # pylint: disable=W0201,E1101
-        current_icon_id = self.items[0].icon_id() if len(self.items) == 1 else ""
+        current_icon_id = (
+            self.items[0].icon_id() if len(self.items) == 1 else ""
+        )
 
-        self._iconEntry = entry.IconEntry(self, current_icon_id, exclude="status")
+        self._iconEntry = entry.IconEntry(
+            self, current_icon_id, exclude="status"
+        )
         self._iconSync = attributesync.AttributeSync(
             "icon_id",
             self._iconEntry,
@@ -1070,13 +1311,13 @@ class TaskAppearancePage(ScrolledPage):
             self.items[0].appearanceChangedEventType(),
         )
         self.addEntry(
-            _("Icon"), self._iconEntry, flags=[None, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT]
+            _("Icon"),
+            self._iconEntry,
+            flags=[None, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT],
         )
 
     def entries(self):
-        return dict(
-            firstEntry=self._iconEntry
-        )  # pylint: disable=E1101
+        return dict(firstEntry=self._iconEntry)  # pylint: disable=E1101
 
     def close(self):
         super().close()
@@ -1097,26 +1338,41 @@ class DatesPage(ScrolledPage):
         super().__init__(theTask, parent, *args, **kwargs)
 
     def close(self):
-        if len(self.items) == 1 and hasattr(self, '_statusLabel'):
+        if len(self.items) == 1 and hasattr(self, "_statusLabel"):
             try:
-                pub.unsubscribe(self._onStatusMayHaveChanged,
-                                self.items[0].statusChangedEventType())
+                pub.unsubscribe(
+                    self._onStatusMayHaveChanged,
+                    self.items[0].statusChangedEventType(),
+                )
             except Exception as e:
-                log_step("unsubscribe failed in %s.close: %s" %
-                         (self.__class__.__name__, e), prefix="DEAD-OBJ")
+                log_step(
+                    "unsubscribe failed in %s.close: %s"
+                    % (self.__class__.__name__, e),
+                    prefix="DEAD-OBJ",
+                )
         if len(self.items) == 1:
             try:
-                pub.unsubscribe(self._onDomainPlannedDurationModeChanged,
-                                self.items[0].plannedDurationModeChangedEventType())
+                pub.unsubscribe(
+                    self._onDomainPlannedDurationModeChanged,
+                    self.items[0].plannedDurationModeChangedEventType(),
+                )
             except Exception as e:
-                log_step("unsubscribe failed in %s.close: %s" %
-                         (self.__class__.__name__, e), prefix="DEAD-OBJ")
+                log_step(
+                    "unsubscribe failed in %s.close: %s"
+                    % (self.__class__.__name__, e),
+                    prefix="DEAD-OBJ",
+                )
             try:
-                pub.unsubscribe(self.__onTaskDurationDomainChanged,
-                                self.items[0].plannedDurationChangedEventType())
+                pub.unsubscribe(
+                    self.__onTaskDurationDomainChanged,
+                    self.items[0].plannedDurationChangedEventType(),
+                )
             except Exception as e:
-                log_step("unsubscribe failed in %s.close: %s" %
-                         (self.__class__.__name__, e), prefix="DEAD-OBJ")
+                log_step(
+                    "unsubscribe failed in %s.close: %s"
+                    % (self.__class__.__name__, e),
+                    prefix="DEAD-OBJ",
+                )
         super().close()
 
     def __onPlannedStartChanged(self, value):
@@ -1126,8 +1382,8 @@ class DatesPage(ScrolledPage):
 
     def __onPlannedStartDateTimeChanged(self, value):
         """Called when planned start date changes - update based on mode."""
-        if hasattr(self, '_currentPlannedDurationMode'):
-            self.__syncTaskState(sourceField='start')
+        if hasattr(self, "_currentPlannedDurationMode"):
+            self.__syncTaskState(sourceField="start")
 
     def __onDueDateChanged(self, value):
         """AttributeSync callback for due date changes."""
@@ -1136,8 +1392,8 @@ class DatesPage(ScrolledPage):
 
     def __onDueDateTimeChanged(self, value):
         """Called when due date changes - update based on mode."""
-        if hasattr(self, '_currentPlannedDurationMode'):
-            self.__syncTaskState(sourceField='due')
+        if hasattr(self, "_currentPlannedDurationMode"):
+            self.__syncTaskState(sourceField="due")
 
     def _onDomainPlannedDurationModeChanged(self, newValue, sender):
         """Layer 2: Domain plannedDurationMode changed externally."""
@@ -1149,7 +1405,7 @@ class DatesPage(ScrolledPage):
 
     def __onPlannedDurationSyncCallback(self, value):
         """AttributeSync callback: duration committed or changed externally."""
-        self.__syncTaskState(sourceField='duration')
+        self.__syncTaskState(sourceField="duration")
 
     def __onTaskDurationDomainChanged(self, newValue, sender):
         """Domain duration changed — update preset dropdown to match."""
@@ -1174,6 +1430,7 @@ class DatesPage(ScrolledPage):
         class NoFocusPanel(wx.Panel):
             def AcceptsFocusFromKeyboard(self):
                 return False
+
         self._statusPanel = NoFocusPanel(self)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -1188,48 +1445,59 @@ class DatesPage(ScrolledPage):
         # Source explanation (gray text)
         self._statusSource = wx.StaticText(self, label="")
         self._statusSource.SetForegroundColour(
-            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
 
         # 3 controls: label + panel + source
         self.addEntry(
             _("Status"),
             self._statusPanel,
             self._statusSource,
-            flags=[None, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,
-                   wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT],
+            flags=[
+                None,
+                wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,
+                wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,
+            ],
         )
 
         # Initial display
         self._updateStatusDisplay()
 
         # Subscribe to status change event (fired by computeStoredStatus when status changes)
-        pub.subscribe(self._onStatusMayHaveChanged, self.items[0].statusChangedEventType())
+        pub.subscribe(
+            self._onStatusMayHaveChanged,
+            self.items[0].statusChangedEventType(),
+        )
 
     def _onStatusMayHaveChanged(self, newValue, sender):
         if sender == self.items[0] or sender is None:
             self._updateStatusDisplay()
 
     def _updateStatusDisplay(self):
-        if not hasattr(self, '_statusLabel'):
+        if not hasattr(self, "_statusLabel"):
             return
-        theTask = self.items[0]
+        the_task = self.items[0]
         # Use centralized computedStatus(explain=True) for status and source
-        taskStatus, statusSource = theTask.computedStatus(explain=True)
+        task_status, status_source = the_task.computedStatus(explain=True)
 
         # Update icon
-        icon_id = taskStatus.getBitmap(self.__settings)
+        icon_id = task_status.getBitmap(self.__settings)
         bitmap = icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
         if bitmap.IsOk():
             self._statusIcon.SetBitmap(bitmap)
 
         # Update text and foreground color only (no background painting)
-        statusText = taskStatus.pluralLabel.replace(" tasks", "").replace("tasks", "").strip()
-        self._statusLabel.SetLabel(statusText)
-        self._statusLabel.SetForegroundColour(theTask.statusFgColor())
+        status_text = (
+            task_status.pluralLabel.replace(" tasks", "")
+            .replace("tasks", "")
+            .strip()
+        )
+        self._statusLabel.SetLabel(status_text)
+        self._statusLabel.SetForegroundColour(the_task.statusFgColor())
 
         # Update source explanation
-        if hasattr(self, '_statusSource'):
-            self._statusSource.SetLabel(statusSource or _("Initializing..."))
+        if hasattr(self, "_statusSource"):
+            self._statusSource.SetLabel(status_source or _("Initializing..."))
             self._statusSource.InvalidateBestSize()
 
         # Relayout panel and parent to accommodate new text sizes
@@ -1246,7 +1514,7 @@ class DatesPage(ScrolledPage):
         self._addCompletionDateEntry()
 
         # Now that all date entries exist, set initial enabled state
-        if hasattr(self, '_currentPlannedDurationMode'):
+        if hasattr(self, "_currentPlannedDurationMode"):
             self.__syncTaskState()
 
     def _addPlannedDateSection(self):
@@ -1260,13 +1528,22 @@ class DatesPage(ScrolledPage):
         self._currentPlannedStartDateTime = plannedStartDateTime
 
         # value=None means no date set, value=datetime means date exists
-        value = plannedStartDateTime if plannedStartDateTime != date.DateTime() else None
+        value = (
+            plannedStartDateTime
+            if plannedStartDateTime != date.DateTime()
+            else None
+        )
 
         self._plannedStartDateTimeCombo = widgets.DateTimeComboCtrl(
-            self, value=value,
+            self,
+            value=value,
             suggestedValue=task.Task.suggestedPlannedStartDateTime(),
-            hourChoices=lambda: get_suggested_hour_choices(self._DatesPage__settings),
-            minuteChoices=lambda: get_suggested_minute_choices(self._DatesPage__settings)
+            hourChoices=lambda: get_suggested_hour_choices(
+                self._DatesPage__settings
+            ),
+            minuteChoices=lambda: get_suggested_minute_choices(
+                self._DatesPage__settings
+            ),
         )
         # Use AttributeSync for automatic external update handling
         # Sync on EVT_VALUE_CHANGED — fires on checkbox toggle AND date/time edits
@@ -1281,7 +1558,9 @@ class DatesPage(ScrolledPage):
             callback=self.__onPlannedStartChanged,
         )
         # Rebuild dropdown when focus leaves this field
-        self._plannedStartDateTimeCombo.Bind(wx.EVT_KILL_FOCUS, self.__onDurationFieldKillFocus)
+        self._plannedStartDateTimeCombo.Bind(
+            wx.EVT_KILL_FOCUS, self.__onDurationFieldKillFocus
+        )
 
         # Add planned start row: label | datetime row | (empty)
         self.addEntry(
@@ -1314,7 +1593,9 @@ class DatesPage(ScrolledPage):
             self, days=days, hours=hours, minutes=minutes
         )
         # Rebuild dropdown when focus leaves this field
-        self._plannedDurationCtrl.Bind(wx.EVT_KILL_FOCUS, self.__onDurationFieldKillFocus)
+        self._plannedDurationCtrl.Bind(
+            wx.EVT_KILL_FOCUS, self.__onDurationFieldKillFocus
+        )
 
         # Layer 2: AttributeSync for duration (user edits → command,
         # domain changes → widget update). Callback triggers sync cascade.
@@ -1332,17 +1613,25 @@ class DatesPage(ScrolledPage):
         # Subscribe to domain changes BEFORE __syncTaskState()
         # so that changes during init sync trigger UI updates.
         if len(self.items) == 1:
-            pub.subscribe(self._onDomainPlannedDurationModeChanged,
-                          self.items[0].plannedDurationModeChangedEventType())
-            pub.subscribe(self.__onTaskDurationDomainChanged,
-                          self.items[0].plannedDurationChangedEventType())
+            pub.subscribe(
+                self._onDomainPlannedDurationModeChanged,
+                self.items[0].plannedDurationModeChangedEventType(),
+            )
+            pub.subscribe(
+                self.__onTaskDurationDomainChanged,
+                self.items[0].plannedDurationChangedEventType(),
+            )
 
         # Presets dropdown
         self._durationPresetsChoice = wx.Choice(self)
         self.__populateDurationPresets()
-        self._durationPresetsChoice.Bind(wx.EVT_CHOICE, self.__onDurationPresetSelected)
+        self._durationPresetsChoice.Bind(
+            wx.EVT_CHOICE, self.__onDurationPresetSelected
+        )
         # Rebuild mode dropdown when focus leaves preset dropdown
-        self._durationPresetsChoice.Bind(wx.EVT_KILL_FOCUS, self.__onDurationFieldKillFocus)
+        self._durationPresetsChoice.Bind(
+            wx.EVT_KILL_FOCUS, self.__onDurationFieldKillFocus
+        )
 
         self.registerObserver(
             self.__onPresetsConfigChanged,
@@ -1361,7 +1650,9 @@ class DatesPage(ScrolledPage):
         self._durationModeChoice = wx.Choice(self)
         for key, label in self._durationModeChoices:
             self._durationModeChoice.Append(label, key)
-        self._durationModeChoice.Bind(wx.EVT_CHOICE, self.__onDurationModeChanged)
+        self._durationModeChoice.Bind(
+            wx.EVT_CHOICE, self.__onDurationModeChanged
+        )
 
         # Get stored mode from task, default to "automatic"
         stored_mode = (
@@ -1387,8 +1678,15 @@ class DatesPage(ScrolledPage):
         duration_rest_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self._durationPresetsChoice.Reparent(duration_rest_panel)
         self._durationModeChoice.Reparent(duration_rest_panel)
-        duration_rest_sizer.Add(self._durationPresetsChoice, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-        duration_rest_sizer.Add(self._durationModeChoice, 0, wx.ALIGN_CENTER_VERTICAL)
+        duration_rest_sizer.Add(
+            self._durationPresetsChoice,
+            0,
+            wx.ALIGN_CENTER_VERTICAL | wx.RIGHT,
+            5,
+        )
+        duration_rest_sizer.Add(
+            self._durationModeChoice, 0, wx.ALIGN_CENTER_VERTICAL
+        )
         duration_rest_panel.SetSizer(duration_rest_sizer)
 
         # Add duration row: label | duration | presets+mode (left-aligned)
@@ -1396,7 +1694,11 @@ class DatesPage(ScrolledPage):
             _("Planned duration"),
             self._plannedDurationCtrl,
             duration_rest_panel,
-            flags=[None, wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL | wx.ALL],
+            flags=[
+                None,
+                wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL,
+                wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL | wx.ALL,
+            ],
         )
 
         # Row 3: Due date (value already retrieved above)
@@ -1405,10 +1707,15 @@ class DatesPage(ScrolledPage):
         value = dueDateTime if dueDateTime != date.DateTime() else None
 
         self._dueDateTimeCombo = widgets.DateTimeComboCtrl(
-            self, value=value,
+            self,
+            value=value,
             suggestedValue=task.Task.suggestedDueDateTime(),
-            hourChoices=lambda: get_suggested_hour_choices(self._DatesPage__settings),
-            minuteChoices=lambda: get_suggested_minute_choices(self._DatesPage__settings)
+            hourChoices=lambda: get_suggested_hour_choices(
+                self._DatesPage__settings
+            ),
+            minuteChoices=lambda: get_suggested_minute_choices(
+                self._DatesPage__settings
+            ),
         )
         # Use AttributeSync for automatic external update handling
         # Sync on EVT_VALUE_CHANGED — fires on checkbox toggle AND date/time edits
@@ -1423,7 +1730,9 @@ class DatesPage(ScrolledPage):
             callback=self.__onDueDateChanged,
         )
         # Rebuild dropdown when focus leaves this field
-        self._dueDateTimeCombo.Bind(wx.EVT_KILL_FOCUS, self.__onDurationFieldKillFocus)
+        self._dueDateTimeCombo.Bind(
+            wx.EVT_KILL_FOCUS, self.__onDurationFieldKillFocus
+        )
 
         # Add due date row: label | datetime row | (empty)
         self.addEntry(
@@ -1447,13 +1756,22 @@ class DatesPage(ScrolledPage):
         self._currentActualStartDateTime = actualStartDateTime
 
         # value=None means no date set, value=datetime means date exists
-        value = actualStartDateTime if actualStartDateTime != date.DateTime() else None
+        value = (
+            actualStartDateTime
+            if actualStartDateTime != date.DateTime()
+            else None
+        )
 
         self._actualStartDateTimeCombo = widgets.DateTimeComboCtrl(
-            self, value=value,
+            self,
+            value=value,
             suggestedValue=task.Task.suggestedActualStartDateTime(),
-            hourChoices=lambda: get_suggested_hour_choices(self._DatesPage__settings),
-            minuteChoices=lambda: get_suggested_minute_choices(self._DatesPage__settings)
+            hourChoices=lambda: get_suggested_hour_choices(
+                self._DatesPage__settings
+            ),
+            minuteChoices=lambda: get_suggested_minute_choices(
+                self._DatesPage__settings
+            ),
         )
         # Use AttributeSync for automatic external update handling
         # Sync on EVT_VALUE_CHANGED — fires on checkbox toggle AND date/time edits
@@ -1487,13 +1805,22 @@ class DatesPage(ScrolledPage):
         )
 
         # value=None means no date set, value=datetime means date exists
-        value = completionDateTime if completionDateTime != date.DateTime() else None
+        value = (
+            completionDateTime
+            if completionDateTime != date.DateTime()
+            else None
+        )
 
         self._completionDateTimeCombo = widgets.DateTimeComboCtrl(
-            self, value=value,
+            self,
+            value=value,
             suggestedValue=task.Task.suggestedCompletionDateTime(),
-            hourChoices=lambda: get_suggested_hour_choices(self._DatesPage__settings),
-            minuteChoices=lambda: get_suggested_minute_choices(self._DatesPage__settings)
+            hourChoices=lambda: get_suggested_hour_choices(
+                self._DatesPage__settings
+            ),
+            minuteChoices=lambda: get_suggested_minute_choices(
+                self._DatesPage__settings
+            ),
         )
 
         # Use AttributeSync for automatic external update handling
@@ -1517,7 +1844,9 @@ class DatesPage(ScrolledPage):
     def __populateDurationPresets(self):
         """Populate the duration presets dropdown from settings."""
         self._durationPresetsChoice.Clear()
-        self._durationPresetsChoice.Append(_("Presets..."), None)  # Placeholder
+        self._durationPresetsChoice.Append(
+            _("Presets..."), None
+        )  # Placeholder
 
         presets_str = self.__settings.get("feature", "task_duration_presets")
         if presets_str:
@@ -1534,13 +1863,15 @@ class DatesPage(ScrolledPage):
                 label = self.__formatDurationPreset(total_minutes)
                 self._durationPresetsChoice.Append(label, total_minutes)
 
-        self._durationPresetsChoice.Append(_("Reset to zero"), 0)  # Reset option (last)
+        self._durationPresetsChoice.Append(
+            _("Reset to zero"), 0
+        )  # Reset option (last)
 
         self._durationPresetsChoice.SetSelection(0)
 
     def __updatePresetSelection(self):
         """Update preset dropdown to match current duration value."""
-        if not hasattr(self, '_plannedDurationCtrl'):
+        if not hasattr(self, "_plannedDurationCtrl"):
             return
 
         # Get current duration in total minutes
@@ -1617,8 +1948,6 @@ class DatesPage(ScrolledPage):
         # SetDuration → EVT_VALUE_CHANGED → AttributeSync → command → pubsub → preset update
         self._plannedDurationCtrl.SetDuration(new_duration)
 
-
-
     def __onDurationFieldKillFocus(self, event):
         """Rebuild mode dropdown on focus loss."""
         self.__updateDurationModeDropdown()
@@ -1641,17 +1970,24 @@ class DatesPage(ScrolledPage):
         """
         # 0.4 Sync-mode guard — flag on domain SSOT, shared across windows
         task = self.items[0]
-        if getattr(task, '_durationSyncInProgress', False):
+        if getattr(task, "_durationSyncInProgress", False):
             return
 
         # 0.3 Recursive safety
         # 0.3.4 Depth > 1 should never occur, log error, exit
         if depth > 1:
-            log_step("ERROR: __syncTaskState depth > 1 (%d), exiting" % depth, prefix="SYNC")
+            log_step(
+                "ERROR: __syncTaskState depth > 1 (%d), exiting" % depth,
+                prefix="SYNC",
+            )
             return
         # 0.3.3 depth == 1 should never receive a user action, log error, continue
         if depth == 1 and sourceField is not None:
-            log_step("ERROR: __syncTaskState depth==1 received sourceField=%s, expected None" % sourceField, prefix="SYNC")
+            log_step(
+                "ERROR: __syncTaskState depth==1 received "
+                "sourceField=%s, expected None" % sourceField,
+                prefix="SYNC",
+            )
 
         # Read current widget state once — no step in a single pass
         # depends on values changed by a prior step in the same pass.
@@ -1674,7 +2010,7 @@ class DatesPage(ScrolledPage):
         elif mode == "adjdue":
             # 2.1 Note: Mode changes away never come back here
             # 2.2 Activate Start-Date, If not Unset-Action [Ref2, 0.1.1]
-            if sourceField != 'start' and start is None:
+            if sourceField != "start" and start is None:
                 self._plannedStartDateTimeCombo.ActivateValue()
             # 2.3 Activate Due-Date (Read-Only) [Ref2]
             #     On first entry (sourceField=None), adj if due doesn't exist yet.
@@ -1683,10 +2019,14 @@ class DatesPage(ScrolledPage):
             # 2.4 Disable Automatic mode option in dropdown [Ref1]
             #     (handled by __updateDurationModeDropdown on focus loss)
             # 2.5 If Duration changed, Then adj Due-Date
-            if sourceField == 'duration' and start is not None and duration is not None:
+            if (
+                sourceField == "duration"
+                and start is not None
+                and duration is not None
+            ):
                 self._dueDateTimeCombo.ActivateValue(start + duration)
             # 2.6 If Start-Date Unset-Action, Then
-            if sourceField == 'start' and start is None:
+            if sourceField == "start" and start is None:
                 # 2.6.1 Set Sync-Mode [0.4]
                 task._durationSyncInProgress = True
                 try:
@@ -1702,13 +2042,17 @@ class DatesPage(ScrolledPage):
                 # 2.6.6 Loop
                 return self.__syncTaskState(None, depth=depth + 1)  # 0.3.2
             # 2.7 If Start-Date changed, Then adj Due-Date
-            if sourceField == 'start' and start is not None and duration is not None:
+            if (
+                sourceField == "start"
+                and start is not None
+                and duration is not None
+            ):
                 self._dueDateTimeCombo.ActivateValue(start + duration)
 
         elif mode == "adjstart":
             # 3.1 Note: Mode changes away never come back here
             # 3.2 Activate Due-Date, If not Unset-Action [Ref2, 0.1.2]
-            if sourceField != 'due' and due is None:
+            if sourceField != "due" and due is None:
                 self._dueDateTimeCombo.ActivateValue()
             # 3.3 Activate Start-Date (Read-Only) [Ref2]
             #     On first entry (sourceField=None), adj if start doesn't exist.
@@ -1717,10 +2061,14 @@ class DatesPage(ScrolledPage):
             # 3.4 Disable Automatic mode option in dropdown [Ref1]
             #     (handled by __updateDurationModeDropdown on focus loss)
             # 3.5 If Duration changed, Then adj Start-Date
-            if sourceField == 'duration' and due is not None and duration is not None:
+            if (
+                sourceField == "duration"
+                and due is not None
+                and duration is not None
+            ):
                 self._plannedStartDateTimeCombo.ActivateValue(due - duration)
             # 3.6 If Due-Date Unset-Action, Then
-            if sourceField == 'due' and due is None:
+            if sourceField == "due" and due is None:
                 # 3.6.1 Set Sync-Mode [0.4]
                 task._durationSyncInProgress = True
                 try:
@@ -1736,7 +2084,11 @@ class DatesPage(ScrolledPage):
                 # 3.6.6 Loop
                 return self.__syncTaskState(None, depth=depth + 1)  # 0.3.2
             # 3.7 If Due-Date changed, Then adj Start-Date
-            if sourceField == 'due' and due is not None and duration is not None:
+            if (
+                sourceField == "due"
+                and due is not None
+                and duration is not None
+            ):
                 self._plannedStartDateTimeCombo.ActivateValue(due - duration)
 
         elif mode == "implicit":
@@ -1749,9 +2101,15 @@ class DatesPage(ScrolledPage):
                 if due is not None:
                     # 4.3.1.1 Enable Duration (Read-Only)
                     # 4.3.1.2 Adj Duration (duration = due - start)
-                    new_duration = due - start  # 4.3.1.3 Negative Durations permitted
+                    new_duration = (
+                        due - start
+                    )  # 4.3.1.3 Negative Durations permitted
                     self._plannedDurationCtrl.SetDuration(
-                        date.TimeDelta(days=new_duration.days, seconds=new_duration.seconds))
+                        date.TimeDelta(
+                            days=new_duration.days,
+                            seconds=new_duration.seconds,
+                        )
+                    )
                 # 4.3.2 If Due-Date Unset-Action, Then disable Duration
                 #        -- handled by __updateFieldStates
             # 4.4 If Start-Date Unset-Action, Then disable Duration
@@ -1776,9 +2134,15 @@ class DatesPage(ScrolledPage):
         elif mode == "adjdue":
             # Adjust Due | Editable | Editable | Read-only
             if start is None:
-                log_step("WARNING: adjdue mode but Start-Date does not exist", prefix="DURATION")
+                log_step(
+                    "WARNING: adjdue mode but Start-Date does not exist",
+                    prefix="DURATION",
+                )
             if due is None:
-                log_step("WARNING: adjdue mode but Due-Date does not exist", prefix="DURATION")
+                log_step(
+                    "WARNING: adjdue mode but Due-Date does not exist",
+                    prefix="DURATION",
+                )
             self._plannedStartDateTimeCombo.SetEditable()
             self._plannedDurationCtrl.Enable(True)
             self._plannedDurationCtrl.SetReadOnly(False)
@@ -1787,9 +2151,15 @@ class DatesPage(ScrolledPage):
         elif mode == "adjstart":
             # Adjust Start | Read-only | Editable | Editable
             if start is None:
-                log_step("WARNING: adjstart mode but Start-Date does not exist", prefix="DURATION")
+                log_step(
+                    "WARNING: adjstart mode but Start-Date does not exist",
+                    prefix="DURATION",
+                )
             if due is None:
-                log_step("WARNING: adjstart mode but Due-Date does not exist", prefix="DURATION")
+                log_step(
+                    "WARNING: adjstart mode but Due-Date does not exist",
+                    prefix="DURATION",
+                )
             self._plannedStartDateTimeCombo.SetReadOnly()
             self._plannedDurationCtrl.Enable(True)
             self._plannedDurationCtrl.SetReadOnly(False)
@@ -1825,7 +2195,7 @@ class DatesPage(ScrolledPage):
 
     def __strikethrough(self, text):
         """Apply Unicode strikethrough effect using combining character U+0336."""
-        return ''.join(char + '\u0336' for char in text)
+        return "".join(char + "\u0336" for char in text)
 
     def __updateDurationModeDropdown(self):
         """Update the duration mode dropdown based on current mode.
@@ -1833,7 +2203,9 @@ class DatesPage(ScrolledPage):
         See docs/DURATION_CALCULATIONS.md "Calculation Mode Dropdown Build Logic".
         Rule: If current mode is Automatic, enable Automatic option; otherwise disable it.
         """
-        self._automaticModeDisabled = self._currentPlannedDurationMode != "automatic"
+        self._automaticModeDisabled = (
+            self._currentPlannedDurationMode != "automatic"
+        )
 
         # Rebuild dropdown with updated labels
         self._durationModeChoice.Clear()
@@ -1857,7 +2229,9 @@ class DatesPage(ScrolledPage):
         newMode = self._durationModeChoice.GetClientData(selection)
 
         # Prevent selecting disabled Automatic mode (both dates checked)
-        if newMode == "automatic" and getattr(self, '_automaticModeDisabled', False):
+        if newMode == "automatic" and getattr(
+            self, "_automaticModeDisabled", False
+        ):
             self.__updateDurationModeDropdown()  # Revert visual
             return
 
@@ -1885,13 +2259,20 @@ class DatesPage(ScrolledPage):
         self._currentReminderDateTime = reminderDateTime
 
         # value=None means no date set, value=datetime means date exists
-        value = reminderDateTime if reminderDateTime != date.DateTime() else None
+        value = (
+            reminderDateTime if reminderDateTime != date.DateTime() else None
+        )
 
         self._reminderDateTimeCombo = widgets.DateTimeComboCtrl(
-            self, value=value,
+            self,
+            value=value,
             suggestedValue=task.Task.suggestedReminderDateTime(),
-            hourChoices=lambda: get_suggested_hour_choices(self._DatesPage__settings),
-            minuteChoices=lambda: get_suggested_minute_choices(self._DatesPage__settings)
+            hourChoices=lambda: get_suggested_hour_choices(
+                self._DatesPage__settings
+            ),
+            minuteChoices=lambda: get_suggested_minute_choices(
+                self._DatesPage__settings
+            ),
         )
         # Use AttributeSync for automatic external update handling
         # Sync on EVT_VALUE_CHANGED — fires on checkbox toggle AND date/time edits
@@ -1918,18 +2299,18 @@ class DatesPage(ScrolledPage):
 
     def addRecurrenceEntry(self):
         # pylint: disable=W0201
-        currentRecurrence = (
+        current_recurrence = (
             self.items[0].recurrence()
             if len(self.items) == 1
             else date.Recurrence()
         )
         self._recurrenceEntry = entry.RecurrenceEntry(
-            self, currentRecurrence, self.__settings
+            self, current_recurrence, self.__settings
         )
         self._recurrenceSync = attributesync.AttributeSync(
             "recurrence",
             self._recurrenceEntry,
-            currentRecurrence,
+            current_recurrence,
             self.items,
             command.EditRecurrenceCommand,
             entry.EVT_RECURRENCEENTRY,
@@ -1937,14 +2318,17 @@ class DatesPage(ScrolledPage):
         )
         # Place each recurrence sub-panel as its own grid row.
         # "Recurrence" label on the first row; empty label on the rest.
-        recurrenceFlags = [None, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT | wx.EXPAND]
+        recurrence_flags = [
+            None,
+            wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT | wx.EXPAND,
+        ]
         panels = self._recurrenceEntry.getSubPanels()
         for i, panel in enumerate(panels):
             panel.Reparent(self)
             self.addEntry(
                 _("Recurrence") if i == 0 else "",
                 panel,
-                flags=recurrenceFlags,
+                flags=recurrence_flags,
             )
 
     def entries(self):
@@ -1960,6 +2344,7 @@ class DatesPage(ScrolledPage):
             reminder=self._reminderDateTimeCombo.GetDateCtrl(),
             recurrence=self._recurrenceEntry,
         )
+
 
 class ProgressPage(Page):
     pageName = "progress"
@@ -2050,100 +2435,99 @@ class BudgetPage(ScrolledPage):
         self.GetParent().NavigateBook(forward)
 
     def addEntries(self):
-        self.addBudgetEntries()
+        self.add_budget_entries()
         self.addLine()
-        self.addRevenueEntries()
-        self.observeTracking()
+        self.add_revenue_entries()
+        self.observe_tracking()
 
-    def addBudgetEntries(self):
-        self.addBudgetEntry()
+    def add_budget_entries(self):
+        self.add_budget_entry()
         if len(self.items) == 1:
-            self.addTimeSpentEntry()
-            self.addBudgetLeftEntry()
+            self.add_time_spent_entry()
+            self.add_budget_left_entry()
 
-    def addBudgetEntry(self):
+    def add_budget_entry(self):
         # pylint: disable=W0201,W0212
-        currentBudget = (
+        current_budget = (
             self.items[0].budget()
             if len(self.items) == 1
             else date.TimeDelta()
         )
-        self._budgetEntry = widgets.MaskedDurationCtrl(
-            self, showSeconds=True
-        )
-        self._budgetEntry.SetDuration(currentBudget)
-        self._budgetSync = attributesync.AttributeSync(
+        self._budget_entry = widgets.MaskedDurationCtrl(self, showSeconds=True)
+        self._budget_entry.SetDuration(current_budget)
+        self._budget_sync = attributesync.AttributeSync(
             "budget",
-            self._budgetEntry,
-            currentBudget,
+            self._budget_entry,
+            current_budget,
             self.items,
             command.EditBudgetCommand,
             widgets.EVT_VALUE_CHANGED,
             self.items[0].budgetChangedEventType(),
         )
-        self.addEntry(
-            _("Budget"), self._budgetEntry, flags=[None, wx.ALL]
-        )
+        self.addEntry(_("Budget"), self._budget_entry, flags=[None, wx.ALL])
 
-    def addTimeSpentEntry(self):
+    def add_time_spent_entry(self):
         assert len(self.items) == 1
         # pylint: disable=W0201
-        self._timeSpentEntry = widgets.MaskedDurationCtrl(
+        self._time_spent_entry = widgets.MaskedDurationCtrl(
             self, showSeconds=True
         )
-        self._timeSpentEntry.SetDuration(self.items[0].timeSpent())
-        self._timeSpentEntry.SetReadOnly(True)
+        self._time_spent_entry.SetDuration(self.items[0].timeSpent())
+        self._time_spent_entry.SetReadOnly(True)
         self.addEntry(
             _("Time spent"),
-            self._timeSpentEntry,
+            self._time_spent_entry,
             flags=[None, wx.ALL],
         )
         pub.subscribe(
-            self.onTimeSpentChanged, self.items[0].timeSpentChangedEventType()
+            self.on_time_spent_changed,
+            self.items[0].timeSpentChangedEventType(),
         )
 
-    def onTimeSpentChanged(self, newValue, sender):
+    def on_time_spent_changed(self, newValue, sender):
         if sender == self.items[0]:
-            self._timeSpentEntry.SetDuration(sender.timeSpent())
+            self._time_spent_entry.SetDuration(sender.timeSpent())
 
-    def addBudgetLeftEntry(self):
+    def add_budget_left_entry(self):
         assert len(self.items) == 1
         # pylint: disable=W0201
-        self._budgetLeftEntry = widgets.MaskedDurationCtrl(
+        self._budget_left_entry = widgets.MaskedDurationCtrl(
             self, showSeconds=True
         )
-        self._budgetLeftEntry.SetDuration(self.items[0].budgetLeft())
-        self._budgetLeftEntry.SetReadOnly(True)
+        self._budget_left_entry.SetDuration(self.items[0].budgetLeft())
+        self._budget_left_entry.SetReadOnly(True)
         self.addEntry(
             _("Budget left"),
-            self._budgetLeftEntry,
+            self._budget_left_entry,
             flags=[None, wx.ALL],
         )
         pub.subscribe(
-            self.onBudgetLeftChanged,
+            self.on_budget_left_changed,
             self.items[0].budgetLeftChangedEventType(),
         )
 
-    def onBudgetLeftChanged(self, newValue, sender):  # pylint: disable=W0613
+    def on_budget_left_changed(
+        self, newValue, sender
+    ):  # pylint: disable=W0613
         if sender == self.items[0]:
-            self._budgetLeftEntry.SetDuration(sender.budgetLeft())
+            self._budget_left_entry.SetDuration(sender.budgetLeft())
 
-    def addRevenueEntries(self):
-        self.addHourlyFeeEntry()
-        self.addFixedFeeEntry()
+    def add_revenue_entries(self):
+        self.add_hourly_fee_entry()
+        self.add_fixed_fee_entry()
         if len(self.items) == 1:
-            self.addRevenueEntry()
+            self.add_revenue_entry()
 
-    def addHourlyFeeEntry(self):
+    def add_hourly_fee_entry(self):
         # pylint: disable=W0201,W0212
-        currentHourlyFee = (
+        current_hourly_fee = (
             self.items[0].hourlyFee() if len(self.items) == 1 else 0
         )
-        self._hourlyFeeEntry = entry.AmountEntry(self, currentHourlyFee)
-        self._hourlyFeeSync = attributesync.AttributeSync(
+        self._hourly_fee_entry = entry.AmountEntry(self, current_hourly_fee)
+        self._hourly_fee_sync = attributesync.AttributeSync(
             "hourlyFee",
-            self._hourlyFeeEntry,
-            currentHourlyFee,
+            self._hourly_fee_entry,
+            current_hourly_fee,
             self.items,
             command.EditHourlyFeeCommand,
             widgets.EVT_VALUE_CHANGED,
@@ -2151,99 +2535,105 @@ class BudgetPage(ScrolledPage):
         )
         self.addEntry(
             _("Hourly fee"),
-            self._hourlyFeeEntry,
+            self._hourly_fee_entry,
             flags=[None, wx.ALL],
         )
 
-    def addFixedFeeEntry(self):
+    def add_fixed_fee_entry(self):
         # pylint: disable=W0201,W0212
-        currentFixedFee = (
+        current_fixed_fee = (
             self.items[0].fixedFee() if len(self.items) == 1 else 0
         )
-        self._fixedFeeEntry = entry.AmountEntry(self, currentFixedFee)
-        self._fixedFeeSync = attributesync.AttributeSync(
+        self._fixed_fee_entry = entry.AmountEntry(self, current_fixed_fee)
+        self._fixed_fee_sync = attributesync.AttributeSync(
             "fixedFee",
-            self._fixedFeeEntry,
-            currentFixedFee,
+            self._fixed_fee_entry,
+            current_fixed_fee,
             self.items,
             command.EditFixedFeeCommand,
             widgets.EVT_VALUE_CHANGED,
             self.items[0].fixedFeeChangedEventType(),
         )
         self.addEntry(
-            _("Fixed fee"), self._fixedFeeEntry, flags=[None, wx.ALL]
+            _("Fixed fee"), self._fixed_fee_entry, flags=[None, wx.ALL]
         )
 
-    def addRevenueEntry(self):
+    def add_revenue_entry(self):
         assert len(self.items) == 1
         revenue = self.items[0].revenue()
-        self._revenueEntry = entry.AmountEntry(
+        self._revenue_entry = entry.AmountEntry(
             self, revenue, readonly=True
         )  # pylint: disable=W0201
-        self.addEntry(
-            _("Revenue"), self._revenueEntry, flags=[None, wx.ALL]
-        )
+        self.addEntry(_("Revenue"), self._revenue_entry, flags=[None, wx.ALL])
         pub.subscribe(
-            self.onRevenueChanged, self.items[0].revenueChangedEventType()
+            self.on_revenue_changed, self.items[0].revenueChangedEventType()
         )
 
-    def onRevenueChanged(self, newValue, sender):
+    def on_revenue_changed(self, newValue, sender):
         if sender == self.items[0]:
-            if newValue != self._revenueEntry.GetValue():
-                self._revenueEntry.SetValue(newValue)
+            if newValue != self._revenue_entry.GetValue():
+                self._revenue_entry.SetValue(newValue)
 
-    def observeTracking(self):
+    def observe_tracking(self):
         if len(self.items) != 1:
             return
         item = self.items[0]
-        pub.subscribe(self.onTrackingChanged, item.trackingChangedEventType())
+        pub.subscribe(
+            self.on_tracking_changed, item.trackingChangedEventType()
+        )
         if item.isBeingTracked():
-            self.onTrackingChanged(True, item)
+            self.on_tracking_changed(True, item)
 
-    def onTrackingChanged(self, newValue, sender):
+    def on_tracking_changed(self, newValue, sender):
         if newValue:
             if sender in self.items:
-                self._startClock()
+                self._start_clock()
         else:
             # We might need to keep tracking the clock if the user was tracking this
             # task with multiple effort records simultaneously
             if not self.items[0].isBeingTracked():
-                self._stopClock()
+                self._stop_clock()
 
-    def _startClock(self):
-        if not getattr(self, '_clockRunning', False):
-            pub.subscribe(self._onTimerSecond, 'timer.second')
-            self._clockRunning = True
+    def _start_clock(self):
+        if not getattr(self, "_clock_running", False):
+            self.registerObserver(
+                self._on_timer_second, eventType="timer.second"
+            )
+            self._clock_running = True
 
-    def _stopClock(self):
-        if getattr(self, '_clockRunning', False):
-            pub.unsubscribe(self._onTimerSecond, 'timer.second')
-            self._clockRunning = False
+    def _stop_clock(self):
+        if getattr(self, "_clock_running", False):
+            self.removeObserver(
+                self._on_timer_second, eventType="timer.second"
+            )
+            self._clock_running = False
 
-    def _onTimerSecond(self, timestamp):
+    def _on_timer_second(self, event):  # pylint: disable=W0613
         """Handle second tick from global timer."""
-        self.onEverySecond()
+        self.on_every_second()
 
-    def onEverySecond(self):
-        taskDisplayed = self.items[0]
-        self.onTimeSpentChanged(taskDisplayed.timeSpent(), taskDisplayed)
-        self.onBudgetLeftChanged(taskDisplayed.budgetLeft(), taskDisplayed)
-        self.onRevenueChanged(taskDisplayed.revenue(), taskDisplayed)
+    def on_every_second(self):
+        task_displayed = self.items[0]
+        self.on_time_spent_changed(task_displayed.timeSpent(), task_displayed)
+        self.on_budget_left_changed(
+            task_displayed.budgetLeft(), task_displayed
+        )
+        self.on_revenue_changed(task_displayed.revenue(), task_displayed)
 
     def close(self):
-        self._stopClock()
+        self._stop_clock()
         super().close()
 
     def entries(self):
         result = dict(
-            firstEntry=self._budgetEntry,
-            budget=self._budgetEntry,
-            hourlyFee=self._hourlyFeeEntry,
-            fixedFee=self._fixedFeeEntry,
+            firstEntry=self._budget_entry,
+            budget=self._budget_entry,
+            hourlyFee=self._hourly_fee_entry,
+            fixedFee=self._fixed_fee_entry,
         )
         if len(self.items) == 1:
-            result["budgetLeft"] = self._budgetLeftEntry
-            result["revenue"] = self._revenueEntry
+            result["budgetLeft"] = self._budget_left_entry
+            result["revenue"] = self._revenue_entry
         return result
 
 
@@ -2342,7 +2732,7 @@ class LocalCategoryViewer(viewer.BaseCategoryViewer):  # pylint: disable=W0223
             for item in self.__items:
                 if cat not in item.categories():
                     item.addCategory(cat)
-        self.widget.refreshAllCheckStates()
+        self.widget.refresh_all_check_states()
 
     def uncheck_all_categories(self):
         """Remove all categories from the items being edited."""
@@ -2350,7 +2740,7 @@ class LocalCategoryViewer(viewer.BaseCategoryViewer):  # pylint: disable=W0223
             for item in self.__items:
                 if cat in item.categories():
                     item.removeCategory(cat)
-        self.widget.refreshAllCheckStates()
+        self.widget.refresh_all_check_states()
 
     def createActionToolBarUICommands(self):
         """UI commands for check/uncheck all in the edit task categories tab."""
@@ -2388,7 +2778,9 @@ class CategoriesPage(PageWithViewer):
                 item.categoryRemovedEventType(),
             ):
                 self.registerObserver(
-                    self.onCategoryChanged, eventType=eventType, eventSource=item
+                    self.onCategoryChanged,
+                    eventType=eventType,
+                    eventSource=item,
                 )
         return LocalCategoryViewer(
             self.items,
@@ -2436,6 +2828,7 @@ class LocalAttachmentViewer(viewer.AttachmentViewer):  # pylint: disable=W0223
     def pasteItemCommand(self):
         """Paste attachments from clipboard to this task's attachments."""
         from taskcoachlib.command.clipboard import Clipboard
+
         items, source = Clipboard().get()
         copies = [item.copy() for item in items]
         return command.AddAttachmentCommand(
@@ -2508,6 +2901,7 @@ class LocalNoteViewer(viewer.BaseNoteViewer):  # pylint: disable=W0223
         copied from a nested location.
         """
         from taskcoachlib.command.clipboard import Clipboard
+
         items, source = Clipboard().get()
         copies = [item.copy() for item in items]
         # Clear parent so notes become top-level (even if source was nested)
@@ -2515,9 +2909,7 @@ class LocalNoteViewer(viewer.BaseNoteViewer):  # pylint: disable=W0223
         for n in copies:
             n.setParent(None)
             self._expandNoteAndChildren(n)
-        return command.AddNoteCommand(
-            None, [self.__note_owner], notes=copies
-        )
+        return command.AddNoteCommand(None, [self.__note_owner], notes=copies)
 
     def pasteAsSubItemCommand(self):
         """Paste notes as subnotes of the selected note.
@@ -2530,6 +2922,7 @@ class LocalNoteViewer(viewer.BaseNoteViewer):  # pylint: disable=W0223
             return None
         parent_note = selected[0]
         from taskcoachlib.command.clipboard import Clipboard
+
         items, source = Clipboard().get()
         copies = [item.copy() for item in items]
         # Clear parent references - AddSubNoteCommand will set correct parent via addChild
@@ -2670,7 +3063,9 @@ class PathPage(ScrolledPage):
         self._pathSizer = None
         self._subscribed = False
         self._realized = False
-        self._iconWidgets = {}  # Dict of object -> StaticBitmap for icon updates
+        self._iconWidgets = (
+            {}
+        )  # Dict of object -> StaticBitmap for icon updates
         self._iconSubscribed = False
         super().__init__(items, parent, *args, **kwargs)
 
@@ -2697,7 +3092,13 @@ class PathPage(ScrolledPage):
         # Subscribe to effective icon changes for individual icon updates
         self._ensureIconSubscription()
 
-        from taskcoachlib.domain import task, category, note, attachment, effort
+        from taskcoachlib.domain import (
+            task,
+            category,
+            note,
+            attachment,
+            effort,
+        )
 
         # Subscribe to parent pubsub topics (pubsub uses hierarchical topics)
         # This catches all child topic messages (e.g., pubsub.task covers
@@ -2706,7 +3107,6 @@ class PathPage(ScrolledPage):
             "pubsub.task",
             "pubsub.category",
             "pubsub.note",
-            "pubsub.attachment",
         ]
         for topic in pubsub_parent_topics:
             pub.subscribe(self._onAnyChange, topic)
@@ -2736,8 +3136,10 @@ class PathPage(ScrolledPage):
                 if self._pathPanel.IsShownOnScreen():
                     wx.CallAfter(self._rebuildPathDisplay)
             except RuntimeError:
-                log_step("_onAnyChange: pathPanel dead %x" % id(self),
-                         prefix="DEAD-OBJ")
+                log_step(
+                    "_onAnyChange: pathPanel dead %x" % id(self),
+                    prefix="DEAD-OBJ",
+                )
 
     def _rebuildPathDisplay(self):
         """Rebuild the path display with all sections."""
@@ -2746,8 +3148,10 @@ class PathPage(ScrolledPage):
         try:
             self._pathPanel.GetName()  # Check if still valid
         except RuntimeError:
-            log_step("_rebuildPathDisplay: pathPanel dead %x" % id(self),
-                     prefix="DEAD-OBJ")
+            log_step(
+                "_rebuildPathDisplay: pathPanel dead %x" % id(self),
+                prefix="DEAD-OBJ",
+            )
             return
 
         # Unsubscribe existing icon handlers before clearing
@@ -2758,8 +3162,9 @@ class PathPage(ScrolledPage):
 
         # Only show sections for single item
         if len(self.items) != 1:
-            label = wx.StaticText(self._pathPanel,
-                                  label=_("Path is only shown for single items"))
+            label = wx.StaticText(
+                self._pathPanel, label=_("Path is only shown for single items")
+            )
             self._pathSizer.Add(label, 0, wx.EXPAND)
             self._pathPanel.Layout()
             return
@@ -2771,6 +3176,7 @@ class PathPage(ScrolledPage):
 
         # Section: Categories (Tasks and Notes only)
         from taskcoachlib.domain import task as task_module, note
+
         if isinstance(item, (task_module.Task, note.Note)):
             self._buildCategoriesSection(item)
 
@@ -2794,8 +3200,9 @@ class PathPage(ScrolledPage):
         path_objects = self._buildPathObjects(item)
 
         if not path_objects:
-            label = wx.StaticText(self._pathPanel,
-                                  label=_("This item has no parent objects"))
+            label = wx.StaticText(
+                self._pathPanel, label=_("This item has no parent objects")
+            )
             self._pathSizer.Add(label, 0, wx.EXPAND | wx.LEFT, 5)
             return
 
@@ -2815,14 +3222,18 @@ class PathPage(ScrolledPage):
                 )
                 if arrow_bitmap.IsOk():
                     arrow = wx.StaticBitmap(item_panel, bitmap=arrow_bitmap)
-                    item_sizer.Add(arrow, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+                    item_sizer.Add(
+                        arrow, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5
+                    )
 
             # Add type icon if available
             if icon_id:
                 bitmap = icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
                 if bitmap.IsOk():
                     icon = wx.StaticBitmap(item_panel, bitmap=bitmap)
-                    item_sizer.Add(icon, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+                    item_sizer.Add(
+                        icon, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5
+                    )
                     self._subscribeIconToObject(obj, icon)
 
             label_text = "[%s] %s" % (obj_type, subject)
@@ -2921,7 +3332,7 @@ class PathPage(ScrolledPage):
 
     def _subscribeIconToObject(self, obj, bitmap):
         """Register a StaticBitmap for updates when object's effective icon changes."""
-        if not hasattr(obj, 'effectiveIconChangedEventType'):
+        if not hasattr(obj, "effectiveIconChangedEventType"):
             return
         self._iconWidgets[id(obj)] = (obj, bitmap)
 
@@ -2931,8 +3342,7 @@ class PathPage(ScrolledPage):
             return
         self._iconSubscribed = True
         self.registerObserver(
-            self._onEffectiveIconChanged,
-            eventType="effective.icon"
+            self._onEffectiveIconChanged, eventType="effective.icon"
         )
 
     def _onEffectiveIconChanged(self, event):
@@ -2944,13 +3354,18 @@ class PathPage(ScrolledPage):
                 try:
                     _, icon_id = self._getTypeInfo(obj)
                     if icon_id:
-                        new_bitmap = icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
+                        new_bitmap = icon_catalog.get_bitmap(
+                            icon_id, LIST_ICON_SIZE
+                        )
                         if new_bitmap.IsOk():
                             bitmap.SetBitmap(new_bitmap)
                             bitmap.Refresh()
                 except RuntimeError:
-                    log_step("_onEffectiveIconChanged: icon widget dead %x" %
-                             id(self), prefix="DEAD-OBJ")
+                    log_step(
+                        "_onEffectiveIconChanged: icon widget dead %x"
+                        % id(self),
+                        prefix="DEAD-OBJ",
+                    )
 
     def _unsubscribeIconUpdates(self):
         """Clear icon widget tracking (subscription cleaned up on page close)."""
@@ -2970,7 +3385,7 @@ class PathPage(ScrolledPage):
             path.extend(owner_path)
 
         # Add ancestors for composite objects
-        if hasattr(item, 'ancestors'):
+        if hasattr(item, "ancestors"):
             path.extend(item.ancestors())
 
         # Add current item
@@ -2983,7 +3398,14 @@ class PathPage(ScrolledPage):
         self._unsubscribeIconUpdates()
 
         if self._subscribed:
-            from taskcoachlib.domain import task, category, note, attachment, effort
+            from taskcoachlib.domain import (
+                task,
+                category,
+                note,
+                attachment,
+                effort,
+            )
+
             all_event_types = (
                 task.Task.modificationEventTypes()
                 + category.Category.modificationEventTypes()
@@ -2998,8 +3420,11 @@ class PathPage(ScrolledPage):
                     try:
                         pub.unsubscribe(self._onAnyChange, eventType)
                     except Exception as e:
-                        log_step("unsubscribe failed in %s.close: %s" %
-                                 (self.__class__.__name__, e), prefix="DEAD-OBJ")
+                        log_step(
+                            "unsubscribe failed in %s.close: %s"
+                            % (self.__class__.__name__, e),
+                            prefix="DEAD-OBJ",
+                        )
             patterns.Publisher().removeObserver(self._onAnyChange)
         super().close()
 
@@ -3116,7 +3541,7 @@ class PathPage(ScrolledPage):
             visited.add(att_id)
 
             # Check if this attachment owns our target note
-            if hasattr(att, 'notes'):
+            if hasattr(att, "notes"):
                 if target_note in att.notes(recursive=False):
                     return att
                 # Add attachments from this attachment's notes to search
@@ -3202,7 +3627,7 @@ class PathPage(ScrolledPage):
                 attachments_checked.add(att_id)
 
                 # Add notes from this attachment
-                if hasattr(att, 'notes'):
+                if hasattr(att, "notes"):
                     for n in att.notes(recursive=True):
                         if n.id() not in visited:
                             notes_to_check.append(n)
@@ -3214,7 +3639,7 @@ class PathPage(ScrolledPage):
 
 
 class EditBook(widgets.Notebook):
-    allPageNames = ["subclass responsibility"]
+    all_page_names = ["subclass responsibility"]
     domainObject = "subclass responsibility"
 
     def __init__(self, parent, items, taskFile, settings, items_are_new):
@@ -3269,7 +3694,7 @@ class EditBook(widgets.Notebook):
     def __pages_to_create(self):
         return [
             page_name
-            for page_name in self.allPageNames
+            for page_name in self.all_page_names
             if self.__should_create_page(page_name)
         ]
 
@@ -3463,7 +3888,7 @@ class EditBook(widgets.Notebook):
 
 
 class TaskEditBook(EditBook):
-    allPageNames = [
+    all_page_names = [
         "subject",
         "dates",
         "prerequisites",
@@ -3483,7 +3908,7 @@ class TaskEditBook(EditBook):
 
 
 class CategoryEditBook(EditBook):
-    allPageNames = ["subject", "notes", "attachments", "appearance", "path"]
+    all_page_names = ["subject", "notes", "attachments", "appearance", "path"]
     domainObject = "category"
 
     def create_subject_page(self):
@@ -3491,12 +3916,18 @@ class CategoryEditBook(EditBook):
 
 
 class NoteEditBook(EditBook):
-    allPageNames = ["subject", "categories", "attachments", "appearance", "path"]
+    all_page_names = [
+        "subject",
+        "categories",
+        "attachments",
+        "appearance",
+        "path",
+    ]
     domainObject = "note"
 
 
 class AttachmentEditBook(EditBook):
-    allPageNames = ["subject", "notes", "appearance", "path"]
+    all_page_names = ["subject", "notes", "appearance", "path"]
     domainObject = "attachment"
 
     def create_subject_page(self):
@@ -3525,8 +3956,10 @@ class NullableDateTimeWrapper:
                 return None
             return self._datetime_entry.GetValue()
         except RuntimeError:
-            log_step("DateTimeEntry.GetValue: widget dead %x" % id(self),
-                     prefix="DEAD-OBJ")
+            log_step(
+                "DateTimeEntry.GetValue: widget dead %x" % id(self),
+                prefix="DEAD-OBJ",
+            )
             return None
 
     def SetValue(self, value):
@@ -3540,10 +3973,14 @@ class NullableDateTimeWrapper:
                 self._datetime_entry.Enable(True)
                 self._datetime_entry.SetValue(value)
         except RuntimeError:
-            log_step("DateTimeEntry.SetValue: widget dead %x" % id(self),
-                     prefix="DEAD-OBJ")
+            log_step(
+                "DateTimeEntry.SetValue: widget dead %x" % id(self),
+                prefix="DEAD-OBJ",
+            )
 
-    def Bind(self, event_type, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
+    def Bind(
+        self, event_type, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY
+    ):
         """Forward bind to datetime entry."""
         self._datetime_entry.Bind(event_type, handler, source, id, id2)
 
@@ -3587,10 +4024,10 @@ class EffortEditBook(Page):
         *args,
         **kwargs
     ):  # pylint: disable=W0613
-        self._effortList = taskFile.efforts()
+        self._effort_list = taskFile.efforts()
         task_list = taskFile.tasks()
-        self._taskList = task.TaskList(task_list)
-        self._taskList.extend(
+        self._task_list = task.TaskList(task_list)
+        self._task_list.extend(
             [
                 effort.task()
                 for effort in efforts
@@ -3627,14 +4064,14 @@ class EffortEditBook(Page):
         # pylint: disable=W0201,W0212
         panel = wx.Panel(self)
         current_task = self.items[0].task()
-        self._taskEntry = entry.TaskEntry(
+        self._task_entry = entry.TaskEntry(
             panel,
-            rootTasks=self._taskList.rootItems(),
+            rootTasks=self._task_list.rootItems(),
             selectedTask=current_task,
         )
-        self._taskSync = attributesync.AttributeSync(
+        self._task_sync = attributesync.AttributeSync(
             "task",
-            self._taskEntry,
+            self._task_entry,
             current_task,
             self.items,
             command.EditTaskCommand,
@@ -3642,10 +4079,10 @@ class EffortEditBook(Page):
             self.items[0].taskChangedEventType(),
         )
         edit_task_button = wx.Button(panel, label=_("Edit task"))
-        edit_task_button.Bind(wx.EVT_BUTTON, self.onEditTask)
+        edit_task_button.Bind(wx.EVT_BUTTON, self.on_edit_task)
         panel_sizer = wx.BoxSizer(wx.HORIZONTAL)
         panel_sizer.Add(
-            self._taskEntry,
+            self._task_entry,
             proportion=1,
             flag=wx.EXPAND,
         )
@@ -3662,12 +4099,18 @@ class EffortEditBook(Page):
 
         # Entry mode tracking (dropdown created in Duration row)
         # Load from effort object, default to standard
-        stored_mode = self.items[0].entryMode() if len(self.items) == 1 else "standard"
-        self._effortEntryMode = {"standard": 0, "retroactive": 1, "implicit": 2}.get(stored_mode, 0)
+        stored_mode = (
+            self.items[0].entryMode() if len(self.items) == 1 else "standard"
+        )
+        self._effort_entry_mode = {
+            "standard": 0,
+            "retroactive": 1,
+            "implicit": 2,
+        }.get(stored_mode, 0)
 
         # --- Start row: Label, DateTime row (checkbox hidden), Button ---
         current_start_date_time = self.items[0].getStart()
-        self._startDateTimeCombo = widgets.DateTimeComboCtrl(
+        self._start_date_time_combo = widgets.DateTimeComboCtrl(
             self,
             value=current_start_date_time,
             showSeconds=True,
@@ -3676,26 +4119,32 @@ class EffortEditBook(Page):
             secondChoices=lambda: get_suggested_second_choices(self._settings),
         )
         # Hide checkbox - start is always required
-        self._startDateTimeCombo.HideCheckBox()
+        self._start_date_time_combo.HideCheckBox()
 
-        self._startDateTimeSync = attributesync.AttributeSync(
+        self._start_date_time_sync = attributesync.AttributeSync(
             "getStart",
-            self._startDateTimeCombo,
+            self._start_date_time_combo,
             current_start_date_time,
             self.items,
             command.EditEffortStartDateTimeCommand,
             widgets.EVT_VALUE_CHANGED,
             self.items[0].startChangedEventType(),
-            callback=self.__onEffortStartChanged,
+            callback=self.__on_effort_start_changed,
         )
 
-        self._startFromLastEffortButton = self.__create_start_from_last_effort_button()
+        self._start_from_last_effort_button = (
+            self.__create_start_from_last_effort_button()
+        )
 
         self.addEntry(
             _("Start"),
-            self._startDateTimeCombo.CreateRowPanel(self),
-            self._startFromLastEffortButton,
-            flags=[wx.ALL | wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL, wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, wx.ALL | wx.ALIGN_CENTER_VERTICAL],
+            self._start_date_time_combo.CreateRowPanel(self),
+            self._start_from_last_effort_button,
+            flags=[
+                wx.ALL | wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL,
+                wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL,
+                wx.ALL | wx.ALIGN_CENTER_VERTICAL,
+            ],
         )
 
         # --- Time Spent row (display only) ---
@@ -3704,8 +4153,12 @@ class EffortEditBook(Page):
 
         # Calculate initial time spent
         if current_stop_date_time is not None:
-            time_spent_duration = current_stop_date_time - current_start_date_time
-            time_spent_seconds = max(0, int(time_spent_duration.total_seconds()))
+            time_spent_duration = (
+                current_stop_date_time - current_start_date_time
+            )
+            time_spent_seconds = max(
+                0, int(time_spent_duration.total_seconds())
+            )
         else:
             # Tracking - calculate from start to now
             now = date.DateTime.now()
@@ -3719,24 +4172,35 @@ class EffortEditBook(Page):
         ts_minutes = (time_spent_seconds % 3600) // 60
         ts_seconds = time_spent_seconds % 60
 
-        self._timeSpentCtrl = widgets.MaskedDurationCtrl(
+        self._time_spent_ctrl = widgets.MaskedDurationCtrl(
             self,
-            days=0, hours=ts_hours, minutes=ts_minutes, seconds=ts_seconds,
-            showSeconds=True
+            days=0,
+            hours=ts_hours,
+            minutes=ts_minutes,
+            seconds=ts_seconds,
+            showSeconds=True,
         )
-        # Initial state managed by __updateTimeSpentDisplay (called from __applyEffortEntryMode)
+        # Initial state managed by __update_time_spent_display (called
+        # from __apply_effort_entry_mode)
 
-        self._timeSpentLabel = wx.StaticText(self, label=_("Calculated time spent until now"))
-        self._timeSpentLabel.SetForegroundColour(
-            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+        self._time_spent_label = wx.StaticText(
+            self, label=_("Calculated time spent until now")
+        )
+        self._time_spent_label.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
 
-        self._timeSpentTimer = None
+        self._time_spent_clock_running = False
 
         self.addEntry(
             _("Time spent"),
-            self._timeSpentCtrl,
-            self._timeSpentLabel,
-            flags=[wx.ALL | wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL, wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, wx.ALL | wx.ALIGN_CENTER_VERTICAL],
+            self._time_spent_ctrl,
+            self._time_spent_label,
+            flags=[
+                wx.ALL | wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL,
+                wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL,
+                wx.ALL | wx.ALIGN_CENTER_VERTICAL,
+            ],
         )
 
         # --- Duration row ---
@@ -3750,63 +4214,89 @@ class EffortEditBook(Page):
         minutes = (total_seconds % 3600) // 60
         seconds = total_seconds % 60
 
-        self._effortDurationCtrl = widgets.MaskedDurationCtrl(
+        self._effort_duration_ctrl = widgets.MaskedDurationCtrl(
             self,
-            days=0, hours=hours, minutes=minutes, seconds=seconds,
-            showSeconds=True
+            days=0,
+            hours=hours,
+            minutes=minutes,
+            seconds=seconds,
+            showSeconds=True,
         )
         # Standard mode: duration always active (start always exists)
         # Retroactive mode: duration inactive only if stop is inactive
         # Initial mode is Standard (0), so duration is always enabled at init
-        current_duration = (current_stop_date_time - current_start_date_time) if current_stop_date_time is not None else date.TimeDelta()
-        self._effortDurationSync = attributesync.AttributeSync(
+        current_duration = (
+            (current_stop_date_time - current_start_date_time)
+            if current_stop_date_time is not None
+            else date.TimeDelta()
+        )
+        self._effort_duration_sync = attributesync.AttributeSync(
             "duration",
-            self._effortDurationCtrl,
+            self._effort_duration_ctrl,
             current_duration,
             self.items,
             command.EditEffortDurationCommand,
             widgets.EVT_VALUE_CHANGED,
             self.items[0].durationChangedEventType(),
-            callback=self.__onEffortDurationChanged,
+            callback=self.__on_effort_duration_changed,
         )
 
-        self._effortDurationPresetsChoice = wx.Choice(self)
-        self.__populateEffortDurationPresets()
-        self._effortDurationPresetsChoice.Bind(wx.EVT_CHOICE, self.__onEffortDurationPresetSelected)
+        self._effort_duration_presets_choice = wx.Choice(self)
+        self.__populate_effort_duration_presets()
+        self._effort_duration_presets_choice.Bind(
+            wx.EVT_CHOICE, self.__on_effort_duration_preset_selected
+        )
 
         self.registerObserver(
-            self.__onEffortPresetsConfigChanged,
+            self.__on_effort_presets_config_changed,
             eventType="feature.effort_duration_presets",
             eventSource=self._settings,
         )
         if len(self.items) == 1:
-            pub.subscribe(self.__onEffortDurationDomainChanged,
-                          self.items[0].durationChangedEventType())
+            pub.subscribe(
+                self.__on_effort_duration_domain_changed,
+                self.items[0].durationChangedEventType(),
+            )
 
         # Entry mode dropdown (Standard / Retroactive) - placed next to presets
-        self._effortEntryModeChoice = wx.Choice(self, choices=[_("Standard"), _("Retroactive"), _("Implicit")])
-        self._effortEntryModeChoice.SetSelection(self._effortEntryMode)
-        self._effortEntryModeChoice.Bind(wx.EVT_CHOICE, self.__onEffortEntryModeChanged)
+        self._effort_entry_mode_choice = wx.Choice(
+            self, choices=[_("Standard"), _("Retroactive"), _("Implicit")]
+        )
+        self._effort_entry_mode_choice.SetSelection(self._effort_entry_mode)
+        self._effort_entry_mode_choice.Bind(
+            wx.EVT_CHOICE, self.__on_effort_entry_mode_changed
+        )
 
         # Create panel with presets and entry mode dropdowns
         presets_and_mode_panel = wx.Panel(self)
         presets_and_mode_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self._effortDurationPresetsChoice.Reparent(presets_and_mode_panel)
-        self._effortEntryModeChoice.Reparent(presets_and_mode_panel)
-        presets_and_mode_sizer.Add(self._effortDurationPresetsChoice, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-        presets_and_mode_sizer.Add(self._effortEntryModeChoice, 0, wx.ALIGN_CENTER_VERTICAL)
+        self._effort_duration_presets_choice.Reparent(presets_and_mode_panel)
+        self._effort_entry_mode_choice.Reparent(presets_and_mode_panel)
+        presets_and_mode_sizer.Add(
+            self._effort_duration_presets_choice,
+            0,
+            wx.ALIGN_CENTER_VERTICAL | wx.RIGHT,
+            5,
+        )
+        presets_and_mode_sizer.Add(
+            self._effort_entry_mode_choice, 0, wx.ALIGN_CENTER_VERTICAL
+        )
         presets_and_mode_panel.SetSizer(presets_and_mode_sizer)
 
         # Duration row: label, duration (right-aligned), presets+mode (left-aligned)
         self.addEntry(
             _("Duration"),
-            self._effortDurationCtrl,
+            self._effort_duration_ctrl,
             presets_and_mode_panel,
-            flags=[wx.ALL | wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL, wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, wx.ALL | wx.ALIGN_CENTER_VERTICAL],
+            flags=[
+                wx.ALL | wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL,
+                wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL,
+                wx.ALL | wx.ALIGN_CENTER_VERTICAL,
+            ],
         )
 
         # --- Stop row: Label, DateTime row (with checkbox), Button ---
-        self._stopDateTimeCombo = widgets.DateTimeComboCtrl(
+        self._stop_date_time_combo = widgets.DateTimeComboCtrl(
             self,
             value=current_stop_date_time,
             showSeconds=True,
@@ -3815,97 +4305,108 @@ class EffortEditBook(Page):
             secondChoices=lambda: get_suggested_second_choices(self._settings),
         )
 
-        self._stopDateTimeSync = attributesync.AttributeSync(
+        self._stop_date_time_sync = attributesync.AttributeSync(
             "getStop",
-            self._stopDateTimeCombo,
+            self._stop_date_time_combo,
             current_stop_date_time,
             self.items,
             command.EditEffortStopDateTimeCommand,
             widgets.EVT_VALUE_CHANGED,
             self.items[0].stopChangedEventType(),
-            callback=self.__onEffortStopChanged,
+            callback=self.__on_effort_stop_changed,
         )
-        self._stopNowButton = self.__create_stop_now_button()
+        self._stop_now_button = self.__create_stop_now_button()
 
         self.addEntry(
             _("Stop"),
-            self._stopDateTimeCombo.CreateRowPanel(self),
-            self._stopNowButton,
-            flags=[wx.ALL | wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL, wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, wx.ALL | wx.ALIGN_CENTER_VERTICAL],
+            self._stop_date_time_combo.CreateRowPanel(self),
+            self._stop_now_button,
+            flags=[
+                wx.ALL | wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL,
+                wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL,
+                wx.ALL | wx.ALIGN_CENTER_VERTICAL,
+            ],
         )
 
         # --- Warning message ---
-        self._invalidPeriodMessage = self.__create_invalid_period_message()
+        self._invalid_period_message = self.__create_invalid_period_message()
         self.addEntry(
-            self._invalidPeriodMessage,
-            flags=[wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT | wx.EXPAND]
+            self._invalid_period_message,
+            flags=[
+                wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT | wx.EXPAND
+            ],
         )
 
         # Apply initial entry mode state (after all controls are created)
-        self.__applyEffortEntryMode()
+        self.__apply_effort_entry_mode()
 
         # Layer 2: Subscribe to domain entryMode and duration changes
         if len(self.items) == 1:
-            pub.subscribe(self._onDomainEntryModeChanged,
-                          self.items[0].entryModeChangedEventType())
+            pub.subscribe(
+                self._on_domain_entry_mode_changed,
+                self.items[0].entryModeChangedEventType(),
+            )
 
-    def _onDomainEntryModeChanged(self, newValue, sender):
+    def _on_domain_entry_mode_changed(self, newValue, sender):
         """Layer 2: Domain entryMode changed externally."""
         if sender not in self.items:
             return
-        mode_index = {"standard": 0, "retroactive": 1, "implicit": 2}.get(newValue, 0)
-        self._effortEntryMode = mode_index
-        self._effortEntryModeChoice.SetSelection(mode_index)
-        self.__applyEffortEntryMode()
+        mode_index = {"standard": 0, "retroactive": 1, "implicit": 2}.get(
+            newValue, 0
+        )
+        self._effort_entry_mode = mode_index
+        self._effort_entry_mode_choice.SetSelection(mode_index)
+        self.__apply_effort_entry_mode()
 
-    def __onEffortDurationChanged(self, value):
+    def __on_effort_duration_changed(self, value):
         """AttributeSync callback: effort duration committed or changed externally."""
-        self.__syncEffortState(sourceField='duration')
+        self.__sync_effort_state(source_field="duration")
 
-    def __onEffortStartChanged(self, value):
+    def __on_effort_start_changed(self, value):
         """Called when start datetime is committed."""
-        self.__syncEffortState(sourceField='start')
+        self.__sync_effort_state(source_field="start")
 
-    def __onEffortStopChanged(self, value):
+    def __on_effort_stop_changed(self, value):
         """Called when stop datetime is committed."""
-        self.__syncEffortState(sourceField='stop')
+        self.__sync_effort_state(source_field="stop")
 
-    def __onEffortEntryModeChanged(self, event):
+    def __on_effort_entry_mode_changed(self, event):
         """Handle switching between Standard and Retroactive entry modes."""
-        self._effortEntryMode = self._effortEntryModeChoice.GetSelection()
-        new_mode = {0: "standard", 1: "retroactive", 2: "implicit"}.get(self._effortEntryMode, "standard")
+        self._effort_entry_mode = self._effort_entry_mode_choice.GetSelection()
+        new_mode = {0: "standard", 1: "retroactive", 2: "implicit"}.get(
+            self._effort_entry_mode, "standard"
+        )
         command.EditEffortEntryModeCommand(
             items=self.items, newValue=new_mode
         ).do()
-        self.__applyEffortEntryMode()
+        self.__apply_effort_entry_mode()
 
-    def __applyEffortEntryMode(self):
+    def __apply_effort_entry_mode(self):
         """Apply the current entry mode to control states and recalculate values."""
-        self.__syncEffortState(sourceField='mode')
+        self.__sync_effort_state(source_field="mode")
 
     # --- Effort helpers (mirroring task pattern) ---
 
-
-    def __setEffortEntryMode(self, new_mode):
+    def __set_effort_entry_mode(self, new_mode):
         """Set entry mode, update dropdown, write through command.
         Mirrors __setDurationMode for tasks."""
         mode_index = {"standard": 0, "retroactive": 1, "implicit": 2}[new_mode]
-        if mode_index == self._effortEntryMode:
+        if mode_index == self._effort_entry_mode:
             return
-        self._effortEntryMode = mode_index
-        self._effortEntryModeChoice.SetSelection(mode_index)
+        self._effort_entry_mode = mode_index
+        self._effort_entry_mode_choice.SetSelection(mode_index)
         command.EditEffortEntryModeCommand(
             items=self.items, newValue=new_mode
         ).do()
 
-    def __syncEffortState(self, sourceField=None, depth=0):
+    def __sync_effort_state(self, source_field=None, depth=0):
         """Central sync function implementing the Effort Logic Flow.
 
         The logic flow is triggered by ONE user-initiated change at a time.
         The flow processes (including explicit loops) until it stabilizes.
 
         See docs/DURATION_CALCULATIONS.md "Edit Effort Window" section.
-        Implements: __syncEffortState()
+        Implements: __sync_effort_state()
         Called on: Every change of Start-Date, Stop-Date, Duration, or Mode dropdown.
 
         Sync-mode guard [0.4] is set inline around multi-adjustment
@@ -3913,94 +4414,111 @@ class EffortEditBook(Page):
         Flag lives on the domain effort instance (SSOT), shared across windows.
 
         Args:
-            sourceField: Which field triggered this sync:
+            source_field: Which field triggered this sync:
                          'start', 'stop', 'duration', 'mode', or None (depth>0 loop).
                          Proxy for user-action — cannot differentiate user clicks from
                          system-triggered changes. See TODO item 4 in doc.
             depth: Recursive depth counter (doc 0.3).
                    0 = initial call from handler (default).
-                   1 = explicit Loop call (sourceField=None, reads widget state).
+                   1 = explicit Loop call (source_field=None, reads
+                       widget state).
                    >1 = error, exit immediately.
         """
         # 0.4 Sync-mode guard — flag on domain SSOT, shared across windows
         effort = self.items[0]
-        if getattr(effort, '_effortSyncInProgress', False):
+        if getattr(effort, "_effort_sync_in_progress", False):
             return
 
         # 0.3 Recursive safety
         if depth > 1:
             # 0.3.4 Depth > 1 should never occur, log error, exit
-            log_step("ERROR: __syncEffortState depth > 1 (%d), exiting" % depth, prefix="EFFORT")
+            log_step(
+                "ERROR: __sync_effort_state depth > 1 (%d), exiting" % depth,
+                prefix="EFFORT",
+            )
             return
-        if depth == 1 and sourceField is not None:
-            # 0.3.3 depth==1 should never receive a sourceField, log error, continue
-            log_step("ERROR: __syncEffortState depth==1 received sourceField=%s, expected None" % sourceField, prefix="EFFORT")
+        if depth == 1 and source_field is not None:
+            # 0.3.3 depth==1 should never receive a source_field, log
+            # error, continue
+            log_step(
+                "ERROR: __sync_effort_state depth==1 received "
+                "source_field=%s, expected None" % source_field,
+                prefix="EFFORT",
+            )
 
         # Read current widget state once — no step in a single pass
         # depends on values changed by a prior step in the same pass.
-        start = self._startDateTimeCombo.GetDateTime()
-        stop = self._stopDateTimeCombo.GetDateTime()
-        duration = self._effortDurationCtrl.GetTimeDelta()
+        start = self._start_date_time_combo.GetDateTime()
+        stop = self._stop_date_time_combo.GetDateTime()
+        duration = self._effort_duration_ctrl.GetTimeDelta()
         total_seconds = int(duration.total_seconds()) if duration else 0
 
-        if self._effortEntryMode == 0:  # 1. If Mode Standard
+        if self._effort_entry_mode == 0:  # 1. If Mode Standard
             # 1.3 Set Start-Date editable
-            self._startDateTimeCombo.SetEditable()
-            self._startFromLastEffortButton.Enable(
-                self._effortList.maxDateTime() is not None
+            self._start_date_time_combo.SetEditable()
+            self._start_from_last_effort_button.Enable(
+                self._effort_list.maxDateTime() is not None
             )
             # 1.4 Set Duration editable
-            self._effortDurationCtrl.Enable(True)
-            self._effortDurationCtrl.SetReadOnly(False)
+            self._effort_duration_ctrl.Enable(True)
+            self._effort_duration_ctrl.SetReadOnly(False)
             # 1.5 Set Presets dropdown enabled [Ref1]
 
             # 1.6 If Duration Unset-Action, Then disable Stop-Date
-            if sourceField == 'duration' and total_seconds == 0:
-                self._stopDateTimeCombo.DeactivateValue()
+            if source_field == "duration" and total_seconds == 0:
+                self._stop_date_time_combo.DeactivateValue()
 
             # 1.7 If Stop-Date Unset-Action, Then set Duration = 0
-            elif sourceField == 'stop' and stop is None:
-                self._effortDurationCtrl.SetDuration(date.TimeDelta())
+            elif source_field == "stop" and stop is None:
+                self._effort_duration_ctrl.SetDuration(date.TimeDelta())
 
             # 1.8 If Stop-Date Set-Action
-            elif sourceField == 'stop' and stop is not None and total_seconds == 0:
+            elif (
+                source_field == "stop"
+                and stop is not None
+                and total_seconds == 0
+            ):
                 # 1.8.1 If Duration = 0, Then set Implicit mode, Loop
-                self.__setEffortEntryMode("implicit")
-                return self.__syncEffortState(None, depth=depth + 1)
+                self.__set_effort_entry_mode("implicit")
+                return self.__sync_effort_state(None, depth=depth + 1)
 
             # 1.9 If Start-Date changed
-            elif sourceField == 'start':
+            elif source_field == "start":
                 # 1.9.1 If Duration > 0
                 if total_seconds > 0:
                     # 1.9.1.1 Set Sync-Mode [0.4]
-                    effort._effortSyncInProgress = True
+                    effort._effort_sync_in_progress = True
                     try:
                         # 1.9.1.2 Adj Stop-Date (stop = start + duration)
                         if start is not None and duration is not None:
-                            self._stopDateTimeCombo.ActivateValue(start + duration)
+                            self._stop_date_time_combo.ActivateValue(
+                                start + duration
+                            )
                         # 1.9.1.3 Adj Duration *Impossible* — see spec TODO
                     finally:
                         # 1.9.1.4 Unset Sync-Mode
-                        effort._effortSyncInProgress = False
+                        effort._effort_sync_in_progress = False
                 # 1.9.2 If Duration = 0, Then do nothing
 
             # 1.10 If Duration changed and exists
-            elif sourceField == 'duration':
+            elif source_field == "duration":
                 # 1.10.1 If Duration > 0
                 if total_seconds > 0:
                     # 1.10.1.1 Enable Stop-Date
                     if stop is None:
-                        self._stopDateTimeCombo.ActivateValue()
+                        self._stop_date_time_combo.ActivateValue()
                     # 1.10.1.2 Adj Stop-Date (stop = start + duration)
                     if start is not None and duration is not None:
-                        self._stopDateTimeCombo.ActivateValue(start + duration)
+                        self._stop_date_time_combo.ActivateValue(
+                            start + duration
+                        )
                 # 1.10.2 If Duration = 0, Then disable Stop-Date
                 # (already handled in 1.6 above)
 
             # 1.11 If Stop-Date changed and exists, Then adj Duration (duration = stop - start)
-            elif sourceField == 'stop':
+            elif source_field == "stop":
                 if start is not None and stop is not None:
-                    self._effortDurationCtrl.SetDuration(stop - start)
+                    self._effort_duration_ctrl.SetDuration(stop - start)
 
             # 1.12 If Duration = 0, Then Autoheal, Thus
             if total_seconds == 0:
@@ -4009,45 +4527,51 @@ class EffortEditBook(Page):
             # 1.13 If Duration > 0, Then Autoheal, Thus
             elif total_seconds > 0:
                 # 1.13.1 Enable Stop-Date [0.1, 0.2]
-                if sourceField != 'stop' and stop is None:
-                    self._stopDateTimeCombo.ActivateValue()
+                if source_field != "stop" and stop is None:
+                    self._stop_date_time_combo.ActivateValue()
                 # 1.13.2 Adj Stop-Date [0.1, 0.2] (stop = start + duration)
-                if sourceField != 'stop' and start is not None and duration is not None:
-                    self._stopDateTimeCombo.ActivateValue(start + duration)
+                if (
+                    source_field != "stop"
+                    and start is not None
+                    and duration is not None
+                ):
+                    self._stop_date_time_combo.ActivateValue(start + duration)
             # 1.14 If Duration < 0, Then Negative Durations permitted
 
-        elif self._effortEntryMode == 1:  # 2. If Mode Retroactive
+        elif self._effort_entry_mode == 1:  # 2. If Mode Retroactive
             # 2.3 Set Start-Date read-only
-            self._startDateTimeCombo.SetReadOnly()
-            self._startFromLastEffortButton.Enable(False)
+            self._start_date_time_combo.SetReadOnly()
+            self._start_from_last_effort_button.Enable(False)
             # 2.4 Set Duration editable
-            self._effortDurationCtrl.Enable(True)
-            self._effortDurationCtrl.SetReadOnly(False)
+            self._effort_duration_ctrl.Enable(True)
+            self._effort_duration_ctrl.SetReadOnly(False)
             # 2.5 Set Presets dropdown enabled [Ref1]
 
             # 2.6 If Duration Unset-Action, Then disable Stop-Date
-            if sourceField == 'duration' and total_seconds == 0:
-                self._stopDateTimeCombo.DeactivateValue()
+            if source_field == "duration" and total_seconds == 0:
+                self._stop_date_time_combo.DeactivateValue()
 
             # 2.7 If Stop-Date Unset-Action, Then set Duration = 0
-            elif sourceField == 'stop' and stop is None:
-                self._effortDurationCtrl.SetDuration(date.TimeDelta())
+            elif source_field == "stop" and stop is None:
+                self._effort_duration_ctrl.SetDuration(date.TimeDelta())
 
             # 2.8 If Stop-Date changed and exists, Then adj Start-Date (start = stop - duration)
-            elif sourceField == 'stop':
+            elif source_field == "stop":
                 if stop is not None and duration is not None:
-                    self._startDateTimeCombo.ActivateValue(stop - duration)
+                    self._start_date_time_combo.ActivateValue(stop - duration)
 
             # 2.9 If Duration changed and exists
-            elif sourceField == 'duration':
+            elif source_field == "duration":
                 # 2.9.1 If Duration > 0
                 if total_seconds > 0:
                     # 2.9.1.1 Enable Stop-Date
                     if stop is None:
-                        self._stopDateTimeCombo.ActivateValue()
+                        self._stop_date_time_combo.ActivateValue()
                     # 2.9.1.2 Adj Start-Date (start = stop - duration)
                     if stop is not None and duration is not None:
-                        self._startDateTimeCombo.ActivateValue(stop - duration)
+                        self._start_date_time_combo.ActivateValue(
+                            stop - duration
+                        )
                 # 2.9.2 If Duration = 0, Then disable Stop-Date
                 # (already handled in 2.6 above)
 
@@ -4058,57 +4582,62 @@ class EffortEditBook(Page):
             # 2.11 If Duration > 0, Then Autoheal, Thus
             elif total_seconds > 0:
                 # 2.11.1 Enable Stop-Date [0.1, 0.2]
-                if sourceField != 'stop' and stop is None:
-                    self._stopDateTimeCombo.ActivateValue()
+                if source_field != "stop" and stop is None:
+                    self._stop_date_time_combo.ActivateValue()
                 # 2.11.2 Adj Start-Date [0.1, 0.2] (start = stop - duration)
-                if sourceField != 'start' and stop is not None and duration is not None:
-                    self._startDateTimeCombo.ActivateValue(stop - duration)
+                if (
+                    source_field != "start"
+                    and stop is not None
+                    and duration is not None
+                ):
+                    self._start_date_time_combo.ActivateValue(stop - duration)
             # 2.12 If Duration < 0, Then Negative Durations permitted
 
-        elif self._effortEntryMode == 2:  # 3. If Mode Implicit
+        elif self._effort_entry_mode == 2:  # 3. If Mode Implicit
             # 3.3 Set Presets dropdown disabled [Ref1]
             # 3.4 Set Start-Date editable
-            self._startDateTimeCombo.SetEditable()
-            self._startFromLastEffortButton.Enable(
-                self._effortList.maxDateTime() is not None
+            self._start_date_time_combo.SetEditable()
+            self._start_from_last_effort_button.Enable(
+                self._effort_list.maxDateTime() is not None
             )
 
             # 3.5 If Stop-Date does not exist, Disable Duration
             if stop is None:
-                self._effortDurationCtrl.Enable(False)
-                self._effortDurationCtrl.SetDuration(date.TimeDelta())
+                self._effort_duration_ctrl.Enable(False)
+                self._effort_duration_ctrl.SetDuration(date.TimeDelta())
 
             # 3.6 If Stop-Date exists
             elif stop is not None:
                 # 3.6.1 Enable Duration (Read-Only)
-                self._effortDurationCtrl.Enable(True)
-                self._effortDurationCtrl.SetReadOnly(True)
+                self._effort_duration_ctrl.Enable(True)
+                self._effort_duration_ctrl.SetReadOnly(True)
                 # 3.6.2 Adj Duration (duration = stop - start)
                 # 3.6.3 Negative Durations permitted
                 if start is not None and stop is not None:
-                    self._effortDurationCtrl.SetDuration(stop - start)
-    
+                    self._effort_duration_ctrl.SetDuration(stop - start)
 
         self.__update_invalid_period_message()
-        self.__updateFieldStates()
+        self.__update_field_states()
 
-    def __updateFieldStates(self):
+    def __update_field_states(self):
         """See UI Field States table in DURATION_CALCULATIONS.md.
         Currently only implements Time Spent and Presets dropdown."""
         # Presets: disabled in implicit, enabled otherwise [Ref1]
-        if self._effortEntryMode == 2:  # Implicit
-            self._effortDurationPresetsChoice.Enable(False)
+        if self._effort_entry_mode == 2:  # Implicit
+            self._effort_duration_presets_choice.Enable(False)
         else:
-            self._effortDurationPresetsChoice.Enable(True)
+            self._effort_duration_presets_choice.Enable(True)
         # Preset auto-align
-        self.__updateEffortPresetSelection()
+        self.__update_effort_preset_selection()
         # Time Spent
-        self.__updateTimeSpentDisplay()
+        self.__update_time_spent_display()
 
-    def __populateEffortDurationPresets(self):
+    def __populate_effort_duration_presets(self):
         """Populate the effort duration presets dropdown from settings."""
-        self._effortDurationPresetsChoice.Clear()
-        self._effortDurationPresetsChoice.Append(_("Presets..."), None)  # Placeholder
+        self._effort_duration_presets_choice.Clear()
+        self._effort_duration_presets_choice.Append(
+            _("Presets..."), None
+        )  # Placeholder
 
         presets_str = self._settings.get("feature", "effort_duration_presets")
         if presets_str:
@@ -4122,14 +4651,18 @@ class EffortEditBook(Page):
                     pass
 
             for total_seconds in sorted(presets):
-                label = self.__formatEffortDurationPreset(total_seconds)
-                self._effortDurationPresetsChoice.Append(label, total_seconds)
+                label = self.__format_effort_duration_preset(total_seconds)
+                self._effort_duration_presets_choice.Append(
+                    label, total_seconds
+                )
 
-        self._effortDurationPresetsChoice.Append(_("Reset to zero"), 0)  # Reset option (last)
+        self._effort_duration_presets_choice.Append(
+            _("Reset to zero"), 0
+        )  # Reset option (last)
 
-        self._effortDurationPresetsChoice.SetSelection(0)
+        self._effort_duration_presets_choice.SetSelection(0)
 
-    def __formatEffortDurationPreset(self, total_seconds):
+    def __format_effort_duration_preset(self, total_seconds):
         """Format seconds as a readable duration string for effort presets."""
         hours = total_seconds // 3600
         minutes = (total_seconds % 3600) // 60
@@ -4156,115 +4689,134 @@ class EffortEditBook(Page):
             return _("0 secs")
         return " ".join(parts)
 
-    def __onEffortDurationDomainChanged(self, newValue, sender):
+    def __on_effort_duration_domain_changed(self, newValue, sender):
         """Domain duration changed — update preset dropdown to match."""
         if sender in self.items:
-            self.__updateEffortPresetSelection()
+            self.__update_effort_preset_selection()
 
-    def __updateEffortPresetSelection(self):
+    def __update_effort_preset_selection(self):
         """Update preset dropdown to match current duration value."""
-        if not hasattr(self, '_effortDurationCtrl'):
+        if not hasattr(self, "_effort_duration_ctrl"):
             return
 
-        duration = self._effortDurationCtrl.GetDuration()
+        duration = self._effort_duration_ctrl.GetDuration()
         current_seconds = int(duration.total_seconds())
 
         # Search for matching preset (start at 1 to skip placeholder, stop before last "Reset to zero")
-        for i in range(1, self._effortDurationPresetsChoice.GetCount() - 1):
-            preset_seconds = self._effortDurationPresetsChoice.GetClientData(i)
+        for i in range(1, self._effort_duration_presets_choice.GetCount() - 1):
+            preset_seconds = (
+                self._effort_duration_presets_choice.GetClientData(i)
+            )
             if preset_seconds == current_seconds:
-                self._effortDurationPresetsChoice.SetSelection(i)
+                self._effort_duration_presets_choice.SetSelection(i)
                 return
 
         # No match - reset to placeholder "Presets..."
-        self._effortDurationPresetsChoice.SetSelection(0)
+        self._effort_duration_presets_choice.SetSelection(0)
 
-    def __onEffortDurationPresetSelected(self, event):
+    def __on_effort_duration_preset_selected(self, event):
         """Handle selection of a duration preset.
 
         Presets route through duration change — set duration via command,
-        then let __syncEffortState handle all derived adjustments.
+        then let __sync_effort_state handle all derived adjustments.
         """
-        idx = self._effortDurationPresetsChoice.GetSelection()
+        idx = self._effort_duration_presets_choice.GetSelection()
         if idx == 0:  # Placeholder selected
             return
 
-        total_seconds = self._effortDurationPresetsChoice.GetClientData(idx)
+        total_seconds = self._effort_duration_presets_choice.GetClientData(idx)
         if total_seconds is None:
             return
 
         # SetDuration → EVT_VALUE_CHANGED → AttributeSync → command → pubsub → preset update
-        self._effortDurationCtrl.SetDuration(date.TimeDelta(seconds=total_seconds))
+        self._effort_duration_ctrl.SetDuration(
+            date.TimeDelta(seconds=total_seconds)
+        )
 
-    def __onEffortPresetsConfigChanged(self, event=None):
+    def __on_effort_presets_config_changed(self, event=None):
         """Handle changes to effort preset configuration."""
-        self.__populateEffortDurationPresets()
+        self.__populate_effort_duration_presets()
 
-    def __updateTimeSpentDisplay(self):
-        """Enable/disable Time Spent and start/stop timer.
+    def __update_time_spent_display(self):
+        """Enable/disable Time Spent and start/stop its clock.
 
-        Activated when tracking (no Stop-Date), deactivated when Stop-Date exists.
-        See DURATION_CALCULATIONS.md "Time Spent" section.
+        Activated when tracking (no Stop-Date), deactivated when
+        Stop-Date exists. See DURATION_CALCULATIONS.md "Time Spent"
+        section.
         """
-        if not hasattr(self, '_timeSpentCtrl'):
+        if not hasattr(self, "_time_spent_ctrl"):
             return
 
-        stop = self._stopDateTimeCombo.GetDateTime()
+        stop = self._stop_date_time_combo.GetDateTime()
         if stop is not None:
-            # Stop exists — deactivate time spent
-            self._timeSpentCtrl.Enable(False)
-            self.__stopTimeSpentTimer()
+            # Stop exists - deactivate time spent
+            self._time_spent_ctrl.Enable(False)
+            self.__stop_time_spent_clock()
         else:
-            # Tracking — activate time spent (read-only)
-            self._timeSpentCtrl.Enable(True)
-            self._timeSpentCtrl.SetReadOnly(True)
-            self.__startTimeSpentTimer()
+            # Tracking - activate time spent (read-only)
+            self._time_spent_ctrl.Enable(True)
+            self._time_spent_ctrl.SetReadOnly(True)
+            self.__start_time_spent_clock()
 
-        self.__refreshTimeSpentValue()
+        self.__refresh_time_spent_value()
 
-    def __refreshTimeSpentValue(self):
+    def __refresh_time_spent_value(self):
         """Calculate and display Time Spent value (Now - Start).
 
-        Called by timer every 1s and by __updateTimeSpentDisplay.
+        Called on every GlobalTimer tick and by
+        __update_time_spent_display.
         """
-        if not hasattr(self, '_timeSpentCtrl'):
+        if not hasattr(self, "_time_spent_ctrl"):
             return
 
-        start = self._startDateTimeCombo.GetDateTime()
+        start = self._start_date_time_combo.GetDateTime()
         if start is None:
-            self._timeSpentCtrl.SetDuration(datetime.timedelta(seconds=0))
+            self._time_spent_ctrl.SetDuration(datetime.timedelta(seconds=0))
             return
 
-        stop = self._stopDateTimeCombo.GetDateTime()
+        stop = self._stop_date_time_combo.GetDateTime()
         if stop is None:
             stop = date.DateTime.now()
 
         total_seconds = int((stop - start).total_seconds())
-        self._timeSpentCtrl.SetDuration(datetime.timedelta(seconds=total_seconds))
+        self._time_spent_ctrl.SetDuration(
+            datetime.timedelta(seconds=total_seconds)
+        )
 
-    def __onTimeSpentTimer(self, event):
-        """Timer handler — refresh value only, not enable/disable state."""
-        self.__refreshTimeSpentValue()
+    def __on_time_spent_tick(self, event):  # pylint: disable=W0613
+        """GlobalTimer tick: refresh the value only."""
+        self.__refresh_time_spent_value()
 
-    def __startTimeSpentTimer(self):
-        """Start the timer for updating time spent display."""
-        if self._timeSpentTimer is None:
-            self._timeSpentTimer = wx.Timer(self)
-            self.Bind(wx.EVT_TIMER, self.__onTimeSpentTimer, self._timeSpentTimer)
-            self._timeSpentTimer.Start(1000)
+    def __start_time_spent_clock(self):
+        """Subscribe to the GlobalTimer tick.
 
-    def __stopTimeSpentTimer(self):
-        """Stop the timer for updating time spent display."""
-        if self._timeSpentTimer is not None:
-            self._timeSpentTimer.Stop()
-            self._timeSpentTimer = None
+        This can run after close_edit_book(), when a start time commit
+        queued by the dialog's own focus loss is processed after the
+        close handler. The page's destroy handler (removeInstance)
+        removes the subscription, so it cannot outlive the page.
+        """
+        if not self._time_spent_clock_running:
+            self.registerObserver(
+                self.__on_time_spent_tick, eventType="timer.second"
+            )
+            self._time_spent_clock_running = True
+
+    def __stop_time_spent_clock(self):
+        """Unsubscribe from the GlobalTimer tick."""
+        if self._time_spent_clock_running:
+            self.removeObserver(
+                self.__on_time_spent_tick, eventType="timer.second"
+            )
+            self._time_spent_clock_running = False
 
     def __create_start_from_last_effort_button(self, parent=None):
         if parent is None:
             parent = self
-        button = wx.Button(parent, label=_("Start tracking from last stop time"))
-        self.Bind(wx.EVT_BUTTON, self.onStartFromLastEffort, button)
-        if self._effortList.maxDateTime() is None:
+        button = wx.Button(
+            parent, label=_("Start tracking from last stop time")
+        )
+        self.Bind(wx.EVT_BUTTON, self.on_start_from_last_effort, button)
+        if self._effort_list.maxDateTime() is None:
             button.Disable()
         return button
 
@@ -4272,7 +4824,7 @@ class EffortEditBook(Page):
         if parent is None:
             parent = self
         button = wx.Button(parent, label=_("Stop tracking now"))
-        self.Bind(wx.EVT_BUTTON, self.onStopNow, button)
+        self.Bind(wx.EVT_BUTTON, self.on_stop_now, button)
         return button
 
     def __create_invalid_period_message(self):
@@ -4283,50 +4835,43 @@ class EffortEditBook(Page):
         text.SetForegroundColour(wx.RED)
         return text
 
-    def onStartFromLastEffort(self, event):  # pylint: disable=W0613
-        maxDateTime = self._effortList.maxDateTime()
-        if maxDateTime is not None:
-            self._startDateTimeCombo.ActivateValue(maxDateTime)
+    def on_start_from_last_effort(self, event):  # pylint: disable=W0613
+        max_date_time = self._effort_list.maxDateTime()
+        if max_date_time is not None:
+            self._start_date_time_combo.ActivateValue(max_date_time)
 
-    def onStopNow(self, event):
+    def on_stop_now(self, event):
         # Stop only the specific effort(s) being edited, not all efforts for the task
-        self._stopDateTimeCombo.ActivateValue(datetime.datetime.now())
-
-    def onStopDateTimeChanged(self, *args, **kwargs):
-        self.onDateTimeChanged(*args, **kwargs)
-
-    def __onStopDateTimeChanged(self, new_value):
-        # The actual start date/time was not changed (the command class checks that) if
-        # if was greater than the stop date/time then, so make sure it is if everything is
-        # OK now.
-        command.EditEffortStartDateTimeCommand(
-            None, self.items, newValue=self._startDateTimeCombo.GetValue()
-        ).do()
-
-    def onDateTimeChanged(self, event):
-        event.Skip()
-        self.__update_invalid_period_message()
+        self._stop_date_time_combo.ActivateValue(datetime.datetime.now())
 
     def __update_invalid_period_message(self):
         warnings = []
         try:
             now = date.DateTime.now()
-            start_value = self._startDateTimeCombo.GetValue()
+            start_value = self._start_date_time_combo.GetValue()
             stop_value = None
-            if self._stopDateTimeCombo.IsActive():
-                stop_value = self._stopDateTimeCombo.GetValue()
-            if stop_value is not None and start_value is not None and start_value >= stop_value:
-                warnings.append(_("Warning: start date-time is after the stop date-time!"))
+            if self._stop_date_time_combo.IsActive():
+                stop_value = self._stop_date_time_combo.GetValue()
+            if (
+                stop_value is not None
+                and start_value is not None
+                and start_value >= stop_value
+            ):
+                warnings.append(
+                    _("Warning: start date-time is after the stop date-time!")
+                )
             if stop_value is not None and stop_value > now:
                 warnings.append(_("Warning: stop date-time is in the future!"))
             if start_value is not None and start_value > now:
-                warnings.append(_("Warning: start date-time is in the future!"))
+                warnings.append(
+                    _("Warning: start date-time is in the future!")
+                )
         except AttributeError:
             pass  # Entries not created yet
-        self._invalidPeriodMessage.SetLabel("  ".join(warnings))
+        self._invalid_period_message.SetLabel("  ".join(warnings))
 
-    def onEditTask(self, event):  # pylint: disable=W0613
-        task_to_edit = self._taskEntry.GetValue()
+    def on_edit_task(self, event):  # pylint: disable=W0613
+        task_to_edit = self._task_entry.GetValue()
         TaskEditor(
             None,
             [task_to_edit],
@@ -4338,8 +4883,8 @@ class EffortEditBook(Page):
     def addDescriptionEntry(self):
         # pylint: disable=W0201
         def combined_description(items):
-            distinctDescriptions = set(item.description() for item in items)
-            if len(distinctDescriptions) == 1 and distinctDescriptions.pop():
+            distinct_descriptions = set(item.description() for item in items)
+            if len(distinct_descriptions) == 1 and distinct_descriptions.pop():
                 return items[0].description()
             lines = ["[%s]" % _("Edit to change all descriptions")]
             lines.extend(
@@ -4367,9 +4912,7 @@ class EffortEditBook(Page):
         )
         # Description text box spans full width - label not needed as purpose is obvious
         self.addEntry(
-            self._descriptionEntry,
-            flags=[wx.ALL | wx.EXPAND],
-            growable=True
+            self._descriptionEntry, flags=[wx.ALL | wx.EXPAND], growable=True
         )
 
     def setFocus(self, column_name):
@@ -4383,31 +4926,41 @@ class EffortEditBook(Page):
 
     def entries(self):
         return dict(
-            firstEntry=self._startDateTimeCombo,
-            task=self._taskEntry,
-            period=self._stopDateTimeCombo,
+            firstEntry=self._start_date_time_combo,
+            task=self._task_entry,
+            period=self._stop_date_time_combo,
             description=self._descriptionEntry,
-            timeSpent=self._stopDateTimeCombo,
-            revenue=self._taskEntry,
+            timeSpent=self._stop_date_time_combo,
+            revenue=self._task_entry,
         )
 
     def close_edit_book(self):
         """Cleanup method called when dialog closes."""
         if len(self.items) == 1:
             try:
-                pub.unsubscribe(self.__onEffortDurationDomainChanged,
-                                self.items[0].durationChangedEventType())
+                pub.unsubscribe(
+                    self.__on_effort_duration_domain_changed,
+                    self.items[0].durationChangedEventType(),
+                )
             except Exception as e:
-                log_step("unsubscribe failed in %s.close_edit_book: %s" %
-                         (self.__class__.__name__, e), prefix="DEAD-OBJ")
+                log_step(
+                    "unsubscribe failed in %s.close_edit_book: %s"
+                    % (self.__class__.__name__, e),
+                    prefix="DEAD-OBJ",
+                )
             try:
-                pub.unsubscribe(self._onDomainEntryModeChanged,
-                                self.items[0].entryModeChangedEventType())
+                pub.unsubscribe(
+                    self._on_domain_entry_mode_changed,
+                    self.items[0].entryModeChangedEventType(),
+                )
             except Exception as e:
-                log_step("unsubscribe failed in %s.close_edit_book: %s" %
-                         (self.__class__.__name__, e), prefix="DEAD-OBJ")
-        # Stop the time spent timer
-        self.__stopTimeSpentTimer()
+                log_step(
+                    "unsubscribe failed in %s.close_edit_book: %s"
+                    % (self.__class__.__name__, e),
+                    prefix="DEAD-OBJ",
+                )
+        # Stop the Time Spent clock
+        self.__stop_time_spent_clock()
 
 
 class Editor(BalloonTipManager, widgets.Dialog):
@@ -4476,7 +5029,10 @@ class Editor(BalloonTipManager, widgets.Dialog):
         self.__create_ui_commands()
         self.__dimensions_tracker = (
             windowdimensionstracker.WindowGeometryTracker(
-                self, settings, self._interior.settings_section(), parent=parent
+                self,
+                settings,
+                self._interior.settings_section(),
+                parent=parent,
             )
         )
 
@@ -4498,13 +5054,21 @@ class Editor(BalloonTipManager, widgets.Dialog):
                 (wx.ACCEL_CMD, ord("Y"), wx.ID_REDO),
                 (wx.ACCEL_CMD, ord("E"), self.__new_effort_id),
                 (wx.ACCEL_CTRL, wx.WXK_TAB, self.__next_tab_id),
-                (wx.ACCEL_CTRL | wx.ACCEL_SHIFT, wx.WXK_TAB, self.__prev_tab_id),
+                (
+                    wx.ACCEL_CTRL | wx.ACCEL_SHIFT,
+                    wx.WXK_TAB,
+                    self.__prev_tab_id,
+                ),
             ]
         )
         self._interior.SetAcceleratorTable(table)
         # Bind tab navigation commands
-        self._interior.Bind(wx.EVT_MENU, self.__on_next_tab, id=self.__next_tab_id)
-        self._interior.Bind(wx.EVT_MENU, self.__on_prev_tab, id=self.__prev_tab_id)
+        self._interior.Bind(
+            wx.EVT_MENU, self.__on_next_tab, id=self.__next_tab_id
+        )
+        self._interior.Bind(
+            wx.EVT_MENU, self.__on_prev_tab, id=self.__prev_tab_id
+        )
         # pylint: disable=W0201
         self.__undo_command = uicommand.EditUndo()
         self.__redo_command = uicommand.EditRedo()
@@ -4558,8 +5122,7 @@ class Editor(BalloonTipManager, widgets.Dialog):
         self.__undo_command.removeInstance()
         self.__redo_command.unbind(self._interior, wx.ID_REDO)
         self.__redo_command.removeInstance()
-        self.__new_effort_command.unbind(
-            self._interior, self.__new_effort_id)
+        self.__new_effort_command.unbind(self._interior, self.__new_effort_id)
         self.__new_effort_command.removeInstance()
         IdProvider.put(self.__new_effort_id)
         IdProvider.put(self.__next_tab_id)
@@ -4588,8 +5151,10 @@ class Editor(BalloonTipManager, widgets.Dialog):
             if self:
                 self.Destroy()
         except RuntimeError:
-            log_step("_deferred_destroy: already dead %x" % (
-                id(self)), prefix="DEAD-OBJ")
+            log_step(
+                "_deferred_destroy: already dead %x" % (id(self)),
+                prefix="DEAD-OBJ",
+            )
 
     def on_activate(self, event):
         event.Skip()
@@ -4609,12 +5174,17 @@ class Editor(BalloonTipManager, widgets.Dialog):
         # callback executes after window destruction (e.g., closing nested dialogs)
         try:
             if not self or self.IsBeingDeleted():
-                log_step("__close_if_item_is_deleted: dialog already dead/deleting %x" %
-                         id(self), prefix="DEAD-OBJ")
+                log_step(
+                    "__close_if_item_is_deleted: dialog already "
+                    "dead/deleting %x" % id(self),
+                    prefix="DEAD-OBJ",
+                )
                 return
         except RuntimeError:
-            log_step("__close_if_item_is_deleted: C++ object deleted %x" %
-                     id(self), prefix="DEAD-OBJ")
+            log_step(
+                "__close_if_item_is_deleted: C++ object deleted %x" % id(self),
+                prefix="DEAD-OBJ",
+            )
             return
         for item in items:
             if (
@@ -4630,7 +5200,9 @@ class Editor(BalloonTipManager, widgets.Dialog):
     def __title(self):
         if len(self._items) > 1:
             # Indicate modal window for multi-item editing
-            return _("Editing Multiple %s - Modal Window") % self.item_type_plural
+            return (
+                _("Editing Multiple %s - Modal Window") % self.item_type_plural
+            )
         else:
             return self.singular_title % self._items[0].subject()
 

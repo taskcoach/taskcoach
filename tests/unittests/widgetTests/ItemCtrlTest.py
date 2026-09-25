@@ -82,7 +82,7 @@ class CtrlWithSortableColumnsTestsMixin(object):
         self.assertCurrentSortColumn(self.column1)
 
     def testShowSortColumn(self):
-        self.control.showSortColumn(self.column2)
+        self.control.show_sort_column(self.column2)
         self.assertCurrentSortColumn(self.column2)
 
 
@@ -148,7 +148,7 @@ class ListCtrlWithColumnPopupMenuTest(CtrlWithColumnsTestCase):
 
     @test.skipOnPlatform("__WXGTK__")  # Popup menu hangs the test
     def testColumnHeaderPopupMenu(self):
-        self.control.onColumnPopupMenu(DummyEvent(self.control))
+        self.control.on_column_popup_menu(DummyEvent(self.control))
 
 
 class HyperListTreeCtrlWithColumnPopupMenuTest(CtrlWithColumnsTestCase):
@@ -165,4 +165,4 @@ class HyperListTreeCtrlWithColumnPopupMenuTest(CtrlWithColumnsTestCase):
 
     @test.skipOnPlatform("__WXGTK__")  # Popup menu hangs the test
     def testColumnHeaderPopupMenu(self):
-        self.control.onColumnPopupMenu(DummyEvent(self.control))
+        self.control.on_column_popup_menu(DummyEvent(self.control))

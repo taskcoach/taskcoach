@@ -29,7 +29,7 @@ Duration calculations for Edit Task Dates and Edit Effort windows.
    functions must return immediately without entering any mode branch.
    No silent fallback to a default mode.
    - 0.5.1 __syncTaskState: if mode not in valid set → return.
-   - 0.5.2 __syncEffortState: if mode not in valid set → return.
+   - 0.5.2 __sync_effort_state: if mode not in valid set → return.
      Current gap: else branch catches None mode incorrectly.
 7. Add section 0.6: Calculation mode is always explicitly required.
    If no mode explicitly set, never default to a calculation mode.
@@ -304,7 +304,7 @@ Start: Standard mode, Duration 0, Stop-Date disabled
 
 0. See Preconditions and Global Logic section above.
    0.4 Sync-mode guard... See section above.
-       0.4.1 Flag: effort._effortSyncInProgress on domain Effort instance.
+       0.4.1 Flag: effort._effort_sync_in_progress on domain Effort instance.
 
 1. If Mode Standard
    1.1 Note: Mode changes away never come back here
@@ -385,7 +385,7 @@ References:
 ```
 
 ```
-Implements: __syncEffortState()
+Implements: __sync_effort_state()
 Called on: Every change of Start-Date, Stop-Date, Duration, or Mode dropdown.
 Note: Business logic — reads/sets domain values through commands.
       The attribute pattern (Layer 2) updates widgets automatically.
@@ -394,12 +394,15 @@ Note: Business logic — reads/sets domain values through commands.
 
 ### Time Spent
 
-Display-only field showing Now - Start. Value refreshes on a 1-second timer.
+Display-only field showing Now - Start. While the effort is tracked, the
+value refreshes on the GlobalTimer `timer.second` tick (a Publisher
+subscription, not a private `wx.Timer`; see
+[SCHEDULERS.md](SCHEDULERS.md#subscribing-to-the-tick)).
 See UI Field States table for Active/Hidden display rules.
 
 ```
-Implements: __updateTimeSpentDisplay()
-Called on: After main calc logic; value refreshed every 1s by timer while active.
+Implements: __update_time_spent_display()
+Called on: After main calc logic; value refreshed on every GlobalTimer tick while active.
 ```
 
 ### UI Field States
@@ -421,7 +424,7 @@ Key: Disabled = Field is disabled (and unchecked for Stop)
 ```
 Note: Currently only implements Time Spent and Presets dropdown fields.
       Other field states are set inline in the logic flow.
-Implements: __updateFieldStates()
+Implements: __update_field_states()
 Called on: After main calc logic, every change of Start-Date, Stop-Date, Duration, or Mode dropdown.
 ```
 
@@ -492,7 +495,7 @@ domain, the dropdown updates itself.
 - Subscribes to `plannedDurationChangedEventType()` → `__updatePresetSelection()`
 
 **Effort editor:**
-- Subscribes to `durationChangedEventType()` → `__updateEffortPresetSelection()`
+- Subscribes to `durationChangedEventType()` → `__update_effort_preset_selection()`
 
 ### Why Not a Callback?
 

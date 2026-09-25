@@ -61,5 +61,5 @@ class TreeViewerTest(test.wxTestCase):
         self.assertFalse(self.parent.isExpanded(context=self.expansionContext))
 
     def testExpandall(self):
-        self.viewer.expandAll()
+        self.viewer.expand_all()
         self.assertTrue(self.parent.isExpanded(context=self.expansionContext))

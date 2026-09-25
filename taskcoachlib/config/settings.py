@@ -147,10 +147,12 @@ class Settings(CachingConfigParser):
             summary = resourcelock.owner_summary(in_use.owner)
             if summary:
                 message += "\n\n" + _("In use by: %s") % summary
+            # No window exists yet: without STAY_ON_TOP the box can open
+            # behind the focused window, with no taskbar entry
             wx.MessageBox(
                 message,
                 _("%s: configuration locked") % meta.name,
-                style=wx.OK | wx.ICON_ERROR,
+                style=wx.OK | wx.ICON_ERROR | wx.STAY_ON_TOP,
             )
             sys.exit(1)
 
@@ -336,17 +338,21 @@ class Settings(CachingConfigParser):
 
     def set(self, section, option, value, new=False):  # pylint: disable=W0221
         if new:
-            currentValue = (
+            current_value = (
                 "a new option, so use something as current value"
                 " that is unlikely to be equal to the new value"
             )
         else:
-            currentValue = self.get(section, option)
-        if value != currentValue:
+            current_value = self.get(section, option)
+        if value != current_value:
             super().set(section, option, value)
-            patterns.Event("%s.%s" % (section, option), self, value).send()
             from taskcoachlib.config import settings2
 
+            if (section, option) == ("window", "theme"):
+                # Before notifying: listeners read the computed
+                # window.theme_is_dark right away
+                settings2.refresh_now()
+            patterns.Event("%s.%s" % (section, option), self, value).send()
             settings2.schedule_refresh()
             return True
         else:

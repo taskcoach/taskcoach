@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
-from taskcoachlib.domain import base, date
+from taskcoachlib.domain import base
 from pubsub import pub
 from . import task
 from . import tasklist
@@ -25,14 +25,14 @@ from . import tasklist
 
 class ViewFilter(tasklist.TaskListQueryMixin, base.Filter):
     def __init__(self, *args, **kwargs):
-        self.__statusesToHide = set(kwargs.pop("statusesToHide", []))
+        self.__statuses_to_hide = set(kwargs.pop("statusesToHide", []))
         self.__hide_composite_tasks = kwargs.pop("hide_composite_tasks", False)
         self.register_observers()
         super().__init__(*args, **kwargs)
 
     def register_observers(self):
-        registerObserver = patterns.Publisher().registerObserver
-        for eventType in (
+        register_observer = patterns.Publisher().registerObserver
+        for event_type in (
             task.Task.plannedStartDateTimeChangedEventType(),
             task.Task.dueDateTimeChangedEventType(),
             task.Task.actualStartDateTimeChangedEventType(),
@@ -42,22 +42,27 @@ class ViewFilter(tasklist.TaskListQueryMixin, base.Filter):
             task.Task.addChildEventType(),
             task.Task.removeChildEventType(),
         ):
-            if eventType.startswith("pubsub"):
-                pub.subscribe(self.on_task_status_change, eventType)
+            if event_type.startswith("pubsub"):
+                pub.subscribe(self.on_task_status_change, event_type)
             else:
-                registerObserver(
-                    self.on_task_status_change_deprecated, eventType=eventType
+                register_observer(
+                    self.on_task_status_change_deprecated, eventType=event_type
                 )
-        # Subscribe to global timer for midnight processing
-        pub.subscribe(self._onDateChanged, 'timer.date')
+        # Midnight processing, sent after the scheduler recomputed the
+        # task statuses for the new day
+        register_observer(self._on_date_changed, eventType="scheduler.date")
 
     def detach(self):
         super().detach()
-        patterns.Publisher().removeObserver(self.on_task_status_change_deprecated)
-        pub.unsubscribe(self._onDateChanged, 'timer.date')
+        patterns.Publisher().removeObserver(
+            self.on_task_status_change_deprecated
+        )
+        patterns.Publisher().removeObserver(
+            self._on_date_changed, eventType="scheduler.date"
+        )
 
-    def _onDateChanged(self, timestamp):
-        """Handle date change from global timer."""
+    def _on_date_changed(self, event):  # pylint: disable=W0613
+        """Handle the date change from the scheduler."""
         self.at_midnight()
 
     def at_midnight(self):
@@ -75,9 +80,9 @@ class ViewFilter(tasklist.TaskListQueryMixin, base.Filter):
 
     def hide_task_status(self, status, hide=True):
         if hide:
-            self.__statusesToHide.add(status)
+            self.__statuses_to_hide.add(status)
         else:
-            self.__statusesToHide.discard(status)
+            self.__statuses_to_hide.discard(status)
         self.reset()
 
     def hide_composite_tasks(self, hide=True):
@@ -114,32 +119,32 @@ class ViewFilter(tasklist.TaskListQueryMixin, base.Filter):
 
         # Get filter_forced items from entire filter chain (e.g., parents added
         # by CategoryFilter as ancestors of categorized children)
-        filterForced = self.getAccumulatedFilterForced()
-        if not filterForced:
+        filter_forced = self.getAccumulatedFilterForced()
+        if not filter_forced:
             return
 
         # Recursive cleanup: remove filter_forced items with no visible children.
         # We loop until no more removals because removing a parent may make its
         # grandparent an orphan too.
-        currentItems = set(self)
+        current_items = set(self)
         changed = True
         while changed:
             changed = False
-            for item in list(filterForced):
-                if item in currentItems:
+            for item in list(filter_forced):
+                if item in current_items:
                     # Check if item has any children still in the visible set
-                    hasVisibleChild = any(
-                        child in currentItems for child in item.children()
+                    has_visible_child = any(
+                        child in current_items for child in item.children()
                     )
-                    if not hasVisibleChild:
+                    if not has_visible_child:
                         # This item was only included as an ancestor and now has
                         # no visible children - remove it
-                        currentItems.discard(item)
-                        filterForced.discard(item)
+                        current_items.discard(item)
+                        filter_forced.discard(item)
                         changed = True  # Removal may create new orphans
 
         # Apply the cleanup by removing orphaned items
-        orphans = set(self) - currentItems
+        orphans = set(self) - current_items
         if orphans:
             self.removeItemsFromSelf(list(orphans), event=event)
 
@@ -150,7 +155,7 @@ class ViewFilter(tasklist.TaskListQueryMixin, base.Filter):
 
     def filter_task(self, task):  # pylint: disable=W0621
         result = True
-        if task.computedStatus() in self.__statusesToHide:
+        if task.computedStatus() in self.__statuses_to_hide:
             result = False
         elif (
             self.__hide_composite_tasks
@@ -161,6 +166,6 @@ class ViewFilter(tasklist.TaskListQueryMixin, base.Filter):
         return result
 
     def has_filter(self):
-        return len(self.__statusesToHide) != 0 or (
+        return len(self.__statuses_to_hide) != 0 or (
             self.__hide_composite_tasks and not self.tree_mode()
         )

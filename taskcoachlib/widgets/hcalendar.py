@@ -43,9 +43,9 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
     def __init__(
         self, parent, tasks, onSelect, onEdit, onCreate, popupMenu, **kwargs
     ):
-        self.__onDropURLCallback = kwargs.pop("onDropURL", None)
-        self.__onDropFilesCallback = kwargs.pop("onDropFiles", None)
-        self.__onDropMailCallback = kwargs.pop("onDropMail", None)
+        self.__on_drop_url_callback = kwargs.pop("on_drop_url", None)
+        self.__on_drop_files_callback = kwargs.pop("on_drop_files", None)
+        self.__on_drop_mail_callback = kwargs.pop("on_drop_mail", None)
         self.__taskList = tasks
         self.__onSelect = onSelect
         self.__onEdit = onEdit
@@ -59,7 +59,7 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
         super().__init__(parent, **kwargs)
         self.SetCalendarFormat(
             self.__calFormat
-        )  # This calls _Invalidate() so no need to call SetHeaderFormat
+        )  # This calls _invalidate() so no need to call SetHeaderFormat
 
         self.__tip = tooltip.SimpleToolTip(self)
         self.__dropTarget = draganddrop.DropTarget(
@@ -119,7 +119,7 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
         return len(self._coords)
 
     def RefreshAllItems(self, count):
-        self._Invalidate()
+        self._invalidate()
         self.Refresh()
 
     def RefreshItems(self, *items):
@@ -162,7 +162,7 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
         elif self.__calFormat == self.CAL_MONTHLY:
             self._start = date.Now().startOfMonth()
             self._end = date.Now().endOfMonth()
-        self._Invalidate()
+        self._invalidate()
         self.Refresh()
 
     def CalendarFormat(self):
@@ -170,7 +170,7 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
 
     def SetHeaderFormat(self, fmt):
         self.__hdrFormat = fmt
-        self._Invalidate()
+        self._invalidate()
         self.Refresh()
 
     def HeaderFormat(self):
@@ -182,6 +182,11 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
 
     def DrawNow(self):
         return self.__drawNow
+
+    def refresh_now_line(self):
+        """Redraw the "now" line, if shown (called every minute)."""
+        if self.__drawNow:
+            self.Refresh()
 
     def SetTodayColor(self, xxx_todo_changeme):
         r, g, b = xxx_todo_changeme
@@ -243,9 +248,9 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
             components.append(render.date(dateTime, human_readable=True))
         return " - ".join(components)
 
-    def _DrawNow(self, gc, h):
+    def _draw_now(self, gc, h):
         if self.__drawNow:
-            super()._DrawNow(gc, h)
+            super()._draw_now(gc, h)
 
     def GetRootEvents(self):
         return self.__adapter.get_root_items()
@@ -293,13 +298,13 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
         return task.font(recursive=True) or wx.NORMAL_FONT
 
     def OnDropURL(self, x, y, url):
-        self.__Drop(x, y, url, self.__onDropURLCallback)
+        self.__Drop(x, y, url, self.__on_drop_url_callback)
 
     def OnDropFiles(self, x, y, filenames):
-        self.__Drop(x, y, filenames, self.__onDropFilesCallback)
+        self.__Drop(x, y, filenames, self.__on_drop_files_callback)
 
     def OnDropMail(self, x, y, mail):
-        self.__Drop(x, y, filenames, self.__onDropMailCallback)
+        self.__Drop(x, y, mail, self.__on_drop_mail_callback)
 
     def __Drop(self, x, y, objects, callback):
         if callback is not None:

@@ -29,7 +29,6 @@ from .csv.writer import CSVWriter
 from .csv.reader import CSVReader
 from .todotxt import TodoTxtReader, TodoTxtWriter
 from .icalendar.writer import iCalendarWriter
-from .icalendar.ical import VCalendarParser
 from .taskfile import TaskFile, LockedTaskFile
 from .autosaver import AutoSaver
 from .autoimporterexporter import AutoImporterExporter

@@ -72,10 +72,20 @@ class EffortViewerForSpecificTasksTest(test.wxTestCase):
     def testViewerKeepsShowingOnlyEffortForSpecifiedTasksWhenSwitchingAggregation(
         self,
     ):
-        self.settings.settext(
-            self.viewer.settingsSection(), "aggregation", "week"
-        )
+        self.viewer.set_aggregation("week")
         self.assertEqual(2, len(self.viewer.presentation()))
+
+    def test_column_menu_follows_the_aggregation_when_refilled(self):
+        column_menu = gui.menu.EffortViewerColumnPopupMenu(self.viewer)
+
+        def labels():
+            # What the column header does before popping it up
+            column_menu.updateMenu()
+            return [i.GetItemLabelText() for i in column_menu.GetMenuItems()]
+
+        self.assertNotIn("Effort per weekday", labels())
+        self.viewer.set_aggregation("week")
+        self.assertIn("Effort per weekday", labels())
 
 
 class EffortViewerStatusMessageTest(test.wxTestCase):
@@ -139,18 +149,14 @@ class EffortViewerStatusMessageTest(test.wxTestCase):
         )
 
     def testStatusMessageInAggregatedMode_OneTaskNoEffort(self):
-        self.settings.settext(
-            self.viewer.settingsSection(), "aggregation", "day"
-        )
+        self.viewer.set_aggregation("day")
         self.assertStatusMessages(
             "Effort: 0 selected, 0 visible, 0 total. Time spent: 0:00:00 selected, 0:00:00 visible, 0:00:00 total",
             "Status: 0 tracking",
         )
 
     def testStatusMessageInAggregateMode_OneTaskOneEffort(self):
-        self.settings.settext(
-            self.viewer.settingsSection(), "aggregation", "day"
-        )
+        self.viewer.set_aggregation("day")
         self.task.addEffort(self.effort1)
         self.assertStatusMessages(
             "Effort: 0 selected, 2 visible, 1 total. Time spent: 0:00:00 selected, 48:00:00 visible, 24:00:00 total",
@@ -158,9 +164,7 @@ class EffortViewerStatusMessageTest(test.wxTestCase):
         )
 
     def testStatusMessageInAggregateMode_OneTaskTwoEfforts(self):
-        self.settings.settext(
-            self.viewer.settingsSection(), "aggregation", "day"
-        )
+        self.viewer.set_aggregation("day")
         self.task.addEffort(self.effort1)
         self.task.addEffort(self.effort2)
         self.assertStatusMessages(
@@ -301,9 +305,7 @@ class EffortViewerAggregationTestCase(test.wxTestCase):
     def switchAggregation(self):
         aggregations = ["details", "day", "week", "month"]
         aggregations.remove(self.aggregation)
-        self.settings.settext(
-            self.viewer.settingsSection(), "aggregation", aggregations[0]
-        )
+        self.viewer.set_aggregation(aggregations[0])
 
 
 class EffortViewerAggregationRoundingTestCase(test.wxTestCase):
@@ -551,9 +553,7 @@ class CommonTestsMixin(object):
 
     def testSwitchAggregation(self):
         self.switchAggregation()
-        self.settings.settext(
-            self.viewer.settingsSection(), "aggregation", self.aggregation
-        )
+        self.viewer.set_aggregation(self.aggregation)
         self.assertEqual(self.expectedNumberOfItems, self.viewer.size())
 
     def testAggregationIsSavedInSettings(self):
@@ -604,18 +604,17 @@ class CommonTestsMixin(object):
             self.assertEqual(self.task2, newEffort.task())
 
     def testColumnUICommands(self):
-        expectedLength = dict(details=6, day=8, week=9, month=8)[
+        expected_length = dict(details=7, day=9, week=10, month=9)[
             self.aggregation
         ]
         self.assertEqual(
-            expectedLength, len(self.viewer.getColumnUICommands())
+            expected_length, len(self.viewer.getColumnUICommands())
         )
 
     def testTotalTimeSpentColumnNotInDetailsMode(self):
         columns = [
-            command.setting
+            getattr(command, "setting", None)
             for command in self.viewer.getColumnUICommands()
-            if command
         ]
         self.assertEqual(
             self.aggregation != "details", "totalTimeSpent" in columns
@@ -623,9 +622,8 @@ class CommonTestsMixin(object):
 
     def testTotalRevenueColumnNotInDetailsMode(self):
         columns = [
-            command.setting
+            getattr(command, "setting", None)
             for command in self.viewer.getColumnUICommands()
-            if command
         ]
         self.assertEqual(
             self.aggregation != "details", "totalRevenue" in columns
@@ -654,7 +652,7 @@ class CommonTestsMixin(object):
         self.viewer.showColumnByName("totalTimeSpent", True)
         self.switchAggregation()
         self.assertEqual(
-            self.viewer.isShowingAggregatedEffort(),
+            self.viewer.is_showing_aggregated_effort(),
             self.viewer.isVisibleColumnByName("totalTimeSpent"),
         )
 
@@ -662,33 +660,33 @@ class CommonTestsMixin(object):
         self.viewer.showColumnByName("totalRevenue", True)
         self.switchAggregation()
         self.assertEqual(
-            self.viewer.isShowingAggregatedEffort(),
+            self.viewer.is_showing_aggregated_effort(),
             self.viewer.isVisibleColumnByName("totalRevenue"),
         )
 
     def testActiveEffort(self):
         self.task2.efforts()[0].setStop(date.DateTime.max)  # Make active
-        self.viewer.secondRefresher.onEverySecond()  # Simulate clock firing
+        self.viewer.second_refresher.on_every_second()  # Simulate clock firing
         expectedNrOfTrackedItems = 1 if self.aggregation == "details" else 2
         self.assertEqual(
             expectedNrOfTrackedItems,
-            len(self.viewer.secondRefresher.currentlyTrackedItems()),
+            len(self.viewer.second_refresher.currently_tracked_items()),
         )
 
     def testActiveEffortAfterSwitch(self):
         self.task2.efforts()[0].setStop(date.DateTime.max)  # Make active
         self.switchAggregation()
-        self.viewer.secondRefresher.onEverySecond()  # Simulate clock firing
+        self.viewer.second_refresher.on_every_second()  # Simulate clock firing
         expectedNrOfTrackedItems = 2 if self.aggregation == "details" else 1
         self.assertEqual(
             expectedNrOfTrackedItems,
-            len(self.viewer.secondRefresher.currentlyTrackedItems()),
+            len(self.viewer.second_refresher.currently_tracked_items()),
         )
 
     def testIsShowingAggregatedEffort(self):
         isAggregating = self.aggregation != "details"
         self.assertEqual(
-            isAggregating, self.viewer.isShowingAggregatedEffort()
+            isAggregating, self.viewer.is_showing_aggregated_effort()
         )
 
     def testStopEffortTracking(self):

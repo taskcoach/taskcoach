@@ -43,7 +43,7 @@
      via `event.addSource` on parent
 
    **Scheduler approach:** store `recursivePriority` as a volatile
-   Attribute on each task, recomputed by `ComputeStyles._computeForObject()`.
+   Attribute on each task, recomputed by `MasterScheduler._process_task()`.
    The Attribute equality check suppresses notifications when the value
    hasn't changed. Removes cross-concern coupling from completion callback.
    Same 1-second staleness tradeoff as stored status.
@@ -68,7 +68,7 @@ Task Coach uses scheduled/timed events for various features. This document descr
 | Responsibility | Mechanism | Example |
 |----------------|-----------|---------|
 | **TIME-based updates** | Scheduler (polling) | Status recomputation, reminders, styles |
-| **DATA-based cascades** | Events | Parent/child auto-completion |
+| **DATA-based cascades** | Events | Parent/child auto-completion; an open child reopens its completed parent |
 
 **Why this matters:**
 
@@ -89,26 +89,20 @@ The system uses a `GlobalTimer` that fires every second, and a `MasterScheduler`
 
 **File:** `taskcoachlib/gui/scheduler.py`
 
-- `GlobalTimer`: 1-second timer, publishes `timer.second`, `timer.minute`, `timer.date`
-- `MasterScheduler`: Subscribes to `timer.second`, emits `scheduler.dateChange.uiRefresh`, `scheduler.minuteChange.uiRefresh`
+- `GlobalTimer`: 1-second timer, publishes `timer.second`
+  as Publisher events (`patterns.Event`, source is the GlobalTimer, value is
+  the tick timestamp), not pypubsub messages. See
+  [PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md).
+- `MasterScheduler`: Subscribes to `timer.second`; after its processing, sends the Publisher events `scheduler.date` and `scheduler.minute`
 
 ### Event Flow
 
 ```
-Every 1 second (_onTick):
+Every 1 second (_on_tick):
     │
     ├── now = DateTime.now()              # ONCE per tick
     │
-    ├── currentDate = (year, month, day)  # Extract from now
-    ├── currentMinute = (hour, minute)    # Extract from now
-    │
-    ├── if lastDate != currentDate:       # First run or date change
-    │   └── pub.sendMessage('timer.date', timestamp=now)
-    │
-    ├── if lastMinute != currentMinute:   # Minute changed
-    │   └── pub.sendMessage('timer.minute', timestamp=now)
-    │
-    └── pub.sendMessage('timer.second', timestamp=now)  # Always
+    └── patterns.Event('timer.second', self, now).send()
 ```
 
 ### Event Subscribers
@@ -116,12 +110,30 @@ Every 1 second (_onTick):
 | Event | Subscriber | Purpose |
 |-------|------------|---------|
 | `timer.second` | `MasterScheduler` | All per-second data processing |
-| `timer.date` | `TaskFilter` | Re-filter tasks at midnight |
-| `scheduler.dateChange.uiRefresh` | `CalendarViewer` | Redraw calendar after midnight processing |
-| `scheduler.minuteChange.uiRefresh` | `MinuteRefresher` | Update "time left" displays |
+| `scheduler.date` | `ViewFilter` | Re-filter tasks at midnight, with the new day's statuses |
+| `scheduler.date` | `CalendarViewer`, `HierarchicalCalendarViewer` | Move to the new day |
+| `scheduler.date` | Viewers with columns (`ViewerWithColumns`) | Redraw relative dates ("Today", "Yesterday") |
+| `scheduler.minute` | `MinuteRefresher` | Update "time left" displays |
+| `scheduler.minute` | `CalendarViewer`, `HierarchicalCalendarViewer` | Move the "now" line |
 | `task.reminder.trigger` | `ReminderController` | Show reminder dialog (see [REMINDERS.md](REMINDERS.md)) |
-| `timer.second` | `TaskbarIcon` | Update tracking tooltip (local UI) |
-| `timer.second` | `Editor` | Update budget/revenue while tracking (local UI) |
+| `timer.second` | `TaskBarIcon` | Blink the icon while tracking, if enabled (local UI) |
+| `timer.second` | `BudgetPage` (task editor) | Update budget/revenue while tracking (local UI) |
+| `timer.second` | `EffortEditBook` (effort editor) | Update Time Spent while tracking (local UI) |
+| `timer.second` | `SecondRefresher` (task and effort viewers) | Refresh tracked items while tracking (local UI) |
+| `timer.second` | `AutoSaver` | Retry a failed autosave after a minute (only while one is pending) |
+| `timer.second` | `IdleController` | Poll idle time while tracking with the idle notice enabled (see [IDLE.md](IDLE.md)) |
+| `timer.second` | `MainWindow` | Catch system light/dark switches wx does not report (see [SETTINGS.md](SETTINGS.md#system-theme-changes)) |
+
+All of these are Publisher events. Date and minute subscribers use
+the `scheduler.*` events, which come after that tick's processing. The
+first tick sends `scheduler.date` only when the day differs from the
+one the viewers were drawn on (Task Coach started just before
+midnight).
+`SecondRefresher` asks its viewer `needs_second_refresh()` on each
+tick: the task viewer only when a time spent, budget left or revenue
+column is shown, the hierarchical calendar never (its "now" line moves
+on `scheduler.minute`). The calendars draw their "now" line on
+`scheduler.minute` instead of a timer of their own.
 
 ### Component Implementation
 
@@ -129,19 +141,54 @@ Every 1 second (_onTick):
 |-----------|------|-------------------|
 | MasterScheduler | `gui/scheduler.py` | Subscribes to `timer.second`, processes all tasks and styles |
 | Reminder Controller | `gui/remindercontroller.py` | Subscribes to `task.reminder.trigger` event (see [REMINDERS.md](REMINDERS.md)) |
-| Task Filter | `domain/task/filter.py` | Subscribes to `timer.date`, calls `reset()` |
-| Calendar Viewer | `gui/viewer/task.py` | Subscribes to `scheduler.dateChange.uiRefresh` |
-| Minute Refresher | `gui/viewer/refresher.py` | Subscribes to `scheduler.minuteChange.uiRefresh` |
-| Second Refresher | `gui/viewer/refresher.py` | Uses own `wx.Timer` (per-viewer tracking) |
+| View Filter | `domain/task/filter.py` | `ViewFilter` subscribes to `scheduler.date`, calls `reset()` |
+| Calendar Viewers | `gui/viewer/task.py` | Subscribe to `scheduler.date` and `scheduler.minute` |
+| Minute Refresher | `gui/viewer/refresher.py` | Subscribes to `scheduler.minute` |
+| Second Refresher | `gui/viewer/refresher.py` | Subscribes to `timer.second` while the viewer shows tracked items |
 | Taskbar Icon | `gui/taskbaricon.py` | Subscribes to `timer.second` (local UI update) |
-| Task Editor | `gui/dialog/editor.py` | Subscribes to `timer.second` when tracking (local UI) |
+| Task Editor | `gui/dialog/editor.py` | `BudgetPage` subscribes to `timer.second` when tracking (local UI) |
+| Effort Editor | `gui/dialog/editor.py` | `EffortEditBook` subscribes to `timer.second` while the effort is tracked (Time Spent) |
+| Idle Controller | `powermgt/idle.py` | `IdleNotifier` (its base) subscribes to `timer.second` while tracking with the idle notice enabled |
+| Main Window | `gui/mainwindow.py` | Subscribes to `timer.second` to check the system light/dark state |
+
+### Subscribing to the Tick
+
+Per-second UI updates subscribe to the GlobalTimer tick; they do not
+create their own `wx.Timer`:
+
+```python
+self.registerObserver(self._on_timer_second, eventType="timer.second")
+
+def _on_timer_second(self, event):
+    timestamp = event.value()
+```
+
+A private `wx.Timer` owned by a window keeps a raw C++ pointer to that
+window. If it is still running when the window is destroyed, the next
+tick is dispatched into freed memory and the app crashes natively, with
+no Python traceback. The effort editor's Time Spent display did exactly
+that when the start time of a tracked effort was edited and the dialog
+closed with the title bar X (see [CRASH_GUARD.md](CRASH_GUARD.md)). A
+Publisher subscription is held by weak reference and dispatched in
+Python. Subscriptions made with `patterns.Observer.registerObserver`
+are removed by `removeInstance()`; editor pages call it on
+`EVT_WINDOW_DESTROY`, so a subscription cannot outlive its page even
+when it is made after the close handler ran. `MasterScheduler`,
+`ViewFilter` and `IdleNotifier` register on the Publisher directly and
+unsubscribe in `shutdown()`, `detach()` and `pause()`.
+
+A handler that raises is logged and stays subscribed, so the next tick
+runs it again; only handlers of deleted wx objects, or whose own code
+touched one, are removed (see
+[PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md)). While Task Coach is
+quitting the Publisher dispatches nothing; a cancelled quit resumes it.
 
 ---
 
 ## MasterScheduler Processing Flow
 
 ```
-Every second (_onSecond):
+Every second (_on_second):
   Skip if no task file loaded
 
   Detect date/minute changes
@@ -163,10 +210,20 @@ Every second (_onSecond):
     computeStyles(note.attachments)
 
   if dateChanged:
-    emit 'scheduler.dateChange.uiRefresh'
+    send 'scheduler.date'
   if minuteChanged:
-    emit 'scheduler.minuteChange.uiRefresh'
+    send 'scheduler.minute'
 ```
+
+Each category, task and note, and each of the two events, runs
+isolated (`_run_isolated`): these steps notify listeners (viewers,
+reminder dialogs), and one failing listener must not skip the rest of
+the tick or keep the date and minute events from being sent. The
+Publisher runs each of their subscribers isolated; pypubsub messages
+sent during the processing (status changes, reminder triggers) still
+stop at their first failing listener. A failure is logged with the
+`[SCHEDULER]` prefix, with its traceback the first time and then a
+count every 100 repeats.
 
 > **Key Principle:** MasterScheduler handles TIME-based changes (status updates, reminders, styles). Auto-completion cascades are EVENT-driven via `_onCompletionDateTimeChanged` to respect user intent when manually unchecking tasks.
 
@@ -174,18 +231,18 @@ Every second (_onSecond):
 
 ## Optimizations
 
-**Reference:** `scheduler.py:GlobalTimer._onTick()`, `MasterScheduler._onSecond()`
+**Reference:** `scheduler.py:GlobalTimer._on_tick()`, `MasterScheduler._on_second()`
 
 1. **Single Timestamp Per Tick**: `DateTime.now()` called once, passed to all subscribers
-2. **Tuple Comparison**: Date/minute stored as tuples for fast integer comparison
-3. **First-Run Detection**: `_lastDate = None` triggers date event on first tick
+2. **Tuple Comparison**: MasterScheduler stores date/minute as tuples for fast integer comparison
+3. **First-Tick Detection**: `_last_date = None` runs the daily task processing on the first tick
 4. **Timestamp Reuse**: Subscribers receive timestamp parameter, no extra `now()` calls
 
 ---
 
 ## Performance Considerations
 
-If `_onSecond()` ever freezes the UI with very large task files:
+If `_on_second()` ever freezes the UI with very large task files:
 
 1. **Profile first** - Don't optimize blindly. Identify actual bottlenecks before making changes.
 

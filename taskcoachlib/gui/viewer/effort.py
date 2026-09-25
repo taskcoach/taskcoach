@@ -48,20 +48,21 @@ class EffortViewer(
 
     def __init__(self, parent, taskFile, settings, *args, **kwargs):
         kwargs.setdefault("settingsSection", "effortviewer")
-        self.__tasksToShowEffortFor = kwargs.pop("tasksToShowEffortFor", [])
+        self.__tasks_to_show_effort_for = kwargs.pop(
+            "tasksToShowEffortFor", []
+        )
         self.aggregation = (
             "details"  # Temporary value, will be properly set below
         )
-        self.__hiddenWeekdayColumns = []
-        self.__hiddenTotalColumns = []
-        self.__columnUICommands = None
-        self.__domainObjectsToView = None
+        self.__hidden_weekday_columns = []
+        self.__hidden_total_columns = []
+        self.__domain_objects_to_view = None
         super().__init__(parent, taskFile, settings, *args, **kwargs)
-        self.secondRefresher = refresher.SecondRefresher(
+        self.second_refresher = refresher.SecondRefresher(
             self, effort.Effort.trackingChangedEventType()
         )
         self.aggregation = settings.get(self.settingsSection(), "aggregation")
-        self.__initModeToolBarUICommands()
+        self.__init_mode_toolbar_ui_commands()
         self.registerObserver(
             self.onAttributeChanged_Deprecated,
             eventType=effort.Effort.appearanceChangedEventType(),
@@ -105,17 +106,17 @@ class EffortViewer(
         return columns
 
     def tasksToShowEffortFor(self):
-        return self.__tasksToShowEffortFor
+        return self.__tasks_to_show_effort_for
 
     def on_rounding_changed(self, value):  # pylint: disable=W0613
-        self.__initRoundingToolBarUICommands()
+        self.__init_rounding_toolbar_ui_commands()
         self.refresh()
 
-    def __initModeToolBarUICommands(self):
+    def __init_mode_toolbar_ui_commands(self):
         self.aggregationUICommand.set_choice(self.aggregation)
-        self.__initRoundingToolBarUICommands()
+        self.__init_rounding_toolbar_ui_commands()
 
-    def __initRoundingToolBarUICommands(self):
+    def __init_rounding_toolbar_ui_commands(self):
         aggregated = self.is_showing_aggregated_effort()
         rounding = self.__round_precision() if aggregated else 0
         self.roundingUICommand.set_choice(rounding)
@@ -130,7 +131,7 @@ class EffortViewer(
         )
 
     def domainObjectsToView(self):
-        if self.__domainObjectsToView is None:
+        if self.__domain_objects_to_view is None:
             if self.__displayingNewTasks():
                 tasks = self.tasksToShowEffortFor()
             else:
@@ -138,8 +139,8 @@ class EffortViewer(
                     self.taskFile.tasks(),
                     selectedItems=self.tasksToShowEffortFor(),
                 )
-            self.__domainObjectsToView = tasks
-        return self.__domainObjectsToView
+            self.__domain_objects_to_view = tasks
+        return self.__domain_objects_to_view
 
     def __displayingNewTasks(self):
         return any(
@@ -151,7 +152,7 @@ class EffortViewer(
 
     def detach(self):
         super().detach()
-        self.secondRefresher.removeInstance()
+        self.second_refresher.removeInstance()
 
     def is_showing_effort(self):
         return True
@@ -166,11 +167,14 @@ class EffortViewer(
         editor), pasted efforts are added to that task.
         """
         from taskcoachlib.command.clipboard import Clipboard
+
         items, source = Clipboard().get()
         tasks = self.tasksToShowEffortFor()
         if tasks:
             # Paste to the specific task this viewer is showing efforts for
-            target_task = list(tasks)[0] if hasattr(tasks, '__iter__') else tasks
+            target_task = (
+                list(tasks)[0] if hasattr(tasks, "__iter__") else tasks
+            )
             copies = [item.copy() for item in items]
             return command.AddEffortCommand(
                 None, [target_task], efforts=copies
@@ -187,37 +191,32 @@ class EffortViewer(
         )
         self.aggregation = aggregation
         self._refresh()
-        patterns.Event(
-            self.view_settings_changed_event_type(), self
-        ).send()
+        patterns.Event(self.view_settings_changed_event_type(), self).send()
 
     def _refresh(self, clear=False):
         if clear:
-            self.__domainObjectsToView = None
+            self.__domain_objects_to_view = None
         self.set_presentation(
             self.create_sorter(self.createFilter(self.domainObjectsToView()))
         )
-        self.secondRefresher.updatePresentation()
+        self.second_refresher.update_presentation()
         self.register_presentation_observers()
-        # Invalidate the UICommands used for the column popup menu:
-        self.__columnUICommands = None
         # Clear the selection to remove the cached selection
         self.clear_selection()
         # If the widget is auto-resizing columns, turn it off temporarily to
         # make removing/adding columns faster
-        autoResizing = self.widget.IsAutoResizing()
-        if autoResizing:
+        auto_resizing = self.widget.IsAutoResizing()
+        if auto_resizing:
             self.widget.ToggleAutoResizing(False)
         # Refresh first so that the list control doesn't think there are more
         # efforts than there really are when switching from aggregate mode to
         # detail mode.
         self.refresh()
-        self._showWeekdayColumns(show=self.aggregation == "week")
-        self._showTotalColumns(show=self.aggregation != "details")
-        if autoResizing:
+        self._show_weekday_columns(show=self.aggregation == "week")
+        self._show_total_columns(show=self.aggregation != "details")
+        if auto_resizing:
             self.widget.ToggleAutoResizing(True)
-        self.__initRoundingToolBarUICommands()
-        pub.sendMessage("effortviewer.aggregation")
+        self.__init_rounding_toolbar_ui_commands()
 
     def is_showing_aggregated_effort(self):
         return self.aggregation != "details"
@@ -449,12 +448,12 @@ class EffortViewer(
             ]
         )
 
-    def _showWeekdayColumns(self, show=True):
+    def _show_weekday_columns(self, show=True):
         if show:
-            columnsToShow = self.__hiddenWeekdayColumns[:]
-            self.__hiddenWeekdayColumns = []
+            columns_to_show = self.__hidden_weekday_columns[:]
+            self.__hidden_weekday_columns = []
         else:
-            self.__hiddenWeekdayColumns = columnsToShow = [
+            self.__hidden_weekday_columns = columns_to_show = [
                 column
                 for column in self.visibleColumns()
                 if column.name()
@@ -468,20 +467,20 @@ class EffortViewer(
                     "sunday",
                 ]
             ]
-        for column in columnsToShow:
+        for column in columns_to_show:
             self.showColumn(column, show, refresh=False)
 
-    def _showTotalColumns(self, show=True):
+    def _show_total_columns(self, show=True):
         if show:
-            columnsToShow = self.__hiddenTotalColumns[:]
-            self.__hiddenTotalColumns = []
+            columns_to_show = self.__hidden_total_columns[:]
+            self.__hidden_total_columns = []
         else:
-            self.__hiddenTotalColumns = columnsToShow = [
+            self.__hidden_total_columns = columns_to_show = [
                 column
                 for column in self.visibleColumns()
                 if column.name().startswith("total")
             ]
-        for column in columnsToShow:
+        for column in columns_to_show:
             self.showColumn(column, show, refresh=False)
 
     def getColumnUICommands(self):
@@ -640,7 +639,10 @@ class EffortViewer(
         return True
 
     def getModeUICommands(self):
-        return [uicommand.DisabledLabel(_("Effort aggregation")), uicommand.Separator()] + [
+        return [
+            uicommand.DisabledLabel(_("Effort aggregation")),
+            uicommand.Separator(),
+        ] + [
             uicommand.EffortViewerAggregationOption(
                 menu_text=menu_text,
                 value=value,
@@ -774,9 +776,7 @@ class EffortViewer(
         """Return whether the effort has the same period as the previous
         effort record."""
         index = self.presentation().index(an_effort)
-        previous_effort = (
-            index > 0 and self.presentation()[index - 1] or None
-        )
+        previous_effort = index > 0 and self.presentation()[index - 1] or None
         if not previous_effort:
             return False
         if an_effort.getStart() != previous_effort.getStart():

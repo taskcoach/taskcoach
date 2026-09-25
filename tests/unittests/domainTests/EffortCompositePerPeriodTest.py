@@ -59,7 +59,7 @@ class CompositeEffortPerPeriodTest(test.TestCase):
         self.assertEqual(0, len(self.composite))
 
     def testInitialDuration(self):
-        self.assertEqual(date.TimeDelta(), self.composite.duration())
+        self.assertEqual(date.TimeDelta(), self.composite.totalTimeSpent())
 
     def testInitialTrackingState(self):
         self.assertFalse(self.composite.isBeingTracked())
@@ -76,7 +76,9 @@ class CompositeEffortPerPeriodTest(test.TestCase):
 
     def testDurationForSingleEffort(self):
         self.task.addEffort(self.effort1)
-        self.assertEqual(self.effort1.duration(), self.composite.duration())
+        self.assertEqual(
+            self.effort1.timeSpent(), self.composite.totalTimeSpent()
+        )
 
     def testAddEffortOutsidePeriodToTask(self):
         effortOutsidePeriod = effort.Effort(
@@ -85,7 +87,7 @@ class CompositeEffortPerPeriodTest(test.TestCase):
             date.DateTime(2004, 1, 11, 14, 0, 0),
         )
         self.task.addEffort(effortOutsidePeriod)
-        self.assertEqual(date.TimeDelta(), self.composite.duration())
+        self.assertEqual(date.TimeDelta(), self.composite.totalTimeSpent())
 
     def testAddEffortWithStartTimeEqualToStartOfPeriodToTask(self):
         effortSameStartTime = effort.Effort(
@@ -95,7 +97,7 @@ class CompositeEffortPerPeriodTest(test.TestCase):
         )
         self.task.addEffort(effortSameStartTime)
         self.assertEqual(
-            effortSameStartTime.duration(), self.composite.duration()
+            effortSameStartTime.timeSpent(), self.composite.totalTimeSpent()
         )
 
     def testAddEffortWithStartTimeEqualToEndOfPeriodToTask(self):
@@ -106,13 +108,13 @@ class CompositeEffortPerPeriodTest(test.TestCase):
         )
         self.task.addEffort(effortSameStopTime)
         self.assertEqual(
-            effortSameStopTime.duration(), self.composite.duration()
+            effortSameStopTime.timeSpent(), self.composite.totalTimeSpent()
         )
 
     def testRemoveEffortFromTask(self):
         self.task.addEffort(self.effort1)
         self.task.removeEffort(self.effort1)
-        self.assertEqual(date.TimeDelta(), self.composite.duration())
+        self.assertEqual(date.TimeDelta(), self.composite.totalTimeSpent())
 
     def testRemoveMultipleEffortsFromSamePeriodFromTask(self):
         events = []

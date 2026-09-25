@@ -322,7 +322,3 @@ class EffortAggregator(
     def __key_for_period(self, effort):
         key = self.__key_for_effort(effort)
         return key[1], key[2]
-
-    @classmethod
-    def sortEventType(class_):
-        return "this event type is not used"  # pragma: no cover

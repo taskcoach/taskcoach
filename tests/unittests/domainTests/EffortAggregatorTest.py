@@ -121,10 +121,10 @@ class CommonTestsMixin(object):
         self.task1.addEffort(self.effort1period1b)
         self.taskList.append(self.task1)
         expectedDuration = (
-            self.effort1period1a.duration() + self.effort1period1b.duration()
+            self.effort1period1a.timeSpent() + self.effort1period1b.timeSpent()
         )
         self.assertEqual(
-            expectedDuration, list(self.effortAggregator)[0].duration()
+            expectedDuration, list(self.effortAggregator)[0].totalTimeSpent()
         )
 
     def testAddTwoEffortsInDifferentPeriods(self):

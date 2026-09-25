@@ -3,7 +3,6 @@
 
 from .wxSchedulerCore import *
 import wx.lib.scrolledpanel as scrolled
-import time
 
 
 class wxScheduler(wxSchedulerCore, scrolled.ScrolledPanel):
@@ -20,9 +19,9 @@ class wxScheduler(wxSchedulerCore, scrolled.ScrolledPanel):
         self._dirty = False
         self._refreshing = False
 
+        # The "now" line is redrawn by the owner every minute (Task
+        # Coach: the calendar viewer, on its scheduler.minute event)
         self._showNow = True
-        self._refreshTimer = wx.Timer(self, wx.NewId())
-        self._refreshTimer.Start(int(1000 * (60 - (time.time() % 60))), True)
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_LEFT_DOWN, self.OnClick)
@@ -32,9 +31,6 @@ class wxScheduler(wxSchedulerCore, scrolled.ScrolledPanel):
         self.Bind(wx.EVT_LEFT_DCLICK, self.OnDClick)
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_TIMER, self.OnSizeTimer, id=timerId)
-        self.Bind(
-            wx.EVT_TIMER, self.OnRefreshTimer, id=self._refreshTimer.GetId()
-        )
         # Stop timers on window destruction to prevent crashes
         self.Bind(wx.EVT_WINDOW_DESTROY, self._OnDestroy)
 
@@ -75,17 +71,11 @@ class wxScheduler(wxSchedulerCore, scrolled.ScrolledPanel):
         finally:
             self._refreshing = False
 
-    def OnRefreshTimer(self, evt):
-        self.Refresh()
-        self._refreshTimer.Start(60000, True)
-
     def _OnDestroy(self, event):
         """Stop timers on window destruction to prevent crashes."""
         if event.GetEventObject() == self:
             if self._sizeTimer and self._sizeTimer.IsRunning():
                 self._sizeTimer.Stop()
-            if self._refreshTimer and self._refreshTimer.IsRunning():
-                self._refreshTimer.Stop()
         event.Skip()
 
     def Add(self, *args, **kwds):
@@ -149,7 +139,8 @@ class wxScheduler(wxSchedulerCore, scrolled.ScrolledPanel):
         unitX, unitY = self.GetScrollPixelsPerUnit()
 
         coords = wx.Point(
-            int(event.GetX() + (originX * unitX)), int(event.GetY() + (originY * unitY))
+            int(event.GetX() + (originX * unitX)),
+            int(event.GetY() + (originY * unitY)),
         )
 
         return coords
@@ -161,14 +152,6 @@ class wxScheduler(wxSchedulerCore, scrolled.ScrolledPanel):
 
     def SetShowNow(self, show=True):
         self._showNow = show
-
-        if show:
-            self._refreshTimer.Start(
-                int(1000 * (60 - (time.time() % 60))), True
-            )
-        else:
-            self._refreshTimer.Stop()
-
         self.Refresh()
 
     def GetShowNow(self):

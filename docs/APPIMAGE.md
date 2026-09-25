@@ -11,7 +11,7 @@ The AppImage build system creates a portable, self-contained Linux executable th
 |-----------|---------|--------|
 | Python | 3.11.x (latest from the python3.11 release tag, resolved at build time) | python-appimage (manylinux_2_28) |
 | wxPython | 4.2.5 (pinned, newest cp311 wheel in extras) | wxPython extras (Ubuntu 22.04) |
-| wxWidgets | 3.2.6 | Bundled with wxPython |
+| wxWidgets | 3.2.9 | Bundled with wxPython |
 | Image libs | libjpeg, libpng, libtiff, libjbig, libwebp | Copied from build system |
 
 The resulting AppImage runs on most Linux distributions with glibc 2.28+ (Debian Bookworm, Ubuntu 22.04+, Fedora 40+).

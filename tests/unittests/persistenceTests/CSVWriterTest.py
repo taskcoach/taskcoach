@@ -99,7 +99,7 @@ class TaskTestsMixin(object):
     def testWriteSelectionOnly_SelectedChild(self):
         child = task.Task("Child", parent=self.task)
         self.taskFile.tasks().append(child)
-        self.viewer.expandAll()
+        self.viewer.expand_all()
         self.selectItem([child])
         self.expectInCSV("Child,", selectionOnly=True)
 
@@ -383,21 +383,15 @@ class EffortWriterTest(CSVWriterTestCase):
         self.expectInCSV(",0:00:01")
 
     def testEffortPerDay(self):
-        self.settings.settext(
-            self.viewer.settingsSection(), "aggregation", "day"
-        )
+        self.viewer.set_aggregation("day")
         self.expectInCSV("Total")
 
     def testEffortPerDay_SelectionOnly_EmptySelection(self):
-        self.settings.settext(
-            self.viewer.settingsSection(), "aggregation", "day"
-        )
+        self.viewer.set_aggregation("day")
         self.expectNotInCSV("Total", selectionOnly=True)
 
     def testEffortPerDay_SelectionOnly_SelectAll(self):
-        self.settings.settext(
-            self.viewer.settingsSection(), "aggregation", "day"
-        )
+        self.viewer.set_aggregation("day")
         self.viewer.widget.select_all()
         self.viewer.updateSelection()
         self.expectInCSV("Total", selectionOnly=True)

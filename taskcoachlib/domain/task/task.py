@@ -20,13 +20,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
-from taskcoachlib.domain import date, categorizable, note, attachment, base
+from taskcoachlib.domain import date, categorizable, note, attachment
 from taskcoachlib.domain.base.attribute import Attribute
 from pubsub import pub
 from weakref import WeakSet
 from . import status
 import ast
-import weakref
 import wx
 
 
@@ -71,7 +70,7 @@ class Task(
         kwargs["categories"] = categories
         super().__init__(*args, **kwargs)
         self.__status = None  # status cache (legacy)
-        # New single-source-of-truth fields (updated by computeStatus)
+        # Single-source-of-truth fields, set by computeStoredStatus()
         self.__computed_status = None
         self.__status_text = ""
         self.__status_icon_id = ""
@@ -80,23 +79,48 @@ class Task(
             "behavior", "duesoonhours"
         )  # pylint: disable=E1101
         maxDateTime = self.maxDateTime
-        self.__dueDateTime = Attribute(dueDateTime or maxDateTime, self, self._onDueDateTimeChanged)
-        self.__plannedStartDateTime = Attribute(plannedStartDateTime or maxDateTime, self, self._onPlannedStartDateTimeChanged)
-        self.__actualStartDateTime = Attribute(actualStartDateTime or maxDateTime, self, self._onActualStartDateTimeChanged)
+        self.__dueDateTime = Attribute(
+            dueDateTime or maxDateTime, self, self._onDueDateTimeChanged
+        )
+        self.__plannedStartDateTime = Attribute(
+            plannedStartDateTime or maxDateTime,
+            self,
+            self._onPlannedStartDateTimeChanged,
+        )
+        self.__actualStartDateTime = Attribute(
+            actualStartDateTime or maxDateTime,
+            self,
+            self._onActualStartDateTimeChanged,
+        )
         if completionDateTime is None and percentageComplete == 100:
             completionDateTime = date.Now()
-        self.__completionDateTime = Attribute(completionDateTime or maxDateTime, self, self._onCompletionDateTimeChanged)
+        self.__completionDateTime = Attribute(
+            completionDateTime or maxDateTime,
+            self,
+            self._onCompletionDateTimeChanged,
+        )
         percentageComplete = (
             100
             if self.__completionDateTime.get() != maxDateTime
             else percentageComplete
         )
-        self.__percentageComplete = Attribute(percentageComplete, self, self._onPercentageCompleteChanged)
+        self.__percentageComplete = Attribute(
+            percentageComplete, self, self._onPercentageCompleteChanged
+        )
         self.__budget = budget or date.TimeDelta()
-        self.__plannedDuration = Attribute(plannedDuration or date.TimeDelta(), self, self._onPlannedDurationChanged)
+        self.__plannedDuration = Attribute(
+            plannedDuration or date.TimeDelta(),
+            self,
+            self._onPlannedDurationChanged,
+        )
         # Normalize old mode values to new keys: implicit, adjdue, adjstart
         mode_map = {"todue": "adjdue", "fromstart": "adjstart"}
-        self.__plannedDurationMode = Attribute(mode_map.get(plannedDurationMode, plannedDurationMode) or "implicit", self, self._onPlannedDurationModeChanged)
+        self.__plannedDurationMode = Attribute(
+            mode_map.get(plannedDurationMode, plannedDurationMode)
+            or "implicit",
+            self,
+            self._onPlannedDurationModeChanged,
+        )
         self._efforts = efforts or []
         self.__priority = Attribute(priority, self, self._onPriorityChanged)
         self.__hourlyFee = hourlyFee
@@ -127,8 +151,12 @@ class Task(
         )
         pub.subscribe(self.__compute_recursive_icon_id, "settings.icon")
         pub.subscribe(self.__compute_recursive_icon_id, "settings.icon_dark")
-        pub.subscribe(self.__compute_recursive_selected_icon_id, "settings.icon")
-        pub.subscribe(self.__compute_recursive_selected_icon_id, "settings.icon_dark")
+        pub.subscribe(
+            self.__compute_recursive_selected_icon_id, "settings.icon"
+        )
+        pub.subscribe(
+            self.__compute_recursive_selected_icon_id, "settings.icon_dark"
+        )
         pub.subscribe(self.__onThemeChanged, "settings.window.theme")
         pub.subscribe(
             self.onDueSoonHoursChanged, "settings.behavior.duesoonhours"
@@ -147,7 +175,9 @@ class Task(
     @patterns.eventSource
     def __setstate__(self, state, event=None):
         super().__setstate__(state, event=event)
-        self.setPlannedStartDateTime(state["plannedStartDateTime"], event=event)
+        self.setPlannedStartDateTime(
+            state["plannedStartDateTime"], event=event
+        )
         self.setActualStartDateTime(state["actualStartDateTime"], event=event)
         self.setDueDateTime(state["dueDateTime"], event=event)
         self.setCompletionDateTime(state["completionDateTime"], event=event)
@@ -156,8 +186,12 @@ class Task(
         self.setReminder(state["reminder"])
         self.setEfforts(state["efforts"])
         self.setBudget(state["budget"])
-        self.setPlannedDuration(state.get("plannedDuration", date.TimeDelta()), event=event)
-        self.setPlannedDurationMode(state.get("plannedDurationMode", "implicit"), event=event)
+        self.setPlannedDuration(
+            state.get("plannedDuration", date.TimeDelta()), event=event
+        )
+        self.setPlannedDurationMode(
+            state.get("plannedDurationMode", "implicit"), event=event
+        )
         self.setPriority(state["priority"], event=event)
         self.setHourlyFee(state["hourlyFee"])
         self.setFixedFee(state["fixedFee"])
@@ -405,7 +439,8 @@ class Task(
                 if not child.completed()
             ]
             return min(
-                childrenPlannedStartDateTimes + [self.__plannedStartDateTime.get()]
+                childrenPlannedStartDateTimes
+                + [self.__plannedStartDateTime.get()]
             )
         else:
             return self.__plannedStartDateTime.get()
@@ -469,12 +504,15 @@ class Task(
                 if not child.completed()
             ]
             return min(
-                childrenActualStartDateTimes + [self.__actualStartDateTime.get()]
+                childrenActualStartDateTimes
+                + [self.__actualStartDateTime.get()]
             )
         else:
             return self.__actualStartDateTime.get()
 
-    def setActualStartDateTime(self, actualStartDateTime, recursive=False, event=None):
+    def setActualStartDateTime(
+        self, actualStartDateTime, recursive=False, event=None
+    ):
         if recursive:
             for child in self.children(recursive=True):
                 child.setActualStartDateTime(actualStartDateTime)
@@ -525,7 +563,9 @@ class Task(
             return self.__completionDateTime.get()
 
     def setCompletionDateTime(self, completionDateTime=None, event=None):
-        self.__completionDateTime.set(completionDateTime or date.Now(), event=event)
+        self.__completionDateTime.set(
+            completionDateTime or date.Now(), event=event
+        )
 
     def _onCompletionDateTimeChanged(self, event):
         self.__status = None
@@ -552,8 +592,13 @@ class Task(
             parent = self.parent()
             if parent and parent.shouldBeMarkedCompleted():
                 parent.setCompletionDateTime(completionDateTime)
-        elif self.percentageComplete() == 100:
-            self.setPercentageComplete(0)
+        else:
+            if self.percentageComplete() == 100:
+                self.setPercentageComplete(0)
+            # An open child reopens its completed parent, and so on up
+            parent = self.parent()
+            if parent and parent.completed():
+                parent.setCompletionDateTime(self.maxDateTime)
 
         # Notify parent of recursive priority change (child completion
         # changes which children are included in the recursive max)
@@ -714,52 +759,63 @@ class Task(
         return "pubsub.task.status"
 
     @classmethod
-    def computeStatus(cls, completionDT, dueDT, actualStartDT, plannedStartDT,
-                      dueSoonHours, hasIncompletePrerequisites, now=None,
-                      maxDateTime=None):
+    def compute_status(
+        cls,
+        completion_dt,
+        due_dt,
+        actual_start_dt,
+        planned_start_dt,
+        due_soon_hours,
+        has_incomplete_prerequisites,
+        now=None,
+        max_date_time=None,
+    ):
         """Compute task status from date values. SINGLE SOURCE OF TRUTH.
 
-        This is the only function that computes status. All status calculations
-        must go through this method.
+        This is the only function that computes status. All status
+        calculations must go through this method.
 
         Args:
-            completionDT: Completion datetime (or maxDateTime if not set)
-            dueDT: Due datetime (or maxDateTime if not set)
-            actualStartDT: Actual start datetime (or maxDateTime if not set)
-            plannedStartDT: Planned start datetime (or maxDateTime if not set)
-            dueSoonHours: Hours threshold for "due soon" status
-            hasIncompletePrerequisites: True if task has incomplete prerequisites
+            completion_dt, due_dt, actual_start_dt, planned_start_dt:
+                The dates, max_date_time when not set
+            due_soon_hours: Hours threshold for "due soon" status
+            has_incomplete_prerequisites: Whether any prerequisite is
+                not completed
             now: Current datetime (defaults to date.Now())
-            maxDateTime: Sentinel for unset dates (defaults to date.DateTime.max)
+            max_date_time: Sentinel for unset dates (defaults to
+                date.DateTime.max)
 
         Returns:
             (TaskStatus, source_string) tuple.
         """
         if now is None:
             now = date.Now()
-        if maxDateTime is None:
-            maxDateTime = date.DateTime.max
+        if max_date_time is None:
+            max_date_time = date.DateTime.max
 
         # Priority order: completed > inactive(prereqs) > overdue > duesoon > active > late > inactive
-        if completionDT != maxDateTime:
+        if completion_dt != max_date_time:
             return status.completed, _("Completion date is set")
 
-        if hasIncompletePrerequisites:
+        if has_incomplete_prerequisites:
             return status.inactive, _("Has incomplete prerequisites")
 
-        if dueDT != maxDateTime and dueDT < now:
+        if due_dt != max_date_time and due_dt < now:
             return status.overdue, _("Due date has passed")
 
-        if dueDT != maxDateTime:
-            timeLeft = dueDT - now
-            timeLeftHours = timeLeft.total_seconds() / 3600
-            if 0 <= timeLeftHours < dueSoonHours:
-                return status.duesoon, _("Due within %d hours") % dueSoonHours
+        if due_dt != max_date_time:
+            time_left = due_dt - now
+            time_left_hours = time_left.total_seconds() / 3600
+            if 0 <= time_left_hours < due_soon_hours:
+                return (
+                    status.duesoon,
+                    _("Due within %d hours") % due_soon_hours,
+                )
 
-        if actualStartDT != maxDateTime and actualStartDT <= now:
+        if actual_start_dt != max_date_time and actual_start_dt <= now:
             return status.active, _("Actual start date has passed")
 
-        if plannedStartDT != maxDateTime and plannedStartDT < now:
+        if planned_start_dt != max_date_time and planned_start_dt < now:
             return status.late, _("Planned start date has passed")
 
         return status.inactive, _("No actual start date")
@@ -776,36 +832,43 @@ class Task(
         Fires statusChangedEventType if status actually changed.
         """
         # Check prerequisites
-        hasIncompletePrereqs = any(
+        has_incomplete_prereqs = any(
             prerequisite.completionDateTime() == self.maxDateTime
-            for prerequisite in self.prerequisites(recursive=True, upwards=True)
+            for prerequisite in self.prerequisites(
+                recursive=True, upwards=True
+            )
         )
 
         # Call the single source of truth
-        newStatus, newSource = self.computeStatus(
-            completionDT=self.completionDateTime(),
-            dueDT=self.dueDateTime(),
-            actualStartDT=self.actualStartDateTime(),
-            plannedStartDT=self.plannedStartDateTime(),
-            dueSoonHours=self.__dueSoonHours,
-            hasIncompletePrerequisites=hasIncompletePrereqs,
-            maxDateTime=self.maxDateTime
+        new_status, new_source = self.compute_status(
+            completion_dt=self.completionDateTime(),
+            due_dt=self.dueDateTime(),
+            actual_start_dt=self.actualStartDateTime(),
+            planned_start_dt=self.plannedStartDateTime(),
+            due_soon_hours=self.__dueSoonHours,
+            has_incomplete_prerequisites=has_incomplete_prereqs,
+            max_date_time=self.maxDateTime,
         )
 
         # Update stored fields
-        oldStatus = self.__computed_status
-        self.__computed_status = newStatus
-        self.__status_text = newStatus.pluralLabel.replace(
-            " tasks", "").replace("tasks", "").strip()
-        iconSection = self._themedSection("icon")
-        self.__status_icon_id = self.settings.get(iconSection, "%stasks" % newStatus)
-        self.__status_source = newSource
+        old_status = self.__computed_status
+        self.__computed_status = new_status
+        self.__status_text = (
+            new_status.pluralLabel.replace(" tasks", "")
+            .replace("tasks", "")
+            .strip()
+        )
+        icon_section = self._themedSection("icon")
+        self.__status_icon_id = self.settings.get(
+            icon_section, "%stasks" % new_status
+        )
+        self.__status_source = new_source
 
         # Fire event if status changed
-        if oldStatus is not None and newStatus != oldStatus:
+        if old_status is not None and new_status != old_status:
             pub.sendMessage(
                 self.statusChangedEventType(),
-                newValue=newStatus,
+                newValue=new_status,
                 sender=self,
             )
 
@@ -818,8 +881,9 @@ class Task(
     def computedStatus(self, explain=False):
         """Return the computed TaskStatus object (single source of truth).
 
-        This is the preferred accessor for status. It returns the cached
-        TaskStatus object populated by computeStatus(), which is called:
+        This is the preferred accessor for status. It returns the
+        cached TaskStatus object populated by computeStoredStatus(),
+        which is called:
         - On task creation/load (Task.__init__)
         - On date changes (recomputeAppearance)
         - Every second (ComputeStyles polling)
@@ -836,9 +900,6 @@ class Task(
         if explain:
             return self.__computed_status, self.__status_source
         return self.__computed_status
-
-    def statusSource(self):
-        return self.__status_source
 
     # =========================================================================
     # Scheduler methods - called by MasterScheduler every second
@@ -865,8 +926,10 @@ class Task(
         if self.completionDateTime() != self.maxDateTime:
             self.__status = status.completed
         # Direct prereqs only - no recursive (each task's status already computed)
-        elif any(p.completionDateTime() == self.maxDateTime
-                 for p in self.prerequisites()):
+        elif any(
+            p.completionDateTime() == self.maxDateTime
+            for p in self.prerequisites()
+        ):
             self.__status = status.inactive
         elif self.dueDateTime() < now:
             self.__status = status.overdue
@@ -918,7 +981,7 @@ class Task(
         Fires event - ReminderController subscribes and shows dialog
         if not already open. Safe to call multiple times.
         """
-        pub.sendMessage('task.reminder.trigger', task=self)
+        patterns.Event("task.reminder.trigger", self).send()
 
     def onDueSoonHoursChanged(self, value):
         self.__dueSoonHours = value
@@ -1219,9 +1282,15 @@ class Task(
     def _themedSection(class_, section):
         try:
             from taskcoachlib.config import settings2
-            return section + "_dark" if settings2.window.theme_is_dark else section
+
+            return (
+                section + "_dark"
+                if settings2.window.theme_is_dark
+                else section
+            )
         except Exception as e:
             from taskcoachlib.meta.debug import log_step
+
             log_step("_themedSection(%s): %s" % (section, e), prefix="THEME")
             return section
 
@@ -1229,7 +1298,9 @@ class Task(
     def fgColorForStatus(class_, taskStatus):
         section = class_._themedSection("fgcolor")
         return wx.Colour(
-            *ast.literal_eval(class_.settings.get(section, "%stasks" % taskStatus))
+            *ast.literal_eval(
+                class_.settings.get(section, "%stasks" % taskStatus)
+            )
         )  # pylint: disable=E1101
 
     def appearanceChangedEvent(self, event):
@@ -1287,7 +1358,9 @@ class Task(
     def bgColorForStatus(class_, taskStatus):
         section = class_._themedSection("bgcolor")
         return wx.Colour(
-            *ast.literal_eval(class_.settings.get(section, "%stasks" % taskStatus))
+            *ast.literal_eval(
+                class_.settings.get(section, "%stasks" % taskStatus)
+            )
         )  # pylint: disable=E1101
 
     # Font
@@ -1329,11 +1402,17 @@ class Task(
                 icon_id = self.__recursive_icon_id
             except AttributeError:
                 icon_id = self.__compute_recursive_icon_id()
-        return self.pluralOrSingularIcon(icon_id, native=super().icon_id() == "")
+        return self.pluralOrSingularIcon(
+            icon_id, native=super().icon_id() == ""
+        )
 
-    def __compute_recursive_icon_id(self, *args, **kwargs):  # pylint: disable=W0613
+    def __compute_recursive_icon_id(
+        self, *args, **kwargs
+    ):  # pylint: disable=W0613
         # pylint: disable=W0201
-        self.__recursive_icon_id = self.category_icon_id() or self.status_icon_id()
+        self.__recursive_icon_id = (
+            self.category_icon_id() or self.status_icon_id()
+        )
         return self.__recursive_icon_id
 
     def selected_icon_id(self, recursive=False):
@@ -1365,7 +1444,6 @@ class Task(
         self.__compute_recursive_icon_id()
         self.__compute_recursive_selected_icon_id()
 
-
     # Note: Derived and effective appearance is now handled by the base class
     # (object.py) and ComputeStyles polling in appearance.py. The base class
     # provides: derivedFgColor(), derivedFgColorSource(), effectiveFgColor(),
@@ -1395,7 +1473,8 @@ class Task(
             self.__recursiveForegroundColor != previousForegroundColor
             or self.__recursiveBackgroundColor != previousBackgroundColor
             or self.__recursive_icon_id != prev_recursive_icon_id
-            or self.__recursive_selected_icon_id != prev_recursive_selected_icon_id
+            or self.__recursive_selected_icon_id
+            != prev_recursive_selected_icon_id
         ):
             event.addSource(self, type=self.appearanceChangedEventType())
         if recursive:
@@ -1433,7 +1512,9 @@ class Task(
         percentage = self.__percentageComplete.get()
         if percentage == 100 and self.completionDateTime() == self.maxDateTime:
             self.setCompletionDateTime(date.Now())
-        elif percentage != 100 and self.completionDateTime() != self.maxDateTime:
+        elif (
+            percentage != 100 and self.completionDateTime() != self.maxDateTime
+        ):
             self.setCompletionDateTime(self.maxDateTime)
         if (
             0 < percentage < 100
@@ -1713,13 +1794,17 @@ class Task(
     @patterns.eventSource
     def recur(self, completionDateTime=None, event=None):
         from taskcoachlib.meta.debug import log_step
+
         completionDateTime = completionDateTime or date.Now()
         self.setCompletionDateTime(self.maxDateTime)
         recur = self.recurrence(recursive=True, upwards=True)
 
         if not recur.unit:
-            log_step("recur() on %r: resolved recurrence has no unit"
-                     % self.subject(), prefix="RECUR")
+            log_step(
+                "recur() on %r: resolved recurrence has no unit"
+                % self.subject(),
+                prefix="RECUR",
+            )
 
         current_due = self.dueDateTime()
         current_planned_start = self.plannedStartDateTime()
@@ -1738,8 +1823,11 @@ class Task(
                 microsecond=current_due.microsecond,
             )
             if next_due == current_due:
-                log_step("recur() on %r: date did not advance (%s)"
-                         % (self.subject(), current_due), prefix="RECUR")
+                log_step(
+                    "recur() on %r: date did not advance (%s)"
+                    % (self.subject(), current_due),
+                    prefix="RECUR",
+                )
             self.setDueDateTime(next_due)
 
         if current_planned_start != date.DateTime():
@@ -1995,73 +2083,78 @@ class Task(
 
     @classmethod
     def suggestedPlannedStartDateTime(cls, now=date.Now):
-        return cls.suggestedDateTime("defaultplannedstartdatetime", now)
+        return cls.suggested_date_time("defaultplannedstartdatetime", now)
 
     @classmethod
     def suggestedActualStartDateTime(cls, now=date.Now):
-        return cls.suggestedDateTime("defaultactualstartdatetime", now)
+        return cls.suggested_date_time("defaultactualstartdatetime", now)
 
     @classmethod
     def suggestedDueDateTime(cls, now=date.Now):
-        return cls.suggestedDateTime("defaultduedatetime", now)
+        return cls.suggested_date_time("defaultduedatetime", now)
 
     @classmethod
     def suggestedCompletionDateTime(cls, now=date.Now):
-        return cls.suggestedDateTime("defaultcompletiondatetime", now)
+        return cls.suggested_date_time("defaultcompletiondatetime", now)
 
     @classmethod
     def suggestedReminderDateTime(cls, now=date.Now):
-        return cls.suggestedDateTime("defaultreminderdatetime", now)
+        return cls.suggested_date_time("defaultreminderdatetime", now)
 
     @classmethod
-    def suggestedDateTime(cls, defaultDateTimeSetting, now=date.Now):
+    def suggested_date_time(cls, default_date_time_setting, now=date.Now):
         # pylint: disable=E1101,W0142
-        defaultDateTime = cls.settings.get("view", defaultDateTimeSetting)
-        dummy_prefix, defaultDate, defaultTime = defaultDateTime.split("_")
-        dateTime = now()
-        currentTime = dict(
-            hour=dateTime.hour,
-            minute=dateTime.minute,
-            second=dateTime.second,
-            microsecond=dateTime.microsecond,
+        default_date_time = cls.settings.get("view", default_date_time_setting)
+        dummy_prefix, default_date, default_time = default_date_time.split("_")
+        date_time = now()
+        current_time = dict(
+            hour=date_time.hour,
+            minute=date_time.minute,
+            second=date_time.second,
+            microsecond=date_time.microsecond,
         )
-        if defaultDate == "tomorrow":
-            dateTime += date.ONE_DAY
-        elif defaultDate == "dayaftertomorrow":
-            dateTime += date.ONE_DAY + date.ONE_DAY
-        elif defaultDate == "nextfriday":
-            dateTime = (
-                (dateTime + date.ONE_DAY)
+        if default_date == "tomorrow":
+            date_time += date.ONE_DAY
+        elif default_date == "dayaftertomorrow":
+            date_time += date.ONE_DAY + date.ONE_DAY
+        elif default_date == "nextfriday":
+            date_time = (
+                (date_time + date.ONE_DAY)
                 .endOfWorkWeek()
-                .replace(**currentTime)
+                .replace(**current_time)
             )
-        elif defaultDate == "nextmonday":
-            dateTime = (
-                (dateTime + date.ONE_WEEK)
+        elif default_date == "nextmonday":
+            date_time = (
+                (date_time + date.ONE_WEEK)
                 .startOfWorkWeek()
-                .replace(**currentTime)
+                .replace(**current_time)
             )
 
-        if defaultTime == "startofday":
-            return dateTime.startOfDay()
-        elif defaultTime == "startofworkingday":
-            startHour = cls.settings.getint("view", "efforthourstart")
-            return dateTime.replace(
-                hour=startHour, minute=0, second=0, microsecond=0
+        if default_time == "startofday":
+            return date_time.startOfDay()
+        elif default_time == "startofworkingday":
+            start_hour = cls.settings.getint("view", "efforthourstart")
+            return date_time.replace(
+                hour=start_hour, minute=0, second=0, microsecond=0
             )
-        elif defaultTime == "currenttime":
-            return dateTime
-        elif defaultTime == "endofworkingday":
-            if cls.settings.getboolean("view", "efforthourend_endofday"):
-                endHour, minute, second = 23, 59, 59
+        elif default_time == "currenttime":
+            return date_time
+        elif default_time == "endofworkingday":
+            end_hour = cls.settings.getint("view", "efforthourend")
+            # 24 is how older versions said "end of day" (Preferences
+            # migrates it only when saved); replace() rejects hour 24.
+            if (
+                cls.settings.getboolean("view", "efforthourend_endofday")
+                or end_hour >= 24
+            ):
+                end_hour, minute, second = 23, 59, 59
             else:
-                endHour = cls.settings.getint("view", "efforthourend")
                 minute, second = 0, 0
-            return dateTime.replace(
-                hour=endHour, minute=minute, second=second, microsecond=0
+            return date_time.replace(
+                hour=end_hour, minute=minute, second=second, microsecond=0
             )
-        elif defaultTime == "endofday":
-            return dateTime.endOfDay()
+        elif default_time == "endofday":
+            return date_time.endOfDay()
 
     @classmethod
     def modificationEventTypes(class_):

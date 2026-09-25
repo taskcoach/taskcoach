@@ -348,9 +348,9 @@ class ObjectTest(test.TestCase):
         self.assertEqual(copy.font(), self.object.font())
 
     def testCopy_IconIsCopied(self):
-        self.object.setIcon("icon")
+        self.object.set_icon_id("icon")
         copy = self.object.copy()
-        self.assertEqual(copy.icon(), self.object.icon())
+        self.assertEqual(copy.icon_id(), self.object.icon_id())
 
     def testCopy_ShouldUseSubclassForCopy(self):
         copy = self.subclassObject.copy()
@@ -416,37 +416,37 @@ class ObjectTest(test.TestCase):
     # Icon tests:
 
     def testDefaultIcon(self):
-        self.assertEqual("", self.object.icon())
+        self.assertEqual("", self.object.icon_id())
 
     def testSetIcon(self):
-        self.object.setIcon("icon")
-        self.assertEqual("icon", self.object.icon())
+        self.object.set_icon_id("icon")
+        self.assertEqual("icon", self.object.icon_id())
 
     def testSetIconOnCreation(self):
         domainObject = base.Object(icon="icon")
-        self.assertEqual("icon", domainObject.icon())
+        self.assertEqual("icon", domainObject.icon_id())
 
     def testIconChangedNotification(self):
-        self.object.setIcon("icon")
+        self.object.set_icon_id("icon")
         self.assertEqual(1, len(self.eventsReceived))
 
     def testDefaultSelectedIcon(self):
-        self.assertEqual("", self.object.selectedIcon())
+        self.assertEqual("", self.object.selected_icon_id())
 
     def testSetSelectedIcon(self):
-        self.object.setSelectedIcon("selected")
-        self.assertEqual("selected", self.object.selectedIcon())
+        self.object.set_selected_icon_id("selected")
+        self.assertEqual("selected", self.object.selected_icon_id())
 
     def testSelectedIconAfterSettingRegularIconOnly(self):
-        self.object.setIcon("icon")
-        self.assertEqual("", self.object.selectedIcon())
+        self.object.set_icon_id("icon")
+        self.assertEqual("", self.object.selected_icon_id())
 
     def testSetSelectedIconOnCreation(self):
         domainObject = base.Object(selectedIcon="icon")
-        self.assertEqual("icon", domainObject.selectedIcon())
+        self.assertEqual("icon", domainObject.selected_icon_id())
 
     def testSelectedIconChangedNotification(self):
-        self.object.setSelectedIcon("icon")
+        self.object.set_selected_icon_id("icon")
         self.assertEqual(1, len(self.eventsReceived))
 
     # Event types:
@@ -609,13 +609,13 @@ class CompositeObjectTest(test.TestCase):
 
     def testSubItemUsesParentIcon(self):
         self.addChild()
-        self.compositeObject.setIcon("icon")
-        self.assertEqual("icon", self.child.icon(recursive=True))
+        self.compositeObject.set_icon_id("icon")
+        self.assertEqual("icon", self.child.icon_id(recursive=True))
 
     def testSubItemDoesNotUseParentIconIfItHasItsOwnIcon(self):
         self.addChild(icon="childIcon")
-        self.compositeObject.setIcon("icon")
-        self.assertEqual("childIcon", self.child.icon(recursive=True))
+        self.compositeObject.set_icon_id("icon")
+        self.assertEqual("childIcon", self.child.icon_id(recursive=True))
 
     def testIconChangedNotification(self):
         self.addChild()
@@ -624,23 +624,25 @@ class CompositeObjectTest(test.TestCase):
             eventType=base.CompositeObject.appearanceChangedEventType(),
             eventSource=self.child,
         )
-        self.compositeObject.setIcon("icon")
+        self.compositeObject.set_icon_id("icon")
         self.assertEqual(1, len(self.eventsReceived))
 
     def testSubItemUsesParentSelectedIcon(self):
         self.addChild()
-        self.compositeObject.setSelectedIcon("icon")
-        self.assertEqual("icon", self.child.selectedIcon(recursive=True))
+        self.compositeObject.set_selected_icon_id("icon")
+        self.assertEqual("icon", self.child.selected_icon_id(recursive=True))
 
     def testSubItemDoesNotUseParentSelectedIconIfItHasItsOwnSelectedIcon(self):
         self.addChild(selectedIcon="childIcon")
-        self.compositeObject.setSelectedIcon("icon")
-        self.assertEqual("childIcon", self.child.selectedIcon(recursive=True))
+        self.compositeObject.set_selected_icon_id("icon")
+        self.assertEqual(
+            "childIcon", self.child.selected_icon_id(recursive=True)
+        )
 
     def testSubItemUsesParentSelectedIconEvenIfItHasItsOwnIcon(self):
         self.addChild(icon="childIcon")
-        self.compositeObject.setSelectedIcon("icon")
-        self.assertEqual("icon", self.child.selectedIcon(recursive=True))
+        self.compositeObject.set_selected_icon_id("icon")
+        self.assertEqual("icon", self.child.selected_icon_id(recursive=True))
 
     def testSelectedIconChangedNotification(self):
         self.addChild()
@@ -649,85 +651,109 @@ class CompositeObjectTest(test.TestCase):
             eventType=base.CompositeObject.appearanceChangedEventType(),
             eventSource=self.child,
         )
-        self.compositeObject.setSelectedIcon("icon")
+        self.compositeObject.set_selected_icon_id("icon")
         self.assertEqual(1, len(self.eventsReceived))
 
     def testCompositeWithChildrenUsesPluralIconIfAvailable(self):
-        self.compositeObject.setIcon("nuvola_apps_accessories-dictionary")
+        self.compositeObject.set_icon_id("nuvola_actions_ledblue")
         self.assertEqual(
-            "nuvola_apps_accessories-dictionary", self.compositeObject.icon(recursive=True)
+            "nuvola_actions_ledblue",
+            self.compositeObject.icon_id(recursive=True),
         )
         self.addChild()
         self.assertEqual(
-            "nuvola_apps_bookcase", self.compositeObject.icon(recursive=True)
+            "nuvola_mimetypes_inode-directory",
+            self.compositeObject.icon_id(recursive=True),
         )
         self.assertEqual(
-            "nuvola_apps_accessories-dictionary", self.compositeObject.icon(recursive=False)
+            "nuvola_actions_ledblue",
+            self.compositeObject.icon_id(recursive=False),
         )
 
     def testCompositeWithChildrenUsesPluralSelectedIconIfAvailable(self):
-        self.compositeObject.setSelectedIcon("nuvola_apps_accessories-dictionary")
+        self.compositeObject.set_selected_icon_id("nuvola_actions_ledblue")
         self.assertEqual(
-            "nuvola_apps_accessories-dictionary", self.compositeObject.selectedIcon(recursive=True)
+            "nuvola_actions_ledblue",
+            self.compositeObject.selected_icon_id(recursive=True),
         )
         self.addChild()
         self.assertEqual(
-            "nuvola_apps_bookcase", self.compositeObject.selectedIcon(recursive=True)
+            "nuvola_mimetypes_inode-directory",
+            self.compositeObject.selected_icon_id(recursive=True),
         )
         self.assertEqual(
-            "nuvola_apps_accessories-dictionary", self.compositeObject.selectedIcon(recursive=False)
+            "nuvola_actions_ledblue",
+            self.compositeObject.selected_icon_id(recursive=False),
         )
 
     def testCompositeWithoutChildrenDoesNotUseSingularIconIfAvailable(self):
-        self.compositeObject.setIcon("nuvola_apps_bookcase")
+        self.compositeObject.set_icon_id("nuvola_mimetypes_inode-directory")
         self.assertEqual(
-            "nuvola_apps_bookcase", self.compositeObject.icon(recursive=False)
+            "nuvola_mimetypes_inode-directory",
+            self.compositeObject.icon_id(recursive=False),
         )
         self.assertEqual(
-            "nuvola_apps_bookcase", self.compositeObject.icon(recursive=True)
+            "nuvola_mimetypes_inode-directory",
+            self.compositeObject.icon_id(recursive=True),
         )
 
     def testCompositeWithoutChildrenDoesNotUseSingularSelectedIconIfAvailable(
         self,
     ):
-        self.compositeObject.setSelectedIcon("nuvola_apps_bookcase")
-        self.assertEqual(
-            "nuvola_apps_bookcase", self.compositeObject.selectedIcon(recursive=False)
+        self.compositeObject.set_selected_icon_id(
+            "nuvola_mimetypes_inode-directory"
         )
         self.assertEqual(
-            "nuvola_apps_bookcase", self.compositeObject.selectedIcon(recursive=True)
+            "nuvola_mimetypes_inode-directory",
+            self.compositeObject.selected_icon_id(recursive=False),
+        )
+        self.assertEqual(
+            "nuvola_mimetypes_inode-directory",
+            self.compositeObject.selected_icon_id(recursive=True),
         )
 
     def testChildOfCompositeUsesSingularIconIfAvailable(self):
-        self.compositeObject.setIcon("nuvola_apps_bookcase")
-        self.addChild()
-        self.assertEqual("nuvola_apps_accessories-dictionary", self.child.icon(recursive=True))
-
-    def testChildOfCompositeUsesSingularSelectedIconIfAvailable(self):
-        self.compositeObject.setSelectedIcon("nuvola_apps_bookcase")
-        self.addChild()
-        self.assertEqual("nuvola_apps_accessories-dictionary", self.child.selectedIcon(recursive=True))
-
-    def testParentUsesSingularIconAfterChildRemoved(self):
-        self.compositeObject.setIcon("nuvola_apps_accessories-dictionary")
+        self.compositeObject.set_icon_id("nuvola_mimetypes_inode-directory")
         self.addChild()
         self.assertEqual(
-            "nuvola_apps_bookcase", self.compositeObject.icon(recursive=True)
+            "nuvola_actions_ledblue",
+            self.child.icon_id(recursive=True),
+        )
+
+    def testChildOfCompositeUsesSingularSelectedIconIfAvailable(self):
+        self.compositeObject.set_selected_icon_id(
+            "nuvola_mimetypes_inode-directory"
+        )
+        self.addChild()
+        self.assertEqual(
+            "nuvola_actions_ledblue",
+            self.child.selected_icon_id(recursive=True),
+        )
+
+    def testParentUsesSingularIconAfterChildRemoved(self):
+        self.compositeObject.set_icon_id("nuvola_actions_ledblue")
+        self.addChild()
+        self.assertEqual(
+            "nuvola_mimetypes_inode-directory",
+            self.compositeObject.icon_id(recursive=True),
         )
         self.removeChild()
         self.assertEqual(
-            "nuvola_apps_accessories-dictionary", self.compositeObject.icon(recursive=True)
+            "nuvola_actions_ledblue",
+            self.compositeObject.icon_id(recursive=True),
         )
 
     def testParentUsesSingularSelectedIconAfterChildRemoved(self):
-        self.compositeObject.setSelectedIcon("nuvola_apps_accessories-dictionary")
+        self.compositeObject.set_selected_icon_id("nuvola_actions_ledblue")
         self.addChild()
         self.assertEqual(
-            "nuvola_apps_bookcase", self.compositeObject.selectedIcon(recursive=True)
+            "nuvola_mimetypes_inode-directory",
+            self.compositeObject.selected_icon_id(recursive=True),
         )
         self.removeChild()
         self.assertEqual(
-            "nuvola_apps_accessories-dictionary", self.compositeObject.selectedIcon(recursive=True)
+            "nuvola_actions_ledblue",
+            self.compositeObject.selected_icon_id(recursive=True),
         )
 
     def testCopy(self):

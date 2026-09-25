@@ -17,12 +17,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test
-from taskcoachlib import persistence
+from taskcoachlib import config, persistence
 from taskcoachlib.domain import task, note, category, effort, date
 
 
 class TaskFileTestCase(test.TestCase):
     def setUp(self):
+        task.Task.settings = config.Settings(load=False)
         self.taskFile = persistence.TaskFile()
         self.task = task.Task(subject="Subject")
 

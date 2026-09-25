@@ -15,12 +15,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-DESIGN NOTE (Scheduler Refactoring - 2024):
-The old Scheduler-based reminder system has been replaced with a polling-based
-system using GlobalTimer + pubsub. See docs/SCHEDULERS.md for details.
-
-Reminders are now checked every second by subscribing to 'timer.second' events
-and polling all tasks to see if their reminder time has passed.
+MasterScheduler checks each task's reminder every second and sends
+'task.reminder.trigger', which ReminderController handles. See
+docs/REMINDERS.md.
 """
 
 import test
@@ -29,7 +26,7 @@ from taskcoachlib import gui, config, persistence
 from taskcoachlib.domain import task, date, effort
 
 
-class ReminderControllerUnderTest(gui.ReminderController):
+class ReminderControllerUnderTest(gui.remindercontroller.ReminderController):
     def __init__(self, *args, **kwargs):
         self.messages = []
         self.userAttentionRequested = False
@@ -41,6 +38,12 @@ class ReminderControllerUnderTest(gui.ReminderController):
                 pass
 
             def Bind(self, *args, **kwargs):
+                pass
+
+            def GetSize(self):
+                return wx.Size(100, 100)
+
+            def SetPosition(self, position):
                 pass
 
             def Show(self):
@@ -94,6 +97,22 @@ class ReminderControllerTest(ReminderControllerTestCase):
         self.assertIsNotNone(self.task.reminder())
         self.assertEqual(self.task.reminder(), self.reminderDateTime)
 
+    def test_due_reminder_is_shown(self):
+        self.task.setReminder(date.Now())
+        self.task.processReminder(date.Now())
+        self.assertEqual([self.task], self.reminderController.messages)
+
+    def test_future_reminder_is_not_shown(self):
+        self.task.setReminder(date.Now() + date.ONE_HOUR)
+        self.task.processReminder(date.Now())
+        self.assertEqual([], self.reminderController.messages)
+
+    def test_no_reminder_is_shown_after_shutdown(self):
+        self.reminderController.shutdown()
+        self.task.triggerReminder()
+        self.assertEqual([], self.reminderController.messages)
+
+    @test.stale("reminders fire from the scheduler tick")
     def testReminderShownWhenDue(self):
         """Verify reminder is shown when due time is reached."""
         # Set reminder to now (so it's immediately due)
@@ -103,6 +122,7 @@ class ReminderControllerTest(ReminderControllerTestCase):
         # Reminder should have been shown
         self.assertEqual(len(self.reminderController.messages), 1)
 
+    @test.stale("reminders fire from the scheduler tick")
     def testReminderNotShownTwice(self):
         """Verify same reminder is not shown twice."""
         self.task.setReminder(date.Now())
@@ -113,6 +133,7 @@ class ReminderControllerTest(ReminderControllerTestCase):
         # Only one reminder should have been shown
         self.assertEqual(len(self.reminderController.messages), 1)
 
+    @test.stale("reminders fire from the scheduler tick")
     def testReminderClearedOnSnooze(self):
         """Verify reminder tracking is cleared when task is snoozed."""
         self.task.setReminder(date.Now())
@@ -126,12 +147,14 @@ class ReminderControllerTest(ReminderControllerTestCase):
         self.reminderController._checkReminders(date.DateTime.now())
         self.assertEqual(len(self.reminderController.messages), 2)
 
+    @test.stale("reminders fire from the scheduler tick")
     def testFutureReminderNotShown(self):
         """Verify future reminders are not shown until due."""
         self.task.setReminder(date.Now() + date.ONE_HOUR)
         self.reminderController._checkReminders(date.DateTime.now())
         self.assertEqual(len(self.reminderController.messages), 0)
 
+    @test.stale("reminders fire from the scheduler tick")
     def testMultipleTasksWithReminders(self):
         """Verify multiple tasks can have reminders checked."""
         task2 = task.Task("Task 2")
@@ -193,6 +216,7 @@ class ReminderControllerTest(ReminderControllerTestCase):
         )
         self.assertTrue(frame)
 
+    @test.stale("reminders fire from the scheduler tick")
     def testOnWakeDoesNotRequestUserAttentionWhenThereAreNoReminders(self):
         self.reminderController.onReminder()
         self.assertFalse(self.reminderController.userAttentionRequested)

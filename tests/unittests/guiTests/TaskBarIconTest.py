@@ -38,6 +38,9 @@ class MainWindowMock(object):
     def Bind(self, evt, cb):
         self.__cb = cb
 
+    def Unbind(self, evt, handler=None):  # TaskBarIcon.Destroy unbinds
+        self.__cb = None
+
     def ProcessIdle(self):
         if self.__cb is not None:
             self.__cb(None)
@@ -48,7 +51,9 @@ class TaskBarIconTestCase(test.TestCase):
         self.taskList = task.TaskList()
         self.settings = task.Task.settings = config.Settings(load=False)
         self.window = MainWindowMock()
-        self.icon = gui.TaskBarIcon(self.window, self.taskList, self.settings)
+        self.icon = gui.taskbaricon.TaskBarIcon(
+            self.window, self.taskList, self.settings
+        )
 
     def tearDown(self):  # pragma: no cover
         if operating_system.isWindows():
@@ -67,7 +72,7 @@ class TaskBarIconTest(TaskBarIconTestCase):
         activeTask = task.Task()
         self.taskList.append(activeTask)
         activeTask.addEffort(effort.Effort(activeTask))
-        self.assertEqual("nuvola_apps_clock", self.icon.bitmap())
+        self.assertEqual("nuvola_apps_clock", self.icon.icon_id())
 
     def testStopTracking(self):
         activeTask = task.Task()
@@ -75,7 +80,7 @@ class TaskBarIconTest(TaskBarIconTestCase):
         activeEffort = effort.Effort(activeTask)
         activeTask.addEffort(activeEffort)
         activeTask.removeEffort(activeEffort)
-        self.assertEqual(self.icon.defaultBitmap(), self.icon.bitmap())
+        self.assertEqual(self.icon.default_icon_id(), self.icon.icon_id())
 
 
 class TaskBarIconTooltipTestCase(TaskBarIconTestCase):

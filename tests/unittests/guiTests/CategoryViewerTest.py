@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import test, wx
+import test
 from taskcoachlib import gui, config, persistence
 from taskcoachlib.domain import category
 
@@ -50,7 +50,7 @@ class CategoryViewerTest(test.wxTestCase):
         parent.addChild(child)
         copy = parent.copy()
         self.categories.append(copy)
-        self.viewer.expandAll()
+        self.viewer.expand_all()
         self.assertEqual(4, self.viewer.size())
 
     def testSortInWidget(self):

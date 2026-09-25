@@ -35,8 +35,8 @@ from ctypes import (
     c_ulong,
     sizeof,
 )
-from taskcoachlib import operating_system
-
+from taskcoachlib import operating_system, patterns
+from taskcoachlib.meta.debug import log_step
 
 # ==============================================================================
 
@@ -101,9 +101,9 @@ if operating_system.isGTK():
             # ext-idle-notify-v1 state. _idle_since is the wall-clock
             # time the compositor reported the seat went idle, or
             # None while active. The idled/resumed handlers and the
-            # EVT_IDLE reader all run on the main thread (events are
-            # pumped non-blockingly in get_idle_seconds), so no lock
-            # is needed. The registry/seat/notifier proxies are held
+            # idle poll all run on the main thread (events are pumped
+            # non-blockingly in get_idle_seconds), so no lock is
+            # needed. The registry/seat/notifier proxies are held
             # for the life of the connection so libwayland never
             # dispatches an event against a garbage-collected proxy.
             self._idle_since = None
@@ -117,12 +117,13 @@ if operating_system.isGTK():
             """Try GNOME Mutter IdleMonitor via DBus. Returns (ok, detail)."""
             try:
                 import dbus
+
                 bus = dbus.SessionBus()
                 proxy = bus.get_object(
-                    'org.gnome.Mutter.IdleMonitor',
-                    '/org/gnome/Mutter/IdleMonitor/Core'
+                    "org.gnome.Mutter.IdleMonitor",
+                    "/org/gnome/Mutter/IdleMonitor/Core",
                 )
-                iface = dbus.Interface(proxy, 'org.gnome.Mutter.IdleMonitor')
+                iface = dbus.Interface(proxy, "org.gnome.Mutter.IdleMonitor")
                 # Test that it works
                 iface.GetIdletime()
                 self._dbus_proxy = proxy
@@ -138,12 +139,12 @@ if operating_system.isGTK():
             """
             try:
                 import dbus
+
                 bus = dbus.SessionBus()
                 proxy = bus.get_object(
-                    'org.freedesktop.ScreenSaver',
-                    '/ScreenSaver'
+                    "org.freedesktop.ScreenSaver", "/ScreenSaver"
                 )
-                iface = dbus.Interface(proxy, 'org.freedesktop.ScreenSaver')
+                iface = dbus.Interface(proxy, "org.freedesktop.ScreenSaver")
                 # Test that it works
                 iface.GetSessionIdleTime()
                 self._dbus_proxy = proxy
@@ -210,15 +211,16 @@ if operating_system.isGTK():
             compositors and COSMIC. Returns (ok, detail).
 
             The protocol is event-based (idled/resumed), not a
-            pollable query, so a daemon thread holds a notification
-            armed at a short timeout and records the idle timestamp;
-            get_idle_seconds() synthesises a value from it.
+            pollable query, so a notification armed at a short timeout
+            records the idle timestamp; get_idle_seconds() synthesises
+            a value from it.
             """
             if not os.environ.get("WAYLAND_DISPLAY"):
                 return False, "no WAYLAND_DISPLAY (not a Wayland session)"
             try:
                 from pywayland.client import Display
                 from pywayland.protocol.wayland import WlSeat
+
                 # Distro python3-pywayland ships only the core wayland
                 # protocol; the ext-idle-notify-v1 binding is vendored
                 # (see taskcoachlib/thirdparty/ext_idle_notify_v1).
@@ -289,8 +291,12 @@ if operating_system.isGTK():
                 )
                 # XQueryExtension to check if MIT-SCREEN-SAVER is available
                 self.XQueryExtension = CFUNCTYPE(
-                    c_int, c_ulong, c_char_p,
-                    POINTER(c_int), POINTER(c_int), POINTER(c_int)
+                    c_int,
+                    c_ulong,
+                    c_char_p,
+                    POINTER(c_int),
+                    POINTER(c_int),
+                    POINTER(c_int),
                 )(("XQueryExtension", _x11))
 
                 self.dpy = self.XOpenDisplay(None)
@@ -306,7 +312,7 @@ if operating_system.isGTK():
                     b"MIT-SCREEN-SAVER",
                     byref(major_opcode),
                     byref(first_event),
-                    byref(first_error)
+                    byref(first_error),
                 )
 
                 if not has_extension:
@@ -343,27 +349,27 @@ if operating_system.isGTK():
             # fire constantly. dbus_screensaver is kept last as a
             # fallback for the few Plasma 5 setups that rely on it.
             ok, detail = self._try_dbus_mutter()
-            self._probe_log.append(('dbus_mutter', ok, detail))
+            self._probe_log.append(("dbus_mutter", ok, detail))
             if ok:
-                self._method = 'dbus_mutter'
+                self._method = "dbus_mutter"
                 return
 
             ok, detail = self._try_x11_screensaver()
-            self._probe_log.append(('x11_mit_screensaver', ok, detail))
+            self._probe_log.append(("x11_mit_screensaver", ok, detail))
             if ok:
-                self._method = 'x11_mit_screensaver'
+                self._method = "x11_mit_screensaver"
                 return
 
             ok, detail = self._try_ext_idle_notify()
-            self._probe_log.append(('ext_idle_notify', ok, detail))
+            self._probe_log.append(("ext_idle_notify", ok, detail))
             if ok:
-                self._method = 'ext_idle_notify'
+                self._method = "ext_idle_notify"
                 return
 
             ok, detail = self._try_dbus_screensaver()
-            self._probe_log.append(('dbus_screensaver', ok, detail))
+            self._probe_log.append(("dbus_screensaver", ok, detail))
             if ok:
-                self._method = 'dbus_screensaver'
+                self._method = "dbus_screensaver"
                 return
 
             self._method = None
@@ -375,38 +381,35 @@ if operating_system.isGTK():
             return list(self._probe_log)
 
         def __del__(self):
-            if self.dpy and hasattr(self, 'XCloseDisplay'):
+            if self.dpy and hasattr(self, "XCloseDisplay"):
                 self.XCloseDisplay(self.dpy)
-            if getattr(self, '_wl_display', None) is not None:
+            if getattr(self, "_wl_display", None) is not None:
                 self._teardown_wl()
 
         def get_idle_seconds(self):
             self._initialize()
 
-            if self._method == 'dbus_mutter':
+            if self._method == "dbus_mutter":
                 try:
                     # Returns milliseconds
                     return self._dbus_iface.GetIdletime() / 1000
                 except Exception:
                     pass
-            elif self._method == 'dbus_screensaver':
+            elif self._method == "dbus_screensaver":
                 try:
                     # Returns seconds
                     return self._dbus_iface.GetSessionIdleTime()
                 except Exception:
                     pass
-            elif self._method == 'ext_idle_notify':
+            elif self._method == "ext_idle_notify":
                 self._wl_pump()
                 since = self._idle_since
                 if since is None:
                     return 0
                 # The compositor only told us once the seat had been
                 # idle for _WL_TIMEOUT_MS, so add that back in.
-                return (
-                    (time.time() - since)
-                    + (self._WL_TIMEOUT_MS / 1000.0)
-                )
-            elif self._method == 'x11_mit_screensaver':
+                return (time.time() - since) + (self._WL_TIMEOUT_MS / 1000.0)
+            elif self._method == "x11_mit_screensaver":
                 self.XScreenSaverQueryInfo(
                     self.dpy, self.XRootWindow(self.dpy, 0), self.info
                 )
@@ -432,6 +435,9 @@ elif operating_system.isWindows():
     class WindowsIdleQuery(object):
         def __init__(self):
             self.GetTickCount = windll.kernel32.GetTickCount
+            # A DWORD; ctypes' default (signed int) goes negative after
+            # 24.9 days of uptime
+            self.GetTickCount.restype = c_uint
             self.GetLastInputInfo = windll.user32.GetLastInputInfo
 
             self.lastInputInfo = LASTINPUTINFO()
@@ -439,13 +445,17 @@ elif operating_system.isWindows():
 
         def get_idle_seconds(self):
             self.GetLastInputInfo(byref(self.lastInputInfo))
-            return (self.GetTickCount() - self.lastInputInfo.dwTime) / 1000
+            # Both are 32-bit tick counts, which wrap after 49.7 days
+            elapsed = (
+                self.GetTickCount() - self.lastInputInfo.dwTime
+            ) & 0xFFFFFFFF
+            return elapsed / 1000
 
         def get_backend_name(self):
-            return 'win32_GetLastInputInfo'
+            return "win32_GetLastInputInfo"
 
         def get_probe_log(self):
-            return [('win32_GetLastInputInfo', True, None)]
+            return [("win32_GetLastInputInfo", True, None)]
 
     IdleQuery = WindowsIdleQuery
 
@@ -469,23 +479,27 @@ elif operating_system.isMac():
             try:
                 # Load IOKit and CoreFoundation frameworks
                 self._iokit = cdll.LoadLibrary(
-                    '/System/Library/Frameworks/IOKit.framework/IOKit'
+                    "/System/Library/Frameworks/IOKit.framework/IOKit"
                 )
                 self._cf = cdll.LoadLibrary(
-                    '/System/Library/Frameworks/'
-                    'CoreFoundation.framework/CoreFoundation'
+                    "/System/Library/Frameworks/"
+                    "CoreFoundation.framework/CoreFoundation"
                 )
 
                 # IOKit functions
                 self._iokit.IOServiceGetMatchingService.restype = c_uint32
                 self._iokit.IOServiceGetMatchingService.argtypes = [
-                    c_uint32, c_void_p
+                    c_uint32,
+                    c_void_p,
                 ]
                 self._iokit.IOServiceMatching.restype = c_void_p
                 self._iokit.IOServiceMatching.argtypes = [c_void_p]
                 self._iokit.IORegistryEntryCreateCFProperty.restype = c_void_p
                 self._iokit.IORegistryEntryCreateCFProperty.argtypes = [
-                    c_uint32, c_void_p, c_void_p, c_uint32
+                    c_uint32,
+                    c_void_p,
+                    c_void_p,
+                    c_uint32,
                 ]
                 self._iokit.IOObjectRelease.restype = c_int32
                 self._iokit.IOObjectRelease.argtypes = [c_uint32]
@@ -493,11 +507,15 @@ elif operating_system.isMac():
                 # CoreFoundation functions
                 self._cf.CFStringCreateWithCString.restype = c_void_p
                 self._cf.CFStringCreateWithCString.argtypes = [
-                    c_void_p, c_void_p, c_uint32
+                    c_void_p,
+                    c_void_p,
+                    c_uint32,
                 ]
                 self._cf.CFNumberGetValue.restype = c_int32
                 self._cf.CFNumberGetValue.argtypes = [
-                    c_void_p, c_int32, c_void_p
+                    c_void_p,
+                    c_int32,
+                    c_void_p,
                 ]
                 self._cf.CFRelease.restype = None
                 self._cf.CFRelease.argtypes = [c_void_p]
@@ -519,7 +537,7 @@ elif operating_system.isMac():
                 self._init_error = _summarize_exception(e)
 
         def __del__(self):
-            if hasattr(self, '_idle_key') and self._idle_key:
+            if hasattr(self, "_idle_key") and self._idle_key:
                 try:
                     self._cf.CFRelease(self._idle_key)
                 except Exception:
@@ -539,7 +557,7 @@ elif operating_system.isMac():
                 # Get IOHIDSystem service
                 hid_service = self._iokit.IOServiceGetMatchingService(
                     self._kIOMasterPortDefault,
-                    self._iokit.IOServiceMatching(b"IOHIDSystem")
+                    self._iokit.IOServiceMatching(b"IOHIDSystem"),
                 )
 
                 if not hid_service:
@@ -559,6 +577,7 @@ elif operating_system.isMac():
                     try:
                         # Get the value as int64 (nanoseconds)
                         from ctypes import c_int64
+
                         idle_ns = c_int64()
                         self._cf.CFNumberGetValue(
                             idle_time_ref,
@@ -576,10 +595,10 @@ elif operating_system.isMac():
                 return 0
 
         def get_backend_name(self):
-            return 'iokit_HIDIdleTime' if self._available else None
+            return "iokit_HIDIdleTime" if self._available else None
 
         def get_probe_log(self):
-            return [('iokit_HIDIdleTime', self._available, self._init_error)]
+            return [("iokit_HIDIdleTime", self._available, self._init_error)]
 
     IdleQuery = MacIdleQuery
 
@@ -589,6 +608,13 @@ elif operating_system.isMac():
 
 
 class IdleNotifier(wx.EvtHandler, IdleQuery):
+    """Idle/awake state machine, polled on the GlobalTimer tick.
+
+    Polls only while activity is tracked (resume/pause), the computer
+    is not suspended (poweron/poweroff) and get_min_idle_time() is
+    above 0, so a disabled notice never queries the backend.
+    """
+
     STATE_SLEEPING = 0
     STATE_AWAKE = 1
 
@@ -600,62 +626,84 @@ class IdleNotifier(wx.EvtHandler, IdleQuery):
         self._last_activity = time.time()
         self._gone_to_sleep = None
 
-        self._bound = True
-        wx.GetApp().Bind(wx.EVT_IDLE, self._on_idle)
+        self._tracking = False
+        self._suspended = False
 
     def stop(self):
         self.pause()
 
     def pause(self):
-        if self._bound:
-            wx.GetApp().Unbind(wx.EVT_IDLE, handler=self._on_idle)
-            self._bound = False
+        self._tracking = False
+        self._update_polling()
 
     def resume(self):
         self.state = self.STATE_AWAKE
         self._last_activity = time.time()
-        if not self._bound:
-            wx.GetApp().Bind(wx.EVT_IDLE, self._on_idle)
+        self._tracking = True
+        self._update_polling()
 
-    def _check(self):
-        if (
-            self.state == self.STATE_AWAKE
-            and time.time() - self._last_activity >= self.get_min_idle_time()
-        ):
+    def is_polling(self):
+        return self._on_tick in patterns.Publisher().observers(
+            eventType="timer.second"
+        )
+
+    def _update_polling(self):
+        polling = (
+            self._tracking
+            and not self._suspended
+            and self.get_min_idle_time() > 0
+        )
+        if polling == self.is_polling():
+            return
+        if polling:
+            patterns.Publisher().registerObserver(
+                self._on_tick, eventType="timer.second"
+            )
+            log_step(
+                "Polling started; threshold=%ds" % self.get_min_idle_time(),
+                prefix="IDLE",
+            )
+        else:
+            patterns.Publisher().removeObserver(
+                self._on_tick, eventType="timer.second"
+            )
+            log_step("Polling stopped", prefix="IDLE")
+
+    def _check(self, min_idle_time):
+        idle_time = time.time() - self._last_activity
+        if self.state == self.STATE_AWAKE and idle_time >= min_idle_time:
             self._gone_to_sleep = self._last_activity
             self.state = self.STATE_SLEEPING
             self.sleep()
-        elif (
-            self.state == self.STATE_SLEEPING
-            and time.time() - self._last_activity < self.get_min_idle_time()
-        ):
+        elif self.state == self.STATE_SLEEPING and idle_time < min_idle_time:
             self.state = self.STATE_AWAKE
             self.wake(self._gone_to_sleep)
 
-    def _on_idle(self, event):
-        self._check()
+    def _on_tick(self, event=None):  # pylint: disable=W0613
+        min_idle_time = self.get_min_idle_time()
+        if min_idle_time <= 0:  # Notice disabled
+            return
+        # Checking before the query too counts a gap between polls (a
+        # suspend, which idle counters may not include) as idle.
+        self._check(min_idle_time)
         self._last_activity = time.time() - self.get_idle_seconds()
-        self._check()
-        event.Skip()
+        self._check(min_idle_time)
 
     def poweroff(self):
         """
         Call this when the computer goes to sleep.
         """
-        if self._bound:
-            wx.GetApp().Unbind(wx.EVT_IDLE, handler=self._on_idle)
-            self._bound = False
+        self._suspended = True
+        self._update_polling()
 
     def poweron(self):
         """
         Call this when the computer resumes from sleep.
         """
-        if not self._bound:
-            wx.GetApp().Bind(wx.EVT_IDLE, self._on_idle)
-            self._bound = True
-        self._check()
-        self._last_activity = time.time() - self.get_idle_seconds()
-        self._check()
+        self._suspended = False
+        self._update_polling()
+        if self.is_polling():
+            self._on_tick()
 
     def get_min_idle_time(self):
         """

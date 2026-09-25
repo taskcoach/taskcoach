@@ -11,9 +11,9 @@
 
 This patch is **ABSOLUTELY CRITICAL** for TaskCoach to display category row background colors correctly on Debian Bookworm. Without it, only text backgrounds are colored, not full rows, making the category system nearly unusable.
 
-**This workaround is required until:**
-- Debian ships wxPython 4.2.4+ (which includes the upstream fix), OR
-- wxPython 4.2.4+ becomes available via `pip install` in a venv
+The bundled copy is used on every wxPython version: besides these
+fixes (upstream since wxPython 4.2.4) it has Task Coach's own changes,
+such as the macOS colour checks and column resizing.
 
 ---
 

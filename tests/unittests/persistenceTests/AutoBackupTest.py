@@ -16,9 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import test, os, shutil, bz2
+import bz2
+import os
+import shutil
+import tempfile
+import test
 from taskcoachlib import persistence, config
 from taskcoachlib.domain import date, task
+from taskcoachlib.filesystem import resourcelock
 
 
 class DummyFile(object):
@@ -40,13 +45,19 @@ class DummyTaskFile(persistence.TaskFile):
         return DummyFile()
 
     def _read(self, *args, **kwargs):  # pylint: disable=W0613
-        return [task.Task()], [], [], None, dict(), None
+        content = [task.Task()], [], [], None, dict(), None
+        return content, []  # No duplicate ids
 
     def exists(self):
         return True
 
     def filename(self):
         return super().filename() or "whatever.tsk"
+
+
+def remove_test_data():
+    """Remove the data folder LocalSettings creates."""
+    shutil.rmtree(os.path.join(os.getcwd(), "testdata"), ignore_errors=True)
 
 
 class LocalSettings(config.Settings):
@@ -59,6 +70,11 @@ class LocalSettings(config.Settings):
 
     def _pathToDataDir(self, *args, **kwargs):
         return self.__path, False
+
+    def _pathToTemplatesDir(self):
+        # Existing, so migrateConfigurationFiles() leaves the user's own
+        # templates folder where it is
+        return self.__path, True
 
 
 class AutoBackupTest(test.TestCase):
@@ -78,6 +94,7 @@ class AutoBackupTest(test.TestCase):
         self.taskFile.stop()
         if os.path.exists("test.tsk"):
             os.remove("test.tsk")
+        remove_test_data()
 
     def onCopyFile(self, *args):  # pylint: disable=W0613
         self.copyCalled = True
@@ -141,13 +158,15 @@ class AutoBackupTest(test.TestCase):
             content = fp.read()
         self.assertEqual(
             content,
-            '<backupfiles><file sha="13cf6835565aaf4ab1f78e922b9917f9a4c7a856">test.tsk</file></backupfiles>',
+            b"<backupfiles><file "
+            b'sha="13cf6835565aaf4ab1f78e922b9917f9a4c7a856">'
+            b"test.tsk</file></backupfiles>",
         )
 
     def testBackupMigration(self):
         self.taskFile.setFilename("test.tsk")
         with open("test.20140715-010203.tsk.bak", "wb") as fp:
-            fp.write("Hello, world")
+            fp.write(b"Hello, world")
         self.backup.onTaskFileRead(self.taskFile)
         self.assertFalse(os.path.exists("test.20140715-010203.tsk.bak"))
 
@@ -157,7 +176,7 @@ class AutoBackupTest(test.TestCase):
             "20140715010203.bak",
         )
         self.assertTrue(os.path.exists(backupName))
-        self.assertEqual(bz2.BZ2File(backupName).read(), "Hello, world")
+        self.assertEqual(bz2.BZ2File(backupName).read(), b"Hello, world")
 
     def testNoBackupFiles(self):
         self.assertEqual(
@@ -241,4 +260,72 @@ class AutoBackupTest(test.TestCase):
                 self.taskFile, now=lambda: date.DateTime(2002, 1, 1, 1, 1, 1)
             ),
             self.backup.leastUniqueBackupFile(self.fiveBackupFiles()),
+        )
+
+
+class RestoreBackupTest(test.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.directory = tempfile.mkdtemp()
+        self.filename = os.path.join(self.directory, "tasks.tsk")
+        self.write(self.filename, b"current")
+        self.manifest = persistence.BackupManifest(LocalSettings(load=False))
+        self.backup_time = date.DateTime(2026, 9, 1, 12, 0, 0)
+        self.backup = os.path.join(
+            self.manifest.backupPath(self.filename),
+            self.backup_time.strftime("%Y%m%d%H%M%S.bak"),
+        )
+        with bz2.BZ2File(self.backup, "w") as backup:
+            backup.write(b"backup")
+
+    def tearDown(self):
+        shutil.rmtree(self.directory)
+        remove_test_data()
+        super().tearDown()
+
+    @staticmethod
+    def write(filename, content):
+        with open(filename, "wb") as output:
+            output.write(content)
+
+    def content(self):
+        with open(self.filename, "rb") as restored:
+            return restored.read()
+
+    def restore(self):
+        self.manifest.restoreFile(
+            self.filename, self.backup_time, self.filename
+        )
+
+    def test_restore_replaces_the_file_and_releases_the_lock(self):
+        self.restore()
+        self.assertEqual(b"backup", self.content())
+        with open(self.filename + ".lock", "rb") as lock_file:
+            self.assertEqual(b"", lock_file.read())
+
+    def test_restore_keeps_the_lock_of_the_open_file(self):
+        held = resourcelock.acquire(self.filename, "task file")
+        self.addCleanup(held.release)
+        self.restore()
+        self.assertEqual(b"backup", self.content())
+        self.assertIs(held, resourcelock.acquire(self.filename, "task file"))
+
+    def test_restore_onto_a_file_open_elsewhere_is_refused(self):
+        def in_use(path, purpose):
+            raise resourcelock.LockInUse(path, {"pid": "4321"})
+
+        original = resourcelock.acquire
+        resourcelock.acquire = in_use
+        self.addCleanup(setattr, resourcelock, "acquire", original)
+        with self.assertRaises(resourcelock.LockInUse):
+            self.restore()
+        self.assertEqual(b"current", self.content())
+
+    def test_unreadable_backup_keeps_the_file(self):
+        self.write(self.backup, b"not bz2")
+        with self.assertRaises(OSError):
+            self.restore()
+        self.assertEqual(b"current", self.content())
+        self.assertEqual(
+            ["tasks.tsk", "tasks.tsk.lock"], sorted(os.listdir(self.directory))
         )

@@ -31,8 +31,8 @@ class AuiManagedFrameWithDynamicCenterPane(
 
 
 class Window(AuiManagedFrameWithDynamicCenterPane):
-    def addPane(self, viewer, title, name="name", floating=False):
-        super().addPane(viewer, title, name, floating)
+    def add_pane(self, viewer, title, name="name", floating=False):
+        super().add_pane(viewer, title, name, floating)
 
 
 class ViewerTest(test.wxTestCase):
@@ -47,7 +47,7 @@ class ViewerTest(test.wxTestCase):
             self.window, self.settings
         )
         self.viewer = self.createViewer()
-        self.viewerContainer.addViewer(self.viewer)
+        self.viewerContainer.add_viewer(self.viewer)
 
     def tearDown(self):
         super().tearDown()
@@ -70,13 +70,13 @@ class ViewerTest(test.wxTestCase):
 
     def testSelectAll(self):
         self.viewer.select_all()
-        self.viewer.endOfSelectAll()
+        self.viewer.end_of_select_all()
         self.assertEqual([self.task], self.viewer.curselection())
 
     def testSelectAllWithMultipleItems(self):
         self.taskFile.tasks().append(task.Task("second"))
         self.viewer.select_all()
-        self.viewer.endOfSelectAll()
+        self.viewer.end_of_select_all()
         self.assertEqual(2, len(self.viewer.curselection()))
 
     def testSelectNextItemAfterDeletingSelection(self):
@@ -124,24 +124,24 @@ class ViewerTest(test.wxTestCase):
         self.assertEqual(self.viewer.defaultTitle, self.viewer.title())
 
     def testSetTitle(self):
-        self.viewer.setTitle("New title")
+        self.viewer.set_title("New title")
         self.assertEqual("New title", self.viewer.title())
 
     def testSetTitleSavesTitleInSettings(self):
-        self.viewer.setTitle("New title")
+        self.viewer.set_title("New title")
         self.assertEqual(
             "New title",
             self.settings.get(self.viewer.settingsSection(), "title"),
         )
 
     def testSetTitleDoesNotSaveTitleInSettingsWhenTitleIsDefaultTitle(self):
-        self.viewer.setTitle(self.viewer.defaultTitle)
+        self.viewer.set_title(self.viewer.defaultTitle)
         self.assertEqual(
             "", self.settings.get(self.viewer.settingsSection(), "title")
         )
 
     def testSetTitleChangesTabTitle(self):
-        self.viewer.setTitle("New title")
+        self.viewer.set_title("New title")
         self.assertEqual(
             "New title", self.window.manager.GetPane(self.viewer).caption
         )
@@ -169,7 +169,7 @@ class SortableViewerTest(test.TestCase):
         viewer.settings = self.settings
         viewer.settingsSection = lambda: "taskviewer"
         viewer.SorterClass = task.sorter.Sorter
-        presentation = viewer.createSorter(task.TaskList())
+        presentation = viewer.create_sorter(task.TaskList())
         viewer.presentation = lambda: presentation
         return viewer
 
@@ -180,9 +180,9 @@ class SortableViewerTest(test.TestCase):
         self.viewer.sortBy("subject")
         self.assertEqual(
             "subject",
-            ast.literal_eval(self.settings.get(self.viewer.settingsSection(), "sortby"))[
-                0
-            ],
+            ast.literal_eval(
+                self.settings.get(self.viewer.settingsSection(), "sortby")
+            )[0],
         )
 
     def testSortByTwiceFlipsSortOrder(self):
@@ -387,11 +387,15 @@ class FilterableViewerForTasks(test.TestCase):
         return viewer
 
     def testIsNotHidingInactiveTasksByDefault(self):
-        self.assertFalse(self.viewer.is_hiding_task_status(task.status.inactive))
+        self.assertFalse(
+            self.viewer.is_hiding_task_status(task.status.inactive)
+        )
 
     def testHideInactiveTasks(self):
         self.viewer.hide_task_status(task.status.inactive)
-        self.assertTrue(self.viewer.is_hiding_task_status(task.status.inactive))
+        self.assertTrue(
+            self.viewer.is_hiding_task_status(task.status.inactive)
+        )
 
     def testHideInactiveTasks_SetsSetting(self):
         self.viewer.hide_task_status(task.status.inactive)
@@ -447,7 +451,9 @@ class FilterableViewerForTasks(test.TestCase):
         self.assertTrue(self.viewer.presentation())
 
     def testIsNotHidingDueSoonTasksByDefault(self):
-        self.assertFalse(self.viewer.is_hiding_task_status(task.status.duesoon))
+        self.assertFalse(
+            self.viewer.is_hiding_task_status(task.status.duesoon)
+        )
 
     def testHideDueSoonTasks(self):
         self.viewer.hide_task_status(task.status.duesoon)
@@ -477,7 +483,9 @@ class FilterableViewerForTasks(test.TestCase):
         self.assertTrue(self.viewer.presentation())
 
     def testIsNotHidingOverDueTasksByDefault(self):
-        self.assertFalse(self.viewer.is_hiding_task_status(task.status.overdue))
+        self.assertFalse(
+            self.viewer.is_hiding_task_status(task.status.overdue)
+        )
 
     def testHideOverDueTasks(self):
         self.viewer.hide_task_status(task.status.overdue)
@@ -507,11 +515,15 @@ class FilterableViewerForTasks(test.TestCase):
         self.assertTrue(self.viewer.presentation())
 
     def testIsNotHidingCompletedTasksByDefault(self):
-        self.assertFalse(self.viewer.is_hiding_task_status(task.status.completed))
+        self.assertFalse(
+            self.viewer.is_hiding_task_status(task.status.completed)
+        )
 
     def testHideCompletedTasks(self):
         self.viewer.hide_task_status(task.status.completed)
-        self.assertTrue(self.viewer.is_hiding_task_status(task.status.completed))
+        self.assertTrue(
+            self.viewer.is_hiding_task_status(task.status.completed)
+        )
 
     def testHideCompletedTasks_SetsSetting(self):
         self.viewer.hide_task_status(task.status.completed)
@@ -618,9 +630,7 @@ class ViewerIteratorTestCase(test.wxTestCase):
         self.taskList = self.taskFile.tasks()
         self.window = AuiManagedFrameWithDynamicCenterPane(self.frame)
         self.viewer = self.createViewer()
-        self.settings.setboolean(
-            self.viewer.settingsSection(), "treemode", self.tree_mode == "True"
-        )
+        self.viewer.set_tree_mode(self.tree_mode == "True")
         self.viewer.sortBy("subject")
 
     def tearDown(self):

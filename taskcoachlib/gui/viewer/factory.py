@@ -18,8 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
 
-from taskcoachlib import operating_system
-
 from . import effort
 from . import task
 from . import category
@@ -127,12 +125,15 @@ class addViewers(object):  # pylint: disable=C0103, R0903
         """
         section = viewer_class.__name__.lower()
         perspective = self.__settings.get("view", "perspective")
-        # Anchored on the name separator so that effortviewer does not
-        # also match effortviewerforselectedtasks.
+        # Anchored at the start of a pane entry, so a caption containing
+        # "name=" does not match (AUI escapes "|" in captions as "|\"),
+        # and on the name separator, so effortviewer does not also match
+        # effortviewerforselectedtasks.
         numbers = sorted(
             int(match.group(1) or 0)
             for match in re.finditer(
-                r"name=%s(\d*)(?=[;|]|$)" % re.escape(section), perspective
+                r"(?:^|\|)name=%s(\d*)(?=[;|]|$)" % re.escape(section),
+                perspective,
             )
         )
         if numbers:

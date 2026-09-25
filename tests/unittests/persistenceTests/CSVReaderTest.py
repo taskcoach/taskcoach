@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import os
 import tempfile
 import test
 from taskcoachlib import persistence, config
@@ -37,9 +38,12 @@ class CSVReaderTestCase(test.TestCase):
         )
 
     def createCSVFile(self, contents):
-        with tempfile.NamedTemporaryFile(delete=False) as tmpFile:
-            tmpFile.write(contents)
-        return tmpFile.name
+        with tempfile.NamedTemporaryFile(
+            "w", encoding="utf-8", suffix=".csv", delete=False
+        ) as tmp_file:
+            tmp_file.write(contents)
+        self.addCleanup(os.remove, tmp_file.name)
+        return tmp_file.name
 
     def testTwoTasksWithSubject(self):
         filename = self.createCSVFile("Subject 1\nSubject 2\n")

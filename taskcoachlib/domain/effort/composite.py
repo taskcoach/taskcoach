@@ -94,7 +94,7 @@ class BaseCompositeEffort(base.BaseEffort):  # pylint: disable=W0223
         if consolidate:
             totalEffort = sum(
                 (
-                    self.__doRound(effort.timeSpent(), 0, false)
+                    self.__doRound(effort.timeSpent(), 0, False)
                     for effort in self._getEfforts(recursive=False)
                     if startOfDay <= effort.getStart() <= endOfDay
                 ),

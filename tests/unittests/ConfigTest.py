@@ -65,9 +65,11 @@ class SettingsTest(SettingsTestCase):
 
     def testGetNonExistingSettingFromSection1ReturnsDefault(self):
         self.settings.add_section("effortviewer1")
-        self.settings.set("effortviewer", "columnwidths", "dict(subject=10)")
+        self.settings.set("effortviewer", "columnwidths", "{'subject': 10}")
         self.assertEqual(
-            ast.literal_eval(config.defaults.defaults["effortviewer"]["columnwidths"]),
+            ast.literal_eval(
+                config.defaults.defaults["effortviewer"]["columnwidths"]
+            ),
             self.settings.getdict("effortviewer1", "columnwidths"),
         )
 
@@ -76,7 +78,9 @@ class SettingsTest(SettingsTestCase):
         self.settings.add_section("effortviewer2")
         self.settings.set("effortviewer1", "columnwidths", "dict(subject=10)")
         self.assertEqual(
-            ast.literal_eval(config.defaults.defaults["effortviewer"]["columnwidths"]),
+            ast.literal_eval(
+                config.defaults.defaults["effortviewer"]["columnwidths"]
+            ),
             self.settings.getdict("effortviewer2", "columnwidths"),
         )
 
@@ -96,7 +100,7 @@ class SettingsTest(SettingsTestCase):
         )
 
     def testAddSectionAndSkipOne(self):
-        self.settings.set("effortviewer", "columnwidths", "dict(subject=10)")
+        self.settings.set("effortviewer", "columnwidths", "{'subject': 10}")
         self.settings.add_section(
             "effortviewer2", copyFromSection="effortviewer"
         )
@@ -125,6 +129,7 @@ class SettingsTest(SettingsTestCase):
         self.assertEqual(
             "%%", self.settings.get("effortviewer", "searchfilterstring")
         )
+
 
 class SettingsIOTest(SettingsTestCase):
     def setUp(self):
@@ -228,12 +233,17 @@ class SettingsFileLocationTest(SettingsTestCase):
 
     def testPathWhenSavingIniFileInProgramDir(self):
         self.settings.setboolean("file", "saveinifileinprogramdir", True)
-        self.assertEqual(os.path.dirname(sys.argv[0]), self.settings.path())
+        self.assertEqual(
+            os.path.abspath(os.path.dirname(sys.argv[0])), self.settings.path()
+        )
 
     def testPathWhenSavingIniFileInProgramDirAndRunFromZipFile(self):
         self.settings.setboolean("file", "saveinifileinprogramdir", True)
         sys.argv.insert(0, os.path.join("d:", "TaskCoach", "library.zip"))
-        self.assertEqual(os.path.join("d:", "TaskCoach"), self.settings.path())
+        self.assertEqual(
+            os.path.abspath(os.path.join("d:", "TaskCoach")),
+            self.settings.path(),
+        )
         del sys.argv[0]
 
     def testSettingSaveIniFileInProgramDirToFalseRemovesIniFile(self):

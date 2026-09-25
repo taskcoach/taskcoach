@@ -549,12 +549,23 @@ class FileManageBackups(IOCommand, settings_uicommand.SettingsCommand):
         )
 
     def do_command(self, event):
+        # Ask about unsaved changes before restoring: saving them after
+        # the restore would merge them into the restored file
+        if not self.iocontroller.save_unsaved_changes(
+            _(
+                "You have unsaved changes.\n"
+                "Save them before restoring a backup?"
+            )
+        ):
+            return
         dlg = dialog.BackupManagerDialog(
             self.main_window(), self.settings, self.iocontroller.filename()
         )
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                self.iocontroller.open(dlg.restoredFilename())
+                self.iocontroller.open(
+                    dlg.restoredFilename(), ask_to_save=False
+                )
         finally:
             dlg.Destroy()
 
@@ -2850,10 +2861,8 @@ class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
             **kwargs
         )
         self.__tracker = effort.EffortListTracker(self.effortList)
-        for subtype in ["", ".added", ".removed"]:
-            self.__tracker.subscribe(
-                self.__onEffortsChanged, "effortlisttracker%s" % subtype
-            )
+        # Also gets the subtopics (.changed.added, .changed.removed)
+        self.__tracker.subscribe(self.__onEffortsChanged, "effortlisttracker")
         self.__current_icon_id = None
 
     def removeInstance(self):

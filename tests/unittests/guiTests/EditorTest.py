@@ -45,7 +45,7 @@ class EditorTestCase(test.wxTestCase):
         self.editor = EditorUnderTest(
             self.frame, [self.item], self.settings, self.items, self.taskFile
         )
-        self.appearance = self.editor._interior[-1]
+        self.appearance = self.editor._interior.getPage("appearance")
 
     def tearDown(self):
         super().tearDown()
@@ -130,8 +130,10 @@ class EditorTestCase(test.wxTestCase):
     def testThatPickingAnIconChangesTheItemIcon(self):
         self.appearance._iconEntry.SetValue("nuvola_apps_clanbomber")
         self.appearance._iconSync.onAttributeEdited(dummy.Event())
-        self.assertEqual("nuvola_apps_clanbomber", self.item.icon())
+        self.assertEqual("nuvola_apps_clanbomber", self.item.icon_id())
 
     def testThatChangingTheItemIconAffectsTheIconEntry(self):
-        self.item.setIcon("nuvola_apps_clanbomber")
-        self.assertEqual("nuvola_apps_clanbomber", self.appearance._iconEntry.GetValue())
+        self.item.set_icon_id("nuvola_apps_clanbomber")
+        self.assertEqual(
+            "nuvola_apps_clanbomber", self.appearance._iconEntry.GetValue()
+        )

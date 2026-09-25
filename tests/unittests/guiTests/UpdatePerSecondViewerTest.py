@@ -60,8 +60,8 @@ class UpdatePerSecondViewerTestsMixin(object):
 
     def testClockNotificationResultsInRefreshedItem(self):
         self.updateViewer.widget = MockWidget()
-        self.updateViewer.secondRefresher.refreshItems(
-            self.updateViewer.secondRefresher.currentlyTrackedItems()
+        self.updateViewer.second_refresher.refresh_items(
+            self.updateViewer.second_refresher.currently_tracked_items()
         )
         usingTaskViewer = self.ListViewerClass != gui.viewer.EffortViewer
         expected = self.trackedTask if usingTaskViewer else self.trackedEffort
@@ -72,15 +72,14 @@ class UpdatePerSecondViewerTestsMixin(object):
     def testClockNotificationResultsInRefreshedItem_OnlyForTrackedItems(self):
         self.taskList.append(task.Task("not tracked"))
         self.updateViewer.widget = MockWidget()
-        self.updateViewer.secondRefresher.refreshItems(
-            self.updateViewer.secondRefresher.currentlyTrackedItems()
+        self.updateViewer.second_refresher.refresh_items(
+            self.updateViewer.second_refresher.currently_tracked_items()
         )
         self.assertEqual(1, len(self.updateViewer.widget.refreshedItems))
 
     def testStopTrackingRemovesViewerFromClockObservers(self):
         self.trackedTask.stopTracking()
-        # With new architecture, check if the secondRefresher's timer stopped
-        self.assertFalse(self.updateViewer.secondRefresher.isClockStarted())
+        self.assertFalse(self.updateViewer.second_refresher.is_clock_started())
 
     def testStopTrackingRefreshesTrackedItems(self):
         self.updateViewer.widget = MockWidget()
@@ -92,12 +91,11 @@ class UpdatePerSecondViewerTestsMixin(object):
         self.taskList.append(parent)
         parent.addChild(self.trackedTask)
         self.taskList.remove(parent)
-        # With new architecture, check if the secondRefresher's timer stopped
-        self.assertFalse(self.updateViewer.secondRefresher.isClockStarted())
+        self.assertFalse(self.updateViewer.second_refresher.is_clock_started())
 
     def testCreateViewerWithTrackedItemsStartsTheClock(self):
         self.createUpdateViewer()
-        self.assertTrue(self.updateViewer.secondRefresher.isClockStarted())
+        self.assertTrue(self.updateViewer.second_refresher.is_clock_started())
 
     def testViewerDoesNotReactToAddEventsFromOtherContainers(self):
         categories = base.filter.SearchFilter(category.CategoryList())

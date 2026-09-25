@@ -30,6 +30,10 @@ class PopupButtonMixin(object):
         except AttributeError:
             self.__menu = self.createPopupMenu()  # pylint: disable=W0201
             args = [self.__menu]
+        # Nothing else refreshes it: fill it with the current templates
+        # or tasks before each popup
+        if hasattr(self.__menu, "updateMenu"):
+            self.__menu.updateMenu()
 
         # Check if menu has any items
         if self.__menu.GetMenuItemCount() == 0:

@@ -8,7 +8,8 @@ This document covers AUI-related topics for Task Coach, which uses wxPython's AG
    - [Pane Names Carry Instance Numbers](#pane-names-carry-instance-numbers)
    - [AUI-Generated Panes](#aui-generated-panes)
 2. [Sash Cursor Seep-Through Fix](#sash-cursor-seep-through-fix)
-3. [Related Documentation](#related-documentation)
+3. [System Colour Change Event](#system-colour-change-event)
+4. [Related Documentation](#related-documentation)
 
 ---
 
@@ -82,8 +83,9 @@ def __restore_perspective(self):
 A pane's name is `viewer.settingsSection()`, which appends the viewer's
 instance number for every instance after the first: `taskviewer`,
 `taskviewer1`, `taskviewer2`. `NumberedInstances` (in
-`patterns/metaclass.py`) hands out the lowest number not held by a live
-instance.
+`patterns/metaclass.py`) hands out the lowest number not held by a
+registered instance. An instance stays registered until it is garbage
+collected, so a closed viewer can hold its number for a while.
 
 This matters because the layout is persisted in two places that encode
 different things:
@@ -173,8 +175,8 @@ The name is determined by `viewer.settingsSection()` in `taskcoachlib/gui/viewer
 | `taskcoachlib/gui/viewer/base.py` | `settingsSection()` - generates unique pane names |
 | `taskcoachlib/gui/viewer/factory.py` | `_instance_numbers_to_add()` - reads instance numbers back from the perspective |
 | `taskcoachlib/patterns/metaclass.py` | `NumberedInstances` - assigns instance numbers, honours an explicit one |
-| `taskcoachlib/gui/viewer/container.py` | `addViewer()` - adds panes to AUI manager |
-| `taskcoachlib/widgets/frame.py` | `addPane()` - configures AuiPaneInfo |
+| `taskcoachlib/gui/viewer/container.py` | `add_viewer()` - adds panes to AUI manager |
+| `taskcoachlib/widgets/frame.py` | `add_pane()` - configures AuiPaneInfo |
 | `taskcoachlib/config/settings.py` | Stores perspective in INI file |
 
 ---
@@ -203,6 +205,25 @@ Implemented via monkey-patch on `wx.Dialog` at application startup in `taskcoach
 |------|---------|
 | `taskcoachlib/widgets/__init__.py` | `_install_dialog_cursor_fix()` - patches wx.Dialog |
 | `wx/lib/agw/aui/framemanager.py` | System file - `OnSetCursor()` that causes the issue |
+
+---
+
+## System Colour Change Event
+
+`AuiManager` is pushed onto its window's event handler stack and handles
+`EVT_SYS_COLOUR_CHANGED` without calling `Skip()`, so the window's own
+handlers and its children never see the event. The main window's
+manager is a subclass that skips it, so `MainWindow` can follow system
+light/dark switches (see [SETTINGS.md](SETTINGS.md#system-theme-changes)).
+The manager inside each AGW `AuiNotebook` (editor pages, docked
+notebooks) still consumes it.
+
+### Related Files
+
+| File | Purpose |
+|------|---------|
+| `taskcoachlib/widgets/frame.py` | `_AuiManager` - skips `EVT_SYS_COLOUR_CHANGED` |
+| `wx/lib/agw/aui/framemanager.py` | System file - `OnSysColourChanged()` without `Skip()` |
 
 ---
 

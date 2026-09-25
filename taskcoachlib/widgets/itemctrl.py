@@ -223,7 +223,9 @@ class _CtrlWithColumnPopupMenuMixin(_CtrlWithPopupMenuMixin):
         except AttributeError:
             window = event.GetEventObject()
         window.SetFocus()
-
+        # A menu built from the viewer's current state refills first
+        if hasattr(self.__popupMenu, "updateMenu"):
+            self.__popupMenu.updateMenu()
         self.PopupMenu(self.__popupMenu)
         event.Skip(False)
 

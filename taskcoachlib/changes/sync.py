@@ -16,16 +16,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import wx
-from taskcoachlib.gui.icons.icon_library import icon_catalog, NOTIFICATION_ICON_SIZE
+from taskcoachlib.gui.icons.icon_library import (
+    icon_catalog,
+    NOTIFICATION_ICON_SIZE,
+)
 
 from taskcoachlib.changes import ChangeMonitor
 from taskcoachlib.domain.note import NoteOwner
 from taskcoachlib.domain.attachment import AttachmentOwner
 from taskcoachlib.domain.base import CompositeObject
 from taskcoachlib.domain.task import Task
-from taskcoachlib.domain.note import Note
-from taskcoachlib.domain.category import Category
+from taskcoachlib.domain.effort import Effort
 from taskcoachlib.notify import AbstractNotifier
 from taskcoachlib.i18n import _
 
@@ -84,7 +85,9 @@ class ChangeSynchronizer(object):
         self.notifier.notify(
             _("Task Coach"),
             message,
-            icon_catalog.get_bitmap("nuvola_apps_korganizer", NOTIFICATION_ICON_SIZE),
+            icon_catalog.get_bitmap(
+                "nuvola_apps_korganizer", NOTIFICATION_ICON_SIZE
+            ),
         )
 
     def mergeObjects(self, memList, diskList):
@@ -111,7 +114,7 @@ class ChangeSynchronizer(object):
         self.reparentObjects(memList, diskList)
         self.deletedObjects(memList)
         self.deletedOwnedObjects(memList)
-        self.applyChanges(memList)
+        self.apply_changes(memList)
 
     def mergeCompositeObjects(self, memList, diskList):
         # First pass: new composite objects on disk. Don't handle
@@ -171,7 +174,7 @@ class ChangeSynchronizer(object):
             if isinstance(obj, AttachmentOwner):
                 self._handleNewOwnedObjectsOnDisk(obj.attachments())
             if isinstance(obj, Task):
-                self._handleNewEffortsOnDisk(obj.efforts())
+                self._handle_new_efforts_on_disk(obj.efforts())
 
     def _handleNewOwnedObjectsOnDisk(self, diskObjects):
         for diskObject in diskObjects:
@@ -251,19 +254,19 @@ class ChangeSynchronizer(object):
                 if isinstance(diskObject, AttachmentOwner):
                     self._handleNewOwnedObjectsOnDisk(diskObject.attachments())
 
-    def _handleNewEffortsOnDisk(self, diskEfforts):
-        for diskEffort in diskEfforts:
-            memChanges = self._monitor.getChanges(diskEffort)
-            deleted = memChanges is not None and "__del__" in memChanges
-            if diskEffort.id() not in self.memMap and not deleted:
-                diskTask = diskEffort.parent()
-                if diskTask.id() in self.memMap:
-                    memTask = self.memMap[diskTask.id()]
-                    diskEffort.setTask(memTask)
-                    self.memMap[diskEffort.id()] = diskEffort
+    def _handle_new_efforts_on_disk(self, disk_efforts):
+        for disk_effort in disk_efforts:
+            mem_changes = self._monitor.getChanges(disk_effort)
+            deleted = mem_changes is not None and "__del__" in mem_changes
+            if disk_effort.id() not in self.memMap and not deleted:
+                disk_task = disk_effort.parent()
+                if disk_task.id() in self.memMap:
+                    mem_task = self.memMap[disk_task.id()]
+                    disk_effort.replace_task(mem_task)
+                    self.memMap[disk_effort.id()] = disk_effort
                 else:
                     # Task deleted; forget it.
-                    self.conflictChanges.addChange(diskEffort, "__del__")
+                    self.conflictChanges.addChange(disk_effort, "__del__")
 
     def reparentObjects(self, memList, diskList):
         # Third pass: objects reparented on disk.
@@ -404,172 +407,186 @@ class ChangeSynchronizer(object):
                 self.memMap[memEffort.parent().id()].removeEffort(memEffort)
                 del self.memMap[memEffort.id()]
 
-    def applyChanges(self, memList):
+    def apply_changes(self, mem_list):
         # Final: apply disk changes
 
-        for memObject in self.allObjects(memList.rootItems()):
-            diskChanges = self.diskChanges.getChanges(memObject)
-            if diskChanges:
-                memChanges = self._monitor.getChanges(memObject)
-                diskObject = self.diskMap[memObject.id()]
+        for mem_object in self.allObjects(mem_list.rootItems()):
+            disk_changes = self.diskChanges.getChanges(mem_object)
+            if disk_changes:
+                mem_changes = self._monitor.getChanges(mem_object)
+                disk_object = self.diskMap[mem_object.id()]
 
                 conflicts = []
 
-                for changeName in diskChanges:
-                    if changeName == "__parent__":
+                for change_name in disk_changes:
+                    if change_name == "__parent__":
                         pass  # Already handled
-                    elif changeName.startswith("__add_category:"):
-                        categoryId = changeName[15:]
-                        if categoryId not in self.memMap:
+                    elif change_name.startswith("__add_category:"):
+                        category_id = change_name[15:]
+                        if category_id not in self.memMap:
                             # Mmmh, deleted...
-                            conflicts.append(changeName)
+                            conflicts.append(change_name)
                             self.conflictChanges.addChange(
-                                memObject, "__del" + changeName[5:]
+                                mem_object, "__del" + change_name[5:]
                             )
                         else:
                             if (
-                                memChanges is not None
-                                and "__del" + changeName[5:] in memChanges
+                                mem_changes is not None
+                                and "__del" + change_name[5:] in mem_changes
                             ):
-                                conflicts.append(changeName)
+                                conflicts.append(change_name)
                                 self.conflictChanges.addChange(
-                                    memObject, "__del" + changeName[5:]
+                                    mem_object, "__del" + change_name[5:]
                                 )
                             else:
                                 # Aaaaah finally
-                                theCategory = self.memMap[categoryId]
-                                memObject.addCategory(theCategory)
-                                theCategory.addCategorizable(memObject)
-                    elif changeName.startswith("__del_category:"):
-                        categoryId = changeName[15:]
-                        if categoryId in self.memMap:
+                                the_category = self.memMap[category_id]
+                                mem_object.addCategory(the_category)
+                                the_category.addCategorizable(mem_object)
+                    elif change_name.startswith("__del_category:"):
+                        category_id = change_name[15:]
+                        if category_id in self.memMap:
                             if (
-                                memChanges is not None
-                                and "__add" + changeName[5:] in memChanges
+                                mem_changes is not None
+                                and "__add" + change_name[5:] in mem_changes
                             ):
-                                conflicts.append(changeName)
+                                conflicts.append(change_name)
                                 self.conflictChanges.addChange(
-                                    memObject, "__add" + changeName[5:]
+                                    mem_object, "__add" + change_name[5:]
                                 )
                             else:
-                                theCategory = self.memMap[categoryId]
-                                memObject.removeCategory(theCategory)
-                                theCategory.removeCategorizable(memObject)
-                    elif changeName == "__prerequisites__":
-                        diskPrereqs = set(
+                                the_category = self.memMap[category_id]
+                                mem_object.removeCategory(the_category)
+                                the_category.removeCategorizable(mem_object)
+                    elif change_name == "__prerequisites__":
+                        disk_prereqs = set(
                             [
                                 self.memMap[obj.id()]
-                                for obj in diskObject.prerequisites()
+                                for obj in disk_object.prerequisites()
                             ]
                         )
-                        memPrereqs = set(memObject.prerequisites())
+                        mem_prereqs = set(mem_object.prerequisites())
                         if (
-                            memChanges is not None
-                            and "__prerequisites__" in memChanges
-                            and memPrereqs != diskPrereqs
+                            mem_changes is not None
+                            and "__prerequisites__" in mem_changes
+                            and mem_prereqs != disk_prereqs
                         ):
                             conflicts.append("__prerequisites__")
                             self.conflictChanges.addChange(
-                                memObject, "__prerequisites__"
+                                mem_object, "__prerequisites__"
                             )
                         else:
-                            memObject.setPrerequisites(diskPrereqs)
-                    elif changeName == "__task__":
+                            mem_object.setPrerequisites(disk_prereqs)
+                    elif change_name == "__task__":
                         # Effort changed task
                         if (
-                            memChanges is not None
-                            and "__task__" in memChanges
-                            and memObject.parent().id()
-                            != diskObject.parent().id()
+                            mem_changes is not None
+                            and "__task__" in mem_changes
+                            and mem_object.parent().id()
+                            != disk_object.parent().id()
                         ):
                             conflicts.append("__task__")
                             self.conflictChanges.addChange(
-                                memObject, "__task__"
+                                mem_object, "__task__"
                             )
                         else:
-                            memObject.setTask(
-                                self.memMap[diskObject.parent().id()]
+                            mem_object.setTask(
+                                self.memMap[disk_object.parent().id()]
                             )
-                    elif changeName == "__owner__":
+                    elif change_name == "__owner__":
                         # This happens after a conflict
                         if (
-                            memChanges is not None
-                            and "__owner__" in memChanges
-                            and self.memOwnerMap[memObject.id()].id()
-                            != self.diskOwnerMap[diskObject.id()].id()
+                            mem_changes is not None
+                            and "__owner__" in mem_changes
+                            and self.memOwnerMap[mem_object.id()].id()
+                            != self.diskOwnerMap[disk_object.id()].id()
                         ):
                             # Yet another conflict... Memory wins
                             conflicts.append("__owner__")
                             self.conflictChanges.addChange(
-                                memObject, "__owner__"
+                                mem_object, "__owner__"
                             )
                         else:
-                            className = memObject.__class__.__name__
-                            if className.endsWith("Attachment"):
-                                className = "Attachment"
-                            oldOwner = self.memOwnerMap[memObject.id()]
-                            newOwner = self.memOwnerMap[diskObject.id()]
-                            getattr(oldOwner, "remove%s" % className)(
-                                memObject
+                            class_name = mem_object.__class__.__name__
+                            if class_name.endswith("Attachment"):
+                                class_name = "Attachment"
+                            old_owner = self.memOwnerMap[mem_object.id()]
+                            new_owner = self.memOwnerMap[disk_object.id()]
+                            getattr(old_owner, "remove%s" % class_name)(
+                                mem_object
                             )
-                            getattr(newOwner, "add%s" % className)(memObject)
-                    elif changeName == "appearance":
-                        attrNames = [
-                            "foregroundColor",
-                            "backgroundColor",
-                            "font",
-                            "icon",
-                            "selectedIcon",
+                            getattr(new_owner, "add%s" % class_name)(
+                                mem_object
+                            )
+                    elif change_name == "appearance" and isinstance(
+                        mem_object, Effort
+                    ):
+                        # Derived from its task, which records the
+                        # change too, and never saved
+                        pass
+                    elif change_name == "appearance":
+                        # (getter, setter) pairs, called by name
+                        accessors = [
+                            ("foregroundColor", "setForegroundColor"),
+                            ("backgroundColor", "setBackgroundColor"),
+                            ("font", "setFont"),
+                            ("icon_id", "set_icon_id"),
+                            ("selected_icon_id", "set_selected_icon_id"),
                         ]
                         if (
-                            memChanges is not None
-                            and "appearance" in memChanges
+                            mem_changes is not None
+                            and "appearance" in mem_changes
                         ):
-                            for attrName in attrNames:
+                            for getter, _setter in accessors:
                                 if (
-                                    getattr(memObject, attrName)()
-                                    != getattr(diskObject, attrName)()
+                                    getattr(mem_object, getter)()
+                                    != getattr(disk_object, getter)()
                                 ):
-                                    conflicts.append(attrName)
+                                    conflicts.append(getter)
                             self.conflictChanges.addChange(
-                                memObject, "appearance"
+                                mem_object, "appearance"
                             )
                         else:
-                            for attrName in attrNames:
-                                getattr(
-                                    memObject,
-                                    "set" + attrName[0].upper() + attrName[1:],
-                                )(getattr(diskObject, attrName)())
-                    elif changeName == "expandedContexts":
+                            for getter, setter in accessors:
+                                getattr(mem_object, setter)(
+                                    getattr(disk_object, getter)()
+                                )
+                    elif change_name == "expandedContexts":
                         # Note: no conflict resolution for this one.
-                        memObject.expand(diskObject.isExpanded())
+                        mem_object.expand(disk_object.isExpanded())
                     else:
-                        if changeName in ["start", "stop"]:
-                            getterName = (
-                                "get" + changeName[0].upper() + changeName[1:]
+                        if change_name in ["start", "stop"]:
+                            getter_name = (
+                                "get"
+                                + change_name[0].upper()
+                                + change_name[1:]
                             )
                         else:
-                            getterName = changeName
+                            getter_name = change_name
                         if (
-                            memChanges is not None
-                            and changeName in memChanges
-                            and getattr(memObject, getterName)()
-                            != getattr(diskObject, getterName)()
+                            mem_changes is not None
+                            and change_name in mem_changes
+                            and getattr(mem_object, getter_name)()
+                            != getattr(disk_object, getter_name)()
                         ):
-                            conflicts.append(changeName)
+                            conflicts.append(change_name)
                             self.conflictChanges.addChange(
-                                memObject, changeName
+                                mem_object, change_name
                             )
                         else:
                             getattr(
-                                memObject,
-                                "set" + changeName[0].upper() + changeName[1:],
-                            )(getattr(diskObject, getterName)())
+                                mem_object,
+                                "set"
+                                + change_name[0].upper()
+                                + change_name[1:],
+                            )(getattr(disk_object, getter_name)())
 
-                    if conflicts:
-                        self.notify(
-                            _(
-                                'Conflicts detected for "%s".\nThe local version was used.'
-                            )
-                            % memObject.subject()
+                # One notification per object, not per change
+                if conflicts:
+                    self.notify(
+                        _(
+                            'Conflicts detected for "%s".\n'
+                            "The local version was used."
                         )
+                        % mem_object.subject()
+                    )

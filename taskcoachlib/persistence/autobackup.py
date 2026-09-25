@@ -20,6 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os, shutil, glob, math, re
 from taskcoachlib.domain import date
+from taskcoachlib.filesystem import resourcelock
+from .taskfile import SafeWriteFile
 from pubsub import pub
 import bz2, hashlib
 
@@ -112,8 +114,10 @@ class BackupManifest(object):
             del self.__files[sha]
 
     def restoreFile(self, filename, dateTime, dstName):
-        if os.path.exists(dstName):
-            os.remove(dstName)
+        """Restore the backup of filename made at dateTime as dstName.
+        dstName is locked while it is written, so a file open in
+        another Task Coach is never replaced (LockInUse), and it is
+        replaced only once the whole backup was read."""
         sha = SHA(filename)
         src = bz2.BZ2File(
             os.path.join(
@@ -124,8 +128,14 @@ class BackupManifest(object):
             "r",
         )
         try:
-            with open(dstName, "wb") as dst:
-                shutil.copyfileobj(src, dst)
+            with resourcelock.holding(dstName, "task file"):
+                dst = SafeWriteFile(dstName)
+                try:
+                    shutil.copyfileobj(src, dst)
+                except BaseException:
+                    dst.discard()
+                    raise
+                dst.close()
         finally:
             src.close()
 

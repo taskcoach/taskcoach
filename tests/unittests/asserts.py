@@ -16,6 +16,25 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import re
+
+_START_TAG = re.compile(r'<([\w:]+)((?:\s+[\w:]+="[^"]*")+)(\s*/?)>')
+
+
+def sorted_attributes(xml):
+    """Sort each start tag's attributes: the expected fragments were
+    written for Python 2, whose ElementTree sorted them."""
+
+    def sort(match):
+        attributes = re.findall(r'\s+[\w:]+="[^"]*"', match.group(2))
+        return "<%s%s%s>" % (
+            match.group(1),
+            "".join(sorted(attributes)),
+            match.group(3),
+        )
+
+    return _START_TAG.sub(sort, xml)
+
 
 class TaskListAssertsMixin(object):
     def assertTaskList(self, expected):
@@ -78,7 +97,12 @@ class TaskAssertsMixin(object):
         self.assertEqual(orig.priority(), copy.priority())
         self.assertEqual(orig.fixedFee(), copy.fixedFee())
         self.assertEqual(orig.hourlyFee(), copy.hourlyFee())
-        self.assertEqual(orig.attachments(), copy.attachments())
+        # Copies are new attachments (equality is by id): compare
+        # locations
+        self.assertEqual(
+            [each.location() for each in orig.attachments()],
+            [each.location() for each in copy.attachments()],
+        )
         self.assertEqual(orig.reminder(), copy.reminder())
         self.assertEqual(
             orig.shouldMarkCompletedWhenAllChildrenCompleted(),

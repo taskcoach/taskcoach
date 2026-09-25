@@ -28,10 +28,8 @@ from taskcoachlib.domain import task, category, effort, date, note, attachment
 class IntegrationTestCase(test.TestCase):
     def setUp(self):
         task.Task.settings = config.Settings(load=False)
-        self.fd = io.StringIO()
+        self.fd = io.BytesIO()  # The app writes UTF-8 bytes (SafeWriteFile)
         self.fd.name = "testfile.tsk"
-        self.fd.encoding = "utf-8"
-        self.reader = persistence.XMLReader(self.fd)
         self.writer = persistence.XMLWriter(self.fd)
         self.taskList = task.TaskList()
         self.categories = category.CategoryList()
@@ -61,8 +59,12 @@ class IntegrationTestCase(test.TestCase):
             None,  # SyncML removed
             self.guid,
         )
-        self.fd.seek(0)
-        return self.reader.read()
+        # The app reads the file back as text (TaskFile._openForRead)
+        written = io.BytesIO(self.fd.getvalue())
+        written.name = self.fd.name
+        return persistence.XMLReader(
+            io.TextIOWrapper(written, encoding="utf-8")
+        ).read()
 
 
 class IntegrationTest_EmptyList(IntegrationTestCase):
@@ -183,7 +185,7 @@ class IntegrationTest(IntegrationTestCase):
         self.assertAttributeWrittenAndRead(self.task, "font")
 
     def testIcon(self):
-        self.assertAttributeWrittenAndRead(self.task, "icon")
+        self.assertAttributeWrittenAndRead(self.task, "icon_id")
 
     def testExpansionState(self):
         self.assertAttributeWrittenAndRead(self.task, "isExpanded")

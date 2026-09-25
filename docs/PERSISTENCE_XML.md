@@ -14,6 +14,7 @@ How domain objects are serialized to `.tsk` XML files and deserialized back.
 - [Reader Defaults](#reader-defaults)
 - [Round-Trip Consistency](#round-trip-consistency)
 - [Skip Condition Categories](#skip-condition-categories)
+- [Saving](#saving)
 - [Related Documentation](#related-documentation)
 
 ---
@@ -188,6 +189,43 @@ value.
 against a string literal that the writer assumes is the default. The
 domain constructor defines the actual default separately. If they
 diverge, data is silently lost.
+
+---
+
+## Saving
+
+`TaskFile.save()` (`persistence/taskfile.py`):
+
+1. Merges the changes other instances made to the file on disk
+   (`merge_disk_changes()`, using the `.delta` change log). Our own
+   changes are passed on to the other instances after that merge, as
+   it resolved them (an item deleted here but edited elsewhere is kept,
+   and not deleted there later). Changes caused by reading the file are
+   not recorded as local changes.
+2. Writes the XML through `SafeWriteFile`: to a temporary file next to
+   the file, which replaces the file in one step (`os.replace`) only
+   after the whole write, including the final flush, succeeded. The
+   temporary file gets the file's mode first (not on Windows, where
+   permissions are ACLs), and a task file that is a symbolic link is
+   written through, so the link stays a link. In a synced cloud folder
+   (Dropbox, ownCloud) the file is written in place instead, from a
+   buffer, once the XML is complete; a failure during that write can
+   still truncate it.
+3. If writing fails, the file is left as it was (outside cloud
+   folders), and the local changes the merge consumed (deletions too)
+   are recorded again, so the next save neither loses them nor brings
+   deleted items back. The merge has already written the `.delta`, so
+   other instances may apply those changes anyway. File > Merge disk
+   changes, which merges without saving, keeps them recorded the same
+   way.
+4. Save As moves an existing file at the new name (and its `.delta`)
+   aside instead of deleting it, and puts it back if the save fails.
+   Save and merge errors are shown to the user. A failed autosave is
+   logged and tried again every minute (the file stays marked unsaved
+   in the title); when the retry fails too, a notification tells the
+   user once.
+
+Locking is described in [FILE_LOCKING.md](FILE_LOCKING.md).
 
 ---
 

@@ -48,8 +48,11 @@ class NumberedInstances(type):
         return instance
 
     def lowest_unused_number(cls):
-        used_numbers = sorted(NumberedInstances.count[cls].values())
-        for index, used_number in enumerate(used_numbers):
-            if used_number != index:
-                return index
-        return len(used_numbers)
+        # A set, not a sorted list: an explicit number may duplicate one
+        # still held by an instance awaiting garbage collection (e.g.
+        # after resetting the window layout).
+        used_numbers = set(NumberedInstances.count[cls].values())
+        number = 0
+        while number in used_numbers:
+            number += 1
+        return number
