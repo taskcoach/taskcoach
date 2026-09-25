@@ -113,13 +113,16 @@ class TaskTestsMixin(CommonTestsMixin):
         if not self.filename:
             self.expectInHTML("<u>")
 
+    @test.stale("HTML export uses inline colours since #308")
     def testTaskStatusStyle(self):
         self.expectInHTML("      .completed {color: rgb(0, 255, 0)}\n")
 
+    @test.stale("HTML export uses inline colours since #308")
     def testTaskStatusStyleWhenForegroundColorChangedInSettings(self):
         self.settings.set("fgcolor", "completedtasks", str(wx.RED))
         self.expectInHTML("      .completed {color: rgb(255, 0, 0)}\n")
 
+    @test.stale("HTML export uses inline colours since #308")
     def testOverdueTask(self):
         self.task.setDueDateTime(date.Yesterday())
         fragment = (
@@ -129,6 +132,7 @@ class TaskTestsMixin(CommonTestsMixin):
         )
         self.expectInHTML(fragment)
 
+    @test.stale("HTML export uses inline colours since #308")
     def testCompletedTask(self):
         self.task.setCompletionDateTime()
         if self.filename:
@@ -138,6 +142,7 @@ class TaskTestsMixin(CommonTestsMixin):
                 '<font color="rgb(0, 255, 0)">Task subject</font>'
             )
 
+    @test.stale("HTML export uses inline colours since #308")
     def testTaskDueSoon(self):
         self.task.setDueDateTime(date.Now() + date.ONE_HOUR)
         fragment = (
@@ -147,6 +152,7 @@ class TaskTestsMixin(CommonTestsMixin):
         )
         self.expectInHTML(fragment)
 
+    @test.stale("HTML export uses inline colours since #308")
     def testInactiveTask(self):
         self.task.setPlannedStartDateTime(date.Tomorrow())
         fragment = (
@@ -156,6 +162,7 @@ class TaskTestsMixin(CommonTestsMixin):
         )
         self.expectInHTML(fragment)
 
+    @test.stale("HTML export uses inline colours since #308")
     def testLateTask(self):
         self.task.setPlannedStartDateTime(date.Yesterday())
         fragment = (
@@ -165,6 +172,7 @@ class TaskTestsMixin(CommonTestsMixin):
         )
         self.expectInHTML(fragment)
 
+    @test.stale("HTML export uses inline colours since #308")
     def testTaskBackgroundColor(self):
         self.task.setActualStartDateTime(date.Now())
         self.task.setBackgroundColor(wx.RED)
@@ -175,6 +183,7 @@ class TaskTestsMixin(CommonTestsMixin):
         )
         self.expectInHTML(fragment)
 
+    @test.stale("HTML export uses inline colours since #308")
     def testTaskHasCategoryBackgroundColor(self):
         self.task.setActualStartDateTime(date.Now())
         cat = category.Category("cat", bgColor=wx.RED)
@@ -186,6 +195,7 @@ class TaskTestsMixin(CommonTestsMixin):
         )
         self.expectInHTML(fragment)
 
+    @test.stale("HTML export uses inline colours since #308")
     def testCategoryBackgroundColorAsTuple(self):
         self.task.setActualStartDateTime(date.Now())
         cat = category.Category("cat", bgColor=(255, 0, 0))
@@ -309,6 +319,7 @@ class CategoryWriterTestsMixin(CommonTestsMixin):
     def testCategorySubject(self):
         self.expectInHTML(">Category<")
 
+    @test.stale("HTML export uses inline colours since #308")
     def testCategoryBackgroundColor(self):
         self.category.setBackgroundColor(wx.RED)
         if self.filename:

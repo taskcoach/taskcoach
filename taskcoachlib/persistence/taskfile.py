@@ -16,13 +16,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import io
 import logging
 import os
+import shutil
+import stat
 from . import xml
 from taskcoachlib import patterns
 from taskcoachlib.domain import base, task, category, note, effort, attachment
 import uuid
 from taskcoachlib.changes import ChangeMonitor, ChangeSynchronizer
+from taskcoachlib.meta.debug import log_step
 from taskcoachlib.filesystem import (
     FilesystemNotifier,
     FilesystemPollerNotifier,
@@ -60,56 +64,126 @@ class TaskCoachFilesystemPollerNotifier(FilesystemPollerNotifier):
         self.__taskFile.onFileChanged()
 
 
+def _discard(fd):
+    """Close a file from _openForWrite after a failed write, so a
+    partial write never replaces the file on disk."""
+    getattr(fd, "discard", fd.close)()
+
+
+def _move_aside(path):
+    """Move path to a new name in its folder and return that name. The
+    name is short: appending to path could pass the Windows path
+    length limit."""
+    aside, placeholder = SafeWriteFile._create_temporary_file(
+        os.path.dirname(path)
+    )
+    placeholder.close()
+    try:
+        os.replace(path, aside)
+    except BaseException:
+        os.remove(aside)
+        raise
+    return aside
+
+
+def _remove(path):
+    try:
+        os.remove(path)
+    except PermissionError:
+        # Windows refuses to remove a read-only file
+        os.chmod(path, stat.S_IWRITE)
+        os.remove(path)
+
+
 class SafeWriteFile(object):
+    """Write to a temporary file and move it over the file on close(),
+    so a failed write leaves the file intact."""
+
     def __init__(self, filename):
+        # Write the file a link points to, so the link stays a link
+        if os.path.islink(filename):
+            filename = os.path.realpath(filename)
         self.__filename = filename
-        if self._isCloud():
-            # Ideally we should create a temporary file on the same filesystem (so that
-            # os.rename works) but outside the Dropbox folder...
-            self.__fd = open(self.__filename, "wb")
+        # Decided once: it must not change between open and close
+        self.__cloud = self._isCloud()
+        if self.__cloud:
+            # A temporary file would be synced too, so write in place,
+            # but only on close(): buffering in memory means a failure
+            # before that (e.g. while generating the XML) leaves the
+            # file intact. A failure during the final write still
+            # truncates it.
+            self.__fd = io.BytesIO()
         else:
-            self.__tempFilename = self._getTemporaryFileName(
-                os.path.dirname(filename)
+            self.__tempFilename, self.__fd = self._create_temporary_file(
+                os.path.dirname(self.__filename)
             )
-            self.__fd = open(self.__tempFilename, "wb")
 
     def write(self, bf):
         self.__fd.write(bf)
 
+    def discard(self):
+        """Close without replacing the target file."""
+        try:
+            self.__fd.close()
+        except OSError:
+            pass  # e.g. the flush on a full disk; the caller re-raises
+        if not self.__cloud:
+            self.__remove_temporary_file()
+
     def close(self):
-        self.__fd.close()
-        if not self._isCloud():
-            if os.path.exists(self.__filename):
-                os.remove(self.__filename)
-            if self.__filename is not None:
-                if os.path.exists(self.__filename):
-                    # WTF ?
-                    self.__moveFileOutOfTheWay(self.__filename)
-                os.rename(self.__tempFilename, self.__filename)
+        if self.__cloud:
+            data = self.__fd.getvalue()
+            self.__fd.close()
+            with open(self.__filename, "wb") as target:
+                target.write(data)
+            return
+        try:
+            self.__fd.close()  # Flushes, which fails on a full disk
+        except BaseException:
+            self.__remove_temporary_file()
+            raise
+        try:
+            # Keep who may read it, e.g. a private file stays private.
+            # Windows keeps permissions in ACLs, which the mode does not
+            # carry.
+            if os.name != "nt" and os.path.exists(self.__filename):
+                try:
+                    shutil.copymode(self.__filename, self.__tempFilename)
+                except OSError:
+                    log_step(
+                        "cannot copy the mode of %s" % self.__filename,
+                        prefix="FILE",
+                        exc=True,
+                    )
+            # One step, so the file is never missing
+            os.replace(self.__tempFilename, self.__filename)
+        except BaseException:
+            self.__remove_temporary_file()
+            raise
 
-    def __moveFileOutOfTheWay(self, filename):
-        index = 1
+    def __remove_temporary_file(self):
+        try:
+            os.remove(self.__tempFilename)
+        except OSError:
+            pass
+
+    @staticmethod
+    def _create_temporary_file(path):
+        # Created exclusively, so another Task Coach saving in the same
+        # folder gets another name; close() copies the mode of the file
+        # it replaces
+        flags = (
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
+        )
+        index = 0
         while True:
-            name, ext = os.path.splitext(filename)
-            newName = "%s (%d)%s" % (name, index, ext)
-            if not os.path.exists(newName):
-                os.rename(filename, newName)
-                break
-            index += 1
-
-    def _getTemporaryFileName(self, path):
-        """All functions/classes in the standard library that can generate
-        a temporary file, visible on the file system, without deleting it
-        when closed are deprecated (there is tempfile.NamedTemporaryFile
-        but its 'delete' argument is new in Python 2.6). This is not
-        secure, not thread-safe, but it works."""
-
-        idx = 0
-        while True:
-            name = os.path.join(path, "tmp-%d" % idx)
-            if not os.path.exists(name):
-                return name
-            idx += 1
+            name = os.path.join(path, "tmp-%d" % index)
+            try:
+                fd = os.open(name, flags, 0o666)
+            except FileExistsError:
+                index += 1
+                continue
+            return name, os.fdopen(fd, "wb")
 
     def _isCloud(self):
         return _isCloud(os.path.dirname(self.__filename))
@@ -131,6 +205,9 @@ class TaskFile(patterns.Observer):
         self.__changes = dict()
         self.__changes[self.__monitor.guid()] = self.__monitor
         self.__changedOnDisk = False
+        # A read-only task file writes nothing next to the file it
+        # loads, not even the .delta change log (used for merging).
+        self.__read_only = kwargs.pop("read_only", False)
         if kwargs.pop("poll", False):
             self.__notifier = TaskCoachFilesystemPollerNotifier(self)
         else:
@@ -190,7 +267,6 @@ class TaskFile(patterns.Observer):
                 self.registerObserver(
                     self.onAttachmentChanged_Deprecated, eventType
                 )
-        pub.subscribe(self.onAttachmentChanged, "pubsub.attachment")
 
     def __str__(self):
         return self.filename()
@@ -329,13 +405,6 @@ class TaskFile(patterns.Observer):
         self.markDirty()
         sender.markDirty()
 
-    def onAttachmentChanged(self, newValue, sender):
-        if self.__loading or self.__saving:
-            return
-        # Attachments don't know their owner, so we can't check whether the
-        # attachment is actually in the task file. Assume it is.
-        self.markDirty()
-
     def onAttachmentChanged_Deprecated(self, event):
         if self.__loading:
             return
@@ -351,7 +420,14 @@ class TaskFile(patterns.Observer):
         self.__lastFilename = filename or self.__filename
         self.__filename = filename
         self.__notifier.setFilename(filename)
-        pub.sendMessage("taskfile.filenameChanged", filename=filename)
+        self._publish("taskfile.filenameChanged", filename=filename)
+
+    def _publish(self, topic, **kwargs):
+        # A read-only task file (merge) is not the open file: messages
+        # about it would reach listeners of the open file (window title,
+        # backups).
+        if not self.__read_only:
+            pub.sendMessage(topic, **kwargs)
 
     def filename(self):
         return self.__filename
@@ -365,23 +441,23 @@ class TaskFile(patterns.Observer):
     def markDirty(self, force=False):
         if force or not self.__needSave:
             self.__needSave = True
-            pub.sendMessage("taskfile.dirty", taskFile=self)
+            self._publish("taskfile.dirty", taskFile=self)
 
     def markClean(self):
         if self.__needSave:
             self.__needSave = False
-            pub.sendMessage("taskfile.clean", taskFile=self)
+            self._publish("taskfile.clean", taskFile=self)
 
     def onFileChanged(self):
         if not self.__saving:
             import wx  # Not really clean but we're in another thread...
 
             self.__changedOnDisk = True
-            wx.CallAfter(pub.sendMessage, "taskfile.changed", taskFile=self)
+            wx.CallAfter(self._publish, "taskfile.changed", taskFile=self)
 
     @patterns.eventSource
     def clear(self, regenerate=True, event=None):
-        pub.sendMessage("taskfile.aboutToClear", taskFile=self)
+        self._publish("taskfile.aboutToClear", taskFile=self)
         try:
             self.tasks().clear(event=event)
             self.categories().clear(event=event)
@@ -390,15 +466,14 @@ class TaskFile(patterns.Observer):
                 self.__guid = str(uuid.uuid4())
                 self.__syncMLConfig = None
         finally:
-            pub.sendMessage("taskfile.justCleared", taskFile=self)
+            self._publish("taskfile.justCleared", taskFile=self)
 
     def close(self):
-        if os.path.exists(self.filename()):
-            changes = xml.ChangesXMLReader(self.filename() + ".delta").read()
+        delta = self.filename() + ".delta"
+        if os.path.exists(self.filename()) and not self.__read_only:
+            changes = xml.ChangesXMLReader(delta).read()
             del changes[self.__monitor.guid()]
-            xml.ChangesXMLWriter(open(self.filename() + ".delta", "wb")).write(
-                changes
-            )
+            xml.ChangesXMLWriter(open(delta, "wb")).write(changes)
 
         self.setFilename("")
         self.__guid = str(uuid.uuid4())
@@ -409,6 +484,15 @@ class TaskFile(patterns.Observer):
 
     def stop(self):
         self.__notifier.stop()
+
+    def detach(self):
+        """Stop watching the file and following changes of the domain
+        objects, without clearing them: for a task file whose objects
+        belong to the open file (Save selection). Otherwise it gets
+        dirty, and autosaved, whenever they change later."""
+        self.stop()
+        self.__monitor.removeInstance()
+        self.removeInstance()
 
     def _read(self, fd):
         reader = xml.XMLReader(fd)
@@ -456,7 +540,7 @@ class TaskFile(patterns.Observer):
         return open(self.__filename, "r", encoding="utf-8")
 
     def load(self, filename=None):
-        pub.sendMessage("taskfile.aboutToRead", taskFile=self)
+        self._publish("taskfile.aboutToRead", taskFile=self)
         self.__loading = True
         if filename:
             self.setFilename(filename)
@@ -515,7 +599,7 @@ class TaskFile(patterns.Observer):
             # syncMLConfig from file is ignored - SyncML removed
             self.__guid = guid
 
-            if os.path.exists(self.filename()):
+            if os.path.exists(self.filename()) and not self.__read_only:
                 # We need to reset the changes on disk because we're up to date.
                 xml.ChangesXMLWriter(
                     open(self.filename() + ".delta", "wb")
@@ -528,11 +612,11 @@ class TaskFile(patterns.Observer):
             self.__loading = False
             self.markClean()
             self.__changedOnDisk = False
-            pub.sendMessage("taskfile.justRead", taskFile=self)
+            self._publish("taskfile.justRead", taskFile=self)
 
     def save(self):
         try:
-            pub.sendMessage("taskfile.aboutToSave", taskFile=self)
+            self._publish("taskfile.aboutToSave", taskFile=self)
         except Exception:
             pass  # Ignore errors from subscribers
         # When encountering a problem while saving (disk full,
@@ -540,6 +624,10 @@ class TaskFile(patterns.Observer):
         # it's lost. So write to a temporary file and rename it if
         # everything went OK.
         self.__saving = True
+        # Merging consumes the recorded local changes (deletions too);
+        # if the save then fails, restore them, or the next save would
+        # bring deleted items back from the file on disk.
+        monitor_state = self.__monitor.snapshot()
         try:
             self.merge_disk_changes()
 
@@ -553,19 +641,45 @@ class TaskFile(patterns.Observer):
                         self.syncMLConfig(),
                         self.guid(),
                     )
-                finally:
-                    fd.close()
+                except BaseException:
+                    _discard(fd)
+                    raise
+                fd.close()
 
             self.markClean()
+        except BaseException:
+            self.__restore_local_changes(monitor_state)
+            raise
         finally:
             self.__saving = False
             self.__notifier.saved()
-            try:
-                pub.sendMessage("taskfile.justSaved", taskFile=self)
-            except Exception:
-                pass  # Ignore errors from subscribers
+
+    def __restore_local_changes(self, monitor_state):
+        """Put back the local changes a merge consumed, when they did
+        not reach the file (failed save, or a merge without save), so
+        the next save does not bring locally deleted items back."""
+        self.__monitor.restore(monitor_state)
+        recorded = self.__monitor.allChanges()
+        for obj in self.__all_objects():
+            changes = recorded.get(obj.id())
+            if obj.id() not in recorded:
+                # Brought in by the merge: record later edits
+                self.__monitor.resetChanges(obj)
+            elif changes is not None:
+                # In memory, so not deleted, even if the merge brought
+                # it back after a local deletion
+                changes.discard("__del__")
+
+    def __all_objects(self):
+        """Every domain object in memory, owned ones (notes,
+        attachments, efforts) included."""
+        for collection in (self.categories(), self.tasks(), self.notes()):
+            yield from ChangeSynchronizer.allObjects(collection.rootItems())
 
     def merge_disk_changes(self):
+        # Without a save the local changes do not reach the file, so
+        # they must stay recorded for the next save.
+        monitor_state = None if self.__saving else self.__monitor.snapshot()
         self.__loading = True
         try:
             if os.path.exists(
@@ -580,21 +694,19 @@ class TaskFile(patterns.Observer):
                         tasks,
                         categories,
                         notes,
-                        syncMLConfig,
-                        allChanges,
+                        syncml_config,
+                        all_changes,
                         guid,
                     ), _duplicate_ids = self._read(fd)
                     fd.close()
                     # Don't log duplicates here - already logged on initial load
 
-                    self.__changes = allChanges
+                    self.__changes = all_changes
+                    # The sync consumes our recorded changes; keep them
+                    # to pass on to the other devices afterwards.
+                    local_changes = self.__monitor.snapshot()
 
-                    if self.__saving:
-                        for devGUID, changes in list(self.__changes.items()):
-                            if devGUID != self.__monitor.guid():
-                                changes.merge(self.__monitor)
-
-                    sync = ChangeSynchronizer(self.__monitor, allChanges)
+                    sync = ChangeSynchronizer(self.__monitor, all_changes)
 
                     sync.sync(
                         [
@@ -607,6 +719,20 @@ class TaskFile(patterns.Observer):
                         ]
                     )
 
+                    if self.__saving:
+                        # Tell the other devices about our changes as
+                        # the sync resolved them: an item it brought
+                        # back after a local deletion (edited elsewhere)
+                        # is not deleted, or they would delete it at
+                        # their save.
+                        for obj in self.__all_objects():
+                            changes = local_changes.get(obj.id())
+                            if changes is not None:
+                                changes.discard("__del__")
+                        for dev_guid, changes in list(self.__changes.items()):
+                            if dev_guid != self.__monitor.guid():
+                                changes.merge_changes(local_changes)
+
                     self.__changes[self.__monitor.guid()] = self.__monitor
                 finally:
                     self.__monitor.thaw()
@@ -617,45 +743,83 @@ class TaskFile(patterns.Observer):
             fd = self._openForWrite(".delta")
             try:
                 xml.ChangesXMLWriter(fd).write(self.changes())
-            finally:
-                fd.close()
+            except BaseException:
+                _discard(fd)
+                raise
+            fd.close()
 
             self.__changedOnDisk = False
         finally:
             self.__loading = False
+            if monitor_state is not None:
+                self.__restore_local_changes(monitor_state)
 
     def saveas(self, filename):
-        if os.path.exists(filename):
-            os.remove(filename)
-        if os.path.exists(filename + ".delta"):
-            os.remove(filename + ".delta")
-        self.setFilename(filename)
-        self.save()
+        # An existing file there (and its change log) must not stay, or
+        # save() would merge it into this one; move it aside rather than
+        # deleting it, so a failed save puts it back.
+        delta = filename + ".delta"
+        had_delta = os.path.exists(delta)
+        moved = []
+        try:
+            for path in (filename, delta):
+                if os.path.exists(path):
+                    moved.append((_move_aside(path), path))
+            self.setFilename(filename)
+            self.save()
+        except BaseException:
+            if not had_delta:
+                # Written by the failed save for a file that had none
+                try:
+                    os.remove(delta)
+                except OSError:
+                    pass
+            for aside, path in moved:
+                try:
+                    os.replace(aside, path)
+                except OSError:
+                    log_step(
+                        "cannot restore %s" % path, prefix="FILE", exc=True
+                    )
+            raise
+        for aside, _path in moved:
+            try:
+                _remove(aside)
+            except OSError:
+                # Saved already; a leftover must not fail the Save As
+                log_step("cannot remove %s" % aside, prefix="FILE", exc=True)
 
     def merge(self, filename):
-        # A plain TaskFile: merging only reads the other file, so it
-        # takes no lock on it
-        merge_file = TaskFile()
-        merge_file.load(filename)
+        # Merging only reads the other file, which may be open in
+        # another Task Coach: take no lock on it and write nothing next
+        # to it.
+        merge_file = TaskFile(read_only=True)
         self.__loading = True
-        category_map = dict()
-        self.tasks().removeItems(
-            self.objectsToOverwrite(self.tasks(), merge_file.tasks())
-        )
-        self.rememberCategoryLinks(category_map, self.tasks())
-        self.tasks().extend(merge_file.tasks().rootItems())
-        self.notes().removeItems(
-            self.objectsToOverwrite(self.notes(), merge_file.notes())
-        )
-        self.rememberCategoryLinks(category_map, self.notes())
-        self.notes().extend(merge_file.notes().rootItems())
-        self.categories().removeItems(
-            self.objectsToOverwrite(self.categories(), merge_file.categories())
-        )
-        self.categories().extend(merge_file.categories().rootItems())
-        self.restoreCategoryLinks(category_map)
-        merge_file.close()
-        self.__loading = False
+        try:
+            merge_file.load(filename)
+            category_map = dict()
+            self.tasks().removeItems(
+                self.objectsToOverwrite(self.tasks(), merge_file.tasks())
+            )
+            self.rememberCategoryLinks(category_map, self.tasks())
+            self.tasks().extend(merge_file.tasks().rootItems())
+            self.notes().removeItems(
+                self.objectsToOverwrite(self.notes(), merge_file.notes())
+            )
+            self.rememberCategoryLinks(category_map, self.notes())
+            self.notes().extend(merge_file.notes().rootItems())
+            self.categories().removeItems(
+                self.objectsToOverwrite(
+                    self.categories(), merge_file.categories()
+                )
+            )
+            self.categories().extend(merge_file.categories().rootItems())
+            self.restoreCategoryLinks(category_map)
+        finally:
+            # Also on failure: stop its file watcher, and leave loading
+            merge_file.close()
+            merge_file.stop()
+            self.__loading = False
         self.markDirty(force=True)
 
     def objectsToOverwrite(self, originalObjects, objectsToMerge):
@@ -731,10 +895,13 @@ class LockedTaskFile(TaskFile):
             self.__lock = None
 
     def close(self):
-        try:
-            super().close()
-        finally:
-            self.release_lock()
+        # Released only after closing succeeded: a failed close leaves
+        # the file loaded, so it must stay locked.
+        super().close()
+        self.release_lock()
+
+    def holds_lock(self, lock):
+        return self.__lock is lock
 
     def load(self, filename=None, lock=True):  # pylint: disable=W0221
         """Lock the file and keep it locked until close() is called."""
@@ -755,7 +922,14 @@ class LockedTaskFile(TaskFile):
     def saveas(self, filename):
         # Lock the new name first: TaskFile.saveas deletes an existing
         # file there, which must not happen to a file open elsewhere.
-        return self.__with_lock_of(filename, super().saveas, filename)
+        previous_filename = self.filename()
+        try:
+            return self.__with_lock_of(filename, super().saveas, filename)
+        except BaseException:
+            # The previous lock is kept, so keep the previous name too
+            if self.filename() != previous_filename:
+                self.setFilename(previous_filename)
+            raise
 
     def __with_lock_of(self, filename, action, *args, **kwargs):
         """Run action holding the lock of filename. When that is a new

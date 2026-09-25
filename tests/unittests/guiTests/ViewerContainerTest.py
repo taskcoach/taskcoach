@@ -29,9 +29,9 @@ class DummyMainWindow(widgets.AuiManagedFrameWithDynamicCenterPane):
     def __init__(self):
         super().__init__(None)
 
-    def addPane(self, window, caption, floating=False):
+    def add_pane(self, window, caption, floating=False):
         self.count += 1
-        super().addPane(window, caption, str("name%d" % self.count))
+        super().add_pane(window, caption, "name%d" % self.count, floating)
 
     def AddBalloonTip(self, *args, **kwargs):
         pass
@@ -88,9 +88,9 @@ class ViewerContainerTest(test.wxTestCase):
             self.mainWindow, self.settings
         )
         self.viewer1 = self.createViewer("taskviewer1")
-        self.container.addViewer(self.viewer1)
+        self.container.add_viewer(self.viewer1)
         self.viewer2 = self.createViewer("taskviewer2")
-        self.container.addViewer(self.viewer2)
+        self.container.add_viewer(self.viewer2)
 
     def createViewer(self, settingsSection):
         self.settings.add_section(settingsSection)
@@ -112,28 +112,28 @@ class ViewerContainerTest(test.wxTestCase):
         self.assertEqual(1, self.container.size())
 
     def testDefaultActiveViewer(self):
-        self.assertEqual(self.viewer1, self.container.activeViewer())
+        self.assertEqual(self.viewer1, self.container.active_viewer())
 
     def testChangePage_ChangesActiveViewer(self):
-        self.container.activateViewer(self.viewer2)
-        self.assertEqual(self.viewer2, self.container.activeViewer())
+        self.container.activate_viewer(self.viewer2)
+        self.assertEqual(self.viewer2, self.container.active_viewer())
 
     def testChangePage_NotifiesObserversAboutNewActiveViewer(self):
         pub.subscribe(self.onEvent, "viewer.status")
-        self.container.onPageChanged(DummyChangeEvent(self.viewer2))
+        self.container.on_page_changed(DummyChangeEvent(self.viewer2))
         self.assertTrue(self.events > 0)
 
     def testCloseViewer_RemovesViewerFromContainer(self):
-        self.container.onPageClosed(DummyCloseEvent(self.viewer1))
+        self.container.on_page_closed(DummyCloseEvent(self.viewer1))
         self.assertEqual([self.viewer2], self.container.viewers)
 
     def testCloseViewer_ChangesActiveViewer(self):
-        self.container.onPageChanged(DummyChangeEvent(self.viewer2))
-        self.container.onPageClosed(DummyCloseEvent(self.viewer2))
-        self.assertEqual(self.viewer1, self.container.activeViewer())
+        self.container.on_page_changed(DummyChangeEvent(self.viewer2))
+        self.container.on_page_closed(DummyCloseEvent(self.viewer2))
+        self.assertEqual(self.viewer1, self.container.active_viewer())
 
     def testCloseViewer_NotifiesObserversAboutNewActiveViewer(self):
-        self.container.activateViewer(self.viewer2)
+        self.container.activate_viewer(self.viewer2)
         pub.subscribe(self.onEvent, "viewer.status")
-        self.container.closeViewer(self.viewer2)
+        self.container.close_viewer(self.viewer2)
         self.assertTrue(self.events > 0)

@@ -35,8 +35,9 @@
 5. **Gradually migrate other read-only call sites** as code is touched.
    No big-bang refactor — incremental adoption.
 6. ~~**Wire `EVT_SYS_COLOUR_CHANGED`** to recompute `theme_is_dark`.~~ Done.
-   `application.py` rebroadcasts as `"system.theme_colour_changed"` Publisher
-   signal; settings2 subscribes and recomputes.
+   `MainWindow` sends the `"system.theme_colour_changed"` Publisher event
+   on a light/dark switch; settings2 subscribes and recomputes. See
+   [System theme changes](#system-theme-changes).
 7. **Refine refresh triggers.** Eventually, replace the 1-second debounce
    with a proper batched signal when `ConfigParser` is replaced.
 8. **Wire `"settings2.changed"` listeners.** Nobody subscribes yet.
@@ -48,23 +49,37 @@
 
 ## Known Anomalies
 
-### System theme detection on Linux/GTK
+### System theme changes
 
-`EVT_SYS_COLOUR_CHANGED` does **not** fire on GNOME 42+ when the user
-toggles dark/light mode via the system Settings panel. GNOME uses the
-`org.freedesktop.appearance color-scheme` D-Bus portal to signal the
-change, but wxWidgets only added a portal listener in **3.2.3**. The
-current build uses wxWidgets 3.2.2, so the event never arrives.
+With **Mode** Automatic, Task Coach follows a system light/dark switch
+while running on Linux and macOS. `MainWindow` handles
+`EVT_SYS_COLOUR_CHANGED` and also compares `detect_dark_theme()` with
+its last value every second, a safety net for a switch wx does not
+report. On Windows `detect_dark_theme()` follows the Mode applied to
+the native controls at startup, so Task Coach's colours keep matching
+them and a switch applies after a restart. Only the Theme page's
+"Detected" label reads the system setting there
+(`detect_system_dark_theme()`, wxPython 4.3).
+Whichever sees a switch first handles it, once: the
+`"system.theme_colour_changed"` Publisher event makes settings2
+recompute `window.theme_is_dark` and updates an open Theme preferences
+page; with Mode Automatic, the `"settings.window.theme"` message then
+re-themes tasks and task viewers as a Mode change in Preferences does.
 
-`detect_dark_theme()` (which calls `wx.SystemSettings.GetAppearance().IsDark()`)
-**does** return the correct value — the wx colour cache is eventually
-invalidated by GTK internally. The value is correct whenever it is
-called; it is just never called at the right moment because no event
-triggers it.
+The AGW `AuiManager` consumes `EVT_SYS_COLOUR_CHANGED` (see
+[AUI.md](AUI.md#system-colour-change-event)). The main window's manager
+lets it through; editor pages sit in an AGW `AuiNotebook` and never get
+it, so `MultiLineTextCtrl` checks the system colours at paint time.
 
-The Preferences dialog works around this with `EVT_IDLE` polling: it
-calls `detect_dark_theme()` every idle cycle and updates the
-"(Detected: ...)" label when the result changes.
+Limits:
+
+- GNOME 42+ "Dark Style" only sets the `color-scheme` portal setting,
+  which GTK 3 ignores and wxWidgets reads only from 3.2.3: with 3.2.2
+  the app stays light, so there is nothing to follow. Switches that
+  also change the GTK theme (e.g. Ubuntu's Yaru-dark) are followed.
+- On Windows, native controls and Task Coach's colours keep the Mode
+  applied at startup until a restart
+  ([WINDOWS.md](WINDOWS.md#dark-mode)).
 
 ### Frequent implicit refreshes
 
@@ -84,18 +99,7 @@ In practice, `Settings.set()` is called frequently:
 
 Because dialogs and viewers save geometry on close, settings2 is
 re-snapshotted relatively often during normal use. Computed values like
-`theme_is_dark` are recomputed on each refresh, so a system theme change
-will be picked up the next time any window closes — typically within
-seconds of normal interaction.
-
-### Remaining gap
-
-There is currently no **proactive** detection of system theme changes.
-If the user switches the OS theme and does not interact with the app
-(no window close, no setting change), `theme_is_dark` stays stale
-until the next `Settings.set()` call. The `"settings2.changed"` signal
-is already broadcast after each refresh, but no consumer subscribes to
-it yet. Wiring listeners is tracked in TODO item 8.
+`theme_is_dark` are recomputed on each refresh.
 
 ---
 
@@ -291,12 +295,14 @@ live as regular attributes on the same `SimpleNamespace` objects.
 - `wx_ready()` — after wxApp created (re-refresh with display-dependent
   computed settings)
 - `Settings.set()` — debounced 1-second timer; burst writes (e.g.
-  Preferences OK) collapse into a single refresh
-- `EVT_SYS_COLOUR_CHANGED` — `application.py` binds the wx event on the
-  main window and rebroadcasts as
-  `patterns.Event("system.theme_colour_changed", self).send()`.
-  Settings2 subscribes in `wx_ready()` and recomputes
-  `_compute_settings_all()` (no full ConfigParser re-read needed).
+  Preferences OK) collapse into a single refresh. Setting
+  `window.theme` also refreshes at once (`refresh_now()`), before the
+  change is sent, since its listeners read `window.theme_is_dark`
+- System light/dark switch: `MainWindow` sends
+  `patterns.Event("system.theme_colour_changed", self)` (see
+  [System theme changes](#system-theme-changes)). Settings2 subscribes
+  in `wx_ready()` and recomputes `_compute_settings_all()` (no full
+  ConfigParser re-read needed).
 
 ### Completion signal
 
@@ -308,7 +314,7 @@ patterns.Event("settings2.changed", _instance).send()
 
 This fires after:
 - debounced `Settings.set()` refresh
-- system colour change recomputation
+- system light/dark switch recomputation
 
 Listeners register with:
 

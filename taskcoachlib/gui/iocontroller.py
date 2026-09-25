@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import meta, persistence, patterns, operating_system
 from taskcoachlib.i18n import _
 from taskcoachlib.filesystem import resourcelock
+from taskcoachlib.meta.debug import log_step
 
 from taskcoachlib.gui.dialog import BackupManagerDialog
 import wx
@@ -112,6 +113,9 @@ class IOController(object):
         self.__error_message_options = dict(
             caption=_("%s file error") % meta.name, style=wx.ICON_ERROR
         )
+        # A task file the user agreed to replace; _save_save removes its
+        # auto import/export files once it holds the lock
+        self.__replacing = None
 
     def need_save(self):
         return self.__task_file.need_save()
@@ -156,8 +160,9 @@ class IOController(object):
         filename=None,
         showerror=wx.MessageBox,
         file_exists=os.path.exists,
+        ask_to_save=True,
     ):
-        if self.__task_file.need_save():
+        if ask_to_save and self.__task_file.need_save():
             if not self.__save_unsaved_changes():
                 return
         if not filename:
@@ -168,7 +173,23 @@ class IOController(object):
             return
         self.__update_default_path(filename)
         if file_exists(filename):
-            self.__close_unconditionally()
+            # Lock the file before closing the current one, so a file in
+            # use elsewhere leaves the current file open; load() adopts
+            # this lock.
+            try:
+                lock = resourcelock.acquire(filename, "task file")
+            except resourcelock.LockInUse as in_use:
+                showerror(
+                    resourcelock.in_use_message(filename, in_use.owner),
+                    **self.__error_message_options
+                )
+                return
+            try:
+                self.__close_unconditionally()
+            except BaseException:
+                if not self.__holds_lock(lock):
+                    lock.release()
+                raise
             self.__add_recent_file(filename)
             try:
                 self.__task_file.load(filename)
@@ -186,6 +207,10 @@ class IOController(object):
                     filename, showerror, show_backups=True
                 )
                 return
+            finally:
+                # Held only if the task file took it over
+                if not self.__holds_lock(lock):
+                    lock.release()
             self.__message_callback(
                 _("Loaded %(nrtasks)d tasks from " "%(filename)s")
                 % dict(
@@ -236,8 +261,24 @@ class IOController(object):
         else:
             return False
 
+    def save_unsaved_changes(self, question=None):
+        """Ask whether to save unsaved changes, and save them if so.
+        Return False if the user cancelled."""
+        if self.__task_file.need_save():
+            return self.__save_unsaved_changes(question)
+        return True
+
     def merge_disk_changes(self):
-        self.__task_file.merge_disk_changes()
+        try:
+            self.__task_file.merge_disk_changes()
+        except Exception as reason:  # pylint: disable=W0703
+            filename = self.__task_file.filename()
+            log_step("cannot merge %s" % filename, prefix="FILE", exc=True)
+            wx.MessageBox(
+                _("Cannot merge the changes on disk of %s\n%s")
+                % (filename, str(reason) or type(reason).__name__),
+                **self.__error_message_options
+            )
 
     def save_as(
         self,
@@ -287,7 +328,12 @@ class IOController(object):
             if not filename:
                 return False  # User didn't enter a filename, cancel save
         selection_file = self._create_selection_file(tasks, task_file_class)
-        if self._save_save(selection_file, showerror, filename):
+        try:
+            saved = self._save_save(selection_file, showerror, filename)
+        finally:
+            # The tasks stay in the open file
+            selection_file.detach()
+        if saved:
             return True
         else:
             return self.save_selection(
@@ -309,29 +355,74 @@ class IOController(object):
         return selection_file
 
     def _save_save(self, task_file, showerror, filename=None):
-        """Save the file and show an error message if saving fails."""
+        """Save the file and show an error message if saving fails.
+
+        A new file name is locked before anything there is touched, so
+        a file open in another Task Coach is never replaced. The open
+        task file adopts the lock (Save as); otherwise it is released
+        afterwards."""
+        lock = None
+        replacing, self.__replacing = self.__replacing, None
         try:
             if filename:
+                lock = resourcelock.acquire(filename, "task file")
+                open_file = self.__holds_lock(lock)
+                if open_file and task_file is not self.__task_file:
+                    # It would replace the open file behind its back
+                    showerror(
+                        _(
+                            "%s is the open task file.\n"
+                            "Save the selected tasks to another file."
+                        )
+                        % filename,
+                        **self.__error_message_options
+                    )
+                    return False
+                if filename == replacing and not open_file:
+                    self.__remove_auto_files(filename)
                 task_file.saveas(filename)
             else:
                 filename = task_file.filename()
                 task_file.save()
-            self.__show_save_message(task_file)
-            self.__add_recent_file(filename)
-            return True
         except resourcelock.LockInUse as in_use:
             showerror(
                 resourcelock.in_use_message(filename, in_use.owner),
                 **self.__error_message_options
             )
             return False
-        except (OSError, IOError) as reason:
+        except Exception as reason:  # pylint: disable=W0703
+            # Not only OSError: e.g. merging a corrupt file on disk
+            log_step("cannot save %s" % filename, prefix="FILE", exc=True)
             error_message = _("Cannot save %s\n%s") % (
                 filename,
-                str(reason),
+                str(reason) or type(reason).__name__,
             )
             showerror(error_message, **self.__error_message_options)
             return False
+        finally:
+            if lock is not None and not self.__holds_lock(lock):
+                lock.release()
+        self.__show_save_message(task_file)
+        self.__add_recent_file(filename)
+        return True
+
+    def __holds_lock(self, lock):
+        holds_lock = getattr(self.__task_file, "holds_lock", None)
+        return bool(holds_lock and holds_lock(lock))
+
+    def __remove_auto_files(self, filename):
+        """Remove the auto import/export files of the task file that
+        filename replaces, so they are not imported into the new one."""
+        extensions = {"Todo.txt": ".txt"}
+        for auto in set(
+            self.__settings.getlist("file", "autoimport")
+            + self.__settings.getlist("file", "autoexport")
+        ):
+            auto_name = os.path.splitext(filename)[0] + extensions[auto]
+            if os.path.exists(auto_name):
+                os.remove(auto_name)
+            if os.path.exists(auto_name + "-meta"):
+                os.remove(auto_name + "-meta")
 
     def save_as_template(self, task):
         templates = persistence.TemplateList(
@@ -585,16 +676,8 @@ class IOController(object):
             style=wx.YES_NO | wx.CANCEL | wx.ICON_QUESTION | wx.NO_DEFAULT,
         )
         if result == wx.YES:
-            extensions = {"Todo.txt": ".txt"}
-            for auto in set(
-                self.__settings.getlist("file", "autoimport")
-                + self.__settings.getlist("file", "autoexport")
-            ):
-                auto_name = os.path.splitext(filename)[0] + extensions[auto]
-                if os.path.exists(auto_name):
-                    os.remove(auto_name)
-                if os.path.exists(auto_name + "-meta"):
-                    os.remove(auto_name + "-meta")
+            if file_dialog_opts["default_extension"] == "tsk":
+                self.__replacing = filename
             return filename
         elif result == wx.NO:
             return self.__ask_user_for_file(
@@ -605,9 +688,9 @@ class IOController(object):
         else:
             return None
 
-    def __save_unsaved_changes(self):
+    def __save_unsaved_changes(self, question=None):
         result = wx.MessageBox(
-            _("You have unsaved changes.\n" "Save before closing?"),
+            question or _("You have unsaved changes.\nSave before closing?"),
             _("%s: save changes?") % meta.name,
             style=wx.YES_NO | wx.CANCEL | wx.ICON_QUESTION | wx.YES_DEFAULT,
         )

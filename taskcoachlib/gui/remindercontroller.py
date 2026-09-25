@@ -25,9 +25,9 @@ which is called by MasterScheduler every second.
 See docs/SCHEDULERS.md for architecture documentation.
 """
 
+from taskcoachlib import patterns
 from taskcoachlib.gui.dialog import reminder, editor
 from taskcoachlib.tools import wxhelper
-from pubsub import pub
 import wx
 
 
@@ -51,9 +51,11 @@ class ReminderController(object):
         self.effortList = effortList
 
         # Subscribe to reminder trigger events from Task.processReminder()
-        pub.subscribe(self._onReminderTrigger, 'task.reminder.trigger')
+        patterns.Publisher().registerObserver(
+            self._on_reminder_trigger, eventType="task.reminder.trigger"
+        )
 
-    def _onReminderTrigger(self, task):
+    def _on_reminder_trigger(self, event):
         """
         Handle reminder trigger from Task.processReminder().
 
@@ -61,12 +63,13 @@ class ReminderController(object):
         Only shows dialog if not already open (checked via ReminderDialog.isOpenFor).
 
         Args:
-            task: The task whose reminder is due
+            event: its source is the task whose reminder is due
         """
-        # Check if dialog already open for this task (SSOT check)
-        if not reminder.ReminderDialog.isOpenFor(task):
-            self.showReminderMessage(task)
-            self.requestUserAttention()
+        for task in event.sources():
+            # Check if dialog already open for this task (SSOT check)
+            if not reminder.ReminderDialog.isOpenFor(task):
+                self.showReminderMessage(task)
+                self.requestUserAttention()
 
     def showReminderMessage(
         self, taskWithReminder, ReminderDialog=reminder.ReminderDialog
@@ -134,4 +137,6 @@ class ReminderController(object):
 
     def shutdown(self):
         """Cleanup subscriptions."""
-        pub.unsubscribe(self._onReminderTrigger, 'task.reminder.trigger')
+        patterns.Publisher().removeObserver(
+            self._on_reminder_trigger, eventType="task.reminder.trigger"
+        )

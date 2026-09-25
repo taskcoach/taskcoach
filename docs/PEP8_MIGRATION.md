@@ -54,11 +54,11 @@ Before renaming any non-wx CamelCase name:
 1. Confirm it is internal (not a wx override or wx-interface method).
 2. Find every reference: `registerObserver`, `pub.subscribe`, `Bind`,
    `getattr`, and cross-module callers.
-3. Rename in lockstep and run the tests.
+3. Rename in lockstep, then run `tools/check_renames.py` and the tests.
 
 ## flake8 codes: fix vs expected
 
-- **Fix:** `E501` (except unbreakable URLs/strings), `E1xx`/`E3xx`,
-  `F401`/`F402`, blank-line rules.
+- **Fix:** `E501` (except unbreakable URLs/strings), `W505` (comments
+  and docstrings over 72), `E1xx`/`E3xx`, `F401`/`F402`, blank-line rules.
 - **Expected / ignore:** `N802/N803/N812/N813` on wx names; `W503/W504`
   (black's preferred operator-wrapping style).

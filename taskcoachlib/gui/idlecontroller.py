@@ -28,7 +28,6 @@ from taskcoachlib.meta.debug import log_step
 from taskcoachlib.notify import NotificationFrameBase, NotificationCenter
 from taskcoachlib.patterns import Observer
 from taskcoachlib.powermgt import IdleNotifier
-from pubsub import pub
 from taskcoachlib import render
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 import wx
@@ -111,10 +110,22 @@ class IdleController(Observer, IdleNotifier):
         self._tracker = effort.EffortListTracker(self._effort_list)
         self._tracker.subscribe(self._on_tracked_changed, "effortlisttracker")
 
-        pub.subscribe(self.poweroff, "powermgt.off")
-        pub.subscribe(self.poweron, "powermgt.on")
+        self.registerObserver(self._on_power_off, eventType="powermgt.off")
+        self.registerObserver(self._on_power_on, eventType="powermgt.on")
+        self.registerObserver(
+            self._on_min_idle_time_changed,
+            eventType="feature.minidletime",
+            eventSource=settings,
+        )
 
         self._log_backend_if_enabled()
+        self._on_tracked_changed(self._tracker.trackedEfforts())
+
+    def _on_power_off(self, event):  # pylint: disable=W0613
+        self.poweroff()
+
+    def _on_power_on(self, event):  # pylint: disable=W0613
+        self.poweron()
 
     def _log_backend_if_enabled(self):
         """Probe and report the idle-detection backend at startup.
@@ -165,6 +176,11 @@ class IdleController(Observer, IdleNotifier):
         else:
             self.pause()
 
+    def _on_min_idle_time_changed(self, event):  # pylint: disable=W0613
+        # Through resume(), so polling that starts now does not count
+        # the time since tracking started as idle.
+        self._on_tracked_changed(self._tracker.trackedEfforts())
+
     def get_min_idle_time(self):
         return self._settings.getint("feature", "minidletime") * 60
 
@@ -175,8 +191,8 @@ class IdleController(Observer, IdleNotifier):
         # Keep the went-idle timestamp in its own attribute. Storing it
         # in _last_activity overwrote the IdleNotifier state machine's
         # activity clock with a stale time, which made _check() cycle
-        # through sleep/wake on every wx idle event and reopen the
-        # notification endlessly after "Do nothing".
+        # through sleep/wake on every poll and reopen the notification
+        # endlessly after "Do nothing".
         self._went_idle_at = timestamp
         log_step(
             "Wake from idle; idle since %s"

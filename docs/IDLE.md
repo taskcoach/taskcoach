@@ -39,11 +39,11 @@ Linux; the first one that responds is used.
 
 | Platform | Backend | Mechanism | Notes |
 |----------|---------|-----------|-------|
-| **Windows** | `win32_GetLastInputInfo` | `user32.GetLastInputInfo` + `kernel32.GetTickCount` | Single backend, no fallback. Works on all supported Windows versions. |
+| **Windows** | `win32_GetLastInputInfo` | `user32.GetLastInputInfo` + `kernel32.GetTickCount` | Single backend, no fallback. Works on all supported Windows versions. Both are unsigned 32-bit millisecond counts that wrap after 49.7 days of uptime; the difference is taken modulo 2^32. |
 | **macOS** | `iokit_HIDIdleTime` | IOKit `IORegistryEntryCreateCFProperty` on `IOHIDSystem`, property `HIDIdleTime` | Pure-ctypes; loads `IOKit.framework` and `CoreFoundation.framework`. Replaces the pre-2026 `_idle.so` C extension. |
 | **Linux/GTK (GNOME, X11 or Wayland)** | `dbus_mutter` | DBus call `org.gnome.Mutter.IdleMonitor.GetIdletime` on `/org/gnome/Mutter/IdleMonitor/Core` | Returns milliseconds. Works for GNOME Shell sessions including Wayland. |
 | **Linux/GTK (any X11 session: KDE Plasma 5/6, XFCE, LXDE, MATE, Cinnamon, i3, …)** | `x11_mit_screensaver` | `libXss.so.1` `XScreenSaverQueryInfo` via the X11 MIT-SCREEN-SAVER extension | The X server's real input idle. Probed before `dbus_screensaver` because KDE Plasma 6 returns a *bogus* `GetSessionIdleTime` value on X11 without raising. Works on any X11 session advertising the extension; correctly unavailable on Wayland. |
-| **Linux/GTK (KDE Plasma 6, wlroots, COSMIC, Wayland)** | `ext_idle_notify` | `ext-idle-notify-v1` Wayland protocol via a **vendored** `pywayland` binding (`taskcoachlib/thirdparty/ext_idle_notify_v1`); a daemon thread holds an `ext_idle_notification_v1` armed at a 1 s timeout and tracks `idled`/`resumed` | Covers KWin (Plasma 5.27+, all Plasma 6), wlroots (Sway, Hyprland, niri, river, Wayfire) and COSMIC. Only attempted when `WAYLAND_DISPLAY` is set and core `pywayland` is importable; otherwise skipped silently. GNOME Mutter does not implement this protocol, but GNOME is already covered by `dbus_mutter`. |
+| **Linux/GTK (KDE Plasma 6, wlroots, COSMIC, Wayland)** | `ext_idle_notify` | `ext-idle-notify-v1` Wayland protocol via a **vendored** `pywayland` binding (`taskcoachlib/thirdparty/ext_idle_notify_v1`); an `ext_idle_notification_v1` armed at a 1 s timeout reports `idled`/`resumed`, drained on each poll | Covers KWin (Plasma 5.27+, all Plasma 6), wlroots (Sway, Hyprland, niri, river, Wayfire) and COSMIC. Only attempted when `WAYLAND_DISPLAY` is set and core `pywayland` is importable; otherwise skipped silently. GNOME Mutter does not implement this protocol, but GNOME is already covered by `dbus_mutter`. |
 | **Linux/GTK (KDE Plasma 5 fallback)** | `dbus_screensaver` | DBus call `org.freedesktop.ScreenSaver.GetSessionIdleTime` on `/ScreenSaver` | Last-resort fallback only. Plasma 5 implements it; on Plasma 6 it returns `NotSupported` (Wayland) or a bogus value (X11, already handled by `x11_mit_screensaver` winning first). |
 | **Linux/GTK (other)** | none | none | If all four probes fail, a one-time warning is logged and the feature silently disables itself for the session. |
 
@@ -70,7 +70,7 @@ implements neither `org.gnome.Mutter.IdleMonitor` nor
 ## Backend Probe Order (Linux)
 
 `LinuxIdleQuery._initialize()` in `taskcoachlib/powermgt/idle.py` runs
-lazily on the first `getIdleSeconds()` call. It probes:
+lazily on the first `get_idle_seconds()` call. It probes:
 
 1. `dbus_mutter` - attempts a real `GetIdletime()` call. Caches the
    interface on success.
@@ -87,8 +87,8 @@ lazily on the first `getIdleSeconds()` call. It probes:
 3. `ext_idle_notify` - skipped immediately unless `WAYLAND_DISPLAY`
    is set and the vendored binding imports. Connects to the Wayland
    display, binds `ext_idle_notifier_v1` + `wl_seat`, creates an
-   `ext_idle_notification_v1` armed at a 1 s timeout, and starts a
-   daemon thread that dispatches `idled`/`resumed` events. Success
+   `ext_idle_notification_v1` armed at a 1 s timeout, whose
+   `idled`/`resumed` events each poll drains. Success
    means the globals were advertised and the notification was
    created without a protocol error. The protocol binding is
    **vendored** at `taskcoachlib/thirdparty/ext_idle_notify_v1`
@@ -106,7 +106,8 @@ probed. The selected method is exposed via `get_backend_name()`.
 
 The probe is triggered explicitly at startup by `IdleController`
 when the feature is enabled, so subsequent runtime calls hit the
-already-selected backend with no extra cost.
+already-selected backend with no extra cost. With the feature
+disabled no backend is probed or queried.
 
 ---
 
@@ -120,7 +121,9 @@ Defined in `taskcoachlib/config/defaults.py` (section `feature`).
 Editable in Preferences > Features as "Idle time notice".
 
 `IdleController.get_min_idle_time()` returns the value times 60
-(seconds) and is consulted on every state-machine tick.
+(seconds) and is read on every poll. `IdleController` also observes the
+setting (Publisher event `feature.minidletime`), so a change in
+Preferences starts or stops polling at once.
 
 ---
 
@@ -144,14 +147,15 @@ set on the controller prevents duplicate dialogs for the same effort.
 
 ## State Machine
 
-`IdleNotifier` in `taskcoachlib/powermgt/idle.py` runs on `wx.EVT_IDLE`.
+`IdleNotifier` in `taskcoachlib/powermgt/idle.py` polls on the
+GlobalTimer `timer.second` tick (see [SCHEDULERS.md](SCHEDULERS.md)).
 
 ```
-       (no efforts tracked)
+       (no efforts tracked, or threshold 0)
               |
               v
         +-----------+   tracking starts    +-----------+
-        | unbound   | -------------------> | AWAKE     |
+        | stopped   | -------------------> | AWAKE     |
         +-----------+                      +-----------+
               ^                              |       ^
               | tracking stops               |       |
@@ -167,14 +171,20 @@ set on the controller prevents duplicate dialogs for the same effort.
                                   -> wake(goneToSleep) fires
 ```
 
-- The handler is **bound only while at least one effort is tracked**.
-  `IdleController.__onTrackedChanged` calls `resume()` / `pause()` on
-  the underlying `IdleNotifier`.
-- `lastActivity` is recomputed on every EVT_IDLE tick as
-  `time.time() - getIdleSeconds()`.
-- `goneToSleep` is captured when the threshold is first crossed and
+- It **polls only while at least one effort is tracked, the threshold
+  is above 0 and the computer is not suspended**.
+  `IdleController._on_tracked_changed` calls `resume()` / `pause()`,
+  and a threshold change goes through it too; the main window's
+  Publisher events `powermgt.off` / `powermgt.on` (Windows only) call
+  `poweroff()` / `poweron()`.
+- `_last_activity` is recomputed on every poll as
+  `time.time() - get_idle_seconds()`. It is also checked before the
+  query, so a gap between polls (a suspend, which idle counters may
+  not include) counts as idle.
+- `_gone_to_sleep` is captured when the threshold is first crossed and
   passed to `wake()` so the dialog shows when the user actually
-  stopped being active.
+  stopped being active. Return is detected on the next tick, within
+  about a second.
 
 ---
 
@@ -183,9 +193,10 @@ set on the controller prevents duplicate dialogs for the same effort.
 When the feature is enabled (`minidletime > 0`), `IdleController` logs a
 one-shot summary at startup using the standard `log_step` utility with
 prefix `[IDLE]`. The log proves which backend was selected and that a
-real query returned a sensible value. No additional logging is emitted
-during normal operation (state transitions, dialog button choices),
-since the startup probe has already verified the path works.
+real query returned a sensible value. At runtime it logs
+`Polling started; threshold=<n>s` and `Polling stopped`,
+`Idle threshold reached while tracking effort` on sleep and
+`Wake from idle; idle since <time>` on wake.
 
 Example output on a Debian LXDE/X11 box:
 
@@ -268,10 +279,9 @@ GNOME Mutter does not implement `ext-idle-notify-v1` as of early
 ### Setting changes during a session
 
 The startup probe runs once at `IdleController.__init__`. If the user
-toggles `minidletime` from `0` to non-zero (or vice versa) at runtime
-via Preferences, the probe is not re-run. The feature still functions
-because `get_min_idle_time()` is consulted on every tick; only the
-startup log is missing. Not currently considered a bug; a restart
+toggles `minidletime` from `0` to non-zero at runtime via
+Preferences, the probe summary is not logged; the backend is selected
+silently on the first poll. Not currently considered a bug; a restart
 re-runs the probe.
 
 ---

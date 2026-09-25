@@ -19,31 +19,32 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import test, io
 from taskcoachlib import persistence, config
 from taskcoachlib.domain import task, date
+from unittests.asserts import sorted_attributes
 
 
 class TemplateXMLWriterTestCase(test.TestCase):
     def setUp(self):
         task.Task.settings = config.Settings(load=False)
-        self.fd = io.StringIO()
+        self.fd = io.BytesIO()  # The app writes UTF-8 bytes (SafeWriteFile)
         self.fd.name = "testfile.tsk"
-        self.fd.encoding = "utf-8"
         self.writer = persistence.TemplateXMLWriter(self.fd)
         self.task = task.Task()
 
     def __writeAndRead(self):
         self.writer.write(self.task)
-        return self.fd.getvalue()
+        return self.fd.getvalue().decode("utf-8")
 
-    def expectInXML(self, xmlFragment):
-        xml = self.__writeAndRead()
+    def expect_in_xml(self, xml_fragment):
+        xml = sorted_attributes(self.__writeAndRead())
+        xml_fragment = sorted_attributes(xml_fragment)
         self.assertTrue(
-            xmlFragment in xml, "%s not in %s" % (xmlFragment, xml)
+            xml_fragment in xml, "%s not in %s" % (xml_fragment, xml)
         )
 
     # tests
 
     def testDefaultTask(self):
-        self.expectInXML(
+        self.expect_in_xml(
             '<tasks>\n<task creationDateTime="%s" id="%s" '
             'status="1" />\n</tasks>'
             % (self.task.creationDateTime(), self.task.id())
@@ -53,16 +54,16 @@ class TemplateXMLWriterTestCase(test.TestCase):
         self.task.setPlannedStartDateTime(
             date.Now() + date.TimeDelta(minutes=31)
         )
-        self.expectInXML('plannedstartdatetmpl="31 minutes from now')
+        self.expect_in_xml('plannedstartdatetmpl="31 minutes from now')
 
     def testTaskWithDueDateTime(self):
         self.task.setDueDateTime(date.Now() + date.TimeDelta(minutes=13))
-        self.expectInXML('duedatetmpl="13 minutes from now')
+        self.expect_in_xml('duedatetmpl="13 minutes from now')
 
     def testTaskWithCompletionDateTime(self):
         self.task.setCompletionDateTime(date.Now() + date.TimeDelta(minutes=4))
-        self.expectInXML('completiondatetmpl="4 minutes from now')
+        self.expect_in_xml('completiondatetmpl="4 minutes from now')
 
     def testTaskWithReminder(self):
         self.task.setReminder(date.Now() + date.TimeDelta(seconds=10))
-        self.expectInXML('remindertmpl="0 minutes from now')
+        self.expect_in_xml('remindertmpl="0 minutes from now')

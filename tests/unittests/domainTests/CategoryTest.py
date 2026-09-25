@@ -358,7 +358,7 @@ class CategoryTest(test.TestCase):
         )
         self.registerObserver(eventType)
         self.category.addCategorizable(self.categorizable)
-        self.category.setIcon("icon")
+        self.category.set_icon_id("icon")
         self.assertEqual(
             [patterns.Event(eventType, self.categorizable)], self.events
         )
@@ -369,7 +369,7 @@ class CategoryTest(test.TestCase):
         )
         self.registerObserver(eventType)
         self.category.addCategorizable(self.categorizable)
-        self.category.setSelectedIcon("icon")
+        self.category.set_selected_icon_id("icon")
         self.assertEqual(
             [patterns.Event(eventType, self.categorizable)], self.events
         )
@@ -436,6 +436,7 @@ class CategoryTest(test.TestCase):
                 self.category.categorizableAddedEventType(),
                 self.category.categorizableRemovedEventType(),
                 self.category.exclusiveSubcategoriesChangedEventType(),
+                self.category.stylePriorityChangedEventType(),
             ],
             self.category.modificationEventTypes(),
         )

@@ -73,8 +73,8 @@ import math
 import datetime
 import time
 import calendar
-from pubsub import pub
 
+from taskcoachlib import patterns
 from taskcoachlib.i18n import _
 from taskcoachlib.domain import date
 
@@ -1942,7 +1942,9 @@ class _CalendarComboPopup(wx.ComboPopup):
         self._panel.Bind(wx.EVT_MOTION, self._onMotion)
         self._panel.Bind(wx.EVT_LEAVE_WINDOW, self._onLeaveWindow)
         self._panel.Bind(wx.EVT_CHAR, self._onChar)
-        pub.subscribe(self._onColoursChanged, 'calendar.colours.changed')
+        patterns.Publisher().registerObserver(
+            self._on_colours_changed, eventType="calendar.colours.changed"
+        )
         return True
 
     def GetControl(self):
@@ -2001,9 +2003,11 @@ class _CalendarComboPopup(wx.ComboPopup):
         pass
 
     def DestroyPopup(self):
-        pub.unsubscribe(self._onColoursChanged, 'calendar.colours.changed')
+        patterns.Publisher().removeObserver(
+            self._on_colours_changed, eventType="calendar.colours.changed"
+        )
 
-    def _onColoursChanged(self):
+    def _on_colours_changed(self, event):  # pylint: disable=W0613
         if self._panel:
             self._panel.Refresh()
 

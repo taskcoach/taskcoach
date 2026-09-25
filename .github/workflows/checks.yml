@@ -1,0 +1,39 @@
+name: Static Checks
+
+# Catch errors that only fail when their line runs: undefined names and
+# names left behind by a rename (see docs/DEVELOPMENT.md).
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches:
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Undefined and renamed names
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install flake8
+        run: python -m pip install flake8==7.3.0
+
+      - name: flake8 errors
+        run: python -m flake8 --select=E9,F63,F7,F821,F822,F823 taskcoachlib tests tools taskcoach.py setup.py
+
+      - name: Renamed names
+        run: python tools/check_renames.py

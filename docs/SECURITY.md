@@ -4,8 +4,7 @@
 
 1. [No Dynamic Function Dispatch](#no-dynamic-function-dispatch)
 2. [Audit Results](#audit-results)
-3. [iCalendar Eval Sandboxing](#icalendar-eval-sandboxing)
-4. [General Principles](#general-principles)
+3. [General Principles](#general-principles)
 
 ---
 
@@ -50,9 +49,12 @@ Full audit of `taskcoachlib/` for dynamic function calls (2026-02-16).
 
 ### Category 2: eval/exec
 
-| File | Line | Pattern | Status |
-|------|------|---------|--------|
-| `icalendar/ical.py` | 258 | `safe_eval_datetime_expr(value, context)` | OK — sandboxed via AST parser |
+No `eval` or `exec`. Text from a task file is parsed, never run:
+
+| File | Pattern | Status |
+|------|---------|--------|
+| `persistence/xml/reader.py` | `ast.literal_eval` of colour and expanded-context tuples | **Fixed**: was `eval` |
+| `persistence/xml/reader.py` | `safe_eval_date_expr()` of date expressions in templates saved before tskversion 32 | **Fixed**: names limited to `OLD_TEMPLATE_NAMES` (was the whole `date` module); `_` attributes and modules refused |
 
 ### Category 3: Dynamic imports
 
@@ -60,31 +62,6 @@ Full audit of `taskcoachlib/` for dynamic function calls (2026-02-16).
 |------|------|---------|--------|
 | `application.py` | 137 | `__import__(import_name)` | OK — version checking, hardcoded names |
 | `gui/icons/icon_library.py` | 390 | `importlib.import_module(module_name)` | OK — theme name from catalog JSON |
-
----
-
-## iCalendar Eval Sandboxing
-
-`icalendar/ical.py` contains a `safe_eval_datetime_expr()` function that
-evaluates date/time expressions from iCalendar files. It uses Python's `ast`
-module to parse the expression into an AST, then walks the tree to ensure
-only allowed node types and function calls are present.
-
-**Allowed constructs:**
-
-- `datetime.datetime(...)` and `datetime.timedelta(...)`
-- Integer and string literals
-- Basic arithmetic operators
-
-**Blocked constructs:**
-
-- All other function calls
-- Attribute access beyond `datetime.datetime` / `datetime.timedelta`
-- Import statements
-- Lambda, comprehensions, assignments
-
-This is the correct approach for evaluating untrusted expressions — AST
-whitelisting rather than string blacklisting.
 
 ---
 

@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import os, pickle, tempfile, shutil
-from pubsub import pub
 from taskcoachlib.meta.debug import log_step
 from .xml import TemplateXMLWriter, TemplateXMLReader
 
@@ -82,7 +81,6 @@ class TemplateList(object):
         for task, name in self._toDelete:
             os.remove(os.path.join(self._path, name))
         self._toDelete = []
-        pub.sendMessage("templates.saved")
 
     def addTemplate(self, task):
         handle, filename = tempfile.mkstemp(".tsktmpl", dir=self._path)
@@ -103,7 +101,6 @@ class TemplateList(object):
         shutil.copyfile(
             filename, os.path.join(self._path, os.path.split(filename)[-1])
         )
-        pub.sendMessage("templates.saved")
 
     def swapTemplates(self, i, j):
         self._templates[i], self._templates[j] = (

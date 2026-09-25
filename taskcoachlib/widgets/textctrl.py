@@ -16,19 +16,19 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import i18n, operating_system
+from taskcoachlib import i18n, operating_system, patterns
 from taskcoachlib.meta.debug import log_step
-import ast
+import functools
 import wx
 import wx.stc as stc
 import webbrowser
 import re
-from pubsub import pub
 
 # Try to import enchant for spell checking
 try:
     import enchant
     from enchant.checker import SpellChecker
+
     ENCHANT_AVAILABLE = True
 except ImportError:
     ENCHANT_AVAILABLE = False
@@ -48,13 +48,14 @@ class SpellCheckMixin:
     def _detectLanguage(cls):
         """Detect the system language for spell checking."""
         import locale
+
         try:
             lang, _ = locale.getdefaultlocale()
             if lang:
                 return lang
         except (ValueError, TypeError):
             pass
-        return 'en_US'  # Default fallback
+        return "en_US"  # Default fallback
 
     @classmethod
     def getAvailableLanguages(cls):
@@ -68,8 +69,7 @@ class SpellCheckMixin:
         try:
             return enchant.list_languages()
         except Exception as e:
-            log_step("enchant.list_languages() failed: %s" % e,
-                     prefix="SPELL")
+            log_step("enchant.list_languages() failed: %s" % e, prefix="SPELL")
             return []
 
 
@@ -194,28 +194,37 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
     the native border, padding, focus indication, and highlight.
 
     Args:
-        singleLine: If True, prevents Enter key from creating newlines.
+        single_line: If True, prevents Enter key from creating newlines.
     """
 
     # Shared spell checker instance cache (per language)
     _spell_dicts = {}
-    _word_pattern = re.compile(r'\b[a-zA-Z\u00C0-\u024F\u1E00-\u1EFF]+\b')
+    _word_pattern = re.compile(r"\b[a-zA-Z\u00C0-\u024F\u1E00-\u1EFF]+\b")
     _url_pattern = re.compile(
         r'(https?://[^\s<>"{}|\\^`\[\]]+|www\.[^\s<>"{}|\\^`\[\]]+)',
-        re.IGNORECASE
+        re.IGNORECASE,
     )
 
     # Indicator numbers (0-31 available in Scintilla)
     URL_INDICATOR = 1
 
-    def __init__(self, parent, text="", *args, settings=None, singleLine=False, spellCheck=True, **kwargs):
+    def __init__(
+        self,
+        parent,
+        text="",
+        *args,
+        settings=None,
+        single_line=False,
+        spell_check=True,
+        **kwargs
+    ):
         # Filter out TextCtrl-specific kwargs that don't apply to StyledTextCtrl
         kwargs.pop("style", None)
         super().__init__(parent, style=wx.BORDER_NONE)
 
         self._settings = settings
-        self._singleLine = singleLine
-        self._spellCheckRequested = spellCheck  # User requested spell check
+        self._single_line = single_line
+        self._spell_check_requested = spell_check  # User requested spell check
         self._spellCheckEnabled = False
         self._spellCheckLanguage = None
         self._misspelledRanges = []
@@ -253,24 +262,28 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         self.Bind(wx.EVT_KEY_DOWN, self._onKeyDown)
 
         # Single line mode: also block Enter from inserting newlines
-        if self._singleLine:
+        if self._single_line:
             self.CmdKeyClear(stc.STC_KEY_RETURN, 0)
             self.CmdKeyClear(stc.STC_KEY_RETURN, stc.STC_SCMOD_SHIFT)
 
         # Live update squiggle color from preferences
-        pub.subscribe(self._onSquiggleColourChanged, 'spellcheck.colours.changed')
+        patterns.Publisher().registerObserver(
+            self._on_squiggle_colour_changed,
+            eventType="spellcheck.colours.changed",
+        )
         self.Bind(wx.EVT_WINDOW_DESTROY, self._onDestroy)
 
-    def _onSquiggleColourChanged(self):
-        self.IndicatorSetForeground(SPELLCHECK_INDICATOR, self._getSquiggleColor())
+    def _on_squiggle_colour_changed(self, event):  # pylint: disable=W0613
+        self.IndicatorSetForeground(
+            SPELLCHECK_INDICATOR, self._getSquiggleColor()
+        )
         self.Refresh()
 
     def _onDestroy(self, event):
-        try:
-            pub.unsubscribe(self._onSquiggleColourChanged, 'spellcheck.colours.changed')
-        except Exception as e:
-            log_step("unsubscribe squiggle colour failed: %s" % e,
-                     prefix="SPELL")
+        patterns.Publisher().removeObserver(
+            self._on_squiggle_colour_changed,
+            eventType="spellcheck.colours.changed",
+        )
         event.Skip()
 
     def _onKeyDown(self, event):
@@ -292,11 +305,11 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
             self.Navigate(not event.ShiftDown())
             return
         # Single-line: Enter navigates, Ctrl+V strips newlines
-        if self._singleLine:
+        if self._single_line:
             if keyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
                 self.Navigate(True)
                 return
-            if event.ControlDown() and keyCode == ord('V'):
+            if event.ControlDown() and keyCode == ord("V"):
                 self._pasteWithoutNewlines()
                 return
         event.Skip()
@@ -305,12 +318,18 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         """Paste clipboard text with newlines replaced by spaces."""
         if wx.TheClipboard.Open():
             try:
-                if wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_UNICODETEXT)):
+                if wx.TheClipboard.IsSupported(
+                    wx.DataFormat(wx.DF_UNICODETEXT)
+                ):
                     data = wx.TextDataObject()
                     wx.TheClipboard.GetData(data)
                     text = data.GetText()
                     # Replace newlines with spaces
-                    text = text.replace('\r\n', ' ').replace('\r', ' ').replace('\n', ' ')
+                    text = (
+                        text.replace("\r\n", " ")
+                        .replace("\r", " ")
+                        .replace("\n", " ")
+                    )
                     # Insert at current position (replacing selection if any)
                     self.ReplaceSelection(text)
             finally:
@@ -324,7 +343,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         self.SetMarginWidth(2, 0)
 
         # Word wrap: enabled for multiline, disabled for single-line
-        if self._singleLine:
+        if self._single_line:
             self.SetWrapMode(stc.STC_WRAP_NONE)
             self.SetUseVerticalScrollBar(False)
             self.SetUseHorizontalScrollBar(False)
@@ -337,13 +356,27 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         """Apply system theme colours to the control."""
         font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         self.StyleSetFont(stc.STC_STYLE_DEFAULT, font)
-        self.StyleSetForeground(stc.STC_STYLE_DEFAULT, wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
-        self.StyleSetBackground(stc.STC_STYLE_DEFAULT, wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        self.StyleSetForeground(
+            stc.STC_STYLE_DEFAULT,
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT),
+        )
+        self.StyleSetBackground(
+            stc.STC_STYLE_DEFAULT,
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW),
+        )
         self.StyleClearAll()
-        self.SetCaretForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
-        self.SetSelBackground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT))
-        self.SetSelForeground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
-        self.IndicatorSetForeground(SPELLCHECK_INDICATOR, self._getSquiggleColor())
+        self.SetCaretForeground(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+        )
+        self.SetSelBackground(
+            True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT)
+        )
+        self.SetSelForeground(
+            True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
+        )
+        self.IndicatorSetForeground(
+            SPELLCHECK_INDICATOR, self._getSquiggleColor()
+        )
 
     def _getSquiggleColor(self):
         """Get the squiggle color from settings, respecting light/dark theme."""
@@ -351,19 +384,28 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
             return wx.RED
         try:
             from taskcoachlib.config import settings2
-            section = "spellcheck_dark" if settings2.window.theme_is_dark else "spellcheck_light"
+
+            section = (
+                "spellcheck_dark"
+                if settings2.window.theme_is_dark
+                else "spellcheck_light"
+            )
             color_tuple = self._settings.getvalue(section, "squiggle_color")
             return wx.Colour(*color_tuple)
         except Exception as e:
-            log_step("squiggle colour load failed, using RED: %s" % e,
-                     prefix="SPELL")
+            log_step(
+                "squiggle colour load failed, using RED: %s" % e,
+                prefix="SPELL",
+            )
             return wx.RED
 
     def _setupIndicators(self):
         """Set up indicators for spell check and URLs."""
         # Spell check: squiggly underline with configurable color
         self.IndicatorSetStyle(SPELLCHECK_INDICATOR, stc.STC_INDIC_SQUIGGLE)
-        self.IndicatorSetForeground(SPELLCHECK_INDICATOR, self._getSquiggleColor())
+        self.IndicatorSetForeground(
+            SPELLCHECK_INDICATOR, self._getSquiggleColor()
+        )
 
         # URLs: blue underline with hotspot
         self.IndicatorSetStyle(self.URL_INDICATOR, stc.STC_INDIC_PLAIN)
@@ -378,17 +420,23 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
 
     def _initSpellCheck(self):
         """Initialize spell checking."""
-        if not ENCHANT_AVAILABLE or not self._spellCheckRequested:
+        if not ENCHANT_AVAILABLE or not self._spell_check_requested:
             return
 
         # Load settings
         if self._settings:
             try:
-                self._spellCheckEnabled = self._settings.getboolean('spellcheck', 'enabled')
-                self._spellCheckLanguage = self._settings.get('spellcheck', 'language') or None
+                self._spellCheckEnabled = self._settings.getboolean(
+                    "spellcheck", "enabled"
+                )
+                self._spellCheckLanguage = (
+                    self._settings.get("spellcheck", "language") or None
+                )
             except Exception as e:
-                log_step("spellcheck settings load failed, using defaults: %s"
-                         % e, prefix="SPELL")
+                log_step(
+                    "spellcheck settings load failed, using defaults: %s" % e,
+                    prefix="SPELL",
+                )
                 self._spellCheckEnabled = True
                 self._spellCheckLanguage = None
         else:
@@ -404,9 +452,14 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
     def _onTextModified(self, event):
         """Handle text changes - schedule spell check and URL detection."""
         event.Skip()
-        if event.GetModificationType() & (stc.STC_MOD_INSERTTEXT | stc.STC_MOD_DELETETEXT):
+        if event.GetModificationType() & (
+            stc.STC_MOD_INSERTTEXT | stc.STC_MOD_DELETETEXT
+        ):
             # Debounce highlighting
-            if hasattr(self, '_highlightTimer') and self._highlightTimer.IsRunning():
+            if (
+                hasattr(self, "_highlightTimer")
+                and self._highlightTimer.IsRunning()
+            ):
                 self._highlightTimer.Stop()
             self._highlightTimer = wx.CallLater(300, self._performHighlighting)
 
@@ -418,16 +471,17 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         language = self._spellCheckLanguage
         if language is None:
             import locale
+
             try:
                 language, _ = locale.getdefaultlocale()
             except (ValueError, TypeError):
-                language = 'en_US'
+                language = "en_US"
 
         if language not in self._spell_dicts:
             try:
                 self._spell_dicts[language] = enchant.Dict(language)
             except enchant.errors.DictNotFoundError:
-                base_lang = language.split('_')[0] if '_' in language else None
+                base_lang = language.split("_")[0] if "_" in language else None
                 if base_lang:
                     try:
                         self._spell_dicts[language] = enchant.Dict(base_lang)
@@ -441,7 +495,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
     def _performHighlighting(self):
         """Perform spell checking and URL detection."""
         text = self.GetText()
-        text_bytes = text.encode('utf-8')
+        text_bytes = text.encode("utf-8")
 
         # Clear all indicators
         self.SetIndicatorCurrent(SPELLCHECK_INDICATOR)
@@ -458,9 +512,11 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
                 for match in self._word_pattern.finditer(text):
                     word = match.group()
                     if len(word) > 1 and not spell_dict.check(word):
-                        start = len(text[:match.start()].encode('utf-8'))
-                        length = len(word.encode('utf-8'))
-                        self._misspelledRanges.append((match.start(), match.end(), word))
+                        start = len(text[: match.start()].encode("utf-8"))
+                        length = len(word.encode("utf-8"))
+                        self._misspelledRanges.append(
+                            (match.start(), match.end(), word)
+                        )
                         self.IndicatorFillRange(start, length)
 
         # URL detection
@@ -470,8 +526,8 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
             url = match.group()
             char_start = match.start()
             char_end = match.end()
-            byte_start = len(text[:char_start].encode('utf-8'))
-            byte_length = len(url.encode('utf-8'))
+            byte_start = len(text[:char_start].encode("utf-8"))
+            byte_length = len(url.encode("utf-8"))
             self._urlRanges.append((char_start, char_end, url))
             self.IndicatorFillRange(byte_start, byte_length)
             # Apply link styling
@@ -481,19 +537,21 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         """Handle left click for URL opening."""
         pos = self.PositionFromPoint(event.GetPosition())
         text = self.GetText()
-        byte_text = text.encode('utf-8')
-        char_pos = len(byte_text[:pos].decode('utf-8', errors='replace'))
+        byte_text = text.encode("utf-8")
+        char_pos = len(byte_text[:pos].decode("utf-8", errors="replace"))
 
         for start, end, url in self._urlRanges:
             if start <= char_pos < end:
                 if self.__webbrowser:
                     # Add protocol if missing
-                    if url.lower().startswith('www.'):
-                        url = 'http://' + url
+                    if url.lower().startswith("www."):
+                        url = "http://" + url
                     try:
                         self.__webbrowser.open(url)
                     except Exception as message:
-                        wx.MessageBox(str(message), i18n._("Error opening URL"))
+                        wx.MessageBox(
+                            str(message), i18n._("Error opening URL")
+                        )
                     return
         event.Skip()
 
@@ -501,18 +559,20 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         """Handle hotspot click (URLs)."""
         pos = event.GetPosition()
         text = self.GetText()
-        byte_text = text.encode('utf-8')
-        char_pos = len(byte_text[:pos].decode('utf-8', errors='replace'))
+        byte_text = text.encode("utf-8")
+        char_pos = len(byte_text[:pos].decode("utf-8", errors="replace"))
 
         for start, end, url in self._urlRanges:
             if start <= char_pos < end:
                 if self.__webbrowser:
-                    if url.lower().startswith('www.'):
-                        url = 'http://' + url
+                    if url.lower().startswith("www."):
+                        url = "http://" + url
                     try:
                         self.__webbrowser.open(url)
                     except Exception as message:
-                        wx.MessageBox(str(message), i18n._("Error opening URL"))
+                        wx.MessageBox(
+                            str(message), i18n._("Error opening URL")
+                        )
                 return
 
     def _onUpdateUI(self, event):
@@ -520,9 +580,9 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         event.Skip()
         pos = self.GetCurrentPos()
         text = self.GetText()
-        byte_text = text.encode('utf-8')
+        byte_text = text.encode("utf-8")
         if pos <= len(byte_text):
-            char_pos = len(byte_text[:pos].decode('utf-8', errors='replace'))
+            char_pos = len(byte_text[:pos].decode("utf-8", errors="replace"))
             for start, end, _ in self._urlRanges:
                 if start <= char_pos < end:
                     self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
@@ -545,8 +605,8 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
 
         # Convert byte position to character position
         text = self.GetText()
-        byte_text = text.encode('utf-8')
-        char_pos = len(byte_text[:text_pos].decode('utf-8', errors='replace'))
+        byte_text = text.encode("utf-8")
+        char_pos = len(byte_text[:text_pos].decode("utf-8", errors="replace"))
 
         # Check if we clicked on a misspelled word
         misspelled_word = None
@@ -569,18 +629,30 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
                 if suggestions:
                     for suggestion in suggestions:
                         item = menu.Append(wx.ID_ANY, suggestion)
-                        self.Bind(wx.EVT_MENU,
-                                 lambda evt, s=suggestion, ws=word_start, we=word_end:
-                                     self._replaceWord(ws, we, s), item)
+                        replace = functools.partial(
+                            self._replace_word,
+                            word_start,
+                            word_end,
+                            suggestion,
+                        )
+                        self.Bind(
+                            wx.EVT_MENU, lambda _event, r=replace: r(), item
+                        )
                     menu.AppendSeparator()
 
                 add_item = menu.Append(wx.ID_ANY, i18n._("Add to dictionary"))
-                self.Bind(wx.EVT_MENU,
-                         lambda evt, w=misspelled_word: self._addToDictionary(w), add_item)
+                self.Bind(
+                    wx.EVT_MENU,
+                    lambda evt, w=misspelled_word: self._addToDictionary(w),
+                    add_item,
+                )
 
                 ignore_item = menu.Append(wx.ID_ANY, i18n._("Ignore"))
-                self.Bind(wx.EVT_MENU,
-                         lambda evt: self._performHighlighting(), ignore_item)
+                self.Bind(
+                    wx.EVT_MENU,
+                    lambda evt: self._performHighlighting(),
+                    ignore_item,
+                )
 
                 menu.AppendSeparator()
                 self._addStandardContextMenuItems(menu)
@@ -604,7 +676,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         self.Bind(wx.EVT_MENU, lambda e: self.Paste(), paste_item)
         self.Bind(wx.EVT_MENU, lambda e: self.SelectAll(), select_all_item)
 
-    def _replaceWord(self, start, end, replacement):
+    def _replace_word(self, start, end, replacement):
         """Replace a misspelled word."""
         text = self.GetText()
         new_text = text[:start] + replacement + text[end:]
@@ -620,8 +692,9 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
                 spell_dict.add(word)
                 wx.CallAfter(self._performHighlighting)
             except Exception as e:
-                log_step("add word to dictionary failed: %s" % e,
-                         prefix="SPELL")
+                log_step(
+                    "add word to dictionary failed: %s" % e, prefix="SPELL"
+                )
 
     # Compatibility methods to match wx.TextCtrl interface
     def GetValue(self):
@@ -691,45 +764,66 @@ class MultiLineTextCtrl(wx.Panel):
         if operating_system.isGTK():
             try:
                 import gi
-                gi.require_version('Gtk', '3.0')
+
+                gi.require_version("Gtk", "3.0")
                 from gi.repository import Gtk
+
                 entry = Gtk.Entry()
-                padding = entry.get_style_context().get_padding(Gtk.StateFlags.NORMAL)
+                padding = entry.get_style_context().get_padding(
+                    Gtk.StateFlags.NORMAL
+                )
                 if padding.left > 0:
                     cls._nativePadding = padding.left
                     return cls._nativePadding
             except Exception as e:
-                log_step("GTK padding probe failed: %s" % e,
-                         prefix="TEXTCTRL")
+                log_step("GTK padding probe failed: %s" % e, prefix="TEXTCTRL")
 
         # Fallback: try wxPython GetMargins (works on Windows)
         try:
-            temp = wx.TextCtrl(parent, -1, "X", style=wx.TE_MULTILINE | wx.BORDER_DEFAULT)
+            temp = wx.TextCtrl(
+                parent, -1, "X", style=wx.TE_MULTILINE | wx.BORDER_DEFAULT
+            )
             margins = temp.GetMargins()
             temp.Destroy()
             if margins.x > 0:
                 cls._nativePadding = margins.x
                 return cls._nativePadding
         except Exception as e:
-            log_step("wxPython GetMargins probe failed: %s" % e,
-                     prefix="TEXTCTRL")
+            log_step(
+                "wxPython GetMargins probe failed: %s" % e, prefix="TEXTCTRL"
+            )
 
         # Last fallback
         cls._nativePadding = 6
         return cls._nativePadding
 
-    def __init__(self, parent, text="", *args, settings=None, singleLine=False, spellCheck=True, **kwargs):
+    def __init__(
+        self,
+        parent,
+        text="",
+        *args,
+        settings=None,
+        single_line=False,
+        spell_check=True,
+        **kwargs
+    ):
         style = kwargs.pop("style", 0)
         super().__init__(parent, style=wx.BORDER_NONE)
 
-        self._singleLine = singleLine
+        self._single_line = single_line
         self._hasFocus = False
         self._padding = self._getNativePadding(parent)
 
         # Create the inner text control
         self._textCtrl = _StyledTextCtrl(
-            self, text, *args, settings=settings, singleLine=singleLine,
-            spellCheck=spellCheck, style=style, **kwargs
+            self,
+            text,
+            *args,
+            settings=settings,
+            single_line=single_line,
+            spell_check=spell_check,
+            style=style,
+            **kwargs
         )
 
         # Don't set explicit bg — inherit from parent so corners
@@ -741,7 +835,7 @@ class MultiLineTextCtrl(wx.Panel):
         self.SetSizer(sizer)
 
         # For single-line mode, constrain height to one line
-        if singleLine:
+        if single_line:
             font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
             dc = wx.ScreenDC()
             dc.SetFont(font)
@@ -777,7 +871,8 @@ class MultiLineTextCtrl(wx.Panel):
         rect = self.GetClientRect()
         flags = wx.CONTROL_FOCUSED if self._hasFocus else 0
         renderer.DrawTextCtrl(self, dc, rect, flags)
-        # Detect theme change (EVT_SYS_COLOUR_CHANGED doesn't reach children on GTK)
+        # Detect theme change here: EVT_SYS_COLOUR_CHANGED does not get
+        # past the AuiManager of an AGW AuiNotebook (editor pages)
         windowBg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
         if self._lastWindowBg != windowBg:
             self._lastWindowBg = windowBg
@@ -804,7 +899,7 @@ class MultiLineTextCtrl(wx.Panel):
 
     def SetBackgroundColour(self, colour):
         super().SetBackgroundColour(colour)
-        if hasattr(self, '_textCtrl'):
+        if hasattr(self, "_textCtrl"):
             self._textCtrl.SetBackgroundColour(colour)
 
     def SetData(self, data):
@@ -839,10 +934,17 @@ class MultiLineTextCtrl(wx.Panel):
 
     def Bind(self, event, handler, *args, **kwargs):
         # Text and focus events go to inner control; others to panel
-        if event in (wx.EVT_TEXT, wx.EVT_TEXT_URL, wx.EVT_TEXT_ENTER,
-                     wx.EVT_SET_FOCUS, wx.EVT_KILL_FOCUS):
+        if event in (
+            wx.EVT_TEXT,
+            wx.EVT_TEXT_URL,
+            wx.EVT_TEXT_ENTER,
+            wx.EVT_SET_FOCUS,
+            wx.EVT_KILL_FOCUS,
+        ):
             if event == wx.EVT_TEXT:
-                return self._textCtrl.Bind(stc.EVT_STC_CHANGE, handler, *args, **kwargs)
+                return self._textCtrl.Bind(
+                    stc.EVT_STC_CHANGE, handler, *args, **kwargs
+                )
             return self._textCtrl.Bind(event, handler, *args, **kwargs)
         return super().Bind(event, handler, *args, **kwargs)
 
@@ -862,17 +964,26 @@ class MultiLineTextCtrl(wx.Panel):
         return self._textCtrl.setSpellCheckLanguage(language)
 
 
-def SingleLineTextCtrl(parent, value="", settings=None, spellCheck=True, **kwargs):
+def single_line_text_ctrl(
+    parent, value="", settings=None, spell_check=True, **kwargs
+):
     """Single-line text control with optional spell checking.
 
     This is a convenience wrapper that creates a MultiLineTextCtrl with
-    singleLine=True, which prevents Enter from creating newlines.
+    single_line=True, which prevents Enter from creating newlines.
 
     Args:
-        spellCheck: Enable spell checking (default True). Set False for
-                    fields like file paths/URLs that shouldn't be spell checked.
+        spell_check: Enable spell checking (default True). Set False
+            for fields like file paths or URLs.
     """
-    return MultiLineTextCtrl(parent, value, settings=settings, singleLine=True, spellCheck=spellCheck, **kwargs)
+    return MultiLineTextCtrl(
+        parent,
+        value,
+        settings=settings,
+        single_line=True,
+        spell_check=spell_check,
+        **kwargs
+    )
 
 
 class StaticTextWithToolTip(wx.StaticText):

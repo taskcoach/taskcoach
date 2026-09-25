@@ -663,12 +663,11 @@ nothing.
 
 ### The Problem
 
-Two always-running repeating timers keep the wx event loop alive:
+One always-running repeating timer keeps the wx event loop alive:
 
 | Timer | File | Interval | Purpose |
 |-------|------|----------|---------|
-| Signal check | `application.py:801` | 500ms | Wakes event loop so SIGINT/SIGTERM work (Linux/Mac) |
-| Global scheduler | `scheduler.py:88` | 1000ms | Fires `timer.second` for reminders, effort tracking |
+| Global scheduler | `scheduler.py` (`GlobalTimer`) | 1000ms | Fires `timer.second` for reminders, effort tracking; its Python tick also lets SIGINT/SIGTERM handlers run (Linux/Mac) |
 
 Every timer tick generates an event. After each event, wx fires `EVT_IDLE`.
 During idle, wx fires `EVT_UPDATE_UI` for **every visible toolbar button**
@@ -676,7 +675,7 @@ During idle, wx fires `EVT_UPDATE_UI` for **every visible toolbar button**
 whether the button should be greyed out.
 
 ```
-signal_check_timer fires (every 500ms)
+GlobalTimer fires (every second)
   -> event queue briefly empty -> EVT_IDLE fires
   -> wx checks: interval elapsed since last UpdateUI? yes
   -> EVT_UPDATE_UI x ~30 visible toolbar buttons
@@ -717,7 +716,7 @@ states only when selection or data actually changes, not by continuous polling.
 ### ~~TODO~~: Eliminate UpdateUI polling entirely — DONE
 
 **Q1: Can we piggyback on the 1-second scheduler tick?** The global scheduler
-timer already fires every second (`scheduler.py:88`). Instead of wx polling
+timer already fires every second (`scheduler.py:89`). Instead of wx polling
 `enabled()` via UpdateUI, we could update toolbar button states once per second
 in the scheduler callback. This would consolidate the work into one place and
 eliminate the UpdateUI overhead entirely.
@@ -790,8 +789,8 @@ continuous polling overhead.
 | `FilePurgeDeletedItems` | deleted items | menu-open → `command.enabled()` |
 | `ViewerHideCompositeTasks` | tree mode | menu-open → `command.enabled()` + `checked()` |
 | `EditTrackedTasks` | tracking | menu-open → `command.enabled()` |
-| `EditUndo` | history | `commandhistory.changed` pubsub → `command.enabled()` |
-| `EditRedo` | history | `commandhistory.changed` pubsub → `command.enabled()` |
+| `EditUndo` | history | `commandhistory.changed` Publisher event → `command.enabled()` |
+| `EditRedo` | history | `commandhistory.changed` Publisher event → `command.enabled()` |
 
 **Custom `enabled()`** (`EVT_UPDATE_UI` but no selection polling):
 
@@ -810,8 +809,7 @@ continuous polling overhead.
 
 | Handler | File | Cost |
 |---------|------|------|
-| `onIdle` | `taskbaricon.py:124` | Compares tooltip text + icon strings |
-| `_OnIdle` | `powermgt/idle.py:401` | Two `time.time()` calls + state check |
+| `on_idle` | `taskbaricon.py:155` | Compares tooltip text + icon strings |
 | `_on_idle` | `windowdimensionstracker.py:469` | Checks ready flag (cheap early return) |
 
 ### The Fix: SetUpdateInterval
@@ -850,8 +848,7 @@ then removed. Re-add any of them to trace a specific path:
 | OnMouse fallthrough | `hypertreelist.py:OnMouse` after fast-path | `OnMouse` | Non-motion events (clicks, drag) entering full handler |
 | Tooltip motion | `tooltip.py:__OnMotion` | `TOOLTIP` | Timer stop/restart on every mouse move |
 | UpdateUI poll | `base_uicommand.py:onUpdateUI` | `UpdateUI` | Each toolbar button's enabled() poll |
-| Taskbar idle | `taskbaricon.py:onIdle` | `EVT_IDLE` | Tray icon tooltip/icon string comparison |
-| Power mgmt idle | `powermgt/idle.py:_OnIdle` | `EVT_IDLE` | Idle-time state machine check |
+| Taskbar idle | `taskbaricon.py:on_idle` | `EVT_IDLE` | Tray icon tooltip/icon string comparison |
 | Window dims idle | `windowdimensionstracker.py:_on_idle` | `EVT_IDLE` | Window position/size readiness check |
 | Autosaver idle | `autosaver.py:on_idle` | `EVT_IDLE` | Dirty-file save during idle |
 
@@ -859,15 +856,12 @@ then removed. Re-add any of them to trace a specific path:
 
 | Timer | File | Interval | Always? | Purpose |
 |-------|------|----------|---------|---------|
-| Signal check | `application.py:801` | 500ms | Yes (Linux/Mac) | SIGINT/SIGTERM handling |
-| Global scheduler | `scheduler.py:88` | 1000ms | Yes | Reminders, effort display |
-| Effort refresher | `refresher.py:146` | 1000ms | Only while tracking | Updates effort time display |
-| Notification center | `notifier_universal.py:294` | 1000ms | While notifications shown | Timeout-based dismissal |
-| Notification anim | `notifier_universal.py:44,91` | 100ms | During fade-in only (~1s) | Fade-in/move animation |
-| Editor time spent | `editor.py:4240` | 1000ms | While editor open + tracking | Time spent display |
-| Editor Mac poll | `editor.py:4457` | 1000ms | macOS only, editor open | Window close detection |
+| Global scheduler | `scheduler.py:89` | 1000ms | Yes | Reminders, styles; its `timer.second` tick drives viewer, editor and tray refreshes |
+| Notification center | `notifier_universal.py` (`_NotificationCenter`) | 1000ms | While notifications shown | Timeout-based dismissal |
+| Notification anim | `notifier_universal.py` (`AnimatedShow`, `AnimatedMove`) | 100ms | During fade-in only (~1s) | Fade-in/move animation |
+| Editor Mac poll | `editor.py` (`Editor.__init__`) | 1000ms | macOS only, editor open | Window close detection |
 
-Only the first two (signal check, global scheduler) run at all times. All
+Only the global scheduler runs at all times. All
 others are conditional and stop when their context ends.
 
 ---

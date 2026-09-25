@@ -159,6 +159,11 @@ to do, returns.
 
 **Persistence:** `__getstate__` calls `.get()` to extract values.
 `__setstate__` calls the setter. `__getcopystate__` same as `__getstate__`.
+Each `__getstate__` extends its base's state, which the base's
+`__setstate__` reads (`Composite`: parent and children; the owner
+mixins: notes, attachments). `fresh_state()` in `domain/base/object.py`
+starts a new dict where the base is `object`: its `__getstate__`
+(Python 3.11+) returns the live `__dict__`.
 
 ---
 
@@ -236,7 +241,7 @@ firing on sub-control blur and state transitions. Legacy sites still use
 
 **Layer 3: Change-Only Rule (Widget↔Widget)** — Manual equality checks +
 source_field guards + quiet flags in UI sync functions
-(`__syncTaskState`, `__syncEffortState`). The UI-level equivalent of
+(`__syncTaskState`, `__sync_effort_state`). The UI-level equivalent of
 `Attribute.set()`'s equality check, applied to widget-to-widget
 synchronization. Documented in DURATION_CALCULATIONS.md section 0.2.
 

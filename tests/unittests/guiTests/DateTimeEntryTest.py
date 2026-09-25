@@ -19,49 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import test
 from taskcoachlib.gui.dialog import entry
 from taskcoachlib.domain import date
-from taskcoachlib import config
-
-
-class DateTimeEntryTest(test.wxTestCase):
-    def setUp(self):
-        super().setUp()
-        self.dateTimeEntry = entry.DateTimeEntry(
-            self.frame, config.Settings(load=False)
-        )
-        self.dateTime = date.DateTime(2004, 1, 1)
-
-    def testCreate(self):
-        self.assertEqual(date.DateTime(), self.dateTimeEntry.GetValue())
-
-    def testSet(self):
-        now = date.Now()
-        self.dateTimeEntry.SetValue(now)
-        self.assertAlmostEqual(
-            now.toordinal(),
-            self.dateTimeEntry.GetValue().toordinal(),
-            places=2,
-        )
-
-    def testReset(self):
-        self.dateTimeEntry.SetValue()
-        self.assertEqual(date.DateTime(), self.dateTimeEntry.GetValue())
-
-    def testValidDateTime(self):
-        self.dateTimeEntry.SetValue(self.dateTime)
-        self.assertEqual(self.dateTime, self.dateTimeEntry.GetValue())
-
-
-class DateEntryConstructorTest(test.wxTestCase):
-    def testCreateWithDate(self):
-        tomorrow = date.Tomorrow()
-        dateTimeEntry = entry.DateTimeEntry(
-            self.frame, config.Settings(load=False), tomorrow
-        )
-        self.assertAlmostEqual(
-            tomorrow.toordinal(),
-            dateTimeEntry.GetValue().toordinal(),
-            places=2,
-        )
 
 
 class TimeDeltaEntryTest(test.wxTestCase):

@@ -31,11 +31,13 @@ running older version still blocks this one (and the other way
 around). See docs/FILE_LOCKING.md for the full design.
 """
 
+import contextlib
 import datetime
 import errno
 import getpass
 import os
 import socket
+import stat
 import time
 
 from taskcoachlib.meta.debug import log_step
@@ -43,10 +45,11 @@ from taskcoachlib.meta.debug import log_step
 LOCK_SUFFIX = ".lock"
 
 # Layout of the lock file: byte 0 is a newline, bytes 1 to
-# RECORD_SIZE - 1 hold the owner record, padded with spaces. The OS
-# lock covers byte 0 and everything from RECORD_SIZE on, but never the
-# record itself: Windows byte-range locks also block reading, and the
-# record must stay readable for the "in use" message.
+# RECORD_SIZE - 1 hold the owner record, padded with spaces. On Windows
+# the OS lock covers byte 0 and everything from RECORD_SIZE on, but
+# never the record itself: Windows byte-range locks also block reading,
+# and the record must stay readable for the "in use" message. POSIX
+# locks are advisory and cover the whole file.
 RECORD_SIZE = 1024
 
 # OS lock errors that mean "another process holds the lock". Any other
@@ -89,8 +92,26 @@ def acquire(path, purpose):
     if lock is None:
         lock = ResourceLock(path, purpose)
         lock.acquire()
+        lock.key = key
         _held_locks[key] = lock
     return lock
+
+
+@contextlib.contextmanager
+def holding(path, purpose):
+    """Hold the lock of path while the with block runs, for a single
+    write to a file this process does not keep open (restoring a
+    backup). A lock this process already holds is used and kept; one
+    taken here is released afterwards, so the block must not hand it
+    on (a LockedTaskFile would adopt it). Raises LockInUse like
+    acquire()."""
+    held = _held_locks.get(_key(path))
+    lock = acquire(path, purpose)
+    try:
+        yield lock
+    finally:
+        if lock is not held:
+            lock.release()
 
 
 def in_use_message(path, owner):
@@ -106,12 +127,16 @@ def in_use_message(path, owner):
 
 def owner_summary(owner):
     """Describe an owner record for messages, e.g. "process 1234,
-    since 2026-09-23 14:05:03"."""
+    user real, computer my-computer, since 2026-09-23 14:05:03"."""
     from taskcoachlib.i18n import _
 
     parts = []
     if owner.get("pid"):
         parts.append(_("process %s") % owner["pid"])
+    if owner.get("user"):
+        parts.append(_("user %s") % owner["user"])
+    if owner.get("host"):
+        parts.append(_("computer %s") % owner["host"])
     if owner.get("since"):
         parts.append(_("since %s") % owner["since"])
     if owner.get("version"):
@@ -124,8 +149,10 @@ class ResourceLock:
 
     mode is "os" (operating system lock, the normal case), "record"
     (the file system has no OS locks, so only the owner record and a
-    process check protect the resource) or "none" (no lock file could
-    be written).
+    process check protect the resource), "os-read-only" (the lock file
+    cannot be written, e.g. it belongs to another user; the OS lock is
+    held through a read-only handle and no owner record is written) or
+    "none" (no lock file could be opened).
     """
 
     def __init__(self, path, purpose):
@@ -133,6 +160,7 @@ class ResourceLock:
         self.lock_path = self.path + LOCK_SUFFIX
         self.purpose = purpose
         self.mode = None
+        self.key = None
         self._fd = None
 
     def acquire(self):
@@ -140,8 +168,9 @@ class ResourceLock:
         whatever the file system supports:
 
         1. Remove a Task Coach 1.x lock, if any, then open (or create)
-           the lock file. If no lock file can be written, the resource
-           is used unlocked.
+           the lock file. A symbolic link is never followed. If the lock
+           file cannot be written, lock it read-only (see
+           _acquire_read_only).
         2. Try the OS lock. Refused means a running Task Coach holds
            it: in use, stop here. Granted or not supported, go on.
         3. Check the owner record left in the file. It still counts
@@ -158,14 +187,19 @@ class ResourceLock:
             self.mode = "none"
             self._log("cannot remove 1.x lock, using unlocked: %s" % reason)
             return
+        if _is_link(self.lock_path):
+            # Never write through a link (O_NOFOLLOW does not exist on
+            # Windows); the resource is used unlocked.
+            self.mode = "none"
+            self._log("lock file is a link, not following it; unlocked")
+            return
         try:
             self._fd = os.open(self.lock_path, _OPEN_FLAGS, 0o666)
         except OSError as reason:
-            self.mode = "none"
-            self._log("cannot create lock file, using unlocked: %s" % reason)
+            self._acquire_read_only(reason)
             return
         try:
-            self.mode = "os" if self._take_os_lock() else "record"
+            self.mode = "os" if self._take_os_lock(_lock) else "record"
             owner = _read_record(self._fd)
             if owner.get("pid"):
                 self._check_owner(owner)
@@ -184,14 +218,16 @@ class ResourceLock:
         """Blank the owner record, then release the lock. The lock
         file itself is kept: deleting it while another process waits
         for it would let two processes lock two different files."""
-        _held_locks.pop(_key(self.path), None)
+        if self.key is not None and _held_locks.get(self.key) is self:
+            del _held_locks[self.key]
         if self._fd is None:
             return
-        try:
-            os.ftruncate(self._fd, 0)
-        except OSError:
-            pass
-        if self.mode == "os":
+        if self.mode in ("os", "record"):
+            try:
+                os.ftruncate(self._fd, 0)
+            except OSError:
+                pass
+        if self.mode in ("os", "os-read-only"):
             try:
                 _unlock(self._fd)
             except OSError:
@@ -199,10 +235,48 @@ class ResourceLock:
         self._close()
         self._log("released")
 
-    def _take_os_lock(self):
+    def _acquire_read_only(self, reason):
+        """The lock file cannot be opened for writing, e.g. it belongs
+        to another user (shared folder). Lock it through a read-only
+        handle, so that a Task Coach holding it is still detected and
+        this one blocks Task Coaches that can write the lock file. On
+        Linux and macOS this is a shared lock, so two instances that
+        both lack write access do not block each other. No owner record
+        is written, so others see the previous record, if any. Only when
+        no handle can be opened is the resource used unlocked."""
+        try:
+            self._fd = os.open(self.lock_path, _READ_ONLY_FLAGS)
+        except OSError as read_reason:
+            self.mode = "none"
+            self._log(
+                "cannot open lock file (%s; read-only: %s), using unlocked"
+                % (reason, read_reason)
+            )
+            return
+        try:
+            if self._take_os_lock(_lock_read_only):
+                self.mode = "os-read-only"
+                self._log(
+                    "acquired (OS lock through a read-only handle: %s)"
+                    % reason
+                )
+                return
+            # No OS locks: only a running owner in the record can block
+            self.mode = "record"
+            owner = _read_record(self._fd)
+            if owner.get("pid"):
+                self._check_owner(owner)
+        except BaseException:
+            self._close()
+            raise
+        self._close()
+        self.mode = "none"
+        self._log("cannot write owner record (%s), using unlocked" % reason)
+
+    def _take_os_lock(self, lock_function):
         for attempt in range(_ATTEMPTS):
             try:
-                _lock(self._fd)
+                lock_function(self._fd)
                 return True
             except OSError as reason:
                 if reason.errno not in _BUSY_ERRNOS:
@@ -246,6 +320,8 @@ class ResourceLock:
           "<host>-<thread>.<pid><hash>" next to it; both are removed.
           Later versions never hard-link the lock file.
         """
+        if _is_link(self.lock_path):
+            return  # Never follow a link, never a 1.x lock
         if os.path.isdir(self.lock_path):
             for name in os.listdir(self.lock_path):
                 os.remove(os.path.join(self.lock_path, name))
@@ -307,6 +383,27 @@ def _key(path):
     return os.path.normcase(os.path.abspath(path))
 
 
+# Windows reparse tags of symbolic links and junctions (the stat module
+# only defines these names on Windows).
+_LINK_REPARSE_TAGS = (
+    getattr(stat, "IO_REPARSE_TAG_SYMLINK", 0xA000000C),
+    getattr(stat, "IO_REPARSE_TAG_MOUNT_POINT", 0xA0000003),
+)
+
+
+def _is_link(path):
+    """True for a symbolic link, and on Windows also for a junction,
+    which os.path.islink does not report. Other Windows reparse points,
+    such as OneDrive files, are ordinary files here."""
+    try:
+        info = os.lstat(path)
+    except OSError:
+        return False
+    if stat.S_ISLNK(info.st_mode):
+        return True
+    return getattr(info, "st_reparse_tag", 0) in _LINK_REPARSE_TAGS
+
+
 def _read_record(fd):
     """Read the owner record, skipping byte 0, which the owner's OS
     lock may make unreadable on Windows. An empty dict means no record,
@@ -352,6 +449,7 @@ if os.name == "nt":
     from ctypes import wintypes
 
     _OPEN_FLAGS = os.O_RDWR | os.O_CREAT | os.O_BINARY | os.O_NOINHERIT
+    _READ_ONLY_FLAGS = os.O_RDONLY | os.O_BINARY | os.O_NOINHERIT
     _TAIL_LENGTH = 0x7FFFFFFF - RECORD_SIZE
 
     def _lock(fd):
@@ -368,6 +466,10 @@ if os.name == "nt":
     def _unlock(fd):
         _unlock_range(fd, RECORD_SIZE, _TAIL_LENGTH)
         _unlock_range(fd, 0, 1)
+
+    def _lock_read_only(fd):
+        # Byte-range locks work on a read-only handle too
+        _lock(fd)
 
     def _lock_range(fd, start, length):
         os.lseek(fd, start, os.SEEK_SET)
@@ -412,7 +514,10 @@ if os.name == "nt":
 else:
     import fcntl
 
-    _OPEN_FLAGS = os.O_RDWR | os.O_CREAT | os.O_CLOEXEC
+    # O_NOFOLLOW: a lock file that is a symbolic link must never make
+    # Task Coach write to (and truncate) the file it points to.
+    _OPEN_FLAGS = os.O_RDWR | os.O_CREAT | os.O_CLOEXEC | os.O_NOFOLLOW
+    _READ_ONLY_FLAGS = os.O_RDONLY | os.O_CLOEXEC | os.O_NOFOLLOW
 
     def _lock(fd):
         # The whole file, like older versions, so each blocks the other.
@@ -423,6 +528,11 @@ else:
 
     def _unlock(fd):
         fcntl.lockf(fd, fcntl.LOCK_UN, 0, 0, os.SEEK_SET)
+
+    def _lock_read_only(fd):
+        # An exclusive lock needs write access; a shared lock still
+        # conflicts with the exclusive lock of a running Task Coach.
+        fcntl.lockf(fd, fcntl.LOCK_SH | fcntl.LOCK_NB, 0, 0, os.SEEK_SET)
 
     def _process_exists(pid):
         try:

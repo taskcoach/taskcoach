@@ -17,7 +17,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import os
+import shutil
+import stat
+import tempfile
 import wx
+from pubsub import pub
 import test
 from taskcoachlib import persistence, config
 from taskcoachlib.domain import (
@@ -839,6 +843,28 @@ class TaskFileMergeTest(TaskFileTestCase):
         self.merge()
         self.assertEqual(2, len(self.taskFile.tasks()))
 
+    def test_merge_sends_no_messages_about_the_merged_file(self):
+        self.mergeFile.save()
+        names = []
+
+        def on_filename_changed(filename):
+            names.append(filename)
+
+        pub.subscribe(on_filename_changed, "taskfile.filenameChanged")
+        try:
+            self.taskFile.merge("merge.tsk")
+        finally:
+            pub.unsubscribe(on_filename_changed, "taskfile.filenameChanged")
+        self.assertEqual([], names)
+
+    def test_merge_writes_nothing_next_to_the_merged_file(self):
+        # The merged file may be open in another Task Coach, which uses
+        # its .delta; merging must not rewrite it, even temporarily.
+        self.mergeFile.save()
+        os.utime("merge.tsk.delta", ns=(10**18, 10**18))
+        self.taskFile.merge("merge.tsk")
+        self.assertEqual(10**18, os.stat("merge.tsk.delta").st_mtime_ns)
+
     def testMerge_TasksWithSubtask(self):
         parent = task.Task(subject="parent")
         child = task.Task(subject="child")
@@ -1021,6 +1047,157 @@ class LockedTaskFileLockTest(TaskFileTestCase):
         self.taskFile.close()
         self.emptyTaskFile.load(self.filename)
         self.assertEqual(1, len(self.emptyTaskFile.tasks()))
+
+    def fail_writing(self):
+        def write(*args, **kwargs):
+            raise IOError("disk full")
+
+        original = persistence.xml.XMLWriter.write
+        persistence.xml.XMLWriter.write = write
+        self.addCleanup(setattr, persistence.xml.XMLWriter, "write", original)
+
+    def test_failed_save_keeps_the_file_on_disk(self):
+        self.taskFile.setFilename(self.filename)
+        self.taskFile.save()
+        with open(self.filename, "rb") as saved:
+            content = saved.read()
+        self.fail_writing()
+        self.taskFile.tasks().append(task.Task(subject="new"))
+        with self.assertRaises(IOError):
+            self.taskFile.save()
+        with open(self.filename, "rb") as saved:
+            self.assertEqual(content, saved.read())
+        self.assertFalse(
+            [name for name in os.listdir(".") if name.startswith("tmp-")]
+        )
+
+    def test_failed_save_keeps_local_deletions(self):
+        self.taskFile.setFilename(self.filename)
+        self.taskFile.save()
+        self.taskFile.tasks().remove(self.task)
+        original = persistence.xml.XMLWriter.write
+
+        def write(*args, **kwargs):
+            raise IOError("disk full")
+
+        persistence.xml.XMLWriter.write = write
+        try:
+            with self.assertRaises(IOError):
+                self.taskFile.save()
+        finally:
+            persistence.xml.XMLWriter.write = original
+        self.taskFile.save()
+        self.assertEqual(0, len(self.taskFile.tasks()))
+        self.taskFile.close()
+        self.emptyTaskFile.load(self.filename)
+        self.assertEqual(0, len(self.emptyTaskFile.tasks()))
+
+    def test_merging_disk_changes_keeps_local_deletions(self):
+        self.taskFile.setFilename(self.filename)
+        self.taskFile.save()
+        self.taskFile.tasks().remove(self.task)
+        self.taskFile.merge_disk_changes()
+        self.taskFile.save()
+        self.assertEqual(0, len(self.taskFile.tasks()))
+
+    def test_failed_save_as_keeps_the_file_it_would_replace(self):
+        self.emptyTaskFile.setFilename(self.filename2)
+        self.emptyTaskFile.save()
+        self.emptyTaskFile.close()
+        with open(self.filename2, "rb") as existing:
+            content = existing.read()
+        with open(self.filename2 + ".delta", "rb") as existing:
+            changes = existing.read()
+        self.taskFile.setFilename(self.filename)
+        self.taskFile.save()
+        self.fail_writing()
+        with self.assertRaises(IOError):
+            self.taskFile.saveas(self.filename2)
+        with open(self.filename2, "rb") as existing:
+            self.assertEqual(content, existing.read())
+        with open(self.filename2 + ".delta", "rb") as existing:
+            self.assertEqual(changes, existing.read())
+        self.assertFalse(
+            [name for name in os.listdir(".") if name.startswith("tmp-")]
+        )
+
+    def test_save_keeps_the_permissions_of_the_file(self):
+        if os.name == "nt":
+            self.skipTest("needs POSIX permissions")
+        self.taskFile.setFilename(self.filename)
+        self.taskFile.save()
+        os.chmod(self.filename, 0o600)
+        self.taskFile.tasks().append(task.Task(subject="new"))
+        self.taskFile.save()
+        mode = stat.S_IMODE(os.stat(self.filename).st_mode)
+        self.assertEqual(0o600, mode)
+
+    def test_save_through_a_link_keeps_the_link(self):
+        if os.name == "nt":
+            self.skipTest("needs POSIX symbolic links")
+        directory = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, directory)
+        target = os.path.join(directory, "target.tsk")
+        link = os.path.join(directory, "link.tsk")
+        self.emptyTaskFile.setFilename(target)
+        self.emptyTaskFile.save()
+        self.emptyTaskFile.close()
+        os.symlink(target, link)
+        self.taskFile.setFilename(link)
+        self.taskFile.save()
+        self.assertTrue(os.path.islink(link))
+        with open(target, "rb") as saved:
+            self.assertIn(self.task.id().encode(), saved.read())
+
+    def test_save_as_keeps_the_change_log_when_the_file_cannot_move(self):
+        self.emptyTaskFile.setFilename(self.filename2)
+        self.emptyTaskFile.save()
+        self.emptyTaskFile.close()
+        with open(self.filename2 + ".delta", "rb") as existing:
+            changes = existing.read()
+        original = os.replace
+
+        def replace(source, target):
+            # As on Windows while another program holds the file
+            if source == self.filename2:
+                raise PermissionError("in use")
+            original(source, target)
+
+        os.replace = replace
+        self.addCleanup(setattr, os, "replace", original)
+        self.taskFile.setFilename(self.filename)
+        self.taskFile.save()
+        with self.assertRaises(PermissionError):
+            self.taskFile.saveas(self.filename2)
+        with open(self.filename2 + ".delta", "rb") as existing:
+            self.assertEqual(changes, existing.read())
+
+    def test_failed_save_as_keeps_the_name_and_the_lock(self):
+        self.taskFile.setFilename(self.filename)
+        self.taskFile.save()
+        self.fail_writing()
+        with self.assertRaises(IOError):
+            self.taskFile.saveas(self.filename2)
+        self.assertEqual(self.filename, self.taskFile.filename())
+        with open(self.filename + ".lock", "rb") as lock_file:
+            self.assertIn(b"pid=%d" % os.getpid(), lock_file.read())
+        self.assertFalse(os.path.exists(self.filename2))
+
+
+class DetachedTaskFileTest(TaskFileTestCase):
+    def test_detached_file_keeps_but_no_longer_follows_its_objects(self):
+        # A saved selection: its task belongs to self.taskFile
+        selection = persistence.TaskFile()
+        selection.tasks().append(self.task)
+        selection.setFilename(self.filename2)
+        selection.save()
+        self.task.setSubject("followed")
+        self.assertTrue(selection.need_save())
+        selection.save()
+        selection.detach()
+        self.task.setSubject("no longer followed")
+        self.assertFalse(selection.need_save())
+        self.assertEqual([self.task], list(selection.tasks()))
 
 
 class TaskFileMonitorTestBase(TaskFileTestCase):
@@ -1400,14 +1577,17 @@ class TaskFileMultiUserTestBase(object):
     def _testChangeAppearance(
         self, listName, attrName, initialValue, newValue
     ):
-        setName = "set" + attrName[0].upper() + attrName[1:]
+        if "_" in attrName:  # snake_case accessors, e.g. icon_id
+            set_name = "set_" + attrName
+        else:
+            set_name = "set" + attrName[0].upper() + attrName[1:]
         obj = getattr(self.taskFile1, listName)().rootItems()[0]
         newObj = getattr(self.taskFile2, listName)().rootItems()[0]
-        getattr(obj, setName)(initialValue)
-        getattr(newObj, setName)(initialValue)
+        getattr(obj, set_name)(initialValue)
+        getattr(newObj, set_name)(initialValue)
         self.taskFile1.monitor().resetAllChanges()
         self.taskFile2.monitor().resetAllChanges()
-        getattr(obj, setName)(newValue)
+        getattr(obj, set_name)(newValue)
         self.taskFile2.monitor().resetAllChanges()
         self.taskFile1.save()
         self.doSave(self.taskFile2)
@@ -1425,12 +1605,12 @@ class TaskFileMultiUserTestBase(object):
 
     def testChangeCategoryIcon(self):
         self._testChangeAppearance(
-            "categories", "icon", "initialIcon", "finalIcon"
+            "categories", "icon_id", "initialIcon", "finalIcon"
         )
 
     def testChangeCategorySelectedIcon(self):
         self._testChangeAppearance(
-            "categories", "selectedIcon", "initialIcon", "finalIcon"
+            "categories", "selected_icon_id", "initialIcon", "finalIcon"
         )
 
     def testChangeNoteForeground(self):
@@ -1444,11 +1624,13 @@ class TaskFileMultiUserTestBase(object):
         )
 
     def testChangeNoteIcon(self):
-        self._testChangeAppearance("notes", "icon", "initialIcon", "finalIcon")
+        self._testChangeAppearance(
+            "notes", "icon_id", "initialIcon", "finalIcon"
+        )
 
     def testChangeNoteSelectedIcon(self):
         self._testChangeAppearance(
-            "notes", "selectedIcon", "initialIcon", "finalIcon"
+            "notes", "selected_icon_id", "initialIcon", "finalIcon"
         )
 
     def testChangeTaskBackground(self):
@@ -1457,11 +1639,13 @@ class TaskFileMultiUserTestBase(object):
         )
 
     def testChangeTaskIcon(self):
-        self._testChangeAppearance("tasks", "icon", "initialIcon", "finalIcon")
+        self._testChangeAppearance(
+            "tasks", "icon_id", "initialIcon", "finalIcon"
+        )
 
     def testChangeTaskSelectedIcon(self):
         self._testChangeAppearance(
-            "tasks", "selectedIcon", "initialIcon", "finalIcon"
+            "tasks", "selected_icon_id", "initialIcon", "finalIcon"
         )
 
     def testChangeExclusiveSubcategories(self):
@@ -1778,6 +1962,24 @@ class TaskFileMultiUserTestBase(object):
             self.doSave(self.taskFile2)
         except Exception as e:
             self.fail(str(e))
+
+    def test_edit_elsewhere_wins_over_local_deletion(self):
+        # taskFile1 deletes the task, taskFile2 edits it and saves; the
+        # edit wins, and taskFile1 must not delete the task again later.
+        self.taskFile1.tasks().remove(self.task)
+        self.taskFile2.tasks().rootItems()[0].setSubject("Edited")
+        self.taskFile2.save()
+        self.doSave(self.taskFile1)
+        self.taskFile1.save()
+        self.taskFile2.save()
+        self.assertEqual(
+            ["Edited"],
+            [
+                tsk.subject()
+                for tsk in self.taskFile2.tasks()
+                if tsk.id() == self.task.id()
+            ],
+        )
 
     def testAddEffortToTask(self):
         newEffort = effort.Effort(

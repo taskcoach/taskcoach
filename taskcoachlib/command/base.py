@@ -371,6 +371,11 @@ class DragAndDropCommand(BaseCommand, SaveStateMixin, CompositeMixin):
         toSave = self.items[:]
         if self._itemToDropOn is not None:
             toSave.insert(0, self._itemToDropOn)
+        # Completion cascades up both trees: the new parent's completed
+        # ancestors reopen, the old parent's ancestors may complete
+        for ancestor in self.getAncestors(toSave):
+            if not any(ancestor is item for item in toSave):
+                toSave.append(ancestor)
         return toSave
 
     def modified_items(self):

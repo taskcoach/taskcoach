@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import time
 import os
 import test
-import mock
+from integrationtests import mock
 from taskcoachlib import persistence, config
 from taskcoachlib.domain import task, category, note
 

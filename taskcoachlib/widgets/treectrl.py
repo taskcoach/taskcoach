@@ -451,7 +451,9 @@ class TreeListCtrl(
             current = self._snapshot_tree(root_item)
             desired = self._snapshot_adapter()
             if current and current == desired:
-                # Structure unchanged - refresh items in place
+                # Structure unchanged - refresh items in place, keeping
+                # the current selection (as RefreshItems does)
+                self.__selection = self.curselection()
                 self._refresh_all_items_in_place(root_item)
                 return
 

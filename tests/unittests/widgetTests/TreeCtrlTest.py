@@ -39,7 +39,7 @@ class TreeCtrlTestCase(test.wxTestCase):
         self.frame.getItemImages = lambda item, column: {
             wx.TreeItemIcon_Normal: -1
         }
-        self.frame.getIsItemChecked = lambda item: False
+        self.frame.get_is_item_checked = lambda item: False
         self.frame.get_item_expanded = (
             lambda item: item not in self.collapsedItems
         )
@@ -56,6 +56,9 @@ class DummyDomainObject(object):
 
     def subject(self):
         return self.__subject
+
+    def id(self):
+        return str(id(self))
 
     # pylint: disable=W0613
 
@@ -254,15 +257,19 @@ class TreeListCtrlTest(TreeCtrlTestCase, CommonTestsMixin):
             dummy.DummyUICommand(),
         )
         from taskcoachlib.gui.icons.icon_library import icon_catalog
+
         imageList = wx.ImageList(16, 16)
-        for icon_id in ["nuvola_actions_ledblue", "nuvola_mimetypes_inode-directory"]:
+        for icon_id in [
+            "nuvola_actions_ledblue",
+            "nuvola_mimetypes_inode-directory",
+        ]:
             imageList.Add(icon_catalog.get_bitmap(icon_id, 16))
         self.treeCtrl.AssignImageList(imageList)  # pylint: disable=E1101
 
 
 class CheckTreeCtrlTest(TreeCtrlTestCase, CommonTestsMixin):
     def setUp(self):
-        self.frame.getItemParentHasExclusiveChildren = (
+        self.frame.get_item_parent_has_exclusive_children = (
             lambda item: item.subject().startswith("mutual")
         )
         super().setUp()

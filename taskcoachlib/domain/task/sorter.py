@@ -45,10 +45,13 @@ class Sorter(base.TreeSorter):
             task.Task.completionDateTimeChangedEventType(),
         ):
             pub.subscribe(self.onAttributeChanged, event_type)
-        pub.subscribe(self._onStatusSortPriorityChanged,
-                      "settings.statussortpriority.changed")
+        # Sent once after Preferences saved all the priorities
+        self.registerObserver(
+            self._on_status_sort_priority_changed,
+            eventType="settings.statussortpriority.changed",
+        )
 
-    def _onStatusSortPriorityChanged(self):
+    def _on_status_sort_priority_changed(self, event):  # pylint: disable=W0613
         """Re-sort when status sort priorities change in settings."""
         self.reset()
 

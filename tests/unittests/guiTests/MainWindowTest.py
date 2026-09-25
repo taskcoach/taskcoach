@@ -17,6 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import ast
+import os
+import shutil
+import tempfile
 import wx, test
 from taskcoachlib import gui, config, persistence, meta, operating_system
 from taskcoachlib.domain import task
@@ -29,26 +32,26 @@ class MockViewer(wx.Frame):
     def settingsSection(self):
         return "taskviewer"
 
-    def viewerStatusEventType(self):
+    def viewer_status_event_type(self):
         return "mockviewer.status"
 
     def curselection(self):
         return []
 
 
-class MainWindowUnderTest(gui.MainWindow):
+class MainWindowUnderTest(gui.mainwindow.MainWindow):
     def _create_window_components(self):
         # Create only the window components we really need for the tests
         self._create_viewer_container()
-        self.viewer.addViewer(MockViewer(None))
+        self.viewer.add_viewer(MockViewer(None))
         self._create_status_bar()
 
 
 class DummyIOController(object):
-    def needSave(self, *args, **kwargs):  # pylint: disable=W0613
+    def need_save(self, *args, **kwargs):  # pylint: disable=W0613
         return False  # pragma: no cover
 
-    def changedOnDisk(self):
+    def changed_on_disk(self):
         return False  # pragme: no cover
 
 
@@ -71,6 +74,8 @@ class MainWindowTestCase(test.wxTestCase):
             self.mainwindow.OnQuit()  # Stop power monitoring thread
         # Also stop idle time thread
         self.mainwindow._idleController.stop()
+        # As MainWindow.onClose does before the window is destroyed
+        self.mainwindow.manager.UnInit()
         self.mainwindow.Destroy()
         wx.Yield()
         del self.mainwindow
@@ -107,7 +112,10 @@ class MainWindowTest(MainWindowTestCase):
         )
 
     def testTitle_AfterSave(self):
-        self.taskFile.setFilename("New filename")
+        # Saving writes the file, its change log and its lock file
+        directory = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, directory)
+        self.taskFile.setFilename(os.path.join(directory, "New filename"))
         self.taskFile.tasks().extend([task.Task()])
         self.taskFile.save()
         self.assertEqual(

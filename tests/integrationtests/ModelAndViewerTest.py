@@ -16,7 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import test, mock
+import test
+from integrationtests import mock
 from taskcoachlib.domain import task, category
 
 
@@ -63,5 +64,5 @@ class TaskTreeViewerAndCategoryFilterIntegrationTest(
         self.taskViewer.settings.setboolean(
             self.taskViewer.settingsSection(), "treemode", True
         )
-        self.taskViewer.expandAll()
+        self.taskViewer.expand_all()
         self.assertEqual(2, self.taskViewer.widget.GetItemCount())

@@ -35,7 +35,7 @@ This document describes the packaging setup for Task Coach on Linux (Debian, Ubu
 | watchdog | >=3.0.0 | File monitoring API | Debian Bookworm (2.2.1) |
 | numpy | >=1.26,<2 | NumPy 2.4+ requires SSE4.2 (crashes old CPUs, see [NUMPY.md](NUMPY.md)) | — |
 
-**Note**: wxPython 4.2.4 was released October 28, 2025. Of the distros, only Arch (4.2.5) and Fedora 43 (4.2.4) ship it so far. Until the others do, a bundled patch in `taskcoachlib/patches/` is used (see [CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md)).
+**Note**: wxPython 4.2.4 was released October 28, 2025. Of the distros, only Arch (4.2.5) and Fedora 43 (4.2.4) ship it so far. The bundled copy in `taskcoachlib/patches/` is used on every wxPython version, since it also carries Task Coach changes (see [CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md)).
 
 ## Install Overview by Build Target
 

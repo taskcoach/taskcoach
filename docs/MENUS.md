@@ -232,7 +232,7 @@ See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) for toolbar signal details
 - No `EVT_UPDATE_UI` polling
 - `enabled()`: command determines its own state (CommandHistory or focused TextCtrl)
 - `current_menu_text()`: dynamic text ("Undo *add task*", "Redo *delete*")
-- Toolbar: signal-driven via `commandhistory.changed` pubsub
+- Toolbar: signal-driven via the `commandhistory.changed` Publisher event
 - Menu: updated via `_update_menu_state()` on menu open
 
 ### TaskPriorityParentMenu (parent menu item with submenu)

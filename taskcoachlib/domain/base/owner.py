@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
+from .object import fresh_state
 
 
 def DomainObjectOwnerMetaclass(name, bases, ns):
@@ -196,10 +197,7 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
     setattr(klass, "remove%ss" % klass.__ownedType__, removeObjects)
 
     def getstate(instance):
-        try:
-            state = super(klass, instance).__getstate__()
-        except AttributeError:
-            state = dict()
+        state = fresh_state(super(klass, instance), instance)
         state[klass.__ownedType__.lower() + "s"] = getattr(
             instance, "_%s__%ss" % (name, klass.__ownedType__.lower())
         )[:]

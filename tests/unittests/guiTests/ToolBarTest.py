@@ -40,7 +40,7 @@ class ToolBarTest(test.wxTestCase):
 
 class ToolBarSizeTest(test.wxTestCase):
     def testSizeDefault(self):
-        self.createToolBarAndTestSize(None, (32, 32))
+        self.createToolBarAndTestSize(None, (22, 22))  # Medium
 
     def testSizeSmall(self):
         self.createToolBarAndTestSize((16, 16))
@@ -86,7 +86,8 @@ class ToolBarPerspectiveTest(test.wxTestCase):
 
     def test_empty(self):
         bar = gui.toolbar.ToolBar(self.tbFrame, self.settings)
-        self.assertEqual(bar.perspective(), "Test1,Separator,Test2,Spacer")
+        # An empty perspective is an empty toolbar
+        self.assertEqual(bar.perspective(), "")
 
     def test_restrict(self):
         self.tbFrame.toolbarPerspective = "Test1,Spacer"

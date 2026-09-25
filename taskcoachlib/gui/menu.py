@@ -16,12 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import operating_system
 from taskcoachlib import patterns, persistence, help  # pylint: disable=W0622
 from taskcoachlib.meta.debug import log_step
-from taskcoachlib.domain import task, note, base, category
+from taskcoachlib.domain import base, category
 from taskcoachlib.i18n import _
-from pubsub import pub
 from taskcoachlib.gui.newid import IdProvider
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.config.defaults import (
@@ -94,9 +92,7 @@ class Menu(wx.Menu, uicommand.UICommandContainerMixin):
         """Programmatically invoke the menuItem. This is mainly for testing
         purposes."""
         self._window.ProcessEvent(
-            wx.CommandEvent(
-                wx.wxEVT_COMMAND_MENU_SELECTED, winid=menuItem.GetId()
-            )
+            wx.CommandEvent(wx.wxEVT_COMMAND_MENU_SELECTED, menuItem.GetId())
         )
 
     def openMenu(self):
@@ -415,16 +411,27 @@ class ImportMenu(Menu):
 
 
 class TaskTemplateMenu(DynamicMenu):
-    def __init__(self, mainwindow, taskList, settings):
+    """Refilled when it is about to show, so it needs no message when
+    the templates change: in the menu bar when its parent menu opens,
+    in the tray and on the toolbar before they pop it up."""
+
+    def __init__(
+        self,
+        mainwindow,
+        task_list,
+        settings,
+        parent_menu=None,
+        label_in_parent_menu="",
+    ):
         self.settings = settings
-        self.taskList = taskList
-        super().__init__(mainwindow)
+        self.taskList = task_list
+        super().__init__(mainwindow, parent_menu, label_in_parent_menu)
 
     def registerForMenuUpdate(self):
-        pub.subscribe(self.onTemplatesSaved, "templates.saved")
-
-    def onTemplatesSaved(self):
-        self.onUpdateMenu(None, None)
+        if self._parentMenu is not None:
+            # The parent's open, not our own: GTK3 sizes a menu before
+            # its own EVT_MENU_OPEN handlers run
+            self._window.Bind(wx.EVT_MENU_OPEN, self.onUpdateMenu_Deprecated)
 
     def updateMenuItems(self):
         self.clearMenu()
@@ -742,9 +749,16 @@ class NewMenu(Menu):
                 taskList=tasks, viewer=viewerContainer, settings=settings
             ),
         )
+        label = _("New task from &template")
         self.appendMenu(
-            _("New task from &template"),
-            TaskTemplateMenu(mainwindow, taskList=tasks, settings=settings),
+            label,
+            TaskTemplateMenu(
+                mainwindow,
+                task_list=tasks,
+                settings=settings,
+                parent_menu=self,
+                label_in_parent_menu=label,
+            ),
             "taskcoach_actions_newtmpl",
         )
         self.appendUICommands(
@@ -863,7 +877,7 @@ class TaskBarMenu(Menu):
         )
         self.appendMenu(
             _("New task from &template"),
-            TaskTemplateMenu(taskBarIcon, taskList=tasks, settings=settings),
+            TaskTemplateMenu(taskBarIcon, task_list=tasks, settings=settings),
             "taskcoach_actions_newtmpl",
         )
         self.appendUICommands(None)  # Separator
@@ -949,7 +963,29 @@ class ToggleCategoryMenu(DynamicMenu):
         return bool(self.categories)
 
 
+def trackable_task_tree(tasks):
+    """What the start tracking menus show, as (task, trackable,
+    children) for each task that can be tracked or has subtasks that
+    can, sorted like the category menus. A completed task only holds
+    its subtasks. tasks decides which tasks count (e.g. no deleted)."""
+
+    def nodes(candidates):
+        result = []
+        for each in sorted(candidates, key=lambda t: t.subject().lower()):
+            children = nodes([c for c in each.children() if c in tasks])
+            trackable = not each.completed()
+            if trackable or children:
+                result.append((each, trackable, children))
+        return result
+
+    return nodes(tasks.rootItems())
+
+
 class StartEffortForTaskMenu(DynamicMenu):
+    """A line per task to track, and like the category menus an arrow
+    line under it with its subtasks. The tray's GTK menu shows the same
+    tree (AppIndicatorTaskBarIcon)."""
+
     def __init__(
         self, taskBarIcon, tasks, parentMenu=None, labelInParentMenu=""
     ):
@@ -957,48 +993,38 @@ class StartEffortForTaskMenu(DynamicMenu):
         super().__init__(taskBarIcon, parentMenu, labelInParentMenu)
 
     def registerForMenuUpdate(self):
-        # No-op: menu is rebuilt on-demand in popup_taskbar_menu() instead of
-        # subscribing to every domain event.  The old approach exhausted wx
-        # menu-item IDs during recur() cascades (wxAssertionError 0x7fff).
+        # Refilled before it shows (tray, toolbar button): following
+        # every task change exhausted wx menu ids in recur() cascades
         pass
 
     def updateMenuItems(self):
         self.clearMenu()
-        trackableRootTasks = self._trackableRootTasks()
-        if not trackableRootTasks:
+        tree = trackable_task_tree(self.tasks)
+        if not tree:
             item = self.Append(wx.ID_ANY, _("All tasks are completed!"))
             item.Enable(False)
             return
-        trackableRootTasks.sort(key=lambda task: task.subject())
-        for trackableRootTask in trackableRootTasks:
-            self.addMenuItemForTask(trackableRootTask, self)
+        self.__add_items(tree, self)
 
-    def addMenuItemForTask(self, task, menu):  # pylint: disable=W0621
-        uiCommand = uicommand.EffortStartForTask(
-            task=task, taskList=self.tasks
-        )
-        uiCommand.add_to_menu(menu, self._window)
-        trackableChildren = [
-            child
-            for child in task.children()
-            if child in self.tasks and not child.completed()
-        ]
-        if trackableChildren:
-            trackableChildren.sort(key=lambda child: child.subject())
-            subMenu = Menu(self._window)
-            for child in trackableChildren:
-                self.addMenuItemForTask(child, subMenu)
-            menu.AppendSubMenu(subMenu, _("%s (subtasks)") % task.subject())
+    def __add_items(self, nodes, menu):
+        for each, trackable, children in nodes:
+            if trackable:
+                ui_command = uicommand.EffortStartForTask(
+                    task=each, taskList=self.tasks
+                )
+                ui_command.add_to_menu(menu, self._window)
+            if children:
+                sub_menu = Menu(self._window)
+                self.__add_items(children, sub_menu)
+                subject = each.subject() or _("(No subject)")
+                menu.appendMenu(
+                    subject.replace("&", "&&"),
+                    sub_menu,
+                    "taskcoach_actions_arrow_down_right",
+                )
 
     def enabled(self):
         return True
-
-    def _trackableRootTasks(self):
-        return [
-            rootTask
-            for rootTask in self.tasks.rootItems()
-            if not rootTask.completed()
-        ]
 
 
 class TaskPopupMenu(Menu):
@@ -1210,13 +1236,11 @@ class ColumnPopupMenu(ColumnPopupMenuMixin, Menu):
 class EffortViewerColumnPopupMenu(
     ColumnPopupMenuMixin, DynamicMenuThatGetsUICommandsFromViewer
 ):
-    """Column header popup menu."""
+    """Column header popup menu. Its columns follow the viewer's
+    aggregation, so the header control refills it before it pops up."""
 
     def registerForMenuUpdate(self):
-        pub.subscribe(self.onChangeAggregation, "effortviewer.aggregation")
-
-    def onChangeAggregation(self):
-        self.onUpdateMenu(None, None)
+        pass
 
 
 class AttachmentPopupMenu(Menu):

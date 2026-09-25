@@ -23,6 +23,7 @@ from .itemctrl import Column
 from .listctrl import VirtualListCtrl
 from .checklistbox import CheckListBox
 from .treectrl import CheckTreeCtrl, TreeListCtrl
+
 try:
     from .tcsquaremap import TcSquareMap
 except ImportError:
@@ -40,7 +41,7 @@ from .maskedtimectrl import (
     EVT_VALUE_CHANGED,
 )
 from .textctrl import (
-    SingleLineTextCtrl,
+    single_line_text_ctrl,
     MultiLineTextCtrl,
     StaticTextWithToolTip,
 )

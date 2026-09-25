@@ -34,15 +34,15 @@ Task Coach has the following text-based input fields:
 
 | Field       | Widget              | Multi-line | Max Length | Spell Check | Used In                      |
 |-------------|---------------------|------------|------------|-------------|------------------------------|
-| Subject     | SingleLineTextCtrl  | No         | None       | Yes         | Task, Note, Category, Effort |
+| Subject     | single_line_text_ctrl  | No         | None       | Yes         | Task, Note, Category, Effort |
 | Description | MultiLineTextCtrl   | Yes        | None       | Yes         | Task, Note, Category, Effort |
-| Location    | SingleLineTextCtrl  | No         | None       | No          | Attachment (file path/URL)   |
+| Location    | single_line_text_ctrl  | No         | None       | No          | Attachment (file path/URL)   |
 
 **Notes:**
 - No maximum length has ever been enforced on any text field (stored as Python strings)
 - Subject and Description use `wx.stc.StyledTextCtrl` internally for spell check squiggle support
 - Location does not have spell check (file paths/URLs should not be spell checked)
-- `SingleLineTextCtrl` is `MultiLineTextCtrl` with `singleLine=True` parameter
+- `single_line_text_ctrl` is `MultiLineTextCtrl` with `single_line=True` parameter
 
 ## Technical Implementation
 
@@ -159,7 +159,7 @@ self.SetHotspotActiveForeground(True, linkColour)
 
 ### 3. Live Theme Switching — Done
 
-The `MultiLineTextCtrl` wrapper detects theme changes and re-applies colours. On GTK, `EVT_SYS_COLOUR_CHANGED` doesn't reliably reach children, so the wrapper polls via `EVT_PAINT` and calls `_applyThemeColours` when a change is detected.
+The `MultiLineTextCtrl` wrapper detects theme changes and re-applies colours. `EVT_SYS_COLOUR_CHANGED` does not reach editor pages (the AGW `AuiNotebook`'s `AuiManager` consumes it, see [AUI.md](AUI.md#system-colour-change-event)), so the wrapper checks the system window colour on `EVT_PAINT` and calls `_applyThemeColours` when it changed.
 
 **Important:** Panel bg must come from `self.GetParent().GetBackgroundColour()` (not the STC) so rounded corners blend with the dialog background.
 

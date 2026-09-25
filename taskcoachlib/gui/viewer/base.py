@@ -25,7 +25,6 @@ import wx
 from taskcoachlib import patterns, widgets, command, render
 from taskcoachlib.i18n import _
 from taskcoachlib.gui import uicommand, toolbar
-from taskcoachlib.gui.icons import icon_library
 from taskcoachlib.gui.icons import image_list_cache
 from wx.lib.agw import hypertreelist
 from pubsub import pub
@@ -487,6 +486,12 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
 
     def thaw(self):
         self.widget.Thaw()
+
+    def needs_second_refresh(self):
+        """Whether tracked items must be redrawn every second (see
+        SecondRefresher). Viewers that show nothing that changes every
+        second override this."""
+        return True
 
     def refresh(self):
         if self and not self.__freezeCount:
@@ -1076,6 +1081,14 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         super().__init__(*args, **kwargs)
         self.init_columns()
         self.__initDone = True
+        self.refresh()
+        # Relative dates ("Today", "Yesterday") change at midnight;
+        # removed by detach()
+        self.registerObserver(
+            self.__on_date_changed, eventType="scheduler.date"
+        )
+
+    def __on_date_changed(self, event):  # pylint: disable=W0613
         self.refresh()
 
     def hasHideableColumns(self):

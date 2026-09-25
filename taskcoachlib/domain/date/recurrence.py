@@ -124,7 +124,7 @@ class Recurrence(object):
         if self.sameWeekday:
             weekday = dateTime.weekday()
             week_nr = min(
-                3, (day - 1) / 7
+                3, (day - 1) // 7
             )  # In what week of the month falls aDate, allowable range 0-3
             day = (
                 week_nr * 7 + 1
@@ -192,8 +192,11 @@ class Recurrence(object):
             )
         except AttributeError:
             from taskcoachlib.meta.debug import log_step
-            log_step("__eq__ AttributeError: self=%r other=%r" % (
-                self, other), prefix="RECUR")
+
+            log_step(
+                "__eq__ AttributeError: self=%r other=%r" % (self, other),
+                prefix="RECUR",
+            )
             return False
 
     def __lt__(self, other):
@@ -206,8 +209,11 @@ class Recurrence(object):
             )
         except AttributeError:
             from taskcoachlib.meta.debug import log_step
-            log_step("__lt__ AttributeError: self=%r other=%r" % (
-                self, other), prefix="RECUR")
+
+            log_step(
+                "__lt__ AttributeError: self=%r other=%r" % (self, other),
+                prefix="RECUR",
+            )
             return True
 
     def __bool__(self):

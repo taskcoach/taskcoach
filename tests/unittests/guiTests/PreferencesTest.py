@@ -18,14 +18,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import ast
 import test
-from taskcoachlib import gui, config, persistence
+from taskcoachlib import gui, config
 
 
 class PreferencesTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
         self.settings = config.Settings(load=False)
-        self.preferences = gui.Preferences(
+        self.preferences = gui.dialog.preferences.Preferences(
             parent=self.frame, title="Test", settings=self.settings
         )
         self.originalColor = self.settings.get("fgcolor", "activetasks")

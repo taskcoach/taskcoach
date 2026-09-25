@@ -20,7 +20,6 @@ import wx
 from .notifier import AbstractNotifier
 from taskcoachlib import operating_system
 
-
 # ==============================================================================
 # Utils
 
@@ -152,9 +151,7 @@ class NotificationFrameBase(_NotifyBase):
         style = self.style_flags() | (
             wx.STAY_ON_TOP if parent is None else wx.FRAME_FLOAT_ON_PARENT
         )
-        super().__init__(
-            parent, wx.ID_ANY, "", style=style
-        )
+        super().__init__(parent, wx.ID_ANY, "", style=style)
         self.populate()
 
     def populate(self):
@@ -210,11 +207,17 @@ class NotificationFrameBase(_NotifyBase):
         the notification.
         """
 
-        from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
+        from taskcoachlib.gui.icons.icon_library import (
+            icon_catalog,
+            LIST_ICON_SIZE,
+        )
+
         return wx.BitmapButton(
             panel,
             wx.ID_ANY,
-            icon_catalog.get_bitmap("nuvola_status_dialog-error", LIST_ICON_SIZE),
+            icon_catalog.get_bitmap(
+                "nuvola_status_dialog-error", LIST_ICON_SIZE
+            ),
         )
 
     def add_inner_content(self, sizer, panel):
@@ -290,7 +293,7 @@ class _NotificationCenter(wx.EvtHandler):
         self.__tmr = wx.Timer()
         id_ = wx.NewId()
         self.__tmr.SetOwner(self, id_)
-        self.Bind(wx.EVT_TIMER, self.__OnTick, id=id_)
+        self.Bind(wx.EVT_TIMER, self.__on_tick, id=id_)
         self.__tmr.Start(1000)
 
     def notify_frame(self, frm, timeout=None):
@@ -392,18 +395,27 @@ class _NotificationCenter(wx.EvtHandler):
             return wx.ClientDisplayRect()
         return wx.Display(dpyIndex).GetClientArea()
 
-    def __OnTick(self, event):  # pylint: disable=W0613
+    def __on_tick(self, event):  # pylint: disable=W0613
         s = 0
-        newList = []
+        new_list = []
+        # Next free bottom per display area, carried over from frame to
+        # frame so each kept frame stacks above the previous one
+        bottoms = {}
 
         for frame, height, tmo in self.displayedFrames:
+            if not frame:
+                # Destroyed elsewhere: drop it like a closed frame, so
+                # the frames above move down into its place
+                s = 1
+                continue
             if frame.GetParent():
                 dx, dy = frame.GetParent().GetPosition()
                 dw, dh = frame.GetParent().GetSize()
             else:
                 dx, dy, dw, dh = self.GetDisplayRect()
 
-            bottom = dy + dh - self.notificationMargin
+            area = (dx, dy, dw, dh)
+            bottom = bottoms.get(area, dy + dh - self.notificationMargin)
 
             if s == 0:
                 if tmo == 1:
@@ -411,24 +423,24 @@ class _NotificationCenter(wx.EvtHandler):
                     s = 1
                     continue
 
-                newList.append(
+                new_list.append(
                     (frame, height, tmo - 1 if tmo is not None else None)
                 )
-                bottom -= height + self.notificationMargin
+                bottoms[area] = bottom - height - self.notificationMargin
             else:
                 if tmo == 1:
                     frame.Close()
                 else:
-                    newList.append(
+                    new_list.append(
                         (frame, height, tmo - 1 if tmo is not None else None)
                     )
                     x, y = frame.GetPosition()
                     AnimatedMove(
                         frame, (x, bottom - height - self.notificationMargin)
                     )
-                    bottom -= height + self.notificationMargin
+                    bottoms[area] = bottom - height - self.notificationMargin
 
-        self.displayedFrames = newList
+        self.displayedFrames = new_list
         self.CheckWaiting()
 
 
@@ -458,7 +470,10 @@ AbstractNotifier.register(UniversalNotifier())
 
 
 if __name__ == "__main__":
-    from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
+    from taskcoachlib.gui.icons.icon_library import (
+        icon_catalog,
+        LIST_ICON_SIZE,
+    )
 
     class TestNotificationFrame(NotificationFrameBase):
         def add_inner_content(self, sizer, panel):

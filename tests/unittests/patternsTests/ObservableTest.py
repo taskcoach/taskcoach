@@ -59,7 +59,7 @@ class EventTest(test.TestCase):
         self.assertEqual("some value", self.event.value())
 
     def testEventValues(self):
-        self.assertEqual(("some value",), list(self.event.values()))
+        self.assertEqual(("some value",), tuple(self.event.values()))
 
     def testEventValueForSpecificSource(self):
         self.assertEqual("some value", self.event.value(self))
@@ -118,14 +118,18 @@ class EventTest(test.TestCase):
 
     def testAddSourceAndValueForSpecificType(self):
         self.event.addSource("source", "value", type="another eventtype")
-        self.assertEqual("value", self.event.value("source"))
+        # value() picks an arbitrary type when there are several
+        self.assertEqual(
+            "value", self.event.value("source", type="another eventtype")
+        )
 
     def testAddSourceAndValuesForSpecificType(self):
         self.event.addSource(
             "source", "value1", "value2", type="another eventtype"
         )
         self.assertEqual(
-            set(["value1", "value2"]), set(self.event.values("source"))
+            set(["value1", "value2"]),
+            set(self.event.values("source", type="another eventtype")),
         )
 
     def testAddExistingSourceToAnotherType(self):
@@ -247,7 +251,7 @@ class ObservableCollectionTestsMixin(object):
 
     def testExtend_Notification(self):
         self.collection.extend([1, 2, 3])
-        self.assertEqual((1, 2, 3), list(self.receivedAddEvents[0].values()))
+        self.assertEqual((1, 2, 3), tuple(self.receivedAddEvents[0].values()))
 
     def testExtend_NoNotificationWhenNoItems(self):
         self.collection.extend([])
@@ -285,7 +289,7 @@ class ObservableCollectionTestsMixin(object):
     def testRemoveItems_Notification(self):
         self.collection.extend([1, 2, 3])
         self.collection.removeItems([1, 2])
-        self.assertEqual((1, 2), list(self.receivedRemoveEvents[0].values()))
+        self.assertEqual((1, 2), tuple(self.receivedRemoveEvents[0].values()))
 
     def testRemoveItems_NoNotificationWhenNoItems(self):
         self.collection.extend([1, 2, 3])
@@ -301,7 +305,7 @@ class ObservableCollectionTestsMixin(object):
         self.collection.extend([1, 2, 3])
         self.collection.clear()
         self.assertEqual(
-            (1, 2, 3), list(self.receivedRemoveEvents[0].values())
+            (1, 2, 3), tuple(self.receivedRemoveEvents[0].values())
         )
 
     def testClear_NoNotificationWhenNoItems(self):
@@ -471,16 +475,23 @@ class ListDecoratorTest_ObserveTheObserver(test.TestCase):
 
     def testExtendOriginal(self):
         self.list.extend([1, 2, 3])
-        self.assertEqual((1, 2, 3), list(self.receivedAddEvents[0].values()))
+        self.assertEqual((1, 2, 3), tuple(self.receivedAddEvents[0].values()))
 
     def testExtendObserver(self):
         self.observer.extend([1, 2, 3])
-        self.assertEqual((1, 2, 3), list(self.receivedAddEvents[0].values()))
+        self.assertEqual((1, 2, 3), tuple(self.receivedAddEvents[0].values()))
 
     def testRemoveItemsFromOriginal(self):
         self.list.extend([1, 2, 3])
         self.list.removeItems([1, 3])
-        self.assertEqual((1, 3), list(self.receivedRemoveEvents[0].values()))
+        self.assertEqual((1, 3), tuple(self.receivedRemoveEvents[0].values()))
+
+
+class DeletedWidgetUser(object):
+    def use(self):
+        raise RuntimeError(
+            "wrapped C/C++ object of type Panel has been deleted"
+        )
 
 
 class PublisherTest(test.TestCase):
@@ -494,6 +505,44 @@ class PublisherTest(test.TestCase):
 
     def onEvent2(self, event):
         self.events2.append(event)
+
+    def on_event_raising(self, event):
+        self.events.append(event)
+        raise ValueError("observer bug")
+
+    def on_event_of_deleted_widget(self, event):
+        self.events.append(event)
+        raise RuntimeError(
+            "wrapped C/C++ object of type Panel has been deleted"
+        )
+
+    def test_observer_that_raises_is_kept(self):
+        self.publisher.registerObserver(
+            self.on_event_raising, eventType="eventType"
+        )
+        patterns.Event("eventType", "observable").send()
+        patterns.Event("eventType", "observable").send()
+        self.assertEqual(2, len(self.events))
+
+    def on_event_calling_deleted_widget_user(self, event):
+        self.events.append(event)
+        DeletedWidgetUser().use()
+
+    def test_observer_whose_callee_hits_deleted_widget_is_kept(self):
+        self.publisher.registerObserver(
+            self.on_event_calling_deleted_widget_user, eventType="eventType"
+        )
+        patterns.Event("eventType", "observable").send()
+        patterns.Event("eventType", "observable").send()
+        self.assertEqual(2, len(self.events))
+
+    def test_observer_of_deleted_widget_is_removed(self):
+        self.publisher.registerObserver(
+            self.on_event_of_deleted_widget, eventType="eventType"
+        )
+        patterns.Event("eventType", "observable").send()
+        patterns.Event("eventType", "observable").send()
+        self.assertEqual(1, len(self.events))
 
     def testPublisherIsSingleton(self):
         anotherPublisher = patterns.Publisher()

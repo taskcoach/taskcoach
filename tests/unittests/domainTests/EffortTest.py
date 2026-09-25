@@ -61,7 +61,7 @@ class EffortTest(test.TestCase, asserts.Mixin):
         )
 
     def testDuration(self):
-        self.assertEqual(date.TimeDelta(days=1), self.effort.duration())
+        self.assertEqual(date.TimeDelta(days=1), self.effort.timeSpent())
 
     def testForegroundColor(self):
         self.task.setForegroundColor(wx.RED)
@@ -116,7 +116,7 @@ class EffortTest(test.TestCase, asserts.Mixin):
         pub.subscribe(onEvent, effort.Effort.durationChangedEventType())
         start = date.DateTime.now()
         self.effort.setStart(start)
-        self.assertEqual([(self.effort.duration(), self.effort)], events)
+        self.assertEqual([(self.effort.timeSpent(), self.effort)], events)
 
     def testDurationNotificationForSetStop(self):
         events = []
@@ -126,7 +126,7 @@ class EffortTest(test.TestCase, asserts.Mixin):
 
         pub.subscribe(onEvent, effort.Effort.durationChangedEventType())
         self.effort.setStop(date.DateTime.now())
-        self.assertEqual([(self.effort.duration(), self.effort)], events)
+        self.assertEqual([(self.effort.timeSpent(), self.effort)], events)
 
     def testNotificationForSetDescription(self):
         patterns.Publisher().registerObserver(
@@ -204,7 +204,7 @@ class EffortTest(test.TestCase, asserts.Mixin):
         currentTime = date.DateTime.now()
         now = lambda: currentTime
         self.assertEqual(
-            now() - effortPeriod.getStart(), effortPeriod.duration(now=now)
+            now() - effortPeriod.getStart(), effortPeriod.timeSpent(now=now)
         )
 
     def testState(self):
@@ -285,7 +285,7 @@ class EffortTest(test.TestCase, asserts.Mixin):
         self.task.setHourlyFee(100)
         self.task.addEffort(self.effort)
         self.assertEqual(
-            self.effort.duration().hours() * 100, self.effort.revenue()
+            self.effort.timeSpent().hours() * 100, self.effort.revenue()
         )
 
     def testRevenue_FixedFee_OneEffort(self):

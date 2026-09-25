@@ -72,6 +72,7 @@ class NoteViewerTest(test.wxTestCase):
         self.viewer.showColumnByName("categories")
         self.assertEqual("Category", self.firstItemText(column=3))
 
+    @test.stale("imageIndex was replaced by image_list_cache")
     def testShowAttachmentColumn(self):
         self.note.addAttachments(attachment.FileAttachment("whatever"))
         self.assertEqual(

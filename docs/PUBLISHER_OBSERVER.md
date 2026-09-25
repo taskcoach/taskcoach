@@ -55,9 +55,20 @@ relationship) — signal dispatch exists to serve Attribute change notification.
    `WeakMethodProxy` (`weakref.WeakMethod`). Publisher no longer prevents
    GC of destroyed wx widgets. Dead subscribers are detected and pruned
    automatically during `notifyObservers()` dispatch.
+   Editor pages (`Page`, `ScrolledPage` in `gui/dialog/editor.py`) call
+   `removeInstance()` on their own `EVT_WINDOW_DESTROY`, so their
+   subscriptions are removed however the page is destroyed (close
+   handler, parent destroy, app exit). A subscriber that raises during
+   dispatch is logged with its traceback (`[OBSERVER]`). It is removed
+   only if its wx object was deleted, or its own code touched a deleted
+   wx object ("has been deleted"); a failure inside a listener it
+   called does not count. Otherwise it is kept, so one failure cannot
+   silently stop a subscriber such as the per-second `MasterScheduler`.
+   A failure that repeats on every event logs its traceback once, then
+   a count every 100 repeats.
    **Remaining:** Hook `EVT_WINDOW_DESTROY` → `removeInstance()` for
-   immediate cleanup (currently relies on GC timing). Remove DEAD-OBJ
-   guards once cleanup is proven reliable.
+   the other `patterns.Observer` windows (viewers, toolbars, menus,
+   dialogs). Remove DEAD-OBJ guards once cleanup is proven reliable.
 
 ---
 
@@ -311,8 +322,20 @@ No manual unsubscribe, no silent `except` guards, no zombie callbacks.
 | `view.efforthourend` | Deleted (no live-update needed) | `taskcoachlib/gui/viewer/task.py` |
 | `file.recentfiles` | Migrated to Publisher | `taskcoachlib/gui/menu.py` |
 | `commandhistory.changed` | Migrated to Publisher | `taskcoachlib/gui/uicommand/uicommand.py` |
+| `settings.statussortpriority.changed` | Migrated to Publisher | `taskcoachlib/gui/dialog/preferences.py` (StatusesPage), `taskcoachlib/domain/task/sorter.py` (Sorter) |
+| `templates.saved` | Deleted (menus refill when shown) | `taskcoachlib/gui/menu.py` (TaskTemplateMenu) |
+| `effortviewer.aggregation` | Deleted (menu refills before popup) | `taskcoachlib/gui/menu.py` (EffortViewerColumnPopupMenu) |
+| `spellcheck.colours.changed` | Migrated to Publisher | `taskcoachlib/gui/dialog/preferences.py` (ThemePage), `taskcoachlib/widgets/textctrl.py` (_StyledTextCtrl) |
+| `calendar.colours.changed` | Migrated to Publisher | `taskcoachlib/gui/dialog/preferences.py` (ThemePage), `taskcoachlib/gui/viewer/task.py` (CalendarViewer), `taskcoachlib/widgets/maskedtimectrl.py` (_CalendarComboPopup) |
+| `powermgt.on` / `powermgt.off` | Migrated to Publisher | `taskcoachlib/gui/mainwindow.py` (MainWindow), `taskcoachlib/gui/idlecontroller.py` (IdleController), `taskcoachlib/gui/viewer/task.py` (BaseTaskViewer, `powermgt.on` only) |
+| `task.reminder.trigger` | Migrated to Publisher | `taskcoachlib/domain/task/task.py` (Task), `taskcoachlib/gui/remindercontroller.py` (ReminderController) |
 | `feature.task_duration_presets` | Migrated to Publisher | `taskcoachlib/gui/dialog/editor.py` (DatesPage) |
 | `feature.effort_duration_presets` | Migrated to Publisher | `taskcoachlib/gui/dialog/editor.py` (EffortEditBook) |
+| `timer.second` | Migrated to Publisher | `taskcoachlib/gui/scheduler.py` (GlobalTimer, MasterScheduler), `taskcoachlib/gui/taskbaricon.py`, `taskcoachlib/gui/dialog/editor.py` (BudgetPage, EffortEditBook), `taskcoachlib/gui/viewer/refresher.py` (SecondRefresher), `taskcoachlib/powermgt/idle.py` (IdleNotifier), `taskcoachlib/gui/mainwindow.py` (MainWindow, system theme check), `taskcoachlib/persistence/autosaver.py` (AutoSaver, retry) |
+| `timer.minute` | Deleted (no subscribers; see `scheduler.minute`) | `taskcoachlib/gui/scheduler.py` |
+| `timer.date` | Deleted (no subscribers; see `scheduler.date`) | `taskcoachlib/gui/scheduler.py` |
+| `scheduler.dateChange.uiRefresh` | Replaced by Publisher `scheduler.date` | `taskcoachlib/gui/scheduler.py` (MasterScheduler), `taskcoachlib/domain/task/filter.py` (ViewFilter), `taskcoachlib/gui/viewer/task.py` (calendar viewers), `taskcoachlib/gui/viewer/base.py` (ViewerWithColumns) |
+| `scheduler.minuteChange.uiRefresh` | Replaced by Publisher `scheduler.minute` | `taskcoachlib/gui/scheduler.py` (MasterScheduler), `taskcoachlib/gui/viewer/refresher.py` (MinuteRefresher), `taskcoachlib/gui/viewer/task.py` (calendar viewers) |
 
 ---
 
@@ -334,10 +357,18 @@ an `EVT_MENU_OPEN` handler. This manifests in two ways:
    Text is clipped on first open; second open recalculates. This affects
    EditUndo/EditRedo and EditPasteAsSubItem (see [MENUS.md TODO #2](MENUS.md#todo)).
 
-**Pattern:** populate the menu at construction, then subscribe to a
-Publisher event that fires when the underlying data changes. The handler
-updates items while the menu is closed, so GTK always sees the correct
-geometry at popup time.
+**Pattern:** change items only while the menu is closed, so GTK always
+sees the correct geometry at popup time. Without messaging where possible:
+
+- A **submenu** refills when its parent menu opens (the parent's
+  `EVT_MENU_OPEN`, not its own): View's Mode/Filter/Columns/Sort/Rounding
+  submenus, New > New task from template. Verified on GTK3: a refilled
+  submenu is sized correctly on its first display.
+- A **popup menu** refills just before `PopupMenu()`: the toolbar
+  drop-downs (`PopupButtonMixin`), the tray (`popup_taskbar_menu`), the
+  effort viewer's column header menu (`on_column_popup_menu`).
+- Items directly in a **menu bar menu** have no earlier moment, so they
+  follow a Publisher event that fires when the data changes (below).
 
 **Affected menus:**
 - **FileMenu** — recent files list. Subscribes to `file.recentfiles`
@@ -363,12 +394,20 @@ list for the migration — entries are removed as they are migrated or deleted.
 
 | Topic pattern | Subscriber location |
 |---------------|---------------------|
-| `settings.icon` / `settings.icon_dark` | `taskcoachlib/domain/task/task.py:128-131` |
-| `settings.fgcolor` / `settings.fgcolor_dark` | `taskcoachlib/domain/task/task.py:116,119` |
-| `settings.bgcolor` / `settings.bgcolor_dark` | `taskcoachlib/domain/task/task.py:122,125` |
-| `settings.behavior.duesoonhours` | `taskcoachlib/domain/task/task.py:133` |
-| `settings.window.theme` | `taskcoachlib/domain/task/task.py:132`, `taskcoachlib/gui/viewer/task.py:160` |
+| `settings.icon` / `settings.icon_dark` | `taskcoachlib/domain/task/task.py:152-159` |
+| `settings.fgcolor` / `settings.fgcolor_dark` | `taskcoachlib/domain/task/task.py:140,143` |
+| `settings.bgcolor` / `settings.bgcolor_dark` | `taskcoachlib/domain/task/task.py:146,149` |
+| `settings.behavior.duesoonhours` | `taskcoachlib/domain/task/task.py:161` |
+| `settings.behavior.markparentcompletedwhenallchildrencompleted` | `taskcoachlib/domain/task/task.py:164` |
+| `settings.window.theme` | `taskcoachlib/domain/task/task.py:160`, `taskcoachlib/gui/viewer/task.py:171` |
+
+pypubsub fixes a topic's arguments from its first listener, so the
+listeners of a topic and of its subtopics must agree on which arguments
+are optional; otherwise subscribing fails depending on which object
+subscribed first. The appearance and theme listeners take `value` as
+optional (`value=None`, or `*args, **kwargs`); `onDueSoonHoursChanged`
+and `onMarkParentCompletedWhenAllChildrenCompletedChanged` require it.
 
 ---
 
-**Last Updated:** March 2026
+**Last Updated:** September 2026

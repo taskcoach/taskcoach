@@ -22,7 +22,7 @@ import datetime
 from taskcoachlib.i18n import _
 from wx.lib import sized_controls
 from wx.lib.agw import hypertreelist, customtreectrl
-from taskcoachlib import meta, widgets
+from taskcoachlib import meta
 from pubsub import pub
 
 
@@ -177,10 +177,7 @@ class ColumnPicker(sized_controls.SizedPanel):
             | wx.TR_FULL_ROW_HIGHLIGHT
         )
 
-        self.tree = hypertreelist.HyperTreeList(
-            self,
-            agwStyle=agwStyle
-        )
+        self.tree = hypertreelist.HyperTreeList(self, agwStyle=agwStyle)
         self.tree.SetSizerProps(expand=True, proportion=1)
         self.tree.AddColumn(_("Field"))
 
@@ -188,7 +185,13 @@ class ColumnPicker(sized_controls.SizedPanel):
     # These columns only show icons (e.g. paperclip, note icon) and render
     # as empty strings — they have no meaningful data to export.
     EXCLUDED_EXPORT_COLUMNS = {
-        "tasks": {"ordering", "notes", "attachments", "statusIcon", "statusIconText"},
+        "tasks": {
+            "ordering",
+            "notes",
+            "attachments",
+            "statusIcon",
+            "statusIconText",
+        },
         "efforts": set(),
         "categories": {"ordering", "notes", "attachments"},
         "notes": {"ordering", "attachments"},
@@ -209,9 +212,9 @@ class ColumnPicker(sized_controls.SizedPanel):
             self.tree.SetColumnWidth(0, 150)
             return
         root = self.tree.AddRoot("")
-        visibleColumns = viewer.visibleColumns()
-        objectType = getattr(viewer, 'coreObjectType', '')
-        excluded = self.EXCLUDED_EXPORT_COLUMNS.get(objectType, set())
+        visible_columns = viewer.visibleColumns()
+        object_type = getattr(viewer, "coreObjectType", "")
+        excluded = self.EXCLUDED_EXPORT_COLUMNS.get(object_type, set())
         headers = []
         for column in viewer.selectable_columns():
             if column.name() in excluded:
@@ -219,7 +222,7 @@ class ColumnPicker(sized_controls.SizedPanel):
             item = self.tree.AppendItem(root, column.header(), ct_type=1)
             self._columnMap[id(item)] = column
             headers.append(column.header())
-            if checkAll or column in visibleColumns:
+            if checkAll or column in visible_columns:
                 self.tree.CheckItem(item, True)
         self._sizeColumnsFromContent(headers)
 
@@ -305,8 +308,12 @@ class SeparateCSSCheckBox(sized_controls.SizedPanel):
 
     def createHelpInformation(self):
         self._helpText = (
-            _("If a CSS file exists for the exported file, %(name)s will not overwrite it. "
-              "This allows you to change the style information without losing your changes on the next export.")
+            _(
+                "If a CSS file exists for the exported file, %(name)s "
+                "will not overwrite it. This allows you to change the "
+                "style information without losing your changes on the "
+                "next export."
+            )
             % meta.metaDict
         )
         self.infoText = wx.StaticText(self, label=self._helpText)
@@ -316,7 +323,7 @@ class SeparateCSSCheckBox(sized_controls.SizedPanel):
 
     def onSize(self, event):
         event.Skip()
-        if hasattr(self, 'infoText') and hasattr(self, '_helpText'):
+        if hasattr(self, "infoText") and hasattr(self, "_helpText"):
             width = self.GetClientSize().GetWidth()
             if width > 50:
                 self.infoText.SetLabel(self._helpText)
@@ -352,16 +359,26 @@ class ExportAsCSVDialog(ExportDialog):
 
     def createInterior(self, pane):
         from taskcoachlib.gui.viewer import (
-            TaskViewer, EffortViewer, CategoryViewer, NoteViewer,
-            AttachmentViewer
+            TaskViewer,
+            EffortViewer,
+            CategoryViewer,
+            NoteViewer,
+            AttachmentViewer,
         )
+
         self._hiddenViewers = {}
         self._hiddenPanel = None
 
         self.viewerPicker = EnhancedViewerPicker(
-            pane, self.window,
-            supportedTypes=[TaskViewer, EffortViewer, CategoryViewer,
-                            NoteViewer, AttachmentViewer]
+            pane,
+            self.window,
+            supportedTypes=[
+                TaskViewer,
+                EffortViewer,
+                CategoryViewer,
+                NoteViewer,
+                AttachmentViewer,
+            ],
         )
         self.viewerPicker.Bind(EVT_VIEWERPICKED, self.onViewerChanged)
 
@@ -392,7 +409,10 @@ class ExportAsCSVDialog(ExportDialog):
 
         # 1. Search open viewers by coreObjectType
         for v in self.window.viewer:
-            if getattr(v, 'coreObjectType', None) == objectType and v.hasHideableColumns():
+            if (
+                getattr(v, "coreObjectType", None) == objectType
+                and v.hasHideableColumns()
+            ):
                 return v
 
         # 2. Check cached hidden viewers
@@ -406,12 +426,10 @@ class ExportAsCSVDialog(ExportDialog):
         kwargs = {}
         if objectType == "attachments":
             from taskcoachlib.domain.attachment import AttachmentList
+
             kwargs["attachmentsToShow"] = AttachmentList()
         hiddenViewer = viewerClass(
-            self._hiddenPanel,
-            self.window.taskFile,
-            self.settings,
-            **kwargs
+            self._hiddenPanel, self.window.taskFile, self.settings, **kwargs
         )
         hiddenViewer.Hide()
         self._hiddenViewers[viewerClass] = hiddenViewer
@@ -439,17 +457,22 @@ class ExportAsCSVDialog(ExportDialog):
     def _updateColumnPickerState(self):
         """Update column picker and options based on viewer selection."""
         selected = self.viewerPicker.selectedViewer()
-        viewerClass = self.viewerPicker.selectedViewerClass()
+        viewer_class = self.viewerPicker.selectedViewerClass()
 
         if self.viewerPicker.isAllSelected():
-            viewer = self._getViewerForColumns(viewerClass) if viewerClass else None
+            viewer = None
+            if viewer_class:
+                viewer = self._getViewerForColumns(viewer_class)
             self.columnPicker.populateFromViewer(viewer, checkAll=True)
         else:
             self.columnPicker.populateFromViewer(selected, checkAll=False)
 
         # Separate date/time only relevant for tasks and efforts
-        hasDatetime = viewerClass is not None and viewerClass.coreObjectType in ("tasks", "efforts")
-        self.separateDateAndTimeColumnsCheckBox.Enable(hasDatetime)
+        has_datetime = (
+            viewer_class is not None
+            and viewer_class.coreObjectType in ("tasks", "efforts")
+        )
+        self.separateDateAndTimeColumnsCheckBox.Enable(has_datetime)
 
     def onViewerChanged(self, event):
         event.Skip()
@@ -460,15 +483,18 @@ class ExportAsCSVDialog(ExportDialog):
             component.saveSettings()
 
         if self._exportCallback:
-            exportOptions = self.options()
-            selectedViewer = exportOptions.pop("selectedViewer")
-            exportOptions["selectionOnly"] = not self.viewerPicker.isAllSelected()
-
-            dateStr = datetime.date.today().strftime("%Y%m%d")
-            exportOptions["defaultFilename"] = "%s-%s" % (
-                self.viewerPicker.selectedTypeName(), dateStr
+            export_options = self.options()
+            selected_viewer = export_options.pop("selectedViewer")
+            export_options["selectionOnly"] = (
+                not self.viewerPicker.isAllSelected()
             )
-            self._exportCallback(selectedViewer, **exportOptions)
+
+            date_str = datetime.date.today().strftime("%Y%m%d")
+            export_options["default_filename"] = "%s-%s" % (
+                self.viewerPicker.selectedTypeName(),
+                date_str,
+            )
+            self._exportCallback(selected_viewer, **export_options)
 
         self._destroyHiddenViewers()
         self.Destroy()
@@ -483,10 +509,13 @@ class ExportAsCSVDialog(ExportDialog):
 
 
 class EnhancedViewerPicker(sized_controls.SizedPanel):
-    """Enhanced viewer picker with 'All' options and dynamic selection counts.
+    """Enhanced viewer picker with 'All' options and dynamic selection
+    counts.
 
-    Each export format declares what object types it supports via supportedTypes.
-    The picker builds entries from this list, then searches open viewers to match."""
+    Each export format declares what object types it supports via
+    supportedTypes. The picker builds entries from this list, then
+    searches open viewers to match.
+    """
 
     def __init__(self, parent, mainWindow, supportedTypes):
         """Initialize the enhanced viewer picker.
@@ -504,7 +533,8 @@ class EnhancedViewerPicker(sized_controls.SizedPanel):
         self.mainWindow = mainWindow
         self._supportedTypes = supportedTypes
         self.SetSizerType("horizontal")
-        self._viewerMap = {}  # Maps display string to viewer or allMarker string
+        # Maps display string to viewer or allMarker string
+        self._viewerMap = {}
         self.createPicker()
         self.populatePicker()
         self._subscribeToSelectionChanges()
@@ -525,8 +555,9 @@ class EnhancedViewerPicker(sized_controls.SizedPanel):
         for viewerClass in self._supportedTypes:
             objectType = viewerClass.coreObjectType
             grouped[objectType] = [
-                v for v in viewers
-                if getattr(v, 'coreObjectType', None) == objectType
+                v
+                for v in viewers
+                if getattr(v, "coreObjectType", None) == objectType
                 and v.hasHideableColumns()
             ]
         return grouped
@@ -638,7 +669,10 @@ class EnhancedViewerPicker(sized_controls.SizedPanel):
             marker = "ALL_" + viewerClass.coreObjectType.upper()
             if selected == marker:
                 return viewerClass
-            if hasattr(selected, 'coreObjectType') and selected.coreObjectType == viewerClass.coreObjectType:
+            if (
+                hasattr(selected, "coreObjectType")
+                and selected.coreObjectType == viewerClass.coreObjectType
+            ):
                 return viewerClass
         return None
 
@@ -682,26 +716,146 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
     # Field definitions: (field_key, taskcoach_label, icalendar_field, required, formatting, for_tasks, for_efforts)
     TASK_FIELDS = [
         ("uid", _("ID"), "UID", True, _("Internal identifier"), True, False),
-        ("dtstamp", _("(auto-generated)"), "DTSTAMP", True, _("Current UTC timestamp"), True, False),
-        ("summary", _("Subject"), "SUMMARY", False, _("Text, quoted"), True, False),
-        ("description", _("Description"), "DESCRIPTION", False, _("Text, quoted"), True, False),
-        ("dtstart", _("Planned start date"), "DTSTART", False, _("UTC datetime"), True, False),
+        (
+            "dtstamp",
+            _("(auto-generated)"),
+            "DTSTAMP",
+            True,
+            _("Current UTC timestamp"),
+            True,
+            False,
+        ),
+        (
+            "summary",
+            _("Subject"),
+            "SUMMARY",
+            False,
+            _("Text, quoted"),
+            True,
+            False,
+        ),
+        (
+            "description",
+            _("Description"),
+            "DESCRIPTION",
+            False,
+            _("Text, quoted"),
+            True,
+            False,
+        ),
+        (
+            "dtstart",
+            _("Planned start date"),
+            "DTSTART",
+            False,
+            _("UTC datetime"),
+            True,
+            False,
+        ),
         ("due", _("Due date"), "DUE", False, _("UTC datetime"), True, False),
-        ("completed", _("Completion date"), "COMPLETED", False, _("UTC datetime"), True, False),
-        ("categories", _("Categories"), "CATEGORIES", False, _("Comma-separated, recursive"), True, False),
-        ("status", _("Status"), "STATUS", False, _("NEEDS-ACTION / IN-PROCESS / COMPLETED"), True, False),
-        ("priority", _("Priority"), "PRIORITY", False, _("Number, capped at 3"), True, False),
-        ("percent", _("Percent complete"), "PERCENT-COMPLETE", False, _("Integer 0-100"), True, False),
-        ("created", _("Creation date"), "CREATED", False, _("UTC datetime"), True, False),
-        ("lastmod", _("Modification date"), "LAST-MODIFIED", False, _("UTC datetime"), True, False),
+        (
+            "completed",
+            _("Completion date"),
+            "COMPLETED",
+            False,
+            _("UTC datetime"),
+            True,
+            False,
+        ),
+        (
+            "categories",
+            _("Categories"),
+            "CATEGORIES",
+            False,
+            _("Comma-separated, recursive"),
+            True,
+            False,
+        ),
+        (
+            "status",
+            _("Status"),
+            "STATUS",
+            False,
+            _("NEEDS-ACTION / IN-PROCESS / COMPLETED"),
+            True,
+            False,
+        ),
+        (
+            "priority",
+            _("Priority"),
+            "PRIORITY",
+            False,
+            _("Number, capped at 3"),
+            True,
+            False,
+        ),
+        (
+            "percent",
+            _("Percent complete"),
+            "PERCENT-COMPLETE",
+            False,
+            _("Integer 0-100"),
+            True,
+            False,
+        ),
+        (
+            "created",
+            _("Creation date"),
+            "CREATED",
+            False,
+            _("UTC datetime"),
+            True,
+            False,
+        ),
+        (
+            "lastmod",
+            _("Modification date"),
+            "LAST-MODIFIED",
+            False,
+            _("UTC datetime"),
+            True,
+            False,
+        ),
     ]
 
     EFFORT_FIELDS = [
         ("uid", _("ID"), "UID", True, _("Internal identifier"), False, True),
-        ("dtstamp", _("(auto-generated)"), "DTSTAMP", True, _("Current UTC timestamp"), False, True),
-        ("summary", _("Subject"), "SUMMARY", False, _("Task subject, quoted"), False, True),
-        ("description", _("Description"), "DESCRIPTION", False, _("Task description, quoted"), False, True),
-        ("dtstart", _("Start"), "DTSTART", False, _("UTC datetime"), False, True),
+        (
+            "dtstamp",
+            _("(auto-generated)"),
+            "DTSTAMP",
+            True,
+            _("Current UTC timestamp"),
+            False,
+            True,
+        ),
+        (
+            "summary",
+            _("Subject"),
+            "SUMMARY",
+            False,
+            _("Task subject, quoted"),
+            False,
+            True,
+        ),
+        (
+            "description",
+            _("Description"),
+            "DESCRIPTION",
+            False,
+            _("Task description, quoted"),
+            False,
+            True,
+        ),
+        (
+            "dtstart",
+            _("Start"),
+            "DTSTART",
+            False,
+            _("UTC datetime"),
+            False,
+            True,
+        ),
         ("dtend", _("End"), "DTEND", False, _("UTC datetime"), False, True),
     ]
 
@@ -728,10 +882,7 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
         )
 
         # Use default border style to match system theme
-        self.tree = hypertreelist.HyperTreeList(
-            self,
-            agwStyle=agwStyle
-        )
+        self.tree = hypertreelist.HyperTreeList(self, agwStyle=agwStyle)
         self.tree.SetSizerProps(expand=True, proportion=1)
 
         # Add columns - widths will be auto-sized after population
@@ -739,7 +890,9 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
         self.tree.AddColumn(_("Output Field"))
         self.tree.AddColumn(_("Formatting"))
 
-        self.tree.Bind(customtreectrl.EVT_TREE_ITEM_CHECKED, self.onItemChecked)
+        self.tree.Bind(
+            customtreectrl.EVT_TREE_ITEM_CHECKED, self.onItemChecked
+        )
 
     def populateFields(self):
         """Populate the field list based on whether we're exporting tasks or efforts."""
@@ -750,7 +903,15 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
         root = self.tree.AddRoot("")
         fields = self.TASK_FIELDS if self._forTasks else self.EFFORT_FIELDS
 
-        for field_key, tc_label, ical_field, required, formatting, for_tasks, for_efforts in fields:
+        for (
+            field_key,
+            tc_label,
+            ical_field,
+            required,
+            formatting,
+            for_tasks,
+            for_efforts,
+        ) in fields:
             item = self.tree.AppendItem(root, tc_label, ct_type=1)
             self.tree.SetItemText(item, ical_field, 1)
             self.tree.SetItemText(item, formatting, 2)
@@ -778,7 +939,8 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
         checkboxPad = 24
         colPad = 16  # General padding per column
         for field in fields:
-            texts = [field[1], field[2], field[4]]  # tc_label, ical_field, formatting
+            # tc_label, ical_field, formatting
+            texts = [field[1], field[2], field[4]]
             for col in range(numCols):
                 w, _ = dc.GetTextExtent(texts[col])
                 maxWidths[col] = max(maxWidths[col], w)
@@ -836,9 +998,9 @@ class ExportAsICalendarDialog(ExportDialog):
 
     def createInterior(self, pane):
         from taskcoachlib.gui.viewer import TaskViewer, EffortViewer
+
         self.viewerPicker = EnhancedViewerPicker(
-            pane, self.window,
-            supportedTypes=[TaskViewer, EffortViewer]
+            pane, self.window, supportedTypes=[TaskViewer, EffortViewer]
         )
         self.viewerPicker.Bind(EVT_VIEWERPICKED, self.onViewerChanged)
 
@@ -854,15 +1016,18 @@ class ExportAsICalendarDialog(ExportDialog):
             component.saveSettings()
 
         if self._exportCallback:
-            exportOptions = self.options()
-            selectedViewer = exportOptions.pop("selectedViewer")
-            exportOptions["selectionOnly"] = not self.viewerPicker.isAllSelected()
-
-            dateStr = datetime.date.today().strftime("%Y%m%d")
-            exportOptions["defaultFilename"] = "%s-%s" % (
-                self.viewerPicker.selectedTypeName(), dateStr
+            export_options = self.options()
+            selected_viewer = export_options.pop("selectedViewer")
+            export_options["selectionOnly"] = (
+                not self.viewerPicker.isAllSelected()
             )
-            self._exportCallback(selectedViewer, **exportOptions)
+
+            date_str = datetime.date.today().strftime("%Y%m%d")
+            export_options["default_filename"] = "%s-%s" % (
+                self.viewerPicker.selectedTypeName(),
+                date_str,
+            )
+            self._exportCallback(selected_viewer, **export_options)
 
         self.Destroy()
 
@@ -875,6 +1040,7 @@ class ExportAsICalendarDialog(ExportDialog):
     def onViewerChanged(self, event):
         event.Skip()
         from taskcoachlib.gui.viewer import TaskViewer
+
         forTasks = self.viewerPicker.selectedViewerClass() is TaskViewer
         self.fieldPicker.setForTasks(forTasks)
 
@@ -894,16 +1060,26 @@ class ExportAsHTMLDialog(ExportDialog):
 
     def createInterior(self, pane):
         from taskcoachlib.gui.viewer import (
-            TaskViewer, EffortViewer, CategoryViewer, NoteViewer,
-            AttachmentViewer
+            TaskViewer,
+            EffortViewer,
+            CategoryViewer,
+            NoteViewer,
+            AttachmentViewer,
         )
+
         self._hiddenViewers = {}
         self._hiddenPanel = None
 
         self.viewerPicker = EnhancedViewerPicker(
-            pane, self.window,
-            supportedTypes=[TaskViewer, EffortViewer, CategoryViewer,
-                            NoteViewer, AttachmentViewer]
+            pane,
+            self.window,
+            supportedTypes=[
+                TaskViewer,
+                EffortViewer,
+                CategoryViewer,
+                NoteViewer,
+                AttachmentViewer,
+            ],
         )
         self.viewerPicker.Bind(EVT_VIEWERPICKED, self.onViewerChanged)
 
@@ -928,7 +1104,10 @@ class ExportAsHTMLDialog(ExportDialog):
         objectType = viewerClass.coreObjectType
 
         for v in self.window.viewer:
-            if getattr(v, 'coreObjectType', None) == objectType and v.hasHideableColumns():
+            if (
+                getattr(v, "coreObjectType", None) == objectType
+                and v.hasHideableColumns()
+            ):
                 return v
 
         if viewerClass in self._hiddenViewers:
@@ -940,12 +1119,10 @@ class ExportAsHTMLDialog(ExportDialog):
         kwargs = {}
         if objectType == "attachments":
             from taskcoachlib.domain.attachment import AttachmentList
+
             kwargs["attachmentsToShow"] = AttachmentList()
         hiddenViewer = viewerClass(
-            self._hiddenPanel,
-            self.window.taskFile,
-            self.settings,
-            **kwargs
+            self._hiddenPanel, self.window.taskFile, self.settings, **kwargs
         )
         hiddenViewer.Hide()
         self._hiddenViewers[viewerClass] = hiddenViewer
@@ -973,10 +1150,12 @@ class ExportAsHTMLDialog(ExportDialog):
     def _updateColumnPickerState(self):
         """Update column picker based on viewer selection."""
         selected = self.viewerPicker.selectedViewer()
-        viewerClass = self.viewerPicker.selectedViewerClass()
+        viewer_class = self.viewerPicker.selectedViewerClass()
 
         if self.viewerPicker.isAllSelected():
-            viewer = self._getViewerForColumns(viewerClass) if viewerClass else None
+            viewer = None
+            if viewer_class:
+                viewer = self._getViewerForColumns(viewer_class)
             self.columnPicker.populateFromViewer(viewer, checkAll=True)
         else:
             self.columnPicker.populateFromViewer(selected, checkAll=False)
@@ -990,15 +1169,18 @@ class ExportAsHTMLDialog(ExportDialog):
             component.saveSettings()
 
         if self._exportCallback:
-            exportOptions = self.options()
-            selectedViewer = exportOptions.pop("selectedViewer")
-            exportOptions["selectionOnly"] = not self.viewerPicker.isAllSelected()
-
-            dateStr = datetime.date.today().strftime("%Y%m%d")
-            exportOptions["defaultFilename"] = "%s-%s" % (
-                self.viewerPicker.selectedTypeName(), dateStr
+            export_options = self.options()
+            selected_viewer = export_options.pop("selectedViewer")
+            export_options["selectionOnly"] = (
+                not self.viewerPicker.isAllSelected()
             )
-            self._exportCallback(selectedViewer, **exportOptions)
+
+            date_str = datetime.date.today().strftime("%Y%m%d")
+            export_options["default_filename"] = "%s-%s" % (
+                self.viewerPicker.selectedTypeName(),
+                date_str,
+            )
+            self._exportCallback(selected_viewer, **export_options)
 
         self._destroyHiddenViewers()
         self.Destroy()
@@ -1023,7 +1205,11 @@ class TodoTxtFieldMapping(sized_controls.SizedPanel):
         (_("Completion date"), "X YYYY-MM-DD", _("Prefix 'X', date only")),
         (_("Planned start date"), "YYYY-MM-DD", _("Date only, time stripped")),
         (_("Subject"), _("text"), _("Recursive with arrow separator")),
-        (_("Categories"), "@context +project", _("@ and + prefixed, spaces to underscores")),
+        (
+            _("Categories"),
+            "@context +project",
+            _("@ and + prefixed, spaces to underscores"),
+        ),
         (_("Due date"), "due:YYYY-MM-DD", _("Key:value, date only")),
         (_("Task ID"), "tcid:<id>", _("Key:value, internal identifier")),
     ]
@@ -1046,10 +1232,7 @@ class TodoTxtFieldMapping(sized_controls.SizedPanel):
             | wx.TR_FULL_ROW_HIGHLIGHT
         )
 
-        self.tree = hypertreelist.HyperTreeList(
-            self,
-            agwStyle=agwStyle
-        )
+        self.tree = hypertreelist.HyperTreeList(self, agwStyle=agwStyle)
         self.tree.SetSizerProps(expand=True, proportion=1)
 
         self.tree.AddColumn(_("Source Field"))
@@ -1109,9 +1292,9 @@ class ExportAsTodoTxtDialog(ExportDialog):
 
     def createInterior(self, pane):
         from taskcoachlib.gui.viewer import TaskViewer
+
         self.viewerPicker = EnhancedViewerPicker(
-            pane, self.window,
-            supportedTypes=[TaskViewer]
+            pane, self.window, supportedTypes=[TaskViewer]
         )
         self.fieldMapping = TodoTxtFieldMapping(pane)
         return (self.viewerPicker, self.fieldMapping)
@@ -1121,15 +1304,18 @@ class ExportAsTodoTxtDialog(ExportDialog):
             component.saveSettings()
 
         if self._exportCallback:
-            exportOptions = self.options()
-            selectedViewer = exportOptions.pop("selectedViewer")
-            exportOptions["selectionOnly"] = not self.viewerPicker.isAllSelected()
-
-            dateStr = datetime.date.today().strftime("%Y%m%d")
-            exportOptions["defaultFilename"] = "%s-%s" % (
-                self.viewerPicker.selectedTypeName(), dateStr
+            export_options = self.options()
+            selected_viewer = export_options.pop("selectedViewer")
+            export_options["selectionOnly"] = (
+                not self.viewerPicker.isAllSelected()
             )
-            self._exportCallback(selectedViewer, **exportOptions)
+
+            date_str = datetime.date.today().strftime("%Y%m%d")
+            export_options["default_filename"] = "%s-%s" % (
+                self.viewerPicker.selectedTypeName(),
+                date_str,
+            )
+            self._exportCallback(selected_viewer, **export_options)
 
         self.Destroy()
 

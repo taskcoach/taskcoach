@@ -103,9 +103,13 @@ class MainWindow(
             self, self.settings, self.taskFile.efforts()
         )
 
-        # System theme change monitor (Windows/macOS)
-        self._lastDetectedDark = detect_dark_theme()
+        # Follow system light/dark switches, see docs/SETTINGS.md
+        self._last_detected_dark = detect_dark_theme()
         self.Bind(wx.EVT_SYS_COLOUR_CHANGED, self._onSysColourChanged)
+        # Also check on the per-second tick, a safety net for a switch
+        # wx does not report (it can see one only where
+        # detect_dark_theme follows the system: not on Windows)
+        self.registerObserver(self._on_timer_second, eventType="timer.second")
 
     def setShutdownInProgress(self):
         self.__shutdown = True
@@ -202,7 +206,7 @@ class MainWindow(
         """
         saved = [
             name
-            for name in re.findall(r"name=([^;|]+)", perspective or "")
+            for name in re.findall(r"(?:^|\|)name=([^;|]+)", perspective or "")
             if not name.startswith("__notebook_")
         ]
         existing = [pane.name for pane in panes]
@@ -216,7 +220,8 @@ class MainWindow(
         no_window, no_entry = self.__unmatched_pane_names(
             perspective, self.manager.GetAllPanes()
         )
-        if no_window or no_entry:
+        # An empty perspective (first run) restores nothing by design.
+        if perspective and (no_window or no_entry):
             log_step(
                 "layout will not fully restore. Saved panes with no "
                 "window: %s. Panes with no saved entry: %s"
@@ -288,10 +293,14 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         self.manager.Bind(aui.EVT_AUI_RENDER, self._onAuiRender)
 
     def __onFilenameChanged(self, filename):
+        if filename != self.taskFile.filename():
+            return  # Another task file, e.g. a saved selection
         self.__filename = filename
         self.__setTitle()
 
     def __onDirtyChanged(self, taskFile):
+        if taskFile is not self.taskFile:
+            return
         self.__dirty = taskFile.is_dirty()
         self.__setTitle()
 
@@ -342,14 +351,32 @@ If this happens again, please make a copy of your TaskCoach.ini file """
                 child.Close()
 
     def _onSysColourChanged(self, event):
-        """Handle system theme/colour change event (Windows/macOS)."""
-        currentDark = detect_dark_theme()
-        if currentDark != self._lastDetectedDark:
-            self._lastDetectedDark = currentDark
-            pub.sendMessage("system.appearance.changed")
-            if self.settings.get("window", "theme") == "automatic":
-                pub.sendMessage("settings.window.theme")
         event.Skip()
+        self._follow_system_theme("wx event")
+
+    def _on_timer_second(self, event):  # pylint: disable=W0613
+        self._follow_system_theme("per-second check")
+
+    def _follow_system_theme(self, found_by):
+        """Re-theme once per system light/dark switch, however it was
+        found first."""
+        if getattr(wx.GetApp(), "quitting", False):
+            return
+        is_dark = detect_dark_theme()
+        if is_dark == self._last_detected_dark:
+            return
+        self._last_detected_dark = is_dark
+        theme = self.settings.get("window", "theme")
+        log_step(
+            "System theme is now %s (%s), window theme %s"
+            % ("dark" if is_dark else "light", found_by, theme),
+            prefix="THEME",
+        )
+        # Recomputes settings2.window.theme_is_dark, which the
+        # settings.window.theme listeners read
+        patterns.Event("system.theme_colour_changed", self).send()
+        if theme == "automatic":
+            pub.sendMessage("settings.window.theme", value=theme)
 
     def onClose(self, event):
         self.closeEditors()
@@ -587,15 +614,14 @@ If this happens again, please make a copy of your TaskCoach.ini file """
 
     # Viewers
 
-    def advanceSelection(self, forward):
-        self.viewer.advance_selection(forward)
-
     def viewerCount(self):
         return len(self.viewer)
 
     # Power management
 
     def OnPowerState(self, state):
-        pub.sendMessage(
-            "powermgt.%s" % {self.POWERON: "on", self.POWEROFF: "off"}[state]
-        )
+        event_type = {
+            self.POWERON: "powermgt.on",
+            self.POWEROFF: "powermgt.off",
+        }[state]
+        patterns.Event(event_type, self).send()

@@ -25,9 +25,23 @@ from pubsub import pub
 from . import attribute
 from .appearance import FIELD_DEFAULTS, FIELD_NO_VALUE_SOURCE
 import functools
-import sys
 import uuid
 import re
+
+
+def fresh_state(parent, instance):
+    """The state the next __getstate__ in the MRO (parent, a super()
+    object) returns, as a dict the caller may update.
+
+    Python 3.11 added object.__getstate__, which returns the instance's
+    live __dict__ (None when empty): updating that would write shadow
+    attributes onto the instance."""
+    # Python < 3.11 has no object.__getstate__
+    getstate = getattr(parent, "__getstate__", None)
+    state = getstate() if getstate else None
+    if state is None or state is instance.__dict__:
+        return dict()
+    return state
 
 
 class SynchronizedObject(object):
@@ -49,11 +63,11 @@ class SynchronizedObject(object):
         return "object.marknotdeleted"
 
     def __getstate__(self):
-        # Python 3.11 added object.__getstate__, which returns the instance's
-        # __dict__ as a live reference. Mutating that dict (as the subclass
-        # chain below does via state.update) would write shadow attributes
-        # onto self. Start from a fresh dict instead.
-        return {"status": self.__status}
+        # The bases' state (Composite: parent and children; NoteOwner:
+        # notes) is needed by their __setstate__
+        state = fresh_state(super(), self)
+        state["status"] = self.__status
+        return state
 
     @patterns.eventSource
     def __setstate__(self, state, event=None):
@@ -73,6 +87,7 @@ class SynchronizedObject(object):
             self.cleanDirty(event=event)
         else:
             from taskcoachlib.meta.debug import log_step
+
             log_step(
                 "unknown status value %r in __setstate__" % (new_status,),
                 prefix="SYNC-OBJ",
@@ -169,9 +184,11 @@ class Object(SynchronizedObject):
             kwargs.pop("font", None), self, self.appearanceChangedEvent
         )
         from taskcoachlib.gui.icons.icon_library import icon_catalog
+
         self.__icon_id = Attribute(
             icon_catalog.normalize_icon_id(kwargs.pop("icon", "")),
-            self, self.appearanceChangedEvent
+            self,
+            self.appearanceChangedEvent,
         )
         self.__selected_icon_id = Attribute(
             kwargs.pop("selectedIcon", ""), self, self.appearanceChangedEvent
@@ -184,27 +201,65 @@ class Object(SynchronizedObject):
         self.__id = kwargs.pop("id", None) or str(uuid.uuid1())
 
         # Derived SSOT fields (value + source for each appearance type)
-        self.__derivedFgColorValue = Attribute(None, self, self._onDerivedFgColorChanged)
-        self.__derivedFgColorSource = Attribute(None, self, self._onDerivedFgColorChanged)
-        self.__derivedBgColorValue = Attribute(None, self, self._onDerivedBgColorChanged)
-        self.__derivedBgColorSource = Attribute(None, self, self._onDerivedBgColorChanged)
-        self.__derivedIconValue = Attribute(None, self, self._onDerivedIconChanged)
-        self.__derivedIconSource = Attribute(None, self, self._onDerivedIconChanged)
-        self.__derivedFontValue = Attribute(None, self, self._onDerivedFontChanged)
-        self.__derivedFontSource = Attribute(None, self, self._onDerivedFontChanged)
+        self.__derivedFgColorValue = Attribute(
+            None, self, self._onDerivedFgColorChanged
+        )
+        self.__derivedFgColorSource = Attribute(
+            None, self, self._onDerivedFgColorChanged
+        )
+        self.__derivedBgColorValue = Attribute(
+            None, self, self._onDerivedBgColorChanged
+        )
+        self.__derivedBgColorSource = Attribute(
+            None, self, self._onDerivedBgColorChanged
+        )
+        self.__derivedIconValue = Attribute(
+            None, self, self._onDerivedIconChanged
+        )
+        self.__derivedIconSource = Attribute(
+            None, self, self._onDerivedIconChanged
+        )
+        self.__derivedFontValue = Attribute(
+            None, self, self._onDerivedFontChanged
+        )
+        self.__derivedFontSource = Attribute(
+            None, self, self._onDerivedFontChanged
+        )
 
         # Effective SSOT fields (value + source + default for colors/font, value + source for icon)
-        self.__effectiveFgColorValue = Attribute(None, self, self._onEffectiveFgColorChanged)
-        self.__effectiveFgColorSource = Attribute(None, self, self._onEffectiveFgColorChanged)
-        self.__effectiveFgColorDefault = Attribute(None, self, self._onEffectiveFgColorChanged)
-        self.__effectiveBgColorValue = Attribute(None, self, self._onEffectiveBgColorChanged)
-        self.__effectiveBgColorSource = Attribute(None, self, self._onEffectiveBgColorChanged)
-        self.__effectiveBgColorDefault = Attribute(None, self, self._onEffectiveBgColorChanged)
-        self.__effectiveIconValue = Attribute(None, self, self._onEffectiveIconChanged)
-        self.__effectiveIconSource = Attribute(None, self, self._onEffectiveIconChanged)
-        self.__effectiveFontValue = Attribute(None, self, self._onEffectiveFontChanged)
-        self.__effectiveFontSource = Attribute(None, self, self._onEffectiveFontChanged)
-        self.__effectiveFontDefault = Attribute(None, self, self._onEffectiveFontChanged)
+        self.__effectiveFgColorValue = Attribute(
+            None, self, self._onEffectiveFgColorChanged
+        )
+        self.__effectiveFgColorSource = Attribute(
+            None, self, self._onEffectiveFgColorChanged
+        )
+        self.__effectiveFgColorDefault = Attribute(
+            None, self, self._onEffectiveFgColorChanged
+        )
+        self.__effectiveBgColorValue = Attribute(
+            None, self, self._onEffectiveBgColorChanged
+        )
+        self.__effectiveBgColorSource = Attribute(
+            None, self, self._onEffectiveBgColorChanged
+        )
+        self.__effectiveBgColorDefault = Attribute(
+            None, self, self._onEffectiveBgColorChanged
+        )
+        self.__effectiveIconValue = Attribute(
+            None, self, self._onEffectiveIconChanged
+        )
+        self.__effectiveIconSource = Attribute(
+            None, self, self._onEffectiveIconChanged
+        )
+        self.__effectiveFontValue = Attribute(
+            None, self, self._onEffectiveFontChanged
+        )
+        self.__effectiveFontSource = Attribute(
+            None, self, self._onEffectiveFontChanged
+        )
+        self.__effectiveFontDefault = Attribute(
+            None, self, self._onEffectiveFontChanged
+        )
 
         super().__init__(*args, **kwargs)
 
@@ -419,7 +474,8 @@ class Object(SynchronizedObject):
         self.__fgColor.set(color, event=event)
         # Trigger computeEffective after SSOT update
         from . import appearance
-        appearance.computeEffective(self, 'fgColor')
+
+        appearance.computeEffective(self, "fgColor")
 
     def foregroundColor(self, recursive=False):  # pylint: disable=W0613
         # The 'recursive' argument isn't actually used here, but some
@@ -431,7 +487,8 @@ class Object(SynchronizedObject):
         self.__bgColor.set(color, event=event)
         # Trigger computeEffective after SSOT update
         from . import appearance
-        appearance.computeEffective(self, 'bgColor')
+
+        appearance.computeEffective(self, "bgColor")
 
     def backgroundColor(self, recursive=False):  # pylint: disable=W0613
         # The 'recursive' argument isn't actually used here, but some
@@ -451,20 +508,24 @@ class Object(SynchronizedObject):
         self.__font.set(font, event=event)
         # Trigger computeEffective after SSOT update
         from . import appearance
-        appearance.computeEffective(self, 'font')
+
+        appearance.computeEffective(self, "font")
 
     # Icons:
-
 
     def icon_id(self):
         return self.__icon_id.get()
 
     def set_icon_id(self, icon_id, event=None):
         from taskcoachlib.gui.icons.icon_library import icon_catalog
-        self.__icon_id.set(icon_catalog.normalize_icon_id(icon_id), event=event)
+
+        self.__icon_id.set(
+            icon_catalog.normalize_icon_id(icon_id), event=event
+        )
         # Trigger computeEffective after SSOT update
         from . import appearance
-        appearance.computeEffective(self, 'icon')
+
+        appearance.computeEffective(self, "icon")
 
     def selected_icon_id(self):
         return self.__selected_icon_id.get()
@@ -484,28 +545,34 @@ class Object(SynchronizedObject):
     # --- Derived SSOT Getters ---
 
     def derivedFgColor(self):
-        return self.__derivedFgColorValue.get() or FIELD_DEFAULTS['fgColor']
+        return self.__derivedFgColorValue.get() or FIELD_DEFAULTS["fgColor"]
 
     def derivedFgColorSource(self):
-        return self.__derivedFgColorSource.get() or FIELD_NO_VALUE_SOURCE['fgColor']
+        return (
+            self.__derivedFgColorSource.get()
+            or FIELD_NO_VALUE_SOURCE["fgColor"]
+        )
 
     def derivedBgColor(self):
-        return self.__derivedBgColorValue.get() or FIELD_DEFAULTS['bgColor']
+        return self.__derivedBgColorValue.get() or FIELD_DEFAULTS["bgColor"]
 
     def derivedBgColorSource(self):
-        return self.__derivedBgColorSource.get() or FIELD_NO_VALUE_SOURCE['bgColor']
+        return (
+            self.__derivedBgColorSource.get()
+            or FIELD_NO_VALUE_SOURCE["bgColor"]
+        )
 
     def derivedIcon(self):
-        return self.__derivedIconValue.get() or FIELD_DEFAULTS['icon']
+        return self.__derivedIconValue.get() or FIELD_DEFAULTS["icon"]
 
     def derivedIconSource(self):
-        return self.__derivedIconSource.get() or FIELD_NO_VALUE_SOURCE['icon']
+        return self.__derivedIconSource.get() or FIELD_NO_VALUE_SOURCE["icon"]
 
     def derivedFont(self):
-        return self.__derivedFontValue.get() or FIELD_DEFAULTS['font']
+        return self.__derivedFontValue.get() or FIELD_DEFAULTS["font"]
 
     def derivedFontSource(self):
-        return self.__derivedFontSource.get() or FIELD_NO_VALUE_SOURCE['font']
+        return self.__derivedFontSource.get() or FIELD_NO_VALUE_SOURCE["font"]
 
     # --- Derived SSOT Setters (for use by computeDerived) ---
 
@@ -560,37 +627,51 @@ class Object(SynchronizedObject):
     # --- Effective SSOT Getters ---
 
     def effectiveFgColor(self):
-        return self.__effectiveFgColorValue.get() or FIELD_DEFAULTS['fgColor']
+        return self.__effectiveFgColorValue.get() or FIELD_DEFAULTS["fgColor"]
 
     def effectiveFgColorSource(self):
-        return self.__effectiveFgColorSource.get() or FIELD_NO_VALUE_SOURCE['fgColor']
+        return (
+            self.__effectiveFgColorSource.get()
+            or FIELD_NO_VALUE_SOURCE["fgColor"]
+        )
 
     def effectiveFgColorDefault(self):
-        return self.__effectiveFgColorDefault.get() or FIELD_DEFAULTS['fgColor']
+        return (
+            self.__effectiveFgColorDefault.get() or FIELD_DEFAULTS["fgColor"]
+        )
 
     def effectiveBgColor(self):
-        return self.__effectiveBgColorValue.get() or FIELD_DEFAULTS['bgColor']
+        return self.__effectiveBgColorValue.get() or FIELD_DEFAULTS["bgColor"]
 
     def effectiveBgColorSource(self):
-        return self.__effectiveBgColorSource.get() or FIELD_NO_VALUE_SOURCE['bgColor']
+        return (
+            self.__effectiveBgColorSource.get()
+            or FIELD_NO_VALUE_SOURCE["bgColor"]
+        )
 
     def effectiveBgColorDefault(self):
-        return self.__effectiveBgColorDefault.get() or FIELD_DEFAULTS['bgColor']
+        return (
+            self.__effectiveBgColorDefault.get() or FIELD_DEFAULTS["bgColor"]
+        )
 
     def effectiveIcon(self):
-        return self.__effectiveIconValue.get() or FIELD_DEFAULTS['icon']
+        return self.__effectiveIconValue.get() or FIELD_DEFAULTS["icon"]
 
     def effectiveIconSource(self):
-        return self.__effectiveIconSource.get() or FIELD_NO_VALUE_SOURCE['icon']
+        return (
+            self.__effectiveIconSource.get() or FIELD_NO_VALUE_SOURCE["icon"]
+        )
 
     def effectiveFont(self):
-        return self.__effectiveFontValue.get() or FIELD_DEFAULTS['font']
+        return self.__effectiveFontValue.get() or FIELD_DEFAULTS["font"]
 
     def effectiveFontSource(self):
-        return self.__effectiveFontSource.get() or FIELD_NO_VALUE_SOURCE['font']
+        return (
+            self.__effectiveFontSource.get() or FIELD_NO_VALUE_SOURCE["font"]
+        )
 
     def effectiveFontDefault(self):
-        return self.__effectiveFontDefault.get() or FIELD_DEFAULTS['font']
+        return self.__effectiveFontDefault.get() or FIELD_DEFAULTS["font"]
 
     # --- Effective SSOT Setters (for use by computeEffective) ---
 
@@ -788,7 +869,9 @@ class CompositeObject(Object, patterns.ObservableComposite):
             return icon_id
         if not icon_id and self.parent():
             icon_id = self.parent().icon_id(recursive=True)
-        return self.pluralOrSingularIcon(icon_id, native=super().icon_id() == "")
+        return self.pluralOrSingularIcon(
+            icon_id, native=super().icon_id() == ""
+        )
 
     def selected_icon_id(self, recursive=False):
         icon_id = super().selected_icon_id()

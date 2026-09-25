@@ -68,6 +68,7 @@ class DummyViewerContainer(object):
 class ExportDialogTest(test.wxTestCase):
     def testCreate(self):
         self.frame.viewer = DummyViewerContainer()
+        self.set_main_window_task_file(self.frame)
         settings = config.Settings(load=False)
         dialog.export.ExportAsHTMLDialog(self.frame, settings=settings)
 
@@ -77,6 +78,7 @@ class ColumnPickerTest(test.wxTestCase):
         panel = sized_controls.SizedPanel(self.frame)
         dialog.export.ColumnPicker(panel, DummyViewer())
 
+    @test.stale("the column picker is a tree since #306")
     def testOnlySelectableColumns(self):
         panel = sized_controls.SizedPanel(self.frame)
         dlg = dialog.export.ColumnPicker(panel, DummyViewer())

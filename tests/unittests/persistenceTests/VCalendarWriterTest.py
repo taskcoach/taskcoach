@@ -23,22 +23,13 @@ from taskcoachlib import persistence, gui, config, meta
 from taskcoachlib.domain import task, effort, date
 
 
-class UTF8StringIO(io.StringIO):
-    """
-    Mimic codecs.open; encodes on the fly in UTF-8
-    """
-
-    def write(self, u):
-        io.StringIO.write(self, u.encode("UTF-8"))
-
-
 class VCalTestCase(test.wxTestCase):
     selectionOnly = "Subclass responsibility"
 
     def setUp(self):
         super().setUp()
         task.Task.settings = self.settings = config.Settings(load=False)
-        self.fd = UTF8StringIO()
+        self.fd = io.StringIO()  # The app writes text (codecs.open)
         self.writer = persistence.iCalendarWriter(self.fd)
         self.taskFile = persistence.TaskFile()
 
@@ -49,7 +40,7 @@ class VCalTestCase(test.wxTestCase):
 
     def writeAndRead(self):
         self.writer.write(self.viewer, self.settings, self.selectionOnly)
-        return self.fd.getvalue().decode("utf-8")
+        return self.fd.getvalue()
 
     def selectItems(self, items):
         self.viewer.select(items)
@@ -69,7 +60,7 @@ class VCalendarCommonTestsMixin(object):
         self.assertEqual("VERSION:2.0", self.vcalFile.split("\r\n")[1])
 
     def testProdId(self):
-        domain = meta.url[len("http://") : -1]
+        domain = meta.url.split("://", 1)[1].strip("/")
         self.assertEqual(
             "PRODID:-//%s//NONSGML %s V%s//EN"
             % (domain, meta.name, meta.version),
@@ -218,7 +209,7 @@ class VCalTaskCommonTestsMixin(VCalendarCommonTestsMixin):
         self.assertTrue("UID:%s" % self.task2.id() in self.vcalFile)
 
     def testCreationDateTime(self):
-        creation_datetime = persistence.icalendar.ical.fmtDateTime(
+        creation_datetime = persistence.icalendar.ical.fmt_date_time(
             self.task2.creationDateTime()
         )
         self.assertTrue("CREATED:%s" % creation_datetime in self.vcalFile)
@@ -227,7 +218,7 @@ class VCalTaskCommonTestsMixin(VCalendarCommonTestsMixin):
         self.assertEqual(1, self.vcalFile.count("CREATED:"))
 
     def testModificationDateTime(self):
-        modification_datetime = persistence.icalendar.ical.fmtDateTime(
+        modification_datetime = persistence.icalendar.ical.fmt_date_time(
             date.DateTime(2012, 1, 1)
         )
         self.assertTrue(

@@ -20,7 +20,6 @@ import wx
 import wx.lib.agw.aui as aui
 from taskcoachlib import operating_system
 
-
 # --- Rebuild guard: block motion events during list/tree rebuilds ---
 
 # Motion event types to eat during rebuild.  Only motion events are
@@ -29,7 +28,8 @@ from taskcoachlib import operating_system
 # (OnMotion -> hover -> repaint -> repeat) and must be suppressed.
 _MOTION_EVENTS = {
     wx.wxEVT_MOTION,
-    wx.wxEVT_ENTER_WINDOW, wx.wxEVT_LEAVE_WINDOW,
+    wx.wxEVT_ENTER_WINDOW,
+    wx.wxEVT_LEAVE_WINDOW,
 }
 
 
@@ -40,6 +40,7 @@ class _RebuildInputFilter(wx.EventFilter):
     motion events so mouse movement can't drive the AUI cascade.
     Clicks, keyboard, and scroll events pass through normally.
     """
+
     active = False
     _refcount = 0
     _release_timer = None
@@ -68,7 +69,8 @@ class _RebuildInputFilter(wx.EventFilter):
         self._refcount = max(0, self._refcount - 1)
         if self._refcount == 0:
             self._release_timer = wx.CallLater(
-                1000, self._deferred_release,
+                1000,
+                self._deferred_release,
             )
 
     def _deferred_release(self):
@@ -98,7 +100,7 @@ def _install_sash_resize_optimization(manager):
     """
     import time
 
-    original_on_motion = getattr(manager, 'OnMotion', None)
+    original_on_motion = getattr(manager, "OnMotion", None)
     if not original_on_motion:
         return
 
@@ -109,7 +111,7 @@ def _install_sash_resize_optimization(manager):
     # Throttle updates during sash drag
     def throttled_on_motion(event):
         nonlocal last_update_time
-        action = getattr(manager, '_action', 0)
+        action = getattr(manager, "_action", 0)
         # action 3 = actionResize (sash drag)
         if action == 3:
             now = time.time()
@@ -119,6 +121,14 @@ def _install_sash_resize_optimization(manager):
         return original_on_motion(event)
 
     manager.OnMotion = throttled_on_motion
+
+
+class _AuiManager(aui.AuiManager):
+    def OnSysColourChanged(self, event):
+        # The manager is pushed onto the frame's event handler stack;
+        # without Skip() the frame and its children never see the event.
+        super().OnSysColourChanged(event)
+        event.Skip()
 
 
 class AuiManagedFrameWithDynamicCenterPane(wx.Frame):
@@ -136,7 +146,7 @@ class AuiManagedFrameWithDynamicCenterPane(wx.Frame):
             # With this style on Windows, you can't dock back floating frames
             agw_style |= aui.AUI_MGR_USE_NATIVE_MINIFRAMES
 
-        self.manager = aui.AuiManager(self, agw_style)
+        self.manager = _AuiManager(self, agw_style)
 
         # Throttle AUI sash resize updates to ~30fps to reduce flickering
         _install_sash_resize_optimization(self.manager)

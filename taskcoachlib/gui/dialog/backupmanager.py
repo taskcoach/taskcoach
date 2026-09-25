@@ -18,8 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx, os
 from taskcoachlib.persistence import BackupManifest
+from taskcoachlib.filesystem import resourcelock
 from taskcoachlib.i18n import _
-from taskcoachlib import render
+from taskcoachlib.meta.debug import log_step
+from taskcoachlib import meta, render
 
 
 class BackupManagerDialog(wx.Dialog):
@@ -122,7 +124,9 @@ class BackupManagerDialog(wx.Dialog):
 
     def _OnSelectFile(self, event):
         self.__backups.DeleteAllItems()
-        backups = self.__manifest.listBackups(self.__filenames[event.GetIndex()])
+        backups = self.__manifest.listBackups(
+            self.__filenames[event.GetIndex()]
+        )
         for index, dateTime in enumerate(backups):
             self.__backups.InsertItem(
                 index, render.dateTime(dateTime, human_readable=True)
@@ -166,11 +170,36 @@ class BackupManagerDialog(wx.Dialog):
             style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
         )
         try:
-            if dlg.ShowModal() == wx.ID_OK:
-                self.__filename = dlg.GetPath()
-                self.__manifest.restoreFile(
-                    filename, dateTime, self.__filename
-                )
-                self.EndModal(wx.ID_OK)
+            if dlg.ShowModal() != wx.ID_OK:
+                return
+            destination = dlg.GetPath()
         finally:
             dlg.Destroy()
+        # On failure the dialog stays open, e.g. to choose another
+        # destination
+        try:
+            self.__manifest.restoreFile(filename, dateTime, destination)
+        except resourcelock.LockInUse as in_use:
+            self.__show_error(
+                resourcelock.in_use_message(destination, in_use.owner)
+            )
+            return
+        except Exception as reason:  # pylint: disable=W0703
+            log_step(
+                "cannot restore %s" % destination, prefix="FILE", exc=True
+            )
+            self.__show_error(
+                _("Cannot restore %s\n%s")
+                % (destination, str(reason) or type(reason).__name__)
+            )
+            return
+        self.__filename = destination
+        self.EndModal(wx.ID_OK)
+
+    def __show_error(self, message):
+        wx.MessageBox(
+            message,
+            _("%s file error") % meta.name,
+            style=wx.ICON_ERROR,
+            parent=self,
+        )

@@ -20,7 +20,6 @@ from taskcoachlib import operating_system, patterns
 import subprocess
 import wx
 
-
 if operating_system.isWindows():
 
     class Speaker(object):
@@ -43,24 +42,29 @@ else:
                 self.__binary = "espeak"
             self.__texts_to_say = []
             self.__current_speech_process = None
+            self.__retry_pending = False
 
         def say(self, text):
             """Schedule the text for speaking."""
             self.__texts_to_say.append(text)
-            self.__say_next_text()
+            if not self.__retry_pending:
+                self.__say_next_text()
 
         def __say_next_text(self):
-            """Say the next text if there is no speech process currently
-            running. If there is, try again in one second."""
-            if self.__is_speaking():
-                wx.CallLater(1000, self.__say_next_text)
-                return
+            """Say the oldest waiting text if no speech process is
+            running. Otherwise, or if more texts wait, try again in one
+            second. Only one retry is pending at a time."""
+            self.__retry_pending = False
             if not self.__texts_to_say:
                 return
-            text = self.__texts_to_say.pop()
-            self.__current_speech_process = subprocess.Popen(
-                (self.__binary, text)
-            )
+            if not self.__is_speaking():
+                text = self.__texts_to_say.pop(0)
+                self.__current_speech_process = subprocess.Popen(
+                    (self.__binary, text)
+                )
+            if self.__texts_to_say:
+                self.__retry_pending = True
+                wx.CallLater(1000, self.__say_next_text)
 
         def __is_speaking(self):
             """Return whether the computer is currently speaking."""

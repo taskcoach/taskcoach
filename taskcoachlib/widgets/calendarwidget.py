@@ -53,9 +53,9 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
     ):
         self.getItemTooltipData = parent.getItemTooltipData
 
-        self.__onDropURLCallback = kwargs.pop("onDropURL", None)
-        self.__onDropFilesCallback = kwargs.pop("onDropFiles", None)
-        self.__onDropMailCallback = kwargs.pop("onDropMail", None)
+        self.__on_drop_url_callback = kwargs.pop("on_drop_url", None)
+        self.__on_drop_files_callback = kwargs.pop("on_drop_files", None)
+        self.__on_drop_mail_callback = kwargs.pop("on_drop_mail", None)
 
         self.dropTarget = draganddrop.DropTarget(
             self.OnDropURL, self.OnDropFiles, self.OnDropMail
@@ -128,13 +128,13 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
         )
 
     def OnDropURL(self, x, y, url):
-        self._handleDrop(x, y, url, self.__onDropURLCallback)
+        self._handleDrop(x, y, url, self.__on_drop_url_callback)
 
     def OnDropFiles(self, x, y, filenames):
-        self._handleDrop(x, y, filenames, self.__onDropFilesCallback)
+        self._handleDrop(x, y, filenames, self.__on_drop_files_callback)
 
     def OnDropMail(self, x, y, mail):
-        self._handleDrop(x, y, mail, self.__onDropMailCallback)
+        self._handleDrop(x, y, mail, self.__on_drop_mail_callback)
 
     def SetShowNoStartDate(self, doShow):
         self.__showNoPlannedStartDate = doShow
@@ -247,7 +247,9 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
                         ):
                             continue
 
-                schedule = TaskSchedule(task, self.get_selected_or_normal_icon_id)
+                schedule = TaskSchedule(
+                    task, self.get_selected_or_normal_icon_id
+                )
                 schedules.append(schedule)
                 self.taskMap[task.id()] = schedule
 
@@ -302,7 +304,9 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
                     schedule = self.taskMap[task.id()]
                     schedule.update()
                 else:
-                    schedule = TaskSchedule(task, self.get_selected_or_normal_icon_id)
+                    schedule = TaskSchedule(
+                        task, self.get_selected_or_normal_icon_id
+                    )
                     self.taskMap[task.id()] = schedule
                     self.Add([schedule])
 
@@ -423,6 +427,11 @@ class Calendar(wx.Panel):
 
     def RefreshItems(self, *args):
         self._content.RefreshItems(*args)
+
+    def refresh_now_line(self):
+        """Redraw the "now" line, if shown (called every minute)."""
+        if self._content.GetShowNow():
+            self._content.Refresh()
 
     def GetItemCount(self):
         return self._content.GetItemCount()
@@ -546,7 +555,9 @@ class TaskSchedule(wxSchedule):
             )
             self.font = self.task.font(True)
 
-            self.icon_ids = [self.get_selected_or_normal_icon_id(self.task, False)]
+            self.icon_ids = [
+                self.get_selected_or_normal_icon_id(self.task, False)
+            ]
             if self.task.attachments():
                 self.icon_ids.append("nuvola_status_mail-attachment")
             if self.task.notes():

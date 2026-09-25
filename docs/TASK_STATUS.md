@@ -9,9 +9,8 @@
 3. [State Transitions](#state-transitions)
 4. [Architecture](#architecture)
    - [Stored Fields](#stored-fields)
-   - [computeStatus() — Single Source of Truth](#computestatus--single-source-of-truth-class-method)
+   - [compute_status(): Single Source of Truth](#compute_status-single-source-of-truth-class-method)
    - [computeStoredStatus() — Instance Update Method](#computestoredstatus--instance-update-method)
-   - [Editor Live Preview](#editor-live-preview)
    - [Event: statusChangedEventType](#event-statuschangedeventtype)
    - [Update Triggers](#update-triggers)
    - [Timer-Driven Updates (ComputeStyles)](#timer-driven-updates-computestyles)
@@ -269,25 +268,26 @@ Accessor methods:
 - `task.status_icon_id()` — Returns icon ID ✓
 - `task.status()` — Returns TaskStatus object (legacy cached method, to be removed)
 
-### computeStatus() — Single Source of Truth (Class Method)
+### compute_status(): Single Source of Truth (Class Method)
 
 **File:** `taskcoachlib/domain/task/task.py`
 
-The `Task.computeStatus()` class method is the **single source of truth** for status calculation.
+The `Task.compute_status()` class method is the **single source of truth** for status calculation.
 It takes date values as parameters and returns `(TaskStatus, source_string)` tuple.
 
 ```python
 @classmethod
-def computeStatus(cls, completionDT, dueDT, actualStartDT, plannedStartDT,
-                  dueSoonHours, hasIncompletePrerequisites, now=None,
-                  maxDateTime=None):
+def compute_status(cls, completion_dt, due_dt, actual_start_dt,
+                   planned_start_dt, due_soon_hours,
+                   has_incomplete_prerequisites, now=None,
+                   max_date_time=None):
     """Compute task status from date values. SINGLE SOURCE OF TRUTH."""
     # Priority order: completed > inactive(prereqs) > overdue > duesoon > active > late > inactive
-    if completionDT != maxDateTime:
+    if completion_dt != max_date_time:
         return status.completed, _("Completion date is set")
-    if hasIncompletePrerequisites:
+    if has_incomplete_prerequisites:
         return status.inactive, _("Has incomplete prerequisites")
-    if dueDT != maxDateTime and dueDT < now:
+    if due_dt != max_date_time and due_dt < now:
         return status.overdue, _("Due date has passed")
     # ... etc
     return status.inactive, _("No actual start date")
@@ -295,34 +295,31 @@ def computeStatus(cls, completionDT, dueDT, actualStartDT, plannedStartDT,
 
 ### computeStoredStatus() — Instance Update Method
 
-The `task.computeStoredStatus()` instance method calls `computeStatus()` with the task's
+The `task.computeStoredStatus()` instance method calls `compute_status()` with the task's
 actual values and stores the results in the task's fields.
 
 Called from:
 - `Task.__init__()` — Initial population on task creation/load
 - `recomputeAppearance()` — Immediate update on date changes (called by all date setters)
-- `ComputeStyles._computeForObject()` — Called per-task before `computeDerived()` and `computeEffective()`, ensuring status is fresh before appearance computation
-
-### Editor Live Preview
-
-The editor's `_computeLocalStatus()` method also calls `Task.computeStatus()`, but passes
-form field values instead of the task's stored values. This enables live preview as the
-user edits dates before committing changes.
+- `MasterScheduler._process_task()`: every second, before `computeStyles()`
 
 ### Event: statusChangedEventType
 
 `task.Task.statusChangedEventType()` returns `"pubsub.task.status"`
 
-Fired by `computeStatus()` only when status actually changes.
+Fired by `computeStoredStatus()` only when the status changes.
 Subscribers: status columns in TaskViewer (via column event infrastructure).
 
 ### Update Triggers
 
 Status is recomputed in three scenarios:
 
-1. **On load** — `Task.__init__()` calls `computeStatus()` once
-2. **On date change** — Date setters (e.g., `setDueDateTime()`) call `recomputeAppearance()` which calls `computeStatus()` at its start. This provides immediate status updates.
-3. **Every second** — `ComputeStyles._computeForObject()` calls `computeStoredStatus()` for each task as part of its per-object processing pass, ensuring status is fresh before computing derived and effective appearance values.
+1. **On load:** `Task.__init__()` calls `computeStoredStatus()` once.
+2. **On date change:** date setters (e.g. `setDueDateTime()`) call
+   `recomputeAppearance()`, which calls `computeStoredStatus()` first,
+   so the status updates at once.
+3. **Every second:** `MasterScheduler._process_task()` calls
+   `computeStoredStatus()` for each task, before `computeStyles()`.
 
 ### Timer-Driven Updates (ComputeStyles)
 
@@ -333,12 +330,12 @@ Status is recomputed in three scenarios:
 processes all objects. For each task, the per-object flow is:
 
 ```
-GlobalTimer._onTick() (every 1 second)
-    └── pub.sendMessage('timer.second', timestamp=now)
-        └── MasterScheduler._onSecond(timestamp)
+GlobalTimer._on_tick() (every 1 second)
+    └── patterns.Event('timer.second', self, now).send()
+        └── MasterScheduler._on_second(event)
             └── For each task:
                 1. task.computeStoredStatus()
-                │   ├── Calls Task.computeStatus() with task's dates
+                │   ├── Calls Task.compute_status() with task's dates
                 │   ├── Updates __computed_status, __status_text, __status_icon
                 │   └── Fires statusChangedEventType if changed
                 2. computeStyles(task)
@@ -355,7 +352,7 @@ When a user changes a date field, the update is immediate:
 ```
 setDueDateTime(newDate) / setPlannedStartDateTime(newDate) / etc.
     └── self.recomputeAppearance()
-        ├── self.computeStatus()
+        ├── self.computeStoredStatus()
         │   ├── Recalculates status from current dates
         │   └── Fires 'pubsub.task.status' if status changed
         ├── __computeRecursiveForegroundColor()  (uses status for color)
@@ -435,26 +432,25 @@ The status has no dedicated event type. Changes propagate via:
 
 The status calculation now exists in **one place only**:
 
-- **`Task.computeStatus()`** — class method, single source of truth
+- **`Task.compute_status()`**: class method, single source of truth
 
 All other code calls this method:
-- **`task.computeStoredStatus()`** — instance method that calls `computeStatus()` and stores results
-- **`DatesPage._computeLocalStatus()`** — calls `Task.computeStatus()` with form field values for live preview
-- **`ComputeStyles._computeForObject()`** — calls `task.computeStoredStatus()` for each task during per-object processing
+- **`task.computeStoredStatus()`**: instance method that calls `compute_status()` and stores results
+- **`MasterScheduler._process_task()`**: calls `task.computeStoredStatus()` for each task every second
 
-The `computeStatus()` method returns `(TaskStatus, source_string)` tuple, providing both the status and an explanation of why the task has that status.
+The `compute_status()` method returns `(TaskStatus, source_string)` tuple, providing both the status and an explanation of why the task has that status.
 
 ### 2. No Dedicated Status Event — RESOLVED
 
-`statusChangedEventType` (`"pubsub.task.status"`) now exists, fired by `computeStatus()` only on actual transitions. The new status columns subscribe to it.
+`statusChangedEventType` (`"pubsub.task.status"`) now exists, fired by `computeStoredStatus()` only on actual transitions. The new status columns subscribe to it.
 Legacy consumers still use `appearanceChangedEventType()` as a proxy.
 
 ### 3. StatusChecker Duplicates Logic — RESOLVED
 
-StatusChecker has been merged into ComputeStyles. Each task's `computeStoredStatus()` is
-now called directly within `ComputeStyles._computeForObject()`, immediately before
-`computeDerived()` and `computeEffective()`. This eliminates the duplicated date logic
-and guarantees correct ordering: status is always fresh when appearance values are computed.
+StatusChecker has been merged into the scheduler. `MasterScheduler._process_task()`
+calls each task's `computeStoredStatus()` immediately before `computeStyles()`. This
+eliminates the duplicated date logic and guarantees correct ordering: status is always
+fresh when appearance values are computed.
 
 ### 4. Cache Invalidation is Implicit
 
@@ -501,7 +497,7 @@ The cache made this O(1) after the first call, but required manual invalidation
 
 ### Why the New Approach Eliminates the Cache
 
-With `computeStatus()` as the sole writer:
+With `computeStoredStatus()` as the sole writer:
 1. **No cache needed** — `statusText()` and `status_icon_id()` are simple field reads
 2. **No invalidation needed** — the scheduler updates fields every second
 3. **No redundant recalculation** — doesn't matter how many consumers read the fields
@@ -514,7 +510,7 @@ every consumer to potentially trigger computation. The new pattern separates wri
 
 ### Migration Path
 
-1. **Current state:** `computeStatus()` runs in parallel alongside legacy code.
+1. **Current state:** `compute_status()` runs in parallel alongside legacy code.
    New columns read `statusText()` / `status_icon_id()`. Legacy consumers still
    use `status()` / `statusFgColor()` / etc.
 
@@ -541,9 +537,9 @@ every consumer to potentially trigger computation. The new pattern separates wri
    | Task effectiveXxx(explain) | task.py | ✓ Done |
    | Category derivedXxx(explain) | category.py | ✓ Done |
    | Category effectiveXxx(explain) | category.py | ✓ Done |
-   | computeStatus() centralized | task.py | ✓ Done (class method, no duplication) |
+   | compute_status() centralized | task.py | ✓ Done (class method, no duplication) |
    | computedStatus(explain) | task.py | ✓ Done |
-   | Dates tab status source | editor.py | ✓ Done (uses Task.computeStatus) |
+   | Dates tab status source | editor.py | ✓ Done (uses computedStatus(explain=True)) |
    | Font picker preview colors | editor.py | ✓ Done (uses effectiveFgColor/effectiveBgColor) |
    | Path tab icons | editor.py | ✓ Done (uses effectiveIcon) |
    | Category cascade on load | category.py | ✓ Done (centralized in _computeEffectiveAppearance) |
@@ -554,13 +550,12 @@ every consumer to potentially trigger computation. The new pattern separates wri
    | Selected icon variant (open/closed folder) | task.py | Will not migrate (concept will be removed) |
 
 3. **Final cleanup:** Remove legacy `status()` cache, `__status` field, and the
-   scattered `__status = None` invalidations. Remove duplicated logic from
-   `DatesPage._computeLocalStatus()`.
+   scattered `__status = None` invalidations.
 
 ### Staleness Tradeoff — RESOLVED
 
 Immediate updates are now implemented: `recomputeAppearance()` (called by all date
-setters) invokes `computeStatus()` at its start. This means:
+setters) invokes `computeStoredStatus()` at its start. This means:
 - User-driven date changes → instant status update (no 1-second delay)
 - Time-based transitions → detected within 1 second by ComputeStyles
 - The only remaining "stale" window is for time-based transitions (up to 1 second),

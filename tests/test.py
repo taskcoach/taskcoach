@@ -24,6 +24,9 @@ projectRoot = os.path.abspath("..")
 if projectRoot not in sys.path:
     sys.path.insert(0, projectRoot)
 
+# The runtime patches taskcoach.py applies (e.g. inspect.getargspec)
+import taskcoachlib.workarounds.monkeypatches  # noqa: F401,E402
+
 from taskcoachlib.notify import AbstractNotifier
 
 
@@ -41,6 +44,12 @@ def skipOnPlatform(*platforms):
     return wrapper
 
 
+def stale(reason):
+    """Skip a test that no longer matches the application and needs a
+    rewrite. List them with: grep -rn "test.stale" tests"""
+    return unittest.skip("stale: " + reason)
+
+
 def skipOnTwistedVersions(*versions):
     """
     Decorator for unit tests that were previously skipped on specific
@@ -52,6 +61,7 @@ def skipOnTwistedVersions(*versions):
     Tests that used reactor.iterate() have been updated to use
     wx event processing instead.
     """
+
     def wrapper(func):
         # No longer skip based on Twisted versions since Twisted is removed
         return func
@@ -79,6 +89,20 @@ class TestCase(unittest.TestCase, object):
 
     def setUp(self):
         AbstractNotifier.disableNotifications()
+
+    def set_main_window_task_file(self, window=None):
+        """Give the test main window (default: the top window) a task
+        file, as the app's main window has, for code that reads its
+        taskFile."""
+        from taskcoachlib import persistence  # pylint: disable=W0404
+
+        window = window or wx.GetApp().GetTopWindow()
+        task_file = persistence.TaskFile()
+        window.taskFile = task_file
+        self.addCleanup(task_file.stop)
+        self.addCleanup(task_file.close)
+        # Later tests share the top window
+        self.addCleanup(delattr, window, "taskFile")
 
     def tearDown(self):
         # pylint: disable=W0404
@@ -112,6 +136,18 @@ class TestCaseFrame(wx.Frame):
 class wxTestCase(TestCase):
     # pylint: disable=W0404
     app = wx.App(0)
+    # What the application's wx.App provides (application.py)
+    app.quitting = False
+    from taskcoachlib import config
+
+    app.settings = config.Settings(load=False)
+    # Light, so colours do not follow the desktop theme
+    app.settings.settext("window", "theme", "light")
+    from taskcoachlib.config import settings2
+
+    if not settings2._initialized:  # test.py also runs as module "test"
+        settings2.init(app.settings)
+        settings2.wx_ready()
     frame = TestCaseFrame()
     from taskcoachlib import i18n
 
@@ -119,6 +155,22 @@ class wxTestCase(TestCase):
     from taskcoachlib import gui
 
     gui.init()
+    # The gui package does not import its modules; tests use them as
+    # gui.<module>, and they need the icons initialized first
+    from taskcoachlib.gui import (  # noqa: F401
+        dialog,
+        iocontroller,
+        mainwindow,
+        menu,
+        printer,
+        remindercontroller,
+        taskbaricon,
+        toolbar,
+        uicommand,
+        viewer,
+        windowdimensionstracker,
+    )
+    from taskcoachlib.gui.dialog import editor  # noqa: F401
 
     def tearDown(self):
         super().tearDown()

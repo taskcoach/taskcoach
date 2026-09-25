@@ -714,6 +714,19 @@ class DragAndDropTaskCommandTest(CommandWithChildrenTestCase):
             lambda: self.assertEqual(self.child, self.grandchild.parent()),
         )
 
+    def test_undo_drop_on_completed_task_completes_its_parent_again(self):
+        completed = date.DateTime(2026, 9, 1)
+        self.parent.setCompletionDateTime(completed)
+        self.taskList.append(self.task1)
+        # The open task reopens the child it lands on, and its parent
+        self.dragAndDrop([self.child], [self.task1])
+        self.assertDoUndoRedo(
+            lambda: self.assertFalse(self.parent.completed()),
+            lambda: self.assertEqual(
+                completed, self.parent.completionDateTime()
+            ),
+        )
+
 
 class PriorityCommandTestCase(TaskCommandTestCase):
     def setUp(self):

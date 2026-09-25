@@ -91,9 +91,9 @@ class Event(object):
         the event has only one type."""
         event_type = kwargs.pop("type", self.type())
         current_values = set(
-            self.__sourcesAndValuesByType.setdefault(event_type, {}).setdefault(
-                source, tuple()
-            )
+            self.__sourcesAndValuesByType.setdefault(
+                event_type, {}
+            ).setdefault(source, tuple())
         )
         current_values |= set(values)
         self.__sourcesAndValuesByType.setdefault(event_type, {})[source] = (
@@ -202,11 +202,13 @@ class WeakMethodProxy:
         self._ref = weakref.WeakMethod(method)
         # Cache hash — must survive after referent dies, because
         # set.discard() needs it during cleanup.
-        self._hash = hash((
-            method.__self__.__class__,
-            id(method.__self__),
-            method.__func__,
-        ))
+        self._hash = hash(
+            (
+                method.__self__.__class__,
+                id(method.__self__),
+                method.__func__,
+            )
+        )
 
     def alive(self):
         return self._ref() is not None
@@ -245,6 +247,63 @@ class WeakMethodProxy:
     def __self__(self):
         method = self._ref()
         return method.__self__ if method is not None else None
+
+
+def _is_dead_observer(observer, exc):
+    """Whether the observer failed because its wx object is gone."""
+    import wx
+    from wx import siplib
+
+    owner = observer.__self__
+    if isinstance(owner, wx.Object) and siplib.isdeleted(owner):
+        return True
+    if not (isinstance(exc, RuntimeError) and "has been deleted" in str(exc)):
+        return False
+    # Count a deleted C++ object only when the observer's own code
+    # touched it, not a listener it called (e.g. MasterScheduler sending
+    # a message that a closed viewer receives).
+    tb = exc.__traceback__
+    while tb.tb_next is not None:
+        tb = tb.tb_next
+    return tb.tb_frame.f_locals.get("self") is owner
+
+
+def failure_site(exc):
+    """The type of exc and the line that raised it: the same for each
+    repeat of a failure, unlike its message (values, addresses)."""
+    tb = exc.__traceback__
+    if tb is None:
+        return (type(exc),)
+    while tb.tb_next is not None:
+        tb = tb.tb_next
+    return type(exc), tb.tb_frame.f_code.co_filename, tb.tb_lineno
+
+
+# An observer that fails on every event (e.g. every tick) logs its
+# traceback the first time, then only a count every _REPEAT_LOG_EVERY.
+_REPEAT_LOG_EVERY = 100
+_failure_counts = {}
+
+
+def _log_observer_failure(observer, types, exc, dead):
+    from taskcoachlib.meta.debug import log_step
+
+    key = (id(observer.__self__), observer, failure_site(exc))
+    count = _failure_counts.get(key, 0) + 1
+    _failure_counts[key] = count
+    outcome = "removing" if dead else "kept"
+    if count == 1 or dead:
+        log_step(
+            "Observer exception: %s on %s - %s" % (observer, types, outcome),
+            prefix="OBSERVER",
+            exc=True,
+        )
+    elif count % _REPEAT_LOG_EVERY == 0:
+        log_step(
+            "Observer exception repeated %d times: %s on %s: %r - %s"
+            % (count, observer, types, exc, outcome),
+            prefix="OBSERVER",
+        )
 
 
 def wrapObserver(decorated_method):
@@ -375,7 +434,8 @@ class Publisher(object, metaclass=singleton.Singleton):
             if key in self.__observers and not self.__observers[key]:
                 del self.__observers[key]
         import wx
-        if wx.GetApp() and getattr(wx.GetApp(), 'quitting', False):
+
+        if wx.GetApp() and getattr(wx.GetApp(), "quitting", False):
             return
         failed_entries = []
         for observer, types_and_sources in observers.items():
@@ -383,13 +443,17 @@ class Publisher(object, metaclass=singleton.Singleton):
             if sub_event.types():
                 try:
                     observer(sub_event)
-                except Exception:
-                    from taskcoachlib.meta.debug import log_step
-                    log_step("Observer exception: %s on %s - removing" % (
-                        observer, sub_event.types()), prefix="OBSERVER")
-                    for key in types_and_sources:
-                        failed_entries.append((key, observer))
-        # Prune observers that threw exceptions (dead C++ widget, etc.)
+                except Exception as exc:
+                    dead = _is_dead_observer(observer, exc)
+                    _log_observer_failure(
+                        observer, sub_event.types(), exc, dead
+                    )
+                    if dead:
+                        for key in types_and_sources:
+                            failed_entries.append((key, observer))
+        # Prune observers whose wx object was destroyed. Any other
+        # failure keeps the observer, so one bad tick cannot silently
+        # stop, e.g., the per-second scheduler.
         for key, failed_proxy in failed_entries:
             self.__observers.get(key, set()).discard(failed_proxy)
             if key in self.__observers and not self.__observers[key]:

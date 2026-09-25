@@ -46,7 +46,7 @@ Commands wrap **all** field changes, including derived value adjustments.
 For example, when the user changes a start date:
 
 1. `EditEffortStartDateTimeCommand` fires, writing the new start to the domain.
-2. The sync calc (`__syncEffortState`) detects that duration must be
+2. The sync calc (`__sync_effort_state`) detects that duration must be
    recalculated and fires `EditEffortDurationCommand` to adjust duration.
 
 Both commands land on the undo stack. Undoing the start change does **not**

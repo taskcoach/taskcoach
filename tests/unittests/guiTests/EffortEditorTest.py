@@ -71,30 +71,34 @@ class EffortEditorTest(test.wxTestCase):
 
     def testCreate(self):
         self.assertEqual(
-            self.task, self.editor._interior._taskEntry.GetValue()
+            self.task, self.editor._interior._task_entry.GetValue()
         )
         self.assertEqual(
             self.effort.getStart().date(),
-            self.editor._interior._startDateTimeEntry.GetValue().date(),
+            self.editor._interior._start_date_time_combo.GetValue().date(),
         )
         self.assertEqual(
-            self.effort.task(), self.editor._interior._taskEntry.GetValue()
+            self.effort.task(), self.editor._interior._task_entry.GetValue()
         )
 
     def testInvalidEffort(self):
-        self.editor._interior._stopDateTimeEntry.SetValue(
+        self.editor._interior._stop_date_time_combo.SetValue(
             date.DateTime(1900, 1, 1)
         )
-        self.editor._interior.onDateTimeChanged(dummy.Event())
-        self.assertTrue(self.editor._interior._invalidPeriodMessage.GetLabel())
+        self.editor._interior._stop_date_time_sync.onAttributeEdited(
+            dummy.Event()
+        )
+        self.assertTrue(
+            self.editor._interior._invalid_period_message.GetLabel()
+        )
 
     def testChangeTask(self):
-        self.editor._interior._taskEntry.SetValue(self.task2)
-        self.editor._interior._taskSync.onAttributeEdited(dummy.Event())
+        self.editor._interior._task_entry.SetValue(self.task2)
+        self.editor._interior._task_sync.onAttributeEdited(dummy.Event())
         self.assertEqual(self.task2, self.effort.task())
         self.assertFalse(self.effort in self.task.efforts())
 
     def testChangeTaskDoesNotCloseEditor(self):
-        self.editor._interior._taskEntry.SetValue(self.task2)
-        self.editor._interior._taskSync.onAttributeEdited(dummy.Event())
+        self.editor._interior._task_entry.SetValue(self.task2)
+        self.editor._interior._task_sync.onAttributeEdited(dummy.Event())
         self.assertFalse(self.editor.editorClosed)

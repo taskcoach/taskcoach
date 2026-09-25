@@ -41,8 +41,20 @@ import operator
 import os
 import re
 import stat
+import types
 import wx
 from lxml import etree as ET
+
+# What date expressions in templates saved before tskversion 32 use
+OLD_TEMPLATE_NAMES = dict(
+    Now=date.Now,
+    Today=date.Today,
+    Tomorrow=date.Tomorrow,
+    Yesterday=date.Yesterday,
+    DateTime=date.DateTime,
+    Date=date.Date,
+    TimeDelta=date.TimeDelta,
+)
 
 
 def safe_eval_date_expr(expr, context):
@@ -84,13 +96,17 @@ def safe_eval_date_expr(expr, context):
             raise ValueError(f"Name '{name}' not allowed in expression")
         elif isinstance(node, ast.BinOp):
             if type(node.op) not in allowed_operators:
-                raise ValueError(f"Operator {type(node.op).__name__} not allowed")
+                raise ValueError(
+                    f"Operator {type(node.op).__name__} not allowed"
+                )
             left = eval_node(node.left)
             right = eval_node(node.right)
             return allowed_operators[type(node.op)](left, right)
         elif isinstance(node, ast.UnaryOp):
             if type(node.op) not in allowed_unary:
-                raise ValueError(f"Unary operator {type(node.op).__name__} not allowed")
+                raise ValueError(
+                    f"Unary operator {type(node.op).__name__} not allowed"
+                )
             operand = eval_node(node.operand)
             return allowed_unary[type(node.op)](operand)
         elif isinstance(node, ast.Call):
@@ -100,6 +116,11 @@ def safe_eval_date_expr(expr, context):
             return func(*args, **kwargs)
         elif isinstance(node, ast.Attribute):
             value = eval_node(node.value)
+            # Private names and modules lead out of the date API
+            if node.attr.startswith("_") or isinstance(
+                value, types.ModuleType
+            ):
+                raise ValueError(f"Attribute '{node.attr}' not allowed")
             return getattr(value, node.attr)
         elif isinstance(node, ast.Tuple):
             return tuple(eval_node(elt) for elt in node.elts)
@@ -109,7 +130,7 @@ def safe_eval_date_expr(expr, context):
             raise ValueError(f"Node type {type(node).__name__} not allowed")
 
     try:
-        tree = ast.parse(expr, mode='eval')
+        tree = ast.parse(expr, mode="eval")
         return eval_node(tree)
     except (SyntaxError, ValueError) as e:
         raise ValueError(f"Invalid expression '{expr}': {e}")
@@ -386,7 +407,9 @@ class XMLReader(object):
             if self.__tskversion < 19:
                 categorizable_ids = category_node.attrib.get("tasks", "")
             else:
-                categorizable_ids = category_node.attrib.get("categorizables", "")
+                categorizable_ids = category_node.attrib.get(
+                    "categorizables", ""
+                )
             if self.__tskversion > 20:
                 kwargs["attachments"] = self.__parse_attachments(category_node)
             theCategory = category.Category(**kwargs)  # pylint: disable=W0142
@@ -445,25 +468,32 @@ class XMLReader(object):
                         task_node.attrib.get(
                             planned_start_datetime_attribute_name, ""
                         ),
-                        *self.defaultStartTime
+                        *self.defaultStartTime,
                     ),
                     dueDateTime=parseAndAdjustDateTime(
-                        task_node.attrib.get("duedate", ""), *self.defaultEndTime
+                        task_node.attrib.get("duedate", ""),
+                        *self.defaultEndTime,
                     ),
                     actualStartDateTime=date.parseDateTime(
                         task_node.attrib.get("actualstartdate", ""),
-                        *self.defaultStartTime
+                        *self.defaultStartTime,
                     ),
                     completionDateTime=date.parseDateTime(
                         task_node.attrib.get("completiondate", ""),
-                        *self.defaultEndTime
+                        *self.defaultEndTime,
                     ),
                     percentageComplete=self.__parse_int_attribute(
                         task_node, "percentageComplete"
                     ),
-                    budget=date.parseTimeDelta(task_node.attrib.get("budget", "")),
-                    plannedDuration=date.parseTimeDelta(task_node.attrib.get("plannedDuration", "")),
-                    plannedDurationMode=task_node.attrib.get("plannedDurationMode", "implicit"),
+                    budget=date.parseTimeDelta(
+                        task_node.attrib.get("budget", "")
+                    ),
+                    plannedDuration=date.parseTimeDelta(
+                        task_node.attrib.get("plannedDuration", "")
+                    ),
+                    plannedDurationMode=task_node.attrib.get(
+                        "plannedDurationMode", "implicit"
+                    ),
                     priority=self.__parse_int_attribute(task_node, "priority"),
                     hourlyFee=float(task_node.attrib.get("hourlyFee", "0")),
                     fixedFee=float(task_node.attrib.get("fixedFee", "0")),
@@ -684,7 +714,7 @@ class XMLReader(object):
             stop=date.parseDateTime(stop),
             description=description,
             entryMode=entryMode,
-            **kwargs
+            **kwargs,
         )
 
     def __parse_syncml_node(self, nodes, guid):
@@ -735,7 +765,11 @@ class XMLReader(object):
                 # are no longer supported. Keep the attachment object but
                 # the file data is lost.
                 data_node = node.find("data")
-                ext = data_node.attrib.get("extension", "") if data_node is not None else ""
+                ext = (
+                    data_node.attrib.get("extension", "")
+                    if data_node is not None
+                    else ""
+                )
                 log_step(
                     f"WARNING: Inline attachment '{subject}' - "
                     f"embedded file data is not supported and will be "
@@ -749,7 +783,7 @@ class XMLReader(object):
             attachment.AttachmentFactory(
                 location,  # pylint: disable=W0142
                 node.attrib["type"],
-                **kwargs
+                **kwargs,
             )
         )
 
@@ -799,6 +833,7 @@ class XMLReader(object):
     def __parse_icon(text):
         """Parse an icon name from the text, normalizing deprecated/duplicate."""
         from taskcoachlib.gui.icons.icon_library import icon_catalog
+
         return icon_catalog.normalize_icon_id(text)
 
     @classmethod
@@ -821,7 +856,11 @@ class XMLReader(object):
         """Parse a tuple from the text. In case of failure, return the default
         value."""
         if text.startswith("(") and text.endswith(")"):
-            return cls.__parse(text, eval, default_value)
+            # A literal only: the text comes from the file, never run it
+            try:
+                return ast.literal_eval(text)
+            except (ValueError, SyntaxError):
+                return default_value
         else:
             return default_value
 
@@ -911,7 +950,7 @@ class TemplateXMLReader(XMLReader):
         if expr in built_in_templates:
             return built_in_templates[expr]
         # Not a built in template:
-        new_datetime = safe_eval_date_expr(expr, date.__dict__)
+        new_datetime = safe_eval_date_expr(expr, OLD_TEMPLATE_NAMES)
         if isinstance(new_datetime, date.date.RealDate):
             new_datetime = date.DateTime(
                 new_datetime.year, new_datetime.month, new_datetime.day

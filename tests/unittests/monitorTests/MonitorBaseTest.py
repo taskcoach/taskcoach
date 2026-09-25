@@ -16,10 +16,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import test, wx
+import test
 from taskcoachlib.changes import ChangeMonitor
 from taskcoachlib.domain.base import Object, CompositeObject
 from taskcoachlib.patterns import ObservableList
+
+
+def setter_name(getter):
+    """Setter of a getter: setFoo for foo, set_foo_id for foo_id."""
+    if "_" in getter:
+        return "set_" + getter
+    return "set" + getter[:1].upper() + getter[1:]
 
 
 class MonitorBaseTest(test.TestCase):
@@ -46,23 +53,17 @@ class MonitorObjectTest(MonitorBaseTest):
     ):
         if methodName is None:
             methodName = name
-        getattr(self.obj, "set" + methodName[:1].upper() + methodName[1:])(
-            initialValue
-        )
+        getattr(self.obj, setter_name(methodName))(initialValue)
         self.monitor.resetChanges(self.obj)
-        getattr(self.obj, "set" + methodName[:1].upper() + methodName[1:])(
-            value
-        )
+        getattr(self.obj, setter_name(methodName))(value)
         self.assertEqual(self.monitor.getChanges(self.obj), set([name]))
 
     def doTestAttributeDidNotChange(self, name, initialValue, methodName=None):
         if methodName is None:
             methodName = name
-        getattr(self.obj, "set" + methodName[:1].upper() + methodName[1:])(
-            initialValue
-        )
+        getattr(self.obj, setter_name(methodName))(initialValue)
         self.monitor.resetChanges(self.obj)
-        getattr(self.obj, "set" + methodName[:1].upper() + methodName[1:])(
+        getattr(self.obj, setter_name(methodName))(
             getattr(self.obj, methodName)()
         )
         self.assertEqual(self.monitor.getChanges(self.obj), set())
@@ -108,16 +109,20 @@ class MonitorObjectTest(MonitorBaseTest):
         self.doTestAttributeDidNotChange("appearance", "dummy", "font")
 
     def testIconChanged(self):
-        self.doTestAttributeChanged("appearance", "foo", "bar", "icon")
+        self.doTestAttributeChanged("appearance", "foo", "bar", "icon_id")
 
     def testIconDidNotChange(self):
-        self.doTestAttributeDidNotChange("appearance", "foo", "icon")
+        self.doTestAttributeDidNotChange("appearance", "foo", "icon_id")
 
     def testSelectedIconChanged(self):
-        self.doTestAttributeChanged("appearance", "foo", "bar", "selectedIcon")
+        self.doTestAttributeChanged(
+            "appearance", "foo", "bar", "selected_icon_id"
+        )
 
     def testSelectedIconDidNotChange(self):
-        self.doTestAttributeDidNotChange("appearance", "foo", "selectedIcon")
+        self.doTestAttributeDidNotChange(
+            "appearance", "foo", "selected_icon_id"
+        )
 
     def testNewObject(self):
         obj = self.klass(subject="New")

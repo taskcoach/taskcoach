@@ -32,7 +32,6 @@ import locale
 import os
 import test
 import wx
-import weakref
 
 
 class TaskViewerUnderTest(gui.viewer.task.TaskViewer):  # pylint: disable=W0223
@@ -70,9 +69,7 @@ class TaskViewerTestCase(test.wxTestCase):
         self.viewer.sortBy("subject")
         self.viewer.setSortOrderAscending()
         self.viewer.setSortByTaskStatusFirst(True)
-        self.settings.setboolean(
-            self.viewer.settingsSection(), "treemode", self.tree_mode
-        )
+        self.viewer.set_tree_mode(self.tree_mode)
         self.newColor = (100, 200, 100, 255)
         attachment.Attachment.attdir = os.getcwd()
         if not operating_system.isGTK():
@@ -85,6 +82,13 @@ class TaskViewerTestCase(test.wxTestCase):
             locale.setlocale(locale.LC_ALL, tmpLocale)
 
     def tearDown(self):
+        # As when its pane closes, and before super() destroys the
+        # frames: a viewer being destroyed tests false, and a frame is
+        # deleted only at idle time, which never comes here. A viewer
+        # left attached keeps its menu ids, and they run out.
+        self.viewer.detach()
+        self.viewer.Destroy()
+        self.viewer = None
         super().tearDown()
         if not operating_system.isGTK():
             locale.setlocale(locale.LC_ALL, self.originalLocale)
@@ -98,16 +102,12 @@ class TaskViewerTestCase(test.wxTestCase):
         if os.path.isfile("test.mail"):
             os.remove("test.mail")
 
-        if self.viewer:
-            self.viewer.detach()
-            self.viewer = None
-
         if self.parentFrame:
             self.parentFrame.Close()
             wx.Yield()
 
     def assertItems(self, *tasks):
-        self.viewer.expandAll()  # pylint: disable=E1101
+        self.viewer.expand_all()  # pylint: disable=E1101
         self.assertEqual(self.viewer.size(), len(tasks))
         for index, eachTask in enumerate(tasks):
             self.assertItem(index, eachTask)
@@ -307,7 +307,7 @@ class CommonTestsMixin(object):
         self.task.addChild(child2)
         child2.addChild(grandChild)
         self.taskList.append(self.task)
-        self.viewer.expandAll()
+        self.viewer.expand_all()
         self.assertEqual(4, self.viewer.size())
         markCompletedCommand = command.MarkCompletedCommand(
             self.taskList, [grandChild]
@@ -497,6 +497,7 @@ class CommonTestsMixin(object):
         self.taskList.append(taskWithRecurrence)
         self.assertEqual("Every other week", self.getItemText(0, 3))
 
+    @test.stale("imageIndex was replaced by image_list_cache")
     def testRenderAttachment(self):
         att = attachment.FileAttachment("whatever")
         self.task.addAttachment(att)
@@ -686,8 +687,11 @@ class CommonTestsMixin(object):
         self.taskList.append(aTask)
         self.viewer.onDropFiles(aTask, ["filename"])
         self.assertEqual(
-            [attachment.FileAttachment("filename")],
-            self.viewer.presentation()[0].attachments(),
+            ["filename"],
+            [
+                a.location()
+                for a in self.viewer.presentation()[0].attachments()
+            ],
         )
 
     def testOnDropURL(self):
@@ -695,18 +699,28 @@ class CommonTestsMixin(object):
         self.taskList.append(aTask)
         self.viewer.onDropURL(aTask, "http://www.example.com/")
         self.assertEqual(
-            [attachment.URIAttachment("http://www.example.com/")],
-            self.viewer.presentation()[0].attachments(),
+            ["http://www.example.com/"],
+            [
+                a.location()
+                for a in self.viewer.presentation()[0].attachments()
+            ],
         )
 
     def testOnDropMail(self):
-        open("test.mail", "wb").write("Subject: foo\r\n\r\nBody\r\n")
+        with open("test.mail", "wb") as mail:
+            mail.write(b"Subject: foo\r\n\r\nBody\r\n")
+        self.addCleanup(
+            lambda: os.path.exists("test.mail") and os.remove("test.mail")
+        )
         aTask = task.Task()
         self.taskList.append(aTask)
         self.viewer.onDropMail(aTask, "test.mail")
         self.assertEqual(
-            [attachment.MailAttachment("test.mail")],
-            self.viewer.presentation()[0].attachments(),
+            ["test.mail"],
+            [
+                a.location()
+                for a in self.viewer.presentation()[0].attachments()
+            ],
         )
 
     def testCategoryBackgroundColor(self):
@@ -722,7 +736,9 @@ class CommonTestsMixin(object):
         self.taskFile.categories().append(
             category.Category("cat", filtered=True)
         )
-        dialog = self.viewer.newItemDialog(bitmap="nuvola_actions_document-new")
+        dialog = self.viewer.newItemDialog(
+            icon_id="nuvola_actions_document-new"
+        )
         dialog._interior[4].selected()
         tree = dialog._interior[4].viewer.widget  # pylint: disable=W0212
         firstChild = tree.GetFirstChild(tree.GetRootItem())[0]
@@ -732,21 +748,25 @@ class CommonTestsMixin(object):
         self.taskList.append(task.Task(font=wx.SWISS_FONT))
         self.assertEqual(wx.SWISS_FONT, self.getFirstItemFont())
 
+    @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenPlannedStartDateTimeChanges(self):
         self.taskList.append(self.task)
         self.task.setPlannedStartDateTime(date.Now() + date.ONE_DAY)
         self.assertIcon(task.inactive.getBitmap(self.settings))
 
+    @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenDueDateTimeChanges(self):
         self.taskList.append(self.task)
         self.task.setDueDateTime(date.Now() + date.ONE_HOUR)
         self.assertIcon(task.duesoon.getBitmap(self.settings))
 
+    @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenCompletionDateTimeChanges(self):
         self.taskList.append(self.task)
         self.task.setCompletionDateTime(date.Now())
         self.assertIcon(task.completed.getBitmap(self.settings))
 
+    @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenPrerequisiteIsAdded(self):
         prerequisite = task.Task("zzz")
         self.taskList.extend([prerequisite, self.task])
@@ -754,6 +774,7 @@ class CommonTestsMixin(object):
         prerequisite.addDependencies([self.task])
         self.assertIcon(task.inactive.getBitmap(self.settings))
 
+    @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenPrerequisiteIsCompleted(self):
         prerequisite = task.Task(subject="zzz")
         self.taskList.extend([prerequisite, self.task])
@@ -762,17 +783,20 @@ class CommonTestsMixin(object):
         prerequisite.setCompletionDateTime(date.Now())
         self.assertIcon(task.late.getBitmap(self.settings))
 
+    @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenEffortTrackingStarts(self):
         self.taskList.append(self.task)
         self.task.addEffort(effort.Effort(self.task))
         self.assertIcon("nuvola_apps_clock")
 
+    @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenEffortTrackingStops(self):
         self.taskList.append(self.task)
         self.task.addEffort(effort.Effort(self.task))
         self.task.stopTracking()
         self.assertIcon(task.active.getBitmap(self.settings))
 
+    @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenTaskBecomesOverdue(self):
         dueDateTime = date.Now() + date.TimeDelta(seconds=10)
         dueDateTime = dueDateTime.replace(microsecond=0)
@@ -812,9 +836,7 @@ class CommonTestsMixin(object):
     def testItemOrderAfterSwitch(self):
         self.task.addChild(self.child)
         self.taskList.append(self.task)
-        self.settings.setboolean(
-            self.viewer.settingsSection(), "treemode", not self.tree_mode
-        )
+        self.viewer.set_tree_mode(not self.tree_mode)
         if self.tree_mode:
             self.assertItems(self.child, self.task)
         else:
@@ -824,9 +846,7 @@ class CommonTestsMixin(object):
         self.task.addChild(self.child)
         self.taskList.append(self.task)
         self.task.setSubject("a")  # task comes before child
-        self.settings.setboolean(
-            self.viewer.settingsSection(), "treemode", not self.tree_mode
-        )
+        self.viewer.set_tree_mode(not self.tree_mode)
         if self.tree_mode:
             self.assertItems(self.task, self.child)
         else:
@@ -952,20 +972,28 @@ class CommonTestsMixin(object):
     def testChangePriorityWhileColumnNotShown(self):
         self.taskList.append(self.task)
         self.task.setPriority(10)
-        self.assertFalse(self.viewer.events)
+        # Priority changes are Publisher events
+        self.assertFalse(self.viewer.events_deprecated)
 
     def testChangePriorityWhileColumnShown(self):
         self.taskList.append(self.task)
         self.showColumn("priority")
         self.task.setPriority(10)
-        self.assertEventFired(10, self.task)
+        # Priority changes are Publisher events
+        self.assertEventFired_Deprecated(task.Task.priorityChangedEventType())
 
     def testChangePriorityOfSubtask(self):
         self.showColumn("priority")
         self.task.addChild(self.child)
         self.taskList.append(self.task)
         self.child.setPriority(10)
-        self.assertEventFired(self.task.priority(), self.task)
+        # The parent is a source of the child's Publisher event
+        self.assertIn(
+            self.task,
+            self.viewer.events_deprecated[-1].sources(
+                task.Task.priorityChangedEventType()
+            ),
+        )
 
     def testChangeHourlyFeeWhileColumnShown(self):
         self.showColumn("hourlyFee")
@@ -1283,6 +1311,15 @@ class TaskCalendarViewerTest(test.wxTestCase):
         dateTime = date.DateTime(2010, 10, 1, 0, 0, 0)
         self.openDialogAndAssertDateTimes(
             dateTime, dateTime, dateTime.endOfDay()
+        )
+
+    def test_colours_follow_preferences(self):
+        for section in ("calendar_light", "calendar_dark"):
+            self.settings.setboolean(section, "other_month_bg_system", False)
+            self.settings.setvalue(section, "other_month_bg", (1, 2, 3))
+        patterns.Event("calendar.colours.changed", self.settings).send()
+        self.assertEqual(
+            wx.Colour(1, 2, 3), self.viewer.widget.GetOtherMonthColor()
         )
 
 
