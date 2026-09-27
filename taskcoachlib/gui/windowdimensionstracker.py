@@ -16,545 +16,644 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import os
-import wx
 import time
+
+import wx
+
 from taskcoachlib import operating_system
+from taskcoachlib.meta.debug import log_step
 
-# Debug logging for window position tracking (set to True to enable)
-_DEBUG_WINDOW_TRACKING = False
+# Windows and macOS apply position, size and maximize during the call,
+# also before the first show, proven by years of use without reports
+# (docs/WINDOW_GEOMETRY.md, Direct Placement). Elsewhere placement is
+# observed until quiet.
+_DIRECT_PLACEMENT = operating_system.isWindows() or operating_system.isMac()
+
+# Placement steps are checked once neither position nor size changed
+# for a quiet period (docs/WINDOW_GEOMETRY.md, Main Window). Startup
+# is slow, so the first one is longer. Each lasts at least twice the
+# platform's slowest answer so far, up to the maximum.
+_FIRST_QUIET_MS = 1000
+_QUIET_MS = 500
+_MAX_QUIET_MS = 3000
+
+# Attempts to get a position, size or maximized state applied before
+# the platform's decision is accepted
+_ATTEMPTS = 3
+
+# A placement step ends this long after it started even if the window
+# keeps changing, for instance dragged at once by the user
+_STEP_LIMIT = 10.0
 
 
-def _log_debug(msg):
-    """Log debug message with timestamp including milliseconds."""
-    if _DEBUG_WINDOW_TRACKING:
-        now = time.time()
-        timestamp = time.strftime("%H:%M:%S", time.localtime(now))
-        ms = int((now % 1) * 1000)
-        print(f"[{timestamp}.{ms:03d}] WindowTracker: {msg}")
+def fit_to_monitors(rect, monitors):
+    """Fit a saved window rect (x, y, width, height) to the monitors.
+
+    monitors holds (geometry, work_area) per monitor, each an
+    (x, y, width, height) tuple. A rect whose title bar lies on a
+    monitor and whose size fits that monitor's work area is kept as it
+    is. Otherwise the size is reduced to the work area the rect
+    overlaps most, or else the nearest one, and the rect is moved
+    inside it.
+    """
+    x, y, width, height = rect
+    for geometry, work_area in monitors:
+        fits = width <= work_area[2] and height <= work_area[3]
+        if fits and _title_bar_on(rect, geometry):
+            return tuple(rect)
+    if not monitors:
+        return tuple(rect)
+    ax, ay, aw, ah = _best_work_area(rect, [area for _, area in monitors])
+    width, height = min(width, aw), min(height, ah)
+    x = max(ax, min(x, ax + aw - width))
+    y = max(ay, min(y, ay + ah - height))
+    return (x, y, width, height)
+
+
+def _title_bar_on(rect, geometry):
+    """Whether the rect's top left, where the title bar is, lies on the
+    monitor with at least 100 pixels of it showing."""
+    x, y, width, _ = rect
+    gx, gy, gw, gh = geometry
+    return gx - width + 100 <= x <= gx + gw - 100 and gy <= y <= gy + gh - 100
+
+
+def _best_work_area(rect, work_areas):
+    """The work area the rect overlaps most, or else the nearest."""
+    x, y, width, height = rect
+
+    def overlap(area):
+        ax, ay, aw, ah = area
+        dx = min(x + width, ax + aw) - max(x, ax)
+        dy = min(y + height, ay + ah) - max(y, ay)
+        return max(dx, 0) * max(dy, 0)
+
+    def distance(area):
+        ax, ay, aw, ah = area
+        cx, cy = x + width / 2, y + height / 2
+        dx = max(ax - cx, 0, cx - (ax + aw))
+        dy = max(ay - cy, 0, cy - (ay + ah))
+        return dx * dx + dy * dy
+
+    best = max(work_areas, key=overlap)
+    return best if overlap(best) > 0 else min(work_areas, key=distance)
 
 
 class WindowGeometryTracker:
-    """Track and restore window geometry (position, size, maximized state).
+    """Track and restore window geometry (position, size, maximized).
 
-    Handles two window types with different positioning rules:
+    Rules, platform notes and known issues: docs/WINDOW_GEOMETRY.md.
+    With a parent the window is an editor: it stays on the parent's
+    monitor. On Windows and macOS the geometry is set before the first
+    show and kept; elsewhere it is checked once the window is quiet.
 
-    == MAIN WINDOW (parent=None) ==
-
-    Single source of truth for DESIRED window state. While not ready, we keep
-    trying to make the actual window match the desired state.
-
-    State (desired, persisted):
-        position: (x, y) - desired restore position
-        size: (w, h) - desired restore size
-        maximized: bool - desired maximize state
-
-    State (in-memory):
-        ready: bool - position/size achieved
-        position_confirmed: bool - SetPosition() result confirmed by EVT_MOVE
-        size_confirmed: bool - SetSize() result confirmed by EVT_SIZE
-
-    Rules:
-        - While not ready: keep trying to achieve desired state
-        - On mismatch: set confirmed=False, send correction
-        - On EVT_MOVE/EVT_SIZE: set respective confirmed=True
-        - On EVT_IDLE: check ready conditions
-        - Ready when: IsActive() AND position_confirmed AND size_confirmed
-                      AND (state empty OR position/size achieved)
-        - After ready: ONE maximize attempt (fire and forget)
-        - After ready: cache window changes back to state
-        - Only cache position/size when not maximized and not iconized
-
-    == DIALOG WINDOW (parent specified) ==
-
-    Dialogs have different positioning rules - they must stay with their parent
-    window and never support maximized/iconized states.
-
-    State (persisted):
-        position: (x, y) or (-1, -1) - saved position, (-1,-1) = none saved
-        size: (w, h) or (-1, -1) - saved size, (-1,-1) = let system decide
-
-    Rules (in order):
-        1. Always on parent's monitor - dialog appears on same monitor as parent
-        2. Missing size (-1 value) → let system decide both, clear cache
-        3. Missing position (but size valid) → keep size, center on parent
-        4. Size too big for monitor → clear all cache, let system decide
-        5. Position off-screen (but size OK) → keep size, center, clear position
-        6. Valid size and position → use saved values
-
-    Key Differences from Main Window:
-        - Monitor: Must be on parent's monitor (not any monitor)
-        - Maximized/Iconized: Never supported for dialogs
-        - No saved geometry: Let system decide (main window lets WM decide)
-        - Position invalid: Keep size, center on parent (main window clears all)
+    Each restore step is logged with the [GEOMETRY] prefix and the time
+    since the tracker started, until the window has settled.
     """
 
     def __init__(self, window, settings, section, parent=None):
         self._window = window
         self._settings = settings
         self._section = section
-        self._parent = parent  # Parent window for dialogs (constrains to same monitor)
+        self._parent = parent
+        # Editor sections name every tab; the type is enough to trace
+        self._label = section.split("_with_")[0]
 
-        # === Desired state (persisted) ===
-        self.position = None    # (x, y)
-        self.size = None        # (w, h)
-        self.maximized = False  # True if should be maximized
+        # Desired state (persisted)
+        self.position = None  # (x, y)
+        self.size = None  # (w, h)
+        self.maximized = False
 
-        # === In-memory state ===
-        self.ready = False              # Position/size achieved
-        self.position_confirmed = True  # No pending SetPosition()
-        self.size_confirmed = True      # No pending SetSize()
+        # Placement: "placing", then "maximizing" if saved maximized
+        self.ready = False  # Placed; moves and resizes are kept from now
+        self._direct = _DIRECT_PLACEMENT
+        self._phase = "placing"
+        self._attempts = 0
+        self._quiet = None  # wx.CallLater ending the quiet period
+        self._quiet_ms = _FIRST_QUIET_MS
+        self._step_started = None  # Set by the first show
+        self._requesting = False  # In our own SetSize() and the like
+        self._requested_at = None  # Last request: show, attempt
+        self._slowest_answer = 0.0  # Seconds from a request to a change
+        self._requested_size = None  # Last size given to SetSize()
+        self._seen = None  # Geometry at the last event
+        # Placed at once but started minimized: maximize when restored
+        self._maximize_on_restore = False
 
-        # Position logging timer
-        self._pos_log_timer = None
-        self._pos_log_start_time = None
+        # Tracing
+        self._started = time.perf_counter()
+        self._tracing = True
+        self._resized_at = None  # Last EVT_SIZE not yet followed by idle
 
-        # Check for Wayland
-        self._on_wayland = os.environ.get('XDG_SESSION_TYPE') == 'wayland' or \
-                          os.environ.get('WAYLAND_DISPLAY') is not None
-        if self._on_wayland:
-            _log_debug("Running on Wayland - window positioning blocked by compositor")
+        # The compositor places windows and never reports positions
+        self._positions_known = not operating_system.isWayland()
+        if not self._positions_known:
+            self._trace("Wayland: positions are neither set nor kept")
 
-        # Set minimum size
-        if isinstance(self._window, wx.Dialog):
-            self._window.SetMinSize((400, 300))
-        else:
-            self._window.SetMinSize((600, 400))
+        self._min_size = (
+            (400, 300) if isinstance(window, wx.Dialog) else (600, 400)
+        )
+        self._window.SetMinSize(self._min_size)
+        self._trace("SetMinSize%s" % (self._min_size,))
 
-        # Load desired state from file and apply to window
         self.load()
 
-        # Bind event handlers
+        # wxGTK maps a new window at its minimum size (see
+        # docs/WINDOW_GEOMETRY.md), so ask for the requested size as the
+        # minimum until the window is shown
+        self._min_size_pending = (
+            not self._direct
+            and self._requested_size is not None
+            and not self._window.IsShown()
+        )
+        if self._min_size_pending:
+            self._window.SetMinSize(self._requested_size)
+            self._trace("SetMinSize%s until shown" % (self._requested_size,))
+
         self._window.Bind(wx.EVT_MOVE, self._on_move)
         self._window.Bind(wx.EVT_SIZE, self._on_size)
         self._window.Bind(wx.EVT_MAXIMIZE, self._on_maximize)
+        self._window.Bind(wx.EVT_ICONIZE, self._on_iconize)
         self._window.Bind(wx.EVT_IDLE, self._on_idle)
+        self._window.Bind(wx.EVT_SHOW, self._on_show)
+        if self._direct:
+            # Applied during the calls; traced until shown
+            self.ready = True
+            self._trace("placed: %s" % self._window_state())
 
-        # Start position logging for debugging
-        self._start_position_logging()
+    # === Tracing ===
+
+    def _trace(self, message, always=False):
+        """Log a restore step with the milliseconds since the start;
+        only until the window has settled, unless always."""
+        if not self._tracing and not always:
+            return
+        elapsed = (time.perf_counter() - self._started) * 1000
+        log_step(
+            "%s +%.0f ms: %s" % (self._label, elapsed, message),
+            prefix="GEOMETRY",
+        )
+
+    def _window_state(self):
+        pos = self._window.GetPosition()
+        size = self._window.GetSize()
+        return "pos=(%d, %d) size=(%d, %d) shown=%s max=%s active=%s" % (
+            pos.x,
+            pos.y,
+            size.width,
+            size.height,
+            self._window.IsShown(),
+            self._window.IsMaximized(),
+            self._window.IsActive(),
+        )
 
     # === Settings I/O ===
 
     def _get_setting(self, setting):
-        """Get value from settings file."""
         return self._settings.getvalue(self._section, setting)
 
     def _set_setting(self, setting, value):
-        """Set value in settings file."""
         self._settings.setvalue(self._section, setting, value)
 
     # === State persistence ===
 
     def load(self):
-        """Load desired state from settings file and apply to window."""
+        """Load the desired state from the settings and apply it."""
         x, y = self._get_setting("position")
         width, height = self._get_setting("size")
         self.maximized = self._get_setting("maximized")
-
-        _log_debug(f"LOAD: pos=({x}, {y}) size=({width}, {height}) maximized={self.maximized}")
+        self._trace(
+            "load: saved pos=(%d, %d) size=(%d, %d) maximized=%s, %s"
+            % (x, y, width, height, self.maximized, self._window_state())
+        )
 
         # Enforce minimum size
-        min_w, min_h = self._window.GetMinSize()
+        min_w, min_h = self._min_size
         width = max(width, min_w) if width > 0 else min_w
         height = max(height, min_h) if height > 0 else min_h
 
-        # For dialogs with parent: must be on same monitor as parent
         if self._parent is not None:
-            self._load_dialog_geometry(x, y, width, height, min_w, min_h)
+            self._load_dialog_geometry(x, y, width, height)
         else:
-            self._load_main_window_geometry(x, y, width, height, min_w, min_h)
+            self._load_main_window_geometry(x, y, width, height)
 
-        if operating_system.isMac():
-            self._window.SetClientSize((width, height))
+        if self._direct and self.maximized:
+            # Applied when shown, on the monitor of the saved rect
+            self._trace("request Maximize() before show")
+            self._window.Maximize()
 
-    def _load_main_window_geometry(self, x, y, width, height, min_w, min_h):
-        """Load geometry for main window (can be on any monitor)."""
-        if x == -1 and y == -1:
-            # No saved position - let WM place it, clear state
-            _log_debug(f"  No saved position, clearing state, letting WM place window")
-            self._clear_state()
-            self._window.SetSize(width, height)
-        else:
-            validated = self._validate_geometry(x, y, width, height)
-            if validated is None:
-                # Geometry invalid - let WM place it, clear state
-                _log_debug(f"  Geometry invalid, clearing state, letting WM place window")
-                self._clear_state()
-                self._window.SetSize(min_w, min_h)
-            else:
-                # Geometry valid - set desired state
-                x, y, width, height = validated
-                self.position = (x, y)
-                self.size = (width, height)
-                self._window.SetSize(x, y, width, height)
-                _log_debug(f"  Set desired: pos={self.position} size={self.size} maximized={self.maximized}")
+    def _set_size(self, *args):
+        """SetSize() with tracing; remembers the size for the first
+        show."""
+        self._trace("request SetSize%s" % (args,))
+        self._window.SetSize(*args)
+        self._requested_size = tuple(args[-2:])
+        self._trace("after SetSize: %s" % self._window_state())
 
-    def _load_dialog_geometry(self, x, y, width, height, min_w, min_h):
-        """Load geometry for dialog (must be on same monitor as parent).
-
-        Rules (in order):
-        1. Always on parent's monitor - dialog appears on same monitor as parent
-        2. Missing size (-1 value) → let system decide both, clear cache
-           (Position is meaningless without size)
-        3. Missing position (but size valid) → keep size, center on parent
-        4. Size too big for monitor → clear all cache, let system decide
-        5. Position off-screen (but size OK) → keep size, center, clear position only
-        6. Valid size and position → use saved values
-
-        Note: Never save/use maximized or iconized for dialogs.
-        """
-        # Get parent's monitor
-        parent_display_idx = self._get_parent_display_index()
-        if parent_display_idx < 0:
-            _log_debug(f"  Could not determine parent monitor, letting system decide")
-            self._clear_dialog_cache()
+    def _load_main_window_geometry(self, x, y, width, height):
+        """Load geometry for the main window (any monitor)."""
+        monitors = self._monitors()
+        if (x == -1 and y == -1) or not self._positions_known:
+            # The window manager places it, and the size it gets is kept
+            # once placed; the saved maximized state is kept
+            self._trace("no position to restore: the window manager places it")
+            if monitors:
+                area = monitors[0][1]
+                rect = (area[0], area[1], width, height)
+                width, height = fit_to_monitors(rect, monitors)[2:]
+            self.position = None
+            self.size = None
+            self._set_size(width, height)
             return
-
-        parent_display = wx.Display(parent_display_idx)
-        work_area = parent_display.GetClientArea()
-        _log_debug(f"  Parent on monitor {parent_display_idx}: work_area={work_area.x},{work_area.y} {work_area.width}x{work_area.height}")
-
-        size_missing = width == -1 or height == -1
-        position_missing = x == -1 or y == -1
-
-        # Rule 2: Missing size → let system decide both (position meaningless without size)
-        if size_missing:
-            _log_debug(f"  Rule 2: Missing saved size, letting system decide")
-            self._clear_dialog_cache()
-            return
-
-        # Rule 3: Missing position (but size valid) → center on parent with saved size
-        if position_missing:
-            _log_debug(f"  Rule 3: Missing saved position, centering with saved size ({width}x{height})")
-            self._center_on_parent_with_size(width, height)
-            return
-
-        # Rule 4: Size too big for monitor → clear all cache, let system decide
-        if width > work_area.width or height > work_area.height:
-            _log_debug(f"  Rule 4: Saved size ({width}x{height}) too big for monitor ({work_area.width}x{work_area.height}), clearing cache")
-            self._clear_dialog_cache()
-            return
-
-        # Rule 5: Position off-screen (but size OK) → keep size, center, clear position
-        if not self._is_position_on_screen(x, y, width, height, work_area):
-            _log_debug(f"  Rule 5: Saved position ({x},{y}) off-screen, centering with saved size ({width}x{height})")
-            self._center_on_parent_with_size(width, height)
-            self._clear_position_cache()
-            return
-
-        # Rule 6: Valid size and position → use saved values
+        fitted = fit_to_monitors((x, y, width, height), monitors)
+        if fitted != (x, y, width, height):
+            self._trace("fitted to the monitors: %s" % (fitted,))
+        x, y, width, height = fitted
         self.position = (x, y)
         self.size = (width, height)
-        self._window.SetSize(x, y, width, height)
-        _log_debug(f"  Rule 6: Using saved geometry: pos={self.position} size={self.size}")
+        self._set_size(x, y, width, height)
 
-    def _is_position_on_screen(self, x, y, width, height, work_area):
-        """Check if dialog is fully visible on the parent's monitor.
+    def _load_dialog_geometry(self, x, y, width, height):
+        """Load geometry for an editor (on the parent's monitor).
 
-        Dialog must be entirely within the work area. Positions and sizes
-        already include window decorations, so no tolerance is needed.
+        Rules, in order: see docs/WINDOW_GEOMETRY.md, Editors.
         """
-        # Check all four edges
-        if x < work_area.x:
-            return False  # Left edge off screen
-        if y < work_area.y:
-            return False  # Top edge off screen
-        if x + width > work_area.x + work_area.width:
-            return False  # Right edge off screen
-        if y + height > work_area.y + work_area.height:
-            return False  # Bottom edge off screen
-        return True
-
-    def _center_on_parent_with_size(self, width, height):
-        """Center on parent with specified size. Sets position and size state."""
-        if self._parent is None:
-            self._window.SetSize(width, height)
+        if not self._positions_known:
+            self._trace("the compositor places it: the saved size only")
             self.size = (width, height)
+            self._set_size(width, height)
+            return
+        parent_display_idx = self._get_parent_display_index()
+        if parent_display_idx < 0:
+            self._trace("parent monitor unknown: the system decides")
+            self._clear_dialog_cache()
             return
 
-        # Get parent geometry
+        work_area = wx.Display(parent_display_idx).GetClientArea()
+        self._trace(
+            "parent on monitor %d, work area (%d, %d) %dx%d"
+            % (
+                parent_display_idx,
+                work_area.x,
+                work_area.y,
+                work_area.width,
+                work_area.height,
+            )
+        )
+
+        if x == -1 or y == -1:
+            self._trace("no saved position: center with the saved size")
+            self._center_on_parent_with_size(width, height)
+            return
+        if width > work_area.width or height > work_area.height:
+            self._trace("saved size larger than the monitor: system decides")
+            self._clear_dialog_cache()
+            return
+        if not self._is_position_on_screen(x, y, width, height, work_area):
+            self._trace("saved position off the monitor: center")
+            self._center_on_parent_with_size(width, height)
+            return
+        self.position = (x, y)
+        self.size = (width, height)
+        self._set_size(x, y, width, height)
+
+    def _is_position_on_screen(self, x, y, width, height, work_area):
+        """Whether the editor lies entirely within the work area.
+
+        Positions and sizes include the window decorations.
+        """
+        return (
+            x >= work_area.x
+            and y >= work_area.y
+            and x + width <= work_area.x + work_area.width
+            and y + height <= work_area.y + work_area.height
+        )
+
+    def _center_on_parent_with_size(self, width, height):
+        """Center on the parent with this size, within its monitor."""
         parent_pos = self._parent.GetPosition()
         parent_size = self._parent.GetSize()
-
-        # Calculate centered position
         x = parent_pos.x + (parent_size.width - width) // 2
         y = parent_pos.y + (parent_size.height - height) // 2
 
-        # Ensure it's on screen (on parent's monitor)
         parent_display_idx = self._get_parent_display_index()
         if parent_display_idx >= 0:
-            work_area = wx.Display(parent_display_idx).GetClientArea()
-            x = max(work_area.x, min(x, work_area.x + work_area.width - width))
-            y = max(work_area.y, min(y, work_area.y + work_area.height - height))
+            area = wx.Display(parent_display_idx).GetClientArea()
+            x = max(area.x, min(x, area.x + area.width - width))
+            y = max(area.y, min(y, area.y + area.height - height))
 
         self.position = (x, y)
         self.size = (width, height)
-        self._window.SetSize(x, y, width, height)
-        _log_debug(f"  Centered on parent: pos={self.position} size={self.size}")
+        self._set_size(x, y, width, height)
 
     def _clear_dialog_cache(self):
-        """Clear dialog geometry cache in settings. Let system decide."""
+        """Clear the saved editor geometry; the system decides."""
         self._set_setting("position", (-1, -1))
         self._set_setting("size", (-1, -1))
         self.position = None
         self.size = None
-        _log_debug(f"  Cleared dialog geometry cache")
-
-    def _clear_position_cache(self):
-        """Clear only position cache in settings."""
-        self._set_setting("position", (-1, -1))
-        _log_debug(f"  Cleared position cache")
 
     def _get_parent_display_index(self):
-        """Get the display index where the parent window is located."""
-        if self._parent is None:
-            return -1
+        """Index of the monitor holding the parent's center, or -1."""
         parent_pos = self._parent.GetPosition()
         parent_size = self._parent.GetSize()
-        # Use center of parent to determine its monitor
-        center_x = parent_pos.x + parent_size.width // 2
-        center_y = parent_pos.y + parent_size.height // 2
-        return wx.Display.GetFromPoint(wx.Point(center_x, center_y))
-
-    def _clear_state(self):
-        """Clear all state - let WM decide, normal caching will capture new values."""
-        self.position = None
-        self.size = None
-        self.maximized = False
-        # Reset confirmed flags so ready check can proceed
-        self.position_confirmed = True
-        self.size_confirmed = True
-        _log_debug(f"  State cleared: pos=None size=None maximized=False")
+        center = wx.Point(
+            parent_pos.x + parent_size.width // 2,
+            parent_pos.y + parent_size.height // 2,
+        )
+        return wx.Display.GetFromPoint(center)
 
     def save(self):
-        """Save current state to settings file."""
-        _log_debug(f"SAVE: pos={self.position} size={self.size} maximized={self.maximized}")
-
+        """Write the state to the settings."""
+        self._trace(
+            "save: pos=%s size=%s maximized=%s"
+            % (self.position, self.size, self.maximized),
+            always=True,
+        )
         self._set_setting("maximized", self.maximized)
-
         if self.position:
             self._set_setting("position", self.position)
-
         if self.size:
             self._set_setting("size", self.size)
 
-    # === Window correction ===
+    # === Placement ===
 
     def _is_normal_state(self):
-        """Return True if window is in normal state (not maximized, not iconized)."""
         return not self._window.IsMaximized() and not self._window.IsIconized()
 
-    def check_and_correct(self):
-        """Try to make window match desired state. Called on EVT_MOVE/EVT_SIZE.
-
-        Rules:
-        - Error (iconized, or maximized unexpectedly) → clear state only
-        - On mismatch: set confirmed=False, send correction
-        - Ready check happens in EVT_IDLE handler
-        """
-        if self.ready:
+    def _wait_until_quiet(self):
+        """(Re)start the quiet period; the placement step is checked
+        when it ends without any move or resize."""
+        elapsed = time.perf_counter() - self._step_started
+        if elapsed > _STEP_LIMIT and not self._window.IsIconized():
+            self._trace("still moving after %.1f s: accepted" % elapsed)
+            self._accept()
             return
+        if self._quiet is None:
+            self._quiet = wx.CallLater(self._quiet_ms, self._on_quiet)
+        else:
+            self._quiet.Start(self._quiet_ms)
 
-        # ERROR: Window is iconized before ready
-        if self._window.IsIconized():
-            _log_debug(f"ERROR: Window is iconized before ready!")
-            _log_debug(f"  Desired state was: pos={self.position} size={self.size} maximized={self.maximized}")
-            self._clear_state()
+    def _on_quiet(self):
+        """Quiet for a quiet period: check the placement step."""
+        if not self._window or self.ready:
             return
+        self._adapt_quiet_period()
+        if self._phase == "placing":
+            self._check_placement()
+        elif not self._window.IsIconized():
+            self._check_maximized()
+        # A minimized window is maximized once restored (EVT_ICONIZE)
 
-        # ERROR: Window is maximized before ready (we haven't set position/size yet)
+    def _check_placement(self):
+        """Correct position and size if they differ, at most _ATTEMPTS
+        times; then accept what the platform applied."""
         if self._window.IsMaximized():
-            _log_debug(f"ERROR: Window is maximized before ready!")
-            _log_debug(f"  Desired state was: pos={self.position} size={self.size} maximized={self.maximized}")
-            self._clear_state()
+            # Maximized meanwhile, by the user or the window manager:
+            # the saved normal geometry is kept for the un-maximize
+            self._trace("maximized during placement: accepted")
+            self.maximized = True
+            self._finish()
             return
-
-        # Window is in normal state - check and correct position/size
-        if self.position is not None or self.size is not None:
-            pos = self._window.GetPosition()
-            size = self._window.GetSize()
-            self._check_position(pos)
-            self._check_size(size)
-
-    def _check_position(self, pos):
-        """Check and correct position. Sets position_confirmed=False if correcting."""
-        if self.position is None:
-            return
-
-        target_x, target_y = self.position
-        if pos.x != target_x or pos.y != target_y:
-            _log_debug(f"_check_position: ({pos.x}, {pos.y}) != target ({target_x}, {target_y}), correcting")
-            self.position_confirmed = False
-            self._window.SetPosition(wx.Point(target_x, target_y))
-
-    def _check_size(self, size):
-        """Check and correct size. Sets size_confirmed=False if correcting."""
-        if self.size is None:
-            return
-
-        target_w, target_h = self.size
-        if size.width != target_w or size.height != target_h:
-            _log_debug(f"_check_size: ({size.width}, {size.height}) != target ({target_w}, {target_h}), correcting")
-            self.size_confirmed = False
-            self._window.SetSize(target_w, target_h)
-
-    def _mark_ready(self):
-        """Mark window as ready - position/size achieved. Then maximize if needed."""
-        elapsed = time.time() - self._pos_log_start_time
-
-        self.ready = True
-
-        # Update state with actual final position/size values
         pos = self._window.GetPosition()
         size = self._window.GetSize()
-        self.position = (pos.x, pos.y)
+        wrong_position = (
+            self._positions_known
+            and self.position is not None
+            and (pos.x, pos.y) != self.position
+        )
+        wrong_size = self.size is not None and (
+            (size.width, size.height) != self.size
+        )
+        self._trace("quiet: %s" % self._window_state())
+        if wrong_position or wrong_size:
+            if self._attempts < _ATTEMPTS:
+                self._attempts += 1
+                self._trace(
+                    "attempt %d: position %s size %s"
+                    % (self._attempts, self.position, self.size)
+                )
+                if wrong_position:
+                    self._request(
+                        self._window.SetPosition, wx.Point(*self.position)
+                    )
+                if wrong_size:
+                    self._request(self._window.SetSize, *self.size)
+                self._wait_until_quiet()
+                return
+            self._trace("not applied after %d attempts: accepted" % _ATTEMPTS)
+        self._accept_placement()
+        if self.maximized and not self._window.IsMaximized():
+            self._phase = "maximizing"
+            self._attempts = 0
+            self._step_started = time.perf_counter()
+            if not self._window.IsIconized():
+                self._request_maximize()
+            self._wait_until_quiet()
+            return
+        self._finish()
+
+    def _adapt_quiet_period(self):
+        """Wait at least twice the platform's slowest answer so far, so
+        a slow or loaded computer gets longer quiet periods."""
+        quiet_ms = min(
+            max(_QUIET_MS, int(2000 * self._slowest_answer)), _MAX_QUIET_MS
+        )
+        if quiet_ms != self._quiet_ms:
+            self._trace(
+                "slowest answer %.0f ms: quiet period %d ms"
+                % (1000 * self._slowest_answer, quiet_ms)
+            )
+            self._quiet_ms = quiet_ms
+
+    def _request(self, method, *args):
+        """Call a wx method changing the geometry. Its own events are
+        ours, not the platform's answer."""
+        self._requesting = True
+        try:
+            method(*args)
+        finally:
+            self._requesting = False
+        self._requested_at = time.perf_counter()
+
+    def _request_maximize(self):
+        self._attempts += 1
+        self._trace("attempt %d: Maximize()" % self._attempts)
+        self._request(self._window.Maximize)
+
+    def _check_maximized(self):
+        """Maximize again if it did not apply, at most _ATTEMPTS times;
+        then accept."""
+        if self._window.IsMaximized():
+            self._finish()
+        elif self._attempts < _ATTEMPTS:
+            self._request_maximize()
+            self._wait_until_quiet()
+        else:
+            self._trace("maximize not applied: accepted")
+            self.maximized = False
+            self._finish()
+
+    def _accept_placement(self):
+        """Keep the geometry the window got, as the platform decided."""
+        pos = self._window.GetPosition()
+        size = self._window.GetSize()
+        if self._positions_known:
+            self.position = (pos.x, pos.y)
         self.size = (size.width, size.height)
-        _log_debug(f"WINDOW READY [{elapsed:.2f}s]: pos={self.position} size={self.size}")
 
-        # Stop position logging
-        if self._pos_log_timer:
-            self._pos_log_timer.Stop()
-            self._pos_log_timer = None
+    def _accept(self):
+        """End placement with what the window has now; a saved maximized
+        state not tried yet is kept."""
+        if self._window.IsMaximized():
+            self.maximized = True
+        elif self._phase == "placing":
+            self._accept_placement()
+        else:
+            self.maximized = False
+        self._finish()
 
-        # After ready, ONE maximize attempt if state says maximized (fire and forget)
-        if self.maximized:
-            _log_debug(f"  Maximizing (fire and forget)")
-            self._window.Maximize()
+    def _finish(self):
+        self.ready = True
+        self._trace("placed: %s" % self._window_state())
+        self._tracing = False
 
-    # === State updates from window (after ready) ===
+    # === State updates from the window (after placement) ===
 
     def cache_from_window(self):
-        """Update state from window. Only cache position/size in normal state."""
-        # Always cache maximized state from window
+        """Update the state from the window; position and size only in
+        the normal state. Minimized, the state to restore to is kept."""
+        if self._window.IsIconized():
+            return
         self.maximized = self._window.IsMaximized()
-
-        # Only cache position/size when in normal state
         if self._is_normal_state():
             pos = self._window.GetPosition()
             size = self._window.GetSize()
-            self.position = (pos.x, pos.y)
+            if self._positions_known:
+                self.position = (pos.x, pos.y)
             if size.width > 100 and size.height > 100:
                 self.size = (size.width, size.height)
-            _log_debug(f"cache_from_window: pos={self.position} size={self.size} maximized={self.maximized}")
 
     # === Event handlers ===
 
-    def _on_move(self, event):
-        """Handle window move. Confirms position change."""
-        if not self.ready:
-            self.position_confirmed = True
-            self.check_and_correct()
-        else:
+    def _on_show(self, event):
+        if self._tracing:
+            self._trace(
+                "EVT_SHOW shown=%s: %s"
+                % (event.IsShown(), self._window_state())
+            )
+        if event.IsShown() and self._min_size_pending:
+            self._resend_lost_request()
+            self._min_size_pending = False
+            self._window.SetMinSize(self._min_size)
+            self._trace("SetMinSize%s" % (self._min_size,))
+        if event.IsShown() and self._direct:
+            self._tracing = False
+        elif event.IsShown() and not self.ready:
+            if self._step_started is None:
+                self._step_started = time.perf_counter()
+                self._requested_at = self._step_started
+            self._wait_until_quiet()
+        event.Skip()
+
+    def _resend_lost_request(self):
+        """Before its first show wxGTK may defer mapping the window and
+        lose the requested position: the window manager then places it
+        at its own spot. If wx reports another geometry than requested,
+        send the position again while the window is not mapped yet (see
+        docs/WINDOW_GEOMETRY.md). wx passes a position on only when it
+        differs from its own, hence the step aside."""
+        if not self._positions_known or self.position is None:
+            return
+        pos = self._window.GetPosition()
+        size = self._window.GetSize()
+        if ((pos.x, pos.y), (size.width, size.height)) == (
+            self.position,
+            self._requested_size,
+        ):
+            return
+        x, y = self.position
+        self._trace("request lost before the show: position sent again")
+        if (pos.x, pos.y) == (x, y):
+            self._request(self._window.SetPosition, wx.Point(x + 1, y))
+        self._request(self._window.SetPosition, wx.Point(x, y))
+
+    def _on_geometry_event(self, name):
+        """Moves and resizes are the platform's while placing, a change
+        only restarting the quiet period; the user's once placed."""
+        if self._tracing:
+            self._trace("%s: %s" % (name, self._window_state()))
+        if self.ready:
             self.cache_from_window()
+            return
+        pos = self._window.GetPosition()
+        size = self._window.GetSize()
+        seen = (pos.x, pos.y, size.width, size.height)
+        seen += (self._window.IsMaximized(),)
+        changed, self._seen = seen != self._seen, seen
+        # Not before the show, not ours, and not a layout that changed
+        # nothing (SendSizeEvent())
+        if self._step_started is None or self._requesting or not changed:
+            return
+        answer = time.perf_counter() - self._requested_at
+        self._slowest_answer = max(self._slowest_answer, answer)
+        self._wait_until_quiet()
+
+    def _on_move(self, event):
+        self._on_geometry_event("EVT_MOVE")
         event.Skip()
 
     def _on_size(self, event):
-        """Handle window resize. Confirms size change."""
-        if not self.ready:
-            self.size_confirmed = True
-            self.check_and_correct()
-        else:
-            self.cache_from_window()
+        if self._tracing:
+            self._resized_at = time.perf_counter()
+        self._on_geometry_event("EVT_SIZE")
         event.Skip()
 
     def _on_maximize(self, event):
-        """Handle maximize/restore."""
-        _log_debug(f"EVT_MAXIMIZE: IsMaximized={self._window.IsMaximized()}")
-        if not self.ready:
-            self.check_and_correct()
-        else:
-            self.cache_from_window()
+        self._on_geometry_event("EVT_MAXIMIZE")
+        event.Skip()
+
+    def _on_iconize(self, event):
+        if self._tracing:
+            self._trace("EVT_ICONIZE iconized=%s" % event.IsIconized())
+        if self._maximize_on_restore and not event.IsIconized():
+            self._maximize_on_restore = False
+            if not self._window.IsMaximized():
+                self._trace("restored: Maximize()", always=True)
+                self._request(self._window.Maximize)
+        if not self.ready and not event.IsIconized():
+            if self._step_started is not None:
+                self._step_started = time.perf_counter()
+                self._requested_at = self._step_started
+                if self._phase == "maximizing":
+                    self._request_maximize()
+                self._wait_until_quiet()
         event.Skip()
 
     def _on_idle(self, event):
-        """Handle idle event. Check ready conditions here.
-
-        Ready when: IsActive() AND position_confirmed AND size_confirmed
-                    AND (state empty OR position/size achieved)
-        """
-        if self.ready:
-            event.Skip()
-            return
-
-        # All conditions must be met
-        if not self._window.IsActive():
-            event.Skip()
-            return
-        if not self.position_confirmed or not self.size_confirmed:
-            event.Skip()
-            return
-
-        # Check for errors (iconized/maximized unexpectedly)
-        if self._window.IsIconized() or self._window.IsMaximized():
-            event.Skip()
-            return
-
-        # Check if state empty or position/size achieved
-        state_empty = self.position is None and self.size is None
-        if state_empty:
-            self._mark_ready()
-        else:
-            pos = self._window.GetPosition()
-            size = self._window.GetSize()
-            pos_ok = self.position is None or (pos.x == self.position[0] and pos.y == self.position[1])
-            size_ok = self.size is None or (size.width == self.size[0] and size.height == self.size[1])
-            if pos_ok and size_ok:
-                self._mark_ready()
-
+        """Trace the cost of the last resize (layout and paint)."""
         event.Skip()
+        if self._tracing and self._resized_at is not None:
+            self._trace(
+                "idle %.0f ms after the last EVT_SIZE (layout and paint)"
+                % ((time.perf_counter() - self._resized_at) * 1000)
+            )
+            self._resized_at = None
 
-    # === Geometry validation ===
+    # === Monitors ===
 
-    def _validate_geometry(self, x, y, width, height):
-        """Validate position and size fit on a monitor. Returns (x, y, w, h) or None."""
-        num_displays = wx.Display.GetCount()
-        _log_debug(f"_validate_geometry: checking pos=({x}, {y}) size=({width}, {height}) against {num_displays} monitors")
-
-        for i in range(num_displays):
+    def _monitors(self):
+        """(geometry, work area) of each monitor, as tuples."""
+        monitors = []
+        for i in range(wx.Display.GetCount()):
             display = wx.Display(i)
-            geometry = display.GetGeometry()
-            work_area = display.GetClientArea()  # Excludes taskbar
-            _log_debug(f"  Monitor {i}: geometry={geometry.width}x{geometry.height} work_area={work_area.width}x{work_area.height}")
-
-            # Check if position is reasonably within this monitor
-            if (geometry.x - width + 100 <= x <= geometry.x + geometry.width - 100 and
-                geometry.y <= y <= geometry.y + geometry.height - 100):
-
-                # Check if size fits on this monitor's work area
-                if width > work_area.width or height > work_area.height:
-                    _log_debug(f"  Size ({width}x{height}) too big for monitor {i} work area ({work_area.width}x{work_area.height})")
-                    return None  # Size doesn't fit - clear state
-
-                _log_debug(f"  Geometry valid for monitor {i}")
-                return (x, y, width, height)
-
-        _log_debug(f"  Position ({x}, {y}) not valid for any monitor")
-        return None
-
-    # === Debug logging ===
-
-    def _start_position_logging(self):
-        """Start position logging for debugging."""
-        self._pos_log_start_time = time.time()
-        self._log_position_tick()
-
-    def _log_position_tick(self):
-        """Log current position until ready."""
-        if not self._window or self.ready:
-            self._pos_log_timer = None
-            return
-
-        elapsed = time.time() - self._pos_log_start_time
-        pos = self._window.GetPosition()
-        size = self._window.GetSize()
-        is_max = self._window.IsMaximized()
-
-        _log_debug(f"POS_LOG [{elapsed:.2f}s]: pos=({pos.x}, {pos.y}) size=({size.width}, {size.height}) max={is_max}")
-
-        # Schedule next tick
-        interval = 50 if elapsed < 1.0 else 500
-        if elapsed < 10.0:
-            self._pos_log_timer = wx.CallLater(interval, self._log_position_tick)
+            geometry = tuple(display.GetGeometry())
+            work_area = tuple(display.GetClientArea())  # Excludes taskbar
+            self._trace(
+                "monitor %d: %s, work area %s" % (i, geometry, work_area)
+            )
+            monitors.append((geometry, work_area))
+        return monitors
 
 
 class WindowDimensionsTracker(WindowGeometryTracker):
@@ -565,10 +664,16 @@ class WindowDimensionsTracker(WindowGeometryTracker):
 
         # Handle start iconized setting (Task Coach specific)
         if self._should_start_iconized():
+            self._trace("start iconized: Show() then Iconize(True)")
             if operating_system.isMac() or operating_system.isGTK():
                 self._window.Show()
             self._window.Iconize(True)
-            if not operating_system.isMac() and self._get_setting("hidewheniconized"):
+            # Minimizing a window not shown yet drops the Maximize()
+            # asked before the show (wxMSW)
+            self._maximize_on_restore = self._direct and self.maximized
+            if not operating_system.isMac() and self._get_setting(
+                "hidewheniconized"
+            ):
                 wx.CallAfter(self._window.Hide)
 
     def _should_start_iconized(self):

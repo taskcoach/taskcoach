@@ -7,6 +7,7 @@ This document covers AUI-related topics for Task Coach, which uses wxPython's AG
 1. [Layout Persistence](#layout-persistence)
    - [Pane Names Carry Instance Numbers](#pane-names-carry-instance-numbers)
    - [AUI-Generated Panes](#aui-generated-panes)
+   - [Planned: Fit Floating Panes to the Monitors](#planned-fit-floating-panes-to-the-monitors)
 2. [Sash Cursor Seep-Through Fix](#sash-cursor-seep-through-fix)
 3. [System Colour Change Event](#system-colour-change-event)
 4. [Related Documentation](#related-documentation)
@@ -167,6 +168,19 @@ Task Coach viewer names follow this pattern:
 
 The name is determined by `viewer.settingsSection()` in `taskcoachlib/gui/viewer/base.py`.
 
+### Planned: Fit Floating Panes to the Monitors
+
+The perspective stores each floating pane's position and size, and
+`LoadPerspective()` restores them as saved, whatever the current
+monitors: a pane saved on a monitor that is gone can open off screen.
+Plan: after `LoadPerspective()`, pass each floating pane's rect through
+the shared `restore_rect()`
+([WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md#planned-refactoring)) and set
+the result with `FloatingPosition()` and `FloatingSize()` before
+`Update()`. This adapts the loaded geometry only; it does not validate
+the perspective string
+([Best Practice](#best-practice-trust-auis-built-in-mismatch-handling)).
+
 ### Related Files
 
 | File | Purpose |
@@ -230,7 +244,7 @@ notebooks) still consumes it.
 ## Related Documentation
 
 - **[AUI Wayland Issues](AUI_WAYLAND_ISSUES.md)** - Docking problems on Wayland display servers
-- **[Window Position Persistence Analysis](WINDOW_POSITION_PERSISTENCE_ANALYSIS.md)** - Related window position tracking
+- **[Window Geometry](WINDOW_GEOMETRY.md)** - Size and position of the main window and editors
 
 ## External References
 
