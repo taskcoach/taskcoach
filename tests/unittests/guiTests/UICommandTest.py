@@ -554,9 +554,6 @@ class OpenAllAttachmentsTest(test.TestCase):
             def open(self, attachmentBase):  # pylint: disable=W0613
                 self.openCalled = True
 
-            def isDeleted(self):
-                return False
-
         dummyAttachment1 = DummyAttachment()
         dummyAttachment2 = DummyAttachment()
         self.viewer.selection[0].addAttachment(dummyAttachment1)

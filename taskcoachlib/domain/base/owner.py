@@ -92,11 +92,7 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
         ownedObjects = getattr(
             instance, "_%s__%ss" % (name, klass.__ownedType__.lower())
         )
-        result = [
-            ownedObject
-            for ownedObject in ownedObjects
-            if not ownedObject.isDeleted()
-        ]
+        result = list(ownedObjects)
         if recursive:
             for ownedObject in result[:]:
                 result.extend(ownedObject.children(recursive=True))

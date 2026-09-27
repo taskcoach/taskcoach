@@ -28,7 +28,7 @@ from taskcoachlib.gui.toplevelcontroller import (
     create_toplevel_controller,
 )
 from taskcoachlib.i18n import _
-from taskcoachlib.domain import base, task
+from taskcoachlib.domain import task
 from pubsub import pub
 import wx.adv
 from .icons.icon_library import icon_catalog, LIST_ICON_SIZE
@@ -106,9 +106,9 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         pub.subscribe(
             self.on_tracking_changed, task.Task.trackingChangedEventType()
         )
-        pub.subscribe(
+        self.registerObserver(
             self.on_change_due_date_time,
-            task.Task.dueDateTimeChangedEventType(),
+            eventType=task.Task.dueDateTimeChangedEventType(),
         )
         # When the user chances the due soon hours preferences it may cause
         # a task to change appearance. That also means the number of due soon
@@ -118,7 +118,7 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         # do. When that happens the tasks haven't changed their status yet and
         # we would use the wrong status count.
         self.registerObserver(
-            self.on_change_due_date_time_deprecated,
+            self.on_change_due_date_time,
             eventType=task.Task.appearanceChangedEventType(),
         )
         if operating_system.isGTK():
@@ -188,12 +188,7 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
     def on_change_subject(self, event):  # pylint: disable=W0613
         self.__set_tooltip_text()
 
-    def on_change_due_date_time(
-        self, newValue, sender
-    ):  # pylint: disable=W0613
-        self.__set_tooltip_text()
-
-    def on_change_due_date_time_deprecated(self, event):
+    def on_change_due_date_time(self, event):  # pylint: disable=W0613
         self.__set_tooltip_text()
 
     def on_every_second(self):
@@ -383,7 +378,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         self.__window = mainwindow
         self.__toplevel = None
         self.__task_list = taskList
-        self.__trackable_tasks = base.filter.DeletedFilter(taskList)
+        self.__trackable_tasks = taskList
         self.__settings = settings
         self.__menu_rebuild_pending = False
 
@@ -442,20 +437,20 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         pub.subscribe(
             self.on_tracking_changed, task.Task.trackingChangedEventType()
         )
-        pub.subscribe(
+        self.registerObserver(
             self.on_change_due_date_time,
-            task.Task.dueDateTimeChangedEventType(),
+            eventType=task.Task.dueDateTimeChangedEventType(),
         )
         self.registerObserver(
-            self.on_change_due_date_time_deprecated,
+            self.on_change_due_date_time,
             eventType=task.Task.appearanceChangedEventType(),
         )
         # The tray host shows the GTK menu, so it cannot be filled when
         # it opens: rebuild it when what it lists changes (besides adds
         # and removes above)
-        pub.subscribe(
+        self.registerObserver(
             self._on_completion_changed,
-            task.Task.completionDateTimeChangedEventType(),
+            eventType=task.Task.completionDateTimeChangedEventType(),
         )
         self.registerObserver(
             self._on_any_subject_changed,
@@ -472,9 +467,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         self.__start_or_stop_ticking()
         self._rebuild_gtk_menu()  # Update menu with new task list
 
-    def _on_completion_changed(
-        self, newValue, sender
-    ):  # pylint: disable=W0613
+    def _on_completion_changed(self, event):  # pylint: disable=W0613
         self._rebuild_gtk_menu()
 
     def _on_any_subject_changed(self, event):  # pylint: disable=W0613
@@ -503,12 +496,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         self.__set_tooltip_text()
         self._rebuild_gtk_menu()  # Update menu with new task subject
 
-    def on_change_due_date_time(
-        self, newValue, sender
-    ):  # pylint: disable=W0613
-        self.__set_tooltip_text()
-
-    def on_change_due_date_time_deprecated(self, event):
+    def on_change_due_date_time(self, event):  # pylint: disable=W0613
         self.__set_tooltip_text()
 
     def on_every_second(self):
@@ -842,10 +830,9 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
                 max_stop = stop
                 most_recent_task = effort.task()
 
-        # Only return if task is not completed and not deleted
+        # Only return if task is not completed
         if most_recent_task and not most_recent_task.completed():
-            if not getattr(most_recent_task, "isDeleted", lambda: False)():
-                return most_recent_task
+            return most_recent_task
         return None
 
     # Getters:

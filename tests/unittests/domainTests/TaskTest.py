@@ -36,11 +36,11 @@ class TaskTestCase(test.TestCase):
     @staticmethod
     def run_scheduler_tick(*tasks):
         """Statuses and their icons are recomputed by the scheduler's
-        per-second tick (docs/SCHEDULERS.md)."""
+        full loop (docs/SCHEDULERS.md)."""
         from taskcoachlib.gui.scheduler import MasterScheduler
 
         for each in tasks:
-            MasterScheduler._process_task(each, date.Now(), False)
+            MasterScheduler._process_task(each, date.Now())
 
     def labelTaskChildrenAndEffort(self, parentTask, taskLabel):
         for childIndex, child in enumerate(parentTask.children()):
@@ -107,6 +107,17 @@ class TaskTestCase(test.TestCase):
     def assertEvent(self, *expectedEventArgs):
         self.assertEqual([patterns.Event(*expectedEventArgs)], self.events)
 
+    def record_changes(self, event_type):
+        """Record (value, source) for each change of the event type."""
+        self.changes = []
+        patterns.Publisher().registerObserver(
+            self.on_change, eventType=event_type
+        )
+
+    def on_change(self, event):
+        for source in event.sources():
+            self.changes.append((event.value(source), source))
+
 
 class CommonTaskTestsMixin(asserts.TaskAssertsMixin):
     """These tests should succeed for all tasks, regardless of state."""
@@ -118,11 +129,6 @@ class CommonTaskTestsMixin(asserts.TaskAssertsMixin):
     def testCopy_IdIsDifferent(self):
         copy = self.task.copy()
         self.assertNotEqual(copy.id(), self.task.id())
-
-    def testCopy_statusIsNew(self):
-        self.task.markDeleted()
-        copy = self.task.copy()
-        self.assertEqual(copy.getStatus(), copy.STATUS_NEW)
 
 
 class NoBudgetTestsMixin(object):
@@ -287,28 +293,14 @@ class DefaultTaskStateTest(
             )
 
     def testSetPlannedStartDateTimeNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(
-            onEvent, task.Task.plannedStartDateTimeChangedEventType()
-        )
+        self.record_changes(task.Task.plannedStartDateTimeChangedEventType())
         self.task.setPlannedStartDateTime(self.yesterday)
-        self.assertEqual((self.yesterday, self.task), events[0])
+        self.assertEqual((self.yesterday, self.task), self.changes[0])
 
     def testSetPlannedStartDateTimeUnchangedCausesNoNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(
-            onEvent, task.Task.plannedStartDateTimeChangedEventType()
-        )
+        self.record_changes(task.Task.plannedStartDateTimeChangedEventType())
         self.task.setPlannedStartDateTime(self.task.plannedStartDateTime())
-        self.assertFalse(events)
+        self.assertFalse(self.changes)
 
     def testSetFuturePlannedStartDateTimeChangesIcon(self):
         self.task.setPlannedStartDateTime(self.tomorrow)
@@ -337,24 +329,14 @@ class DefaultTaskStateTest(
             )
 
     def testSetActualStartDateTimeNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.actualStartDateTimeChangedEventType())
+        self.record_changes(task.Task.actualStartDateTimeChangedEventType())
         self.task.setActualStartDateTime(self.yesterday)
-        self.assertEqual((self.yesterday, self.task), events[0])
+        self.assertEqual((self.yesterday, self.task), self.changes[0])
 
     def testSetActualStartDateTimeUnchangedCausesNoNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.actualStartDateTimeChangedEventType())
+        self.record_changes(task.Task.actualStartDateTimeChangedEventType())
         self.task.setActualStartDateTime(self.task.actualStartDateTime())
-        self.assertFalse(events)
+        self.assertFalse(self.changes)
 
     def testSetDueDateTime(self):
         self.task.setDueDateTime(self.tomorrow)
@@ -364,24 +346,14 @@ class DefaultTaskStateTest(
             )
 
     def testSetDueDateTimeNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.dueDateTimeChangedEventType())
+        self.record_changes(task.Task.dueDateTimeChangedEventType())
         self.task.setDueDateTime(self.tomorrow)
-        self.assertEqual((self.tomorrow, self.task), events[0])
+        self.assertEqual((self.tomorrow, self.task), self.changes[0])
 
     def testSetDueDateTimeUnchangedCausesNoNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.dueDateTimeChangedEventType())
+        self.record_changes(task.Task.dueDateTimeChangedEventType())
         self.task.setDueDateTime(self.task.dueDateTime())
-        self.assertFalse(events)
+        self.assertFalse(self.changes)
 
     def testIconChangedAfterSetDueDateTimeHasPassed(self):
         self.task.setDueDateTime(self.tomorrow)
@@ -429,25 +401,15 @@ class DefaultTaskStateTest(
             )
 
     def testSetCompletionDateTimeNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.completionDateTimeChangedEventType())
+        self.record_changes(task.Task.completionDateTimeChangedEventType())
         now = date.Now()
         self.task.setCompletionDateTime(now)
-        self.assertEqual([(now, self.task)], events)
+        self.assertEqual([(now, self.task)], self.changes)
 
     def testSetCompletionDateTimeUnchangedCausesNoNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.completionDateTimeChangedEventType())
+        self.record_changes(task.Task.completionDateTimeChangedEventType())
         self.task.setCompletionDateTime(date.DateTime())
-        self.assertFalse(events)
+        self.assertFalse(self.changes)
 
     def testSetCompletionDateTimeMakesTaskCompleted(self):
         self.task.setCompletionDateTime()
@@ -1016,7 +978,7 @@ class DefaultTaskStateTest(
         state = self.task.__getstate__()
         self.task.setReminder(date.DateTime.now() + date.TimeDelta(seconds=10))
         self.task.__setstate__(state)
-        self.assertFalse(self.task.reminder())
+        self.assertEqual(date.DateTime(), self.task.reminder())
 
     def testTaskStateIncludesPlannedStartDateTime(self):
         previousPlannedStartDateTime = self.task.plannedStartDateTime()
@@ -1090,6 +1052,95 @@ class DefaultTaskStateTest(
             ],
             self.task.modificationEventTypes(),
         )
+
+
+class TimerSecondsTest(TaskTestCase):
+    """Each timer second is the first second at which a rule of
+    compute_status() or processReminder() holds
+    (docs/MASTER_SCHEDULER_REFACTOR.md)."""
+
+    moment = date.DateTime(2026, 9, 27, 12, 0, 0)
+
+    def setUp(self):
+        super().setUp()
+        self.hours = self.settings.getint("behavior", "duesoonhours")
+
+    def status_at(self, moment):
+        self.task.compute_stored_status(moment)
+        return self.task.computedStatus()
+
+    def assert_starts_at(self, expected_status, second):
+        before = second - date.ONE_SECOND
+        self.assertNotEqual(expected_status, self.status_at(before))
+        self.assertEqual(expected_status, self.status_at(second))
+
+    def timer_second(self, index):
+        return self.task.timer_seconds(self.hours)[index]
+
+    def test_late_from_the_second_after_the_planned_start(self):
+        self.task.setPlannedStartDateTime(self.moment)
+        self.assertEqual(self.moment + date.ONE_SECOND, self.timer_second(0))
+        self.assert_starts_at(task.status.late, self.timer_second(0))
+
+    def test_active_from_the_actual_start(self):
+        self.task.setActualStartDateTime(self.moment)
+        self.assertEqual(self.moment, self.timer_second(1))
+        self.assert_starts_at(task.status.active, self.timer_second(1))
+
+    def test_due_soon_from_the_second_after_due_less_the_hours(self):
+        self.task.setDueDateTime(self.moment)
+        due_soon = self.moment - date.TimeDelta(hours=self.hours)
+        self.assertEqual(due_soon + date.ONE_SECOND, self.timer_second(2))
+        self.assert_starts_at(task.status.duesoon, self.timer_second(2))
+
+    def test_overdue_from_the_second_after_the_due(self):
+        self.task.setDueDateTime(self.moment)
+        self.assertEqual(self.moment + date.ONE_SECOND, self.timer_second(3))
+        self.assert_starts_at(task.status.overdue, self.timer_second(3))
+
+    def test_reminder_fires_from_its_second(self):
+        self.task.setReminder(self.moment)
+        second = self.timer_second(4)
+        self.registerObserver("task.reminder.trigger")
+        self.task.processReminder(second - date.ONE_SECOND)
+        self.assertEqual([], self.events)
+        self.task.processReminder(second)
+        self.assertEqual(1, len(self.events))
+
+    def test_dates_not_set_give_seconds_never_reached(self):
+        seconds = self.task.timer_seconds(self.hours)
+        self.assertEqual(date.DateTime(), max(seconds))
+        self.assertLess(date.DateTime(9999, 12, 1), min(seconds))
+
+    def test_a_completed_task_keeps_its_seconds(self):
+        self.task.setDueDateTime(self.moment)
+        self.task.setCompletionDateTime(self.moment)
+        self.assertEqual(self.moment + date.ONE_SECOND, self.timer_second(3))
+
+
+class NotSetIsTheLatestDateTest(TaskTestCase):
+    """A date not set is the latest date, never None
+    (docs/ATTRIBUTE_PATTERN.md)."""
+
+    def test_date_setters_take_none_as_not_set(self):
+        for setter, getter in (
+            ("setPlannedStartDateTime", "plannedStartDateTime"),
+            ("setDueDateTime", "dueDateTime"),
+            ("setActualStartDateTime", "actualStartDateTime"),
+            ("setReminder", "reminder"),
+        ):
+            getattr(self.task, setter)(date.Now())
+            getattr(self.task, setter)(None)
+            self.assertEqual(date.DateTime(), getattr(self.task, getter)())
+
+    def test_reminder_of_a_tree_without_any_is_the_latest_date(self):
+        self.task.addChild(task.Task(subject="child"))
+        self.assertEqual(date.DateTime(), self.task.reminder(recursive=True))
+
+    def test_clearing_an_unset_reminder_sends_nothing(self):
+        self.record_changes(self.task.reminderChangedEventType())
+        self.task.setReminder(None)
+        self.assertEqual([], self.changes)
 
 
 class TaskDueTodayTest(TaskTestCase, CommonTaskTestsMixin):
@@ -1919,16 +1970,11 @@ class TaskWithChildTest(
         self.assertEqual(now, self.task1.dueDateTime(recursive=True))
 
     def testNotificationWhenRecursiveDueDateTimeChanges(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.dueDateTimeChangedEventType())
+        self.record_changes(task.Task.dueDateTimeChangedEventType())
         now = date.Now()
         self.task1_1.setDueDateTime(now)
         self.assertEqual(
-            set([(now, self.task1), (now, self.task1_1)]), set(events)
+            set([(now, self.task1), (now, self.task1_1)]), set(self.changes)
         )
 
     def testRecursiveDueDateTimeWhenChildDueTodayAndCompleted(self):
@@ -1973,18 +2019,11 @@ class TaskWithChildTest(
         )
 
     def testNotificationWhenRecursivePlannedStartDateTimeChanges(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(
-            onEvent, task.Task.plannedStartDateTimeChangedEventType()
-        )
+        self.record_changes(task.Task.plannedStartDateTimeChangedEventType())
         now = date.Now()
         self.task1_1.setPlannedStartDateTime(now)
         self.assertEqual(
-            set([(now, self.task1), (now, self.task1_1)]), set(events)
+            set([(now, self.task1), (now, self.task1_1)]), set(self.changes)
         )
 
     def testRecursivePlannedStartDateTimeWhenChildStartsYesterday(self):
@@ -2001,16 +2040,11 @@ class TaskWithChildTest(
         )
 
     def testNotificationWhenRecursiveActualStartDateTimeChanges(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.actualStartDateTimeChangedEventType())
+        self.record_changes(task.Task.actualStartDateTimeChangedEventType())
         now = date.Now()
         self.task1_1.setActualStartDateTime(now)
         self.assertEqual(
-            set([(now, self.task1), (now, self.task1_1)]), set(events)
+            set([(now, self.task1), (now, self.task1_1)]), set(self.changes)
         )
 
     def testRecursiveActualStartDateTimeWhenChildStartsYesterday(self):
@@ -2030,16 +2064,11 @@ class TaskWithChildTest(
 
     def testNotificationWhenRecursiveCompletionDateTimeChanges(self):
         self.task1_1.setCompletionDateTime(self.yesterday)
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.completionDateTimeChangedEventType())
+        self.record_changes(task.Task.completionDateTimeChangedEventType())
         now = date.Now()
         self.task1_1.setCompletionDateTime(now)
         self.assertEqual(
-            set([(now, self.task1), (now, self.task1_1)]), set(events)
+            set([(now, self.task1), (now, self.task1_1)]), set(self.changes)
         )
 
     def testRecursiveCompletionDateTimeWhenChildIsCompletedYesterday(self):
@@ -2049,16 +2078,21 @@ class TaskWithChildTest(
         self.assertEqual(now, self.task1.completionDateTime(recursive=True))
 
     def testNotificationWhenRecursiveReminderDateTimeChanges(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.reminderChangedEventType())
+        self.record_changes(task.Task.reminderChangedEventType())
         now = date.Now()
         self.task1_1.setReminder(now)
         self.assertEqual(
-            set([(now, self.task1), (now, self.task1_1)]), set(events)
+            set([(now, self.task1), (now, self.task1_1)]), set(self.changes)
+        )
+
+    def test_snoozing_a_child_reminder_notifies_its_parent_too(self):
+        self.record_changes(task.Task.reminderChangedEventType())
+        now = date.Now()
+        self.task1_1.snooze_reminder(date.ONE_HOUR, now=lambda: now)
+        snoozed = now + date.ONE_HOUR
+        self.assertEqual(
+            set([(snoozed, self.task1), (snoozed, self.task1_1)]),
+            set(self.changes),
         )
 
     def testNotAllChildrenAreCompleted(self):
@@ -2997,32 +3031,35 @@ class TaskReminderTestCase(TaskTestCase, CommonTaskTestsMixin):
 
     def testCancelReminder(self):
         self.task.setReminder()
-        self.assertReminder(None)
+        self.assertReminder(date.DateTime())
 
     def testSnoozeReminder(self):
         snoozePeriod = date.ONE_HOUR
         now = date.Now()
-        self.task.snoozeReminder(snoozePeriod, now=lambda: now)
+        self.task.snooze_reminder(snoozePeriod, now=lambda: now)
         self.assertReminder(now + snoozePeriod)
 
     def testSnoozeReminderTwice(self):
         snoozePeriod = date.ONE_HOUR
         now = date.Now()
-        self.task.snoozeReminder(snoozePeriod, now=lambda: now)
-        self.task.snoozeReminder(snoozePeriod, now=lambda: now + snoozePeriod)
+        self.task.snooze_reminder(snoozePeriod, now=lambda: now)
+        self.task.snooze_reminder(snoozePeriod, now=lambda: now + snoozePeriod)
         self.assertReminder(now + 2 * snoozePeriod)
 
     def testSnoozeWhenReminderNotSet(self):
         self.task.setReminder()
         snoozePeriod = date.ONE_HOUR
         now = date.Now()
-        self.task.snoozeReminder(snoozePeriod, now=lambda: now)
+        self.task.snooze_reminder(snoozePeriod, now=lambda: now)
         self.assertReminder(now + snoozePeriod)
 
     def testSnoozeWithZeroTimeDelta(self):
-        self.task.snoozeReminder(date.TimeDelta())
-        self.assertReminder(None)
-        self.assertEqual(None, self.task.reminder(includeSnooze=False))
+        self.task.snooze_reminder(date.TimeDelta())
+        # Not set is the latest date (docs/ATTRIBUTE_PATTERN.md)
+        self.assertReminder(date.DateTime())
+        self.assertEqual(
+            date.DateTime(), self.task.reminder(includeSnooze=False)
+        )
 
     def testOriginalReminder(self):
         self.assertEqual(
@@ -3030,50 +3067,42 @@ class TaskReminderTestCase(TaskTestCase, CommonTaskTestsMixin):
         )
 
     def testOriginalReminderAfterSnooze(self):
-        self.task.snoozeReminder(date.ONE_HOUR)
+        self.task.snooze_reminder(date.ONE_HOUR)
         self.assertEqual(
             self.initialReminder(), self.task.reminder(includeSnooze=False)
         )
 
     def testOriginalReminderAfterTwoSnoozes(self):
-        self.task.snoozeReminder(date.ONE_HOUR)
-        self.task.snoozeReminder(date.ONE_HOUR)
+        self.task.snooze_reminder(date.ONE_HOUR)
+        self.task.snooze_reminder(date.ONE_HOUR)
         self.assertEqual(
             self.initialReminder(), self.task.reminder(includeSnooze=False)
         )
 
     def testOriginalReminderAfterCancel(self):
         self.task.setReminder(None)
-        self.assertEqual(None, self.task.reminder(includeSnooze=False))
+        self.assertEqual(
+            date.DateTime(), self.task.reminder(includeSnooze=False)
+        )
 
     def testCancelReminderWithMaxDateTime(self):
         self.task.setReminder(date.DateTime.max)
-        self.assertReminder(None)
+        self.assertReminder(date.DateTime())
 
     def testTaskNotifiesObserverOfNewReminder(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.reminderChangedEventType())
+        self.record_changes(task.Task.reminderChangedEventType())
         newReminder = self.initialReminder() + date.ONE_SECOND
         self.task.setReminder(newReminder)
-        self.assertEqual([(newReminder, self.task)], events)
+        self.assertEqual([(newReminder, self.task)], self.changes)
 
     def testNewReminderCancelsPreviousReminder(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.reminderChangedEventType())
+        self.record_changes(task.Task.reminderChangedEventType())
         self.task.setReminder()
-        self.assertEqual([(None, self.task)], events)
+        self.assertEqual([(date.DateTime(), self.task)], self.changes)
 
     def testMarkCompletedCancelsReminder(self):
         self.task.setCompletionDateTime()
-        self.assertReminder(None)
+        self.assertReminder(date.DateTime())
 
     def testRecursiveReminder(self):
         self.assertEqual(
@@ -3552,7 +3581,6 @@ class TaskSuggestedDateTimeBaseSetupAndTests(object):
             hour=now.hour,
             minute=now.minute,
             second=now.second,
-            microsecond=now.microsecond,
         )
         nextFriday = tomorrow.endOfWorkWeek().replace(**currentTimeKwArgs)
         nextMonday = (
@@ -3562,7 +3590,7 @@ class TaskSuggestedDateTimeBaseSetupAndTests(object):
         )
         startOfWorkingDayHour = self.settings.getint("view", "efforthourstart")
         startOfWorkingDayKwArgs = dict(
-            hour=startOfWorkingDayHour, minute=0, second=0, microsecond=0
+            hour=startOfWorkingDayHour, minute=0, second=0
         )
         endOfWorkingDayHour = self.settings.getint("view", "efforthourend")
         if endOfWorkingDayHour == 24:
@@ -3576,7 +3604,6 @@ class TaskSuggestedDateTimeBaseSetupAndTests(object):
             hour=endOfWorkingDayHour,
             minute=minute,
             second=second,
-            microsecond=0,
         )
         startOfWorkingDay = now.replace(**startOfWorkingDayKwArgs)
         endOfWorkingDay = now.replace(**endOfWorkingDayKwArgs)

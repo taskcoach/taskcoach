@@ -342,54 +342,6 @@ class IOControllerTest(test.TestCase):
         )
         self.assertTrue(self.showerrorCalled)
 
-    def testNothingDeleted(self):
-        self.taskFile.tasks().append(task.Task(subject="Task"))
-        self.taskFile.notes().append(note.Note(subject="Note"))
-        self.assertFalse(self.iocontroller.has_deleted_items())
-
-    def testNoteDeleted(self):
-        self.taskFile.tasks().append(task.Task(subject="Task"))
-        myNote = note.Note(subject="Note")
-        myNote.markDeleted()
-        self.taskFile.notes().append(myNote)
-        self.assertTrue(self.iocontroller.has_deleted_items())
-
-    def testTaskDeleted(self):
-        myTask = task.Task(subject="Task")
-        myTask.markDeleted()
-        self.taskFile.tasks().append(myTask)
-        self.taskFile.notes().append(note.Note(subject="Note"))
-        self.assertTrue(self.iocontroller.has_deleted_items())
-
-    def testPurgeNothing(self):
-        myTask = task.Task(subject="Task")
-        myNote = note.Note(subject="Note")
-        self.taskFile.tasks().append(myTask)
-        self.taskFile.notes().append(myNote)
-        self.iocontroller.purge_deleted_items()
-        self.assertEqual(self.taskFile.tasks(), [myTask])
-        self.assertEqual(self.taskFile.notes(), [myNote])
-
-    def testPurgeNote(self):
-        myTask = task.Task(subject="Task")
-        myNote = note.Note(subject="Note")
-        self.taskFile.tasks().append(myTask)
-        self.taskFile.notes().append(myNote)
-        myNote.markDeleted()
-        self.iocontroller.purge_deleted_items()
-        self.assertEqual(self.taskFile.tasks(), [myTask])
-        self.assertEqual(self.taskFile.notes(), [])
-
-    def testPurgeTask(self):
-        myTask = task.Task(subject="Task")
-        myNote = note.Note(subject="Note")
-        self.taskFile.tasks().append(myTask)
-        self.taskFile.notes().append(myNote)
-        myTask.markDeleted()
-        self.iocontroller.purge_deleted_items()
-        self.assertEqual(self.taskFile.tasks(), [])
-        self.assertEqual(self.taskFile.notes(), [myNote])
-
     def testMerge(self):
         mergeFile = persistence.TaskFile()
         mergeFile.setFilename(self.filename2)

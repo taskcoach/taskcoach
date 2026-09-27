@@ -227,10 +227,9 @@ class EffortViewer(
         the taskList, either individually (i.e. no aggregation), per day,
         per week, or per month."""
         aggregation = self.settings.get(self.settingsSection(), "aggregation")
-        deletedFilter = filter.DeletedFilter(taskList)
-        categoryFilter = super().createFilter(deletedFilter)
+        category_filter = super().createFilter(taskList)
         searchFilter = filter.SearchFilter(
-            self.createAggregator(categoryFilter, aggregation)
+            self.createAggregator(category_filter, aggregation)
         )
         return searchFilter
 

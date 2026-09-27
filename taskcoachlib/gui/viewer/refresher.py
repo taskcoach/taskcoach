@@ -50,7 +50,7 @@ class MinuteRefresher(patterns.Observer):
 
     def _on_minute_changed(self, event):  # pylint: disable=W0613
         """Handle the minute change the scheduler sends after its
-        per-second processing."""
+        tick's processing."""
         self.on_every_minute()
 
     def on_every_minute(self):

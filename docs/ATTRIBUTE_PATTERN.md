@@ -11,6 +11,7 @@ The domain model's change-detection and event-notification pattern.
 - [Attribute Class API](#attribute-class-api)
 - [SetAttribute Class API](#setattribute-class-api)
 - [Value Normalization](#value-normalization)
+  - [Dates: Not Set Is the Latest Date](#dates-not-set-is-the-latest-date)
 - [Setter / Callback Pattern](#setter--callback-pattern)
 - [Event Batching During Load](#event-batching-during-load)
 - [Volatile vs Persisted Attributes](#volatile-vs-persisted-attributes)
@@ -108,13 +109,16 @@ current set. Separate callbacks for add, remove, and change operations.
 ## Value Normalization
 
 **General strategy:** All Attribute fields normalize invalid, missing, zero,
-or sentinel values to `None` at the boundary (constructor, setter entry,
-XML load). This guarantees `None == None` for the equality check.
+or sentinel values to one value per logical state at the boundary
+(constructor, setter entry, XML load): `None`, except for dates, whose
+"not set" is the latest date
+([below](#dates-not-set-is-the-latest-date)). This guarantees equal
+values for equal states in the equality check.
 
 | Raw Value | Normalized | Rationale |
 |-----------|-----------|-----------|
 | `TimeDelta()` (zero duration) | `None` | "no duration set" |
-| `date.DateTime()` (maxDateTime sentinel) | `None` | "no date set" |
+| Date not set | `date.DateTime()`, the latest date | "no date set": [see below](#dates-not-set-is-the-latest-date) |
 | Missing from XML / state dict | `None` | Field not present |
 | `""` or invalid value for mode/enum fields | `None` | "no mode set" — not a silent fallback |
 
@@ -125,6 +129,59 @@ check only works reliably when the same logical state always has the same value.
 Normalization happens in the **setter**, before calling `.set()`.
 Example: `setPlannedDurationMode()` maps old mode names and rejects
 invalid values to `None` before delegating to the Attribute.
+
+### Dates: Not Set Is the Latest Date
+
+A task's planned start, due, actual start, completion and reminder are
+optional. "Not set" is the latest date, `date.DateTime()`: 9999-12-31
+23:59:59, the latest whole second (dates are whole seconds:
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#time-resolution)).
+The same value is also named `DateTime.max` and `Task.maxDateTime`.
+
+It plays two roles at once:
+
+- **Not set.** Shown blank; the date picker unchecked (its `GetValue()`
+  returns it when unchecked, and `SetValue()` takes it or `None` as
+  unchecked, [DATETIME_CONTROLS.md](DATETIME_CONTROLS.md)); not written
+  to the file, and a missing attribute reads back as it
+  ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#writer-skip-conditions));
+  skipped by exports. A task whose completion date is not set is not
+  completed.
+- **Never, infinitely far.** Being the latest date, it makes plain time
+  comparisons right without an "is it set?" case: an unset due date is
+  never passed (never overdue), an unset planned start never reached
+  (never late); tasks without a date sort last; the earliest due date
+  of the subtasks (`min`) ignores unset ones; the time left is
+  infinite (`TimeDelta.max`); an effort still running sorts as stopping
+  at the end of time.
+
+Why not `None`: it would split the two roles, and every comparison
+(status rules, sorting, earliest due date, time left) would need its
+own "is it set?" branch. The latest date gives the "never" behaviour
+from ordinary comparisons.
+
+A date typed in the picker as 9999-12-31 23:59:59 is this value: it
+shows blank and is not saved, and it means "never" either way.
+
+`DateTime.min`, the earliest date, is the counterpart for an unknown
+creation or modification time, from old files.
+
+The setters store it for `None`: `setPlannedStartDateTime()`,
+`setDueDateTime()`, `setActualStartDateTime()` and `setReminder()`
+take `None` as "not set". `setCompletionDateTime()` differs by design:
+without a date it means now (mark completed), and the latest date
+reopens the task. Over subtasks, the planned start, actual start, due
+and reminder take the earliest date, so unset ones never win; the
+completion takes the latest, so a parent not completed stays not set.
+
+Until 2026-09-27 the reminder also used `None` ("not set" after
+clearing or snoozing without a delay); it now uses the latest date as
+every other date.
+
+One place still uses `None`, for a different meaning: an effort still
+being tracked has no stop yet (`Effort.getStop()` is `None`), and
+comparisons map it to the latest date. Efforts are not in the master
+timer list, so it is left as is.
 
 ---
 

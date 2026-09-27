@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import re
 import sre_constants
 from taskcoachlib import patterns
-from taskcoachlib.domain.base import object as domainobject
 
 
 class Filter(patterns.SetDecorator):
@@ -276,26 +275,3 @@ class SearchFilter(Filter):
         if self.__searchDescription:
             text += item.description()
         return text
-
-
-class DeletedFilter(Filter):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        for eventType in [
-            domainobject.Object.markDeletedEventType(),
-            domainobject.Object.markNotDeletedEventType(),
-        ]:
-            patterns.Publisher().registerObserver(
-                self.onObjectMarkedDeletedOrNot, eventType=eventType
-            )
-
-    def detach(self):
-        patterns.Publisher().removeObserver(self.onObjectMarkedDeletedOrNot)
-        super().detach()
-
-    def onObjectMarkedDeletedOrNot(self, event):  # pylint: disable=W0613
-        self.reset()
-
-    def filter_items(self, items):
-        return [item for item in items if not item.isDeleted()]

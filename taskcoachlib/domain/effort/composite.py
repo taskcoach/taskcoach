@@ -49,9 +49,6 @@ class BaseCompositeEffort(base.BaseEffort):  # pylint: disable=W0223
     def _getEfforts(self):
         raise NotImplementedError
 
-    def markDirty(self):
-        pass  # CompositeEfforts cannot be dirty
-
     def __doRound(self, duration, rounding, roundUp):
         if rounding:
             return duration.round(seconds=rounding, alwaysUp=roundUp)

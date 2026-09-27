@@ -101,7 +101,7 @@ class ReminderController(object):
             snoozeTimeDelta = snoozeOptions.GetClientData(
                 snoozeOptions.Selection
             )
-            taskWithReminder.snoozeReminder(
+            taskWithReminder.snooze_reminder(
                 snoozeTimeDelta
             )  # Note that this is not undoable
             # Undoing the snoozing makes little sense, because it would set the

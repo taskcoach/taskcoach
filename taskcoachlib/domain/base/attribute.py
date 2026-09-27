@@ -33,15 +33,20 @@ class Attribute(object):
     def get(self):
         return self.__value
 
-    @patterns.eventSource
     def set(self, value, event=None):
         owner = self.__owner()
-        if owner is not None:
-            if value == self.__value:
-                return False
-            self.__value = value
-            self.__setEvent(owner, event)
-            return True
+        # Checked before an event is created: the master loop sets
+        # thousands of unchanged values
+        # (docs/MASTER_SCHEDULER_REFACTOR.md)
+        if owner is None or value == self.__value:
+            return False
+        return self.__change(owner, value, event=event)
+
+    @patterns.eventSource
+    def __change(self, owner, value, event=None):
+        self.__value = value
+        self.__setEvent(owner, event)
+        return True
 
 
 class SetAttribute(object):

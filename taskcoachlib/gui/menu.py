@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns, persistence, help  # pylint: disable=W0622
 from taskcoachlib.meta.debug import log_step
-from taskcoachlib.domain import base, category
+from taskcoachlib.domain import category
 from taskcoachlib.i18n import _
 from taskcoachlib.gui.newid import IdProvider
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
@@ -304,9 +304,6 @@ class FileMenu(Menu, patterns.Observer):
             uicommand.FileSaveSelection(
                 iocontroller=iocontroller, viewer=viewerContainer
             ),
-        )
-        self.appendUICommands(
-            uicommand.FilePurgeDeletedItems(iocontroller=iocontroller),
         )
         self.appendUICommands(
             None,
@@ -895,7 +892,7 @@ class TaskBarMenu(Menu):
         self.appendMenu(
             label,
             StartEffortForTaskMenu(
-                taskBarIcon, base.filter.DeletedFilter(tasks), self, label
+                taskBarIcon, tasks, self, label
             ),
             "nuvola_apps_clock",
         )

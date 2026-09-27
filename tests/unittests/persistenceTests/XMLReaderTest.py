@@ -28,7 +28,7 @@ import base64
 import sys
 import test
 from taskcoachlib import persistence, config, operating_system
-from taskcoachlib.domain import date, task
+from taskcoachlib.domain import category, date, task
 
 
 class XMLTemplateReaderTestCase(test.TestCase):
@@ -127,18 +127,18 @@ class XMLReaderTestCase(test.TestCase):
         return self.writeAndRead(xml_contents)[2]
 
     def writeAndReadGUID(self, xml_contents):
-        return self.writeAndRead(xml_contents)[5]
+        return self.writeAndRead(xml_contents)[4]
 
     def writeAndReadTasksAndCategories(self, xml_contents):
-        tasks, categories, _, _, _, _ = self.writeAndRead(xml_contents)
+        tasks, categories, _, _, _ = self.writeAndRead(xml_contents)
         return tasks, categories
 
     def writeAndReadTasksAndCategoriesAndNotes(self, xml_contents):
-        tasks, categories, notes, _, _, _ = self.writeAndRead(xml_contents)
+        tasks, categories, notes, _, _ = self.writeAndRead(xml_contents)
         return tasks, categories, notes
 
     def writeAndReadCategoriesAndNotes(self, xml_contents):
-        _, categories, notes, _, _, _ = self.writeAndRead(xml_contents)
+        _, categories, notes, _, _ = self.writeAndRead(xml_contents)
         return categories, notes
 
 
@@ -1142,11 +1142,20 @@ class XMLReaderVersion21Test(XMLReaderTestCase):
 class XMLReaderVersion22Test(XMLReaderTestCase):
     tskversion = 22
 
-    def testStatus(self):
+    def test_task_with_another_status_is_loaded(self):
         tasks = self.writeAndReadTasks(
             '<tasks><task subject="Task" status="2"></task></tasks>'
         )
-        self.assertEqual(2, tasks[0].getStatus())
+        self.assertEqual(["Task"], [each.subject() for each in tasks])
+
+    def test_task_saved_as_deleted_is_not_loaded(self):
+        # Deleted with SyncML enabled, before 2026: hidden and not
+        # restorable
+        tasks = self.writeAndReadTasks(
+            '<tasks><task subject="Kept" status="1"/>'
+            '<task subject="Deleted" status="3"/></tasks>'
+        )
+        self.assertEqual(["Kept"], [each.subject() for each in tasks])
 
 
 class XMLReaderVersion23Test(XMLReaderTestCase):
@@ -1846,6 +1855,51 @@ class XMLReaderVersion36Test(XMLReaderTestCase):
 
 class XMLReaderVersion37Test(XMLReaderTestCase):
     tskversion = 37  # New in release 1.3.23
+
+    def test_items_saved_as_deleted_are_not_loaded(self):
+        tasks, categories, notes = self.writeAndReadTasksAndCategoriesAndNotes(
+            """
+        <tasks>
+            <task id="1" subject="Kept" prerequisites="2">
+                <task id="1.1" subject="Deleted subtask" status="3"/>
+            </task>
+            <task id="2" subject="Deleted" status="3">
+                <task id="2.1" subject="Subtask of deleted"/>
+            </task>
+            <category subject="Category" categorizables="1 2 note2"/>
+            <note id="note1" subject="Kept note"/>
+            <note id="note2" subject="Deleted note" status="3"/>
+        </tasks>"""
+        )
+        self.assertEqual(["Kept"], [each.subject() for each in tasks])
+        self.assertEqual([], tasks[0].children())
+        self.assertEqual(set(), set(tasks[0].prerequisites()))
+        self.assertEqual(
+            set([tasks[0]]), set(categories[0].categorizables())
+        )
+        self.assertEqual(["Kept note"], [each.subject() for each in notes])
+
+    def test_categories_are_resolved_in_one_event(self):
+        # Filters reset on each event: one per item would be quadratic
+        self.registerObserver(category.Category.categorizableAddedEventType())
+        self.writeAndReadTasksAndCategories("""
+        <tasks>
+            <task id="1"/><task id="2"/><task id="3"/>
+            <category subject="Category" categorizables="1 2 3"/>
+        </tasks>""")
+        self.assertEqual(1, len(self.events))
+
+    def test_effort_saved_as_deleted_is_not_loaded(self):
+        tasks = self.writeAndReadTasks("""
+        <tasks>
+            <task id="1" subject="Task">
+                <effort id="e1" start="2004-01-01 10:00:00"
+                        stop="2004-01-01 11:00:00"/>
+                <effort id="e2" start="2004-01-02 10:00:00"
+                        stop="2004-01-02 11:00:00" status="3"/>
+            </task>
+        </tasks>""")
+        self.assertEqual(["e1"], [each.id() for each in tasks[0].efforts()])
 
     def testModificationDateTime(self):
         tasks = self.writeAndReadTasks("""

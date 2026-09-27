@@ -16,10 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from .object import Object, CompositeObject, SynchronizedObject
+from .object import Object, CompositeObject
 from .attribute import Attribute, SetAttribute
 from .collection import Collection
-from .filter import Filter, SearchFilter, SelectedItemsFilter, DeletedFilter
+from .filter import Filter, SearchFilter, SelectedItemsFilter
 from .sorter import Sorter, TreeSorter
 from .owner import DomainObjectOwnerMetaclass
 from .appearance import (

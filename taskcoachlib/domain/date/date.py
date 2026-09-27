@@ -32,9 +32,7 @@ class RealDate(StrftimeFix, datetime.date):
     def __sub__(self, other):
         newdate = super().__sub__(other)
         if isinstance(newdate, datetime.timedelta):
-            return timedelta.TimeDelta(
-                newdate.days, newdate.seconds, newdate.microseconds
-            )
+            return timedelta.TimeDelta(newdate.days, newdate.seconds)
         else:
             return RealDate(newdate.year, newdate.month, newdate.day)
 

@@ -46,7 +46,7 @@ class DateTimeTest(test.TestCase):
         self.assertEqual(startOfDay, noonish.startOfDay())
 
     def testEndOfDay(self):
-        endOfDay = date.DateTime(2005, 1, 1, 23, 59, 59, 999999)
+        endOfDay = date.DateTime(2005, 1, 1, 23, 59, 59)
         noonish = date.DateTime(2005, 1, 1, 12, 30, 15, 400)
         self.assertEqual(endOfDay, noonish.endOfDay())
 
@@ -66,13 +66,13 @@ class DateTimeTest(test.TestCase):
         self.assertEqual(startOfWorkWeek, sunday.startOfWorkWeek())
 
     def testEndOfWorkWeek(self):
-        endOfWorkWeek = date.DateTime(2010, 5, 7, 23, 59, 59, 999999)
-        midweek = date.DateTime(2010, 5, 5, 12, 30, 15, 200000)
+        endOfWorkWeek = date.DateTime(2010, 5, 7, 23, 59, 59)
+        midweek = date.DateTime(2010, 5, 5, 12, 30, 15)
         self.assertEqual(endOfWorkWeek, midweek.endOfWorkWeek())
 
     def testEndOfWorkWeek_OnSaturday(self):
-        endOfWorkWeek = date.DateTime(2010, 5, 7, 23, 59, 59, 999999)
-        midweek = date.DateTime(2010, 5, 1, 12, 30, 15, 200000)
+        endOfWorkWeek = date.DateTime(2010, 5, 7, 23, 59, 59)
+        midweek = date.DateTime(2010, 5, 1, 12, 30, 15)
         self.assertEqual(endOfWorkWeek, midweek.endOfWorkWeek())
 
     def testLastDayOfCurrentMonth_InFebruary2004(self):
@@ -88,4 +88,61 @@ class DateTimeTest(test.TestCase):
     def testFormat1900(self):
         self.assertEqual(
             date.DateTime(2, 5, 19, 0, 0, 0).strftime("%Y%m%d"), "20519"
+        )
+
+
+class WholeSecondsTest(test.TestCase):
+    """Dates are whole seconds, however they are made; only logs keep
+    fractions of a second (docs/MASTER_SCHEDULER_REFACTOR.md)."""
+
+    def assert_whole(self, value):
+        self.assertEqual(0, value.microsecond)
+        self.assertIsInstance(value, date.DateTime)
+
+    def test_constructor(self):
+        self.assert_whole(date.DateTime(2026, 9, 27, 14, 49, 7, 659208))
+
+    def test_keyword(self):
+        self.assert_whole(
+            date.DateTime(2026, 9, 27, 14, 49, 7, microsecond=659208)
+        )
+
+    def test_now(self):
+        self.assert_whole(date.Now())
+
+    def test_from_timestamp(self):
+        self.assert_whole(date.DateTime.fromtimestamp(1790000000.659208))
+
+    def test_from_date_time(self):
+        value = datetime.datetime(2026, 9, 27, 14, 49, 7, 659208)
+        self.assert_whole(date.DateTime.fromDateTime(value))
+
+    def test_parse(self):
+        self.assert_whole(date.parseDateTime("2026-09-27 14:49:07.659208"))
+
+    def test_arithmetic(self):
+        start = date.DateTime(2026, 9, 27, 14, 49, 7)
+        self.assert_whole(start + datetime.timedelta(microseconds=659208))
+        self.assert_whole(start - datetime.timedelta(microseconds=659208))
+
+    def test_replace(self):
+        start = date.DateTime(2026, 9, 27, 14, 49, 7)
+        self.assert_whole(start.replace(microsecond=659208))
+
+    def test_end_of_day_is_its_last_second(self):
+        self.assertEqual(
+            date.DateTime(2026, 9, 27, 23, 59, 59),
+            date.DateTime(2026, 9, 27, 12).endOfDay(),
+        )
+
+    def test_unset_date_is_the_latest_second(self):
+        self.assertEqual(date.DateTime.max, date.DateTime())
+        self.assert_whole(date.DateTime())
+
+    def test_difference_is_whole_seconds(self):
+        self.assertEqual(
+            0,
+            (
+                date.Now() - date.DateTime(2026, 1, 1, 0, 0, 0, 500000)
+            ).microseconds,
         )

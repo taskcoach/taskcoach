@@ -11,6 +11,7 @@
 5. [Performance Considerations](#performance-considerations)
 6. [Historical Context](#historical-context)
 7. [Benefits of New Architecture](#benefits-of-new-architecture)
+8. [The Master Timer List](#the-master-timer-list)
 
 ---
 
@@ -46,14 +47,17 @@
    Attribute on each task, recomputed by `MasterScheduler._process_task()`.
    The Attribute equality check suppresses notifications when the value
    hasn't changed. Removes cross-concern coupling from completion callback.
-   Same 1-second staleness tradeoff as stored status.
+   Same staleness tradeoff as stored status: the change pushes the
+   current second, so the loop runs at the next tick.
 
    **Natural cascade (no recursive search):** each task computes its
    recursive priority from its own priority and its direct children's
    already-stored recursive priorities — `max(own, max of children's
-   stored recursivePriority)`. The scheduler processes all tasks each
-   tick, so values propagate upward naturally. No tree walk needed;
-   each task only reads its immediate children's stored values.
+   stored recursivePriority)`. Values propagate upward pass by pass:
+   each pass that changes one pushes the next
+   ([the cascade ruling](MASTER_SCHEDULER_REFACTOR.md#ruling-the-cascade-runs-through-the-heap)).
+   No tree walk needed; each task only reads its immediate children's
+   stored values.
 
 ---
 
@@ -67,14 +71,14 @@ Task Coach uses scheduled/timed events for various features. This document descr
 
 | Responsibility | Mechanism | Example |
 |----------------|-----------|---------|
-| **TIME-based updates** | Scheduler (polling) | Status recomputation, reminders, styles |
+| **TIME-based updates** | Scheduler (master timer list) | Status recomputation, reminders, styles |
 | **DATA-based cascades** | Events | Parent/child auto-completion; an open child reopens its completed parent |
 
 **Why this matters:**
 
 During event handlers, `computedStatus()` may be stale (scheduler hasn't run yet). Action methods like `completed()` and `allChildrenCompleted()` must use **direct field checks** (e.g., `completionDateTime() != maxDateTime`), not `computedStatus()`.
 
-- `computedStatus()`: For UI display, filtering, reporting (updated every second by scheduler)
+- `computedStatus()`: For UI display, filtering, reporting (recomputed on each date change, and by the master loop at the seconds time changes it)
 - Direct field checks: For action logic, cascades, event handlers (always current)
 
 See also: `docs/TASK_STATUS.md` section "SSOT Principle: Action vs Display"
@@ -83,7 +87,11 @@ See also: `docs/TASK_STATUS.md` section "SSOT Principle: Action vs Display"
 
 ## Architecture
 
-The system uses a `GlobalTimer` that fires every second, and a `MasterScheduler` that handles all per-second processing. Only MasterScheduler subscribes to `timer.second` for data processing.
+The system uses a `GlobalTimer` that fires every second, and a
+`MasterScheduler` that keeps the master timer list and runs the full
+loop at the seconds it holds
+([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md)). Only
+MasterScheduler subscribes to `timer.second` for data processing.
 
 ### Core Components
 
@@ -109,7 +117,7 @@ Every 1 second (_on_tick):
 
 | Event | Subscriber | Purpose |
 |-------|------------|---------|
-| `timer.second` | `MasterScheduler` | All per-second data processing |
+| `timer.second` | `MasterScheduler` | The master timer list check; the full loop when a second is due |
 | `scheduler.date` | `ViewFilter` | Re-filter tasks at midnight, with the new day's statuses |
 | `scheduler.date` | `CalendarViewer`, `HierarchicalCalendarViewer` | Move to the new day |
 | `scheduler.date` | Viewers with columns (`ViewerWithColumns`) | Redraw relative dates ("Today", "Yesterday") |
@@ -139,7 +147,7 @@ on `scheduler.minute`). The calendars draw their "now" line on
 
 | Component | File | How It Uses Timer |
 |-----------|------|-------------------|
-| MasterScheduler | `gui/scheduler.py` | Subscribes to `timer.second`, processes all tasks and styles |
+| MasterScheduler | `gui/scheduler.py` | Subscribes to `timer.second`; runs the full loop when the master timer list holds a due second |
 | Reminder Controller | `gui/remindercontroller.py` | Subscribes to `task.reminder.trigger` event (see [REMINDERS.md](REMINDERS.md)) |
 | View Filter | `domain/task/filter.py` | `ViewFilter` subscribes to `scheduler.date`, calls `reset()` |
 | Calendar Viewers | `gui/viewer/task.py` | Subscribe to `scheduler.date` and `scheduler.minute` |
@@ -187,27 +195,34 @@ quitting the Publisher dispatches nothing; a cancelled quit resumes it.
 
 ## MasterScheduler Processing Flow
 
+The master timer list is a binary heap of the seconds not processed
+yet at which something changes: each task's time rules
+(`Task.timer_seconds()`) and the second of each data change. Its
+design, rulings and coverage are in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md).
+
 ```
 Every second (_on_second):
   Skip if no task file loaded
+  A tick earlier than the last one (clock set back): rebuild the heap
 
-  Detect date/minute changes
+  Detect minute changes
 
-  For each category:
-    computeStyles(category)
-
-  For each task:
-    if dateChanged: task.onDailyChange()
-    task.recomputeLegacyStatus()        # Legacy __status
-    task.computeStoredStatus()          # Modern __computed_status
-    task.processReminder()              # Fire trigger if due
-    computeStyles(task)
-    computeStyles(task.notes)
-    computeStyles(task.attachments)
-
-  For each global note:
-    computeStyles(note)
-    computeStyles(note.attachments)
+  Pop every entry up to now (past ones and this second's), leaving
+  the first later one; if any, run the full loop once, parents before
+  children (allItemsSorted()):
+    For each category:
+      computeStyles(category)
+    For each task:
+      task.recomputeLegacyStatus(tick)      # Legacy __status
+      task.compute_stored_status(tick)      # Modern __computed_status
+      task.processReminder(tick)            # Fire trigger if due
+      computeStyles(task)
+      computeStyles(task.notes)
+      computeStyles(task.attachments)
+    For each global note:
+      computeStyles(note)
+      computeStyles(note.attachments)
 
   if dateChanged:
     send 'scheduler.date'
@@ -215,13 +230,31 @@ Every second (_on_second):
     send 'scheduler.minute'
 ```
 
+What pushes into the heap:
+
+- A task's planned start, actual start, due or reminder changed, or
+  tasks added: their timer seconds.
+- Any change the loop reads (domain changes except subject,
+  description and expansion; the appearance settings; the system
+  theme), and the loop's own changes (statuses, styles): the current
+  tick's second, which the next tick takes with every other due entry.
+  A cascade settles one pass per second.
+- The due soon hours changed, a file opened, the clock set back: the
+  heap is rebuilt from the tasks, with a second due at once.
+
+`TASKCOACH_SCHEDULER_CHECK=1` runs the full loop every second as well
+and logs each change it makes at a second the heap did not call for
+(`[SCHEDULER] missed at ...`). Once a minute, if passes ran, a
+`[SCHEDULER]` line gives the ticks, the passes and their cost: fewer
+than 60 ticks means the UI thread was held.
+
 Each category, task and note, and each of the two events, runs
 isolated (`_run_isolated`): these steps notify listeners (viewers,
 reminder dialogs), and one failing listener must not skip the rest of
-the tick or keep the date and minute events from being sent. The
+the pass or keep the date and minute events from being sent. The
 Publisher runs each of their subscribers isolated; pypubsub messages
-sent during the processing (status changes, reminder triggers) still
-stop at their first failing listener. A failure is logged with the
+sent during the processing (status changes) still stop at their first
+failing listener. A failure is logged with the
 `[SCHEDULER]` prefix, with its traceback the first time and then a
 count every 100 repeats.
 
@@ -235,20 +268,18 @@ count every 100 repeats.
 
 1. **Single Timestamp Per Tick**: `DateTime.now()` called once, passed to all subscribers
 2. **Tuple Comparison**: MasterScheduler stores date/minute as tuples for fast integer comparison
-3. **First-Tick Detection**: `_last_date = None` runs the daily task processing on the first tick
+3. **The heap's smallest entry**: the check each second reads one value; the full loop runs only when it is due
 4. **Timestamp Reuse**: Subscribers receive timestamp parameter, no extra `now()` calls
 
 ---
 
 ## Performance Considerations
 
-If `_on_second()` ever freezes the UI with very large task files:
-
-1. **Profile first** - Don't optimize blindly. Identify actual bottlenecks before making changes.
-
-2. **Yield to event loop** - If loop iteration is the issue, yield to wx event loop every 100-200ms using `wx.SafeYield()` or `wx.GetApp().Yield()`.
-
-3. **Only if needed** - Only add yielding if there are actual cases where processing exceeds 100-200ms.
+Measured on 2026-09-27 with 2000 tasks and dates spread 20 days
+around now: the old loop cost 258 ms every second; the master timer
+list runs one pass a minute (213 ms) and 59 of 60 ticks do nothing
+([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#cost-after)).
+Profile before optimizing further.
 
 ---
 
@@ -276,9 +307,13 @@ The old system used a custom `Scheduler` class (`domain/date/scheduler.py`) that
 2. **No identity issues**: No `ScheduledMethod` equality comparisons
 3. **Simple lifecycle**: Timer starts on app start, stops on app close
 4. **Predictable**: Just check conditions, no complex event chains
-5. **Debuggable**: Easy to log what's being checked each second
+5. **Debuggable**: the check mode and the minute trace (above)
 6. **Efficient**: Single timestamp, tuple comparisons, pub/sub dispatch
 
 ---
 
+## The Master Timer List
 
+The full scan every second was replaced by the master timer list in
+2026-09: [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md),
+with the costs before and after.

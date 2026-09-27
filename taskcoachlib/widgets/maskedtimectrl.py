@@ -2892,7 +2892,9 @@ class DateTimeComboCtrl(wx.EvtHandler):
         self._suggestedValue = suggestedValue
 
         checked = value is not None
-        display_value = value if value is not None else (suggestedValue or datetime.datetime.now())
+        # Whole seconds, as every date in Task Coach
+        now = datetime.datetime.now().replace(microsecond=0)
+        display_value = value if value is not None else (suggestedValue or now)
 
         self._checkbox = wx.CheckBox(parent)
         self._checkbox.SetValue(checked)

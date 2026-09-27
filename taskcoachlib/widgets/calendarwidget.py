@@ -223,39 +223,38 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
         maxDateTime = date.DateTime()
 
         for task in self.taskList:
-            if not task.isDeleted():
+            if (
+                task.plannedStartDateTime() == maxDateTime
+                or not task.completed()
+            ):
                 if (
                     task.plannedStartDateTime() == maxDateTime
-                    or not task.completed()
+                    and not self.__showNoPlannedStartDate
                 ):
+                    continue
+
+                if (
+                    task.dueDateTime() == maxDateTime
+                    and not self.__showNoDueDate
+                ):
+                    continue
+
+                if not self.__showUnplanned:
                     if (
                         task.plannedStartDateTime() == maxDateTime
-                        and not self.__showNoPlannedStartDate
+                        and task.dueDateTime() == maxDateTime
                     ):
                         continue
 
-                    if (
-                        task.dueDateTime() == maxDateTime
-                        and not self.__showNoDueDate
-                    ):
-                        continue
+            schedule = TaskSchedule(
+                task, self.get_selected_or_normal_icon_id
+            )
+            schedules.append(schedule)
+            self.taskMap[task.id()] = schedule
 
-                    if not self.__showUnplanned:
-                        if (
-                            task.plannedStartDateTime() == maxDateTime
-                            and task.dueDateTime() == maxDateTime
-                        ):
-                            continue
-
-                schedule = TaskSchedule(
-                    task, self.get_selected_or_normal_icon_id
-                )
-                schedules.append(schedule)
-                self.taskMap[task.id()] = schedule
-
-                if task.id() == selectionId:
-                    self.__selection = [task]
-                    schedule.SetSelected(True)
+            if task.id() == selectionId:
+                self.__selection = [task]
+                schedule.SetSelected(True)
 
         self.Add(schedules)
         wx.CallAfter(self.__safeSelectCommand)
@@ -291,9 +290,7 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
 
             # Special case
 
-            if task.isDeleted():
-                doShow = False
-            elif (
+            if (
                 task.plannedStartDateTime() != date.DateTime()
                 and task.completed()
             ):

@@ -85,9 +85,13 @@ the element, not written as an empty value.
 | 166 | `priority` | `== 0` (falsy) | Falsy |
 | 168 | `hourlyFee` | `== 0` (falsy) | Falsy |
 | 170 | `fixedFee` | `== 0` (falsy) | Falsy |
-| 173 | `reminder` | `== maxDateTime` or `None` | Sentinel + None |
+| 173 | `reminder` | `== maxDateTime` | Sentinel |
 | 187 | `prerequisites` | empty string (falsy) | Falsy |
 | 189 | `shouldMarkCompleted...` | `== None` | None check |
+
+`maxDateTime` is the date not set, the latest date
+([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#dates-not-set-is-the-latest-date));
+the reader gives it back for a missing attribute.
 
 ### Recurrence Node
 
@@ -193,6 +197,12 @@ diverge, data is silently lost.
 ---
 
 ## Saving
+
+Any change to saved data marks the file unsaved, and so starts an
+autosave. A task's status is computed, not saved: the clock changing
+it marks nothing, or every status change would save and re-read the
+file ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#steps)
+item 11).
 
 `TaskFile.save()` (`persistence/taskfile.py`):
 

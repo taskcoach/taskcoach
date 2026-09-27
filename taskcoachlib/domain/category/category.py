@@ -26,7 +26,7 @@ class Category(
     """Category class for organizing tasks and notes.
 
     Appearance (derived and effective values) is handled by the base class
-    and ComputeStyles polling. No explicit calls needed.
+    and the master loop. No explicit calls needed.
     """
 
     def __init__(
@@ -60,7 +60,7 @@ class Category(
         self.__filtered = filtered
         self.__exclusiveSubcategories = exclusiveSubcategories
         self.__stylePriority = stylePriority
-        # Note: Effective appearance is computed by ComputeStyles polling
+        # Note: Effective appearance is computed by the master loop
 
     @classmethod
     def monitoredAttributes(class_):
@@ -204,7 +204,7 @@ class Category(
         """Handle appearance change event.
 
         Notifies categorizables (tasks/notes) that belong to this category.
-        Note: Effective appearance is computed by ComputeStyles polling.
+        Note: Effective appearance is computed by the master loop.
         """
         super().appearanceChangedEvent(event)
         for categorizable in self.categorizables():

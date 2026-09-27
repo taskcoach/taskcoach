@@ -235,10 +235,6 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.emptyTaskFile.tasks().append(newTask)
         self.assertTrue(self.emptyTaskFile.need_save())
 
-    def testNeedSave_AfterTaskMarkedDeleted(self):
-        self.task.markDeleted()
-        self.assertTrue(self.taskFile.need_save())
-
     def testNeedSave_AfterNewNoteAdded(self):
         newNote = note.Note(subject="Note")
         self.emptyTaskFile.notes().append(newNote)
@@ -306,6 +302,14 @@ class DirtyTaskFileTest(TaskFileTestCase):
     def testNeedSave_AfterEditTaskDueDate(self):
         self.task.setDueDateTime(date.Tomorrow())
         self.assertTrue(self.taskFile.need_save())
+
+    def test_status_changed_by_the_clock_needs_no_save(self):
+        due = date.Now() + date.ONE_HOUR
+        self.task.setDueDateTime(due)
+        self.taskFile.save()
+        self.task.compute_stored_status(due + date.ONE_SECOND)  # Overdue
+        self.assertEqual(task.status.overdue, self.task.computedStatus())
+        self.assertFalse(self.taskFile.need_save())
 
     def testNeedSave_AfterEditTaskCompletionDate(self):
         self.task.setCompletionDateTime(date.Now())
@@ -541,21 +545,6 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.note.expand()
-        self.assertTrue(self.taskFile.need_save())
-
-    def testNeedSave_AfterMarkDeleted(self):
-        self.taskFile.notes().append(self.note)
-        self.taskFile.setFilename(self.filename)
-        self.taskFile.save()
-        self.note.markDeleted()
-        self.assertTrue(self.taskFile.need_save())
-
-    def testNeedSave_AfterMarkNotDeleted(self):
-        self.taskFile.notes().append(self.note)
-        self.note.markDeleted()
-        self.taskFile.setFilename(self.filename)
-        self.taskFile.save()
-        self.note.cleanDirty()
         self.assertTrue(self.taskFile.need_save())
 
     def testLastFilename_EqualsCurrentFilenameAfterSetFilename(self):
@@ -1532,6 +1521,11 @@ class TaskFileMultiUserTestBase(object):
     def testChangeTaskDueDateTime(self):
         self._testChangeAttribute(
             "dueDateTime", date.DateTime(2011, 7, 16), "tasks"
+        )
+
+    def test_change_task_actual_start_date_time(self):
+        self._testChangeAttribute(
+            "actualStartDateTime", date.DateTime(2011, 6, 20), "tasks"
         )
 
     def testChangeTaskCompletionDateTime(self):

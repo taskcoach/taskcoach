@@ -189,12 +189,6 @@ See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) for toolbar signal details
 - Toolbar: signal-driven via `taskfile.changed` / `taskfile.dirty` / `taskfile.clean` pubsub
 - Menu: updated via `_update_menu_state()` on menu open
 
-### FilePurgeDeletedItems
-
-- No `EVT_UPDATE_UI` polling
-- `enabled()`: `iocontroller.has_deleted_items()`
-- Menu-only (no toolbar) — updated via `_update_menu_state()` on menu open
-
 ### ViewerHideTasks (task status filter buttons)
 
 - No `EVT_UPDATE_UI` polling

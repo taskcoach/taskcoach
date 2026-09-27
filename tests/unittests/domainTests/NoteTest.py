@@ -126,7 +126,6 @@ class NoteTest(test.TestCase):
                 categories=set(),
                 attachments=[],
                 children=self.note.children(),
-                status=self.note.getStatus(),
                 fgColor=None,
                 bgColor=None,
                 font=None,

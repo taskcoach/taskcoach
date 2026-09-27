@@ -25,82 +25,44 @@ from taskcoachlib import patterns
 from taskcoachlib.domain import base, date
 
 
-class SynchronizedObjectTest(test.TestCase):
+class AttributeOwner:
+    def __init__(self):
+        self.changes = 0
+        self.attribute = base.Attribute("old", self, self.on_change)
+
+    def on_change(self, event):
+        self.changes += 1
+
+
+class AttributeTest(test.TestCase):
+    """An unchanged value creates no event: the master loop sets
+    thousands of them."""
+
     def setUp(self):
-        self.object = base.SynchronizedObject()
-        self.events = []
+        self.owner = AttributeOwner()
+        self.events_created = 0
+        self.original_event_class = patterns.observer.Event
+        test_case = self
 
-    def onEvent(self, event):
-        self.events.append(event)
+        class CountingEvent(self.original_event_class):
+            def __init__(self, *args, **kwargs):
+                test_case.events_created += 1
+                super().__init__(*args, **kwargs)
 
-    def registerObserver(self, eventType):  # pylint: disable=W0221
-        patterns.Publisher().registerObserver(self.onEvent, eventType)
+        patterns.observer.Event = CountingEvent
 
-    def assertObjectStatus(self, expectedStatus):
-        self.assertEqual(expectedStatus, self.object.getStatus())
+    def tearDown(self):
+        patterns.observer.Event = self.original_event_class
+        super().tearDown()
 
-    def assertOneEventReceived(self, eventSource, eventType, *values):
-        self.assertEqual(
-            [patterns.Event(eventType, eventSource, *values)], self.events
-        )
+    def test_unchanged_value_creates_no_event(self):
+        self.assertFalse(self.owner.attribute.set("old"))
+        self.assertEqual((0, 0), (self.events_created, self.owner.changes))
 
-    def testInitialStatus(self):
-        self.assertObjectStatus(base.SynchronizedObject.STATUS_NEW)
-
-    def testMarkDeleted(self):
-        self.object.markDeleted()
-        self.assertObjectStatus(base.SynchronizedObject.STATUS_DELETED)
-
-    def testMarkDeletedNotification(self):
-        self.registerObserver(self.object.markDeletedEventType())
-        self.object.markDeleted()
-        self.assertOneEventReceived(
-            self.object,
-            self.object.markDeletedEventType(),
-            self.object.getStatus(),
-        )
-
-    def testMarkNewObjectAsNotDeleted(self):
-        self.object.cleanDirty()
-        self.assertObjectStatus(base.SynchronizedObject.STATUS_NONE)
-
-    def testMarkDeletedObjectAsUndeleted(self):
-        self.object.markDeleted()
-        self.object.cleanDirty()
-        self.assertObjectStatus(base.SynchronizedObject.STATUS_NONE)
-
-    def testMarkNotDeletedNotification(self):
-        self.object.markDeleted()
-        self.registerObserver(self.object.markNotDeletedEventType())
-        self.object.cleanDirty()
-        self.assertOneEventReceived(
-            self.object,
-            self.object.markNotDeletedEventType(),
-            self.object.getStatus(),
-        )
-
-    def testSetStateToDeletedCausesNotification(self):
-        self.object.markDeleted()
-        state = self.object.__getstate__()
-        self.object.cleanDirty()
-        self.registerObserver(self.object.markDeletedEventType())
-        self.object.__setstate__(state)
-        self.assertOneEventReceived(
-            self.object,
-            self.object.markDeletedEventType(),
-            self.object.STATUS_DELETED,
-        )
-
-    def testSetStateToNotDeletedCausesNotification(self):
-        state = self.object.__getstate__()
-        self.object.markDeleted()
-        self.registerObserver(self.object.markNotDeletedEventType())
-        self.object.__setstate__(state)
-        self.assertOneEventReceived(
-            self.object,
-            self.object.markNotDeletedEventType(),
-            self.object.STATUS_NEW,
-        )
+    def test_changed_value_calls_back_with_one_event(self):
+        self.assertTrue(self.owner.attribute.set("new"))
+        self.assertEqual("new", self.owner.attribute.get())
+        self.assertEqual((1, 1), (self.events_created, self.owner.changes))
 
 
 class ObjectSubclass(base.Object):
@@ -255,7 +217,6 @@ class ObjectTest(test.TestCase):
                 subject="",
                 description="",
                 id=self.object.id(),
-                status=self.object.getStatus(),
                 fgColor=None,
                 bgColor=None,
                 font=None,
@@ -273,7 +234,6 @@ class ObjectTest(test.TestCase):
             subject="New",
             description="New",
             id=None,
-            status=self.object.STATUS_DELETED,
             fgColor=wx.GREEN,
             bgColor=wx.RED,
             font=wx.SWISS_FONT,
@@ -291,7 +251,6 @@ class ObjectTest(test.TestCase):
             subject="New",
             description="New",
             id=None,
-            status=self.object.STATUS_DELETED,
             fgColor=wx.GREEN,
             bgColor=wx.RED,
             font=wx.SWISS_FONT,
@@ -765,72 +724,6 @@ class CompositeObjectTest(test.TestCase):
         )
         self.compositeObject.expand(context="another_viewer")
         self.assertFalse("another_viewer" in copy.expandedContexts())
-
-    def testMarkDeleted(self):
-        self.addChild()
-        patterns.Publisher().registerObserver(
-            self.onEvent, eventType=base.CompositeObject.markDeletedEventType()
-        )
-        self.compositeObject.markDeleted()
-        expectedEvent = patterns.Event(
-            base.CompositeObject.markDeletedEventType(),
-            self.compositeObject,
-            base.CompositeObject.STATUS_DELETED,
-        )
-        expectedEvent.addSource(
-            self.child, base.CompositeObject.STATUS_DELETED
-        )
-        self.assertEqual([expectedEvent], self.eventsReceived)
-
-    def testMarkDirty(self):
-        self.addChild()
-        patterns.Publisher().registerObserver(
-            self.onEvent,
-            eventType=base.CompositeObject.markNotDeletedEventType(),
-        )
-        self.compositeObject.markDeleted()
-        self.compositeObject.markDirty(force=True)
-        expectedEvent = patterns.Event(
-            base.CompositeObject.markNotDeletedEventType(),
-            self.compositeObject,
-            base.CompositeObject.STATUS_CHANGED,
-        )
-        expectedEvent.addSource(
-            self.child, base.CompositeObject.STATUS_CHANGED
-        )
-        self.assertEqual([expectedEvent], self.eventsReceived)
-
-    def testMarkNew(self):
-        self.addChild()
-        patterns.Publisher().registerObserver(
-            self.onEvent,
-            eventType=base.CompositeObject.markNotDeletedEventType(),
-        )
-        self.compositeObject.markDeleted()
-        self.compositeObject.markNew()
-        expectedEvent = patterns.Event(
-            base.CompositeObject.markNotDeletedEventType(),
-            self.compositeObject,
-            base.CompositeObject.STATUS_NEW,
-        )
-        expectedEvent.addSource(self.child, base.CompositeObject.STATUS_NEW)
-        self.assertEqual([expectedEvent], self.eventsReceived)
-
-    def testCleanDirty(self):
-        self.addChild()
-        patterns.Publisher().registerObserver(
-            self.onEvent,
-            eventType=base.CompositeObject.markNotDeletedEventType(),
-        )
-        self.compositeObject.markDeleted()
-        self.compositeObject.cleanDirty()
-        expectedEvent = patterns.Event(
-            base.CompositeObject.markNotDeletedEventType(),
-            self.compositeObject,
-            base.CompositeObject.STATUS_NONE,
-        )
-        expectedEvent.addSource(self.child, base.CompositeObject.STATUS_NONE)
-        self.assertEqual([expectedEvent], self.eventsReceived)
 
     def testModificationEventTypes(self):
         self.assertEqual(

@@ -121,7 +121,8 @@ class MainWindow(
             # Start global timer FIRST - other components subscribe to its events
             self._globalTimer = scheduler.GlobalTimer(self)
             self._globalTimer.start()
-            # MasterScheduler handles all per-second processing (status, styles, auto-complete)
+            # MasterScheduler: statuses, reminders and styles, at the
+            # seconds that change them (docs/SCHEDULERS.md)
             self._masterScheduler = scheduler.MasterScheduler(self.taskFile)
 
             self._create_viewer_container()

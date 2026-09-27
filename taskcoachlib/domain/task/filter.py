@@ -48,8 +48,8 @@ class ViewFilter(tasklist.TaskListQueryMixin, base.Filter):
                 register_observer(
                     self.on_task_status_change_deprecated, eventType=event_type
                 )
-        # Midnight processing, sent after the scheduler recomputed the
-        # task statuses for the new day
+        # Midnight processing: which tasks are included may change with
+        # the day
         register_observer(self._on_date_changed, eventType="scheduler.date")
 
     def detach(self):

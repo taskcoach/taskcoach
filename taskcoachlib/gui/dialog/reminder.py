@@ -72,9 +72,10 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
             eventType=self.taskList.removeItemEventType(),
             eventSource=self.taskList,
         )
-        pub.subscribe(
-            self.onTaskCompletionDateChanged,
-            task.completionDateTimeChangedEventType(),
+        self.registerObserver(
+            self.on_task_completion_changed,
+            eventType=task.completionDateTimeChangedEventType(),
+            eventSource=task,
         )
         pub.subscribe(self.onTrackingChanged, task.trackingChangedEventType())
         self.openTaskAfterClose = self.ignoreSnoozeOption = False
@@ -242,12 +243,11 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
         if self.task in list(event.values()):
             self.Close()
 
-    def onTaskCompletionDateChanged(self, newValue, sender):
-        if sender == self.task:
-            if self.task.completed():
-                self.Close()
-            else:
-                self.markCompleted.Enable()
+    def on_task_completion_changed(self, event):  # pylint: disable=W0613
+        if self.task.completed():
+            self.Close()
+        else:
+            self.markCompleted.Enable()
 
     def onClose(self, event):
         # Block closing during freeze period to prevent accidental dismissal
@@ -260,14 +260,8 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
             self._freezeTimer.Stop()
             self._freezeTimer = None
 
-        # Unsubscribe from pubsub events to prevent callbacks on destroyed dialog
-        try:
-            pub.unsubscribe(
-                self.onTaskCompletionDateChanged,
-                self.task.completionDateTimeChangedEventType(),
-            )
-        except Exception:
-            pass
+        # Stop listening, to prevent callbacks on the destroyed dialog
+        self.removeObserver(self.on_task_completion_changed)
         try:
             pub.unsubscribe(self.onTrackingChanged, self.task.trackingChangedEventType())
         except Exception:

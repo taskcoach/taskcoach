@@ -105,7 +105,7 @@ Sources checked in order (first non-system-theme value wins):
 
 1. **Categories** - sorted by `stylePriority` descending (via `_getFromCategories`)
 2. **Parent task** - `parent.effectiveXxx()` (via `_getFromParent`)
-3. **Status** - `statusIcon()`, `statusFgColor()`, etc. from `computeStoredStatus()`
+3. **Status** - `statusIcon()`, `statusFgColor()`, etc. from `compute_stored_status()`
 
 Source labels: `[Category] name`, `[Task] name`, `[Status] active/completed/...`
 
@@ -258,7 +258,7 @@ an `"appearance"` page).
 |------|---------|
 | `taskcoachlib/domain/base/appearance.py` | SSOT stored procedures, ComputeStyles, constants |
 | `taskcoachlib/domain/base/object.py` | SSOT accessor/setter methods on base Object |
-| `taskcoachlib/domain/task/task.py` | Task status icon/color/font, `computeStoredStatus()` |
+| `taskcoachlib/domain/task/task.py` | Task status icon/color/font, `compute_stored_status()` |
 | `taskcoachlib/domain/category/category.py` | `stylePriority` attribute |
 | `taskcoachlib/domain/categorizable/categorizable.py` | Legacy category color/font mixers |
 | `taskcoachlib/command/categoryCommands.py` | `EditStylePriorityCommand` |

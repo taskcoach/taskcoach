@@ -106,24 +106,23 @@ class XMLWriter(object):
         self.__fd = fd
         self.__versionnr = versionnr
 
-    def write(
-        self, taskList, categoryContainer, noteContainer, syncMLConfig, guid
-    ):
+    def write(self, task_list, category_container, note_container, guid):
         root = ET.Element("tasks")
 
-        for rootTask in sortedById(taskList.rootItems()):
-            self.taskNode(root, rootTask)
+        for root_task in sortedById(task_list.rootItems()):
+            self.taskNode(root, root_task)
 
-        ownedNotes = self.notesOwnedByNoteOwners(taskList, categoryContainer)
-        for rootCategory in sortedById(categoryContainer.rootItems()):
+        owned_notes = self.notesOwnedByNoteOwners(
+            task_list, category_container
+        )
+        for root_category in sortedById(category_container.rootItems()):
             self.categoryNode(
-                root, rootCategory, taskList, noteContainer, ownedNotes
+                root, root_category, task_list, note_container, owned_notes
             )
 
-        for rootNote in sortedById(noteContainer.rootItems()):
-            self.noteNode(root, rootNote)
+        for root_note in sortedById(note_container.rootItems()):
+            self.noteNode(root, root_note)
 
-        # syncMLConfig no longer written - SyncML removed
         if guid:
             ET.SubElement(root, "guid").text = guid
 
@@ -144,7 +143,6 @@ class XMLWriter(object):
     def taskNode(self, parentNode, task):  # pylint: disable=W0621
         maxDateTime = self.maxDateTime
         node = self.baseCompositeNode(parentNode, task, "task", self.taskNode)
-        node.attrib["status"] = str(task.getStatus())
         if task.plannedStartDateTime() != maxDateTime:
             node.attrib["plannedstartdate"] = str(task.plannedStartDateTime())
         if task.dueDateTime() != maxDateTime:
@@ -170,13 +168,10 @@ class XMLWriter(object):
         if task.fixedFee():
             node.attrib["fixedFee"] = str(task.fixedFee())
         reminder = task.reminder()
-        if reminder != maxDateTime and reminder != None:
+        if reminder != maxDateTime:
             node.attrib["reminder"] = str(reminder)
             reminderBeforeSnooze = task.reminder(includeSnooze=False)
-            if (
-                reminderBeforeSnooze != None
-                and reminderBeforeSnooze < task.reminder()
-            ):
+            if reminderBeforeSnooze < reminder:
                 node.attrib["reminderBeforeSnooze"] = str(reminderBeforeSnooze)
         prerequisiteIds = " ".join(
             [
@@ -220,7 +215,6 @@ class XMLWriter(object):
         formattedStart = self.formatDateTime(effort.getStart())
         attrs = dict(
             id=effort.id(),
-            status=str(effort.getStatus()),
             start=formattedStart,
         )
         stop = effort.getStop()
@@ -287,7 +281,7 @@ class XMLWriter(object):
         node = ET.SubElement(
             parentNode,
             nodeName,
-            dict(id=item.id(), status=str(item.getStatus())),
+            dict(id=item.id()),
         )
         if item.creationDateTime() > date.DateTime.min:
             node.attrib["creationDateTime"] = str(item.creationDateTime())
@@ -401,7 +395,6 @@ class TemplateXMLWriter(XMLWriter):
             task.TaskList([tsk]),
             category.CategoryList(),
             note.NoteContainer(),
-            None,
             None,
         )
 

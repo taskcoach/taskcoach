@@ -15,35 +15,94 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-MasterScheduler - Consolidated timer and per-second processing.
+MasterScheduler - the master timer list and the full loop.
 
-All periodic processing in one place:
-- Categories: style computation
-- Tasks: status updates (legacy + modern), auto-completion, reminders, styles
-- Notes: style computation
-- Date/minute change detection and UI refresh events
+The master timer list is a binary heap of the seconds not processed yet
+at which something changes: each task's time rules (late, active, due
+soon, overdue, reminder) and the second of each data change. Each
+second, if its smallest entry is due, the due entries are popped and
+the full loop runs once over all categories, tasks and notes, parents
+first: statuses, reminders, styles. The loop's own changes push the
+current second, so a cascade settles one pass per second. The date and
+minute events are sent every second.
 
-See docs/SCHEDULERS.md for full architecture documentation.
+See docs/MASTER_SCHEDULER_REFACTOR.md (design and rulings) and
+docs/SCHEDULERS.md.
 
-Key Principle: ONLY MasterScheduler subscribes to timer.second. All other
-modules get CALLED BY the scheduler - they do not have their own timer
-subscriptions, except for local UI updates and polls (effort tracking
-display, idle time, system theme, autosave retry).
-
-Performance Note:
-If _on_second() ever freezes the UI with very large task files,
-consider:
-1. First, profile to identify bottlenecks (don't optimize blindly)
-2. If loop iteration is the issue, yield to wx event loop every 100-200ms
-   using wx.SafeYield() or wx.GetApp().Yield()
-3. Only add yielding if there are actual cases where processing > 100-200ms
+Key Principle: ONLY MasterScheduler subscribes to timer.second for the
+domain. All other modules get CALLED BY the scheduler - they do not
+have their own timer subscriptions, except for local UI updates and
+polls (effort tracking display, idle time, system theme, autosave
+retry).
 """
 
+import collections
+import heapq
+import os
+import time
+
+from pubsub import pub
+
 from taskcoachlib import patterns
+from taskcoachlib.domain import attachment, base, category, effort, note
 from taskcoachlib.domain import date as datemodule
 from taskcoachlib.domain.base.appearance import computeStyles
+from taskcoachlib.domain.task import Task
 from taskcoachlib.meta.debug import log_step
 import wx
+
+# Set to run the full loop every second as well and log each change it
+# makes at a second the heap did not call for: a missed signal
+# (docs/MASTER_SCHEDULER_REFACTOR.md)
+_CHECK = os.environ.get("TASKCOACH_SCHEDULER_CHECK") == "1"
+
+# The settings sections the styles read; the others (the window
+# geometry, say) change often and the loop reads none of them
+_APPEARANCE_SETTINGS = tuple(
+    "settings.%s%s" % (section, theme)
+    for section in ("fgcolor", "bgcolor", "font", "icon")
+    for theme in ("", "_dark")
+) + ("settings.window.theme",)
+
+# The domain changes still sent on pypubsub
+_PUBSUB_TOPICS = ("pubsub.task", "pubsub.note", "pubsub.category")
+
+# The domain classes whose changes the full loop reads
+_DOMAIN_CLASSES = (
+    Task,
+    category.Category,
+    note.Note,
+    effort.Effort,
+    attachment.FileAttachment,
+    attachment.URIAttachment,
+    attachment.MailAttachment,
+)
+
+
+def _data_event_types():
+    """The Publisher change events the full loop reads: every domain
+    modification except the fields no loop step reads (typing in them
+    must not run the loop every second), and the loop's own outputs,
+    whose changes cascade (docs/MASTER_SCHEDULER_REFACTOR.md)."""
+    event_types = set()
+    for klass in _DOMAIN_CLASSES:
+        unread = set()
+        for field in ("subject", "description", "expansion"):
+            getter = getattr(klass, "%sChangedEventType" % field, None)
+            if getter:
+                unread.add(getter())
+        event_types.update(
+            event_type
+            for event_type in klass.modificationEventTypes()
+            if not event_type.startswith("pubsub")
+            and event_type not in unread
+        )
+    for kind in ("derived", "effective"):
+        for field in ("FgColor", "BgColor", "Icon", "Font"):
+            name = "%s%sChangedEventType" % (kind, field)
+            event_types.add(getattr(base.Object, name)())
+    event_types.add("system.theme_colour_changed")
+    return event_types
 
 
 class GlobalTimer:
@@ -95,16 +154,15 @@ class GlobalTimer:
 
 
 class MasterScheduler:
-    """Master scheduler for all periodic processing.
+    """The master timer list and the full loop
+    (docs/MASTER_SCHEDULER_REFACTOR.md).
 
-    Single source of truth for cross-task logic (parent auto-completion).
-    Handles time-based status updates, reminders, and style computation.
-
-    Processing order each second:
+    When the heap holds a due second, the full loop runs once, parents
+    before children:
     1. Categories: computeStyles
-    2. Tasks: status (legacy + modern), auto-complete, reminders, styles
+    2. Tasks: status (legacy + modern), reminders, styles
     3. Notes (global): computeStyles
-    4. UI refresh events (date/minute change)
+    Every second, after it: the UI refresh events (date/minute change).
     """
 
     def __init__(self, task_file):
@@ -114,63 +172,183 @@ class MasterScheduler:
             task_file: The task file to access categories, tasks, notes
         """
         self._task_file = task_file
+        self._heap = []
+        # The last tick's second, once pushed for a change since
+        self._pushed = None
+        self._last_tick = None
         self._last_date = None
         self._last_minute = None
         # The day the viewers show: the one they were drawn on
         now = datemodule.DateTime.now()
         self._shown_date = (now.year, now.month, now.day)
         self._failures = {}
+        self._in_pass = False
+        self._pass_changes = collections.Counter()
+        self._pass_costs = []  # Milliseconds, since the last trace line
+        self._ticks = 0  # Since the last trace line
+        self._observing = bool(task_file)
+        if self._observing:
+            self._rebuild()
+            self._start_observing()
         patterns.Publisher().registerObserver(
             self._on_second, eventType="timer.second"
         )
 
-    def _on_second(self, event):
-        """Master function called every second.
+    # ═══════════════════════════════════════════════════════════════════
+    # THE MASTER TIMER LIST
+    # ═══════════════════════════════════════════════════════════════════
 
-        See docs/SCHEDULERS.md for full architecture documentation.
+    def _start_observing(self):
+        register = patterns.Publisher().registerObserver
+        for event_type in (
+            Task.plannedStartDateTimeChangedEventType(),
+            Task.actualStartDateTimeChangedEventType(),
+            Task.dueDateTimeChangedEventType(),
+            Task.reminderChangedEventType(),
+        ):
+            register(self._on_task_times_changed, eventType=event_type)
+        tasks = self._task_file.tasks()
+        register(
+            self._on_tasks_added,
+            eventType=tasks.addItemEventType(),
+            eventSource=tasks,
+        )
+        register(
+            self._on_tasks_removed,
+            eventType=tasks.removeItemEventType(),
+            eventSource=tasks,
+        )
+        for collection in (
+            self._task_file.categories(),
+            self._task_file.notes(),
+        ):
+            for event_type in (
+                collection.addItemEventType(),
+                collection.removeItemEventType(),
+            ):
+                register(
+                    self._on_data_changed,
+                    eventType=event_type,
+                    eventSource=collection,
+                )
+        for event_type in _data_event_types():
+            register(self._on_data_changed, eventType=event_type)
+        for topic in _PUBSUB_TOPICS + _APPEARANCE_SETTINGS:
+            pub.subscribe(self._on_topic_changed, topic)
+        pub.subscribe(
+            self._on_due_soon_hours_changed, "settings.behavior.duesoonhours"
+        )
+
+    @staticmethod
+    def _due_soon_hours():
+        return Task.settings.getint("behavior", "duesoonhours")
+
+    def _rebuild(self):
+        """Every task's timer seconds, plus one due at once."""
+        heap = [datemodule.DateTime.min]
+        tasks = self._task_file.tasks()
+        if tasks:
+            hours = self._due_soon_hours()
+            for each in tasks:
+                heap.extend(each.timer_seconds(hours))
+        heapq.heapify(heap)
+        self._heap = heap
+        self._pushed = None
+
+    def _push_seconds(self, seconds):
+        for second in seconds:
+            heapq.heappush(self._heap, second)
+
+    def _push_changed(self, event_types):
+        """A change the full loop reads: its second is due at the next
+        tick. The loop's own changes too: a cascade settles one pass per
+        second."""
+        if self._in_pass:
+            self._pass_changes.update(event_types)
+        # The current tick's second: already passed, so the next tick
+        # takes it with every other due entry; before the first tick,
+        # the earliest second, due at once
+        second = self._last_tick or datemodule.DateTime.min
+        if second != self._pushed:
+            heapq.heappush(self._heap, second)
+            self._pushed = second
+
+    def _pop_due(self, timestamp):
+        """Pop every entry up to timestamp, past ones and this second's,
+        and stop at the first later one, which stays; return how many
+        were popped. Popped before the loop runs: what the pass pushes
+        stays for the next tick."""
+        heap = self._heap
+        count = 0
+        while heap and heap[0] <= timestamp:
+            heapq.heappop(heap)
+            count += 1
+        if count:
+            self._pushed = None
+        return count
+
+    def _on_task_times_changed(self, event):
+        # Sources: the task and its ancestors, whose seconds are already
+        # there, pushed again harmlessly
+        hours = self._due_soon_hours()
+        for source in event.sources():
+            self._push_seconds(source.timer_seconds(hours))
+
+    def _on_tasks_added(self, event):
+        # Created and loaded tasks send no date change: their seconds
+        # come from here (docs/MASTER_SCHEDULER_REFACTOR.md)
+        hours = self._due_soon_hours()
+        for added in event.values():
+            self._push_seconds(added.timer_seconds(hours))
+        self._push_changed(event.types())
+
+    def _on_tasks_removed(self, event):
+        if not self._task_file.tasks():
+            # Closed, or about to be filled by a file being opened
+            self._heap = []
+            self._pushed = None
+        self._push_changed(event.types())
+
+    def _on_data_changed(self, event):
+        self._push_changed(event.types())
+
+    def _on_topic_changed(self, topic=pub.AUTO_TOPIC, **kwargs):
+        self._push_changed((topic.getName(),))
+
+    def _on_due_soon_hours_changed(self, value):  # pylint: disable=W0613
+        # Every task's due soon second moves
+        self._rebuild()
+
+    # ═══════════════════════════════════════════════════════════════════
+    # THE TICK AND THE FULL LOOP
+    # ═══════════════════════════════════════════════════════════════════
+
+    def _on_second(self, event):
+        """Called every second: runs the full loop if the heap holds a
+        due second, then sends the date and minute events.
+
+        See docs/MASTER_SCHEDULER_REFACTOR.md.
         """
         if not self._task_file:
             return
         timestamp = event.value()
-
-        # ═══════════════════════════════════════════════════════════════
-        # TIME CHANGE DETECTION
-        # ═══════════════════════════════════════════════════════════════
-
-        date_changed = self._check_date_changed(timestamp)
-        minute_changed = self._check_minute_changed(timestamp)
-
-        # Each item and each UI refresh runs isolated: they notify
-        # listeners (viewers, dialogs), and one failing listener must
-        # not skip the rest of the tick. (A pypubsub message sent during
-        # the processing still stops at its first failing listener.)
-
-        # ═══════════════════════════════════════════════════════════════
-        # CATEGORIES
-        # ═══════════════════════════════════════════════════════════════
-
-        for category in self._task_file.categories():
-            self._run_isolated("category", computeStyles, category)
-
-        # ═══════════════════════════════════════════════════════════════
-        # TASKS
-        # ═══════════════════════════════════════════════════════════════
-
-        for task in self._task_file.tasks():
-            self._run_isolated(
-                "task", self._process_task, task, timestamp, date_changed
+        if self._last_tick is not None and timestamp < self._last_tick:
+            log_step(
+                "clock set back from %s to %s: timer list rebuilt"
+                % (self._last_tick, timestamp),
+                prefix="SCHEDULER",
             )
+            self._rebuild()
+        self._last_tick = timestamp
+        self._ticks += 1
+        self._last_date = (timestamp.year, timestamp.month, timestamp.day)
+        minute_changed = self._check_minute_changed(timestamp)
+        if minute_changed:
+            self._trace_passes()
 
-        # ═══════════════════════════════════════════════════════════════
-        # NOTES (global, not task-owned)
-        # ═══════════════════════════════════════════════════════════════
-
-        for note in self._task_file.notes():
-            self._run_isolated("note", self._process_note, note)
-
-        # ═══════════════════════════════════════════════════════════════
-        # DATE/MINUTE CHANGE PROCESSING (after all data changes)
-        # ═══════════════════════════════════════════════════════════════
+        due = self._pop_due(timestamp)
+        if due or _CHECK:
+            self._run_pass(timestamp, due)
 
         # Publisher events, so each subscriber (viewers, filters) runs
         # isolated from the others' failures. The date event is for a
@@ -187,35 +365,73 @@ class MasterScheduler:
                 patterns.Event("scheduler.minute", self, timestamp).send,
             )
 
+    def _run_pass(self, timestamp, due):
+        """The full loop, once over every object, parents first: a child
+        reads its parent's style. Each item runs isolated: it notifies
+        listeners (viewers, dialogs), and one failing listener must not
+        skip the rest of the pass. (A pypubsub message sent during the
+        pass still stops at its first failing listener.)"""
+        started = time.perf_counter()
+        self._in_pass = True
+        self._pass_changes.clear()
+        try:
+            for each in self._task_file.categories().allItemsSorted():
+                self._run_isolated("category", computeStyles, each)
+            for each in self._task_file.tasks().allItemsSorted():
+                self._run_isolated(
+                    "task", self._process_task, each, timestamp
+                )
+            for each in self._task_file.notes().allItemsSorted():
+                self._run_isolated("note", self._process_note, each)
+        finally:
+            self._in_pass = False
+        if _CHECK and not due and self._pass_changes:
+            log_step(
+                "missed at %s: %s" % (timestamp, dict(self._pass_changes)),
+                prefix="SCHEDULER",
+            )
+        self._pass_costs.append((time.perf_counter() - started) * 1000)
+
+    def _trace_passes(self):
+        """Log the passes of the last minute, if any ran, and the ticks:
+        fewer than 60 means the UI thread was held."""
+        ticks, self._ticks = self._ticks, 0
+        if not self._pass_costs:
+            return
+        costs = sorted(self._pass_costs)
+        self._pass_costs = []
+        log_step(
+            "last minute: %d ticks, %d passes, median %.0f ms, max %.0f ms;"
+            " %d tasks, %d entries waiting"
+            % (
+                ticks,
+                len(costs),
+                costs[len(costs) // 2],
+                costs[-1],
+                len(self._task_file.tasks()),
+                len(self._heap),
+            ),
+            prefix="SCHEDULER",
+        )
+
     @staticmethod
-    def _process_task(task, timestamp, date_changed):
-        # --- Daily processing (midnight) ---
-        if date_changed:
-            task.onDailyChange()
-
-        # --- Every-second processing ---
-
-        # Status updates (separate methods for legacy/modern)
+    def _process_task(task, timestamp):
+        # Statuses at the tick's second, as the timer seconds assume
         task.recomputeLegacyStatus(timestamp)  # Legacy: __status
-        task.computeStoredStatus()  # Modern: __computed_status
-
-        # Reminders
+        task.compute_stored_status(timestamp)  # Modern: __computed_status
         task.processReminder(timestamp)
-
-        # Styles
         computeStyles(task)
-
-        # Owned notes/attachments
-        for note in task.notes(recursive=True):
-            computeStyles(note)
-        for attachment in task.attachments():
-            computeStyles(attachment)
+        # Owned notes and attachments, parents first
+        for owned_note in task.notes(recursive=True):
+            computeStyles(owned_note)
+        for owned_attachment in task.attachments():
+            computeStyles(owned_attachment)
 
     @staticmethod
-    def _process_note(note):
-        computeStyles(note)
-        for attachment in note.attachments():
-            computeStyles(attachment)
+    def _process_note(note_):
+        computeStyles(note_)
+        for owned_attachment in note_.attachments():
+            computeStyles(owned_attachment)
 
     def _run_isolated(self, step, func, *args):
         """Run one step of the tick, logging a failure instead of
@@ -239,14 +455,6 @@ class MasterScheduler:
     # HELPERS
     # ═══════════════════════════════════════════════════════════════════
 
-    def _check_date_changed(self, timestamp):
-        """Check if date changed since last tick."""
-        current_date = (timestamp.year, timestamp.month, timestamp.day)
-        if self._last_date != current_date:
-            self._last_date = current_date
-            return True
-        return False
-
     def _check_minute_changed(self, timestamp):
         """Check if minute changed since last tick."""
         current_minute = (timestamp.hour, timestamp.minute)
@@ -257,6 +465,19 @@ class MasterScheduler:
 
     def shutdown(self):
         """Cleanup on application close."""
-        patterns.Publisher().removeObserver(
-            self._on_second, eventType="timer.second"
+        publisher = patterns.Publisher()
+        for handler in (
+            self._on_second,
+            self._on_task_times_changed,
+            self._on_tasks_added,
+            self._on_tasks_removed,
+            self._on_data_changed,
+        ):
+            publisher.removeObserver(handler)
+        if not self._observing:
+            return
+        for topic in _PUBSUB_TOPICS + _APPEARANCE_SETTINGS:
+            pub.unsubscribe(self._on_topic_changed, topic)
+        pub.unsubscribe(
+            self._on_due_soon_hours_changed, "settings.behavior.duesoonhours"
         )

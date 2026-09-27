@@ -197,7 +197,7 @@ class ReminderControllerTest(ReminderControllerTestCase):
         self.reminderController.onCloseReminderDialog(
             self.dummyCloseEvent(), show=False
         )
-        self.assertEqual(None, self.task.reminder())
+        self.assertEqual(date.DateTime(), self.task.reminder())
 
     def testOnCloseReminderSetsReminder(self):
         self.task.setReminder(self.reminderDateTime)

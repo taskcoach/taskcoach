@@ -150,7 +150,6 @@ def parseAndAdjustDateTime(string, *timeDefaults):
             hour=23,
             minute=59,
             second=59,
-            microsecond=999999,
         )
     return dateTime
 
@@ -176,8 +175,8 @@ class XMLReaderTooNewException(Exception):
 class XMLReader(object):
     """Class for reading task files in the default XML task file format."""
 
-    defaultStartTime = (0, 0, 0, 0)
-    defaultEndTime = (23, 59, 59, 999999)
+    defaultStartTime = (0, 0, 0)
+    defaultEndTime = (23, 59, 59)
 
     def __init__(self, fd):
         self.__fd = fd
@@ -220,8 +219,8 @@ class XMLReader(object):
         }
 
     def read(self):
-        """Read the task file and return the tasks, categories, notes, SyncML
-        configuration and GUID."""
+        """Read the task file and return the tasks, categories, notes,
+        changes and GUID."""
         if self.__has_broken_lines():
             self.__fix_broken_lines()
         parser = PIParser()
@@ -245,8 +244,8 @@ class XMLReader(object):
             categories = self.__parse_category_nodes(root)
         self.__resolve_categories(categories, tasks, notes)
 
+        # An old file's SyncML section is not read: SyncML was removed
         guid = self.__parse_guid_node(root.find("guid"))
-        syncml_config = self.__parse_syncml_node(root, guid)
 
         for (
             object,
@@ -262,7 +261,7 @@ class XMLReader(object):
         else:
             changes = dict()
 
-        return tasks, categories, notes, syncml_config, changes, guid
+        return tasks, categories, notes, changes, guid
 
     def __has_broken_lines(self):
         """tskversion 24 may contain newlines in element tags."""
@@ -285,10 +284,26 @@ class XMLReader(object):
         self.__fd.write("".join(lines))
         self.__fd.seek(0)
 
+    def __children_to_load(self, node, tag):
+        """The child nodes with the tag, except those saved as deleted:
+        until 2026, with SyncML enabled, deleting only marked an item
+        (status 3) until the next sync. Such items were hidden and could
+        not be restored, so they are not loaded."""
+        return [
+            child
+            for child in node.findall(tag)
+            if not (
+                self.__tskversion >= 22 and child.attrib.get("status") == "3"
+            )
+        ]
+
     def __parse_task_nodes(self, node):
         """Recursively parse all tasks from the node and return a list of
         task instances."""
-        return [self._parse_task_node(child) for child in node.findall("task")]
+        return [
+            self._parse_task_node(child)
+            for child in self.__children_to_load(node, "task")
+        ]
 
     def __resolve_prerequisites_and_dependencies(self, tasks):
         """Replace all prerequisites with the actual task instances
@@ -305,14 +320,6 @@ class XMLReader(object):
             """Replace all prerequisites ids with actual task instances and
             set the dependencies."""
             for each_task in tasks:
-                if each_task.isDeleted():
-                    # Don't restore prerequisites and dependencies for deleted
-                    # tasks
-                    for deleted_task in [each_task] + each_task.children(
-                        recursive=True
-                    ):
-                        deleted_task.setPrerequisites([])
-                    continue
                 prerequisites = set()
                 for prerequisiteId in self.__prerequisites.get(
                     each_task.id(), []
@@ -364,19 +371,22 @@ class XMLReader(object):
             for categorizableId in categorizableIds:
                 if categorizableId in categorizableMap:
                     theCategorizable = categorizableMap[categorizableId]
-                    theCategory.addCategorizable(theCategorizable)
+                    theCategory.addCategorizable(
+                        theCategorizable, event=event
+                    )
                     theCategorizable.addCategory(theCategory, event=event)
         event.send()
 
     def __parse_category_nodes(self, node):
         return [
             self.__parse_category_node(child)
-            for child in node.findall("category")
+            for child in self.__children_to_load(node, "category")
         ]
 
     def __parse_note_nodes(self, node):
         return [
-            self.__parse_note_node(child) for child in node.findall("note")
+            self.__parse_note_node(child)
+            for child in self.__children_to_load(node, "note")
         ]
 
     def __parse_category_node(self, category_node):
@@ -636,8 +646,6 @@ class XMLReader(object):
             attributes["attachments"] = (
                 self.__parse_attachments_before_version21(node)
             )
-        if self.__tskversion >= 22:
-            attributes["status"] = int(node.attrib.get("status", "1"))
 
         return attributes
 
@@ -687,14 +695,12 @@ class XMLReader(object):
         """Parse all effort records from the node."""
         return [
             self.__parse_effort_node(effort_node)
-            for effort_node in node.findall("effort")
+            for effort_node in self.__children_to_load(node, "effort")
         ]
 
     def __parse_effort_node(self, node):
         """Parse an effort record from the node."""
         kwargs = {}
-        if self.__tskversion >= 22:
-            kwargs["status"] = int(node.attrib.get("status", "1"))
         if self.__tskversion >= 29:
             kwargs["id"] = node.attrib["id"]
             # Register effort ID for duplicate detection
@@ -717,14 +723,6 @@ class XMLReader(object):
             **kwargs,
         )
 
-    def __parse_syncml_node(self, nodes, guid):
-        """Parse the SyncML node from the nodes.
-
-        SyncML has been removed. This method now returns None but is kept
-        for backwards compatibility with old task files that contain syncmlconfig.
-        """
-        return None
-
     def __parse_guid_node(self, node):
         """Parse the GUID from the node."""
         guid = self.__parse_text(node).strip()
@@ -733,7 +731,7 @@ class XMLReader(object):
     def __parse_attachments(self, node):
         """Parse the attachments from the node."""
         attachments = []
-        for child_node in node.findall("attachment"):
+        for child_node in self.__children_to_load(node, "attachment"):
             try:
                 attachments.append(self.__parse_attachment(child_node))
             except IOError:

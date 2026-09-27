@@ -69,7 +69,7 @@ class Attachment(base.Object, NoteOwner):
     """Abstract base class for attachments.
 
     Appearance (derived and effective values) is handled by the base class
-    and ComputeStyles polling. Attachments have no inheritance - always
+    and the master loop. Attachments have no inheritance - always
     use system theme.
     """
 
@@ -82,7 +82,7 @@ class Attachment(base.Object, NoteOwner):
             kwargs["subject"] = os.path.splitext(filename)[0] or location
         super().__init__(*args, **kwargs)
         self.__location = Attribute(location, self, self._onLocationChanged)
-        # Note: Effective appearance is computed by ComputeStyles polling
+        # Note: Effective appearance is computed by the master loop
 
     def data(self):
         return None
@@ -99,7 +99,6 @@ class Attachment(base.Object, NoteOwner):
         self.__location.set(location, event=event)
 
     def _onLocationChanged(self, event):
-        self.markDirty()
         event.addSource(self, type=self.locationChangedEventType())
 
     @classmethod

@@ -1463,7 +1463,8 @@ class DatesPage(ScrolledPage):
         # Initial display
         self._updateStatusDisplay()
 
-        # Subscribe to status change event (fired by computeStoredStatus when status changes)
+        # Subscribe to the status change event, fired by
+        # compute_stored_status() when the status changes
         pub.subscribe(
             self._onStatusMayHaveChanged,
             self.items[0].statusChangedEventType(),
@@ -4842,7 +4843,7 @@ class EffortEditBook(Page):
 
     def on_stop_now(self, event):
         # Stop only the specific effort(s) being edited, not all efforts for the task
-        self._stop_date_time_combo.ActivateValue(datetime.datetime.now())
+        self._stop_date_time_combo.ActivateValue(date.Now())
 
     def __update_invalid_period_message(self):
         warnings = []

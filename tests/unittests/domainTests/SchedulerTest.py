@@ -25,8 +25,9 @@ GlobalTimer sends the Publisher event 'timer.second' every second
 
 import test
 from pubsub import pub
-from taskcoachlib import patterns
-from taskcoachlib.domain import date
+import wx
+from taskcoachlib import config, patterns
+from taskcoachlib.domain import date, task
 from taskcoachlib.gui import scheduler
 
 
@@ -110,7 +111,7 @@ class GlobalTimerEventTest(test.wxTestCase):
 
 class MasterSchedulerEventTest(test.wxTestCase):
     """MasterScheduler sends scheduler.date and scheduler.minute after
-    its per-second processing, as Publisher events."""
+    its tick's processing, as Publisher events."""
 
     def setUp(self):
         super().setUp()
@@ -186,3 +187,120 @@ class MasterSchedulerEventTest(test.wxTestCase):
     def on_minute_failing_too(self, event):
         self.failed.append("second")
         raise ValueError("subscriber bug")
+
+
+class MasterTimerListTest(test.wxTestCase):
+    """The full loop runs only when the heap holds a due second
+    (docs/MASTER_SCHEDULER_REFACTOR.md)."""
+
+    start = date.DateTime(2026, 9, 27, 12, 0, 0)
+
+    def setUp(self):
+        super().setUp()
+        from taskcoachlib import persistence
+
+        task.Task.settings = config.Settings(load=False)
+        self.task_file = persistence.TaskFile()
+        self.master = scheduler.MasterScheduler(self.task_file)
+        self.passes = []
+        run_pass = self.master._run_pass
+
+        def record_pass(timestamp, due):
+            self.passes.append(timestamp)
+            run_pass(timestamp, due)
+
+        self.master._run_pass = record_pass
+        self.task = task.Task(subject="task")
+        self.task_file.tasks().append(self.task)
+        self.now = self.start
+
+    def tearDown(self):
+        self.master.shutdown()
+        self.task_file.close()
+        self.task_file.stop()
+        super().tearDown()
+
+    def tick(self, seconds=1):
+        self.now += date.TimeDelta(seconds=seconds)
+        before = len(self.passes)
+        patterns.Event("timer.second", self, self.now).send()
+        return len(self.passes) > before
+
+    def settle(self):
+        """Tick until a tick runs no pass; return the passes run."""
+        for count in range(10):
+            if not self.tick():
+                return count
+        self.fail("the cascade does not settle")
+
+    def test_first_tick_runs_the_loop(self):
+        self.assertTrue(self.tick(0))
+
+    def test_the_cascade_settles(self):
+        self.assertGreater(self.settle(), 0)
+        self.assertFalse(self.tick())
+
+    def test_the_second_after_the_due_runs_the_loop(self):
+        self.task.setDueDateTime(self.start + date.ONE_HOUR)
+        self.settle()
+        self.now = self.start + date.ONE_HOUR - date.ONE_SECOND
+        self.assertFalse(self.tick())  # At the due: not overdue yet
+        self.assertTrue(self.tick())
+        self.assertEqual(task.status.overdue, self.task.computedStatus())
+
+    def test_one_pass_takes_every_due_second_and_leaves_the_next(self):
+        self.settle()
+        dues = [
+            self.now + date.TimeDelta(seconds=seconds)
+            for seconds in (-20, -10, 1)
+        ]
+        later = self.now + date.ONE_MINUTE
+        added = [
+            task.Task(subject="due", dueDateTime=due)
+            for due in dues + [later]
+        ]
+        self.task_file.tasks().extend(added)
+        # One tick takes the past overdue seconds and this second's
+        self.assertTrue(self.tick(2))
+        self.assertEqual(
+            [task.status.overdue] * 3,
+            [each.computedStatus() for each in added[:3]],
+        )
+        self.assertEqual(task.status.duesoon, added[3].computedStatus())
+        # The later second stays until its time
+        self.settle()
+        self.now = later - date.ONE_SECOND
+        self.assertFalse(self.tick())
+        self.assertTrue(self.tick())
+        self.assertEqual(task.status.overdue, added[3].computedStatus())
+
+    def test_a_colour_change_runs_the_loop_at_the_next_tick(self):
+        self.settle()
+        self.task.setForegroundColor(wx.RED)
+        self.assertTrue(self.tick())
+
+    def test_a_subject_change_runs_nothing(self):
+        self.settle()
+        self.task.setSubject("new subject")
+        self.assertFalse(self.tick())
+
+    def test_a_reminder_set_in_the_past_fires_at_the_next_tick(self):
+        self.settle()
+        self.registerObserver("task.reminder.trigger")
+        self.task.setReminder(self.now - date.ONE_HOUR)
+        self.tick()
+        self.assertEqual(1, len(self.events))
+
+    def test_an_added_task_runs_the_loop_at_its_due(self):
+        self.settle()
+        due = self.now + date.ONE_HOUR
+        added = task.Task(subject="added", dueDateTime=due)
+        self.task_file.tasks().append(added)
+        self.settle()
+        self.now = due
+        self.assertTrue(self.tick())
+        self.assertEqual(task.status.overdue, added.computedStatus())
+
+    def test_setting_the_clock_back_runs_the_loop(self):
+        self.settle()
+        self.assertTrue(self.tick(-3600))

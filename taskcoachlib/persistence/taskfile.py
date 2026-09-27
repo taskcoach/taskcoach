@@ -198,9 +198,6 @@ class TaskFile(patterns.Observer):
         self.__notes = note.NoteContainer()
         self.__efforts = effort.EffortList(self.tasks())
         self.__guid = str(uuid.uuid4())
-        self.__syncMLConfig = (
-            None  # SyncML removed - kept for file format compatibility
-        )
         self.__monitor = ChangeMonitor()
         self.__changes = dict()
         self.__changes[self.__monitor.guid()] = self.__monitor
@@ -236,16 +233,10 @@ class TaskFile(patterns.Observer):
                     eventSource=container,
                 )
 
-        for eventType in (
-            base.Object.markDeletedEventType(),
-            base.Object.markNotDeletedEventType(),
-        ):
-            self.registerObserver(self.onDomainObjectAddedOrRemoved, eventType)
-
         for eventType in task.Task.modificationEventTypes():
             if not eventType.startswith("pubsub"):
                 self.registerObserver(self.onTaskChanged_Deprecated, eventType)
-        pub.subscribe(self.onTaskChanged, "pubsub.task")
+        pub.subscribe(self.on_task_changed, "pubsub.task")
         for eventType in effort.Effort.modificationEventTypes():
             self.registerObserver(self.onEffortChanged, eventType)
         for eventType in note.Note.modificationEventTypes():
@@ -294,9 +285,6 @@ class TaskFile(patterns.Observer):
     def efforts(self):
         return self.__efforts
 
-    def syncMLConfig(self):
-        return self.__syncMLConfig
-
     def guid(self):
         return self.__guid
 
@@ -316,8 +304,12 @@ class TaskFile(patterns.Observer):
             return
         self.markDirty()
 
-    def onTaskChanged(self, newValue, sender):
+    def on_task_changed(self, newValue, sender, topic=pub.AUTO_TOPIC):
         if self.__loading or self.__saving:
+            return
+        # The status is computed, not saved: the clock changing it
+        # changes nothing to save
+        if topic.getName() == task.Task.statusChangedEventType():
             return
         if sender in self.tasks():
             self.markDirty()
@@ -332,8 +324,6 @@ class TaskFile(patterns.Observer):
         ]
         if changedTasks:
             self.markDirty()
-            for changedTask in changedTasks:
-                changedTask.markDirty()
 
     def onEffortChanged(self, event):
         if self.__loading or self.__saving:
@@ -345,8 +335,6 @@ class TaskFile(patterns.Observer):
         ]
         if changedEfforts:
             self.markDirty()
-            for changedEffort in changedEfforts:
-                changedEffort.markDirty()
 
     def onCategoryChanged_Deprecated(self, event):
         if self.__loading or self.__saving:
@@ -358,15 +346,6 @@ class TaskFile(patterns.Observer):
         ]
         if changedCategories:
             self.markDirty()
-            # Mark all categorizables belonging to the changed category dirty;
-            # this is needed because in SyncML/vcard world, categories are not
-            # first-class objects. Instead, each task/contact/etc has a
-            # categories property which is a comma-separated list of category
-            # names. So, when a category name changes, every associated
-            # categorizable changes.
-            for changedCategory in changedCategories:
-                for categorizable in changedCategory.categorizables():
-                    categorizable.markDirty()
 
     def onCategoryChanged(self, newValue, sender):
         if self.__loading or self.__saving:
@@ -378,15 +357,6 @@ class TaskFile(patterns.Observer):
         ]
         if changedCategories:
             self.markDirty()
-            # Mark all categorizables belonging to the changed category dirty;
-            # this is needed because in SyncML/vcard world, categories are not
-            # first-class objects. Instead, each task/contact/etc has a
-            # categories property which is a comma-separated list of category
-            # names. So, when a category name changes, every associated
-            # categorizable changes.
-            for changedCategory in changedCategories:
-                for categorizable in changedCategory.categorizables():
-                    categorizable.markDirty()
 
     def onNoteChanged_Deprecated(self, event):
         if self.__loading:
@@ -394,8 +364,6 @@ class TaskFile(patterns.Observer):
         # A note may be in self.notes() or it may be a note of another
         # domain object.
         self.markDirty()
-        for changedNote in event.sources():
-            changedNote.markDirty()
 
     def onNoteChanged(self, newValue, sender):
         if self.__loading:
@@ -403,7 +371,6 @@ class TaskFile(patterns.Observer):
         # A note may be in self.notes() or it may be a note of another
         # domain object.
         self.markDirty()
-        sender.markDirty()
 
     def onAttachmentChanged_Deprecated(self, event):
         if self.__loading:
@@ -411,8 +378,6 @@ class TaskFile(patterns.Observer):
         # Attachments don't know their owner, so we can't check whether the
         # attachment is actually in the task file. Assume it is.
         self.markDirty()
-        for changedAttachment in event.sources():
-            changedAttachment.markDirty()
 
     def setFilename(self, filename):
         if filename == self.__filename:
@@ -464,7 +429,6 @@ class TaskFile(patterns.Observer):
             self.notes().clear(event=event)
             if regenerate:
                 self.__guid = str(uuid.uuid4())
-                self.__syncMLConfig = None
         finally:
             self._publish("taskfile.justCleared", taskFile=self)
 
@@ -552,7 +516,6 @@ class TaskFile(patterns.Observer):
                         tasks,
                         categories,
                         notes,
-                        syncMLConfig,
                         changes,
                         guid,
                     ), duplicate_ids = self._read(fd)
@@ -596,7 +559,6 @@ class TaskFile(patterns.Observer):
             registerOtherObjects(self.tasks().rootItems())
             registerOtherObjects(self.notes().rootItems())
             self.__monitor.resetAllChanges()
-            # syncMLConfig from file is ignored - SyncML removed
             self.__guid = guid
 
             if os.path.exists(self.filename()) and not self.__read_only:
@@ -638,7 +600,6 @@ class TaskFile(patterns.Observer):
                         self.tasks(),
                         self.categories(),
                         self.notes(),
-                        self.syncMLConfig(),
                         self.guid(),
                     )
                 except BaseException:
@@ -694,7 +655,6 @@ class TaskFile(patterns.Observer):
                         tasks,
                         categories,
                         notes,
-                        syncml_config,
                         all_changes,
                         guid,
                     ), _duplicate_ids = self._read(fd)

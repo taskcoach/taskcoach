@@ -44,7 +44,12 @@ class Sorter(base.TreeSorter):
             task.Task.actualStartDateTimeChangedEventType(),
             task.Task.completionDateTimeChangedEventType(),
         ):
-            pub.subscribe(self.onAttributeChanged, event_type)
+            if event_type.startswith("pubsub"):
+                pub.subscribe(self.onAttributeChanged, event_type)
+            else:
+                self.registerObserver(
+                    self.onAttributeChanged_Deprecated, eventType=event_type
+                )
         # Sent once after Preferences saved all the priorities
         self.registerObserver(
             self._on_status_sort_priority_changed,

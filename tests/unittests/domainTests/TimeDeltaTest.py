@@ -37,37 +37,37 @@ class TimeDeltaTest(test.TestCase):
         timedelta = date.TimeDelta(days=1)
         self.assertEqual(24 * 60 * 60 * 1000, timedelta.milliseconds())
 
-    def testMillisecondsInOneMicrosecond(self):
-        timedelta = date.TimeDelta(microseconds=1)
-        self.assertEqual(0, timedelta.milliseconds())
-
-    def testMillisecondsIn500Microseconds(self):
-        timedelta = date.TimeDelta(microseconds=500)
-        self.assertEqual(1, timedelta.milliseconds())
+    def test_fractions_of_a_second_are_dropped(self):
+        # Whole seconds only (docs/MASTER_SCHEDULER_REFACTOR.md)
+        self.assertEqual(
+            date.TimeDelta(seconds=1),
+            date.TimeDelta(seconds=1, milliseconds=999),
+        )
+        self.assertEqual(0, date.TimeDelta(microseconds=500).milliseconds())
 
     def testRoundTo5Seconds_Down(self):
-        timedelta = date.TimeDelta(seconds=1, milliseconds=400)
+        timedelta = date.TimeDelta(seconds=1)
         self.assertEqual(date.TimeDelta(seconds=0), timedelta.round(seconds=5))
 
     def testRoundTo5Seconds_Up(self):
-        timedelta = date.TimeDelta(seconds=3, milliseconds=500)
+        timedelta = date.TimeDelta(seconds=3)
         self.assertEqual(date.TimeDelta(seconds=5), timedelta.round(seconds=5))
 
     def testRoundTo5Seconds_AlwaysUp(self):
-        timedelta = date.TimeDelta(seconds=1, milliseconds=100)
+        timedelta = date.TimeDelta(seconds=1)
         self.assertEqual(
             date.TimeDelta(seconds=5),
             timedelta.round(seconds=5, alwaysUp=True),
         )
 
     def testRoundTo10Seconds_Down(self):
-        timedelta = date.TimeDelta(seconds=4, milliseconds=400)
+        timedelta = date.TimeDelta(seconds=4)
         self.assertEqual(
             date.TimeDelta(seconds=0), timedelta.round(seconds=10)
         )
 
     def testRoundTo10Seconds_Up(self):
-        timedelta = date.TimeDelta(seconds=16, milliseconds=400)
+        timedelta = date.TimeDelta(seconds=16)
         self.assertEqual(
             date.TimeDelta(seconds=20), timedelta.round(seconds=10)
         )

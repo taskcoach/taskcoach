@@ -36,7 +36,7 @@ UI Pattern:
 Volatile Fields (not persisted):
   - Derived and effective values are Attribute fields in object.py
   - NOT in __getstate__, so after file load they are all None/""
-  - ComputeStyles polling populates them within 1 second of app start
+  - The master loop populates them at its first tick after a file opens
 
 Field types: 'fgColor', 'bgColor', 'font', 'icon'
 """
@@ -372,7 +372,7 @@ def computeStyles(obj):
 
     Called by MasterScheduler for each object. Computes all field types.
     Does NOT recurse into notes/attachments - caller handles that.
-    Does NOT call computeStoredStatus - caller handles that separately.
+    Does NOT call compute_stored_status: the caller does, separately.
 
     Args:
         obj: Domain object (Task, Category, Note, Attachment)

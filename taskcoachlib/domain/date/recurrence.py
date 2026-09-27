@@ -110,12 +110,7 @@ class Recurrence(object):
 
     def _addMonth(self, dateTime):
         year, month, day = dateTime.year, dateTime.month, dateTime.day
-        details = (
-            dateTime.hour,
-            dateTime.minute,
-            dateTime.second,
-            dateTime.microsecond,
-        )
+        details = (dateTime.hour, dateTime.minute, dateTime.second)
         if month == 12:  # If December, move to January next year
             year += 1
             month = 1

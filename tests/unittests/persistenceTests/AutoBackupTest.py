@@ -45,7 +45,7 @@ class DummyTaskFile(persistence.TaskFile):
         return DummyFile()
 
     def _read(self, *args, **kwargs):  # pylint: disable=W0613
-        content = [task.Task()], [], [], None, dict(), None
+        content = [task.Task()], [], [], dict(), None
         return content, []  # No duplicate ids
 
     def exists(self):

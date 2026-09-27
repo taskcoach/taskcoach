@@ -555,10 +555,9 @@ class TaskEntry(wx.Panel):
     def _addTaskRecursively(self, task, parentItem=None):
         """Add a task to the ComboTreeBox and then recursively add its
         subtasks."""
-        if not task.isDeleted():
-            item = self._comboTreeBox.Append(task.subject(), parent=parentItem)
-            self._comboTreeBox.SetClientData(item, task)
-            self._addTasksRecursively(task.children(), item)
+        item = self._comboTreeBox.Append(task.subject(), parent=parentItem)
+        self._comboTreeBox.SetClientData(item, task)
+        self._addTasksRecursively(task.children(), item)
 
     def onTaskSelected(self, event):  # pylint: disable=W0613
         wx.PostEvent(self, TaskEntryEvent())

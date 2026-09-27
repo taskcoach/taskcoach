@@ -55,10 +55,10 @@ class TaskViewerTestCase(test.wxTestCase):
     def setUp(self):
         super().setUp()
         task.Task.settings = self.settings = config.Settings(load=False)
-        self.task = task.Task(subject="task", plannedStartDateTime=date.Now())
-        self.child = task.Task(
-            subject="child", plannedStartDateTime=date.Now()
-        )
+        # Late: planned a second ago, dates being whole seconds
+        started = date.Now() - date.ONE_SECOND
+        self.task = task.Task(subject="task", plannedStartDateTime=started)
+        self.child = task.Task(subject="child", plannedStartDateTime=started)
         self.child.setParent(self.task)
         self.taskFile = persistence.TaskFile()
         self.taskList = self.taskFile.tasks()
@@ -799,7 +799,6 @@ class CommonTestsMixin(object):
     @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenTaskBecomesOverdue(self):
         dueDateTime = date.Now() + date.TimeDelta(seconds=10)
-        dueDateTime = dueDateTime.replace(microsecond=0)
         self.task.setDueDateTime(dueDateTime)
         self.taskList.append(self.task)
         self.assertIcon(task.duesoon.getBitmap(self.settings))
@@ -864,6 +863,14 @@ class CommonTestsMixin(object):
     def assertEventFired(self, newValue, sender):
         self.assertTrue((newValue, sender) in self.viewer.events)
 
+    def assert_change_received(self, event_type, value, source):
+        received = [
+            event.value(source, type=event_type)
+            for event in self.viewer.events_deprecated
+            if source in event.sources(event_type)
+        ]
+        self.assertIn(value, received)
+
     def testGetTimeSpent(self):
         self.taskList.append(self.task)
         self.task.addEffort(
@@ -925,7 +932,11 @@ class CommonTestsMixin(object):
         self.taskList.append(self.task)
         newValue = date.Now() - date.ONE_DAY
         self.task.setPlannedStartDateTime(newValue)
-        self.assertEqual((newValue, self.task), self.viewer.events[0])
+        self.assert_change_received(
+            task.Task.plannedStartDateTimeChangedEventType(),
+            newValue,
+            self.task,
+        )
 
     def testStartTracking(self):
         self.taskList.append(self.task)
@@ -936,27 +947,40 @@ class CommonTestsMixin(object):
         self.taskList.append(self.task)
         self.showColumn("plannedStartDate", False)
         self.task.setPlannedStartDateTime(date.Yesterday())
-        self.assertEqual(1, len(self.viewer.events))
+        # Still received once, for the subject column
+        event_type = task.Task.plannedStartDateTimeChangedEventType()
+        received = [
+            event
+            for event in self.viewer.events_deprecated
+            if event_type in event.types()
+        ]
+        self.assertEqual(1, len(received))
 
     def testChangeDueDate(self):
         self.taskList.append(self.task)
         newValue = date.Now().endOfDay()
         self.task.setDueDateTime(newValue)
-        self.assertTrue((newValue, self.task) in self.viewer.events)
+        self.assert_change_received(
+            task.Task.dueDateTimeChangedEventType(), newValue, self.task
+        )
 
     def testChangeCompletionDateWhileColumnNotShown(self):
         self.taskList.append(self.task)
         now = date.Now()
         self.task.setCompletionDateTime(now)
         # We still get an event for the subject column:
-        self.assertTrue((now, self.task) in self.viewer.events)
+        self.assert_change_received(
+            task.Task.completionDateTimeChangedEventType(), now, self.task
+        )
 
     def testChangeCompletionDateWhileColumnShown(self):
         self.taskList.append(self.task)
         self.showColumn("completionDate")
         now = date.Now()
         self.task.setCompletionDateTime(now)
-        self.assertTrue((now, self.task) in self.viewer.events)
+        self.assert_change_received(
+            task.Task.completionDateTimeChangedEventType(), now, self.task
+        )
 
     def testChangePercentageCompleteWhileColumnNotShown(self):
         self.taskList.append(self.task)

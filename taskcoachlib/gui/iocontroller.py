@@ -123,20 +123,6 @@ class IOController(object):
     def changed_on_disk(self):
         return self.__task_file.changed_on_disk()
 
-    def has_deleted_items(self):
-        return bool(
-            [task for task in self.__task_file.tasks() if task.isDeleted()]
-            + [note for note in self.__task_file.notes() if note.isDeleted()]
-        )
-
-    def purge_deleted_items(self):
-        self.__task_file.tasks().removeItems(
-            [task for task in self.__task_file.tasks() if task.isDeleted()]
-        )
-        self.__task_file.notes().removeItems(
-            [note for note in self.__task_file.notes() if note.isDeleted()]
-        )
-
     def open_after_start(self, command_line_args, early_lock_result=None):
         """Open either the file specified on the command line, or the file
         the user was working on previously, or none at all.

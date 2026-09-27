@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import command, widgets, domain
+from taskcoachlib import command, widgets
 from taskcoachlib.domain import note
 from taskcoachlib.gui import uicommand, dialog
 from taskcoachlib.gui.icons import image_list_cache
@@ -96,8 +96,7 @@ class BaseNoteViewer(
         return widget
 
     def createFilter(self, notes):
-        notes = super().createFilter(notes)
-        return domain.base.DeletedFilter(notes)
+        return super().createFilter(notes)
 
     def createCreationToolBarUICommands(self):
         return (
@@ -302,7 +301,6 @@ class BaseNoteViewer(
         return command.DeleteNoteCommand(
             self.presentation(),
             self.curselection(),
-            shadow=False,  # SyncML removed
         )
 
     def itemEditorClass(self):

@@ -36,7 +36,6 @@ class PerformanceTest(test.TestCase):
             taskList,
             category.CategoryList(),
             note.NoteContainer(),
-            None,  # SyncML removed
             "fake",
         )
         taskfile.close()

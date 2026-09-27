@@ -53,14 +53,8 @@ ALLOWED = {
     ("taskcoachlib/thirdparty/deltaTime.py", "R2", "day_name"): (
         "calendar.day_name; pyparsing result name"
     ),
-    ("taskcoachlib/thirdparty/deltaTime.py", "R2", "time_delta"): (
-        "pyparsing result name"
-    ),
     ("taskcoachlib/application/application.py", "R2", "get_default"): (
         "Gtk.IconTheme method"
-    ),
-    ("taskcoachlib/gui/appindicator.py", "R2", "get_status"): (
-        "AppIndicator3 method"
     ),
     ("taskcoachlib/config/settings.py", "R4", "frozen"): (
         "sys.frozen, set by bundlers"

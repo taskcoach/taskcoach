@@ -42,7 +42,10 @@ relationship) — signal dispatch exists to serve Attribute change notification.
    dispatch from the start: `ToggleAutoScroll` (toolbar button sync)
    and `Viewer.on_auto_scroll_changed` (re-center on enable) both
    subscribe via `registerObserver` on the settings instance.
-   **Remaining:** Task dates, percentage, duration; Effort fields.
+   Task planned start, due, actual start, completion and reminder
+   migrated to Publisher (the reminder made an `Attribute`), for the
+   master timer list ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#what-changes-the-master-timer-list)).
+   **Remaining:** Task percentage, duration; Effort fields.
 
 2. **Modularize and clean up the signaling system.** The three independent
    cleanup mechanisms (wx C++ destruction, `removeInstance()`, Python GC)
@@ -328,6 +331,8 @@ No manual unsubscribe, no silent `except` guards, no zombie callbacks.
 | `spellcheck.colours.changed` | Migrated to Publisher | `taskcoachlib/gui/dialog/preferences.py` (ThemePage), `taskcoachlib/widgets/textctrl.py` (_StyledTextCtrl) |
 | `calendar.colours.changed` | Migrated to Publisher | `taskcoachlib/gui/dialog/preferences.py` (ThemePage), `taskcoachlib/gui/viewer/task.py` (CalendarViewer), `taskcoachlib/widgets/maskedtimectrl.py` (_CalendarComboPopup) |
 | `powermgt.on` / `powermgt.off` | Migrated to Publisher | `taskcoachlib/gui/mainwindow.py` (MainWindow), `taskcoachlib/gui/idlecontroller.py` (IdleController), `taskcoachlib/gui/viewer/task.py` (BaseTaskViewer, `powermgt.on` only) |
+| `pubsub.task.plannedStartDateTime`, `dueDateTime`, `actualStartDateTime`, `completionDateTime` | Migrated to Publisher as `task.<field>`, the task and each ancestor as sources | `taskcoachlib/domain/task/task.py` (Task), `taskcoachlib/domain/task/sorter.py` (Sorter), `taskcoachlib/gui/taskbaricon.py`, `taskcoachlib/gui/dialog/reminder.py` (ReminderDialog); the others route by prefix |
+| `pubsub.task.reminder` | Migrated to Publisher as `task.reminder`; the reminder is an `Attribute`, so snoozing also notifies the ancestors | `taskcoachlib/domain/task/task.py` (Task) |
 | `task.reminder.trigger` | Migrated to Publisher | `taskcoachlib/domain/task/task.py` (Task), `taskcoachlib/gui/remindercontroller.py` (ReminderController) |
 | `feature.task_duration_presets` | Migrated to Publisher | `taskcoachlib/gui/dialog/editor.py` (DatesPage) |
 | `feature.effort_duration_presets` | Migrated to Publisher | `taskcoachlib/gui/dialog/editor.py` (EffortEditBook) |

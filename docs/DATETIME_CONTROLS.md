@@ -1079,7 +1079,7 @@ Use `wx.ComboCtrl` which provides a **native dropdown button** and manages popup
 
 | Method | Type |
 |--------|------|
-| `GetValue()` / `SetValue()` | `date.DateTime` (domain-compatible for AttributeSync). `SetValue` routes through `ActivateValue`/`DeactivateValue`. |
+| `GetValue()` / `SetValue()` | `date.DateTime` (domain-compatible for AttributeSync). `SetValue` routes through `ActivateValue`/`DeactivateValue`. Unchecked is `date.DateTime()`, the latest date: "not set" ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#dates-not-set-is-the-latest-date)). |
 | `GetDateTime()` | `datetime.datetime` or `None` (read-only) |
 | `GetDate()` | `datetime.date` (read-only) |
 | `GetTime()` | `datetime.time` (read-only) |

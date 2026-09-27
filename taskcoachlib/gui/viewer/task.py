@@ -24,7 +24,7 @@ import math
 import wx.lib.agw.piectrl
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.gui.icons import image_list_cache
-from taskcoachlib import command, widgets, domain, render, patterns
+from taskcoachlib import command, widgets, render, patterns
 from taskcoachlib.config import settings2
 from taskcoachlib.domain import task, date
 from taskcoachlib.gui import uicommand, dialog
@@ -213,8 +213,7 @@ class BaseTaskViewer(
         return True
 
     def createFilter(self, taskList):
-        tasks = domain.base.DeletedFilter(taskList)
-        return super().createFilter(tasks)
+        return super().createFilter(taskList)
 
     def nrOfVisibleTasks(self):
         # Make this overridable for viewers where the widget does not show all
@@ -337,7 +336,6 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
         return command.DeleteTaskCommand(
             self.presentation(),
             self.curselection(),
-            shadow=False,  # SyncML removed
         )
 
     def getSupportedPasteTypes(self):

@@ -43,10 +43,10 @@ class TaskCommandTestCase(CommandTestCase, asserts.Mixin):
         super().tearDown()
         command.Clipboard().clear()
 
-    def delete(self, items=None, shadow=False):
+    def delete(self, items=None):
         if items == "all":
             items = list(self.list)
-        command.DeleteTaskCommand(self.list, items or [], shadow=shadow).do()
+        command.DeleteTaskCommand(self.list, items or []).do()
 
     def paste(self, items=None):  # pylint: disable=W0221
         if items:
@@ -232,17 +232,9 @@ class DeleteCommandWithTasksWithChildrenTest(CommandWithChildrenTestCase):
         self.failUnlessParentAndChild(self.parent, self.child)
         self.failUnlessParentAndChild(self.child, self.grandchild)
 
-    def assertShadowed(self, *shadowedTasks):
-        for shadowedTask in shadowedTasks:
-            self.assertTrue(shadowedTask.isDeleted())
-
     def testDeleteParent(self):
         self.delete([self.parent])
         self.assertDeleteWorks()
-
-    def testDeleteParentWhileShadowing(self):
-        self.delete([self.parent], shadow=True)
-        self.assertShadowed(self.parent, *self.parent.children())
 
     def testDeleteParentAndChild(self):
         self.delete([self.parent, self.child])
@@ -844,9 +836,12 @@ class EditReminderCommandTest(TaskCommandTestCase):
 
     def testEditReminder(self):
         self.editReminder([self.task1])
+        # Not set is the latest date (docs/ATTRIBUTE_PATTERN.md)
         self.assertDoUndoRedo(
-            lambda: self.assertTrue(self.task1.reminder()),
-            lambda: self.assertFalse(self.task1.reminder()),
+            lambda: self.assertNotEqual(
+                date.DateTime(), self.task1.reminder()
+            ),
+            lambda: self.assertEqual(date.DateTime(), self.task1.reminder()),
         )
 
 

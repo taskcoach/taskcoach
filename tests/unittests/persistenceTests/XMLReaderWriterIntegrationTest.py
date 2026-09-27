@@ -37,13 +37,10 @@ class IntegrationTestCase(test.TestCase):
         self.changes = dict()
         self.guid = "GUID"
         self.fillContainers()
-        tasks, categories, notes, syncMLConfig, changes, guid = (
-            self.readAndWrite()
-        )
+        tasks, categories, notes, changes, guid = self.readAndWrite()
         self.tasksWrittenAndRead = task.TaskList(tasks)
         self.categoriesWrittenAndRead = category.CategoryList(categories)
         self.notesWrittenAndRead = note.NoteContainer(notes)
-        # syncMLConfig is now always None - SyncML removed
         self.changesWrittenAndRead = changes
         self.guidWrittenAndRead = guid
 
@@ -56,7 +53,6 @@ class IntegrationTestCase(test.TestCase):
             self.taskList,
             self.categories,
             self.notes,
-            None,  # SyncML removed
             self.guid,
         )
         # The app reads the file back as text (TaskFile._openForRead)

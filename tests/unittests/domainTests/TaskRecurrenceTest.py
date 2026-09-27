@@ -114,7 +114,7 @@ class CommonRecurrenceTestsMixin(object):
 
     def testMarkCompletedDoesNotSetReminderIfItWasNotSetPreviously(self):
         self.task.setCompletionDateTime()
-        self.assertEqual(None, self.task.reminder())
+        self.assertEqual(date.DateTime(), self.task.reminder())
 
     def testMarkCompletedSetsNewReminderIfItWasSetPreviously(self):
         reminder = self.now + date.TimeDelta(seconds=10)
@@ -127,7 +127,7 @@ class CommonRecurrenceTestsMixin(object):
     def testMarkCompletedIgnoresSnoozeWhenSettingNewReminder(self):
         reminder = self.now + date.TimeDelta(seconds=10)
         self.task.setReminder(reminder)
-        self.task.snoozeReminder(
+        self.task.snooze_reminder(
             date.TimeDelta(seconds=30), now=lambda: self.now
         )
         self.task.setCompletionDateTime()

@@ -24,6 +24,10 @@ or config defaults; non-obvious decisions are documented there).
 
   A library name `check_renames.py` mistakes for a missed rename goes
   in its `ALLOWED` table, with the reason.
+- **Time resolution:** dates, times and durations are whole seconds;
+  only log timestamps carry fractions. `DateTime` and `TimeDelta`
+  enforce it. Ruling and scope:
+  [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#time-resolution).
 - **Naming:** `snake_case` by default. Keep CamelCase when the name
   comes from wx (method overrides, duck-typed wx interfaces) or is
   name-coupled (pubsub topics, `getattr` dispatch, the

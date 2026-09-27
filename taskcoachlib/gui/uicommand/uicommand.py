@@ -383,35 +383,6 @@ class FileEditTemplates(
         templateDialog.Show()
 
 
-class FilePurgeDeletedItems(IOCommand):
-    def __init__(self, *args, **kwargs):
-        super().__init__(
-            menu_text=_("&Purge deleted items"),
-            help_text=_(
-                "Permanently delete tasks and notes marked as deleted"
-            ),
-            icon_id="nuvola_actions_edit-delete",
-            *args,
-            **kwargs
-        )
-
-    def do_command(self, event):
-        if (
-            wx.MessageBox(
-                _(
-                    "Purging deleted items cannot be undone.\n\nDo you still want to purge?"
-                ),
-                _("Warning"),
-                wx.YES_NO,
-            )
-            == wx.YES
-        ):
-            self.iocontroller.purge_deleted_items()
-
-    def enabled(self, event):
-        return self.iocontroller.has_deleted_items()
-
-
 class PrintPageSetup(
     settings_uicommand.SettingsCommand, base_uicommand.UICommand
 ):
@@ -2823,7 +2794,6 @@ class EffortStartForTask(TaskListCommand):
 
 class EffortStartButton(mixin_uicommand.PopupButtonMixin, TaskListCommand):
     def __init__(self, *args, **kwargs):
-        kwargs["taskList"] = base.filter.DeletedFilter(kwargs["taskList"])
         super().__init__(
             icon_id="taskcoach_actions_clock_menu_icon",
             menu_text=_("&Start tracking effort"),

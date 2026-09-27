@@ -227,40 +227,24 @@ class CopyCommand(BaseCommand):
         Clipboard().put(self.__copies, self.list)
 
 
-class DeleteCommand(BaseCommand, SaveStateMixin):
+class DeleteCommand(BaseCommand):
     plural_name = _("Delete")
     singular_name = _('Delete "%s"')
-
-    def __init__(self, *args, **kwargs):
-        self.__shadow = kwargs.pop("shadow", False)
-        super().__init__(*args, **kwargs)
 
     def modified_items(self):
         return [item.parent() for item in self.items if item.parent()]
 
     def do_command(self):
         super().do_command()
-        if self.__shadow:
-            self.saveStates(self.items)
-
-            for item in self.items:
-                item.markDeleted()
-        else:
-            self.list.removeItems(self.items)
+        self.list.removeItems(self.items)
 
     def undo_command(self):
         super().undo_command()
-        if self.__shadow:
-            self.undoStates()
-        else:
-            self.list.extend(self.items)
+        self.list.extend(self.items)
 
     def redo_command(self):
         super().redo_command()
-        if self.__shadow:
-            self.redoStates()
-        else:
-            self.list.removeItems(self.items)
+        self.list.removeItems(self.items)
 
 
 class CutCommandMixin(object):
