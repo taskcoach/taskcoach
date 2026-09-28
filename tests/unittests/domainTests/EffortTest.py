@@ -171,11 +171,11 @@ class EffortTest(test.TestCase, asserts.Mixin):
             events.append((newValue, sender))
 
         pub.subscribe(onEvent, effort.Effort.revenueChangedEventType())
-        self.task.setHourlyFee(100)
+        self.task.set_hourly_fee(100)
         self.assertEqual([(2400.0, self.effort)], events)
 
     def testRevenueNotificationForEffortDurationChange_ChangeStop(self):
-        self.task.setHourlyFee(100)
+        self.task.set_hourly_fee(100)
         events = []
 
         def onEvent(newValue, sender):
@@ -186,7 +186,7 @@ class EffortTest(test.TestCase, asserts.Mixin):
         self.assertEqual([(4800.0, self.effort)], events)
 
     def testRevenueNotificationForEffortDurationChange_ChangeStart(self):
-        self.task.setHourlyFee(100)
+        self.task.set_hourly_fee(100)
         events = []
 
         def onEvent(newValue, sender):
@@ -274,24 +274,24 @@ class EffortTest(test.TestCase, asserts.Mixin):
         self.assertEqual(0, self.effort.revenue())
 
     def testRevenue_HourlyFee(self):
-        self.task.setHourlyFee(100)
+        self.task.set_hourly_fee(100)
         self.task.addEffort(self.effort)
         self.assertEqual(
             self.effort.timeSpent().hours() * 100, self.effort.revenue()
         )
 
     def testRevenue_FixedFee_OneEffort(self):
-        self.task.setFixedFee(1000)
+        self.task.set_fixed_fee(1000)
         self.task.addEffort(self.effort)
         self.assertEqual(0, self.effort.revenue())
 
     def testRevenue_FixedFee_OneSmallEffort(self):
-        self.task.setFixedFee(1000)
+        self.task.set_fixed_fee(1000)
         self.effort.setStop(self.effort.getStart())
         self.assertEqual(0, self.effort.revenue())
 
     def testRevenue_FixedFee_TwoEfforts(self):
-        self.task.setFixedFee(1000)
+        self.task.set_fixed_fee(1000)
         self.task.addEffort(self.effort)
         self.task.addEffort(
             effort.Effort(

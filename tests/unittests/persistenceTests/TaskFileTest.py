@@ -413,11 +413,11 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.assertTrue(self.taskFile.need_save())
 
     def testNeedSave_AfterChangeHourlyFee(self):
-        self.task.setHourlyFee(100)
+        self.task.set_hourly_fee(100)
         self.assertTrue(self.taskFile.need_save())
 
     def testNeedSave_AfterChangeFixedFee(self):
-        self.task.setFixedFee(500)
+        self.task.set_fixed_fee(500)
         self.assertTrue(self.taskFile.need_save())
 
     def testNeedSave_AfterAddChild(self):

@@ -111,7 +111,7 @@ Data flow example (German locale, comma decimal):
 User types "25,50"
   → CurrencyCtrl displays "25,50" (locale)
   → CurrencyCtrl.GetValue() → 25.5 (Python float, period)
-    → AttributeSync → domain → task.setHourlyFee(25.5)
+    → AttributeSync → domain → task.set_hourly_fee(25.5)
       → XML writer: str(25.5) → "25.5" (period, always)
 ```
 

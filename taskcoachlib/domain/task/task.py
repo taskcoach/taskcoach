@@ -123,8 +123,10 @@ class Task(
         )
         self._efforts = efforts or []
         self.__priority = Attribute(priority, self, self._onPriorityChanged)
-        self.__hourlyFee = hourlyFee
-        self.__fixedFee = fixedFee
+        self.__hourlyFee = Attribute(
+            hourlyFee, self, self._on_hourly_fee_changed
+        )
+        self.__fixedFee = Attribute(fixedFee, self, self._on_fixed_fee_changed)
         self.__reminder = Attribute(
             reminder or maxDateTime, self, self._on_reminder_changed
         )
@@ -196,8 +198,8 @@ class Task(
             state.get("plannedDurationMode", "implicit"), event=event
         )
         self.setPriority(state["priority"], event=event)
-        self.setHourlyFee(state["hourlyFee"])
-        self.setFixedFee(state["fixedFee"])
+        self.set_hourly_fee(state["hourlyFee"], event=event)
+        self.set_fixed_fee(state["fixedFee"], event=event)
         self.setPrerequisites(state["prerequisites"])
         self.setDependencies(state["dependencies"])
         self.setShouldMarkCompletedWhenAllChildrenCompleted(
@@ -220,8 +222,8 @@ class Task(
                 plannedDuration=self.__plannedDuration.get(),
                 plannedDurationMode=self.__plannedDurationMode.get(),
                 priority=self.__priority.get(),
-                hourlyFee=self.__hourlyFee,
-                fixedFee=self.__fixedFee,
+                hourlyFee=self.hourlyFee(),
+                fixedFee=self.__fixedFee.get(),
                 recurrence=self.__recurrence.copy(),
                 reminder=self.__reminder.get(),
                 prerequisites=set(self.__prerequisites),
@@ -245,8 +247,8 @@ class Task(
                 plannedDuration=self.__plannedDuration.get(),
                 plannedDurationMode=self.__plannedDurationMode.get(),
                 priority=self.__priority.get(),
-                hourlyFee=self.__hourlyFee,
-                fixedFee=self.__fixedFee,
+                hourlyFee=self.hourlyFee(),
+                fixedFee=self.__fixedFee.get(),
                 recurrence=self.__recurrence.copy(),
                 reminder=self.__reminder.get(),
                 shouldMarkCompletedWhenAllChildrenCompleted=self.__shouldMarkCompletedWhenAllChildrenCompleted,
@@ -1559,14 +1561,14 @@ class Task(
     # Hourly fee
 
     def hourlyFee(self, recursive=False):  # pylint: disable=W0613
-        return self.__hourlyFee
+        return self.__hourlyFee.get()
 
-    def setHourlyFee(self, hourlyFee):
-        if hourlyFee == self.__hourlyFee:
-            return
-        self.__hourlyFee = hourlyFee
-        pub.sendMessage(
-            self.hourlyFeeChangedEventType(), newValue=hourlyFee, sender=self
+    def set_hourly_fee(self, hourly_fee, event=None):
+        self.__hourlyFee.set(hourly_fee, event=event)
+
+    def _on_hourly_fee_changed(self, event):
+        event.addSource(
+            self, self.hourlyFee(), type=self.hourlyFeeChangedEventType()
         )
         if self.timeSpent() > date.TimeDelta():
             self.sendRevenueChangedMessage()
@@ -1575,7 +1577,7 @@ class Task(
 
     @classmethod
     def hourlyFeeChangedEventType(class_):
-        return "pubsub.task.hourlyFee"
+        return "task.hourlyFee"
 
     @staticmethod  # pylint: disable=W0613
     def hourlyFeeSortFunction(**kwargs):
@@ -1594,26 +1596,27 @@ class Task(
             if recursive
             else 0
         )
-        return self.__fixedFee + childFixedFees
+        return self.__fixedFee.get() + childFixedFees
 
-    def setFixedFee(self, fixedFee):
-        if fixedFee == self.__fixedFee:
-            return
-        self.__fixedFee = fixedFee
-        pub.sendMessage(
-            self.fixedFeeChangedEventType(), newValue=fixedFee, sender=self
+    def set_fixed_fee(self, fixed_fee, event=None):
+        self.__fixedFee.set(fixed_fee, event=event)
+
+    def _on_fixed_fee_changed(self, event):
+        # Ancestors show it in their recursive fixed fee
+        event.addSource(
+            self, self.fixedFee(), type=self.fixedFeeChangedEventType()
         )
         for ancestor in self.ancestors():
-            pub.sendMessage(
-                ancestor.fixedFeeChangedEventType(),
-                newValue=ancestor.fixedFee(recursive=True),
-                sender=ancestor,
+            event.addSource(
+                ancestor,
+                ancestor.fixedFee(recursive=True),
+                type=ancestor.fixedFeeChangedEventType(),
             )
         self.sendRevenueChangedMessage()
 
     @classmethod
     def fixedFeeChangedEventType(class_):
-        return "pubsub.task.fixedFee"
+        return "task.fixedFee"
 
     @staticmethod
     def fixedFeeSortFunction(**kwargs):

@@ -515,28 +515,26 @@ class DefaultTaskStateTest(
         self.assertEqual(-1, self.task.priority())
 
     def testSetFixedFee(self):
-        self.task.setFixedFee(1000)
+        self.task.set_fixed_fee(1000)
         self.assertEqual(1000, self.task.fixedFee())
 
     def testSetFixedFeeUnchangedCausesNoNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.fixedFeeChangedEventType())
-        self.task.setFixedFee(self.task.fixedFee())
-        self.assertFalse(events)
+        self.record_changes(task.Task.fixedFeeChangedEventType())
+        self.task.set_fixed_fee(self.task.fixedFee())
+        self.assertFalse(self.changes)
 
     def testSetFixedFeeCausesNotification(self):
-        events = []
+        self.record_changes(task.Task.fixedFeeChangedEventType())
+        self.task.set_fixed_fee(1000)
+        self.assertEqual([(1000, self.task)], self.changes)
 
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.fixedFeeChangedEventType())
-        self.task.setFixedFee(1000)
-        self.assertEqual([(1000, self.task)], events)
+    def test_fee_change_sets_the_modification_date(self):
+        before = date.Now()
+        self.task.set_fixed_fee(1000)
+        self.assertTrue(before <= self.task.modificationDateTime())
+        self.task.set_modification_datetime(date.DateTime.min)
+        self.task.set_hourly_fee(100)
+        self.assertTrue(before <= self.task.modificationDateTime())
 
     def testSetFixedFeeCausesRevenueChangeNotification(self):
         events = []
@@ -545,22 +543,17 @@ class DefaultTaskStateTest(
             events.append((newValue, sender))
 
         pub.subscribe(onEvent, task.Task.revenueChangedEventType())
-        self.task.setFixedFee(1000)
+        self.task.set_fixed_fee(1000)
         self.assertEqual([(1000, self.task)], events)
 
     def testSetHourlyFeeViaSetter(self):
-        self.task.setHourlyFee(100)
+        self.task.set_hourly_fee(100)
         self.assertEqual(100, self.task.hourlyFee())
 
     def testSetHourlyFeeCausesNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.hourlyFeeChangedEventType())
-        self.task.setHourlyFee(100)
-        self.assertEqual([(100, self.task)], events)
+        self.record_changes(task.Task.hourlyFeeChangedEventType())
+        self.task.set_hourly_fee(100)
+        self.assertEqual([(100, self.task)], self.changes)
 
     def testSetRecurrence(self):
         self.task.setRecurrence(date.Recurrence("weekly"))
@@ -1896,7 +1889,7 @@ class TaskWithChildTest(
         self.assertFalse(self.events)
 
     def testRemoveChildWithRevenueCausesTotalRevenueNotification(self):
-        self.task1_1.setFixedFee(1000)
+        self.task1_1.set_fixed_fee(1000)
         events = []
 
         def onEvent(newValue, sender):
@@ -2255,7 +2248,7 @@ class TaskWithChildTest(
             events.append((newValue, sender))
 
         pub.subscribe(onEvent, task.Task.revenueChangedEventType())
-        self.task1_1.setHourlyFee(100)
+        self.task1_1.set_hourly_fee(100)
         self.task1_1.addEffort(
             effort.Effort(
                 self.task1_1,
@@ -2301,23 +2294,18 @@ class TaskWithChildTest(
         )
 
     def testSetFixedFeeOfChild(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.fixedFeeChangedEventType())
-        self.task1_1.setFixedFee(1000)
-        self.assertTrue((1000, self.task1) in events)
+        self.record_changes(task.Task.fixedFeeChangedEventType())
+        self.task1_1.set_fixed_fee(1000)
+        self.assertTrue((1000, self.task1) in self.changes)
 
     def testGetFixedFeeRecursive(self):
-        self.task.setFixedFee(2000)
-        self.task1_1.setFixedFee(1000)
+        self.task.set_fixed_fee(2000)
+        self.task1_1.set_fixed_fee(1000)
         self.assertEqual(3000, self.task.fixedFee(recursive=True))
 
     def testRecursiveRevenueFromFixedFee(self):
-        self.task.setFixedFee(2000)
-        self.task1_1.setFixedFee(1000)
+        self.task.set_fixed_fee(2000)
+        self.task1_1.set_fixed_fee(1000)
         self.assertEqual(3000, self.task.revenue(recursive=True))
 
     def testForegroundColorChangeNotificationOfEfforts(self):
@@ -2888,8 +2876,8 @@ class TaskWithChildAndEffortTest(TaskTestCase, CommonTaskTestsMixin):
         )
 
     def testRecursiveRevenue(self):
-        self.task.setHourlyFee(100)
-        self.task1_1.setHourlyFee(100)
+        self.task.set_hourly_fee(100)
+        self.task1_1.set_hourly_fee(100)
         self.assertEqual(4800, self.task.revenue(recursive=True))
 
     def testChildEffortBackgroundColorNotification(self):
@@ -3391,7 +3379,7 @@ class TaskWithHourlyFeeFixture(TaskTestCase, CommonTaskTestsMixin):
 
         pub.subscribe(onEvent, effort.Effort.revenueChangedEventType())
         self.task.addEffort(self.effort)
-        self.task.setHourlyFee(200)
+        self.task.set_hourly_fee(200)
         self.assertEqual([(200, self.effort)], events)
 
 

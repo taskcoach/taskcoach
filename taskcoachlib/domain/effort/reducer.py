@@ -66,8 +66,8 @@ class EffortAggregator(
         pub.subscribe(
             self.onEffortStartChanged, effort.Effort.startChangedEventType()
         )
-        pub.subscribe(
-            self.onRevenueChanged, task.Task.hourlyFeeChangedEventType()
+        patterns.Publisher().registerObserver(
+            self.on_hourly_fee_changed, task.Task.hourlyFeeChangedEventType()
         )
 
     def detach(self):
@@ -75,6 +75,7 @@ class EffortAggregator(
         patterns.Publisher().removeObserver(self.onChildAddedToTask)
         patterns.Publisher().removeObserver(self.onChildRemovedFromTask)
         patterns.Publisher().removeObserver(self.onTaskRemoved)
+        patterns.Publisher().removeObserver(self.on_hourly_fee_changed)
 
     def extend(self, efforts):  # pylint: disable=W0221
         for effort in efforts:
@@ -209,6 +210,10 @@ class EffortAggregator(
             elif not is_tracked and was_tracked:
                 self.__trackedComposites.remove(affected_composite)
             affected_composite.onTimeSpentChanged(newValue, sender)
+
+    def on_hourly_fee_changed(self, event):
+        for sender in event.sources():
+            self.onRevenueChanged(event.value(sender), sender)
 
     def onRevenueChanged(self, newValue, sender):
         for affected_composite in self.__get_composites_for_tasks([sender]):

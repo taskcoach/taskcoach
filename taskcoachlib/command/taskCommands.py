@@ -859,12 +859,12 @@ class EditHourlyFeeCommand(base.BaseCommand):
     def do_command(self):
         super().do_command()
         for item in self.items:
-            item.setHourlyFee(self.__newHourlyFee)
+            item.set_hourly_fee(self.__newHourlyFee)
 
     def undo_command(self):
         super().undo_command()
         for item, oldHourlyFee in zip(self.items, self.__oldHourlyFees):
-            item.setHourlyFee(oldHourlyFee)
+            item.set_hourly_fee(oldHourlyFee)
 
     def redo_command(self):
         self.do_command()
@@ -882,12 +882,12 @@ class EditFixedFeeCommand(base.BaseCommand):
     def do_command(self):
         super().do_command()
         for item in self.items:
-            item.setFixedFee(self.__newFixedFee)
+            item.set_fixed_fee(self.__newFixedFee)
 
     def undo_command(self):
         super().undo_command()
         for item, oldFixedFee in zip(self.items, self.__oldFixedFees):
-            item.setFixedFee(oldFixedFee)
+            item.set_fixed_fee(oldFixedFee)
 
     def redo_command(self):
         self.do_command()

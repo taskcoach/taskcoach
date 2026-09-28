@@ -244,15 +244,15 @@ class TaskSorterSettingsTest(test.TestCase):
     def testSortByHourlyFeeAscending(self):
         self.sorter.sort_ascending(True)
         self.sorter.sort_by("hourlyFee")
-        self.task1.setHourlyFee(100)
-        self.task2.setHourlyFee(200)
+        self.task1.set_hourly_fee(100)
+        self.task2.set_hourly_fee(200)
         self.assertEqual([self.task1, self.task2], list(self.sorter))
 
     def testSortByHourlyFeeDescending(self):
         self.sorter.sort_by("hourlyFee")
         self.sorter.sort_ascending(False)
-        self.task1.setHourlyFee(100)
-        self.task2.setHourlyFee(200)
+        self.task1.set_hourly_fee(100)
+        self.task2.set_hourly_fee(200)
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
     def testSortByPrerequisiteAscending(self):

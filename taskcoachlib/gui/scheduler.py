@@ -87,7 +87,13 @@ def _data_event_types():
     event_types = set()
     for klass in _DOMAIN_CLASSES:
         unread = set()
-        for field in ("subject", "description", "expansion"):
+        for field in (
+            "subject",
+            "description",
+            "expansion",
+            "hourlyFee",
+            "fixedFee",
+        ):
             getter = getattr(klass, "%sChangedEventType" % field, None)
             if getter:
                 unread.add(getter())

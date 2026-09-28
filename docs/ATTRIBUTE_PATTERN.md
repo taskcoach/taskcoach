@@ -332,7 +332,7 @@ and sets the modification date, then is tested:
 | 0 | Attribute and SetAttribute set their owner's modification date; computed (derived, effective) Attributes are volatile | Commands set it | Done |
 | 1 | Category style priority | Plain value, Publisher, never saved | Done, saved as `stylePriority` |
 | 2 | Category exclusive subcategories | Plain value, Publisher | Done |
-| 3 | Task hourly fee, fixed fee | Plain values, pypubsub | To do |
+| 3 | Task hourly fee, fixed fee | Plain values, pypubsub | Done: Attributes, Publisher (`task.hourlyFee`, `task.fixedFee`) |
 | 4 | Task budget | Plain value, pypubsub | To do |
 | 5 | Task "mark completed when all subtasks are" | Plain value, pypubsub | To do |
 | 6 | Task percentage complete, planned duration and its mode | Attributes, pypubsub | To do |

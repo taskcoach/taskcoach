@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import config
+from taskcoachlib import config, patterns
 from taskcoachlib.domain import task, effort, date
 from pubsub import pub
 import test
@@ -28,9 +28,13 @@ class FakeEffortAggregator(object):
         pub.subscribe(
             self.onTimeSpentChanged, task.Task.timeSpentChangedEventType()
         )
-        pub.subscribe(
-            self.onRevenueChanged, task.Task.hourlyFeeChangedEventType()
+        patterns.Publisher().registerObserver(
+            self.on_hourly_fee_changed, task.Task.hourlyFeeChangedEventType()
         )
+
+    def on_hourly_fee_changed(self, event):
+        for sender in event.sources():
+            self.onRevenueChanged(event.value(sender), sender)
 
     def onTimeSpentChanged(self, newValue, sender):
         self.composite.onTimeSpentChanged(newValue, sender)
@@ -232,12 +236,12 @@ class CompositeEffortTest(test.TestCase):
         )
 
     def testRevenue(self):
-        self.task.setHourlyFee(100)
+        self.task.set_hourly_fee(100)
         self.task.addEffort(self.effort1)
         self.assertEqual(100, self.composite.revenue())
 
     def testRevenueTwoEfforts(self):
-        self.task.setHourlyFee(100)
+        self.task.set_hourly_fee(100)
         self.task.addEffort(self.effort1)
         self.task.addEffort(self.effort2)
         self.assertEqual(200, self.composite.revenue())
@@ -250,7 +254,7 @@ class CompositeEffortTest(test.TestCase):
             events.append((newValue, sender))
 
         pub.subscribe(onEvent, effort.Effort.revenueChangedEventType())
-        self.task.setHourlyFee(100)
+        self.task.set_hourly_fee(100)
         self.assertTrue((100.0, self.composite) in events)
 
     def testIsBeingTracked(self):
@@ -590,39 +594,39 @@ class CompositeEffortWithSubTasksRevenueTest(test.TestCase):
         self.child.addEffort(self.childEffort)
 
     def testRevenueWhenParentHasHourlyFee(self):
-        self.task.setHourlyFee(100)
+        self.task.set_hourly_fee(100)
         self.assertEqual(
             self.taskEffort.timeSpent().hours() * 100, self.composite.revenue()
         )
 
     def testRecursiveRevenueWhenParentHasHourlyFee(self):
-        self.task.setHourlyFee(100)
+        self.task.set_hourly_fee(100)
         self.assertEqual(
             self.taskEffort.timeSpent().hours() * 100,
             self.composite.revenue(recursive=True),
         )
 
     def testRevenueWhenChildHasHourlyFee(self):
-        self.child.setHourlyFee(100)
+        self.child.set_hourly_fee(100)
         self.assertEqual(0, self.composite.revenue())
 
     def testRecursiveRevenueWhenChildHasHourlyFee(self):
-        self.child.setHourlyFee(100)
+        self.child.set_hourly_fee(100)
         self.assertEqual(
             self.childEffort.timeSpent().hours() * 100,
             self.composite.revenue(recursive=True),
         )
 
     def testRevenueWhenChildAndParentHaveHourlyFees(self):
-        self.child.setHourlyFee(100)
-        self.task.setHourlyFee(200)
+        self.child.set_hourly_fee(100)
+        self.task.set_hourly_fee(200)
         self.assertEqual(
             self.taskEffort.timeSpent().hours() * 200, self.composite.revenue()
         )
 
     def testRecursiveRevenueWhenChildAndParentHaveHourlyFees(self):
-        self.child.setHourlyFee(100)
-        self.task.setHourlyFee(200)
+        self.child.set_hourly_fee(100)
+        self.task.set_hourly_fee(200)
         self.assertEqual(
             self.taskEffort.timeSpent().hours() * 200
             + self.childEffort.timeSpent().hours() * 100,
@@ -630,23 +634,23 @@ class CompositeEffortWithSubTasksRevenueTest(test.TestCase):
         )
 
     def testRevenueWhenParentHasFixedFee(self):
-        self.task.setFixedFee(1000)
+        self.task.set_fixed_fee(1000)
         self.assertEqual(0, self.composite.revenue())
 
     def testRecursiveRevenueWhenParentHasFixedFee(self):
-        self.task.setFixedFee(1000)
+        self.task.set_fixed_fee(1000)
         self.assertEqual(0, self.composite.revenue(recursive=True))
 
     def testRevenueWhenChildHasFixedFee(self):
-        self.child.setFixedFee(1000)
+        self.child.set_fixed_fee(1000)
         self.assertEqual(0, self.composite.revenue())
 
     def testRecursiveRevenueWhenChildHasFixedFee(self):
-        self.child.setFixedFee(1000)
+        self.child.set_fixed_fee(1000)
         self.assertEqual(0, self.composite.revenue(recursive=True))
 
     def testRevenueWhenParentHasFixedFeeAndMultipleEfforts(self):
-        self.task.setFixedFee(1000)
+        self.task.set_fixed_fee(1000)
         self.task.addEffort(
             effort.Effort(
                 self.task,
@@ -657,7 +661,7 @@ class CompositeEffortWithSubTasksRevenueTest(test.TestCase):
         self.assertEqual(0, self.composite.revenue())
 
     def testRevenueWhenChildHasFixedFeeAndMultipleEfforts(self):
-        self.child.setFixedFee(1000)
+        self.child.set_fixed_fee(1000)
         self.child.addEffort(
             effort.Effort(
                 self.child,
@@ -668,7 +672,7 @@ class CompositeEffortWithSubTasksRevenueTest(test.TestCase):
         self.assertEqual(0, self.composite.revenue())
 
     def testRecursiveRevenueWhenChildHasFixedFeeAndMultipleEfforts(self):
-        self.child.setFixedFee(1000)
+        self.child.set_fixed_fee(1000)
         self.child.addEffort(
             effort.Effort(
                 self.child,
@@ -679,8 +683,8 @@ class CompositeEffortWithSubTasksRevenueTest(test.TestCase):
         self.assertEqual(0, self.composite.revenue(recursive=True))
 
     def testRevenueWithMixture(self):
-        self.child.setFixedFee(100)
-        self.task.setHourlyFee(1000)
+        self.child.set_fixed_fee(100)
+        self.task.set_hourly_fee(1000)
         self.assertEqual(1000, self.composite.revenue(recursive=True))
 
     def testThatAnHourlyFeeChangeCausesARevenueNotification(self):
@@ -690,5 +694,5 @@ class CompositeEffortWithSubTasksRevenueTest(test.TestCase):
             events.append((newValue, sender))
 
         pub.subscribe(onEvent, effort.Effort.revenueChangedEventType())
-        self.child.setHourlyFee(100)
+        self.child.set_hourly_fee(100)
         self.assertTrue((0.0, self.composite) in events)

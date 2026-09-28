@@ -344,14 +344,14 @@ class XMLWriterTest(test.TestCase):
         self.expect_not_in_xml("hourlyFee")
 
     def testHourlyFee(self):
-        self.task.setHourlyFee(100)
+        self.task.set_hourly_fee(100)
         self.expect_in_xml('hourlyFee="100"')
 
     def testDefaultFixedFee(self):
         self.expect_not_in_xml("fixedFee")
 
     def testFixedFee(self):
-        self.task.setFixedFee(1000)
+        self.task.set_fixed_fee(1000)
         self.expect_in_xml('fixedFee="1000"')
 
     def testNoReminder(self):

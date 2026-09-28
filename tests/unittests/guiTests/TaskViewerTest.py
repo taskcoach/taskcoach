@@ -1032,21 +1032,21 @@ class CommonTestsMixin(object):
     def testChangeHourlyFeeWhileColumnShown(self):
         self.showColumn("hourlyFee")
         self.taskList.append(self.task)
-        self.task.setHourlyFee(100)
+        self.task.set_hourly_fee(100)
         self.assertEqual(render.monetaryAmount(100.0), self.getItemText(0, 3))
 
     def testChangeFixedFeeWhileColumnShown(self):
         self.showColumn("fixedFee")
         self.taskList.append(self.task)
-        self.task.setFixedFee(200)
+        self.task.set_fixed_fee(200)
         self.assertEqual(render.monetaryAmount(200.0), self.getItemText(0, 3))
 
     def testCollapsedCompositeTaskShowsRecursiveFixedFee(self):
         self.showColumn("fixedFee")
         self.taskList.extend([self.task, self.child])
         self.task.addChild(self.child)
-        self.task.setFixedFee(100)
-        self.child.setFixedFee(200)
+        self.task.set_fixed_fee(100)
+        self.child.set_fixed_fee(200)
         self.viewer.setSortOrderAscending(False)
         expectedAmount = (
             "(%s)" % locale.currency(300, False)
