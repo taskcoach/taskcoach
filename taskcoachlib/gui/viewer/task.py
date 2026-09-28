@@ -109,7 +109,15 @@ class BaseTaskViewer(
         super().__init__(*args, **kwargs)
         self.statusMessages = TaskViewerStatusMessages(self)
         self.__register_for_appearance_changes()
+        # The status bar counts the statuses; the clock changes them too
+        self.registerObserver(
+            self._on_task_status_changed,
+            eventType=task.Task.statusChangedEventType(),
+        )
         wx.CallAfter(self.__DisplayBalloon)
+
+    def _on_task_status_changed(self, event):  # pylint: disable=W0613
+        self.send_viewer_status_event()
 
     def __DisplayBalloon(self):
         # Guard against deleted C++ object - can happen when wx.CallAfter

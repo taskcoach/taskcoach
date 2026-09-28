@@ -31,7 +31,8 @@ The scheduler:
 
 4. Step 10: one reminder window per due reminder when a file opens,
    the loading freeze.
-5. The status bar counts after the clock changes a status (issue 12).
+5. Done 2026-09-28: the status bar counts after the clock changes a
+   status (issue 12).
 6. Step 7: drop the legacy status and colours.
 7. To review: the recursive priority computed by the loop, as the
    status is ([SCHEDULERS.md](SCHEDULERS.md#todo)).
@@ -581,10 +582,12 @@ Issues found, not fixed:
     a copy of a task (File > Merge's) could leak efforts into the open
     file's list. The effort list and the effort aggregator now take a
     task's efforts message by identity (`EffortListTest`).
-12. The status bar's counts (overdue, late, ...) are not refreshed
-    when the clock changes a status: a task falling due shows red but
-    counts as overdue only after the next selection change. Also on
-    the commit before this work (87d6ceed8).
+12. Fixed 2026-09-28: the status bar's counts (overdue, late, ...)
+    were not refreshed when the clock changed a status: a task falling
+    due showed red but counted as overdue only after the next
+    selection change (also on 87d6ceed8, before this work). Task
+    viewers now send their status when a task's status changes
+    (`TaskViewerTest`).
 13. `Filter.reset()` (`domain/base/filter.py`) matches items by
     equality, that is by id: loading over open items (no close
     first) leaves the old objects in the viewers, as the loaded

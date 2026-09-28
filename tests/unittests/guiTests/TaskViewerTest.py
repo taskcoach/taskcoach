@@ -930,6 +930,14 @@ class CommonTestsMixin(object):
             self.task,
         )
 
+    def test_a_status_changed_by_the_clock_updates_the_status_bar(self):
+        self.taskList.append(self.task)
+        self.task.setDueDateTime(date.Now() + date.ONE_HOUR)
+        statuses = test.ChangeRecorder(self.viewer.viewer_status_event_type())
+        # The master loop, a day later: the task is overdue
+        self.task.compute_stored_status(now=date.Now() + date.ONE_DAY)
+        self.assertEqual([self.viewer], statuses)
+
     def testStartTracking(self):
         self.taskList.append(self.task)
         self.task.addEffort(effort.Effort(self.task))
