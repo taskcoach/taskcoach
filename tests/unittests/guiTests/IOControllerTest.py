@@ -354,6 +354,35 @@ class IOControllerTest(test.TestCase):
             targetFile.close()
             targetFile.stop()
 
+    def test_open_lists_the_duplicate_ids_it_corrected(self):
+        with open(self.filename1, "w", encoding="utf-8") as fd:
+            fd.write(
+                '<?taskcoach release="2.0.3" tskversion="37"?>\n'
+                '<tasks><task id="1" subject="first"/>'
+                '<task id="1" subject="second"/></tasks>'
+            )
+        task_file = persistence.TaskFile()
+        iocontroller = gui.iocontroller.IOController(
+            task_file, lambda *args: None, self.settings
+        )
+        messages = []
+        try:
+            iocontroller.open(
+                self.filename1,
+                showerror=lambda message, **kwargs: messages.append(message),
+            )
+        finally:
+            task_file.close()
+            task_file.stop()
+        self.assertEqual(
+            (1, True, True),
+            (
+                len(messages),
+                "Kept its ID: Task: first" in messages[0],
+                "New ID: Task: second" in messages[0],
+            ),
+        )
+
     def test_open_when_in_use(self):
         self.taskFile.raiseError = resourcelock.LockInUse(
             self.filename1, {"pid": "4321"}

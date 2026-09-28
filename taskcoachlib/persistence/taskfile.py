@@ -232,6 +232,7 @@ class TaskFile(patterns.Observer):
         self.__notes = note.NoteContainer()
         self.__efforts = effort.EffortList(self.tasks())
         self.__guid = str(uuid.uuid4())
+        self.__corrected_ids = {}
         self.__changedOnDisk = False
         # The file's (mtime, size) when last loaded or saved
         self.__saved_stat = None
@@ -285,6 +286,11 @@ class TaskFile(patterns.Observer):
 
     def guid(self):
         return self.__guid
+
+    def corrected_ids(self):
+        """The duplicate IDs the last load corrected: ID -> the items'
+        (type, path), the first kept the ID."""
+        return self.__corrected_ids
 
     def isEmpty(self):
         return (
@@ -471,6 +477,7 @@ class TaskFile(patterns.Observer):
         # Before reading: a change during the read is noticed later
         stat = self.__disk_stat()
         duplicate_ids = None
+        self.__corrected_ids = {}
         try:
             if self.exists():
                 fd = self._openForRead()
@@ -486,6 +493,7 @@ class TaskFile(patterns.Observer):
                 # Log any duplicate IDs found in the file
                 if duplicate_ids:
                     self._log_duplicate_ids(duplicate_ids)
+                    self.__corrected_ids = duplicate_ids
             else:
                 tasks = []
                 categories = []

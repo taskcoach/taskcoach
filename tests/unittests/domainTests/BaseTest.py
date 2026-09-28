@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 import test
+import uuid
 import weakref
 from taskcoachlib import patterns
 from taskcoachlib.domain import base, date
@@ -131,6 +132,9 @@ class ObjectTest(test.TestCase):
 
     def testIdIsAString(self):
         self.assertEqual(type(""), type(self.object.id()))
+
+    def test_a_new_id_is_a_random_uuid(self):
+        self.assertEqual(4, uuid.UUID(self.object.id()).version)
 
     def testDifferentObjectsHaveDifferentIds(self):
         self.assertNotEqual(base.Object().id(), self.object.id())

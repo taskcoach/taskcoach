@@ -32,6 +32,9 @@ import sys
 import codecs
 import traceback
 
+# The duplicate IDs listed after opening a file; the log has them all
+_MAX_CORRECTED_LISTED = 20
+
 
 def copy_name(path, file_exists=os.path.exists):
     """Return the file name (without folder) to suggest for a copy of
@@ -206,6 +209,7 @@ class IOController(object):
                     filename=self.__task_file.filename(),
                 )
             )
+            self.__report_corrected_ids(showerror)
         else:
             error_message = (
                 _("Cannot open %s because it doesn't exist") % filename
@@ -218,6 +222,47 @@ class IOController(object):
             else:
                 showerror(error_message, **self.__error_message_options)
             self.__remove_recent_file(filename)
+
+    def __report_corrected_ids(self, showerror):
+        """The log is not shown to everyone: list the items that had
+        another item's ID and say how to keep or drop the correction."""
+        corrected = self.__task_file.corrected_ids()
+        if not corrected:
+            return
+        lines = []
+        for locations in corrected.values():
+            lines.append(_("Kept its ID: %s") % locations[0][1])
+            lines.extend(
+                _("New ID: %s") % path for _kind, path in locations[1:]
+            )
+        shown = lines[:_MAX_CORRECTED_LISTED]
+        if len(lines) > len(shown):
+            shown.append(
+                _("... and %d more, listed in the log")
+                % (len(lines) - len(shown))
+            )
+        if self.__settings.getboolean("file", "autosave"):
+            keep_or_drop = _(
+                "Autosave saves the correction; the file as it was can be "
+                "restored with File > Manage backups."
+            )
+        else:
+            keep_or_drop = _(
+                "Save to keep the correction, Save as to keep it in "
+                "another file, or close without saving to leave the file "
+                "as it was."
+            )
+        message = "%s\n\n%s\n\n%s" % (
+            _(
+                "Some items in %s had the same ID, which must be unique. "
+                "They have been separated: the first item with each ID "
+                "kept it, the others got new IDs."
+            )
+            % self.__task_file.filename(),
+            "\n".join(shown),
+            keep_or_drop,
+        )
+        showerror(message, caption=_("Duplicate IDs"), style=wx.ICON_WARNING)
 
     def merge(self, filename=None, showerror=wx.MessageBox):
         if not filename:

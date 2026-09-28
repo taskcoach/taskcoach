@@ -17,6 +17,7 @@ How domain objects are serialized to `.tsk` XML files and deserialized back.
 - [Skip Condition Categories](#skip-condition-categories)
 - [Saving](#saving)
 - [Merging](#merging)
+- [IDs](#ids)
 - [Duplicate IDs](#duplicate-ids)
 - [Related Documentation](#related-documentation)
 
@@ -312,15 +313,26 @@ only for the merge; the same ID in both is the same item.
 - Deletions do not carry over: an item deleted in one file comes back
   from the other.
 
+## IDs
+
+**Ruling, 2026-09-28:** a new item's ID is a random UUID, version 4
+(`base.new_id()`): 122 random bits from the operating system's
+cryptographic source (`os.urandom()`), no machine data, no time, in the
+standard 36-character form, so two items never get the same ID. An ID
+read from a file is kept as it is: older files have time-based UUIDs
+(version 1), which never equal a version 4 one. Copies get new IDs
+([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#id-review)).
+
 ## Duplicate IDs
 
 **Ruling, 2026-09-28:** an ID is unique within a file, fixed when the
 file is read. The first item with an ID keeps it; each later one gets a
 new ID (`XMLReader.__register_id()`), so references to the ID
 (prerequisites, category members) mean the first. The file is marked
-unsaved to keep the correction, and the log lists what was changed.
-Copies always get new IDs
-([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#id-review)).
+unsaved, and a message lists the items and how to keep or drop the
+correction: Save, Save As, or close without saving; with autosave on,
+the correction is saved at once and the file as it was can be restored
+with File > Manage backups. The log lists them all.
 
 ---
 

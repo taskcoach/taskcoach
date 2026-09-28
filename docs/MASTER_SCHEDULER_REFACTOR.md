@@ -18,9 +18,8 @@ recursive priority stays out of the loop
 
 This refactor:
 
-1. IDs: decisions on issues 16 to 18 (cut and paste identity,
-   `uuid1` saving the MAC address, the unused file GUID;
-   [ID Review](#id-review)).
+1. IDs: decisions on issues 16 and 18 (cut and paste identity, the
+   unused file GUID; [ID Review](#id-review)).
 2. The undo log as object versions keyed by the modification date
    ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log), option C).
 3. Sorting by the Status column, in the status sort order
@@ -558,13 +557,15 @@ Issues found, not fixed:
     `Task` has no `statusSortFunction`. The Status icon column does
     not sort.
 15. Fixed 2026-09-28: duplicate IDs in a file were only logged; both
-    objects loaded and compared equal. They are corrected when read
+    objects loaded and compared equal. They are corrected when read,
+    and a message lists them
     ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#duplicate-ids)).
 16. Paste inserts copies, so a task moved by cut and paste gets a new
     ID and creation date, unlike drag and drop; merging an older copy
     of the file then brings the old task back beside it.
-17. New IDs are `uuid1()`: the time and this computer's network (MAC)
-    address, saved in every item; `uuid4()` is random.
+17. Fixed 2026-09-28: new IDs were `uuid1()`, the time and this
+    computer's network (MAC) address, saved in every item; they are
+    random UUIDs now ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#ids)).
 18. The task file's GUID is written back on every save but read by
     nothing since the sync was removed.
 
@@ -573,7 +574,7 @@ Issues found, not fixed:
 Checked 2026-09-28, across the repository:
 
 - Every task, category, note, attachment and effort gets an ID when
-  created (`Object.__init__`, `uuid1()`), keeps it for life and saves
+  created (`base.new_id()`, a random UUID), keeps it for life and saves
   it. Only reading a file and undo (each object's own state) set an
   existing ID.
 - Copies get new IDs (`__getcopystate__()` leaves the ID and the
@@ -587,7 +588,7 @@ Checked 2026-09-28, across the repository:
 - Not item IDs: the file's GUID (issue 18); wx window and menu IDs
   (`IdProvider`), returned when a window closes.
 
-Open: issues 16 to 18.
+Open: issues 16 and 18.
 
 ---
 

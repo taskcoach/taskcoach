@@ -29,8 +29,10 @@ import re
 
 
 def new_id():
-    """A new item's ID, unique for good."""
-    return str(uuid.uuid1())
+    """A new item's ID: a random UUID (version 4) from the operating
+    system's cryptographic source, no machine data
+    (docs/PERSISTENCE_XML.md, IDs)."""
+    return str(uuid.uuid4())
 
 
 def fresh_state(parent, instance):
