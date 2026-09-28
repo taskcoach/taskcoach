@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import contextlib
 from . import singleton as patterns
 from .observer import Event
 
@@ -41,9 +42,28 @@ class CommandHistory(object, metaclass=patterns.Singleton):
     def __init__(self):
         self.__history = []
         self.__future = []
+        self.__running = 0
 
     def _notify(self):
         Event("commandhistory.changed", self).send()
+
+    @contextlib.contextmanager
+    def running(self):
+        """While a command does, undoes or redoes its change: changes
+        made meanwhile are the command's."""
+        self.__running += 1
+        try:
+            yield
+        finally:
+            self.__running -= 1
+
+    def is_running(self):
+        return self.__running > 0
+
+    def current(self):
+        """The last command done, which undo would undo; None if
+        none."""
+        return self.__history[-1] if self.__history else None
 
     def append(self, command):
         self.__history.append(command)
@@ -53,14 +73,16 @@ class CommandHistory(object, metaclass=patterns.Singleton):
     def undo(self):
         if self.__history:
             command = self.__history.pop()
-            command.undo()
+            with self.running():
+                command.undo()
             self.__future.append(command)
             self._notify()
 
     def redo(self):
         if self.__future:
             command = self.__future.pop()
-            command.redo()
+            with self.running():
+                command.redo()
             self.__history.append(command)
             self._notify()
 

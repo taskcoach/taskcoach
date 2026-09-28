@@ -78,9 +78,11 @@ second. The modification date keeps fractions of a second anyway
 - The log is not saved. Undo and redo change stored data, so they
   mark the file unsaved like any change, and closing the file clears
   the log (`IOController`).
-- To decide: undoing back to the saved state leaves the file marked
-  unsaved; editors usually track the saved point and clear the mark
-  there.
+- Undo or redo back to the saved state clears the unsaved mark (ruling,
+  2026-09-28): the file remembers the last command done when it was
+  saved or loaded. A change made outside a command (expanding a task,
+  a merge, snoozing) makes that state unreachable until the next save
+  (`TaskFile.on_command_history_changed()`).
 - Changes outside a user action (the scheduler, a Todo.txt import,
   snoozing in the reminder window) are not undoable and record into
   no entry. An undo that restores an item overwrites such a change

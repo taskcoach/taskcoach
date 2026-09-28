@@ -24,7 +24,7 @@ import tempfile
 import wx
 from pubsub import pub
 import test
-from taskcoachlib import persistence, config
+from taskcoachlib import command, config, patterns, persistence
 from taskcoachlib.domain import (
     base,
     task,
@@ -276,6 +276,27 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.taskFile.save()
         self.assertFalse(self.taskFile.need_save())
         self.task.removeEffort(newEffort)
+        self.assertTrue(self.taskFile.need_save())
+
+    def edit_subject(self):
+        patterns.CommandHistory().clear()
+        self.taskFile.save()
+        command.EditSubjectCommand(
+            self.taskFile.tasks(), [self.task], newValue="new"
+        ).do()
+
+    def test_undo_back_to_the_saved_state_needs_no_save(self):
+        self.edit_subject()
+        self.assertTrue(self.taskFile.need_save())
+        patterns.CommandHistory().undo()
+        self.assertFalse(self.taskFile.need_save())
+        patterns.CommandHistory().redo()
+        self.assertTrue(self.taskFile.need_save())
+
+    def test_change_outside_commands_is_not_undone(self):
+        self.edit_subject()
+        self.task.setDescription("not a command")
+        patterns.CommandHistory().undo()
         self.assertTrue(self.taskFile.need_save())
 
     def test_modification_date_change_needs_save(self):

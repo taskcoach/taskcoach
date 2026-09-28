@@ -189,6 +189,9 @@ class SafeWriteFile(object):
         return _isCloud(os.path.dirname(self.__filename))
 
 
+# The saved state can no longer be reached by undo or redo
+_UNREACHABLE = object()
+
 _ATTACHMENT_CLASSES = (
     attachment.FileAttachment,
     attachment.URIAttachment,
@@ -254,6 +257,10 @@ class TaskFile(patterns.Observer):
             self.registerObserver(self.on_saved_data_changed, event_type)
         for topic in _SAVED_TOPICS:
             pub.subscribe(self.on_saved_message, topic)
+        self.__saved_at = None
+        self.registerObserver(
+            self.on_command_history_changed, "commandhistory.changed"
+        )
 
     def __str__(self):
         return self.filename()
@@ -340,14 +347,30 @@ class TaskFile(patterns.Observer):
         return self.__needSave
 
     def markDirty(self, force=False):
+        if not patterns.CommandHistory().is_running():
+            # Changed outside a command: undo cannot bring back the
+            # saved state
+            self.__saved_at = _UNREACHABLE
         if force or not self.__needSave:
             self.__needSave = True
             self._publish("taskfile.dirty", taskFile=self)
 
     def markClean(self):
+        # The saved state is where undo and redo lead to this command
+        self.__saved_at = patterns.CommandHistory().current()
         if self.__needSave:
             self.__needSave = False
             self._publish("taskfile.clean", taskFile=self)
+
+    def on_command_history_changed(self, event):
+        """Undo or redo back to the saved state leaves nothing to
+        save."""
+        if (
+            self.__needSave
+            and self.__saved_at is not _UNREACHABLE
+            and patterns.CommandHistory().current() is self.__saved_at
+        ):
+            self.markClean()
 
     def onFileChanged(self):
         if not self.__saving:

@@ -494,9 +494,8 @@ Questions to decide:
    watcher still runs and sends `taskfile.changed`, which nobody
    hears, and the next save replaces the file. Warn once (pointing to
    File > Merge), or remove the watcher and its `fspoll` setting?
-2. **Undo back to the saved state.** Should it clear the unsaved mark
-   (track the saved point)? See
-   [UNDO_REDO.md](UNDO_REDO.md#persistence).
+2. Decided and done 2026-09-28: undo back to the saved state clears
+   the unsaved mark ([UNDO_REDO.md](UNDO_REDO.md#persistence)).
 3. **View state and the modification date.** A category's filter
    state and a task's expanded state are saved but are not the item's
    data; they do not set the date today. Manual ordering does (it is

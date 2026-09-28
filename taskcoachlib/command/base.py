@@ -64,8 +64,9 @@ class BaseCommand(patterns.Command):
     def do(self):
         if self.canDo():
             super().do()
-            with ModificationDateRecorder() as recorder:
-                self.do_command()
+            with patterns.CommandHistory().running():
+                with ModificationDateRecorder() as recorder:
+                    self.do_command()
             self.__dates_before = recorder.dates_before
             self.__dates_after = {
                 key: (item, item.modificationDateTime())
