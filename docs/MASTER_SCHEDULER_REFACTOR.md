@@ -51,9 +51,9 @@ Found along the way:
 12. `.delta` files left by older versions (issue 10).
 13. The task editor's Progress tab drawn twice, to check on a real
     display (issue 7).
-15. Sorting by the Status column (issue 14).
 14. Done 2026-09-28: the timing-dependent `EffortViewerTest` case
     (issue 8).
+15. Sorting by the Status column (issue 14).
 
 ## Master Design
 
