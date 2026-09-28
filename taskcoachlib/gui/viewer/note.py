@@ -55,9 +55,7 @@ class BaseNoteViewer(
             note.Note.appearanceChangedEventType(),
             note.Note.subjectChangedEventType(),
         ):
-            self.registerObserver(
-                self.onAttributeChanged_Deprecated, eventType
-            )
+            self.registerObserver(self.on_attribute_changed, eventType)
 
     def domainObjectsToView(self):
         return (

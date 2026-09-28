@@ -2802,15 +2802,18 @@ class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
             **kwargs
         )
         self.__tracker = effort.EffortListTracker(self.effortList)
-        # Also gets the subtopics (.changed.added, .changed.removed)
-        self.__tracker.subscribe(self.__onEffortsChanged, "effortlisttracker")
+        self.registerObserver(
+            self.__on_efforts_changed,
+            eventType=self.__tracker.changed_event_type(),
+            eventSource=self.__tracker,
+        )
         self.__current_icon_id = None
 
     def removeInstance(self):
         self._EffortStop__tracker.removeInstance()
         super().removeInstance()
 
-    def __onEffortsChanged(self, efforts):
+    def __on_efforts_changed(self, event):  # pylint: disable=W0613
         self.updateUI()
 
     def efforts(self):

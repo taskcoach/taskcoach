@@ -64,7 +64,7 @@ class EffortViewer(
         self.aggregation = settings.get(self.settingsSection(), "aggregation")
         self.__init_mode_toolbar_ui_commands()
         self.registerObserver(
-            self.onAttributeChanged_Deprecated,
+            self.on_attribute_changed,
             eventType=effort.Effort.appearanceChangedEventType(),
         )
         pub.subscribe(

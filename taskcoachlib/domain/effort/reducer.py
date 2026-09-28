@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns
 from taskcoachlib.domain import date, task
-from pubsub import pub
 from . import composite
 from . import effortlist
 from . import effort
@@ -44,12 +43,12 @@ class EffortAggregator(
         )
         self.__end_of_period = getattr(date.DateTime, "endOf%s" % aggregation)
         super().__init__(*args, **kwargs)
-        pub.subscribe(
-            self.onCompositeEmpty,
+        patterns.Publisher().registerObserver(
+            self.on_composite_empty,
             composite.CompositeEffort.compositeEmptyEventType(),
         )
-        pub.subscribe(
-            self.onTaskEffortChanged, task.Task.effortsChangedEventType()
+        patterns.Publisher().registerObserver(
+            self.on_task_efforts_changed, task.Task.effortsChangedEventType()
         )
         patterns.Publisher().registerObserver(
             self.onChildAddedToTask, eventType=task.Task.addChildEventType()
@@ -72,6 +71,8 @@ class EffortAggregator(
 
     def detach(self):
         super().detach()
+        patterns.Publisher().removeObserver(self.on_composite_empty)
+        patterns.Publisher().removeObserver(self.on_task_efforts_changed)
         patterns.Publisher().removeObserver(self.onChildAddedToTask)
         patterns.Publisher().removeObserver(self.onChildRemovedFromTask)
         patterns.Publisher().removeObserver(self.onTaskRemoved)
@@ -104,14 +105,16 @@ class EffortAggregator(
     def __extend_self_with_composites(self, new_composites, event=None):
         """Add composites to the aggregator."""
         super().extendSelf(new_composites, event=event)
+        tracking = patterns.Event()
         for new_composite in new_composites:
             if new_composite.isBeingTracked():
                 self.__trackedComposites.add(new_composite)
-                pub.sendMessage(
-                    effort.Effort.trackingChangedEventType(),
-                    newValue=True,
-                    sender=new_composite,
+                tracking.addSource(
+                    new_composite,
+                    True,
+                    type=effort.Effort.trackingChangedEventType(),
                 )
+        tracking.send()
 
     @patterns.eventSource
     def removeItemsFromSelf(self, tasks, event=None):
@@ -141,9 +144,13 @@ class EffortAggregator(
             affected_composite._invalidateCache()
             affected_composite.notifyObserversOfDurationOrEmpty()
 
+    def on_task_efforts_changed(self, event):
+        for sender in event.sources():
+            # By identity, as in EffortList
+            if any(sender is each for each in self.observable()):
+                self.onTaskEffortChanged(event.value(sender), sender)
+
     def onTaskEffortChanged(self, newValue, sender):
-        if sender not in self.observable():
-            return
         new_composites = []
         newValue, oldValue = newValue
         efforts_added = [
@@ -184,6 +191,10 @@ class EffortAggregator(
         for affected_composite in affected_composites:
             affected_composite._invalidateCache()
             affected_composite.notifyObserversOfDurationOrEmpty()
+
+    def on_composite_empty(self, event):
+        for sender in event.sources():
+            self.onCompositeEmpty(sender)
 
     def onCompositeEmpty(self, sender):
         # pylint: disable=W0621

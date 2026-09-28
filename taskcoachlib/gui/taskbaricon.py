@@ -29,7 +29,6 @@ from taskcoachlib.gui.toplevelcontroller import (
 )
 from taskcoachlib.i18n import _
 from taskcoachlib.domain import task
-from pubsub import pub
 import wx.adv
 from .icons.icon_library import icon_catalog, LIST_ICON_SIZE
 
@@ -103,8 +102,9 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
             eventType=taskList.removeItemEventType(),
             eventSource=taskList,
         )
-        pub.subscribe(
-            self.on_tracking_changed, task.Task.trackingChangedEventType()
+        self.registerObserver(
+            self.on_tracking_changed,
+            eventType=task.Task.trackingChangedEventType(),
         )
         self.registerObserver(
             self.on_change_due_date_time,
@@ -167,20 +167,22 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         self.__set_tooltip_text()
         self.__start_or_stop_ticking()
 
-    def on_tracking_changed(self, newValue, sender):
-        if newValue:
-            self.registerObserver(
-                self.on_change_subject,
-                eventType=sender.subjectChangedEventType(),
-                eventSource=sender,
-            )
-        else:
-            self.removeObserver(
-                self.on_change_subject,
-                eventType=sender.subjectChangedEventType(),
-            )
+    def on_tracking_changed(self, event):
+        for sender in event.sources():
+            if event.value(sender):
+                self.registerObserver(
+                    self.on_change_subject,
+                    eventType=sender.subjectChangedEventType(),
+                    eventSource=sender,
+                )
+            else:
+                self.removeObserver(
+                    self.on_change_subject,
+                    eventType=sender.subjectChangedEventType(),
+                )
         self.__set_tooltip_text()
-        if newValue:
+        # The task and its ancestors, all with the same value
+        if any(event.value(sender) for sender in event.sources()):
             self.__start_ticking()
         else:
             self.__stop_ticking()
@@ -434,8 +436,9 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             eventType=taskList.removeItemEventType(),
             eventSource=taskList,
         )
-        pub.subscribe(
-            self.on_tracking_changed, task.Task.trackingChangedEventType()
+        self.registerObserver(
+            self.on_tracking_changed,
+            eventType=task.Task.trackingChangedEventType(),
         )
         self.registerObserver(
             self.on_change_due_date_time,
@@ -473,20 +476,22 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
     def _on_any_subject_changed(self, event):  # pylint: disable=W0613
         self._rebuild_gtk_menu()
 
-    def on_tracking_changed(self, newValue, sender):
-        if newValue:
-            self.registerObserver(
-                self.on_change_subject,
-                eventType=sender.subjectChangedEventType(),
-                eventSource=sender,
-            )
-        else:
-            self.removeObserver(
-                self.on_change_subject,
-                eventType=sender.subjectChangedEventType(),
-            )
+    def on_tracking_changed(self, event):
+        for sender in event.sources():
+            if event.value(sender):
+                self.registerObserver(
+                    self.on_change_subject,
+                    eventType=sender.subjectChangedEventType(),
+                    eventSource=sender,
+                )
+            else:
+                self.removeObserver(
+                    self.on_change_subject,
+                    eventType=sender.subjectChangedEventType(),
+                )
         self.__set_tooltip_text()
-        if newValue:
+        # The task and its ancestors, all with the same value
+        if any(event.value(sender) for sender in event.sources()):
             self.__start_ticking()
         else:
             self.__stop_ticking()

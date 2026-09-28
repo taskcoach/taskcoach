@@ -17,10 +17,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import render
+from taskcoachlib import patterns, render
 from taskcoachlib.domain import date
 from taskcoachlib.i18n import _
-from pubsub import pub
 from . import base
 
 
@@ -111,11 +110,11 @@ class BaseCompositeEffort(base.BaseEffort):  # pylint: disable=W0223
         if self._getEfforts():
             self.sendDurationChangedMessage()
         else:
-            pub.sendMessage(self.compositeEmptyEventType(), sender=self)
+            patterns.Event(self.compositeEmptyEventType(), self).send()
 
     @classmethod
     def compositeEmptyEventType(class_):
-        return "pubsub.effort.composite.empty"
+        return "effort.composite.empty"
 
     @classmethod
     def modificationEventTypes(class_):

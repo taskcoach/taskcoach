@@ -206,29 +206,22 @@ _ATTACHMENT_CLASSES = (
 
 
 def _saved_event_types():
-    """The Publisher events of saved data changing: an item's
-    modification date, an item added to or removed from another, a
-    category's filter."""
+    """The events of saved data changing: an item's modification date,
+    an item added to or removed from another, saved view state (the
+    expanded state, a category's filter)."""
     composites = (task.Task, category.Category, note.Note)
     for cls in composites + (effort.Effort,) + _ATTACHMENT_CLASSES:
         yield cls.modification_datetime_changed_event_type()
     for cls in composites:
         yield cls.addChildEventType()
         yield cls.removeChildEventType()
+        yield cls.expansionChangedEventType()
     for cls in (task.Task, category.Category) + _ATTACHMENT_CLASSES:
         yield cls.notesChangedEventType()
     for cls in composites:
         yield cls.attachmentsChangedEventType()
+    yield task.Task.effortsChangedEventType()
     yield category.Category.filterChangedEventType()
-
-
-# The same on pypubsub: efforts added or removed, expanded state
-_SAVED_TOPICS = (
-    task.Task.effortsChangedEventType(),
-    task.Task.expansionChangedEventType(),
-    category.Category.expansionChangedEventType(),
-    note.Note.expansionChangedEventType(),
-)
 
 
 class TaskFile(patterns.Observer):
@@ -263,8 +256,6 @@ class TaskFile(patterns.Observer):
                 )
         for event_type in _saved_event_types():
             self.registerObserver(self.on_saved_data_changed, event_type)
-        for topic in _SAVED_TOPICS:
-            pub.subscribe(self.on_saved_message, topic)
         self.__saved_at = None
         self.registerObserver(
             self.on_command_history_changed, "commandhistory.changed"
@@ -313,10 +304,6 @@ class TaskFile(patterns.Observer):
         if self.__loading or self.__saving:
             return
         if any(self.__holds(item) for item in event.sources()):
-            self.markDirty()
-
-    def on_saved_message(self, newValue, sender):
-        if not (self.__loading or self.__saving) and self.__holds(sender):
             self.markDirty()
 
     def __holds(self, item):
@@ -439,8 +426,6 @@ class TaskFile(patterns.Observer):
         dirty, and autosaved, whenever they change later."""
         self.stop()
         self.removeInstance()
-        for topic in _SAVED_TOPICS:
-            pub.unsubscribe(self.on_saved_message, topic)
 
     def _read(self, fd):
         reader = xml.XMLReader(fd)

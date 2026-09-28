@@ -69,6 +69,25 @@ def skipOnTwistedVersions(*versions):
     return wrapper
 
 
+class ChangeRecorder(list):
+    """The changes of an event type, as they are sent: (value, source)
+    for each source, or the source alone when the event carries no
+    value. Keep it referenced: the Publisher holds it weakly."""
+
+    def __init__(self, event_type):
+        super().__init__()
+        from taskcoachlib import patterns
+
+        patterns.Publisher().registerObserver(
+            self.on_event, eventType=event_type
+        )
+
+    def on_event(self, event):
+        for source in event.sources():
+            values = event.values(source)
+            self.append((values[0], source) if values else source)
+
+
 class TestCase(unittest.TestCase, object):
     def assertEqualLists(self, expectedList, actualList):
         self.assertEqual(len(expectedList), len(actualList))

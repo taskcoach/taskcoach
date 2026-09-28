@@ -41,7 +41,6 @@ Volatile Fields (not persisted):
 Field types: 'fgColor', 'bgColor', 'font', 'icon'
 """
 
-from pubsub import pub
 
 # =============================================================================
 # Constants

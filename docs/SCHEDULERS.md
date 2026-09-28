@@ -252,9 +252,7 @@ Each category, task and note, and each of the two events, runs
 isolated (`_run_isolated`): these steps notify listeners (viewers,
 reminder dialogs), and one failing listener must not skip the rest of
 the pass or keep the date and minute events from being sent. The
-Publisher runs each of their subscribers isolated; pypubsub messages
-sent during the processing (status changes) still stop at their first
-failing listener. A failure is logged with the
+Publisher runs each of their subscribers isolated. A failure is logged with the
 `[SCHEDULER]` prefix, with its traceback the first time and then a
 count every 100 repeats.
 

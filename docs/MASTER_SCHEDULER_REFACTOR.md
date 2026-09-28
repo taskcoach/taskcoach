@@ -16,11 +16,11 @@ The signals, after steps 12 to 14: everything moves to the Publisher,
 then pypubsub is removed
 ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#todo)):
 
-1. The domain's pypubsub messages, computed values included. The
-   loop's hook then lists exactly what it reads, instead of the whole
-   `pubsub.task`, `pubsub.note` and `pubsub.category` topics
-   (issue 5), and the viewers, editors and AttributeSync lose their
-   pypubsub branches. Issue 11 comes from the efforts message.
+1. Done 2026-09-28: the domain's pypubsub messages, computed values
+   included, moved to the Publisher. The loop's hook lists what it
+   reads instead of whole topics (issue 5); the viewers, editors,
+   AttributeSync, sorters and filters lost their pypubsub branches;
+   issue 11 is fixed.
 2. The rest of pypubsub (the task file's, settings', commands' and
    viewers' messages), then pypubsub itself.
 3. Attachments re-sorted under their own classes' event types
@@ -42,8 +42,8 @@ Found along the way:
 9. The undo log as object versions keyed by the modification date
    ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log), option C).
 10. Identity: domain objects compare equal by id, so a copy is taken
-    for the original where objects are tracked (issues 11 and 13).
-    One rule for all of them.
+    for the original where objects are tracked (issue 13; issue 11
+    fixed one case). One rule for all of them.
 11. File > Merge runs the parent rules while moving subtasks
     (issue 9).
 12. `.delta` files left by older versions (issue 10).
@@ -321,13 +321,13 @@ What the loop reads, so what pushes the current second:
 - The appearance settings (colour, font and icon per status, light and
   dark), the theme, the due soon hours
 
-The hook is the domain's change messages, the ones the task file uses
-to know it has unsaved changes (the Publisher modification events and
-the pypubsub topics `pubsub.task`, `pubsub.note`, `pubsub.category`),
-and the loop's own outputs (status, derived and effective styles),
-except fields that change no status, reminder or style, such as the
-subject and description, so typing does not run the loop every
-second.
+The hook is the domain's modification events (`_data_event_types()`
+in `gui/scheduler.py`), a task's tracking, and the loop's own outputs
+(status, derived and effective styles), except fields that change no
+status, reminder or style, such as the subject, the description, the
+fees and the expanded state, so typing does not run the loop every
+second. Computed values the loop does not read (time spent, budget
+left, revenue) run nothing.
 
 The safe side decides doubtful fields: one wrongly left in costs a
 loop; one wrongly left out is a miss, which the debug check of step 5
@@ -553,12 +553,11 @@ Questions to decide:
 
 Issues found, not fixed:
 
-5. The loop runs a pass on every pypubsub task, note and category
-   message (the `pubsub.task` catch-all), computed ones included:
-   revenue, time spent, budget left, tracking. A fee change still runs
-   a pass through its revenue message. It goes when the domain's
-   messages move to the Publisher
-   ([Remaining Work](#remaining-work), 1).
+5. Fixed 2026-09-28: the loop ran a pass on every pypubsub task,
+   note and category message (the `pubsub.task` catch-all), computed
+   ones included, so a fee change ran one through its revenue message
+   and expanding a task ran one too. The messages are Publisher events
+   now and the hook lists what the loop reads (`SchedulerTest`).
 6. Attachment re-sorting listens under the base `Attachment` class's
    event types; file, link and mail attachments send under their own
    class names, so no change re-sorts them, whatever the column.
@@ -574,10 +573,11 @@ Issues found, not fixed:
    still keep their winning copies' dates (`persistence/merge.py`).
 10. A `.delta` file left by an older version next to a task file is
    ignored; nothing removes it.
-11. `EffortList` takes effort changes of any task equal to one of its
-    tasks (same id), so a second task file holding a copy of a task
-    (File > Merge's) can leak efforts into the open file's list;
-    pypubsub, compared by id.
+11. Fixed 2026-09-28: `EffortList` took effort changes of any task
+    equal to one of its tasks (same id), so a second task file holding
+    a copy of a task (File > Merge's) could leak efforts into the open
+    file's list. The effort list and the effort aggregator now take a
+    task's efforts message by identity (`EffortListTest`).
 12. The status bar's counts (overdue, late, ...) are not refreshed
     when the clock changes a status: a task falling due shows red but
     counts as overdue only after the next selection change. Also on

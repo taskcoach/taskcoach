@@ -64,9 +64,6 @@ _APPEARANCE_SETTINGS = tuple(
     for theme in ("", "_dark")
 ) + ("settings.window.theme",)
 
-# The domain changes still sent on pypubsub
-_PUBSUB_TOPICS = ("pubsub.task", "pubsub.note", "pubsub.category")
-
 # The domain classes whose changes the full loop reads
 _DOMAIN_CLASSES = (
     Task,
@@ -80,10 +77,12 @@ _DOMAIN_CLASSES = (
 
 
 def _data_event_types():
-    """The Publisher change events the full loop reads: every domain
+    """The change events the full loop reads: every domain
     modification except the fields no loop step reads (typing in them
-    must not run the loop every second), and the loop's own outputs,
-    whose changes cascade (docs/MASTER_SCHEDULER_REFACTOR.md)."""
+    must not run the loop every second), tracking, and the loop's own
+    outputs, whose changes cascade (docs/MASTER_SCHEDULER_REFACTOR.md).
+    Other computed values (time spent, budget left, revenue) are not
+    read."""
     event_types = set()
     for klass in _DOMAIN_CLASSES:
         unread = set()
@@ -100,9 +99,10 @@ def _data_event_types():
         event_types.update(
             event_type
             for event_type in klass.modificationEventTypes()
-            if not event_type.startswith("pubsub")
-            and event_type not in unread
+            if event_type not in unread
         )
+    event_types.add(Task.trackingChangedEventType())
+    event_types.add(Task.statusChangedEventType())
     for kind in ("derived", "effective"):
         for field in ("FgColor", "BgColor", "Icon", "Font"):
             name = "%s%sChangedEventType" % (kind, field)
@@ -239,7 +239,7 @@ class MasterScheduler:
                 )
         for event_type in _data_event_types():
             register(self._on_data_changed, eventType=event_type)
-        for topic in _PUBSUB_TOPICS + _APPEARANCE_SETTINGS:
+        for topic in _APPEARANCE_SETTINGS:
             pub.subscribe(self._on_topic_changed, topic)
         pub.subscribe(
             self._on_due_soon_hours_changed, "settings.behavior.duesoonhours"
@@ -375,8 +375,7 @@ class MasterScheduler:
         """The full loop, once over every object, parents first: a child
         reads its parent's style. Each item runs isolated: it notifies
         listeners (viewers, dialogs), and one failing listener must not
-        skip the rest of the pass. (A pypubsub message sent during the
-        pass still stops at its first failing listener.)"""
+        skip the rest of the pass."""
         started = time.perf_counter()
         self._in_pass = True
         self._pass_changes.clear()
@@ -482,7 +481,7 @@ class MasterScheduler:
             publisher.removeObserver(handler)
         if not self._observing:
             return
-        for topic in _PUBSUB_TOPICS + _APPEARANCE_SETTINGS:
+        for topic in _APPEARANCE_SETTINGS:
             pub.unsubscribe(self._on_topic_changed, topic)
         pub.unsubscribe(
             self._on_due_soon_hours_changed, "settings.behavior.duesoonhours"

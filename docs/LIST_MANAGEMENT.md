@@ -372,7 +372,7 @@ viewer.set_tree_mode(value) (task.py)
     -> dropdown: set_choice(value)
     -> buttons: EnableTool(id, value)
 ```
-Note: `Sorter.reset()` fires `pub.sendMessage(self.sort_event_type())`, not add/remove
+Note: `Sorter.reset()` fires the Publisher event `sort_event_type()`, not add/remove
 events, so `on_presentation_changed` does NOT fire. Because the rebuild's own recompute
 (`scroll_to_selection`) is synchronous and gated on a non-empty selection, `set_tree_mode`
 also calls `_schedule_scrollbar_adjustment()` to recompute the scrollbar range

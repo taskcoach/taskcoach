@@ -57,9 +57,7 @@ class BaseCategoryViewer(
             category.Category.exclusiveSubcategoriesChangedEventType(),
             category.Category.filterChangedEventType(),
         ]:
-            self.registerObserver(
-                self.onAttributeChanged_Deprecated, eventType
-            )
+            self.registerObserver(self.on_attribute_changed, eventType)
 
     def domainObjectsToView(self):
         return self.taskFile.categories()
@@ -282,10 +280,7 @@ class BaseCategoryViewer(
         )
         return commands
 
-    def onAttributeChanged(self, newValue, sender):
-        super().onAttributeChanged(newValue, sender)
-
-    def onAttributeChanged_Deprecated(self, event):
+    def on_attribute_changed(self, event):
         if (
             category.Category.exclusiveSubcategoriesChangedEventType()
             in event.types()
@@ -298,7 +293,7 @@ class BaseCategoryViewer(
                 items |= set(item.children())
             self.widget.RefreshItems(*items)  # pylint: disable=W0142
         else:
-            super().onAttributeChanged_Deprecated(event)
+            super().on_attribute_changed(event)
 
     def onCheck(self, event, final):
         categoryToFilter = self.widget.GetItemPyData(event.GetItem())

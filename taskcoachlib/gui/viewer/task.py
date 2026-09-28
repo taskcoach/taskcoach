@@ -171,11 +171,11 @@ class BaseTaskViewer(
             self.on_appearance_setting_change, "settings.window.theme"
         )
         self.registerObserver(
-            self.onAttributeChanged_Deprecated,
+            self.on_attribute_changed,
             eventType=task.Task.appearanceChangedEventType(),
         )
         self.registerObserver(
-            self.onAttributeChanged_Deprecated,
+            self.on_attribute_changed,
             eventType=task.Task.prerequisitesChangedEventType(),
         )
         self.registerObserver(self._on_power_on, eventType="powermgt.on")
@@ -538,12 +538,7 @@ class TimelineViewer(BaseTaskTreeViewer):
             task.Task.dueDateTimeChangedEventType(),
             task.Task.completionDateTimeChangedEventType(),
         ):
-            if eventType.startswith("pubsub"):
-                pub.subscribe(self.onAttributeChanged, eventType)
-            else:
-                self.registerObserver(
-                    self.onAttributeChanged_Deprecated, eventType
-                )
+            self.registerObserver(self.on_attribute_changed, eventType)
 
     def createWidget(self):
         self.rootNode = TimelineRootNode(
@@ -694,12 +689,7 @@ class SquareTaskViewer(BaseTaskTreeViewer):
             task.Task.plannedStartDateTimeChangedEventType(),
             task.Task.completionDateTimeChangedEventType(),
         ):
-            if eventType.startswith("pubsub"):
-                pub.subscribe(self.onAttributeChanged, eventType)
-            else:
-                self.registerObserver(
-                    self.onAttributeChanged_Deprecated, eventType
-                )
+            self.registerObserver(self.on_attribute_changed, eventType)
 
     def createWidget(self):
         itemPopupMenu = self.createTaskPopupMenu()
@@ -759,27 +749,14 @@ class SquareTaskViewer(BaseTaskTreeViewer):
             )()
         except AttributeError:
             old_event_type = "task.%s" % old_choice
-        if old_event_type.startswith("pubsub"):
-            try:
-                pub.unsubscribe(self.onAttributeChanged, old_event_type)
-            except pub.TopicNameError:
-                pass  # Can happen on first call
-        else:
-            self.removeObserver(
-                self.onAttributeChanged_Deprecated, old_event_type
-            )
+        self.removeObserver(self.on_attribute_changed, old_event_type)
         try:
             new_event_type = getattr(
                 task.Task, "%sChangedEventType" % choice
             )()
         except AttributeError:
             new_event_type = "task.%s" % choice
-        if new_event_type.startswith("pubsub"):
-            pub.subscribe(self.onAttributeChanged, new_event_type)
-        else:
-            self.registerObserver(
-                self.onAttributeChanged_Deprecated, new_event_type
-            )
+        self.registerObserver(self.on_attribute_changed, new_event_type)
         if choice in ("budget", "timeSpent"):
             self.__transform_task_attribute = (
                 lambda timeSpent: timeSpent.milliseconds() / 1000
@@ -890,12 +867,7 @@ class HierarchicalCalendarViewer(
             task.Task.trackingChangedEventType(),
             task.Task.percentageCompleteChangedEventType(),
         ):
-            if eventType.startswith("pubsub"):
-                pub.subscribe(self.onAttributeChanged, eventType)
-            else:
-                self.registerObserver(
-                    self.onAttributeChanged_Deprecated, eventType
-                )
+            self.registerObserver(self.on_attribute_changed, eventType)
 
         # Dates are treated separately: the layout may change
         # (_invalidate)
@@ -905,12 +877,7 @@ class HierarchicalCalendarViewer(
             task.Task.dueDateTimeChangedEventType(),
             task.Task.completionDateTimeChangedEventType(),
         ):
-            if eventType.startswith("pubsub"):
-                pub.subscribe(self.onLayoutAttributeChanged, eventType)
-            else:
-                self.registerObserver(
-                    self.onLayoutAttributeChanged_Deprecated, eventType
-                )
+            self.registerObserver(self.on_layout_attribute_changed, eventType)
 
         self.reconfig()
 
@@ -978,10 +945,7 @@ class HierarchicalCalendarViewer(
     def at_midnight(self):
         self.widget.SetCalendarFormat(self.widget.CalendarFormat())
 
-    def onLayoutAttributeChanged(self, newValue, sender):
-        self.refresh()
-
-    def onLayoutAttributeChanged_Deprecated(self, event):
+    def on_layout_attribute_changed(self, event):
         self.refresh()
 
     def is_tree_viewer(self):
@@ -1070,12 +1034,7 @@ class CalendarViewer(
             task.Task.trackingChangedEventType(),
             task.Task.percentageCompleteChangedEventType(),
         ):
-            if event_type.startswith("pubsub"):
-                pub.subscribe(self.onAttributeChanged, event_type)
-            else:
-                self.registerObserver(
-                    self.onAttributeChanged_Deprecated, event_type
-                )
+            self.registerObserver(self.on_attribute_changed, event_type)
         # Sent after the scheduler's processing; removed by detach()
         self.registerObserver(
             self._on_date_changed, eventType="scheduler.date"
@@ -2450,7 +2409,7 @@ else:
                 task.Task.prerequisitesChangedEventType(),
             ):
                 self.registerObserver(
-                    self.onAttributeChanged_Deprecated, eventType=event_type
+                    self.on_attribute_changed, eventType=event_type
                 )
 
         def createWidget(self):

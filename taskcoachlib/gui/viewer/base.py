@@ -355,15 +355,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         filter."""
         return collection
 
-    def onAttributeChanged(self, newValue, sender):  # pylint: disable=W0613
-        if self:
-            if self.__freezeCount:
-                # During bulk operation, collect items to refresh later
-                self.__pendingRefreshItems.add(sender)
-            else:
-                self.refreshItems(sender)
-
-    def onAttributeChanged_Deprecated(self, event):
+    def on_attribute_changed(self, event):
         if self.__freezeCount:
             # During bulk operation, collect items to refresh later
             self.__pendingRefreshItems.update(event.sources())
@@ -1311,12 +1303,9 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
 
     def __startObserving(self, eventTypes):
         for eventType in eventTypes:
-            if eventType.startswith("pubsub"):
-                pub.subscribe(self.onAttributeChanged, eventType)
-            else:
-                self.registerObserver(
-                    self.onAttributeChanged_Deprecated, eventType=eventType
-                )
+            self.registerObserver(
+                self.on_attribute_changed, eventType=eventType
+            )
 
     def __stopObserving(self, eventTypes):
         # Collect the event types that the currently visible columns are
@@ -1326,12 +1315,9 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
             eventTypesOfVisibleColumns.extend(column.eventTypes())
         for eventType in eventTypes:
             if eventType not in eventTypesOfVisibleColumns:
-                if eventType.startswith("pubsub"):
-                    pub.unsubscribe(self.onAttributeChanged, eventType)
-                else:
-                    self.removeObserver(
-                        self.onAttributeChanged_Deprecated, eventType=eventType
-                    )
+                self.removeObserver(
+                    self.on_attribute_changed, eventType=eventType
+                )
 
     def renderCategories(self, item):
         return self.renderSubjectsOfRelatedItems(item, item.categories)

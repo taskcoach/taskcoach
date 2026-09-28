@@ -25,7 +25,6 @@ from taskcoachlib.domain import base, task, category, attachment
 from taskcoachlib.gui import uicommand
 from taskcoachlib.gui.icons import image_list_cache
 from taskcoachlib.i18n import _
-from pubsub import pub
 import ast
 import wx
 
@@ -287,18 +286,19 @@ class SortableViewerMixin(object):
 
     def register_presentation_observers(self):
         super().register_presentation_observers()
-        pub.subscribe(
-            self.on_sort_order_changed, self.presentation().sort_event_type()
+        self.removeObserver(self.on_sort_order_changed)
+        self.registerObserver(
+            self.on_sort_order_changed,
+            eventType=self.presentation().sort_event_type(),
+            eventSource=self.presentation(),
         )
 
     def detach(self):
         super().detach()
-        pub.unsubscribe(
-            self.on_sort_order_changed, self.presentation().sort_event_type()
-        )
+        self.removeObserver(self.on_sort_order_changed)
 
-    def on_sort_order_changed(self, sender):
-        if sender == self.presentation():
+    def on_sort_order_changed(self, event):
+        if self.presentation() in event.sources():
             self.refresh()
             self.send_viewer_status_event()
 

@@ -38,15 +38,10 @@ class TaskViewerUnderTest(gui.viewer.task.TaskViewer):  # pylint: disable=W0223
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.events = []
-        self.events_deprecated = []
 
-    def onAttributeChanged(self, newValue, sender):
-        super().onAttributeChanged(newValue, sender)
-        self.events.append((newValue, sender))
-
-    def onAttributeChanged_Deprecated(self, event):
-        super().onAttributeChanged_Deprecated(event)
-        self.events_deprecated.append(event)
+    def on_attribute_changed(self, event):
+        super().on_attribute_changed(event)
+        self.events.append(event)
 
 
 class TaskViewerTestCase(test.wxTestCase):
@@ -851,22 +846,19 @@ class CommonTestsMixin(object):
         else:
             self.assertItems((self.task, 1), self.child)
 
-    def assertEventFired_Deprecated(self, type_):
+    def assert_event_fired(self, type_):
         types = []
-        for event in self.viewer.events_deprecated:
+        for event in self.viewer.events:
             types.extend(event.types())
         self.assertTrue(
             type_ in types,
-            '"%s" not in %s' % (type_, self.viewer.events_deprecated),
+            '"%s" not in %s' % (type_, self.viewer.events),
         )
-
-    def assertEventFired(self, newValue, sender):
-        self.assertTrue((newValue, sender) in self.viewer.events)
 
     def assert_change_received(self, event_type, value, source):
         received = [
             event.value(source, type=event_type)
-            for event in self.viewer.events_deprecated
+            for event in self.viewer.events
             if source in event.sources(event_type)
         ]
         self.assertIn(value, received)
@@ -925,7 +917,7 @@ class CommonTestsMixin(object):
         self.task.setSubject("New subject")
         self.assertEqual(
             task.Task.subjectChangedEventType(),
-            self.viewer.events_deprecated[0].type(),
+            self.viewer.events[0].type(),
         )
 
     def testChangePlannedStartDateTimeWhileColumnShown(self):
@@ -941,7 +933,9 @@ class CommonTestsMixin(object):
     def testStartTracking(self):
         self.taskList.append(self.task)
         self.task.addEffort(effort.Effort(self.task))
-        self.assertTrue((True, self.task) in self.viewer.events)
+        self.assert_change_received(
+            task.Task.trackingChangedEventType(), True, self.task
+        )
 
     def testChangePlannedStartDateTimeWhileColumnNotShown(self):
         self.taskList.append(self.task)
@@ -951,7 +945,7 @@ class CommonTestsMixin(object):
         event_type = task.Task.plannedStartDateTimeChangedEventType()
         received = [
             event
-            for event in self.viewer.events_deprecated
+            for event in self.viewer.events
             if event_type in event.types()
         ]
         self.assertEqual(1, len(received))
@@ -999,7 +993,7 @@ class CommonTestsMixin(object):
         self.assertFalse(
             [
                 event
-                for event in self.viewer.events_deprecated
+                for event in self.viewer.events
                 if event_type in event.types()
             ]
         )
@@ -1016,14 +1010,14 @@ class CommonTestsMixin(object):
         self.taskList.append(self.task)
         self.task.setPriority(10)
         # Priority changes are Publisher events
-        self.assertFalse(self.viewer.events_deprecated)
+        self.assertFalse(self.viewer.events)
 
     def testChangePriorityWhileColumnShown(self):
         self.taskList.append(self.task)
         self.showColumn("priority")
         self.task.setPriority(10)
         # Priority changes are Publisher events
-        self.assertEventFired_Deprecated(task.Task.priorityChangedEventType())
+        self.assert_event_fired(task.Task.priorityChangedEventType())
 
     def testChangePriorityOfSubtask(self):
         self.showColumn("priority")
@@ -1033,7 +1027,7 @@ class CommonTestsMixin(object):
         # The parent is a source of the child's Publisher event
         self.assertIn(
             self.task,
-            self.viewer.events_deprecated[-1].sources(
+            self.viewer.events[-1].sources(
                 task.Task.priorityChangedEventType()
             ),
         )

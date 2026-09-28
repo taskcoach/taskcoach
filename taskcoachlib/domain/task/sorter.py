@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib.domain import base
-from pubsub import pub
 from . import task
 
 
@@ -44,12 +43,9 @@ class Sorter(base.TreeSorter):
             task.Task.actualStartDateTimeChangedEventType(),
             task.Task.completionDateTimeChangedEventType(),
         ):
-            if event_type.startswith("pubsub"):
-                pub.subscribe(self.onAttributeChanged, event_type)
-            else:
-                self.registerObserver(
-                    self.onAttributeChanged_Deprecated, eventType=event_type
-                )
+            self.registerObserver(
+                self.on_attribute_changed, eventType=event_type
+            )
         # Sent once after Preferences saved all the priorities
         self.registerObserver(
             self._on_status_sort_priority_changed,

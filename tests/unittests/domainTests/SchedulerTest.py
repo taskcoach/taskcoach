@@ -27,7 +27,7 @@ import test
 from pubsub import pub
 import wx
 from taskcoachlib import config, patterns
-from taskcoachlib.domain import date, task
+from taskcoachlib.domain import date, effort, task
 from taskcoachlib.gui import scheduler
 
 
@@ -282,6 +282,20 @@ class MasterTimerListTest(test.wxTestCase):
     def test_a_subject_change_runs_nothing(self):
         self.settle()
         self.task.setSubject("new subject")
+        self.assertFalse(self.tick())
+
+    def test_a_fee_change_runs_nothing(self):
+        # Nor the revenue it changes: the loop reads neither
+        self.task.addEffort(
+            effort.Effort(self.task, self.start - date.ONE_HOUR, self.start)
+        )
+        self.settle()
+        self.task.set_hourly_fee(100)
+        self.assertFalse(self.tick())
+
+    def test_expanding_runs_nothing(self):
+        self.settle()
+        self.task.expand()
         self.assertFalse(self.tick())
 
     def test_a_reminder_set_in_the_past_fires_at_the_next_tick(self):

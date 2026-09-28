@@ -108,7 +108,11 @@ class IdleController(Observer, IdleNotifier):
         super().__init__()
 
         self._tracker = effort.EffortListTracker(self._effort_list)
-        self._tracker.subscribe(self._on_tracked_changed, "effortlisttracker")
+        self.registerObserver(
+            self._on_tracked_changed,
+            eventType=self._tracker.changed_event_type(),
+            eventSource=self._tracker,
+        )
 
         self.registerObserver(self._on_power_off, eventType="powermgt.off")
         self.registerObserver(self._on_power_on, eventType="powermgt.on")
@@ -119,7 +123,7 @@ class IdleController(Observer, IdleNotifier):
         )
 
         self._log_backend_if_enabled()
-        self._on_tracked_changed(self._tracker.trackedEfforts())
+        self._on_tracked_changed()
 
     def _on_power_off(self, event):  # pylint: disable=W0613
         self.poweroff()
@@ -170,8 +174,8 @@ class IdleController(Observer, IdleNotifier):
                 prefix="IDLE",
             )
 
-    def _on_tracked_changed(self, efforts):
-        if len(efforts):
+    def _on_tracked_changed(self, event=None):  # pylint: disable=W0613
+        if self._tracker.trackedEfforts():
             self.resume()
         else:
             self.pause()
@@ -179,7 +183,7 @@ class IdleController(Observer, IdleNotifier):
     def _on_min_idle_time_changed(self, event):  # pylint: disable=W0613
         # Through resume(), so polling that starts now does not count
         # the time since tracking started as idle.
-        self._on_tracked_changed(self._tracker.trackedEfforts())
+        self._on_tracked_changed()
 
     def get_min_idle_time(self):
         return self._settings.getint("feature", "minidletime") * 60

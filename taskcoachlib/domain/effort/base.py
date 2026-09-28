@@ -17,8 +17,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from taskcoachlib import patterns
 from taskcoachlib.domain.base.attribute import Attribute
-from pubsub import pub
 import weakref
 
 
@@ -81,26 +81,22 @@ class BaseEffort(object):
 
     @classmethod
     def trackingChangedEventType(class_):
-        return "pubsub.effort.track"
+        return "effort.track"
 
     def sendDurationChangedMessage(self):
-        pub.sendMessage(
-            self.durationChangedEventType(),
-            newValue=self.timeSpent(),
-            sender=self,
-        )
+        patterns.Event(
+            self.durationChangedEventType(), self, self.timeSpent()
+        ).send()
 
     @classmethod
     def durationChangedEventType(class_):
-        return "pubsub.effort.duration"
+        return "effort.duration"
 
     def sendRevenueChangedMessage(self):
-        pub.sendMessage(
-            self.revenueChangedEventType(),
-            newValue=self.revenue(),
-            sender=self,
-        )
+        patterns.Event(
+            self.revenueChangedEventType(), self, self.revenue()
+        ).send()
 
     @classmethod
     def revenueChangedEventType(class_):
-        return "pubsub.effort.revenue"
+        return "effort.revenue"

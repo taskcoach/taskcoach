@@ -287,7 +287,7 @@ Controls must update automatically when the underlying data changes from externa
 `AttributeSync` provides bidirectional synchronization between UI controls and domain objects:
 
 1. **User edits control** → `onAttributeEdited()` → executes command → updates domain
-2. **External change to domain** → `onAttributeChanged()` → calls `control.SetValue()` → updates display
+2. **External change to domain** → `on_attribute_changed()` → calls `control.SetValue()` → updates display
 
 **Key methods AttributeSync expects on controls:**
 - `GetValue()` - returns domain-compatible value (e.g., `date.DateTime`)
@@ -911,7 +911,7 @@ def ValidateChange(self, field, value):
 
 ### Refresh and Update for Visual Sync
 
-After updating field values programmatically (e.g., from `AttributeSync.onAttributeChanged()`), both `Refresh()` and `Update()` are called:
+After updating field values programmatically (e.g., from `AttributeSync.on_attribute_changed()`), both `Refresh()` and `Update()` are called:
 
 ```python
 self.__observer.Refresh()  # Mark for repaint

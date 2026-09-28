@@ -26,7 +26,6 @@ from taskcoachlib import (
 from taskcoachlib.domain import date
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.i18n import _
-from pubsub import pub
 import wx
 
 
@@ -77,7 +76,11 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
             eventType=task.completionDateTimeChangedEventType(),
             eventSource=task,
         )
-        pub.subscribe(self.onTrackingChanged, task.trackingChangedEventType())
+        self.registerObserver(
+            self.on_tracking_changed,
+            eventType=task.trackingChangedEventType(),
+            eventSource=task,
+        )
         self.openTaskAfterClose = self.ignoreSnoozeOption = False
 
         # Main sizer
@@ -223,7 +226,7 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
             command.StartEffortCommand(self.taskList, [self.task]).do()
         self.setTrackingIcon()
 
-    def onTrackingChanged(self, newValue, sender):
+    def on_tracking_changed(self, event):  # pylint: disable=W0613
         self.setTrackingIcon()
 
     def setTrackingIcon(self):
@@ -262,10 +265,7 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
 
         # Stop listening, to prevent callbacks on the destroyed dialog
         self.removeObserver(self.on_task_completion_changed)
-        try:
-            pub.unsubscribe(self.onTrackingChanged, self.task.trackingChangedEventType())
-        except Exception:
-            pass
+        self.removeObserver(self.on_tracking_changed)
 
         event.Skip()
         # Safety check - verify controls exist before accessing

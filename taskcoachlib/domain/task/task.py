@@ -729,7 +729,7 @@ class Task(
 
     @classmethod
     def statusChangedEventType(class_):
-        return "pubsub.task.status"
+        return "task.status"
 
     @classmethod
     def compute_status(
@@ -865,11 +865,9 @@ class Task(
 
         # Fire event if status changed
         if old_status is not None and new_status != old_status:
-            pub.sendMessage(
-                self.statusChangedEventType(),
-                newValue=new_status,
-                sender=self,
-            )
+            patterns.Event(
+                self.statusChangedEventType(), self, new_status
+            ).send()
 
     def statusText(self):
         return self.__status_text
@@ -914,7 +912,7 @@ class Task(
         Note: recomputeAppearance() handles data-change-triggered updates.
         This method handles time-passing updates (due soon → overdue at midnight).
 
-        No pubsub events - legacy system didn't have them. UI updates via:
+        No events - legacy system didn't have them. UI updates via:
         - Modern system fires statusChangedEventType
         - MinuteRefresher calls viewer.refresh() every minute
 
@@ -998,41 +996,43 @@ class Task(
         self._efforts.append(effort)
         if effort.getStart() < self.actualStartDateTime():
             self.setActualStartDateTime(effort.getStart())
-        pub.sendMessage(
-            self.effortsChangedEventType(),
-            newValue=(self._efforts, oldValue),
-            sender=self,
-        )
+        self.__send_efforts_changed(oldValue)
         if effort.isBeingTracked() and not wasTracking:
             self.sendTrackingChangedMessage(tracking=True)
         self.sendTimeSpentChangedMessage()
 
     @classmethod
     def effortsChangedEventType(class_):
-        return "pubsub.task.efforts"
+        return "task.efforts"
+
+    def __send_efforts_changed(self, old_efforts):
+        # Tuples: event values must be hashable
+        patterns.Event(
+            self.effortsChangedEventType(),
+            self,
+            (tuple(self._efforts), tuple(old_efforts)),
+        ).send()
+
+    def __send_to_ancestors_too(self, event_type, value, ancestor_value):
+        """One event for the task and its ancestors, which show the
+        value too; ancestor_value(ancestor) gives theirs."""
+        event = patterns.Event(event_type, self, value)
+        for ancestor in self.ancestors():
+            event.addSource(ancestor, ancestor_value(ancestor))
+        event.send()
 
     def sendTrackingChangedMessage(self, tracking):
         self.recomputeAppearance()
-        pub.sendMessage(
-            self.trackingChangedEventType(), newValue=tracking, sender=self
+        self.__send_to_ancestors_too(
+            self.trackingChangedEventType(), tracking, lambda _: tracking
         )
-        for ancestor in self.ancestors():
-            pub.sendMessage(
-                ancestor.trackingChangedEventType(),
-                newValue=tracking,
-                sender=ancestor,
-            )
 
     def removeEffort(self, effort):
         if effort not in self._efforts:
             return
         oldValue = self._efforts[:]
         self._efforts.remove(effort)
-        pub.sendMessage(
-            self.effortsChangedEventType(),
-            newValue=(self._efforts, oldValue),
-            sender=self,
-        )
+        self.__send_efforts_changed(oldValue)
         if effort.isBeingTracked() and not self.isBeingTracked():
             self.sendTrackingChangedMessage(tracking=False)
         self.sendTimeSpentChangedMessage()
@@ -1046,16 +1046,12 @@ class Task(
             return
         oldValue = self._efforts[:]
         self._efforts = efforts
-        pub.sendMessage(
-            self.effortsChangedEventType(),
-            newValue=(self._efforts, oldValue),
-            sender=self,
-        )
+        self.__send_efforts_changed(oldValue)
         self.sendTimeSpentChangedMessage()
 
     @classmethod
     def trackingChangedEventType(class_):
-        return "pubsub.task.track"
+        return "task.track"
 
     # Time spent
 
@@ -1066,17 +1062,11 @@ class Task(
         )
 
     def sendTimeSpentChangedMessage(self):
-        pub.sendMessage(
+        self.__send_to_ancestors_too(
             self.timeSpentChangedEventType(),
-            newValue=self.timeSpent(),
-            sender=self,
+            self.timeSpent(),
+            lambda ancestor: ancestor.timeSpent(),
         )
-        for ancestor in self.ancestors():
-            pub.sendMessage(
-                ancestor.timeSpentChangedEventType(),
-                newValue=ancestor.timeSpent(),
-                sender=ancestor,
-            )
         if self.budget(recursive=True):
             self.sendBudgetLeftChangedMessage()
         if self.hourlyFee() > 0:
@@ -1084,7 +1074,7 @@ class Task(
 
     @classmethod
     def timeSpentChangedEventType(class_):
-        return "pubsub.task.timeSpent"
+        return "task.timeSpent"
 
     @staticmethod
     def timeSpentSortFunction(**kwargs):
@@ -1145,21 +1135,15 @@ class Task(
         return budget - self.timeSpent(recursive)
 
     def sendBudgetLeftChangedMessage(self):
-        pub.sendMessage(
+        self.__send_to_ancestors_too(
             self.budgetLeftChangedEventType(),
-            newValue=self.budgetLeft(),
-            sender=self,
+            self.budgetLeft(),
+            lambda ancestor: ancestor.budgetLeft(recursive=True),
         )
-        for ancestor in self.ancestors():
-            pub.sendMessage(
-                ancestor.budgetLeftChangedEventType(),
-                newValue=ancestor.budgetLeft(recursive=True),
-                sender=ancestor,
-            )
 
     @classmethod
     def budgetLeftChangedEventType(class_):
-        return "pubsub.task.budgetLeft"
+        return "task.budgetLeft"
 
     @staticmethod
     def budgetLeftSortFunction(**kwargs):
@@ -1651,21 +1635,15 @@ class Task(
         )
 
     def sendRevenueChangedMessage(self):
-        pub.sendMessage(
+        self.__send_to_ancestors_too(
             self.revenueChangedEventType(),
-            newValue=self.revenue(),
-            sender=self,
+            self.revenue(),
+            lambda ancestor: ancestor.revenue(recursive=True),
         )
-        for ancestor in self.ancestors():
-            pub.sendMessage(
-                ancestor.revenueChangedEventType(),
-                newValue=ancestor.revenue(recursive=True),
-                sender=ancestor,
-            )
 
     @classmethod
     def revenueChangedEventType(class_):
-        return "pubsub.task.revenue"
+        return "task.revenue"
 
     @staticmethod
     def revenueSortFunction(**kwargs):

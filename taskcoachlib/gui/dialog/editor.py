@@ -40,7 +40,6 @@ from taskcoachlib.gui.dialog.entry import (
 )
 from taskcoachlib.gui.newid import IdProvider
 from taskcoachlib.i18n import _
-from pubsub import pub
 from taskcoachlib.help.balloontips import BalloonTipManager
 import datetime
 import os.path
@@ -1330,17 +1329,7 @@ class DatesPage(ScrolledPage):
 
     def close(self):
         if len(self.items) == 1 and hasattr(self, "_statusLabel"):
-            try:
-                pub.unsubscribe(
-                    self._onStatusMayHaveChanged,
-                    self.items[0].statusChangedEventType(),
-                )
-            except Exception as e:
-                log_step(
-                    "unsubscribe failed in %s.close: %s"
-                    % (self.__class__.__name__, e),
-                    prefix="DEAD-OBJ",
-                )
+            self.removeObserver(self._on_status_changed)
         if len(self.items) == 1:
             patterns.Publisher().removeObserver(
                 self._on_domain_planned_duration_mode_changed
@@ -1437,14 +1426,14 @@ class DatesPage(ScrolledPage):
 
         # Subscribe to the status change event, fired by
         # compute_stored_status() when the status changes
-        pub.subscribe(
-            self._onStatusMayHaveChanged,
-            self.items[0].statusChangedEventType(),
+        self.registerObserver(
+            self._on_status_changed,
+            eventType=self.items[0].statusChangedEventType(),
+            eventSource=self.items[0],
         )
 
-    def _onStatusMayHaveChanged(self, newValue, sender):
-        if sender == self.items[0] or sender is None:
-            self._updateStatusDisplay()
+    def _on_status_changed(self, event):  # pylint: disable=W0613
+        self._updateStatusDisplay()
 
     def _updateStatusDisplay(self):
         if not hasattr(self, "_statusLabel"):
@@ -1908,7 +1897,7 @@ class DatesPage(ScrolledPage):
         """Handle preset selection from dropdown.
 
         Presets route through duration change — fire command only,
-        then pubsub callback handles widget update, preset alignment,
+        then the change event handles widget update, preset alignment,
         and sync. Same pattern as effort presets."""
         selection = self._durationPresetsChoice.GetSelection()
         if selection == 0:  # Placeholder selected
@@ -1920,7 +1909,8 @@ class DatesPage(ScrolledPage):
 
         new_duration = date.TimeDelta(minutes=total_minutes)
 
-        # SetDuration → EVT_VALUE_CHANGED → AttributeSync → command → pubsub → preset update
+        # SetDuration → EVT_VALUE_CHANGED → AttributeSync → command
+        # → change event → preset update
         self._plannedDurationCtrl.SetDuration(new_duration)
 
     def __onDurationFieldKillFocus(self, event):
@@ -2454,14 +2444,14 @@ class BudgetPage(ScrolledPage):
             self._time_spent_entry,
             flags=[None, wx.ALL],
         )
-        pub.subscribe(
+        self.registerObserver(
             self.on_time_spent_changed,
-            self.items[0].timeSpentChangedEventType(),
+            eventType=self.items[0].timeSpentChangedEventType(),
+            eventSource=self.items[0],
         )
 
-    def on_time_spent_changed(self, newValue, sender):
-        if sender == self.items[0]:
-            self._time_spent_entry.SetDuration(sender.timeSpent())
+    def on_time_spent_changed(self, event=None):  # pylint: disable=W0613
+        self._time_spent_entry.SetDuration(self.items[0].timeSpent())
 
     def add_budget_left_entry(self):
         assert len(self.items) == 1
@@ -2476,16 +2466,14 @@ class BudgetPage(ScrolledPage):
             self._budget_left_entry,
             flags=[None, wx.ALL],
         )
-        pub.subscribe(
+        self.registerObserver(
             self.on_budget_left_changed,
-            self.items[0].budgetLeftChangedEventType(),
+            eventType=self.items[0].budgetLeftChangedEventType(),
+            eventSource=self.items[0],
         )
 
-    def on_budget_left_changed(
-        self, newValue, sender
-    ):  # pylint: disable=W0613
-        if sender == self.items[0]:
-            self._budget_left_entry.SetDuration(sender.budgetLeft())
+    def on_budget_left_changed(self, event=None):  # pylint: disable=W0613
+        self._budget_left_entry.SetDuration(self.items[0].budgetLeft())
 
     def add_revenue_entries(self):
         self.add_hourly_fee_entry()
@@ -2540,34 +2528,34 @@ class BudgetPage(ScrolledPage):
             self, revenue, readonly=True
         )  # pylint: disable=W0201
         self.addEntry(_("Revenue"), self._revenue_entry, flags=[None, wx.ALL])
-        pub.subscribe(
-            self.on_revenue_changed, self.items[0].revenueChangedEventType()
+        self.registerObserver(
+            self.on_revenue_changed,
+            eventType=self.items[0].revenueChangedEventType(),
+            eventSource=self.items[0],
         )
 
-    def on_revenue_changed(self, newValue, sender):
-        if sender == self.items[0]:
-            if newValue != self._revenue_entry.GetValue():
-                self._revenue_entry.SetValue(newValue)
+    def on_revenue_changed(self, event=None):  # pylint: disable=W0613
+        revenue = self.items[0].revenue()
+        if revenue != self._revenue_entry.GetValue():
+            self._revenue_entry.SetValue(revenue)
 
     def observe_tracking(self):
         if len(self.items) != 1:
             return
         item = self.items[0]
-        pub.subscribe(
-            self.on_tracking_changed, item.trackingChangedEventType()
+        self.registerObserver(
+            self.on_tracking_changed,
+            eventType=item.trackingChangedEventType(),
+            eventSource=item,
         )
-        if item.isBeingTracked():
-            self.on_tracking_changed(True, item)
+        self.on_tracking_changed()
 
-    def on_tracking_changed(self, newValue, sender):
-        if newValue:
-            if sender in self.items:
-                self._start_clock()
+    def on_tracking_changed(self, event=None):  # pylint: disable=W0613
+        # Tracked by any of its efforts: several can run at once
+        if self.items[0].isBeingTracked():
+            self._start_clock()
         else:
-            # We might need to keep tracking the clock if the user was tracking this
-            # task with multiple effort records simultaneously
-            if not self.items[0].isBeingTracked():
-                self._stop_clock()
+            self._stop_clock()
 
     def _start_clock(self):
         if not getattr(self, "_clock_running", False):
@@ -2588,12 +2576,9 @@ class BudgetPage(ScrolledPage):
         self.on_every_second()
 
     def on_every_second(self):
-        task_displayed = self.items[0]
-        self.on_time_spent_changed(task_displayed.timeSpent(), task_displayed)
-        self.on_budget_left_changed(
-            task_displayed.budgetLeft(), task_displayed
-        )
-        self.on_revenue_changed(task_displayed.revenue(), task_displayed)
+        self.on_time_spent_changed()
+        self.on_budget_left_changed()
+        self.on_revenue_changed()
 
     def close(self):
         self._stop_clock()
@@ -3079,18 +3064,6 @@ class PathPage(ScrolledPage):
             effort,
         )
 
-        # Subscribe to parent pubsub topics (pubsub uses hierarchical topics)
-        # This catches all child topic messages (e.g., pubsub.task covers
-        # pubsub.task.subject, pubsub.task.dependencies, etc.)
-        pubsub_parent_topics = [
-            "pubsub.task",
-            "pubsub.category",
-            "pubsub.note",
-        ]
-        for topic in pubsub_parent_topics:
-            pub.subscribe(self._onAnyChange, topic)
-
-        # Subscribe to deprecated event types via patterns.Publisher
         all_event_types = (
             task.Task.modificationEventTypes()
             + category.Category.modificationEventTypes()
@@ -3102,11 +3075,10 @@ class PathPage(ScrolledPage):
         )
 
         for eventType in all_event_types:
-            if not eventType.startswith("pubsub"):
-                patterns.Publisher().registerObserver(
-                    self._onAnyChange,
-                    eventType=eventType,
-                )
+            patterns.Publisher().registerObserver(
+                self._onAnyChange,
+                eventType=eventType,
+            )
 
     def _onAnyChange(self, event=None, **kwargs):
         """Called when any domain object changes. Rebuild if visible."""
@@ -3377,33 +3349,6 @@ class PathPage(ScrolledPage):
         self._unsubscribeIconUpdates()
 
         if self._subscribed:
-            from taskcoachlib.domain import (
-                task,
-                category,
-                note,
-                attachment,
-                effort,
-            )
-
-            all_event_types = (
-                task.Task.modificationEventTypes()
-                + category.Category.modificationEventTypes()
-                + note.Note.modificationEventTypes()
-                + effort.Effort.modificationEventTypes()
-                + attachment.FileAttachment.modificationEventTypes()
-                + attachment.URIAttachment.modificationEventTypes()
-                + attachment.MailAttachment.modificationEventTypes()
-            )
-            for eventType in all_event_types:
-                if eventType.startswith("pubsub"):
-                    try:
-                        pub.unsubscribe(self._onAnyChange, eventType)
-                    except Exception as e:
-                        log_step(
-                            "unsubscribe failed in %s.close: %s"
-                            % (self.__class__.__name__, e),
-                            prefix="DEAD-OBJ",
-                        )
             patterns.Publisher().removeObserver(self._onAnyChange)
         super().close()
 
@@ -4210,7 +4155,7 @@ class EffortEditBook(Page):
             else date.TimeDelta()
         )
         self._effort_duration_sync = attributesync.AttributeSync(
-            "duration",
+            "getDuration",
             self._effort_duration_ctrl,
             current_duration,
             self.items,
@@ -4232,9 +4177,10 @@ class EffortEditBook(Page):
             eventSource=self._settings,
         )
         if len(self.items) == 1:
-            pub.subscribe(
+            self.registerObserver(
                 self.__on_effort_duration_domain_changed,
-                self.items[0].durationChangedEventType(),
+                eventType=self.items[0].durationChangedEventType(),
+                eventSource=self.items[0],
             )
 
         # Entry mode dropdown (Standard / Retroactive) - placed next to presets
@@ -4388,7 +4334,7 @@ class EffortEditBook(Page):
         Called on: Every change of Start-Date, Stop-Date, Duration, or Mode dropdown.
 
         Sync-mode guard [0.4] is set inline around multi-adjustment
-        sequences (e.g. 1.9.1) to prevent re-entry from pubsub callbacks.
+        sequences (e.g. 1.9.1) to prevent re-entry from callbacks.
         Flag lives on the domain effort instance (SSOT), shared across windows.
 
         Args:
@@ -4667,10 +4613,11 @@ class EffortEditBook(Page):
             return _("0 secs")
         return " ".join(parts)
 
-    def __on_effort_duration_domain_changed(self, newValue, sender):
+    def __on_effort_duration_domain_changed(
+        self, event
+    ):  # pylint: disable=W0613
         """Domain duration changed: match the preset dropdown."""
-        if sender in self.items:
-            self.__update_effort_preset_selection()
+        self.__update_effort_preset_selection()
 
     def __update_effort_preset_selection(self):
         """Update preset dropdown to match current duration value."""
@@ -4706,7 +4653,8 @@ class EffortEditBook(Page):
         if total_seconds is None:
             return
 
-        # SetDuration → EVT_VALUE_CHANGED → AttributeSync → command → pubsub → preset update
+        # SetDuration → EVT_VALUE_CHANGED → AttributeSync → command
+        # → change event → preset update
         self._effort_duration_ctrl.SetDuration(
             date.TimeDelta(seconds=total_seconds)
         )
@@ -4915,17 +4863,7 @@ class EffortEditBook(Page):
     def close_edit_book(self):
         """Cleanup method called when dialog closes."""
         if len(self.items) == 1:
-            try:
-                pub.unsubscribe(
-                    self.__on_effort_duration_domain_changed,
-                    self.items[0].durationChangedEventType(),
-                )
-            except Exception as e:
-                log_step(
-                    "unsubscribe failed in %s.close_edit_book: %s"
-                    % (self.__class__.__name__, e),
-                    prefix="DEAD-OBJ",
-                )
+            self.removeObserver(self.__on_effort_duration_domain_changed)
             patterns.Publisher().removeObserver(
                 self._on_domain_entry_mode_changed
             )

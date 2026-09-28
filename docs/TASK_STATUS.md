@@ -305,7 +305,8 @@ Called from:
 
 ### Event: statusChangedEventType
 
-`task.Task.statusChangedEventType()` returns `"pubsub.task.status"`
+`task.Task.statusChangedEventType()` returns `"task.status"` (a
+Publisher event, the task as source)
 
 Fired by `compute_stored_status()` only when the status changes.
 Subscribers: status columns in TaskViewer (via column event infrastructure).
@@ -354,7 +355,7 @@ setDueDateTime(newDate) / setPlannedStartDateTime(newDate) / etc.
     └── self.recomputeAppearance()
         ├── self.compute_stored_status()
         │   ├── Recalculates status from current dates
-        │   └── Fires 'pubsub.task.status' if status changed
+        │   └── Fires 'task.status' if status changed
         ├── __computeRecursiveForegroundColor()  (uses status for color)
         └── __computeRecursiveBackgroundColor()
 ```
@@ -442,7 +443,7 @@ The `compute_status()` method returns `(TaskStatus, source_string)` tuple, provi
 
 ### 2. No Dedicated Status Event — RESOLVED
 
-`statusChangedEventType` (`"pubsub.task.status"`) now exists, fired by `compute_stored_status()` only on actual transitions. The new status columns subscribe to it.
+`statusChangedEventType` (`"task.status"`) now exists, fired by `compute_stored_status()` only on actual transitions. The new status columns subscribe to it.
 Legacy consumers still use `appearanceChangedEventType()` as a proxy.
 
 ### 3. StatusChecker Duplicates Logic — RESOLVED

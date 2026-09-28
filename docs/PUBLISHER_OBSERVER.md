@@ -51,15 +51,13 @@ relationship) — signal dispatch exists to serve Attribute change notification.
    ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
    Task recurrence, prerequisites and dependencies, and effort start,
    stop, entry mode and task migrated the same way.
-   **Remaining** (2026-09-28: 49 `pub.sendMessage` and 69
-   `pub.subscribe` sites in 34 files), in this order
+   The domain's other messages followed (2026-09-28, Migration Log):
+   computed values too, so no event type is routed by a `pubsub`
+   prefix any more.
+   **Remaining** (2026-09-28: 25 `pub.sendMessage` and 41
+   `pub.subscribe` sites in 18 files, from 49 and 69 in 34), in this
+   order
    ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#remaining-work)):
-   - The domain, 24 sends: a task's status, efforts list, tracking,
-     time spent, budget left and revenue; an effort's tracking,
-     duration and revenue; the expanded state; the sorters' and
-     composite efforts' notices. Viewers, editors, AttributeSync and
-     the scheduler route event types by their `pubsub` prefix; those
-     branches go with them.
    - The task file's messages (`taskfile.*`, 9 topics, 15
      subscribers).
    - Settings (`settings.<section>.<option>`, 18 subscribers; see
@@ -137,10 +135,11 @@ invoked, no subscriber has to check "is this message for me?"
 **pypubsub** (`pub.sendMessage`/`pub.subscribe`) — topic-based broadcast.
 All subscribers to a topic receive all messages regardless of sender. No
 per-sender filtering at dispatch; subscribers must check the `sender` kwarg
-in the handler to decide whether to act. Used by some Task fields (dates,
-percentage, duration) and Effort fields that were migrated circa 2012.
-The migration was intended to replace the legacy system entirely but
-stalled partway.
+in the handler to decide whether to act. Task and Effort fields were
+migrated to it circa 2012; the migration was intended to replace the
+legacy system entirely but stalled partway. Since 2026-09-28 the domain
+sends nothing on it; the task file's, settings', commands' and viewers'
+messages remain (see [TODO](#todo)).
 
 The pypubsub migration was motivated by API simplicity and weak reference
 support, but it introduced broadcast dispatch for what are inherently
@@ -354,6 +353,8 @@ No manual unsubscribe, no silent `except` guards, no zombie callbacks.
 | `powermgt.on` / `powermgt.off` | Migrated to Publisher | `taskcoachlib/gui/mainwindow.py` (MainWindow), `taskcoachlib/gui/idlecontroller.py` (IdleController), `taskcoachlib/gui/viewer/task.py` (BaseTaskViewer, `powermgt.on` only) |
 | `pubsub.task.plannedStartDateTime`, `dueDateTime`, `actualStartDateTime`, `completionDateTime` | Migrated to Publisher as `task.<field>`, the task and each ancestor as sources | `taskcoachlib/domain/task/task.py` (Task), `taskcoachlib/domain/task/sorter.py` (Sorter), `taskcoachlib/gui/taskbaricon.py`, `taskcoachlib/gui/dialog/reminder.py` (ReminderDialog); the others route by prefix |
 | `pubsub.task.reminder` | Migrated to Publisher as `task.reminder`; the reminder is an `Attribute`, so snoozing also notifies the ancestors | `taskcoachlib/domain/task/task.py` (Task) |
+| `pubsub.task.status`, `efforts`, `track`, `timeSpent`, `budgetLeft`, `revenue`; `pubsub.effort.track`, `duration`, `revenue`; `pubsub.<class>.expandedContexts`; `pubsub.<sorter>.sorted`; `pubsub.effort.composite.empty` | Migrated to Publisher without the `pubsub.` prefix; a task's change also shown by its ancestors is one event with them as sources; the prefix routing and the `(newValue, sender)` handler twins removed (`onAttributeChanged_Deprecated` is `on_attribute_changed`) | `taskcoachlib/domain/task/task.py`, `taskcoachlib/domain/effort/`, `taskcoachlib/domain/base/object.py`, `taskcoachlib/domain/base/sorter.py`; listeners in `taskcoachlib/gui/viewer/`, `taskcoachlib/gui/dialog/editor.py`, `attributesync.py`, `reminder.py`, `taskcoachlib/gui/taskbaricon.py`, `taskcoachlib/gui/scheduler.py`, `taskcoachlib/persistence/taskfile.py` |
+| `effortlisttracker.changed` (the tracker's own pypubsub publisher) | Migrated to Publisher, the tracker as source | `taskcoachlib/domain/effort/effortlist.py` (EffortListTracker), `taskcoachlib/gui/idlecontroller.py`, `taskcoachlib/gui/uicommand/uicommand.py` (EffortStop) |
 | `task.reminder.trigger` | Migrated to Publisher | `taskcoachlib/domain/task/task.py` (Task), `taskcoachlib/gui/remindercontroller.py` (ReminderController) |
 | `feature.task_duration_presets` | Migrated to Publisher | `taskcoachlib/gui/dialog/editor.py` (DatesPage) |
 | `feature.effort_duration_presets` | Migrated to Publisher | `taskcoachlib/gui/dialog/editor.py` (EffortEditBook) |

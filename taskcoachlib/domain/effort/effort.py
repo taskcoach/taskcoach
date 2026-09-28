@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import patterns
 from taskcoachlib.domain import date, base, task
 from taskcoachlib.domain.base.attribute import Attribute
-from pubsub import pub
 from . import base as baseeffort
 import functools
 import weakref
@@ -159,19 +158,14 @@ class Effort(baseeffort.BaseEffort, base.Object):
     def sendDurationChangedMessage(self):
         """Override to send stored value, not live-computed value.
 
-        BaseEffort.sendDurationChangedMessage sends self.duration() which
-        returns now()-start when duration is None (tracking). We send
-        self.__duration.get() (the stored value) to match how start/stop
-        send their stored values via getters.
+        BaseEffort.sendDurationChangedMessage sends self.timeSpent(),
+        now()-start while tracking. We send getDuration() (the stored
+        value) to match how start/stop send their stored values via
+        getters.
         """
-        stored = self.__duration.get()
-        from pubsub import pub
-
-        pub.sendMessage(
-            self.durationChangedEventType(),
-            newValue=stored,
-            sender=self,
-        )
+        patterns.Event(
+            self.durationChangedEventType(), self, self.getDuration()
+        ).send()
 
     def timeSpent(self, now=date.DateTime.now):
         """Always compute elapsed time from start/stop."""
@@ -189,6 +183,10 @@ class Effort(baseeffort.BaseEffort, base.Object):
             prefix="DEPRECATION",
         )
         return
+
+    def getDuration(self):
+        """The stored duration: None while the effort is tracked."""
+        return self.__duration.get()
 
     def setDuration(self, newDuration, event=None):
         """Setter — normalizes and delegates to Attribute."""
@@ -224,15 +222,11 @@ class Effort(baseeffort.BaseEffort, base.Object):
         new_stop = self._stop.get()
         task = self.task()
         if new_stop is None:
-            pub.sendMessage(
-                self.trackingChangedEventType(), newValue=True, sender=self
-            )
+            patterns.Event(self.trackingChangedEventType(), self, True).send()
             if task:
                 task.sendTrackingChangedMessage(tracking=True)
         elif previous_stop is None:
-            pub.sendMessage(
-                self.trackingChangedEventType(), newValue=False, sender=self
-            )
+            patterns.Event(self.trackingChangedEventType(), self, False).send()
             if task:
                 task.sendTrackingChangedMessage(tracking=False)
         if task:

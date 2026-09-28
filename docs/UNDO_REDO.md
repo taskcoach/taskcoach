@@ -140,23 +140,23 @@ independent on the stack. Path step 4 above fixes this.
 ## Interaction with Attribute Pattern
 
 The Attribute pattern (see [ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md))
-manages value storage, change detection, and pubsub notification. Commands
+manages value storage, change detection, and change notification. Commands
 call the domain setter (e.g., `effort.setDuration()`), which delegates to
 `Attribute.set()`. The Attribute fires its callback only on actual change,
-which sends pubsub notifications. AttributeSync in the editor subscribes to
+which sends Publisher events. AttributeSync in the editor subscribes to
 these notifications and updates the UI.
 
 The flow:
 
 ```
 User edit → AttributeSync → Command.do() → domain setter → Attribute.set()
-  → callback (on change) → pubsub → AttributeSync.onAttributeChanged → UI update
+  → callback (on change) → Publisher event → AttributeSync.on_attribute_changed → UI update
 ```
 
 ## References
 
 - [ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md) — Attribute storage, change
-  detection, and pubsub notification pattern; modification date ruling
+  detection, and change notification pattern; modification date ruling
 - [PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging): merging by
   modification date
 - [DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md) — Duration sync calc

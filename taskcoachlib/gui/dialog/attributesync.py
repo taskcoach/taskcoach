@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
-from pubsub import pub
 from taskcoachlib.i18n import _
 import wx
 
@@ -47,7 +46,6 @@ class AttributeSync(object):
         self._items = items
         self._commandClass = commandClass
         self.__commandKwArgs = kwargs
-        self.__changedEventType = changedEventType
         self.__callback = callback
 
         entry.Bind(editedEventType, self.onAttributeEdited)
@@ -69,7 +67,7 @@ class AttributeSync(object):
         ).do()  # pylint: disable=W0142
         self.__invokeCallback(new_value)
 
-    def onAttributeChanged_Deprecated(self, event):  # pylint: disable=W0613
+    def on_attribute_changed(self, event):  # pylint: disable=W0613
         if self._entry:
             new_value = getattr(self._items[0], self._getter)()
             if new_value != self._currentValue:
@@ -78,29 +76,6 @@ class AttributeSync(object):
                 self.__invokeCallback(new_value)
         else:
             self.__stop_observing_attribute()
-
-    def onAttributeChanged(self, newValue, sender):
-        if sender in self._items:
-            # Check if widget is still valid (not destroyed)
-            try:
-                if not self._entry:
-                    self.__stop_observing_attribute()
-                    return
-                # Additional check - try to access a property to verify widget is alive
-                # On GTK, accessing a destroyed widget can segfault
-                self._entry.GetId()
-            except RuntimeError:
-                self.__stop_observing_attribute()
-                return
-
-            if newValue != self._currentValue:
-                self._currentValue = newValue
-                try:
-                    self.setValue(newValue)
-                    self.__invokeCallback(newValue)
-                except RuntimeError:
-                    self.__stop_observing_attribute()
-                    return
 
     def commandKwArgs(self, new_value):
         self.__commandKwArgs["newValue"] = new_value
@@ -129,21 +104,14 @@ class AttributeSync(object):
                 wx.MessageBox(str(e), _("Error"), wx.OK)
 
     def __start_observing_attribute(self, eventType, eventSource):
-        if eventType.startswith("pubsub"):
-            pub.subscribe(self.onAttributeChanged, eventType)
-        else:
-            patterns.Publisher().registerObserver(
-                self.onAttributeChanged_Deprecated,
-                eventType=eventType,
-                eventSource=eventSource,
-            )
+        patterns.Publisher().registerObserver(
+            self.on_attribute_changed,
+            eventType=eventType,
+            eventSource=eventSource,
+        )
 
     def __stop_observing_attribute(self):
-        try:
-            pub.unsubscribe(self.onAttributeChanged, self.__changedEventType)
-        except pub.TopicNameError:
-            pass
-        patterns.Publisher().removeObserver(self.onAttributeChanged_Deprecated)
+        patterns.Publisher().removeObserver(self.on_attribute_changed)
 
 
 class FontColorSync(AttributeSync):

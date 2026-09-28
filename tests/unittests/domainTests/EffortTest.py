@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns, config
 from taskcoachlib.domain import task, effort, date, category
-from pubsub import pub
 from unittests import asserts
 import test
 import wx
@@ -102,23 +101,13 @@ class EffortTest(test.TestCase, asserts.Mixin):
         self.assertTrue(before <= self.effort.modificationDateTime())
 
     def testDurationNotificationForSetStart(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, effort.Effort.durationChangedEventType())
+        events = test.ChangeRecorder(effort.Effort.durationChangedEventType())
         start = date.DateTime.now()
         self.effort.setStart(start)
         self.assertEqual([(self.effort.timeSpent(), self.effort)], events)
 
     def testDurationNotificationForSetStop(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, effort.Effort.durationChangedEventType())
+        events = test.ChangeRecorder(effort.Effort.durationChangedEventType())
         self.effort.setStop(date.DateTime.now())
         self.assertEqual([(self.effort.timeSpent(), self.effort)], events)
 
@@ -142,55 +131,30 @@ class EffortTest(test.TestCase, asserts.Mixin):
         self.assertTrue(before <= self.effort.modificationDateTime())
 
     def testNotificationForStartTracking(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, self.effort.trackingChangedEventType())
+        events = test.ChangeRecorder(self.effort.trackingChangedEventType())
         self.effort.setStop(date.DateTime())
         self.assertEqual([(True, self.effort)], events)
 
     def testNotificationForStopTracking(self):
         self.effort.setStop(date.DateTime())
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, self.effort.trackingChangedEventType())
+        events = test.ChangeRecorder(self.effort.trackingChangedEventType())
         self.effort.setStop(date.DateTime.now())
         self.assertEqual([(False, self.effort)], events)
 
     def testRevenueNotificationForTaskHourlyFeeChange(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, effort.Effort.revenueChangedEventType())
+        events = test.ChangeRecorder(effort.Effort.revenueChangedEventType())
         self.task.set_hourly_fee(100)
         self.assertEqual([(2400.0, self.effort)], events)
 
     def testRevenueNotificationForEffortDurationChange_ChangeStop(self):
         self.task.set_hourly_fee(100)
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, effort.Effort.revenueChangedEventType())
+        events = test.ChangeRecorder(effort.Effort.revenueChangedEventType())
         self.effort.setStop(date.DateTime(2004, 1, 3))
         self.assertEqual([(4800.0, self.effort)], events)
 
     def testRevenueNotificationForEffortDurationChange_ChangeStart(self):
         self.task.set_hourly_fee(100)
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, effort.Effort.revenueChangedEventType())
+        events = test.ChangeRecorder(effort.Effort.revenueChangedEventType())
         self.effort.setStart(date.DateTime(2004, 1, 1, 12, 0, 0))
         self.assertEqual([(1200.0, self.effort)], events)
 

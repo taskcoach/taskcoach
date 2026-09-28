@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
-from pubsub import pub
 
 
 class Sorter(patterns.ListDecorator):
@@ -43,7 +42,7 @@ class Sorter(patterns.ListDecorator):
 
     @classmethod
     def sort_event_type(cls):
-        return "pubsub.%s.sorted" % cls.__name__
+        return "%s.sorted" % cls.__name__
 
     @patterns.eventSource
     def extendSelf(self, items, event=None):
@@ -111,7 +110,7 @@ class Sorter(patterns.ListDecorator):
                 reverse=sort_key.startswith("-"),
             )
         if force_event or self != old_self:
-            pub.sendMessage(self.sort_event_type(), sender=self)
+            patterns.Event(self.sort_event_type(), self).send()
 
     def create_sort_key_function(self, sort_key):
         """create_sort_key_function returns a function that is passed to the
@@ -137,28 +136,17 @@ class Sorter(patterns.ListDecorator):
 
     def _registerObserverForAttribute(self, attribute):
         for event_type in self._getSortEventTypes(attribute):
-            if event_type.startswith("pubsub"):
-                pub.subscribe(self.onAttributeChanged, event_type)
-            else:
-                patterns.Publisher().registerObserver(
-                    self.onAttributeChanged_Deprecated,
-                    eventType=event_type,
-                )
+            patterns.Publisher().registerObserver(
+                self.on_attribute_changed, eventType=event_type
+            )
 
     def _removeObserverForAttribute(self, attribute):
         for event_type in self._getSortEventTypes(attribute):
-            if event_type.startswith("pubsub"):
-                pub.unsubscribe(self.onAttributeChanged, event_type)
-            else:
-                patterns.Publisher().removeObserver(
-                    self.onAttributeChanged_Deprecated,
-                    eventType=event_type,
-                )
+            patterns.Publisher().removeObserver(
+                self.on_attribute_changed, eventType=event_type
+            )
 
-    def onAttributeChanged(self, newValue, sender):  # pylint: disable=W0613
-        self.reset()
-
-    def onAttributeChanged_Deprecated(self, event):  # pylint: disable=W0613
+    def on_attribute_changed(self, event):  # pylint: disable=W0613
         self.reset()
 
     def _getSortEventTypes(self, attribute):

@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import patterns
 from taskcoachlib.domain.attribute import icon
 from taskcoachlib.domain.date import Timestamp
-from pubsub import pub
 from . import attribute
 from .appearance import FIELD_DEFAULTS, FIELD_NO_VALUE_SOURCE
 import functools
@@ -759,18 +758,15 @@ class CompositeObject(Object, patterns.ObservableComposite):
         else:
             self.__expandedContexts.discard(context)
         if notify:
-            pub.sendMessage(
-                self.expansionChangedEventType(), newValue=expand, sender=self
-            )
+            patterns.Event(
+                self.expansionChangedEventType(), self, expand
+            ).send()
 
     @classmethod
     def expansionChangedEventType(cls):
         """The event type used for notifying changes in the expansion state
         of a composite object."""
-        return "pubsub.%s.expandedContexts" % cls.__name__.lower()
-
-    def expansionChangedEvent(self, event):
-        event.addSource(self, type=self.expansionChangedEventType())
+        return "%s.expandedContexts" % cls.__name__.lower()
 
     # Appearance:
 

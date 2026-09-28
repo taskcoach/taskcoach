@@ -58,6 +58,12 @@ class EffortListTest(test.TestCase):
         self.assertEqual(1, len(self.effortList))
         self.assertTrue(self.effort in self.effortList)
 
+    def test_efforts_of_a_copy_of_a_task_stay_out(self):
+        # A copy (same id), such as a merged file's, is another list's
+        copy = task.Task(id=self.task.id())
+        copy.addEffort(effort.Effort(copy, date.DateTime(2004, 1, 1)))
+        self.assertEqual(0, len(self.effortList))
+
     def testNotificationAfterRemove(self):
         self.task.addEffort(self.effort)
         self.task.removeEffort(self.effort)

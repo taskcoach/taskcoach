@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns
 from taskcoachlib.domain import base
-from pubsub import pub
 from . import task
 from . import tasklist
 
@@ -42,21 +41,14 @@ class ViewFilter(tasklist.TaskListQueryMixin, base.Filter):
             task.Task.addChildEventType(),
             task.Task.removeChildEventType(),
         ):
-            if event_type.startswith("pubsub"):
-                pub.subscribe(self.on_task_status_change, event_type)
-            else:
-                register_observer(
-                    self.on_task_status_change_deprecated, eventType=event_type
-                )
+            register_observer(self.on_task_status_change, eventType=event_type)
         # Midnight processing: which tasks are included may change with
         # the day
         register_observer(self._on_date_changed, eventType="scheduler.date")
 
     def detach(self):
         super().detach()
-        patterns.Publisher().removeObserver(
-            self.on_task_status_change_deprecated
-        )
+        patterns.Publisher().removeObserver(self.on_task_status_change)
         patterns.Publisher().removeObserver(
             self._on_date_changed, eventType="scheduler.date"
         )
@@ -70,12 +62,7 @@ class ViewFilter(tasklist.TaskListQueryMixin, base.Filter):
         midnight."""
         self.reset()
 
-    def on_task_status_change(self, newValue, sender):  # pylint: disable=W0613
-        self.reset()
-
-    def on_task_status_change_deprecated(
-        self, event=None
-    ):  # pylint: disable=W0613
+    def on_task_status_change(self, event=None):  # pylint: disable=W0613
         self.reset()
 
     def hide_task_status(self, status, hide=True):

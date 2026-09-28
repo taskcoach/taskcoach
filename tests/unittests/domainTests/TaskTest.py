@@ -22,7 +22,6 @@ import ast
 from taskcoachlib import patterns, config
 from taskcoachlib.domain import task, effort, date, attachment, note, category
 from taskcoachlib.domain.attribute.icon import getImagePlural
-from pubsub import pub
 from unittests import asserts
 import test
 import wx
@@ -544,12 +543,7 @@ class DefaultTaskStateTest(
         self.assertTrue(before <= self.task.modificationDateTime())
 
     def testSetFixedFeeCausesRevenueChangeNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.revenueChangedEventType())
+        events = test.ChangeRecorder(task.Task.revenueChangedEventType())
         self.task.set_fixed_fee(1000)
         self.assertEqual([(1000, self.task)], events)
 
@@ -687,12 +681,7 @@ class DefaultTaskStateTest(
 
     def testAddChildWithEffortCausesBudgetLeftNotification(self):
         self.task.set_budget(date.TimeDelta(hours=100))
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.budgetLeftChangedEventType())
+        events = test.ChangeRecorder(task.Task.budgetLeftChangedEventType())
         child = task.Task()
         child.addEffort(
             effort.Effort(
@@ -706,24 +695,14 @@ class DefaultTaskStateTest(
 
     def testAddChildWithoutEffortCausesNoBudgetLeftNotification(self):
         self.task.set_budget(date.TimeDelta(hours=100))
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.budgetLeftChangedEventType())
+        events = test.ChangeRecorder(task.Task.budgetLeftChangedEventType())
         self.task.addChild(task.Task())
         self.assertFalse(events)
 
     def testAddChildWithEffortToTaskWithoutBudgetCausesNoBudgetLeftNotification(
         self,
     ):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.budgetLeftChangedEventType())
+        events = test.ChangeRecorder(task.Task.budgetLeftChangedEventType())
         child = task.Task()
         child.addEffort(
             effort.Effort(
@@ -736,12 +715,7 @@ class DefaultTaskStateTest(
         self.assertFalse(events)
 
     def testAddChildWithBudgetCausesBudgetLeftNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.budgetLeftChangedEventType())
+        events = test.ChangeRecorder(task.Task.budgetLeftChangedEventType())
         self.task.addChild(task.Task(budget=date.TimeDelta(hours=100)))
         self.assertEqual([(date.TimeDelta(), self.task)], events)
 
@@ -753,22 +727,12 @@ class DefaultTaskStateTest(
             date.DateTime(2000, 1, 1, 11, 0, 0),
         )
         child.addEffort(childEffort)
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.timeSpentChangedEventType())
+        events = test.ChangeRecorder(task.Task.timeSpentChangedEventType())
         self.task.addChild(child)
         self.assertEqual([(self.task.timeSpent(), self.task)], events)
 
     def testAddChildWithoutEffortCausesNoTimeSpentNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.timeSpentChangedEventType())
+        events = test.ChangeRecorder(task.Task.timeSpentChangedEventType())
         self.task.addChild(task.Task())
         self.assertFalse(events)
 
@@ -784,34 +748,19 @@ class DefaultTaskStateTest(
         self.assertFalse(self.events)
 
     def testAddChildWithRevenueCausesRevenueNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.revenueChangedEventType())
+        events = test.ChangeRecorder(task.Task.revenueChangedEventType())
         self.task.addChild(task.Task(fixedFee=1000))
         self.assertEqual([(0, self.task)], events)
 
     def testAddChildWithoutRevenueCausesNoRevenueNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.revenueChangedEventType())
+        events = test.ChangeRecorder(task.Task.revenueChangedEventType())
         self.task.addChild(task.Task())
         self.assertFalse(events)
 
     def testAddTrackedChildCausesStartTrackingNotification(self):
         child = task.Task()
         child.addEffort(effort.Effort(child))
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, self.task.trackingChangedEventType())
+        events = test.ChangeRecorder(self.task.trackingChangedEventType())
         self.task.addChild(child)
         self.assertEqual([(True, self.task)], events)
 
@@ -819,12 +768,7 @@ class DefaultTaskStateTest(
         child = task.Task()
         child.addEffort(effort.Effort(child))
         child.addEffort(effort.Effort(child))
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, self.task.trackingChangedEventType())
+        events = test.ChangeRecorder(self.task.trackingChangedEventType())
         self.task.addChild(child)
         self.assertEqual([(True, self.task)], events)
 
@@ -837,22 +781,12 @@ class DefaultTaskStateTest(
     # Add effort
 
     def testAddEffortCausesNoBudgetLeftNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.budgetLeftChangedEventType())
+        events = test.ChangeRecorder(task.Task.budgetLeftChangedEventType())
         self.task.addEffort(effort.Effort(self.task))
         self.assertFalse(events)
 
     def testAddActiveEffortCausesStartTrackingNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, self.task.trackingChangedEventType())
+        events = test.ChangeRecorder(self.task.trackingChangedEventType())
         activeEffort = effort.Effort(self.task)
         self.task.addEffort(activeEffort)
         self.assertEqual([(True, self.task)], events)
@@ -1811,24 +1745,14 @@ class TaskWithChildTest(
                 date.DateTime(2005, 1, 1, 12, 0, 0),
             )
         )
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.budgetLeftChangedEventType())
+        events = test.ChangeRecorder(task.Task.budgetLeftChangedEventType())
         self.task1.removeChild(self.task1_1)
         self.assertTrue((date.TimeDelta(hours=100), self.task1) in events)
 
     def testRemoveChildWithEffortFromTaskWithoutBudgetCausesNoBudgetLeftNotification(
         self,
     ):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.budgetLeftChangedEventType())
+        events = test.ChangeRecorder(task.Task.budgetLeftChangedEventType())
         self.task1_1.addEffort(
             effort.Effort(
                 self.task1_1,
@@ -1846,24 +1770,14 @@ class TaskWithChildTest(
             date.DateTime(2005, 1, 1, 12, 0, 0),
         )
         self.task1_1.addEffort(childEffort)
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.timeSpentChangedEventType())
+        events = test.ChangeRecorder(task.Task.timeSpentChangedEventType())
         self.task1.removeChild(self.task1_1)
         self.assertEqual(
             [(self.task1.timeSpent(recursive=True), self.task1)], events
         )
 
     def testRemoveChildWithoutEffortCausesNoTimeSpentNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.timeSpentChangedEventType())
+        events = test.ChangeRecorder(task.Task.timeSpentChangedEventType())
         self.task1.removeChild(self.task1_1)
         self.assertFalse(events)
 
@@ -1881,33 +1795,18 @@ class TaskWithChildTest(
 
     def testRemoveChildWithRevenueCausesTotalRevenueNotification(self):
         self.task1_1.set_fixed_fee(1000)
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.revenueChangedEventType())
+        events = test.ChangeRecorder(task.Task.revenueChangedEventType())
         self.task1.removeChild(self.task1_1)
         self.assertEqual([(0, self.task1)], events)
 
     def testRemoveChildWithoutRevenueCausesNoRevenueNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.revenueChangedEventType())
+        events = test.ChangeRecorder(task.Task.revenueChangedEventType())
         self.task1.removeChild(self.task1_1)
         self.assertFalse(events)
 
     def testRemoveTrackedChildCausesStopTrackingNotification(self):
         self.task1_1.addEffort(effort.Effort(self.task1_1))
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.trackingChangedEventType())
+        events = test.ChangeRecorder(task.Task.trackingChangedEventType())
         self.task1.removeChild(self.task1_1)
         self.assertEqual([(False, self.task1)], events)
 
@@ -1916,12 +1815,7 @@ class TaskWithChildTest(
     ):
         self.task1.addEffort(effort.Effort(self.task1))
         self.task1_1.addEffort(effort.Effort(self.task1_1))
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.trackingChangedEventType())
+        events = test.ChangeRecorder(task.Task.trackingChangedEventType())
         self.task1.removeChild(self.task1_1)
         self.assertFalse(events)
 
@@ -2131,23 +2025,13 @@ class TaskWithChildTest(
         self.assertTrue((date.TimeDelta(0), self.task1) in self.changes)
 
     def testBudgetLeftNotification_WhenChildBudgetChanges(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.budgetLeftChangedEventType())
+        events = test.ChangeRecorder(task.Task.budgetLeftChangedEventType())
         self.task1_1.set_budget(date.ONE_HOUR)
         self.assertTrue((date.ONE_HOUR, self.task1) in events)
 
     def testBudgetLeftNotification_WhenChildTimeSpentChanges(self):
         self.task1_1.set_budget(date.TWO_HOURS)
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.budgetLeftChangedEventType())
+        events = test.ChangeRecorder(task.Task.budgetLeftChangedEventType())
         self.task1_1.addEffort(
             effort.Effort(
                 self.task1_1,
@@ -2159,12 +2043,7 @@ class TaskWithChildTest(
 
     def testBudgetLeftNotification_WhenParentHasNoBudget(self):
         self.task1_1.set_budget(date.TWO_HOURS)
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.budgetLeftChangedEventType())
+        events = test.ChangeRecorder(task.Task.budgetLeftChangedEventType())
         self.task1.addEffort(
             effort.Effort(
                 self.task1,
@@ -2177,12 +2056,7 @@ class TaskWithChildTest(
     def testNoBudgetLeftNotification_WhenChildTimeSpentChangesButNoBudget(
         self,
     ):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.budgetLeftChangedEventType())
+        events = test.ChangeRecorder(task.Task.budgetLeftChangedEventType())
         self.task1_1.addEffort(
             effort.Effort(
                 self.task1_1,
@@ -2199,12 +2073,7 @@ class TaskWithChildTest(
             date.DateTime(2005, 1, 1, 11, 0, 0),
         )
         self.task1_1.addEffort(childEffort)
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.timeSpentChangedEventType())
+        events = test.ChangeRecorder(task.Task.timeSpentChangedEventType())
         childEffort.setStop(date.DateTime(2005, 1, 1, 12, 0, 0))
         self.assertTrue((self.task1.timeSpent(), self.task1) in events)
 
@@ -2223,12 +2092,7 @@ class TaskWithChildTest(
         self.assertIn(self.task1, sources)
 
     def testRevenueNotificationWhenChildHasEffortAdded(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.revenueChangedEventType())
+        events = test.ChangeRecorder(task.Task.revenueChangedEventType())
         self.task1_1.set_hourly_fee(100)
         self.task1_1.addEffort(
             effort.Effort(
@@ -2248,12 +2112,7 @@ class TaskWithChildTest(
         self.assertTrue(self.task1.isBeingTracked(recursive=True))
 
     def testNotificationWhenChildIsBeingTracked(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, self.task1.trackingChangedEventType())
+        events = test.ChangeRecorder(self.task1.trackingChangedEventType())
         activeEffort = effort.Effort(self.task1_1)
         self.task1_1.addEffort(activeEffort)
         self.assertEqual(
@@ -2263,12 +2122,7 @@ class TaskWithChildTest(
     def testNotificationWhenChildTrackingStops(self):
         activeEffort = effort.Effort(self.task1_1)
         self.task1_1.addEffort(activeEffort)
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.trackingChangedEventType())
+        events = test.ChangeRecorder(task.Task.trackingChangedEventType())
         activeEffort.setStop()
         self.assertEqual(
             set([(False, self.task), (False, self.task1_1)]), set(events)
@@ -2650,23 +2504,13 @@ class TaskWithOneEffortTest(TaskTestCase, CommonTaskTestsMixin):
         self.assertEqual([self.task1effort1], self.task.efforts())
 
     def testStartTrackingEffort(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, self.task.trackingChangedEventType())
+        events = test.ChangeRecorder(self.task.trackingChangedEventType())
         self.task1effort1.setStop(date.DateTime.max)
         self.assertEqual([(True, self.task)], events)
 
     def testStopTrackingEffort(self):
         self.task1effort1.setStop(date.DateTime.max)
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, self.task.trackingChangedEventType())
+        events = test.ChangeRecorder(self.task.trackingChangedEventType())
         self.task1effort1.setStop()
         self.assertEqual([(False, self.task)], events)
 
@@ -2734,54 +2578,29 @@ class TaskWithActiveEffort(TaskTestCase, CommonTaskTestsMixin):
     def testNoStartTrackingEventBecauseActiveEffortWasAddedViaConstructor(
         self,
     ):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.trackingChangedEventType())
+        events = test.ChangeRecorder(task.Task.trackingChangedEventType())
         task.Task(efforts=[effort.Effort(None)])
         self.assertFalse(events)
 
     def testNoStartTrackingEventAfterAddingASecondActiveEffort(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.trackingChangedEventType())
+        events = test.ChangeRecorder(task.Task.trackingChangedEventType())
         self.task.addEffort(effort.Effort(self.task))
         self.assertFalse(events)
 
     def testNoStopTrackingEventAfterRemovingFirstOfTwoActiveEfforts(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.trackingChangedEventType())
+        events = test.ChangeRecorder(task.Task.trackingChangedEventType())
         secondEffort = effort.Effort(self.task)
         self.task.addEffort(secondEffort)
         self.task.removeEffort(secondEffort)
         self.assertFalse(events)
 
     def testRemoveActiveEffortShouldCauseStopTrackingEvent(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, self.task.trackingChangedEventType())
+        events = test.ChangeRecorder(self.task.trackingChangedEventType())
         self.task.removeEffort(self.task1effort1)
         self.assertEqual([(False, self.task)], events)
 
     def testStopTrackingEvent(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, self.task.trackingChangedEventType())
+        events = test.ChangeRecorder(self.task.trackingChangedEventType())
         self.task.stopTracking()
         self.assertEqual([(False, self.task)], events)
 
@@ -2937,12 +2756,7 @@ class TaskWithBudgetTest(TaskTestCase, CommonTaskTestsMixin):
         self.assertEqual(date.ONE_HOUR, self.task.budgetLeft())
 
     def testBudgetLeftNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.budgetLeftChangedEventType())
+        events = test.ChangeRecorder(task.Task.budgetLeftChangedEventType())
         self.addEffort(date.ONE_HOUR)
         self.assertEqual([(date.ONE_HOUR, self.task)], events)
 
@@ -3297,24 +3111,14 @@ class TaskWithHourlyFeeFixture(TaskTestCase, CommonTaskTestsMixin):
         self.assertEqual(100, self.task.revenue())
 
     def testRevenue_Notification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.revenueChangedEventType())
+        events = test.ChangeRecorder(task.Task.revenueChangedEventType())
         self.task.addEffort(self.effort)
         self.assertEqual([(100, self.task)], events)
 
     def testRecursiveRevenue_Notification(self):
         child = task.Task("child", hourlyFee=100)
         self.task.addChild(child)
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.revenueChangedEventType())
+        events = test.ChangeRecorder(task.Task.revenueChangedEventType())
         child.addEffort(
             effort.Effort(
                 child,
@@ -3325,22 +3129,12 @@ class TaskWithHourlyFeeFixture(TaskTestCase, CommonTaskTestsMixin):
         self.assertTrue((100, self.task) in events)
 
     def testAddingEffortDoesNotTriggerRevenueNotificationForEffort(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, effort.Effort.revenueChangedEventType())
+        events = test.ChangeRecorder(effort.Effort.revenueChangedEventType())
         self.task.addEffort(self.effort)
         self.assertFalse(events)
 
     def testTaskNotifiesEffortObserversOfRevenueChange(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, effort.Effort.revenueChangedEventType())
+        events = test.ChangeRecorder(effort.Effort.revenueChangedEventType())
         self.task.addEffort(self.effort)
         self.task.set_hourly_fee(200)
         self.assertEqual([(200, self.effort)], events)
