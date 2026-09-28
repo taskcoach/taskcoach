@@ -20,32 +20,30 @@ This refactor:
 
 1. The undo log as object versions keyed by the modification date
    ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log), option C).
-2. Sorting by the Status column, in the status sort order
-   ([TASK_STATUS_SORT.md](TASK_STATUS_SORT.md), issue 14).
-3. The task editor's Progress tab, to check on a real display
+2. The task editor's Progress tab, to check on a real display
    (issue 7).
-4. Not planned: the reason for each entry
+3. Not planned: the reason for each entry
    ([Later](#later-the-reason-for-each-entry)).
-5. Effective fields for the 13 other subtree values, one at a time;
+4. Effective fields for the 13 other subtree values, one at a time;
    none is read by the loop
    ([TASK_FIELDS.md](TASK_FIELDS.md#subtree-values-in-other-columns)).
 
 Before the branch is pushed:
 
-6. Squash to one commit, version 2.0.3.0 in the body; the release
+5. Squash to one commit, version 2.0.3.0 in the body; the release
    date (2026-09-28) may move.
-7. One app run on 2026-09-28 logged a traceback (log lost, not
+6. One app run on 2026-09-28 logged a traceback (log lost, not
    reproduced in four runs of the same steps): watch for it.
 
 Other TODOs, outside this refactor:
 
-8. Signal cleanup, then a signal library
+7. Signal cleanup, then a signal library
    ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#todo)).
-9. Editor text fields commit only on focus loss
+8. Editor text fields commit only on focus loss
    ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#todo)).
-10. Default values in the file
-    ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#todo)).
-11. Settings modernization ([SETTINGS.md](SETTINGS.md#todo)).
+9. Default values in the file
+   ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#todo)).
+10. Settings modernization ([SETTINGS.md](SETTINGS.md#todo)).
 
 ## Master Design
 
@@ -551,9 +549,10 @@ Issues found, not fixed:
     ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging); issue 11 was
     its one leak); reload closes first, as loading over open items
     would leave the old objects in the viewers (`Filter.reset()`).
-14. Sorting by the Status or Status combo column sorts by subject:
-    `Task` has no `statusSortFunction`. The Status icon column does
-    not sort.
+14. Decided 2026-09-28, no change: sorting by status is the "Sort by
+    status first" control, in the configured order
+    ([TASK_STATUS_SORT.md](TASK_STATUS_SORT.md)); a click on a status
+    column header sorts by subject, as on master.
 15. Fixed 2026-09-28: duplicate IDs in a file were only logged; both
     objects loaded and compared equal. They are corrected when read,
     and a message lists them
