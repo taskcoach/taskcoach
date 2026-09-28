@@ -121,7 +121,7 @@ class Page(patterns.Observer, widgets.BookPage):
     def __init__(self, items, *args, **kwargs):
         self.items = items
         super().__init__(columns=self.columns, *args, **kwargs)
-        # Remove this page's Publisher and pubsub subscriptions when it
+        # Remove this page's Publisher subscriptions when it
         # is destroyed, however that happens (close handler, parent
         # destroy, app exit), so none can outlive the page. See
         # docs/PUBLISHER_OBSERVER.md, Signaling System Cleanup.
@@ -184,7 +184,7 @@ class ScrolledPage(patterns.Observer, widgets.ScrolledBookPage):
     def __init__(self, items, *args, **kwargs):
         self.items = items
         super().__init__(columns=self.columns, *args, **kwargs)
-        # Remove this page's Publisher and pubsub subscriptions when it
+        # Remove this page's Publisher subscriptions when it
         # is destroyed, however that happens (close handler, parent
         # destroy, app exit), so none can outlive the page. See
         # docs/PUBLISHER_OBSERVER.md, Signaling System Cleanup.
@@ -5038,7 +5038,7 @@ class Editor(BalloonTipManager, widgets.Dialog):
         # Close any child Editor dialogs BEFORE Destroy(). Without
         # this, Destroy() cascades to children without sending
         # EVT_CLOSE, so their on_close_editor never runs — leaving
-        # dangling observers, UICommands, and pubsub subscriptions
+        # dangling observers and UICommands
         # that cause C++ segfaults.
         for child in list(self.GetChildren()):
             if isinstance(child, Editor) and child is not self:

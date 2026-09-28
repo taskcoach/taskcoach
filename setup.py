@@ -97,7 +97,6 @@ def majorAndMinorPythonVersion():
 
 install_requires = [
     "six",
-    "pypubsub",
     "watchdog>=3.0.0",  # File monitoring - Bookworm too old, needs pip
     "chardet",
     "python-dateutil",

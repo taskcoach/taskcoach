@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import meta, patterns, operating_system
 from taskcoachlib.i18n import _
-from pubsub import pub
 import ast
 import configparser
 import os
@@ -117,9 +116,10 @@ class Settings(CachingConfigParser):
             # Assume that if the settings are not to be loaded, we also
             # should be quiet (i.e. we are probably in test mode):
             self.__beQuiet()
-        pub.subscribe(
-            self.onSettingsFileLocationChanged,
-            "settings.file.saveinifileinprogramdir",
+        patterns.Publisher().registerObserver(
+            self.on_settings_file_location_changed,
+            eventType="file.saveinifileinprogramdir",
+            eventSource=self,
         )
 
     def acquire_ini_lock(self):
@@ -162,9 +162,9 @@ class Settings(CachingConfigParser):
             self.__ini_lock.release()
             self.__ini_lock = None
 
-    def onSettingsFileLocationChanged(self, value):
-        saveIniFileInProgramDir = value
-        if not saveIniFileInProgramDir:
+    def on_settings_file_location_changed(self, event):
+        # pylint: disable=W0613
+        if not self.getboolean("file", "saveinifileinprogramdir"):
             try:
                 os.remove(self.generatedIniFilename(forceProgramDir=True))
             except OSError:
@@ -352,21 +352,37 @@ class Settings(CachingConfigParser):
                 # Before notifying: listeners read the computed
                 # window.theme_is_dark right away
                 settings2.refresh_now()
-            patterns.Event("%s.%s" % (section, option), self, value).send()
+            self.send_changed(section, option)
             settings2.schedule_refresh()
             return True
         else:
             return False
 
+    @staticmethod
+    def section_changed_event_type(section):
+        """Any option of the section changed: the settings are the
+        source and the option's name the value. An option's own event
+        type is "<section>.<option>", its value the new text."""
+        return "settings.%s" % section
+
+    def send_changed(self, section, option):
+        """Tell the listeners of the option and of its section that it
+        changed; they read typed values from the settings."""
+        event = patterns.Event(
+            "%s.%s" % (section, option), self, self.get(section, option)
+        )
+        event.addSource(
+            self, option, type=self.section_changed_event_type(section)
+        )
+        event.send()
+
     def setboolean(self, section, option, value):
-        if self.set(section, option, str(value)):
-            pub.sendMessage("settings.%s.%s" % (section, option), value=value)
+        self.set(section, option, str(value))
 
     setvalue = settuple = setlist = setdict = setint = setboolean
 
     def settext(self, section, option, value):
-        if self.set(section, option, value):
-            pub.sendMessage("settings.%s.%s" % (section, option), value=value)
+        self.set(section, option, value)
 
     def getlist(self, section, option):
         return self.getEvaluatedValue(section, option, ast.literal_eval)

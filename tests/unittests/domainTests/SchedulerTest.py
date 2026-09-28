@@ -24,7 +24,6 @@ GlobalTimer sends the Publisher event 'timer.second' every second
 """
 
 import test
-from pubsub import pub
 import wx
 from taskcoachlib import config, patterns
 from taskcoachlib.domain import date, effort, task
@@ -96,17 +95,6 @@ class GlobalTimerEventTest(test.wxTestCase):
         )
         self.tick()
         self.assertFalse(hasattr(self, "events") and self.events)
-
-    def test_nothing_is_published_on_pubsub(self):
-        """The ticks moved from pypubsub to the Publisher."""
-        received = []
-
-        def listener(timestamp):
-            received.append(timestamp)
-
-        pub.subscribe(listener, "timer.second")
-        self.tick()
-        self.assertEqual([], received)
 
 
 class MasterSchedulerEventTest(test.wxTestCase):

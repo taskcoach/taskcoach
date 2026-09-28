@@ -179,7 +179,7 @@ See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) for toolbar signal details
 
 - No `EVT_UPDATE_UI` polling
 - `enabled()`: `iocontroller.need_save()`
-- Toolbar: signal-driven via `taskfile.dirty` / `taskfile.clean` pubsub
+- Toolbar: signal-driven via the `taskfile.dirty` / `taskfile.clean` events
 - Menu: updated via `_update_menu_state()` on menu open
 
 ### ViewerHideTasks (task status filter buttons)
@@ -204,7 +204,7 @@ See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) for toolbar signal details
 - Toolbar: stay-pressed check button on the main toolbar and the task
   viewer toolbar; all instances sync via Publisher dispatch
   (`registerObserver`, event type `view.autoscrollselection`,
-  `eventSource=settings`) -> `ToggleTool(checked())`; not pypubsub
+  `eventSource=settings`) -> `ToggleTool(checked())`
 - Menu: View menu check item, updated via `_update_menu_state()` on open
 - See LIST_MANAGEMENT.md "Auto-Scroll Toggle" for what the setting gates
 

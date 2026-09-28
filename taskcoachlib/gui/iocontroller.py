@@ -24,7 +24,6 @@ from taskcoachlib.filesystem import resourcelock
 from taskcoachlib.meta.debug import log_step
 
 from taskcoachlib.gui.dialog import BackupManagerDialog
-from pubsub import pub
 import wx
 import os
 import re
@@ -117,7 +116,11 @@ class IOController(object):
         # A task file the user agreed to replace; _save_save removes its
         # auto import/export files once it holds the lock
         self.__replacing = None
-        pub.subscribe(self.on_changed_on_disk, "taskfile.changed")
+        patterns.Publisher().registerObserver(
+            self.on_changed_on_disk,
+            eventType="taskfile.changed",
+            eventSource=task_file,
+        )
 
     def need_save(self):
         return self.__task_file.need_save()
@@ -235,13 +238,11 @@ class IOController(object):
             )
             self.__add_recent_file(filename)
 
-    def on_changed_on_disk(self, taskFile):
+    def on_changed_on_disk(self, event):  # pylint: disable=W0613
         """Another program changed the open file. Saving would replace
         its changes, so it waits until they are merged in, the file is
         reloaded, or saved under another name (docs/PERSISTENCE_XML.md,
         Saving)."""
-        if taskFile is not self.__task_file:
-            return
         if self.__task_file.need_save():
             self.__resolve_changes_on_disk(save=False)
             return

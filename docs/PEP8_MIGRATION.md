@@ -45,7 +45,7 @@ convention.
 ## Do not blindly rename name-coupled callbacks
 
 Some names are coupled by string, not by reference, so renaming silently breaks
-dispatch: pubsub topics and handlers, `getattr`-based dispatch, and the
+dispatch: event type strings and their handlers, `getattr`-based dispatch, and the
 `humanReadable`/`renderXxx` coupling (see `ATTRIBUTE_PATTERN.md` and
 `PUBLISHER_OBSERVER.md`).
 

@@ -918,7 +918,7 @@ self.__observer.Refresh()  # Mark for repaint
 self.__observer.Update()   # Force immediate repaint
 ```
 
-`Update()` is necessary because `Refresh()` only schedules a repaint for the next event loop iteration. During synchronous pubsub callbacks, this may not happen quickly enough, causing visual lag. `Update()` forces immediate processing of pending paint events.
+`Update()` is necessary because `Refresh()` only schedules a repaint for the next event loop iteration. During synchronous change callbacks, this may not happen quickly enough, causing visual lag. `Update()` forces immediate processing of pending paint events.
 
 ### Sub-Control Stash Model
 

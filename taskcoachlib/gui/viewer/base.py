@@ -27,7 +27,6 @@ from taskcoachlib.i18n import _
 from taskcoachlib.gui import uicommand, toolbar
 from taskcoachlib.gui.icons import image_list_cache
 from wx.lib.agw import hypertreelist
-from pubsub import pub
 from taskcoachlib.meta.debug import log_step
 from . import mixin
 
@@ -82,8 +81,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         )
         self.init_layout()
         self.register_presentation_observers()
-        # Re-center when auto-scroll is turned back on. Publisher
-        # dispatch, not pypubsub; see PUBLISHER_OBSERVER.md.
+        # Re-center when auto-scroll is turned back on
         self.registerObserver(
             self.on_auto_scroll_changed,
             eventType="view.autoscrollselection",
@@ -91,15 +89,22 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         )
         self.refresh()
 
-        pub.subscribe(self.on_begin_io, "taskfile.aboutToRead")
-        pub.subscribe(self.on_begin_io, "taskfile.aboutToClear")
-        pub.subscribe(self.on_end_io, "taskfile.justRead")
-        pub.subscribe(self.on_end_io, "taskfile.justCleared")
-        # Subscribe to bulk operation signals to freeze/thaw during batch updates
-        pub.subscribe(
-            self.on_begin_bulk_operation, "command.aboutToBulkModify"
+        for event_type, handler in (
+            ("taskfile.aboutToRead", self.on_begin_io),
+            ("taskfile.aboutToClear", self.on_begin_io),
+            ("taskfile.justRead", self.on_end_io),
+            ("taskfile.justCleared", self.on_end_io),
+        ):
+            self.registerObserver(
+                handler, eventType=event_type, eventSource=self.taskFile
+            )
+        # Frozen during a command's bulk changes, refreshed once after
+        self.registerObserver(
+            self.on_begin_bulk_operation, eventType="command.aboutToBulkModify"
         )
-        pub.subscribe(self.on_end_bulk_operation, "command.justBulkModified")
+        self.registerObserver(
+            self.on_end_bulk_operation, eventType="command.justBulkModified"
+        )
 
         wx.CallAfter(self.__DisplayBalloon)
 
@@ -129,22 +134,22 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
                 ),
             )
 
-    def on_begin_io(self, taskFile):
+    def on_begin_io(self, event):  # pylint: disable=W0613
         self.__freezeCount += 1
         self.__presentation.freeze()
 
-    def on_end_io(self, taskFile):
+    def on_end_io(self, event):  # pylint: disable=W0613
         self.__freezeCount -= 1
         self.__presentation.thaw()
         if self.__freezeCount == 0:
             self.refresh()
 
-    def on_begin_bulk_operation(self):
+    def on_begin_bulk_operation(self, event=None):  # pylint: disable=W0613
         """Freeze viewer and presentation to batch updates during bulk operations."""
         self.__freezeCount += 1
         self.__presentation.freeze()
 
-    def on_end_bulk_operation(self):
+    def on_end_bulk_operation(self, event=None):  # pylint: disable=W0613
         """Thaw viewer and presentation after bulk operation, refresh only changed items."""
         self.__freezeCount -= 1
         self.__presentation.thaw()
@@ -232,14 +237,13 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
                     exc=True,
                 )
 
-        pub.unsubscribe(self.on_begin_io, "taskfile.aboutToRead")
-        pub.unsubscribe(self.on_begin_io, "taskfile.aboutToClear")
-        pub.unsubscribe(self.on_end_io, "taskfile.justRead")
-        pub.unsubscribe(self.on_end_io, "taskfile.justCleared")
-        pub.unsubscribe(
-            self.on_begin_bulk_operation, "command.aboutToBulkModify"
-        )
-        pub.unsubscribe(self.on_end_bulk_operation, "command.justBulkModified")
+        for handler in (
+            self.on_begin_io,
+            self.on_end_io,
+            self.on_begin_bulk_operation,
+            self.on_end_bulk_operation,
+        ):
+            self.removeObserver(handler)
 
         self.presentation().detach()
         self.toolbar.detach()
@@ -294,7 +298,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         return False
 
     def send_viewer_status_event(self):
-        pub.sendMessage(self.viewer_status_event_type(), viewer=self)
+        patterns.Event(self.viewer_status_event_type(), self).send()
 
     def statusMessages(self):
         return "", ""

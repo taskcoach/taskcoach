@@ -19,12 +19,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 
-from pubsub import pub
+import contextlib
 from taskcoachlib import patterns
 from taskcoachlib.domain import task, effort, date
 from taskcoachlib.i18n import _
 from . import base
 from . import noteCommands
+
+
+@contextlib.contextmanager
+def _bulk_modification(command):
+    """Viewers freeze while the command changes many items, and refresh
+    once after."""
+    patterns.Event("command.aboutToBulkModify", command).send()
+    try:
+        yield
+    finally:
+        patterns.Event("command.justBulkModified", command).send()
 
 
 class SaveTaskStateMixin(base.SaveStateMixin, base.CompositeMixin):
@@ -259,29 +270,20 @@ class MarkCompletedCommand(base.SaveStateMixin, EffortCommand):
         self.saveStates(itemsToSave)
 
     def do_command(self):
-        pub.sendMessage("command.aboutToBulkModify")
-        try:
+        with _bulk_modification(self):
             super().do_command()
             for item in self.items:
                 item.setCompletionDateTime(task.Task.suggestedCompletionDateTime())
-        finally:
-            pub.sendMessage("command.justBulkModified")
 
     def undo_command(self):
-        pub.sendMessage("command.aboutToBulkModify")
-        try:
+        with _bulk_modification(self):
             self.undoStates()
             super().undo_command()
-        finally:
-            pub.sendMessage("command.justBulkModified")
 
     def redo_command(self):
-        pub.sendMessage("command.aboutToBulkModify")
-        try:
+        with _bulk_modification(self):
             self.redoStates()
             super().redo_command()
-        finally:
-            pub.sendMessage("command.justBulkModified")
 
     def tasksToStopTracking(self):
         return self.items
@@ -305,32 +307,23 @@ class MarkActiveCommand(base.SaveStateMixin, base.BaseCommand):
         self.saveStates(itemsToSave)
 
     def do_command(self):
-        pub.sendMessage("command.aboutToBulkModify")
-        try:
+        with _bulk_modification(self):
             super().do_command()
             for item in self.items:
                 item.setActualStartDateTime(
                     task.Task.suggestedActualStartDateTime()
                 )
                 item.setCompletionDateTime(date.DateTime())
-        finally:
-            pub.sendMessage("command.justBulkModified")
 
     def undo_command(self):
-        pub.sendMessage("command.aboutToBulkModify")
-        try:
+        with _bulk_modification(self):
             self.undoStates()
             super().undo_command()
-        finally:
-            pub.sendMessage("command.justBulkModified")
 
     def redo_command(self):
-        pub.sendMessage("command.aboutToBulkModify")
-        try:
+        with _bulk_modification(self):
             self.redoStates()
             super().redo_command()
-        finally:
-            pub.sendMessage("command.justBulkModified")
 
 
 class MarkInactiveCommand(base.SaveStateMixin, base.BaseCommand):
@@ -351,30 +344,21 @@ class MarkInactiveCommand(base.SaveStateMixin, base.BaseCommand):
         self.saveStates(itemsToSave)
 
     def do_command(self):
-        pub.sendMessage("command.aboutToBulkModify")
-        try:
+        with _bulk_modification(self):
             super().do_command()
             for item in self.items:
                 item.setActualStartDateTime(date.DateTime())
                 item.setCompletionDateTime(date.DateTime())
-        finally:
-            pub.sendMessage("command.justBulkModified")
 
     def undo_command(self):
-        pub.sendMessage("command.aboutToBulkModify")
-        try:
+        with _bulk_modification(self):
             self.undoStates()
             super().undo_command()
-        finally:
-            pub.sendMessage("command.justBulkModified")
 
     def redo_command(self):
-        pub.sendMessage("command.aboutToBulkModify")
-        try:
+        with _bulk_modification(self):
             self.redoStates()
             super().redo_command()
-        finally:
-            pub.sendMessage("command.justBulkModified")
 
 
 class StartEffortCommand(EffortCommand):

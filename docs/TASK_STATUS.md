@@ -902,7 +902,7 @@ UI components should:
 
 1. Trigger fires ONLY when INPUT field in SSOT changes
 2. Write to OUTPUT fields ONLY if value changed
-3. Fire pubsub ONLY if output changed (for UI refresh)
+3. Send an event ONLY if output changed (for UI refresh)
 
 ---
 

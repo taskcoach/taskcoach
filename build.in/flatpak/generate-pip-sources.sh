@@ -31,7 +31,6 @@ OUT="$SCRIPT_DIR/python3-sources.json"
 # dbus/glib dev headers. wxPython/wxWidgets are separate pinned source modules.
 REQUIREMENTS=(
     "six>=1.16.0"
-    "pypubsub"
     "watchdog>=3.0.0"
     "chardet>=5.2.0"
     "python-dateutil>=2.9.0"

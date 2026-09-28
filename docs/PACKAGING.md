@@ -44,7 +44,6 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | Package | debian12 | ubuntu22 | debian13 | ubuntu24 | arch | fedora | appimage | ~~flatpak~~ | windows | macos |
 |---------|:--------:|:--------:|:--------:|:--------:|:----:|:------:|:--------:|:-------:|:-------:|:-----:|
 | wxpython | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
-| pypubsub | distro | distro | distro | distro | AUR | distro | bundled | bundled | pip | pip |
 | pyparsing | **pip** | **pip** | distro | distro | distro | **pip** | bundled | bundled | pip | pip |
 | watchdog | **pip** | **pip** | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | squaremap | distro | distro | distro | distro | **pip** | **pip** | bundled | bundled | pip | pip |
@@ -105,8 +104,8 @@ backends.
 | [Debian 13 Trixie](#debianubuntu-packaging) | debian13 | 3.12 | 4.2.3 | `setup_debian13_trixie.sh` | `build-deb.yml` | Distro deps sufficient |
 | [Ubuntu 22.04 Jammy](#debianubuntu-packaging) | ubuntu22 | 3.10 | 4.1.1 | `setup_ubuntu2204_jammy.sh` | `build-deb.yml` | pip: pyparsing, watchdog |
 | [Ubuntu 24.04 Noble](#debianubuntu-packaging) | ubuntu24 | 3.12 | 4.2.1 | `setup_ubuntu2404_noble.sh` | `build-deb.yml` | Distro deps sufficient |
-| [Arch Linux](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap; pypubsub from AUR |
-| [Manjaro](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap; pypubsub from AUR |
+| [Arch Linux](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap |
+| [Manjaro](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap |
 | [Fedora 43](#fedora-packaging) | fedora43 | 3.13 | 4.2.4 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap, pyparsing |
 | [**AppImage**](#appimage-packaging) | appimage | **3.11** | **4.2.5** | — | `build-appimage.yml` | Bundles Python + all deps |
 | [~~**Flatpak**~~](#flatpak-packaging) | flatpak | runtime | **4.3.1 (source)** | `scripts/build-flatpak.sh` | `build-flatpak.yml` | **Flathub release postponed**; GNOME runtime; wxPython from sdist (builds its own bundled wxWidgets) |
@@ -403,7 +402,7 @@ sudo pacman -U taskcoach-*.pkg.tar.zst
 
 ### Dependencies
 
-See `PKGBUILD` (linked above) for runtime, build, and optional dependencies. Some packages require AUR (`python-pypubsub`, `python-squaremap`).
+See `PKGBUILD` (linked above) for runtime, build, and optional dependencies. `python-squaremap` requires AUR.
 
 ### Setup Script
 

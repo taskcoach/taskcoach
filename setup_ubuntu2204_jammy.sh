@@ -107,12 +107,12 @@ echo
 
 # Install Python dependencies not available in Ubuntu repos or with version issues
 echo -e "${BLUE}[4/7] Installing Python dependencies in venv...${NC}"
-echo "Installing: distro, pypubsub, pyparsing>=3.1.3, watchdog>=3.0.0"
+echo "Installing: distro, pyparsing>=3.1.3, watchdog>=3.0.0"
 
 source "$VENV_PATH/bin/activate"
 # Note: pyparsing>=3.1.3 required (Jammy has 3.0.7)
 # Note: watchdog>=3.0.0 for file system monitoring (Jammy has 2.1.6)
-pip install --quiet distro pypubsub 'pyparsing>=3.1.3' 'watchdog>=3.0.0'
+pip install --quiet distro 'pyparsing>=3.1.3' 'watchdog>=3.0.0'
 deactivate
 
 echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
@@ -172,15 +172,6 @@ for pkg in "desktop" "distro"; do
     fi
 done
 
-# pypubsub package provides 'pubsub' module
-echo -n "  - pypubsub... "
-if python3 -c "from pubsub import pub" 2>/dev/null; then
-    echo -e "${GREEN}✓${NC}"
-else
-    echo -e "${RED}✗ Failed${NC}"
-    FAILED=1
-fi
-
 deactivate
 
 if [ $FAILED -eq 1 ]; then
@@ -219,7 +210,7 @@ echo
 echo "TaskCoach has been set up for Ubuntu 22.04 (Jammy) with:"
 echo "  • System packages from Ubuntu repos (wxPython, numpy, lxml, squaremap, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
-echo "  • Additional packages in venv (distro, pypubsub, pyparsing, watchdog)"
+echo "  • Additional packages in venv (distro, pyparsing, watchdog)"
 echo "  • wxPython background color patch (for category row coloring)"
 echo
 echo "You can now run TaskCoach with:"

@@ -41,9 +41,9 @@ import heapq
 import os
 import time
 
-from pubsub import pub
 
 from taskcoachlib import patterns
+from taskcoachlib.config.settings import Settings
 from taskcoachlib.domain import attachment, base, category, effort, note
 from taskcoachlib.domain import date as datemodule
 from taskcoachlib.domain.base.appearance import computeStyles
@@ -59,10 +59,10 @@ _CHECK = os.environ.get("TASKCOACH_SCHEDULER_CHECK") == "1"
 # The settings sections the styles read; the others (the window
 # geometry, say) change often and the loop reads none of them
 _APPEARANCE_SETTINGS = tuple(
-    "settings.%s%s" % (section, theme)
+    Settings.section_changed_event_type(section + theme)
     for section in ("fgcolor", "bgcolor", "font", "icon")
     for theme in ("", "_dark")
-) + ("settings.window.theme",)
+) + ("window.theme",)
 
 # The domain classes whose changes the full loop reads
 _DOMAIN_CLASSES = (
@@ -237,12 +237,10 @@ class MasterScheduler:
                     eventType=event_type,
                     eventSource=collection,
                 )
-        for event_type in _data_event_types():
+        for event_type in _data_event_types() | set(_APPEARANCE_SETTINGS):
             register(self._on_data_changed, eventType=event_type)
-        for topic in _APPEARANCE_SETTINGS:
-            pub.subscribe(self._on_topic_changed, topic)
-        pub.subscribe(
-            self._on_due_soon_hours_changed, "settings.behavior.duesoonhours"
+        register(
+            self._on_due_soon_hours_changed, eventType="behavior.duesoonhours"
         )
 
     @staticmethod
@@ -318,10 +316,7 @@ class MasterScheduler:
     def _on_data_changed(self, event):
         self._push_changed(event.types())
 
-    def _on_topic_changed(self, topic=pub.AUTO_TOPIC, **kwargs):
-        self._push_changed((topic.getName(),))
-
-    def _on_due_soon_hours_changed(self, value):  # pylint: disable=W0613
+    def _on_due_soon_hours_changed(self, event):  # pylint: disable=W0613
         # Every task's due soon second moves
         self._rebuild()
 
@@ -475,12 +470,6 @@ class MasterScheduler:
             self._on_tasks_added,
             self._on_tasks_removed,
             self._on_data_changed,
+            self._on_due_soon_hours_changed,
         ):
             publisher.removeObserver(handler)
-        if not self._observing:
-            return
-        for topic in _APPEARANCE_SETTINGS:
-            pub.unsubscribe(self._on_topic_changed, topic)
-        pub.unsubscribe(
-            self._on_due_soon_hours_changed, "settings.behavior.duesoonhours"
-        )

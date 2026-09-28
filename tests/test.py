@@ -134,9 +134,6 @@ class TestCase(unittest.TestCase, object):
         patterns.NumberedInstances.count = dict()
         if hasattr(self, "events"):
             del self.events
-        from pubsub import pub
-
-        pub.unsubAll()
         super().tearDown()
 
 

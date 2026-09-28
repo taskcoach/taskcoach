@@ -81,7 +81,6 @@ jobs:
           dnf install -y \
             python3-wxpython4 \
             python3-six \
-            python3-pypubsub \
             python3-watchdog \
             python3-chardet \
             python3-dateutil \

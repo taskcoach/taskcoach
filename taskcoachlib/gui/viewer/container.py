@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import taskcoachlib.gui.menu
-from pubsub import pub
+from taskcoachlib import patterns
 import wx.lib.agw.aui as aui
 import wx
 
@@ -93,7 +93,11 @@ class ViewerContainer(object):
         self.viewers.append(viewer)
         if len(self.viewers) == 1:
             self.activate_viewer(viewer)
-        pub.subscribe(self.on_status_changed, viewer.viewer_status_event_type())
+        patterns.Publisher().registerObserver(
+            self.on_status_changed,
+            eventType=viewer.viewer_status_event_type(),
+            eventSource=viewer,
+        )
 
     def close_viewer(self, viewer):
         """Close the specified viewer."""
@@ -132,10 +136,25 @@ class ViewerContainer(object):
     def __del__(self):
         pass  # Don't forward del to one of the viewers.
 
-    def on_status_changed(self, viewer):
-        if self.active_viewer() == viewer:
-            self.send_viewer_status_event()
-        pub.sendMessage("all.viewer.status", viewer=viewer)
+    @classmethod
+    def all_viewers_status_event_type(cls):
+        """A viewer's status changed: the container is the source and
+        the viewer the value."""
+        return "all.viewer.status"
+
+    @classmethod
+    def status_event_type(cls):
+        """The active viewer's status changed, or another viewer became
+        active: the container is the source."""
+        return "viewer.status"
+
+    def on_status_changed(self, event):
+        for viewer in event.sources():
+            if self.active_viewer() == viewer:
+                self.send_viewer_status_event()
+            patterns.Event(
+                self.all_viewers_status_event_type(), self, viewer
+            ).send()
 
     def on_page_changed(self, event):
         """Handle pane activation events from AUI."""
@@ -146,7 +165,7 @@ class ViewerContainer(object):
         event.Skip()
 
     def send_viewer_status_event(self):
-        pub.sendMessage("viewer.status")
+        patterns.Event(self.status_event_type(), self).send()
 
     def __ensure_active_viewer_has_focus(self):
         """Set focus on active viewer, unless a text control inside it has focus.
@@ -198,10 +217,10 @@ class ViewerContainer(object):
         if viewer in self.viewers:
             self.viewers.remove(viewer)
             # Unsubscribe from the viewer's status event before detaching
-            try:
-                pub.unsubscribe(self.on_status_changed, viewer.viewer_status_event_type())
-            except Exception:
-                pass  # May already be unsubscribed
+            patterns.Publisher().removeObserver(
+                self.on_status_changed,
+                eventType=viewer.viewer_status_event_type(),
+            )
             viewer.detach()
 
     @staticmethod

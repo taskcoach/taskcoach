@@ -1,7 +1,7 @@
 # Publisher / Observer Signal Dispatch
 
-Signal dispatch architecture, pypubsub migration, and signaling lifecycle
-cleanup for the Task Coach domain model.
+Signal dispatch architecture, the move off pypubsub (done 2026-09-28),
+and signaling lifecycle cleanup for the Task Coach domain model.
 
 See [ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md) for the Attribute pattern
 itself (setter/callback, equality check, event batching, three-layer
@@ -14,13 +14,13 @@ relationship) — signal dispatch exists to serve Attribute change notification.
   - [Case Study: Tree Mode Toggle](#case-study-tree-mode-toggle)
 - [Signaling System Cleanup](#signaling-system-cleanup)
 - [Migration Log](#migration-log)
-- [Active pypubsub Settings Listeners](#active-pypubsub-settings-listeners)
+- [Settings Events](#settings-events)
 
 ---
 
 ## TODO
 
-1. **Migrate signal dispatch to per-instance.** Some Attribute callbacks
+1. **Done: migrate signal dispatch to per-instance.** Some Attribute callbacks
    (Task dates, percentage, duration; Effort fields) use pypubsub
    (`pub.sendMessage`) which is topic-based broadcast — every subscriber
    receives every object's changes. This is wrong for per-instance
@@ -51,20 +51,10 @@ relationship) — signal dispatch exists to serve Attribute change notification.
    ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
    Task recurrence, prerequisites and dependencies, and effort start,
    stop, entry mode and task migrated the same way.
-   The domain's other messages followed (2026-09-28, Migration Log):
-   computed values too, so no event type is routed by a `pubsub`
-   prefix any more.
-   **Remaining** (2026-09-28: 25 `pub.sendMessage` and 41
-   `pub.subscribe` sites in 18 files, from 49 and 69 in 34), in this
-   order
-   ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#remaining-work)):
-   - The task file's messages (`taskfile.*`, 9 topics, 15
-     subscribers).
-   - Settings (`settings.<section>.<option>`, 18 subscribers; see
-     [Active pypubsub Settings Listeners](#active-pypubsub-settings-listeners)).
-   - Commands' bulk-modify notices (18 sends, 2 subscribers) and the
-     viewers' status messages (4 subscribers).
-   - Then pypubsub itself, as a dependency.
+   The domain's other messages (computed values too), then the task
+   file's, settings', commands' and viewers' messages followed
+   (2026-09-28, Migration Log), and pypubsub is no longer a
+   dependency: every signal is a Publisher event.
 
 2. **Modularize and clean up the signaling system.** The three independent
    cleanup mechanisms (wx C++ destruction, `removeInstance()`, Python GC)
@@ -137,9 +127,8 @@ All subscribers to a topic receive all messages regardless of sender. No
 per-sender filtering at dispatch; subscribers must check the `sender` kwarg
 in the handler to decide whether to act. Task and Effort fields were
 migrated to it circa 2012; the migration was intended to replace the
-legacy system entirely but stalled partway. Since 2026-09-28 the domain
-sends nothing on it; the task file's, settings', commands' and viewers'
-messages remain (see [TODO](#todo)).
+legacy system entirely but stalled partway. Since 2026-09-28 nothing
+uses it and it is no longer a dependency (see [TODO](#todo)).
 
 The pypubsub migration was motivated by API simplicity and weak reference
 support, but it introduced broadcast dispatch for what are inherently
@@ -162,21 +151,16 @@ system.
    supports per-sender subscription natively, weak references, and a clean
    API.
 
-3. **Revert pypubsub fields:** the Task and Effort fields currently using
-   `pub.sendMessage` should be migrated back to sender-filtered dispatch
-   (either legacy Publisher or the future signal library). pypubsub should
-   be removed as a dependency once all fields are migrated.
+3. **Done 2026-09-28: revert pypubsub fields.** Every message moved to
+   the Publisher and pypubsub was removed as a dependency.
 
 ### Naming convention
 
 Event type strings prefixed `"pubsub."` were introduced during the
-pypubsub migration. The viewer's `__start_observing()` in `base.py` uses
-this prefix to choose dispatch system: `"pubsub."` → `pub.subscribe`,
-otherwise → `registerObserver`.
-
-New event types should **not** use the `"pubsub."` prefix. They should use
-the legacy Publisher dispatch (per-instance) until the future signal library
-migration.
+pypubsub migration, and listeners chose the dispatch system by that
+prefix. Since 2026-09-28 every event type is a Publisher event and none
+has the prefix. New event types use the Publisher (per-instance) until
+the future signal library migration.
 
 ### Case Study: Tree Mode Toggle
 
@@ -276,8 +260,8 @@ that don't coordinate lifecycle cleanup:
 
 1. **wx C++ destruction** — `Destroy()` frees the C++ widget tree. Python
    wrappers become zombies (accessing them segfaults).
-2. **patterns.Observer.removeInstance()** — Removes pubsub + Publisher
-   subscriptions for a Python object. Must be called explicitly.
+2. **patterns.Observer.removeInstance()**: removes the Publisher
+   subscriptions of a Python object. Must be called explicitly.
 3. **Python garbage collection** — Frees Python objects when refcount hits
    zero. Triggers `__del__`.
 
@@ -290,7 +274,7 @@ coordination.
 ### Goal
 
 A single, automatic cleanup mechanism: when an object goes away, all its
-subscriptions (pubsub, Publisher, wx events) are automatically removed.
+subscriptions (Publisher, wx events) are automatically removed.
 No manual unsubscribe, no silent `except` guards, no zombie callbacks.
 
 ### Current band-aids (February 2026)
@@ -355,6 +339,11 @@ No manual unsubscribe, no silent `except` guards, no zombie callbacks.
 | `pubsub.task.reminder` | Migrated to Publisher as `task.reminder`; the reminder is an `Attribute`, so snoozing also notifies the ancestors | `taskcoachlib/domain/task/task.py` (Task) |
 | `pubsub.task.status`, `efforts`, `track`, `timeSpent`, `budgetLeft`, `revenue`; `pubsub.effort.track`, `duration`, `revenue`; `pubsub.<class>.expandedContexts`; `pubsub.<sorter>.sorted`; `pubsub.effort.composite.empty` | Migrated to Publisher without the `pubsub.` prefix; a task's change also shown by its ancestors is one event with them as sources; the prefix routing and the `(newValue, sender)` handler twins removed (`onAttributeChanged_Deprecated` is `on_attribute_changed`) | `taskcoachlib/domain/task/task.py`, `taskcoachlib/domain/effort/`, `taskcoachlib/domain/base/object.py`, `taskcoachlib/domain/base/sorter.py`; listeners in `taskcoachlib/gui/viewer/`, `taskcoachlib/gui/dialog/editor.py`, `attributesync.py`, `reminder.py`, `taskcoachlib/gui/taskbaricon.py`, `taskcoachlib/gui/scheduler.py`, `taskcoachlib/persistence/taskfile.py` |
 | `effortlisttracker.changed` (the tracker's own pypubsub publisher) | Migrated to Publisher, the tracker as source | `taskcoachlib/domain/effort/effortlist.py` (EffortListTracker), `taskcoachlib/gui/idlecontroller.py`, `taskcoachlib/gui/uicommand/uicommand.py` (EffortStop) |
+| `taskfile.aboutToRead`, `justRead`, `aboutToClear`, `justCleared`, `aboutToSave`, `dirty`, `clean`, `filenameChanged`, `changed` | Migrated to Publisher, the task file as source (a read-only merged file sends none); the viewers, main window and IO controller listen to their own file only | `taskcoachlib/persistence/taskfile.py`, `autosaver.py`, `autobackup.py`, `autoimporterexporter.py`, `taskcoachlib/gui/viewer/base.py`, `taskcoachlib/gui/mainwindow.py`, `taskcoachlib/gui/iocontroller.py`, `taskcoachlib/gui/uicommand/uicommand.py` (FileSave) |
+| `command.aboutToBulkModify`, `command.justBulkModified` | Migrated to Publisher, the command as source (`_bulk_modification()`) | `taskcoachlib/command/taskCommands.py`, `taskcoachlib/gui/viewer/base.py` |
+| `viewer<id>.status`, `viewer.status`, `all.viewer.status` | Migrated to Publisher: the viewer, or the container with the viewer as value, as source | `taskcoachlib/gui/viewer/base.py`, `container.py`, `effort.py`, `taskcoachlib/gui/status.py`, `taskcoachlib/gui/dialog/export.py` |
+| `settings.<section>.<option>` | Replaced by the Publisher events `Settings.set()` already sent, plus a section event ([Settings Events](#settings-events)) | `taskcoachlib/config/settings.py`; listeners in `taskcoachlib/domain/task/task.py`, `taskcoachlib/gui/scheduler.py`, `taskcoachlib/gui/viewer/task.py`, `effort.py`, `taskcoachlib/gui/mainwindow.py` |
+| pypubsub | Removed as a dependency: `setup.py`, the setup scripts, the CI workflows, the Debian, Fedora and Arch packaging, the Flatpak sources | |
 | `task.reminder.trigger` | Migrated to Publisher | `taskcoachlib/domain/task/task.py` (Task), `taskcoachlib/gui/remindercontroller.py` (ReminderController) |
 | `feature.task_duration_presets` | Migrated to Publisher | `taskcoachlib/gui/dialog/editor.py` (DatesPage) |
 | `feature.effort_duration_presets` | Migrated to Publisher | `taskcoachlib/gui/dialog/editor.py` (EffortEditBook) |
@@ -414,26 +403,17 @@ sees the correct geometry at popup time. Without messaging where possible:
 
 ---
 
-## Active pypubsub Settings Listeners
+## Settings Events
 
-Settings topics that still have pypubsub subscribers. This is the tracking
-list for the migration — entries are removed as they are migrated or deleted.
-
-| Topic pattern | Subscriber location |
-|---------------|---------------------|
-| `settings.icon` / `settings.icon_dark` | `taskcoachlib/domain/task/task.py:152-159` |
-| `settings.fgcolor` / `settings.fgcolor_dark` | `taskcoachlib/domain/task/task.py:140,143` |
-| `settings.bgcolor` / `settings.bgcolor_dark` | `taskcoachlib/domain/task/task.py:146,149` |
-| `settings.behavior.duesoonhours` | `taskcoachlib/domain/task/task.py:161` |
-| `settings.behavior.markparentcompletedwhenallchildrencompleted` | `taskcoachlib/domain/task/task.py:164` |
-| `settings.window.theme` | `taskcoachlib/domain/task/task.py:160`, `taskcoachlib/gui/viewer/task.py:171` |
-
-pypubsub fixes a topic's arguments from its first listener, so the
-listeners of a topic and of its subtopics must agree on which arguments
-are optional; otherwise subscribing fails depending on which object
-subscribed first. The appearance and theme listeners take `value` as
-optional (`value=None`, or `*args, **kwargs`); `onDueSoonHoursChanged`
-and `onMarkParentCompletedWhenAllChildrenCompletedChanged` require it.
+`Settings.set()` sends one Publisher event, the settings as source, of
+two types: `"<section>.<option>"` with the new text as value, and
+`Settings.section_changed_event_type(section)` (`"settings.<section>"`)
+with the option's name as value, for listeners of a whole section (the
+appearance sections, whose options are the statuses). Listeners read
+typed values from the settings (`getint()`, `getboolean()`), not from
+the event. `Settings.send_changed()` sends the same event without a
+change: the main window uses it when the system theme changes while
+the theme follows it.
 
 ---
 

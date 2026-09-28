@@ -107,12 +107,12 @@ echo
 
 # Install Python dependencies not available in Debian repos or with version issues
 echo -e "${BLUE}[4/7] Installing Python dependencies in venv...${NC}"
-echo "Installing: distro, pypubsub, pyparsing>=3.1.3, watchdog>=3.0.0"
+echo "Installing: distro, pyparsing>=3.1.3, watchdog>=3.0.0"
 
 source "$VENV_PATH/bin/activate"
 # Note: pyparsing>=3.1.3 required for deltaTime.py (Debian Bookworm only has 3.0.9)
 # Note: watchdog>=3.0.0 for file system monitoring (Bookworm has 2.2.1)
-pip install --quiet distro pypubsub 'pyparsing>=3.1.3' 'watchdog>=3.0.0'
+pip install --quiet distro 'pyparsing>=3.1.3' 'watchdog>=3.0.0'
 deactivate
 
 echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
@@ -171,15 +171,6 @@ for pkg in "distro"; do
     fi
 done
 
-# pypubsub package provides 'pubsub' module
-echo -n "  - pypubsub... "
-if python3 -c "from pubsub import pub" 2>/dev/null; then
-    echo -e "${GREEN}✓${NC}"
-else
-    echo -e "${RED}✗ Failed${NC}"
-    VENV_FAILED=1
-fi
-
 deactivate
 
 if [ $VENV_FAILED -eq 1 ]; then
@@ -188,7 +179,7 @@ if [ $VENV_FAILED -eq 1 ]; then
     echo "  rm -rf $VENV_PATH"
     echo "  python3 -m venv --system-site-packages $VENV_PATH"
     echo "  source $VENV_PATH/bin/activate"
-    echo "  pip install distro pypubsub"
+    echo "  pip install distro"
     exit 1
 fi
 
@@ -235,7 +226,7 @@ echo
 echo "TaskCoach has been set up with:"
 echo "  • System packages from Debian repos (wxPython, numpy, lxml, squaremap, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
-echo "  • Additional packages in venv (distro, pypubsub, pyparsing, watchdog)"
+echo "  • Additional packages in venv (distro, pyparsing, watchdog)"
 echo "  • wxPython background color patch (for category row coloring)"
 echo
 echo "You can now run TaskCoach with:"

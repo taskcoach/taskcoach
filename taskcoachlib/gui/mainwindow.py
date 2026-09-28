@@ -40,7 +40,6 @@ from taskcoachlib.gui.dialog.editor import Editor
 from taskcoachlib.i18n import _
 from taskcoachlib.powermgt import PowerStateMixin
 from taskcoachlib.help.balloontips import BalloonTipManager
-from pubsub import pub
 from taskcoachlib.config.settings import Settings
 from taskcoachlib.meta.debug import log_step
 import re
@@ -276,9 +275,14 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         self.manager.Update()
 
     def __register_for_window_component_changes(self):
-        pub.subscribe(self.__onFilenameChanged, "taskfile.filenameChanged")
-        pub.subscribe(self.__onDirtyChanged, "taskfile.dirty")
-        pub.subscribe(self.__onDirtyChanged, "taskfile.clean")
+        for event_type, handler in (
+            ("taskfile.filenameChanged", self.__on_filename_changed),
+            ("taskfile.dirty", self.__on_dirty_changed),
+            ("taskfile.clean", self.__on_dirty_changed),
+        ):
+            self.registerObserver(
+                handler, eventType=event_type, eventSource=self.taskFile
+            )
         self.registerObserver(
             self.showStatusBar,
             eventType="view.statusbar",
@@ -293,16 +297,12 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         # Detect toolbar drag-end and float-to-dock transitions to reset position
         self.manager.Bind(aui.EVT_AUI_RENDER, self._onAuiRender)
 
-    def __onFilenameChanged(self, filename):
-        if filename != self.taskFile.filename():
-            return  # Another task file, e.g. a saved selection
-        self.__filename = filename
+    def __on_filename_changed(self, event):
+        self.__filename = event.value()
         self.__setTitle()
 
-    def __onDirtyChanged(self, taskFile):
-        if taskFile is not self.taskFile:
-            return
-        self.__dirty = taskFile.is_dirty()
+    def __on_dirty_changed(self, event):  # pylint: disable=W0613
+        self.__dirty = self.taskFile.is_dirty()
         self.__setTitle()
 
     def __setTitle(self):
@@ -377,7 +377,8 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         # settings.window.theme listeners read
         patterns.Event("system.theme_colour_changed", self).send()
         if theme == "automatic":
-            pub.sendMessage("settings.window.theme", value=theme)
+            # The theme follows the system: as if it had changed
+            self.settings.send_changed("window", "theme")
 
     def onClose(self, event):
         self.closeEditors()

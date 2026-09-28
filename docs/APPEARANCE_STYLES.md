@@ -42,15 +42,14 @@
    `computeDerived` correctly flows category fg/bg/font/icon values through
    to Notes via `_getFromCategories` for all field types.
 
-3. **Category assignment triggers filter refresh** *(deferred — wait for
-   pubsub conversion)*: Selecting a category for *assignment* (e.g. in a
+3. **Category assignment triggers filter refresh** *(deferred; the
+   move to per-instance events it waited for is done, 2026-09-28)*: Selecting a category for *assignment* (e.g. in a
    task/note editor) incorrectly triggers the same full filter-refresh
    event used by the category *filter* viewer. Root cause:
    `CategoryFilter.onCategoryChanged()` in `domain/category/filter.py:91`
    blindly calls `self.reset()` for both membership events
    (`categorizableAdded/Removed`) and filter events (`filterChanged`).
-   With proper pubsub, these would be separate subscriptions with clean
-   separation. Current event system makes the fix messy.
+   They can now be separate subscriptions with clean separation.
 
 ---
 

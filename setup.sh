@@ -146,7 +146,7 @@ get_system_packages() {
                 SYSTEM_PACKAGES="$SYSTEM_PACKAGES python3.12-venv"
             fi
             # Trixie has python3-watchdog in repos
-            SYSTEM_PACKAGES="$SYSTEM_PACKAGES python3-watchdog python3-pubsub"
+            SYSTEM_PACKAGES="$SYSTEM_PACKAGES python3-watchdog"
             ;;
         bookworm)
             # Bookworm needs some packages from pip (older versions in repos)
@@ -168,11 +168,11 @@ get_pip_packages() {
             ;;
         bookworm)
             # Bookworm needs more packages from pip
-            echo "distro pypubsub 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'"
+            echo "distro 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'"
             ;;
         *)
             # Default: install most from pip to be safe
-            echo "distro pypubsub 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'"
+            echo "distro 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'"
             ;;
     esac
 }
@@ -319,15 +319,6 @@ main() {
             FAILED=1
         fi
     done
-
-    # Test pubsub
-    echo -n "  - pypubsub... "
-    if $PYTHON_CMD -c "from pubsub import pub" 2>/dev/null; then
-        echo -e "${GREEN}✓${NC}"
-    else
-        echo -e "${RED}✗ Failed${NC}"
-        FAILED=1
-    fi
 
     deactivate
 

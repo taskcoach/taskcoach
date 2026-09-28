@@ -78,7 +78,6 @@ if command -v sudo &> /dev/null; then
         python3-xdg \
         python3-venv \
         python3-watchdog \
-        python3-pubsub \
         python3-squaremap
     echo -e "${GREEN}✓ System packages installed${NC}"
 else
@@ -173,15 +172,6 @@ for pkg in "desktop" "distro" "watchdog"; do
         FAILED=1
     fi
 done
-
-# pypubsub package provides 'pubsub' module
-echo -n "  - pypubsub... "
-if python3 -c "from pubsub import pub" 2>/dev/null; then
-    echo -e "${GREEN}✓${NC}"
-else
-    echo -e "${RED}✗ Failed${NC}"
-    FAILED=1
-fi
 
 deactivate
 

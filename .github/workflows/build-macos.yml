@@ -80,7 +80,6 @@ jobs:
           echo "Installing TaskCoach dependencies..."
           python -m pip install \
             "six>=1.16.0" \
-            pypubsub \
             "watchdog>=3.0.0" \
             "chardet>=4.0.0,<5.2.0" \
             "python-dateutil>=2.9.0" \
@@ -159,7 +158,7 @@ jobs:
                       }
                   ],
               },
-              'packages': ['taskcoachlib', 'wx', 'pubsub', 'watchdog', 'lxml', 'keyring', 'numpy', 'dateutil', 'chardet', 'pyparsing', 'squaremap'],
+              'packages': ['taskcoachlib', 'wx', 'watchdog', 'lxml', 'keyring', 'numpy', 'dateutil', 'chardet', 'pyparsing', 'squaremap'],
               'includes': ['ctypes', 'ctypes.util'],
               'excludes': ['tkinter', 'test'],  # unittest needed by pyparsing.testing import
           }

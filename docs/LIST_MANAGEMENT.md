@@ -193,7 +193,7 @@ Selection changes in widget
 onSelect() fires
     │
     ▼
-sendViewerStatusEvent() - fires pubsub event
+send_viewer_status_event() - sends a Publisher event
     │
     ▼
 StatusBar receives event, restarts 500ms timer
@@ -431,8 +431,7 @@ its widget on the selection immediately
 buttons stay in sync with each other and with the menu the same way
 (`ToggleAutoScroll._on_setting_change`). Both use legacy Publisher
 dispatch (`registerObserver` on event type `view.autoscrollselection`
-with the settings object as source), not pypubsub; see
-PUBLISHER_OBSERVER.md for why new signals must not use pubsub.
+with the settings object as source); see PUBLISHER_OBSERVER.md.
 
 ---
 
@@ -618,7 +617,7 @@ to survive native repaints.
 
 Both hover and tooltip settings are read directly via the `settings2` shim
 (see [SETTINGS.md](SETTINGS.md)) — no cached attributes, no getter lambdas,
-no pubsub subscriptions.
+no change subscriptions.
 
 - `settings2.window.hoverlinewidth` — integer, default 1. 0 disables hover,
   >0 enables the two-tone outline. User-facing: **Preferences > Theme >
@@ -784,7 +783,7 @@ continuous polling overhead.
 | `ViewerHideTasks` | filter change | `Filter.filter_change_event_type()` → `command.checked()` |
 | `SelectAll` | selection | menu-open → `command.enabled()` |
 | `ToggleCategory` | selection | menu-open → `command.enabled()` + `checked()` |
-| `FileSave` | dirty state | `taskfile.dirty`/`taskfile.clean` pubsub → `command.enabled()` |
+| `FileSave` | dirty state | `taskfile.dirty`/`taskfile.clean` events → `command.enabled()` |
 | `ViewerHideCompositeTasks` | tree mode | menu-open → `command.enabled()` + `checked()` |
 | `EditTrackedTasks` | tracking | menu-open → `command.enabled()` |
 | `EditUndo` | history | `commandhistory.changed` Publisher event → `command.enabled()` |

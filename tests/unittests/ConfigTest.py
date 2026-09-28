@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import ast
 import test, sys, os, configparser, io
 from taskcoachlib import config, meta
-from pubsub import pub
 
 
 class SettingsTestCase(test.TestCase):
@@ -192,22 +191,22 @@ class SettingsIOTest(SettingsTestCase):
 class SettingsObservableTest(SettingsTestCase):
     def setUp(self):
         super().setUp()
-        self.events = []
-        pub.subscribe(self.onEvent, "settings.view.toolbar")
+        self.events = test.ChangeRecorder("view.toolbar")
 
-    def tearDown(self):
-        pub.clearNotificationHandlers()
-
-    def onEvent(self, value):
-        self.events.append(value)
-
-    def testChangingTheSettingCausesNotification(self):
+    def test_changing_the_setting_causes_notification(self):
         self.settings.settuple("view", "toolbar", (16, 16))
-        self.assertEqual((16, 16), self.events[0])
+        self.assertEqual([("(16, 16)", self.settings)], self.events)
 
-    def testChangingAnotherSettingDoesNotCauseANotification(self):
+    def test_changing_another_setting_does_not_cause_a_notification(self):
         self.settings.set("view", "statusbar", "True")
         self.assertFalse(self.events)
+
+    def test_the_section_is_told_which_option_changed(self):
+        section = test.ChangeRecorder(
+            self.settings.section_changed_event_type("view")
+        )
+        self.settings.settuple("view", "toolbar", (16, 16))
+        self.assertEqual([("toolbar", self.settings)], section)
 
 
 class SpecificSettingsTest(SettingsTestCase):
@@ -246,17 +245,18 @@ class SettingsFileLocationTest(SettingsTestCase):
         )
         del sys.argv[0]
 
-    def testSettingSaveIniFileInProgramDirToFalseRemovesIniFile(self):
+    def test_setting_save_ini_file_in_program_dir_to_false_is_heard(self):
         class SettingsUnderTest(config.Settings):
-            def onSettingsFileLocationChanged(self, value):
-                self.onSettingsFileLocationChangedCalled = (
-                    value  # pylint: disable=W0201
+            def on_settings_file_location_changed(self, event):
+                # pylint: disable=W0201
+                self.in_program_dir = self.getboolean(
+                    "file", "saveinifileinprogramdir"
                 )
 
         settings = SettingsUnderTest(load=False)
         settings.setboolean("file", "saveinifileinprogramdir", True)
         settings.setboolean("file", "saveinifileinprogramdir", False)
-        self.assertFalse(settings.onSettingsFileLocationChangedCalled)
+        self.assertFalse(settings.in_program_dir)
 
 
 class MinimumSettingsTest(SettingsTestCase):

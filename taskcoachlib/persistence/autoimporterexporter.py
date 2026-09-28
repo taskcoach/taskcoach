@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import codecs, os
-from pubsub import pub
+from taskcoachlib import patterns
 from . import todotxt
 
 
@@ -30,8 +30,19 @@ class AutoImporterExporter(object):
     def __init__(self, settings):
         super().__init__()
         self.__settings = settings
-        pub.subscribe(self.onTaskFileAboutToBeSaved, "taskfile.aboutToSave")
-        pub.subscribe(self.onTaskFileJustRead, "taskfile.justRead")
+        register = patterns.Publisher().registerObserver
+        register(
+            self.on_task_file_about_to_save, eventType="taskfile.aboutToSave"
+        )
+        register(self.on_task_file_read, eventType="taskfile.justRead")
+
+    def on_task_file_read(self, event):
+        for task_file in event.sources():
+            self.onTaskFileJustRead(task_file)
+
+    def on_task_file_about_to_save(self, event):
+        for task_file in event.sources():
+            self.onTaskFileAboutToBeSaved(task_file)
 
     def onTaskFileJustRead(self, taskFile):
         """After a task file has been read and if auto import is on,

@@ -22,7 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import patterns
 from taskcoachlib.domain import date, categorizable, note, attachment
 from taskcoachlib.domain.base.attribute import Attribute, SetAttribute
-from pubsub import pub
 from weakref import WeakSet
 from . import status
 import ast
@@ -154,34 +153,7 @@ class Task(
         )
         for effort in self._efforts:
             effort.setTask(self)
-        pub.subscribe(
-            self.__computeRecursiveForegroundColor, "settings.fgcolor"
-        )
-        pub.subscribe(
-            self.__computeRecursiveForegroundColor, "settings.fgcolor_dark"
-        )
-        pub.subscribe(
-            self.__computeRecursiveBackgroundColor, "settings.bgcolor"
-        )
-        pub.subscribe(
-            self.__computeRecursiveBackgroundColor, "settings.bgcolor_dark"
-        )
-        pub.subscribe(self.__compute_recursive_icon_id, "settings.icon")
-        pub.subscribe(self.__compute_recursive_icon_id, "settings.icon_dark")
-        pub.subscribe(
-            self.__compute_recursive_selected_icon_id, "settings.icon"
-        )
-        pub.subscribe(
-            self.__compute_recursive_selected_icon_id, "settings.icon_dark"
-        )
-        pub.subscribe(self.__onThemeChanged, "settings.window.theme")
-        pub.subscribe(
-            self.onDueSoonHoursChanged, "settings.behavior.duesoonhours"
-        )
-        pub.subscribe(
-            self.onMarkParentCompletedWhenAllChildrenCompletedChanged,
-            "settings.behavior.markparentcompletedwhenallchildrencompleted",
-        )
+        self.__observe_settings()
 
         self.compute_stored_status()
         # The effective appearance and the status transitions in time
@@ -637,7 +609,30 @@ class Task(
         """The event types that influence the completion date time sort order."""
         return (class_.completionDateTimeChangedEventType(),)
 
-    def onMarkParentCompletedWhenAllChildrenCompletedChanged(self, value):
+    def __observe_settings(self):
+        section = self.settings.section_changed_event_type
+        for event_type, handler in (
+            (section("fgcolor"), self.__computeRecursiveForegroundColor),
+            (section("fgcolor_dark"), self.__computeRecursiveForegroundColor),
+            (section("bgcolor"), self.__computeRecursiveBackgroundColor),
+            (section("bgcolor_dark"), self.__computeRecursiveBackgroundColor),
+            (section("icon"), self.__compute_recursive_icon_id),
+            (section("icon_dark"), self.__compute_recursive_icon_id),
+            (section("icon"), self.__compute_recursive_selected_icon_id),
+            (section("icon_dark"), self.__compute_recursive_selected_icon_id),
+            ("window.theme", self.__on_theme_changed),
+            ("behavior.duesoonhours", self.on_due_soon_hours_changed),
+            (
+                "behavior.markparentcompletedwhenallchildrencompleted",
+                self.on_mark_parent_completed_setting_changed,
+            ),
+        ):
+            patterns.Publisher().registerObserver(
+                handler, eventType=event_type, eventSource=self.settings
+            )
+
+    def on_mark_parent_completed_setting_changed(self, event=None):
+        # pylint: disable=W0613
         """When the global setting changes, send a percentage completed
         changed if necessary."""
         if self.shouldMarkCompletedWhenAllChildrenCompleted() is None and any(
@@ -965,8 +960,8 @@ class Task(
         """
         patterns.Event("task.reminder.trigger", self).send()
 
-    def onDueSoonHoursChanged(self, value):
-        self.__dueSoonHours = value
+    def on_due_soon_hours_changed(self, event=None):  # pylint: disable=W0613
+        self.__dueSoonHours = self.settings.getint("behavior", "duesoonhours")
         # The master loop recomputes the statuses (docs/SCHEDULERS.md)
         self.recomputeAppearance()
 
@@ -1400,7 +1395,7 @@ class Task(
         )
         return self.__recursive_selected_icon_id
 
-    def __onThemeChanged(self, value=None):
+    def __on_theme_changed(self, event=None):  # pylint: disable=W0613
         """Recompute all cached appearance when the theme changes."""
         self.__computeRecursiveForegroundColor()
         self.__computeRecursiveBackgroundColor()

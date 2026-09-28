@@ -30,7 +30,6 @@ from taskcoachlib.domain import task, date
 from taskcoachlib.gui import uicommand, dialog
 import taskcoachlib.gui.menu
 from taskcoachlib.i18n import _
-from pubsub import pub
 from taskcoachlib.thirdparty.wxScheduler import (
     wxSCHEDULER_TODAY,
     wxFancyDrawer,
@@ -109,7 +108,7 @@ class BaseTaskViewer(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.statusMessages = TaskViewerStatusMessages(self)
-        self.__registerForAppearanceChanges()
+        self.__register_for_appearance_changes()
         wx.CallAfter(self.__DisplayBalloon)
 
     def __DisplayBalloon(self):
@@ -141,7 +140,7 @@ class BaseTaskViewer(
                 ),
             )
 
-    def __registerForAppearanceChanges(self):
+    def __register_for_appearance_changes(self):
         for appearance in (
             "font",
             "fgcolor",
@@ -152,23 +151,16 @@ class BaseTaskViewer(
             "bgcolor_dark",
             "icon_dark",
         ):
-            appearance_settings = [
-                "settings.%s.%s" % (appearance, setting)
-                for setting in (
-                    "activetasks",
-                    "inactivetasks",
-                    "completedtasks",
-                    "duesoontasks",
-                    "overduetasks",
-                    "latetasks",
-                )
-            ]
-            for appearance_setting in appearance_settings:
-                pub.subscribe(
-                    self.on_appearance_setting_change, appearance_setting
-                )
-        pub.subscribe(
-            self.on_appearance_setting_change, "settings.window.theme"
+            # Its options are the statuses
+            self.registerObserver(
+                self.on_appearance_setting_change,
+                eventType=self.settings.section_changed_event_type(appearance),
+                eventSource=self.settings,
+            )
+        self.registerObserver(
+            self.on_appearance_setting_change,
+            eventType="window.theme",
+            eventSource=self.settings,
         )
         self.registerObserver(
             self.on_attribute_changed,
@@ -195,11 +187,7 @@ class BaseTaskViewer(
         kwargs.setdefault("decimal", settings2.feature.decimal_time)
         return render.budget(*args, **kwargs)
 
-    # value is optional, as in Task's listeners on these topics:
-    # pypubsub takes a topic's signature from its first listener
-    def on_appearance_setting_change(
-        self, value=None
-    ):  # pylint: disable=W0613
+    def on_appearance_setting_change(self, event):  # pylint: disable=W0613
         if self:
             wx.CallAfter(
                 self.refresh
@@ -2277,9 +2265,10 @@ class TaskStatsViewer(BaseTaskViewer):  # pylint: disable=W0223
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("settingsSection", "taskstatsviewer")
         super().__init__(*args, **kwargs)
-        pub.subscribe(
-            self.onPieChartAngleChanged,
-            "settings.%s.piechartangle" % self.settingsSection(),
+        self.registerObserver(
+            self.on_pie_chart_angle_changed,
+            eventType="%s.piechartangle" % self.settingsSection(),
+            eventSource=self.settings,
         )
 
     def createWidget(self):
@@ -2382,7 +2371,7 @@ class TaskStatsViewer(BaseTaskViewer):  # pylint: disable=W0223
     def is_tree_viewer(self):
         return False
 
-    def onPieChartAngleChanged(self, value):  # pylint: disable=W0613
+    def on_pie_chart_angle_changed(self, event):  # pylint: disable=W0613
         self.refresh()
 
 

@@ -20,7 +20,7 @@ import test
 from unittests import dummy
 from taskcoachlib import gui, config, persistence, widgets
 from taskcoachlib.domain import task
-from pubsub import pub
+from taskcoachlib import patterns
 
 
 class DummyMainWindow(widgets.AuiManagedFrameWithDynamicCenterPane):
@@ -101,7 +101,7 @@ class ViewerContainerTest(test.wxTestCase):
             settingsSection=settingsSection,
         )
 
-    def onEvent(self):
+    def on_event(self, event):  # pylint: disable=W0613
         self.events += 1
 
     def testCreate(self):
@@ -118,8 +118,10 @@ class ViewerContainerTest(test.wxTestCase):
         self.container.activate_viewer(self.viewer2)
         self.assertEqual(self.viewer2, self.container.active_viewer())
 
-    def testChangePage_NotifiesObserversAboutNewActiveViewer(self):
-        pub.subscribe(self.onEvent, "viewer.status")
+    def test_change_page_notifies_observers_about_new_active_viewer(self):
+        patterns.Publisher().registerObserver(
+            self.on_event, eventType=self.container.status_event_type()
+        )
         self.container.on_page_changed(DummyChangeEvent(self.viewer2))
         self.assertTrue(self.events > 0)
 
@@ -132,8 +134,10 @@ class ViewerContainerTest(test.wxTestCase):
         self.container.on_page_closed(DummyCloseEvent(self.viewer2))
         self.assertEqual(self.viewer1, self.container.active_viewer())
 
-    def testCloseViewer_NotifiesObserversAboutNewActiveViewer(self):
+    def test_close_viewer_notifies_observers_about_new_active_viewer(self):
         self.container.activate_viewer(self.viewer2)
-        pub.subscribe(self.onEvent, "viewer.status")
+        patterns.Publisher().registerObserver(
+            self.on_event, eventType=self.container.status_event_type()
+        )
         self.container.close_viewer(self.viewer2)
         self.assertTrue(self.events > 0)

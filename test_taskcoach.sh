@@ -72,9 +72,6 @@ run_test "wxPython patch (background fix)" \
     "python3 -c 'import wx.lib.agw.hypertreelist as ht; import inspect; s=inspect.getsource(ht.TreeListMainWindow.PaintItem); exit(0 if \"Fix from Issue #2081 (Roland171281)\" in s else 1)'"
 
 # Test 5: Dependencies
-run_test "pypubsub dependency" \
-    "python3 -c 'import pubsub'"
-
 run_test "watchdog dependency" \
     "python3 -c 'import watchdog'"
 

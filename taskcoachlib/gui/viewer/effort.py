@@ -27,7 +27,6 @@ from taskcoachlib.domain.base import filter  # pylint: disable=W0622
 from taskcoachlib.gui import uicommand, dialog
 import taskcoachlib.gui.menu
 from taskcoachlib.i18n import _
-from pubsub import pub
 from . import base
 from . import mixin
 from . import refresher
@@ -67,18 +66,12 @@ class EffortViewer(
             self.on_attribute_changed,
             eventType=effort.Effort.appearanceChangedEventType(),
         )
-        pub.subscribe(
-            self.on_rounding_changed,
-            "settings.%s.round" % self.settingsSection(),
-        )
-        pub.subscribe(
-            self.on_rounding_changed,
-            "settings.%s.alwaysroundup" % self.settingsSection(),
-        )
-        pub.subscribe(
-            self.on_rounding_changed,
-            "settings.%s.consolidateeffortspertask" % self.settingsSection(),
-        )
+        for option in ("round", "alwaysroundup", "consolidateeffortspertask"):
+            self.registerObserver(
+                self.on_rounding_changed,
+                eventType="%s.%s" % (self.settingsSection(), option),
+                eventSource=self.settings,
+            )
 
     def selectable_columns(self):
         columns = list()
@@ -108,7 +101,7 @@ class EffortViewer(
     def tasksToShowEffortFor(self):
         return self.__tasks_to_show_effort_for
 
-    def on_rounding_changed(self, value):  # pylint: disable=W0613
+    def on_rounding_changed(self, event):  # pylint: disable=W0613
         self.__init_rounding_toolbar_ui_commands()
         self.refresh()
 
@@ -912,7 +905,11 @@ class EffortViewerForSelectedTasks(EffortViewer):
             if active_viewer is not None and active_viewer.is_showing_tasks()
             else None
         )
-        pub.subscribe(self.onTaskSelectionChanged, "all.viewer.status")
+        patterns.Publisher().registerObserver(
+            self.on_task_selection_changed,
+            eventType=self.__viewerContainer.all_viewers_status_event_type(),
+            eventSource=self.__viewerContainer,
+        )
         super().__init__(*args, **kwargs)
 
     def tasksToShowEffortFor(self):
@@ -922,7 +919,8 @@ class EffortViewerForSelectedTasks(EffortViewer):
             )
         return []
 
-    def onTaskSelectionChanged(self, viewer):
+    def on_task_selection_changed(self, event):
+        viewer = event.value()
         if viewer.is_showing_tasks():
             self.__currentTaskViewer = viewer
             self._refresh(clear=True)

@@ -193,7 +193,7 @@ instance. This creates unnecessary coupling:
 - **Getter lambdas** — when a widget layer shouldn't depend on the config
   layer, a lambda was injected to bridge the gap (e.g. the former
   `_hoverSettingGetter` in `treectrl.py`, now removed).
-- **Pubsub subscriptions** — some code subscribes to setting-change pubsub
+- **Change subscriptions**: some code subscribes to setting-change events
   topics instead of just reading the value when needed, adding complexity
   for a simple config lookup.
 
@@ -368,7 +368,7 @@ settings2.view.descriptionpopups     # bool
 settings2.window.hoverlinewidth      # int
 ```
 
-No constructor injection. No getter lambdas. No pubsub subscriptions for
+No constructor injection. No getter lambdas. No change subscriptions for
 read-only config lookups. See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#settings)
 for the hover/tooltip flow that uses these two settings.
 
@@ -399,7 +399,8 @@ self.settings.setboolean(section, option, value)
 self.settings.settext(section, option, value)
 ```
 
-These methods handle change detection, pubsub notification, and
+These methods handle change detection, change events
+([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#settings-events)), and
 persistence. `Settings.set()` also calls `settings2.schedule_refresh()`
 to trigger a debounced shim refresh (see [Refresh triggers](#refresh-triggers)).
 

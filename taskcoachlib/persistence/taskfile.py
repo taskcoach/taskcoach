@@ -32,7 +32,6 @@ from taskcoachlib.filesystem import (
     FilesystemPollerNotifier,
     resourcelock,
 )
-from pubsub import pub
 
 
 class ChangedOnDiskError(Exception):
@@ -323,14 +322,15 @@ class TaskFile(patterns.Observer):
         self.__lastFilename = filename or self.__filename
         self.__filename = filename
         self.__notifier.setFilename(filename)
-        self._publish("taskfile.filenameChanged", filename=filename)
+        self._publish("taskfile.filenameChanged", filename)
 
-    def _publish(self, topic, **kwargs):
-        # A read-only task file (merge) is not the open file: messages
-        # about it would reach listeners of the open file (window title,
-        # backups).
+    def _publish(self, event_type, *value):
+        """An event about this file, the file as source."""
+        # A read-only task file (merge) is not the open file: events
+        # about it would reach listeners of every file (backups,
+        # autosave).
         if not self.__read_only:
-            pub.sendMessage(topic, **kwargs)
+            patterns.Event(event_type, self, *value).send()
 
     def filename(self):
         return self.__filename
@@ -348,14 +348,14 @@ class TaskFile(patterns.Observer):
             self.__saved_at = _UNREACHABLE
         if force or not self.__needSave:
             self.__needSave = True
-            self._publish("taskfile.dirty", taskFile=self)
+            self._publish("taskfile.dirty")
 
     def mark_clean(self):
         # The saved state is where undo and redo lead to this command
         self.__saved_at = patterns.CommandHistory().current()
         if self.__needSave:
             self.__needSave = False
-            self._publish("taskfile.clean", taskFile=self)
+            self._publish("taskfile.clean")
 
     def on_command_history_changed(self, event):
         """Undo or redo back to the saved state leaves nothing to
@@ -387,7 +387,7 @@ class TaskFile(patterns.Observer):
         self.__changedOnDisk = True
         log_step("%s changed on disk" % self.__filename, prefix="FILE")
         if notify:
-            self._publish("taskfile.changed", taskFile=self)
+            self._publish("taskfile.changed")
 
     def __disk_stat(self):
         try:
@@ -398,7 +398,7 @@ class TaskFile(patterns.Observer):
 
     @patterns.eventSource
     def clear(self, regenerate=True, event=None):
-        self._publish("taskfile.aboutToClear", taskFile=self)
+        self._publish("taskfile.aboutToClear")
         try:
             self.tasks().clear(event=event)
             self.categories().clear(event=event)
@@ -406,7 +406,7 @@ class TaskFile(patterns.Observer):
             if regenerate:
                 self.__guid = str(uuid.uuid4())
         finally:
-            self._publish("taskfile.justCleared", taskFile=self)
+            self._publish("taskfile.justCleared")
 
     def close(self):
         self.setFilename("")
@@ -473,7 +473,7 @@ class TaskFile(patterns.Observer):
         return open(self.__filename, "r", encoding="utf-8")
 
     def load(self, filename=None):
-        self._publish("taskfile.aboutToRead", taskFile=self)
+        self._publish("taskfile.aboutToRead")
         self.__loading = True
         if filename:
             self.setFilename(filename)
@@ -512,7 +512,7 @@ class TaskFile(patterns.Observer):
             self.mark_clean()
             self.__changedOnDisk = False
             self.__saved_stat = stat
-            self._publish("taskfile.justRead", taskFile=self)
+            self._publish("taskfile.justRead")
 
     def save(self):
         # Also when the watcher did not report it (yet); callers check
@@ -521,7 +521,7 @@ class TaskFile(patterns.Observer):
         if self.__changedOnDisk:
             raise ChangedOnDiskError(self.__filename)
         try:
-            self._publish("taskfile.aboutToSave", taskFile=self)
+            self._publish("taskfile.aboutToSave")
         except Exception:
             pass  # Ignore errors from subscribers
         # When encountering a problem while saving (disk full,

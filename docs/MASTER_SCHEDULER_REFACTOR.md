@@ -21,8 +21,9 @@ then pypubsub is removed
    reads instead of whole topics (issue 5); the viewers, editors,
    AttributeSync, sorters and filters lost their pypubsub branches;
    issue 11 is fixed.
-2. The rest of pypubsub (the task file's, settings', commands' and
-   viewers' messages), then pypubsub itself.
+2. Done 2026-09-28: the rest of pypubsub (the task file's,
+   settings', commands' and viewers' messages) moved to the Publisher,
+   and pypubsub is no longer a dependency.
 3. Attachments re-sorted under their own classes' event types
    (issue 6).
 
@@ -250,7 +251,7 @@ as well: [Data Changes](#data-changes)):
 |---|---|---|
 | A task's due, planned start, actual start or reminder changed | Publisher `task.<field>` from the field's change callback, the task as source ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#migration-log)) | Push the task's seconds |
 | Tasks added to the task file's task list | Publisher add event of the task list; `extend()` includes every subtask | Push their seconds |
-| Due soon hours changed | pypubsub `settings.behavior.duesoonhours` | Push every task's due soon second |
+| Due soon hours changed | Publisher `behavior.duesoonhours`, the settings as source | Push every task's due soon second |
 
 Each ancestor is a source of the same event too; it pushes the
 ancestor's own seconds again, a harmless duplicate.

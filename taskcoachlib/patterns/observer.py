@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from . import singleton
 import functools
 import weakref
-from pubsub import pub
 
 # Ignore these pylint messages:
 # - W0142: * or ** magic
@@ -488,12 +487,6 @@ class Observer(object):
     def removeInstance(self):
         for observer in self.__observers.copy():
             self.removeObserver(observer)
-        pub.unsubAll(
-            listenerFilter=lambda listener: hasattr(
-                listener.getCallable(), "__self__"
-            )
-            and listener.getCallable().__self__ is self
-        )
 
 
 class Decorator(Observer):

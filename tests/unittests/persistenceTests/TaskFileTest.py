@@ -22,7 +22,6 @@ import shutil
 import stat
 import tempfile
 import wx
-from pubsub import pub
 import test
 from taskcoachlib import command, config, patterns, persistence
 from taskcoachlib.domain import (
@@ -893,16 +892,8 @@ class TaskFileMergeTest(TaskFileTestCase):
 
     def test_merge_sends_no_messages_about_the_merged_file(self):
         self.mergeFile.save()
-        names = []
-
-        def on_filename_changed(filename):
-            names.append(filename)
-
-        pub.subscribe(on_filename_changed, "taskfile.filenameChanged")
-        try:
-            self.taskFile.merge("merge.tsk")
-        finally:
-            pub.unsubscribe(on_filename_changed, "taskfile.filenameChanged")
+        names = test.ChangeRecorder("taskfile.filenameChanged")
+        self.taskFile.merge("merge.tsk")
         self.assertEqual([], names)
 
     def test_merge_only_reads_the_merged_file(self):
@@ -1448,11 +1439,7 @@ class TaskFileChangedOnDiskTest(TaskFileTestCase):
         super().setUp()
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
-        self.noticed = []
-        pub.subscribe(self.on_changed_on_disk, "taskfile.changed")
-
-    def on_changed_on_disk(self, taskFile):  # noqa: N803 (message arg)
-        self.noticed.append(taskFile)
+        self.noticed = test.ChangeRecorder("taskfile.changed")
 
     def change_on_disk(self):
         theirs = persistence.TaskFile(read_only=True)

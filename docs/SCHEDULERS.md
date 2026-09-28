@@ -99,7 +99,7 @@ MasterScheduler subscribes to `timer.second` for data processing.
 
 - `GlobalTimer`: 1-second timer, publishes `timer.second`
   as Publisher events (`patterns.Event`, source is the GlobalTimer, value is
-  the tick timestamp), not pypubsub messages. See
+  the tick timestamp). See
   [PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md).
 - `MasterScheduler`: Subscribes to `timer.second`; after its processing, sends the Publisher events `scheduler.date` and `scheduler.minute`
 

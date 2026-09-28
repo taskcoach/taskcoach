@@ -22,7 +22,7 @@ import os, shutil, glob, math, re
 from taskcoachlib.domain import date
 from taskcoachlib.filesystem import resourcelock
 from .taskfile import SafeWriteFile
-from pubsub import pub
+from taskcoachlib import patterns
 import bz2, hashlib
 
 # Hack: indirect
@@ -152,8 +152,19 @@ class AutoBackup(object):
         super().__init__()
         self.__settings = settings
         self.__copyfile = copyfile
-        pub.subscribe(self.onTaskFileAboutToSave, "taskfile.aboutToSave")
-        pub.subscribe(self.onTaskFileRead, "taskfile.justRead")
+        register = patterns.Publisher().registerObserver
+        register(
+            self.on_task_file_about_to_save, eventType="taskfile.aboutToSave"
+        )
+        register(self.on_task_file_read, eventType="taskfile.justRead")
+
+    def on_task_file_read(self, event):
+        for task_file in event.sources():
+            self.onTaskFileRead(task_file)
+
+    def on_task_file_about_to_save(self, event):
+        for task_file in event.sources():
+            self.onTaskFileAboutToSave(task_file)
 
     def onTaskFileRead(self, taskFile):
         """Copies old-style backups (in the same dictory as the task file) to the

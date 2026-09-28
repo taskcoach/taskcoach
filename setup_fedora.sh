@@ -83,7 +83,6 @@ if command -v sudo &> /dev/null; then
         python3-pyparsing \
         python3-pyxdg \
         python3-watchdog \
-        python3-pypubsub \
         libayatana-appindicator-gtk3 \
         libXScrnSaver \
         xdg-utils
@@ -182,15 +181,6 @@ for pkg in "distro" "watchdog" "squaremap"; do
         FAILED=1
     fi
 done
-
-# pypubsub package provides 'pubsub' module
-echo -n "  - pypubsub... "
-if $PYTHON_CMD -c "from pubsub import pub" 2>/dev/null; then
-    echo -e "${GREEN}✓${NC}"
-else
-    echo -e "${RED}✗ Failed${NC}"
-    FAILED=1
-fi
 
 deactivate
 

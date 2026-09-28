@@ -102,7 +102,7 @@ for the next user change.
    0.4 Sync-mode guard. If sync is already in progress, early exit.
        Flag lives on the domain SSOT instance (task or effort), shared
        across all editor windows editing the same object. Prevents
-       re-entry from synchronous pubsub callbacks triggered by commands
+       re-entry from synchronous change callbacks triggered by commands
        within the sync function. The loop (direct recursion) is the
        guaranteed path for processing mode changes — suppressed
        callbacks are harmless because the loop completes the state
@@ -487,7 +487,7 @@ selecting a matching preset when the duration matches, or resetting to the
 ### Sync Pattern
 
 The preset dropdown subscribes directly to the domain's duration-changed
-pubsub event. This decouples it from the source of the change — whether the
+event. This decouples it from the source of the change: whether the
 user typed a value, selected a preset, or an external source updated the
 domain, the dropdown updates itself.
 
@@ -502,7 +502,7 @@ domain, the dropdown updates itself.
 The alternative is calling the preset update from the duration change handler
 or `AttributeSync` callback. This couples the preset to the commit path —
 any code that changes duration must remember to also update the preset.
-Pubsub subscription ensures the preset is always correct regardless of how
+The subscription ensures the preset is always correct regardless of how
 the duration changed.
 
 ### Lifecycle

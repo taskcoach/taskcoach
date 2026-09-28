@@ -30,7 +30,7 @@ or config defaults; non-obvious decisions are documented there).
   [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#time-resolution).
 - **Naming:** `snake_case` by default. Keep CamelCase when the name
   comes from wx (method overrides, duck-typed wx interfaces) or is
-  name-coupled (pubsub topics, `getattr` dispatch, the
+  name-coupled (event type strings, `getattr` dispatch, the
   `renderXxx`/`humanReadable` coupling).
 - Full rules, the flake8 fix-vs-expected list, and rename traps:
   [PEP8_MIGRATION.md](PEP8_MIGRATION.md). The style rules were first

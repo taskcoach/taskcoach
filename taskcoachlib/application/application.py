@@ -149,7 +149,6 @@ def _log_required_packages():
     # Core packages (package_name, import_name if different)
     packages = [
         ("six", None),
-        ("pypubsub", "pubsub"),
         ("watchdog", None),
         ("chardet", None),
         ("python-dateutil", "dateutil"),

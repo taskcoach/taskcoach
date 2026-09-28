@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
 
-from pubsub import pub
 import wx
 
 from taskcoachlib import patterns
@@ -41,13 +40,16 @@ class AutoSaver(object):
         self.__bound = False
         self.__failures = {}  # task file: failed autosaves in a row
         self.__retries = {}  # task file: time.monotonic() of next try
-        pub.subscribe(self.on_task_file_dirty, "taskfile.dirty")
+        patterns.Publisher().registerObserver(
+            self.on_task_file_dirty, eventType="taskfile.dirty"
+        )
 
-    def on_task_file_dirty(self, taskFile):
+    def on_task_file_dirty(self, event):
         """When a task file gets dirty and auto save is on, note it so
         it can be saved during idle time."""
-        if self._need_save(taskFile):
-            self.__task_files.add(taskFile)
+        for task_file in event.sources():
+            if self._need_save(task_file):
+                self.__task_files.add(task_file)
         self.__save_when_idle()
 
     def __save_when_idle(self):

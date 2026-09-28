@@ -95,16 +95,9 @@ echo
 echo -e "${BLUE}[3/8] Checking AUR packages...${NC}"
 AUR_PACKAGES=""
 
-# Check for python-pypubsub
-if ! pacman -Q python-pypubsub &>/dev/null; then
-    AUR_PACKAGES="$AUR_PACKAGES python-pypubsub"
-fi
-
 # Check for python-squaremap (optional)
 if ! pacman -Q python-squaremap &>/dev/null; then
     echo -e "${YELLOW}Note: python-squaremap is optional (for hierarchical visualization)${NC}"
-fi
-
 fi
 
 if [ -n "$AUR_PACKAGES" ]; then
@@ -162,16 +155,9 @@ source "$VENV_PATH/bin/activate"
 pip install --quiet distro
 
 # Install optional packages if not available from system
-if ! python3 -c "from pubsub import pub" 2>/dev/null; then
-    echo "Installing pypubsub from pip..."
-    pip install --quiet pypubsub
-fi
-
 if ! python3 -c "import squaremap" 2>/dev/null; then
     echo "Installing squaremap from pip (optional)..."
     pip install --quiet squaremap || echo -e "${YELLOW}squaremap install failed (optional)${NC}"
-fi
-
 fi
 
 deactivate
@@ -242,15 +228,6 @@ for pkg in "desktop" "distro" "watchdog"; do
         FAILED=1
     fi
 done
-
-# pypubsub package provides 'pubsub' module
-echo -n "  - pypubsub... "
-if python3 -c "from pubsub import pub" 2>/dev/null; then
-    echo -e "${GREEN}✓${NC}"
-else
-    echo -e "${RED}✗ Failed${NC}"
-    FAILED=1
-fi
 
 deactivate
 

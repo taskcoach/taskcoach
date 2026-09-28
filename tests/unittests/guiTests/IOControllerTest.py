@@ -20,7 +20,6 @@ from taskcoachlib import gui, config, persistence
 from taskcoachlib.domain import task, note, category
 from taskcoachlib.filesystem import resourcelock
 from unittests import dummy
-from pubsub import pub
 import os
 import shutil
 import tempfile
@@ -280,13 +279,7 @@ class IOControllerTest(test.TestCase):
         self.iocontroller.save_selection([selected], self.filename1)
         with open(self.filename1 + ".lock", "rb") as lock_file:
             self.assertEqual(b"", lock_file.read())
-        dirty = []
-
-        def on_dirty(taskFile):
-            dirty.append(taskFile)
-
-        pub.subscribe(on_dirty, "taskfile.dirty")
-        self.addCleanup(pub.unsubscribe, on_dirty, "taskfile.dirty")
+        dirty = test.ChangeRecorder("taskfile.dirty")
         selected.setSubject("changed")
         self.assertEqual(
             [],

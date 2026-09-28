@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import persistence, config, patterns
 from taskcoachlib.domain import task, category, date
 from unittests import dummy
-from pubsub import pub
 import os
 import shutil
 import tempfile
@@ -241,11 +240,7 @@ class AutoSaverChangedOnDiskTest(test.TestCase):
         self.task_file.setFilename(self.filename)
         self.task_file.save()
         self.auto_saver = persistence.AutoSaver(self.settings)
-        self.noticed = []
-        pub.subscribe(self.on_changed_on_disk, "taskfile.changed")
-
-    def on_changed_on_disk(self, taskFile):  # noqa: N803 (message arg)
-        self.noticed.append(taskFile)
+        self.noticed = test.ChangeRecorder("taskfile.changed")
 
     def add_their_task(self):
         theirs = persistence.TaskFile(read_only=True)

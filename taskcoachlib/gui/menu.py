@@ -339,7 +339,7 @@ class FileMenu(Menu, patterns.Observer):
         # Populate recent files at init (fixes GTK3 dynamic menu sizing)
         self.__insertRecentFileMenuItems()
 
-        # Update recent files when settings change (Publisher, not pypubsub)
+        # Update recent files when settings change
         self.registerObserver(
             self.__onRecentFilesChanged,
             eventType="file.recentfiles",

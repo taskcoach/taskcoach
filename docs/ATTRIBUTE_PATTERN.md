@@ -51,7 +51,7 @@ The domain model's change-detection and event-notification pattern.
 ## Signal Dispatch
 
 See [PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#signal-dispatch) for the
-full signal dispatch architecture, pypubsub migration plan, and naming
+full signal dispatch architecture, the move off pypubsub, and naming
 convention.
 
 ### Case Study: Tree Mode Toggle
@@ -200,7 +200,7 @@ Clean separation between the setter and the callback:
 Three complexity levels of callbacks:
 
 **Notification callback** — fires change signal (see
-[PUBLISHER_OBSERVER.md — Signal Dispatch](PUBLISHER_OBSERVER.md#signal-dispatch)), `mark_dirty`,
+[PUBLISHER_OBSERVER.md, Signal Dispatch](PUBLISHER_OBSERVER.md#signal-dispatch)), `mark_dirty`,
 `recomputeAppearance`. Example: `_onDueDateTimeChanged`,
 `_onPlannedStartDateTimeChanged`.
 
@@ -401,9 +401,9 @@ signal subscription to handle external domain changes. This is either:
   GetValue/SetValue and a corresponding edit command.
 - **Manual signal subscription** — for fields with custom controls
   (dropdowns, checkboxes) where AttributeSync doesn't fit directly.
-  Currently a mix of `registerObserver` (legacy) and `pub.subscribe`
-  (pypubsub) — see [PUBLISHER_OBSERVER.md — Signal Dispatch](PUBLISHER_OBSERVER.md#signal-dispatch)
-  for target architecture.
+  `registerObserver` (the Publisher) since pypubsub was removed; see
+  [PUBLISHER_OBSERVER.md, Signal Dispatch](PUBLISHER_OBSERVER.md#signal-dispatch)
+  for the target architecture.
 
 Without Layer 2, the Attribute pattern is incomplete: the domain notifies
 correctly, but no UI listens.

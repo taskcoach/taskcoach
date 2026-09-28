@@ -148,7 +148,7 @@ Callbacks only fire on `Attribute.set()`. This means any business logic in
 the `_on*Changed` callback is skipped when a value is set via the constructor.
 
 For most date fields this is harmless — the callbacks for planned start,
-due date, and actual start just send pubsub notifications and mark dirty,
+due date, and actual start just send change events and mark dirty,
 which happen separately during task creation.
 
 But for **completion date** and **reminder**, the callbacks contain
@@ -180,7 +180,7 @@ See also [REMINDERS.md](REMINDERS.md) for the reminder popup, sound
 playback, and snooze configuration.
 
 When `reminder` is passed to the Task constructor, `setReminder()` is not
-called, so the `reminderChangedEventType` pubsub event is not fired.
+called, so the `reminderChangedEventType` event is not fired.
 
 This is **not a problem** because reminders are polled:
 `MasterScheduler` calls `task.processReminder()` for every task each
@@ -325,7 +325,7 @@ Convenience classmethods:
 
 When a `.tsk` file is loaded, tasks are reconstructed via `__init__` with
 reminder values from XML. The reminder is stored directly in `self.__reminder`
-(not through `setReminder()`), so no pubsub event fires.
+(not through `setReminder()`), so no event fires.
 
 This works because reminders are polled (see
 [Reminder Preset](#reminder-preset)). The planned master timer list

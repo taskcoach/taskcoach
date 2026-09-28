@@ -43,7 +43,6 @@ from taskcoachlib.gui.wizard import CSVImportWizard
 from taskcoachlib.i18n import _
 from taskcoachlib.mailer import sendMail
 from wx.lib.agw import hypertreelist
-from pubsub import pub
 from taskcoachlib.thirdparty.wxScheduler import (
     wxSCHEDULER_NEXT,
     wxSCHEDULER_PREV,
@@ -256,10 +255,10 @@ class FileSave(IOCommand):
 
     def append_to_toolbar(self, *args, **kwargs):
         super().append_to_toolbar(*args, **kwargs)
-        pub.subscribe(self._on_dirty_changed, "taskfile.dirty")
-        pub.subscribe(self._on_dirty_changed, "taskfile.clean")
+        self.registerObserver(self._on_dirty_changed, "taskfile.dirty")
+        self.registerObserver(self._on_dirty_changed, "taskfile.clean")
 
-    def _on_dirty_changed(self, taskFile):
+    def _on_dirty_changed(self, event):  # pylint: disable=W0613
         try:
             self.toolbar.EnableTool(self.id, self.enabled(None))
             self.toolbar.Refresh(False)
@@ -1641,7 +1640,6 @@ class ToggleAutoScroll(settings_uicommand.UICheckCommand):
         self.toolbar.ToggleTool(self.id, self.checked())
         # Keep all toolbar instances (viewer and main window) in sync
         # when the setting changes from any of them or from the menu.
-        # Publisher dispatch, not pypubsub; see PUBLISHER_OBSERVER.md.
         self.registerObserver(
             self._on_setting_change,
             eventType="view.autoscrollselection",

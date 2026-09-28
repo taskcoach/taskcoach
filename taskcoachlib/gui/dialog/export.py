@@ -23,7 +23,7 @@ from taskcoachlib.i18n import _
 from wx.lib import sized_controls
 from wx.lib.agw import hypertreelist, customtreectrl
 from taskcoachlib import meta
-from pubsub import pub
+from taskcoachlib import patterns
 
 
 class ExportDialog(sized_controls.SizedDialog):
@@ -537,7 +537,7 @@ class EnhancedViewerPicker(sized_controls.SizedPanel):
         self._viewerMap = {}
         self.createPicker()
         self.populatePicker()
-        self._subscribeToSelectionChanges()
+        self._subscribe_to_selection_changes()
         topLevel = self.GetTopLevelParent()
         if topLevel:
             topLevel.Bind(wx.EVT_ACTIVATE, self._onDialogActivate)
@@ -618,17 +618,22 @@ class EnhancedViewerPicker(sized_controls.SizedPanel):
         if self.viewerComboBox.GetCount() > 0:
             self.viewerComboBox.SetSelection(0)
 
-    def _subscribeToSelectionChanges(self):
+    def _subscribe_to_selection_changes(self):
         """Subscribe to selection change events from all viewers."""
-        pub.subscribe(self._onViewerStatusChanged, "viewer.status")
+        from taskcoachlib.gui.viewer.container import ViewerContainer
+
+        patterns.Publisher().registerObserver(
+            self._on_viewer_status_changed,
+            eventType=ViewerContainer.status_event_type(),
+        )
 
     def _onDialogActivate(self, event):
         """Rebuild dropdown when the export dialog gains focus."""
         event.Skip()
         if event.GetActive():
-            self._onViewerStatusChanged()
+            self._on_viewer_status_changed()
 
-    def _onViewerStatusChanged(self):
+    def _on_viewer_status_changed(self, event=None):  # pylint: disable=W0613
         """Handle viewer status changes (including selection changes)."""
         currentSelection = self.viewerComboBox.GetStringSelection()
         currentViewer = self._viewerMap.get(currentSelection)
@@ -702,10 +707,7 @@ class EnhancedViewerPicker(sized_controls.SizedPanel):
         pass
 
     def Destroy(self):
-        try:
-            pub.unsubscribe(self._onViewerStatusChanged, "viewer.status")
-        except Exception:
-            pass
+        patterns.Publisher().removeObserver(self._on_viewer_status_changed)
         return super().Destroy()
 
 
