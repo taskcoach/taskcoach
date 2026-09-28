@@ -338,7 +338,7 @@ and sets the modification date, then is tested:
 | 5 | Task "mark completed when all subtasks are" | Plain value, pypubsub | Done: Attribute, Publisher |
 | 6 | Task percentage complete, planned duration and its mode | Attributes, pypubsub | Done: Publisher; the duration and mode now mark the file unsaved by their own events |
 | 7 | Task recurrence | Plain value, pypubsub | Done: Attribute, Publisher; recurring sets a copy with the next count, instead of changing it in place |
-| 8 | Effort start, stop, entry mode, task | Attributes (not the task), pypubsub; the date is not saved | In progress: the dates are saved; start, stop and entry mode are Publisher events; the task link remains |
+| 8 | Effort start, stop, entry mode, task | Attributes (not the task), pypubsub; the date is not saved | Done: the dates are saved; start, stop, entry mode and task are Publisher events; moving to another task sets the date. Duration, revenue and tracking stay computed messages |
 | 9 | Task prerequisites (dependencies are their reverse) | Plain sets, pypubsub | To do |
 | 10 | Links: subtasks and parent, owned notes and attachments, efforts | Plain lists, Publisher | To do |
 | 11 | View state: a category's filter state, the expanded state | Plain values | To decide: stored, but not the item's data |

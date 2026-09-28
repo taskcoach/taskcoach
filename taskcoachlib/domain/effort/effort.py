@@ -47,7 +47,8 @@ class Effort(baseeffort.BaseEffort, base.Object):
             self._computeDuration(), self, self._onDurationChanged
         )
 
-    def setTask(self, task):
+    @patterns.eventSource
+    def setTask(self, task, event=None):
         if self._task is None:
             # We haven't been fully initialised yet, so allow setting of the
             # task, without notifying observers. Also, don't call addEffort()
@@ -61,20 +62,18 @@ class Effort(baseeffort.BaseEffort, base.Object):
         # command.PasteCommand may try to set the parent to None.
         if task is None or task is current_task:
             return
-        event = patterns.Event()  # Change monitor needs one event
         current_task.removeEffort(self)
         self._task = weakref.ref(task)
         task.addEffort(self)
-        event.send()
-        pub.sendMessage(
-            self.taskChangedEventType(), newValue=task, sender=self
-        )
+        # A link, not an Attribute: its change sets the date here
+        self.set_modification_datetime(date.Timestamp.now(), event=event)
+        event.addSource(self, task, type=self.taskChangedEventType())
 
     setParent = setTask  # FIXME: should we create a common superclass for Effort and Task?
 
     @classmethod
     def taskChangedEventType(class_):
-        return "pubsub.effort.task"
+        return "effort.task"
 
     def __str__(self):
         return "Effort(%s, %s, %s)" % (

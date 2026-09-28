@@ -129,16 +129,17 @@ class EffortTest(test.TestCase, asserts.Mixin):
         self.effort.setDescription("description")
         self.assertEqual("description", self.events[0].value())
 
-    def testNotificationForSetTask(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, effort.Effort.taskChangedEventType())
+    def test_notification_for_set_task(self):
+        self.registerObserver(effort.Effort.taskChangedEventType())
         task2 = task.Task()
         self.effort.setTask(task2)
-        self.assertEqual([(task2, self.effort)], events)
+        self.assertEqual([(task2, self.effort)], self.changes())
+
+    def test_moving_to_another_task_sets_the_modification_date(self):
+        self.effort.set_modification_datetime(date.DateTime.min)
+        before = date.Now()
+        self.effort.setTask(task.Task())
+        self.assertTrue(before <= self.effort.modificationDateTime())
 
     def testNotificationForStartTracking(self):
         events = []
