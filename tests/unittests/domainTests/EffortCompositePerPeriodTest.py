@@ -115,7 +115,7 @@ class CompositeEffortPerPeriodTest(test.TestCase):
         self.task.removeEffort(self.effort1)
         self.assertEqual(date.TimeDelta(), self.composite.totalTimeSpent())
 
-    def testRemoveMultipleEffortsFromSamePeriodFromTask(self):
+    def test_remove_multiple_efforts_from_same_period_from_task(self):
         events = test.ChangeRecorder(
             effort.CompositeEffort.compositeEmptyEventType()
         )
@@ -124,7 +124,7 @@ class CompositeEffortPerPeriodTest(test.TestCase):
         self.task.setEfforts([])
         self.assertTrue(events)
 
-    def testRemoveMultipleEffortsFromDifferentPeriodsFromTask(self):
+    def test_remove_multiple_efforts_from_different_periods_from_task(self):
         events = test.ChangeRecorder(
             effort.CompositeEffort.compositeEmptyEventType()
         )

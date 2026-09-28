@@ -203,9 +203,7 @@ class TaskWithDailyRecurrenceThatHasMaxRecurrenceCountFixture(
         before = self.task.recurrence()
         self.task.set_modification_datetime(date.DateTime.min)
         self.task.setCompletionDateTime()
-        self.assertEqual(
-            (0, 1), (before.count, self.task.recurrence().count)
-        )
+        self.assertEqual((0, 1), (before.count, self.task.recurrence().count))
         self.assertTrue(date.DateTime.min < self.task.modificationDateTime())
 
 

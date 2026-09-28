@@ -29,9 +29,9 @@ class TimeDelta(datetime.timedelta):
     millisecondsPerSecond = 1000
     millisecondsPerDay = 24 * 60 * 60 * millisecondsPerSecond
 
-    def __new__(class_, *args, **kwargs):
+    def __new__(cls, *args, **kwargs):
         value = datetime.timedelta(*args, **kwargs)
-        return datetime.timedelta.__new__(class_, value.days, value.seconds)
+        return datetime.timedelta.__new__(cls, value.days, value.seconds)
 
     def hoursMinutesSeconds(self) -> Tuple[int, int, int]:
         """Return a tuple (hours, minutes, seconds). Note that the caller

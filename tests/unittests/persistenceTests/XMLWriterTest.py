@@ -34,7 +34,6 @@ from taskcoachlib.domain import (
     attachment,
 )
 
-
 _DATES = re.compile(r' (?:creation|modification)DateTime="[^"]*"')
 
 
@@ -176,9 +175,7 @@ class XMLWriterTest(test.TestCase):
             )
         )
         self.expect_in_xml('creationDateTime="2004-01-01 00:00:00.000001"')
-        self.expect_in_xml(
-            'modificationDateTime="2005-01-01 00:00:00.000002"'
-        )
+        self.expect_in_xml('modificationDateTime="2005-01-01 00:00:00.000002"')
 
     def testThatEffortTimesDoNotContainMilliseconds(self):
         self.task.addEffort(

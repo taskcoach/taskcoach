@@ -47,7 +47,7 @@ class FilesystemPollerNotifier(base.NotifierBase, threading.Thread):
                         stamp = os.stat(self._filename).st_mtime
                         if stamp > self.stamp:
                             self.stamp = stamp
-                            self.onFileChanged()
+                            self.on_file_changed()
                 finally:
                     self.lock.release()
 
@@ -64,5 +64,5 @@ class FilesystemPollerNotifier(base.NotifierBase, threading.Thread):
         with self.lock:
             super().saved()
 
-    def onFileChanged(self):
+    def on_file_changed(self):
         raise NotImplementedError

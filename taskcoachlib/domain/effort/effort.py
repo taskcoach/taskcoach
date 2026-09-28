@@ -150,21 +150,21 @@ class Effort(baseeffort.BaseEffort, base.Object):
         return stop - self._start.get() if stop else None
 
     def _onDurationChanged(self, event):
-        self.sendDurationChangedMessage()
+        self.send_duration_changed()
         task = self.task()
         if task and task.hourlyFee():
-            self.sendRevenueChangedMessage()
+            self.send_revenue_changed()
 
-    def sendDurationChangedMessage(self):
+    def send_duration_changed(self):
         """Override to send stored value, not live-computed value.
 
-        BaseEffort.sendDurationChangedMessage sends self.timeSpent(),
-        now()-start while tracking. We send getDuration() (the stored
-        value) to match how start/stop send their stored values via
-        getters.
+        BaseEffort.send_duration_changed sends self.timeSpent(),
+        now()-start while tracking. We send stored_duration() (the
+        stored value) to match how start/stop send their stored values
+        via getters.
         """
         patterns.Event(
-            self.durationChangedEventType(), self, self.getDuration()
+            self.durationChangedEventType(), self, self.stored_duration()
         ).send()
 
     def timeSpent(self, now=date.DateTime.now):
@@ -184,7 +184,7 @@ class Effort(baseeffort.BaseEffort, base.Object):
         )
         return
 
-    def getDuration(self):
+    def stored_duration(self):
         """The stored duration: None while the effort is tracked."""
         return self.__duration.get()
 
@@ -203,7 +203,7 @@ class Effort(baseeffort.BaseEffort, base.Object):
         )
         task = self.task()
         if task:
-            task.sendTimeSpentChangedMessage()
+            task.send_time_spent_changed()
 
     @classmethod
     def startChangedEventType(class_):
@@ -224,13 +224,13 @@ class Effort(baseeffort.BaseEffort, base.Object):
         if new_stop is None:
             patterns.Event(self.trackingChangedEventType(), self, True).send()
             if task:
-                task.sendTrackingChangedMessage(tracking=True)
+                task.send_tracking_changed(tracking=True)
         elif previous_stop is None:
             patterns.Event(self.trackingChangedEventType(), self, False).send()
             if task:
-                task.sendTrackingChangedMessage(tracking=False)
+                task.send_tracking_changed(tracking=False)
         if task:
-            task.sendTimeSpentChangedMessage()
+            task.send_time_spent_changed()
         event.addSource(self, new_stop, type=self.stopChangedEventType())
 
     @classmethod

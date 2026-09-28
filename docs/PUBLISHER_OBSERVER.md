@@ -170,7 +170,7 @@ system.
 ### Naming convention
 
 Event type strings prefixed `"pubsub."` were introduced during the
-pypubsub migration. The viewer's `__startObserving()` in `base.py` uses
+pypubsub migration. The viewer's `__start_observing()` in `base.py` uses
 this prefix to choose dispatch system: `"pubsub."` → `pub.subscribe`,
 otherwise → `registerObserver`.
 

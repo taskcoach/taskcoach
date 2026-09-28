@@ -55,7 +55,7 @@ class BaseCompositeEffort(base.BaseEffort):  # pylint: disable=W0223
 
     def timeSpent(self, now=None):
         """Return the total time spent for this composite (no rounding).
-        Required by BaseEffort.sendDurationChangedMessage()."""
+        Required by BaseEffort.send_duration_changed()."""
         return self.totalTimeSpent()
 
     def totalTimeSpent(
@@ -108,7 +108,7 @@ class BaseCompositeEffort(base.BaseEffort):  # pylint: disable=W0223
 
     def notifyObserversOfDurationOrEmpty(self):
         if self._getEfforts():
-            self.sendDurationChangedMessage()
+            self.send_duration_changed()
         else:
             patterns.Event(self.compositeEmptyEventType(), self).send()
 
@@ -127,7 +127,7 @@ class BaseCompositeEffort(base.BaseEffort):  # pylint: disable=W0223
             self.notifyObserversOfDurationOrEmpty()
 
     def onRevenueChanged(self, newValue, sender):  # pylint: disable=W0613
-        self.sendRevenueChangedMessage()
+        self.send_revenue_changed()
 
     def revenue(self, recursive=False):
         raise NotImplementedError  # pragma: no cover

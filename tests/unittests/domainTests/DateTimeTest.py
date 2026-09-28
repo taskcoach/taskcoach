@@ -46,9 +46,9 @@ class DateTimeTest(test.TestCase):
         self.assertEqual(startOfDay, noonish.startOfDay())
 
     def testEndOfDay(self):
-        endOfDay = date.DateTime(2005, 1, 1, 23, 59, 59)
+        end_of_day = date.DateTime(2005, 1, 1, 23, 59, 59)
         noonish = date.DateTime(2005, 1, 1, 12, 30, 15, 400)
-        self.assertEqual(endOfDay, noonish.endOfDay())
+        self.assertEqual(end_of_day, noonish.endOfDay())
 
     def testStartOfWorkWeekOnWednesday(self):
         startOfWorkWeek = date.DateTime(2011, 7, 25, 0, 0, 0, 0)
@@ -66,14 +66,14 @@ class DateTimeTest(test.TestCase):
         self.assertEqual(startOfWorkWeek, sunday.startOfWorkWeek())
 
     def testEndOfWorkWeek(self):
-        endOfWorkWeek = date.DateTime(2010, 5, 7, 23, 59, 59)
+        end_of_work_week = date.DateTime(2010, 5, 7, 23, 59, 59)
         midweek = date.DateTime(2010, 5, 5, 12, 30, 15)
-        self.assertEqual(endOfWorkWeek, midweek.endOfWorkWeek())
+        self.assertEqual(end_of_work_week, midweek.endOfWorkWeek())
 
     def testEndOfWorkWeek_OnSaturday(self):
-        endOfWorkWeek = date.DateTime(2010, 5, 7, 23, 59, 59)
+        end_of_work_week = date.DateTime(2010, 5, 7, 23, 59, 59)
         midweek = date.DateTime(2010, 5, 1, 12, 30, 15)
-        self.assertEqual(endOfWorkWeek, midweek.endOfWorkWeek())
+        self.assertEqual(end_of_work_week, midweek.endOfWorkWeek())
 
     def testLastDayOfCurrentMonth_InFebruary2004(self):
         expected = date.DateTime(2004, 2, 29)

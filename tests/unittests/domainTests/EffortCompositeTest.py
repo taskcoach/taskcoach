@@ -174,7 +174,9 @@ class CompositeEffortTest(test.TestCase):
             effortSameStopTime.timeSpent(), self.composite.totalTimeSpent()
         )
 
-    def testAddTrackedEffortToTaskDoesNotCauseListEmptyNotification(self):
+    def test_add_tracked_effort_to_task_does_not_cause_list_empty_notification(
+        self,
+    ):
         events = test.ChangeRecorder(
             effort.CompositeEffort.compositeEmptyEventType()
         )
@@ -183,7 +185,7 @@ class CompositeEffortTest(test.TestCase):
         )
         self.assertFalse(events)
 
-    def testAddEffortNotification(self):
+    def test_add_effort_notification(self):
         events = test.ChangeRecorder(effort.Effort.durationChangedEventType())
         self.task.addEffort(self.effort1)
         self.assertEqual(
@@ -195,7 +197,7 @@ class CompositeEffortTest(test.TestCase):
         self.task.removeEffort(self.effort1)
         self.assertEqual(date.TimeDelta(), self.composite.totalTimeSpent())
 
-    def testRemoveEffortNotification(self):
+    def test_remove_effort_notification(self):
         self.task.addEffort(self.effort1)
         events = test.ChangeRecorder(
             effort.CompositeEffort.compositeEmptyEventType()
@@ -228,7 +230,7 @@ class CompositeEffortTest(test.TestCase):
         self.task.addEffort(self.effort2)
         self.assertEqual(200, self.composite.revenue())
 
-    def testThatAnHourlyFeeChangeCausesARevenueNotification(self):
+    def test_that_an_hourly_fee_change_causes_a_revenue_notification(self):
         self.task.addEffort(self.effort1)
         events = test.ChangeRecorder(effort.Effort.revenueChangedEventType())
         self.task.set_hourly_fee(100)
@@ -246,7 +248,9 @@ class CompositeEffortTest(test.TestCase):
             self.effort1.timeSpent(), self.composite.totalTimeSpent()
         )
 
-    def testChangeStartTimeOfEffort_KeepWithinPeriod_NoNotification(self):
+    def test_change_start_time_of_effort_keep_within_period_no_notification(
+        self,
+    ):
         self.task.addEffort(self.effort1)
         events = test.ChangeRecorder(effort.Effort.durationChangedEventType())
         self.effort1.setStart(self.effort1.getStart() + date.ONE_HOUR)
@@ -273,7 +277,7 @@ class CompositeEffortTest(test.TestCase):
             self.effort1.timeSpent(), self.composite.totalTimeSpent()
         )
 
-    def testChangeStopTimeOfEffort_MoveOutsidePeriod_Notification(self):
+    def test_change_stop_time_of_effort_move_outside_period_notification(self):
         self.task.addEffort(self.effort1)
         events = test.ChangeRecorder(effort.Effort.durationChangedEventType())
         self.effort1.setStop(self.effort1.getStop() + date.TimeDelta(days=2))
@@ -281,7 +285,7 @@ class CompositeEffortTest(test.TestCase):
             (self.composite.totalTimeSpent(), self.composite) in events
         )
 
-    def testChangeStopTimeOfEffort_NoNotification(self):
+    def test_change_stop_time_of_effort_no_notification(self):
         self.task.addEffort(self.effort1)
         events = test.ChangeRecorder(effort.Effort.durationChangedEventType())
         self.effort1.setStop(self.effort1.getStop() + date.ONE_HOUR)
@@ -296,7 +300,7 @@ class CompositeEffortTest(test.TestCase):
             self.effort3.timeSpent(), self.composite.totalTimeSpent()
         )
 
-    def testEmptyNotification(self):
+    def test_empty_notification(self):
         events = test.ChangeRecorder(
             effort.CompositeEffort.compositeEmptyEventType()
         )
@@ -309,7 +313,7 @@ class CompositeEffortTest(test.TestCase):
         self.effort1.setTask(task.Task())
         self.assertEqual(date.TimeDelta(), self.composite.totalTimeSpent())
 
-    def testChangeTask_EmptyNotification(self):
+    def test_change_task_empty_notification(self):
         events = test.ChangeRecorder(
             effort.CompositeEffort.compositeEmptyEventType()
         )
@@ -377,7 +381,7 @@ class CompositeEffortWithSubTasksTest(test.TestCase):
         )
         self.fakeAggregator = FakeEffortAggregator(self.composite)
 
-    def testAddEffortToChildTaskNotification(self):
+    def test_add_effort_to_child_task_notification(self):
         events = test.ChangeRecorder(effort.Effort.durationChangedEventType())
         self.child.addEffort(self.childEffort)
         self.assertTrue(
@@ -389,7 +393,7 @@ class CompositeEffortWithSubTasksTest(test.TestCase):
         self.child.removeEffort(self.childEffort)
         self.assertEqual(date.TimeDelta(), self.composite.totalTimeSpent())
 
-    def testRemoveEffortFromChildNotification(self):
+    def test_remove_effort_from_child_notification(self):
         self.child.addEffort(self.childEffort)
         events = test.ChangeRecorder(
             effort.CompositeEffort.compositeEmptyEventType()
@@ -477,7 +481,7 @@ class CompositeEffortWithSubTasksTest(test.TestCase):
             date.TimeDelta(), self.composite.totalTimeSpent(recursive=True)
         )
 
-    def testRemoveChildWithEffortCausesEmptyNotification(self):
+    def test_remove_child_with_effort_causes_empty_notification(self):
         events = test.ChangeRecorder(
             effort.CompositeEffort.compositeEmptyEventType()
         )
@@ -624,7 +628,7 @@ class CompositeEffortWithSubTasksRevenueTest(test.TestCase):
         self.task.set_hourly_fee(1000)
         self.assertEqual(1000, self.composite.revenue(recursive=True))
 
-    def testThatAnHourlyFeeChangeCausesARevenueNotification(self):
+    def test_that_an_hourly_fee_change_causes_a_revenue_notification(self):
         events = test.ChangeRecorder(effort.Effort.revenueChangedEventType())
         self.child.set_hourly_fee(100)
         self.assertTrue((0.0, self.composite) in events)

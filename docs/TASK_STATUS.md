@@ -464,7 +464,7 @@ The derived and effective Attribute fields (on base `Object`, inherited by
 all domain types) had event type strings prefixed with `"pubsub."` — e.g.
 `"pubsub.derived.fgColor"`, `"pubsub.effective.icon"`. The Attribute
 callbacks correctly used `event.addSource()` (legacy Publisher dispatch),
-but the `"pubsub."` prefix caused the viewer's `__startObserving()` to
+but the `"pubsub."` prefix caused the viewer's `__start_observing()` to
 subscribe via `pub.subscribe` (broadcast) instead of `registerObserver`
 (sender-filtered). The viewer never received these notifications because
 pypubsub and the legacy Publisher are separate dispatch systems.

@@ -27,7 +27,7 @@ class Sorter(patterns.ListDecorator):
         self._sortCaseSensitive = kwargs.pop("sortCaseSensitive", True)
         super().__init__(*args, **kwargs)
         for sort_key in self._sortKeys:
-            self._registerObserverForAttribute(sort_key.lstrip("-"))
+            self._register_observer_for_attribute(sort_key.lstrip("-"))
         self.reset()
 
     def thaw(self):
@@ -38,7 +38,7 @@ class Sorter(patterns.ListDecorator):
     def detach(self):
         super().detach()
         for sort_key in self._sortKeys:
-            self._removeObserverForAttribute(sort_key.lstrip("-"))
+            self._remove_observer_for_attribute(sort_key.lstrip("-"))
 
     @classmethod
     def sort_event_type(cls):
@@ -76,7 +76,7 @@ class Sorter(patterns.ListDecorator):
             self._sortKeys.insert(0, sort_key)
         else:
             self._sortKeys.insert(0, sort_key)
-            self._registerObserverForAttribute(sort_key)
+            self._register_observer_for_attribute(sort_key)
 
         self.reset()
 
@@ -134,13 +134,13 @@ class Sorter(patterns.ListDecorator):
                      prefix='SORTER')
             return self._getSortKeyFunction("subject")
 
-    def _registerObserverForAttribute(self, attribute):
+    def _register_observer_for_attribute(self, attribute):
         for event_type in self._getSortEventTypes(attribute):
             patterns.Publisher().registerObserver(
                 self.on_attribute_changed, eventType=event_type
             )
 
-    def _removeObserverForAttribute(self, attribute):
+    def _remove_observer_for_attribute(self, attribute):
         for event_type in self._getSortEventTypes(attribute):
             patterns.Publisher().removeObserver(
                 self.on_attribute_changed, eventType=event_type

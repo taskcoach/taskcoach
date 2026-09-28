@@ -57,8 +57,8 @@ class TaskCoachFilesystemNotifier(FilesystemNotifier):
         self.__taskFile = taskFile
         super().__init__()
 
-    def onFileChanged(self):
-        self.__taskFile.onFileChanged()
+    def on_file_changed(self):
+        self.__taskFile.on_file_changed()
 
 
 class TaskCoachFilesystemPollerNotifier(FilesystemPollerNotifier):
@@ -66,8 +66,8 @@ class TaskCoachFilesystemPollerNotifier(FilesystemPollerNotifier):
         self.__taskFile = taskFile
         super().__init__()
 
-    def onFileChanged(self):
-        self.__taskFile.onFileChanged()
+    def on_file_changed(self):
+        self.__taskFile.on_file_changed()
 
 
 def _discard(fd):
@@ -298,13 +298,13 @@ class TaskFile(patterns.Observer):
     def onDomainObjectAddedOrRemoved(self, event):  # pylint: disable=W0613
         if self.__loading or self.__saving:
             return
-        self.markDirty()
+        self.mark_dirty()
 
     def on_saved_data_changed(self, event):
         if self.__loading or self.__saving:
             return
         if any(self.__holds(item) for item in event.sources()):
-            self.markDirty()
+            self.mark_dirty()
 
     def __holds(self, item):
         """Whether the item is this file's. Owned notes and attachments
@@ -341,7 +341,7 @@ class TaskFile(patterns.Observer):
     def is_dirty(self):
         return self.__needSave
 
-    def markDirty(self, force=False):
+    def mark_dirty(self, force=False):
         if not patterns.CommandHistory().is_running():
             # Changed outside a command: undo cannot bring back the
             # saved state
@@ -350,7 +350,7 @@ class TaskFile(patterns.Observer):
             self.__needSave = True
             self._publish("taskfile.dirty", taskFile=self)
 
-    def markClean(self):
+    def mark_clean(self):
         # The saved state is where undo and redo lead to this command
         self.__saved_at = patterns.CommandHistory().current()
         if self.__needSave:
@@ -365,9 +365,9 @@ class TaskFile(patterns.Observer):
             and self.__saved_at is not _UNREACHABLE
             and patterns.CommandHistory().current() is self.__saved_at
         ):
-            self.markClean()
+            self.mark_clean()
 
-    def onFileChanged(self):
+    def on_file_changed(self):
         import wx  # Not really clean but we're in another thread...
 
         # Checked on the main thread, after any save of ours finished
@@ -412,7 +412,7 @@ class TaskFile(patterns.Observer):
         self.setFilename("")
         self.__guid = str(uuid.uuid4())
         self.clear()
-        self.markClean()
+        self.mark_clean()
         self.__changedOnDisk = False
         self.__saved_stat = None
 
@@ -509,7 +509,7 @@ class TaskFile(patterns.Observer):
             raise
         finally:
             self.__loading = False
-            self.markClean()
+            self.mark_clean()
             self.__changedOnDisk = False
             self.__saved_stat = stat
             self._publish("taskfile.justRead", taskFile=self)
@@ -544,7 +544,7 @@ class TaskFile(patterns.Observer):
                     raise
                 fd.close()
 
-            self.markClean()
+            self.mark_clean()
             self.__saved_stat = self.__disk_stat()
         finally:
             self.__saving = False
@@ -612,7 +612,7 @@ class TaskFile(patterns.Observer):
             merge_file.close()
             merge_file.stop()
             self.__loading = False
-        self.markDirty(force=True)
+        self.mark_dirty(force=True)
 
     def need_save(self):
         return not self.__loading and self.__needSave

@@ -890,9 +890,7 @@ class TaskBarMenu(Menu):
         label = _("&Start tracking effort")
         self.appendMenu(
             label,
-            StartEffortForTaskMenu(
-                taskBarIcon, tasks, self, label
-            ),
+            StartEffortForTaskMenu(taskBarIcon, tasks, self, label),
             "nuvola_apps_clock",
         )
         self.appendUICommands(

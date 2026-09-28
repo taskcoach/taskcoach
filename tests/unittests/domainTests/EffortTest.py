@@ -100,13 +100,13 @@ class EffortTest(test.TestCase, asserts.Mixin):
         self.effort.setStart(date.DateTime(2004, 1, 1, 12, 0, 0))
         self.assertTrue(before <= self.effort.modificationDateTime())
 
-    def testDurationNotificationForSetStart(self):
+    def test_duration_notification_for_set_start(self):
         events = test.ChangeRecorder(effort.Effort.durationChangedEventType())
         start = date.DateTime.now()
         self.effort.setStart(start)
         self.assertEqual([(self.effort.timeSpent(), self.effort)], events)
 
-    def testDurationNotificationForSetStop(self):
+    def test_duration_notification_for_set_stop(self):
         events = test.ChangeRecorder(effort.Effort.durationChangedEventType())
         self.effort.setStop(date.DateTime.now())
         self.assertEqual([(self.effort.timeSpent(), self.effort)], events)
@@ -130,29 +130,31 @@ class EffortTest(test.TestCase, asserts.Mixin):
         self.effort.setTask(task.Task())
         self.assertTrue(before <= self.effort.modificationDateTime())
 
-    def testNotificationForStartTracking(self):
+    def test_notification_for_start_tracking(self):
         events = test.ChangeRecorder(self.effort.trackingChangedEventType())
         self.effort.setStop(date.DateTime())
         self.assertEqual([(True, self.effort)], events)
 
-    def testNotificationForStopTracking(self):
+    def test_notification_for_stop_tracking(self):
         self.effort.setStop(date.DateTime())
         events = test.ChangeRecorder(self.effort.trackingChangedEventType())
         self.effort.setStop(date.DateTime.now())
         self.assertEqual([(False, self.effort)], events)
 
-    def testRevenueNotificationForTaskHourlyFeeChange(self):
+    def test_revenue_notification_for_task_hourly_fee_change(self):
         events = test.ChangeRecorder(effort.Effort.revenueChangedEventType())
         self.task.set_hourly_fee(100)
         self.assertEqual([(2400.0, self.effort)], events)
 
-    def testRevenueNotificationForEffortDurationChange_ChangeStop(self):
+    def test_revenue_notification_for_effort_duration_change_change_stop(self):
         self.task.set_hourly_fee(100)
         events = test.ChangeRecorder(effort.Effort.revenueChangedEventType())
         self.effort.setStop(date.DateTime(2004, 1, 3))
         self.assertEqual([(4800.0, self.effort)], events)
 
-    def testRevenueNotificationForEffortDurationChange_ChangeStart(self):
+    def test_revenue_notification_for_effort_duration_change_change_start(
+        self,
+    ):
         self.task.set_hourly_fee(100)
         events = test.ChangeRecorder(effort.Effort.revenueChangedEventType())
         self.effort.setStart(date.DateTime(2004, 1, 1, 12, 0, 0))

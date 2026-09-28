@@ -151,12 +151,12 @@ class EffortListTracker(patterns.Observer):
         self.__trackedEfforts = self.__filterTrackedEfforts(self.__effortList)
 
         self.registerObserver(
-            self.onEffortAdded,
+            self.on_effort_added,
             eventType=self.__effortList.addItemEventType(),
             eventSource=self.__effortList,
         )
         self.registerObserver(
-            self.onEffortRemoved,
+            self.on_effort_removed,
             eventType=self.__effortList.removeItemEventType(),
             eventSource=self.__effortList,
         )
@@ -176,13 +176,13 @@ class EffortListTracker(patterns.Observer):
     def trackedEfforts(self):
         return self.__trackedEfforts
 
-    def onEffortAdded(self, event):
+    def on_effort_added(self, event):
         self.__trackedEfforts.extend(
             self.__filterTrackedEfforts(list(event.values()))
         )
         self.__send_changed()
 
-    def onEffortRemoved(self, event):
+    def on_effort_removed(self, event):
         for effort in list(event.values()):
             if effort in self.__trackedEfforts:
                 self.__trackedEfforts.remove(effort)

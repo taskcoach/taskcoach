@@ -1900,9 +1900,7 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
         self.assertEqual(["Kept"], [each.subject() for each in tasks])
         self.assertEqual([], tasks[0].children())
         self.assertEqual(set(), set(tasks[0].prerequisites()))
-        self.assertEqual(
-            set([tasks[0]]), set(categories[0].categorizables())
-        )
+        self.assertEqual(set([tasks[0]]), set(categories[0].categorizables()))
         self.assertEqual(["Kept note"], [each.subject() for each in notes])
 
     def test_categories_are_resolved_in_one_event(self):

@@ -92,14 +92,14 @@ class Sorter(base.TreeSorter):
         else:
             return lambda task: []
 
-    def _registerObserverForAttribute(self, attribute):
+    def _register_observer_for_attribute(self, attribute):
         # Sorter is always observing task dates and prerequisites because
         # sorting by status depends on those attributes. Hence we don't need
         # to subscribe to these attributes when they become the sort key.
         if attribute not in self.TaskStatusAttributes:
-            super()._registerObserverForAttribute(attribute)
+            super()._register_observer_for_attribute(attribute)
 
-    def _removeObserverForAttribute(self, attribute):
-        # See comment at _registerObserverForAttribute.
+    def _remove_observer_for_attribute(self, attribute):
+        # See comment at _register_observer_for_attribute.
         if attribute not in self.TaskStatusAttributes:
-            super()._removeObserverForAttribute(attribute)
+            super()._remove_observer_for_attribute(attribute)

@@ -200,7 +200,7 @@ Clean separation between the setter and the callback:
 Three complexity levels of callbacks:
 
 **Notification callback** — fires change signal (see
-[PUBLISHER_OBSERVER.md — Signal Dispatch](PUBLISHER_OBSERVER.md#signal-dispatch)), `markDirty`,
+[PUBLISHER_OBSERVER.md — Signal Dispatch](PUBLISHER_OBSERVER.md#signal-dispatch)), `mark_dirty`,
 `recomputeAppearance`. Example: `_onDueDateTimeChanged`,
 `_onPlannedStartDateTimeChanged`.
 

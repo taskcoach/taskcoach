@@ -3044,10 +3044,10 @@ class PathPage(ScrolledPage):
         """Called when this tab is selected. Build/rebuild the path display."""
         if not self._realized:
             self._realized = True
-            self._subscribeToChanges()
+            self._subscribe_to_changes()
         self._rebuildPathDisplay()
 
-    def _subscribeToChanges(self):
+    def _subscribe_to_changes(self):
         """Subscribe to all modification events that could affect the path."""
         if self._subscribed:
             return
@@ -4155,7 +4155,7 @@ class EffortEditBook(Page):
             else date.TimeDelta()
         )
         self._effort_duration_sync = attributesync.AttributeSync(
-            "getDuration",
+            "stored_duration",
             self._effort_duration_ctrl,
             current_duration,
             self.items,

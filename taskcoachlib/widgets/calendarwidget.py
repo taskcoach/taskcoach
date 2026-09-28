@@ -246,9 +246,7 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
                     ):
                         continue
 
-            schedule = TaskSchedule(
-                task, self.get_selected_or_normal_icon_id
-            )
+            schedule = TaskSchedule(task, self.get_selected_or_normal_icon_id)
             schedules.append(schedule)
             self.taskMap[task.id()] = schedule
 

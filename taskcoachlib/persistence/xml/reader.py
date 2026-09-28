@@ -174,8 +174,8 @@ class XMLReaderTooNewException(Exception):
 class XMLReader(object):
     """Class for reading task files in the default XML task file format."""
 
-    defaultStartTime = (0, 0, 0)
-    defaultEndTime = (23, 59, 59)
+    default_start_time = (0, 0, 0)
+    default_end_time = (23, 59, 59)
 
     def __init__(self, fd):
         self.__fd = fd
@@ -249,9 +249,10 @@ class XMLReader(object):
         # Restored last, over the dates the reading itself set, in one
         # event (docs/ATTRIBUTE_PATTERN.md, Event Batching During Load)
         event = patterns.Event()
-        for item, modification_datetime in (
-            self.__modification_datetimes.items()
-        ):
+        for (
+            item,
+            modification_datetime,
+        ) in self.__modification_datetimes.items():
             item.set_modification_datetime(modification_datetime, event=event)
         event.send()
 
@@ -365,9 +366,7 @@ class XMLReader(object):
             for categorizableId in categorizableIds:
                 if categorizableId in categorizableMap:
                     theCategorizable = categorizableMap[categorizableId]
-                    theCategory.addCategorizable(
-                        theCategorizable, event=event
-                    )
+                    theCategory.addCategorizable(theCategorizable, event=event)
                     theCategorizable.addCategory(theCategory, event=event)
         event.send()
 
@@ -476,19 +475,19 @@ class XMLReader(object):
                         task_node.attrib.get(
                             planned_start_datetime_attribute_name, ""
                         ),
-                        *self.defaultStartTime,
+                        *self.default_start_time,
                     ),
                     dueDateTime=parseAndAdjustDateTime(
                         task_node.attrib.get("duedate", ""),
-                        *self.defaultEndTime,
+                        *self.default_end_time,
                     ),
                     actualStartDateTime=date.parseDateTime(
                         task_node.attrib.get("actualstartdate", ""),
-                        *self.defaultStartTime,
+                        *self.default_start_time,
                     ),
                     completionDateTime=date.parseDateTime(
                         task_node.attrib.get("completiondate", ""),
-                        *self.defaultEndTime,
+                        *self.default_end_time,
                     ),
                     percentageComplete=self.__parse_int_attribute(
                         task_node, "percentageComplete"

@@ -342,22 +342,22 @@ class Task(
         childPriority = child.priority(recursive=True)
         # Determine what changes due to the child being added or removed:
         if childHasTimeSpent:
-            self.sendTimeSpentChangedMessage()
+            self.send_time_spent_changed()
         if childHasRevenue:
-            self.sendRevenueChangedMessage()
+            self.send_revenue_changed()
         if childHasBudget:
             self.budget_changed_event(event)
         if childHasBudgetLeft or (
             childHasTimeSpent and (childHasBudget or self.budget())
         ):
-            self.sendBudgetLeftChangedMessage()
+            self.send_budget_left_changed()
         if childPriority > self.priority():
             event.addSource(self, type=self.priorityChangedEventType())
         isTracking = self.isBeingTracked(recursive=True)
         if wasTracking and not isTracking:
-            self.sendTrackingChangedMessage(tracking=False)
+            self.send_tracking_changed(tracking=False)
         elif not wasTracking and isTracking:
-            self.sendTrackingChangedMessage(tracking=True)
+            self.send_tracking_changed(tracking=True)
 
     @patterns.eventSource
     def setSubject(self, subject, event=None):
@@ -952,7 +952,8 @@ class Task(
             self.setReminder()
             return
 
-        # Trigger when due; a reminder not set, the latest date, never is.
+        # Trigger when due; a reminder not set (the latest date) never
+        # is.
         if self.reminder() <= timestamp + self.REMINDER_AHEAD:
             self.triggerReminder()
 
@@ -998,8 +999,8 @@ class Task(
             self.setActualStartDateTime(effort.getStart())
         self.__send_efforts_changed(oldValue)
         if effort.isBeingTracked() and not wasTracking:
-            self.sendTrackingChangedMessage(tracking=True)
-        self.sendTimeSpentChangedMessage()
+            self.send_tracking_changed(tracking=True)
+        self.send_time_spent_changed()
 
     @classmethod
     def effortsChangedEventType(class_):
@@ -1021,7 +1022,7 @@ class Task(
             event.addSource(ancestor, ancestor_value(ancestor))
         event.send()
 
-    def sendTrackingChangedMessage(self, tracking):
+    def send_tracking_changed(self, tracking):
         self.recomputeAppearance()
         self.__send_to_ancestors_too(
             self.trackingChangedEventType(), tracking, lambda _: tracking
@@ -1034,8 +1035,8 @@ class Task(
         self._efforts.remove(effort)
         self.__send_efforts_changed(oldValue)
         if effort.isBeingTracked() and not self.isBeingTracked():
-            self.sendTrackingChangedMessage(tracking=False)
-        self.sendTimeSpentChangedMessage()
+            self.send_tracking_changed(tracking=False)
+        self.send_time_spent_changed()
 
     def stopTracking(self):
         for effort in self.activeEfforts():
@@ -1047,7 +1048,7 @@ class Task(
         oldValue = self._efforts[:]
         self._efforts = efforts
         self.__send_efforts_changed(oldValue)
-        self.sendTimeSpentChangedMessage()
+        self.send_time_spent_changed()
 
     @classmethod
     def trackingChangedEventType(class_):
@@ -1061,16 +1062,16 @@ class Task(
             date.TimeDelta(),
         )
 
-    def sendTimeSpentChangedMessage(self):
+    def send_time_spent_changed(self):
         self.__send_to_ancestors_too(
             self.timeSpentChangedEventType(),
             self.timeSpent(),
             lambda ancestor: ancestor.timeSpent(),
         )
         if self.budget(recursive=True):
-            self.sendBudgetLeftChangedMessage()
+            self.send_budget_left_changed()
         if self.hourlyFee() > 0:
-            self.sendRevenueChangedMessage()
+            self.send_revenue_changed()
 
     @classmethod
     def timeSpentChangedEventType(class_):
@@ -1100,7 +1101,7 @@ class Task(
 
     def _on_budget_changed(self, event):
         self.budget_changed_event(event)
-        self.sendBudgetLeftChangedMessage()
+        self.send_budget_left_changed()
 
     def budget_changed_event(self, event):
         # Ancestors show it in their recursive budget
@@ -1134,7 +1135,7 @@ class Task(
         budget = self.budget(recursive)
         return budget - self.timeSpent(recursive)
 
-    def sendBudgetLeftChangedMessage(self):
+    def send_budget_left_changed(self):
         self.__send_to_ancestors_too(
             self.budgetLeftChangedEventType(),
             self.budgetLeft(),
@@ -1563,9 +1564,9 @@ class Task(
             self, self.hourlyFee(), type=self.hourlyFeeChangedEventType()
         )
         if self.timeSpent() > date.TimeDelta():
-            self.sendRevenueChangedMessage()
+            self.send_revenue_changed()
             for effort in self.efforts():
-                effort.sendRevenueChangedMessage()
+                effort.send_revenue_changed()
 
     @classmethod
     def hourlyFeeChangedEventType(class_):
@@ -1604,7 +1605,7 @@ class Task(
                 ancestor.fixedFee(recursive=True),
                 type=ancestor.fixedFeeChangedEventType(),
             )
-        self.sendRevenueChangedMessage()
+        self.send_revenue_changed()
 
     @classmethod
     def fixedFeeChangedEventType(class_):
@@ -1634,7 +1635,7 @@ class Task(
             + childRevenues
         )
 
-    def sendRevenueChangedMessage(self):
+    def send_revenue_changed(self):
         self.__send_to_ancestors_too(
             self.revenueChangedEventType(),
             self.revenue(),

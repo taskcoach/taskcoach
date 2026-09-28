@@ -256,8 +256,7 @@ class MasterTimerListTest(test.wxTestCase):
         ]
         later = self.now + date.ONE_MINUTE
         added = [
-            task.Task(subject="due", dueDateTime=due)
-            for due in dues + [later]
+            task.Task(subject="due", dueDateTime=due) for due in dues + [later]
         ]
         self.task_file.tasks().extend(added)
         # One tick takes the past overdue seconds and this second's

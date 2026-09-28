@@ -383,9 +383,7 @@ class MasterScheduler:
             for each in self._task_file.categories().allItemsSorted():
                 self._run_isolated("category", computeStyles, each)
             for each in self._task_file.tasks().allItemsSorted():
-                self._run_isolated(
-                    "task", self._process_task, each, timestamp
-                )
+                self._run_isolated("task", self._process_task, each, timestamp)
             for each in self._task_file.notes().allItemsSorted():
                 self._run_isolated("note", self._process_note, each)
         finally:

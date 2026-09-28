@@ -1123,7 +1123,7 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
             self.widget.showColumn(column, show=show)
         if show:
             self.__visibleColumns.append(column)
-            self.__startObserving(column.eventTypes())
+            self.__start_observing(column.eventTypes())
 
     def showColumnByName(self, columnName, show=True):
         for column in self.hideable_columns():
@@ -1142,10 +1142,10 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
             self.__visibleColumns = [
                 c for c in self.columns() if c in self.__visibleColumns
             ]
-            self.__startObserving(column.eventTypes())
+            self.__start_observing(column.eventTypes())
         else:
             self.__visibleColumns.remove(column)
-            self.__stopObserving(column.eventTypes())
+            self.__stop_observing(column.eventTypes())
         self.widget.showColumn(column, show)
         # Set main column AFTER inserting/removing the ordering column
         if column.name() == "ordering":
@@ -1301,22 +1301,21 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
             wx.TreeItemIcon_Expanded: selectedImageIndex,
         }
 
-    def __startObserving(self, eventTypes):
-        for eventType in eventTypes:
+    def __start_observing(self, event_types):
+        for event_type in event_types:
             self.registerObserver(
-                self.on_attribute_changed, eventType=eventType
+                self.on_attribute_changed, eventType=event_type
             )
 
-    def __stopObserving(self, eventTypes):
-        # Collect the event types that the currently visible columns are
-        # interested in and make sure we don't stop observing those event types.
-        eventTypesOfVisibleColumns = []
+    def __stop_observing(self, event_types):
+        # Keep observing the event types the visible columns still need
+        visible_event_types = []
         for column in self.visibleColumns():
-            eventTypesOfVisibleColumns.extend(column.eventTypes())
-        for eventType in eventTypes:
-            if eventType not in eventTypesOfVisibleColumns:
+            visible_event_types.extend(column.eventTypes())
+        for event_type in event_types:
+            if event_type not in visible_event_types:
                 self.removeObserver(
-                    self.on_attribute_changed, eventType=eventType
+                    self.on_attribute_changed, eventType=event_type
                 )
 
     def renderCategories(self, item):

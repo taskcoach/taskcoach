@@ -72,7 +72,7 @@ class TaskFileEventHandler(FileSystemEventHandler):
             if self._notifier._check(watched_filename) and watched_filename:
                 self._notifier.stamp = os.stat(watched_filename).st_mtime
                 # Use wx.CallAfter to ensure callback runs in main thread
-                wx.CallAfter(self._notifier.onFileChanged)
+                wx.CallAfter(self._notifier.on_file_changed)
 
     def on_created(self, event):
         """Handle file creation events (might be recreated after save)."""
@@ -119,7 +119,7 @@ class FilesystemNotifier(base.NotifierBase):
             self._observer.join(timeout=1.0)
             self._observer = None
 
-    def onFileChanged(self):
+    def on_file_changed(self):
         """
         Callback when the watched file changes.
 

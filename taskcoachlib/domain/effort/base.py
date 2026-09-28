@@ -83,7 +83,7 @@ class BaseEffort(object):
     def trackingChangedEventType(class_):
         return "effort.track"
 
-    def sendDurationChangedMessage(self):
+    def send_duration_changed(self):
         patterns.Event(
             self.durationChangedEventType(), self, self.timeSpent()
         ).send()
@@ -92,7 +92,7 @@ class BaseEffort(object):
     def durationChangedEventType(class_):
         return "effort.duration"
 
-    def sendRevenueChangedMessage(self):
+    def send_revenue_changed(self):
         patterns.Event(
             self.revenueChangedEventType(), self, self.revenue()
         ).send()
