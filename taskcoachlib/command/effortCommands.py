@@ -34,7 +34,6 @@ class NewEffortCommand(base.BaseCommand):
         ]
         self.__oldActualStartDateTimes = {}
 
-
     def name_subject(self, effort):  # pylint: disable=W0621
         return effort.task().subject()
 
@@ -73,6 +72,7 @@ class AddEffortCommand(base.BaseCommand):
     task and pasted to another. Updates the effort's task reference and
     adds it to the target task's effort list.
     """
+
     plural_name = _("Add efforts")
     singular_name = _('Add effort to "%s"')
 
@@ -85,7 +85,6 @@ class AddEffortCommand(base.BaseCommand):
         # Store original task references for undo support
         self.__old_task_refs = [eff.task() for eff in self.__efforts]
         self.items = self.__efforts
-
 
     def name_subject(self, anEffort):
         return self.__tasks[0].subject() if self.__tasks else ""
@@ -119,7 +118,6 @@ class DeleteEffortCommand(base.DeleteCommand):
     singular_name = _('Delete effort "%s"')
 
 
-
 class EditTaskCommand(base.BaseCommand):
     plural_name = _("Change task of effort")
     singular_name = _('Change task of "%s" effort')
@@ -129,7 +127,6 @@ class EditTaskCommand(base.BaseCommand):
         self.__oldTasks = []
         super().__init__(*args, **kwargs)
         self.__oldTasks = [item.task() for item in self.items]
-
 
     def do_command(self):
         super().do_command()

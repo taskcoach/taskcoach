@@ -144,7 +144,9 @@ class BaseCategoryViewer(
                 width=self.getColumnWidth("attachments"),
                 alignment=wx.LIST_FORMAT_LEFT,
                 imageIndicesCallback=self.attachmentImageIndices,
-                headerImageIndex=image_list_cache.get_index("nuvola_status_mail-attachment"),
+                headerImageIndex=image_list_cache.get_index(
+                    "nuvola_status_mail-attachment"
+                ),
                 renderCallback=lambda category: "",
                 **kwargs
             ),
@@ -157,7 +159,9 @@ class BaseCategoryViewer(
                 width=self.getColumnWidth("notes"),
                 alignment=wx.LIST_FORMAT_LEFT,
                 imageIndicesCallback=self.noteImageIndices,
-                headerImageIndex=image_list_cache.get_index("nuvola_apps_knotes"),
+                headerImageIndex=image_list_cache.get_index(
+                    "nuvola_apps_knotes"
+                ),
                 renderCallback=lambda category: "",
                 **kwargs
             )

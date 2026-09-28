@@ -244,12 +244,22 @@ _DEPRECATED_ICONS = {
 # Icon class
 # ============================================================================
 
+
 class Icon:
     """A single icon with metadata, path resolution, and bitmap loading."""
 
-    def __init__(self, icon_id, label="", hints=None, theme="",
-                 theme_label="", context="", context_label="",
-                 file="", paths=None):
+    def __init__(
+        self,
+        icon_id,
+        label="",
+        hints=None,
+        theme="",
+        theme_label="",
+        context="",
+        context_label="",
+        file="",
+        paths=None,
+    ):
         self.icon_id = icon_id
         self.label = label
         self.hints = hints or []
@@ -267,8 +277,10 @@ class Icon:
         Logs error + returns None for synthetic icons (no file paths).
         """
         if self.theme == "synthetic":
-            log_step(f"ERROR: path() called on synthetic icon '{self.icon_id}'.",
-                     prefix="ICON")
+            log_step(
+                f"ERROR: path() called on synthetic icon '{self.icon_id}'.",
+                prefix="ICON",
+            )
             return None
         rel = self._paths.get(size)
         if rel is None:
@@ -285,6 +297,7 @@ class Icon:
         otherwise loads from file.
         """
         import wx
+
         result = None
         if self.theme == "synthetic":
             if self._synthetic_icon_generator:
@@ -306,6 +319,7 @@ class Icon:
         remove the error and open the else block when needed).
         """
         import wx
+
         scaleFactor = 1.0
         if window:
             try:
@@ -315,10 +329,14 @@ class Icon:
         # DPI-aware cursor sizing — only 16px cursors exist today.
         # When HiDPI cursors are added, uncomment the size assignments below.
         if scaleFactor >= 1.75:
-            log_step("WARNING: HiDPI cursor (32px) not yet available, falling back to 16px")
+            log_step(
+                "WARNING: HiDPI cursor (32px) not yet available, falling back to 16px"
+            )
             size = LIST_ICON_SIZE
         elif scaleFactor >= 1.125:
-            log_step("WARNING: MidDPI cursor (22px) not yet available, falling back to 16px")
+            log_step(
+                "WARNING: MidDPI cursor (22px) not yet available, falling back to 16px"
+            )
             size = LIST_ICON_SIZE
         else:
             size = LIST_ICON_SIZE
@@ -327,13 +345,17 @@ class Icon:
             if self._synthetic_icon_generator:
                 result = self._synthetic_icon_generator.render_cursor(size)
         else:
-            log_step(f"ERROR: get_cursor() called on non-synthetic icon "
-                     f"'{self.icon_id}'.", prefix="ICON")
+            log_step(
+                f"ERROR: get_cursor() called on non-synthetic icon "
+                f"'{self.icon_id}'.",
+                prefix="ICON",
+            )
         return result
 
     def get_wx_icon(self, size):
         """Return wx.Icon (bitmap with alpha-to-mask conversion)."""
         import wx
+
         bitmap = self.get_bitmap(size)
         if not bitmap or not bitmap.IsOk():
             return None
@@ -344,6 +366,7 @@ class Icon:
     def get_icon_bundle(self):
         """Return wx.IconBundle with all standard sizes."""
         import wx
+
         bundle = wx.IconBundle()
         for size in self.sizes:
             wx_icon = self.get_wx_icon(size)
@@ -356,17 +379,17 @@ class Icon:
         return sorted(self._paths)
 
 
-
 # ============================================================================
 # IconCatalog class
 # ============================================================================
+
 
 class IconCatalog:
     """Registry of all icons. Single source of truth."""
 
     def __init__(self):
-        self._icons = {}        # icon_id -> Icon
-        self._duplicates = {}   # duplicate_id -> target_id
+        self._icons = {}  # icon_id -> Icon
+        self._duplicates = {}  # duplicate_id -> target_id
 
     def get_icon(self, icon_id):
         """Get Icon by id. Returns Icon or None.
@@ -383,7 +406,7 @@ class IconCatalog:
             log_step(
                 f"CRITICAL: Fallback icon '{_FALLBACK_ICON}' itself failed. "
                 f"This should never occur - the installation is broken.",
-                prefix="ICON"
+                prefix="ICON",
             )
             return None
         fallback = self.get_icon(_FALLBACK_ICON)
@@ -391,18 +414,19 @@ class IconCatalog:
             log_step(
                 f"CRITICAL: Fallback icon '{_FALLBACK_ICON}' not in catalog. "
                 f"This should never occur - the installation is broken.",
-                prefix="ICON"
+                prefix="ICON",
             )
         return fallback
 
     def _fallback_bitmap(self, icon_id, size):
         """Try to get a bitmap from the fallback icon. Logs all failures."""
         import wx
+
         fallback = self._get_fallback_icon(icon_id)
         if not fallback:
             log_step(
                 f"ERROR: No fallback available for icon '{icon_id}'.",
-                prefix="ICON"
+                prefix="ICON",
             )
             return wx.NullBitmap
         bmp = fallback.get_bitmap(size)
@@ -410,18 +434,19 @@ class IconCatalog:
             return bmp
         log_step(
             f"ERROR: Fallback icon '{_FALLBACK_ICON}' also failed at size {size}.",
-            prefix="ICON"
+            prefix="ICON",
         )
         return wx.NullBitmap
 
     def _fallback_wx_icon(self, icon_id, size):
         """Try to get a wx.Icon from the fallback icon. Logs all failures."""
         import wx
+
         fallback = self._get_fallback_icon(icon_id)
         if not fallback:
             log_step(
                 f"ERROR: No fallback available for icon '{icon_id}'.",
-                prefix="ICON"
+                prefix="ICON",
             )
             return wx.NullIcon
         wx_icon = fallback.get_wx_icon(size)
@@ -429,7 +454,7 @@ class IconCatalog:
             return wx_icon
         log_step(
             f"ERROR: Fallback icon '{_FALLBACK_ICON}' wx.Icon also failed at size {size}.",
-            prefix="ICON"
+            prefix="ICON",
         )
         return wx.NullIcon
 
@@ -439,6 +464,7 @@ class IconCatalog:
         Falls back to the fallback icon on failure.
         """
         import wx
+
         result = wx.NullBitmap
 
         if not icon_id:
@@ -449,7 +475,7 @@ class IconCatalog:
                 log_step(
                     f"ERROR: Icon '{icon_id}' not found in catalog. "
                     f"Migrate it or restore it. See ICON_LIBRARY.md.",
-                    prefix="ICON"
+                    prefix="ICON",
                 )
                 result = self._fallback_bitmap(icon_id, size)
             else:
@@ -460,7 +486,7 @@ class IconCatalog:
                     log_step(
                         f"ERROR: Icon '{icon_id}' failed at size {size}. "
                         f"Import it from the distillery. See ICON_LIBRARY.md.",
-                        prefix="ICON"
+                        prefix="ICON",
                     )
                     result = self._fallback_bitmap(icon_id, size)
 
@@ -469,6 +495,7 @@ class IconCatalog:
     def get_icon_bundle(self, icon_id):
         """Get IconBundle for icon_id. Returns IconBundle (empty if not found)."""
         import wx
+
         icon = self.get_icon(icon_id)
         if icon:
             return icon.get_icon_bundle()
@@ -480,13 +507,13 @@ class IconCatalog:
         Falls back to the fallback icon on failure.
         """
         import wx
+
         result = wx.NullIcon
 
         icon = self.get_icon(icon_id)
         if not icon:
             log_step(
-                f"ERROR: Icon '{icon_id}' not found in catalog.",
-                prefix="ICON"
+                f"ERROR: Icon '{icon_id}' not found in catalog.", prefix="ICON"
             )
             result = self._fallback_wx_icon(icon_id, size)
         else:
@@ -496,7 +523,7 @@ class IconCatalog:
             else:
                 log_step(
                     f"ERROR: Icon '{icon_id}' wx.Icon failed at size {size}.",
-                    prefix="ICON"
+                    prefix="ICON",
                 )
                 result = self._fallback_wx_icon(icon_id, size)
 
@@ -536,7 +563,7 @@ class IconCatalog:
         if new_id:
             log_step(
                 f"Normalizing deprecated icon '{icon_id}' -> '{new_id}'",
-                prefix="ICON"
+                prefix="ICON",
             )
             return new_id
         return icon_id
@@ -550,7 +577,7 @@ class IconCatalog:
         if target:
             log_step(
                 f"Normalizing duplicate icon '{icon_id}' -> '{target}'",
-                prefix="ICON"
+                prefix="ICON",
             )
             return target
         return icon_id
@@ -563,7 +590,7 @@ class IconCatalog:
                 f"ERROR: Icon ID conflict '{icon.icon_id}' - "
                 f"theme '{existing.theme}' vs '{icon.theme}'. "
                 f"Keeping first, dropping second.",
-                prefix="ICON"
+                prefix="ICON",
             )
             return
         self._icons[icon.icon_id] = icon
@@ -574,8 +601,11 @@ class IconCatalog:
         Currently returns all non-synthetic icons. Future: only icons
         actually assigned to items in the current data file.
         """
-        return [icon_id for icon_id, icon in self._icons.items()
-                if icon.theme != "synthetic"]
+        return [
+            icon_id
+            for icon_id, icon in self._icons.items()
+            if icon.theme != "synthetic"
+        ]
 
     def __len__(self):
         return len(self._icons)
@@ -590,21 +620,26 @@ class IconCatalog:
             if "duplicate_of" in data:
                 self._duplicates[icon_id] = data["duplicate_of"]
                 continue
-            if not data.get("file") or not data.get("label") \
-               or not data.get("paths"):
+            if (
+                not data.get("file")
+                or not data.get("label")
+                or not data.get("paths")
+            ):
                 continue
             ctx = data.get("context", "")
-            self._register(Icon(
-                icon_id=icon_id,
-                label=data["label"],
-                hints=data.get("hints", []),
-                theme=theme,
-                theme_label=theme_label,
-                context=ctx,
-                context_label=contexts.get(ctx, ctx.title()),
-                file=data["file"],
-                paths=data.get("paths", {}),
-            ))
+            self._register(
+                Icon(
+                    icon_id=icon_id,
+                    label=data["label"],
+                    hints=data.get("hints", []),
+                    theme=theme,
+                    theme_label=theme_label,
+                    context=ctx,
+                    context_label=contexts.get(ctx, ctx.title()),
+                    file=data["file"],
+                    paths=data.get("paths", {}),
+                )
+            )
 
     def _load_theme_catalog(self):
         """Read ICON_THEME_CATALOG.json and return active theme names.
@@ -618,12 +653,17 @@ class IconCatalog:
         for theme_name, theme_config in cat.items():
             if not theme_config.get("active", False):
                 continue
-            parsed_path = os.path.join(_ICONS_DIR, theme_name, "icons_parsed.py")
+            parsed_path = os.path.join(
+                _ICONS_DIR, theme_name, "icons_parsed.py"
+            )
             if os.path.exists(parsed_path):
                 themes.append(theme_name)
             else:
-                log_step(f"ERROR: Active theme '{theme_name}' missing "
-                         f"{theme_name}/icons_parsed.py", prefix="ICON")
+                log_step(
+                    f"ERROR: Active theme '{theme_name}' missing "
+                    f"{theme_name}/icons_parsed.py",
+                    prefix="ICON",
+                )
         return themes
 
     def _load_synthetic_icons(self):
@@ -633,7 +673,10 @@ class IconCatalog:
         Bitmap generation is lazy — only happens on first get_bitmap() call.
         """
         from taskcoachlib.gui.icons.synthetic_icon_generator import (
-            get_icon_defs, SyntheticIconGenerator)
+            get_icon_defs,
+            SyntheticIconGenerator,
+        )
+
         for sid in get_icon_defs():
             icon = Icon(icon_id=sid, theme="synthetic")
             icon._synthetic_icon_generator = SyntheticIconGenerator(sid)
@@ -650,16 +693,14 @@ class IconCatalog:
         self._load_synthetic_icons()
 
 
-
 # Module-level singleton
 icon_catalog = IconCatalog()
-
-
 
 
 # ============================================================================
 # Internal helpers
 # ============================================================================
+
 
 def _load_catalog():
     """Load and cache the theme catalog JSON."""
@@ -671,10 +712,16 @@ def _load_catalog():
                 with open(catalog_path, "r", encoding="utf-8") as f:
                     _theme_catalog = json.load(f)
             except json.JSONDecodeError as e:
-                log_step(f"ERROR: Failed to parse {catalog_path}: {e}", prefix="ICON")
+                log_step(
+                    f"ERROR: Failed to parse {catalog_path}: {e}",
+                    prefix="ICON",
+                )
                 _theme_catalog = {}
         else:
-            log_step(f"ERROR: Theme catalog not found: {catalog_path}", prefix="ICON")
+            log_step(
+                f"ERROR: Theme catalog not found: {catalog_path}",
+                prefix="ICON",
+            )
             _theme_catalog = {}
     return _theme_catalog
 
@@ -694,20 +741,18 @@ def _load_theme_parsed(theme):
                 "contexts": getattr(mod, "contexts", {}),
             }
         except ImportError as e:
-            log_step(f"ERROR: Failed to import {module_name}: {e}", prefix="ICON")
+            log_step(
+                f"ERROR: Failed to import {module_name}: {e}", prefix="ICON"
+            )
             _theme_parsed[theme] = {"icons": {}, "contexts": {}}
 
     return _theme_parsed[theme]
 
 
-
-
-
-
-
 # ============================================================================
 # init() — call after wx.App exists
 # ============================================================================
+
 
 def init():
     """Initialize the icon system. Call once after wx.App exists.
@@ -728,4 +773,7 @@ def init():
     # Load all active themes (legacy, file-based, synthetic)
     icon_catalog._load_all_themes()
 
-    log_step(f"Icon system initialized: {len(icon_catalog)} icons registered", prefix="ICON")
+    log_step(
+        f"Icon system initialized: {len(icon_catalog)} icons registered",
+        prefix="ICON",
+    )

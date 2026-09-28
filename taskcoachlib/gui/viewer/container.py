@@ -79,7 +79,9 @@ class ViewerContainer(object):
         self.containerWidget.Bind(
             aui.EVT_AUI_PANE_ACTIVATED, self.on_page_changed
         )
-        self.containerWidget.Bind(aui.EVT_AUI_PANE_FLOATED, self.on_page_floated)
+        self.containerWidget.Bind(
+            aui.EVT_AUI_PANE_FLOATED, self.on_page_floated
+        )
 
     def __getitem__(self, index):
         return self.viewers[index]
@@ -89,7 +91,9 @@ class ViewerContainer(object):
 
     def add_viewer(self, viewer, floating=False):
         """Add a new pane with the specified viewer."""
-        self.containerWidget.add_pane(viewer, viewer.title(), floating=floating)
+        self.containerWidget.add_pane(
+            viewer, viewer.title(), floating=floating
+        )
         self.viewers.append(viewer)
         if len(self.viewers) == 1:
             self.activate_viewer(viewer)

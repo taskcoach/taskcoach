@@ -63,8 +63,12 @@ class Sorter(base.TreeSorter):
             observable.set_tree_mode(tree_mode)
         else:
             from taskcoachlib.meta.debug import log_step
-            log_step("set_tree_mode: Sorter observable is %s, expected Filter"
-                     % type(observable).__name__, prefix="FILTER")
+
+            log_step(
+                "set_tree_mode: Sorter observable is %s, expected Filter"
+                % type(observable).__name__,
+                prefix="FILTER",
+            )
         self.reset(force_event=True)
 
     def tree_mode(self):
@@ -85,10 +89,14 @@ class Sorter(base.TreeSorter):
         if self.__sort_by_task_status_first:
             if self.is_ascending():
                 # Negate priority so higher priority (more urgent) sorts first
-                return lambda task: [-task.computedStatus().getSortPriority(task.settings)]
+                return lambda task: [
+                    -task.computedStatus().getSortPriority(task.settings)
+                ]
             else:
                 # For descending, use priority directly (higher sorts first)
-                return lambda task: [task.computedStatus().getSortPriority(task.settings)]
+                return lambda task: [
+                    task.computedStatus().getSortPriority(task.settings)
+                ]
         else:
             return lambda task: []
 

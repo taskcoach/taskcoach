@@ -57,7 +57,6 @@ class BaseCommand(patterns.Command):
         """The items this command operates on."""
         return self.items
 
-
     def canDo(self):
         return bool(self.items)
 
@@ -171,7 +170,6 @@ class NewItemCommand(BaseCommand):
     def items_are_new(self):
         return True
 
-
     @patterns.eventSource
     def do_command(self, event=None):
         super().do_command()
@@ -202,7 +200,6 @@ class NewSubItemCommand(NewItemCommand):
         return subitem.parent().subject()
 
 
-
 class CopyCommand(BaseCommand):
     plular_name = _("Copy")
     singular_name = _('Copy "%s"')
@@ -223,7 +220,6 @@ class CopyCommand(BaseCommand):
 class DeleteCommand(BaseCommand):
     plural_name = _("Delete")
     singular_name = _('Delete "%s"')
-
 
     def do_command(self):
         super().do_command()
@@ -281,6 +277,7 @@ class PasteCommand(BaseCommand, SaveStateMixin):
     destination for paste operations, such as when pasting between tasks
     in the task editor dialog.
     """
+
     plural_name = _("Paste")
     singular_name = _('Paste "%s"')
 
@@ -352,7 +349,6 @@ class DragAndDropCommand(BaseCommand, SaveStateMixin, CompositeMixin):
             if not any(ancestor is item for item in toSave):
                 toSave.append(ancestor)
         return toSave
-
 
     def canDo(self):
         return self._itemToDropOn not in (
@@ -582,7 +578,10 @@ class EditIconCommand(BaseCommand):
         self.__new_icon_id = new_icon_id = kwargs.pop("newValue")
         self.__new_selected_icon_id = (
             new_icon_id[: -len("_icon")] + "_open_icon"
-            if (new_icon_id.startswith("folder") and new_icon_id.count("_") == 2)
+            if (
+                new_icon_id.startswith("folder")
+                and new_icon_id.count("_") == 2
+            )
             else new_icon_id
         )
         super().__init__(*args, **kwargs)

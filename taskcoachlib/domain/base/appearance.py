@@ -51,33 +51,34 @@ SYSTEM_BG_COLOR = "SYS_COLOUR_WINDOW"
 SYSTEM_FONT = "SYS_DEFAULT_GUI_FONT"
 SYSTEM_THEME_SOURCE = "System Theme"
 
-FIELD_TYPES = ('fgColor', 'bgColor', 'font', 'icon')
+FIELD_TYPES = ("fgColor", "bgColor", "font", "icon")
 
 FIELD_DEFAULTS = {
-    'fgColor': SYSTEM_FG_COLOR,
-    'bgColor': SYSTEM_BG_COLOR,
-    'font': SYSTEM_FONT,
-    'icon': "",
+    "fgColor": SYSTEM_FG_COLOR,
+    "bgColor": SYSTEM_BG_COLOR,
+    "font": SYSTEM_FONT,
+    "icon": "",
 }
 
 FIELD_NO_VALUE_SOURCE = {
-    'fgColor': SYSTEM_THEME_SOURCE,
-    'bgColor': SYSTEM_THEME_SOURCE,
-    'font': SYSTEM_THEME_SOURCE,
-    'icon': "N/A",
+    "fgColor": SYSTEM_THEME_SOURCE,
+    "bgColor": SYSTEM_THEME_SOURCE,
+    "font": SYSTEM_THEME_SOURCE,
+    "icon": "N/A",
 }
 
 OVERRIDE_METHOD = {
-    'fgColor': 'foregroundColor',
-    'bgColor': 'backgroundColor',
-    'font': 'font',
-    'icon': 'icon_id',
+    "fgColor": "foregroundColor",
+    "bgColor": "backgroundColor",
+    "font": "font",
+    "icon": "icon_id",
 }
 
 
 # =============================================================================
 # Per-field Event Types
 # =============================================================================
+
 
 def effectiveFgColorChangedEventType():
     return "effective.fgColor"
@@ -96,16 +97,17 @@ def effectiveFontChangedEventType():
 
 
 EFFECTIVE_EVENT_TYPES = {
-    'fgColor': effectiveFgColorChangedEventType,
-    'bgColor': effectiveBgColorChangedEventType,
-    'icon': effectiveIconChangedEventType,
-    'font': effectiveFontChangedEventType,
+    "fgColor": effectiveFgColorChangedEventType,
+    "bgColor": effectiveBgColorChangedEventType,
+    "icon": effectiveIconChangedEventType,
+    "font": effectiveFontChangedEventType,
 }
 
 
 # =============================================================================
 # Per-field Effective Setters
 # =============================================================================
+
 
 def setEffectiveFgColor(obj, value, default, source):
     obj.setEffectiveFgColor(value, default, source)
@@ -125,10 +127,10 @@ def setEffectiveFont(obj, value, default, source):
 
 
 EFFECTIVE_SETTERS = {
-    'fgColor': setEffectiveFgColor,
-    'bgColor': setEffectiveBgColor,
-    'icon': setEffectiveIcon,
-    'font': setEffectiveFont,
+    "fgColor": setEffectiveFgColor,
+    "bgColor": setEffectiveBgColor,
+    "icon": setEffectiveIcon,
+    "font": setEffectiveFont,
 }
 
 
@@ -138,49 +140,49 @@ EFFECTIVE_SETTERS = {
 
 # Mapping of field types to effective getter method names
 EFFECTIVE_GETTERS = {
-    'fgColor': 'effectiveFgColor',
-    'bgColor': 'effectiveBgColor',
-    'icon': 'effectiveIcon',
-    'font': 'effectiveFont',
+    "fgColor": "effectiveFgColor",
+    "bgColor": "effectiveBgColor",
+    "icon": "effectiveIcon",
+    "font": "effectiveFont",
 }
 
 # Mapping of field types to status getter method names (Task only)
 STATUS_GETTERS = {
-    'fgColor': 'statusFgColor',
-    'bgColor': 'statusBgColor',
-    'icon': 'statusIcon',
-    'font': 'statusFont',
+    "fgColor": "statusFgColor",
+    "bgColor": "statusBgColor",
+    "icon": "statusIcon",
+    "font": "statusFont",
 }
 
 # Mapping of field types to derived setter method names
 DERIVED_SETTERS = {
-    'fgColor': 'setDerivedFgColor',
-    'bgColor': 'setDerivedBgColor',
-    'icon': 'setDerivedIcon',
-    'font': 'setDerivedFont',
+    "fgColor": "setDerivedFgColor",
+    "bgColor": "setDerivedBgColor",
+    "icon": "setDerivedIcon",
+    "font": "setDerivedFont",
 }
 
 
 # Default icons for types without status-based icons (Task gets icons from status)
 TYPE_DEFAULT_ICONS = {
-    'Note': 'nuvola_apps_knotes',
-    'Attachment': 'nuvola_status_mail-attachment',
+    "Note": "nuvola_apps_knotes",
+    "Attachment": "nuvola_status_mail-attachment",
 }
 
 
 def _isBeingTracked(obj):
-    return hasattr(obj, 'isBeingTracked') and obj.isBeingTracked()
+    return hasattr(obj, "isBeingTracked") and obj.isBeingTracked()
 
 
 def _getObjectType(obj):
     class_name = obj.__class__.__name__
-    if class_name == 'Task':
-        return 'Task'
-    elif class_name == 'Category':
-        return 'Category'
-    elif class_name == 'Note':
-        return 'Note'
-    return 'Attachment'
+    if class_name == "Task":
+        return "Task"
+    elif class_name == "Category":
+        return "Category"
+    elif class_name == "Note":
+        return "Note"
+    return "Attachment"
 
 
 def _isSystemThemeValue(value):
@@ -197,11 +199,11 @@ def _getFromCategories(object_ref, effective_getter):
     Returns (value, source) from the highest-priority category that has
     a non-system-theme value, or (None, None) if no category provides one.
     """
-    if not hasattr(object_ref, 'categories'):
+    if not hasattr(object_ref, "categories"):
         return None, None
     categories = list(object_ref.categories())
     categories.sort(
-        key=lambda c: getattr(c, 'stylePriority', lambda: 0)(),
+        key=lambda c: getattr(c, "stylePriority", lambda: 0)(),
         reverse=True,
     )
     for cat in categories:
@@ -246,9 +248,9 @@ def computeDerived(object_ref, field_type):
     value = None
     source = FIELD_NO_VALUE_SOURCE[field_type]
 
-    if obj_type == 'Task':
+    if obj_type == "Task":
         # Tracking icon: highest priority for icon field
-        if field_type == 'icon' and _isBeingTracked(object_ref):
+        if field_type == "icon" and _isBeingTracked(object_ref):
             value = "nuvola_apps_clock"
             source = "[Tracking]"
 
@@ -269,12 +271,12 @@ def computeDerived(object_ref, field_type):
             if status_getter and hasattr(object_ref, status_getter):
                 getter = getattr(object_ref, status_getter)
                 value = getter()
-                if hasattr(object_ref, 'computedStatus'):
+                if hasattr(object_ref, "computedStatus"):
                     source = f"[Status] {object_ref.computedStatus()}"
                 else:
                     source = "[Status]"
 
-    elif obj_type == 'Note':
+    elif obj_type == "Note":
         # Note sources: categories → parent
         value, src = _getFromCategories(object_ref, effective_getter)
         if src:
@@ -285,7 +287,7 @@ def computeDerived(object_ref, field_type):
             if src:
                 source = src
 
-    elif obj_type == 'Category':
+    elif obj_type == "Category":
         # Category sources: parent only
         value, src = _getFromParent(object_ref, obj_type, effective_getter)
         if src:
@@ -294,7 +296,7 @@ def computeDerived(object_ref, field_type):
     # Attachment: no sources, value stays None
 
     # Default icon fallback for types without status (Category, Note, Attachment)
-    if field_type == 'icon' and value is None:
+    if field_type == "icon" and value is None:
         default_icon = TYPE_DEFAULT_ICONS.get(obj_type)
         if default_icon:
             value = default_icon
@@ -307,24 +309,23 @@ def computeDerived(object_ref, field_type):
         setter(value, source)
 
 
-
 # =============================================================================
 # Stored Procedure: computeEffective
 # =============================================================================
 
 # Mapping of field types to derived getter method names
 DERIVED_VALUE_GETTERS = {
-    'fgColor': 'derivedFgColor',
-    'bgColor': 'derivedBgColor',
-    'icon': 'derivedIcon',
-    'font': 'derivedFont',
+    "fgColor": "derivedFgColor",
+    "bgColor": "derivedBgColor",
+    "icon": "derivedIcon",
+    "font": "derivedFont",
 }
 
 DERIVED_SOURCE_GETTERS = {
-    'fgColor': 'derivedFgColorSource',
-    'bgColor': 'derivedBgColorSource',
-    'icon': 'derivedIconSource',
-    'font': 'derivedFontSource',
+    "fgColor": "derivedFgColorSource",
+    "bgColor": "derivedBgColorSource",
+    "icon": "derivedIconSource",
+    "font": "derivedFontSource",
 }
 
 
@@ -335,17 +336,27 @@ def computeEffective(object_ref, field_type):
     OUTPUTS: calls object's setEffectiveXxx(value, default, source)
     """
     # Read derived values from object getters
-    derived_value_getter = getattr(object_ref, DERIVED_VALUE_GETTERS[field_type], None)
-    derived_source_getter = getattr(object_ref, DERIVED_SOURCE_GETTERS[field_type], None)
+    derived_value_getter = getattr(
+        object_ref, DERIVED_VALUE_GETTERS[field_type], None
+    )
+    derived_source_getter = getattr(
+        object_ref, DERIVED_SOURCE_GETTERS[field_type], None
+    )
 
     derived_value = derived_value_getter() if derived_value_getter else None
-    derived_source = (derived_source_getter() if derived_source_getter else None) or FIELD_NO_VALUE_SOURCE[field_type]
+    derived_source = (
+        derived_source_getter() if derived_source_getter else None
+    ) or FIELD_NO_VALUE_SOURCE[field_type]
 
     override_method = getattr(object_ref, OVERRIDE_METHOD[field_type])
-    override_value = override_method() if field_type == 'icon' else override_method(recursive=False)
+    override_value = (
+        override_method()
+        if field_type == "icon"
+        else override_method(recursive=False)
+    )
 
     # Compute effective
-    if field_type == 'icon' and _isBeingTracked(object_ref):
+    if field_type == "icon" and _isBeingTracked(object_ref):
         effective_value = derived_value
         effective_source = derived_source
     elif override_value:
@@ -366,6 +377,7 @@ def computeEffective(object_ref, field_type):
 # computeStyles - Per-Object Style Computation
 # =============================================================================
 
+
 def computeStyles(obj):
     """Compute derived and effective styles for a single object.
 
@@ -379,5 +391,3 @@ def computeStyles(obj):
     for field_type in FIELD_TYPES:
         computeDerived(obj, field_type)
         computeEffective(obj, field_type)
-
-

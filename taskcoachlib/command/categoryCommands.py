@@ -89,9 +89,7 @@ class EditStylePriorityCommand(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__newPriority = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__oldPriorities = [
-            item.stylePriority() for item in self.items
-        ]
+        self.__oldPriorities = [item.stylePriority() for item in self.items]
 
     @patterns.eventSource
     def do_command(self, event=None):

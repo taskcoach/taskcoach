@@ -71,8 +71,11 @@ class BaseNoteViewer(
         imageList = self.createImageList()  # Has side-effects
         self._columns = self._createColumns()
         itemPopupMenu = taskcoachlib.gui.menu.NotePopupMenu(
-            self.parent, self.settings, self.taskFile.categories(), self,
-            notes=self.taskFile.notes()
+            self.parent,
+            self.settings,
+            self.taskFile.categories(),
+            self,
+            notes=self.taskFile.notes(),
         )
         columnPopupMenu = taskcoachlib.gui.menu.ColumnPopupMenu(self)
         self._popupMenus.extend([itemPopupMenu, columnPopupMenu])
@@ -209,7 +212,9 @@ class BaseNoteViewer(
             width=self.getColumnWidth("attachments"),
             alignment=wx.LIST_FORMAT_LEFT,
             imageIndicesCallback=self.attachmentImageIndices,  # pylint: disable=E1101
-            headerImageIndex=image_list_cache.get_index("nuvola_status_mail-attachment"),
+            headerImageIndex=image_list_cache.get_index(
+                "nuvola_status_mail-attachment"
+            ),
             renderCallback=lambda note: "",
         )
         categoriesColumn = widgets.Column(

@@ -55,8 +55,12 @@ class Filter(patterns.SetDecorator):
             observable.set_tree_mode(tree_mode)
         elif not isinstance(observable, patterns.ObservableCollection):
             from taskcoachlib.meta.debug import log_step
-            log_step("set_tree_mode: unexpected observable type %s"
-                     % type(observable).__name__, prefix="FILTER")
+
+            log_step(
+                "set_tree_mode: unexpected observable type %s"
+                % type(observable).__name__,
+                prefix="FILTER",
+            )
         self.reset()
 
     def tree_mode(self):
@@ -126,12 +130,15 @@ class Filter(patterns.SetDecorator):
         accumulated = self.__filterForced.copy()
         try:
             inner = self.observable()
-            if hasattr(inner, 'getAccumulatedFilterForced'):
+            if hasattr(inner, "getAccumulatedFilterForced"):
                 accumulated |= inner.getAccumulatedFilterForced()
         except AttributeError:
             from taskcoachlib.meta.debug import log_step
-            log_step("getAccumulatedFilterForced: AttributeError on observable",
-                     prefix="FILTER")
+
+            log_step(
+                "getAccumulatedFilterForced: AttributeError on observable",
+                prefix="FILTER",
+            )
         return accumulated
 
     def filter_items(self, items):

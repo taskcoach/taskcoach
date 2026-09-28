@@ -33,4 +33,3 @@ class Note(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Note: Effective appearance is computed by the master loop
-

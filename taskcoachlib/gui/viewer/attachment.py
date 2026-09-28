@@ -42,7 +42,6 @@ class AttachmentViewer(
     defaultTitle = _("Attachments")
     coreObjectType = "attachments"
 
-
     # Map type_ values to human-readable names
     TYPE_NAMES = {
         "file": _("File"),
@@ -64,6 +63,7 @@ class AttachmentViewer(
         location = anAttachment.location()
         if location.startswith("file://"):
             import urllib.request
+
             try:
                 path = urllib.request.url2pathname(location[7:])
                 return os.path.isdir(path)
@@ -84,7 +84,9 @@ class AttachmentViewer(
             (None, [item.location()]),
         ]
         if item.description():
-            lines = [line.rstrip("\r") for line in item.description().split("\n")]
+            lines = [
+                line.rstrip("\r") for line in item.description().split("\n")
+            ]
             if lines and lines != [""]:
                 result.append((None, lines))
         return result
@@ -118,7 +120,7 @@ class AttachmentViewer(
             itemPopupMenu,
             columnPopupMenu,
             resizeableColumn=1,
-            **self.widgetCreationKeywordArguments()
+            **self.widgetCreationKeywordArguments(),
         )
         widget.SetColumnWidth(0, 150)
         widget.SetImageList(imageList, wx.IMAGE_LIST_SMALL)
@@ -176,7 +178,9 @@ class AttachmentViewer(
                 width=self.getColumnWidth("notes"),
                 alignment=wx.LIST_FORMAT_LEFT,
                 imageIndicesCallback=self.noteImageIndices,  # pylint: disable=E1101
-                headerImageIndex=image_list_cache.get_index("nuvola_apps_knotes"),
+                headerImageIndex=image_list_cache.get_index(
+                    "nuvola_apps_knotes"
+                ),
                 renderCallback=lambda item: "",
                 resizeCallback=self.onResizeColumn,
             ),
@@ -291,17 +295,25 @@ class AttachmentViewer(
         if anAttachment.type_ == "file":
             attachmentBase = self.settings.get("file", "attachmentbase")
             if exists(anAttachment.normalizedLocation(attachmentBase)):
-                index = image_list_cache.get_index("nuvola_mimetypes_application-x-dvi")
+                index = image_list_cache.get_index(
+                    "nuvola_mimetypes_application-x-dvi"
+                )
             else:
-                index = image_list_cache.get_index("taskcoach_actions_fileopen_red")
+                index = image_list_cache.get_index(
+                    "taskcoach_actions_fileopen_red"
+                )
         elif self._isFolderUri(anAttachment):
             # Folder URI - use folder icon
-            index = image_list_cache.get_index("nuvola_mimetypes_inode-directory")
+            index = image_list_cache.get_index(
+                "nuvola_mimetypes_inode-directory"
+            )
         else:
             try:
                 index = image_list_cache.get_index(
-                    {"uri": "nuvola_categories_applications-internet",
-                     "mail": "nuvola_apps_email"}[anAttachment.type_]
+                    {
+                        "uri": "nuvola_categories_applications-internet",
+                        "mail": "nuvola_apps_email",
+                    }[anAttachment.type_]
                 )
             except KeyError:
                 index = -1

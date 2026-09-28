@@ -18,7 +18,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-
 import contextlib
 from taskcoachlib import patterns
 from taskcoachlib.domain import task, effort, date
@@ -273,7 +272,9 @@ class MarkCompletedCommand(base.SaveStateMixin, EffortCommand):
         with _bulk_modification(self):
             super().do_command()
             for item in self.items:
-                item.setCompletionDateTime(task.Task.suggestedCompletionDateTime())
+                item.setCompletionDateTime(
+                    task.Task.suggestedCompletionDateTime()
+                )
 
     def undo_command(self):
         with _bulk_modification(self):
@@ -884,7 +885,9 @@ class EditPlannedDurationCommand(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__newPlannedDuration = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__oldPlannedDurations = [item.plannedDuration() for item in self.items]
+        self.__oldPlannedDurations = [
+            item.plannedDuration() for item in self.items
+        ]
 
     def do_command(self):
         super().do_command()
@@ -893,7 +896,9 @@ class EditPlannedDurationCommand(base.BaseCommand):
 
     def undo_command(self):
         super().undo_command()
-        for item, oldPlannedDuration in zip(self.items, self.__oldPlannedDurations):
+        for item, oldPlannedDuration in zip(
+            self.items, self.__oldPlannedDurations
+        ):
             item.setPlannedDuration(oldPlannedDuration)
 
     def redo_command(self):

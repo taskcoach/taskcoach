@@ -98,15 +98,13 @@ class AddNoteCommand(base.BaseCommand):
     Otherwise, new empty notes are created. This allows the command to be
     used both for creating new notes and for paste operations.
     """
+
     plural_name = _("Add note")
     singular_name = _('Add note to "%s"')
 
     def __init__(self, *args, **kwargs):
         self.owners = []
-        self.__notes = kwargs.pop(
-            "notes",
-            None
-        )
+        self.__notes = kwargs.pop("notes", None)
         super().__init__(*args, **kwargs)
         self.owners = self.items
         if self.__notes is None:
@@ -114,7 +112,6 @@ class AddNoteCommand(base.BaseCommand):
                 note.Note(subject=_("New note")) for dummy in self.items
             ]
         self.items = self.__notes
-
 
     def name_subject(self, newNote):  # pylint: disable=W0613
         # Override to use the subject of the owner of the new note instead
@@ -166,7 +163,6 @@ class AddSubNoteCommand(base.BaseCommand):
             ],
         )
         self.items = self.__notes
-
 
     @patterns.eventSource
     def addNotes(self, event=None):

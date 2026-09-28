@@ -2088,9 +2088,7 @@ class TaskWithChildTest(
         # A collapsed ancestor shows its subtasks' shortest recurrence
         self.registerObserver(task.Task.recurrenceChangedEventType())
         self.task1_1.set_recurrence(date.Recurrence("weekly"))
-        self.assertEqual(
-            {self.task1_1, self.task1}, self.events[0].sources()
-        )
+        self.assertEqual({self.task1_1, self.task1}, self.events[0].sources())
 
     def test_subtask_priority_change_names_the_chain(self):
         self.registerObserver(

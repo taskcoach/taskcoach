@@ -26,7 +26,6 @@ from wx.lib import combotreebox, newevent
 import wx
 import wx.adv
 
-
 # Helper functions to get suggested time choices from preferences
 # These are used by both entry.py and editor.py for datetime controls
 #
@@ -56,6 +55,7 @@ def get_suggested_hour_choices(settings, override=None):
         return override
     # Check time format - in 12-hour mode, return 1-12
     from taskcoachlib.widgets.maskedtimectrl import getEffectiveTimeFormat
+
     if getEffectiveTimeFormat() == "12":
         return list(range(1, 13))
     # 24-hour mode: use working hours from preferences
@@ -251,11 +251,21 @@ FontEntryEvent, EVT_FONTENTRY = newevent.NewEvent()
 
 
 class FontEntry(widgets.PanelWithBoxSizer):
-    def __init__(self, parent, currentFont, currentColor, currentBgColor=None, *args, **kwargs):
+    def __init__(
+        self,
+        parent,
+        currentFont,
+        currentColor,
+        currentBgColor=None,
+        *args,
+        **kwargs
+    ):
         kwargs["orientation"] = wx.HORIZONTAL
         super().__init__(parent, *args, **kwargs)
         self._fontCheckBox = self._createCheckBox(currentFont)
-        self._fontPicker = self._createFontPicker(currentFont, currentColor, currentBgColor)
+        self._fontPicker = self._createFontPicker(
+            currentFont, currentColor, currentBgColor
+        )
         self.add(
             self._fontCheckBox,
             flag=wx.ALIGN_CENTER_VERTICAL | wx.RIGHT,
@@ -279,7 +289,10 @@ class FontEntry(widgets.PanelWithBoxSizer):
     def _createFontPicker(self, currentFont, currentColor, currentBgColor):
         defaultFont = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         picker = widgets.FontPickerCtrl(
-            self, font=currentFont or defaultFont, colour=currentColor, bgColour=currentBgColor
+            self,
+            font=currentFont or defaultFont,
+            colour=currentColor,
+            bgColour=currentBgColor,
         )
         picker.Bind(wx.EVT_FONTPICKER_CHANGED, self.onFontPicked)
         return picker
@@ -295,7 +308,11 @@ class FontEntry(widgets.PanelWithBoxSizer):
     def onChecked(self, event):
         event.Skip()
         checked = self._fontCheckBox.IsChecked()
-        if not checked and hasattr(self, '_effectiveFont') and self._effectiveFont:
+        if (
+            not checked
+            and hasattr(self, "_effectiveFont")
+            and self._effectiveFont
+        ):
             self._fontPicker.SetSelectedFont(self._effectiveFont)
         wx.PostEvent(self, FontEntryEvent())
 
@@ -340,11 +357,14 @@ class ColorEntry(widgets.PanelWithBoxSizer):
     When checked: user can pick a custom color.
     Editor provides derived color (inherited value or system theme fallback).
     """
+
     def __init__(self, parent, currentColor, defaultColor, *args, **kwargs):
         kwargs["orientation"] = wx.HORIZONTAL
         super().__init__(parent, *args, **kwargs)
         self._defaultColor = defaultColor
-        self._effectiveColor = None  # Set via setEffectiveColor() after construction
+        self._effectiveColor = (
+            None  # Set via setEffectiveColor() after construction
+        )
         self._colorCheckBox = self._createCheckBox(currentColor)
         self._colorPicker = self._createColorPicker(currentColor, defaultColor)
         self.add(
@@ -375,9 +395,13 @@ class ColorEntry(widgets.PanelWithBoxSizer):
         else:
             # No override - show system theme initially (derived color set later)
             if defaultColor == wx.BLACK:
-                displayColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+                displayColor = wx.SystemSettings.GetColour(
+                    wx.SYS_COLOUR_WINDOWTEXT
+                )
             elif defaultColor == wx.WHITE:
-                displayColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+                displayColor = wx.SystemSettings.GetColour(
+                    wx.SYS_COLOUR_WINDOW
+                )
             else:
                 displayColor = defaultColor
         picker = widgets.ColourPickerCtrl(self, colour=displayColor)
@@ -389,7 +413,9 @@ class ColorEntry(widgets.PanelWithBoxSizer):
 
         Editor provides the effective color from the SSOT model.
         """
-        if color is None or (isinstance(color, wx.Colour) and not color.IsOk()):
+        if color is None or (
+            isinstance(color, wx.Colour) and not color.IsOk()
+        ):
             return
         if not isinstance(color, wx.Colour):
             color = wx.Colour(*color)
@@ -428,11 +454,14 @@ IconEntryEvent, EVT_ICONENTRY = newevent.NewEvent()
 
 class IconEntry(widgets.PanelWithBoxSizer):
     """Icon entry with checkbox. When unchecked, returns empty string (no icon)."""
+
     def __init__(self, parent, current_icon_id, exclude=None, *args, **kwargs):
         kwargs["orientation"] = wx.HORIZONTAL
         super().__init__(parent, *args, **kwargs)
         self._iconCheckBox = self._createCheckBox(current_icon_id)
-        self._iconPicker = self._createIconPicker(parent, current_icon_id, exclude)
+        self._iconPicker = self._createIconPicker(
+            parent, current_icon_id, exclude
+        )
         self.add(
             self._iconCheckBox,
             flag=wx.ALIGN_CENTER_VERTICAL | wx.RIGHT,
@@ -454,7 +483,9 @@ class IconEntry(widgets.PanelWithBoxSizer):
         return checkBox
 
     def _createIconPicker(self, parent, current_icon_id, exclude):
-        picker = widgets.IconPicker(self, current_icon_id or "", exclude=exclude)
+        picker = widgets.IconPicker(
+            self, current_icon_id or "", exclude=exclude
+        )
         picker.Bind(wx.EVT_COMBOBOX, self.onIconPicked)
         return picker
 
@@ -873,7 +904,9 @@ class RecurrenceEntry(wx.Panel):
             self._recurrenceStopDateTimeCombo.SetEditable()
             has_stop_datetime = recurrence.stop_datetime != date.DateTime()
             if has_stop_datetime:
-                self._recurrenceStopDateTimeCombo.SetValue(recurrence.stop_datetime)
+                self._recurrenceStopDateTimeCombo.SetValue(
+                    recurrence.stop_datetime
+                )
             else:
                 self._recurrenceStopDateTimeCombo.DeactivateValue()
         else:
@@ -898,7 +931,9 @@ class RecurrenceEntry(wx.Panel):
         kwargs["sameWeekday"] = self._recurrenceSameWeekdayCheckBox.IsChecked()
         kwargs["recurBasedOnCompletion"] = bool(self._scheduleChoice.Selection)
         if self._recurrenceStopDateTimeCombo.IsActive():
-            kwargs["stop_datetime"] = self._recurrenceStopDateTimeCombo.GetValue()
+            kwargs["stop_datetime"] = (
+                self._recurrenceStopDateTimeCombo.GetValue()
+            )
         # Get selected weekdays (0-6 for Mon-Sun)
         kwargs["weekdays"] = [
             i for i, cb in enumerate(self._weekdayCheckBoxes) if cb.IsChecked()
