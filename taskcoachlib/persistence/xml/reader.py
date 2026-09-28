@@ -620,12 +620,6 @@ class XMLReader(object):
         bg_color_attribute = "color" if self.__tskversion <= 27 else "bgColor"
         attributes = dict(
             id=node.attrib.get("id", ""),
-            creationDateTime=self.__parse_timestamp(
-                node.attrib.get("creationDateTime", "1-1-1 0:0")
-            ),
-            modificationDateTime=self.__parse_timestamp(
-                node.attrib.get("modificationDateTime", "1-1-1 0:0")
-            ),
             subject=node.attrib.get("subject", ""),
             description=self.__parse_description(node),
             fgColor=self.__parse_tuple(node.attrib.get("fgColor", ""), None),
@@ -638,6 +632,7 @@ class XMLReader(object):
                 node.attrib.get("selectedIcon", "")
             ),
             ordering=int(node.attrib.get("ordering", "0")),
+            **self.__parse_dates(node),
         )
 
         if self.__tskversion <= 20:
@@ -719,12 +714,7 @@ class XMLReader(object):
                 stop=date.parseDateTime(stop),
                 description=description,
                 entryMode=entryMode,
-                creationDateTime=self.__parse_timestamp(
-                    node.attrib.get("creationDateTime", "1-1-1 0:0")
-                ),
-                modificationDateTime=self.__parse_timestamp(
-                    node.attrib.get("modificationDateTime", "1-1-1 0:0")
-                ),
+                **self.__parse_dates(node),
                 **kwargs,
             )
         )
@@ -821,6 +811,22 @@ class XMLReader(object):
     def __parse_datetime(cls, text):
         """Parse a datetime from the text."""
         return cls.__parse(text, date.parseDateTime, None)
+
+    def __parse_dates(self, node):
+        """The creation and modification dates. Without a modification
+        date the item was not modified since its creation; without
+        either, both are unknown (DateTime.min)."""
+        creation = self.__parse_timestamp(
+            node.attrib.get("creationDateTime", "1-1-1 0:0")
+        )
+        modification = node.attrib.get("modificationDateTime")
+        return dict(
+            creationDateTime=creation,
+            modificationDateTime=(
+                modification and self.__parse_timestamp(modification)
+            )
+            or creation,
+        )
 
     @classmethod
     def __parse_timestamp(cls, text):

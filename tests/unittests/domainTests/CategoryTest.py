@@ -229,7 +229,8 @@ class CategoryTest(test.TestCase):
     def test_unchanged_exclusivity_keeps_the_modification_date(self):
         self.category.makeSubcategoriesExclusive(False)
         self.assertEqual(
-            date.DateTime.min, self.category.modificationDateTime()
+            self.category.creationDateTime(),
+            self.category.modificationDateTime(),
         )
 
     # Style priority:
@@ -263,7 +264,8 @@ class CategoryTest(test.TestCase):
     def test_unchanged_style_priority_keeps_the_modification_date(self):
         self.category.setStylePriority(0)
         self.assertEqual(
-            date.DateTime.min, self.category.modificationDateTime()
+            self.category.creationDateTime(),
+            self.category.modificationDateTime(),
         )
 
     def test_style_priority_is_restored_from_state(self):

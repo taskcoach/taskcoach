@@ -1851,6 +1851,26 @@ class XMLReaderVersion36Test(XMLReaderTestCase):
             tasks[0].creationDateTime(),
         )
 
+    def test_item_never_modified_was_last_modified_when_created(self):
+        tasks = self.writeAndReadTasks("""
+        <tasks>
+            <task creationDateTime="2012-12-12 12:00:00"/>
+        </tasks>""")
+        self.assertEqual(
+            date.Timestamp(2012, 12, 12, 12, 0, 0),
+            tasks[0].modificationDateTime(),
+        )
+
+    def test_item_without_dates_has_unknown_dates(self):
+        tasks = self.writeAndReadTasks("""
+        <tasks>
+            <task/>
+        </tasks>""")
+        self.assertEqual(
+            (date.DateTime.min, date.DateTime.min),
+            (tasks[0].creationDateTime(), tasks[0].modificationDateTime()),
+        )
+
     def test_creation_date_in_whole_seconds_has_no_fraction(self):
         tasks = self.writeAndReadTasks("""
         <tasks>

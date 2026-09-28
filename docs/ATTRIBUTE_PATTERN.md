@@ -282,7 +282,10 @@ modification date to now, at the moment of the change, however it is
 made. The date is logging data, not functional data: it keeps
 fractions of a second (`date.Timestamp`, microseconds, also in the
 file), so changes within one second stay ordered
-([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#time-resolution)). The data layer does it, as part of storing the value: callers
+([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#time-resolution)).
+A new item's modification date starts at its creation date (ruling,
+2026-09-28); read from a file without one, the item was not modified
+since its creation, and without either date both are unknown. The data layer does it, as part of storing the value: callers
 never set it, computed values (status, time spent, budget left,
 revenue, styles) do not change it, and loading restores the stored
 date without touching it. The interface shows the new date at once,

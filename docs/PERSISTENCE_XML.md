@@ -256,8 +256,9 @@ item (`persistence/merge.py`).
 - An item in both files (same ID) keeps its newer copy by
   modification date
   ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
-  When a copy has no date (files from before the dates were kept),
-  the file with the newest date of all its items wins; on a tie the
+  When a copy has no date (neither a creation nor a modification
+  date: files from before the dates were kept), the file with the
+  newest date of all its items wins; on a tie the
   open file keeps its copy. The merge gets more exact as more fields
   set the date.
 - Each item goes under the parent its winning copy names, so subitems

@@ -847,7 +847,7 @@ class TaskFileMergeTest(TaskFileTestCase):
         self.mergeFile = persistence.TaskFile()
         self.mergeFile.setFilename("merge.tsk")
         # The open file as last changed in 2020
-        for item in (self.task, self.category, self.note):
+        for item in (self.task, self.category, self.note, self.effort):
             item.set_modification_datetime(date.DateTime(2020, 1, 1))
 
     def tearDown(self):
@@ -942,8 +942,13 @@ class TaskFileMergeTest(TaskFileTestCase):
         self.assertEqual(2, len(self.taskFile.notes()))
 
     def their_copy(self, item, subject, modified):
+        # Created when modified: an undated copy has neither date, as
+        # items from files written before the dates were kept
         return item.__class__(
-            subject=subject, id=item.id(), modificationDateTime=modified
+            subject=subject,
+            id=item.id(),
+            creationDateTime=modified,
+            modificationDateTime=modified,
         )
 
     def test_newer_copy_wins(self):
@@ -1002,7 +1007,7 @@ class TaskFileMergeTest(TaskFileTestCase):
         )
 
     def test_without_dates_the_open_file_keeps_its_copy(self):
-        for item in (self.task, self.category, self.note):
+        for item in (self.task, self.category, self.note, self.effort):
             item.set_modification_datetime(date.DateTime.min)
         self.mergeFile.tasks().append(
             self.their_copy(self.task, "theirs", date.DateTime.min)
@@ -1137,10 +1142,12 @@ class TaskFileMergeTest(TaskFileTestCase):
     def testMerge_CategoryLinkedToTask(self):
         self.task.addCategory(self.category)
         self.category.addCategorizable(self.task)
-        mergedCategory = category.Category(
-            "merged category", id=self.category.id()
+        # An older copy, without the link: the open file's stays
+        self.mergeFile.categories().append(
+            self.their_copy(
+                self.category, "merged category", date.DateTime(2019, 1, 1)
+            )
         )
-        self.mergeFile.categories().append(mergedCategory)
         self.merge()
         self.assertEqual(
             self.category.id(), list(self.task.categories())[0].id()
@@ -1149,10 +1156,12 @@ class TaskFileMergeTest(TaskFileTestCase):
     def testMerge_CategoryLinkedToNote(self):
         self.note.addCategory(self.category)
         self.category.addCategorizable(self.note)
-        mergedCategory = category.Category(
-            "merged category", id=self.category.id()
+        # An older copy, without the link: the open file's stays
+        self.mergeFile.categories().append(
+            self.their_copy(
+                self.category, "merged category", date.DateTime(2019, 1, 1)
+            )
         )
-        self.mergeFile.categories().append(mergedCategory)
         self.merge()
         self.assertEqual(
             self.category.id(), list(self.note.categories())[0].id()

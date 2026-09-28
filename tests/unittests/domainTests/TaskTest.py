@@ -901,8 +901,9 @@ class DefaultTaskStateTest(
 
     def test_dependency_change_keeps_the_modification_date(self):
         # The reverse of a prerequisite: not the task's saved data
+        before = self.task.modificationDateTime()
         self.task.add_dependencies([task.Task()])
-        self.assertEqual(date.DateTime.min, self.task.modificationDateTime())
+        self.assertEqual(before, self.task.modificationDateTime())
 
     def testRemovePrerequisiteThatHasNotBeenAdded(self):
         prerequisite = task.Task()

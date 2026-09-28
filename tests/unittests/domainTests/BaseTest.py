@@ -163,8 +163,10 @@ class ObjectTest(test.TestCase):
             modification_datetime, domain_object.modificationDateTime()
         )
 
-    def testModificationDateTimeIsNotSetWhenNotPassed(self):
-        self.assertEqual(date.DateTime.min, self.object.modificationDateTime())
+    def test_modification_date_starts_at_creation(self):
+        self.assertEqual(
+            self.object.creationDateTime(), self.object.modificationDateTime()
+        )
 
     def test_stored_field_change_sets_the_modification_date(self):
         event_type = self.object.modification_datetime_changed_event_type()
@@ -189,7 +191,9 @@ class ObjectTest(test.TestCase):
         self.object.setDerivedFgColor(wx.RED, "category")
         self.object.setEffectiveFgColor(wx.RED, wx.BLACK, "category")
         self.assertEqual(wx.RED, self.object.effectiveFgColor())
-        self.assertEqual(date.DateTime.min, self.object.modificationDateTime())
+        self.assertEqual(
+            self.object.creationDateTime(), self.object.modificationDateTime()
+        )
 
     # Subject tests:
 
@@ -327,7 +331,7 @@ class ObjectTest(test.TestCase):
             date.DateTime(2013, 1, 1, 1, 0, 0)
         )
         copy = self.object.copy()
-        self.assertEqual(date.DateTime.min, copy.modificationDateTime())
+        self.assertEqual(copy.creationDateTime(), copy.modificationDateTime())
 
     def testCopy_SubjectIsCopied(self):
         self.object.setSubject("New subject")

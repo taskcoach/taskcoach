@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns
 from taskcoachlib.domain.attribute import icon
-from taskcoachlib.domain.date import DateTime, Timestamp
+from taskcoachlib.domain.date import Timestamp
 from pubsub import pub
 from . import attribute
 from .appearance import FIELD_DEFAULTS, FIELD_NO_VALUE_SOURCE
@@ -78,8 +78,9 @@ class Object:
         self.__creationDateTime = (
             kwargs.pop("creationDateTime", None) or Timestamp.now()
         )
-        self.__modificationDateTime = kwargs.pop(
-            "modificationDateTime", DateTime.min
+        # A new item was last modified when it was created
+        self.__modificationDateTime = (
+            kwargs.pop("modificationDateTime", None) or self.__creationDateTime
         )
         self.__subject = Attribute(
             kwargs.pop("subject", ""), self, self.subjectChangedEvent
