@@ -473,3 +473,131 @@ class IOControllerReplaceFileTest(test.TestCase):
             None, openfile=openfile, showerror=self.showerror
         )
         self.assertTrue(os.path.exists(self.name + ".txt"))
+
+
+class IOControllerChangedOnDiskTest(test.TestCase):
+    """Another program changed the open file: nothing replaces its
+    changes unasked (docs/PERSISTENCE_XML.md, Saving)."""
+
+    def setUp(self):
+        super().setUp()
+        directory = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, directory)
+        self.filename = os.path.join(directory, "tasks.tsk")
+        self.other_filename = os.path.join(directory, "other.tsk")
+        task.Task.settings = self.settings = config.Settings(load=False)
+        self.task_file = persistence.TaskFile()
+        self.addCleanup(self.task_file.stop)
+        self.addCleanup(self.task_file.close)
+        self.task = task.Task(subject="ours")
+        self.task_file.tasks().append(self.task)
+        self.task_file.setFilename(self.filename)
+        self.task_file.save()
+        self.iocontroller = gui.iocontroller.IOController(
+            self.task_file, lambda *args: None, self.settings
+        )
+        self.iocontroller._ask = self.ask
+        self.answers = []
+        self.questions = 0
+
+    def ask(self, message, labels):
+        self.questions += 1
+        return self.answers.pop(0)
+
+    def change_on_disk(self, *answers):
+        """Another program adds a task, reported by the watcher;
+        answers are for the questions that follow."""
+        self.answers.extend(answers)
+        self.add_their_task()
+        self.task_file.check_disk()
+
+    def add_their_task(self):
+        theirs = persistence.TaskFile(read_only=True)
+        try:
+            theirs.load(self.filename)
+            theirs.tasks().append(task.Task(subject="theirs"))
+            theirs.save()
+        finally:
+            theirs.close()
+            theirs.stop()
+
+    def subjects(self, task_file):
+        return sorted(each.subject() for each in task_file.tasks())
+
+    def subjects_on_disk(self, filename=None):
+        on_disk = persistence.TaskFile(read_only=True)
+        try:
+            on_disk.load(filename or self.filename)
+            return self.subjects(on_disk)
+        finally:
+            on_disk.close()
+            on_disk.stop()
+
+    def open_copy_kept(self):
+        return any(each is self.task for each in self.task_file.tasks())
+
+    def test_reload(self):
+        self.change_on_disk(0)
+        self.assertEqual(
+            (["ours", "theirs"], False, False),
+            (
+                self.subjects(self.task_file),
+                self.open_copy_kept(),
+                self.task_file.changed_on_disk(),
+            ),
+        )
+
+    def test_merge(self):
+        self.change_on_disk(1)
+        self.assertEqual(
+            (["ours", "theirs"], True, False),
+            (
+                self.subjects(self.task_file),
+                self.open_copy_kept(),
+                self.task_file.changed_on_disk(),
+            ),
+        )
+
+    def test_later(self):
+        self.change_on_disk(2)
+        self.assertEqual(
+            (["ours"], True),
+            (self.subjects(self.task_file), self.task_file.changed_on_disk()),
+        )
+
+    def test_save_merges_first(self):
+        self.task.setSubject("ours, changed")
+        self.change_on_disk(2)  # Later
+        self.answers.append(0)  # Merge and save
+        self.assertTrue(self.iocontroller.save())
+        self.assertEqual(
+            (["ours, changed", "theirs"], 2),
+            (self.subjects_on_disk(), self.questions),
+        )
+
+    def test_save_asks_once_about_an_unreported_change(self):
+        self.task.setSubject("ours, changed")
+        self.add_their_task()
+        self.answers.append(2)  # Cancel
+        self.assertFalse(self.iocontroller.save())
+        self.assertEqual(
+            (1, ["ours", "theirs"]), (self.questions, self.subjects_on_disk())
+        )
+
+    def test_save_as_leaves_the_changed_file(self):
+        self.task.setSubject("ours, changed")
+        select_file_once(self, self.other_filename)
+        self.change_on_disk(1)  # Save as
+        self.assertEqual(
+            (["ours", "theirs"], ["ours, changed"]),
+            (
+                self.subjects_on_disk(),
+                self.subjects_on_disk(self.other_filename),
+            ),
+        )
+
+    def test_cancel_saves_nothing(self):
+        self.task.setSubject("ours, changed")
+        self.change_on_disk(2, 2)  # Later, then Cancel
+        self.assertFalse(self.iocontroller.save())
+        self.assertEqual(["ours", "theirs"], self.subjects_on_disk())

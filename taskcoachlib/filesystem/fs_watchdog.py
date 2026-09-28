@@ -48,16 +48,24 @@ class TaskFileEventHandler(FileSystemEventHandler):
 
     def on_modified(self, event):
         """Handle file modification events."""
-        if event.is_directory:
-            return
+        if not event.is_directory:
+            self._on_changed(event.src_path)
 
+    def on_moved(self, event):
+        """Handle a file renamed over the watched one: written to a
+        temporary file first (editors, sync clients, Task Coach
+        itself)."""
+        if not event.is_directory:
+            self._on_changed(event.dest_path)
+
+    def _on_changed(self, path):
         # Get the filename being watched
         watched_filename = self._notifier._filename
         if watched_filename is None:
             return
 
         # Check if this event is for our watched file
-        event_filename = os.path.basename(event.src_path)
+        event_filename = os.path.basename(path)
         watched_basename = os.path.basename(watched_filename)
 
         if event_filename == watched_basename:

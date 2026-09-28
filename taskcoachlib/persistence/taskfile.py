@@ -35,6 +35,12 @@ from taskcoachlib.filesystem import (
 from pubsub import pub
 
 
+class ChangedOnDiskError(Exception):
+    """Saving would replace changes another program made to the file:
+    merge them in, reload, or save under another name first
+    (docs/PERSISTENCE_XML.md, Saving)."""
+
+
 def _isCloud(path):
     path = os.path.abspath(path)
     while True:
@@ -235,6 +241,8 @@ class TaskFile(patterns.Observer):
         self.__efforts = effort.EffortList(self.tasks())
         self.__guid = str(uuid.uuid4())
         self.__changedOnDisk = False
+        # The file's (mtime, size) when last loaded or saved
+        self.__saved_stat = None
         # A read-only task file (merge) sends no messages about itself
         self.__read_only = kwargs.pop("read_only", False)
         if kwargs.pop("poll", False):
@@ -373,11 +381,33 @@ class TaskFile(patterns.Observer):
             self.markClean()
 
     def onFileChanged(self):
-        if not self.__saving:
-            import wx  # Not really clean but we're in another thread...
+        import wx  # Not really clean but we're in another thread...
 
-            self.__changedOnDisk = True
-            wx.CallAfter(self._publish, "taskfile.changed", taskFile=self)
+        # Checked on the main thread, after any save of ours finished
+        wx.CallAfter(self.check_disk)
+
+    def check_disk(self, notify=True):
+        """Notice a change by another program: the file differs from
+        what was last loaded or saved. Without notify, the caller tells
+        the user itself."""
+        if self.__saving or self.__read_only or self.__changedOnDisk:
+            return
+        if self.__saved_stat is None:
+            return  # Neither loaded nor saved yet
+        stat = self.__disk_stat()
+        if stat is None or stat == self.__saved_stat:
+            return
+        self.__changedOnDisk = True
+        log_step("%s changed on disk" % self.__filename, prefix="FILE")
+        if notify:
+            self._publish("taskfile.changed", taskFile=self)
+
+    def __disk_stat(self):
+        try:
+            stat = os.stat(self.__filename)
+        except (OSError, TypeError):
+            return None
+        return stat.st_mtime_ns, stat.st_size
 
     @patterns.eventSource
     def clear(self, regenerate=True, event=None):
@@ -397,6 +427,7 @@ class TaskFile(patterns.Observer):
         self.clear()
         self.markClean()
         self.__changedOnDisk = False
+        self.__saved_stat = None
 
     def stop(self):
         self.__notifier.stop()
@@ -461,6 +492,8 @@ class TaskFile(patterns.Observer):
         self.__loading = True
         if filename:
             self.setFilename(filename)
+        # Before reading: a change during the read is noticed later
+        stat = self.__disk_stat()
         try:
             if self.exists():
                 fd = self._openForRead()
@@ -493,9 +526,15 @@ class TaskFile(patterns.Observer):
             self.__loading = False
             self.markClean()
             self.__changedOnDisk = False
+            self.__saved_stat = stat
             self._publish("taskfile.justRead", taskFile=self)
 
     def save(self):
+        # Also when the watcher did not report it (yet); callers check
+        # first, to ask the user
+        self.check_disk(notify=False)
+        if self.__changedOnDisk:
+            raise ChangedOnDiskError(self.__filename)
         try:
             self._publish("taskfile.aboutToSave", taskFile=self)
         except Exception:
@@ -521,21 +560,44 @@ class TaskFile(patterns.Observer):
                 fd.close()
 
             self.markClean()
+            self.__saved_stat = self.__disk_stat()
         finally:
             self.__saving = False
             self.__notifier.saved()
+
+    def merge_changes_on_disk(self):
+        """Merge the file as another program changed it: the newest
+        copy of each item (docs/PERSISTENCE_XML.md, Merging). Saving is
+        allowed again."""
+        disk_state = self.__changedOnDisk, self.__saved_stat
+        # Before merging: the merge marks the file unsaved, which starts
+        # an autosave. The stat is taken before reading, as in load().
+        self.__changedOnDisk, self.__saved_stat = False, self.__disk_stat()
+        try:
+            self.merge(self.__filename)
+        except BaseException:
+            self.__changedOnDisk, self.__saved_stat = disk_state
+            raise
+        log_step(
+            "merged the changes on disk of %s" % self.__filename,
+            prefix="FILE",
+        )
 
     def saveas(self, filename):
         # An existing file there is moved aside rather than replaced, so
         # a failed save puts it back, also where the file is written in
         # place (cloud folders).
         moved = []
+        disk_state = self.__changedOnDisk, self.__saved_stat
         try:
             if os.path.exists(filename):
                 moved.append((_move_aside(filename), filename))
             self.setFilename(filename)
+            # Another program's changes to the previous file stay there
+            self.__changedOnDisk, self.__saved_stat = False, None
             self.save()
         except BaseException:
+            self.__changedOnDisk, self.__saved_stat = disk_state
             for aside, path in moved:
                 try:
                     os.replace(aside, path)

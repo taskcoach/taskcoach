@@ -245,6 +245,27 @@ memory; nothing on disk is merged ([Merging](#merging)).
 
 Locking is described in [FILE_LOCKING.md](FILE_LOCKING.md).
 
+**Changed on disk (ruling, 2026-09-28).** Another program's change to
+the open file (a sync client, an editor) is never replaced unasked.
+The file watcher (`filesystem/`) reports a change, also a file
+renamed over it (how editors, sync clients and Task Coach itself
+write); `TaskFile.check_disk()` compares the file's size and
+modification time with those at the last load or save, so our own
+saves do not count. Every save checks too, before writing: the
+watcher can report late, or not at all (some network drives).
+
+- Saving raises `ChangedOnDiskError` and autosave pauses until the
+  changes are merged in, the file is reloaded, or saved under another
+  name.
+- No unsaved changes: the user is asked once: Reload, Merge
+  ([Merging](#merging)) or Later. Reload reads the file first (one
+  that cannot be read changes nothing), then opens it as File > Open
+  does.
+- Unsaved changes: Merge (recommended), Save As or Later; Save asks
+  the same, with Merge and save, Save As or Cancel.
+- There is no Overwrite. Save As to the file's own name replaces it,
+  after the file dialog's confirmation.
+
 ## Merging
 
 **Ruling, 2026-09-27:** one Task Coach per task file (the lock), so

@@ -29,7 +29,7 @@ from .csv.writer import CSVWriter
 from .csv.reader import CSVReader
 from .todotxt import TodoTxtReader, TodoTxtWriter
 from .icalendar.writer import iCalendarWriter
-from .taskfile import TaskFile, LockedTaskFile
+from .taskfile import TaskFile, LockedTaskFile, ChangedOnDiskError
 from .autosaver import AutoSaver
 from .autoimporterexporter import AutoImporterExporter
 from .autobackup import AutoBackup, BackupManifest

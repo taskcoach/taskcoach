@@ -24,6 +24,7 @@ from taskcoachlib.filesystem import resourcelock
 from taskcoachlib.meta.debug import log_step
 
 from taskcoachlib.gui.dialog import BackupManagerDialog
+from pubsub import pub
 import wx
 import os
 import re
@@ -116,6 +117,7 @@ class IOController(object):
         # A task file the user agreed to replace; _save_save removes its
         # auto import/export files once it holds the lock
         self.__replacing = None
+        pub.subscribe(self.on_changed_on_disk, "taskfile.changed")
 
     def need_save(self):
         return self.__task_file.need_save()
@@ -233,8 +235,104 @@ class IOController(object):
             )
             self.__add_recent_file(filename)
 
+    def on_changed_on_disk(self, taskFile):
+        """Another program changed the open file. Saving would replace
+        its changes, so it waits until they are merged in, the file is
+        reloaded, or saved under another name (docs/PERSISTENCE_XML.md,
+        Saving)."""
+        if taskFile is not self.__task_file:
+            return
+        if self.__task_file.need_save():
+            self.__resolve_changes_on_disk(save=False)
+            return
+        choice = self._ask(
+            _(
+                "%s was changed by another program.\n"
+                "Reload it, or merge its changes into what is open?"
+            )
+            % self.__task_file.filename(),
+            (_("&Reload"), _("&Merge"), _("&Later")),
+        )
+        if choice == 0:
+            self.__reload()
+        elif choice == 1:
+            self.__merge_changes_on_disk()
+
+    def __resolve_changes_on_disk(self, save):
+        """Return whether the conflict is resolved (and, if save, the
+        file saved)."""
+        choice = self._ask(
+            _(
+                "%s was changed by another program.\n"
+                "Saving would replace its changes: merge them into yours "
+                "first, or save yours under another name."
+            )
+            % self.__task_file.filename(),
+            (
+                _("&Merge and save") if save else _("&Merge"),
+                _("Save &as..."),
+                _("&Cancel") if save else _("&Later"),
+            ),
+        )
+        if choice == 0:
+            if not self.__merge_changes_on_disk():
+                return False
+            return self.save() if save else True
+        if choice == 1:
+            return self.save_as()
+        return False
+
+    def _ask(self, message, labels):
+        """Ask with three buttons; return the chosen one's index."""
+        dialog = wx.MessageDialog(
+            None,
+            message,
+            _("%s: file changed on disk") % meta.name,
+            style=wx.YES_NO | wx.CANCEL | wx.ICON_WARNING | wx.YES_DEFAULT,
+        )
+        dialog.SetYesNoCancelLabels(*labels)
+        try:
+            result = dialog.ShowModal()
+        finally:
+            dialog.Destroy()
+        return {wx.ID_YES: 0, wx.ID_NO: 1}.get(result, 2)
+
+    def __merge_changes_on_disk(self, showerror=wx.MessageBox):
+        filename = self.__task_file.filename()
+        try:
+            self.__task_file.merge_changes_on_disk()
+        except Exception:  # pylint: disable=W0703
+            self.__show_generic_error_message(filename, showerror)
+            return False
+        self.__message_callback(
+            _("Merged the changes on disk of %s") % filename
+        )
+        return True
+
+    def __reload(self, showerror=wx.MessageBox):
+        """Open the file again as File > Open does, closing first:
+        loading over the open items would leave them in the viewers,
+        as equal copies (same ids) of the loaded ones."""
+        filename = self.__task_file.filename()
+        # Read first: a file that cannot be read leaves what is open
+        on_disk = persistence.TaskFile(read_only=True)
+        try:
+            on_disk.load(filename)
+        except Exception:  # pylint: disable=W0703
+            self.__show_generic_error_message(filename, showerror)
+            return
+        finally:
+            on_disk.close()
+            on_disk.stop()
+        log_step("reloading %s" % filename, prefix="FILE")
+        self.open(filename, showerror=showerror, ask_to_save=False)
+
     def save(self, showerror=wx.MessageBox):
         if self.__task_file.filename():
+            # Also when the watcher did not report it (yet)
+            self.__task_file.check_disk(notify=False)
+            if self.__task_file.changed_on_disk():
+                return self.__resolve_changes_on_disk(save=True)
             if self._save_save(self.__task_file, showerror):
                 return True
             else:

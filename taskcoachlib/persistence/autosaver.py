@@ -57,9 +57,12 @@ class AutoSaver(object):
 
     def _need_save(self, task_file):
         """Return whether the task file needs to be saved."""
+        # Paused while another program's changes on disk are not
+        # merged: saving would replace them
         return (
             task_file.filename()
             and task_file.need_save()
+            and not task_file.changed_on_disk()
             and self.__settings.getboolean("file", "autosave")
         )
 
@@ -70,6 +73,9 @@ class AutoSaver(object):
         self.__bound = False
         while self.__task_files:
             task_file = self.__task_files.pop()
+            # Also when the watcher did not report it (yet): the user
+            # is told, and autosave pauses until it is resolved
+            task_file.check_disk()
             if not self._need_save(task_file):
                 # Saved some other way meanwhile, e.g. File > Save
                 self.__failures.pop(task_file, None)

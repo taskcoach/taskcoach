@@ -1367,22 +1367,6 @@ class LockedTaskFileLockTest(TaskFileTestCase):
             [name for name in os.listdir(".") if name.startswith("tmp-")]
         )
 
-    def test_save_writes_memory_over_changes_on_disk(self):
-        # One Task Coach per file: saving merges nothing from the disk
-        self.taskFile.setFilename(self.filename)
-        self.taskFile.save()
-        other = persistence.TaskFile()
-        self.addCleanup(other.stop)
-        other.load(self.filename)
-        other.tasks().append(task.Task(subject="on disk"))
-        other.save()
-        other.close()
-        self.taskFile.tasks().remove(self.task)
-        self.taskFile.save()
-        self.taskFile.close()
-        self.emptyTaskFile.load(self.filename)
-        self.assertEqual(0, len(self.emptyTaskFile.tasks()))
-
     def test_failed_save_as_keeps_the_file_it_would_replace(self):
         self.emptyTaskFile.setFilename(self.filename2)
         self.emptyTaskFile.save()
@@ -1454,3 +1438,113 @@ class DetachedTaskFileTest(TaskFileTestCase):
         self.task.setSubject("no longer followed")
         self.assertFalse(selection.need_save())
         self.assertEqual([self.task], list(selection.tasks()))
+
+
+class TaskFileChangedOnDiskTest(TaskFileTestCase):
+    """Another program changed the open file (docs/PERSISTENCE_XML.md,
+    Saving)."""
+
+    def setUp(self):
+        super().setUp()
+        self.taskFile.setFilename(self.filename)
+        self.taskFile.save()
+        self.noticed = []
+        pub.subscribe(self.on_changed_on_disk, "taskfile.changed")
+
+    def on_changed_on_disk(self, taskFile):  # noqa: N803 (message arg)
+        self.noticed.append(taskFile)
+
+    def change_on_disk(self):
+        theirs = persistence.TaskFile(read_only=True)
+        try:
+            theirs.load(self.filename)
+            theirs.tasks().append(task.Task(subject="theirs"))
+            theirs.save()
+        finally:
+            theirs.close()
+            theirs.stop()
+
+    def notice_changes(self):
+        self.taskFile.check_disk()
+
+    def subjects_on_disk(self):
+        on_disk = persistence.TaskFile(read_only=True)
+        try:
+            on_disk.load(self.filename)
+            return sorted(each.subject() for each in on_disk.tasks())
+        finally:
+            on_disk.close()
+            on_disk.stop()
+
+    def test_own_save_is_no_change_on_disk(self):
+        self.task.setSubject("ours")
+        self.taskFile.save()
+        self.notice_changes()
+        self.assertEqual(
+            (False, []), (self.taskFile.changed_on_disk(), self.noticed)
+        )
+
+    def test_change_by_another_program_is_noticed_once(self):
+        self.change_on_disk()
+        self.notice_changes()
+        self.notice_changes()
+        self.assertEqual(
+            (True, [self.taskFile]),
+            (self.taskFile.changed_on_disk(), self.noticed),
+        )
+
+    def test_save_notices_an_unreported_change(self):
+        # Its callers tell the user (autosave, File > Save)
+        self.change_on_disk()
+        self.task.setSubject("ours")
+        self.assertRaises(persistence.ChangedOnDiskError, self.taskFile.save)
+        self.assertEqual(
+            (True, [], ["task", "theirs"]),
+            (
+                self.taskFile.changed_on_disk(),
+                self.noticed,
+                self.subjects_on_disk(),
+            ),
+        )
+
+    def test_save_keeps_the_changes_on_disk(self):
+        self.change_on_disk()
+        self.notice_changes()
+        self.task.setSubject("ours")
+        self.assertRaises(persistence.ChangedOnDiskError, self.taskFile.save)
+        self.assertEqual(["task", "theirs"], self.subjects_on_disk())
+
+    def test_merging_the_changes_on_disk_allows_saving(self):
+        self.change_on_disk()
+        self.notice_changes()
+        self.task.setSubject("ours")
+        self.taskFile.merge_changes_on_disk()
+        self.taskFile.save()
+        self.assertEqual(["ours", "theirs"], self.subjects_on_disk())
+
+    def test_reloading_allows_saving(self):
+        self.change_on_disk()
+        self.notice_changes()
+        self.taskFile.load()
+        self.assertFalse(self.taskFile.changed_on_disk())
+
+    def test_save_as_leaves_the_changed_file(self):
+        self.change_on_disk()
+        self.notice_changes()
+        self.taskFile.saveas(self.filename2)
+        self.assertEqual(
+            (False, ["task", "theirs"]),
+            (self.taskFile.changed_on_disk(), self.subjects_on_disk()),
+        )
+
+    def test_failed_save_as_keeps_the_change_on_disk(self):
+        self.change_on_disk()
+        self.notice_changes()
+        self.taskFile._openForWrite = self.fail_to_write
+        self.assertRaises(IOError, self.taskFile.saveas, self.filename2)
+        self.taskFile.setFilename(self.filename)
+        self.assertTrue(self.taskFile.changed_on_disk())
+
+    @staticmethod
+    def fail_to_write(*args, **kwargs):
+        raise IOError("disk full")

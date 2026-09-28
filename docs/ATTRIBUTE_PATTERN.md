@@ -285,8 +285,9 @@ file), so changes within one second stay ordered
 ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#time-resolution)).
 A new item's modification date starts at its creation date (ruling,
 2026-09-28); read from a file without one, the item was not modified
-since its creation, and without either date both are unknown. The data layer does it, as part of storing the value: callers
-never set it, computed values (status, time spent, budget left,
+since its creation, and without either date both are unknown. The
+data layer does it, as part of storing the value: callers never set
+it, computed values (status, time spent, budget left,
 revenue, styles) do not change it, and loading restores the stored
 date without touching it. The interface shows the new date at once,
 saved or not. Undo reverts the change and so its dates: every date
@@ -311,6 +312,11 @@ category's members) are derived and set no date. The file stores
 category membership on the category, but it is read both ways.
 Merging follows the same rule
 ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)).
+
+**Ruling, 2026-09-28: view state is not the item's data.** A
+category's filter state and an item's expanded state are saved, and
+so mark the file unsaved, but set no date. Manual ordering is the
+order of the items themselves and does.
 
 Before step 0 (traced 2026-09-27) only commands set it, on the items
 they were given (`BaseCommand.modified_items()`, `command/base.py`),
@@ -353,7 +359,7 @@ and sets the modification date, then is tested:
 | 8 | Effort start, stop, entry mode, task | Attributes (not the task), pypubsub; the date is not saved | Done: the dates are saved; start, stop, entry mode and task are Publisher events; moving to another task sets the date. Duration, revenue and tracking stay computed messages |
 | 9 | Task prerequisites (dependencies are their reverse) | Plain sets, pypubsub | Done: prerequisites a SetAttribute, dependencies derived (no date); Publisher |
 | 10 | Links: subtasks and parent, owned notes and attachments, efforts | Plain lists, Publisher | Done: the pointing item's date (ruling above); merging takes owned items item by item |
-| 11 | View state: a category's filter state, the expanded state | Plain values | To decide: stored, but not the item's data |
+| 11 | View state: a category's filter state, the expanded state | Plain values | Decided: no date, still saved (ruling above) |
 | 12 | Commands no longer set the date | Commands set it on parents and owners | Done; the undo log plan: [UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log) |
 
 ---

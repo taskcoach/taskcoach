@@ -490,16 +490,14 @@ For later review (2026-09-27).
 
 Questions to decide:
 
-1. **File changed on disk.** Since item 13 nothing reacts to it: the
-   watcher still runs and sends `taskfile.changed`, which nobody
-   hears, and the next save replaces the file. Warn once (pointing to
-   File > Merge), or remove the watcher and its `fspoll` setting?
+1. Decided and done 2026-09-28: a file changed on disk is never
+   replaced unasked; save waits for a merge, reload or Save As
+   ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#saving)).
 2. Decided and done 2026-09-28: undo back to the saved state clears
    the unsaved mark ([UNDO_REDO.md](UNDO_REDO.md#persistence)).
-3. **View state and the modification date.** A category's filter
-   state and a task's expanded state are saved but are not the item's
-   data; they do not set the date today. Manual ordering does (it is
-   an Attribute). One rule for all three
+3. Decided 2026-09-28: a category's filter state and a task's expanded
+   state set no date (saved view state, not the item's data); manual
+   ordering does
    ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date),
    row 11).
 4. Decided 2026-09-28: the task (or note) owns its categories
@@ -535,6 +533,11 @@ Issues found, not fixed:
     when the clock changes a status: a task falling due shows red but
     counts as overdue only after the next selection change. Also on
     the commit before this work (87d6ceed8).
+13. `Filter.reset()` (`domain/base/filter.py`) matches items by
+    equality, that is by id: loading over open items (no close
+    first) leaves the old objects in the viewers, as the loaded
+    copies are equal to them. Reload on a file changed on disk goes
+    through File > Open, which closes first, for this reason.
 
 ---
 
