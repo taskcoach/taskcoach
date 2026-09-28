@@ -3,8 +3,53 @@
 Plan to replace the full scan `MasterScheduler` runs every second.
 [SCHEDULERS.md](SCHEDULERS.md) describes the scheduler as it is.
 
-**Status:** steps 1 to 6, 8, 9 and 11 implemented, 2026-09-27
-([Cost After](#cost-after)); 7 and 10 open.
+**Status:** steps 1 to 6, 8, 9 and 11 to 14 done, 2026-09-28
+([Cost After](#cost-after)); what is left:
+[Remaining Work](#remaining-work).
+
+## Remaining Work
+
+Everything left to do, in the proposed order (2026-09-28); the
+details are in the entries linked.
+
+The signals, after steps 12 to 14: everything moves to the Publisher,
+then pypubsub is removed
+([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#todo)):
+
+1. The domain's pypubsub messages, computed values included. The
+   loop's hook then lists exactly what it reads, instead of the whole
+   `pubsub.task`, `pubsub.note` and `pubsub.category` topics
+   (issue 5), and the viewers, editors and AttributeSync lose their
+   pypubsub branches. Issue 11 comes from the efforts message.
+2. The rest of pypubsub (the task file's, settings', commands' and
+   viewers' messages), then pypubsub itself.
+3. Attachments re-sorted under their own classes' event types
+   (issue 6).
+
+The scheduler:
+
+4. Step 10: one reminder window per due reminder when a file opens,
+   the loading freeze.
+5. The status bar counts after the clock changes a status (issue 12).
+6. Step 7: drop the legacy status and colours.
+7. To review: the recursive priority computed by the loop, as the
+   status is ([SCHEDULERS.md](SCHEDULERS.md#todo)).
+8. Not planned: the reason for each entry
+   ([Later](#later-the-reason-for-each-entry)).
+
+Found along the way:
+
+9. The undo log as object versions keyed by the modification date
+   ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log), option C).
+10. Identity: domain objects compare equal by id, so a copy is taken
+    for the original where objects are tracked (issues 11 and 13).
+    One rule for all of them.
+11. File > Merge runs the parent rules while moving subtasks
+    (issue 9).
+12. `.delta` files left by older versions (issue 10).
+13. The task editor's Progress tab drawn twice, to check on a real
+    display (issue 7).
+14. The timing-dependent `EffortViewerTest` case (issue 8).
 
 ## Master Design
 
@@ -116,6 +161,7 @@ Sweep, to leave nothing behind in this branch:
 
 ## Index
 
+- [Remaining Work](#remaining-work)
 - [Master Design](#master-design)
 - [Time Resolution](#time-resolution)
 - [The Master Timer List](#the-master-timer-list)
@@ -447,10 +493,12 @@ Found along the way, 2026-09-27:
 
 Chain of work, each needing the one before (2026-09-27):
 
-12. Modification date set by the data layer on every stored change
+12. Done: the modification date set by the data layer on every
+    stored change
     ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)),
-    field by field; with it the stored fields' changes move from
-    pypubsub to the Publisher.
+    field by field; with it the stored fields' changes moved from
+    pypubsub to the Publisher; the domain's other messages follow
+    ([Remaining Work](#remaining-work), 1).
 13. Done: merging. The automatic merge with other instances removed,
     File > Merge a union with the newest copy of each item
     ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)); more exact as
@@ -508,8 +556,9 @@ Issues found, not fixed:
 5. The loop runs a pass on every pypubsub task, note and category
    message (the `pubsub.task` catch-all), computed ones included:
    revenue, time spent, budget left, tracking. A fee change still runs
-   a pass through its revenue message. Narrow it as the stored fields
-   leave pypubsub (item 14).
+   a pass through its revenue message. It goes when the domain's
+   messages move to the Publisher
+   ([Remaining Work](#remaining-work), 1).
 6. Attachment re-sorting listens under the base `Attachment` class's
    event types; file, link and mail attachments send under their own
    class names, so no change re-sorts them, whatever the column.

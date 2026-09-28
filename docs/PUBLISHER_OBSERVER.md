@@ -51,8 +51,22 @@ relationship) — signal dispatch exists to serve Attribute change notification.
    ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
    Task recurrence, prerequisites and dependencies, and effort start,
    stop, entry mode and task migrated the same way.
-   **Remaining:** computed values (time spent, budget left, revenue,
-   status, tracking, effort duration).
+   **Remaining** (2026-09-28: 49 `pub.sendMessage` and 69
+   `pub.subscribe` sites in 34 files), in this order
+   ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#remaining-work)):
+   - The domain, 24 sends: a task's status, efforts list, tracking,
+     time spent, budget left and revenue; an effort's tracking,
+     duration and revenue; the expanded state; the sorters' and
+     composite efforts' notices. Viewers, editors, AttributeSync and
+     the scheduler route event types by their `pubsub` prefix; those
+     branches go with them.
+   - The task file's messages (`taskfile.*`, 9 topics, 15
+     subscribers).
+   - Settings (`settings.<section>.<option>`, 18 subscribers; see
+     [Active pypubsub Settings Listeners](#active-pypubsub-settings-listeners)).
+   - Commands' bulk-modify notices (18 sends, 2 subscribers) and the
+     viewers' status messages (4 subscribers).
+   - Then pypubsub itself, as a dependency.
 
 2. **Modularize and clean up the signaling system.** The three independent
    cleanup mechanisms (wx C++ destruction, `removeInstance()`, Python GC)
