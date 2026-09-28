@@ -135,6 +135,13 @@ class WholeSecondsTest(test.TestCase):
             date.DateTime(2026, 9, 27, 12).endOfDay(),
         )
 
+    def test_timestamp_keeps_the_microseconds(self):
+        # The modification date only (TimestampTest)
+        self.assertEqual(
+            659208,
+            date.Timestamp.fromtimestamp(1790000000.659208).microsecond,
+        )
+
     def test_unset_date_is_the_latest_second(self):
         self.assertEqual(date.DateTime.max, date.DateTime())
         self.assert_whole(date.DateTime())
@@ -145,4 +152,36 @@ class WholeSecondsTest(test.TestCase):
             (
                 date.Now() - date.DateTime(2026, 1, 1, 0, 0, 0, 500000)
             ).microseconds,
+        )
+
+
+class TimestampTest(test.TestCase):
+    """The modification date keeps fractions of a second, like the
+    logs, so changes within one second stay ordered."""
+
+    def test_constructor_keeps_the_microseconds(self):
+        self.assertEqual(
+            659208,
+            date.Timestamp(2026, 9, 27, 14, 49, 7, 659208).microsecond,
+        )
+
+    def test_now_is_a_timestamp(self):
+        self.assertIsInstance(date.Timestamp.now(), date.Timestamp)
+
+    def test_parse_keeps_the_fraction(self):
+        self.assertEqual(
+            date.Timestamp(2012, 12, 12, 12, 0, 0, 123450),
+            date.Timestamp.parse("2012-12-12 12:00:00.12345"),
+        )
+
+    def test_parse_whole_seconds(self):
+        self.assertEqual(
+            date.Timestamp(2026, 9, 27, 21, 0, 43),
+            date.Timestamp.parse("2026-09-27 21:00:43"),
+        )
+
+    def test_written_with_its_fraction(self):
+        self.assertEqual(
+            "2026-09-27 14:49:07.659208",
+            str(date.Timestamp(2026, 9, 27, 14, 49, 7, 659208)),
         )

@@ -196,6 +196,14 @@ class AttachmentViewer(
             widgets.Column(
                 "modificationDateTime",
                 _("Modification date"),
+                *[
+                    each.modification_datetime_changed_event_type()
+                    for each in (
+                        attachment.FileAttachment,
+                        attachment.URIAttachment,
+                        attachment.MailAttachment,
+                    )
+                ],
                 width=self.getColumnWidth("modificationDateTime"),
                 renderCallback=self.renderModificationDateTime,
                 sortCallback=uicommand.ViewerSortByCommand(
@@ -205,7 +213,6 @@ class AttachmentViewer(
                     help_text=_("Sort by last modification date"),
                 ),
                 resizeCallback=self.onResizeColumn,
-                *attachment.Attachment.modificationEventTypes()
             ),
             widgets.Column(
                 "id",

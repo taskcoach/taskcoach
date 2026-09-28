@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns
 from taskcoachlib.domain import date
+from taskcoachlib.domain.base import ModificationDateRecorder
 from taskcoachlib.i18n import _
 from .clipboard import Clipboard
 
@@ -31,15 +32,7 @@ class BaseCommand(patterns.Command):
         super().__init__(*args, **kwargs)
         self.list = list
         self.items = [item for item in items] if items else []
-        self.save_modification_datetimes()
-
-    def save_modification_datetimes(self):
-        self.__old_modification_datetimes = [
-            (item, item.modificationDateTime())
-            for item in self.modified_items()
-            if item
-        ]
-        self.__now = date.Now()
+        self.__dates_before = self.__dates_after = {}
 
     def __str__(self):
         return self.name()
@@ -75,15 +68,31 @@ class BaseCommand(patterns.Command):
     def do(self):
         if self.canDo():
             super().do()
-            self.do_command()
+            with ModificationDateRecorder() as recorder:
+                self.do_command()
+            self.__dates_before = recorder.dates_before
+            self.__dates_after = {
+                item: item.modificationDateTime()
+                for item in recorder.dates_before
+            }
 
     def undo(self):
         super().undo()
-        self.undo_command()
+        self.__set_dates(self.undo_command, self.__dates_before)
 
     def redo(self):
         super().redo()
-        self.redo_command()
+        self.__set_dates(self.redo_command, self.__dates_after)
+
+    @staticmethod
+    def __set_dates(run, dates):
+        """Undo puts back the modification dates from before the change,
+        redo those from after it; any other date keeps its value
+        (docs/ATTRIBUTE_PATTERN.md, Modification Date)."""
+        with ModificationDateRecorder() as recorder:
+            run()
+        for item, date_time in {**recorder.dates_before, **dates}.items():
+            item.set_modification_datetime(date_time)
 
     def __tryInvokeMethodOnSuper(self, methodName, *args, **kwargs):
         try:
@@ -94,21 +103,21 @@ class BaseCommand(patterns.Command):
 
     def do_command(self):
         self.__tryInvokeMethodOnSuper("do_command")
-        for item in self.modified_items():
-            item.setModificationDateTime(self.__now)
+        self.__set_modification_datetimes()
 
     def undo_command(self):
         self.__tryInvokeMethodOnSuper("undo_command")
-        for (
-            item,
-            old_modification_datetime,
-        ) in self.__old_modification_datetimes:
-            item.setModificationDateTime(old_modification_datetime)
 
     def redo_command(self):
         self.__tryInvokeMethodOnSuper("redo_command")
+
+    def __set_modification_datetimes(self):
+        # Until every stored field sets it itself
+        # (docs/ATTRIBUTE_PATTERN.md, Modification Date)
+        now = date.Timestamp.now()
         for item in self.modified_items():
-            item.setModificationDateTime(self.__now)
+            if item is not None:
+                item.set_modification_datetime(now)
 
 
 class SaveStateMixin(object):

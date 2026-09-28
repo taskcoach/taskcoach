@@ -248,7 +248,9 @@ class TaskListTestsMixin(object):
         self.expectNotInHTML("1/1/1")
 
     def testModificationDateTime(self):
-        self.task.setModificationDateTime(date.DateTime(2012, 1, 1, 10, 0, 0))
+        self.task.set_modification_datetime(
+            date.DateTime(2012, 1, 1, 10, 0, 0)
+        )
         self.viewer.showColumnByName("modificationDateTime")
         self.expectInHTML(
             render.dateTime(

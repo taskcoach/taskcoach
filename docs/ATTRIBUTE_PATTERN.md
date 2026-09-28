@@ -15,6 +15,7 @@ The domain model's change-detection and event-notification pattern.
 - [Setter / Callback Pattern](#setter--callback-pattern)
 - [Event Batching During Load](#event-batching-during-load)
 - [Volatile vs Persisted Attributes](#volatile-vs-persisted-attributes)
+- [Modification Date](#modification-date)
 - [Three-Layer Relationship](#three-layer-relationship)
 
 ---
@@ -271,6 +272,76 @@ Volatile Attributes provide the same equality-check and event-notification
 benefits. The equality check is especially valuable for volatile fields that
 get recomputed frequently — repeated `.set()` with the same derived value
 is a no-op.
+
+---
+
+## Modification Date
+
+**Ruling, 2026-09-27:** any change to an item's stored data sets its
+modification date to now, at the moment of the change, however it is
+made. The date is logging data, not functional data: it keeps
+fractions of a second (`date.Timestamp`, microseconds, also in the
+file), so changes within one second stay ordered
+([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#time-resolution)). The data layer does it, as part of storing the value: callers
+never set it, computed values (status, time spent, budget left,
+revenue, styles) do not change it, and loading restores the stored
+date without touching it. The interface shows the new date at once,
+saved or not. Undo reverts the change and so its dates: every date
+the change set goes back to what it was before, including those of
+items it changed in turn (a parent completed by its last subtask);
+redo puts back the dates from the change
+([UNDO_REDO.md](UNDO_REDO.md#modification-dates)). Merging
+files keeps the newest copy of each item
+([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)), so it has to be
+exact.
+
+How: every stored field is an Attribute or a SetAttribute, and these
+set their owner's modification date when their value changes;
+Attributes of computed values are marked volatile and do not. Links
+between items (subtasks and parent, notes, attachments, efforts,
+prerequisites, category membership) set it on the item whose links
+changed.
+
+Before step 0 (traced 2026-09-27) only commands set it, on the items
+they were given (`BaseCommand.modified_items()`, `command/base.py`),
+so these changes left it as it was:
+
+- Changes a command causes on other items: completing the last open
+  subtask completes the parent, completing a parent completes its
+  subtasks and clears their recurrence, reopening a subtask reopens its
+  parent, adding or removing a subtask completes or reopens the parent
+  (`task.py`, `_onCompletionDateTimeChanged()`, `addChild()`,
+  `removeChild()`); completing a task stops its running effort; a
+  prerequisite adds the dependency to the other task
+  (`addPrerequisites()`).
+- Changes outside commands: the scheduler clearing a completed task's
+  reminder (`processReminder()`), snoozing in the reminder dialog
+  (`ReminderController`), a Todo.txt import updating an existing task.
+
+Step 0 covers those that change Attributes (completion date, reminder,
+effort stop). The rest wait for their row below: recurrence (7), the
+dependency a prerequisite adds (9), subtask links (10). Until the last
+row, commands still set the date too, on the items they were given.
+
+Migration, one field at a time, simplest first; each becomes an
+Attribute whose change sends a Publisher event with the item as source
+and sets the modification date, then is tested:
+
+| # | Field | Today | Status |
+|---|---|---|---|
+| 0 | Attribute and SetAttribute set their owner's modification date; computed (derived, effective) Attributes are volatile | Commands set it | Done |
+| 1 | Category style priority | Plain value, Publisher, never saved | Done, saved as `stylePriority` |
+| 2 | Category exclusive subcategories | Plain value, Publisher | To do |
+| 3 | Task hourly fee, fixed fee | Plain values, pypubsub | To do |
+| 4 | Task budget | Plain value, pypubsub | To do |
+| 5 | Task "mark completed when all subtasks are" | Plain value, pypubsub | To do |
+| 6 | Task percentage complete, planned duration and its mode | Attributes, pypubsub | To do |
+| 7 | Task recurrence | Plain value, pypubsub | To do |
+| 8 | Effort start, stop, entry mode, task | Attributes (not the task), pypubsub; the date is not saved | To do |
+| 9 | Task prerequisites (dependencies are their reverse) | Plain sets, pypubsub | To do |
+| 10 | Links: subtasks and parent, owned notes and attachments, efforts | Plain lists, Publisher | To do |
+| 11 | View state: a category's filter state, the expanded state | Plain values | To decide: stored, but not the item's data |
+| 12 | Commands no longer set the date: the undo log records every change ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log)) | | Last |
 
 ---
 

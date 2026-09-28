@@ -17,18 +17,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
+from taskcoachlib.domain.date import Timestamp
 from weakref import WeakSet
 import weakref
 
 
 class Attribute(object):
-    __slots__ = ("__value", "__owner", "__setEvent")
+    """A field of a domain object, with one change callback however it
+    is set. A stored field's change sets its owner's modification date;
+    a volatile one, a computed value, does not
+    (docs/ATTRIBUTE_PATTERN.md, Modification Date)."""
 
-    def __init__(self, value, owner, setEvent):
+    __slots__ = ("__value", "__owner", "__set_event", "__volatile")
+
+    def __init__(self, value, owner, set_event, volatile=False):
         super().__init__()
         self.__value = value
         self.__owner = weakref.ref(owner)
-        self.__setEvent = setEvent.__func__
+        self.__set_event = set_event.__func__
+        self.__volatile = volatile
 
     def get(self):
         return self.__value
@@ -45,11 +52,17 @@ class Attribute(object):
     @patterns.eventSource
     def __change(self, owner, value, event=None):
         self.__value = value
-        self.__setEvent(owner, event)
+        if not self.__volatile:
+            owner.set_modification_datetime(Timestamp.now(), event=event)
+        self.__set_event(owner, event)
         return True
 
 
 class SetAttribute(object):
+    """A set field of a domain object, such as its links to other
+    items. A change sets its owner's modification date, as an
+    Attribute's does."""
+
     __slots__ = (
         "__set",
         "__owner",
@@ -87,6 +100,7 @@ class SetAttribute(object):
             added = values - set(self.__set)
             removed = set(self.__set) - values
             self.__set = self.__setClass(values)
+            owner.set_modification_datetime(Timestamp.now(), event=event)
             if added:
                 self.__addEvent(owner, event, *added)  # pylint: disable=W0142
             if removed:
@@ -104,6 +118,7 @@ class SetAttribute(object):
             if values <= set(self.__set):
                 return False
             self.__set = self.__setClass(set(self.__set) | values)
+            owner.set_modification_datetime(Timestamp.now(), event=event)
             self.__addEvent(owner, event, *values)  # pylint: disable=W0142
             self.__changeEvent(owner, event, *set(self.__set))
             return True
@@ -115,6 +130,7 @@ class SetAttribute(object):
             if values & set(self.__set) == set():
                 return False
             self.__set = self.__setClass(set(self.__set) - values)
+            owner.set_modification_datetime(Timestamp.now(), event=event)
             self.__removeEvent(owner, event, *values)  # pylint: disable=W0142
             self.__changeEvent(owner, event, *set(self.__set))
             return True

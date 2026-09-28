@@ -62,7 +62,6 @@ class NewSubNoteCommand(base.NewSubItemCommand):
             )
             for parent in self.__parents
         ]
-        self.save_modification_datetimes()
 
     @patterns.eventSource
     def do_command(self, event=None):
@@ -115,7 +114,6 @@ class AddNoteCommand(base.BaseCommand):
                 note.Note(subject=_("New note")) for dummy in self.items
             ]
         self.items = self.__notes
-        self.save_modification_datetimes()
 
     def modified_items(self):
         return self.owners
@@ -170,7 +168,6 @@ class AddSubNoteCommand(base.BaseCommand):
             ],
         )
         self.items = self.__notes
-        self.save_modification_datetimes()
 
     def modified_items(self):
         return self.__parents

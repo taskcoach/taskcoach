@@ -50,7 +50,6 @@ class NewSubCategoryCommand(base.NewSubItemCommand):
         self.items = self.createNewCategories(
             subject=subject, description=description, attachments=attachments
         )
-        self.save_modification_datetimes()
 
     def createNewCategories(self, **kwargs):
         return [parent.newChild(**kwargs) for parent in self.items]

@@ -160,6 +160,32 @@ DateTime.max = DateTime(datetime.datetime.max.year, 12, 31).endOfDay()
 DateTime.min = DateTime(datetime.datetime.min.year, 1, 1).startOfDay()
 
 
+class Timestamp(DateTime):
+    """A moment with the logs' precision, microseconds kept: the
+    modification date, metadata rather than a functional time. Merging
+    keeps the newest copy of an item, so changes within one second
+    must still be ordered (docs/MASTER_SCHEDULER_REFACTOR.md, Time
+    Resolution)."""
+
+    def __new__(cls, *args, **kwargs):
+        return datetime.datetime.__new__(cls, *args, **kwargs)
+
+    @classmethod
+    def parse(cls, text):
+        """Read one as the task file has it: 2026-09-27 21:00:43.123456,
+        or whole seconds."""
+        moment = datetime.datetime.fromisoformat(text)
+        return cls(
+            moment.year,
+            moment.month,
+            moment.day,
+            moment.hour,
+            moment.minute,
+            moment.second,
+            moment.microsecond,
+        )
+
+
 def parseDateTime(string, *timeDefaults):
     if string in ("", "None"):
         return None

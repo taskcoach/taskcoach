@@ -247,11 +247,14 @@ class XMLReader(object):
         # An old file's SyncML section is not read: SyncML was removed
         guid = self.__parse_guid_node(root.find("guid"))
 
-        for (
-            object,
-            modification_datetime,
-        ) in self.__modification_datetimes.items():
-            object.setModificationDateTime(modification_datetime)
+        # Restored last, over the dates the reading itself set, in one
+        # event (docs/ATTRIBUTE_PATTERN.md, Event Batching During Load)
+        event = patterns.Event()
+        for item, modification_datetime in (
+            self.__modification_datetimes.items()
+        ):
+            item.set_modification_datetime(modification_datetime, event=event)
+        event.send()
 
         changesName = self.__fd.name + ".delta"
         if os.path.exists(changesName):
@@ -407,11 +410,15 @@ class XMLReader(object):
             exclusive = self.__parse_boolean(
                 category_node.attrib.get("exclusiveSubcategories", "False")
             )
+            style_priority = self.__parse_int_attribute(
+                category_node, "stylePriority"
+            )
             kwargs.update(
                 dict(
                     notes=notes,
                     filtered=filtered,
                     exclusiveSubcategories=exclusive,
+                    stylePriority=style_priority,
                 )
             )
             if self.__tskversion < 19:
@@ -625,7 +632,7 @@ class XMLReader(object):
             creationDateTime=self.__parse_datetime(
                 node.attrib.get("creationDateTime", "1-1-1 0:0")
             ),
-            modificationDateTime=self.__parse_datetime(
+            modificationDateTime=self.__parse_timestamp(
                 node.attrib.get("modificationDateTime", "1-1-1 0:0")
             ),
             subject=node.attrib.get("subject", ""),
@@ -815,6 +822,14 @@ class XMLReader(object):
     def __parse_datetime(cls, text):
         """Parse a datetime from the text."""
         return cls.__parse(text, date.parseDateTime, None)
+
+    @classmethod
+    def __parse_timestamp(cls, text):
+        """Parse a timestamp, fractions of a second included."""
+        try:
+            return date.Timestamp.parse(text)
+        except ValueError:
+            return cls.__parse_datetime(text)
 
     def __parse_font_description(self, text, default_value=None):
         """Parse a font from the text. In case of failure, return the default

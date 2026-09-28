@@ -328,15 +328,12 @@ class SubjectPage(Page):
             self, label=self.__modification_text()
         )
         self.addEntry(_("Modification date"), self._modificationTextEntry)
-        for eventType in self.items[0].modificationEventTypes():
-            if eventType.startswith("pubsub"):
-                pub.subscribe(self.onAttributeChanged, eventType)
-            else:
-                patterns.Publisher().registerObserver(
-                    self.onAttributeChanged_Deprecated,
-                    eventType=eventType,
-                    eventSource=self.items[0],
-                )
+        for item in self.items:
+            patterns.Publisher().registerObserver(
+                self.on_modification_datetime_changed,
+                eventType=item.modification_datetime_changed_event_type(),
+                eventSource=item,
+            )
 
     def __modification_text(self):
         modification_datetimes = [
@@ -356,20 +353,14 @@ class SubjectPage(Page):
             )
         return modification_text
 
-    def onAttributeChanged(self, newValue, sender):
-        self._modificationTextEntry.SetLabel(self.__modification_text())
-
-    def onAttributeChanged_Deprecated(self, *args, **kwargs):
+    def on_modification_datetime_changed(self, event):
         self._modificationTextEntry.SetLabel(self.__modification_text())
 
     def close(self):
         super().close()
-        for eventType in self.items[0].modificationEventTypes():
-            try:
-                pub.unsubscribe(self.onAttributeChanged, eventType)
-            except pub.TopicNameError:
-                pass
-        patterns.Publisher().removeObserver(self.onAttributeChanged_Deprecated)
+        patterns.Publisher().removeObserver(
+            self.on_modification_datetime_changed
+        )
 
     def entries(self):
         return dict(

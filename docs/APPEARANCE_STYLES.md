@@ -143,7 +143,8 @@ Not processed by the appearance system. Uses hardcoded `clock_icon`.
 When an object belongs to multiple categories, `stylePriority` determines which
 category's appearance wins. Higher priority = checked first.
 
-- Stored on `Category` as `__stylePriority` (integer, default 0)
+- Stored on `Category` as an Attribute (integer, default 0), saved as
+  the category's `stylePriority` (omitted when 0)
 - Sorted descending: `categories.sort(key=stylePriority, reverse=True)`
 - First category with a non-system-theme value for the field wins
 - Editable via `EditStylePriorityCommand`

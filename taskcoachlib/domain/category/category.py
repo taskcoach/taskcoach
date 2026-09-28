@@ -59,7 +59,9 @@ class Category(
         )
         self.__filtered = filtered
         self.__exclusiveSubcategories = exclusiveSubcategories
-        self.__stylePriority = stylePriority
+        self.__stylePriority = base.Attribute(
+            stylePriority, self, self.stylePriorityChangedEvent
+        )
         # Note: Effective appearance is computed by the master loop
 
     @classmethod
@@ -115,7 +117,7 @@ class Category(
             dict(
                 categorizables=self.__categorizables.get(),
                 filtered=self.__filtered,
-                stylePriority=self.__stylePriority,
+                stylePriority=self.stylePriority(),
             ),
             exclusiveSubcategories=self.__exclusiveSubcategories,
         )
@@ -137,7 +139,7 @@ class Category(
             dict(
                 categorizables=self.__categorizables.get(),
                 filtered=self.__filtered,
-                stylePriority=self.__stylePriority,
+                stylePriority=self.stylePriority(),
             )
         )
         return state
@@ -252,19 +254,15 @@ class Category(
 
     def stylePriority(self):
         """Return the style priority for this category."""
-        return self.__stylePriority
+        return self.__stylePriority.get()
 
-    @patterns.eventSource
     def setStylePriority(self, priority, event=None):
         """Set the style priority for this category."""
-        if priority == self.__stylePriority:
-            return
-        self.__stylePriority = priority
-        self.stylePriorityChangedEvent(event)
+        self.__stylePriority.set(priority, event=event)
 
     def stylePriorityChangedEvent(self, event):
         event.addSource(
             self,
-            self.__stylePriority,
+            self.stylePriority(),
             type=self.stylePriorityChangedEventType(),
         )

@@ -964,6 +964,16 @@ class CommonTestsMixin(object):
             task.Task.dueDateTimeChangedEventType(), newValue, self.task
         )
 
+    def test_change_shows_the_new_modification_date(self):
+        self.taskList.append(self.task)
+        self.showColumn("modificationDateTime")
+        self.task.setSubject("New subject")
+        self.assert_change_received(
+            task.Task.modification_datetime_changed_event_type(),
+            self.task.modificationDateTime(),
+            self.task,
+        )
+
     def testChangeCompletionDateWhileColumnNotShown(self):
         self.taskList.append(self.task)
         now = date.Now()

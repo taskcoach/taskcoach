@@ -247,6 +247,7 @@ class BaseNoteViewer(
         modificationDateTimeColumn = widgets.Column(
             "modificationDateTime",
             _("Modification date"),
+            note.Note.modification_datetime_changed_event_type(),
             width=self.getColumnWidth("modificationDateTime"),
             resizeCallback=self.onResizeColumn,
             renderCallback=self.renderModificationDateTime,
@@ -256,7 +257,6 @@ class BaseNoteViewer(
                 menu_text=_("&Modification date"),
                 help_text=_("Sort notes by last modification date"),
             ),
-            *note.Note.modificationEventTypes()
         )
         idColumn = widgets.Column(
             "id",

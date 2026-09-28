@@ -10,11 +10,13 @@ How domain objects are serialized to `.tsk` XML files and deserialized back.
   - [Task Node](#task-node)
   - [Recurrence Node](#recurrence-node)
   - [Effort Node](#effort-node)
+  - [Category Node](#category-node)
   - [Base Node (All Objects)](#base-node-all-objects)
 - [Reader Defaults](#reader-defaults)
 - [Round-Trip Consistency](#round-trip-consistency)
 - [Skip Condition Categories](#skip-condition-categories)
 - [Saving](#saving)
+- [Merging](#merging)
 - [Related Documentation](#related-documentation)
 
 ---
@@ -115,6 +117,18 @@ the reader gives it back for a missing attribute.
 |------|--------------|----------------|------|
 | 234 | `entryMode` | falsy or `== "standard"` | Hardcoded string |
 
+Efforts save no modification date.
+
+### Category Node
+
+`categoryNode()`:
+
+| XML Attribute | Skip Condition | Type |
+|--------------|----------------|------|
+| `filtered` | falsy (`False`) | Falsy |
+| `exclusiveSubcategories` | falsy (`False`) | Falsy |
+| `stylePriority` | `== 0` (falsy) | Falsy |
+
 ### Base Node (All Objects)
 
 `__baseNode()` / `baseNode()` / `baseCompositeNode()` — lines 286-353:
@@ -122,7 +136,7 @@ the reader gives it back for a missing attribute.
 | Line | XML Attribute | Skip Condition | Type |
 |------|--------------|----------------|------|
 | 292 | `creationDateTime` | `<= DateTime.min` | Sentinel |
-| 294 | `modificationDateTime` | `<= DateTime.min` | Sentinel |
+| 294 | `modificationDateTime` | `<= DateTime.min` | Sentinel; written with microseconds (`date.Timestamp`) |
 | 298 | `subject` | `""` (falsy) | Falsy |
 | 300 | `description` | `""` (falsy) | Falsy |
 | 308 | `fgColor` | `None` (falsy) | Falsy |
@@ -236,6 +250,23 @@ item 11).
    user once.
 
 Locking is described in [FILE_LOCKING.md](FILE_LOCKING.md).
+
+## Merging
+
+**Ruling, 2026-09-27:** one Task Coach per task file (the lock), so
+nothing is merged when saving. The automatic merge with other
+instances (`merge_disk_changes()` on every save, the change monitor
+and synchronizer, the `.delta` files, File > Merge disk changes, the
+`autoload` setting) is to be removed.
+
+File > Merge stays, to merge another file on request: a union, item by
+item. Each item comes with its parent's ID, so subtasks from both files
+end up together; an item in both files (same ID) keeps its newest copy
+by modification date
+([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
+Deletions do not carry over: an item deleted in one file comes back
+from the other. Today File > Merge replaces an item in both files by
+the other file's copy, with its subtasks.
 
 ---
 

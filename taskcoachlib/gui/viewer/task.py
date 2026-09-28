@@ -1756,12 +1756,12 @@ class TaskViewer(
             widgets.Column(
                 "modificationDateTime",
                 _("Modification date"),
+                task.Task.modification_datetime_changed_event_type(),
                 width=self.getColumnWidth("modificationDateTime"),
                 renderCallback=self.renderModificationDateTime,
                 sortCallback=uicommand.ViewerSortByCommand(
                     viewer=self, value="modificationDateTime"
                 ),
-                *task.Task.modificationEventTypes(),
                 **kwargs
             )
         )

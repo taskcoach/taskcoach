@@ -254,6 +254,8 @@ class XMLWriter(object):
             node.attrib["exclusiveSubcategories"] = str(
                 category.hasExclusiveSubcategories()
             )
+        if category.stylePriority():
+            node.attrib["stylePriority"] = str(category.stylePriority())
         for eachNote in sortedById(category.notes()):
             self.noteNode(node, eachNote)
         for attachment in sortedById(category.attachments()):

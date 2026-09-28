@@ -62,7 +62,6 @@ class AddAttachmentCommand(base.BaseCommand):
         super().__init__(*args, **kwargs)
         self.owners = self.items
         self.items = self.__attachments
-        self.save_modification_datetimes()
 
     def modified_items(self):
         return self.owners

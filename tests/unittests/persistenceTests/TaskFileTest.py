@@ -279,6 +279,10 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.task.removeEffort(newEffort)
         self.assertTrue(self.taskFile.need_save())
 
+    def test_modification_date_alone_needs_no_save(self):
+        self.task.set_modification_datetime(date.Now())
+        self.assertFalse(self.taskFile.need_save())
+
     def testNeedSave_AfterEditTaskSubject(self):
         self.task.setSubject("new subject")
         self.assertTrue(self.taskFile.need_save())
@@ -793,6 +797,17 @@ class TaskFileSaveAndLoadTest(TaskFileTestCase):
 
     def testSaveAndLoadNotes(self):
         self.saveAndLoad([], [], [self.note])
+
+    def test_save_and_load_keep_the_changed_style_priority_and_its_date(self):
+        self.category.setStylePriority(3)
+        modification_datetime = self.category.modificationDateTime()
+        self.assertTrue(date.DateTime.min < modification_datetime)
+        self.saveAndLoad([], [self.category])
+        loaded = list(self.emptyTaskFile.categories())[0]
+        self.assertEqual(
+            (3, modification_datetime),
+            (loaded.stylePriority(), loaded.modificationDateTime()),
+        )
 
     def testSaveAs(self):
         self.taskFile.saveas("new.tsk")

@@ -33,7 +33,6 @@ class NewEffortCommand(base.BaseCommand):
             effort.Effort(task) for task in self.items
         ]
         self.__oldActualStartDateTimes = {}
-        self.save_modification_datetimes()
 
     def modified_items(self):
         return self.__tasks
@@ -88,7 +87,6 @@ class AddEffortCommand(base.BaseCommand):
         # Store original task references for undo support
         self.__old_task_refs = [eff.task() for eff in self.__efforts]
         self.items = self.__efforts
-        self.save_modification_datetimes()
 
     def modified_items(self):
         # Filter out None values from old task refs
@@ -138,7 +136,6 @@ class EditTaskCommand(base.BaseCommand):
         self.__oldTasks = []
         super().__init__(*args, **kwargs)
         self.__oldTasks = [item.task() for item in self.items]
-        self.save_modification_datetimes()
 
     def modified_items(self):
         return [self.__task] + self.__oldTasks

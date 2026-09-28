@@ -91,9 +91,11 @@ class EditSubjectTestCase(CommandTestCase):
 
     def testModificationDateTime(self):
         self.editSubject("new", self.item1)
+        changed = self.item1.modificationDateTime()
+        self.assertTrue(date.DateTime.min < changed)
         self.assertDoUndoRedo(
-            lambda: self.assertTrue(
-                self.item1.modificationDateTime() > date.DateTime.min
+            lambda: self.assertEqual(
+                changed, self.item1.modificationDateTime()
             ),
             lambda: self.assertEqual(
                 date.DateTime.min, self.item1.modificationDateTime()
@@ -145,9 +147,11 @@ class EditDescriptionTestCase(CommandTestCase):
 
     def testModificationDateTime(self):
         self.edit_description("new", self.item1)
+        changed = self.item1.modificationDateTime()
+        self.assertTrue(date.DateTime.min < changed)
         self.assertDoUndoRedo(
-            lambda: self.assertTrue(
-                self.item1.modificationDateTime() > date.DateTime.min
+            lambda: self.assertEqual(
+                changed, self.item1.modificationDateTime()
             ),
             lambda: self.assertEqual(
                 date.DateTime.min, self.item1.modificationDateTime()

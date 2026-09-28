@@ -308,9 +308,12 @@ class XMLWriterTest(test.TestCase):
         )
         self.categoryContainer.append(aCategory)
         self.taskList.remove(self.task)
+        # Losing the task changed the category's members, and so its
+        # modification date
         self.expect_in_xml(
             '<category creationDateTime="%s" id="id" '
-            'subject="category" />' % str(aCategory.creationDateTime())
+            'modificationDateTime="%s" subject="category" />'
+            % (aCategory.creationDateTime(), aCategory.modificationDateTime())
         )
 
     def testDefaultPriority(self):
@@ -775,6 +778,13 @@ class XMLWriterTest(test.TestCase):
     def testNonExclusiveSubcategoriesByDefault(self):
         self.expect_not_in_xml("""exclusiveSubcategories""")
 
+    def test_style_priority(self):
+        self.category.setStylePriority(3)
+        self.expect_in_xml('stylePriority="3"')
+
+    def test_no_style_priority_by_default(self):
+        self.expect_not_in_xml("stylePriority")
+
     def testTaskFont(self):
         self.task.setFont(wx.SWISS_FONT)
         self.expect_in_xml('font="%s"' % wx.SWISS_FONT.GetNativeFontInfoDesc())
@@ -878,8 +888,14 @@ class XMLWriterTest(test.TestCase):
         self.expect_not_in_xml('creationDateTime="0001-01-01 00:00:00"')
 
     def testModificationDateTime(self):
-        self.task.setModificationDateTime(date.DateTime(2013, 1, 1, 0, 0, 0))
+        self.task.set_modification_datetime(date.DateTime(2013, 1, 1, 0, 0, 0))
         self.expect_in_xml('modificationDateTime="2013-01-01 00:00:00"')
+
+    def test_modification_date_is_written_with_its_fraction(self):
+        self.task.set_modification_datetime(
+            date.Timestamp(2013, 1, 1, 0, 0, 0, 123456)
+        )
+        self.expect_in_xml('modificationDateTime="2013-01-01 00:00:00.123456"')
 
     def testDoNotWriteUnknownModificationDateTime(self):
         task_with_unknown_modification_datetime = task.Task(

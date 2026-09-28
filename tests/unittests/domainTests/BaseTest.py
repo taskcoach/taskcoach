@@ -28,10 +28,17 @@ from taskcoachlib.domain import base, date
 class AttributeOwner:
     def __init__(self):
         self.changes = 0
+        self.modification_datetime = date.DateTime.min
         self.attribute = base.Attribute("old", self, self.on_change)
+        self.computed_attribute = base.Attribute(
+            "old", self, self.on_change, volatile=True
+        )
 
     def on_change(self, event):
         self.changes += 1
+
+    def set_modification_datetime(self, date_time, event=None):
+        self.modification_datetime = date_time
 
 
 class AttributeTest(test.TestCase):
@@ -63,6 +70,19 @@ class AttributeTest(test.TestCase):
         self.assertTrue(self.owner.attribute.set("new"))
         self.assertEqual("new", self.owner.attribute.get())
         self.assertEqual((1, 1), (self.events_created, self.owner.changes))
+
+    def test_changed_value_sets_the_modification_date(self):
+        before = date.Now()
+        self.owner.attribute.set("new")
+        self.assertTrue(before <= self.owner.modification_datetime)
+
+    def test_unchanged_value_keeps_the_modification_date(self):
+        self.owner.attribute.set("old")
+        self.assertEqual(date.DateTime.min, self.owner.modification_datetime)
+
+    def test_computed_value_keeps_the_modification_date(self):
+        self.owner.computed_attribute.set("new")
+        self.assertEqual(date.DateTime.min, self.owner.modification_datetime)
 
 
 class ObjectSubclass(base.Object):
@@ -143,6 +163,31 @@ class ObjectTest(test.TestCase):
         )
 
     def testModificationDateTimeIsNotSetWhenNotPassed(self):
+        self.assertEqual(date.DateTime.min, self.object.modificationDateTime())
+
+    def test_stored_field_change_sets_the_modification_date(self):
+        event_type = self.object.modification_datetime_changed_event_type()
+        patterns.Publisher().registerObserver(
+            self.onEvent, event_type, eventSource=self.object
+        )
+        before = date.Now()
+        self.object.setSubject("New subject")
+        modification_datetime = self.object.modificationDateTime()
+        self.assertIsInstance(modification_datetime, date.Timestamp)
+        self.assertTrue(before <= modification_datetime)
+        self.assertEqual(
+            [modification_datetime],
+            [
+                event.value(self.object, event_type)
+                for event in self.eventsReceived
+                if event_type in event.types()
+            ],
+        )
+
+    def test_computed_style_keeps_the_modification_date(self):
+        self.object.setDerivedFgColor(wx.RED, "category")
+        self.object.setEffectiveFgColor(wx.RED, wx.BLACK, "category")
+        self.assertEqual(wx.RED, self.object.effectiveFgColor())
         self.assertEqual(date.DateTime.min, self.object.modificationDateTime())
 
     # Subject tests:
@@ -277,7 +322,9 @@ class ObjectTest(test.TestCase):
         )
 
     def testCopy_ModificationDateTimeIsNotCopied(self):
-        self.object.setModificationDateTime(date.DateTime(2013, 1, 1, 1, 0, 0))
+        self.object.set_modification_datetime(
+            date.DateTime(2013, 1, 1, 1, 0, 0)
+        )
         copy = self.object.copy()
         self.assertEqual(date.DateTime.min, copy.modificationDateTime())
 

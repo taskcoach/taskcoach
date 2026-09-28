@@ -123,6 +123,14 @@ class CategoryTest(test.TestCase):
             set([self.categorizable]), self.category.categorizables()
         )
 
+    def test_membership_change_sets_the_modification_date(self):
+        before = date.Now()
+        self.category.addCategorizable(self.categorizable)
+        self.assertTrue(before <= self.category.modificationDateTime())
+        self.category.set_modification_datetime(date.DateTime.min)
+        self.category.removeCategorizable(self.categorizable)
+        self.assertTrue(before <= self.category.modificationDateTime())
+
     def testAddCategorizableDoesNotAddCategoryToCategorizable(self):
         self.category.addCategorizable(self.categorizable)
         self.assertEqual(set([]), self.categorizable.categories())
@@ -210,6 +218,46 @@ class CategoryTest(test.TestCase):
     def testSetFilteredViaConstructor(self):
         filteredCategory = category.Category("test", filtered=True)
         self.assertTrue(filteredCategory.isFiltered())
+
+    # Style priority:
+
+    def test_style_priority_is_zero_by_default(self):
+        self.assertEqual(0, self.category.stylePriority())
+
+    def test_style_priority_change_notifies_with_the_category(self):
+        self.registerObserver(
+            self.category.stylePriorityChangedEventType(),
+            eventSource=self.category,
+        )
+        self.category.setStylePriority(3)
+        self.assertEqual(3, self.category.stylePriority())
+        self.assertEqual(
+            [
+                patterns.Event(
+                    self.category.stylePriorityChangedEventType(),
+                    self.category,
+                    3,
+                )
+            ],
+            self.events,
+        )
+
+    def test_style_priority_change_sets_the_modification_date(self):
+        before = date.Now()
+        self.category.setStylePriority(3)
+        self.assertTrue(before <= self.category.modificationDateTime())
+
+    def test_unchanged_style_priority_keeps_the_modification_date(self):
+        self.category.setStylePriority(0)
+        self.assertEqual(
+            date.DateTime.min, self.category.modificationDateTime()
+        )
+
+    def test_style_priority_is_restored_from_state(self):
+        state = self.category.__getstate__()
+        self.category.setStylePriority(3)
+        self.category.__setstate__(state)
+        self.assertEqual(0, self.category.stylePriority())
 
     # Copy:
 

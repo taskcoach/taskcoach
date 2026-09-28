@@ -48,12 +48,17 @@ matters.
 
 **Ruling, 2026-09-27:** every date, time and duration Task Coach
 stores, computes or compares is a whole second: task dates, reminders,
-efforts, creation and modification times, the scheduler's clock, the
-statuses computed from them, and the task file. Only logs carry
-fractions of a second: their timestamps stay high resolution, to show
-the flow in detail. Timer delays in the UI (debounce, animation, the
-window geometry's quiet periods) are not time values and are not
-concerned.
+efforts, creation times, the scheduler's clock, the statuses computed
+from them, and the task file. Only logs carry fractions of a second:
+their timestamps stay high resolution, to show the flow in detail.
+Timer delays in the UI (debounce, animation, the window geometry's
+quiet periods) are not time values and are not concerned.
+
+**Amended, 2026-09-27:** the modification date is logging data, not
+functional data: it keeps the logs' precision (microseconds,
+`date.Timestamp`), in memory and in the file, so changes within one
+second stay ordered when merging keeps the newest copy
+([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
 
 Why: the master timer list works in seconds, with one rule for every
 entry. A fraction of a second would add cases (rounding up or down,
@@ -438,6 +443,19 @@ Found along the way, 2026-09-27:
     themselves; 28 then 54 ticks a minute instead of 5 to 10 (`py-spy`
     on the real app, 120 s each): done. A save still re-reads the
     file, now once and linearly.
+
+Chain of work, each needing the one before (2026-09-27):
+
+12. Modification date set by the data layer on every stored change
+    ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)),
+    field by field; with it the stored fields' changes move from
+    pypubsub to the Publisher.
+13. Merging: the automatic merge with other instances removed, File >
+    Merge a union with the newest copy of each item
+    ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)); needs 12.
+14. The file marked unsaved only by stored fields' changes, not by
+    computed values such as the status (item 11 skips the status by
+    name for now); needs 12.
 
 Tried and dropped on 2026-09-27: one dirty flag running the full loop
 only after a change. It listened to every event, and a due reminder's

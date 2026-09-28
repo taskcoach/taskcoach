@@ -44,6 +44,29 @@ def fresh_state(parent, instance):
     return state
 
 
+class ModificationDateRecorder:
+    """While active, records the modification date each item had
+    before its first change, so a command's undo can put it back
+    (docs/ATTRIBUTE_PATTERN.md, Modification Date)."""
+
+    _active = []
+
+    def __init__(self):
+        self.dates_before = {}
+
+    def __enter__(self):
+        ModificationDateRecorder._active.append(self)
+        return self
+
+    def __exit__(self, *exc_info):
+        ModificationDateRecorder._active.remove(self)
+
+    @classmethod
+    def record(cls, item, date_time):
+        for recorder in cls._active:
+            recorder.dates_before.setdefault(item, date_time)
+
+
 @functools.total_ordering
 class Object:
     rx_attributes = re.compile(r"\[(\w+):(.+)\]")
@@ -90,63 +113,63 @@ class Object:
 
         # Derived SSOT fields (value + source for each appearance type)
         self.__derivedFgColorValue = Attribute(
-            None, self, self._onDerivedFgColorChanged
+            None, self, self._onDerivedFgColorChanged, volatile=True
         )
         self.__derivedFgColorSource = Attribute(
-            None, self, self._onDerivedFgColorChanged
+            None, self, self._onDerivedFgColorChanged, volatile=True
         )
         self.__derivedBgColorValue = Attribute(
-            None, self, self._onDerivedBgColorChanged
+            None, self, self._onDerivedBgColorChanged, volatile=True
         )
         self.__derivedBgColorSource = Attribute(
-            None, self, self._onDerivedBgColorChanged
+            None, self, self._onDerivedBgColorChanged, volatile=True
         )
         self.__derivedIconValue = Attribute(
-            None, self, self._onDerivedIconChanged
+            None, self, self._onDerivedIconChanged, volatile=True
         )
         self.__derivedIconSource = Attribute(
-            None, self, self._onDerivedIconChanged
+            None, self, self._onDerivedIconChanged, volatile=True
         )
         self.__derivedFontValue = Attribute(
-            None, self, self._onDerivedFontChanged
+            None, self, self._onDerivedFontChanged, volatile=True
         )
         self.__derivedFontSource = Attribute(
-            None, self, self._onDerivedFontChanged
+            None, self, self._onDerivedFontChanged, volatile=True
         )
 
         # Effective SSOT fields (value + source + default for colors/font, value + source for icon)
         self.__effectiveFgColorValue = Attribute(
-            None, self, self._onEffectiveFgColorChanged
+            None, self, self._onEffectiveFgColorChanged, volatile=True
         )
         self.__effectiveFgColorSource = Attribute(
-            None, self, self._onEffectiveFgColorChanged
+            None, self, self._onEffectiveFgColorChanged, volatile=True
         )
         self.__effectiveFgColorDefault = Attribute(
-            None, self, self._onEffectiveFgColorChanged
+            None, self, self._onEffectiveFgColorChanged, volatile=True
         )
         self.__effectiveBgColorValue = Attribute(
-            None, self, self._onEffectiveBgColorChanged
+            None, self, self._onEffectiveBgColorChanged, volatile=True
         )
         self.__effectiveBgColorSource = Attribute(
-            None, self, self._onEffectiveBgColorChanged
+            None, self, self._onEffectiveBgColorChanged, volatile=True
         )
         self.__effectiveBgColorDefault = Attribute(
-            None, self, self._onEffectiveBgColorChanged
+            None, self, self._onEffectiveBgColorChanged, volatile=True
         )
         self.__effectiveIconValue = Attribute(
-            None, self, self._onEffectiveIconChanged
+            None, self, self._onEffectiveIconChanged, volatile=True
         )
         self.__effectiveIconSource = Attribute(
-            None, self, self._onEffectiveIconChanged
+            None, self, self._onEffectiveIconChanged, volatile=True
         )
         self.__effectiveFontValue = Attribute(
-            None, self, self._onEffectiveFontChanged
+            None, self, self._onEffectiveFontChanged, volatile=True
         )
         self.__effectiveFontSource = Attribute(
-            None, self, self._onEffectiveFontChanged
+            None, self, self._onEffectiveFontChanged, volatile=True
         )
         self.__effectiveFontDefault = Attribute(
-            None, self, self._onEffectiveFontChanged
+            None, self, self._onEffectiveFontChanged, volatile=True
         )
 
         super().__init__(*args, **kwargs)
@@ -206,7 +229,9 @@ class Object:
         self.__creationDateTime = state["creationDateTime"]
         # Set modification date/time last to overwrite changes made by the
         # setters above
-        self.__modificationDateTime = state["modificationDateTime"]
+        self.set_modification_datetime(
+            state["modificationDateTime"], event=event
+        )
 
     def __getcopystate__(self):
         """Return a dictionary that can be passed to __init__ when creating
@@ -264,8 +289,30 @@ class Object:
     def modificationDateTime(self):
         return self.__modificationDateTime
 
-    def setModificationDateTime(self, dateTime):
-        self.__modificationDateTime = dateTime
+    @patterns.eventSource
+    def set_modification_datetime(self, date_time, event=None):
+        """Set by the stored fields' Attributes when they change, and
+        restored from the file when loading."""
+        if date_time == self.__modificationDateTime:
+            return
+        ModificationDateRecorder.record(self, self.__modificationDateTime)
+        self.__modificationDateTime = date_time
+        event.addSource(
+            self,
+            date_time,
+            type=self.modification_datetime_changed_event_type(),
+        )
+
+    @classmethod
+    def modification_datetime_changed_event_type(cls):
+        """Not a stored field's change: it does not mark the file
+        unsaved."""
+        return "%s.modificationDateTime" % cls
+
+    @classmethod
+    def modificationDateTimeSortEventTypes(cls):
+        # Found by name, from the sort key (Sorter._getSortEventTypes)
+        return (cls.modification_datetime_changed_event_type(),)
 
     @staticmethod
     def modificationDateTimeSortFunction(**kwargs):

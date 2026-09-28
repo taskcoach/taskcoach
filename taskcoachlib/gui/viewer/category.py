@@ -180,12 +180,12 @@ class BaseCategoryViewer(
             widgets.Column(
                 "modificationDateTime",
                 _("Modification date"),
+                category.Category.modification_datetime_changed_event_type(),
                 width=self.getColumnWidth("modificationDateTime"),
                 renderCallback=self.renderModificationDateTime,
                 sortCallback=uicommand.ViewerSortByCommand(
                     viewer=self, value="modificationDateTime"
                 ),
-                *category.Category.modificationEventTypes(),
                 **kwargs
             )
         )

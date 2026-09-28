@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import test, wx
 from taskcoachlib import patterns
-from taskcoachlib.domain import category, categorizable
+from taskcoachlib.domain import category, categorizable, date
 
 
 class CategorizableCompositeObjectTest(test.TestCase):
@@ -66,6 +66,14 @@ class CategorizableCompositeObjectTest(test.TestCase):
     def testAddCategory(self):
         self.categorizable.addCategory(self.category)
         self.assertEqual(set([self.category]), self.categorizable.categories())
+
+    def test_category_change_sets_the_modification_date(self):
+        before = date.Now()
+        self.categorizable.addCategory(self.category)
+        self.assertTrue(before <= self.categorizable.modificationDateTime())
+        self.categorizable.set_modification_datetime(date.DateTime.min)
+        self.categorizable.removeCategory(self.category)
+        self.assertTrue(before <= self.categorizable.modificationDateTime())
 
     def testAddCategoryNotification(self):
         self.registerObserver(self.categoryAddedEventType)

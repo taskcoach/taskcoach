@@ -330,7 +330,9 @@ class TaskTestsMixin(object):
 
     def testModificationDateTime(self):
         self.viewer.showColumnByName("modificationDateTime")
-        self.task.setModificationDateTime(date.DateTime(2013, 1, 1, 12, 0, 0))
+        self.task.set_modification_datetime(
+            date.DateTime(2013, 1, 1, 12, 0, 0)
+        )
         self.expectInCSV(
             render.dateTime(
                 self.task.modificationDateTime(), human_readable=False
@@ -339,7 +341,7 @@ class TaskTestsMixin(object):
 
     def testMissingModificationDateTime(self):
         self.viewer.showColumnByName("modificationDateTime")
-        self.task.setModificationDateTime(date.DateTime.min)
+        self.task.set_modification_datetime(date.DateTime.min)
         self.expectInCSV(",,,")  # No 1/1/1 for the missing creation date
 
 

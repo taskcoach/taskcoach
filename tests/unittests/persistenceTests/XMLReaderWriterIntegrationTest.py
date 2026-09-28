@@ -137,7 +137,9 @@ class IntegrationTest(IntegrationTestCase):
         )
         self.notes.append(self.note)
         self.category.addCategorizable(self.note)
-        self.task.setModificationDateTime(date.DateTime(2012, 1, 1, 10, 9, 8))
+        self.task.set_modification_datetime(
+            date.DateTime(2012, 1, 1, 10, 9, 8)
+        )
 
     def getTaskWrittenAndRead(self, targetId):
         # pylint: disable=W0621

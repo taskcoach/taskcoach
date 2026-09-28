@@ -225,7 +225,6 @@ class NewSubTaskCommand(base.NewSubItemCommand, SaveTaskStateMixin):
             for parent in self.items
         ]
         self.saveStates(self.getTasksToSave())
-        self.save_modification_datetimes()
 
     def getTasksToSave(self):
         # FIXME: can be simplified to: return self.getAncestors(self.items) ?

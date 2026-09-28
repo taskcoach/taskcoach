@@ -1907,7 +1907,7 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
             <task modificationDateTime="2012-12-12 12:00:00.12345"/>
         </tasks>""")
         self.assertEqual(
-            date.DateTime(2012, 12, 12, 12, 0, 0, 12345),
+            date.Timestamp(2012, 12, 12, 12, 0, 0, 123450),
             tasks[0].modificationDateTime(),
         )
 
@@ -1917,8 +1917,70 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
             <task modificationDateTime="2012-12-12 12:00:00.12345"/>
         </tasks>""")
         self.assertEqual(
-            date.DateTime(2012, 12, 12, 12, 0, 0, 12345),
+            date.Timestamp(2012, 12, 12, 12, 0, 0, 123450),
             tasks[0].modificationDateTime(),
+        )
+
+    def test_every_item_keeps_its_stored_modification_date(self):
+        # Setting fields and links while loading sets the date to now,
+        # so the stored one is restored last
+        tasks, categories, notes = self.writeAndReadTasksAndCategoriesAndNotes(
+            """
+        <tasks>
+          <task id="t1" subject="Task" priority="2" hourlyFee="10"
+                fixedFee="5" budget="1:00:00" percentageComplete="50"
+                plannedstartdate="2029-01-01 10:00:00"
+                duedate="2030-01-01 10:00:00"
+                reminder="2029-06-01 10:00:00" prerequisites="t2"
+                modificationDateTime="2012-12-12 12:00:00">
+            <task id="t1.1" subject="Subtask"
+                  modificationDateTime="2012-12-12 12:00:00"/>
+            <effort id="e1" start="2004-01-01 10:00:00"
+                    stop="2004-01-01 11:00:00"/>
+            <note id="n1" subject="Task note"
+                  modificationDateTime="2012-12-12 12:00:00"/>
+            <attachment id="a1" location="file.txt" type="file"
+                        subject="Attachment"
+                        modificationDateTime="2012-12-12 12:00:00"/>
+            <recurrence unit="daily"/>
+          </task>
+          <task id="t2" subject="Prerequisite"
+                modificationDateTime="2012-12-12 12:00:00"/>
+          <category id="c1" subject="Category" categorizables="t1 n2"
+                    stylePriority="3" filtered="True"
+                    exclusiveSubcategories="True"
+                    modificationDateTime="2012-12-12 12:00:00">
+            <category id="c1.1" subject="Subcategory"
+                      modificationDateTime="2012-12-12 12:00:00"/>
+          </category>
+          <note id="n2" subject="Note"
+                modificationDateTime="2012-12-12 12:00:00">
+            <note id="n2.1" subject="Subnote"
+                  modificationDateTime="2012-12-12 12:00:00"/>
+          </note>
+        </tasks>"""
+        )
+        items = []
+        for each in tasks + categories + notes:
+            for item in [each] + each.children(recursive=True):
+                items.append(item)
+                if hasattr(item, "notes"):
+                    items.extend(item.notes())
+                if hasattr(item, "attachments"):
+                    items.extend(item.attachments())
+        self.assertEqual(3, categories[0].stylePriority())
+        self.assertEqual(
+            {"t1", "t1.1", "n1", "a1", "t2", "c1", "c1.1", "n2", "n2.1"},
+            {item.id() for item in items},
+        )
+        self.assertEqual(
+            [],
+            [
+                item.id()
+                for item in items
+                if item.modificationDateTime()
+                != date.DateTime(2012, 12, 12, 12, 0, 0)
+            ],
         )
 
     def testAdjustDueDateTime(self):

@@ -498,6 +498,29 @@ class MarkCompletedCommandTest(CommandWithChildrenTestCase):
             ),
         )
 
+    def test_undo_puts_back_the_date_of_every_task_it_changed(self):
+        # The child is completed by its last subtask, not by the command
+        self.settings.setboolean(
+            "behavior", "markparentcompletedwhenallchildrencompleted", True
+        )
+        before = date.DateTime(2020, 1, 1)
+        for each in (self.child, self.grandchild):
+            each.set_modification_datetime(before)
+        self.markCompleted([self.grandchild])
+
+        def dates():
+            return [
+                self.child.modificationDateTime(),
+                self.grandchild.modificationDateTime(),
+            ]
+
+        changed = dates()
+        self.assertTrue(before < min(changed))
+        self.assertDoUndoRedo(
+            lambda: self.assertEqual(changed, dates()),
+            lambda: self.assertEqual([before, before], dates()),
+        )
+
     def testMarkCompletedStopsEffortTracking(self):
         self.task1.addEffort(effort.Effort(self.task1))
         self.markCompleted([self.task1])
