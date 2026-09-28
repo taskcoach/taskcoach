@@ -472,29 +472,19 @@ class DefaultTaskStateTest(
 
     def testSetBudget(self):
         budget = date.ONE_HOUR
-        self.task.setBudget(budget)
+        self.task.set_budget(budget)
         self.assertEqual(budget, self.task.budget())
 
     def testSetBudgetNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.budgetChangedEventType())
+        self.record_changes(task.Task.budgetChangedEventType())
         budget = date.ONE_HOUR
-        self.task.setBudget(budget)
-        self.assertEqual([(budget, self.task)], events)
+        self.task.set_budget(budget)
+        self.assertEqual([(budget, self.task)], self.changes)
 
     def testSetBudgetUnchangedCausesNoNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.budgetChangedEventType())
-        self.task.setBudget(self.task.budget())
-        self.assertFalse(events)
+        self.record_changes(task.Task.budgetChangedEventType())
+        self.task.set_budget(self.task.budget())
+        self.assertFalse(self.changes)
 
     def testSetPriority(self):
         self.task.setPriority(10)
@@ -527,6 +517,11 @@ class DefaultTaskStateTest(
         self.record_changes(task.Task.fixedFeeChangedEventType())
         self.task.set_fixed_fee(1000)
         self.assertEqual([(1000, self.task)], self.changes)
+
+    def test_budget_change_sets_the_modification_date(self):
+        before = date.Now()
+        self.task.set_budget(date.ONE_HOUR)
+        self.assertTrue(before <= self.task.modificationDateTime())
 
     def test_fee_change_sets_the_modification_date(self):
         before = date.Now()
@@ -667,29 +662,19 @@ class DefaultTaskStateTest(
 
     def testAddChildWithBudgetCausesBudgetNotification(self):
         child = task.Task()
-        child.setBudget(date.TimeDelta(100))
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.budgetChangedEventType())
+        child.set_budget(date.TimeDelta(100))
+        self.record_changes(task.Task.budgetChangedEventType())
         self.task.addChild(child)
-        self.assertEqual([(date.TimeDelta(), self.task)], events)
+        self.assertEqual([(date.TimeDelta(), self.task)], self.changes)
 
     def testAddChildWithoutBudgetCausesNoBudgetNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.budgetChangedEventType())
+        self.record_changes(task.Task.budgetChangedEventType())
         child = task.Task()
         self.task.addChild(child)
-        self.assertFalse(events)
+        self.assertFalse(self.changes)
 
     def testAddChildWithEffortCausesBudgetLeftNotification(self):
-        self.task.setBudget(date.TimeDelta(hours=100))
+        self.task.set_budget(date.TimeDelta(hours=100))
         events = []
 
         def onEvent(newValue, sender):
@@ -708,7 +693,7 @@ class DefaultTaskStateTest(
         self.assertTrue((date.TimeDelta(hours=100), self.task) in events)
 
     def testAddChildWithoutEffortCausesNoBudgetLeftNotification(self):
-        self.task.setBudget(date.TimeDelta(hours=100))
+        self.task.set_budget(date.TimeDelta(hours=100))
         events = []
 
         def onEvent(newValue, sender):
@@ -1771,18 +1756,13 @@ class TaskWithChildTest(
         self.assertFalse(self.events)
 
     def testRemoveChildWithBudgetCausesBudgetNotification(self):
-        self.task1_1.setBudget(date.TimeDelta(hours=100))
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.budgetChangedEventType())
+        self.task1_1.set_budget(date.TimeDelta(hours=100))
+        self.record_changes(task.Task.budgetChangedEventType())
         self.task1.removeChild(self.task1_1)
-        self.assertEqual([(date.TimeDelta(), self.task1)], events)
+        self.assertEqual([(date.TimeDelta(), self.task1)], self.changes)
 
     def testRemoveChildWithBudgetAndEffortCausesBudgetNotification(self):
-        self.task1_1.setBudget(date.TimeDelta(hours=10))
+        self.task1_1.set_budget(date.TimeDelta(hours=10))
         self.task1_1.addEffort(
             effort.Effort(
                 self.task1_1,
@@ -1790,29 +1770,19 @@ class TaskWithChildTest(
                 date.DateTime(2009, 1, 1, 11, 0, 0),
             )
         )
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.budgetChangedEventType())
+        self.record_changes(task.Task.budgetChangedEventType())
         self.task1.removeChild(self.task1_1)
-        self.assertEqual([(date.TimeDelta(), self.task1)], events)
+        self.assertEqual([(date.TimeDelta(), self.task1)], self.changes)
 
     def testRemoveChildWithoutBudgetCausesNoBudgetNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.budgetChangedEventType())
+        self.record_changes(task.Task.budgetChangedEventType())
         self.task1.removeChild(self.task1_1)
-        self.assertFalse(events)
+        self.assertFalse(self.changes)
 
     def testRemoveChildWithEffortFromTaskWithBudgetCausesBudgetLeftNotification(
         self,
     ):
-        self.task1.setBudget(date.TimeDelta(hours=100))
+        self.task1.set_budget(date.TimeDelta(hours=100))
         self.task1_1.addEffort(
             effort.Effort(
                 self.task1_1,
@@ -2104,50 +2074,40 @@ class TaskWithChildTest(
         self.assertEqual(date.TimeDelta(), self.task.timeSpent(recursive=True))
 
     def testRecursiveBudgetWhenParentHasNoBudgetWhileChildDoes(self):
-        self.task1_1.setBudget(date.ONE_HOUR)
+        self.task1_1.set_budget(date.ONE_HOUR)
         self.assertEqual(date.ONE_HOUR, self.task.budget(recursive=True))
 
     def testRecursiveBudgetLeftWhenParentHasNoBudgetWhileChildDoes(self):
-        self.task1_1.setBudget(date.ONE_HOUR)
+        self.task1_1.set_budget(date.ONE_HOUR)
         self.assertEqual(date.ONE_HOUR, self.task.budgetLeft(recursive=True))
 
     def testRecursiveBudgetWhenBothHaveBudget(self):
-        self.task1_1.setBudget(date.ONE_HOUR)
-        self.task.setBudget(date.ONE_HOUR)
+        self.task1_1.set_budget(date.ONE_HOUR)
+        self.task.set_budget(date.ONE_HOUR)
         self.assertEqual(date.TWO_HOURS, self.task.budget(recursive=True))
 
     def testRecursiveBudgetLeftWhenBothHaveBudget(self):
-        self.task1_1.setBudget(date.ONE_HOUR)
-        self.task.setBudget(date.ONE_HOUR)
+        self.task1_1.set_budget(date.ONE_HOUR)
+        self.task.set_budget(date.ONE_HOUR)
         self.assertEqual(date.TWO_HOURS, self.task.budgetLeft(recursive=True))
 
     def testRecursiveBudgetLeftWhenChildBudgetIsAllSpent(self):
-        self.task1_1.setBudget(date.ONE_HOUR)
+        self.task1_1.set_budget(date.ONE_HOUR)
         self.addEffort(date.ONE_HOUR, self.task1_1)
         self.assertEqual(
             date.TimeDelta(), self.task.budgetLeft(recursive=True)
         )
 
     def testBudgetNotification_WhenChildBudgetChanges(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.budgetChangedEventType())
-        self.task1_1.setBudget(date.ONE_HOUR)
-        self.assertTrue((date.ONE_HOUR, self.task1) in events)
+        self.record_changes(task.Task.budgetChangedEventType())
+        self.task1_1.set_budget(date.ONE_HOUR)
+        self.assertTrue((date.ONE_HOUR, self.task1) in self.changes)
 
     def testBudgetNotification_WhenRemovingChildWithBudget(self):
-        self.task1_1.setBudget(date.ONE_HOUR)
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.budgetChangedEventType())
+        self.task1_1.set_budget(date.ONE_HOUR)
+        self.record_changes(task.Task.budgetChangedEventType())
         self.task.removeChild(self.task1_1)
-        self.assertTrue((date.TimeDelta(0), self.task1) in events)
+        self.assertTrue((date.TimeDelta(0), self.task1) in self.changes)
 
     def testBudgetLeftNotification_WhenChildBudgetChanges(self):
         events = []
@@ -2156,11 +2116,11 @@ class TaskWithChildTest(
             events.append((newValue, sender))
 
         pub.subscribe(onEvent, task.Task.budgetLeftChangedEventType())
-        self.task1_1.setBudget(date.ONE_HOUR)
+        self.task1_1.set_budget(date.ONE_HOUR)
         self.assertTrue((date.ONE_HOUR, self.task1) in events)
 
     def testBudgetLeftNotification_WhenChildTimeSpentChanges(self):
-        self.task1_1.setBudget(date.TWO_HOURS)
+        self.task1_1.set_budget(date.TWO_HOURS)
         events = []
 
         def onEvent(newValue, sender):
@@ -2177,7 +2137,7 @@ class TaskWithChildTest(
         self.assertTrue((date.ONE_HOUR, self.task1) in events)
 
     def testBudgetLeftNotification_WhenParentHasNoBudget(self):
-        self.task1_1.setBudget(date.TWO_HOURS)
+        self.task1_1.set_budget(date.TWO_HOURS)
         events = []
 
         def onEvent(newValue, sender):
@@ -2995,7 +2955,7 @@ class TaskWithBudgetTest(TaskTestCase, CommonTaskTestsMixin):
     def testBudgetIsCopiedWhenTaskIsCopied(self):
         copy = self.task.copy()
         self.assertEqual(copy.budget(), self.task.budget())
-        self.task.setBudget(date.ONE_HOUR)
+        self.task.set_budget(date.ONE_HOUR)
         self.assertEqual(date.TWO_HOURS, copy.budget())
 
 

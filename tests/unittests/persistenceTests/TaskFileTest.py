@@ -409,7 +409,7 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.assertTrue(self.taskFile.need_save())
 
     def testNeedSave_AfterChangeBudget(self):
-        self.task.setBudget(date.TimeDelta(10))
+        self.task.set_budget(date.TimeDelta(10))
         self.assertTrue(self.taskFile.need_save())
 
     def testNeedSave_AfterChangeHourlyFee(self):

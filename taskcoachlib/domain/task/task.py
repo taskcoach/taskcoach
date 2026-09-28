@@ -107,7 +107,9 @@ class Task(
         self.__percentageComplete = Attribute(
             percentageComplete, self, self._onPercentageCompleteChanged
         )
-        self.__budget = budget or date.TimeDelta()
+        self.__budget = Attribute(
+            budget or date.TimeDelta(), self, self._on_budget_changed
+        )
         self.__plannedDuration = Attribute(
             plannedDuration or date.TimeDelta(),
             self,
@@ -190,7 +192,7 @@ class Task(
         self.setRecurrence(state["recurrence"])
         self.setReminder(state["reminder"], event=event)
         self.setEfforts(state["efforts"])
-        self.setBudget(state["budget"])
+        self.set_budget(state["budget"], event=event)
         self.setPlannedDuration(
             state.get("plannedDuration", date.TimeDelta()), event=event
         )
@@ -218,7 +220,7 @@ class Task(
                 children=self.children(),
                 parent=self.parent(),
                 efforts=self._efforts,
-                budget=self.__budget,
+                budget=self.__budget.get(),
                 plannedDuration=self.__plannedDuration.get(),
                 plannedDurationMode=self.__plannedDurationMode.get(),
                 priority=self.__priority.get(),
@@ -243,7 +245,7 @@ class Task(
                 completionDateTime=self.__completionDateTime.get(),
                 percentageComplete=self.__percentageComplete.get(),
                 efforts=[effort.copy() for effort in self._efforts],
-                budget=self.__budget,
+                budget=self.__budget.get(),
                 plannedDuration=self.__plannedDuration.get(),
                 plannedDurationMode=self.__plannedDurationMode.get(),
                 priority=self.__priority.get(),
@@ -331,7 +333,7 @@ class Task(
         if childHasRevenue:
             self.sendRevenueChangedMessage()
         if childHasBudget:
-            self.sendBudgetChangedMessage()
+            self.budget_changed_event(event)
         if childHasBudgetLeft or (
             childHasTimeSpent and (childHasBudget or self.budget())
         ):
@@ -1092,33 +1094,34 @@ class Task(
     # Budget
 
     def budget(self, recursive=False):
-        result = self.__budget
+        result = self.__budget.get()
         if recursive:
             for task in self.children():
                 result += task.budget(recursive)
         return result
 
-    def setBudget(self, budget):
-        if budget == self.__budget:
-            return
-        self.__budget = budget
-        self.sendBudgetChangedMessage()
+    def set_budget(self, budget, event=None):
+        self.__budget.set(budget, event=event)
+
+    def _on_budget_changed(self, event):
+        self.budget_changed_event(event)
         self.sendBudgetLeftChangedMessage()
 
-    def sendBudgetChangedMessage(self):
-        pub.sendMessage(
-            self.budgetChangedEventType(), newValue=self.budget(), sender=self
+    def budget_changed_event(self, event):
+        # Ancestors show it in their recursive budget
+        event.addSource(
+            self, self.budget(), type=self.budgetChangedEventType()
         )
         for ancestor in self.ancestors():
-            pub.sendMessage(
-                ancestor.budgetChangedEventType(),
-                newValue=ancestor.budget(recursive=True),
-                sender=ancestor,
+            event.addSource(
+                ancestor,
+                ancestor.budget(recursive=True),
+                type=ancestor.budgetChangedEventType(),
             )
 
     @classmethod
     def budgetChangedEventType(class_):
-        return "pubsub.task.budget"
+        return "task.budget"
 
     @staticmethod
     def budgetSortFunction(**kwargs):

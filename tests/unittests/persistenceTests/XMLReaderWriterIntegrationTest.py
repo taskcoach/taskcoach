@@ -205,7 +205,7 @@ class IntegrationTest(IntegrationTestCase):
         self.assertAttributeWrittenAndRead(self.task, "budget")
 
     def testBudget_MoreThan24Hour(self):
-        self.task.setBudget(date.TimeDelta(hours=25))
+        self.task.set_budget(date.TimeDelta(hours=25))
         self.tasksWrittenAndRead = task.TaskList(self.readAndWrite()[0])
         self.assertAttributeWrittenAndRead(self.task, "budget")
 

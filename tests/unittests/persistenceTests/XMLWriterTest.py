@@ -198,14 +198,14 @@ class XMLWriterTest(test.TestCase):
         self.expect_not_in_xml("<efforts>")
 
     def testBudget(self):
-        self.task.setBudget(date.ONE_HOUR)
+        self.task.set_budget(date.ONE_HOUR)
         self.expect_in_xml('budget="%s"' % str(self.task.budget()))
 
     def testNoBudget(self):
         self.expect_not_in_xml("budget")
 
     def testBudget_MoreThan24Hour(self):
-        self.task.setBudget(date.TimeDelta(hours=25))
+        self.task.set_budget(date.TimeDelta(hours=25))
         self.expect_in_xml('budget="25:00:00"')
 
     def testOneCategoryWithoutTask(self):

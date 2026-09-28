@@ -333,7 +333,7 @@ and sets the modification date, then is tested:
 | 1 | Category style priority | Plain value, Publisher, never saved | Done, saved as `stylePriority` |
 | 2 | Category exclusive subcategories | Plain value, Publisher | Done |
 | 3 | Task hourly fee, fixed fee | Plain values, pypubsub | Done: Attributes, Publisher (`task.hourlyFee`, `task.fixedFee`) |
-| 4 | Task budget | Plain value, pypubsub | To do |
+| 4 | Task budget | Plain value, pypubsub | Done: Attribute, Publisher (`task.budget`); budget left stays computed |
 | 5 | Task "mark completed when all subtasks are" | Plain value, pypubsub | To do |
 | 6 | Task percentage complete, planned duration and its mode | Attributes, pypubsub | To do |
 | 7 | Task recurrence | Plain value, pypubsub | To do |

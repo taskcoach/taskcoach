@@ -836,12 +836,12 @@ class EditBudgetCommand(base.BaseCommand):
     def do_command(self):
         super().do_command()
         for item in self.items:
-            item.setBudget(self.__newBudget)
+            item.set_budget(self.__newBudget)
 
     def undo_command(self):
         super().undo_command()
         for item, oldBudget in zip(self.items, self.__oldBudgets):
-            item.setBudget(oldBudget)
+            item.set_budget(oldBudget)
 
     def redo_command(self):
         self.do_command()

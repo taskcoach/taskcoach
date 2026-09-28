@@ -201,14 +201,14 @@ class TaskSorterSettingsTest(test.TestCase):
     def testSortByBudgetAscending(self):
         self.sorter.sort_ascending(True)
         self.sorter.sort_by("budget")
-        self.task1.setBudget(date.TimeDelta(100))
-        self.task2.setBudget(date.TimeDelta(10))
+        self.task1.set_budget(date.TimeDelta(100))
+        self.task2.set_budget(date.TimeDelta(10))
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
     def testSortByBudgetDescending(self):
         self.sorter.sort_by("budget")
         self.sorter.sort_ascending(False)
-        self.task1.setBudget(date.TimeDelta(100))
+        self.task1.set_budget(date.TimeDelta(100))
         self.assertEqual([self.task1, self.task2], list(self.sorter))
 
     def testSortByTimeSpentAscending(self):
