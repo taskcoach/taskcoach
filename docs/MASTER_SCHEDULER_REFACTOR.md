@@ -503,13 +503,8 @@ Questions to decide:
    an Attribute). One rule for all three
    ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date),
    row 11).
-4. **Category membership: which side owns the link?** Links belong
-   to the item that points (ruling, 2026-09-28). The file stores the
-   member list on the category, but a task's categories work like
-   tags on the task. If the task owns them, the category's members
-   are the reverse and merging takes membership from the tasks'
-   winning copies; today both sides set their date and merging uses
-   the category's copy.
+4. Decided 2026-09-28: the task (or note) owns its categories
+   ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
 
 Issues found, not fixed:
 

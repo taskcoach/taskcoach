@@ -270,8 +270,9 @@ item (`persistence/merge.py`).
 - Notes, attachments and efforts are merged item by item too: each
   goes to the owner (and parent note) its winning copy names, so an
   edit to a task's note carries over even when the task's copy loses.
-- Category membership comes from the winning category copy, a task's
-  prerequisites from its winning copy (dependencies are their
+- Category membership comes from each task's or note's winning copy
+  (they own their categories; a category's members are the reverse),
+  a task's prerequisites from its winning copy (dependencies are their
   reverse).
 - Merged items keep the dates of their winning copies: rebuilding
   links is not an edit.

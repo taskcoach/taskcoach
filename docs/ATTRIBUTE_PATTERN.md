@@ -304,13 +304,13 @@ Attributes of computed values are marked volatile and do not.
 
 **Ruling, 2026-09-28: a link belongs to the item that points.** A
 subitem's parent, an owned note's or attachment's owner, an effort's
-task and a task's prerequisites are that item's own data: changing
-them sets its date. The reverse lists (children, owned notes and
-attachments, efforts, dependencies) are derived and set no date.
+task, a task's prerequisites and a task's or note's categories are
+that item's own data: changing them sets its date. The reverse lists
+(children, owned notes and attachments, efforts, dependencies, a
+category's members) are derived and set no date. The file stores
+category membership on the category, but it is read both ways.
 Merging follows the same rule
-([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)). Category
-membership still sets the date on both sides until its direction is
-decided ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#open-questions-and-issues-found)).
+([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)).
 
 Before step 0 (traced 2026-09-27) only commands set it, on the items
 they were given (`BaseCommand.modified_items()`, `command/base.py`),

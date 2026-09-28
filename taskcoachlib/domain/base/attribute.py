@@ -61,7 +61,8 @@ class Attribute(object):
 class SetAttribute(object):
     """A set field of a domain object, such as its links to other
     items. A change sets its owner's modification date, as an
-    Attribute's does."""
+    Attribute's does; a volatile one, the reverse of links other items
+    own, does not."""
 
     __slots__ = (
         "__set",
@@ -70,6 +71,7 @@ class SetAttribute(object):
         "__removeEvent",
         "__changeEvent",
         "__setClass",
+        "__volatile",
     )
 
     def __init__(
@@ -80,7 +82,9 @@ class SetAttribute(object):
         removeEvent=None,
         changeEvent=None,
         weak=False,
+        volatile=False,
     ):
+        self.__volatile = volatile
         self.__setClass = WeakSet if weak else set
         self.__set = self.__setClass(values) if values else self.__setClass()
         self.__owner = weakref.ref(owner)
@@ -100,7 +104,7 @@ class SetAttribute(object):
             added = values - set(self.__set)
             removed = set(self.__set) - values
             self.__set = self.__setClass(values)
-            owner.set_modification_datetime(Timestamp.now(), event=event)
+            self.__set_date(owner, event)
             if added:
                 self.__addEvent(owner, event, *added)  # pylint: disable=W0142
             if removed:
@@ -118,7 +122,7 @@ class SetAttribute(object):
             if values <= set(self.__set):
                 return False
             self.__set = self.__setClass(set(self.__set) | values)
-            owner.set_modification_datetime(Timestamp.now(), event=event)
+            self.__set_date(owner, event)
             self.__addEvent(owner, event, *values)  # pylint: disable=W0142
             self.__changeEvent(owner, event, *set(self.__set))
             return True
@@ -130,10 +134,14 @@ class SetAttribute(object):
             if values & set(self.__set) == set():
                 return False
             self.__set = self.__setClass(set(self.__set) - values)
-            owner.set_modification_datetime(Timestamp.now(), event=event)
+            self.__set_date(owner, event)
             self.__removeEvent(owner, event, *values)  # pylint: disable=W0142
             self.__changeEvent(owner, event, *set(self.__set))
             return True
+
+    def __set_date(self, owner, event):
+        if not self.__volatile:
+            owner.set_modification_datetime(Timestamp.now(), event=event)
 
     def __nullEvent(self, *args, **kwargs):
         pass

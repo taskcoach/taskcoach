@@ -1178,22 +1178,43 @@ class TaskFileMergeTest(TaskFileTestCase):
             "merged category", list(self.taskFile.categories())[0].subject()
         )
 
-    def test_task_links_to_the_winning_category(self):
+    def link_task_to_category(self):
         self.task.addCategory(self.category)
         self.category.addCategorizable(self.task)
-        self.category.set_modification_datetime(date.DateTime(2020, 1, 1))
-        their_category = self.their_copy(
-            self.category, "merged category", date.DateTime(2021, 1, 1)
+        for item in self.task, self.category:
+            item.set_modification_datetime(date.DateTime(2020, 1, 1))
+
+    def test_task_links_to_the_winning_category(self):
+        self.link_task_to_category()
+        self.mergeFile.categories().append(
+            self.their_copy(
+                self.category, "merged category", date.DateTime(2021, 1, 1)
+            )
         )
-        their_task = task.Task(subject="task", id=self.task.id())
-        their_category.addCategorizable(their_task)
-        their_task.addCategory(their_category)
-        self.mergeFile.categories().append(their_category)
-        self.mergeFile.tasks().append(their_task)
         self.merge()
         winner = list(self.taskFile.categories())[0]
-        self.assertIs(winner, list(self.task.categories())[0])
         self.assertEqual("merged category", winner.subject())
+        self.assertIs(winner, list(self.task.categories())[0])
+        self.assertEqual([self.task], list(winner.categorizables()))
+
+    def test_membership_follows_the_tasks_winning_copy(self):
+        # The task owns its categories: its newer copy keeps the link,
+        # although the category's newer copy lists no member
+        self.link_task_to_category()
+        self.task.set_modification_datetime(date.DateTime(2022, 1, 1))
+        self.mergeFile.categories().append(
+            self.their_copy(
+                self.category, "category", date.DateTime(2021, 1, 1)
+            )
+        )
+        self.mergeFile.tasks().append(
+            self.their_copy(self.task, "task", date.DateTime(2019, 1, 1))
+        )
+        self.merge()
+        winner = list(self.taskFile.categories())[0]
+        self.assertEqual({winner}, self.task.categories())
+        self.assertIs(winner, list(self.task.categories())[0])
+        self.assertEqual({self.task}, winner.categorizables())
 
     def testMerge_CategoryLinkedToTask(self):
         self.task.addCategory(self.category)

@@ -50,12 +50,14 @@ class Category(
             *args,
             **kwargs
         )
+        # The reverse of the categorizables' categories, which they own
         self.__categorizables = base.SetAttribute(
             set(categorizables or []),
             self,
             self.categorizableAddedEvent,
             self.categorizableRemovedEvent,
             weak=True,
+            volatile=True,
         )
         self.__filtered = filtered
         self.__exclusiveSubcategories = base.Attribute(

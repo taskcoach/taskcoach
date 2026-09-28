@@ -123,13 +123,12 @@ class CategoryTest(test.TestCase):
             set([self.categorizable]), self.category.categorizables()
         )
 
-    def test_membership_change_sets_the_modification_date(self):
-        before = date.Now()
+    def test_membership_change_keeps_the_categorys_date(self):
+        # The task owns its categories; the members are the reverse
+        before = self.category.modificationDateTime()
         self.category.addCategorizable(self.categorizable)
-        self.assertTrue(before <= self.category.modificationDateTime())
-        self.category.set_modification_datetime(date.DateTime.min)
         self.category.removeCategorizable(self.categorizable)
-        self.assertTrue(before <= self.category.modificationDateTime())
+        self.assertEqual(before, self.category.modificationDateTime())
 
     def testAddCategorizableDoesNotAddCategoryToCategorizable(self):
         self.category.addCategorizable(self.categorizable)

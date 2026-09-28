@@ -29,6 +29,10 @@ def merge_into(task_file, other):
     together under it. The items taken from other leave it."""
     their_file_is_newer = _newest_date(other) > _newest_date(task_file)
     mine_owned, theirs_owned = _owned(task_file), _owned(other)
+    # Before any change: removing a replaced copy from the file also
+    # removes it from the links pointing to it
+    links = _links(task_file)
+    links.update(_links(other))
     # Each item keeps the date of its winning copy: rebuilding links is
     # not an edit
     with ModificationDateRecorder() as recorder:
@@ -40,8 +44,8 @@ def merge_into(task_file, other):
             _merge_collection(mine, theirs, their_file_is_newer)
         _merge_owned(task_file, mine_owned, theirs_owned, their_file_is_newer)
         items = {item.id(): item for item in _walk(_roots(task_file))}
-        _link_categories(task_file.categories(), items)
-        _link_prerequisites(task_file.tasks(), items)
+        _link_categories(task_file.categories(), items, links)
+        _link_prerequisites(task_file.tasks(), items, links)
     for item, date_time in recorder.dates_before.values():
         item.set_modification_datetime(date_time)
 
@@ -224,46 +228,61 @@ def _newest_date(task_file):
     )
 
 
-def _link_categories(categories, items):
-    """Category membership as each winning category copy has it, to the
-    winning copies of its members."""
-    members = {}
-    for each_category in categories:
-        members[each_category] = {
-            items[member.id()]
-            for member in each_category.categorizables()
-            if member.id() in items
-        }
+def _links(task_file):
+    """The ids of each item's categories and prerequisites, by
+    identity."""
+    links = {}
+    for item in _walk(_roots(task_file)):
+        categories = getattr(item, "categories", None)
+        prerequisites = getattr(item, "prerequisites", None)
+        links[id(item)] = (
+            {each.id() for each in categories()} if categories else set(),
+            (
+                {each.id() for each in prerequisites()}
+                if prerequisites
+                else set()
+            ),
+        )
+    return links
+
+
+def _link_categories(categories, items, links):
+    """Category membership as each winning task or note copy has it:
+    they own their categories, and a category's members are the
+    reverse (docs/ATTRIBUTE_PATTERN.md, Modification Date)."""
     categories_of = {}
-    for each_category, categorizables in members.items():
-        for categorizable in categorizables:
-            categories_of.setdefault(id(categorizable), set()).add(
-                each_category
+    for item in items.values():
+        if hasattr(item, "setCategories"):
+            category_ids = links.get(id(item), (set(), set()))[0]
+            categories_of[id(item)] = (
+                item,
+                {items[each] for each in category_ids if each in items},
             )
+    members = {id(each): set() for each in categories}
+    for item, its_categories in categories_of.values():
+        for each in its_categories:
+            members.setdefault(id(each), set()).add(item)
     # Only where a link changed or points to a replaced copy; emptied
     # first, as a set holding an equal copy (same id) is unchanged
-    for item in items.values():
-        wanted = categories_of.get(id(item), set())
-        if hasattr(item, "setCategories") and not _same_objects(
-            item.categories(), wanted
-        ):
+    for item, its_categories in categories_of.values():
+        if not _same_objects(item.categories(), its_categories):
             item.setCategories(set())
-            item.setCategories(wanted)
-    for each_category, categorizables in members.items():
-        if not _same_objects(each_category.categorizables(), categorizables):
-            each_category.setCategorizables(set())
-            each_category.setCategorizables(categorizables)
+            item.setCategories(its_categories)
+    for each in categories:
+        wanted = members.get(id(each), set())
+        if not _same_objects(each.categorizables(), wanted):
+            each.setCategorizables(set())
+            each.setCategorizables(wanted)
 
 
-def _link_prerequisites(tasks, items):
+def _link_prerequisites(tasks, items, links):
     """Prerequisites as each winning task copy has them, to the winning
     copies; dependencies are their reverse."""
     prerequisites = {}
     for each_task in tasks:
+        prerequisite_ids = links.get(id(each_task), (set(), set()))[1]
         prerequisites[each_task] = {
-            items[prerequisite.id()]
-            for prerequisite in each_task.prerequisites()
-            if prerequisite.id() in items
+            items[each] for each in prerequisite_ids if each in items
         }
     dependencies = {}
     for each_task, its_prerequisites in prerequisites.items():
