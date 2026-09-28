@@ -80,9 +80,31 @@ go at the end. Details live in the sections and documents linked.
 34. The undo log as object versions keyed by the modification date:
     step 1 done, steps 2 to 5 open
     ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log), option C).
-35. The views on the effective styles, the legacy styles removed:
-    the plan and its checklist in
-    [Views on the Effective Styles](#views-on-the-effective-styles).
+35. The views on the effective styles, the legacy styles removed
+    (why and the scan:
+    [Views on the Effective Styles](#views-on-the-effective-styles)):
+    1. Views, widgets, export, menus and the editor's owned-item lists
+       read the effective styles; efforts their task's.
+    2. Listeners of the old appearance event on the effective-style
+       events, the task filter on the status event.
+    3. `recomputeAppearance()` callers keep only the immediate status
+       (`compute_stored_status()`): dates, completion, prerequisites,
+       subtasks added or removed.
+    4. The selected (open folder) icon removed, as decided;
+       `selectedIcon` in old files read and dropped.
+    5. Removed: the task's recursive style overrides and caches, the
+       theme recompute, `recomputeAppearance()`, the composite and
+       categorizable recursive fallbacks, the category mixers
+       (`categoriesChange*()`, `ColorMixer`, `FontMixer`), the old
+       appearance event and its propagation, the `recursive` argument
+       of the own-value style accessors.
+    6. Tests: about 206 references in TaskTest, CategorizableTest,
+       BaseTest, CategoryTest and AttachmentTest on the effective
+       styles.
+    7. Docs: TASK_STATUS.md (issue 4, Legacy Code Compatibility, the
+       migration table's views), APPEARANCE_STYLES.md, ICON_DISPLAY.md.
+    8. Checked in the app, every view, with a file that shows the rule
+       differences; the full suite.
 36. The task editor's Progress tab: a second percentage control and
     slider drawn over the tab labels, seen only under Xvfb; to check on
     a real display.
@@ -149,31 +171,6 @@ Scan, 2026-09-28 (sources the loop does not compute: none left after):
 | `gui/dialog/editor.py` owned-item lists | Notes, efforts, attachments rows | Effective styles |
 | `domain/effort/base.py` | An effort's colours and font: its task's legacy ones | Its task's effective ones |
 | Old event `appearanceChangedEventType()` | Refreshes the task, category, note and effort views, the tray, editor pages, composite efforts; the task filter uses it for status changes | The effective-style events; the filter the status event |
-
-Checklist:
-
-- [ ] Views, widgets, export, menus and editor lists read the
-  effective styles (table above); efforts their task's
-- [ ] Listeners of the old appearance event on the effective-style
-  events, the task filter on the status event
-- [ ] `recomputeAppearance()` callers keep only the immediate status
-  (`compute_stored_status()`, TASK_STATUS.md Immediate Updates):
-  dates, completion, prerequisites, subtasks added or removed
-- [ ] The selected (open folder) icon removed, as decided (TASK_STATUS.md
-  migration table: "concept will be removed"); `selectedIcon` in old
-  files read and dropped
-- [ ] Removed: the task's recursive style overrides and caches, the
-  theme recompute, `recomputeAppearance()`, the composite and
-  categorizable recursive fallbacks, the category mixers
-  (`categoriesChange*()`, `ColorMixer`, `FontMixer`), the old
-  appearance event and its propagation, the `recursive` argument of
-  the own-value style accessors
-- [ ] Tests: about 206 references in TaskTest, CategorizableTest,
-  BaseTest, CategoryTest and AttachmentTest on the effective styles
-- [ ] Docs: TASK_STATUS.md (issue 4, Legacy Code Compatibility, the
-  migration table's views), APPEARANCE_STYLES.md, ICON_DISPLAY.md
-- [ ] Checked in the app, every view above, with a file that shows the
-  rule differences; the full suite
 
 ---
 
