@@ -7,6 +7,8 @@ or config defaults; non-obvious decisions are documented there).
 
 ## Design
 
+Canon decision by designer, 2026-09-28.
+
 - **One source of truth:** no duplicated logic or data; derive what
   can be derived.
 - **Modular:** one implementation per operation, reused by every path
