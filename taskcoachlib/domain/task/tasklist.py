@@ -27,7 +27,7 @@ from . import task
 
 class TaskListQueryMixin(object):
     def nr_of_tasks_per_status(self):
-        statuses = [each_task.status() for each_task in self]
+        statuses = [each_task.computedStatus() for each_task in self]
         count = dict()
         for status in task.Task.possibleStatuses():
             count[status] = statuses.count(status)

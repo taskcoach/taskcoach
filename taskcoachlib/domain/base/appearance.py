@@ -269,8 +269,8 @@ def computeDerived(object_ref, field_type):
             if status_getter and hasattr(object_ref, status_getter):
                 getter = getattr(object_ref, status_getter)
                 value = getter()
-                if hasattr(object_ref, 'status'):
-                    source = f"[Status] {object_ref.status()}"
+                if hasattr(object_ref, 'computedStatus'):
+                    source = f"[Status] {object_ref.computedStatus()}"
                 else:
                     source = "[Status]"
 

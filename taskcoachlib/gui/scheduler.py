@@ -414,9 +414,8 @@ class MasterScheduler:
 
     @staticmethod
     def _process_task(task, timestamp):
-        # Statuses at the tick's second, as the timer seconds assume
-        task.recomputeLegacyStatus(timestamp)  # Legacy: __status
-        task.compute_stored_status(timestamp)  # Modern: __computed_status
+        # The status at the tick's second, as the timer seconds assume
+        task.compute_stored_status(timestamp)
         task.processReminder(timestamp)
         computeStyles(task)
         # Owned notes and attachments, parents first

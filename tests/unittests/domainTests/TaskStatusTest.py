@@ -31,7 +31,7 @@ class TaskStatusTest(test.TestCase):
         self.farFuture = self.now + date.ONE_DAY + date.ONE_DAY
 
     def assertTaskStatus(self, status, **taskKwArgs):
-        self.assertEqual(status, task.Task(**taskKwArgs).status())
+        self.assertEqual(status, task.Task(**taskKwArgs).computedStatus())
 
     # No dates/times
 
@@ -399,4 +399,4 @@ class TaskStatusTest(test.TestCase):
         taskB = task.Task(prerequisites=[taskA])
         taskA.add_prerequisites([taskB])
         for eachTask in (taskA, taskB):
-            self.assertEqual(task.status.inactive, eachTask.status())
+            self.assertEqual(task.status.inactive, eachTask.computedStatus())

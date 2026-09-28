@@ -260,13 +260,11 @@ Transitions are time-driven (status changes as `now` passes date thresholds) or 
 Each task stores three computed status fields:
 - `__status_text` — Display text (e.g., `"Active"`, `"Overdue"`)
 - `__status_icon` — Icon name (e.g., `"nuvola_actions_ledblue"`)
-- `__status` — Cached TaskStatus object (used internally by `status()`)
 
 Accessor methods:
 - `task.computedStatus()` — Returns TaskStatus object (single source of truth) ✓
 - `task.statusText()` — Returns display text ✓
 - `task.status_icon_id()` — Returns icon ID ✓
-- `task.status()` — Returns TaskStatus object (legacy cached method, to be removed)
 
 ### compute_status(): Single Source of Truth (Class Method)
 
@@ -381,7 +379,7 @@ All subscribe to `statusChangedEventType` for refresh.
 | ComputeStyles | `domain/base/appearance.py` | Calls `compute_stored_status()` per task | Computes status then derived/effective appearance per object |
 | Editor live preview | `gui/dialog/editor.py` | **Duplicates date logic** | Computes status from form field values |
 
-### Consumers (read task.status() cache)
+### Consumers (read computedStatus())
 
 | Consumer | File | Purpose |
 |----------|------|---------|
@@ -527,11 +525,11 @@ every consumer to potentially trigger computation. The new pattern separates wri
    | active() | task.py | ✓ Done |
    | dueSoon() | task.py | ✓ Done |
    | late() | task.py | ✓ Done |
-   | statusFgColor() | task.py | Pending |
-   | statusBgColor() | task.py | Pending |
-   | statusFont() | task.py | Pending |
+   | statusFgColor() | task.py | ✓ Done |
+   | statusBgColor() | task.py | ✓ Done |
+   | statusFont() | task.py | ✓ Done |
    | statusIcon() | task.py | ✓ Done (now accessor) |
-   | nr_of_tasks_per_status() | tasklist.py | Pending |
+   | nr_of_tasks_per_status() | tasklist.py | ✓ Done |
    | Editor display | editor.py | ✓ Done (uses derivedXxx/effectiveXxx) |
    | Appearance tab 3-col layout | editor.py | ✓ Done |
    | Task derivedXxx(explain) | task.py | ✓ Done |
@@ -550,8 +548,12 @@ every consumer to potentially trigger computation. The new pattern separates wri
    | Plural/singular icon transform | task.py | Will not migrate (intentionally kept in legacy `icon()` accessor) |
    | Selected icon variant (open/closed folder) | task.py | Will not migrate (concept will be removed) |
 
-3. **Final cleanup:** Remove legacy `status()` cache, `__status` field, and the
-   scattered `__status = None` invalidations.
+3. **Final cleanup (done 2026-09-28):** the legacy `status()` cache, the
+   `__status` field, its invalidations and the loop's
+   `recomputeLegacyStatus()` are removed. They differed from
+   `computedStatus()` in one rule: the loop's update counted only a
+   task's own prerequisites, so a blocked task's subtask looked late
+   while its status column and the filters said inactive.
 
 ### Staleness Tradeoff — RESOLVED
 
@@ -1098,7 +1100,7 @@ Tasks have `derivedXxx()` / `derivedXxxSource()` and `effectiveXxx()` / `effecti
 | File | Purpose |
 |------|---------|
 | `taskcoachlib/domain/task/status.py` | TaskStatus class and 6 singleton instances |
-| `taskcoachlib/domain/task/task.py` | `status()`, color/icon/font methods, `recomputeAppearance()` |
+| `taskcoachlib/domain/task/task.py` | `computedStatus()`, color/icon/font methods, `recomputeAppearance()` |
 | `taskcoachlib/domain/task/filter.py` | ViewFilter with status-based hiding |
 | `taskcoachlib/domain/task/tasklist.py` | `nr_of_tasks_per_status()` count method |
 | `taskcoachlib/gui/scheduler.py` | GlobalTimer + MasterScheduler |

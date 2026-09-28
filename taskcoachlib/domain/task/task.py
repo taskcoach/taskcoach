@@ -68,7 +68,6 @@ class Task(
         kwargs["description"] = description
         kwargs["categories"] = categories
         super().__init__(*args, **kwargs)
-        self.__status = None  # status cache (legacy)
         # Single-source-of-truth fields, set by compute_stored_status()
         self.__computed_status = None
         self.__status_text = ""
@@ -524,7 +523,6 @@ class Task(
         )
 
     def _onCompletionDateTimeChanged(self, event):
-        self.__status = None
         completionDateTime = self.completionDateTime()
         isCompleted = completionDateTime != self.maxDateTime
 
@@ -691,37 +689,6 @@ class Task(
             status.completed,
         )
 
-    def status(self):
-        if self.__status:
-            return self.__status
-        if self.completionDateTime() != self.maxDateTime:
-            self.__status = status.completed
-        else:
-            now = date.Now()
-            # Don't call prerequisite.completed() because it will lead to infinite
-            # recursion in the case of circular dependencies.
-            # Check prerequisites first - task is inactive if any prereq is uncompleted:
-            if any(
-                [
-                    prerequisite.completionDateTime() == self.maxDateTime
-                    for prerequisite in self.prerequisites(
-                        recursive=True, upwards=True
-                    )
-                ]
-            ):
-                self.__status = status.inactive
-            elif self.dueDateTime() < now:
-                self.__status = status.overdue
-            elif 0 <= self.timeLeft().hours() < self.__dueSoonHours:
-                self.__status = status.duesoon
-            elif self.actualStartDateTime() <= now:
-                self.__status = status.active
-            elif self.plannedStartDateTime() < now:
-                self.__status = status.late
-            else:
-                self.__status = status.inactive
-        return self.__status
-
     @classmethod
     def statusChangedEventType(class_):
         return "task.status"
@@ -873,14 +840,12 @@ class Task(
     def computedStatus(self, explain=False):
         """Return the computed TaskStatus object (single source of truth).
 
-        This is the preferred accessor for status. It returns the
-        cached TaskStatus object populated by compute_stored_status(),
-        which is called:
+        The accessor for the status: styles, filters, sorting and the
+        status bar all read it. It returns the cached TaskStatus object
+        populated by compute_stored_status(), which is called:
         - On task creation/load (Task.__init__)
         - On date changes (recomputeAppearance)
         - The master loop, at the seconds time changes a status
-
-        Use this instead of the legacy status() method.
 
         Args:
             explain: If True, return (status, source) tuple where source
@@ -896,45 +861,6 @@ class Task(
     # =========================================================================
     # Scheduler methods - called by the master loop
     # =========================================================================
-
-    def recomputeLegacyStatus(self, timestamp=None):
-        """Recompute legacy status cache for color/font lookups.
-
-        This is the legacy status system, separate from the modern
-        compute_stored_status().
-        Called by the master loop, at the seconds time changes a status.
-
-        Note: recomputeAppearance() handles data-change-triggered updates.
-        This method handles time-passing updates (due soon → overdue at midnight).
-
-        No events - legacy system didn't have them. UI updates via:
-        - Modern system fires statusChangedEventType
-        - MinuteRefresher calls viewer.refresh() every minute
-
-        Args:
-            timestamp: Current time from scheduler (avoids redundant Now() calls)
-        """
-        now = timestamp or date.Now()
-
-        if self.completionDateTime() != self.maxDateTime:
-            self.__status = status.completed
-        # Direct prereqs only - no recursive (each task's status already computed)
-        elif any(
-            p.completionDateTime() == self.maxDateTime
-            for p in self.prerequisites()
-        ):
-            self.__status = status.inactive
-        elif self.dueDateTime() < now:
-            self.__status = status.overdue
-        # At the tick's second, as every other test here
-        elif 0 <= (self.dueDateTime() - now).hours() < self.__dueSoonHours:
-            self.__status = status.duesoon
-        elif self.actualStartDateTime() <= now:
-            self.__status = status.active
-        elif self.plannedStartDateTime() < now:
-            self.__status = status.late
-        else:
-            self.__status = status.inactive
 
     def processReminder(self, timestamp):
         """Process reminder state and trigger if due.
@@ -1234,7 +1160,7 @@ class Task(
         return recursiveColor
 
     def statusFgColor(self):
-        return self.fgColorForStatus(self.status())
+        return self.fgColorForStatus(self.computedStatus())
 
     @classmethod
     def _themedSection(class_, section):
@@ -1310,7 +1236,7 @@ class Task(
         return recursiveColor
 
     def statusBgColor(self):
-        return self.bgColorForStatus(self.status())
+        return self.bgColorForStatus(self.computedStatus())
 
     @classmethod
     def bgColorForStatus(class_, taskStatus):
@@ -1335,7 +1261,7 @@ class Task(
                 return self.statusFont()
 
     def statusFont(self):
-        return self.fontForStatus(self.status())
+        return self.fontForStatus(self.computedStatus())
 
     @classmethod
     def fontForStatus(class_, taskStatus):
@@ -1410,7 +1336,6 @@ class Task(
     @patterns.eventSource
     def recomputeAppearance(self, recursive=False, event=None):
         self.compute_stored_status()
-        self.__status = None
         # The effective styles are computed by the master loop
         # Legacy: compute recursive values for backward compatibility
         try:

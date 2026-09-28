@@ -3,8 +3,8 @@
 Plan to replace the full scan `MasterScheduler` runs every second.
 [SCHEDULERS.md](SCHEDULERS.md) describes the scheduler as it is.
 
-**Status:** steps 1 to 6, 8, 9 and 11 to 14 done, step 10 decided
-(no change), 2026-09-28 ([Cost After](#cost-after)); what is left:
+**Status:** steps 1 to 9 and 11 to 14 done, step 10 decided (no
+change), 2026-09-28 ([Cost After](#cost-after)); what is left:
 [Remaining Work](#remaining-work).
 
 ## Remaining Work
@@ -33,7 +33,7 @@ The scheduler:
    reminder when a file opens, the loading freeze (step 10).
 5. Done 2026-09-28: the status bar counts after the clock changes a
    status (issue 12).
-6. Step 7: drop the legacy status and colours.
+6. Done 2026-09-28: step 7, the legacy status and colours dropped.
 7. To review: the recursive priority computed by the loop, as the
    status is ([SCHEDULERS.md](SCHEDULERS.md#todo)).
 8. Not planned: the reason for each entry
@@ -194,9 +194,9 @@ holds:
 | Reminder | Reminder less 2 s `<=` now (2 s ahead, as today) | That second |
 
 Dates are whole seconds ([Time Resolution](#time-resolution)). These
-are the only time conditions in the loop: `Task.compute_status()` and
-`recomputeLegacyStatus()` (overdue, due soon, active, late, each on the
-task's own dates, not its subtasks') and `processReminder()`.
+are the only time conditions in the loop: `Task.compute_status()`
+(overdue, due soon, active, late, each on the task's own dates, not
+its subtasks') and `processReminder()`.
 Completion is not one: a completion date, even a future one, makes the
 task completed at once. Styles read time only through the status.
 
@@ -458,11 +458,12 @@ Each due second costs its pass and one more that finds nothing (the
    ([Data Changes](#data-changes),
    [the cascade ruling](#ruling-the-cascade-runs-through-the-heap)):
    done, with step 5.
-7. The legacy status and colours: styles read `Task.status()`, which
-   counts only the direct prerequisites, while `computedStatus()`
-   counts those of the ancestors too
-   ([TASK_STATUS.md](TASK_STATUS.md#migration-path)). Drop them once the
-   results are shown to be the same.
+7. Done 2026-09-28: the legacy status and colours. Styles and the
+   status bar counts read `Task.status()`, which the loop updated
+   counting only the direct prerequisites, while `computedStatus()`
+   counts those of the ancestors too; that was their only difference.
+   They read `computedStatus()` now and the legacy status is gone
+   ([TASK_STATUS.md](TASK_STATUS.md#migration-path), `SchedulerTest`).
 
 Found along the way, 2026-09-27:
 

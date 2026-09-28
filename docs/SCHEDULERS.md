@@ -214,8 +214,7 @@ Every second (_on_second):
     For each category:
       computeStyles(category)
     For each task:
-      task.recomputeLegacyStatus(tick)      # Legacy __status
-      task.compute_stored_status(tick)      # Modern __computed_status
+      task.compute_stored_status(tick)      # The status at the tick
       task.processReminder(tick)            # Fire trigger if due
       computeStyles(task)
       computeStyles(task.notes)

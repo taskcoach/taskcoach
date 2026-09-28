@@ -280,6 +280,31 @@ class MasterTimerListTest(test.wxTestCase):
         self.task.set_hourly_fee(100)
         self.assertFalse(self.tick())
 
+    def test_a_blocked_tasks_subtask_looks_and_counts_inactive(self):
+        # The ancestors' prerequisites count, in the styles and the
+        # status bar as in the status column and the filters
+        prerequisite = task.Task(subject="prerequisite")
+        parent = task.Task(subject="parent", prerequisites=[prerequisite])
+        child = task.Task(
+            subject="child", plannedStartDateTime=self.start - date.ONE_HOUR
+        )
+        parent.addChild(child)
+        self.task_file.tasks().extend([prerequisite, parent])
+        self.settle()
+        counts = self.task_file.tasks().nr_of_tasks_per_status()
+        self.assertEqual(
+            (
+                task.status.inactive,
+                child.fgColorForStatus(task.status.inactive),
+                0,
+            ),
+            (
+                child.computedStatus(),
+                child.statusFgColor(),
+                counts[task.status.late],
+            ),
+        )
+
     def test_expanding_runs_nothing(self):
         self.settle()
         self.task.expand()
