@@ -200,6 +200,43 @@ class XMLReaderVersion6Test(XMLReaderTestCase):
         self.assertEqual("Yo", tasks[0].efforts()[0].description())
 
 
+class XMLReaderDuplicateIdTest(XMLReaderTestCase):
+    tskversion = 37
+
+    def test_a_later_duplicate_id_gets_a_new_one(self):
+        tasks = self.writeAndReadTasks(
+            '<tasks><task id="1" subject="first"/>'
+            '<task id="1" subject="second"/></tasks>'
+        )
+        ids = {each.subject(): each.id() for each in tasks}
+        self.assertEqual(
+            ("1", True), (ids["first"], ids["second"] not in ("", "1"))
+        )
+
+    def test_a_subtask_with_its_parents_id_gets_a_new_one(self):
+        tasks = self.writeAndReadTasks(
+            '<tasks><task id="1"><task id="1"/></task></tasks>'
+        )
+        self.assertNotEqual("1", tasks[0].children()[0].id())
+
+    def test_a_prerequisite_on_a_duplicate_id_is_the_first_task(self):
+        tasks = self.writeAndReadTasks(
+            '<tasks><task id="1" subject="first"/>'
+            '<task id="1" subject="second"/>'
+            '<task id="2" subject="waiting" prerequisites="1"/></tasks>'
+        )
+        by_subject = {each.subject(): each for each in tasks}
+        self.assertEqual(
+            [by_subject["first"]], list(by_subject["waiting"].prerequisites())
+        )
+
+    def test_duplicate_ids_are_reported(self):
+        self.writeAndReadTasks(
+            '<tasks><task id="1"/><task id="1"/><task id="2"/></tasks>'
+        )
+        self.assertEqual(["1"], list(self.reader.get_duplicate_ids()))
+
+
 class XMLReaderVersion8Test(XMLReaderTestCase):
     tskversion = 8
 

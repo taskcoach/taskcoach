@@ -28,6 +28,11 @@ import uuid
 import re
 
 
+def new_id():
+    """A new item's ID, unique for good."""
+    return str(uuid.uuid1())
+
+
 def fresh_state(parent, instance):
     """The state the next __getstate__ in the MRO (parent, a super()
     object) returns, as a dict the caller may update.
@@ -112,7 +117,7 @@ class Object:
             self,
             self.orderingChangedEvent,
         )
-        self.__id = kwargs.pop("id", None) or str(uuid.uuid1())
+        self.__id = kwargs.pop("id", None) or new_id()
 
         # Derived SSOT fields (value + source for each appearance type)
         self.__derivedFgColorValue = Attribute(

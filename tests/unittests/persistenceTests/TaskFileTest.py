@@ -264,6 +264,23 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.taskFile.load()
         self.assertFalse(self.taskFile.need_save())
 
+    def test_duplicate_ids_are_corrected_and_need_save_after_load(self):
+        with open(self.filename, "w", encoding="utf-8") as fd:
+            fd.write(
+                '<?taskcoach release="2.0.3" tskversion="37"?>\n'
+                '<tasks><task id="1" subject="first"/>'
+                '<task id="1" subject="second"/></tasks>'
+            )
+        self.taskFile.setFilename(self.filename)
+        self.taskFile.load()
+        self.assertEqual(
+            (2, True),
+            (
+                len({each.id() for each in self.taskFile.tasks()}),
+                self.taskFile.need_save(),
+            ),
+        )
+
     def testNeedSave_AfterEffortAdded(self):
         self.task.addEffort(effort.Effort(self.task, None, None))
         self.assertTrue(self.taskFile.need_save())

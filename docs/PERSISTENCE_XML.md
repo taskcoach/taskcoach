@@ -17,6 +17,7 @@ How domain objects are serialized to `.tsk` XML files and deserialized back.
 - [Skip Condition Categories](#skip-condition-categories)
 - [Saving](#saving)
 - [Merging](#merging)
+- [Duplicate IDs](#duplicate-ids)
 - [Related Documentation](#related-documentation)
 
 ---
@@ -276,7 +277,9 @@ changes and the `autoload` setting (which nothing read). A `.delta`
 file left by an older version is ignored.
 
 File > Merge stays, to merge another file on request: a union, item by
-item (`persistence/merge.py`).
+item (`persistence/merge.py`). **Ruling, 2026-09-28:** the file to
+merge is read into its own task file, separate from the open one and
+only for the merge; the same ID in both is the same item.
 
 - An item in only one file is kept.
 - An item in both files (same ID) keeps its newer copy by
@@ -308,6 +311,16 @@ item (`persistence/merge.py`).
   left to the user.
 - Deletions do not carry over: an item deleted in one file comes back
   from the other.
+
+## Duplicate IDs
+
+**Ruling, 2026-09-28:** an ID is unique within a file, fixed when the
+file is read. The first item with an ID keeps it; each later one gets a
+new ID (`XMLReader.__register_id()`), so references to the ID
+(prerequisites, category members) mean the first. The file is marked
+unsaved to keep the correction, and the log lists what was changed.
+Copies always get new IDs
+([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#id-review)).
 
 ---
 

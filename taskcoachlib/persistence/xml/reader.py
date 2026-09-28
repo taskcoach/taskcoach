@@ -197,13 +197,15 @@ class XMLReader(object):
         return self.__tskversion
 
     def __register_id(self, obj_id, obj_type, subject):
-        """Register an object's ID for duplicate detection."""
+        """Register an object's ID and return the ID it gets: the first
+        item with an ID keeps it, a later duplicate gets a new one
+        (docs/PERSISTENCE_XML.md, Duplicate IDs)."""
         if not obj_id:
-            return
+            return obj_id
         path = " -> ".join(self.__current_path + [f"{obj_type}: {subject}"])
-        if obj_id not in self.__id_registry:
-            self.__id_registry[obj_id] = []
-        self.__id_registry[obj_id].append((obj_type, path))
+        locations = self.__id_registry.setdefault(obj_id, [])
+        locations.append((obj_type, path))
+        return obj_id if len(locations) == 1 else base.new_id()
 
     def get_duplicate_ids(self):
         """Return a dict of IDs that appear more than once.
@@ -386,13 +388,15 @@ class XMLReader(object):
         """Recursively parse the categories from the node and return a
         category instance."""
         subject = category_node.attrib.get("subject", "")
-        obj_id = category_node.attrib.get("id", "")
-        self.__register_id(obj_id, "Category", subject)
+        obj_id = self.__register_id(
+            category_node.attrib.get("id", ""), "Category", subject
+        )
         self.__current_path.append(f"Category: {subject}")
         try:
             kwargs = self.__parse_base_composite_attributes(
                 category_node, self.__parse_category_nodes
             )
+            kwargs["id"] = obj_id
             notes = self.__parse_note_nodes(category_node)
             filtered = self.__parse_boolean(
                 category_node.attrib.get("filtered", "False")
@@ -459,8 +463,9 @@ class XMLReader(object):
         """Recursively parse the node and return a task instance."""
         # Get subject early for path tracking
         subject = task_node.attrib.get("subject", "")
-        obj_id = task_node.attrib.get("id", "")
-        self.__register_id(obj_id, "Task", subject)
+        obj_id = self.__register_id(
+            task_node.attrib.get("id", ""), "Task", subject
+        )
         self.__current_path.append(f"Task: {subject}")
         try:
             planned_start_datetime_attribute_name = (
@@ -469,6 +474,7 @@ class XMLReader(object):
             kwargs = self.__parse_base_composite_attributes(
                 task_node, self.__parse_task_nodes
             )
+            kwargs["id"] = obj_id
             kwargs.update(
                 dict(
                     plannedStartDateTime=date.parseDateTime(
@@ -596,13 +602,15 @@ class XMLReader(object):
     def __parse_note_node(self, note_node):
         """Parse the attributes and child notes from the noteNode."""
         subject = note_node.attrib.get("subject", "")
-        obj_id = note_node.attrib.get("id", "")
-        self.__register_id(obj_id, "Note", subject)
+        obj_id = self.__register_id(
+            note_node.attrib.get("id", ""), "Note", subject
+        )
         self.__current_path.append(f"Note: {subject}")
         try:
             kwargs = self.__parse_base_composite_attributes(
                 note_node, self.__parse_note_nodes
             )
+            kwargs["id"] = obj_id
             if self.__tskversion > 20:
                 kwargs["attachments"] = self.__parse_attachments(note_node)
             return self.__save_modification_datetime(
@@ -694,10 +702,10 @@ class XMLReader(object):
         """Parse an effort record from the node."""
         kwargs = {}
         if self.__tskversion >= 29:
-            kwargs["id"] = node.attrib["id"]
-            # Register effort ID for duplicate detection
             start_str = node.attrib.get("start", "")
-            self.__register_id(kwargs["id"], "Effort", f"started {start_str}")
+            kwargs["id"] = self.__register_id(
+                node.attrib["id"], "Effort", f"started {start_str}"
+            )
         start = node.attrib.get("start", "")
         stop = node.attrib.get("stop", "")
         description = self.__parse_description(node)
@@ -736,9 +744,11 @@ class XMLReader(object):
     def __parse_attachment(self, node):
         """Parse the attachment from the node."""
         subject = node.attrib.get("subject", "")
-        obj_id = node.attrib.get("id", "")
-        self.__register_id(obj_id, "Attachment", subject)
+        obj_id = self.__register_id(
+            node.attrib.get("id", ""), "Attachment", subject
+        )
         kwargs = self.__parse_base_attributes(node)
+        kwargs["id"] = obj_id
         kwargs["notes"] = self.__parse_note_nodes(node)
 
         if self.__tskversion <= 22:

@@ -434,26 +434,17 @@ class TaskFile(patterns.Observer):
         return result, duplicate_ids
 
     def _log_duplicate_ids(self, duplicate_ids):
-        """Log duplicate IDs found in the task file.
-
-        Duplicate IDs can cause issues with sync and data integrity.
-        To fix: Either manually edit the .tsk XML file to assign unique IDs,
-        or delete and recreate the affected items in Task Coach.
-        """
+        """Log the duplicate IDs the reader corrected: the first item
+        with each kept it, the others got new ones."""
         logger = logging.getLogger(__name__)
         logger.warning("=" * 70)
         logger.warning(
-            "WARNING: Duplicate IDs found in task file: %s", self.__filename
+            "Duplicate IDs corrected in task file: %s", self.__filename
         )
         logger.warning(
-            "This may cause sync issues or data integrity problems."
+            "The first item with each ID keeps it, the others got new"
         )
-        logger.warning("")
-        logger.warning("To fix: Either manually edit the .tsk XML file to")
-        logger.warning(
-            "assign unique IDs, or delete and recreate the affected"
-        )
-        logger.warning("items in Task Coach.")
+        logger.warning("IDs; the file is marked unsaved to keep this.")
         logger.warning("")
         logger.warning("Duplicate IDs and their locations:")
         for obj_id, locations in duplicate_ids.items():
@@ -479,6 +470,7 @@ class TaskFile(patterns.Observer):
             self.setFilename(filename)
         # Before reading: a change during the read is noticed later
         stat = self.__disk_stat()
+        duplicate_ids = None
         try:
             if self.exists():
                 fd = self._openForRead()
@@ -510,6 +502,9 @@ class TaskFile(patterns.Observer):
         finally:
             self.__loading = False
             self.mark_clean()
+            if duplicate_ids:
+                # Corrected while reading: saving keeps the new IDs
+                self.mark_dirty()
             self.__changedOnDisk = False
             self.__saved_stat = stat
             self._publish("taskfile.justRead")

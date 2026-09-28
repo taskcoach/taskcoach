@@ -18,9 +18,9 @@ recursive priority stays out of the loop
 
 This refactor:
 
-1. IDs: one rule for two objects with one ID (issue 13), duplicate
-   IDs in a file corrected and shown (issue 15), and decisions on
-   issues 16 to 18 ([ID Review](#id-review)).
+1. IDs: decisions on issues 16 to 18 (cut and paste identity,
+   `uuid1` saving the MAC address, the unused file GUID;
+   [ID Review](#id-review)).
 2. The undo log as object versions keyed by the modification date
    ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log), option C).
 3. Sorting by the Status column, in the status sort order
@@ -548,22 +548,18 @@ Issues found, not fixed:
     task's id, a merged file's copy included; it compares identity.
 12. Fixed: the status bar counts ignored status changes made by the
     clock.
-13. Two objects with one ID count as the same object: domain objects
-    compare equal and hash by ID (`Object.__eq__`), so wherever two
-    objects for one item meet, one is taken for the other. Copies are
-    not a case: each gets a new ID ([ID Review](#id-review)). The
-    cases: File > Merge holds the other file's version of each item
-    (issue 11 was one leak); loading over open items leaves the old
-    objects in the viewers (`Filter.reset()`; reload closes first for
-    this reason); duplicate IDs in a file (issue 15).
+13. Decided 2026-09-28: domain objects compare equal by ID, and one
+    object per ID is kept within a file: duplicates are corrected when
+    read (issue 15); the file to merge is held apart and briefly
+    ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging); issue 11 was
+    its one leak); reload closes first, as loading over open items
+    would leave the old objects in the viewers (`Filter.reset()`).
 14. Sorting by the Status or Status combo column sorts by subject:
     `Task` has no `statusSortFunction`. The Status icon column does
     not sort.
-15. Duplicate IDs in a file are detected on load but only logged
-    (`TaskFile._log_duplicate_ids()`): nothing tells the user or
-    corrects them. Both objects load and compare equal; the reader's
-    ID maps keep the last one, so prerequisites and categories point
-    to it only.
+15. Fixed 2026-09-28: duplicate IDs in a file were only logged; both
+    objects loaded and compared equal. They are corrected when read
+    ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#duplicate-ids)).
 16. Paste inserts copies, so a task moved by cut and paste gets a new
     ID and creation date, unlike drag and drop; merging an older copy
     of the file then brings the old task back beside it.
@@ -591,7 +587,7 @@ Checked 2026-09-28, across the repository:
 - Not item IDs: the file's GUID (issue 18); wx window and menu IDs
   (`IdProvider`), returned when a window closes.
 
-Open: issues 13 and 15 to 18.
+Open: issues 16 to 18.
 
 ---
 
