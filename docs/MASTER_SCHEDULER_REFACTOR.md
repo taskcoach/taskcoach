@@ -80,16 +80,9 @@ go at the end. Details live in the sections and documents linked.
 34. The undo log as object versions keyed by the modification date:
     step 1 done, steps 2 to 5 open
     ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log), option C).
-35. The views still draw rows from the legacy styles: the task list,
-    the calendars, the tray menu and effort rows read
-    `foregroundColor()`, `backgroundColor()`, `font()` and `icon_id()`
-    with `recursive=True`, cached by `Task.recomputeAppearance()` (21
-    call sites); only the editor reads the loop's effective styles. The
-    two rules differ: a task in two coloured categories is drawn mixed,
-    while its effective colour is the highest style priority's (seen
-    2026-09-28). The views move to the effective styles, then the
-    legacy accessors and cache go
-    ([TASK_STATUS.md](TASK_STATUS.md#4-cache-invalidation-is-implicit)).
+35. The views on the effective styles, the legacy styles removed:
+    the plan and its checklist in
+    [Views on the Effective Styles](#views-on-the-effective-styles).
 36. The task editor's Progress tab: a second percentage control and
     slider drawn over the tab labels, seen only under Xvfb; to check on
     a real display.
@@ -119,6 +112,70 @@ go at the end. Details live in the sections and documents linked.
     reproduced in four runs of the same steps): watch for it.
 45. Not planned: the reason for each entry
     ([Later](#later-the-reason-for-each-entry)).
+
+## Views on the Effective Styles
+
+To do 35. **Decided before this refactor**
+([TASK_STATUS.md](TASK_STATUS.md#legacy-code-compatibility)): new code
+reads `effectiveXxx()`, and the legacy `recursive=True` style
+accessors stay only until their consumers move; the migration waited
+for the effective styles to prove stable. Only the editor moved. Every
+view still draws from the legacy accessors, cached by
+`Task.recomputeAppearance()` outside the loop, while the loop computes
+the effective styles every pass for nothing but the editor.
+
+The two rules differ, so moving changes what some rows look like:
+
+- Several coloured categories: the legacy rule mixes their colours and
+  fonts; the effective rule takes the highest style priority's (seen
+  2026-09-28: purple drawn, red effective).
+- A subtask with no colour or category of its own: legacy takes its
+  parent's category colours, else its status colour; effective takes
+  the parent task's effective style, its own colour included.
+- Styles set by categories or the status appear at the loop's next
+  tick (within a second); an item's own style at once, as now.
+
+Scan, 2026-09-28 (sources the loop does not compute: none left after):
+
+| Where | Legacy use | Moves to |
+|---|---|---|
+| `widgets/treectrl.py`, `widgets/listctrl.py` | Row colours, font (every tree and list view) | `effectiveFgColor()`, `effectiveBgColor()`, `effectiveFont()` |
+| `widgets/hcalendar.py`, `widgets/calendarwidget.py` | Task colours, font, icon | The same, `effectiveIcon()` |
+| `gui/viewer/base.py` `subjectImageIndices()`, `gui/viewer/task.py` `get_icon_id()` | Subject icons | `effectiveIcon()` with the plural/singular transform (kept, TASK_STATUS.md migration table) |
+| `gui/viewer/task.py` Timeline, Square map | Colours, font | Effective styles |
+| `gui/viewer/task.py` task graph | `task.foregroundColor(recursive=True)` (the wrong variable: `task`, not `tsk`) | `tsk.effectiveFgColor()` |
+| `gui/taskbaricon.py`, `gui/uicommand/uicommand.py` (start tracking menu) | Task icons | `effectiveIcon()` |
+| `persistence/html/generator.py` | Export and print row colours | Effective colours |
+| `gui/dialog/editor.py` owned-item lists | Notes, efforts, attachments rows | Effective styles |
+| `domain/effort/base.py` | An effort's colours and font: its task's legacy ones | Its task's effective ones |
+| Old event `appearanceChangedEventType()` | Refreshes the task, category, note and effort views, the tray, editor pages, composite efforts; the task filter uses it for status changes | The effective-style events; the filter the status event |
+
+Checklist:
+
+- [ ] Views, widgets, export, menus and editor lists read the
+  effective styles (table above); efforts their task's
+- [ ] Listeners of the old appearance event on the effective-style
+  events, the task filter on the status event
+- [ ] `recomputeAppearance()` callers keep only the immediate status
+  (`compute_stored_status()`, TASK_STATUS.md Immediate Updates):
+  dates, completion, prerequisites, subtasks added or removed
+- [ ] The selected (open folder) icon removed, as decided (TASK_STATUS.md
+  migration table: "concept will be removed"); `selectedIcon` in old
+  files read and dropped
+- [ ] Removed: the task's recursive style overrides and caches, the
+  theme recompute, `recomputeAppearance()`, the composite and
+  categorizable recursive fallbacks, the category mixers
+  (`categoriesChange*()`, `ColorMixer`, `FontMixer`), the old
+  appearance event and its propagation, the `recursive` argument of
+  the own-value style accessors
+- [ ] Tests: about 206 references in TaskTest, CategorizableTest,
+  BaseTest, CategoryTest and AttachmentTest on the effective styles
+- [ ] Docs: TASK_STATUS.md (issue 4, Legacy Code Compatibility, the
+  migration table's views), APPEARANCE_STYLES.md, ICON_DISPLAY.md
+- [ ] Checked in the app, every view above, with a file that shows the
+  rule differences; the full suite
+
+---
 
 ## Master Design
 
@@ -222,6 +279,7 @@ Sweep, to leave nothing behind in this branch:
 ## Index
 
 - [To Do](#to-do)
+- [Views on the Effective Styles](#views-on-the-effective-styles)
 - [Master Design](#master-design)
 - [Time Resolution](#time-resolution)
 - [The Master Timer List](#the-master-timer-list)
