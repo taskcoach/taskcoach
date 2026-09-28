@@ -63,8 +63,6 @@ class AddAttachmentCommand(base.BaseCommand):
         self.owners = self.items
         self.items = self.__attachments
 
-    def modified_items(self):
-        return self.owners
 
     @patterns.eventSource
     def addAttachments(self, event=None):

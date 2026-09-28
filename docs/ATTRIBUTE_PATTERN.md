@@ -331,9 +331,10 @@ so these changes left it as it was:
 Step 0 covers those that change Attributes (completion date, reminder,
 effort stop), step 7 the recurrence (cleared on completed subtasks,
 and the count recurring advances). The dependency a prerequisite adds
-is its reverse, not saved, so it sets no date (9). Subtask links wait
-for row 10. Until the last
-row, commands still set the date too, on the items they were given.
+is its reverse, not saved, so it sets no date (9); a subitem's move
+sets its own date (10). Commands set no date (12): the data layer
+does, and undo puts the dates back
+([UNDO_REDO.md](UNDO_REDO.md#modification-dates)).
 
 Migration, one field at a time, simplest first; each becomes an
 Attribute whose change sends a Publisher event with the item as source
@@ -353,7 +354,7 @@ and sets the modification date, then is tested:
 | 9 | Task prerequisites (dependencies are their reverse) | Plain sets, pypubsub | Done: prerequisites a SetAttribute, dependencies derived (no date); Publisher |
 | 10 | Links: subtasks and parent, owned notes and attachments, efforts | Plain lists, Publisher | Done: the pointing item's date (ruling above); merging takes owned items item by item |
 | 11 | View state: a category's filter state, the expanded state | Plain values | To decide: stored, but not the item's data |
-| 12 | Commands no longer set the date: the undo log records every change ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log)) | | Last |
+| 12 | Commands no longer set the date | Commands set it on parents and owners | Done; the undo log plan: [UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log) |
 
 ---
 

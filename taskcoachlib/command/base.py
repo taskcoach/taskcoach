@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
-from taskcoachlib.domain import date
 from taskcoachlib.domain.base import ModificationDateRecorder
 from taskcoachlib.i18n import _
 from .clipboard import Clipboard
@@ -58,9 +57,6 @@ class BaseCommand(patterns.Command):
         """The items this command operates on."""
         return self.items
 
-    def modified_items(self):
-        """Return the items that are modified by this command."""
-        return self.items
 
     def canDo(self):
         return bool(self.items)
@@ -103,21 +99,12 @@ class BaseCommand(patterns.Command):
 
     def do_command(self):
         self.__tryInvokeMethodOnSuper("do_command")
-        self.__set_modification_datetimes()
 
     def undo_command(self):
         self.__tryInvokeMethodOnSuper("undo_command")
 
     def redo_command(self):
         self.__tryInvokeMethodOnSuper("redo_command")
-
-    def __set_modification_datetimes(self):
-        # Until every stored field sets it itself
-        # (docs/ATTRIBUTE_PATTERN.md, Modification Date)
-        now = date.Timestamp.now()
-        for item in self.modified_items():
-            if item is not None:
-                item.set_modification_datetime(now)
 
 
 class SaveStateMixin(object):
@@ -183,8 +170,6 @@ class NewItemCommand(BaseCommand):
     def items_are_new(self):
         return True
 
-    def modified_items(self):
-        return []
 
     @patterns.eventSource
     def do_command(self, event=None):
@@ -215,8 +200,6 @@ class NewSubItemCommand(NewItemCommand):
         # interesting because it's something like 'New subitem'.
         return subitem.parent().subject()
 
-    def modified_items(self):
-        return [item.parent() for item in self.items]
 
 
 class CopyCommand(BaseCommand):
@@ -240,8 +223,6 @@ class DeleteCommand(BaseCommand):
     plural_name = _("Delete")
     singular_name = _('Delete "%s"')
 
-    def modified_items(self):
-        return [item.parent() for item in self.items if item.parent()]
 
     def do_command(self):
         super().do_command()
@@ -371,13 +352,6 @@ class DragAndDropCommand(BaseCommand, SaveStateMixin, CompositeMixin):
                 toSave.append(ancestor)
         return toSave
 
-    def modified_items(self):
-        return (
-            [item.parent() for item in self.items if item.parent()]
-            + [self._itemToDropOn]
-            if self._itemToDropOn
-            else []
-        )
 
     def canDo(self):
         return self._itemToDropOn not in (

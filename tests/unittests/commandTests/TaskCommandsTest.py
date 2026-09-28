@@ -398,6 +398,14 @@ class NewSubTaskCommandTest(TaskCommandTestCase):
         self.newSubTask()
         self.assertDoUndoRedo(lambda: self.assertTaskList(self.originalList))
 
+    def test_new_subtask_keeps_the_parents_date(self):
+        # Children are the reverse of the subtasks' parent link
+        self.task1.set_modification_datetime(date.DateTime(2020, 1, 1))
+        self.newSubTask([self.task1])
+        self.assertEqual(
+            date.DateTime(2020, 1, 1), self.task1.modificationDateTime()
+        )
+
     def testNewSubTask(self):
         self.newSubTask([self.task1])
         newSubTask = self.task1.children()[0]

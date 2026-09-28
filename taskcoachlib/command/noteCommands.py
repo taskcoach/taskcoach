@@ -115,8 +115,6 @@ class AddNoteCommand(base.BaseCommand):
             ]
         self.items = self.__notes
 
-    def modified_items(self):
-        return self.owners
 
     def name_subject(self, newNote):  # pylint: disable=W0613
         # Override to use the subject of the owner of the new note instead
@@ -169,8 +167,6 @@ class AddSubNoteCommand(base.BaseCommand):
         )
         self.items = self.__notes
 
-    def modified_items(self):
-        return self.__parents
 
     @patterns.eventSource
     def addNotes(self, event=None):

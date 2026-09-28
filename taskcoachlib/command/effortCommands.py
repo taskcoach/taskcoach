@@ -34,8 +34,6 @@ class NewEffortCommand(base.BaseCommand):
         ]
         self.__oldActualStartDateTimes = {}
 
-    def modified_items(self):
-        return self.__tasks
 
     def name_subject(self, effort):  # pylint: disable=W0621
         return effort.task().subject()
@@ -88,9 +86,6 @@ class AddEffortCommand(base.BaseCommand):
         self.__old_task_refs = [eff.task() for eff in self.__efforts]
         self.items = self.__efforts
 
-    def modified_items(self):
-        # Filter out None values from old task refs
-        return self.__tasks + [t for t in self.__old_task_refs if t is not None]
 
     def name_subject(self, anEffort):
         return self.__tasks[0].subject() if self.__tasks else ""
@@ -123,8 +118,6 @@ class DeleteEffortCommand(base.DeleteCommand):
     plural_name = _("Delete efforts")
     singular_name = _('Delete effort "%s"')
 
-    def modified_items(self):
-        return [item.task() for item in self.items]
 
 
 class EditTaskCommand(base.BaseCommand):
@@ -137,8 +130,6 @@ class EditTaskCommand(base.BaseCommand):
         super().__init__(*args, **kwargs)
         self.__oldTasks = [item.task() for item in self.items]
 
-    def modified_items(self):
-        return [self.__task] + self.__oldTasks
 
     def do_command(self):
         super().do_command()
