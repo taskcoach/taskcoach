@@ -37,19 +37,19 @@ class Task(
 
     maxDateTime = date.DateTime()
 
-    # Nonzero while links are rebuilt, not edited (merging files):
-    # a subtask list is derived from the subtasks' parents, so the
-    # parent rules of addChild() and removeChild() do not run
-    _rebuilding_links = 0
+    # Nonzero during File > Merge, which replaces tasks by their
+    # newest copies instead of editing them, so the parent rules of
+    # addChild() and removeChild() do not run
+    _merging = 0
 
     @staticmethod
     @contextlib.contextmanager
-    def rebuilding_links():
-        Task._rebuilding_links += 1
+    def merging():
+        Task._merging += 1
         try:
             yield
         finally:
-            Task._rebuilding_links -= 1
+            Task._merging -= 1
 
     def __init__(
         self,
@@ -300,7 +300,7 @@ class Task(
         wasTracking = self.isBeingTracked(recursive=True)
         super().addChild(child, event=event)
         self.childChangeEvent(child, wasTracking, event)
-        if not Task._rebuilding_links:
+        if not Task._merging:
             if self.shouldBeMarkedCompleted():
                 self.setCompletionDateTime(child.completionDateTime())
             elif self.completed() and not child.completed():
@@ -315,7 +315,7 @@ class Task(
         wasTracking = self.isBeingTracked(recursive=True)
         super().removeChild(child, event=event)
         self.childChangeEvent(child, wasTracking, event)
-        if not Task._rebuilding_links and self.shouldBeMarkedCompleted():
+        if not Task._merging and self.shouldBeMarkedCompleted():
             # The removed child was the last uncompleted child
             self.setCompletionDateTime(date.Now())
         self.recomputeAppearance(recursive=False, event=event)

@@ -298,11 +298,14 @@ item (`persistence/merge.py`).
   (they own their categories; a category's members are the reverse),
   a task's prerequisites from its winning copy (dependencies are their
   reverse).
-- A merge, like loading a file, is not an edit: each item is exactly
-  its winning copy. The parent rules react to edits only
-  ([SCHEDULERS.md](SCHEDULERS.md#ssot-principle-scheduler-vs-events)),
-  so a completed parent stays completed when an open subtask from the
-  other file joins it (`Task.rebuilding_links()`).
+- A merge replaces items by their winning copies and edits nothing,
+  so no edit rule runs, the parent rules
+  ([SCHEDULERS.md](SCHEDULERS.md#ssot-principle-scheduler-vs-events))
+  included (`Task.merging()`). **Ruling, 2026-09-28:** the rules may
+  run, as when adding subtasks in the editor, but not through a
+  separate path for this fringe function; what they would change (a
+  completed parent holding an open subtask from the other file) is
+  left to the user.
 - Deletions do not carry over: an item deleted in one file comes back
   from the other.
 

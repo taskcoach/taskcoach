@@ -1078,8 +1078,7 @@ class TaskFileMergeTest(TaskFileTestCase):
         self.assertEqual(3, len(self.taskFile.tasks()))
 
     def test_a_merged_open_subtask_leaves_its_parent_completed(self):
-        # The subtask list is derived, not the parent's data: the merge
-        # changes no task beyond taking its newest copy
+        # The merge edits nothing, so the parent rules do not run
         self.task.setCompletionDateTime(date.DateTime(2021, 6, 1))
         self.task.set_modification_datetime(date.DateTime(2022, 1, 1))
         parent = self.their_copy(
@@ -1098,7 +1097,7 @@ class TaskFileMergeTest(TaskFileTestCase):
             ),
         )
 
-    def test_relinking_subtasks_completes_no_parent(self):
+    def test_merging_subtasks_completes_no_parent(self):
         self.settings.setboolean(
             "behavior", "markparentcompletedwhenallchildrencompleted", True
         )

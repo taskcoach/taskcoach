@@ -5,6 +5,17 @@ and land changes. Deep-dive rationale for specific subsystems lives in
 dedicated `docs/*.md` files (grep `docs/` before changing pins, flags,
 or config defaults; non-obvious decisions are documented there).
 
+## Design
+
+- **One source of truth:** no duplicated logic or data; derive what
+  can be derived.
+- **Modular:** one implementation per operation, reused by every path
+  (the UI, loading, merging, undo).
+- **Not brittle:** no special cases or order-dependent steps to force
+  a result. When something cannot be done cleanly, do the simple thing
+  and document what it leaves out; never risk core behaviour for a
+  fringe feature.
+
 ## Code style
 
 - **Format the files you touch with black**, line-length 79 (configured
