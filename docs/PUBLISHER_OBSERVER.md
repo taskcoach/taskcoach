@@ -235,10 +235,10 @@ Menu Radio Option ── do_command(event) ────────────�
    tracks all registered observers. When the viewer is destroyed,
    `removeInstance()` unregisters them. No manual unsubscribe needed.
 
-6. **Settings write is inert.** `settings.setboolean()` still fires a
-   pubsub message (`"settings.taskviewer.treemode"`), but nobody subscribes
-   to it. The broadcast is harmless — all subscribers use the Publisher
-   event instead.
+6. **Settings write.** `settings.setboolean()` sends the settings
+   event `taskviewer.treemode`, the settings as source
+   ([Settings Events](#settings-events)); the toggle's subscribers listen
+   to the viewer's own event instead.
 
 **Files:**
 - `taskcoachlib/gui/viewer/task.py` — `TaskViewer.set_tree_mode()`
@@ -290,8 +290,8 @@ No manual unsubscribe, no silent `except` guards, no zombie callbacks.
 
 ### Target architecture
 
-1. **Unify on one signal system.** Migrate all pypubsub usage to Publisher
-   signaling (per-instance dispatch). Then migrate Publisher to a modern
+1. **Unify on one signal system.** Done 2026-09-28 for pypubsub: every
+   signal is a Publisher event. Next: migrate the Publisher to a modern
    signal library (Blinker or psygnal) with true per-instance signals.
 
 2. **Automatic cleanup via EVT_WINDOW_DESTROY.** Hook into wx's
