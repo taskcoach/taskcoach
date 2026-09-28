@@ -43,11 +43,11 @@ import re
 #   - Patch: Incremented for each bug fix release
 # =============================================================================
 
-version = "2.0.2"  # Major.Minor.Milestone
-patch = "27"  # Patch number - INCREMENT THIS for each release
-version_full = f"{version}.{patch}"  # Full version: 2.0.2.27
+version = "2.1.0"  # Major.Minor.Milestone
+patch = "0"  # Patch number - INCREMENT THIS for each release
+version_full = f"{version}.{patch}"  # Full version: 2.1.0.0
 
-release_day = "27"  # Day of the release (1-31)
+release_day = "28"  # Day of the release (1-31)
 release_month = "September"  # Month of the release
 release_year = "2026"  # Year of the release
 
