@@ -533,6 +533,10 @@ Issues found, not fixed:
    still keep their winning copies' dates (`persistence/merge.py`).
 10. A `.delta` file left by an older version next to a task file is
    ignored; nothing removes it.
+11. `EffortList` takes effort changes of any task equal to one of its
+    tasks (same id), so a second task file holding a copy of a task
+    (File > Merge's) can leak efforts into the open file's list;
+    pypubsub, compared by id.
 
 ---
 

@@ -1098,6 +1098,57 @@ class TaskFileMergeTest(TaskFileTestCase):
         )
         self.assertEqual([dependent], list(winner.dependencies()))
 
+    def older_copy_of_task(self):
+        return self.their_copy(self.task, "task", date.DateTime(2019, 1, 1))
+
+    def test_note_added_elsewhere_to_an_older_task_comes_over(self):
+        their_task = self.older_copy_of_task()
+        their_task.addNote(note.Note(subject="their note", id="n"))
+        self.mergeFile.tasks().append(their_task)
+        self.merge()
+        self.assertEqual(
+            ["their note"], [each.subject() for each in self.task.notes()]
+        )
+
+    def test_owned_note_edited_elsewhere_wins_by_its_own_date(self):
+        mine = note.Note(subject="mine", id="n")
+        self.task.addNote(mine)
+        mine.set_modification_datetime(date.DateTime(2020, 1, 1))
+        self.task.set_modification_datetime(date.DateTime(2020, 1, 1))
+        their_task = self.older_copy_of_task()
+        their_task.addNote(
+            note.Note(
+                subject="edited",
+                id="n",
+                modificationDateTime=date.DateTime(2021, 1, 1),
+            )
+        )
+        self.mergeFile.tasks().append(their_task)
+        self.merge()
+        merged = self.taskFile.tasks().getObjectById(self.task.id())
+        self.assertEqual(
+            ("task", ["edited"]),
+            (merged.subject(), [each.subject() for each in merged.notes()]),
+        )
+
+    def test_effort_recorded_elsewhere_comes_over(self):
+        their_task = self.older_copy_of_task()
+        their_task.addEffort(
+            effort.Effort(
+                their_task,
+                date.DateTime(2021, 1, 1, 10, 0, 0),
+                date.DateTime(2021, 1, 1, 11, 0, 0),
+            )
+        )
+        # Older still: the effort set its actual start, and so its date
+        their_task.set_modification_datetime(date.DateTime(2019, 1, 1))
+        self.mergeFile.tasks().append(their_task)
+        self.merge()
+        self.assertEqual(2, len(self.task.efforts()))
+        self.assertTrue(
+            all(each.task() is self.task for each in self.task.efforts())
+        )
+
     def testMerge_SameNote(self):
         self.mergeFile.notes().append(
             self.their_copy(

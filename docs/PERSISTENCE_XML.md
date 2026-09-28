@@ -263,10 +263,12 @@ item (`persistence/merge.py`).
   set the date.
 - Each item goes under the parent its winning copy names, so subitems
   from both files end up together.
+- Notes, attachments and efforts are merged item by item too: each
+  goes to the owner (and parent note) its winning copy names, so an
+  edit to a task's note carries over even when the task's copy loses.
 - Category membership comes from the winning category copy, a task's
   prerequisites from its winning copy (dependencies are their
-  reverse). Notes, attachments and efforts an item owns come with its
-  winning copy.
+  reverse).
 - Merged items keep the dates of their winning copies: rebuilding
   links is not an edit.
 - Deletions do not carry over: an item deleted in one file comes back

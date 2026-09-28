@@ -28,6 +28,7 @@ def merge_into(task_file, other):
     in both keeps its newest copy; its subitems from both files end up
     together under it. The items taken from other leave it."""
     their_file_is_newer = _newest_date(other) > _newest_date(task_file)
+    mine_owned, theirs_owned = _owned(task_file), _owned(other)
     # Each item keeps the date of its winning copy: rebuilding links is
     # not an edit
     with ModificationDateRecorder() as recorder:
@@ -37,6 +38,7 @@ def merge_into(task_file, other):
             (task_file.notes(), other.notes()),
         ):
             _merge_collection(mine, theirs, their_file_is_newer)
+        _merge_owned(task_file, mine_owned, theirs_owned, their_file_is_newer)
         items = {item.id(): item for item in _walk(_roots(task_file))}
         _link_categories(task_file.categories(), items)
         _link_prerequisites(task_file.tasks(), items)
@@ -68,9 +70,7 @@ def _merge_collection(mine, theirs, their_file_is_newer):
             if own is not None:
                 replaced.append(own)
     # Parents as the winning copies name them, before any link changes
-    parents = {
-        item_id: _parent_id(item) for item_id, item in final.items()
-    }
+    parents = {item_id: _parent_id(item) for item_id, item in final.items()}
     # Items compare equal by id, so the copies they replace must leave
     # the collection and their parents first
     mine.removeItems(replaced)
@@ -88,9 +88,97 @@ def _merge_collection(mine, theirs, their_file_is_newer):
             if current is not None and _has_child(current, item):
                 current.removeChild(item)
             item.setParent(parent)
-    mine.extend(
-        [item for item in final.values() if not _contains(mine, item)]
-    )
+    mine.extend([item for item in final.values() if not _contains(mine, item)])
+
+
+_OWNED_KINDS = ("notes", "attachments", "efforts")
+
+
+def _owned(task_file):
+    """The items other items own (notes and their subnotes,
+    attachments, efforts), by id: (item, owner id, parent id, kind)."""
+    records = {}
+
+    def visit(owner):
+        for kind in _OWNED_KINDS:
+            for root in getattr(owner, kind, list)():
+                family = [root] + list(
+                    getattr(root, "children", lambda **kwargs: [])(
+                        recursive=True
+                    )
+                )
+                for item in family:
+                    parent_id = _parent_id(item) if item is not root else None
+                    records[item.id()] = (item, owner.id(), parent_id, kind)
+                    visit(item)
+
+    for collection in (
+        task_file.categories(),
+        task_file.tasks(),
+        task_file.notes(),
+    ):
+        for item in collection:
+            visit(item)
+    return records
+
+
+def _merge_owned(task_file, mine, theirs, their_file_is_newer):
+    """Owned items item by item: each goes to the owner (and parent)
+    its winning copy names."""
+    winners = dict(mine)
+    for item_id, record in theirs.items():
+        own = mine.get(item_id)
+        if own is None or _theirs_wins(own[0], record[0], their_file_is_newer):
+            winners[item_id] = record
+    owners = {item.id(): item for item in _walk(_roots(task_file))}
+    owners.update((item_id, record[0]) for item_id, record in winners.items())
+    wanted = {}
+    for item, owner_id, parent_id, kind in winners.values():
+        key = (parent_id, "children") if parent_id else (owner_id, kind)
+        wanted.setdefault(key, []).append(item)
+    for (owner_id, kind), items in wanted.items():
+        if kind != "children" and owner_id in owners:
+            _set_owned(owners[owner_id], kind, items)
+    for owner_id, owner in owners.items():
+        for kind in _OWNED_KINDS:
+            if hasattr(owner, kind) and (owner_id, kind) not in wanted:
+                _set_owned(owner, kind, [])
+    for item_id, record in winners.items():
+        if record[3] == "notes":
+            _set_children(record[0], wanted.get((item_id, "children"), []))
+
+
+def _identities(items):
+    return [id(each) for each in items]
+
+
+def _set_owned(owner, kind, items):
+    current = getattr(owner, kind)()
+    if _identities(current) == _identities(items):
+        return
+    if kind == "efforts":
+        for effort in current:
+            if not any(effort is each for each in items):
+                owner.removeEffort(effort)
+        for effort in items:
+            if effort.task() is not owner:
+                effort.setTask(owner)
+            elif not any(effort is each for each in owner.efforts()):
+                owner.addEffort(effort)
+        return
+    # Emptied first: a list holding equal copies (same ids) is unchanged
+    setter = getattr(owner, "set" + kind.capitalize())
+    setter([])
+    setter(items)
+
+
+def _set_children(item, children):
+    if _identities(item.children()) == _identities(children):
+        return
+    for child in list(item.children()):
+        item.removeChild(child)
+    for child in children:
+        item.addChild(child)
 
 
 def _parent_id(item):
