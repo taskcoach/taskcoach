@@ -44,9 +44,15 @@ class TemplateXMLWriterTestCase(test.TestCase):
     # tests
 
     def testDefaultTask(self):
+        # Not modified since created: both dates are the same
         self.expect_in_xml(
-            '<tasks>\n<task creationDateTime="%s" id="%s" />\n</tasks>'
-            % (self.task.creationDateTime(), self.task.id())
+            '<tasks>\n<task creationDateTime="%s" id="%s" '
+            'modificationDateTime="%s" />\n</tasks>'
+            % (
+                self.task.creationDateTime(),
+                self.task.id(),
+                self.task.creationDateTime(),
+            )
         )
 
     def testTaskWithPlannedStartDateTime(self):
