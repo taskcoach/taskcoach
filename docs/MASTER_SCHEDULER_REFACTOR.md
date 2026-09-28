@@ -51,6 +51,7 @@ Found along the way:
 12. `.delta` files left by older versions (issue 10).
 13. The task editor's Progress tab drawn twice, to check on a real
     display (issue 7).
+15. Sorting by the Status column (issue 14).
 14. Done 2026-09-28: the timing-dependent `EffortViewerTest` case
     (issue 8).
 
@@ -597,6 +598,10 @@ Issues found, not fixed:
     first) leaves the old objects in the viewers, as the loaded
     copies are equal to them. Reload on a file changed on disk goes
     through File > Open, which closes first, for this reason.
+14. Sorting by the Status or Status combo column finds no
+    `statusSortFunction` on `Task`, so the sorter falls back to the
+    subject (and logs it); the Status icon column does not sort. Also
+    before this work.
 
 ---
 
