@@ -1116,19 +1116,19 @@ class TaskFileMergeTest(TaskFileTestCase):
         mine.set_modification_datetime(date.DateTime(2020, 1, 1))
         self.task.set_modification_datetime(date.DateTime(2020, 1, 1))
         their_task = self.older_copy_of_task()
-        their_task.addNote(
-            note.Note(
-                subject="edited",
-                id="n",
-                modificationDateTime=date.DateTime(2021, 1, 1),
-            )
-        )
+        edited = note.Note(subject="edited", id="n")
+        their_task.addNote(edited)
+        edited.set_modification_datetime(date.DateTime(2021, 1, 1))
         self.mergeFile.tasks().append(their_task)
         self.merge()
         merged = self.taskFile.tasks().getObjectById(self.task.id())
         self.assertEqual(
             ("task", ["edited"]),
             (merged.subject(), [each.subject() for each in merged.notes()]),
+        )
+        # Its own date, although it replaced a copy in the owner's list
+        self.assertEqual(
+            date.DateTime(2021, 1, 1), merged.notes()[0].modificationDateTime()
         )
 
     def test_effort_recorded_elsewhere_comes_over(self):

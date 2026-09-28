@@ -42,7 +42,7 @@ def merge_into(task_file, other):
         items = {item.id(): item for item in _walk(_roots(task_file))}
         _link_categories(task_file.categories(), items)
         _link_prerequisites(task_file.tasks(), items)
-    for item, date_time in recorder.dates_before.items():
+    for item, date_time in recorder.dates_before.values():
         item.set_modification_datetime(date_time)
 
 

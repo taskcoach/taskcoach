@@ -68,8 +68,8 @@ class BaseCommand(patterns.Command):
                 self.do_command()
             self.__dates_before = recorder.dates_before
             self.__dates_after = {
-                item: item.modificationDateTime()
-                for item in recorder.dates_before
+                key: (item, item.modificationDateTime())
+                for key, (item, _date) in recorder.dates_before.items()
             }
 
     def undo(self):
@@ -87,7 +87,7 @@ class BaseCommand(patterns.Command):
         (docs/ATTRIBUTE_PATTERN.md, Modification Date)."""
         with ModificationDateRecorder() as recorder:
             run()
-        for item, date_time in {**recorder.dates_before, **dates}.items():
+        for item, date_time in {**recorder.dates_before, **dates}.values():
             item.set_modification_datetime(date_time)
 
     def __tryInvokeMethodOnSuper(self, methodName, *args, **kwargs):

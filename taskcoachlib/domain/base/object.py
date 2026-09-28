@@ -52,7 +52,8 @@ class ModificationDateRecorder:
     _active = []
 
     def __init__(self):
-        self.dates_before = {}
+        # By identity: two copies of an item (same id) are two entries
+        self.dates_before = {}  # id(item): (item, date)
 
     def __enter__(self):
         ModificationDateRecorder._active.append(self)
@@ -64,7 +65,7 @@ class ModificationDateRecorder:
     @classmethod
     def record(cls, item, date_time):
         for recorder in cls._active:
-            recorder.dates_before.setdefault(item, date_time)
+            recorder.dates_before.setdefault(id(item), (item, date_time))
 
 
 @functools.total_ordering
