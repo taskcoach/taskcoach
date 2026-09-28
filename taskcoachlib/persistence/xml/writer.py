@@ -333,8 +333,6 @@ class XMLWriter(object):
             node.attrib["font"] = str(item.font().GetNativeFontInfoDesc())
         if item.icon_id():
             node.attrib["icon"] = str(item.icon_id())
-        if item.selected_icon_id():
-            node.attrib["selectedIcon"] = str(item.selected_icon_id())
         if item.ordering():
             node.attrib["ordering"] = str(item.ordering())
         return node
@@ -358,8 +356,6 @@ class XMLWriter(object):
             node.attrib["font"] = str(item.font().GetNativeFontInfoDesc())
         if item.icon_id():
             node.attrib["icon"] = str(item.icon_id())
-        if item.selected_icon_id():
-            node.attrib["selectedIcon"] = str(item.selected_icon_id())
         if item.ordering():
             node.attrib["ordering"] = str(item.ordering())
         if item.expandedContexts():

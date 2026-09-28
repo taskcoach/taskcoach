@@ -88,6 +88,30 @@ class ChangeRecorder(list):
             self.append((values[0], source) if values else source)
 
 
+def styled(item):
+    """The item after the master loop's pass over it: its categories,
+    then its parents and itself, parents first (a child reads its
+    parent's style), with the loop's own steps."""
+    from taskcoachlib.domain import date
+    from taskcoachlib.domain.base.appearance import computeStyles
+    from taskcoachlib.gui.scheduler import MasterScheduler
+
+    def parents_first(each):
+        return list(reversed(each.ancestors())) + [each]
+
+    order = []
+    for each in parents_first(item):
+        for category in getattr(each, "categories", set)():
+            order.extend(parents_first(category))
+    order.extend(parents_first(item))
+    for each in order:
+        if hasattr(each, "compute_stored_status"):
+            MasterScheduler._process_task(each, date.Now())
+        else:
+            computeStyles(each)
+    return item
+
+
 class TestCase(unittest.TestCase, object):
     def assertEqualLists(self, expectedList, actualList):
         self.assertEqual(len(expectedList), len(actualList))

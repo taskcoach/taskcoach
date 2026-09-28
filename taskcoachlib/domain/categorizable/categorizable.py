@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns
 from taskcoachlib.domain import base
-from taskcoachlib.domain.attribute import font, color
 
 
 class CategorizableCompositeObject(base.CompositeObject):
@@ -76,36 +75,6 @@ class CategorizableCompositeObject(base.CompositeObject):
             event.addSource(
                 child, *categories, **dict(type=child.categoryAddedEventType())
             )
-        if self.categoriesChangeAppearance(categories):
-            self.appearanceChangedEvent(event)
-
-    def categoriesChangeAppearance(self, categories):
-        return (
-            self.categoriesChangeFgColor(categories)
-            or self.categoriesChangeBgColor(categories)
-            or self.categoriesChangeFont(categories)
-            or self.categoriesChangeIcon(categories)
-        )
-
-    def categoriesChangeFgColor(self, categories):
-        return not self.foregroundColor() and any(
-            category.foregroundColor(recursive=True) for category in categories
-        )
-
-    def categoriesChangeBgColor(self, categories):
-        return not self.backgroundColor() and any(
-            category.backgroundColor(recursive=True) for category in categories
-        )
-
-    def categoriesChangeFont(self, categories):
-        return not self.font() and any(
-            category.font(recursive=True) for category in categories
-        )
-
-    def categoriesChangeIcon(self, categories):
-        return not self.icon_id() and any(
-            category.icon_id(recursive=True) for category in categories
-        )
 
     @classmethod
     def categoryRemovedEventType(class_):
@@ -126,8 +95,6 @@ class CategorizableCompositeObject(base.CompositeObject):
                 *categories,
                 **dict(type=child.categoryRemovedEventType())
             )
-        if self.categoriesChangeAppearance(categories):
-            self.appearanceChangedEvent(event)
 
     def setCategories(self, categories, event=None):
         return self.__categories.set(set(categories), event=event)
@@ -165,124 +132,6 @@ class CategorizableCompositeObject(base.CompositeObject):
             class_.categoryAddedEventType(),
             class_.categoryRemovedEventType(),
         )
-
-    def foregroundColor(self, recursive=False):
-        myOwnFgColor = super(
-            CategorizableCompositeObject, self
-        ).foregroundColor()
-        if myOwnFgColor or not recursive:
-            return myOwnFgColor
-        categoryBasedFgColor = self._categoryForegroundColor()
-        if categoryBasedFgColor:
-            return categoryBasedFgColor
-        else:
-            return super().foregroundColor(recursive=True)
-
-    def backgroundColor(self, recursive=False):
-        myOwnBgColor = super(
-            CategorizableCompositeObject, self
-        ).backgroundColor()
-        if myOwnBgColor or not recursive:
-            return myOwnBgColor
-        categoryBasedBgColor = self._categoryBackgroundColor()
-        if categoryBasedBgColor:
-            return categoryBasedBgColor
-        else:
-            return super().backgroundColor(recursive=True)
-
-    def _categoryForegroundColor(self):
-        """If a categorizable object belongs to a category that has a
-        foreground color associated with it, the categorizable object is
-        colored accordingly. When a categorizable object belongs to
-        multiple categories, the color is mixed. If a categorizable
-        composite object has no foreground color of its own, it uses its
-        parent's foreground color."""
-        colors = [
-            category.foregroundColor(recursive=True)
-            for category in self.categories()
-        ]
-        if not colors and self.parent():
-            return self.parent()._categoryForegroundColor()
-        else:
-            return color.ColorMixer.mix(colors)
-
-    def _categoryBackgroundColor(self):
-        """If a categorizable object belongs to a category that has a
-        background color associated with it, the categorizable object is
-        colored accordingly. When a categorizable object belongs to
-        multiple categories, the color is mixed. If a categorizable
-        composite object has no background color of its own, it uses its
-        parent's background color."""
-        colors = [
-            category.backgroundColor(recursive=True)
-            for category in self.categories()
-        ]
-        if not colors and self.parent():
-            return self.parent()._categoryBackgroundColor()
-        else:
-            return color.ColorMixer.mix(colors)
-
-    def font(self, recursive=False):
-        myFont = super().font()
-        if myFont or not recursive:
-            return myFont
-        categoryBasedFont = self._categoryFont()
-        if categoryBasedFont:
-            return categoryBasedFont
-        else:
-            return super().font(recursive=True)
-
-    def _categoryFont(self):
-        """If a categorizable object belongs to a category that has a
-        font associated with it, the categorizable object uses that font.
-        When a categorizable object belongs to multiple categories, the
-        font is mixed. If a categorizable composite object has no font of
-        its own, it uses its parent's font."""
-        fonts = [
-            category.font(recursive=True) for category in self.categories()
-        ]
-        if not fonts and self.parent():
-            return self.parent()._categoryFont()
-        else:
-            return font.FontMixer.mix(*fonts)  # pylint: disable=W0142
-
-    def icon_id(self, recursive=False):
-        icon_id = super().icon_id()
-        if not icon_id and recursive:
-            icon_id = self.category_icon_id() or super(
-                CategorizableCompositeObject, self
-            ).icon_id(recursive=True)
-        return icon_id
-
-    def category_icon_id(self):
-        icon_id = ""
-        for category in self.categories():
-            icon_id = category.icon_id(recursive=True)
-            if icon_id:
-                return icon_id
-        if self.parent():
-            return self.parent().category_icon_id()
-        else:
-            return ""
-
-    def selected_icon_id(self, recursive=False):
-        icon_id = super().selected_icon_id()
-        if not icon_id and recursive:
-            icon_id = self.category_selected_icon_id() or super(
-                CategorizableCompositeObject, self
-            ).selected_icon_id(recursive=True)
-        return icon_id
-
-    def category_selected_icon_id(self):
-        icon_id = ""
-        for category in self.categories():
-            icon_id = category.selected_icon_id(recursive=True)
-            if icon_id:
-                return icon_id
-        if self.parent():
-            return self.parent().category_selected_icon_id()
-        else:
-            return ""
 
     @classmethod
     def categorySubjectChangedEventType(class_):

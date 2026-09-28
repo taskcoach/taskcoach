@@ -675,8 +675,8 @@ class TreeListCtrl(
                 item.SetImage(column_index, image, which)
 
     def _refresh_colors(self, item, domain_object, check=False):
-        bg_color = domain_object.backgroundColor(recursive=True)
-        fg_color = domain_object.foregroundColor(recursive=True)
+        bg_color = domain_object.shown_bg_color()
+        fg_color = domain_object.shown_fg_color()
         if bg_color is None:
             # wx.NullColour doesn't work correctly on Windows - it renders as
             # black instead of transparent. Use system listbox color to match
@@ -700,7 +700,7 @@ class TreeListCtrl(
             self.SetItemTextColour(item, fg_color)
 
     def _refresh_font(self, item, domain_object, check=False):
-        font = domain_object.font(recursive=True) or self.__default_font
+        font = domain_object.shown_font() or self.__default_font
         if not check or (check and font != self.GetItemFont(item)):
             self.SetItemFont(item, font)
 

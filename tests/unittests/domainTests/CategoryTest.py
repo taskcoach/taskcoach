@@ -73,7 +73,6 @@ class CategoryTest(test.TestCase):
             filtered=True,
             exclusiveSubcategories=True,
             icon="icon",
-            selectedIcon="selected",
             creationDateTime=date.Now(),
             modificationDateTime=date.Now(),
             ordering=42,
@@ -368,18 +367,18 @@ class CategoryTest(test.TestCase):
         self.category.setBackgroundColor(wx.RED)
         self.assertEqual(1, len(self.events))
 
-    def testSubCategoryWithoutForegroundColorHasParentForegroundColor(self):
+    def test_subcategory_takes_parent_foreground_color(self):
         self.category.addChild(self.subCategory)
         self.category.setForegroundColor(wx.RED)
         self.assertEqual(
-            wx.RED, self.subCategory.foregroundColor(recursive=True)
+            wx.RED, test.styled(self.subCategory).shown_fg_color()
         )
 
-    def testSubCategoryWithoutBackgroundColorHasParentBackgroundColor(self):
+    def test_subcategory_takes_parent_background_color(self):
         self.category.addChild(self.subCategory)
         self.category.setBackgroundColor(wx.RED)
         self.assertEqual(
-            wx.RED, self.subCategory.backgroundColor(recursive=True)
+            wx.RED, test.styled(self.subCategory).shown_bg_color()
         )
 
     def testSubCategoryWithoutForegroundColorHasNoOwnForegroundColor(self):
@@ -408,26 +407,12 @@ class CategoryTest(test.TestCase):
 
     # Icon:
 
-    def testIconChangedNotification(self):
-        eventType = (
-            categorizable.CategorizableCompositeObject.appearanceChangedEventType()
-        )
-        self.registerObserver(eventType)
-        self.category.addCategorizable(self.categorizable)
-        self.category.set_icon_id("icon")
+    def test_subcategory_shows_singular_of_parent_icon(self):
+        self.category.addChild(self.subCategory)
+        self.category.set_icon_id("nuvola_mimetypes_inode-directory")
         self.assertEqual(
-            [patterns.Event(eventType, self.categorizable)], self.events
-        )
-
-    def testSelectedIconChangedNotification(self):
-        eventType = (
-            categorizable.CategorizableCompositeObject.appearanceChangedEventType()
-        )
-        self.registerObserver(eventType)
-        self.category.addCategorizable(self.categorizable)
-        self.category.set_selected_icon_id("icon")
-        self.assertEqual(
-            [patterns.Event(eventType, self.categorizable)], self.events
+            "nuvola_actions_ledblue",
+            test.styled(self.subCategory).shown_icon_id(),
         )
 
     # Notes:

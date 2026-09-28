@@ -60,15 +60,13 @@ class DummyDomainObject(object):
     def id(self):
         return str(id(self))
 
-    # pylint: disable=W0613
-
-    def foregroundColor(self, recursive=False):
+    def shown_fg_color(self):
         return None
 
-    def backgroundColor(self, recursive=False):
+    def shown_bg_color(self):
         return None
 
-    def font(self, recursive=False):
+    def shown_font(self):
         return None
 
 

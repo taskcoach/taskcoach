@@ -154,11 +154,6 @@ class CompositeEffort(BaseCompositeEffort):
         self.__hash_value = hash((task, start))
         # Effort cache: {True: [efforts recursively], False: [efforts]}
         self.__effort_cache = dict()
-        """
-        FIMXE! CompositeEffort does not derive from base.Object
-        patterns.Publisher().registerObserver(self.onAppearanceChanged,
-            eventType=task.appearanceChangedEventType(), eventSource=task)
-        """
 
     def __hash__(self):
         return self.__hash_value
@@ -228,10 +223,6 @@ class CompositeEffort(BaseCompositeEffort):
         ]
         return "\n".join(effortDescriptions)
 
-    def onAppearanceChanged(self, event):
-        return  # FIXME: CompositeEffort does not derive from base.Object
-        # patterns.Event(self.appearanceChangedEventType(), self, event.value()).send()
-
 
 class CompositeEffortPerPeriod(BaseCompositeEffort):
     class Total(object):
@@ -239,13 +230,13 @@ class CompositeEffortPerPeriod(BaseCompositeEffort):
         def subject(self, *args, **kwargs):
             return _("Total")
 
-        def foregroundColor(self, *args, **kwargs):
+        def shown_fg_color(self):
             return None
 
-        def backgroundColor(self, *args, **kwargs):
+        def shown_bg_color(self):
             return None
 
-        def font(self, *args, **kwargs):
+        def shown_font(self):
             return None
 
     total = Total()

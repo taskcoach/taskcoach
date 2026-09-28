@@ -52,8 +52,8 @@ class BaseNoteViewer(
         self.notesToShow = kwargs.get("notesToShow", None)
         super().__init__(*args, **kwargs)
         for eventType in (
-            note.Note.appearanceChangedEventType(),
             note.Note.subjectChangedEventType(),
+            *note.Note.effective_style_event_types(),
         ):
             self.registerObserver(self.on_attribute_changed, eventType)
 

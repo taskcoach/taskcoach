@@ -81,30 +81,22 @@ go at the end. Details live in the sections and documents linked.
     step 1 done, steps 2 to 5 open
     ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log), option C).
 35. The views on the effective styles, the legacy styles removed
-    (why and the scan:
+    (why, the scan and what was found:
     [Views on the Effective Styles](#views-on-the-effective-styles)):
-    1. Views, widgets, export, menus and the editor's owned-item lists
-       read the effective styles; efforts their task's.
-    2. Listeners of the old appearance event on the effective-style
-       events, the task filter on the status event.
-    3. `recomputeAppearance()` callers keep only the immediate status
-       (`compute_stored_status()`): dates, completion, prerequisites,
-       subtasks added or removed.
-    4. The selected (open folder) icon removed, as decided;
-       `selectedIcon` in old files read and dropped.
-    5. Removed: the task's recursive style overrides and caches, the
-       theme recompute, `recomputeAppearance()`, the composite and
-       categorizable recursive fallbacks, the category mixers
-       (`categoriesChange*()`, `ColorMixer`, `FontMixer`), the old
-       appearance event and its propagation, the `recursive` argument
-       of the own-value style accessors.
-    6. Tests: about 206 references in TaskTest, CategorizableTest,
-       BaseTest, CategoryTest and AttachmentTest on the effective
-       styles.
-    7. Docs: TASK_STATUS.md (issue 4, Legacy Code Compatibility, the
-       migration table's views), APPEARANCE_STYLES.md, ICON_DISPLAY.md.
-    8. Checked in the app, every view, with a file that shows the rule
-       differences; the full suite.
+    1. ~~Views read the effective styles~~: `shown_*()`.
+    2. ~~Listeners on the effective-style events~~.
+    3. ~~`recomputeAppearance()` callers keep only the immediate
+       status~~: `_update_status()`.
+    4. ~~The selected (open folder) icon removed~~.
+    5. ~~Legacy style code removed~~.
+    6. ~~Tests on the effective styles~~: `test.styled()` runs the
+       loop's pass.
+    7. ~~Docs~~.
+    8. ~~Checked in the app, every view; the full suite~~ (the task
+       dependency graph not opened: igraph not installed here).
+    9. The designer to confirm: a subtask does not take its parent's
+       status or tracking style (each task shows its own, as the views
+       did before).
 36. The task editor's Progress tab: a second percentage control and
     slider drawn over the tab labels, seen only under Xvfb; to check on
     a real display.
@@ -138,13 +130,18 @@ go at the end. Details live in the sections and documents linked.
 ## Views on the Effective Styles
 
 To do 35. **Decided before this refactor**
-([TASK_STATUS.md](TASK_STATUS.md#legacy-code-compatibility)): new code
-reads `effectiveXxx()`, and the legacy `recursive=True` style
+([TASK_STATUS.md](TASK_STATUS.md#legacy-code-compatibility-resolved)):
+new code reads `effectiveXxx()`, and the legacy `recursive=True` style
 accessors stay only until their consumers move; the migration waited
-for the effective styles to prove stable. Only the editor moved. Every
-view still draws from the legacy accessors, cached by
-`Task.recomputeAppearance()` outside the loop, while the loop computes
+for the effective styles to prove stable. Only the editor had moved;
+every view drew from the legacy accessors, cached by
+`Task.recomputeAppearance()` outside the loop, while the loop computed
 the effective styles every pass for nothing but the editor.
+
+Done 2026-09-28: every view draws `shown_fg_color()`,
+`shown_bg_color()`, `shown_font()` and `shown_icon_id()`
+([APPEARANCE_STYLES.md](APPEARANCE_STYLES.md#what-the-views-draw)), and
+the legacy code is gone.
 
 The two rules differ, so moving changes what some rows look like:
 
@@ -153,24 +150,41 @@ The two rules differ, so moving changes what some rows look like:
   2026-09-28: purple drawn, red effective).
 - A subtask with no colour or category of its own: legacy takes its
   parent's category colours, else its status colour; effective takes
-  the parent task's effective style, its own colour included.
+  its parent's own or category style, else its own status.
 - Styles set by categories or the status appear at the loop's next
-  tick (within a second); an item's own style at once, as now.
+  tick (within a second); an item's own style at once, as before.
+
+Found on the way, fixed:
+
+- The effective rule gave a subtask its parent's status and tracking
+  styles (a completed subtask of an active task drawn active, the
+  clock on every subtask of a tracked task): a task's own state is no
+  longer passed down (to do 35.9).
+- A task's status icon never reached its effective icon: the status
+  getter's name was wrong since #386.
+- The effective setters sent one event per value, default and source:
+  up to three refreshes per style change, now one.
+- Categories re-sent their effective icon event for each of their
+  items, which the loop already sends when an item's icon changes.
+- Until the loop's first pass styles a new or loaded task, its icon is
+  empty; the calendar drew it as an invalid bitmap and lost tasks, the
+  start tracking menu logged an invalid icon. Both skip it now, as the
+  trees, tooltips and tray already did.
 
 Scan, 2026-09-28 (sources the loop does not compute: none left after):
 
-| Where | Legacy use | Moves to |
+| Where | Legacy use | Now |
 |---|---|---|
-| `widgets/treectrl.py`, `widgets/listctrl.py` | Row colours, font (every tree and list view) | `effectiveFgColor()`, `effectiveBgColor()`, `effectiveFont()` |
-| `widgets/hcalendar.py`, `widgets/calendarwidget.py` | Task colours, font, icon | The same, `effectiveIcon()` |
-| `gui/viewer/base.py` `subjectImageIndices()`, `gui/viewer/task.py` `get_icon_id()` | Subject icons | `effectiveIcon()` with the plural/singular transform (kept, TASK_STATUS.md migration table) |
-| `gui/viewer/task.py` Timeline, Square map | Colours, font | Effective styles |
-| `gui/viewer/task.py` task graph | `task.foregroundColor(recursive=True)` (the wrong variable: `task`, not `tsk`) | `tsk.effectiveFgColor()` |
-| `gui/taskbaricon.py`, `gui/uicommand/uicommand.py` (start tracking menu) | Task icons | `effectiveIcon()` |
-| `persistence/html/generator.py` | Export and print row colours | Effective colours |
-| `gui/dialog/editor.py` owned-item lists | Notes, efforts, attachments rows | Effective styles |
-| `domain/effort/base.py` | An effort's colours and font: its task's legacy ones | Its task's effective ones |
-| Old event `appearanceChangedEventType()` | Refreshes the task, category, note and effort views, the tray, editor pages, composite efforts; the task filter uses it for status changes | The effective-style events; the filter the status event |
+| `widgets/treectrl.py`, `widgets/listctrl.py` | Row colours, font (every tree and list view) | `shown_fg_color()`, `shown_bg_color()`, `shown_font()` |
+| `widgets/hcalendar.py`, `widgets/calendarwidget.py` | Task colours, font, icon | The same, `shown_icon_id()` |
+| `gui/viewer/base.py` `subjectImageIndices()`, `gui/viewer/task.py` `get_icon_id()` | Subject icons | `shown_icon_id()`: the effective icon with the plural/singular transform |
+| `gui/viewer/task.py` Timeline, Square map | Colours, font | `shown_*()` |
+| `gui/viewer/task.py` task graph | `task.foregroundColor(recursive=True)` (the wrong variable: `task`, not `tsk`) | `tsk.shown_fg_color()` |
+| `gui/taskbaricon.py`, `gui/uicommand/uicommand.py` (start tracking menu) | Task icons | `shown_icon_id()` |
+| `persistence/html/generator.py` | Export and print row colours | `shown_fg_color()`, `shown_bg_color()` |
+| `gui/dialog/editor.py` owned-item lists | Notes, efforts, attachments rows | `shown_*()` |
+| `domain/effort/base.py` | An effort's colours and font: its task's legacy ones | Its task's `shown_*()` |
+| Old event `appearanceChangedEventType()` | Refreshes the task, category, note and effort views, the tray, editor pages, composite efforts; the task filter uses it for status changes | The effective-style events; the filter and the tray the status event; the event stays as an item's own style change |
 
 ---
 

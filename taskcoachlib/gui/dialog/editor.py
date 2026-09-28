@@ -988,7 +988,7 @@ class TaskAppearancePage(ScrolledPage):
 
     def addColorEntry(self, labelText, colorType, defaultColor):
         currentColor = (
-            getattr(self.items[0], "%sColor" % colorType)(recursive=False)
+            getattr(self.items[0], "%sColor" % colorType)()
             if len(self.items) == 1
             else None
         )
@@ -1016,37 +1016,13 @@ class TaskAppearancePage(ScrolledPage):
     def addFontEntry(self):
         # pylint: disable=W0201,E1101
         current_font = self.items[0].font() if len(self.items) == 1 else None
-        # Use override color if set, otherwise use effective/inherited color
-        # Tasks and Categories have effectiveFgColor() (SSOT)
-        # Notes/Efforts/Attachments use foregroundColor(recursive=True)
+        # The override colours if set, else the effective ones
         override_fg_color = self._foregroundColorEntry.GetValue()
         override_bg_color = self._backgroundColorEntry.GetValue()
         if len(self.items) == 1:
             item = self.items[0]
-            if hasattr(item, "effectiveFgColor"):
-                # Tasks and Categories use SSOT effective methods
-                current_color = (
-                    override_fg_color
-                    if override_fg_color
-                    else item.effectiveFgColor()
-                )
-                current_bg_color = (
-                    override_bg_color
-                    if override_bg_color
-                    else item.effectiveBgColor()
-                )
-            else:
-                # Notes inherit from parent notes, Efforts/Attachments have no inheritance
-                current_color = (
-                    override_fg_color
-                    if override_fg_color
-                    else item.foregroundColor(recursive=True)
-                )
-                current_bg_color = (
-                    override_bg_color
-                    if override_bg_color
-                    else item.backgroundColor(recursive=True)
-                )
+            current_color = override_fg_color or item.effectiveFgColor()
+            current_bg_color = override_bg_color or item.effectiveBgColor()
         else:
             current_color = override_fg_color
             current_bg_color = override_bg_color

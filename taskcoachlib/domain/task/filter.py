@@ -37,7 +37,7 @@ class ViewFilter(tasklist.TaskListQueryMixin, base.Filter):
             task.Task.actualStartDateTimeChangedEventType(),
             task.Task.completionDateTimeChangedEventType(),
             task.Task.prerequisitesChangedEventType(),
-            task.Task.appearanceChangedEventType(),  # Proxy for status changes
+            task.Task.statusChangedEventType(),
             task.Task.addChildEventType(),
             task.Task.removeChildEventType(),
         ):

@@ -53,9 +53,9 @@ class BaseCategoryViewer(
         super().__init__(*args, **kwargs)
         for eventType in [
             category.Category.subjectChangedEventType(),
-            category.Category.appearanceChangedEventType(),
             category.Category.exclusiveSubcategoriesChangedEventType(),
             category.Category.filterChangedEventType(),
+            *category.Category.effective_style_event_types(),
         ]:
             self.registerObserver(self.on_attribute_changed, eventType)
 

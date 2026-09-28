@@ -150,7 +150,7 @@ EFFECTIVE_GETTERS = {
 STATUS_GETTERS = {
     "fgColor": "statusFgColor",
     "bgColor": "statusBgColor",
-    "icon": "statusIcon",
+    "icon": "status_icon_id",
     "font": "statusFont",
 }
 
@@ -193,6 +193,12 @@ def _isSystemThemeValue(value):
     return False
 
 
+def shown(value):
+    """A style value as the views draw it: None for the system theme,
+    which the widgets use when given none."""
+    return None if _isSystemThemeValue(value) else value
+
+
 def _getFromCategories(object_ref, effective_getter):
     """Get a style value from the object's categories, sorted by stylePriority.
 
@@ -215,6 +221,11 @@ def _getFromCategories(object_ref, effective_getter):
     return None, None
 
 
+# Sources of a task's style that are its own state, which its subtasks
+# do not take: each task shows its own status and tracking
+_OWN_STATE_SOURCES = ("[Status]", "[Tracking]")
+
+
 def _getFromParent(object_ref, obj_type, effective_getter):
     """Get a style value from the object's parent.
 
@@ -227,6 +238,11 @@ def _getFromParent(object_ref, obj_type, effective_getter):
     if getter:
         parent_value = getter()
         if parent_value and not _isSystemThemeValue(parent_value):
+            parent_source = getattr(parent, effective_getter + "Source")()
+            if obj_type == "Task" and parent_source.startswith(
+                _OWN_STATE_SOURCES
+            ):
+                return None, None
             return parent_value, f"[{obj_type}] {parent.subject()}"
     return None, None
 
@@ -348,12 +364,7 @@ def computeEffective(object_ref, field_type):
         derived_source_getter() if derived_source_getter else None
     ) or FIELD_NO_VALUE_SOURCE[field_type]
 
-    override_method = getattr(object_ref, OVERRIDE_METHOD[field_type])
-    override_value = (
-        override_method()
-        if field_type == "icon"
-        else override_method(recursive=False)
-    )
+    override_value = getattr(object_ref, OVERRIDE_METHOD[field_type])()
 
     # Compute effective
     if field_type == "icon" and _isBeingTracked(object_ref):

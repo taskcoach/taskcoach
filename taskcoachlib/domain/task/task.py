@@ -257,28 +257,6 @@ class Task(
         )
         return state
 
-    @patterns.eventSource
-    def addCategory(self, *categories, **kwargs):
-        if super().addCategory(*categories, **kwargs):
-            self.recomputeAppearance(True, event=kwargs.pop("event"))
-
-    @patterns.eventSource
-    def removeCategory(self, *categories, **kwargs):
-        if super().removeCategory(*categories, **kwargs):
-            self.recomputeAppearance(True, event=kwargs.pop("event"))
-
-    @patterns.eventSource
-    def setCategories(self, *categories, **kwargs):
-        if super().setCategories(*categories, **kwargs):
-            self.recomputeAppearance(True, event=kwargs.pop("event"))
-
-    def setParent(self, parent):
-        """Override to handle parent change.
-
-        Note: Effective appearance is computed by the master loop.
-        """
-        super().setParent(parent)
-
     def allChildrenCompleted(self):
         """Return whether all children (non-recursively) are completed.
 
@@ -305,8 +283,8 @@ class Task(
                 self.setCompletionDateTime(child.completionDateTime())
             elif self.completed() and not child.completed():
                 self.setCompletionDateTime(self.maxDateTime)
-        self.recomputeAppearance(recursive=False, event=event)
-        child.recomputeAppearance(recursive=True, event=event)
+        # Under another parent, other ancestors' prerequisites count
+        child._update_status(recursive=True)
 
     @patterns.eventSource
     def removeChild(self, child, event=None):
@@ -318,8 +296,7 @@ class Task(
         if not Task._merging and self.shouldBeMarkedCompleted():
             # The removed child was the last uncompleted child
             self.setCompletionDateTime(date.Now())
-        self.recomputeAppearance(recursive=False, event=event)
-        child.recomputeAppearance(recursive=True, event=event)
+        child._update_status(recursive=True)
 
     def childChangeEvent(self, child, wasTracking, event):
         childHasTimeSpent = child.timeSpent(recursive=True)
@@ -382,7 +359,7 @@ class Task(
         self.__dueDateTime.set(dueDateTime or self.maxDateTime, event=event)
 
     def _onDueDateTimeChanged(self, event):
-        self.recomputeAppearance()
+        self._update_status()
         self._send_to_self_and_ancestors(
             event, self.dueDateTimeChangedEventType(), self.dueDateTime()
         )
@@ -390,12 +367,6 @@ class Task(
     @classmethod
     def dueDateTimeChangedEventType(class_):
         return "task.dueDateTime"
-
-    def onOverDue(self):
-        self.recomputeAppearance()
-
-    def onDueSoon(self):
-        self.recomputeAppearance()
 
     @staticmethod
     def dueDateTimeSortFunction(**kwargs):
@@ -429,7 +400,7 @@ class Task(
         )
 
     def _onPlannedStartDateTimeChanged(self, event):
-        self.recomputeAppearance()
+        self._update_status()
         self._send_to_self_and_ancestors(
             event,
             self.plannedStartDateTimeChangedEventType(),
@@ -439,9 +410,6 @@ class Task(
     @classmethod
     def plannedStartDateTimeChangedEventType(class_):
         return "task.plannedStartDateTime"
-
-    def onTimeToStart(self):
-        self.recomputeAppearance()
 
     @staticmethod
     def plannedStartDateTimeSortFunction(**kwargs):
@@ -494,7 +462,7 @@ class Task(
         )
 
     def _onActualStartDateTimeChanged(self, event):
-        self.recomputeAppearance()
+        self._update_status()
         self._send_to_self_and_ancestors(
             event,
             self.actualStartDateTimeChangedEventType(),
@@ -572,9 +540,9 @@ class Task(
         if parent:
             parent._send_effective_priority_changed(event)
 
-        self.recomputeAppearance()
+        self._update_status()
         for dependency in self.dependencies():
-            dependency.recomputeAppearance(recursive=True)
+            dependency._update_status(recursive=True)
         self._send_to_self_and_ancestors(
             event,
             self.completionDateTimeChangedEventType(),
@@ -620,17 +588,7 @@ class Task(
         return (class_.completionDateTimeChangedEventType(),)
 
     def __observe_settings(self):
-        section = self.settings.section_changed_event_type
         for event_type, handler in (
-            (section("fgcolor"), self.__computeRecursiveForegroundColor),
-            (section("fgcolor_dark"), self.__computeRecursiveForegroundColor),
-            (section("bgcolor"), self.__computeRecursiveBackgroundColor),
-            (section("bgcolor_dark"), self.__computeRecursiveBackgroundColor),
-            (section("icon"), self.__compute_recursive_icon_id),
-            (section("icon_dark"), self.__compute_recursive_icon_id),
-            (section("icon"), self.__compute_recursive_selected_icon_id),
-            (section("icon_dark"), self.__compute_recursive_selected_icon_id),
-            ("window.theme", self.__on_theme_changed),
             ("behavior.duesoonhours", self.on_due_soon_hours_changed),
             (
                 "behavior.markparentcompletedwhenallchildrencompleted",
@@ -797,7 +755,7 @@ class Task(
 
         Called from:
         - Task.__init__() — initial population on load
-        - recomputeAppearance() — immediate update on date changes
+        - _update_status(): at once after a change of what it reads
         - the master loop, at the seconds time changes a status
 
         Updates __computed_status, __status_text, __status_icon_id, and __status_source.
@@ -856,7 +814,7 @@ class Task(
         status bar all read it. It returns the cached TaskStatus object
         populated by compute_stored_status(), which is called:
         - On task creation/load (Task.__init__)
-        - On date changes (recomputeAppearance)
+        - At once after a change of what it reads (_update_status)
         - The master loop, at the seconds time changes a status
 
         Args:
@@ -900,8 +858,9 @@ class Task(
 
     def on_due_soon_hours_changed(self, event=None):  # pylint: disable=W0613
         self.__dueSoonHours = self.settings.getint("behavior", "duesoonhours")
-        # The master loop recomputes the statuses (docs/SCHEDULERS.md)
-        self.recomputeAppearance()
+        # The status at once; the master loop moves the timer seconds
+        # (docs/SCHEDULERS.md)
+        self._update_status()
 
     # effort related methods:
 
@@ -956,7 +915,6 @@ class Task(
         event.send()
 
     def send_tracking_changed(self, tracking):
-        self.recomputeAppearance()
         self.__send_to_ancestors_too(
             self.trackingChangedEventType(), tracking, lambda _: tracking
         )
@@ -1140,36 +1098,8 @@ class Task(
     def plannedDurationModeChangedEventType(class_):
         return "task.plannedDurationMode"
 
-    # Foreground color
-
-    def setForegroundColor(self, *args, **kwargs):
-        super().setForegroundColor(*args, **kwargs)
-        self.__computeRecursiveForegroundColor()
-
-    def foregroundColor(self, recursive=False):
-        if not recursive:
-            return super().foregroundColor(recursive)
-        try:
-            return self.__recursiveForegroundColor
-        except AttributeError:
-            return self.__computeRecursiveForegroundColor()
-
-    def __computeRecursiveForegroundColor(
-        self, value=None
-    ):  # pylint: disable=W0613
-        ownColor = super().foregroundColor(False)
-        if ownColor:
-            recursiveColor = ownColor
-        else:
-            categoryColor = self._categoryForegroundColor()
-            if categoryColor:
-                recursiveColor = categoryColor
-            else:
-                recursiveColor = self.statusFgColor()
-        self.__recursiveForegroundColor = (
-            recursiveColor  # pylint: disable=W0201
-        )
-        return recursiveColor
+    # Styles by status: the effective styles' last source
+    # (docs/TASK_STATUS.md, Appearance Inheritance Overview)
 
     def statusFgColor(self):
         return self.fgColorForStatus(self.computedStatus())
@@ -1199,54 +1129,6 @@ class Task(
             )
         )  # pylint: disable=E1101
 
-    def appearanceChangedEvent(self, event):
-        self.__computeRecursiveForegroundColor()
-        self.__computeRecursiveBackgroundColor()
-        self.__compute_recursive_icon_id()
-        self.__compute_recursive_selected_icon_id()
-        super().appearanceChangedEvent(event)
-        for eachEffort in self.efforts():
-            eachEffort.appearanceChangedEvent(event)
-
-    # Background color
-
-    def setBackgroundColor(self, *args, **kwargs):
-        super().setBackgroundColor(*args, **kwargs)
-        self.__computeRecursiveBackgroundColor()
-
-    def backgroundColor(self, recursive=False):
-        if not recursive:
-            return super().backgroundColor(recursive)
-        try:
-            return self.__recursiveBackgroundColor
-        except AttributeError:
-            return self.__computeRecursiveBackgroundColor()
-
-    def __computeRecursiveBackgroundColor(
-        self, *args, **kwargs
-    ):  # pylint: disable=W0613
-        ownColor = super().backgroundColor(recursive=False)
-        if ownColor:
-            recursiveColor = ownColor
-        else:
-            categoryColor = self._categoryBackgroundColor()
-            if categoryColor:
-                recursiveColor = categoryColor
-            else:
-                statusColor = self.statusBgColor()
-                if statusColor:
-                    recursiveColor = statusColor
-                elif self.parent():
-                    recursiveColor = self.parent().backgroundColor(
-                        recursive=True
-                    )
-                else:
-                    recursiveColor = None
-        self.__recursiveBackgroundColor = (
-            recursiveColor  # pylint: disable=W0201
-        )
-        return recursiveColor
-
     def statusBgColor(self):
         return self.bgColorForStatus(self.computedStatus())
 
@@ -1258,19 +1140,6 @@ class Task(
                 class_.settings.get(section, "%stasks" % taskStatus)
             )
         )  # pylint: disable=E1101
-
-    # Font
-
-    def font(self, recursive=False):
-        ownFont = super().font(recursive=False)
-        if ownFont or not recursive:
-            return ownFont
-        else:
-            categoryFont = self._categoryFont()
-            if categoryFont:
-                return categoryFont
-            else:
-                return self.statusFont()
 
     def statusFont(self):
         return self.fontForStatus(self.computedStatus())
@@ -1287,94 +1156,14 @@ class Task(
             else None
         )
 
-    # Icon
-
-    def icon_id(self, recursive=False):
-        if recursive and self.isBeingTracked():
-            return "nuvola_apps_clock"
-        icon_id = super().icon_id()
-        if recursive and not icon_id:
-            try:
-                icon_id = self.__recursive_icon_id
-            except AttributeError:
-                icon_id = self.__compute_recursive_icon_id()
-        return self.pluralOrSingularIcon(
-            icon_id, native=super().icon_id() == ""
-        )
-
-    def __compute_recursive_icon_id(
-        self, *args, **kwargs
-    ):  # pylint: disable=W0613
-        # pylint: disable=W0201
-        self.__recursive_icon_id = (
-            self.category_icon_id() or self.status_icon_id()
-        )
-        return self.__recursive_icon_id
-
-    def selected_icon_id(self, recursive=False):
-        if recursive and self.isBeingTracked():
-            return "nuvola_apps_clock"
-        icon_id = super().selected_icon_id()
-        if recursive and not icon_id:
-            try:
-                icon_id = self.__recursive_selected_icon_id
-            except AttributeError:
-                icon_id = self.__compute_recursive_selected_icon_id()
-        return self.pluralOrSingularIcon(
-            icon_id, native=super().selected_icon_id == ""
-        )
-
-    def __compute_recursive_selected_icon_id(
-        self, *args, **kwargs
-    ):  # pylint: disable=W0613
-        # pylint: disable=W0201
-        self.__recursive_selected_icon_id = (
-            self.category_selected_icon_id() or self.status_icon_id()
-        )
-        return self.__recursive_selected_icon_id
-
-    def __on_theme_changed(self, event=None):  # pylint: disable=W0613
-        """Recompute all cached appearance when the theme changes."""
-        self.__computeRecursiveForegroundColor()
-        self.__computeRecursiveBackgroundColor()
-        self.__compute_recursive_icon_id()
-        self.__compute_recursive_selected_icon_id()
-
-    # Note: Derived and effective appearance is now handled by the base class
-    # (object.py) and the master loop's computeStyles(). The base class
-    # provides: derivedFgColor(), derivedFgColorSource(), effectiveFgColor(),
-    # effectiveFgColorSource(), effectiveFgColorDefault(), etc. for all field types.
-
-    @patterns.eventSource
-    def recomputeAppearance(self, recursive=False, event=None):
+    def _update_status(self, recursive=False):
+        """The status at once after a change of what it reads, without
+        waiting for the master loop's next tick (docs/TASK_STATUS.md,
+        Immediate Updates); the styles follow at that tick."""
         self.compute_stored_status()
-        # The effective styles are computed by the master loop
-        # Legacy: compute recursive values for backward compatibility
-        try:
-            previousForegroundColor = self.__recursiveForegroundColor
-            previousBackgroundColor = self.__recursiveBackgroundColor
-            prev_recursive_icon_id = self.__recursive_icon_id
-            prev_recursive_selected_icon_id = self.__recursive_selected_icon_id
-        except AttributeError:
-            previousForegroundColor = None
-            previousBackgroundColor = None
-            prev_recursive_icon_id = None
-            prev_recursive_selected_icon_id = None
-        self.__computeRecursiveForegroundColor()
-        self.__computeRecursiveBackgroundColor()
-        self.__compute_recursive_icon_id()
-        self.__compute_recursive_selected_icon_id()
-        if (
-            self.__recursiveForegroundColor != previousForegroundColor
-            or self.__recursiveBackgroundColor != previousBackgroundColor
-            or self.__recursive_icon_id != prev_recursive_icon_id
-            or self.__recursive_selected_icon_id
-            != prev_recursive_selected_icon_id
-        ):
-            event.addSource(self, type=self.appearanceChangedEventType())
         if recursive:
             for child in self.children():
-                child.recomputeAppearance(recursive=True, event=event)
+                child._update_status(recursive=True)
 
     # percentage Complete
 
@@ -1805,7 +1594,7 @@ class Task(
         self.__prerequisites.remove(set(prerequisites), event=event)
 
     def _on_prerequisites_changed(self, event, *prerequisites):
-        self.recomputeAppearance(recursive=True, event=event)
+        self._update_status(recursive=True)
         # Without the value: a set is not hashable
         event.addSource(self, type=self.prerequisitesChangedEventType())
 

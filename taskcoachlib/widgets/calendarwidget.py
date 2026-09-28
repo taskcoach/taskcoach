@@ -42,7 +42,6 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
         self,
         parent,
         taskList,
-        get_selected_or_normal_icon_id,
         onSelect,
         onEdit,
         onCreate,
@@ -66,7 +65,6 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
         self.SetDropTarget(self.dropTarget)
 
         self.selectCommand = onSelect
-        self.get_selected_or_normal_icon_id = get_selected_or_normal_icon_id
         self.editCommand = onEdit
         self.createCommand = onCreate
         self.changeConfigCb = onChangeConfig
@@ -246,7 +244,7 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
                     ):
                         continue
 
-            schedule = TaskSchedule(task, self.get_selected_or_normal_icon_id)
+            schedule = TaskSchedule(task)
             schedules.append(schedule)
             self.taskMap[task.id()] = schedule
 
@@ -299,9 +297,7 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
                     schedule = self.taskMap[task.id()]
                     schedule.update()
                 else:
-                    schedule = TaskSchedule(
-                        task, self.get_selected_or_normal_icon_id
-                    )
+                    schedule = TaskSchedule(task)
                     self.taskMap[task.id()] = schedule
                     self.Add([schedule])
 
@@ -366,7 +362,6 @@ class Calendar(wx.Panel):
         self,
         parent,
         taskList,
-        get_selected_or_normal_icon_id,
         onSelect,
         onEdit,
         onCreate,
@@ -382,7 +377,6 @@ class Calendar(wx.Panel):
         self._content = _CalendarContent(
             self,
             taskList,
-            get_selected_or_normal_icon_id,
             onSelect,
             onEdit,
             onCreate,
@@ -445,13 +439,12 @@ class Calendar(wx.Panel):
 
 
 class TaskSchedule(wxSchedule):
-    def __init__(self, task, get_selected_or_normal_icon_id):
+    def __init__(self, task):
         super().__init__()
 
         self.__selected = False
 
         self.clientdata = task
-        self.get_selected_or_normal_icon_id = get_selected_or_normal_icon_id
         self.update()
 
     def SetSelected(self, selected):
@@ -464,7 +457,7 @@ class TaskSchedule(wxSchedule):
                 )
                 # On MS Windows, the selection background is very dark. If
                 # the foreground color is too dark, invert it.
-                color = self.task.foregroundColor(True) or (0, 0, 0)
+                color = self.task.shown_fg_color() or (0, 0, 0)
                 if len(color) == 3:
                     r, g, b = color
                 else:
@@ -473,10 +466,10 @@ class TaskSchedule(wxSchedule):
                     self.foreground = wx.Colour(255 - r, 255 - g, 255 - b)
             else:
                 self.color = wx.Colour(
-                    *(self.task.backgroundColor(True) or (255, 255, 255))
+                    *(self.task.shown_bg_color() or (255, 255, 255))
                 )
                 self.foreground = wx.Colour(
-                    *(self.task.foregroundColor(True) or (0, 0, 0))
+                    *(self.task.shown_fg_color() or (0, 0, 0))
                 )
         finally:
             self.Thaw()
@@ -543,16 +536,16 @@ class TaskSchedule(wxSchedule):
                 self.done = True
 
             self.color = wx.Colour(
-                *(self.task.backgroundColor(True) or (255, 255, 255))
+                *(self.task.shown_bg_color() or (255, 255, 255))
             )
             self.foreground = wx.Colour(
-                *(self.task.foregroundColor(True) or (0, 0, 0))
+                *(self.task.shown_fg_color() or (0, 0, 0))
             )
-            self.font = self.task.font(True)
+            self.font = self.task.shown_font()
 
-            self.icon_ids = [
-                self.get_selected_or_normal_icon_id(self.task, False)
-            ]
+            # Empty until the master loop's first pass styles the task
+            icon_id = self.task.shown_icon_id()
+            self.icon_ids = [icon_id] if icon_id else []
             if self.task.attachments():
                 self.icon_ids.append("nuvola_status_mail-attachment")
             if self.task.notes():

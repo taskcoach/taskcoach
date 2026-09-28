@@ -66,11 +66,7 @@ of whether it was user-set or inherited.
 
 | Location | Context |
 |----------|---------|
-| `object.py:782` | `CompositeObject.icon(recursive=True)` — categories, notes |
-| `object.py:790` | `CompositeObject.selectedIcon(recursive=True)` — categories, notes |
-| `task.py:1244` | `Task.icon(recursive=True)` — task display icon |
-| `task.py:1260` | `Task.selectedIcon(recursive=True)` — task selected icon |
-| `task.py:1288` | `Task.iconForStatus()` — status LED icons (always native=True) |
+| `object.py` | `CompositeObject.shown_icon_id()`: the icon every view shows, for tasks, categories and notes |
 
 ## See Also
 

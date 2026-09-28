@@ -50,7 +50,6 @@ from . import refresher
 import ast
 import wx
 import tempfile
-import struct
 
 
 class DueDateTimeCtrl(inplace_editor.DateTimeCtrl):
@@ -170,10 +169,10 @@ class BaseTaskViewer(
             eventType="window.theme",
             eventSource=self.settings,
         )
-        self.registerObserver(
-            self.on_attribute_changed,
-            eventType=task.Task.appearanceChangedEventType(),
-        )
+        for event_type in task.Task.effective_style_event_types():
+            self.registerObserver(
+                self.on_attribute_changed, eventType=event_type
+            )
         self.registerObserver(
             self.on_attribute_changed,
             eventType=task.Task.prerequisitesChangedEventType(),
@@ -403,17 +402,10 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
             + (uicommand.ToggleAutoScroll(settings=self.settings),)
         )
 
-    def get_icon_id(self, item, is_selected):
-        return (
-            item.selected_icon_id(recursive=True)
-            if is_selected
-            else item.icon_id(recursive=True)
-        )
-
     def getItemTooltipData(self, task):  # pylint: disable=W0621
         result = [
             (
-                self.get_icon_id(task, task in self.curselection()),
+                task.shown_icon_id(),
                 [self.getItemText(task)],
             )
         ]
@@ -446,13 +438,13 @@ class RootNode(object):
 
     # pylint: disable=W0613
 
-    def foregroundColor(self, *args, **kwargs):
+    def shown_fg_color(self):
         return None
 
-    def backgroundColor(self, *args, **kwargs):
+    def shown_bg_color(self):
         return None
 
-    def font(self, *args, **kwargs):
+    def shown_font(self):
         return None
 
     def completed(self, *args, **kwargs):
@@ -609,17 +601,16 @@ class TimelineViewer(BaseTaskTreeViewer):
             return []
 
     def foreground_color(self, item, depth=0):  # pylint: disable=W0613
-        return item.foregroundColor(recursive=True)
+        return item.shown_fg_color()
 
     def background_color(self, item, depth=0):  # pylint: disable=W0613
-        return item.backgroundColor(recursive=True)
+        return item.shown_bg_color()
 
     def font(self, item, depth=0):  # pylint: disable=W0613
-        return item.font(recursive=True)
+        return item.shown_font()
 
-    def get_wx_icon(self, item, is_selected=False):
-        icon_id = self.get_icon_id(item, is_selected)
-        return icon_catalog.get_wx_icon(icon_id, LIST_ICON_SIZE)
+    def get_wx_icon(self, item, is_selected=False):  # pylint: disable=W0613
+        return icon_catalog.get_wx_icon(item.shown_icon_id(), LIST_ICON_SIZE)
 
     def now(self):
         return date.Now().toordinal()
@@ -820,21 +811,19 @@ class SquareTaskViewer(BaseTaskTreeViewer):
         return self.overall(task)
 
     def foreground_color(self, task, depth):  # pylint: disable=W0613
-        return task.foregroundColor(recursive=True)
+        return task.shown_fg_color()
 
     def background_color(self, task, depth):  # pylint: disable=W0613
         red = blue = 255 - (depth * 3) % 100
         green = 255 - (depth * 2) % 100
         color = wx.Colour(red, green, blue)
-        return task.backgroundColor(recursive=True) or color
+        return task.shown_bg_color() or color
 
     def font(self, task, depth):  # pylint: disable=W0613
-        return task.font(recursive=True)
+        return task.shown_font()
 
-    def icon(self, task, isSelected):
-        icon_id = (
-            self.get_icon_id(task, isSelected) or "nuvola_actions_ledblue"
-        )
+    def icon(self, task, is_selected):  # pylint: disable=W0613
+        icon_id = task.shown_icon_id() or "nuvola_actions_ledblue"
         return icon_catalog.get_wx_icon(icon_id, LIST_ICON_SIZE)
 
     # Helper methods
@@ -1067,7 +1056,6 @@ class CalendarViewer(
         widget = widgets.Calendar(
             self,
             self.presentation(),
-            self.get_icon_id,
             self.onSelect,
             self.onEdit,
             self.onCreate,
@@ -2480,8 +2468,9 @@ else:
 
         @staticmethod
         def convert_rgba_to_rgb(rgba):
-            rgb = (rgba[0], rgba[1], rgba[2])
-            return "#" + struct.pack("BBB", *rgb).encode("hex")
+            # No colour of its own: the system text colour's usual black
+            rgb = tuple(rgba[:3]) if rgba else (0, 0, 0)
+            return "#%02x%02x%02x" % rgb
 
         def form_depend_graph(self):
             vertices = dict()  # task => (weight, color)
@@ -2493,9 +2482,7 @@ else:
                         self.determine_vertex_weight(
                             tsk.budget(), tsk.priority()
                         ),
-                        self.convert_rgba_to_rgb(
-                            task.foregroundColor(recursive=True)
-                        ),
+                        self.convert_rgba_to_rgb(tsk.shown_fg_color()),
                     )
 
             for task in self.presentation():

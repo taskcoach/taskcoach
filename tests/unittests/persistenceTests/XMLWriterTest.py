@@ -845,38 +845,18 @@ class XMLWriterTest(test.TestCase):
     def testNoTaskIcon(self):
         self.expect_not_in_xml("icon")
 
-    def testSelectedTaskIcon(self):
-        self.task.set_selected_icon_id("icon")
-        self.expect_in_xml('selectedIcon="icon"')
-
-    def testNoSelectedTaskIcon(self):
-        self.expect_not_in_xml("selectedIcon")
-
     def testNoteIcon(self):
         self.note.set_icon_id("icon")
         self.expect_in_xml('icon="icon"')
-
-    def testSelectedNoteIcon(self):
-        self.note.set_selected_icon_id("icon")
-        self.expect_in_xml('selectedIcon="icon"')
 
     def testCategoryIcon(self):
         self.category.set_icon_id("icon")
         self.expect_in_xml('icon="icon"')
 
-    def testSelectedCategoryIcon(self):
-        self.category.set_selected_icon_id("icon")
-        self.expect_in_xml('selectedIcon="icon"')
-
     def testAttachmentIcon(self):
         att = attachment.FileAttachment("whatever.txt", id="foo", icon="icon")
         self.task.addAttachments(att)
         self.expect_in_xml('icon="icon"')
-
-    def testSelectedAttachmentIcon(self):
-        att = attachment.FileAttachment("whatever.txt", selectedIcon="icon")
-        self.task.addAttachments(att)
-        self.expect_in_xml('selectedIcon="icon"')
 
     def testPrerequisite(self):
         prerequisite = task.Task(subject="prereq")

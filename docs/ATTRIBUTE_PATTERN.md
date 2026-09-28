@@ -201,7 +201,7 @@ Three complexity levels of callbacks:
 
 **Notification callback** — fires change signal (see
 [PUBLISHER_OBSERVER.md, Signal Dispatch](PUBLISHER_OBSERVER.md#signal-dispatch)), `mark_dirty`,
-`recomputeAppearance`. Example: `_onDueDateTimeChanged`,
+`_update_status`. Example: `_onDueDateTimeChanged`,
 `_onPlannedStartDateTimeChanged`.
 
 **Cross-field callback** — reacts to current state and triggers other

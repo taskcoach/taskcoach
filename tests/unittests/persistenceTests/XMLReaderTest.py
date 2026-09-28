@@ -1414,33 +1414,22 @@ class XMLReaderVersion29Test(XMLReaderTestCase):
         tasks = self.writeAndReadTasks('<tasks><task icon="icon"/></tasks>')
         self.assertEqual("icon", tasks[0].icon_id())
 
-    def testSelectedTaskIcon(self):
+    def test_selected_icon_of_old_files_is_dropped(self):
         tasks = self.writeAndReadTasks(
-            '<tasks><task selectedIcon="icon"/></tasks>'
+            '<tasks><task icon="icon" selectedIcon="open_icon"/></tasks>'
         )
-        self.assertEqual("icon", tasks[0].selected_icon_id())
+        self.assertEqual("icon", tasks[0].icon_id())
+        self.assertNotIn("selectedIcon", tasks[0].__getstate__())
 
     def testNoteIcon(self):
         notes = self.writeAndReadNotes('<tasks><note icon="icon"/></tasks>')
         self.assertEqual("icon", notes[0].icon_id())
-
-    def testSelectedNoteIcon(self):
-        notes = self.writeAndReadNotes(
-            '<tasks><note selectedIcon="icon"/></tasks>'
-        )
-        self.assertEqual("icon", notes[0].selected_icon_id())
 
     def testCategoryIcon(self):
         categories = self.writeAndReadCategories(
             '<tasks><category icon="icon"/></tasks>'
         )
         self.assertEqual("icon", categories[0].icon_id())
-
-    def testSelectedCategoryIcon(self):
-        categories = self.writeAndReadCategories(
-            '<tasks><category selectedIcon="icon"/></tasks>'
-        )
-        self.assertEqual("icon", categories[0].selected_icon_id())
 
     def testAttachmentIcon(self):
         tasks = self.writeAndReadTasks(
@@ -1449,14 +1438,6 @@ class XMLReaderVersion29Test(XMLReaderTestCase):
             "</task></tasks>"
         )
         self.assertEqual("icon", tasks[0].attachments()[0].icon_id())
-
-    def testSelectedAttachmentIcon(self):
-        tasks = self.writeAndReadTasks(
-            '<tasks><task subject="Task">'
-            '<attachment type="file" location="whatever" selectedIcon="icon"/>'
-            "</task></tasks>"
-        )
-        self.assertEqual("icon", tasks[0].attachments()[0].selected_icon_id())
 
 
 class XMLReaderVersion30Test(XMLReaderTestCase):

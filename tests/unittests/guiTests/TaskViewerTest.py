@@ -148,11 +148,18 @@ class TaskViewerTestCase(test.wxTestCase):
     def setColor(self, setting):
         self.settings.settuple("fgcolor", setting, self.newColor)
 
+    def run_style_pass(self):
+        # Rows show the styles of the master loop's pass
+        for each in self.taskList:
+            test.styled(each)
+
     def assertColor(self, expectedColor=None):
         expectedColor = expectedColor or wx.Colour(*self.newColor)
+        self.run_style_pass()
         self.assertEqual(expectedColor, self.getFirstItemTextColor())
 
     def assertBackgroundColor(self):
+        self.run_style_pass()
         self.assertEqual(
             wx.Colour(*self.newColor), self.getFirstItemBackgroundColor()
         )
@@ -801,7 +808,7 @@ class CommonTestsMixin(object):
         now = dueDateTime + date.ONE_SECOND
         oldNow = date.Now
         date.Now = lambda: now
-        self.task.onOverDue()
+        self.task.compute_stored_status()
         self.assertIcon(task.overdue.getBitmap(self.settings))
         date.Now = oldNow
 

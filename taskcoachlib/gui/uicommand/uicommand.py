@@ -2746,7 +2746,8 @@ class EffortStartForTask(TaskListCommand):
         self.task = kwargs.pop("task")
         subject = self.task.subject() or _("(No subject)")
         super().__init__(
-            icon_id=self.task.icon_id(recursive=True),
+            # Empty until the master loop's first pass styles the task
+            icon_id=self.task.shown_icon_id() or None,
             menu_text="&" + subject.replace("&", "&&"),
             help_text=_("Start tracking effort for %s") % subject,
             *args,

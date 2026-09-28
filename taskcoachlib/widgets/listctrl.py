@@ -197,8 +197,8 @@ class VirtualListCtrl(
             item = self.get_item_with_index(rowIndex)
         except IndexError:
             return None
-        foreground_color = item.foregroundColor(recursive=True)
-        background_color = item.backgroundColor(recursive=True)
+        foreground_color = item.shown_fg_color()
+        background_color = item.shown_bg_color()
         # wx.NullColour doesn't work correctly on Windows - it renders as
         # black instead of transparent. Use system colors to match
         # HyperTreeList's GetClassDefaultAttributes.
@@ -213,7 +213,7 @@ class VirtualListCtrl(
                 )
 
         item_attribute_arguments = [foreground_color, background_color]
-        font = item.font(recursive=True)
+        font = item.shown_font()
         if font is None:
             # FIXME: Is the right way to get the font here?
             # wxItemAttr required a font for initialization, so we give one

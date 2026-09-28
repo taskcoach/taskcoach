@@ -201,25 +201,6 @@ class Category(
             self, self.isFiltered(), type=self.filterChangedEventType()
         )
 
-    def appearanceChangedEvent(self, event):
-        """Handle appearance change event.
-
-        Notifies categorizables (tasks/notes) that belong to this category.
-        Note: Effective appearance is computed by the master loop.
-        """
-        super().appearanceChangedEvent(event)
-        for categorizable in self.categorizables():
-            categorizable.appearanceChangedEvent(event)
-
-    def _onEffectiveIconChanged(self, event):
-        """Propagate effective icon changes to categorizables (tasks/notes)."""
-        super()._onEffectiveIconChanged(event)
-        for categorizable in self.categorizables():
-            event.addSource(
-                categorizable,
-                type=categorizable.effectiveIconChangedEventType(),
-            )
-
     def hasExclusiveSubcategories(self):
         return self.__exclusiveSubcategories.get()
 

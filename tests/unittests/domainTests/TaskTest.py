@@ -259,21 +259,12 @@ class DefaultTaskStateTest(
         self.assertEqual(None, self.task.foregroundColor())
 
     def testDefaultOwnIcon(self):
-        self.assertEqual("", self.task.icon_id(recursive=False))
+        self.assertEqual("", self.task.icon_id())
 
     def testDefaultRecursiveIcon(self):
         self.assertEqual(
             task.inactive.getBitmap(self.settings),
-            self.task.icon_id(recursive=True),
-        )
-
-    def testDefaultOwnSelectedIcon(self):
-        self.assertEqual("", self.task.selected_icon_id(recursive=False))
-
-    def testDefaultRecursiveSelectedIcon(self):
-        self.assertEqual(
-            task.inactive.getBitmap(self.settings),
-            self.task.selected_icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
     def testDefaultPrerequisites(self):
@@ -312,7 +303,7 @@ class DefaultTaskStateTest(
         self.task.setPlannedStartDateTime(self.tomorrow)
         self.assertEqual(
             task.inactive.getBitmap(self.settings),
-            self.task.icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
     def testIconChangedAfterSetPlannedStartDateTimeHasPassed(self):
@@ -320,10 +311,10 @@ class DefaultTaskStateTest(
         now = self.tomorrow + date.ONE_SECOND
         self.addCleanup(setattr, date, "Now", date.Now)
         date.Now = lambda: now
-        self.task.onTimeToStart()
+        self.task.compute_stored_status()
         self.assertEqual(
             task.late.getBitmap(self.settings),
-            self.task.icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
     def testSetActualStartDateTime(self):
@@ -366,10 +357,10 @@ class DefaultTaskStateTest(
         now = self.tomorrow + date.ONE_SECOND
         self.addCleanup(setattr, date, "Now", date.Now)
         date.Now = lambda: now
-        self.task.onOverDue()
+        self.task.compute_stored_status()
         self.assertEqual(
             task.overdue.getBitmap(self.settings),
-            self.task.icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
     def testIconChangedAfterTaskHasBecomeDueSoon(self):
@@ -378,10 +369,10 @@ class DefaultTaskStateTest(
         now = self.tomorrow + date.ONE_SECOND - date.ONE_HOUR
         self.addCleanup(setattr, date, "Now", date.Now)
         date.Now = lambda: now
-        self.task.onDueSoon()
+        self.task.compute_stored_status()
         self.assertEqual(
             task.duesoon.getBitmap(self.settings),
-            self.task.icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
     def testIconChangedAfterTaskHasBecomeDueSoonAccordingToNewDueSoonSetting(
@@ -392,10 +383,10 @@ class DefaultTaskStateTest(
         now = self.tomorrow + date.ONE_SECOND - date.ONE_HOUR
         self.addCleanup(setattr, date, "Now", date.Now)
         date.Now = lambda: now
-        self.task.onDueSoon()
+        self.task.compute_stored_status()
         self.assertEqual(
             task.duesoon.getBitmap(self.settings),
-            self.task.icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
     def testSetCompletionDateTime(self):
@@ -1105,55 +1096,53 @@ class TaskDueTodayTest(TaskTestCase, CommonTaskTestsMixin):
             *ast.literal_eval(self.settings.get("fgcolor", "duesoontasks"))
         )
         self.assertEqual(
-            expectedColor, self.task.foregroundColor(recursive=True)
+            expectedColor, test.styled(self.task).shown_fg_color()
         )
 
     def testColorWhenTaskHasOwnColor(self):
         color = wx.Colour(191, 128, 64, 255)
         self.task.setForegroundColor(color)
-        self.assertEqual(color, self.task.foregroundColor(recursive=True))
+        self.assertEqual(color, test.styled(self.task).shown_fg_color())
 
     def testIcon(self):
         self.assertEqual(
             task.duesoon.getBitmap(self.settings),
-            self.task.icon_id(recursive=True),
-        )
-
-    def testSelectedIcon(self):
-        self.assertEqual(
-            task.duesoon.getBitmap(self.settings),
-            self.task.selected_icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
     def testIconAfterChangingDueSoonHours(self):
         self.settings.setint("behavior", "duesoonhours", 0)
         self.assertEqual(
             task.inactive.getBitmap(self.settings),
-            self.task.icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
-    def testAppearanceNotificationAfterChangingDueSoonHours(self):
-        self.registerObserver(self.task.appearanceChangedEventType())
+    def test_icon_event_after_changing_due_soon_hours(self):
+        test.styled(self.task)
+        self.registerObserver(self.task.effectiveIconChangedEventType())
         self.settings.setint("behavior", "duesoonhours", 0)
-        self.assertEvent(self.task.appearanceChangedEventType(), self.task)
+        test.styled(self.task)
+        self.assertEvent(self.task.effectiveIconChangedEventType(), self.task)
 
     def testIconAfterDueDateTimeHasPassed(self):
         now = self.task.dueDateTime() + date.ONE_SECOND
         self.addCleanup(setattr, date, "Now", date.Now)
         date.Now = lambda: now
-        self.task.onOverDue()
+        self.task.compute_stored_status()
         self.assertEqual(
             task.overdue.getBitmap(self.settings),
-            self.task.icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
-    def testAppearanceNotificationAfterDueDateTimeHasPassed(self):
-        self.registerObserver(self.task.appearanceChangedEventType())
+    def test_icon_event_after_due_date_time_has_passed(self):
+        test.styled(self.task)
+        self.registerObserver(self.task.effectiveIconChangedEventType())
         now = self.task.dueDateTime() + date.ONE_SECOND
         self.addCleanup(setattr, date, "Now", date.Now)
         date.Now = lambda: now
-        self.task.onOverDue()
-        self.assertEvent(self.task.appearanceChangedEventType(), self.task)
+        self.task.compute_stored_status()
+        test.styled(self.task)
+        self.assertEvent(self.task.effectiveIconChangedEventType(), self.task)
 
 
 class TaskDueTomorrowTest(TaskTestCase, CommonTaskTestsMixin):
@@ -1179,33 +1168,22 @@ class TaskDueTomorrowTest(TaskTestCase, CommonTaskTestsMixin):
     def testIconNotDueSoon(self):
         self.assertEqual(
             task.inactive.getBitmap(self.settings),
-            self.task.icon_id(recursive=True),
-        )
-
-    def testselectedIconNotDueSoon(self):
-        self.assertEqual(
-            task.inactive.getBitmap(self.settings),
-            self.task.selected_icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
     def testIconDueSoon(self):
         self.settings.setint("behavior", "duesoonhours", 48)
         self.assertEqual(
             task.duesoon.getBitmap(self.settings),
-            self.task.icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
-    def testSelectedIconDueSoon(self):
+    def test_icon_event_after_changing_due_soon_hours(self):
+        test.styled(self.task)
+        self.registerObserver(self.task.effectiveIconChangedEventType())
         self.settings.setint("behavior", "duesoonhours", 48)
-        self.assertEqual(
-            task.duesoon.getBitmap(self.settings),
-            self.task.selected_icon_id(recursive=True),
-        )
-
-    def testAppearanceNotificationAfterChangingDueSoonHours(self):
-        self.registerObserver(self.task.appearanceChangedEventType())
-        self.settings.setint("behavior", "duesoonhours", 48)
-        self.assertEvent(self.task.appearanceChangedEventType(), self.task)
+        test.styled(self.task)
+        self.assertEvent(self.task.effectiveIconChangedEventType(), self.task)
 
 
 class OverdueTaskTest(TaskTestCase, CommonTaskTestsMixin):
@@ -1230,63 +1208,47 @@ class OverdueTaskTest(TaskTestCase, CommonTaskTestsMixin):
             *ast.literal_eval(self.settings.get("fgcolor", "overduetasks"))
         )
         self.assertEqual(
-            expectedColor, self.task.foregroundColor(recursive=True)
+            expectedColor, test.styled(self.task).shown_fg_color()
         )
 
     def testColorWhenTaskHasOwnColor(self):
         color = wx.Colour(191, 64, 64, 255)
         self.task.setForegroundColor(color)
-        self.assertEqual(color, self.task.foregroundColor(recursive=True))
+        self.assertEqual(color, test.styled(self.task).shown_fg_color())
 
     def testIcon(self):
         self.assertEqual(
             task.overdue.getBitmap(self.settings),
-            self.task.icon_id(recursive=True),
-        )
-
-    def testSelectedIcon(self):
-        self.assertEqual(
-            task.overdue.getBitmap(self.settings),
-            self.task.selected_icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
     def testIconAfterChangingDueDateTime(self):
         self.task.setDueDateTime(date.Now() + date.TimeDelta(hours=72))
         self.assertEqual(
             task.inactive.getBitmap(self.settings),
-            self.task.icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
-    def testSelectedIconAfterChangingDueDateTime(self):
+    def test_icon_event_after_changing_due_date_time(self):
+        test.styled(self.task)
+        self.registerObserver(self.task.effectiveIconChangedEventType())
         self.task.setDueDateTime(date.Now() + date.TimeDelta(hours=72))
-        self.assertEqual(
-            task.inactive.getBitmap(self.settings),
-            self.task.selected_icon_id(recursive=True),
-        )
-
-    def testAppearanceNotificationAfterChangingDueDateTime(self):
-        self.registerObserver(self.task.appearanceChangedEventType())
-        self.task.setDueDateTime(date.Now() + date.TimeDelta(hours=72))
-        self.assertEvent(self.task.appearanceChangedEventType(), self.task)
+        test.styled(self.task)
+        self.assertEvent(self.task.effectiveIconChangedEventType(), self.task)
 
     def testIconAfterMarkingComplete(self):
         self.task.setCompletionDateTime()
         self.assertEqual(
             task.completed.getBitmap(self.settings),
-            self.task.icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
-    def testSelectedIconAfterMarkingComplete(self):
+    def test_icon_event_after_marking_complete(self):
+        test.styled(self.task)
+        self.registerObserver(self.task.effectiveIconChangedEventType())
         self.task.setCompletionDateTime()
-        self.assertEqual(
-            task.completed.getBitmap(self.settings),
-            self.task.selected_icon_id(recursive=True),
-        )
-
-    def testAppearanceNotificationAfterMarkingComplete(self):
-        self.registerObserver(self.task.appearanceChangedEventType())
-        self.task.setCompletionDateTime()
-        self.assertEvent(self.task.appearanceChangedEventType(), self.task)
+        test.styled(self.task)
+        self.assertEvent(self.task.effectiveIconChangedEventType(), self.task)
 
 
 class CompletedTaskTest(TaskTestCase, CommonTaskTestsMixin):
@@ -1327,44 +1289,33 @@ class CompletedTaskTest(TaskTestCase, CommonTaskTestsMixin):
             *ast.literal_eval(self.settings.get("fgcolor", "completedtasks"))
         )
         self.assertEqual(
-            expectedColor, self.task.foregroundColor(recursive=True)
+            expectedColor, test.styled(self.task).shown_fg_color()
         )
 
     def testColorWhenTaskHasOwnColor(self):
         color = wx.Colour(64, 191, 64, 255)
         self.task.setForegroundColor(color)
-        self.assertEqual(color, self.task.foregroundColor(recursive=True))
+        self.assertEqual(color, test.styled(self.task).shown_fg_color())
 
     def testIcon(self):
         self.assertEqual(
             task.completed.getBitmap(self.settings),
-            self.task.icon_id(recursive=True),
-        )
-
-    def testSelectedIcon(self):
-        self.assertEqual(
-            task.completed.getBitmap(self.settings),
-            self.task.selected_icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
     def testIconAfterMarkingUncomplete(self):
         self.task.setCompletionDateTime(date.DateTime.max)
         self.assertEqual(
             task.inactive.getBitmap(self.settings),
-            self.task.icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
-    def testSelectedIconAfterMarkingUncomplete(self):
+    def test_icon_event_after_marking_uncomplete(self):
+        test.styled(self.task)
+        self.registerObserver(self.task.effectiveIconChangedEventType())
         self.task.setCompletionDateTime(date.DateTime.max)
-        self.assertEqual(
-            task.inactive.getBitmap(self.settings),
-            self.task.selected_icon_id(recursive=True),
-        )
-
-    def testAppearanceNotificationAfterMarkingUncomplete(self):
-        self.registerObserver(self.task.appearanceChangedEventType())
-        self.task.setCompletionDateTime(date.DateTime.max)
-        self.assertEvent(self.task.appearanceChangedEventType(), self.task)
+        test.styled(self.task)
+        self.assertEvent(self.task.effectiveIconChangedEventType(), self.task)
 
 
 class HundredProcentCompletedTaskTest(TaskTestCase, CommonTaskTestsMixin):
@@ -1422,24 +1373,18 @@ class TaskWithPlannedStartDateInTheFutureTest(
             *ast.literal_eval(self.settings.get("fgcolor", "inactivetasks"))
         )
         self.assertEqual(
-            expectedColor, self.task.foregroundColor(recursive=True)
+            expectedColor, test.styled(self.task).shown_fg_color()
         )
 
     def testColorWhenTaskHasOwnColor(self):
         color = wx.Colour(160, 160, 160, 255)
         self.task.setForegroundColor(color)
-        self.assertEqual(color, self.task.foregroundColor(recursive=True))
+        self.assertEqual(color, test.styled(self.task).shown_fg_color())
 
     def testIcon(self):
         self.assertEqual(
             task.inactive.getBitmap(self.settings),
-            self.task.icon_id(recursive=True),
-        )
-
-    def testSelectedIcon(self):
-        self.assertEqual(
-            task.inactive.getBitmap(self.settings),
-            self.task.selected_icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
     def testIconAfterPlannedStartDateTimeHasPassed(self):
@@ -1449,35 +1394,32 @@ class TaskWithPlannedStartDateInTheFutureTest(
         self.run_scheduler_tick(self.task)
         self.assertEqual(
             task.late.getBitmap(self.settings),
-            self.task.icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
-    def testAppearanceNotificationAfterPlannedStartDateTimeHasPassed(self):
-        self.registerObserver(self.task.appearanceChangedEventType())
+    def test_icon_event_after_planned_start_date_time_has_passed(self):
+        test.styled(self.task)
+        self.registerObserver(self.task.effectiveIconChangedEventType())
         now = self.task.plannedStartDateTime() + date.ONE_SECOND
         self.addCleanup(setattr, date, "Now", date.Now)
         date.Now = lambda: now
-        self.task.onTimeToStart()
-        self.assertEvent(self.task.appearanceChangedEventType(), self.task)
+        self.task.compute_stored_status()
+        test.styled(self.task)
+        self.assertEvent(self.task.effectiveIconChangedEventType(), self.task)
 
     def testIconAfterMarkingComplete(self):
         self.task.setCompletionDateTime()
         self.assertEqual(
             task.completed.getBitmap(self.settings),
-            self.task.icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
-    def testSelectedIconAfterMarkingComplete(self):
+    def test_icon_event_after_marking_complete(self):
+        test.styled(self.task)
+        self.registerObserver(self.task.effectiveIconChangedEventType())
         self.task.setCompletionDateTime()
-        self.assertEqual(
-            task.completed.getBitmap(self.settings),
-            self.task.selected_icon_id(recursive=True),
-        )
-
-    def testAppearanceNotificationAfterMarkingComplete(self):
-        self.registerObserver(self.task.appearanceChangedEventType())
-        self.task.setCompletionDateTime()
-        self.assertEvent(self.task.appearanceChangedEventType(), self.task)
+        test.styled(self.task)
+        self.assertEvent(self.task.effectiveIconChangedEventType(), self.task)
 
     def testIconAfterChangingPlannedStartDateTime(self):
         self.task.setPlannedStartDateTime(
@@ -1485,24 +1427,17 @@ class TaskWithPlannedStartDateInTheFutureTest(
         )
         self.assertEqual(
             task.late.getBitmap(self.settings),
-            self.task.icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
-    def testSelectedIconAfterChangingPlannedStartDateTime(self):
+    def test_icon_event_after_changing_planned_start_date_time(self):
+        test.styled(self.task)
+        self.registerObserver(self.task.effectiveIconChangedEventType())
         self.task.setPlannedStartDateTime(
             date.Now() - date.TimeDelta(hours=72)
         )
-        self.assertEqual(
-            task.late.getBitmap(self.settings),
-            self.task.selected_icon_id(recursive=True),
-        )
-
-    def testAppearanceNotificationAfterChangingPlannedStartDateTime(self):
-        self.registerObserver(self.task.appearanceChangedEventType())
-        self.task.setPlannedStartDateTime(
-            date.Now() - date.TimeDelta(hours=72)
-        )
-        self.assertEvent(self.task.appearanceChangedEventType(), self.task)
+        test.styled(self.task)
+        self.assertEvent(self.task.effectiveIconChangedEventType(), self.task)
 
 
 class TaskWithPlannedStartDateInThePastTest(
@@ -1523,12 +1458,14 @@ class TaskWithPlannedStartDateInThePastTest(
         self.task2.add_dependencies([self.task])
         self.assertTrue(self.task.inactive())
 
-    def testAppearanceNotificationWhenAddingAnUncompletedPrerequisite(self):
+    def test_icon_event_when_adding_an_uncompleted_prerequisite(self):
         # pylint: disable=E1101
-        self.registerObserver(self.task.appearanceChangedEventType())
+        test.styled(self.task)
+        self.registerObserver(self.task.effectiveIconChangedEventType())
         self.task.add_prerequisites([self.task2])
         self.task2.add_dependencies([self.task])
-        self.assertEvent(self.task.appearanceChangedEventType(), self.task)
+        test.styled(self.task)
+        self.assertEvent(self.task.effectiveIconChangedEventType(), self.task)
 
     def testTaskBecomesActiveWhenUncompletedPrerequisiteIsCompleted(self):
         # pylint: disable=E1101
@@ -1537,15 +1474,17 @@ class TaskWithPlannedStartDateInThePastTest(
         self.task2.setCompletionDateTime()
         self.assertFalse(self.task.inactive())
 
-    def testAppearanceNotificationWhenUncompletedPrerequisiteIsCompleted(self):
+    def test_icon_event_when_uncompleted_prerequisite_is_completed(self):
         # pylint: disable=E1101
         self.task.add_prerequisites([self.task2])
         self.task2.add_dependencies([self.task])
+        test.styled(self.task)
         self.registerObserver(
-            self.task.appearanceChangedEventType(), eventSource=self.task
+            self.task.effectiveIconChangedEventType(), eventSource=self.task
         )
         self.task2.setCompletionDateTime()
-        self.assertEvent(self.task.appearanceChangedEventType(), self.task)
+        test.styled(self.task)
+        self.assertEvent(self.task.effectiveIconChangedEventType(), self.task)
 
 
 class TaskWithoutPlannedStartDateTimeTest(TaskTestCase, CommonTaskTestsMixin):
@@ -1566,19 +1505,21 @@ class TaskWithoutPlannedStartDateTimeTest(TaskTestCase, CommonTaskTestsMixin):
         self.assertTrue(self.task.inactive())
         self.assertEqual(
             task.inactive.getBitmap(self.settings),
-            self.task.icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
-    def testNoAppearanceNotificationWhenUncompletedPrerequisiteIsCompleted(
+    def test_no_icon_event_when_uncompleted_prerequisite_is_completed(
         self,
     ):
         # pylint: disable=E1101
         self.task.add_prerequisites([self.task2])
         self.task2.add_dependencies([self.task])
+        test.styled(self.task)
         self.registerObserver(
-            self.task.appearanceChangedEventType(), eventSource=self.task
+            self.task.effectiveIconChangedEventType(), eventSource=self.task
         )
         self.task2.setCompletionDateTime()
+        test.styled(self.task)
         self.assertFalse(self.events)
 
 
@@ -1594,13 +1535,7 @@ class InactiveTaskWithChildTest(TaskTestCase):
     def testIcon(self):
         self.assertEqual(
             getImagePlural(task.inactive.getBitmap(self.settings)),
-            self.task.icon_id(recursive=True),
-        )
-
-    def testSelectedIcon(self):
-        self.assertEqual(
-            getImagePlural(task.inactive.getBitmap(self.settings)),
-            self.task.selected_icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
     def testPlannedStartDateTime(self):
@@ -2154,45 +2089,92 @@ class TaskWithChildTest(
         self.task1_1.set_fixed_fee(1000)
         self.assertEqual(3000, self.task.revenue(recursive=True))
 
-    def testForegroundColorChangeNotificationOfEfforts(self):
-        self.registerObserver(effort.Effort.appearanceChangedEventType())
+    def test_efforts_take_their_task_foreground_color(self):
         self.task.addEffort(effort.Effort(self.task))
         self.task1_1.addEffort(effort.Effort(self.task1_1))
         self.task.setForegroundColor(wx.RED)
-        self.assertEqual(1, len(self.events))
+        test.styled(self.task1_1)
+        self.assertEqual(
+            [wx.RED, wx.RED],
+            [
+                each.shown_fg_color()
+                for each in self.task.efforts(recursive=True)
+            ],
+        )
 
-    def testBackgroundColorChangeNotificationOfEfforts(self):
-        self.registerObserver(effort.Effort.appearanceChangedEventType())
+    def test_efforts_take_their_task_background_color(self):
         self.task.addEffort(effort.Effort(self.task))
         self.task1_1.addEffort(effort.Effort(self.task1_1))
         self.task.setBackgroundColor(wx.RED)
-        self.assertEqual(1, len(self.events))
+        test.styled(self.task1_1)
+        self.assertEqual(
+            [wx.RED, wx.RED],
+            [
+                each.shown_bg_color()
+                for each in self.task.efforts(recursive=True)
+            ],
+        )
 
-    def testForegroundColorChangeNotificationOfEfforts_ViaCategory(self):
-        self.registerObserver(effort.Effort.appearanceChangedEventType())
+    def test_efforts_take_their_task_category_foreground_color(self):
         self.task.addEffort(effort.Effort(self.task))
         self.task1_1.addEffort(effort.Effort(self.task1_1))
         cat = category.Category("Cat")
         cat.addCategorizable(self.task)
         self.task.addCategory(cat)
         cat.setForegroundColor(wx.RED)
-        self.assertEqual(1, len(self.events))
+        test.styled(self.task1_1)
+        self.assertEqual(
+            [wx.RED, wx.RED],
+            [
+                each.shown_fg_color()
+                for each in self.task.efforts(recursive=True)
+            ],
+        )
 
-    def testBackgroundColorChangeNotificationOfEfforts_ViaCategory(self):
-        self.registerObserver(effort.Effort.appearanceChangedEventType())
+    def test_efforts_take_their_task_category_background_color(self):
         self.task.addEffort(effort.Effort(self.task))
         self.task1_1.addEffort(effort.Effort(self.task1_1))
         cat = category.Category("Cat")
         cat.addCategorizable(self.task)
         self.task.addCategory(cat)
         cat.setBackgroundColor(wx.RED)
-        self.assertEqual(1, len(self.events))
+        test.styled(self.task1_1)
+        self.assertEqual(
+            [wx.RED, wx.RED],
+            [
+                each.shown_bg_color()
+                for each in self.task.efforts(recursive=True)
+            ],
+        )
 
     def testChildUsesForegroundColorOfParentsCategory(self):
         cat = category.Category("Cat", fgColor=wx.RED)
         cat.addCategorizable(self.task)
         self.task.addCategory(cat)
-        self.assertEqual(wx.RED, self.task1_1.foregroundColor(recursive=True))
+        self.assertEqual(wx.RED, test.styled(self.task1_1).shown_fg_color())
+
+    def test_child_takes_the_parent_own_color(self):
+        self.task.setForegroundColor(wx.RED)
+        self.assertEqual(wx.RED, test.styled(self.task1_1).shown_fg_color())
+
+    def test_child_shows_its_own_status_not_the_parent_status(self):
+        self.task.set_should_mark_completed_when_all_children_completed(False)
+        self.task1_1.setCompletionDateTime()
+        test.styled(self.task1_1)
+        self.assertEqual(
+            task.completed.getBitmap(self.settings),
+            self.task1_1.shown_icon_id(),
+        )
+        self.assertEqual(
+            self.task1_1.statusFgColor(), self.task1_1.shown_fg_color()
+        )
+
+    def test_child_of_a_tracked_task_shows_its_own_icon(self):
+        self.task.addEffort(effort.Effort(self.task))
+        self.assertEqual(
+            task.active.getBitmap(self.settings),
+            test.styled(self.task1_1).shown_icon_id(),
+        )
 
     def testPercentageCompleted(self):
         self.assertEqual(0, self.task.percentageComplete(recursive=True))
@@ -2246,38 +2228,26 @@ class TaskWithChildTest(
     def testIcon(self):
         self.assertEqual(
             getImagePlural(task.active.getBitmap(self.settings)),
-            self.task.icon_id(recursive=True),
-        )
-
-    def testSelectedIcon(self):
-        self.assertEqual(
-            getImagePlural(task.active.getBitmap(self.settings)),
-            self.task.selected_icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
     def testChildIcon(self):
         self.assertEqual(
             task.active.getBitmap(self.settings),
-            self.task1_1.icon_id(recursive=True),
-        )
-
-    def testChildSelectedIcon(self):
-        self.assertEqual(
-            task.active.getBitmap(self.settings),
-            self.task1_1.selected_icon_id(recursive=True),
+            test.styled(self.task1_1).shown_icon_id(),
         )
 
     def testIconWithPluralVersion(self):
         self.task.set_icon_id("nuvola_apps_bookcase")
         self.assertEqual(
-            "nuvola_apps_bookcase", self.task.icon_id(recursive=True)
+            "nuvola_apps_bookcase", test.styled(self.task).shown_icon_id()
         )
 
     def testIconWithSingularVersion(self):
         self.task.set_icon_id("nuvola_apps_accessories-dictionary")
         self.assertEqual(
             "nuvola_apps_accessories-dictionary",
-            self.task.icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
     def testChildIsInactiveWhenParentHasPrerequisite(self):
@@ -2294,26 +2264,26 @@ class TaskWithChildTest(
         # First make sure the icon is cached:
         self.assertEqual(
             task.active.getBitmap(self.settings),
-            self.task1_1.icon_id(recursive=True),
+            test.styled(self.task1_1).shown_icon_id(),
         )
         prerequisite = task.Task()
         self.task.add_prerequisites([prerequisite])
         self.assertEqual(
             task.inactive.getBitmap(self.settings),
-            self.task1_1.icon_id(recursive=True),
+            test.styled(self.task1_1).shown_icon_id(),
         )
 
     def testSettingPrerequisitesOfParentRecomputesChildAppearance(self):
         # First make sure the icon is cached:
         self.assertEqual(
             task.active.getBitmap(self.settings),
-            self.task1_1.icon_id(recursive=True),
+            test.styled(self.task1_1).shown_icon_id(),
         )
         prerequisite = task.Task()
         self.task.set_prerequisites([prerequisite])
         self.assertEqual(
             task.inactive.getBitmap(self.settings),
-            self.task1_1.icon_id(recursive=True),
+            test.styled(self.task1_1).shown_icon_id(),
         )
 
     def testRemovingPrerequisiteFromParentRecomputesChildAppearance(self):
@@ -2322,13 +2292,13 @@ class TaskWithChildTest(
         # First make sure the icon is cached:
         self.assertEqual(
             task.inactive.getBitmap(self.settings),
-            self.task1_1.icon_id(recursive=True),
+            test.styled(self.task1_1).shown_icon_id(),
         )
         self.task.remove_prerequisites([prerequisite])
         # The child has an actual start date: active, not late
         self.assertEqual(
             task.active.getBitmap(self.settings),
-            self.task1_1.icon_id(recursive=True),
+            test.styled(self.task1_1).shown_icon_id(),
         )
 
     def testCompletingPrerequisiteOfParentRecomputesChildAppearance(self):
@@ -2338,13 +2308,13 @@ class TaskWithChildTest(
         # First make sure the icon is cached:
         self.assertEqual(
             task.inactive.getBitmap(self.settings),
-            self.task1_1.icon_id(recursive=True),
+            test.styled(self.task1_1).shown_icon_id(),
         )
         prerequisite.setCompletionDateTime(date.Now())
         # The child has an actual start date: active, not late
         self.assertEqual(
             task.active.getBitmap(self.settings),
-            self.task1_1.icon_id(recursive=True),
+            test.styled(self.task1_1).shown_icon_id(),
         )
 
 
@@ -2410,13 +2380,7 @@ class CompletedTaskWithChildTest(TaskTestCase):
     def testIcon(self):
         self.assertEqual(
             getImagePlural(task.completed.getBitmap(self.settings)),
-            self.task.icon_id(recursive=True),
-        )
-
-    def testSelectedIcon(self):
-        self.assertEqual(
-            getImagePlural(task.completed.getBitmap(self.settings)),
-            self.task.selected_icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
 
@@ -2432,13 +2396,7 @@ class OverdueTaskWithChildTest(TaskTestCase):
     def testIcon(self):
         self.assertEqual(
             getImagePlural(task.overdue.getBitmap(self.settings)),
-            self.task.icon_id(recursive=True),
-        )
-
-    def testSelectedIcon(self):
-        self.assertEqual(
-            getImagePlural(task.overdue.getBitmap(self.settings)),
-            self.task.selected_icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
     def testDueDateTime(self):
@@ -2460,13 +2418,7 @@ class DuesoonTaskWithChildTest(TaskTestCase):
     def testIcon(self):
         self.assertEqual(
             getImagePlural(task.duesoon.getBitmap(self.settings)),
-            self.task.icon_id(recursive=True),
-        )
-
-    def testSelectedIcon(self):
-        self.assertEqual(
-            getImagePlural(task.duesoon.getBitmap(self.settings)),
-            self.task.selected_icon_id(recursive=True),
+            test.styled(self.task).shown_icon_id(),
         )
 
 
@@ -2528,12 +2480,10 @@ class TaskWithOneEffortTest(TaskTestCase, CommonTaskTestsMixin):
     def testRevenueWithEffortButWithZeroFee(self):
         self.assertEqual(0, self.task.revenue())
 
-    def testNotifyEffortOfBackgroundColorChange(self):
-        self.registerObserver(effort.Effort.appearanceChangedEventType())
+    def test_effort_takes_its_task_background_color(self):
         self.task.setBackgroundColor(wx.RED)
-        self.assertEvent(
-            effort.Effort.appearanceChangedEventType(), self.task1effort1
-        )
+        test.styled(self.task)
+        self.assertEqual(wx.RED, self.task1effort1.shown_bg_color())
 
 
 class TaskWithTwoEffortsTest(TaskTestCase, CommonTaskTestsMixin):
@@ -2619,24 +2569,13 @@ class TaskWithActiveEffort(TaskTestCase, CommonTaskTestsMixin):
 
     def testIcon(self):
         self.assertEqual(
-            "nuvola_apps_clock", self.task.icon_id(recursive=True)
-        )
-
-    def testSelectedIcon(self):
-        self.assertEqual(
-            "nuvola_apps_clock", self.task.selected_icon_id(recursive=True)
+            "nuvola_apps_clock", test.styled(self.task).shown_icon_id()
         )
 
     def testIconAfterStopTracking(self):
         self.task.stopTracking()
         self.assertNotEqual(
-            "nuvola_apps_clock", self.task.icon_id(recursive=True)
-        )
-
-    def testSelectedIconAfterStopTracking(self):
-        self.task.stopTracking()
-        self.assertNotEqual(
-            "nuvola_apps_clock", self.task.selected_icon_id(recursive=True)
+            "nuvola_apps_clock", test.styled(self.task).shown_icon_id()
         )
 
 
@@ -2685,11 +2624,10 @@ class TaskWithChildAndEffortTest(TaskTestCase, CommonTaskTestsMixin):
         self.task1_1.set_hourly_fee(100)
         self.assertEqual(4800, self.task.revenue(recursive=True))
 
-    def testChildEffortBackgroundColorNotification(self):
-        eventType = self.task1_1effort1.appearanceChangedEventType()
-        self.registerObserver(eventType, self.task1_1effort1)
+    def test_child_effort_takes_the_parent_background_color(self):
         self.task.setBackgroundColor(wx.RED)
-        self.assertEvent(eventType, self.task1_1effort1)
+        test.styled(self.task1_1)
+        self.assertEqual(wx.RED, self.task1_1effort1.shown_bg_color())
 
 
 class TaskWithGrandChildAndEffortTest(TaskTestCase, CommonTaskTestsMixin):
@@ -3195,11 +3133,7 @@ class TaskWithCategoryTestCase(TaskTestCase):
 
     def testCategoryIcon(self):
         self.category.set_icon_id("icon")
-        self.assertEqual("icon", self.task.icon_id(recursive=True))
-
-    def testCategorySelectedIcon(self):
-        self.category.set_selected_icon_id("icon")
-        self.assertEqual("icon", self.task.selected_icon_id(recursive=True))
+        self.assertEqual("icon", test.styled(self.task).shown_icon_id())
 
 
 class TaskColorTest(test.TestCase):
@@ -3243,7 +3177,7 @@ class TaskColorTest(test.TestCase):
         redCategory = category.Category(subject="Red category", fgColor=wx.RED)
         activeTask.addCategory(redCategory)
         redCategory.addCategorizable(activeTask)
-        self.assertEqual(wx.RED, activeTask.foregroundColor(recursive=True))
+        self.assertEqual(wx.RED, test.styled(activeTask).shown_fg_color())
 
 
 class TaskWithPrerequisite(TaskTestCase):
@@ -3288,12 +3222,16 @@ class TaskWithPrerequisite(TaskTestCase):
         self.prerequisite.setSubject("New subject")
         self.assertEqual([{self.task}], self.sources_of(event_type))
 
-    def testAppearanceNotificationAfterMarkingPrerequisiteCompleted(self):
+    def test_icon_event_after_marking_prerequisite_completed(self):
+        # Inactive until the prerequisite is completed, then late
+        self.task.setPlannedStartDateTime(date.Now() - date.ONE_HOUR)
         self.prerequisite.add_dependencies([self.task])
-        eventType = self.task.appearanceChangedEventType()
-        self.registerObserver(eventType, eventSource=self.task)
+        event_type = self.task.effectiveIconChangedEventType()
+        test.styled(self.task)
+        self.registerObserver(event_type, eventSource=self.task)
         self.prerequisite.setCompletionDateTime(date.Now())
-        self.assertEvent(eventType, self.task)
+        test.styled(self.task)
+        self.assertEvent(event_type, self.task)
 
 
 class TaskWithDependency(TaskTestCase):

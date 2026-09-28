@@ -58,17 +58,19 @@ class BaseEffort(object):
         task = self.task()
         return task.categories(*args, **kwargs) if task else set()
 
-    def foregroundColor(self, recursive=False):
-        task = self.task()
-        return task.foregroundColor(recursive) if task else None
+    # An effort is drawn in its task's styles
 
-    def backgroundColor(self, recursive=False):
+    def shown_fg_color(self):
         task = self.task()
-        return task.backgroundColor(recursive) if task else None
+        return task.shown_fg_color() if task else None
 
-    def font(self, recursive=False):
+    def shown_bg_color(self):
         task = self.task()
-        return task.font(recursive) if task else None
+        return task.shown_bg_color() if task else None
+
+    def shown_font(self):
+        task = self.task()
+        return task.shown_font() if task else None
 
     def duration(self, recursive=False):
         raise NotImplementedError  # pragma: no cover

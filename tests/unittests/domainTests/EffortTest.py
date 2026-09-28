@@ -59,17 +59,20 @@ class EffortTest(test.TestCase, asserts.Mixin):
     def testDuration(self):
         self.assertEqual(date.TimeDelta(days=1), self.effort.timeSpent())
 
-    def testForegroundColor(self):
+    def test_foreground_color_is_the_task_color(self):
         self.task.setForegroundColor(wx.RED)
-        self.assertEqual(wx.RED, self.effort.foregroundColor())
+        test.styled(self.task)
+        self.assertEqual(wx.RED, self.effort.shown_fg_color())
 
-    def testBackgroundColor(self):
+    def test_background_color_is_the_task_color(self):
         self.task.setBackgroundColor(wx.RED)
-        self.assertEqual(wx.RED, self.effort.backgroundColor())
+        test.styled(self.task)
+        self.assertEqual(wx.RED, self.effort.shown_bg_color())
 
-    def testFont(self):
+    def test_font_is_the_task_font(self):
         self.task.setFont(wx.SWISS_FONT)
-        self.assertEqual(wx.SWISS_FONT, self.effort.font())
+        test.styled(self.task)
+        self.assertEqual(wx.SWISS_FONT, self.effort.shown_font())
 
     def changes(self):
         return [

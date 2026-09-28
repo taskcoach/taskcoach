@@ -1286,23 +1286,12 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         return self.visibleColumns()[column].hasMultiImages()
 
     def subjectImageIndices(self, item):
-        normal_icon_id = item.icon_id(recursive=True)
-        selected_icon_id = (
-            item.selected_icon_id(recursive=True) or normal_icon_id
-        )
-        normalImageIndex = (
-            image_list_cache.get_index(normal_icon_id)
-            if normal_icon_id
-            else -1
-        )
-        selectedImageIndex = (
-            image_list_cache.get_index(selected_icon_id)
-            if selected_icon_id
-            else -1
-        )
+        # One icon, expanded or not
+        icon_id = item.shown_icon_id()
+        index = image_list_cache.get_index(icon_id) if icon_id else -1
         return {
-            wx.TreeItemIcon_Normal: normalImageIndex,
-            wx.TreeItemIcon_Expanded: selectedImageIndex,
+            wx.TreeItemIcon_Normal: index,
+            wx.TreeItemIcon_Expanded: index,
         }
 
     def __start_observing(self, event_types):

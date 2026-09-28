@@ -144,7 +144,6 @@ the reader gives it back for a missing attribute.
 | 310 | `bgColor` | `None` (falsy) | Falsy |
 | 312 | `font` | `None` (falsy) | Falsy |
 | 314 | `icon` | `""` (falsy) | Falsy |
-| 316 | `selectedIcon` | `""` (falsy) | Falsy |
 | 318 | `ordering` | `== 0` (falsy) | Falsy |
 | 345 | `expandedContexts` | empty (falsy) | Falsy |
 
@@ -164,6 +163,9 @@ When an XML attribute is missing, the reader provides a default via
 | `plannedDurationMode` | `"implicit"` | Yes — code default is `"implicit"` (task.py:52) |
 | `budget` | `""` → `TimeDelta()` | Yes |
 | `hourlyFee` | `"0"` → `0.0` | Yes |
+
+`selectedIcon` (the open folder icon, removed 2026-09-28) is not read:
+an old file's value is dropped and not written back.
 
 ---
 

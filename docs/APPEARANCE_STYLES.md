@@ -5,6 +5,7 @@
 - [TODO](#todo)
 - [Overview](#overview)
 - [SSOT Architecture](#ssot-architecture)
+- [What the Views Draw](#what-the-views-draw)
 - [Field Types](#field-types)
 - [Derivation Sources by Object Type](#derivation-sources-by-object-type)
   - [Task](#task)
@@ -14,7 +15,7 @@
   - [Effort](#effort)
 - [Category Style Priority](#category-style-priority)
 - [Default Icons](#default-icons)
-- [ComputeStyles Polling](#computestyles-polling)
+- [The Master Loop](#the-master-loop)
   - [Processing Order](#processing-order)
   - [Owned Object Traversal](#owned-object-traversal)
 - [Stored Procedures](#stored-procedures)
@@ -58,11 +59,11 @@
 All domain objects (Task, Category, Note, Attachment) use a Single Source of
 Truth (SSOT) architecture for appearance properties. Each object stores derived,
 override, and effective values for each style field. The master loop
-(`ComputeStyles`), at the seconds that matter, recomputes derived and effective
-values for all objects.
+(`MasterScheduler`), at the seconds that matter, recomputes derived and
+effective values for all objects.
 
-Efforts are the exception: they have no appearance/styling system and use a
-hardcoded icon (`clock_icon`).
+Efforts are the exception: they have no styles of their own and are drawn in
+their task's.
 
 ---
 
@@ -76,8 +77,26 @@ Each style field has three layers per object:
 | **Derived** | Computed from sources (categories, parent, status) | No (volatile) |
 | **Effective** | Override if set, otherwise derived | No (volatile) |
 
-Volatile fields are recomputed by `ComputeStyles` polling within 1 second of
-any change. They are `None` after file load until the first poll runs.
+Volatile fields are recomputed by the master loop within 1 second of any
+change. They are `None` after file load until the loop's first pass.
+
+---
+
+## What the Views Draw
+
+Every view, widget, export and print, the tray and the editor's lists
+draw the effective styles through:
+
+| Method | Returns |
+|--------|---------|
+| `shown_fg_color()`, `shown_bg_color()`, `shown_font()` | The effective value, None for the system theme (the widget's own) |
+| `shown_icon_id()` | The effective icon with the plural/singular transform ([ICON_PLURALIZE.md](ICON_PLURALIZE.md)) |
+
+Efforts return their task's. The views refresh on the four effective
+events (`effective_style_event_types()`); each setter sends one event
+for a field's value, default and source together. An item's own style
+shows at once (its setter computes its effective value), styles from
+categories, parents and the status at the loop's next pass.
 
 ---
 
@@ -104,8 +123,9 @@ Icons have type-specific defaults applied in `computeDerived` (see
 Sources checked in order (first non-system-theme value wins):
 
 1. **Categories** - sorted by `stylePriority` descending (via `_getFromCategories`)
-2. **Parent task** - `parent.effectiveXxx()` (via `_getFromParent`)
-3. **Status** - `statusIcon()`, `statusFgColor()`, etc. from `compute_stored_status()`
+2. **Parent task** - `parent.effectiveXxx()` (via `_getFromParent`), unless
+   it comes from the parent's own status or tracking: each task shows its own
+3. **Status** - `status_icon_id()`, `statusFgColor()`, etc. from `compute_stored_status()`
 
 Source labels: `[Category] name`, `[Task] name`, `[Status] active/completed/...`
 
@@ -134,7 +154,7 @@ No sources. Derived value is always `None`. Only override or default icon applie
 
 ### Effort
 
-Not processed by the appearance system. Uses hardcoded `clock_icon`.
+Not processed by the appearance system: `shown_*()` return its task's.
 
 ---
 
@@ -162,20 +182,21 @@ when no other source provides an icon:
 
 | Type | Default Icon | Source Label |
 |------|-------------|-------------|
-| Category | `nuvola_mimetypes_inode-directory` | `"System Theme"` |
 | Note | `nuvola_apps_knotes` | `"System Theme"` |
 | Attachment | `nuvola_status_mail-attachment` | `"System Theme"` |
 
 Tasks get their default icon from status (e.g., `nuvola_actions_ledblue` for active).
+Categories have none (removed in #389): an icon of their own or their parent's.
 
 ---
 
-## ComputeStyles Polling
+## The Master Loop
 
-`ComputeStyles` subscribes to `timer.second` and recomputes all objects every
-second. This catches all changes without explicit triggers.
+The master loop runs `computeStyles()` for every object at each pass: the
+seconds a change or a time condition calls for
+([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#master-design)).
 
-**File:** `taskcoachlib/domain/base/appearance.py` (class `ComputeStyles`)
+**File:** `taskcoachlib/gui/scheduler.py` (`MasterScheduler._run_pass()`)
 
 ### Processing Order
 
@@ -185,8 +206,8 @@ second. This catches all changes without explicit triggers.
 
 ### Owned Object Traversal
 
-`_computeForObject` recursively processes owned objects after computing
-the object's own styles:
+`MasterScheduler._process_task()` and `_process_note()` process owned
+objects after computing the object's own styles:
 
 - `obj.notes(recursive=True)` - all owned notes (flat list + children)
 - `obj.attachments()` - all owned attachments
@@ -217,7 +238,8 @@ category with a non-system-theme effective value.
 ### _getFromParent
 
 Shared helper for Task, Note, and Category derivation. Checks the object's
-parent for a non-system-theme effective value, returns `(value, source)`.
+parent for a non-system-theme effective value, returns `(value, source)`. A
+task skips its parent's value from the parent's own status or tracking.
 
 ---
 
@@ -257,11 +279,10 @@ an `"appearance"` page).
 
 | File | Purpose |
 |------|---------|
-| `taskcoachlib/domain/base/appearance.py` | SSOT stored procedures, ComputeStyles, constants |
-| `taskcoachlib/domain/base/object.py` | SSOT accessor/setter methods on base Object |
+| `taskcoachlib/domain/base/appearance.py` | SSOT stored procedures, `computeStyles()`, constants |
+| `taskcoachlib/domain/base/object.py` | SSOT accessor/setter methods and `shown_*()` on base Object |
 | `taskcoachlib/domain/task/task.py` | Task status icon/color/font, `compute_stored_status()` |
 | `taskcoachlib/domain/category/category.py` | `stylePriority` attribute |
-| `taskcoachlib/domain/categorizable/categorizable.py` | Legacy category color/font mixers |
 | `taskcoachlib/command/categoryCommands.py` | `EditStylePriorityCommand` |
 | `taskcoachlib/config/defaults.py` | Default status icons/colors/fonts/sort priorities |
 | `taskcoachlib/gui/dialog/editor.py` | `TaskAppearancePage` (Appearance tab in editor) |
@@ -272,6 +293,6 @@ an `"appearance"` page).
 ## See Also
 
 - [TASK_STATUS.md](TASK_STATUS.md) - Task status system and status-based icon defaults
-- [SCHEDULERS.md](SCHEDULERS.md) - GlobalTimer architecture (drives ComputeStyles polling)
+- [SCHEDULERS.md](SCHEDULERS.md) - GlobalTimer architecture (drives the master loop)
 - [ICON_LIBRARY.md](ICON_LIBRARY.md) - Icon sources, structure, and adding new icons
 - [ICON_PLURALIZE.md](ICON_PLURALIZE.md) - Plural/singular icon mapping (may be removed)

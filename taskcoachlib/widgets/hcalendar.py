@@ -270,11 +270,11 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
         return self.__adapter.getItemText(task)
 
     def GetBackgroundColor(self, task):
-        color = task.backgroundColor(True)
+        color = task.shown_bg_color()
         return wx.Colour(*color) if color else wx.WHITE
 
     def GetForegroundColor(self, task):
-        color = task.foregroundColor(True)
+        color = task.shown_fg_color()
         return wx.Colour(*color) if color else wx.BLACK
 
     def GetProgress(self, task):
@@ -284,7 +284,9 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
         return None
 
     def GetIcons(self, task):
-        icon_ids = [task.icon_id(recursive=True)]
+        # Empty until the master loop's first pass styles the task
+        icon_id = task.shown_icon_id()
+        icon_ids = [icon_id] if icon_id else []
         if task.attachments():
             icon_ids.append("nuvola_status_mail-attachment")
         if task.notes():
@@ -295,7 +297,7 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
         ]
 
     def GetFont(self, task):
-        return task.font(recursive=True) or wx.NORMAL_FONT
+        return task.shown_font() or wx.NORMAL_FONT
 
     def OnDropURL(self, x, y, url):
         self.__Drop(x, y, url, self.__on_drop_url_callback)

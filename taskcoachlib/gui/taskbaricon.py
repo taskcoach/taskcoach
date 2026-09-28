@@ -110,16 +110,12 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
             self.on_change_due_date_time,
             eventType=task.Task.dueDateTimeChangedEventType(),
         )
-        # When the user chances the due soon hours preferences it may cause
-        # a task to change appearance. That also means the number of due soon
-        # tasks has changed, so we need to change the tool tip text.
-        # Note that directly subscribing to the setting (behavior.duesoonhours)
-        # is not reliable. The TaskBarIcon may get the event before the tasks
-        # do. When that happens the tasks haven't changed their status yet and
-        # we would use the wrong status count.
+        # The tool tip counts statuses: follow their changes, sent once
+        # the tasks have changed (the due soon hours setting's own event
+        # can come before the tasks change)
         self.registerObserver(
             self.on_change_due_date_time,
-            eventType=task.Task.appearanceChangedEventType(),
+            eventType=task.Task.statusChangedEventType(),
         )
         if operating_system.isGTK():
             events = [wx.adv.EVT_TASKBAR_LEFT_DOWN]
@@ -446,7 +442,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         )
         self.registerObserver(
             self.on_change_due_date_time,
-            eventType=task.Task.appearanceChangedEventType(),
+            eventType=task.Task.statusChangedEventType(),
         )
         # The tray host shows the GTK menu, so it cannot be filled when
         # it opens: rebuild it when what it lists changes (besides adds
@@ -705,7 +701,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             subject = task_item.subject() or _("(No subject)")
             if trackable:
                 item = self._image_menu_item(
-                    gtk, subject, task_item.icon_id(recursive=True)
+                    gtk, subject, task_item.shown_icon_id()
                 )
                 item.connect(
                     "activate",

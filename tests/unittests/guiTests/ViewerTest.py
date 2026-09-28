@@ -148,6 +148,7 @@ class ViewerTest(test.wxTestCase):
 
     def testGetItemTooltipData(self):
         self.task.setDescription("Description")
+        test.styled(self.task)
         expectedData = [
             ("taskcoach_actions_led_grey_icon", ["task"]),
             ("nuvola_places_folder-downloads", []),

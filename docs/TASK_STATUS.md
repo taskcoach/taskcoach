@@ -38,7 +38,7 @@
     - [Appearance Tab Layout (3-Column Grid)](#appearance-tab-layout-3-column-grid)
     - [Task Appearance](#task-appearance)
     - [Category Appearance](#category-appearance)
-    - [Inheritance Methods](#inheritance-methods)
+    - [Style Accessors](#style-accessors)
     - [Notes and Attachments](#notes-and-attachments)
 11. [File Reference](#file-reference)
 12. [SSOT Principle: Action vs Display](#ssot-principle-action-vs-display)
@@ -301,7 +301,8 @@ actual values and stores the results in the task's fields.
 
 Called from:
 - `Task.__init__()` — Initial population on task creation/load
-- `recomputeAppearance()` — Immediate update on date changes (called by all date setters)
+- `_update_status()`: at once after a change of what it reads (dates,
+  completion, prerequisites, subtasks added or removed)
 - `MasterScheduler._process_task()`: at each pass, before `computeStyles()`
 
 ### Event: statusChangedEventType
@@ -317,9 +318,11 @@ Subscribers: status columns in TaskViewer (via column event infrastructure).
 Status is recomputed in three scenarios:
 
 1. **On load:** `Task.__init__()` calls `compute_stored_status()` once.
-2. **On date change:** date setters (e.g. `setDueDateTime()`) call
-   `recomputeAppearance()`, which calls `compute_stored_status()` first,
-   so the status updates at once.
+2. **On a change of what it reads:** the date setters (e.g.
+   `setDueDateTime()`), completion, prerequisites and subtasks added or
+   removed call `_update_status()`, which calls `compute_stored_status()`,
+   so the status updates at once; the styles follow at the loop's next
+   pass.
 3. **Each pass of the master loop:** `MasterScheduler._process_task()` calls
    `compute_stored_status()` for each task, before `computeStyles()`.
 
@@ -349,16 +352,16 @@ See docs/SCHEDULERS.md for the complete MasterScheduler processing flow.
 
 ### Immediate Updates (Date Setters)
 
-When a user changes a date field, the update is immediate:
+When a user changes a date field, the status updates at once; the
+colours, font and icon follow at the master loop's next pass (within a
+second):
 
 ```
 setDueDateTime(newDate) / setPlannedStartDateTime(newDate) / etc.
-    └── self.recomputeAppearance()
-        ├── self.compute_stored_status()
-        │   ├── Recalculates status from current dates
-        │   └── Fires 'task.status' if status changed
-        ├── __computeRecursiveForegroundColor()  (uses status for color)
-        └── __computeRecursiveBackgroundColor()
+    └── self._update_status()
+        └── self.compute_stored_status()
+            ├── Recalculates status from current dates
+            └── Fires 'task.status' if status changed
 ```
 
 ### Viewer Columns
@@ -387,10 +390,7 @@ All subscribe to `statusChangedEventType` for refresh.
 | Consumer | File | Purpose |
 |----------|------|---------|
 | Status helper methods | `domain/task/task.py` | `completed()`, `overdue()`, `active()`, etc. |
-| Color cascade | `domain/task/task.py` | Foreground color fallback (own > category > status) |
-| Background cascade | `domain/task/task.py` | Background color fallback |
-| Font cascade | `domain/task/task.py` | Font fallback |
-| Icon cascade | `domain/task/task.py` | Icon fallback |
+| Status styles | `domain/task/task.py` | `statusFgColor()`, `statusBgColor()`, `statusFont()`, `status_icon_id()`, read by `computeDerived()` |
 | ViewFilter | `domain/task/filter.py` | Hide tasks by status |
 | Status bar | `gui/viewer/task.py` | Task count per status |
 | Task list counts | `domain/task/tasklist.py` | `nr_of_tasks_per_status()` |
@@ -413,7 +413,7 @@ These are per-viewer settings (taskviewer, taskstatsviewer, taskinterdepsviewer,
 
 ### Event Types That Affect Status
 
-The status has no dedicated event type. Changes propagate via:
+These changes can change the status, which then sends `task.status`:
 
 | Event | When Fired | Effect on Status |
 |-------|-----------|-----------------|
@@ -421,7 +421,6 @@ The status has no dedicated event type. Changes propagate via:
 | `actualStartDateTimeChangedEventType` | User changes actual start | May change inactive/late↔active |
 | `dueDateTimeChangedEventType` | User changes due date | May change active↔duesoon↔overdue |
 | `completionDateTimeChangedEventType` | User changes completion | May change any↔completed |
-| `appearanceChangedEventType` | `recomputeAppearance()` called | Signals visual update needed |
 | `prerequisitesChangedEventType` | Prerequisites change | May force inactive |
 
 ---
@@ -445,7 +444,10 @@ The `compute_status()` method returns `(TaskStatus, source_string)` tuple, provi
 ### 2. No Dedicated Status Event — RESOLVED
 
 `statusChangedEventType` (`"task.status"`) now exists, fired by `compute_stored_status()` only on actual transitions. The new status columns subscribe to it.
-Legacy consumers still use `appearanceChangedEventType()` as a proxy.
+The task filter and the tray, which used the old appearance event as
+a proxy, listen to it since the views moved to the effective styles
+([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md), To Do
+35).
 
 ### 3. StatusChecker Duplicates Logic — RESOLVED
 
@@ -454,10 +456,12 @@ calls each task's `compute_stored_status()` immediately before `computeStyles()`
 eliminates the duplicated date logic and guarantees correct ordering: status is always
 fresh when appearance values are computed.
 
-### 4. Cache Invalidation is Implicit
+### 4. Cache Invalidation is Implicit: RESOLVED
 
-The legacy cache is still cleared by `recomputeAppearance()` from ~15 call sites.
-To be removed after migration — stored fields eliminate the need for cache/invalidation.
+The legacy style cache and `recomputeAppearance()` are removed with the
+views' move to the effective styles
+([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md), To Do
+35). `_update_status()` keeps only the immediate status.
 
 ### 5. Derived/Effective Event Types Used Wrong Prefix — RESOLVED
 
@@ -531,7 +535,7 @@ every consumer to potentially trigger computation. The new pattern separates wri
    | statusFgColor() | task.py | ✓ Done |
    | statusBgColor() | task.py | ✓ Done |
    | statusFont() | task.py | ✓ Done |
-   | statusIcon() | task.py | ✓ Done (now accessor) |
+   | status_icon_id() | task.py | ✓ Done (now accessor) |
    | nr_of_tasks_per_status() | tasklist.py | ✓ Done |
    | Editor display | editor.py | ✓ Done (uses derivedXxx/effectiveXxx) |
    | Appearance tab 3-col layout | editor.py | ✓ Done |
@@ -548,8 +552,9 @@ every consumer to potentially trigger computation. The new pattern separates wri
    | Note effectiveXxx(explain) | note.py | ✓ Done |
    | Attachment effectiveXxx(explain) | attachment.py | ✓ Done |
    | Tracking icon in derived/effective | appearance.py | ✓ Done (highest-priority derived, skips override) |
-   | Plural/singular icon transform | task.py | Will not migrate (intentionally kept in legacy `icon()` accessor) |
-   | Selected icon variant (open/closed folder) | task.py | Will not migrate (concept will be removed) |
+   | Plural/singular icon transform | object.py | ✓ Done (kept, applied by `shown_icon_id()`) |
+   | Selected icon variant (open/closed folder) | object.py | ✓ Removed |
+   | Every view, widget, export and the tray | gui, widgets, persistence | ✓ Done (`shown_*()`, To Do 35) |
 
 3. **Final cleanup (done 2026-09-28):** the legacy `status()` cache, the
    `__status` field, its invalidations and the loop's
@@ -560,12 +565,13 @@ every consumer to potentially trigger computation. The new pattern separates wri
 
 ### Staleness Tradeoff — RESOLVED
 
-Immediate updates are now implemented: `recomputeAppearance()` (called by all date
-setters) invokes `compute_stored_status()` at its start. This means:
+Immediate updates are implemented: `_update_status()` (called by the
+date setters, completion, prerequisites and subtask changes) runs
+`compute_stored_status()`. This means:
 - User-driven date changes → instant status update (no 1-second delay)
-- Time-based transitions → detected within 1 second by ComputeStyles
-- The only remaining "stale" window is for time-based transitions (up to 1 second),
-  which is imperceptible to users.
+- Time-based transitions → detected within 1 second by the master loop
+- The styles follow at the loop's next pass, within a second, which is
+  imperceptible to users.
 
 ---
 
@@ -591,28 +597,32 @@ Each viewer that shows tasks has `hideXtasks` boolean settings (all default to `
 
 ## Task Icon Decision Sequence
 
-The task icon displayed in the task list is determined by the following priority sequence.
-The first match wins, and the final result is transformed based on whether the task has children.
+The task icon every view shows, `shown_icon_id()`, is the effective
+icon the master loop computes (`computeDerived()`, `computeEffective()`)
+from the following priority sequence. The first match wins, and the
+result is transformed based on whether the task has children.
 
 ### Priority Order
 
 ```
 1. Effort Tracking
-   └── If task.isBeingTracked() is True → "clock_icon"
+   └── If task.isBeingTracked() is True → "nuvola_apps_clock"
    └── Shown when user is actively tracking time on this task
 
 2. Own Icon Override
-   └── task.icon() (non-recursive) - icon set directly on the task
+   └── task.icon_id(): icon set directly on the task
    └── User can set this in the Appearance tab of the task editor
 
 3. Category Icon
-   └── categoryIcon() checks:
-       a) Each category the task belongs to → category.icon(recursive=True)
-       b) If not found, parent task's categoryIcon() (recursive up task tree)
+   └── The task's categories by stylePriority → category.effectiveIcon()
    └── First category with an icon wins
 
-4. Status Icon
-   └── statusIcon() returns __status_icon (single source of truth)
+4. Parent Task Icon
+   └── parent.effectiveIcon(), unless it comes from the parent's own
+       status or tracking: each task shows its own
+
+5. Status Icon
+   └── status_icon_id(), stored by compute_stored_status()
    └── Determined by task status: active, inactive, late, duesoon, overdue, completed
    └── Configured in Preferences > Theme > Status Icons
 ```
@@ -653,11 +663,10 @@ Tasks without children and without override will have folder icons converted bac
 
 | Term | Definition | Storage |
 |------|------------|---------|
-| **Status Icon** | Icon based on task status alone | `__status_icon` (single source of truth) |
-| **Computed Icon** | `categoryIcon() or statusIcon()` (before override) | `__recursiveIcon` |
-| **Final Icon** | Full cascade result including override + plural/singular | Computed on-the-fly by `icon(recursive=True)` |
-
-**Note:** The final icon is currently computed on-the-fly, not stored. This could be refactored to use a single source of truth pattern.
+| **Status Icon** | Icon based on task status alone | `status_icon_id()` |
+| **Derived Icon** | Tracking, categories, parent or status (before override) | `derivedIcon()` |
+| **Effective Icon** | Override, else derived | `effectiveIcon()` |
+| **Shown Icon** | Effective icon with the plural/singular transform | Computed on read by `shown_icon_id()` |
 
 ---
 
@@ -998,16 +1007,14 @@ Accessor methods are generated by Attribute fields and return stored values dire
 - **Eventual consistency:** 1-2 second latency, acceptable for appearance updates
 - **Simple:** No complex trigger/cascade logic to maintain
 
-#### Legacy Code Compatibility
+#### Legacy Code Compatibility: RESOLVED
 
-**IMPORTANT:** The legacy `recursive=True` parameter on `foregroundColor()`, `backgroundColor()`, `icon()`, and `font()` is **preserved for backward compatibility**. Do not modify the legacy methods in `CompositeObject`.
-
-| Method | Behavior |
-|--------|----------|
-| `foregroundColor(recursive=True)` | **Legacy** — walks up parent chain at query time |
-| `effectiveFgColor()` | **New** — returns pre-computed effective value |
-
-New code should use the `effectiveXxx()` methods. Legacy code continues to work unchanged.
+The legacy `recursive=True` style accessors, their caches and the
+colour and font mixing of several categories are removed; every view
+draws the effective styles through `shown_fg_color()`,
+`shown_bg_color()`, `shown_font()` and `shown_icon_id()`, which turn
+system theme values into None for the widgets
+([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#views-on-the-effective-styles)).
 
 #### Task Effective Appearance
 
@@ -1022,10 +1029,12 @@ Tasks have `derivedXxx()` / `derivedXxxSource()` and `effectiveXxx()` / `effecti
 
 2. Parent task's effective value (if child task has NO direct categories)
    └── Child task asks parent.effectiveFgColor() etc.
+   └── Not when it comes from the parent's own status or tracking
+       (source "[Status] ..." or "[Tracking]"): each task shows its own
    └── Source: "[Task] ParentTaskName"
 
 3. Status appearance (fallback - task always has a status)
-   └── statusIcon(), statusFgColor(), statusBgColor()
+   └── status_icon_id(), statusFgColor(), statusBgColor(), statusFont()
    └── Source: "[Status] StatusName" (e.g., "[Status] Inactive", "[Status] Active")
 ```
 
@@ -1064,20 +1073,16 @@ Tasks have `derivedXxx()` / `derivedXxxSource()` and `effectiveXxx()` / `effecti
 - `"[Status] Inactive"` — from task status (includes status name)
 - `"System Theme"` — (Categories/Notes/Attachments only, not Tasks)
 
-### Inheritance Methods
+### Style Accessors
 
 **File:** `taskcoachlib/domain/base/object.py`
 
 | Method | Behavior |
 |--------|----------|
-| `foregroundColor(recursive=False)` | Own color only |
-| `foregroundColor(recursive=True)` | Own color, or parent's recursive color |
-| `backgroundColor(recursive=False)` | Own color only |
-| `backgroundColor(recursive=True)` | Own color, or parent's recursive color |
-| `icon(recursive=False)` | Own icon only |
-| `icon(recursive=True)` | Own icon, or parent's recursive icon, then plural/singular transform |
-| `font(recursive=False)` | Own font only |
-| `font(recursive=True)` | Own font, or parent's recursive font |
+| `foregroundColor()`, `backgroundColor()`, `font()`, `icon_id()` | Own value only (the override) |
+| `effectiveFgColor()` etc. | The master loop's effective value, "SYS_..." for the system theme |
+| `shown_fg_color()`, `shown_bg_color()`, `shown_font()` | Effective value, None for the system theme: what the views draw |
+| `shown_icon_id()` | Effective icon, then the plural/singular transform |
 
 ### Notes, Efforts, and Attachments
 
@@ -1090,7 +1095,7 @@ Tasks have `derivedXxx()` / `derivedXxxSource()` and `effectiveXxx()` / `effecti
 **Efforts:**
 - NO appearance tab — simple editor without tabs
 - Efforts implicitly use the appearance of the task they belong to
-- No inheritance model — appearance comes directly from task
+- No inheritance model: `shown_*()` return their task's
 
 **Attachments:**
 - SSOT `effectiveXxx()` methods (simplest form - override or system theme)
@@ -1104,7 +1109,7 @@ Tasks have `derivedXxx()` / `derivedXxxSource()` and `effectiveXxx()` / `effecti
 | File | Purpose |
 |------|---------|
 | `taskcoachlib/domain/task/status.py` | TaskStatus class and 6 singleton instances |
-| `taskcoachlib/domain/task/task.py` | `computedStatus()`, color/icon/font methods, `recomputeAppearance()` |
+| `taskcoachlib/domain/task/task.py` | `computedStatus()`, status styles, `_update_status()` |
 | `taskcoachlib/domain/task/filter.py` | ViewFilter with status-based hiding |
 | `taskcoachlib/domain/task/tasklist.py` | `nr_of_tasks_per_status()` count method |
 | `taskcoachlib/gui/scheduler.py` | GlobalTimer + MasterScheduler |

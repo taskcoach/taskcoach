@@ -22,7 +22,7 @@ from taskcoachlib import patterns
 from taskcoachlib.domain.attribute import icon
 from taskcoachlib.domain.date import Timestamp
 from . import attribute
-from .appearance import FIELD_DEFAULTS, FIELD_NO_VALUE_SOURCE
+from .appearance import FIELD_DEFAULTS, FIELD_NO_VALUE_SOURCE, shown
 import functools
 import uuid
 import re
@@ -110,9 +110,6 @@ class Object:
             icon_catalog.normalize_icon_id(kwargs.pop("icon", "")),
             self,
             self.appearanceChangedEvent,
-        )
-        self.__selected_icon_id = Attribute(
-            kwargs.pop("selectedIcon", ""), self, self.appearanceChangedEvent
         )
         self.__ordering = Attribute(
             kwargs.pop("ordering", Object._long_zero),
@@ -216,7 +213,6 @@ class Object:
                 font=self.__font.get(),
                 icon=self.__icon_id.get(),
                 ordering=self.__ordering.get(),
-                selectedIcon=self.__selected_icon_id.get(),
             )
         )
         return state
@@ -234,7 +230,6 @@ class Object:
         self.setBackgroundColor(state["bgColor"], event=event)
         self.setFont(state["font"], event=event)
         self.set_icon_id(state["icon"], event=event)
-        self.set_selected_icon_id(state["selectedIcon"], event=event)
         self.setOrdering(state["ordering"], event=event)
         self.__creationDateTime = state["creationDateTime"]
         # Set modification date/time last to overwrite changes made by the
@@ -263,7 +258,6 @@ class Object:
                 bgColor=self.__bgColor.get(),
                 font=self.__font.get(),
                 icon=self.__icon_id.get(),
-                selectedIcon=self.__selected_icon_id.get(),
                 ordering=self.__ordering.get(),
             )
         )
@@ -423,10 +417,7 @@ class Object:
 
         appearance.computeEffective(self, "fgColor")
 
-    def foregroundColor(self, recursive=False):  # pylint: disable=W0613
-        # The 'recursive' argument isn't actually used here, but some
-        # code assumes composite objects where there aren't. This is
-        # the simplest workaround.
+    def foregroundColor(self):
         return self.__fgColor.get()
 
     def setBackgroundColor(self, color, event=None):
@@ -436,18 +427,12 @@ class Object:
 
         appearance.computeEffective(self, "bgColor")
 
-    def backgroundColor(self, recursive=False):  # pylint: disable=W0613
-        # The 'recursive' argument isn't actually used here, but some
-        # code assumes composite objects where there aren't. This is
-        # the simplest workaround.
+    def backgroundColor(self):
         return self.__bgColor.get()
 
     # Font:
 
-    def font(self, recursive=False):  # pylint: disable=W0613
-        # The 'recursive' argument isn't actually used here, but some
-        # code assumes composite objects where there aren't. This is
-        # the simplest workaround.
+    def font(self):
         return self.__font.get()
 
     def setFont(self, font, event=None):
@@ -472,12 +457,6 @@ class Object:
         from . import appearance
 
         appearance.computeEffective(self, "icon")
-
-    def selected_icon_id(self):
-        return self.__selected_icon_id.get()
-
-    def set_selected_icon_id(self, icon_id, event=None):
-        self.__selected_icon_id.set(icon_id, event=event)
 
     # Event types:
 
@@ -521,19 +500,24 @@ class Object:
         return self.__derivedFontSource.get() or FIELD_NO_VALUE_SOURCE["font"]
 
     # --- Derived SSOT Setters (for use by computeDerived) ---
+    # Each sends one event for its value and source together
 
+    @patterns.eventSource
     def setDerivedFgColor(self, value, source, event=None):
         self.__derivedFgColorValue.set(value, event=event)
         self.__derivedFgColorSource.set(source, event=event)
 
+    @patterns.eventSource
     def setDerivedBgColor(self, value, source, event=None):
         self.__derivedBgColorValue.set(value, event=event)
         self.__derivedBgColorSource.set(source, event=event)
 
+    @patterns.eventSource
     def setDerivedIcon(self, value, source, event=None):
         self.__derivedIconValue.set(value, event=event)
         self.__derivedIconSource.set(source, event=event)
 
+    @patterns.eventSource
     def setDerivedFont(self, value, source, event=None):
         self.__derivedFontValue.set(value, event=event)
         self.__derivedFontSource.set(source, event=event)
@@ -619,23 +603,43 @@ class Object:
     def effectiveFontDefault(self):
         return self.__effectiveFontDefault.get() or FIELD_DEFAULTS["font"]
 
-    # --- Effective SSOT Setters (for use by computeEffective) ---
+    # --- Shown styles: what every view draws, the effective styles the
+    # master loop computes (docs/MASTER_SCHEDULER_REFACTOR.md, To Do 35)
 
+    def shown_fg_color(self):
+        return shown(self.effectiveFgColor())
+
+    def shown_bg_color(self):
+        return shown(self.effectiveBgColor())
+
+    def shown_font(self):
+        return shown(self.effectiveFont())
+
+    def shown_icon_id(self):
+        return self.effectiveIcon()
+
+    # --- Effective SSOT Setters (for use by computeEffective) ---
+    # Each sends one event for its value, default and source together
+
+    @patterns.eventSource
     def setEffectiveFgColor(self, value, default, source, event=None):
         self.__effectiveFgColorValue.set(value, event=event)
         self.__effectiveFgColorDefault.set(default, event=event)
         self.__effectiveFgColorSource.set(source, event=event)
 
+    @patterns.eventSource
     def setEffectiveBgColor(self, value, default, source, event=None):
         self.__effectiveBgColorValue.set(value, event=event)
         self.__effectiveBgColorDefault.set(default, event=event)
         self.__effectiveBgColorSource.set(source, event=event)
 
+    @patterns.eventSource
     def setEffectiveIcon(self, value, source, event=None):
         # Icon has no default
         self.__effectiveIconValue.set(value, event=event)
         self.__effectiveIconSource.set(source, event=event)
 
+    @patterns.eventSource
     def setEffectiveFont(self, value, default, source, event=None):
         self.__effectiveFontValue.set(value, event=event)
         self.__effectiveFontDefault.set(default, event=event)
@@ -672,6 +676,16 @@ class Object:
     @classmethod
     def effectiveFontChangedEventType(class_):
         return "effective.font"
+
+    @classmethod
+    def effective_style_event_types(cls):
+        """The events of the styles the views draw."""
+        return (
+            cls.effectiveFgColorChangedEventType(),
+            cls.effectiveBgColorChangedEventType(),
+            cls.effectiveFontChangedEventType(),
+            cls.effectiveIconChangedEventType(),
+        )
 
     @classmethod
     def modificationEventTypes(class_):
@@ -778,51 +792,11 @@ class CompositeObject(Object, patterns.ObservableComposite):
 
     # Appearance:
 
-    def appearanceChangedEvent(self, event):
-        super().appearanceChangedEvent(event)
-        # Assume that most of the times our children change appearance too
-        for child in self.children():
-            child.appearanceChangedEvent(event)
-
-    def foregroundColor(self, recursive=False):
-        myFgColor = super().foregroundColor()
-        if not myFgColor and recursive and self.parent():
-            return self.parent().foregroundColor(recursive=True)
-        else:
-            return myFgColor
-
-    def backgroundColor(self, recursive=False):
-        myBgColor = super().backgroundColor()
-        if not myBgColor and recursive and self.parent():
-            return self.parent().backgroundColor(recursive=True)
-        else:
-            return myBgColor
-
-    def font(self, recursive=False):
-        myFont = super().font()
-        if not myFont and recursive and self.parent():
-            return self.parent().font(recursive=True)
-        else:
-            return myFont
-
-    def icon_id(self, recursive=False):
-        icon_id = super().icon_id()
-        if not recursive:
-            return icon_id
-        if not icon_id and self.parent():
-            icon_id = self.parent().icon_id(recursive=True)
+    def shown_icon_id(self):
+        # An icon the user chose for the item is only pluralized
         return self.pluralOrSingularIcon(
-            icon_id, native=super().icon_id() == ""
-        )
-
-    def selected_icon_id(self, recursive=False):
-        icon_id = super().selected_icon_id()
-        if not recursive:
-            return icon_id
-        if not icon_id and self.parent():
-            icon_id = self.parent().selected_icon_id(recursive=True)
-        return self.pluralOrSingularIcon(
-            icon_id, native=super().selected_icon_id() == ""
+            self.effectiveIcon(),
+            native=self.effectiveIconSource() != "[Override]",
         )
 
     def pluralOrSingularIcon(self, icon_id, native=True):

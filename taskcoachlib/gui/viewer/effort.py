@@ -62,10 +62,10 @@ class EffortViewer(
         )
         self.aggregation = settings.get(self.settingsSection(), "aggregation")
         self.__init_mode_toolbar_ui_commands()
-        self.registerObserver(
-            self.on_attribute_changed,
-            eventType=effort.Effort.appearanceChangedEventType(),
-        )
+        for event_type in effort.Effort.effective_style_event_types():
+            self.registerObserver(
+                self.on_task_style_changed, eventType=event_type
+            )
         for option in ("round", "alwaysroundup", "consolidateeffortspertask"):
             self.registerObserver(
                 self.on_rounding_changed,
@@ -172,6 +172,18 @@ class EffortViewer(
             )
         # Fall back to generic paste when no specific target task
         return super().pasteItemCommand()
+
+    def on_task_style_changed(self, event):
+        """Effort rows are drawn in their task's styles."""
+        tasks = [each for each in event.sources() if hasattr(each, "efforts")]
+        if self.aggregation == "details":
+            items = [each for task in tasks for each in task.efforts()]
+        else:
+            task_set = set(tasks)
+            items = [
+                each for each in self.presentation() if each.task() in task_set
+            ]
+        self.refreshItems(*items)
 
     def set_aggregation(self, aggregation):
         """Change the aggregation mode. Can be one of 'details', 'day', 'week'

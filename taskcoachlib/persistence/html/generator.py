@@ -232,10 +232,10 @@ class Viewer2HTMLConverter(object):
     def bodyRow(self, item, columns, tree, printing, level):
         """Returns a <tr> containing the values of item for the
         visibleColumns."""
-        fgColor = item.foregroundColor(recursive=True)
-        bgColor = item.backgroundColor(recursive=True)
-        if bgColor and bgColor == wx.WHITE:
-            bgColor = None
+        fg_color = item.shown_fg_color()
+        bg_color = item.shown_bg_color()
+        if bg_color and bg_color == wx.WHITE:
+            bg_color = None
         bodyRowContent = []
         for column in columns:
             renderedItem = self.render(
@@ -245,10 +245,10 @@ class Viewer2HTMLConverter(object):
                 self.bodyCell(renderedItem, column, printing, level + 1)
             )
         styles = []
-        if fgColor:
-            styles.append("color: %s" % self.cssColor(fgColor))
-        if bgColor:
-            styles.append("background: %s" % self.cssColor(bgColor))
+        if fg_color:
+            styles.append("color: %s" % self.cssColor(fg_color))
+        if bg_color:
+            styles.append("background: %s" % self.cssColor(bg_color))
         attributes = dict()
         if styles:
             attributes["style"] = "; ".join(styles)
@@ -259,7 +259,11 @@ class Viewer2HTMLConverter(object):
         """Convert a wx.Colour to hex (#RRGGBB) format for HTML attributes."""
         if isinstance(wxColor, tuple):
             wxColor = wx.Colour(*wxColor)
-        return "#%02x%02x%02x" % (wxColor.Red(), wxColor.Green(), wxColor.Blue())
+        return "#%02x%02x%02x" % (
+            wxColor.Red(),
+            wxColor.Green(),
+            wxColor.Blue(),
+        )
 
     def bodyCell(self, item, column, printing, level):
         """Return a <td> for the item/column combination."""

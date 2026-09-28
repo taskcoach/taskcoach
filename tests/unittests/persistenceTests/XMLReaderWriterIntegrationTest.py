@@ -94,7 +94,6 @@ class IntegrationTest(IntegrationTestCase):
             font=wx.NORMAL_FONT,
             expandedContexts=["viewer1"],
             icon="icon",
-            selectedIcon="selectedIcon",
             percentageComplete=67,
             shouldMarkCompletedWhenAllChildrenCompleted=True,
         )

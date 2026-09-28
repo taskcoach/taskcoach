@@ -59,29 +59,12 @@ How icons are rendered in viewer columns.
    `changes/sync.py`, `widgets/searchctrl.py`, `widgets/notebook.py` only
    call `get_bitmap()` inside methods, never at import time.
 
-7. **Remove open/close (selected) icon logic.** The `selectedIcon` system
-   provides alternate icons for expanded tree nodes (e.g. `folder_red_open_icon`
-   for an expanded `folder_red_icon`). This should be removed entirely.
-   Anchor points to review:
-   - **Domain layer:** `object.py` — `selected_icon_id()`, `set_selected_icon_id()`,
-     `__selected_icon_id` attribute, `__getstate__`/`__setstate__`/`__getcopystate__`
-     serialization keys. `categorizable.py` — `selected_icon_id()`,
-     `category_selected_icon_id()`. `task.py` — `selected_icon_id()`,
-     `__recursive_selected_icon_id`, `__compute_recursive_selected_icon_id()`.
-   - **Command:** `command/base.py` `EditIconCommand` — auto-generates
-     `_open_icon` suffix from folder icons (lines 610-613), stores/restores
-     `__new_selected_icon_id` and `__old_icon_ids` tuples.
-   - **Viewer:** `viewer/base.py` `subjectImageIndices()` — reads both
-     `item.icon_id()` and `item.selected_icon_id()`, maps to
-     `wx.TreeItemIcon_Normal` / `wx.TreeItemIcon_Expanded`.
-   - **Calendar:** `calendarwidget.py` — `get_selected_or_normal_icon_id`
-     callback (reference to `get_icon_id` in `viewer/task.py`) selects between
-     `icon_id()` and `selected_icon_id()` based on `isSelected` flag. Currently
-     always called with `False`, so `selected_icon_id` is never used here.
-   - **Serialization:** `writer.py` writes `selectedIcon` XML attribute,
-     `reader.py` reads it back. XML format change required.
-   - **Icon picker:** `entry.py` `IconEntry` — only sets `icon_id`, not
-     `selected_icon_id` (the auto-generation in `EditIconCommand` handles it).
+7. ~~**Remove open/close (selected) icon logic.**~~ **Done** (2026-09-28,
+   [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md), To Do 35).
+   One icon, expanded or not: the domain field, `EditIconCommand`'s
+   `_open_icon` variant, the trees' expanded image, the calendar's icon
+   callback and the XML attribute are removed; `selectedIcon` in old
+   files is read and dropped.
 
 8. ~~**Rename `wx.Icon` variables to `wx_icon`.**~~ **Done.** Variables named
    `icon` holding `wx.Icon` objects renamed to `wx_icon`; variables holding

@@ -119,7 +119,7 @@ class ViewFilterTestsMixin(object):
         oldNow = date.Now
         now = plannedStart + date.ONE_SECOND
         date.Now = lambda: now
-        self.task.onTimeToStart()
+        self.task.compute_stored_status()
         self.assertFilterShows(self.task)
         date.Now = oldNow
 

@@ -634,9 +634,6 @@ class XMLReader(object):
             ),
             font=self.__parse_font_description(node.attrib.get("font", "")),
             icon=self.__parse_icon(node.attrib.get("icon", "")),
-            selectedIcon=self.__parse_icon(
-                node.attrib.get("selectedIcon", "")
-            ),
             ordering=int(node.attrib.get("ordering", "0")),
             **self.__parse_dates(node),
         )
