@@ -19,31 +19,37 @@ recursive priority stays out of the loop
 This refactor:
 
 1. The undo log as object versions keyed by the modification date
-   ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log), option C).
-2. The task editor's Progress tab, to check on a real display
+   ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log), option C; step 1
+   done, steps 2 to 5 open).
+2. The legacy subtree styles: `Task.recomputeAppearance()`, called
+   from 21 places, still computes a cache of subtree colours and icons
+   beside the loop's effective styles; row icons, the tray menu,
+   effort colours and the editor's owned-item lists read it
+   ([TASK_STATUS.md](TASK_STATUS.md#4-cache-invalidation-is-implicit)).
+3. The task editor's Progress tab, to check on a real display
    (issue 7).
-3. Not planned: the reason for each entry
+4. Not planned: the reason for each entry
    ([Later](#later-the-reason-for-each-entry)).
-4. Effective fields for the 13 other subtree values, one at a time;
+5. Effective fields for the 13 other subtree values, one at a time;
    none is read by the loop
    ([TASK_FIELDS.md](TASK_FIELDS.md#subtree-values-in-other-columns)).
 
 Before the branch is pushed:
 
-5. Squash to one commit, version 2.0.3.0 in the body; the release
+6. Squash to one commit, version 2.0.3.0 in the body; the release
    date (2026-09-28) may move.
-6. One app run on 2026-09-28 logged a traceback (log lost, not
+7. One app run on 2026-09-28 logged a traceback (log lost, not
    reproduced in four runs of the same steps): watch for it.
 
 Other TODOs, outside this refactor:
 
-7. Signal cleanup, then a signal library
+8. Signal cleanup, then a signal library
    ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#todo)).
-8. Editor text fields commit only on focus loss
+9. Editor text fields commit only on focus loss
    ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#todo)).
-9. Default values in the file
-   ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#todo)).
-10. Settings modernization ([SETTINGS.md](SETTINGS.md#todo)).
+10. Default values in the file
+    ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#todo)).
+11. Settings modernization ([SETTINGS.md](SETTINGS.md#todo)).
 
 ## Master Design
 
