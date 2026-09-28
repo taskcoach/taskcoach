@@ -296,8 +296,11 @@ item (`persistence/merge.py`).
   (they own their categories; a category's members are the reverse),
   a task's prerequisites from its winning copy (dependencies are their
   reverse).
-- Merged items keep the dates of their winning copies: rebuilding
-  links is not an edit.
+- Merged items keep the dates and data of their winning copies:
+  rebuilding links is not an edit. A subtask list is derived from the
+  subtasks' parents, so the automatic parent rules (a parent completed
+  when all its subtasks are, reopened by an open subtask) do not run
+  while a merge rebuilds it (`Task.rebuilding_links()`).
 - Deletions do not carry over: an item deleted in one file comes back
   from the other.
 

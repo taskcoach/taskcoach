@@ -1077,6 +1077,52 @@ class TaskFileMergeTest(TaskFileTestCase):
         )
         self.assertEqual(3, len(self.taskFile.tasks()))
 
+    def test_a_merged_open_subtask_leaves_its_parent_completed(self):
+        # The subtask list is derived, not the parent's data: the merge
+        # changes no task beyond taking its newest copy
+        self.task.setCompletionDateTime(date.DateTime(2021, 6, 1))
+        self.task.set_modification_datetime(date.DateTime(2022, 1, 1))
+        parent = self.their_copy(
+            self.task, "theirs", date.DateTime(2021, 1, 1)
+        )
+        theirs = task.Task(subject="their subtask", parent=parent)
+        parent.addChild(theirs)
+        self.mergeFile.tasks().extend([parent, theirs])
+        self.merge()
+        merged = self.taskFile.tasks().getObjectById(self.task.id())
+        self.assertEqual(
+            (date.DateTime(2021, 6, 1), ["their subtask"]),
+            (
+                merged.completionDateTime(),
+                [child.subject() for child in merged.children()],
+            ),
+        )
+
+    def test_relinking_subtasks_completes_no_parent(self):
+        self.settings.setboolean(
+            "behavior", "markparentcompletedwhenallchildrencompleted", True
+        )
+        parent = self.their_copy(
+            self.task, "theirs", date.DateTime(2021, 1, 1)
+        )
+        parent.setReminder(date.DateTime(2030, 1, 1))
+        open_child = task.Task(subject="open", parent=parent)
+        done_child = task.Task(
+            subject="done",
+            parent=parent,
+            completionDateTime=date.DateTime(2021, 1, 1),
+        )
+        parent.addChild(open_child)
+        parent.addChild(done_child)
+        parent.set_modification_datetime(date.DateTime(2021, 1, 1))
+        self.mergeFile.tasks().extend([parent, open_child, done_child])
+        self.merge()
+        merged = self.taskFile.tasks().getObjectById(self.task.id())
+        self.assertEqual(
+            (False, date.DateTime(2030, 1, 1)),
+            (merged.completed(), merged.reminder()),
+        )
+
     def test_item_moves_to_the_parent_its_newer_copy_names(self):
         other_parent = task.Task(subject="other parent")
         self.taskFile.tasks().append(other_parent)

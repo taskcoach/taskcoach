@@ -25,6 +25,7 @@ from taskcoachlib.domain.base.attribute import Attribute, SetAttribute
 from weakref import WeakSet
 from . import status
 import ast
+import contextlib
 import wx
 
 
@@ -35,6 +36,20 @@ class Task(
 ):
 
     maxDateTime = date.DateTime()
+
+    # Nonzero while links are rebuilt, not edited (merging files):
+    # a subtask list is derived from the subtasks' parents, so the
+    # parent rules of addChild() and removeChild() do not run
+    _rebuilding_links = 0
+
+    @staticmethod
+    @contextlib.contextmanager
+    def rebuilding_links():
+        Task._rebuilding_links += 1
+        try:
+            yield
+        finally:
+            Task._rebuilding_links -= 1
 
     def __init__(
         self,
@@ -285,10 +300,11 @@ class Task(
         wasTracking = self.isBeingTracked(recursive=True)
         super().addChild(child, event=event)
         self.childChangeEvent(child, wasTracking, event)
-        if self.shouldBeMarkedCompleted():
-            self.setCompletionDateTime(child.completionDateTime())
-        elif self.completed() and not child.completed():
-            self.setCompletionDateTime(self.maxDateTime)
+        if not Task._rebuilding_links:
+            if self.shouldBeMarkedCompleted():
+                self.setCompletionDateTime(child.completionDateTime())
+            elif self.completed() and not child.completed():
+                self.setCompletionDateTime(self.maxDateTime)
         self.recomputeAppearance(recursive=False, event=event)
         child.recomputeAppearance(recursive=True, event=event)
 
@@ -299,7 +315,7 @@ class Task(
         wasTracking = self.isBeingTracked(recursive=True)
         super().removeChild(child, event=event)
         self.childChangeEvent(child, wasTracking, event)
-        if self.shouldBeMarkedCompleted():
+        if not Task._rebuilding_links and self.shouldBeMarkedCompleted():
             # The removed child was the last uncompleted child
             self.setCompletionDateTime(date.Now())
         self.recomputeAppearance(recursive=False, event=event)

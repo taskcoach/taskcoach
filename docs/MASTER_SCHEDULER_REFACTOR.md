@@ -46,8 +46,8 @@ Found along the way:
 10. Identity: domain objects compare equal by id, so a copy is taken
     for the original where objects are tracked (issue 13; issue 11
     fixed one case). One rule for all of them.
-11. File > Merge runs the parent rules while moving subtasks
-    (issue 9).
+11. Done 2026-09-28: File > Merge ran the parent rules while moving
+    subtasks (issue 9).
 12. `.delta` files left by older versions (issue 10).
 13. The task editor's Progress tab drawn twice, to check on a real
     display (issue 7).
@@ -576,10 +576,12 @@ Issues found, not fixed:
    failed once: it expected 0:00:00 for an effort started when the
    test starts, so a second boundary failed it. It accepts 0 or 1
    second now (`test_status_message_one_task_one_active_effort`).
-9. File > Merge moves subtasks between parents with the normal
-   operations, so the parent rules (completed when all children are,
-   reopened by an open child) can run during it; the merged items
-   still keep their winning copies' dates (`persistence/merge.py`).
+9. Fixed 2026-09-28: File > Merge rebuilt the subtask lists with the
+   normal operations, so the parent rules ran during it: a merged
+   open subtask reopened a completed parent, and with "mark parent
+   completed" on, a parent could be completed for a moment, losing
+   its reminder. The lists are derived, so rebuilding them changes no
+   task (`Task.rebuilding_links()`, `TaskFileTest`).
 10. A `.delta` file left by an older version next to a task file is
    ignored; nothing removes it.
 11. Fixed 2026-09-28: `EffortList` took effort changes of any task

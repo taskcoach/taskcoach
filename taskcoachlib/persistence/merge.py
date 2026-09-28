@@ -21,6 +21,7 @@ File > Merge: a union of two task files, item by item
 
 from taskcoachlib.domain import date
 from taskcoachlib.domain.base import ModificationDateRecorder
+from taskcoachlib.domain.task import Task
 
 
 def merge_into(task_file, other):
@@ -33,9 +34,9 @@ def merge_into(task_file, other):
     # removes it from the links pointing to it
     links = _links(task_file)
     links.update(_links(other))
-    # Each item keeps the date of its winning copy: rebuilding links is
-    # not an edit
-    with ModificationDateRecorder() as recorder:
+    # Each item keeps the date and data of its winning copy: rebuilding
+    # links is not an edit, so the parent rules do not run
+    with ModificationDateRecorder() as recorder, Task.rebuilding_links():
         for mine, theirs in (
             (task_file.categories(), other.categories()),
             (task_file.tasks(), other.tasks()),
