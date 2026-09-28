@@ -48,17 +48,18 @@ matters.
 
 **Ruling, 2026-09-27:** every date, time and duration Task Coach
 stores, computes or compares is a whole second: task dates, reminders,
-efforts, creation times, the scheduler's clock, the statuses computed
-from them, and the task file. Only logs carry fractions of a second:
-their timestamps stay high resolution, to show the flow in detail.
-Timer delays in the UI (debounce, animation, the window geometry's
-quiet periods) are not time values and are not concerned.
+efforts, the scheduler's clock, the statuses computed from them, and
+the task file. Only logs carry fractions of a second: their
+timestamps stay high resolution, to show the flow in detail. Timer
+delays in the UI (debounce, animation, the window geometry's quiet
+periods) are not time values and are not concerned.
 
-**Amended, 2026-09-27:** the modification date is logging data, not
-functional data: it keeps the logs' precision (microseconds,
-`date.Timestamp`), in memory and in the file, so changes within one
-second stay ordered when merging keeps the newest copy
-([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
+**Amended, 2026-09-27:** the creation and modification dates are
+logging data, not functional data: they keep the logs' precision
+(microseconds, `date.Timestamp`), in memory and in the file, so
+changes within one second stay ordered when merging keeps the newest
+copy ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
+A file written in whole seconds reads as whole seconds.
 
 Why: the master timer list works in seconds, with one rule for every
 entry. A fraction of a second would add cases (rounding up or down,

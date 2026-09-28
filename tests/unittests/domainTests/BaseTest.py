@@ -152,6 +152,7 @@ class ObjectTest(test.TestCase):
         creation_datetime = self.object.creationDateTime()
         minute = date.TimeDelta(seconds=60)
         self.assertTrue(now - minute < creation_datetime < now + minute)
+        self.assertIsInstance(creation_datetime, date.Timestamp)
 
     # Modification date/time tests:
 

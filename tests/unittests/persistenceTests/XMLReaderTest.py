@@ -1848,9 +1848,16 @@ class XMLReaderVersion36Test(XMLReaderTestCase):
             <task creationDateTime="2012-12-12 12:00:00.12345"/>
         </tasks>""")
         self.assertEqual(
-            date.DateTime(2012, 12, 12, 12, 0, 0, 12345),
+            date.Timestamp(2012, 12, 12, 12, 0, 0, 123450),
             tasks[0].creationDateTime(),
         )
+
+    def test_creation_date_in_whole_seconds_has_no_fraction(self):
+        tasks = self.writeAndReadTasks("""
+        <tasks>
+            <task creationDateTime="2012-12-12 12:00:00"/>
+        </tasks>""")
+        self.assertEqual(0, tasks[0].creationDateTime().microsecond)
 
 
 class XMLReaderVersion37Test(XMLReaderTestCase):

@@ -629,7 +629,7 @@ class XMLReader(object):
         bg_color_attribute = "color" if self.__tskversion <= 27 else "bgColor"
         attributes = dict(
             id=node.attrib.get("id", ""),
-            creationDateTime=self.__parse_datetime(
+            creationDateTime=self.__parse_timestamp(
                 node.attrib.get("creationDateTime", "1-1-1 0:0")
             ),
             modificationDateTime=self.__parse_timestamp(

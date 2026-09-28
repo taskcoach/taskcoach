@@ -135,7 +135,7 @@ Efforts save no modification date.
 
 | Line | XML Attribute | Skip Condition | Type |
 |------|--------------|----------------|------|
-| 292 | `creationDateTime` | `<= DateTime.min` | Sentinel |
+| 292 | `creationDateTime` | `<= DateTime.min` | Sentinel; written with microseconds (`date.Timestamp`) |
 | 294 | `modificationDateTime` | `<= DateTime.min` | Sentinel; written with microseconds (`date.Timestamp`) |
 | 298 | `subject` | `""` (falsy) | Falsy |
 | 300 | `description` | `""` (falsy) | Falsy |

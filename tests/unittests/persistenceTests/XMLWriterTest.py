@@ -880,6 +880,14 @@ class XMLWriterTest(test.TestCase):
             'creationDateTime="%s"' % str(self.task.creationDateTime())
         )
 
+    def test_creation_date_is_written_with_its_fraction(self):
+        self.taskList.append(
+            task.Task(
+                creationDateTime=date.Timestamp(2013, 1, 1, 0, 0, 0, 123456)
+            )
+        )
+        self.expect_in_xml('creationDateTime="2013-01-01 00:00:00.123456"')
+
     def testDoNotWriteUnknownCreationDateTime(self):
         task_with_unknown_creation_datetime = task.Task(
             creationDateTime=date.DateTime.min

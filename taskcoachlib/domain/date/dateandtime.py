@@ -162,10 +162,10 @@ DateTime.min = DateTime(datetime.datetime.min.year, 1, 1).startOfDay()
 
 class Timestamp(DateTime):
     """A moment with the logs' precision, microseconds kept: the
-    modification date, metadata rather than a functional time. Merging
-    keeps the newest copy of an item, so changes within one second
-    must still be ordered (docs/MASTER_SCHEDULER_REFACTOR.md, Time
-    Resolution)."""
+    creation and modification dates, metadata rather than functional
+    times. Merging keeps the newest copy of an item, so changes within
+    one second must still be ordered (docs/MASTER_SCHEDULER_REFACTOR.md,
+    Time Resolution)."""
 
     def __new__(cls, *args, **kwargs):
         return datetime.datetime.__new__(cls, *args, **kwargs)
