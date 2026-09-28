@@ -537,6 +537,10 @@ Issues found, not fixed:
     tasks (same id), so a second task file holding a copy of a task
     (File > Merge's) can leak efforts into the open file's list;
     pypubsub, compared by id.
+12. The status bar's counts (overdue, late, ...) are not refreshed
+    when the clock changes a status: a task falling due shows red but
+    counts as overdue only after the next selection change. Also on
+    the commit before this work (87d6ceed8).
 
 ---
 
