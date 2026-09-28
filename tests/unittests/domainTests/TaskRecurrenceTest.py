@@ -199,6 +199,15 @@ class TaskWithDailyRecurrenceThatHasMaxRecurrenceCountFixture(
             self.task.setCompletionDateTime()
         self.assertTrue(self.task.completed())
 
+    def test_recurring_saves_the_count_through_the_setter(self):
+        before = self.task.recurrence()
+        self.task.set_modification_datetime(date.DateTime.min)
+        self.task.setCompletionDateTime()
+        self.assertEqual(
+            (0, 1), (before.count, self.task.recurrence().count)
+        )
+        self.assertTrue(date.DateTime.min < self.task.modificationDateTime())
+
 
 class TaskWithDailyRecurrenceBasedOnCompletionFixture(
     RecurringTaskTestCase, CommonRecurrenceTestsMixin

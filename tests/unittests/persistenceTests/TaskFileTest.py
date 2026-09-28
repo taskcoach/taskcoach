@@ -452,7 +452,7 @@ class DirtyTaskFileTest(TaskFileTestCase):
     def testNeedSave_AfterChangeRecurrence(self):
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
-        self.task.setRecurrence(date.Recurrence("daily"))
+        self.task.set_recurrence(date.Recurrence("daily"))
         self.assertTrue(self.taskFile.need_save())
 
     def testNeedSave_AfterChangeSetting(self):

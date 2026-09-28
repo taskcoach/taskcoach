@@ -49,7 +49,8 @@ relationship) — signal dispatch exists to serve Attribute change notification.
    subtasks are", percentage complete, planned duration and its mode
    migrated with the modification date
    ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
-   **Remaining:** Task recurrence, prerequisites and dependencies;
+   Task recurrence migrated the same way.
+   **Remaining:** Task prerequisites and dependencies;
    Effort fields; computed values (time spent, budget left, revenue,
    status, tracking).
 

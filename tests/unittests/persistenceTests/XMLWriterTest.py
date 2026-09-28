@@ -527,46 +527,46 @@ class XMLWriterTest(test.TestCase):
         self.expect_not_in_xml("recurrence")
 
     def testDailyRecurrence(self):
-        self.task.setRecurrence(date.Recurrence("daily"))
+        self.task.set_recurrence(date.Recurrence("daily"))
         self.expect_in_xml('<recurrence unit="daily" />')
 
     def testWeeklyRecurrence(self):
-        self.task.setRecurrence(date.Recurrence("weekly"))
+        self.task.set_recurrence(date.Recurrence("weekly"))
         self.expect_in_xml('<recurrence unit="weekly" />')
 
     def testMonthlyRecurrence(self):
-        self.task.setRecurrence(date.Recurrence("monthly"))
+        self.task.set_recurrence(date.Recurrence("monthly"))
         self.expect_in_xml('<recurrence unit="monthly" />')
 
     def testMonthlyRecurrenceOnSameWeekday(self):
-        self.task.setRecurrence(date.Recurrence("monthly", sameWeekday=True))
+        self.task.set_recurrence(date.Recurrence("monthly", sameWeekday=True))
         self.expect_in_xml('<recurrence sameWeekday="True" unit="monthly" />')
 
     def testYearlyRecurrence(self):
-        self.task.setRecurrence(date.Recurrence("yearly"))
+        self.task.set_recurrence(date.Recurrence("yearly"))
         self.expect_in_xml('<recurrence unit="yearly" />')
 
     def testRecurrenceCount(self):
-        self.task.setRecurrence(date.Recurrence("daily", count=5))
+        self.task.set_recurrence(date.Recurrence("daily", count=5))
         self.expect_in_xml('count="5"')
 
     def testMaxRecurrenceCount(self):
-        self.task.setRecurrence(date.Recurrence("daily", maximum=5))
+        self.task.set_recurrence(date.Recurrence("daily", maximum=5))
         self.expect_in_xml('max="5"')
 
     def testRecurrenceStopDateTime(self):
         stop_datetime = date.DateTime(2000, 1, 1, 10, 9, 8)
-        self.task.setRecurrence(
+        self.task.set_recurrence(
             date.Recurrence("daily", stop_datetime=stop_datetime)
         )
         self.expect_in_xml('stop_datetime="%s"' % str(stop_datetime))
 
     def testRecurrenceFrequency(self):
-        self.task.setRecurrence(date.Recurrence("daily", amount=2))
+        self.task.set_recurrence(date.Recurrence("daily", amount=2))
         self.expect_in_xml('amount="2"')
 
     def testRecurrenceBasedOnCompletion(self):
-        self.task.setRecurrence(
+        self.task.set_recurrence(
             date.Recurrence("daily", recurBasedOnCompletion=True)
         )
         self.expect_in_xml('recurBasedOnCompletion="True"')

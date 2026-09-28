@@ -319,8 +319,9 @@ so these changes left it as it was:
   (`ReminderController`), a Todo.txt import updating an existing task.
 
 Step 0 covers those that change Attributes (completion date, reminder,
-effort stop). The rest wait for their row below: recurrence (7), the
-dependency a prerequisite adds (9), subtask links (10). Until the last
+effort stop), step 7 the recurrence (cleared on completed subtasks,
+and the count recurring advances). The rest wait for their row below:
+the dependency a prerequisite adds (9), subtask links (10). Until the last
 row, commands still set the date too, on the items they were given.
 
 Migration, one field at a time, simplest first; each becomes an
@@ -336,7 +337,7 @@ and sets the modification date, then is tested:
 | 4 | Task budget | Plain value, pypubsub | Done: Attribute, Publisher (`task.budget`); budget left stays computed |
 | 5 | Task "mark completed when all subtasks are" | Plain value, pypubsub | Done: Attribute, Publisher |
 | 6 | Task percentage complete, planned duration and its mode | Attributes, pypubsub | Done: Publisher; the duration and mode now mark the file unsaved by their own events |
-| 7 | Task recurrence | Plain value, pypubsub | To do |
+| 7 | Task recurrence | Plain value, pypubsub | Done: Attribute, Publisher; recurring sets a copy with the next count, instead of changing it in place |
 | 8 | Effort start, stop, entry mode, task | Attributes (not the task), pypubsub; the date is not saved | To do |
 | 9 | Task prerequisites (dependencies are their reverse) | Plain sets, pypubsub | To do |
 | 10 | Links: subtasks and parent, owned notes and attachments, efforts | Plain lists, Publisher | To do |

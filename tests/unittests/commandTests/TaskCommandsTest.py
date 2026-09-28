@@ -537,12 +537,12 @@ class MarkCompletedCommandTest(CommandWithChildrenTestCase):
         )
 
     def testMarkRecurringTaskCompleted_CompletionDateIsNotSet(self):
-        self.task1.setRecurrence(date.Recurrence("weekly"))
+        self.task1.set_recurrence(date.Recurrence("weekly"))
         self.markCompleted([self.task1])
         self.assertDoUndoRedo(lambda: self.assertFalse(self.task1.completed()))
 
     def testMarkRecurringTaskCompleted_PlannedStartDateIsIncreased(self):
-        self.task1.setRecurrence(date.Recurrence("weekly"))
+        self.task1.set_recurrence(date.Recurrence("weekly"))
         plannedStartDateTime = self.task1.plannedStartDateTime()
         newPlannedStartDateTime = plannedStartDateTime + date.TimeDelta(days=7)
         self.markCompleted([self.task1])
@@ -556,7 +556,7 @@ class MarkCompletedCommandTest(CommandWithChildrenTestCase):
         )
 
     def testMarkRecurringTaskCompleted_DueDateIsIncreased(self):
-        self.task1.setRecurrence(date.Recurrence("weekly"))
+        self.task1.set_recurrence(date.Recurrence("weekly"))
         tomorrow = date.Tomorrow()
         self.task1.setDueDateTime(tomorrow)
         newDueDate = tomorrow + date.ONE_WEEK
@@ -567,7 +567,7 @@ class MarkCompletedCommandTest(CommandWithChildrenTestCase):
         )
 
     def testMarkRecurringTaskCompleted_ActualStartDateIsReset(self):
-        self.task1.setRecurrence(date.Recurrence("weekly"))
+        self.task1.set_recurrence(date.Recurrence("weekly"))
         now = date.Now()
         self.task1.setActualStartDateTime(now)
         self.markCompleted([self.task1])
@@ -579,7 +579,7 @@ class MarkCompletedCommandTest(CommandWithChildrenTestCase):
         )
 
     def testMarkParentWithRecurringChildCompleted_RemovesChildRecurrence(self):
-        self.child.setRecurrence(date.Recurrence("daily"))
+        self.child.set_recurrence(date.Recurrence("daily"))
         self.markCompleted([self.parent])
         self.assertDoUndoRedo(
             lambda: self.assertFalse(self.child.recurrence()),
@@ -589,7 +589,7 @@ class MarkCompletedCommandTest(CommandWithChildrenTestCase):
         )
 
     def testMarkParentWithRecurringChildCompleted_MakesChildCompleted(self):
-        self.child.setRecurrence(date.Recurrence("daily"))
+        self.child.set_recurrence(date.Recurrence("daily"))
         self.markCompleted([self.parent])
         self.assertDoUndoRedo(
             lambda: self.assertTrue(self.child.completed()),

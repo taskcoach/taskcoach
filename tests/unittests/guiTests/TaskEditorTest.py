@@ -67,10 +67,10 @@ class TaskEditorSetterMixin(object):
         entry.onDateTimeCtrlEdited()
         wx.YieldIfNeeded()
 
-    def setRecurrence(self, newRecurrence):
-        recurrenceEntry = self.editor._interior[1]._recurrenceEntry
-        recurrenceEntry.SetValue(newRecurrence)
-        recurrenceEntry.onRecurrenceEdited()
+    def set_recurrence(self, new_recurrence):
+        recurrence_entry = self.editor._interior[1]._recurrenceEntry
+        recurrence_entry.SetValue(new_recurrence)
+        recurrence_entry.onRecurrenceEdited()
         wx.YieldIfNeeded()
 
 
@@ -155,7 +155,7 @@ class EditorDisplayTest(TaskEditorTestCase):
         # pylint: disable=W0201
         self.task = task.Task("Task to edit")
         self.stop_datetime = date.DateTime(2012, 12, 12, 12, 12)
-        self.task.setRecurrence(
+        self.task.set_recurrence(
             date.Recurrence(
                 "daily", amount=1, stop_datetime=self.stop_datetime
             )
@@ -271,33 +271,33 @@ class EditTaskTestMixin(object):
         self.assertEqual(reminderDateTime, self.task.reminder())
 
     def testSetRecurrence(self):
-        self.setRecurrence(date.Recurrence("weekly"))
+        self.set_recurrence(date.Recurrence("weekly"))
         self.assertEqual("weekly", self.task.recurrence().unit)
 
     def testSetDailyRecurrence(self):
-        self.setRecurrence(date.Recurrence("daily", amount=1))
+        self.set_recurrence(date.Recurrence("daily", amount=1))
         self.assertEqual("daily", self.task.recurrence().unit)
         self.assertEqual(1, self.task.recurrence().amount)
 
     def testSetYearlyRecurrence(self):
-        self.setRecurrence(date.Recurrence("yearly"))
+        self.set_recurrence(date.Recurrence("yearly"))
         self.assertEqual("yearly", self.task.recurrence().unit)
 
     def testSetMaxRecurrence(self):
-        self.setRecurrence(date.Recurrence("weekly", maximum=10))
+        self.set_recurrence(date.Recurrence("weekly", maximum=10))
         self.assertEqual(10, self.task.recurrence().max)
 
     def testSetRecurrenceStopDateTime(self):
         stop = date.DateTime(2012, 3, 4, 10, 0)
-        self.setRecurrence(date.Recurrence("weekly", stop_datetime=stop))
+        self.set_recurrence(date.Recurrence("weekly", stop_datetime=stop))
         self.assertEqual(stop, self.task.recurrence().stop_datetime)
 
     def testSetRecurrenceFrequency(self):
-        self.setRecurrence(date.Recurrence("weekly", amount=3))
+        self.set_recurrence(date.Recurrence("weekly", amount=3))
         self.assertEqual(3, self.task.recurrence().amount)
 
     def testSetRecurrenceSameWeekday(self):
-        self.setRecurrence(date.Recurrence("monthly", sameWeekday=True))
+        self.set_recurrence(date.Recurrence("monthly", sameWeekday=True))
         self.assertTrue(self.task.recurrence().sameWeekday)
 
     def testPriority(self):

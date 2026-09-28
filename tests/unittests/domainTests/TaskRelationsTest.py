@@ -103,12 +103,12 @@ class CommonTaskRelationshipManagerTestsMixin(object):
     # recurrence
 
     def testMarkParentCompletedStopsChildRecurrence(self):
-        self.child.setRecurrence(date.Recurrence("daily"))
+        self.child.set_recurrence(date.Recurrence("daily"))
         self.parent.setCompletionDateTime()
         self.assertFalse(self.child.recurrence())
 
     def testRecurringChildIsCompletedWhenParentIsCompleted(self):
-        self.child.setRecurrence(date.Recurrence("daily"))
+        self.child.set_recurrence(date.Recurrence("daily"))
         self.parent.setCompletionDateTime()
         self.assertTrue(self.child.completed())
 
@@ -123,7 +123,7 @@ class CommonTaskRelationshipManagerTestsMixin(object):
 
     def testMarkLastChildCompletedMakesParentRecur(self):
         self.parent.setPlannedStartDateTime(self.now)
-        self.parent.setRecurrence(date.Recurrence("weekly"))
+        self.parent.set_recurrence(date.Recurrence("weekly"))
         self.child.setCompletionDateTime(self.now)
         expectedPlannedStartDateTime = self.now
         if self.shouldMarkCompletedWhenAllChildrenCompleted(self.parent):
@@ -135,7 +135,7 @@ class CommonTaskRelationshipManagerTestsMixin(object):
 
     def testMarkLastChildCompletedMakesParentRecur_AndThusChildToo(self):
         self.child.setPlannedStartDateTime(self.now)
-        self.parent.setRecurrence(date.Recurrence("weekly"))
+        self.parent.set_recurrence(date.Recurrence("weekly"))
         self.parent.setPlannedStartDateTime(self.now)
         self.child.setCompletionDateTime(self.now)
         expectedPlannedStartDateTime = self.now
@@ -149,7 +149,7 @@ class CommonTaskRelationshipManagerTestsMixin(object):
     def testMarkLastChildCompletedMakesParentRecur_AndThusChildIsNotCompleted(
         self,
     ):
-        self.parent.setRecurrence(date.Recurrence("weekly"))
+        self.parent.set_recurrence(date.Recurrence("weekly"))
         self.child.setCompletionDateTime()
         if self.shouldMarkCompletedWhenAllChildrenCompleted(self.parent):
             self.assertFalse(self.child.completed())
@@ -157,7 +157,7 @@ class CommonTaskRelationshipManagerTestsMixin(object):
             self.assertTrue(self.child.completed())
 
     def testMarkLastGrandChildCompletedMakesParentRecur(self):
-        self.parent.setRecurrence(date.Recurrence("weekly"))
+        self.parent.set_recurrence(date.Recurrence("weekly"))
         self.parent.setPlannedStartDateTime(self.now)
         self.child.addChild(self.grandchild)
         self.grandchild.setParent(self.child)
@@ -173,7 +173,7 @@ class CommonTaskRelationshipManagerTestsMixin(object):
     def testMarkLastGrandChildCompletedMakesParentRecur_AndThusGrandChildToo(
         self,
     ):
-        self.parent.setRecurrence(date.Recurrence("weekly"))
+        self.parent.set_recurrence(date.Recurrence("weekly"))
         self.child.addChild(self.grandchild)
         self.grandchild.setParent(self.child)
         self.grandchild.setCompletionDateTime(self.now)
@@ -188,7 +188,7 @@ class CommonTaskRelationshipManagerTestsMixin(object):
     def testMarkLastChildCompletedMakesParentRecur_AndThusGrandChildIsNotCompleted(
         self,
     ):
-        self.parent.setRecurrence(date.Recurrence("weekly"))
+        self.parent.set_recurrence(date.Recurrence("weekly"))
         self.child.addChild(self.grandchild)
         self.grandchild.setParent(self.child)
         self.grandchild.setCompletionDateTime()

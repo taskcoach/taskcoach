@@ -556,18 +556,18 @@ class DefaultTaskStateTest(
         self.assertEqual([(100, self.task)], self.changes)
 
     def testSetRecurrence(self):
-        self.task.setRecurrence(date.Recurrence("weekly"))
+        self.task.set_recurrence(date.Recurrence("weekly"))
         self.assertEqual(date.Recurrence("weekly"), self.task.recurrence())
 
     def testSetRecurrenceCausesNotification(self):
-        events = []
+        self.registerObserver(task.Task.recurrenceChangedEventType())
+        self.task.set_recurrence(date.Recurrence("weekly"))
+        self.assertEqual([{self.task}], [e.sources() for e in self.events])
 
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.recurrenceChangedEventType())
-        self.task.setRecurrence(date.Recurrence("weekly"))
-        self.assertEqual([(date.Recurrence("weekly"), self.task)], events)
+    def test_recurrence_change_sets_the_modification_date(self):
+        before = date.Now()
+        self.task.set_recurrence(date.Recurrence("weekly"))
+        self.assertTrue(before <= self.task.modificationDateTime())
 
     # Add child
 
@@ -640,7 +640,7 @@ class DefaultTaskStateTest(
     ):
         originalPlannedStartDateTime = self.task.plannedStartDateTime()
         child = task.Task(plannedStartDateTime=self.yesterday)
-        child.setRecurrence(date.Recurrence("monthly"))
+        child.set_recurrence(date.Recurrence("monthly"))
         self.task.addChild(child)
         self.assertEqual(
             originalPlannedStartDateTime, self.task.plannedStartDateTime()
@@ -655,7 +655,7 @@ class DefaultTaskStateTest(
     ):
         originalActualStartDateTime = self.task.actualStartDateTime()
         child = task.Task(actualStartDateTime=self.yesterday)
-        child.setRecurrence(date.Recurrence("monthly"))
+        child.set_recurrence(date.Recurrence("monthly"))
         self.task.addChild(child)
         self.assertEqual(
             originalActualStartDateTime, self.task.actualStartDateTime()
@@ -947,7 +947,7 @@ class DefaultTaskStateTest(
 
     def testTaskStateIncludesRecurrence(self):
         state = self.task.__getstate__()
-        self.task.setRecurrence(date.Recurrence("weekly"))
+        self.task.set_recurrence(date.Recurrence("weekly"))
         self.task.__setstate__(state)
         self.assertFalse(self.task.recurrence())
 

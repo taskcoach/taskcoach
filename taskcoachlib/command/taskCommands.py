@@ -752,12 +752,12 @@ class EditRecurrenceCommand(base.BaseCommand):
     def do_command(self):
         super().do_command()
         for item in self.items:
-            item.setRecurrence(self.__newRecurrence)
+            item.set_recurrence(self.__newRecurrence)
 
     def undo_command(self):
         super().undo_command()
         for item, oldRecurrence in zip(self.items, self.__oldRecurrences):
-            item.setRecurrence(oldRecurrence)
+            item.set_recurrence(oldRecurrence)
 
     def redo_command(self):
         self.do_command()

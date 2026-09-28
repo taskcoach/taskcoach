@@ -135,8 +135,10 @@ class Task(
         self.__reminder_before_snooze = (
             reminderBeforeSnooze or self.__reminder.get()
         )
-        self.__recurrence = (
-            date.Recurrence() if recurrence is None else recurrence
+        self.__recurrence = Attribute(
+            date.Recurrence() if recurrence is None else recurrence,
+            self,
+            self._on_recurrence_changed,
         )
         self.__prerequisites = WeakSet(prerequisites or [])
         self.__dependencies = WeakSet(dependencies or [])
@@ -191,7 +193,7 @@ class Task(
         self.setDueDateTime(state["dueDateTime"], event=event)
         self.setCompletionDateTime(state["completionDateTime"], event=event)
         self.setPercentageComplete(state["percentageComplete"], event=event)
-        self.setRecurrence(state["recurrence"])
+        self.set_recurrence(state["recurrence"], event=event)
         self.setReminder(state["reminder"], event=event)
         self.setEfforts(state["efforts"])
         self.set_budget(state["budget"], event=event)
@@ -228,7 +230,7 @@ class Task(
                 priority=self.__priority.get(),
                 hourlyFee=self.hourlyFee(),
                 fixedFee=self.__fixedFee.get(),
-                recurrence=self.__recurrence.copy(),
+                recurrence=self.__recurrence.get().copy(),
                 reminder=self.__reminder.get(),
                 prerequisites=set(self.__prerequisites),
                 dependencies=set(self.__dependencies),
@@ -255,7 +257,7 @@ class Task(
                 priority=self.__priority.get(),
                 hourlyFee=self.hourlyFee(),
                 fixedFee=self.__fixedFee.get(),
-                recurrence=self.__recurrence.copy(),
+                recurrence=self.__recurrence.get().copy(),
                 reminder=self.__reminder.get(),
                 shouldMarkCompletedWhenAllChildrenCompleted=(
                     self.shouldMarkCompletedWhenAllChildrenCompleted()
@@ -566,7 +568,7 @@ class Task(
             # Parent→Children cascade: complete my incomplete children
             for child in self.children():
                 if child.completionDateTime() == self.maxDateTime:
-                    child.setRecurrence()  # Clear recurrence first (since 2008)
+                    child.set_recurrence(event=event)  # Cleared first
                     child.setCompletionDateTime(completionDateTime)
 
             # Children→Parent cascade: check if parent should auto-complete
@@ -1729,30 +1731,29 @@ class Task(
     # Recurrence
 
     def recurrence(self, recursive=False, upwards=False):
-        if not self.__recurrence and recursive and upwards and self.parent():
+        own = self.__recurrence.get()
+        if not own and recursive and upwards and self.parent():
             return self.parent().recurrence(recursive, upwards)
         elif recursive and not upwards:
             recurrences = [
                 child.recurrence() for child in self.children(recursive)
             ]
-            recurrences.append(self.__recurrence)
+            recurrences.append(own)
             recurrences = [r for r in recurrences if r]
-            return min(recurrences) if recurrences else self.__recurrence
+            return min(recurrences) if recurrences else own
         else:
-            return self.__recurrence
+            return own
 
-    def setRecurrence(self, recurrence=None):
-        recurrence = recurrence or date.Recurrence()
-        if recurrence == self.__recurrence:
-            return
-        self.__recurrence = recurrence
-        pub.sendMessage(
-            self.recurrenceChangedEventType(), newValue=recurrence, sender=self
-        )
+    def set_recurrence(self, recurrence=None, event=None):
+        self.__recurrence.set(recurrence or date.Recurrence(), event=event)
+
+    def _on_recurrence_changed(self, event):
+        # Without the value: a Recurrence is mutable, so not hashable
+        event.addSource(self, type=self.recurrenceChangedEventType())
 
     @classmethod
     def recurrenceChangedEventType(class_):
-        return "pubsub.task.recurrence"
+        return "task.recurrence"
 
     @patterns.eventSource
     def recur(self, completionDateTime=None, event=None):
@@ -1823,7 +1824,11 @@ class Task(
         for child in self.children():
             if not child.recurrence():
                 child.recur(completionDateTime, event=event)
-        self.recurrence()(next=True)
+        # A copy, so the Attribute sees the count change: it is saved
+        if self.recurrence():
+            recurrence = self.recurrence().copy()
+            recurrence(next=True)
+            self.set_recurrence(recurrence, event=event)
 
     @staticmethod
     def recurrenceSortFunction(**kwargs):
