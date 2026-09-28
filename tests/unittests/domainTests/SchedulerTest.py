@@ -280,6 +280,12 @@ class MasterTimerListTest(test.wxTestCase):
         self.task.set_hourly_fee(100)
         self.assertFalse(self.tick())
 
+    def test_a_priority_change_runs_nothing(self):
+        # Nor the effective priorities: the loop reads neither
+        self.settle()
+        self.task.setPriority(5)
+        self.assertFalse(self.tick())
+
     def test_a_blocked_tasks_subtask_looks_and_counts_inactive(self):
         # The ancestors' prerequisites count, in the styles and the
         # status bar as in the status column and the filters

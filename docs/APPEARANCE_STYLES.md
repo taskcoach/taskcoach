@@ -57,8 +57,9 @@
 
 All domain objects (Task, Category, Note, Attachment) use a Single Source of
 Truth (SSOT) architecture for appearance properties. Each object stores derived,
-override, and effective values for each style field. A per-second polling system
-(`ComputeStyles`) recomputes derived and effective values for all objects.
+override, and effective values for each style field. The master loop
+(`ComputeStyles`), at the seconds that matter, recomputes derived and effective
+values for all objects.
 
 Efforts are the exception: they have no appearance/styling system and use a
 hardcoded icon (`clock_icon`).

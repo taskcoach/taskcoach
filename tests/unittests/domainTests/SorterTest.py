@@ -402,8 +402,18 @@ class TaskSorterTreeModeTest(test.TestCase):
             < list(self.sorter).index(self.parent1)
         )
 
-    def testSortByPriority(self):
+    def test_sort_by_priority_uses_the_tasks_own(self):
         self.sorter.sort_by("priority")
+        self.sorter.sort_ascending(False)
+        self.parent1.setPriority(5)
+        self.child2.setPriority(10)
+        self.assertTrue(
+            list(self.sorter).index(self.parent1)
+            < list(self.sorter).index(self.parent2)
+        )
+
+    def test_sort_by_effective_priority(self):
+        self.sorter.sort_by("effectivePriority")
         self.sorter.sort_ascending(False)
         self.parent1.setPriority(5)
         self.child2.setPriority(10)

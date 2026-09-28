@@ -56,7 +56,7 @@
 
 ### Why This Matters
 
-`computedStatus()` is cached and only updated by the scheduler (every second). During event handlers, it may be **stale**.
+`computedStatus()` is stored and only updated by the master loop, at the next tick after a change ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#master-design)). During event handlers, it may be **stale**.
 
 ```python
 # BAD - uses stale cache during event handler:
@@ -85,10 +85,13 @@ Action methods (`completed()`, `allChildrenCompleted()`, etc.) must use **direct
 
 ## Appearance Inheritance Overview
 
+Own, derived and effective values are separate fields; other task
+fields follow the same pattern ([TASK_FIELDS.md](TASK_FIELDS.md)).
+
 ### ComputeStyles Polling (New Architecture)
 
-The appearance SSOT system now uses **per-second polling** via `ComputeStyles` class instead of
-trigger-based updates. This provides:
+The appearance SSOT system is computed by the master loop (`ComputeStyles`), which runs at the
+seconds that matter ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#master-design)), instead of trigger-based updates. This provides:
 
 1. **Eventual consistency** - All changes detected within 1-2 seconds
 2. **Simplified architecture** - No need to track all possible triggers
@@ -97,7 +100,7 @@ trigger-based updates. This provides:
 **Processing order:** Categories → Tasks → Notes → Attachments
 
 **Key classes:**
-- `MasterScheduler` in `scheduler.py` - Polls every second, calls `computeStyles()` for each object
+- `MasterScheduler` in `scheduler.py` - Runs the full loop at each due second, calls `computeStyles()` for each object
 - `computeDerived(obj, field_type)` - Computes derived value from sources
 - `computeEffective(obj, field_type)` - Computes effective from override + derived
 
@@ -299,7 +302,7 @@ actual values and stores the results in the task's fields.
 Called from:
 - `Task.__init__()` — Initial population on task creation/load
 - `recomputeAppearance()` — Immediate update on date changes (called by all date setters)
-- `MasterScheduler._process_task()`: every second, before `computeStyles()`
+- `MasterScheduler._process_task()`: at each pass, before `computeStyles()`
 
 ### Event: statusChangedEventType
 
@@ -317,7 +320,7 @@ Status is recomputed in three scenarios:
 2. **On date change:** date setters (e.g. `setDueDateTime()`) call
    `recomputeAppearance()`, which calls `compute_stored_status()` first,
    so the status updates at once.
-3. **Every second:** `MasterScheduler._process_task()` calls
+3. **Each pass of the master loop:** `MasterScheduler._process_task()` calls
    `compute_stored_status()` for each task, before `computeStyles()`.
 
 ### Timer-Driven Updates (ComputeStyles)
@@ -435,7 +438,7 @@ The status calculation now exists in **one place only**:
 
 All other code calls this method:
 - **`task.compute_stored_status()`**: instance method that calls `compute_status()` and stores results
-- **`MasterScheduler._process_task()`**: calls `task.compute_stored_status()` for each task every second
+- **`MasterScheduler._process_task()`**: calls `task.compute_stored_status()` for each task at each pass
 
 The `compute_status()` method returns `(TaskStatus, source_string)` tuple, providing both the status and an explanation of why the task has that status.
 
@@ -498,7 +501,7 @@ The cache made this O(1) after the first call, but required manual invalidation
 
 With `compute_stored_status()` as the sole writer:
 1. **No cache needed** — `statusText()` and `status_icon_id()` are simple field reads
-2. **No invalidation needed** — the scheduler updates fields every second
+2. **No invalidation needed**: the master loop updates the fields whenever a change or a time condition calls for it
 3. **No redundant recalculation** — doesn't matter how many consumers read the fields
 4. **Built-in change detection** — `statusChangedEventType` fires only on transitions
 5. **Single calculation site** — logic lives in one function, not duplicated in 3 places
@@ -751,7 +754,7 @@ Icons have no default - UI displays "N/A" when source is empty.
 
 All domain objects have SSOT appearance fields as `Attribute` objects defined in base `Object`.
 These are written by `computeDerived()` and `computeEffective()` stored procedures, called
-by the `ComputeStyles` per-second poller.
+by the master loop (`ComputeStyles`).
 
 **Derived accessors** (value and source are separate methods):
 
@@ -808,7 +811,7 @@ OUTPUTS: calls object's setDerivedXxx(value, source) Attribute setter
 3. For Categories/Notes: check parent's effective value
 4. Write via object's Attribute-based setter (fires change event automatically)
 
-**Called by:** `ComputeStyles` per-second poller
+**Called by:** the master loop (`ComputeStyles`)
 
 ---
 
@@ -827,7 +830,7 @@ OUTPUTS: _effective_{field}_value, _effective_{field}_default, _effective_{field
 3. Compute: `effective = override if override else derived`
 4. Write via object's Attribute-based setter (fires change event automatically)
 
-**Called by:** `ComputeStyles` per-second poller
+**Called by:** the master loop (`ComputeStyles`)
 
 ---
 
@@ -835,7 +838,7 @@ OUTPUTS: _effective_{field}_value, _effective_{field}_default, _effective_{field
 
 ComputeStyles polling pattern (eventual consistency):
 1. User changes override value (or category assignment, status, etc.)
-2. ComputeStyles poller runs every second
+2. The change pushes the current second; the master loop (`ComputeStyles`) runs at the next tick
 3. For each object: `computeDerived()` then `computeEffective()` for each field type
 4. Attribute.set() fires change events only when value actually changes
 5. UI subscribers (editor Appearance tab) update on per-field change events
@@ -857,10 +860,10 @@ ComputeStyles polling pattern (eventual consistency):
 
 #### Update Mechanism: ComputeStyles Polling
 
-**No triggers or explicit cascade needed.** The `ComputeStyles` class polls every second:
+**No triggers or explicit cascade needed.** The master loop (`ComputeStyles`) runs at each due second:
 
 ```
-ComputeStyles (per-second polling)
+ComputeStyles (each pass of the master loop)
   └── For each object in taskFile (tasks, categories, notes, attachments):
       └── For each field_type in ('fgColor', 'bgColor', 'font', 'icon'):
           1. computeDerived(object, field_type)
@@ -924,8 +927,8 @@ The derived and effective Attribute fields are:
 - Reduces file size and avoids stale value problems
 
 **No post-load initialization needed** — `ComputeStyles` polling replaces all
-post-load handlers. The poller runs every second and populates all volatile
-fields automatically.
+post-load handlers. The first pass after loading populates all volatile
+fields.
 
 ---
 
@@ -943,14 +946,15 @@ with automatic change event firing via `Attribute.set()`.
 2. MasterScheduler starts (timer.second)
    └── Within 1 second, all objects get status + derived + effective values computed
 
-3. Ongoing: scheduler runs every second
+3. Ongoing: the master loop runs at each due second
    └── Any data change (override, category, status, parent) is picked up
    └── Attribute.set() fires per-field change events when values change
    └── UI subscribers update automatically
 ```
 
-**Key insight:** No explicit triggers needed. The per-second poll catches all changes
-with eventual consistency (1-2 second latency).
+**Key insight:** No per-field triggers needed. A change the loop reads pushes the current
+second and the next pass recomputes everything, with eventual consistency (1-2 second
+latency).
 
 ---
 
@@ -980,7 +984,7 @@ Accessor methods are generated by Attribute fields and return stored values dire
 
 **Change Detection:**
 
-1. ComputeStyles poller runs every second
+1. The master loop (`ComputeStyles`) runs at each due second
 2. Calls `computeDerived()` and `computeEffective()` for all objects
 3. `Attribute.set()` compares new vs prior value (see ATTRIBUTE_PATTERN.md)
 4. If changed: fires per-field change event (e.g., `derivedFgColorChangedEventType()`)
@@ -989,7 +993,7 @@ Accessor methods are generated by Attribute fields and return stored values dire
 **Self-limiting:** Attribute.set() only fires events when value actually changes.
 
 **Benefits:**
-- **Universal:** One poller handles all object types and all change sources
+- **Universal:** One loop handles all object types and all change sources
 - **No triggers needed:** Catches time-based transitions, category changes, parent changes, etc.
 - **Eventual consistency:** 1-2 second latency, acceptable for appearance updates
 - **Simple:** No complex trigger/cascade logic to maintain

@@ -17,6 +17,11 @@ Canon decision by designer, 2026-09-28.
   a result. When something cannot be done cleanly, do the simple thing
   and document what it leaves out; never risk core behaviour for a
   fringe feature.
+- **Explicit fields:** a value computed from other fields gets its own
+  named field (column, editor line, sort) instead of being folded into
+  another field's display or sort, so users choose what to see and can
+  tell what each value means
+  ([TASK_FIELDS.md](TASK_FIELDS.md)).
 
 ## Code style
 

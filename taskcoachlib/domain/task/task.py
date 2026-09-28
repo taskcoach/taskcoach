@@ -326,7 +326,6 @@ class Task(
         childHasBudget = child.budget(recursive=True)
         childHasBudgetLeft = child.budgetLeft(recursive=True)
         childHasRevenue = child.revenue(recursive=True)
-        childPriority = child.priority(recursive=True)
         # Determine what changes due to the child being added or removed:
         if childHasTimeSpent:
             self.send_time_spent_changed()
@@ -338,8 +337,7 @@ class Task(
             childHasTimeSpent and (childHasBudget or self.budget())
         ):
             self.send_budget_left_changed()
-        if childPriority > self.priority():
-            event.addSource(self, type=self.priorityChangedEventType())
+        self._send_effective_priority_changed(event)
         isTracking = self.isBeingTracked(recursive=True)
         if wasTracking and not isTracking:
             self.send_tracking_changed(tracking=False)
@@ -570,11 +568,10 @@ class Task(
             if parent and parent.completed():
                 parent.setCompletionDateTime(self.maxDateTime)
 
-        # Notify parent of recursive priority change (child completion
-        # changes which children are included in the recursive max)
+        # Only open subtasks count in their parent's effective priority
         parent = self.parent()
         if parent:
-            event.addSource(parent, type=parent.priorityChangedEventType())
+            parent._send_effective_priority_changed(event)
 
         self.recomputeAppearance()
         for dependency in self.dependencies():
@@ -1455,23 +1452,17 @@ class Task(
     # priority
 
     def priority(self, recursive=False):
-        if recursive:
-            childPriorities = [
-                child.priority(recursive=True)
-                for child in self.children()
-                if not child.completed()
-            ]
-            return max(childPriorities + [self.__priority.get()])
-        else:
-            return self.__priority.get()
+        # recursive: for callers asking any field for its subtree value
+        return (
+            self.effective_priority() if recursive else self.__priority.get()
+        )
 
     def setPriority(self, priority, event=None):
         self.__priority.set(priority, event=event)
 
     def _onPriorityChanged(self, event):
         event.addSource(self, type=self.priorityChangedEventType())
-        for ancestor in self.ancestors():
-            event.addSource(ancestor, type=ancestor.priorityChangedEventType())
+        self._send_effective_priority_changed(event)
 
     @classmethod
     def priorityChangedEventType(class_):
@@ -1479,13 +1470,49 @@ class Task(
 
     @staticmethod
     def prioritySortFunction(**kwargs):
-        recursive = kwargs.get("tree_mode", False)
-        return lambda task: task.priority(recursive=recursive)
+        return lambda task: task.priority()
 
     @classmethod
     def prioritySortEventTypes(class_):
         """The event types that influence the priority sort order."""
         return (class_.priorityChangedEventType(),)
+
+    # Effective priority (docs/TASK_FIELDS.md)
+
+    def effective_priority(self):
+        """The highest of the task's own priority and its open
+        subtasks' effective priorities. Computed, not saved."""
+        return max(
+            [self.priority()]
+            + [
+                child.effective_priority()
+                for child in self.children()
+                if not child.completed()
+            ]
+        )
+
+    def _send_effective_priority_changed(self, event):
+        # The task and its ancestors are the only effective priorities
+        # a change below them can move
+        for each_task in [self] + self.ancestors():
+            event.addSource(
+                each_task,
+                type=each_task.effective_priority_changed_event_type(),
+            )
+
+    @classmethod
+    def effective_priority_changed_event_type(cls):
+        return "task.effectivePriority"
+
+    @staticmethod
+    def effectivePrioritySortFunction(**kwargs):
+        return lambda task: task.effective_priority()
+
+    @classmethod
+    def effectivePrioritySortEventTypes(cls):
+        """The event types that influence the effective priority sort
+        order."""
+        return (cls.effective_priority_changed_event_type(),)
 
     # Hourly fee
 

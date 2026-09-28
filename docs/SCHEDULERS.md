@@ -17,47 +17,12 @@
 
 ## TODO
 
-1. **Review: move recursive priority to scheduler.** Currently, recursive
-   priority is computed on-demand by `Task.priority(recursive=True)` and
-   notifications are triggered inline — the priority callback walks all
-   ancestors, and the completion callback explicitly notifies the parent.
-   This is a derived value with multiple inputs, similar to stored status,
-   and may be better as a scheduler-computed volatile Attribute.
-
-   **Recursive priority rules:**
-   - A task's recursive priority = `max(own priority, max of children's
-     recursive priorities)`
-   - Only non-completed children are included (completed children are
-     excluded from the max)
-   - The calculation walks the full subtree recursively
-
-   **Inputs that affect recursive priority:**
-   - Own priority changes (`setPriority`)
-   - Child priority changes (any descendant)
-   - Child completion/uncompletion (`setCompletionDateTime`) — completed
-     children are excluded from the recursive max
-   - Child added/removed (structural change to subtree)
-
-   **Current notification sites:**
-   - `_onPriorityChanged` callback: notifies self + all ancestors
-   - `_onCompletionDateTimeChanged` callback: notifies parent
-     via `event.addSource` on parent
-
-   **Scheduler approach:** store `recursivePriority` as a volatile
-   Attribute on each task, recomputed by `MasterScheduler._process_task()`.
-   The Attribute equality check suppresses notifications when the value
-   hasn't changed. Removes cross-concern coupling from completion callback.
-   Same staleness tradeoff as stored status: the change pushes the
-   current second, so the loop runs at the next tick.
-
-   **Natural cascade (no recursive search):** each task computes its
-   recursive priority from its own priority and its direct children's
-   already-stored recursive priorities — `max(own, max of children's
-   stored recursivePriority)`. Values propagate upward pass by pass:
-   each pass that changes one pushes the next
-   ([the cascade ruling](MASTER_SCHEDULER_REFACTOR.md#ruling-the-cascade-runs-through-the-heap)).
-   No tree walk needed; each task only reads its immediate children's
-   stored values.
+1. **Decided 2026-09-28: recursive priority stays out of the
+   scheduler.** It depends on data only (priorities, completion, the
+   tree), never on time, so it goes by events: the effective priority
+   ([TASK_FIELDS.md](TASK_FIELDS.md#effective-priority)). Computed by
+   the loop it would lag a tick behind each edit and climb one level
+   per pass, as the loop visits parents first.
 
 ---
 

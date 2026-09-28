@@ -352,6 +352,7 @@ No manual unsubscribe, no silent `except` guards, no zombie callbacks.
 | `timer.date` | Deleted (no subscribers; see `scheduler.date`) | `taskcoachlib/gui/scheduler.py` |
 | `scheduler.dateChange.uiRefresh` | Replaced by Publisher `scheduler.date` | `taskcoachlib/gui/scheduler.py` (MasterScheduler), `taskcoachlib/domain/task/filter.py` (ViewFilter), `taskcoachlib/gui/viewer/task.py` (calendar viewers), `taskcoachlib/gui/viewer/base.py` (ViewerWithColumns) |
 | `scheduler.minuteChange.uiRefresh` | Replaced by Publisher `scheduler.minute` | `taskcoachlib/gui/scheduler.py` (MasterScheduler), `taskcoachlib/gui/viewer/refresher.py` (MinuteRefresher), `taskcoachlib/gui/viewer/task.py` (calendar viewers) |
+| `task.priority` to the ancestors | Replaced by `task.effectivePriority`, the task and all its ancestors as sources, also on a subtask completed, reopened, added or removed; `task.priority` names the task only ([TASK_FIELDS.md](TASK_FIELDS.md#effective-priority)) | `taskcoachlib/domain/task/task.py` (Task), `taskcoachlib/gui/viewer/task.py` (TaskViewer), `taskcoachlib/gui/dialog/editor.py` (TaskSubjectPage) |
 
 ---
 

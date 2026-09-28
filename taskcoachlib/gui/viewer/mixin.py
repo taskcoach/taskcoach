@@ -209,7 +209,9 @@ class FilterableViewerForTasksMixin(FilterableViewerForCategorizablesMixin):
     def createFilter(self, taskList):
         taskList = super().createFilter(taskList)
         return task.filter.ViewFilter(
-            taskList, tree_mode=self.is_tree_viewer(), **self.viewFilterOptions()
+            taskList,
+            tree_mode=self.is_tree_viewer(),
+            **self.viewFilterOptions()
         )
 
     def viewFilterOptions(self):
@@ -325,7 +327,9 @@ class SortableViewerMixin(object):
         )
 
     def sortKey(self):
-        return ast.literal_eval(self.settings.get(self.settingsSection(), "sortby"))
+        return ast.literal_eval(
+            self.settings.get(self.settingsSection(), "sortby")
+        )
 
     def isSortOrderAscending(self):
         sort_keys = self.presentation().sort_keys()
@@ -346,7 +350,8 @@ class SortableViewerMixin(object):
 
     def setSortCaseSensitive(self, sort_case_sensitive=True):
         self.settings.set(
-            self.settingsSection(), "sortcasesensitive",
+            self.settingsSection(),
+            "sortcasesensitive",
             str(sort_case_sensitive),
         )
         self.presentation().sort_case_sensitive(sort_case_sensitive)
@@ -595,6 +600,11 @@ class SortableViewerForTasksMixin(
             (_("&Time spent"), _("Sort tasks by time spent"), "timeSpent"),
             (_("Budget &left"), _("Sort tasks by budget left"), "budgetLeft"),
             (_("&Priority"), _("Sort tasks by priority"), "priority"),
+            (
+                _("&Effective priority"),
+                _("Sort tasks by effective priority"),
+                "effectivePriority",
+            ),
             (_("&Hourly fee"), _("Sort tasks by hourly fee"), "hourlyFee"),
             (_("&Fixed fee"), _("Sort tasks by fixed fee"), "fixedFee"),
             (_("&Revenue"), _("Sort tasks by revenue"), "revenue"),
@@ -668,7 +678,9 @@ class AttachmentDropTargetMixin(object):
                     task.Task.suggestedReminderDateTime()
                 )
             newItemDialog = self.newItemDialog(
-                icon_id="nuvola_actions_document-new", attachments=attachments, **itemDialogKwargs
+                icon_id="nuvola_actions_document-new",
+                attachments=attachments,
+                **itemDialogKwargs
             )
             newItemDialog.Show()
             # Use CallAfter to ensure proper focus after drop completes
@@ -710,7 +722,7 @@ class AttachmentDropTargetMixin(object):
         for window in wx.GetTopLevelWindows():
             if isinstance(window, EditorClass):
                 # Check if this editor is editing our item
-                if hasattr(window, '_items') and item in window._items:
+                if hasattr(window, "_items") and item in window._items:
                     existingEditor = window
                     break
 
@@ -718,7 +730,7 @@ class AttachmentDropTargetMixin(object):
             # Bring to front and switch to attachments tab
             existingEditor.Raise()
             existingEditor.SetFocus()
-            if hasattr(existingEditor, '_interior'):
+            if hasattr(existingEditor, "_interior"):
                 existingEditor._interior.setFocus("attachments")
             itemEditor = existingEditor
         else:
@@ -742,7 +754,9 @@ class AttachmentDropTargetMixin(object):
             def openAttachmentEditor():
                 # Wrap attachments in AttachmentList container for Editor
                 # (item.attachments() returns a plain list)
-                attachmentContainer = attachment.AttachmentList(item.attachments())
+                attachmentContainer = attachment.AttachmentList(
+                    item.attachments()
+                )
                 attachmentEditor = editor.AttachmentEditor(
                     itemEditor,  # Parent to the item editor
                     newAttachments,
@@ -755,6 +769,7 @@ class AttachmentDropTargetMixin(object):
                 attachmentEditor.Show()
                 attachmentEditor.Raise()
                 attachmentEditor.SetFocus()
+
             wx.CallAfter(openAttachmentEditor)
 
     def onDropURL(self, item, url, **kwargs):
@@ -768,6 +783,7 @@ class AttachmentDropTargetMixin(object):
         are dropped on an item."""
         import os
         import urllib.request
+
         attachmentBase = self.settings.get("file", "attachmentbase")
         attachments = []
         for filename in filenames:
@@ -778,7 +794,9 @@ class AttachmentDropTargetMixin(object):
             else:
                 # Regular files become file attachments
                 if attachmentBase:
-                    filename = attachment.getRelativePath(filename, attachmentBase)
+                    filename = attachment.getRelativePath(
+                        filename, attachmentBase
+                    )
                 attachments.append(attachment.FileAttachment(filename))
         self._addAttachments(attachments, item, **kwargs)
 
@@ -794,11 +812,19 @@ class AttachmentDropTargetMixin(object):
 
 class NoteColumnMixin(object):
     def noteImageIndices(self, item):
-        index = image_list_cache.get_index("nuvola_apps_knotes") if item.notes() else -1
+        index = (
+            image_list_cache.get_index("nuvola_apps_knotes")
+            if item.notes()
+            else -1
+        )
         return {wx.TreeItemIcon_Normal: index}
 
 
 class AttachmentColumnMixin(object):
     def attachmentImageIndices(self, item):  # pylint: disable=W0613
-        index = image_list_cache.get_index("nuvola_status_mail-attachment") if item.attachments() else -1
+        index = (
+            image_list_cache.get_index("nuvola_status_mail-attachment")
+            if item.attachments()
+            else -1
+        )
         return {wx.TreeItemIcon_Normal: index}

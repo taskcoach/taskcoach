@@ -377,6 +377,7 @@ class CommonTestsMixin(object):
             fixedFee=(3, _("Fixed fee")),
             revenue=(3, _("Revenue")),
             priority=(3, _("Priority")),
+            effectivePriority=(3, _("Effective priority")),
             prerequisites=(1, _("Prerequisites")),
             dependencies=(1, _("Dependents")),
             categories=(1, _("Categories")),
@@ -1027,16 +1028,16 @@ class CommonTestsMixin(object):
         # Priority changes are Publisher events
         self.assert_event_fired(task.Task.priorityChangedEventType())
 
-    def testChangePriorityOfSubtask(self):
-        self.showColumn("priority")
+    def test_change_priority_of_subtask(self):
+        self.showColumn("effectivePriority")
         self.task.addChild(self.child)
         self.taskList.append(self.task)
         self.child.setPriority(10)
-        # The parent is a source of the child's Publisher event
+        # The parent's effective priority, not its priority, changes
         self.assertIn(
             self.task,
             self.viewer.events[-1].sources(
-                task.Task.priorityChangedEventType()
+                task.Task.effective_priority_changed_event_type()
             ),
         )
 

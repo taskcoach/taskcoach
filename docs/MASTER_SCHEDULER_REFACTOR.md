@@ -11,18 +11,18 @@ change), 2026-09-28 ([Cost After](#cost-after)); what is left:
 
 What is left, in the proposed order (2026-09-28). pypubsub is gone:
 every signal is a Publisher event
-([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#migration-log)).
+([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#migration-log)). The
+recursive priority stays out of the loop
+([SCHEDULERS.md](SCHEDULERS.md#todo)).
 
-1. To review: the recursive priority computed by the loop, as the
-   status is ([SCHEDULERS.md](SCHEDULERS.md#todo)).
-2. The undo log as object versions keyed by the modification date
+1. The undo log as object versions keyed by the modification date
    ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log), option C).
-3. Identity: one rule for comparing domain objects (issue 13).
-4. Sorting by the Status column, in the status sort order
+2. Identity: one rule for comparing domain objects (issue 13).
+3. Sorting by the Status column, in the status sort order
    ([TASK_STATUS_SORT.md](TASK_STATUS_SORT.md), issue 14).
-5. The task editor's Progress tab, to check on a real display
+4. The task editor's Progress tab, to check on a real display
    (issue 7).
-6. Not planned: the reason for each entry
+5. Not planned: the reason for each entry
    ([Later](#later-the-reason-for-each-entry)).
 
 ## Master Design
@@ -288,9 +288,9 @@ The hook is the domain's modification events (`_data_event_types()`
 in `gui/scheduler.py`), a task's tracking, and the loop's own outputs
 (status, derived and effective styles), except fields that change no
 status, reminder or style, such as the subject, the description, the
-fees and the expanded state, so typing does not run the loop every
-second. Computed values the loop does not read (time spent, budget
-left, revenue) run nothing.
+fees, the priority and the expanded state, so typing does not run the
+loop every second. Computed values the loop does not read (time
+spent, budget left, revenue, the effective priority) run nothing.
 
 The safe side decides doubtful fields: one wrongly left in costs a
 loop; one wrongly left out is a miss, which the debug check of step 5
@@ -449,8 +449,8 @@ Chain of work, each needing the one before (2026-09-27):
     stored change
     ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)),
     field by field; with it the stored fields' changes moved from
-    pypubsub to the Publisher; the domain's other messages follow
-    ([Remaining Work](#remaining-work), 1).
+    pypubsub to the Publisher, then every other message
+    ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#migration-log)).
 13. Done: merging. The automatic merge with other instances removed,
     File > Merge a union with the newest copy of each item
     ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)); more exact as

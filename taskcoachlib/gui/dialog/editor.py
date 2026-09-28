@@ -378,6 +378,7 @@ class TaskSubjectPage(SubjectPage):
         self.addSubjectEntry()
         self.addDescriptionEntry()
         self.addPriorityEntry()
+        self.add_effective_priority_entry()
         self.addCreationDateTimeEntry()
         self.addModificationDateTimeEntry()
 
@@ -399,6 +400,34 @@ class TaskSubjectPage(SubjectPage):
             self.items[0].priorityChangedEventType(),
         )
         self.addEntry(_("Priority"), self._priorityEntry)
+
+    def add_effective_priority_entry(self):
+        self._effective_priority_entry = wx.StaticText(
+            self, label=self.__effective_priority_text()
+        )
+        self.addEntry(_("Effective priority"), self._effective_priority_entry)
+        for item in self.items:
+            patterns.Publisher().registerObserver(
+                self.on_effective_priority_changed,
+                eventType=item.effective_priority_changed_event_type(),
+                eventSource=item,
+            )
+
+    def __effective_priority_text(self):
+        priorities = [item.effective_priority() for item in self.items]
+        low, high = min(priorities), max(priorities)
+        if low == high:
+            return render.priority(low)
+        return "%s - %s" % (render.priority(low), render.priority(high))
+
+    def on_effective_priority_changed(self, event):
+        self._effective_priority_entry.SetLabel(
+            self.__effective_priority_text()
+        )
+
+    def close(self):
+        super().close()
+        patterns.Publisher().removeObserver(self.on_effective_priority_changed)
 
     def entries(self):
         entries = super().entries()

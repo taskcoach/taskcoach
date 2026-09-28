@@ -1620,10 +1620,14 @@ class TaskViewer(
                 _("Priority"),
                 inplace_editor.PriorityCtrl,
                 self.onEditPriority,
-                [
-                    task.Task.expansionChangedEventType(),
-                    task.Task.priorityChangedEventType(),
-                ],
+                [task.Task.priorityChangedEventType()],
+            ),
+            (
+                "effectivePriority",
+                _("Effective priority"),
+                None,
+                None,
+                [task.Task.effective_priority_changed_event_type()],
             ),
             (
                 "hourlyFee",
@@ -1963,6 +1967,12 @@ class TaskViewer(
                     viewer=self,
                 ),
                 uicommand.ViewColumn(
+                    menu_text=_("&Effective priority"),
+                    help_text=_("Show/hide effective priority column"),
+                    setting="effectivePriority",
+                    viewer=self,
+                ),
+                uicommand.ViewColumn(
                     menu_text=_("&Reminder"),
                     help_text=_("Show/hide reminder column"),
                     setting="reminder",
@@ -2121,7 +2131,10 @@ class TaskViewer(
         )
 
     def renderPriority(self, task):
-        return self.renderedValue(task, task.priority, render.priority) + " "
+        return render.priority(task.priority()) + " "
+
+    def renderEffectivePriority(self, task):
+        return render.priority(task.effective_priority()) + " "
 
     def renderReminder(self, task, human_readable=True):
         return self.renderedValue(
