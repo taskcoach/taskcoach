@@ -80,10 +80,15 @@ go at the end. Details live in the sections and documents linked.
 34. The undo log as object versions keyed by the modification date:
     step 1 done, steps 2 to 5 open
     ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log), option C).
-35. The legacy subtree styles: `Task.recomputeAppearance()`, called
-    from 21 places, still computes a cache of subtree colours and icons
-    beside the loop's effective styles; row icons, the tray menu,
-    effort colours and the editor's owned-item lists read it
+35. The views still draw rows from the legacy styles: the task list,
+    the calendars, the tray menu and effort rows read
+    `foregroundColor()`, `backgroundColor()`, `font()` and `icon_id()`
+    with `recursive=True`, cached by `Task.recomputeAppearance()` (21
+    call sites); only the editor reads the loop's effective styles. The
+    two rules differ: a task in two coloured categories is drawn mixed,
+    while its effective colour is the highest style priority's (seen
+    2026-09-28). The views move to the effective styles, then the
+    legacy accessors and cache go
     ([TASK_STATUS.md](TASK_STATUS.md#4-cache-invalidation-is-implicit)).
 36. The task editor's Progress tab: a second percentage control and
     slider drawn over the tab labels, seen only under Xvfb; to check on
