@@ -38,9 +38,9 @@ The domain model's change-detection and event-notification pattern.
    path. See
    [Three-Layer Relationship](#three-layer-relationship), Layer 2.
 
-2. **Migrate signal dispatch to per-instance.** See
-   [PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#todo) for full status,
-   done/remaining items, and migration plan.
+2. **Done 2026-09-28: signal dispatch per instance.** Every signal is
+   a Publisher event and pypubsub is gone
+   ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#migration-log)).
 
 3. **Modularize and clean up the signaling system.** See
    [PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#signaling-system-cleanup)
