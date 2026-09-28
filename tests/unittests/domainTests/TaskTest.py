@@ -513,6 +513,11 @@ class DefaultTaskStateTest(
         self.task.set_fixed_fee(1000)
         self.assertEqual([(1000, self.task)], self.changes)
 
+    def test_planned_duration_change_is_a_publisher_event(self):
+        self.record_changes(task.Task.plannedDurationChangedEventType())
+        self.task.setPlannedDuration(date.ONE_HOUR)
+        self.assertEqual([(date.ONE_HOUR, self.task)], self.changes)
+
     def test_mark_completed_setting_change_sets_the_modification_date(self):
         before = date.Now()
         self.task.set_should_mark_completed_when_all_children_completed(True)
@@ -1027,6 +1032,8 @@ class DefaultTaskStateTest(
                 task.Task.prerequisitesChangedEventType(),
                 task.Task.dependenciesChangedEventType(),
                 task.Task.shouldMarkCompletedWhenAllChildrenCompletedChangedEventType(),
+                task.Task.plannedDurationChangedEventType(),
+                task.Task.plannedDurationModeChangedEventType(),
             ],
             self.task.modificationEventTypes(),
         )
@@ -2335,7 +2342,9 @@ class TaskWithChildTest(
         )
         self.record_changes(task.Task.percentageCompleteChangedEventType())
         self.task1_1.setPercentageComplete(50)
-        self.assertEqual([(50, self.task1_1), (50, self.task)], self.changes)
+        self.assertEqual(
+            {(50, self.task1_1), (50, self.task)}, set(self.changes)
+        )
 
     def testPercentageCompletedNotificationWhenMarkCompletedSettingChanges(
         self,

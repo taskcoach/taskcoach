@@ -335,7 +335,7 @@ and sets the modification date, then is tested:
 | 3 | Task hourly fee, fixed fee | Plain values, pypubsub | Done: Attributes, Publisher (`task.hourlyFee`, `task.fixedFee`) |
 | 4 | Task budget | Plain value, pypubsub | Done: Attribute, Publisher (`task.budget`); budget left stays computed |
 | 5 | Task "mark completed when all subtasks are" | Plain value, pypubsub | Done: Attribute, Publisher |
-| 6 | Task percentage complete, planned duration and its mode | Attributes, pypubsub | To do |
+| 6 | Task percentage complete, planned duration and its mode | Attributes, pypubsub | Done: Publisher; the duration and mode now mark the file unsaved by their own events |
 | 7 | Task recurrence | Plain value, pypubsub | To do |
 | 8 | Effort start, stop, entry mode, task | Attributes (not the task), pypubsub; the date is not saved | To do |
 | 9 | Task prerequisites (dependencies are their reverse) | Plain sets, pypubsub | To do |

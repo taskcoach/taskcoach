@@ -45,7 +45,13 @@ relationship) — signal dispatch exists to serve Attribute change notification.
    Task planned start, due, actual start, completion and reminder
    migrated to Publisher (the reminder made an `Attribute`), for the
    master timer list ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#what-changes-the-master-timer-list)).
-   **Remaining:** Task percentage, duration; Effort fields.
+   Task hourly and fixed fee, budget, "mark completed when all
+   subtasks are", percentage complete, planned duration and its mode
+   migrated with the modification date
+   ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
+   **Remaining:** Task recurrence, prerequisites and dependencies;
+   Effort fields; computed values (time spent, budget left, revenue,
+   status, tracking).
 
 2. **Modularize and clean up the signaling system.** The three independent
    cleanup mechanisms (wx C++ destruction, `removeInstance()`, Python GC)

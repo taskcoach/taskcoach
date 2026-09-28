@@ -1342,28 +1342,12 @@ class DatesPage(ScrolledPage):
                     prefix="DEAD-OBJ",
                 )
         if len(self.items) == 1:
-            try:
-                pub.unsubscribe(
-                    self._onDomainPlannedDurationModeChanged,
-                    self.items[0].plannedDurationModeChangedEventType(),
-                )
-            except Exception as e:
-                log_step(
-                    "unsubscribe failed in %s.close: %s"
-                    % (self.__class__.__name__, e),
-                    prefix="DEAD-OBJ",
-                )
-            try:
-                pub.unsubscribe(
-                    self.__onTaskDurationDomainChanged,
-                    self.items[0].plannedDurationChangedEventType(),
-                )
-            except Exception as e:
-                log_step(
-                    "unsubscribe failed in %s.close: %s"
-                    % (self.__class__.__name__, e),
-                    prefix="DEAD-OBJ",
-                )
+            patterns.Publisher().removeObserver(
+                self._on_domain_planned_duration_mode_changed
+            )
+            patterns.Publisher().removeObserver(
+                self.__on_task_duration_domain_changed
+            )
         super().close()
 
     def __onPlannedStartChanged(self, value):
@@ -1386,11 +1370,9 @@ class DatesPage(ScrolledPage):
         if hasattr(self, "_currentPlannedDurationMode"):
             self.__syncTaskState(sourceField="due")
 
-    def _onDomainPlannedDurationModeChanged(self, newValue, sender):
+    def _on_domain_planned_duration_mode_changed(self, event):
         """Layer 2: Domain plannedDurationMode changed externally."""
-        if sender not in self.items:
-            return
-        self._currentPlannedDurationMode = newValue
+        self._currentPlannedDurationMode = self.items[0].plannedDurationMode()
         self.__updateDurationModeDropdown()
         self.__syncTaskState()
 
@@ -1398,10 +1380,9 @@ class DatesPage(ScrolledPage):
         """AttributeSync callback: duration committed or changed externally."""
         self.__syncTaskState(sourceField="duration")
 
-    def __onTaskDurationDomainChanged(self, newValue, sender):
-        """Domain duration changed — update preset dropdown to match."""
-        if sender in self.items:
-            self.__updatePresetSelection()
+    def __on_task_duration_domain_changed(self, event):
+        """Domain duration changed: match the preset dropdown."""
+        self.__updatePresetSelection()
 
     def addEntries(self):
         self.addStatusEntry()
@@ -1605,13 +1586,15 @@ class DatesPage(ScrolledPage):
         # Subscribe to domain changes BEFORE __syncTaskState()
         # so that changes during init sync trigger UI updates.
         if len(self.items) == 1:
-            pub.subscribe(
-                self._onDomainPlannedDurationModeChanged,
+            patterns.Publisher().registerObserver(
+                self._on_domain_planned_duration_mode_changed,
                 self.items[0].plannedDurationModeChangedEventType(),
+                eventSource=self.items[0],
             )
-            pub.subscribe(
-                self.__onTaskDurationDomainChanged,
+            patterns.Publisher().registerObserver(
+                self.__on_task_duration_domain_changed,
                 self.items[0].plannedDurationChangedEventType(),
+                eventSource=self.items[0],
             )
 
         # Presets dropdown
@@ -4682,7 +4665,7 @@ class EffortEditBook(Page):
         return " ".join(parts)
 
     def __on_effort_duration_domain_changed(self, newValue, sender):
-        """Domain duration changed — update preset dropdown to match."""
+        """Domain duration changed: match the preset dropdown."""
         if sender in self.items:
             self.__update_effort_preset_selection()
 

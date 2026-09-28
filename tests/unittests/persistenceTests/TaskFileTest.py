@@ -282,6 +282,14 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.task.set_modification_datetime(date.Now())
         self.assertFalse(self.taskFile.need_save())
 
+    def test_need_save_after_planned_duration_change(self):
+        self.task.setPlannedDuration(date.ONE_HOUR)
+        self.assertTrue(self.taskFile.need_save())
+
+    def test_need_save_after_planned_duration_mode_change(self):
+        self.task.setPlannedDurationMode("adjdue")
+        self.assertTrue(self.taskFile.need_save())
+
     def testNeedSave_AfterEditTaskSubject(self):
         self.task.setSubject("new subject")
         self.assertTrue(self.taskFile.need_save())

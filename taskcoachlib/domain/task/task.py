@@ -1178,18 +1178,15 @@ class Task(
         self.__plannedDuration.set(plannedDuration, event=event)
 
     def _onPlannedDurationChanged(self, event):
-        self.sendPlannedDurationChangedMessage()
-
-    def sendPlannedDurationChangedMessage(self):
-        pub.sendMessage(
-            self.plannedDurationChangedEventType(),
-            newValue=self.plannedDuration(),
-            sender=self,
+        event.addSource(
+            self,
+            self.plannedDuration(),
+            type=self.plannedDurationChangedEventType(),
         )
 
     @classmethod
     def plannedDurationChangedEventType(class_):
-        return "pubsub.task.plannedDuration"
+        return "task.plannedDuration"
 
     @staticmethod
     def plannedDurationSortFunction(**kwargs):
@@ -1212,18 +1209,15 @@ class Task(
         self.__plannedDurationMode.set(mode, event=event)
 
     def _onPlannedDurationModeChanged(self, event):
-        self.sendPlannedDurationModeChangedMessage()
-
-    def sendPlannedDurationModeChangedMessage(self):
-        pub.sendMessage(
-            self.plannedDurationModeChangedEventType(),
-            newValue=self.plannedDurationMode(),
-            sender=self,
+        event.addSource(
+            self,
+            self.plannedDurationMode(),
+            type=self.plannedDurationModeChangedEventType(),
         )
 
     @classmethod
     def plannedDurationModeChangedEventType(class_):
-        return "pubsub.task.plannedDurationMode"
+        return "task.plannedDurationMode"
 
     # Foreground color
 
@@ -2143,4 +2137,6 @@ class Task(
             class_.prerequisitesChangedEventType(),
             class_.dependenciesChangedEventType(),
             class_.shouldMarkCompletedWhenAllChildrenCompletedChangedEventType(),
+            class_.plannedDurationChangedEventType(),
+            class_.plannedDurationModeChangedEventType(),
         ]
