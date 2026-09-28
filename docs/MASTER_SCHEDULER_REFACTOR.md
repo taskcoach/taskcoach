@@ -3,53 +3,117 @@
 Plan to replace the full scan `MasterScheduler` runs every second.
 [SCHEDULERS.md](SCHEDULERS.md) describes the scheduler as it is.
 
-**Status:** steps 1 to 9 and 11 to 14 done, step 10 decided (no
-change), 2026-09-28 ([Cost After](#cost-after)); what is left:
-[Remaining Work](#remaining-work).
+**Status:** items 1 to 33 done or decided, 2026-09-28
+([Cost After](#cost-after)); what is left: [To Do](#to-do).
 
-## Remaining Work
+## To Do
 
-Everything still open, here so nothing is lost between tangents; in
-the proposed order (2026-09-28). pypubsub is gone: every signal is a
-Publisher event
-([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#migration-log)). The
-recursive priority stays out of the loop
-([SCHEDULERS.md](SCHEDULERS.md#todo)).
+The one list for this refactor, numbered in the order found; an item
+is crossed out and cut to a stub when done or decided, and new items
+go at the end. Details live in the sections and documents linked.
 
-This refactor:
-
-1. The undo log as object versions keyed by the modification date
-   ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log), option C; step 1
-   done, steps 2 to 5 open).
-2. The legacy subtree styles: `Task.recomputeAppearance()`, called
-   from 21 places, still computes a cache of subtree colours and icons
-   beside the loop's effective styles; row icons, the tray menu,
-   effort colours and the editor's owned-item lists read it
-   ([TASK_STATUS.md](TASK_STATUS.md#4-cache-invalidation-is-implicit)).
-3. The task editor's Progress tab, to check on a real display
-   (issue 7).
-4. Not planned: the reason for each entry
-   ([Later](#later-the-reason-for-each-entry)).
-5. Effective fields for the 13 other subtree values, one at a time;
-   none is read by the loop
-   ([TASK_FIELDS.md](TASK_FIELDS.md#subtree-values-in-other-columns)).
-
-Before the branch is pushed:
-
-6. Squash to one commit, version 2.0.3.0 in the body; the release
-   date (2026-09-28) may move.
-7. One app run on 2026-09-28 logged a traceback (log lost, not
-   reproduced in four runs of the same steps): watch for it.
-
-Other TODOs, outside this refactor:
-
-8. Signal cleanup, then a signal library
-   ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#todo)).
-9. Editor text fields commit only on focus loss
-   ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#todo)).
-10. Default values in the file
-    ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#todo)).
-11. Settings modernization ([SETTINGS.md](SETTINGS.md#todo)).
+1. ~~Whole seconds everywhere: done, only logs keep fractions.~~
+   [Time Resolution](#time-resolution)
+2. ~~One "not set" for every task date: done, the latest date; a
+   running effort's missing stop stays `None`, outside the list.~~
+   [ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#dates-not-set-is-the-latest-date)
+3. ~~No event for an unchanged value: done (`Attribute.set()`), a
+   quarter of the tick.~~ [Cost Before](#cost-before)
+4. ~~Task dates and reminder on the Publisher, the reminder an
+   `Attribute`: done.~~ [Why Nothing Is Missed](#why-nothing-is-missed)
+5. ~~The master timer list: done, a heap, the check each second, the
+   full loop at its entries, the check mode
+   (`TASKCOACH_SCHEDULER_CHECK=1`).~~ [Cost After](#cost-after)
+6. ~~Changes the loop reads push the current second, parents first:
+   done.~~ [Data Changes](#data-changes)
+7. ~~One status: done, styles and status bar counts read
+   `computedStatus()`.~~ [TASK_STATUS.md](TASK_STATUS.md#migration-path)
+8. ~~SyncML leftovers (sync status flags): removed.~~
+   [PYTHON3_MIGRATION_4.md](PYTHON3_MIGRATION_4.md#backwards-compatibility)
+9. ~~Merging ignored the actual start: done, then moot (item 13).~~
+10. ~~Reminder windows when a file opens: decided, no change.~~
+    [REMINDERS.md](REMINDERS.md#overview)
+11. ~~UI thread busy while statuses change: done, computed values mark
+    nothing unsaved and a save no longer reads the file (98% to
+    11%).~~ [Cost After](#cost-after)
+12. ~~Modification date on every stored change: done.~~
+    [ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)
+13. ~~Merging: done, no automatic merge; File > Merge a union by newest
+    copy.~~ [PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)
+14. ~~Unsaved mark from saved data only: done.~~
+15. ~~A file changed on disk: done, never replaced unasked.~~
+    [PERSISTENCE_XML.md](PERSISTENCE_XML.md#saving)
+16. ~~Undo back to the saved state clears the unsaved mark: done.~~
+    [UNDO_REDO.md](UNDO_REDO.md#persistence)
+17. ~~View state and category ownership: decided, filter and expanded
+    state set no date, the task owns its categories.~~
+    [ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)
+18. ~~Every signal on the Publisher: done, pypubsub removed.~~
+    [PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#migration-log)
+19. ~~The loop's hook lists what the loop reads: done.~~
+    [Data Changes](#data-changes)
+20. ~~Attachments re-sorted: done.~~
+21. ~~A timing-dependent `EffortViewerTest` case: done.~~
+22. ~~Merge ran the parent rules: done.~~
+    [PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)
+23. ~~`.delta` files: decided, ignored.~~
+    [PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)
+24. ~~The effort list took a merged file's efforts: done, it compares
+    identity.~~
+25. ~~Status bar counts ignored the clock: done.~~
+26. ~~Object identity: decided, one object per ID within a file, the
+    file to merge held apart.~~
+    [PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)
+27. ~~Recursive priority in the loop: decided, no; the effective
+    priority, by events.~~
+    [TASK_FIELDS.md](TASK_FIELDS.md#effective-priority)
+28. ~~Recurrence changes reached only the subtask: done.~~
+    [TASK_FIELDS.md](TASK_FIELDS.md#subtree-values-in-other-columns)
+29. ~~Duplicate IDs in a file: done, corrected when read, with a
+    message.~~ [PERSISTENCE_XML.md](PERSISTENCE_XML.md#duplicate-ids)
+30. ~~Cut and paste changed identity: done, the first paste after a cut
+    is a move.~~ [PERSISTENCE_XML.md](PERSISTENCE_XML.md#ids)
+31. ~~IDs carried the network (MAC) address: done, random UUIDs.~~
+    [PERSISTENCE_XML.md](PERSISTENCE_XML.md#ids)
+32. ~~The unused file GUID: removed.~~
+33. ~~Version: 2.0.3.0.~~
+34. The undo log as object versions keyed by the modification date:
+    step 1 done, steps 2 to 5 open
+    ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log), option C).
+35. The legacy subtree styles: `Task.recomputeAppearance()`, called
+    from 21 places, still computes a cache of subtree colours and icons
+    beside the loop's effective styles; row icons, the tray menu,
+    effort colours and the editor's owned-item lists read it
+    ([TASK_STATUS.md](TASK_STATUS.md#4-cache-invalidation-is-implicit)).
+36. The task editor's Progress tab: a second percentage control and
+    slider drawn over the tab labels, seen only under Xvfb; to check on
+    a real display.
+37. Effective fields for the 13 other subtree values, one at a time;
+    none is read by the loop
+    ([TASK_FIELDS.md](TASK_FIELDS.md#subtree-values-in-other-columns)).
+38. `Timestamp.now()` always later than the one before (creation and
+    modification dates never equal): keep or remove, to decide
+    ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#ids)).
+39. Renames deferred as too wide, each its own change: the task date
+    setters (`setReminder()`, `setDueDateTime()`,
+    `setPlannedStartDateTime()`, `setActualStartDateTime()`,
+    `setCompletionDateTime()`, about 465 calls), `setParent()` (65) and
+    `setTask()` (25), with name-coupled callers such as `merge.py`
+    (`"set" + kind`) in lockstep ([PEP8_MIGRATION.md](PEP8_MIGRATION.md)).
+40. Signal cleanup: views, toolbars, menus and dialogs drop their
+    subscriptions when destroyed, then the dead-window guards go
+    ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#todo)).
+41. Editor text fields (subject, description, attachment location)
+    commit only on focus loss
+    ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#todo)).
+42. The designer's desktop test of the branch, from one consolidated
+    test list.
+43. Squash to one commit before pushing, version 2.0.3.0 in the body;
+    the release date (2026-09-28) may move.
+44. One app run on 2026-09-28 logged a traceback (log lost, not
+    reproduced in four runs of the same steps): watch for it.
+45. Not planned: the reason for each entry
+    ([Later](#later-the-reason-for-each-entry)).
 
 ## Master Design
 
@@ -152,7 +216,7 @@ Sweep, to leave nothing behind in this branch:
 
 ## Index
 
-- [Remaining Work](#remaining-work)
+- [To Do](#to-do)
 - [Master Design](#master-design)
 - [Time Resolution](#time-resolution)
 - [The Master Timer List](#the-master-timer-list)
@@ -160,9 +224,7 @@ Sweep, to leave nothing behind in this branch:
 - [Data Changes](#data-changes)
 - [Cost Before](#cost-before)
 - [Cost After](#cost-after)
-- [Steps](#steps)
 - [Later: the Reason for Each Entry](#later-the-reason-for-each-entry)
-- [Open Questions and Issues Found](#open-questions-and-issues-found)
 - [ID Review](#id-review)
 - [How It Was Measured](#how-it-was-measured)
 - [History: One List on the Tick, Not a Timer per Event](#history-one-list-on-the-tick-not-a-timer-per-event)
@@ -320,7 +382,7 @@ loop every second. Computed values the loop does not read (time
 spent, budget left, revenue, the effective priority) run nothing.
 
 The safe side decides doubtful fields: one wrongly left in costs a
-loop; one wrongly left out is a miss, which the debug check of step 5
+loop; one wrongly left out is a miss, which the check mode of item 5
 logs. Settings are the other way round: only the sections listed
 above, as window and other settings change often and the loop reads
 none of them.
@@ -340,7 +402,7 @@ changes.
   tick; the UI runs between passes.
 - **No pass for nothing**: a pass that changes nothing pushes nothing,
   so the next second runs nothing. Unchanged values send no event
-  (step 3), and a reminder trigger is not a change: triggered again
+  (item 3), and a reminder trigger is not a change: triggered again
   while its dialog is open, it is dropped
   ([Reminders](#data-changes)).
 - **It settles**: styles flow one way (category to task, parent to
@@ -408,7 +470,7 @@ Measured 2026-09-27 in the real app on the desktop with the
 |---|---|---|
 | 2000 tasks, dates 20 days around now, idle | 258 ms every second | 1 pass a minute, 213 ms; 59 of 60 ticks do nothing |
 | 200 tasks, dates 60 minutes around now | 39 ms every second | 2 to 4 passes a minute, about 50 ms each |
-| 2000 tasks, dates 60 minutes around now (about 25 statuses changing a minute) | UI thread busy 98%, 5 to 10 ticks a minute, autosave re-reading the file after every status change | Busy 11%, the passes; 28 to 54 ticks a minute ([Steps](#steps) 11) |
+| 2000 tasks, dates 60 minutes around now (about 25 statuses changing a minute) | UI thread busy 98%, 5 to 10 ticks a minute, autosave re-reading the file after every status change | Busy 11%, the passes; 28 to 54 ticks a minute ([To Do](#to-do), 11) |
 
 Nothing missed: with `TASKCOACH_SCHEDULER_CHECK=1` the full loop ran
 every second as well for 3 minutes with 200 tasks and with 2000, dates
@@ -420,85 +482,6 @@ Each due second costs its pass and one more that finds nothing (the
 
 ---
 
-## Steps
-
-1. Whole seconds everywhere ([Time Resolution](#time-resolution)): the
-   starting point, done first.
-2. One "not set" for every task date, the latest date: done. The
-   reminder no longer uses `None`, and the date setters take `None` as
-   "not set"; the review found no other divergence among the list's
-   inputs. An effort still running keeps `None` for its missing stop,
-   outside the list
-   ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#dates-not-set-is-the-latest-date)).
-3. No `Event` for an unchanged value (`Attribute.set()`): a quarter of
-   the tick ([Cost Before](#cost-before)); done.
-4. The date fields' and the reminder's change signals moved from
-   pypubsub to the Publisher, the reminder made an `Attribute`
-   ([Why Nothing Is Missed](#why-nothing-is-missed)): done.
-5. The master timer list (a heap), the check each second, and the
-   full loop at its entries, with the statuses computed at the tick's
-   second, and the check mode (`TASKCOACH_SCHEDULER_CHECK=1`): done
-   ([Cost After](#cost-after)). The empty `Task.onDailyChange()` went
-   with it: the loop no longer runs daily.
-6. Changes the loop reads, and the loop's own changes, push the
-   current second, and the loop visits parents before children
-   ([Data Changes](#data-changes),
-   [the cascade ruling](#ruling-the-cascade-runs-through-the-heap)):
-   done, with step 5.
-7. Done 2026-09-28: one status. Styles and the status bar counts
-   read the legacy status, which ignored the ancestors' prerequisites;
-   they read `computedStatus()` now
-   ([TASK_STATUS.md](TASK_STATUS.md#migration-path)).
-
-Found along the way, 2026-09-27:
-
-8. The objects' sync status (new, changed, deleted), left from the
-   removed SyncML sync: since step 4 a task's ancestors are sources of
-   its date events, so the task file's change handler flagged them as
-   changed too. Removed with the rest of the SyncML leftovers
-   ([PYTHON3_MIGRATION_4.md](PYTHON3_MIGRATION_4.md#backwards-compatibility)):
-   done.
-9. Merging changes made by another instance ignored the actual start:
-   done, then made moot by step 13.
-
-10. Decided 2026-09-28, no change: the first pass after a file opens
-    opens one reminder window per due reminder (19 s for 134 windows);
-    the wait is accepted ([REMINDERS.md](REMINDERS.md#overview)).
-11. Done: a status change marked the file dirty, and each autosave
-    re-read the file, so with statuses changing every minute the UI
-    thread was busy 98% ([Cost After](#cost-after)). A computed value
-    no longer marks the file dirty, and since step 13 a save no longer
-    reads the file.
-
-Chain of work, each needing the one before (2026-09-27):
-
-12. Done: the modification date set by the data layer on every
-    stored change
-    ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)),
-    field by field; with it the stored fields' changes moved from
-    pypubsub to the Publisher, then every other message
-    ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#migration-log)).
-13. Done: merging. The automatic merge with other instances removed,
-    File > Merge a union with the newest copy of each item
-    ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)); more exact as
-    12 progresses.
-14. Done: the file is marked unsaved by modification date changes,
-    items added or removed and saved view state, not by computed
-    values; the status is no longer skipped by name.
-
-Tried and dropped on 2026-09-27: one dirty flag running the full loop
-only after a change. It listened to every event, and a due reminder's
-trigger every second counted as a change, so the loop never skipped.
-The cascade ruling keeps the idea without that fault: only the change
-events push, and a trigger is not one. An uncommitted
-prototype also went further than this design (entries carrying their
-task, processed per object); what stays useful from it: the
-`Attribute.set()` change, the once-a-minute `[SCHEDULER]` cost line,
-and debug switches to profile the first ticks and to check a skipped
-tick against the full loop.
-
----
-
 ## Later: the Reason for Each Entry
 
 To do, not planned yet: record for each entry its task and the exact
@@ -507,68 +490,9 @@ would allow removing entries that no longer apply and processing only
 the tasks concerned instead of every task. It is coupled to the
 cascade through the hierarchy (categories, parents, prerequisites),
 which is what makes it complicated; whether it is worth it is decided
-then, with the costs measured after steps 5 and 6.
+then, with the costs measured after items 5 and 6.
 
 ---
-
-## Open Questions and Issues Found
-
-For later review (2026-09-27).
-
-Questions to decide:
-
-1. Decided and done 2026-09-28: a file changed on disk is never
-   replaced unasked; save waits for a merge, reload or Save As
-   ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#saving)).
-2. Decided and done 2026-09-28: undo back to the saved state clears
-   the unsaved mark ([UNDO_REDO.md](UNDO_REDO.md#persistence)).
-3. Decided 2026-09-28: a category's filter state and a task's expanded
-   state set no date (saved view state, not the item's data); manual
-   ordering does
-   ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date),
-   row 11).
-4. Decided 2026-09-28: the task (or note) owns its categories
-   ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
-
-Issues found, not fixed:
-
-5. Fixed: every task, note and category message ran a pass, computed
-   values included; the hook lists what the loop reads
-   ([Data Changes](#data-changes)).
-6. Fixed: file, link and mail attachments were not re-sorted, their
-   sorter listening under the base class's event types.
-7. Task editor, Progress tab: a second percentage control and slider
-   drawn over the tab labels, seen only under Xvfb; to check on a
-   real display.
-8. Fixed: an `EffortViewerTest` case depended on the second boundary.
-9. Fixed: File > Merge ran the parent rules
-   ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)).
-10. Decided: a `.delta` file left by an older version is ignored
-    ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)).
-11. Fixed: the effort list took the efforts of any task with its
-    task's id, a merged file's copy included; it compares identity.
-12. Fixed: the status bar counts ignored status changes made by the
-    clock.
-13. Decided 2026-09-28: domain objects compare equal by ID, and one
-    object per ID is kept within a file: duplicates are corrected when
-    read (issue 14); the file to merge is held apart and briefly
-    ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging); issue 11 was
-    its one leak); reload closes first, as loading over open items
-    would leave the old objects in the viewers (`Filter.reset()`).
-14. Fixed 2026-09-28: duplicate IDs in a file were only logged; both
-    objects loaded and compared equal. They are corrected when read,
-    and a message lists them
-    ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#duplicate-ids)).
-15. Fixed 2026-09-28: paste inserted copies, so a task moved by cut
-    and paste got a new ID and creation date, unlike drag and drop.
-    The first paste after a cut now pastes the cut items themselves
-    ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#ids)).
-16. Fixed 2026-09-28: new IDs were `uuid1()`, the time and this
-    computer's network (MAC) address, saved in every item; they are
-    random UUIDs now ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#ids)).
-17. Fixed 2026-09-28: the task file's GUID was written back on every
-    save but read by nothing since the sync was removed; it is no
-    longer read or written.
 
 ## ID Review
 
@@ -626,3 +550,14 @@ list on the tick avoids its failures:
 - Comparing wall-clock time each tick handles suspend and clock
   changes; a relative timer fires at the wrong wall time.
 - The list can be logged.
+
+**Tried and dropped, 2026-09-27:** one dirty flag running the full loop
+only after a change. It listened to every event, and a due reminder's
+trigger every second counted as a change, so the loop never skipped.
+The cascade ruling keeps the idea without that fault: only the change
+events push, and a trigger is not one. An uncommitted
+prototype also went further than this design (entries carrying their
+task, processed per object); what stays useful from it: the
+`Attribute.set()` change, the once-a-minute `[SCHEDULER]` cost line,
+and debug switches to profile the first ticks and to check a skipped
+tick against the full loop.

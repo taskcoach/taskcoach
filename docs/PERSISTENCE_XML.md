@@ -221,7 +221,7 @@ item added or removed (to the file, or as a subitem, note, attachment
 or effort), and saved view state (expanded, a category's filter).
 Undo or redo back to the saved state clears the mark
 ([UNDO_REDO.md](UNDO_REDO.md#persistence)). Computed values, such as
-a task's status, set no date and mark nothing ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#steps)
+a task's status, set no date and mark nothing ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do)
 items 11 and 14).
 
 `TaskFile.save()` (`persistence/taskfile.py`) writes what is in
