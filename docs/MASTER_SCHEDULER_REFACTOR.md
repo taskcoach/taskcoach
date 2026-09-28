@@ -51,7 +51,8 @@ Found along the way:
 12. `.delta` files left by older versions (issue 10).
 13. The task editor's Progress tab drawn twice, to check on a real
     display (issue 7).
-14. The timing-dependent `EffortViewerTest` case (issue 8).
+14. Done 2026-09-28: the timing-dependent `EffortViewerTest` case
+    (issue 8).
 
 ## Master Design
 
@@ -568,9 +569,10 @@ Issues found, not fixed:
 7. Task editor, Progress tab: a second percentage spin control and
    slider are drawn over the tab labels (seen under Xvfb with
    openbox; to check on a real display).
-8. `EffortViewerTest.testStatusMessage_OneTaskOneActiveEffort` failed
-   once: it expects 0:00:00 for an effort started when the test
-   starts, so a second boundary fails it. Timing, not a regression.
+8. Fixed 2026-09-28: `EffortViewerTest.testStatusMessage_OneTaskOneActiveEffort`
+   failed once: it expected 0:00:00 for an effort started when the
+   test starts, so a second boundary failed it. It accepts 0 or 1
+   second now (`test_status_message_one_task_one_active_effort`).
 9. File > Merge moves subtasks between parents with the normal
    operations, so the parent rules (completed when all children are,
    reopened by an open child) can run during it; the merged items

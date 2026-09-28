@@ -141,12 +141,18 @@ class EffortViewerStatusMessageTest(test.wxTestCase):
             "Status: 0 tracking",
         )
 
-    def testStatusMessage_OneTaskOneActiveEffort(self):
+    def test_status_message_one_task_one_active_effort(self):
         self.task.addEffort(effort.Effort(self.task))
-        self.assertStatusMessages(
-            "Effort: 0 selected, 1 visible, 1 total. Time spent: 0:00:00 selected, 0:00:00 visible, 0:00:00 total",
-            "Status: 1 tracking",
-        )
+        # Just started: a second may pass before the message is made
+        expected = [
+            (
+                "Effort: 0 selected, 1 visible, 1 total. Time spent: "
+                "0:00:00 selected, %s visible, %s total" % (spent, spent),
+                "Status: 1 tracking",
+            )
+            for spent in ("0:00:00", "0:00:01")
+        ]
+        self.assertIn(self.viewer.statusMessages(), expected)
 
     def testStatusMessageInAggregatedMode_OneTaskNoEffort(self):
         self.viewer.set_aggregation("day")
