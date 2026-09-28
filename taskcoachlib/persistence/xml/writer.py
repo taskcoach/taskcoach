@@ -401,7 +401,6 @@ class TemplateXMLWriter(XMLWriter):
             task.TaskList([tsk]),
             category.CategoryList(),
             note.NoteContainer(),
-            None,
         )
 
     def taskNode(self, parentNode, task):  # pylint: disable=W0621
