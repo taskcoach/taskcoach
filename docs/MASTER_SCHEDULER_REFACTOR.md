@@ -125,6 +125,7 @@ Sweep, to leave nothing behind in this branch:
 - [Cost After](#cost-after)
 - [Steps](#steps)
 - [Later: the Reason for Each Entry](#later-the-reason-for-each-entry)
+- [Open Questions and Issues Found](#open-questions-and-issues-found)
 - [How It Was Measured](#how-it-was-measured)
 - [History: One List on the Tick, Not a Timer per Event](#history-one-list-on-the-tick-not-a-timer-per-event)
 
@@ -441,8 +442,8 @@ Found along the way, 2026-09-27:
     (quadratic). Status changes no longer mark the file dirty, and the
     reader resolves categories in one event: busy 11%, the passes
     themselves; 28 then 54 ticks a minute instead of 5 to 10 (`py-spy`
-    on the real app, 120 s each): done. A save still re-reads the
-    file, now once and linearly.
+    on the real app, 120 s each): done. Since item 13 a save no longer
+    re-reads the file.
 
 Chain of work, each needing the one before (2026-09-27):
 
@@ -480,6 +481,51 @@ the tasks concerned instead of every task. It is coupled to the
 cascade through the hierarchy (categories, parents, prerequisites),
 which is what makes it complicated; whether it is worth it is decided
 then, with the costs measured after steps 5 and 6.
+
+---
+
+## Open Questions and Issues Found
+
+For later review (2026-09-27).
+
+Questions to decide:
+
+1. **File changed on disk.** Since item 13 nothing reacts to it: the
+   watcher still runs and sends `taskfile.changed`, which nobody
+   hears, and the next save replaces the file. Warn once (pointing to
+   File > Merge), or remove the watcher and its `fspoll` setting?
+2. **Undo back to the saved state.** Should it clear the unsaved mark
+   (track the saved point)? See
+   [UNDO_REDO.md](UNDO_REDO.md#persistence).
+3. **View state and the modification date.** A category's filter
+   state and a task's expanded state are saved but are not the item's
+   data; they do not set the date today. Manual ordering does (it is
+   an Attribute). One rule for all three
+   ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date),
+   row 11).
+
+Issues found, not fixed:
+
+4. The loop runs a pass on every pypubsub task, note and category
+   message (the `pubsub.task` catch-all), computed ones included:
+   revenue, time spent, budget left, tracking. A fee change still runs
+   a pass through its revenue message. Narrow it as the stored fields
+   leave pypubsub (item 14).
+5. Attachment re-sorting listens under the base `Attachment` class's
+   event types; file, link and mail attachments send under their own
+   class names, so no change re-sorts them, whatever the column.
+6. Task editor, Progress tab: a second percentage spin control and
+   slider are drawn over the tab labels (seen under Xvfb with
+   openbox; to check on a real display).
+7. `EffortViewerTest.testStatusMessage_OneTaskOneActiveEffort` failed
+   once: it expects 0:00:00 for an effort started when the test
+   starts, so a second boundary fails it. Timing, not a regression.
+8. File > Merge moves subtasks between parents with the normal
+   operations, so the parent rules (completed when all children are,
+   reopened by an open child) can run during it; the merged items
+   still keep their winning copies' dates (`persistence/merge.py`).
+9. A `.delta` file left by an older version next to a task file is
+   ignored; nothing removes it.
 
 ---
 
