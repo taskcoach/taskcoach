@@ -437,14 +437,9 @@ class DefaultTaskStateTest(
         self.assertTrue(self.task.completed())
 
     def testPercentageCompleteNotificationViaCompletionDateTime(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.percentageCompleteChangedEventType())
+        self.record_changes(task.Task.percentageCompleteChangedEventType())
         self.task.setCompletionDateTime()
-        self.assertEqual([(100, self.task)], events)
+        self.assertEqual([(100, self.task)], self.changes)
 
     def testSetPercentageCompleteSetsActualStartDateTime(self):
         self.task.setPercentageComplete(50)
@@ -1360,14 +1355,9 @@ class CompletedTaskTest(TaskTestCase, CommonTaskTestsMixin):
         self.assertEqual(99, self.task.percentageComplete())
 
     def testPercentageCompleteNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.percentageCompleteChangedEventType())
+        self.record_changes(task.Task.percentageCompleteChangedEventType())
         self.task.setCompletionDateTime(date.DateTime.max)
-        self.assertEqual([(0, self.task)], events)
+        self.assertEqual([(0, self.task)], self.changes)
 
     def testDefaultCompletedColor(self):
         expectedColor = wx.Colour(
@@ -2343,14 +2333,9 @@ class TaskWithChildTest(
         self.settings.setboolean(
             "behavior", "markparentcompletedwhenallchildrencompleted", True
         )
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.percentageCompleteChangedEventType())
+        self.record_changes(task.Task.percentageCompleteChangedEventType())
         self.task1_1.setPercentageComplete(50)
-        self.assertEqual([(50, self.task1_1), (50, self.task)], events)
+        self.assertEqual([(50, self.task1_1), (50, self.task)], self.changes)
 
     def testPercentageCompletedNotificationWhenMarkCompletedSettingChanges(
         self,
@@ -2358,17 +2343,12 @@ class TaskWithChildTest(
         self.settings.setboolean(
             "behavior", "markparentcompletedwhenallchildrencompleted", True
         )
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
         self.task1_1.setPercentageComplete(50)
-        pub.subscribe(onEvent, task.Task.percentageCompleteChangedEventType())
+        self.record_changes(task.Task.percentageCompleteChangedEventType())
         self.settings.setboolean(
             "behavior", "markparentcompletedwhenallchildrencompleted", False
         )
-        self.assertEqual([(0, self.task)], events)
+        self.assertEqual([(0, self.task)], self.changes)
 
     def testIcon(self):
         self.assertEqual(
@@ -3114,16 +3094,11 @@ class MarkTaskCompletedWhenAllChildrenCompletedSettingIsTrueFixture(
         self.assertEqual([(False, self.task)], self.changes)
 
     def testSetSettingCausesPercentageCompleteNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.percentageCompleteChangedEventType())
+        self.record_changes(task.Task.percentageCompleteChangedEventType())
         # The calculation of the total percentage complete depends on whether
         # a task is marked completed when all its children are completed
         self.task.set_should_mark_completed_when_all_children_completed(False)
-        self.assertEqual([(0, self.task)], events)
+        self.assertEqual([(0, self.task)], self.changes)
 
 
 class MarkTaskCompletedWhenAllChildrenCompletedSettingIsFalseFixture(

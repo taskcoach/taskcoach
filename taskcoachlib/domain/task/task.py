@@ -640,11 +640,7 @@ class Task(
         if self.shouldMarkCompletedWhenAllChildrenCompleted() is None and any(
             [child.percentageComplete(True) for child in self.children()]
         ):
-            pub.sendMessage(
-                self.percentageCompleteChangedEventType(),
-                newValue=self.percentageComplete(),
-                sender=self,
-            )
+            self.percentage_complete_changed_event()
 
     # Task state
 
@@ -1506,16 +1502,22 @@ class Task(
             and self.actualStartDateTime() == date.DateTime()
         ):
             self.setActualStartDateTime(date.Now())
-        pub.sendMessage(
-            self.percentageCompleteChangedEventType(),
-            newValue=percentage,
-            sender=self,
+        self.percentage_complete_changed_event(event=event)
+
+    @patterns.eventSource
+    def percentage_complete_changed_event(self, event=None):
+        """The percentage, and so the recursive percentages of the
+        ancestors, changed."""
+        event.addSource(
+            self,
+            self.percentageComplete(),
+            type=self.percentageCompleteChangedEventType(),
         )
         for ancestor in self.ancestors():
-            pub.sendMessage(
-                ancestor.percentageCompleteChangedEventType(),
-                newValue=ancestor.percentageComplete(recursive=True),
-                sender=ancestor,
+            event.addSource(
+                ancestor,
+                ancestor.percentageComplete(recursive=True),
+                type=ancestor.percentageCompleteChangedEventType(),
             )
 
     @staticmethod
@@ -1530,7 +1532,7 @@ class Task(
 
     @classmethod
     def percentageCompleteChangedEventType(class_):
-        return "pubsub.task.percentageComplete"
+        return "task.percentageComplete"
 
     # priority
 
@@ -2041,11 +2043,7 @@ class Task(
             type=event_type,
         )
         # It decides whether the recursive percentage counts this task
-        pub.sendMessage(
-            self.percentageCompleteChangedEventType(),
-            newValue=self.percentageComplete(),
-            sender=self,
-        )
+        self.percentage_complete_changed_event(event=event)
 
     @classmethod
     def shouldMarkCompletedWhenAllChildrenCompletedChangedEventType(class_):
