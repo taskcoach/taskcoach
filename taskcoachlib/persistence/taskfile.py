@@ -189,6 +189,39 @@ class SafeWriteFile(object):
         return _isCloud(os.path.dirname(self.__filename))
 
 
+_ATTACHMENT_CLASSES = (
+    attachment.FileAttachment,
+    attachment.URIAttachment,
+    attachment.MailAttachment,
+)
+
+
+def _saved_event_types():
+    """The Publisher events of saved data changing: an item's
+    modification date, an item added to or removed from another, a
+    category's filter."""
+    composites = (task.Task, category.Category, note.Note)
+    for cls in composites + (effort.Effort,) + _ATTACHMENT_CLASSES:
+        yield cls.modification_datetime_changed_event_type()
+    for cls in composites:
+        yield cls.addChildEventType()
+        yield cls.removeChildEventType()
+    for cls in (task.Task, category.Category) + _ATTACHMENT_CLASSES:
+        yield cls.notesChangedEventType()
+    for cls in composites:
+        yield cls.attachmentsChangedEventType()
+    yield category.Category.filterChangedEventType()
+
+
+# The same on pypubsub: efforts added or removed, expanded state
+_SAVED_TOPICS = (
+    task.Task.effortsChangedEventType(),
+    task.Task.expansionChangedEventType(),
+    category.Category.expansionChangedEventType(),
+    note.Note.expansionChangedEventType(),
+)
+
+
 class TaskFile(patterns.Observer):
     def __init__(self, *args, **kwargs):
         self.__filename = self.__lastFilename = ""
@@ -207,8 +240,9 @@ class TaskFile(patterns.Observer):
             self.__notifier = TaskCoachFilesystemNotifier(self)
         self.__saving = False
         super().__init__(*args, **kwargs)
-        # Register for tasks, categories, efforts and notes being changed so we
-        # can monitor when the task file needs saving (i.e. is 'dirty'):
+        # Unsaved (dirty) when saved data changes: an item's own data
+        # (every change sets its modification date), an item added or
+        # removed, saved view state (docs/PERSISTENCE_XML.md, Saving)
         for container in self.tasks(), self.categories(), self.notes():
             for eventType in container.modificationEventTypes():
                 self.registerObserver(
@@ -216,32 +250,10 @@ class TaskFile(patterns.Observer):
                     eventType,
                     eventSource=container,
                 )
-
-        for eventType in task.Task.modificationEventTypes():
-            if not eventType.startswith("pubsub"):
-                self.registerObserver(self.onTaskChanged_Deprecated, eventType)
-        pub.subscribe(self.on_task_changed, "pubsub.task")
-        for eventType in effort.Effort.modificationEventTypes():
-            self.registerObserver(self.onEffortChanged, eventType)
-        for eventType in note.Note.modificationEventTypes():
-            if not eventType.startswith("pubsub"):
-                self.registerObserver(self.onNoteChanged_Deprecated, eventType)
-        pub.subscribe(self.onNoteChanged, "pubsub.note")
-        for eventType in category.Category.modificationEventTypes():
-            if not eventType.startswith("pubsub"):
-                self.registerObserver(
-                    self.onCategoryChanged_Deprecated, eventType
-                )
-        pub.subscribe(self.onCategoryChanged, "pubsub.category")
-        for eventType in (
-            attachment.FileAttachment.modificationEventTypes()
-            + attachment.URIAttachment.modificationEventTypes()
-            + attachment.MailAttachment.modificationEventTypes()
-        ):
-            if not eventType.startswith("pubsub"):
-                self.registerObserver(
-                    self.onAttachmentChanged_Deprecated, eventType
-                )
+        for event_type in _saved_event_types():
+            self.registerObserver(self.on_saved_data_changed, event_type)
+        for topic in _SAVED_TOPICS:
+            pub.subscribe(self.on_saved_message, topic)
 
     def __str__(self):
         return self.filename()
@@ -282,80 +294,26 @@ class TaskFile(patterns.Observer):
             return
         self.markDirty()
 
-    def on_task_changed(self, newValue, sender, topic=pub.AUTO_TOPIC):
+    def on_saved_data_changed(self, event):
         if self.__loading or self.__saving:
             return
-        # The status is computed, not saved: the clock changing it
-        # changes nothing to save
-        if topic.getName() == task.Task.statusChangedEventType():
-            return
-        if sender in self.tasks():
+        if any(self.__holds(item) for item in event.sources()):
             self.markDirty()
 
-    def onTaskChanged_Deprecated(self, event):
-        if self.__loading:
-            return
-        changedTasks = [
-            changedTask
-            for changedTask in event.sources()
-            if changedTask in self.tasks()
-        ]
-        if changedTasks:
+    def on_saved_message(self, newValue, sender):
+        if not (self.__loading or self.__saving) and self.__holds(sender):
             self.markDirty()
 
-    def onEffortChanged(self, event):
-        if self.__loading or self.__saving:
-            return
-        changedEfforts = [
-            changedEffort
-            for changedEffort in event.sources()
-            if changedEffort.task() in self.tasks()
-        ]
-        if changedEfforts:
-            self.markDirty()
-
-    def onCategoryChanged_Deprecated(self, event):
-        if self.__loading or self.__saving:
-            return
-        changedCategories = [
-            changedCategory
-            for changedCategory in event.sources()
-            if changedCategory in self.categories()
-        ]
-        if changedCategories:
-            self.markDirty()
-
-    def onCategoryChanged(self, newValue, sender):
-        if self.__loading or self.__saving:
-            return
-        changedCategories = [
-            changedCategory
-            for changedCategory in [sender]
-            if changedCategory in self.categories()
-        ]
-        if changedCategories:
-            self.markDirty()
-
-    def onNoteChanged_Deprecated(self, event):
-        if self.__loading:
-            return
-        # A note may be in self.notes() or it may be a note of another
-        # domain object.
-        self.markDirty()
-
-    def onNoteChanged(self, newValue, sender):
-        if self.__loading:
-            return
-        # A note may be in self.notes() or it may be a note of another
-        # domain object.
-        self.markDirty()
-
-    def onAttachmentChanged_Deprecated(self, event):
-        if self.__loading:
-            return
-        # Attachments don't know their owner, so we can't check whether the
-        # attachment is actually in the task file. Assume it is.
-        self.markDirty()
+    def __holds(self, item):
+        """Whether the item is this file's. Owned notes and attachments
+        do not know their owner, so they are assumed to be."""
+        if isinstance(item, task.Task):
+            return item in self.tasks()
+        if isinstance(item, category.Category):
+            return item in self.categories()
+        if isinstance(item, effort.Effort):
+            return item.task() in self.tasks()
+        return True
 
     def setFilename(self, filename):
         if filename == self.__filename:
@@ -427,6 +385,8 @@ class TaskFile(patterns.Observer):
         dirty, and autosaved, whenever they change later."""
         self.stop()
         self.removeInstance()
+        for topic in _SAVED_TOPICS:
+            pub.unsubscribe(self.on_saved_message, topic)
 
     def _read(self, fd):
         reader = xml.XMLReader(fd)

@@ -455,9 +455,9 @@ Chain of work, each needing the one before (2026-09-27):
     File > Merge a union with the newest copy of each item
     ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)); more exact as
     12 progresses.
-14. The file marked unsaved only by stored fields' changes, not by
-    computed values such as the status (item 11 skips the status by
-    name for now); needs 12.
+14. Done: the file is marked unsaved by modification date changes,
+    items added or removed and saved view state, not by computed
+    values; the status is no longer skipped by name.
 
 Tried and dropped on 2026-09-27: one dirty flag running the full loop
 only after a change. It listened to every event, and a due reminder's

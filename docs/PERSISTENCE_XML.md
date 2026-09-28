@@ -212,10 +212,14 @@ diverge, data is silently lost.
 ## Saving
 
 Any change to saved data marks the file unsaved, and so starts an
-autosave. A task's status is computed, not saved: the clock changing
-it marks nothing, or every status change would save and re-read the
-file ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#steps)
-item 11).
+autosave: an item's own data (every change to it sets its
+modification date,
+[ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)), an
+item added or removed (to the file, or as a subitem, note, attachment
+or effort), and saved view state (expanded, a category's filter).
+Computed values, such as a task's status, set no date and mark
+nothing ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#steps)
+items 11 and 14).
 
 `TaskFile.save()` (`persistence/taskfile.py`) writes what is in
 memory; nothing on disk is merged ([Merging](#merging)).

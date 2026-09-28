@@ -278,8 +278,13 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.task.removeEffort(newEffort)
         self.assertTrue(self.taskFile.need_save())
 
-    def test_modification_date_alone_needs_no_save(self):
+    def test_modification_date_change_needs_save(self):
+        # Saved data: every change to an item's data sets it
         self.task.set_modification_datetime(date.Now())
+        self.assertTrue(self.taskFile.need_save())
+
+    def test_computed_change_needs_no_save(self):
+        self.task.setEffectiveFgColor(wx.RED, wx.BLACK, "category")
         self.assertFalse(self.taskFile.need_save())
 
     def test_need_save_after_planned_duration_change(self):
