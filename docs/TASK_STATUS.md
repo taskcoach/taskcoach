@@ -10,7 +10,7 @@
 4. [Architecture](#architecture)
    - [Stored Fields](#stored-fields)
    - [compute_status(): Single Source of Truth](#compute_status-single-source-of-truth-class-method)
-   - [compute_stored_status() — Instance Update Method](#computestoredstatus--instance-update-method)
+   - [compute_stored_status(): Instance Update Method](#compute_stored_status-instance-update-method)
    - [Event: statusChangedEventType](#event-statuschangedeventtype)
    - [Update Triggers](#update-triggers)
    - [Timer-Driven Updates (ComputeStyles)](#timer-driven-updates-computestyles)
@@ -291,7 +291,7 @@ def compute_status(cls, completion_dt, due_dt, actual_start_dt,
     return status.inactive, _("No actual start date")
 ```
 
-### compute_stored_status() — Instance Update Method
+### compute_stored_status(): Instance Update Method
 
 The `task.compute_stored_status()` instance method calls `compute_status()` with the task's
 actual values and stores the results in the task's fields.

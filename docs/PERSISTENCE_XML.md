@@ -287,8 +287,10 @@ item (`persistence/merge.py`).
   newest date of all its items wins; on a tie the
   open file keeps its copy. The merge gets more exact as more fields
   set the date.
-- Each item goes under the parent its winning copy names, so subitems
-  from both files end up together.
+- **Ruling, 2026-09-28:** a task's subtasks are the union of both
+  files'. Each item names its parent and goes under the parent its
+  winning copy names; a list of subitems is not data of its own and is
+  never replaced by one file's.
 - Notes, attachments and efforts are merged item by item too: each
   goes to the owner (and parent note) its winning copy names, so an
   edit to a task's note carries over even when the task's copy loses.
@@ -296,11 +298,11 @@ item (`persistence/merge.py`).
   (they own their categories; a category's members are the reverse),
   a task's prerequisites from its winning copy (dependencies are their
   reverse).
-- Merged items keep the dates and data of their winning copies:
-  rebuilding links is not an edit. A subtask list is derived from the
-  subtasks' parents, so the automatic parent rules (a parent completed
-  when all its subtasks are, reopened by an open subtask) do not run
-  while a merge rebuilds it (`Task.rebuilding_links()`).
+- A merge, like loading a file, is not an edit: each item is exactly
+  its winning copy. The parent rules react to edits only
+  ([SCHEDULERS.md](SCHEDULERS.md#ssot-principle-scheduler-vs-events)),
+  so a completed parent stays completed when an open subtask from the
+  other file joins it (`Task.rebuilding_links()`).
 - Deletions do not carry over: an item deleted in one file comes back
   from the other.
 

@@ -9,51 +9,21 @@ change), 2026-09-28 ([Cost After](#cost-after)); what is left:
 
 ## Remaining Work
 
-Everything left to do, in the proposed order (2026-09-28); the
-details are in the entries linked.
+What is left, in the proposed order (2026-09-28). pypubsub is gone:
+every signal is a Publisher event
+([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#migration-log)).
 
-The signals, after steps 12 to 14: everything moves to the Publisher,
-then pypubsub is removed
-([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#todo)):
-
-1. Done 2026-09-28: the domain's pypubsub messages, computed values
-   included, moved to the Publisher. The loop's hook lists what it
-   reads instead of whole topics (issue 5); the viewers, editors,
-   AttributeSync, sorters and filters lost their pypubsub branches;
-   issue 11 is fixed.
-2. Done 2026-09-28: the rest of pypubsub (the task file's,
-   settings', commands' and viewers' messages) moved to the Publisher,
-   and pypubsub is no longer a dependency.
-3. Done 2026-09-28: attachments re-sorted under their own classes'
-   event types (issue 6).
-
-The scheduler:
-
-4. Decided 2026-09-28, no change: one reminder window per due
-   reminder when a file opens, the loading freeze (step 10).
-5. Done 2026-09-28: the status bar counts after the clock changes a
-   status (issue 12).
-6. Done 2026-09-28: step 7, the legacy status and colours dropped.
-7. To review: the recursive priority computed by the loop, as the
+1. To review: the recursive priority computed by the loop, as the
    status is ([SCHEDULERS.md](SCHEDULERS.md#todo)).
-8. Not planned: the reason for each entry
-   ([Later](#later-the-reason-for-each-entry)).
-
-Found along the way:
-
-9. The undo log as object versions keyed by the modification date
+2. The undo log as object versions keyed by the modification date
    ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log), option C).
-10. Identity: domain objects compare equal by id, so a copy is taken
-    for the original where objects are tracked (issue 13; issue 11
-    fixed one case). One rule for all of them.
-11. Done 2026-09-28: File > Merge ran the parent rules while moving
-    subtasks (issue 9).
-12. `.delta` files left by older versions (issue 10).
-13. The task editor's Progress tab drawn twice, to check on a real
-    display (issue 7).
-14. Done 2026-09-28: the timing-dependent `EffortViewerTest` case
-    (issue 8).
-15. Sorting by the Status column (issue 14).
+3. Identity: one rule for comparing domain objects (issue 13).
+4. Sorting by the Status column, in the status sort order
+   ([TASK_STATUS_SORT.md](TASK_STATUS_SORT.md), issue 14).
+5. The task editor's Progress tab, to check on a real display
+   (issue 7).
+6. Not planned: the reason for each entry
+   ([Later](#later-the-reason-for-each-entry)).
 
 ## Master Design
 
@@ -150,16 +120,7 @@ Sweep, to leave nothing behind in this branch:
 - [x] `TimeDelta.max` and `min` in whole seconds, as `DateTime.max`:
   "time left" of a task without a due date still shows as infinite
 - [x] Tests no longer pass fractions, except those checking they are
-  dropped. Two task viewer tests counted on microseconds passing
-  between creating a task planned "now" and computing its status: in
-  whole seconds it becomes late the second after, so their tasks are
-  planned a second ago, as the other tests' tasks
-- [x] The real app: a generated file with 628 dates with fractions
-  loaded, autosaved (the first pass cleared the reminders of completed
-  tasks) and saved without any; statuses as before; logs still in
-  milliseconds
-- [x] The full unit suite: the same 28 known failures as master, none
-  new
+  dropped
 - Kept: `log_step()` and the other log timestamps; `perf_counter()`
   durations in traces; UI timer delays in milliseconds
 
@@ -293,8 +254,6 @@ Which signal covers each action:
 | Recurring task completed: `recur()` reopens it and moves its dates and reminder | Field changed |
 | Reminder set, changed, snoozed or cleared: editor, reminder dialog, completion of a non-recurring task | Field changed (reminder) |
 | Undo or redo of an edit: `__setstate__()` calls the setters | Field changed |
-| Disk changes merged: changed fields | Field changed (the setters) |
-| Disk changes merged: new tasks | Tasks added |
 | New task or subtask, paste, template, import, file opened, file merged, undo of a delete | Tasks added |
 | Due soon hours, Preferences | Due soon hours changed |
 | Delete, cut, undo of an add | None: the old seconds stay, find nothing and are removed when processed |
@@ -459,12 +418,10 @@ Each due second costs its pass and one more that finds nothing (the
    ([Data Changes](#data-changes),
    [the cascade ruling](#ruling-the-cascade-runs-through-the-heap)):
    done, with step 5.
-7. Done 2026-09-28: the legacy status and colours. Styles and the
-   status bar counts read `Task.status()`, which the loop updated
-   counting only the direct prerequisites, while `computedStatus()`
-   counts those of the ancestors too; that was their only difference.
-   They read `computedStatus()` now and the legacy status is gone
-   ([TASK_STATUS.md](TASK_STATUS.md#migration-path), `SchedulerTest`).
+7. Done 2026-09-28: one status. Styles and the status bar counts
+   read the legacy status, which ignored the ancestors' prerequisites;
+   they read `computedStatus()` now
+   ([TASK_STATUS.md](TASK_STATUS.md#migration-path)).
 
 Found along the way, 2026-09-27:
 
@@ -474,28 +431,17 @@ Found along the way, 2026-09-27:
    changed too. Removed with the rest of the SyncML leftovers
    ([PYTHON3_MIGRATION_4.md](PYTHON3_MIGRATION_4.md#backwards-compatibility)):
    done.
-9. Merging changes made by another instance ignores the actual start:
-   `Task.monitoredAttributes()` lacks `actualStartDateTime`, so the
-   change monitor never records it: added, with a test for the merge
-   and the save paths (`TaskFileTest`); done.
+9. Merging changes made by another instance ignored the actual start:
+   done, then made moot by step 13.
 
 10. Decided 2026-09-28, no change: the first pass after a file opens
-    opens one reminder window per due reminder, about 140 ms each:
-    with 2000 tasks, 134 windows made it 19 s, against 0.7 s without
-    them. Every reminder keeps its own window and the wait is
-    accepted ([REMINDERS.md](REMINDERS.md#overview)); windows opened
-    later, one per tick, would pop up while the user is clicking.
-11. With many statuses changing each minute (2000 tasks, dates within
-    60 minutes) the UI thread was busy 98% of the time, 96% in
-    autosave: a status change marked the file dirty, although the
-    status is computed and not saved, and each save re-read the file
-    to merge other instances' changes, where every categorized item
-    sent its own event and reset the viewers' category filter
-    (quadratic). Status changes no longer mark the file dirty, and the
-    reader resolves categories in one event: busy 11%, the passes
-    themselves; 28 then 54 ticks a minute instead of 5 to 10 (`py-spy`
-    on the real app, 120 s each): done. Since item 13 a save no longer
-    re-reads the file.
+    opens one reminder window per due reminder (19 s for 134 windows);
+    the wait is accepted ([REMINDERS.md](REMINDERS.md#overview)).
+11. Done: a status change marked the file dirty, and each autosave
+    re-read the file, so with statuses changing every minute the UI
+    thread was busy 98% ([Cost After](#cost-after)). A computed value
+    no longer marks the file dirty, and since step 13 a save no longer
+    reads the file.
 
 Chain of work, each needing the one before (2026-09-27):
 
@@ -559,51 +505,30 @@ Questions to decide:
 
 Issues found, not fixed:
 
-5. Fixed 2026-09-28: the loop ran a pass on every pypubsub task,
-   note and category message (the `pubsub.task` catch-all), computed
-   ones included, so a fee change ran one through its revenue message
-   and expanding a task ran one too. The messages are Publisher events
-   now and the hook lists what the loop reads (`SchedulerTest`).
-6. Fixed 2026-09-28: attachment re-sorting listened under the base
-   `Attachment` class's event types, while file, link and mail
-   attachments send under their own class names, so no change re-sorted
-   them. A sorter now listens to the events of each class it sorts
-   (`Sorter.sorted_classes()`, `SorterTest`).
-7. Task editor, Progress tab: a second percentage spin control and
-   slider are drawn over the tab labels (seen under Xvfb with
-   openbox; to check on a real display).
-8. Fixed 2026-09-28: `EffortViewerTest.testStatusMessage_OneTaskOneActiveEffort`
-   failed once: it expected 0:00:00 for an effort started when the
-   test starts, so a second boundary failed it. It accepts 0 or 1
-   second now (`test_status_message_one_task_one_active_effort`).
-9. Fixed 2026-09-28: File > Merge rebuilt the subtask lists with the
-   normal operations, so the parent rules ran during it: a merged
-   open subtask reopened a completed parent, and with "mark parent
-   completed" on, a parent could be completed for a moment, losing
-   its reminder. The lists are derived, so rebuilding them changes no
-   task (`Task.rebuilding_links()`, `TaskFileTest`).
-10. A `.delta` file left by an older version next to a task file is
-   ignored; nothing removes it.
-11. Fixed 2026-09-28: `EffortList` took effort changes of any task
-    equal to one of its tasks (same id), so a second task file holding
-    a copy of a task (File > Merge's) could leak efforts into the open
-    file's list. The effort list and the effort aggregator now take a
-    task's efforts message by identity (`EffortListTest`).
-12. Fixed 2026-09-28: the status bar's counts (overdue, late, ...)
-    were not refreshed when the clock changed a status: a task falling
-    due showed red but counted as overdue only after the next
-    selection change (also on 87d6ceed8, before this work). Task
-    viewers now send their status when a task's status changes
-    (`TaskViewerTest`).
-13. `Filter.reset()` (`domain/base/filter.py`) matches items by
-    equality, that is by id: loading over open items (no close
-    first) leaves the old objects in the viewers, as the loaded
-    copies are equal to them. Reload on a file changed on disk goes
-    through File > Open, which closes first, for this reason.
-14. Sorting by the Status or Status combo column finds no
-    `statusSortFunction` on `Task`, so the sorter falls back to the
-    subject (and logs it); the Status icon column does not sort. Also
-    before this work.
+5. Fixed: every task, note and category message ran a pass, computed
+   values included; the hook lists what the loop reads
+   ([Data Changes](#data-changes)).
+6. Fixed: file, link and mail attachments were not re-sorted, their
+   sorter listening under the base class's event types.
+7. Task editor, Progress tab: a second percentage control and slider
+   drawn over the tab labels, seen only under Xvfb; to check on a
+   real display.
+8. Fixed: an `EffortViewerTest` case depended on the second boundary.
+9. Fixed: File > Merge ran the parent rules
+   ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)).
+10. Decided: a `.delta` file left by an older version is ignored
+    ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)).
+11. Fixed: the effort list took the efforts of any task with its
+    task's id, a merged file's copy included; it compares identity.
+12. Fixed: the status bar counts ignored status changes made by the
+    clock.
+13. Domain objects compare equal by id, so a copy is taken for the
+    original where objects are tracked: `Filter.reset()` keeps the
+    old objects in the viewers when a file loads over open items
+    (reload closes first for this reason); issue 11 was one case.
+14. Sorting by the Status or Status combo column sorts by subject:
+    `Task` has no `statusSortFunction`. The Status icon column does
+    not sort.
 
 ---
 

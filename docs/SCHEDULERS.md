@@ -72,7 +72,7 @@ Task Coach uses scheduled/timed events for various features. This document descr
 | Responsibility | Mechanism | Example |
 |----------------|-----------|---------|
 | **TIME-based updates** | Scheduler (master timer list) | Status recomputation, reminders, styles |
-| **DATA-based cascades** | Events | Parent/child auto-completion; an open child reopens its completed parent |
+| **DATA-based cascades** | Events | Parent/child auto-completion; an open child reopens its completed parent. On edits only: loading or merging a file runs neither ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)) |
 
 **Why this matters:**
 
