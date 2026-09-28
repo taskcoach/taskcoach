@@ -72,37 +72,34 @@ class EffortTest(test.TestCase, asserts.Mixin):
         self.task.setFont(wx.SWISS_FONT)
         self.assertEqual(wx.SWISS_FONT, self.effort.font())
 
-    def testNotificationForSetStart(self):
-        events = []
+    def changes(self):
+        return [
+            (event.value(source), source)
+            for event in self.events
+            for source in event.sources()
+        ]
 
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, effort.Effort.startChangedEventType())
+    def test_notification_for_set_start(self):
+        self.registerObserver(effort.Effort.startChangedEventType())
         start = date.DateTime.now()
         self.effort.setStart(start)
-        self.assertEqual([(start, self.effort)], events)
+        self.assertEqual([(start, self.effort)], self.changes())
 
-    def testNotificationForSetStop(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, effort.Effort.stopChangedEventType())
+    def test_notification_for_set_stop(self):
+        self.registerObserver(effort.Effort.stopChangedEventType())
         stop = date.DateTime.now()
         self.effort.setStop(stop)
-        self.assertEqual([(stop, self.effort)], events)
+        self.assertEqual([(stop, self.effort)], self.changes())
 
-    def testNoNotificationForSetStopWhenNewStopEqualsOldStop(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, effort.Effort.stopChangedEventType())
+    def test_no_notification_for_an_unchanged_stop(self):
+        self.registerObserver(effort.Effort.stopChangedEventType())
         self.effort.setStop(self.effort.getStop())
-        self.assertFalse(events)
+        self.assertFalse(self.events)
+
+    def test_effort_change_sets_its_modification_date(self):
+        before = date.Now()
+        self.effort.setStart(date.DateTime(2004, 1, 1, 12, 0, 0))
+        self.assertTrue(before <= self.effort.modificationDateTime())
 
     def testDurationNotificationForSetStart(self):
         events = []

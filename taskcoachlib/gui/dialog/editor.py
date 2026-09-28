@@ -4317,17 +4317,16 @@ class EffortEditBook(Page):
 
         # Layer 2: Subscribe to domain entryMode and duration changes
         if len(self.items) == 1:
-            pub.subscribe(
+            patterns.Publisher().registerObserver(
                 self._on_domain_entry_mode_changed,
                 self.items[0].entryModeChangedEventType(),
+                eventSource=self.items[0],
             )
 
-    def _on_domain_entry_mode_changed(self, newValue, sender):
+    def _on_domain_entry_mode_changed(self, event):
         """Layer 2: Domain entryMode changed externally."""
-        if sender not in self.items:
-            return
         mode_index = {"standard": 0, "retroactive": 1, "implicit": 2}.get(
-            newValue, 0
+            self.items[0].entryMode(), 0
         )
         self._effort_entry_mode = mode_index
         self._effort_entry_mode_choice.SetSelection(mode_index)
@@ -4923,17 +4922,9 @@ class EffortEditBook(Page):
                     % (self.__class__.__name__, e),
                     prefix="DEAD-OBJ",
                 )
-            try:
-                pub.unsubscribe(
-                    self._on_domain_entry_mode_changed,
-                    self.items[0].entryModeChangedEventType(),
-                )
-            except Exception as e:
-                log_step(
-                    "unsubscribe failed in %s.close_edit_book: %s"
-                    % (self.__class__.__name__, e),
-                    prefix="DEAD-OBJ",
-                )
+            patterns.Publisher().removeObserver(
+                self._on_domain_entry_mode_changed
+            )
         # Stop the Time Spent clock
         self.__stop_time_spent_clock()
 

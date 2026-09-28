@@ -63,8 +63,8 @@ class EffortAggregator(
             self.observable().removeItemEventType(),
             eventSource=self.observable(),
         )
-        pub.subscribe(
-            self.onEffortStartChanged, effort.Effort.startChangedEventType()
+        patterns.Publisher().registerObserver(
+            self.on_effort_start_changed, effort.Effort.startChangedEventType()
         )
         patterns.Publisher().registerObserver(
             self.on_hourly_fee_changed, task.Task.hourlyFeeChangedEventType()
@@ -76,6 +76,7 @@ class EffortAggregator(
         patterns.Publisher().removeObserver(self.onChildRemovedFromTask)
         patterns.Publisher().removeObserver(self.onTaskRemoved)
         patterns.Publisher().removeObserver(self.on_hourly_fee_changed)
+        patterns.Publisher().removeObserver(self.on_effort_start_changed)
 
     def extend(self, efforts):  # pylint: disable=W0221
         for effort in efforts:
@@ -194,6 +195,10 @@ class EffortAggregator(
             # parent and child task have effort in the same period
             del self.__composites[key]
         self.__remove_composites_from_self([sender])
+
+    def on_effort_start_changed(self, event):
+        for sender in event.sources():
+            self.onEffortStartChanged(event.value(sender), sender)
 
     def onEffortStartChanged(self, newValue, sender):  # pylint: disable=W0613
         new_composites = []

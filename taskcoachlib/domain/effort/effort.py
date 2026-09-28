@@ -70,15 +70,6 @@ class Effort(baseeffort.BaseEffort, base.Object):
             self.taskChangedEventType(), newValue=task, sender=self
         )
 
-    def replace_task(self, task):
-        """Move the effort to task, the twin (same id) of the task it
-        was read from disk with, which is then discarded. Unlike
-        setTask(), the discarded task is not told: listeners match tasks
-        by id and would take its messages (e.g. tracking stopped) for
-        task's."""
-        self._task = weakref.ref(task)
-        task.addEffort(self)
-
     setParent = setTask  # FIXME: should we create a common superclass for Effort and Task?
 
     @classmethod
@@ -210,8 +201,8 @@ class Effort(baseeffort.BaseEffort, base.Object):
         self._start.set(startDateTime, event=event)
 
     def _onStartChanged(self, event):
-        pub.sendMessage(
-            self.startChangedEventType(), newValue=self.getStart(), sender=self
+        event.addSource(
+            self, self.getStart(), type=self.startChangedEventType()
         )
         task = self.task()
         if task:
@@ -219,7 +210,7 @@ class Effort(baseeffort.BaseEffort, base.Object):
 
     @classmethod
     def startChangedEventType(class_):
-        return "pubsub.effort.start"
+        return "effort.start"
 
     def setStop(self, newStop=None, event=None):
         if newStop is None:
@@ -247,13 +238,11 @@ class Effort(baseeffort.BaseEffort, base.Object):
                 task.sendTrackingChangedMessage(tracking=False)
         if task:
             task.sendTimeSpentChangedMessage()
-        pub.sendMessage(
-            self.stopChangedEventType(), newValue=new_stop, sender=self
-        )
+        event.addSource(self, new_stop, type=self.stopChangedEventType())
 
     @classmethod
     def stopChangedEventType(class_):
-        return "pubsub.effort.stop"
+        return "effort.stop"
 
     def isBeingTracked(self, recursive=False):  # pylint: disable=W0613
         return self._stop.get() is None
@@ -302,12 +291,10 @@ class Effort(baseeffort.BaseEffort, base.Object):
         self.__entryMode.set(mode, event=event)
 
     def _onEntryModeChanged(self, event):
-        pub.sendMessage(
-            self.entryModeChangedEventType(),
-            newValue=self.entryMode(),
-            sender=self,
+        event.addSource(
+            self, self.entryMode(), type=self.entryModeChangedEventType()
         )
 
     @classmethod
     def entryModeChangedEventType(class_):
-        return "pubsub.effort.entryMode"
+        return "effort.entryMode"
