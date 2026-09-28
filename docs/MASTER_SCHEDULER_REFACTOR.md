@@ -229,8 +229,7 @@ Checked in the code, 2026-09-27:
 - **The constructor** sends no change: the add event covers it. Every
   way a task enters the task file ends in `extend()` or `append()` on
   its task list: new task or subtask, paste, template, undo of a
-  delete, file opened or merged, disk changes from another instance
-  (`ChangeSynchronizer`), CSV and Todo.txt import. Commands given a
+  delete, file opened or merged, CSV and Todo.txt import. Commands given a
   viewer's list pass through to the task file's.
 - **The due soon hours** are the only setting in the time conditions;
   the reminder's 2 s is a constant.
@@ -451,9 +450,10 @@ Chain of work, each needing the one before (2026-09-27):
     ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)),
     field by field; with it the stored fields' changes move from
     pypubsub to the Publisher.
-13. Merging: the automatic merge with other instances removed, File >
-    Merge a union with the newest copy of each item
-    ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)); needs 12.
+13. Done: merging. The automatic merge with other instances removed,
+    File > Merge a union with the newest copy of each item
+    ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)); more exact as
+    12 progresses.
 14. The file marked unsaved only by stored fields' changes, not by
     computed values such as the status (item 11 skips the status by
     name for now); needs 12.

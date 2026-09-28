@@ -45,7 +45,6 @@ fileClose = _("Close the current file")
 fileQuit = _("Exit %s") % meta.name
 fileOpen = _("Open a %s file") % meta.name
 fileSave = _("Save the current file")
-fileMergeDiskChanges = _("Load what has changed on disk")
 fileSaveAs = _("Save the current file under a new name")
 help = _("Help about the program")  # pylint: disable=W0622
 mailItem = _("Mail the selected item(s), using your default mailer")

@@ -37,7 +37,6 @@ class AutoExporterTestCase(test.TestCase):
         del self.exporter
         for filename in (
             self.tskFilename,
-            self.tskFilename + ".delta",
             self.txtFilename,
             self.txtFilename + "-meta",
         ):

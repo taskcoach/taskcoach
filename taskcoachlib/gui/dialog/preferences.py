@@ -828,11 +828,6 @@ class SavePage(SettingsPage):
         )
         self.addBooleanSetting(
             "file",
-            "autoload",
-            _("Auto load when the file changes on disk"),
-        )
-        self.addBooleanSetting(
-            "file",
             "fspoll",
             _("Use polling for file monitoring"),
             _(

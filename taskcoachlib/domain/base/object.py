@@ -769,11 +769,6 @@ class CompositeObject(Object, patterns.ObservableComposite):
     def expansionChangedEvent(self, event):
         event.addSource(self, type=self.expansionChangedEventType())
 
-    # The ChangeMonitor expects this...
-    @classmethod
-    def expandedContextsChangedEventType(class_):
-        return class_.expansionChangedEventType()
-
     # Appearance:
 
     def appearanceChangedEvent(self, event):

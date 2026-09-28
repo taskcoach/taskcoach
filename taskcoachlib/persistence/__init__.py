@@ -19,8 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # This is the persistence package. It contains classes for reading and
 # writing domain objects in different formats such as XML, HTML, iCalendar, ...
 
-from .xml.writer import XMLWriter, TemplateXMLWriter, ChangesXMLWriter
-from .xml.reader import XMLReader, TemplateXMLReader, ChangesXMLReader
+from .xml.writer import XMLWriter, TemplateXMLWriter
+from .xml.reader import XMLReader, TemplateXMLReader
 from .xml.templates import getDefaultTemplates
 from .html.writer import HTMLWriter
 from .html.generator import viewer2html

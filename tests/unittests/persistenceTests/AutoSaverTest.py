@@ -48,7 +48,6 @@ class DummyTaskFile(persistence.TaskFile):
                 [task.Task()],
                 [category.Category("category")],
                 [],
-                {self.monitor().guid(): self.monitor()},
                 None,
             )
             return content, []  # No duplicate ids

@@ -147,7 +147,6 @@ _DEPRECATED_ICONS = {
     "undo": "nuvola_actions_edit-undo",
     "redo": "nuvola_actions_edit-redo",
     "save": "nuvola_devices_media-floppy",
-    "mergedisk": "nuvola_actions_go-top",
     "fileopen": "nuvola_actions_document-open",
     "note_icon": "nuvola_apps_knotes",
     "lock_locked_icon": "nuvola_actions_decrypted",

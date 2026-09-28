@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from .. import sessiontempfile  # pylint: disable=F0401
 from taskcoachlib import meta, patterns
 from taskcoachlib.meta.debug import log_step
-from taskcoachlib.changes import ChangeMonitor
 from taskcoachlib.domain import (
     base,
     date,
@@ -219,8 +218,8 @@ class XMLReader(object):
         }
 
     def read(self):
-        """Read the task file and return the tasks, categories, notes,
-        changes and GUID."""
+        """Read the task file and return the tasks, categories, notes
+        and GUID."""
         if self.__has_broken_lines():
             self.__fix_broken_lines()
         parser = PIParser()
@@ -256,15 +255,7 @@ class XMLReader(object):
             item.set_modification_datetime(modification_datetime, event=event)
         event.send()
 
-        changesName = self.__fd.name + ".delta"
-        if os.path.exists(changesName):
-            changes = ChangesXMLReader(
-                open(self.__fd.name + ".delta", "r", encoding="utf-8")
-            ).read()
-        else:
-            changes = dict()
-
-        return tasks, categories, notes, changes, guid
+        return tasks, categories, notes, guid
 
     def __has_broken_lines(self):
         """tskversion 24 may contain newlines in element tags."""
@@ -890,26 +881,6 @@ class XMLReader(object):
         """Save the modification date time of the item for later restore."""
         self.__modification_datetimes[item] = item.modificationDateTime()
         return item
-
-
-class ChangesXMLReader(object):
-    def __init__(self, fd):
-        self.__fd = fd
-
-    def read(self):
-        allChanges = dict()
-        tree = ET.parse(self.__fd)
-        for devNode in tree.getroot().findall("device"):
-            id_ = devNode.attrib["guid"]
-            mon = ChangeMonitor(id_)
-            for objNode in devNode.findall("obj"):
-                if objNode.text:
-                    changes = set(objNode.text.split(","))
-                else:
-                    changes = set()
-                mon.setChanges(objNode.attrib["id"], changes)
-            allChanges[id_] = mon
-        return allChanges
 
 
 class TemplateXMLReader(XMLReader):

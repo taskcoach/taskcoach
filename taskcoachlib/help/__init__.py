@@ -720,7 +720,6 @@ shortcuts are not configurable at the moment."""
             tr(_("Ctrl-J"), noteNew),
             tr(_("Ctrl-M (Linux and Windows)"), mailItem),
             tr(_("Shift-Ctrl-M (Mac OS X)"), mailItem),
-            tr(_("Shift-Ctrl-M"), fileMergeDiskChanges),
             tr(_("Ctrl-N (Linux and Mac OS X)"), taskNew),
             tr(
                 _("Shift-Ctrl-N (Linux and Mac OS X)"),

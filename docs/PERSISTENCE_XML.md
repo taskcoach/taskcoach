@@ -218,15 +218,10 @@ it marks nothing, or every status change would save and re-read the
 file ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#steps)
 item 11).
 
-`TaskFile.save()` (`persistence/taskfile.py`):
+`TaskFile.save()` (`persistence/taskfile.py`) writes what is in
+memory; nothing on disk is merged ([Merging](#merging)).
 
-1. Merges the changes other instances made to the file on disk
-   (`merge_disk_changes()`, using the `.delta` change log). Our own
-   changes are passed on to the other instances after that merge, as
-   it resolved them (an item deleted here but edited elsewhere is kept,
-   and not deleted there later). Changes caused by reading the file are
-   not recorded as local changes.
-2. Writes the XML through `SafeWriteFile`: to a temporary file next to
+1. It writes the XML through `SafeWriteFile`: to a temporary file next to
    the file, which replaces the file in one step (`os.replace`) only
    after the whole write, including the final flush, succeeded. The
    temporary file gets the file's mode first (not on Windows, where
@@ -235,16 +230,11 @@ item 11).
    (Dropbox, ownCloud) the file is written in place instead, from a
    buffer, once the XML is complete; a failure during that write can
    still truncate it.
-3. If writing fails, the file is left as it was (outside cloud
-   folders), and the local changes the merge consumed (deletions too)
-   are recorded again, so the next save neither loses them nor brings
-   deleted items back. The merge has already written the `.delta`, so
-   other instances may apply those changes anyway. File > Merge disk
-   changes, which merges without saving, keeps them recorded the same
-   way.
-4. Save As moves an existing file at the new name (and its `.delta`)
-   aside instead of deleting it, and puts it back if the save fails.
-   Save and merge errors are shown to the user. A failed autosave is
+2. If writing fails, the file is left as it was (outside cloud
+   folders).
+3. Save As moves an existing file at the new name aside instead of
+   deleting it, and puts it back if the save fails. Save and merge
+   errors are shown to the user. A failed autosave is
    logged and tried again every minute (the file stays marked unsaved
    in the title); when the retry fails too, a notification tells the
    user once.
@@ -255,18 +245,32 @@ Locking is described in [FILE_LOCKING.md](FILE_LOCKING.md).
 
 **Ruling, 2026-09-27:** one Task Coach per task file (the lock), so
 nothing is merged when saving. The automatic merge with other
-instances (`merge_disk_changes()` on every save, the change monitor
-and synchronizer, the `.delta` files, File > Merge disk changes, the
-`autoload` setting) is to be removed.
+instances is removed: `merge_disk_changes()` on every save, the change
+monitor and synchronizer, the `.delta` files, File > Merge disk
+changes and the `autoload` setting (which nothing read). A `.delta`
+file left by an older version is ignored.
 
 File > Merge stays, to merge another file on request: a union, item by
-item. Each item comes with its parent's ID, so subtasks from both files
-end up together; an item in both files (same ID) keeps its newest copy
-by modification date
-([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
-Deletions do not carry over: an item deleted in one file comes back
-from the other. Today File > Merge replaces an item in both files by
-the other file's copy, with its subtasks.
+item (`persistence/merge.py`).
+
+- An item in only one file is kept.
+- An item in both files (same ID) keeps its newer copy by
+  modification date
+  ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
+  When a copy has no date (files from before the dates were kept),
+  the file with the newest date of all its items wins; on a tie the
+  open file keeps its copy. The merge gets more exact as more fields
+  set the date.
+- Each item goes under the parent its winning copy names, so subitems
+  from both files end up together.
+- Category membership comes from the winning category copy, a task's
+  prerequisites from its winning copy (dependencies are their
+  reverse). Notes, attachments and efforts an item owns come with its
+  winning copy.
+- Merged items keep the dates of their winning copies: rebuilding
+  links is not an edit.
+- Deletions do not carry over: an item deleted in one file comes back
+  from the other.
 
 ---
 

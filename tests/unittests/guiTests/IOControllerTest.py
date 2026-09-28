@@ -67,8 +67,6 @@ class IOControllerTest(test.TestCase):
                 os.remove(filename)
             if os.path.exists(filename + ".lock"):
                 os.remove(filename + ".lock")
-            if os.path.exists(filename + ".delta"):
-                os.remove(filename + ".delta")
         super().tearDown()
 
     def doIOAndCheckRecentFiles(

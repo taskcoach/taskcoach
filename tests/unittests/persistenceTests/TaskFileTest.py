@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import glob
 import os
 import shutil
 import stat
@@ -85,8 +86,6 @@ class TaskFileTestCase(test.TestCase):
         self.remove(
             self.filename,
             self.filename2,
-            self.filename + ".delta",
-            self.filename2 + ".delta",
             self.filename + ".lock",
             self.filename2 + ".lock",
         )
@@ -814,7 +813,7 @@ class TaskFileSaveAndLoadTest(TaskFileTestCase):
         self.taskFile.load()
         self.assertEqual(1, len(self.taskFile.tasks()))
         self.taskFile.close()
-        self.remove("new.tsk", "new.tsk.delta")
+        self.remove("new.tsk")
 
     def testSaveAsOverwrites(self):
         self.taskFile.saveas("new.tsk")
@@ -823,7 +822,7 @@ class TaskFileSaveAndLoadTest(TaskFileTestCase):
         self.taskFile.saveas("new.tsk")
         self.assertEqual(1, len(self.taskFile.tasks()))
         self.taskFile.close()
-        self.remove("new.tsk", "new.tsk.delta")
+        self.remove("new.tsk")
 
 
 class TaskFileMergeTest(TaskFileTestCase):
@@ -831,11 +830,14 @@ class TaskFileMergeTest(TaskFileTestCase):
         super().setUp()
         self.mergeFile = persistence.TaskFile()
         self.mergeFile.setFilename("merge.tsk")
+        # The open file as last changed in 2020
+        for item in (self.task, self.category, self.note):
+            item.set_modification_datetime(date.DateTime(2020, 1, 1))
 
     def tearDown(self):
         self.mergeFile.close()
         self.mergeFile.stop()
-        self.remove("merge.tsk", "merge.tsk.delta")
+        self.remove("merge.tsk")
         super().tearDown()
 
     def merge(self):
@@ -861,13 +863,13 @@ class TaskFileMergeTest(TaskFileTestCase):
             pub.unsubscribe(on_filename_changed, "taskfile.filenameChanged")
         self.assertEqual([], names)
 
-    def test_merge_writes_nothing_next_to_the_merged_file(self):
-        # The merged file may be open in another Task Coach, which uses
-        # its .delta; merging must not rewrite it, even temporarily.
+    def test_merge_only_reads_the_merged_file(self):
+        # It may be open in another Task Coach
         self.mergeFile.save()
-        os.utime("merge.tsk.delta", ns=(10**18, 10**18))
+        os.utime("merge.tsk", ns=(10**18, 10**18))
         self.taskFile.merge("merge.tsk")
-        self.assertEqual(10**18, os.stat("merge.tsk.delta").st_mtime_ns)
+        self.assertEqual(10**18, os.stat("merge.tsk").st_mtime_ns)
+        self.assertEqual(["merge.tsk"], glob.glob("merge.tsk*"))
 
     def testMerge_TasksWithSubtask(self):
         parent = task.Task(subject="parent")
@@ -923,18 +925,164 @@ class TaskFileMergeTest(TaskFileTestCase):
         self.merge()
         self.assertEqual(2, len(self.taskFile.notes()))
 
-    def testMerge_SameTask(self):
-        mergedTask = task.Task(subject="merged task", id=self.task.id())
-        self.mergeFile.tasks().append(mergedTask)
-        self.merge()
-        self.assertEqual(1, len(self.taskFile.tasks()))
-        self.assertEqual(
-            "merged task", list(self.taskFile.tasks())[0].subject()
+    def their_copy(self, item, subject, modified):
+        return item.__class__(
+            subject=subject, id=item.id(), modificationDateTime=modified
         )
 
+    def test_newer_copy_wins(self):
+        self.task.set_modification_datetime(date.DateTime(2020, 1, 1))
+        self.mergeFile.tasks().append(
+            self.their_copy(self.task, "theirs", date.DateTime(2021, 1, 1))
+        )
+        self.merge()
+        self.assertEqual(
+            ["theirs"], [each.subject() for each in self.taskFile.tasks()]
+        )
+
+    def test_older_copy_loses(self):
+        self.task.set_modification_datetime(date.DateTime(2020, 1, 1))
+        self.mergeFile.tasks().append(
+            self.their_copy(self.task, "theirs", date.DateTime(2019, 1, 1))
+        )
+        self.merge()
+        self.assertEqual(
+            ["task"], [each.subject() for each in self.taskFile.tasks()]
+        )
+
+    def test_copies_within_one_second_are_ordered(self):
+        self.task.set_modification_datetime(
+            date.Timestamp(2020, 1, 1, 0, 0, 0, 500)
+        )
+        self.mergeFile.tasks().append(
+            self.their_copy(
+                self.task, "theirs", date.Timestamp(2020, 1, 1, 0, 0, 0, 501)
+            )
+        )
+        self.merge()
+        self.assertEqual(
+            ["theirs"], [each.subject() for each in self.taskFile.tasks()]
+        )
+
+    def test_undated_copy_follows_the_file_with_the_newest_date(self):
+        self.mergeFile.tasks().append(
+            self.their_copy(self.task, "theirs", date.DateTime.min)
+        )
+        self.mergeFile.notes().append(
+            note.Note(modificationDateTime=date.DateTime(2021, 1, 1))
+        )
+        self.merge()
+        merged = self.taskFile.tasks().getObjectById(self.task.id())
+        self.assertEqual("theirs", merged.subject())
+
+    def test_undated_copy_stays_when_the_open_file_is_newer(self):
+        self.note.set_modification_datetime(date.DateTime(2021, 1, 1))
+        self.mergeFile.tasks().append(
+            self.their_copy(self.task, "theirs", date.DateTime.min)
+        )
+        self.merge()
+        self.assertEqual(
+            ["task"], [each.subject() for each in self.taskFile.tasks()]
+        )
+
+    def test_without_dates_the_open_file_keeps_its_copy(self):
+        for item in (self.task, self.category, self.note):
+            item.set_modification_datetime(date.DateTime.min)
+        self.mergeFile.tasks().append(
+            self.their_copy(self.task, "theirs", date.DateTime.min)
+        )
+        self.merge()
+        self.assertEqual(
+            ["task"], [each.subject() for each in self.taskFile.tasks()]
+        )
+
+    def test_merged_items_keep_the_dates_of_their_copies(self):
+        mine = date.DateTime(2020, 1, 1)
+        theirs = date.DateTime(2021, 1, 1)
+        self.task.set_modification_datetime(mine)
+        self.task.addCategory(self.category)
+        self.category.addCategorizable(self.task)
+        self.category.set_modification_datetime(mine)
+        self.task.set_modification_datetime(mine)
+        self.mergeFile.notes().append(
+            self.their_copy(self.note, "theirs", theirs)
+        )
+        self.merge()
+        self.assertEqual(
+            [mine, mine, theirs],
+            [
+                self.task.modificationDateTime(),
+                self.category.modificationDateTime(),
+                list(self.taskFile.notes())[0].modificationDateTime(),
+            ],
+        )
+
+    def test_subtasks_from_both_files_end_up_together(self):
+        self.task.set_modification_datetime(date.DateTime(2020, 1, 1))
+        mine = task.Task(subject="mine", parent=self.task)
+        self.task.addChild(mine)
+        self.taskFile.tasks().append(mine)
+        parent = self.their_copy(
+            self.task, "theirs", date.DateTime(2021, 1, 1)
+        )
+        theirs = task.Task(subject="their subtask", parent=parent)
+        parent.addChild(theirs)
+        self.mergeFile.tasks().extend([parent, theirs])
+        self.merge()
+        merged = self.taskFile.tasks().getObjectById(self.task.id())
+        self.assertEqual(
+            ("theirs", ["mine", "their subtask"]),
+            (
+                merged.subject(),
+                sorted(child.subject() for child in merged.children()),
+            ),
+        )
+        self.assertEqual(3, len(self.taskFile.tasks()))
+
+    def test_item_moves_to_the_parent_its_newer_copy_names(self):
+        other_parent = task.Task(subject="other parent")
+        self.taskFile.tasks().append(other_parent)
+        child = task.Task(subject="child", parent=self.task)
+        self.task.addChild(child)
+        self.taskFile.tasks().append(child)
+        child.set_modification_datetime(date.DateTime(2020, 1, 1))
+        their_parent = task.Task(subject="other parent", id=other_parent.id())
+        their_child = self.their_copy(
+            child, "moved", date.DateTime(2021, 1, 1)
+        )
+        their_child.setParent(their_parent)
+        their_parent.addChild(their_child)
+        self.mergeFile.tasks().extend([their_parent, their_child])
+        self.merge()
+        merged = self.taskFile.tasks().getObjectById(child.id())
+        self.assertEqual(
+            ("moved", other_parent.id(), []),
+            (merged.subject(), merged.parent().id(), self.task.children()),
+        )
+
+    def test_prerequisites_point_to_the_winning_copies(self):
+        self.task.set_modification_datetime(date.DateTime(2020, 1, 1))
+        dependent = task.Task(subject="dependent")
+        self.taskFile.tasks().append(dependent)
+        dependent.addPrerequisites([self.task])
+        self.task.addDependencies([dependent])
+        self.mergeFile.tasks().append(
+            self.their_copy(self.task, "theirs", date.DateTime(2021, 1, 1))
+        )
+        self.merge()
+        winner = self.taskFile.tasks().getObjectById(self.task.id())
+        self.assertTrue(
+            [winner] == list(dependent.prerequisites())
+            and list(dependent.prerequisites())[0] is winner
+        )
+        self.assertEqual([dependent], list(winner.dependencies()))
+
     def testMerge_SameNote(self):
-        mergedNote = note.Note(subject="merged note", id=self.note.id())
-        self.mergeFile.notes().append(mergedNote)
+        self.mergeFile.notes().append(
+            self.their_copy(
+                self.note, "merged note", date.DateTime(2021, 1, 1)
+            )
+        )
         self.merge()
         self.assertEqual(1, len(self.taskFile.notes()))
         self.assertEqual(
@@ -942,15 +1090,33 @@ class TaskFileMergeTest(TaskFileTestCase):
         )
 
     def testMerge_SameCategory(self):
-        mergedCategory = category.Category(
-            subject="merged category", id=self.category.id()
+        self.mergeFile.categories().append(
+            self.their_copy(
+                self.category, "merged category", date.DateTime(2021, 1, 1)
+            )
         )
-        self.mergeFile.categories().append(mergedCategory)
         self.merge()
         self.assertEqual(1, len(self.taskFile.categories()))
         self.assertEqual(
             "merged category", list(self.taskFile.categories())[0].subject()
         )
+
+    def test_task_links_to_the_winning_category(self):
+        self.task.addCategory(self.category)
+        self.category.addCategorizable(self.task)
+        self.category.set_modification_datetime(date.DateTime(2020, 1, 1))
+        their_category = self.their_copy(
+            self.category, "merged category", date.DateTime(2021, 1, 1)
+        )
+        their_task = task.Task(subject="task", id=self.task.id())
+        their_category.addCategorizable(their_task)
+        their_task.addCategory(their_category)
+        self.mergeFile.categories().append(their_category)
+        self.mergeFile.tasks().append(their_task)
+        self.merge()
+        winner = list(self.taskFile.categories())[0]
+        self.assertIs(winner, list(self.task.categories())[0])
+        self.assertEqual("merged category", winner.subject())
 
     def testMerge_CategoryLinkedToTask(self):
         self.task.addCategory(self.category)
@@ -976,21 +1142,24 @@ class TaskFileMergeTest(TaskFileTestCase):
             self.category.id(), list(self.note.categories())[0].id()
         )
 
-    def testMerge_ExistingCategoryWithoutExistingSubCategoryRemovesTheSubCategory(
-        self,
-    ):
-        subCategory = category.Category("subcategory")
-        self.category.addChild(subCategory)
-        self.taskFile.categories().append(subCategory)
-        self.task.addCategory(subCategory)
-        subCategory.addCategorizable(self.task)
-        self.assertEqual(2, len(self.taskFile.categories()))
-        mergedCategory = category.Category(
-            "merged category", id=self.category.id()
+    def test_subcategory_missing_from_the_newer_copy_stays(self):
+        subcategory = category.Category("subcategory", parent=self.category)
+        self.category.addChild(subcategory)
+        self.taskFile.categories().append(subcategory)
+        self.task.addCategory(subcategory)
+        subcategory.addCategorizable(self.task)
+        self.mergeFile.categories().append(
+            self.their_copy(
+                self.category, "merged category", date.DateTime(2021, 1, 1)
+            )
         )
-        self.mergeFile.categories().append(mergedCategory)
         self.merge()
-        self.assertEqual(1, len(self.taskFile.categories()))
+        merged = list(self.taskFile.categories().rootItems())[0]
+        self.assertEqual(
+            ("merged category", [subcategory]),
+            (merged.subject(), merged.children()),
+        )
+        self.assertEqual([subcategory], list(self.task.categories()))
 
 
 class LockedTaskFileLockTest(TaskFileTestCase):
@@ -1075,34 +1244,21 @@ class LockedTaskFileLockTest(TaskFileTestCase):
             [name for name in os.listdir(".") if name.startswith("tmp-")]
         )
 
-    def test_failed_save_keeps_local_deletions(self):
+    def test_save_writes_memory_over_changes_on_disk(self):
+        # One Task Coach per file: saving merges nothing from the disk
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
+        other = persistence.TaskFile()
+        self.addCleanup(other.stop)
+        other.load(self.filename)
+        other.tasks().append(task.Task(subject="on disk"))
+        other.save()
+        other.close()
         self.taskFile.tasks().remove(self.task)
-        original = persistence.xml.XMLWriter.write
-
-        def write(*args, **kwargs):
-            raise IOError("disk full")
-
-        persistence.xml.XMLWriter.write = write
-        try:
-            with self.assertRaises(IOError):
-                self.taskFile.save()
-        finally:
-            persistence.xml.XMLWriter.write = original
         self.taskFile.save()
-        self.assertEqual(0, len(self.taskFile.tasks()))
         self.taskFile.close()
         self.emptyTaskFile.load(self.filename)
         self.assertEqual(0, len(self.emptyTaskFile.tasks()))
-
-    def test_merging_disk_changes_keeps_local_deletions(self):
-        self.taskFile.setFilename(self.filename)
-        self.taskFile.save()
-        self.taskFile.tasks().remove(self.task)
-        self.taskFile.merge_disk_changes()
-        self.taskFile.save()
-        self.assertEqual(0, len(self.taskFile.tasks()))
 
     def test_failed_save_as_keeps_the_file_it_would_replace(self):
         self.emptyTaskFile.setFilename(self.filename2)
@@ -1110,8 +1266,6 @@ class LockedTaskFileLockTest(TaskFileTestCase):
         self.emptyTaskFile.close()
         with open(self.filename2, "rb") as existing:
             content = existing.read()
-        with open(self.filename2 + ".delta", "rb") as existing:
-            changes = existing.read()
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.fail_writing()
@@ -1119,8 +1273,6 @@ class LockedTaskFileLockTest(TaskFileTestCase):
             self.taskFile.saveas(self.filename2)
         with open(self.filename2, "rb") as existing:
             self.assertEqual(content, existing.read())
-        with open(self.filename2 + ".delta", "rb") as existing:
-            self.assertEqual(changes, existing.read())
         self.assertFalse(
             [name for name in os.listdir(".") if name.startswith("tmp-")]
         )
@@ -1153,29 +1305,6 @@ class LockedTaskFileLockTest(TaskFileTestCase):
         with open(target, "rb") as saved:
             self.assertIn(self.task.id().encode(), saved.read())
 
-    def test_save_as_keeps_the_change_log_when_the_file_cannot_move(self):
-        self.emptyTaskFile.setFilename(self.filename2)
-        self.emptyTaskFile.save()
-        self.emptyTaskFile.close()
-        with open(self.filename2 + ".delta", "rb") as existing:
-            changes = existing.read()
-        original = os.replace
-
-        def replace(source, target):
-            # As on Windows while another program holds the file
-            if source == self.filename2:
-                raise PermissionError("in use")
-            original(source, target)
-
-        os.replace = replace
-        self.addCleanup(setattr, os, "replace", original)
-        self.taskFile.setFilename(self.filename)
-        self.taskFile.save()
-        with self.assertRaises(PermissionError):
-            self.taskFile.saveas(self.filename2)
-        with open(self.filename2 + ".delta", "rb") as existing:
-            self.assertEqual(changes, existing.read())
-
     def test_failed_save_as_keeps_the_name_and_the_lock(self):
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
@@ -1202,923 +1331,3 @@ class DetachedTaskFileTest(TaskFileTestCase):
         self.task.setSubject("no longer followed")
         self.assertFalse(selection.need_save())
         self.assertEqual([self.task], list(selection.tasks()))
-
-
-class TaskFileMonitorTestBase(TaskFileTestCase):
-    def setUp(self):
-        super().setUp()
-
-        self.taskFile.saveas(self.filename)
-        self.taskFile.load()
-
-        self.otherFile = persistence.TaskFile()
-        self.otherFile.setFilename(self.filename)
-        self.otherFile.load()
-
-    def tearDown(self):
-        self.otherFile.close()
-        self.otherFile.stop()
-        self.remove("other.tsk")
-        super().tearDown()
-
-    def testTaskExistsAfterLoad(self):
-        self.assertEqual(self.taskFile.monitor().getChanges(self.task), set())
-
-    def testCategoryExistsAfterLoad(self):
-        self.assertEqual(
-            self.taskFile.monitor().getChanges(self.category), set()
-        )
-
-    def testNoteExistsAfterLoad(self):
-        self.assertEqual(self.taskFile.monitor().getChanges(self.note), set())
-
-    def testChangeTask(self):
-        self.task.setSubject("New subject")
-        self.assertEqual(
-            self.taskFile.monitor().getChanges(self.task), set(["subject"])
-        )
-
-    def testChangeCategory(self):
-        self.category.setSubject("New subject")
-        self.assertEqual(
-            self.taskFile.monitor().getChanges(self.category), set(["subject"])
-        )
-
-    def testChangeNone(self):
-        self.note.setSubject("New subject")
-        self.assertEqual(
-            self.taskFile.monitor().getChanges(self.note), set(["subject"])
-        )
-
-    def testChangesResetAfterSave(self):
-        self.task.setSubject("New subject")
-        self.taskFile.save()
-        self.assertEqual(
-            self.taskFile.monitor().getChanges(self.task), set([])
-        )
-
-    def testResetAfterClose(self):
-        self.taskFile.close()
-        self.assertEqual(self.taskFile.monitor().getChanges(self.task), None)
-
-    def _loadChangesFromFile(self, filename):
-        return persistence.ChangesXMLReader(
-            open(filename + ".delta", "r")
-        ).read()
-
-    def testGUIDPresentAfterLoad(self):
-        self.assertTrue(
-            self.taskFile.monitor().guid()
-            in self._loadChangesFromFile(self.filename)
-        )
-
-    def testGUIDNotPresentAfterClose(self):
-        self.taskFile.close()
-        self.assertFalse(
-            self.taskFile.monitor().guid()
-            in self._loadChangesFromFile(self.filename)
-        )
-
-    def testChangeOtherSetsChanges(self):
-        self.otherFile.monitor().setChanges(self.task.id(), set(["subject"]))
-        self.otherFile.save()
-        allChanges = self._loadChangesFromFile(self.filename)
-        self.assertEqual(
-            allChanges[self.taskFile.monitor().guid()].getChanges(self.task),
-            set(["subject"]),
-        )
-        self.assertEqual(
-            allChanges[self.otherFile.monitor().guid()].getChanges(self.task),
-            set(),
-        )
-
-    def testDeleteObject(self):
-        self.otherFile.tasks().remove(self.otherFile.tasks().rootItems()[0])
-        self.otherFile.save()
-        allChanges = self._loadChangesFromFile(self.filename)
-        self.assertEqual(
-            allChanges[self.taskFile.monitor().guid()].getChanges(self.task),
-            set(["__del__"]),
-        )
-        self.assertEqual(
-            allChanges[self.otherFile.monitor().guid()].getChanges(self.task),
-            None,
-        )
-
-    def testDiskChangesAfterLoad(self):
-        changes = self._loadChangesFromFile(self.filename)[
-            self.taskFile.monitor().guid()
-        ]
-        self.assertEqual(changes.getChanges(self.task), set())
-
-    def testNewObject(self):
-        item = task.Task(subject="New task")
-        self.otherFile.tasks().append(item)
-        self.otherFile.save()
-        self.taskFile.save()
-        allChanges = self._loadChangesFromFile(self.filename)
-        self.assertEqual(
-            allChanges[self.otherFile.monitor().guid()].getChanges(item), set()
-        )
-        self.assertEqual(
-            allChanges[self.taskFile.monitor().guid()].getChanges(item), set()
-        )
-
-
-class TaskFileMultiUserTestBase(object):
-    def setUp(self):
-        self.createTaskFiles()
-
-        self.task = task.Task(subject="Task")
-        self.taskFile1.tasks().append(self.task)
-
-        self.category = category.Category(subject="Category")
-        self.taskFile1.categories().append(self.category)
-
-        self.note = note.Note(subject="Note")
-        self.taskFile1.notes().append(self.note)
-
-        self.taskNote = note.Note(subject="Task note")
-        self.task.addNote(self.taskNote)
-
-        self.attachment = attachment.FileAttachment("foobarfile")
-        self.task.addAttachment(self.attachment)
-
-        self.filename = "test.tsk"
-
-        self.taskFile1.setFilename(self.filename)
-        self.taskFile2.setFilename(self.filename)
-
-        self.taskFile1.save()
-        self.taskFile2.load()
-
-    def createTaskFiles(self):
-        # pylint: disable-msg=W0201
-        self.taskFile1 = persistence.TaskFile()
-        self.taskFile2 = persistence.TaskFile()
-
-    def tearDown(self):
-        self.taskFile1.close()
-        self.taskFile1.stop()
-        self.taskFile2.close()
-        self.taskFile2.stop()
-        self.remove(self.filename)
-
-    def remove(self, *filenames):
-        for filename in filenames:
-            tries = 0
-            while os.path.exists(filename) and tries < 3:
-                try:  # Don't fail on random 'Access denied' errors.
-                    os.remove(filename)
-                    break
-                except WindowsError:
-                    tries += 1
-
-    def _assertIdInList(self, objects, id_):
-        for obj in objects:
-            if obj.id() == id_:
-                break
-        else:
-            self.fail("ID %s not found" % id_)
-        return obj
-
-    def _testCreateObjectInOther(self, class_, listName):
-        newObject = class_(subject="New %s" % class_.__name__)
-        getattr(self.taskFile1, listName)().append(newObject)
-        self.taskFile2.monitor().resetAllChanges()
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        self.assertEqual(len(getattr(self.taskFile2, listName)()), 2)
-        self._assertIdInList(
-            getattr(self.taskFile2, listName)().rootItems(), newObject.id()
-        )
-
-    def testOtherCreatesCategory(self):
-        self._testCreateObjectInOther(category.Category, "categories")
-
-    def testOtherCreatesTask(self):
-        self._testCreateObjectInOther(task.Task, "tasks")
-
-    def testOtherCreatesNote(self):
-        self._testCreateObjectInOther(note.Note, "notes")
-
-    def _testCreateChildInOther(self, listName):
-        item = getattr(self.taskFile1, listName)().rootItems()[0]
-        subItem = item.newChild(subject="New sub%s" % item.__class__.__name__)
-        getattr(self.taskFile1, listName)().append(subItem)
-        item.addChild(subItem)
-        self.taskFile2.monitor().resetAllChanges()
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        self.assertEqual(len(getattr(self.taskFile2, listName)()), 2)
-        otherItem = getattr(self.taskFile2, listName)().rootItems()[0]
-        self.assertEqual(len(otherItem.children()), 1)
-        self.assertEqual(otherItem.children()[0].id(), subItem.id())
-
-    def testOtherCreatesSubcategory(self):
-        self._testCreateChildInOther("categories")
-
-    def testOtherCreatesSubtask(self):
-        self._testCreateChildInOther("tasks")
-
-    def testOtherCreatesSubnote(self):
-        self._testCreateChildInOther("notes")
-
-    def _testCreateObjectWithChildInOther(self, class_, listName):
-        item = class_(subject="New %s" % class_.__name__)
-        subItem = item.newChild(subject="New sub%s" % class_.__name__)
-        item.addChild(subItem)
-        getattr(self.taskFile1, listName)().append(item)
-        self.taskFile2.monitor().resetAllChanges()
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        self.assertEqual(len(getattr(self.taskFile2, listName)()), 3)
-        otherItem = self._assertIdInList(
-            getattr(self.taskFile2, listName)().rootItems(), item.id()
-        )
-        self.assertEqual(len(otherItem.children()), 1)
-        self.assertEqual(otherItem.children()[0].id(), subItem.id())
-
-    def testOtherCreatesCategoryWithChild(self):
-        self._testCreateObjectWithChildInOther(category.Category, "categories")
-
-    def testOtherCreatesTaskWithChild(self):
-        self._testCreateObjectWithChildInOther(task.Task, "tasks")
-
-    def testOtherCreatesNoteWithChild(self):
-        self._testCreateObjectWithChildInOther(note.Note, "notes")
-
-    def _testCreateObjectAndReparentExisting(self, listName):
-        item = getattr(self.taskFile1, listName)().rootItems()[0]
-        newItem = item.__class__(subject="New %s" % item.__class__.__name__)
-        getattr(self.taskFile1, listName)().append(newItem)
-        newItem.addChild(item)
-        item.setParent(newItem)
-        self.taskFile2.monitor().resetAllChanges()
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        self.assertEqual(len(getattr(self.taskFile2, listName)()), 2)
-        for otherItem in getattr(self.taskFile2, listName)().rootItems():
-            if otherItem.id() == newItem.id():
-                break
-        else:
-            self.fail()
-        self.assertEqual(len(otherItem.children()), 1)
-        self.assertEqual(otherItem.children()[0].id(), item.id())
-
-    def testOtherCreatesCategoryAndReparentsExisting(self):
-        self._testCreateObjectAndReparentExisting("categories")
-
-    def testOtherCreatesTaskAndReparentsExisting(self):
-        self._testCreateObjectAndReparentExisting("tasks")
-
-    def testOtherCreatesNoteAndReparentsExisting(self):
-        self._testCreateObjectAndReparentExisting("notes")
-
-    def _testChangeAttribute(self, name, value, listName):
-        obj = getattr(self.taskFile1, listName)().rootItems()[0]
-        getattr(obj, "set" + name[0].upper() + name[1:])(value)
-        self.taskFile2.monitor().resetAllChanges()
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        self.assertEqual(
-            getattr(
-                getattr(self.taskFile2, listName)().rootItems()[0], name
-            )(),
-            value,
-        )
-
-    def _testExpand(self, listName):
-        obj = getattr(self.taskFile1, listName)().rootItems()[0]
-        obj.expand()
-        self.taskFile2.monitor().resetAllChanges()
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        self.assertTrue(
-            getattr(self.taskFile2, listName)().rootItems()[0].isExpanded()
-        )
-
-    def testChangeCategoryName(self):
-        self._testChangeAttribute("subject", "New category name", "categories")
-
-    def testChangeCategoryDescription(self):
-        self._testChangeAttribute(
-            "description", "New category description", "categories"
-        )
-
-    def testExpandCategory(self):
-        self._testExpand("categories")
-
-    def testChangeTaskSubject(self):
-        self._testChangeAttribute("subject", "New task subject", "tasks")
-
-    def testChangeTaskDescription(self):
-        self._testChangeAttribute(
-            "description", "New task description", "tasks"
-        )
-
-    def testExpandTask(self):
-        self._testExpand("tasks")
-
-    def testChangeNoteSubject(self):
-        self._testChangeAttribute("subject", "New note subject", "notes")
-
-    def testChangeNoteDescription(self):
-        self._testChangeAttribute(
-            "description", "New note description", "notes"
-        )
-
-    def testChangeTaskStartDateTime(self):
-        self._testChangeAttribute(
-            "plannedStartDateTime", date.DateTime(2011, 6, 15), "tasks"
-        )
-
-    def testChangeTaskDueDateTime(self):
-        self._testChangeAttribute(
-            "dueDateTime", date.DateTime(2011, 7, 16), "tasks"
-        )
-
-    def test_change_task_actual_start_date_time(self):
-        self._testChangeAttribute(
-            "actualStartDateTime", date.DateTime(2011, 6, 20), "tasks"
-        )
-
-    def testChangeTaskCompletionDateTime(self):
-        self._testChangeAttribute(
-            "completionDateTime", date.DateTime(2011, 2, 1), "tasks"
-        )
-
-    def testChangeTaskPrecentageComplete(self):
-        self._testChangeAttribute("percentageComplete", 42, "tasks")
-
-    def testChangeTaskRecurrence(self):
-        self._testChangeAttribute(
-            "recurrence", date.Recurrence("daily", 3), "tasks"
-        )
-
-    def testChangeTaskReminder(self):
-        self._testChangeAttribute(
-            "reminder", date.DateTime(2999, 2, 1), "tasks"
-        )
-
-    def testChangeTaskBudget(self):
-        self._testChangeAttribute(
-            "budget", date.TimeDelta(seconds=60), "tasks"
-        )
-
-    def testChangeTaskPriority(self):
-        self._testChangeAttribute("priority", 42, "tasks")
-
-    def testChangeTaskHourlyFee(self):
-        self._testChangeAttribute("hourlyFee", 42, "tasks")
-
-    def testChangeTaskFixedFee(self):
-        self._testChangeAttribute("fixedFee", 42, "tasks")
-
-    def testChangeTaskShouldMarkCompletedWhenAllChildrenCompleted(self):
-        self._testChangeAttribute(
-            "shouldMarkCompletedWhenAllChildrenCompleted", False, "tasks"
-        )
-
-    def testExpandNote(self):
-        self._testExpand("notes")
-
-    def _testChangeAppearance(
-        self, listName, attrName, initialValue, newValue
-    ):
-        if "_" in attrName:  # snake_case accessors, e.g. icon_id
-            set_name = "set_" + attrName
-        else:
-            set_name = "set" + attrName[0].upper() + attrName[1:]
-        obj = getattr(self.taskFile1, listName)().rootItems()[0]
-        newObj = getattr(self.taskFile2, listName)().rootItems()[0]
-        getattr(obj, set_name)(initialValue)
-        getattr(newObj, set_name)(initialValue)
-        self.taskFile1.monitor().resetAllChanges()
-        self.taskFile2.monitor().resetAllChanges()
-        getattr(obj, set_name)(newValue)
-        self.taskFile2.monitor().resetAllChanges()
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        self.assertEqual(getattr(newObj, attrName)(), newValue)
-
-    def testChangeCategoryForeground(self):
-        self._testChangeAppearance(
-            "categories", "foregroundColor", (128, 128, 128), (255, 255, 0)
-        )
-
-    def testChangeCategoryBackground(self):
-        self._testChangeAppearance(
-            "categories", "backgroundColor", (128, 128, 128), (255, 255, 0)
-        )
-
-    def testChangeCategoryIcon(self):
-        self._testChangeAppearance(
-            "categories", "icon_id", "initialIcon", "finalIcon"
-        )
-
-    def testChangeCategorySelectedIcon(self):
-        self._testChangeAppearance(
-            "categories", "selected_icon_id", "initialIcon", "finalIcon"
-        )
-
-    def testChangeNoteForeground(self):
-        self._testChangeAppearance(
-            "notes", "foregroundColor", (128, 128, 128), (255, 255, 0)
-        )
-
-    def testChangeNoteBackground(self):
-        self._testChangeAppearance(
-            "notes", "backgroundColor", (128, 128, 128), (255, 255, 0)
-        )
-
-    def testChangeNoteIcon(self):
-        self._testChangeAppearance(
-            "notes", "icon_id", "initialIcon", "finalIcon"
-        )
-
-    def testChangeNoteSelectedIcon(self):
-        self._testChangeAppearance(
-            "notes", "selected_icon_id", "initialIcon", "finalIcon"
-        )
-
-    def testChangeTaskBackground(self):
-        self._testChangeAppearance(
-            "tasks", "backgroundColor", (128, 128, 128), (255, 255, 0)
-        )
-
-    def testChangeTaskIcon(self):
-        self._testChangeAppearance(
-            "tasks", "icon_id", "initialIcon", "finalIcon"
-        )
-
-    def testChangeTaskSelectedIcon(self):
-        self._testChangeAppearance(
-            "tasks", "selected_icon_id", "initialIcon", "finalIcon"
-        )
-
-    def testChangeExclusiveSubcategories(self):
-        self.category.makeSubcategoriesExclusive(True)
-        self.taskFile2.monitor().resetAllChanges()
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        self.assertTrue(
-            self.taskFile2.categories()
-            .rootItems()[0]
-            .hasExclusiveSubcategories()
-        )
-
-    def _testAddObjectCategory(self, listName):
-        obj = getattr(self.taskFile1, listName)().rootItems()[0]
-        obj.addCategory(self.category)
-        self.category.addCategorizable(obj)
-        self.taskFile2.monitor().resetAllChanges()
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        newObj = getattr(self.taskFile2, listName)().rootItems()[0]
-        self.assertEqual(len(newObj.categories()), 1)
-        self.assertEqual(newObj.categories().pop().id(), self.category.id())
-
-    def testAddNoteCategory(self):
-        self._testAddObjectCategory("notes")
-
-    def testAddTaskCategory(self):
-        self._testAddObjectCategory("tasks")
-
-    def _testChangeObjectCategory(self, listName):
-        self.category2 = category.Category(subject="Other category")
-        self.taskFile1.categories().append(self.category2)
-        obj = getattr(self.taskFile1, listName)().rootItems()[0]
-        obj.addCategory(self.category)
-        self.category.addCategorizable(obj)
-        self.taskFile1.save()
-        self.taskFile2.save()
-        # Load => CategoryList => addCategory()...
-        self.taskFile1.monitor().resetAllChanges()
-
-        self.category.removeCategorizable(obj)
-        obj.removeCategory(self.category)
-        self.category2.addCategorizable(obj)
-        obj.addCategory(self.category2)
-
-        self.taskFile1.save()
-        self.taskFile2.monitor().resetAllChanges()
-        self.doSave(self.taskFile2)
-
-        newObj = getattr(self.taskFile2, listName)().rootItems()[0]
-        self.assertEqual(len(newObj.categories()), 1)
-        self.assertEqual(newObj.categories().pop().id(), self.category2.id())
-
-    def testChangeNoteCategory(self):
-        self._testChangeObjectCategory("notes")
-
-    def testChangeTaskCategory(self):
-        self._testChangeObjectCategory("tasks")
-
-    def _testDeleteObject(self, listName):
-        item = getattr(self.taskFile1, listName)().rootItems()[0]
-        getattr(self.taskFile1, listName)().remove(item)
-        self.taskFile1.save()
-        self.taskFile2.monitor().setChanges(item.id(), set())
-        self.doSave(self.taskFile2)
-        self.assertEqual(len(getattr(self.taskFile1, listName)()), 0)
-        self.assertEqual(len(getattr(self.taskFile2, listName)()), 0)
-
-    def _testDeleteModifiedLocalObject(self, listName):
-        item = getattr(self.taskFile1, listName)().rootItems()[0]
-        getattr(self.taskFile1, listName)().remove(item)
-        self.taskFile1.save()
-        getattr(self.taskFile2, listName)().rootItems()[0].setSubject(
-            "New subject."
-        )
-        self.doSave(self.taskFile2)
-        self.assertEqual(len(getattr(self.taskFile2, listName)()), 1)
-
-    def _testDeleteModifiedRemoteObject(self, listName):
-        getattr(self.taskFile1, listName)().rootItems()[0].setSubject(
-            "New subject."
-        )
-        self.taskFile1.save()
-        item = getattr(self.taskFile2, listName)().rootItems()[0]
-        getattr(self.taskFile2, listName)().remove(item)
-        self.doSave(self.taskFile2)
-        self.assertEqual(len(getattr(self.taskFile2, listName)()), 1)
-        self.assertEqual(
-            getattr(self.taskFile2, listName)().rootItems()[0].subject(),
-            "New subject.",
-        )
-
-    def testDeleteCategory(self):
-        self._testDeleteObject("categories")
-
-    def testDeleteNote(self):
-        self._testDeleteObject("notes")
-
-    def testDeleteTask(self):
-        self._testDeleteObject("tasks")
-
-    def testDeleteModifiedLocalCategory(self):
-        self._testDeleteModifiedLocalObject("categories")
-
-    def testDeleteModifiedLocalNote(self):
-        self._testDeleteModifiedLocalObject("notes")
-
-    def testDeleteModifiedLocalTask(self):
-        self._testDeleteModifiedLocalObject("tasks")
-
-    def testDeleteModifiedRemoteCategory(self):
-        self._testDeleteModifiedRemoteObject("categories")
-
-    def testDeleteModifiedRemoteNote(self):
-        self._testDeleteModifiedRemoteObject("notes")
-
-    def testDeleteModifiedRemoteTask(self):
-        self._testDeleteModifiedRemoteObject("tasks")
-
-    def _testAddNoteToObject(self, listName):
-        newNote = note.Note(subject="Other note")
-        getattr(self.taskFile1, listName)().rootItems()[0].addNote(newNote)
-        noteCount = len(
-            getattr(self.taskFile1, listName)().rootItems()[0].notes()
-        )
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        self.assertEqual(
-            len(getattr(self.taskFile2, listName)().rootItems()[0].notes()),
-            noteCount,
-        )
-
-    def testAddNoteToTask(self):
-        self._testAddNoteToObject("tasks")
-
-    def testAddNoteToCategory(self):
-        self._testAddNoteToObject("categories")
-
-    def testAddNoteToAttachment(self):
-        newNote = note.Note(subject="Attachment note")
-        self.attachment.addNote(newNote)
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        self.assertEqual(
-            len(
-                self.taskFile2.tasks().rootItems()[0].attachments()[0].notes()
-            ),
-            1,
-        )
-
-    def _testAddAttachmentToObject(self, listName):
-        newAttachment = attachment.FileAttachment("Other attachment")
-        getattr(self.taskFile1, listName)().rootItems()[0].addAttachment(
-            newAttachment
-        )
-        attachmentCount = len(
-            getattr(self.taskFile1, listName)().rootItems()[0].attachments()
-        )
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        self.assertEqual(
-            len(
-                getattr(self.taskFile2, listName)()
-                .rootItems()[0]
-                .attachments()
-            ),
-            attachmentCount,
-        )
-
-    def testAddAttachmentToTask(self):
-        self._testAddAttachmentToObject("tasks")
-
-    def testAddAttachmentToCategory(self):
-        self._testAddAttachmentToObject("categories")
-
-    def testAddAttachmentToNote(self):
-        self._testAddAttachmentToObject("notes")
-
-    def _testRemoveNoteFromObject(self, listName):
-        newNote = note.Note(subject="Other note")
-        noteCount = len(
-            getattr(self.taskFile1, listName)().rootItems()[0].notes()
-        )
-        getattr(self.taskFile1, listName)().rootItems()[0].addNote(newNote)
-        self.taskFile2.monitor().resetAllChanges()
-        self.taskFile1.save()
-        self.taskFile2.save()
-
-        getattr(self.taskFile1, listName)().rootItems()[0].removeNote(newNote)
-        self.taskFile2.monitor().setChanges(newNote.id(), set())
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        self.assertEqual(
-            len(getattr(self.taskFile2, listName)().rootItems()[0].notes()),
-            noteCount,
-        )
-
-    def testRemoveNoteFromTask(self):
-        self._testRemoveNoteFromObject("tasks")
-
-    def testRemoveNoteFromCategory(self):
-        self._testRemoveNoteFromObject("categories")
-
-    def testRemoveNoteFromAttachment(self):
-        newNote = note.Note(subject="Attachment note")
-        self.attachment.addNote(newNote)
-        self.taskFile1.save()
-        self.taskFile2.save()
-
-        self.taskFile1.tasks().rootItems()[0].attachments()[0].removeNote(
-            newNote
-        )
-        self.taskFile2.monitor().setChanges(newNote.id(), set())
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        self.assertEqual(
-            len(
-                self.taskFile2.tasks().rootItems()[0].attachments()[0].notes()
-            ),
-            0,
-        )
-
-    def _testRemoveAttachmentFromObject(self, listName):
-        newAttachment = attachment.FileAttachment("Other attachment")
-        attachmentCount = len(
-            getattr(self.taskFile1, listName)().rootItems()[0].attachments()
-        )
-        getattr(self.taskFile1, listName)().rootItems()[0].addAttachment(
-            newAttachment
-        )
-        self.taskFile2.monitor().resetAllChanges()
-        self.taskFile1.save()
-        self.taskFile2.save()
-
-        getattr(self.taskFile1, listName)().rootItems()[0].removeAttachment(
-            newAttachment
-        )
-        self.taskFile2.monitor().setChanges(newAttachment.id(), set())
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        self.assertEqual(
-            len(
-                getattr(self.taskFile2, listName)()
-                .rootItems()[0]
-                .attachments()
-            ),
-            attachmentCount,
-        )
-
-    def testRemoveAttachmentFromTask(self):
-        self._testRemoveAttachmentFromObject("tasks")
-
-    def testRemoveAttachmentFromCategory(self):
-        self._testRemoveAttachmentFromObject("categories")
-
-    def testRemoveAttachmentFromNote(self):
-        self._testRemoveAttachmentFromObject("notes")
-
-    def testChangeNoteBelongingToTask(self):
-        self.taskNote.setSubject("New subject")
-        self.taskFile2.monitor().resetAllChanges()
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        self.assertEqual(
-            self.taskFile2.tasks().rootItems()[0].notes()[0].subject(),
-            "New subject",
-        )
-
-    def testChangeAttachmentBelongingToTask(self):
-        self.attachment.setLocation("new location")
-        self.taskFile2.monitor().resetAllChanges()
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        self.assertEqual(
-            self.taskFile2.tasks().rootItems()[0].attachments()[0].location(),
-            "new location",
-        )
-
-    def testAddChildToNoteBelongingToTask(self):
-        subNote = self.taskNote.newChild(subject="Child note")
-        self.taskNote.addChild(subNote)
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        self.assertEqual(
-            len(self.taskFile2.tasks().rootItems()[0].notes()[0].children()), 1
-        )
-
-    def testRemoveChildToNoteBelongingToTask(self):
-        subNote = self.taskNote.newChild(subject="Child note")
-        self.taskNote.addChild(subNote)
-        self.taskFile1.save()
-        self.taskFile2.save()
-
-        self.taskNote.removeChild(subNote)
-        self.taskFile2.monitor().setChanges(subNote.id(), set())
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        self.assertEqual(
-            len(self.taskFile2.tasks().rootItems()[0].notes()[0].children()), 0
-        )
-
-    def testAddCategorizedNoteBelongingToOtherCategory(self):
-        # Categories should be handled in priority...
-        cat1 = category.Category(subject="Cat #1")
-        cat2 = category.Category(subject="Cat #2")
-        newNote = note.Note(subject="Note")
-        cat1.addNote(newNote)
-        newNote.addCategory(cat2)
-        cat2.addCategorizable(newNote)
-        self.taskFile2.monitor().resetAllChanges()
-        self.taskFile1.save()
-        try:
-            self.doSave(self.taskFile2)
-        except Exception as e:
-            self.fail(str(e))
-
-    def test_edit_elsewhere_wins_over_local_deletion(self):
-        # taskFile1 deletes the task, taskFile2 edits it and saves; the
-        # edit wins, and taskFile1 must not delete the task again later.
-        self.taskFile1.tasks().remove(self.task)
-        self.taskFile2.tasks().rootItems()[0].setSubject("Edited")
-        self.taskFile2.save()
-        self.doSave(self.taskFile1)
-        self.taskFile1.save()
-        self.taskFile2.save()
-        self.assertEqual(
-            ["Edited"],
-            [
-                tsk.subject()
-                for tsk in self.taskFile2.tasks()
-                if tsk.id() == self.task.id()
-            ],
-        )
-
-    def testAddEffortToTask(self):
-        newEffort = effort.Effort(
-            self.task, date.DateTime(2011, 5, 1), date.DateTime(2011, 6, 1)
-        )
-        self.task.addEffort(newEffort)
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        self.assertEqual(
-            newEffort.id(),
-            self.taskFile2.tasks().rootItems()[0].efforts()[0].id(),
-        )
-
-    def testRemoveEffortFromTask(self):
-        newEffort = effort.Effort(
-            self.task, date.DateTime(2011, 5, 1), date.DateTime(2011, 6, 1)
-        )
-        self.task.addEffort(newEffort)
-        self.taskFile1.save()
-        self.taskFile2.save()
-        self.task.removeEffort(newEffort)
-        self.taskFile2.monitor().setChanges(newEffort.id(), set())
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        self.assertEqual(
-            len(self.taskFile2.tasks().rootItems()[0].efforts()), 0
-        )
-
-    def testChangeEffortTask(self):
-        newTask = task.Task(subject="Other task")
-        self.taskFile1.tasks().append(newTask)
-        newEffort = effort.Effort(
-            self.task, date.DateTime(2011, 5, 1), date.DateTime(2011, 6, 1)
-        )
-        self.task.addEffort(newEffort)
-        self.taskFile1.save()
-        self.taskFile2.save()
-        newEffort.setTask(newTask)
-        self.taskFile2.monitor().setChanges(newEffort.id(), set())
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        for theTask in self.taskFile2.tasks():
-            if theTask.id() == newTask.id():
-                self.assertEqual(len(theTask.efforts()), 1)
-                break
-        else:
-            self.fail()
-
-    def testChangeEffortStart(self):
-        newEffort = effort.Effort(
-            self.task, date.DateTime(2011, 5, 1), date.DateTime(2011, 6, 1)
-        )
-        self.task.addEffort(newEffort)
-        self.taskFile1.save()
-        self.taskFile2.save()
-        # This is needed because the setTask in sync() generates a DEL event
-        self.taskFile1.monitor().setChanges(newEffort.id(), set())
-        newDate = date.DateTime(2010, 6, 1)
-        newEffort.setStart(newDate)
-        self.taskFile2.monitor().resetAllChanges()
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        self.assertEqual(
-            self.taskFile2.tasks().rootItems()[0].efforts()[0].getStart(),
-            newDate,
-        )
-
-    def testChangeEffortStop(self):
-        newEffort = effort.Effort(
-            self.task, date.DateTime(2011, 5, 1), date.DateTime(2011, 6, 1)
-        )
-        self.task.addEffort(newEffort)
-        self.taskFile1.save()
-        self.taskFile2.save()
-        # This is needed because the setTask in sync() generates a DEL event
-        self.taskFile1.monitor().setChanges(newEffort.id(), set())
-        newDate = date.DateTime(2012, 6, 1)
-        newEffort.setStop(newDate)
-        self.taskFile2.monitor().resetAllChanges()
-        self.taskFile1.save()
-        self.doSave(self.taskFile2)
-        self.assertEqual(
-            self.taskFile2.tasks().rootItems()[0].efforts()[0].getStop(),
-            newDate,
-        )
-
-    def testAddPrerequisite(self):
-        newTask = task.Task(subject="Prereq")
-        self.taskFile1.tasks().append(newTask)
-        self.taskFile2.save()
-        self.task.addPrerequisites([newTask])
-        self.taskFile2.load()
-        self.taskFile1.save()
-        self.taskFile2.monitor().resetAllChanges()
-        self.doSave(self.taskFile2)
-
-        for tsk in self.taskFile2.tasks():
-            if tsk.id() == self.task.id():
-                self.assertEqual(len(tsk.prerequisites()), 1)
-                self.assertEqual(
-                    list(tsk.prerequisites())[0].id(), newTask.id()
-                )
-                break
-        else:
-            self.fail()
-
-    def testRemovePrerequisite(self):
-        newTask = task.Task(subject="Prereq")
-        self.taskFile1.tasks().append(newTask)
-        self.task.addPrerequisites([newTask])
-        self.taskFile1.save()
-        self.taskFile2.load()
-        self.task.removePrerequisites([newTask])
-        self.taskFile1.save()
-        self.taskFile2.monitor().resetAllChanges()
-        self.doSave(self.taskFile2)
-
-        for tsk in self.taskFile2.tasks():
-            if tsk.id() == self.task.id():
-                self.assertEqual(len(tsk.prerequisites()), 0)
-                break
-        else:
-            self.fail()
-
-
-class TaskFileMultiUserTestSave(TaskFileMultiUserTestBase, TaskFileTestCase):
-    def doSave(self, taskFile):
-        taskFile.save()
-
-
-class TaskFileMultiUserTestMerge(TaskFileMultiUserTestBase, TaskFileTestCase):
-    def doSave(self, taskFile):
-        taskFile.merge_disk_changes()

@@ -120,9 +120,6 @@ class IOController(object):
     def need_save(self):
         return self.__task_file.need_save()
 
-    def changed_on_disk(self):
-        return self.__task_file.changed_on_disk()
-
     def open_after_start(self, command_line_args, early_lock_result=None):
         """Open either the file specified on the command line, or the file
         the user was working on previously, or none at all.
@@ -253,18 +250,6 @@ class IOController(object):
         if self.__task_file.need_save():
             return self.__save_unsaved_changes(question)
         return True
-
-    def merge_disk_changes(self):
-        try:
-            self.__task_file.merge_disk_changes()
-        except Exception as reason:  # pylint: disable=W0703
-            filename = self.__task_file.filename()
-            log_step("cannot merge %s" % filename, prefix="FILE", exc=True)
-            wx.MessageBox(
-                _("Cannot merge the changes on disk of %s\n%s")
-                % (filename, str(reason) or type(reason).__name__),
-                **self.__error_message_options
-            )
 
     def save_as(
         self,

@@ -785,7 +785,6 @@ continuous polling overhead.
 | `SelectAll` | selection | menu-open → `command.enabled()` |
 | `ToggleCategory` | selection | menu-open → `command.enabled()` + `checked()` |
 | `FileSave` | dirty state | `taskfile.dirty`/`taskfile.clean` pubsub → `command.enabled()` |
-| `FileMergeDiskChanges` | disk change | `taskfile.changed`/dirty/clean pubsub → `command.enabled()` |
 | `ViewerHideCompositeTasks` | tree mode | menu-open → `command.enabled()` + `checked()` |
 | `EditTrackedTasks` | tracking | menu-open → `command.enabled()` |
 | `EditUndo` | history | `commandhistory.changed` Publisher event → `command.enabled()` |

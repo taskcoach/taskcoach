@@ -371,26 +371,6 @@ class XMLWriter(object):
         return dateTime.strftime("%Y-%m-%d %H:%M:%S")
 
 
-class ChangesXMLWriter(object):
-    def __init__(self, fd):
-        self.__fd = fd
-
-    def write(self, allChanges):
-        root = ET.Element("changes")
-        if allChanges:
-            for devName, monitor in list(allChanges.items()):
-                devNode = ET.SubElement(root, "device")
-                devNode.attrib["guid"] = monitor.guid()
-                for id_, changes in list(monitor.allChanges().items()):
-                    objNode = ET.SubElement(devNode, "obj")
-                    objNode.attrib["id"] = id_
-                    if changes:
-                        objNode.text = ",".join(list(changes))
-
-        tree = ET.ElementTree(root)
-        tree.write(self.__fd)
-
-
 class TemplateXMLWriter(XMLWriter):
     def write(self, tsk):  # pylint: disable=W0221
         super().write(

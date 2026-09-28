@@ -521,7 +521,6 @@ defaults = {
         "maxrecentfiles": "9",
         "lastfile": "",
         "autosave": "True",
-        "autoload": "False",
         # Formats to automatically import from, only "Todo.txt" supported at this
         # time:
         "autoimport": "[]",

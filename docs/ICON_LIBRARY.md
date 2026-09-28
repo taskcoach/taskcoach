@@ -850,7 +850,6 @@ future icon renames or consolidations.
 | `undo` | `nuvola_actions_edit-undo` | Undo arrow (main toolbar) |
 | `redo` | `nuvola_actions_edit-redo` | Redo arrow (main toolbar) |
 | `save` | `nuvola_devices_media-floppy` | Floppy disk/save (main toolbar) |
-| `mergedisk` | `nuvola_actions_go-top` | Merge disk changes (main toolbar) |
 | `fileopen` | `nuvola_actions_document-open` | File open folder (main toolbar) |
 | `calendar_icon` | `nuvola_apps_date` | Calendar |
 | `graph_icon` | `nuvola_apps_kchart` | Chart/graph |
@@ -1084,20 +1083,19 @@ Search ALL code for the legacy icon name. Every reference must be accounted for:
    **Main toolbar icons require 16, 22, AND 32px.** The main toolbar
    (`MainToolBar`) is user-resizable via View > Toolbar menu: Small (16×16),
    Medium (22×22, default), Large (32×32). If the migrated icon is any of
-   these 10 main toolbar commands, import all 3 sizes from the distillery:
+   these 9 main toolbar commands, import all 3 sizes from the distillery:
 
    | # | Command class | Current bitmap= |
    |---|---------------|-----------------|
    | 1 | FileOpen | `fileopen` |
    | 2 | FileSave | `save` |
-   | 3 | FileMergeDiskChanges | `mergedisk` |
-   | 4 | Print | `print` |
-   | 5 | EditUndo | `undo` |
-   | 6 | EditRedo | `redo` |
-   | 7 | EffortStartButton | `taskcoach_actions_clock_menu_icon` |
-   | 8 | EffortStop | `taskcoach_actions_clock_resume_icon` |
-   | 9 | EditToolBarPerspective | `nuvola_apps_preferences-system-session-services` |
-   | 10 | ToggleAutoScroll | `oxygen_actions_align-vertical-center` (16/22/32/48 imported) |
+   | 3 | Print | `print` |
+   | 4 | EditUndo | `undo` |
+   | 5 | EditRedo | `redo` |
+   | 6 | EffortStartButton | `taskcoach_actions_clock_menu_icon` |
+   | 7 | EffortStop | `taskcoach_actions_clock_resume_icon` |
+   | 8 | EditToolBarPerspective | `nuvola_apps_preferences-system-session-services` |
+   | 9 | ToggleAutoScroll | `oxygen_actions_align-vertical-center` (16/22/32/48 imported) |
 
    (Defined in `mainwindow.py:434` + auto-appended at `toolbar.py:144`)
 

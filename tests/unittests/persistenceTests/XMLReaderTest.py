@@ -127,18 +127,18 @@ class XMLReaderTestCase(test.TestCase):
         return self.writeAndRead(xml_contents)[2]
 
     def writeAndReadGUID(self, xml_contents):
-        return self.writeAndRead(xml_contents)[4]
+        return self.writeAndRead(xml_contents)[3]
 
     def writeAndReadTasksAndCategories(self, xml_contents):
-        tasks, categories, _, _, _ = self.writeAndRead(xml_contents)
+        tasks, categories, _, _ = self.writeAndRead(xml_contents)
         return tasks, categories
 
     def writeAndReadTasksAndCategoriesAndNotes(self, xml_contents):
-        tasks, categories, notes, _, _ = self.writeAndRead(xml_contents)
+        tasks, categories, notes, _ = self.writeAndRead(xml_contents)
         return tasks, categories, notes
 
     def writeAndReadCategoriesAndNotes(self, xml_contents):
-        _, categories, notes, _, _ = self.writeAndRead(xml_contents)
+        _, categories, notes, _ = self.writeAndRead(xml_contents)
         return categories, notes
 
 
@@ -172,7 +172,6 @@ class TempFileLockTest(XMLReaderTestCase):
             )
             try:
                 os.remove(self.__filename)
-                os.remove(self.__filename + ".delta")
             except OSError:
                 pass  # File removal may fail on Windows
 

@@ -273,35 +273,6 @@ class FileSave(IOCommand):
         return self.iocontroller.need_save()
 
 
-class FileMergeDiskChanges(IOCommand):
-    def __init__(self, *args, **kwargs):
-        super().__init__(
-            menu_text=_("Merge &disk changes\tShift-Ctrl-M"),
-            help_text=help.fileMergeDiskChanges,
-            icon_id="nuvola_actions_go-top",
-            *args,
-            **kwargs
-        )
-
-    def append_to_toolbar(self, *args, **kwargs):
-        super().append_to_toolbar(*args, **kwargs)
-        for topic in ("taskfile.changed", "taskfile.dirty", "taskfile.clean"):
-            pub.subscribe(self._on_file_state_changed, topic)
-
-    def _on_file_state_changed(self, taskFile):
-        try:
-            self.toolbar.EnableTool(self.id, self.enabled(None))
-            self.toolbar.Refresh(False)
-        except RuntimeError:
-            pass
-
-    def do_command(self, event):
-        self.iocontroller.merge_disk_changes()
-
-    def enabled(self, event):
-        return self.iocontroller.changed_on_disk()
-
-
 class FileSaveAs(IOCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(

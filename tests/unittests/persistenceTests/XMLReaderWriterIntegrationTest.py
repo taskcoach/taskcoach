@@ -34,14 +34,12 @@ class IntegrationTestCase(test.TestCase):
         self.taskList = task.TaskList()
         self.categories = category.CategoryList()
         self.notes = note.NoteContainer()
-        self.changes = dict()
         self.guid = "GUID"
         self.fillContainers()
-        tasks, categories, notes, changes, guid = self.readAndWrite()
+        tasks, categories, notes, guid = self.readAndWrite()
         self.tasksWrittenAndRead = task.TaskList(tasks)
         self.categoriesWrittenAndRead = category.CategoryList(categories)
         self.notesWrittenAndRead = note.NoteContainer(notes)
-        self.changesWrittenAndRead = changes
         self.guidWrittenAndRead = guid
 
     def fillContainers(self):
