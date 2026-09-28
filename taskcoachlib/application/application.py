@@ -742,10 +742,9 @@ class Application(object, metaclass=patterns.Singleton):
             wx.Log.SetLogLevel(wx.LOG_Info)
             wx.Log.SetVerbose(True)
 
+        # WindowDimensionsTracker places the window once it is shown,
+        # see docs/WINDOW_GEOMETRY.md
         self.mainwindow.Show()
-        # Position correction is handled automatically by
-        # WindowDimensionsTracker via EVT_MOVE detection until
-        # EVT_ACTIVATE fires (window ready for input)
         # Use native wxPython main loop instead of Twisted reactor
         # NOTE: Previously used reactor.run() with wxreactor integration.
         # Now using wx.App.MainLoop() directly for simpler event handling.

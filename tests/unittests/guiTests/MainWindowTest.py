@@ -151,6 +151,7 @@ class MainWindowNotMaximizedTest(MainWindowMaximizeTestCase):
         self.mainwindow.Maximize()
         if operating_system.isWindows():
             wx.Yield()
+        self.mainwindow.save_settings()  # Geometry is written on close
         self.assertTrue(self.settings.getboolean("window", "maximized"))
 
 
@@ -172,10 +173,7 @@ class MainWindowIconizedTest(MainWindowTestCase):
         self.settings.set("window", "starticonized", "Always")
 
     def expectedHeight(self):
-        height = 500
-        if operating_system.isMac():
-            height += 18  # pragma: no cover
-        return height
+        return 500
 
     @test.skipOnPlatform(
         "__WXGTK__"

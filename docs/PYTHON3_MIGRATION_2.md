@@ -530,7 +530,7 @@ grep -r "DESIGN NOTE (Twisted Removal" taskcoachlib/
 **Affected Components:** WindowDimensionsTracker, MainWindow
 **Root Cause:** Multiple sources of spurious resize/move events during initialization
 
-> **See also:** [WINDOW_POSITION_PERSISTENCE_ANALYSIS.md](WINDOW_POSITION_PERSISTENCE_ANALYSIS.md) for detailed analysis of GTK/Linux window positioning, including the `GDK_HINT_USER_POS` issue and the EVT_MOVE + EVT_ACTIVATE solution.
+> **See also:** [WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md) for how window geometry works now, the `GDK_HINT_USER_POS` issue and the planned refactoring.
 
 ### Problem Overview
 
@@ -592,6 +592,10 @@ def __init_window_components(self):
 **Why insufficient:** `mainwindow.Show()` is called later in `Application.start()`, and GTK realization during Show() triggers more spurious events AFTER start_tracking() was called.
 
 ### Correct Fix: Save Only on Close
+
+> **Superseded:** on X11 the window manager's placement won without
+> corrections, so the position was still lost. See
+> [WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md) for the current design.
 
 The simplest and most robust solution: **don't try to save on every resize/move event**.
 
