@@ -313,15 +313,16 @@ so these changes left it as it was:
   (`task.py`, `_onCompletionDateTimeChanged()`, `addChild()`,
   `removeChild()`); completing a task stops its running effort; a
   prerequisite adds the dependency to the other task
-  (`addPrerequisites()`).
+  (`add_prerequisites()`).
 - Changes outside commands: the scheduler clearing a completed task's
   reminder (`processReminder()`), snoozing in the reminder dialog
   (`ReminderController`), a Todo.txt import updating an existing task.
 
 Step 0 covers those that change Attributes (completion date, reminder,
 effort stop), step 7 the recurrence (cleared on completed subtasks,
-and the count recurring advances). The rest wait for their row below:
-the dependency a prerequisite adds (9), subtask links (10). Until the last
+and the count recurring advances). The dependency a prerequisite adds
+is its reverse, not saved, so it sets no date (9). Subtask links wait
+for row 10. Until the last
 row, commands still set the date too, on the items they were given.
 
 Migration, one field at a time, simplest first; each becomes an
@@ -339,7 +340,7 @@ and sets the modification date, then is tested:
 | 6 | Task percentage complete, planned duration and its mode | Attributes, pypubsub | Done: Publisher; the duration and mode now mark the file unsaved by their own events |
 | 7 | Task recurrence | Plain value, pypubsub | Done: Attribute, Publisher; recurring sets a copy with the next count, instead of changing it in place |
 | 8 | Effort start, stop, entry mode, task | Attributes (not the task), pypubsub; the date is not saved | Done: the dates are saved; start, stop, entry mode and task are Publisher events; moving to another task sets the date. Duration, revenue and tracking stay computed messages |
-| 9 | Task prerequisites (dependencies are their reverse) | Plain sets, pypubsub | To do |
+| 9 | Task prerequisites (dependencies are their reverse) | Plain sets, pypubsub | Done: prerequisites a SetAttribute, dependencies derived (no date); Publisher |
 | 10 | Links: subtasks and parent, owned notes and attachments, efforts | Plain lists, Publisher | To do |
 | 11 | View state: a category's filter state, the expanded state | Plain values | To decide: stored, but not the item's data |
 | 12 | Commands no longer set the date: the undo log records every change ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log)) | | Last |

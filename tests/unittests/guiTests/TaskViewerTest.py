@@ -571,7 +571,7 @@ class CommonTestsMixin(object):
     def testSortByPrerequisite_OnePrerequisite(self):
         self.viewer.sortBy("prerequisites")
         prerequisite = task.Task()
-        self.task.addPrerequisites([prerequisite])
+        self.task.add_prerequisites([prerequisite])
         self.taskList.extend([prerequisite, self.task])
         self.assertItems(prerequisite, self.task)
 
@@ -579,7 +579,7 @@ class CommonTestsMixin(object):
         self.viewer.sortBy("prerequisites")
         prerequisite1 = task.Task(subject="1")
         prerequisite2 = task.Task(subject="2")
-        self.task.addPrerequisites([prerequisite1, prerequisite2])
+        self.task.add_prerequisites([prerequisite1, prerequisite2])
         self.taskList.extend([prerequisite1, prerequisite2, self.task])
         try:
             self.assertItems(prerequisite1, prerequisite2, self.task)
@@ -591,8 +591,8 @@ class CommonTestsMixin(object):
         task0 = task.Task(subject="0")
         task1 = task.Task(subject="1")
         task2 = task.Task(subject="2")
-        task2.addPrerequisites([task1])
-        task1.addPrerequisites([task0])
+        task2.add_prerequisites([task1])
+        task1.add_prerequisites([task0])
         self.taskList.extend([task0, task1, task2])
         self.assertItems(task0, task1, task2)  # Prerequisites = '', '0', '1'
         self.viewer.setSortOrderAscending(False)
@@ -607,7 +607,7 @@ class CommonTestsMixin(object):
         )
         self.taskList.extend([task0, task1])
         self.assertItems(task0, task1)
-        task0.addPrerequisites([task1])
+        task0.add_prerequisites([task1])
         self.assertItems(task1, task0)
 
     def testSortByCategories(self):
@@ -770,16 +770,16 @@ class CommonTestsMixin(object):
     def testIconUpdatesWhenPrerequisiteIsAdded(self):
         prerequisite = task.Task("zzz")
         self.taskList.extend([prerequisite, self.task])
-        self.task.addPrerequisites([prerequisite])
-        prerequisite.addDependencies([self.task])
+        self.task.add_prerequisites([prerequisite])
+        prerequisite.add_dependencies([self.task])
         self.assertIcon(task.inactive.getBitmap(self.settings))
 
     @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenPrerequisiteIsCompleted(self):
         prerequisite = task.Task(subject="zzz")
         self.taskList.extend([prerequisite, self.task])
-        self.task.addPrerequisites([prerequisite])
-        prerequisite.addDependencies([self.task])
+        self.task.add_prerequisites([prerequisite])
+        prerequisite.add_dependencies([self.task])
         prerequisite.setCompletionDateTime(date.Now())
         self.assertIcon(task.late.getBitmap(self.settings))
 
@@ -1086,8 +1086,8 @@ class CommonTestsMixin(object):
         self.viewer.setSortOrderAscending(False)
         prerequisite = task.Task(subject="prerequisite")
         self.taskList.extend([self.task, prerequisite])
-        self.task.addPrerequisites([prerequisite])
-        prerequisite.addDependencies([self.task])
+        self.task.add_prerequisites([prerequisite])
+        prerequisite.add_dependencies([self.task])
         self.assertEqual("prerequisite", self.getItemText(0, 1))
         prerequisite.setSubject("new")
         self.assertEqual("new", self.getItemText(0, 1))
@@ -1097,8 +1097,8 @@ class CommonTestsMixin(object):
         self.viewer.setSortOrderAscending(False)
         dependency = task.Task(subject="dependency")
         self.taskList.extend([self.task, dependency])
-        dependency.addPrerequisites([self.task])
-        self.task.addDependencies([dependency])
+        dependency.add_prerequisites([self.task])
+        self.task.add_dependencies([dependency])
         self.assertEqual("dependency", self.getItemText(0, 1))
         dependency.setSubject("new")
         self.assertEqual("new", self.getItemText(0, 1))

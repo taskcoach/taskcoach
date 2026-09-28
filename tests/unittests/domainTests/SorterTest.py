@@ -258,13 +258,13 @@ class TaskSorterSettingsTest(test.TestCase):
     def testSortByPrerequisiteAscending(self):
         self.sorter.sort_ascending(True)
         self.sorter.sort_by("prerequisites")
-        self.task1.addPrerequisites([self.task2])
+        self.task1.add_prerequisites([self.task2])
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
     def testSortByPrerequisiteDescending(self):
         self.sorter.sort_by("prerequisites")
         self.sorter.sort_ascending(False)
-        self.task2.addPrerequisites([self.task1])
+        self.task2.add_prerequisites([self.task1])
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
     def testSortByRecursivePrerequisiteAscending(self):
@@ -273,22 +273,22 @@ class TaskSorterSettingsTest(test.TestCase):
         child1 = task.Task(subject="Child 1")
         self.task1.addChild(child1)
         self.taskList.append(child1)
-        child1.addPrerequisites([self.task2])
-        self.task2.addPrerequisites([self.task1])
+        child1.add_prerequisites([self.task2])
+        self.task2.add_prerequisites([self.task1])
         self.assertEqual([self.task1, self.task2, child1], list(self.sorter))
 
     def testSortByDependencyAscending(self):
         self.sorter.sort_ascending(True)
         self.sorter.sort_by("dependencies")
-        self.task1.addDependencies([self.task2])
-        self.task2.addDependencies([self.task1])
+        self.task1.add_dependencies([self.task2])
+        self.task2.add_dependencies([self.task1])
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
     def testSortByDependencyDescending(self):
         self.sorter.sort_by("dependencies")
         self.sorter.sort_ascending(False)
-        self.task1.addDependencies([self.task2])
-        self.task2.addDependencies([self.task1])
+        self.task1.add_dependencies([self.task2])
+        self.task2.add_dependencies([self.task1])
         self.assertEqual([self.task1, self.task2], list(self.sorter))
 
     def testSortByRecursiveDependencyAscending(self):
@@ -297,8 +297,8 @@ class TaskSorterSettingsTest(test.TestCase):
         child1 = task.Task(subject="Child 1")
         self.task1.addChild(child1)
         self.taskList.append(child1)
-        child1.addDependencies([self.task2])
-        self.task2.addDependencies([self.task1])
+        child1.add_dependencies([self.task2])
+        self.task2.add_dependencies([self.task1])
         self.assertEqual([self.task1, self.task2, child1], list(self.sorter))
 
     def testAlwaysKeepSubscriptionToCompletionDateTime(self):

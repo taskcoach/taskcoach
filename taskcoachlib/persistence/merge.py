@@ -184,9 +184,9 @@ def _link_prerequisites(tasks, items):
     for each_task, its_prerequisites in prerequisites.items():
         # As categories
         if not _same_objects(each_task.prerequisites(), its_prerequisites):
-            each_task.setPrerequisites(set())
-            each_task.setPrerequisites(its_prerequisites)
+            each_task.set_prerequisites(set())
+            each_task.set_prerequisites(its_prerequisites)
         its_dependencies = dependencies.get(id(each_task), set())
         if not _same_objects(each_task.dependencies(), its_dependencies):
-            each_task.setDependencies(set())
-            each_task.setDependencies(its_dependencies)
+            each_task.set_dependencies(set())
+            each_task.set_dependencies(its_dependencies)

@@ -1080,8 +1080,8 @@ class TaskFileMergeTest(TaskFileTestCase):
         self.task.set_modification_datetime(date.DateTime(2020, 1, 1))
         dependent = task.Task(subject="dependent")
         self.taskFile.tasks().append(dependent)
-        dependent.addPrerequisites([self.task])
-        self.task.addDependencies([dependent])
+        dependent.add_prerequisites([self.task])
+        self.task.add_dependencies([dependent])
         self.mergeFile.tasks().append(
             self.their_copy(self.task, "theirs", date.DateTime(2021, 1, 1))
         )

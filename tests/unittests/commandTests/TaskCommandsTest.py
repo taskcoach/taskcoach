@@ -198,8 +198,8 @@ class DeleteCommandWithTasksTest(TaskCommandTestCase):
         )
 
     def testDeleteTaskThatIsPrerequisite(self):
-        self.task2.addPrerequisites([self.task1])
-        self.task1.addDependencies([self.task2])
+        self.task2.add_prerequisites([self.task1])
+        self.task1.add_dependencies([self.task2])
         self.taskList.append(self.task2)
         self.delete([self.task1])
         self.assertDoUndoRedo(
@@ -208,7 +208,7 @@ class DeleteCommandWithTasksTest(TaskCommandTestCase):
         )
 
     def testDeleteTaskThatIsDependency(self):
-        self.task2.addPrerequisites([self.task1])
+        self.task2.add_prerequisites([self.task1])
         self.taskList.append(self.task2)
         self.delete([self.task2])
         self.assertDoUndoRedo(

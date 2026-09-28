@@ -174,8 +174,9 @@ class BaseTaskViewer(
             self.onAttributeChanged_Deprecated,
             eventType=task.Task.appearanceChangedEventType(),
         )
-        pub.subscribe(
-            self.onAttributeChanged, task.Task.prerequisitesChangedEventType()
+        self.registerObserver(
+            self.onAttributeChanged_Deprecated,
+            eventType=task.Task.prerequisitesChangedEventType(),
         )
         self.registerObserver(self._on_power_on, eventType="powermgt.on")
 
@@ -2444,14 +2445,13 @@ else:
             self._updating = False
             super().__init__(*args, **kwargs)
 
-            pub.subscribe(
-                self.onAttributeChanged,
+            for event_type in (
                 task.Task.dependenciesChangedEventType(),
-            )
-            pub.subscribe(
-                self.onAttributeChanged,
                 task.Task.prerequisitesChangedEventType(),
-            )
+            ):
+                self.registerObserver(
+                    self.onAttributeChanged_Deprecated, eventType=event_type
+                )
 
         def createWidget(self):
             self.scrolled_panel = wx.lib.scrolledpanel.ScrolledPanel(self, -1)

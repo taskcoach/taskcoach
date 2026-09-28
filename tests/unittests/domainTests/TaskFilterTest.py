@@ -124,8 +124,8 @@ class ViewFilterTestsMixin(object):
         date.Now = oldNow
 
     def testMarkPrerequisiteCompletedWhileFilteringInactiveTasks(self):
-        self.task.addPrerequisites([self.dueToday])
-        self.dueToday.addDependencies([self.task])
+        self.task.add_prerequisites([self.dueToday])
+        self.dueToday.add_dependencies([self.task])
         self.task.setPlannedStartDateTime(date.Now() - date.ONE_SECOND)
         self.dueToday.setPlannedStartDateTime(date.Now())
         self.filter.extend([self.dueToday, self.task])
@@ -142,7 +142,7 @@ class ViewFilterTestsMixin(object):
             eachTask.setPlannedStartDateTime(date.Now())
         self.filter.extend([self.dueToday, self.task])
         self.filter.hide_task_status(task.status.inactive)
-        self.task.addPrerequisites([self.dueToday])
+        self.task.add_prerequisites([self.dueToday])
         self.assertFilterShows(self.dueToday)
 
     def testFilterLateTask(self):

@@ -324,9 +324,9 @@ class XMLReader(object):
                         # Release 1.2.11 and older have a bug where tasks can
                         # have prerequisites listed that don't exist anymore
                         pass
-                each_task.setPrerequisites(prerequisites)
+                each_task.set_prerequisites(prerequisites)
                 for prerequisite in prerequisites:
-                    prerequisite.addDependencies([each_task])
+                    prerequisite.add_dependencies([each_task])
                 resolve_ids(each_task.children())
 
         collect_ids(tasks)

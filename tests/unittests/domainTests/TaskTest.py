@@ -118,6 +118,13 @@ class TaskTestCase(test.TestCase):
         for source in event.sources():
             self.changes.append((event.value(source), source))
 
+    def sources_of(self, event_type):
+        return [
+            event.sources(event_type)
+            for event in self.events
+            if event_type in event.types()
+        ]
+
 
 class CommonTaskTestsMixin(asserts.TaskAssertsMixin):
     """These tests should succeed for all tasks, regardless of state."""
@@ -873,68 +880,68 @@ class DefaultTaskStateTest(
 
     def testAddOnePrerequisite(self):
         prerequisites = set([task.Task()])
-        self.task.addPrerequisites(prerequisites)
+        self.task.add_prerequisites(prerequisites)
         self.assertEqual(prerequisites, self.task.prerequisites())
 
     def testAddTwoPrerequisites(self):
         prerequisites = set([task.Task(), task.Task()])
-        self.task.addPrerequisites(prerequisites)
+        self.task.add_prerequisites(prerequisites)
         self.assertEqual(prerequisites, self.task.prerequisites())
 
     def testAddPrerequisiteCausesNotification(self):
-        events = []
+        event_type = task.Task.prerequisitesChangedEventType()
+        self.registerObserver(event_type)
+        self.task.add_prerequisites([task.Task()])
+        self.assertEqual([{self.task}], self.sources_of(event_type))
 
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
+    def test_prerequisite_change_sets_the_modification_date(self):
+        before = date.Now()
+        self.task.add_prerequisites([task.Task()])
+        self.assertTrue(before <= self.task.modificationDateTime())
 
-        pub.subscribe(onEvent, task.Task.prerequisitesChangedEventType())
-        prerequisite = task.Task()
-        self.task.addPrerequisites([prerequisite])
-        self.assertEqual([(set([prerequisite]), self.task)], events)
+    def test_dependency_change_keeps_the_modification_date(self):
+        # The reverse of a prerequisite: not the task's saved data
+        self.task.add_dependencies([task.Task()])
+        self.assertEqual(date.DateTime.min, self.task.modificationDateTime())
 
     def testRemovePrerequisiteThatHasNotBeenAdded(self):
         prerequisite = task.Task()
-        self.task.removePrerequisites([prerequisite])
+        self.task.remove_prerequisites([prerequisite])
         self.assertFalse(self.task.prerequisites())
 
     def testAddPrerequisiteKeepsTaskInactive(self):
         prerequisites = set([task.Task()])
-        self.task.addPrerequisites(prerequisites)
+        self.task.add_prerequisites(prerequisites)
         self.assertTrue(self.task.inactive())
 
     def test_add_prerequisite_keeps_actual_start_date_time(self):
         # The reset was removed on purpose in #257 (date status fixes)
         now = date.Now()
         self.task.setActualStartDateTime(now)
-        self.task.addPrerequisites([task.Task()])
+        self.task.add_prerequisites([task.Task()])
         self.assertEqual(now, self.task.actualStartDateTime())
 
     # Dependencies
 
     def testAddOneDependency(self):
         dependencies = set([task.Task()])
-        self.task.addDependencies(dependencies)
+        self.task.add_dependencies(dependencies)
         self.assertEqual(dependencies, self.task.dependencies())
 
     def testAddTwoDependencies(self):
         dependencies = set([task.Task(), task.Task()])
-        self.task.addDependencies(dependencies)
+        self.task.add_dependencies(dependencies)
         self.assertEqual(dependencies, self.task.dependencies())
 
     def testAddDependencyCausesNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.dependenciesChangedEventType())
-        dependency = task.Task()
-        self.task.addDependencies([dependency])
-        self.assertEqual([(set([dependency]), self.task)], events)
+        event_type = task.Task.dependenciesChangedEventType()
+        self.registerObserver(event_type)
+        self.task.add_dependencies([task.Task()])
+        self.assertEqual([{self.task}], self.sources_of(event_type))
 
     def testRemoveDependencyThatHasNotBeenAdded(self):
         dependency = task.Task()
-        self.task.removeDependencies([dependency])
+        self.task.remove_dependencies([dependency])
         self.assertFalse(self.task.dependencies())
 
     # State (FIXME: need to test other attributes too)
@@ -998,18 +1005,18 @@ class DefaultTaskStateTest(
         )
 
     def testTaskStateIncludesPrerequisites(self):
-        self.task.addPrerequisites([task.Task(subject="prerequisite1")])
+        self.task.add_prerequisites([task.Task(subject="prerequisite1")])
         previousPrerequisites = self.task.prerequisites()
         state = self.task.__getstate__()
-        self.task.addPrerequisites([task.Task(subject="prerequisite2")])
+        self.task.add_prerequisites([task.Task(subject="prerequisite2")])
         self.task.__setstate__(state)
         self.assertEqual(previousPrerequisites, self.task.prerequisites())
 
     def testTaskStateIncludesDependencies(self):
-        self.task.addDependencies([task.Task(subject="dependency1")])
+        self.task.add_dependencies([task.Task(subject="dependency1")])
         previousDependencies = self.task.dependencies()
         state = self.task.__getstate__()
-        self.task.addDependencies([task.Task(subject="dependency2")])
+        self.task.add_dependencies([task.Task(subject="dependency2")])
         self.task.__setstate__(state)
         self.assertEqual(previousDependencies, self.task.dependencies())
 
@@ -1443,8 +1450,8 @@ class TaskWithPlannedStartDateInTheFutureTest(
         self,
     ):
         # pylint: disable=E1101
-        self.task.addPrerequisites([self.task2])
-        self.task2.addDependencies([self.task])
+        self.task.add_prerequisites([self.task2])
+        self.task2.add_dependencies([self.task])
         self.task2.setCompletionDateTime()
         self.assertTrue(self.task.inactive())
 
@@ -1563,28 +1570,28 @@ class TaskWithPlannedStartDateInThePastTest(
 
     def testTaskBecomesInactiveWhenAddingAnUncompletedPrerequisite(self):
         # pylint: disable=E1101
-        self.task.addPrerequisites([self.task2])
-        self.task2.addDependencies([self.task])
+        self.task.add_prerequisites([self.task2])
+        self.task2.add_dependencies([self.task])
         self.assertTrue(self.task.inactive())
 
     def testAppearanceNotificationWhenAddingAnUncompletedPrerequisite(self):
         # pylint: disable=E1101
         self.registerObserver(self.task.appearanceChangedEventType())
-        self.task.addPrerequisites([self.task2])
-        self.task2.addDependencies([self.task])
+        self.task.add_prerequisites([self.task2])
+        self.task2.add_dependencies([self.task])
         self.assertEvent(self.task.appearanceChangedEventType(), self.task)
 
     def testTaskBecomesActiveWhenUncompletedPrerequisiteIsCompleted(self):
         # pylint: disable=E1101
-        self.task.addPrerequisites([self.task2])
-        self.task2.addDependencies([self.task])
+        self.task.add_prerequisites([self.task2])
+        self.task2.add_dependencies([self.task])
         self.task2.setCompletionDateTime()
         self.assertFalse(self.task.inactive())
 
     def testAppearanceNotificationWhenUncompletedPrerequisiteIsCompleted(self):
         # pylint: disable=E1101
-        self.task.addPrerequisites([self.task2])
-        self.task2.addDependencies([self.task])
+        self.task.add_prerequisites([self.task2])
+        self.task2.add_dependencies([self.task])
         self.registerObserver(
             self.task.appearanceChangedEventType(), eventSource=self.task
         )
@@ -1604,8 +1611,8 @@ class TaskWithoutPlannedStartDateTimeTest(TaskTestCase, CommonTaskTestsMixin):
 
     def testTaskStaysInactiveWhenUncompletedPrerequisiteIsCompleted(self):
         # pylint: disable=E1101
-        self.task.addPrerequisites([self.task2])
-        self.task2.addDependencies([self.task])
+        self.task.add_prerequisites([self.task2])
+        self.task2.add_dependencies([self.task])
         self.task2.setCompletionDateTime()
         self.assertTrue(self.task.inactive())
         self.assertEqual(
@@ -1617,8 +1624,8 @@ class TaskWithoutPlannedStartDateTimeTest(TaskTestCase, CommonTaskTestsMixin):
         self,
     ):
         # pylint: disable=E1101
-        self.task.addPrerequisites([self.task2])
-        self.task2.addDependencies([self.task])
+        self.task.add_prerequisites([self.task2])
+        self.task2.add_dependencies([self.task])
         self.registerObserver(
             self.task.appearanceChangedEventType(), eventSource=self.task
         )
@@ -2398,12 +2405,12 @@ class TaskWithChildTest(
 
     def testChildIsInactiveWhenParentHasPrerequisite(self):
         prerequisite = task.Task()
-        self.task.addPrerequisites([prerequisite])
+        self.task.add_prerequisites([prerequisite])
         self.assertTrue(self.task1_1.inactive())
 
     def testChildIsNotActiveWhenParentHasPrerequisite(self):
         prerequisite = task.Task()
-        self.task.addPrerequisites([prerequisite])
+        self.task.add_prerequisites([prerequisite])
         self.assertFalse(self.task1_1.active())
 
     def testAddingPrerequisiteToParentRecomputesChildAppearance(self):
@@ -2413,7 +2420,7 @@ class TaskWithChildTest(
             self.task1_1.icon_id(recursive=True),
         )
         prerequisite = task.Task()
-        self.task.addPrerequisites([prerequisite])
+        self.task.add_prerequisites([prerequisite])
         self.assertEqual(
             task.inactive.getBitmap(self.settings),
             self.task1_1.icon_id(recursive=True),
@@ -2426,7 +2433,7 @@ class TaskWithChildTest(
             self.task1_1.icon_id(recursive=True),
         )
         prerequisite = task.Task()
-        self.task.setPrerequisites([prerequisite])
+        self.task.set_prerequisites([prerequisite])
         self.assertEqual(
             task.inactive.getBitmap(self.settings),
             self.task1_1.icon_id(recursive=True),
@@ -2434,13 +2441,13 @@ class TaskWithChildTest(
 
     def testRemovingPrerequisiteFromParentRecomputesChildAppearance(self):
         prerequisite = task.Task()
-        self.task.addPrerequisites([prerequisite])
+        self.task.add_prerequisites([prerequisite])
         # First make sure the icon is cached:
         self.assertEqual(
             task.inactive.getBitmap(self.settings),
             self.task1_1.icon_id(recursive=True),
         )
-        self.task.removePrerequisites([prerequisite])
+        self.task.remove_prerequisites([prerequisite])
         # The child has an actual start date: active, not late
         self.assertEqual(
             task.active.getBitmap(self.settings),
@@ -2449,8 +2456,8 @@ class TaskWithChildTest(
 
     def testCompletingPrerequisiteOfParentRecomputesChildAppearance(self):
         prerequisite = task.Task()
-        self.task.addPrerequisites([prerequisite])
-        prerequisite.addDependencies([self.task])
+        self.task.add_prerequisites([prerequisite])
+        prerequisite.add_dependencies([self.task])
         # First make sure the icon is cached:
         self.assertEqual(
             task.inactive.getBitmap(self.settings),
@@ -3406,44 +3413,36 @@ class TaskWithPrerequisite(TaskTestCase):
         self.assertFalse(self.task in self.prerequisite.dependencies())
 
     def testRemovePrerequisite(self):
-        self.task.removePrerequisites([self.prerequisite])
+        self.task.remove_prerequisites([self.prerequisite])
         self.assertFalse(self.task.prerequisites())
 
     def testRemovePrerequisiteNotInPrerequisites(self):
-        self.task.removePrerequisites([task.Task()])
+        self.task.remove_prerequisites([task.Task()])
         self.assertTrue(self.prerequisite in self.task.prerequisites())
 
     def testRemovePrerequisiteNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.prerequisitesChangedEventType())
-        self.task.removePrerequisites([self.prerequisite])
-        self.assertEqual([(set([]), self.task)], events)
+        event_type = task.Task.prerequisitesChangedEventType()
+        self.registerObserver(event_type)
+        self.task.remove_prerequisites([self.prerequisite])
+        self.assertEqual([{self.task}], self.sources_of(event_type))
 
     def testSetPrerequisitesRemovesOldPrerequisites(self):
         newPrerequisites = set([task.Task()])
-        self.task.setPrerequisites(newPrerequisites)
+        self.task.set_prerequisites(newPrerequisites)
         self.assertEqual(newPrerequisites, self.task.prerequisites())
 
     def testDontCopyPrerequisites(self):
         self.assertFalse(self.prerequisite in self.task.copy().prerequisites())
 
     def testPrerequisiteSubjectChangedNotification(self):
-        self.prerequisite.addDependencies([self.task])
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.prerequisitesChangedEventType())
+        self.prerequisite.add_dependencies([self.task])
+        event_type = task.Task.prerequisitesChangedEventType()
+        self.registerObserver(event_type)
         self.prerequisite.setSubject("New subject")
-        self.assertEqual([(set([self.prerequisite]), self.task)], events)
+        self.assertEqual([{self.task}], self.sources_of(event_type))
 
     def testAppearanceNotificationAfterMarkingPrerequisiteCompleted(self):
-        self.prerequisite.addDependencies([self.task])
+        self.prerequisite.add_dependencies([self.task])
         eventType = self.task.appearanceChangedEventType()
         self.registerObserver(eventType, eventSource=self.task)
         self.prerequisite.setCompletionDateTime(date.Now())
@@ -3464,41 +3463,33 @@ class TaskWithDependency(TaskTestCase):
         self.assertFalse(self.task in self.dependency.prerequisites())
 
     def testRemoveDependency(self):
-        self.task.removeDependencies([self.dependency])
+        self.task.remove_dependencies([self.dependency])
         self.assertFalse(self.task.dependencies())
 
     def testRemoveDependencyNotInDependencies(self):
-        self.task.removeDependencies([task.Task()])
+        self.task.remove_dependencies([task.Task()])
         self.assertTrue(self.dependency in self.task.dependencies())
 
     def testRemoveDependencyNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.dependenciesChangedEventType())
-        self.task.removeDependencies([self.dependency])
-        self.assertEqual([(set(), self.task)], events)
+        event_type = task.Task.dependenciesChangedEventType()
+        self.registerObserver(event_type)
+        self.task.remove_dependencies([self.dependency])
+        self.assertEqual([{self.task}], self.sources_of(event_type))
 
     def testSetDependenciesRemovesOldDependencies(self):
         newDependencies = set([task.Task()])
-        self.task.setDependencies(newDependencies)
+        self.task.set_dependencies(newDependencies)
         self.assertEqual(newDependencies, self.task.dependencies())
 
     def testDontCopyDependencies(self):
         self.assertFalse(self.dependency in self.task.copy().dependencies())
 
     def testDependencySubjectChangedNotification(self):
-        self.dependency.addPrerequisites([self.task])
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(onEvent, task.Task.dependenciesChangedEventType())
+        self.dependency.add_prerequisites([self.task])
+        event_type = task.Task.dependenciesChangedEventType()
+        self.registerObserver(event_type)
         self.dependency.setSubject("New subject")
-        self.assertEqual([(set([self.dependency]), self.task)], events)
+        self.assertEqual([{self.task}], self.sources_of(event_type))
 
 
 class TaskSuggestedDateTimeBaseSetupAndTests(object):

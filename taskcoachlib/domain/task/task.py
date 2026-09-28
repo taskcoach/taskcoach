@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns
 from taskcoachlib.domain import date, categorizable, note, attachment
-from taskcoachlib.domain.base.attribute import Attribute
+from taskcoachlib.domain.base.attribute import Attribute, SetAttribute
 from pubsub import pub
 from weakref import WeakSet
 from . import status
@@ -140,7 +140,12 @@ class Task(
             self,
             self._on_recurrence_changed,
         )
-        self.__prerequisites = WeakSet(prerequisites or [])
+        self.__prerequisites = SetAttribute(
+            set(prerequisites or []),
+            self,
+            changeEvent=self._on_prerequisites_changed,
+            weak=True,
+        )
         self.__dependencies = WeakSet(dependencies or [])
         self.__shouldMarkCompletedWhenAllChildrenCompleted = Attribute(
             shouldMarkCompletedWhenAllChildrenCompleted,
@@ -206,8 +211,8 @@ class Task(
         self.setPriority(state["priority"], event=event)
         self.set_hourly_fee(state["hourlyFee"], event=event)
         self.set_fixed_fee(state["fixedFee"], event=event)
-        self.setPrerequisites(state["prerequisites"])
-        self.setDependencies(state["dependencies"])
+        self.set_prerequisites(state["prerequisites"], event=event)
+        self.set_dependencies(state["dependencies"], event=event)
         self.set_should_mark_completed_when_all_children_completed(
             state["shouldMarkCompletedWhenAllChildrenCompleted"], event=event
         )
@@ -232,7 +237,7 @@ class Task(
                 fixedFee=self.__fixedFee.get(),
                 recurrence=self.__recurrence.get().copy(),
                 reminder=self.__reminder.get(),
-                prerequisites=set(self.__prerequisites),
+                prerequisites=self.__prerequisites.get(),
                 dependencies=set(self.__dependencies),
                 shouldMarkCompletedWhenAllChildrenCompleted=(
                     self.shouldMarkCompletedWhenAllChildrenCompleted()
@@ -357,19 +362,15 @@ class Task(
     @patterns.eventSource
     def setSubject(self, subject, event=None):
         super().setSubject(subject, event=event)
-        # The subject of a dependency of our prerequisites has changed, notify:
+        # Linked tasks show this subject in their prerequisites and
+        # dependencies
         for prerequisite in self.prerequisites():
-            pub.sendMessage(
-                prerequisite.dependenciesChangedEventType(),
-                newValue=prerequisite.dependencies(),
-                sender=prerequisite,
+            event.addSource(
+                prerequisite, type=prerequisite.dependenciesChangedEventType()
             )
-        # The subject of a prerequisite of our dependencies has changed, notify:
         for dependency in self.dependencies():
-            pub.sendMessage(
-                dependency.prerequisitesChangedEventType(),
-                newValue=dependency.prerequisites(),
-                sender=dependency,
+            event.addSource(
+                dependency, type=dependency.prerequisitesChangedEventType()
             )
 
     def _send_to_self_and_ancestors(self, event, event_type, value):
@@ -1843,7 +1844,7 @@ class Task(
     # Prerequisites
 
     def prerequisites(self, recursive=False, upwards=False):
-        prerequisites = set(self.__prerequisites)
+        prerequisites = self.__prerequisites.get()
         if recursive and upwards and self.parent() is not None:
             prerequisites |= self.parent().prerequisites(
                 recursive=True, upwards=True
@@ -1853,53 +1854,31 @@ class Task(
                 prerequisites |= child.prerequisites()
         return prerequisites
 
-    def setPrerequisites(self, prerequisites):
-        prerequisites = set(prerequisites)
-        if prerequisites == self.prerequisites():
-            return
-        self.__prerequisites = WeakSet(prerequisites)
-        self.recomputeAppearance(recursive=True)
-        pub.sendMessage(
-            self.prerequisitesChangedEventType(),
-            newValue=self.prerequisites(),
-            sender=self,
-        )
+    def set_prerequisites(self, prerequisites, event=None):
+        self.__prerequisites.set(set(prerequisites), event=event)
 
-    def addPrerequisites(self, prerequisites):
-        prerequisites = set(prerequisites)
-        if prerequisites <= self.prerequisites():
-            return
-        self.__prerequisites = WeakSet(prerequisites | self.prerequisites())
-        self.recomputeAppearance(recursive=True)
-        pub.sendMessage(
-            self.prerequisitesChangedEventType(),
-            newValue=self.prerequisites(),
-            sender=self,
-        )
+    def add_prerequisites(self, prerequisites, event=None):
+        self.__prerequisites.add(set(prerequisites), event=event)
 
-    def removePrerequisites(self, prerequisites):
-        prerequisites = set(prerequisites)
-        if self.prerequisites().isdisjoint(prerequisites):
-            return
-        self.__prerequisites = WeakSet(self.prerequisites() - prerequisites)
-        self.recomputeAppearance(recursive=True)
-        pub.sendMessage(
-            self.prerequisitesChangedEventType(),
-            newValue=self.prerequisites(),
-            sender=self,
-        )
+    def remove_prerequisites(self, prerequisites, event=None):
+        self.__prerequisites.remove(set(prerequisites), event=event)
+
+    def _on_prerequisites_changed(self, event, *prerequisites):
+        self.recomputeAppearance(recursive=True, event=event)
+        # Without the value: a set is not hashable
+        event.addSource(self, type=self.prerequisitesChangedEventType())
 
     def addTaskAsDependencyOf(self, prerequisites):
         for prerequisite in prerequisites:
-            prerequisite.addDependencies([self])
+            prerequisite.add_dependencies([self])
 
     def removeTaskAsDependencyOf(self, prerequisites):
         for prerequisite in prerequisites:
-            prerequisite.removeDependencies([self])
+            prerequisite.remove_dependencies([self])
 
     @classmethod
     def prerequisitesChangedEventType(class_):
-        return "pubsub.task.prerequisites"
+        return "task.prerequisites"
 
     @staticmethod
     def prerequisitesSortFunction(**kwargs):
@@ -1947,50 +1926,43 @@ class Task(
                 dependencies |= child.dependencies()
         return dependencies
 
-    def setDependencies(self, dependencies):
+    # The reverse of prerequisites, not saved: no modification date
+
+    def set_dependencies(self, dependencies, event=None):
         dependencies = set(dependencies)
-        if dependencies == self.dependencies():
-            return
+        if dependencies != self.dependencies():
+            self.__set_dependencies(dependencies, event=event)
+
+    def add_dependencies(self, dependencies, event=None):
+        dependencies = set(dependencies)
+        if not dependencies <= self.dependencies():
+            self.__set_dependencies(
+                self.dependencies() | dependencies, event=event
+            )
+
+    def remove_dependencies(self, dependencies, event=None):
+        dependencies = set(dependencies)
+        if not self.dependencies().isdisjoint(dependencies):
+            self.__set_dependencies(
+                self.dependencies() - dependencies, event=event
+            )
+
+    @patterns.eventSource
+    def __set_dependencies(self, dependencies, event=None):
         self.__dependencies = WeakSet(dependencies)
-        pub.sendMessage(
-            self.dependenciesChangedEventType(),
-            newValue=self.dependencies(),
-            sender=self,
-        )
-
-    def addDependencies(self, dependencies):
-        dependencies = set(dependencies)
-        if dependencies <= self.dependencies():
-            return
-        self.__dependencies = WeakSet(self.dependencies() | dependencies)
-        pub.sendMessage(
-            self.dependenciesChangedEventType(),
-            newValue=self.dependencies(),
-            sender=self,
-        )
-
-    def removeDependencies(self, dependencies):
-        dependencies = set(dependencies)
-        if self.dependencies().isdisjoint(dependencies):
-            return
-        self.__dependencies = WeakSet(self.dependencies() - dependencies)
-        pub.sendMessage(
-            self.dependenciesChangedEventType(),
-            newValue=self.dependencies(),
-            sender=self,
-        )
+        event.addSource(self, type=self.dependenciesChangedEventType())
 
     def addTaskAsPrerequisiteOf(self, dependencies):
         for dependency in dependencies:
-            dependency.addPrerequisites([self])
+            dependency.add_prerequisites([self])
 
     def removeTaskAsPrerequisiteOf(self, dependencies):
         for dependency in dependencies:
-            dependency.removePrerequisites([self])
+            dependency.remove_prerequisites([self])
 
     @classmethod
     def dependenciesChangedEventType(class_):
-        return "pubsub.task.dependencies"
+        return "task.dependencies"
 
     @staticmethod
     def dependenciesSortFunction(**kwargs):

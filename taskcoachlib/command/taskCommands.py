@@ -84,12 +84,12 @@ class DragAndDropTaskCommand(base.OrderingDragAndDropCommand):
     def do_command(self):
         if self._isPrereqDrop():
             # Dropped on prerequisites column: make dragged items prerequisites of drop target
-            self._itemToDropOn.addPrerequisites(self.items)
+            self._itemToDropOn.add_prerequisites(self.items)
             self._itemToDropOn.addTaskAsDependencyOf(self.items)
         elif self._isDepDrop():
             # Dropped on dependencies column: make drop target a prerequisite of dragged items
             for item in self.items:
-                item.addPrerequisites([self._itemToDropOn])
+                item.add_prerequisites([self._itemToDropOn])
                 item.addTaskAsDependencyOf([self._itemToDropOn])
         else:
             # Drop on other columns: make child (change parent)
@@ -97,22 +97,22 @@ class DragAndDropTaskCommand(base.OrderingDragAndDropCommand):
 
     def undo_command(self):
         if self._isPrereqDrop():
-            self._itemToDropOn.removePrerequisites(self.items)
+            self._itemToDropOn.remove_prerequisites(self.items)
             self._itemToDropOn.removeTaskAsDependencyOf(self.items)
         elif self._isDepDrop():
             for item in self.items:
-                item.removePrerequisites([self._itemToDropOn])
+                item.remove_prerequisites([self._itemToDropOn])
                 item.removeTaskAsDependencyOf([self._itemToDropOn])
         else:
             super().undo_command()
 
     def redo_command(self):
         if self._isPrereqDrop():
-            self._itemToDropOn.addPrerequisites(self.items)
+            self._itemToDropOn.add_prerequisites(self.items)
             self._itemToDropOn.addTaskAsDependencyOf(self.items)
         elif self._isDepDrop():
             for item in self.items:
-                item.addPrerequisites([self._itemToDropOn])
+                item.add_prerequisites([self._itemToDropOn])
                 item.addTaskAsDependencyOf([self._itemToDropOn])
         else:
             super().redo_command()
@@ -150,8 +150,8 @@ class DeleteTaskCommand(base.DeleteCommand, EffortCommand):
             self.__relationsToRestore[eachTask] = prerequisites, dependencies
             eachTask.removeTaskAsDependencyOf(prerequisites)
             eachTask.removeTaskAsPrerequisiteOf(dependencies)
-            eachTask.setPrerequisites([])
-            eachTask.setDependencies([])
+            eachTask.set_prerequisites([])
+            eachTask.set_dependencies([])
 
     def __restorePrerequisites(self):
         for eachTask, (prerequisites, dependencies) in list(
@@ -159,8 +159,8 @@ class DeleteTaskCommand(base.DeleteCommand, EffortCommand):
         ):
             eachTask.addTaskAsDependencyOf(prerequisites)
             eachTask.addTaskAsPrerequisiteOf(dependencies)
-            eachTask.setPrerequisites(prerequisites)
-            eachTask.setDependencies(dependencies)
+            eachTask.set_prerequisites(prerequisites)
+            eachTask.set_dependencies(dependencies)
 
 
 class NewTaskCommand(base.NewItemCommand):
@@ -189,16 +189,16 @@ class NewTaskCommand(base.NewItemCommand):
     def addDependenciesAndPrerequisites(self):
         for eachTask in self.items:
             for prerequisite in eachTask.prerequisites():
-                prerequisite.addDependencies([eachTask])
+                prerequisite.add_dependencies([eachTask])
             for dependency in eachTask.dependencies():
-                dependency.addPrerequisites([eachTask])
+                dependency.add_prerequisites([eachTask])
 
     def removeDependenciesAndPrerequisites(self):
         for eachTask in self.items:
             for prerequisite in eachTask.prerequisites():
-                prerequisite.removeDependencies([eachTask])
+                prerequisite.remove_dependencies([eachTask])
             for dependency in eachTask.dependencies():
-                dependency.removePrerequisites([eachTask])
+                dependency.remove_prerequisites([eachTask])
 
 
 class NewSubTaskCommand(base.NewSubItemCommand, SaveTaskStateMixin):
@@ -953,17 +953,17 @@ class TogglePrerequisiteCommand(base.BaseCommand):
     def do_command(self):
         super().do_command()
         for item in self.items:
-            item.addPrerequisites(self.__checkedPrerequisites)
+            item.add_prerequisites(self.__checkedPrerequisites)
             item.addTaskAsDependencyOf(self.__checkedPrerequisites)
-            item.removePrerequisites(self.__uncheckedPrerequisites)
+            item.remove_prerequisites(self.__uncheckedPrerequisites)
             item.removeTaskAsDependencyOf(self.__uncheckedPrerequisites)
 
     def undo_command(self):
         super().undo_command()
         for item in self.items:
-            item.removePrerequisites(self.__checkedPrerequisites)
+            item.remove_prerequisites(self.__checkedPrerequisites)
             item.removeTaskAsDependencyOf(self.__checkedPrerequisites)
-            item.addPrerequisites(self.__uncheckedPrerequisites)
+            item.add_prerequisites(self.__uncheckedPrerequisites)
             item.addTaskAsDependencyOf(self.__uncheckedPrerequisites)
 
     def redo_command(self):

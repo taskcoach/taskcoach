@@ -872,7 +872,7 @@ class XMLWriterTest(test.TestCase):
     def testPrerequisite(self):
         prerequisite = task.Task(subject="prereq")
         self.taskList.append(prerequisite)
-        self.task.addPrerequisites([prerequisite])
+        self.task.add_prerequisites([prerequisite])
         self.expect_in_xml('prerequisites="%s"' % prerequisite.id())
 
     def testMultiplePrerequisites(self):
@@ -882,7 +882,7 @@ class XMLWriterTest(test.TestCase):
             task.Task(subject="prereq1", id="id1"),
         ]
         self.taskList.extend(prerequisites)
-        self.task.addPrerequisites(prerequisites)
+        self.task.add_prerequisites(prerequisites)
         self.expect_in_xml('prerequisites="id1 id2"')
 
     def testEncodingAttribute(self):

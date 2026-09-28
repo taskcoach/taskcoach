@@ -49,10 +49,10 @@ relationship) — signal dispatch exists to serve Attribute change notification.
    subtasks are", percentage complete, planned duration and its mode
    migrated with the modification date
    ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
-   Task recurrence migrated the same way.
-   **Remaining:** Task prerequisites and dependencies;
-   Effort fields; computed values (time spent, budget left, revenue,
-   status, tracking).
+   Task recurrence, prerequisites and dependencies, and effort start,
+   stop, entry mode and task migrated the same way.
+   **Remaining:** computed values (time spent, budget left, revenue,
+   status, tracking, effort duration).
 
 2. **Modularize and clean up the signaling system.** The three independent
    cleanup mechanisms (wx C++ destruction, `removeInstance()`, Python GC)

@@ -2992,9 +2992,10 @@ class PrerequisitesPage(PageWithViewer):
 
     def createViewer(self, taskFile, settings, settingsSection):
         assert len(self.items) == 1
-        pub.subscribe(
-            self.onPrerequisitesChanged,
+        patterns.Publisher().registerObserver(
+            self.on_prerequisites_changed,
             self.items[0].prerequisitesChangedEventType(),
+            eventSource=self.items[0],
         )
         return LocalPrerequisiteViewer(
             self.items,
@@ -3005,9 +3006,12 @@ class PrerequisitesPage(PageWithViewer):
             use_separate_settings_section=False,
         )
 
-    def onPrerequisitesChanged(self, newValue, sender):
-        if sender == self.items[0]:
-            self.viewer.refreshItems(*newValue)
+    def on_prerequisites_changed(self, event):
+        self.viewer.refreshItems(*self.items[0].prerequisites())
+
+    def close(self):
+        patterns.Publisher().removeObserver(self.on_prerequisites_changed)
+        super().close()
 
     def entries(self):
         if self.__realized and hasattr(self, "viewer"):

@@ -397,6 +397,6 @@ class TaskStatusTest(test.TestCase):
     def testMutualPrerequisites(self):
         taskA = task.Task()
         taskB = task.Task(prerequisites=[taskA])
-        taskA.addPrerequisites([taskB])
+        taskA.add_prerequisites([taskB])
         for eachTask in (taskA, taskB):
             self.assertEqual(task.status.inactive, eachTask.status())
