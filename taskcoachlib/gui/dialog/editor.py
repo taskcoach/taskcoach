@@ -2818,10 +2818,10 @@ class LocalAttachmentViewer(viewer.AttachmentViewer):  # pylint: disable=W0223
         """Paste attachments from clipboard to this task's attachments."""
         from taskcoachlib.command.clipboard import Clipboard
 
-        items, source = Clipboard().get()
-        copies = [item.copy() for item in items]
         return command.AddAttachmentCommand(
-            None, [self.attachmentOwner], attachments=copies
+            None,
+            [self.attachmentOwner],
+            attachments=Clipboard().items_to_paste(),
         )
 
 
@@ -2891,8 +2891,7 @@ class LocalNoteViewer(viewer.BaseNoteViewer):  # pylint: disable=W0223
         """
         from taskcoachlib.command.clipboard import Clipboard
 
-        items, source = Clipboard().get()
-        copies = [item.copy() for item in items]
+        copies = Clipboard().items_to_paste()
         # Clear parent so notes become top-level (even if source was nested)
         # and expand all pasted notes so children are visible
         for n in copies:
@@ -2912,8 +2911,7 @@ class LocalNoteViewer(viewer.BaseNoteViewer):  # pylint: disable=W0223
         parent_note = selected[0]
         from taskcoachlib.command.clipboard import Clipboard
 
-        items, source = Clipboard().get()
-        copies = [item.copy() for item in items]
+        copies = Clipboard().items_to_paste()
         # Clear parent references - AddSubNoteCommand will set correct parent via addChild
         # and expand all pasted notes so children are visible
         for n in copies:

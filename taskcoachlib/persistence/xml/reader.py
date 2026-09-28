@@ -33,7 +33,6 @@ from taskcoachlib.domain import (
 )
 from taskcoachlib.i18n import translate
 from taskcoachlib.thirdparty.deltaTime import nlTimeExpression
-import uuid
 import ast
 import io
 import operator
@@ -220,8 +219,8 @@ class XMLReader(object):
         }
 
     def read(self):
-        """Read the task file and return the tasks, categories, notes
-        and GUID."""
+        """Read the task file and return the tasks, categories and
+        notes."""
         if self.__has_broken_lines():
             self.__fix_broken_lines()
         parser = PIParser()
@@ -245,8 +244,8 @@ class XMLReader(object):
             categories = self.__parse_category_nodes(root)
         self.__resolve_categories(categories, tasks, notes)
 
-        # An old file's SyncML section is not read: SyncML was removed
-        guid = self.__parse_guid_node(root.find("guid"))
+        # An old file's SyncML section and GUID are not read: SyncML
+        # was removed, and nothing used the GUID after it
 
         # Restored last, over the dates the reading itself set, in one
         # event (docs/ATTRIBUTE_PATTERN.md, Event Batching During Load)
@@ -258,7 +257,7 @@ class XMLReader(object):
             item.set_modification_datetime(modification_datetime, event=event)
         event.send()
 
-        return tasks, categories, notes, guid
+        return tasks, categories, notes
 
     def __has_broken_lines(self):
         """tskversion 24 may contain newlines in element tags."""
@@ -725,11 +724,6 @@ class XMLReader(object):
                 **kwargs,
             )
         )
-
-    def __parse_guid_node(self, node):
-        """Parse the GUID from the node."""
-        guid = self.__parse_text(node).strip()
-        return guid if guid else str(uuid.uuid4())
 
     def __parse_attachments(self, node):
         """Parse the attachments from the node."""

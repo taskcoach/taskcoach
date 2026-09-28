@@ -56,7 +56,6 @@ class XMLWriterTest(test.TestCase):
             self.taskList,
             self.categoryContainer,
             self.noteContainer,
-            "GUID",
         )
         return self.fd.getvalue().decode("utf-8")
 
@@ -87,8 +86,8 @@ class XMLWriterTest(test.TestCase):
     def testVersion(self):
         self.expect_in_xml('<?taskcoach release="%s"' % meta.data.version)
 
-    def testGUID(self):
-        self.expect_in_xml("<guid>\nGUID\n</guid>")
+    def test_no_guid_is_written(self):
+        self.expect_not_in_xml("guid")
 
     def testTaskSubject(self):
         self.task.setSubject("Subject")

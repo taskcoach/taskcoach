@@ -161,16 +161,14 @@ class EffortViewer(
         """
         from taskcoachlib.command.clipboard import Clipboard
 
-        items, source = Clipboard().get()
         tasks = self.tasksToShowEffortFor()
         if tasks:
             # Paste to the specific task this viewer is showing efforts for
             target_task = (
                 list(tasks)[0] if hasattr(tasks, "__iter__") else tasks
             )
-            copies = [item.copy() for item in items]
             return command.AddEffortCommand(
-                None, [target_task], efforts=copies
+                None, [target_task], efforts=Clipboard().items_to_paste()
             )
         # Fall back to generic paste when no specific target task
         return super().pasteItemCommand()

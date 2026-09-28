@@ -240,8 +240,8 @@ class CutCommandMixin(object):
 
     def __putItemsOnClipboard(self):
         cb = Clipboard()
-        self.__previousClipboardContents = cb.get()  # pylint: disable=W0201
-        cb.put(self.itemsToCut(), self.sourceOfItemsToCut())
+        self.__previousClipboardContents = cb.state()  # pylint: disable=W0201
+        cb.put(self.itemsToCut(), self.sourceOfItemsToCut(), cut=True)
 
     def __removeItemsFromClipboard(self):
         cb = Clipboard()
@@ -311,10 +311,10 @@ class PasteCommand(BaseCommand, SaveStateMixin):
             item.setParent(newParent)
 
     def getItemsToPaste(self):
-        items, source = Clipboard().get()
+        _items, source = Clipboard().get()
         # Use provided destination container, or fall back to clipboard's source container
         target = self.list if self.list is not None else source
-        return [item.copy() for item in items], target
+        return Clipboard().items_to_paste(), target
 
 
 class PasteAsSubItemCommand(PasteCommand, CompositeMixin):

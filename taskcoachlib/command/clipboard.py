@@ -23,15 +23,30 @@ class Clipboard(metaclass=patterns.Singleton):
     def __init__(self):
         self.clear()
 
-    def put(self, items, source):
+    def put(self, items, source, cut=False):
         # pylint: disable=W0201
         self._contents = items
         self._source = source
+        # Cut items move: the first paste takes them, IDs included
+        self._move_pending = cut
 
     def get(self):
         currentContents = self._contents
         currentSource = self._source
         return currentContents, currentSource
+
+    def state(self):
+        """What put() needs to restore the clipboard as it is."""
+        return self._contents, self._source, self._move_pending
+
+    def items_to_paste(self):
+        """The items a paste inserts: the cut items themselves at the
+        first paste after a cut, a move that keeps their IDs; copies,
+        with new IDs, otherwise (docs/PERSISTENCE_XML.md, IDs)."""
+        if self._move_pending:
+            self._move_pending = False
+            return list(self._contents)
+        return [item.copy() for item in self._contents]
 
     def peek(self):
         return self._contents
@@ -39,6 +54,7 @@ class Clipboard(metaclass=patterns.Singleton):
     def clear(self):
         self._contents = []
         self._source = None
+        self._move_pending = False
 
     def __bool__(self):
         return len(self._contents) > 0

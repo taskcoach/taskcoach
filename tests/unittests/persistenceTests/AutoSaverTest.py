@@ -51,7 +51,6 @@ class DummyTaskFile(persistence.TaskFile):
                 [task.Task()],
                 [category.Category("category")],
                 [],
-                None,
             )
             return content, []  # No duplicate ids
 

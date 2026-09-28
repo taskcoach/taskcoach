@@ -127,7 +127,7 @@ class XMLWriter(object):
         self.__fd = fd
         self.__versionnr = versionnr
 
-    def write(self, task_list, category_container, note_container, guid):
+    def write(self, task_list, category_container, note_container):
         root = ET.Element("tasks")
 
         for root_task in sortedById(task_list.rootItems()):
@@ -143,9 +143,6 @@ class XMLWriter(object):
 
         for root_note in sortedById(note_container.rootItems()):
             self.noteNode(root, root_note)
-
-        if guid:
-            ET.SubElement(root, "guid").text = guid
 
         flatten(root)
         PIElementTree(

@@ -689,11 +689,12 @@ taskcoachlib/bin.in/                     # pysyncml binary modules
 ### Backwards Compatibility
 
 Old `.tsk` files with a `syncml` or `syncmlconfig` section still load:
-the reader reads only the sections it knows (tasks, categories, notes,
-GUID), so that one is skipped. Files from release 0.72.9 have tags
-split across lines inside it, which is not valid XML; the reader
-repairs them first (`__fix_broken_lines()`, tested by
-`testGUIDWithLegacySyncMLNodes`). That repair must stay.
+the reader reads only the sections it knows (tasks, categories,
+notes), so that one is skipped, as is the GUID since 2026-09-28. Files
+from release 0.72.9 have tags split across lines inside it, which is
+not valid XML; the reader repairs them first (`__fix_broken_lines()`,
+tested by `test_a_file_with_legacy_syncml_nodes_still_loads`). That
+repair must stay.
 
 The XML writer no longer writes the section, so the next save drops
 it.

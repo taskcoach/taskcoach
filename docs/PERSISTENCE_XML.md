@@ -325,6 +325,19 @@ ID's form or order: sorting breaks ties by creation date first
 ([TASK_STATUS_SORT.md](TASK_STATUS_SORT.md#ties)). Copies get new IDs
 ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#id-review)).
 
+**Ruling, 2026-09-28:** the first paste after a cut is a move: it
+pastes the cut items themselves, IDs kept (`Clipboard.items_to_paste()`);
+further pastes, and pastes after a copy, insert copies with new IDs.
+Undoing that paste does not make the next paste a move again.
+
+**Ruling, 2026-09-28:** creation and modification dates keep
+microseconds (`date.Timestamp`) and are unique: `Timestamp.now()` is
+always later than the one it gave before, by a microsecond if the
+clock has not moved (15.6 ms steps on Windows before Python 3.13).
+
+The task file has no GUID since 2026-09-28: nothing read it after the
+sync was removed. A file that has one still loads.
+
 ## Duplicate IDs
 
 **Ruling, 2026-09-28:** an ID is unique within a file, fixed when the

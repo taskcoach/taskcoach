@@ -25,7 +25,6 @@ from . import xml
 from .merge import merge_into
 from taskcoachlib import patterns
 from taskcoachlib.domain import task, category, note, effort, attachment
-import uuid
 from taskcoachlib.meta.debug import log_step
 from taskcoachlib.filesystem import (
     FilesystemNotifier,
@@ -231,7 +230,6 @@ class TaskFile(patterns.Observer):
         self.__categories = category.CategoryList()
         self.__notes = note.NoteContainer()
         self.__efforts = effort.EffortList(self.tasks())
-        self.__guid = str(uuid.uuid4())
         self.__corrected_ids = {}
         self.__changedOnDisk = False
         # The file's (mtime, size) when last loaded or saved
@@ -283,9 +281,6 @@ class TaskFile(patterns.Observer):
 
     def efforts(self):
         return self.__efforts
-
-    def guid(self):
-        return self.__guid
 
     def corrected_ids(self):
         """The duplicate IDs the last load corrected: ID -> the items'
@@ -403,20 +398,17 @@ class TaskFile(patterns.Observer):
         return stat.st_mtime_ns, stat.st_size
 
     @patterns.eventSource
-    def clear(self, regenerate=True, event=None):
+    def clear(self, event=None):
         self._publish("taskfile.aboutToClear")
         try:
             self.tasks().clear(event=event)
             self.categories().clear(event=event)
             self.notes().clear(event=event)
-            if regenerate:
-                self.__guid = str(uuid.uuid4())
         finally:
             self._publish("taskfile.justCleared")
 
     def close(self):
         self.setFilename("")
-        self.__guid = str(uuid.uuid4())
         self.clear()
         self.mark_clean()
         self.__changedOnDisk = False
@@ -482,12 +474,7 @@ class TaskFile(patterns.Observer):
             if self.exists():
                 fd = self._openForRead()
                 try:
-                    (
-                        tasks,
-                        categories,
-                        notes,
-                        guid,
-                    ), duplicate_ids = self._read(fd)
+                    (tasks, categories, notes), duplicate_ids = self._read(fd)
                 finally:
                     fd.close()
                 # Log any duplicate IDs found in the file
@@ -498,12 +485,10 @@ class TaskFile(patterns.Observer):
                 tasks = []
                 categories = []
                 notes = []
-                guid = str(uuid.uuid4())
             self.clear()
             self.categories().extend(categories)
             self.tasks().extend(tasks)
             self.notes().extend(notes)
-            self.__guid = guid
         except Exception:
             self.setFilename("")
             raise
@@ -540,7 +525,6 @@ class TaskFile(patterns.Observer):
                         self.tasks(),
                         self.categories(),
                         self.notes(),
-                        self.guid(),
                     )
                 except BaseException:
                     _discard(fd)

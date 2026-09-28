@@ -16,7 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import datetime, re, time
+import datetime
+import re
+import threading
+import time
 from . import timedelta
 from .date import Date
 from .fix import StrftimeFix
@@ -167,8 +170,28 @@ class Timestamp(DateTime):
     one second must still be ordered (docs/MASTER_SCHEDULER_REFACTOR.md,
     Time Resolution)."""
 
+    # The last moment now() gave: the next is always later
+    _last = None
+    _lock = threading.Lock()
+
     def __new__(cls, *args, **kwargs):
         return datetime.datetime.__new__(cls, *args, **kwargs)
+
+    @classmethod
+    def now(cls, tz=None):
+        """The current moment, later than any given before in this run,
+        so no two creation or modification dates are equal: the clock
+        can repeat a value (15.6 ms steps on Windows before Python
+        3.13) or step back."""
+        with cls._lock:
+            moment = super().now(tz)
+            if cls._last is not None and moment <= cls._last:
+                # datetime's addition: DateTime's drops the microseconds
+                moment = datetime.datetime.__add__(
+                    cls._last, datetime.timedelta(microseconds=1)
+                )
+            cls._last = moment
+            return moment
 
     @classmethod
     def parse(cls, text):

@@ -34,13 +34,11 @@ class IntegrationTestCase(test.TestCase):
         self.taskList = task.TaskList()
         self.categories = category.CategoryList()
         self.notes = note.NoteContainer()
-        self.guid = "GUID"
         self.fillContainers()
-        tasks, categories, notes, guid = self.readAndWrite()
+        tasks, categories, notes = self.readAndWrite()
         self.tasksWrittenAndRead = task.TaskList(tasks)
         self.categoriesWrittenAndRead = category.CategoryList(categories)
         self.notesWrittenAndRead = note.NoteContainer(notes)
-        self.guidWrittenAndRead = guid
 
     def fillContainers(self):
         pass
@@ -51,7 +49,6 @@ class IntegrationTestCase(test.TestCase):
             self.taskList,
             self.categories,
             self.notes,
-            self.guid,
         )
         # The app reads the file back as text (TaskFile._openForRead)
         written = io.BytesIO(self.fd.getvalue())
@@ -327,6 +324,3 @@ class IntegrationTest(IntegrationTestCase):
 
     def testTaskNote(self):
         self.assertContainedDomainObjectsWrittenAndRead(self.task, "notes")
-
-    def testGUID(self):
-        self.assertEqual(self.guidWrittenAndRead, self.guid)

@@ -18,36 +18,34 @@ recursive priority stays out of the loop
 
 This refactor:
 
-1. IDs: decisions on issues 16 and 18 (cut and paste identity, the
-   unused file GUID; [ID Review](#id-review)).
-2. The undo log as object versions keyed by the modification date
+1. The undo log as object versions keyed by the modification date
    ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log), option C).
-3. Sorting by the Status column, in the status sort order
+2. Sorting by the Status column, in the status sort order
    ([TASK_STATUS_SORT.md](TASK_STATUS_SORT.md), issue 14).
-4. The task editor's Progress tab, to check on a real display
+3. The task editor's Progress tab, to check on a real display
    (issue 7).
-5. Not planned: the reason for each entry
+4. Not planned: the reason for each entry
    ([Later](#later-the-reason-for-each-entry)).
-6. Effective fields for the 13 other subtree values, one at a time;
+5. Effective fields for the 13 other subtree values, one at a time;
    none is read by the loop
    ([TASK_FIELDS.md](TASK_FIELDS.md#subtree-values-in-other-columns)).
 
 Before the branch is pushed:
 
-7. Squash to one commit, version 2.0.3.0 in the body; the release
+6. Squash to one commit, version 2.0.3.0 in the body; the release
    date (2026-09-28) may move.
-8. One app run on 2026-09-28 logged a traceback (log lost, not
+7. One app run on 2026-09-28 logged a traceback (log lost, not
    reproduced in four runs of the same steps): watch for it.
 
 Other TODOs, outside this refactor:
 
-9. Signal cleanup, then a signal library
+8. Signal cleanup, then a signal library
    ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#todo)).
-10. Editor text fields commit only on focus loss
-    ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#todo)).
-11. Default values in the file
+9. Editor text fields commit only on focus loss
+   ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#todo)).
+10. Default values in the file
     ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#todo)).
-12. Settings modernization ([SETTINGS.md](SETTINGS.md#todo)).
+11. Settings modernization ([SETTINGS.md](SETTINGS.md#todo)).
 
 ## Master Design
 
@@ -560,14 +558,16 @@ Issues found, not fixed:
     objects loaded and compared equal. They are corrected when read,
     and a message lists them
     ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#duplicate-ids)).
-16. Paste inserts copies, so a task moved by cut and paste gets a new
-    ID and creation date, unlike drag and drop; merging an older copy
-    of the file then brings the old task back beside it.
+16. Fixed 2026-09-28: paste inserted copies, so a task moved by cut
+    and paste got a new ID and creation date, unlike drag and drop.
+    The first paste after a cut now pastes the cut items themselves
+    ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#ids)).
 17. Fixed 2026-09-28: new IDs were `uuid1()`, the time and this
     computer's network (MAC) address, saved in every item; they are
     random UUIDs now ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#ids)).
-18. The task file's GUID is written back on every save but read by
-    nothing since the sync was removed.
+18. Fixed 2026-09-28: the task file's GUID was written back on every
+    save but read by nothing since the sync was removed; it is no
+    longer read or written.
 
 ## ID Review
 
@@ -580,15 +580,16 @@ Checked 2026-09-28, across the repository:
 - Copies get new IDs (`__getcopystate__()` leaves the ID and the
   creation date out): copy and paste, paste as subitem, the subtasks,
   notes, attachments and efforts copied with them, a task saved as a
-  template and each task made from one.
+  template and each task made from one. The first paste after a cut
+  is a move: the cut items themselves, IDs kept.
+- Creation and modification dates are unique: `Timestamp.now()` is
+  always later than the one before in the same run.
 - The same ID in two files is the same item: Save As, Save selection,
   backups; File > Merge matches items by it; Todo.txt `tcid:` updates
   the task it names (an unknown one is skipped, never created).
 - A recurring task advances in place; no new task.
-- Not item IDs: the file's GUID (issue 18); wx window and menu IDs
-  (`IdProvider`), returned when a window closes.
-
-Open: issues 16 and 18.
+- Not item IDs: wx window and menu IDs (`IdProvider`), returned when
+  a window closes.
 
 ---
 

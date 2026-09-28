@@ -168,6 +168,23 @@ class PasteCommandWithTasksTest(TaskCommandTestCase):
             lambda: self.assertEqual(1, len(command.Clipboard()._contents))
         )
 
+    def test_the_first_paste_after_a_cut_moves_the_task(self):
+        self.cut([self.task1])
+        self.paste()
+        self.assertTrue(any(each is self.task1 for each in self.taskList))
+
+    def test_a_second_paste_after_a_cut_pastes_a_copy(self):
+        self.cut([self.task1])
+        self.paste()
+        self.paste()
+        ids = [each.id() for each in self.taskList]
+        self.assertEqual((2, True), (len(set(ids)), self.task1.id() in ids))
+
+    def test_a_paste_after_a_copy_pastes_a_copy(self):
+        command.CopyCommand(self.taskList, [self.task1]).do()
+        self.paste()
+        self.assertEqual(2, len({each.id() for each in self.taskList}))
+
 
 class PasteCommandWithNotesTest(NoteCommandTestCase):
     def testPasteWithoutPreviousCut(self):

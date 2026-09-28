@@ -126,19 +126,15 @@ class XMLReaderTestCase(test.TestCase):
     def writeAndReadNotes(self, xml_contents):
         return self.writeAndRead(xml_contents)[2]
 
-    def writeAndReadGUID(self, xml_contents):
-        return self.writeAndRead(xml_contents)[3]
-
     def writeAndReadTasksAndCategories(self, xml_contents):
-        tasks, categories, _, _ = self.writeAndRead(xml_contents)
+        tasks, categories, _ = self.writeAndRead(xml_contents)
         return tasks, categories
 
     def writeAndReadTasksAndCategoriesAndNotes(self, xml_contents):
-        tasks, categories, notes, _ = self.writeAndRead(xml_contents)
-        return tasks, categories, notes
+        return self.writeAndRead(xml_contents)
 
     def writeAndReadCategoriesAndNotes(self, xml_contents):
-        _, categories, notes, _ = self.writeAndRead(xml_contents)
+        _, categories, notes = self.writeAndRead(xml_contents)
         return categories, notes
 
 
@@ -1216,9 +1212,11 @@ class XMLReaderVersion23Test(XMLReaderTestCase):
         )
         self.assertEqual("Data", tasks[0].attachments()[0].data())
 
-    def testGUID(self):
-        guid = self.writeAndReadGUID("<tasks><guid>GUID</guid></tasks>")
-        self.assertEqual("GUID", guid)
+    def test_a_file_with_a_guid_still_loads(self):
+        tasks = self.writeAndReadTasks(
+            '<tasks><task id="1"/><guid>GUID</guid></tasks>'
+        )
+        self.assertEqual(["1"], [each.id() for each in tasks])
 
 
 class XMLReaderVersion24Test(XMLReaderTestCase):
@@ -1247,22 +1245,14 @@ class XMLReaderVersion24Test(XMLReaderTestCase):
         )
         self.assertEqual("Data", tasks[0].attachments()[0].data())
 
-    def testGUID(self):
-        guid = self.writeAndReadGUID(
-            "<tasks>\n<guid>\nGUID\n</guid>\n</tasks>"
-        )
-        self.assertEqual("GUID", guid)
-
-    def testGUIDWithLegacySyncMLNodes(self):
-        """The GUID is parsed even with legacy SyncML nodes present.
-        Release 0.72.9 (and earlier?) had a bug where tags in the SyncML
-        config information would be split across multiple lines. Fixed
-        in release 0.72.10. SyncML is now removed but old files may
-        still have these nodes.
+    def test_a_file_with_legacy_syncml_nodes_still_loads(self):
+        """Release 0.72.9 (and earlier?) had a bug where tags in the
+        SyncML config information would be split across multiple lines.
+        Fixed in release 0.72.10. SyncML is now removed but old files
+        may still have these nodes.
         """
-        expectedGUID = "0000011d209a4b6c3f9f7c32000a00b100240032"
-        actualGUID = self.writeAndReadGUID(
-            "<tasks>\n<syncml><TaskCoach-\n"
+        tasks = self.writeAndReadTasks(
+            '<tasks>\n<task id="1"/>\n<syncml><TaskCoach-\n'
             "0000011d209a4b6c3f9f7c32000a00b100240032\n"
             "><spds><sources><TaskCoach-\n"
             "0000011d209a4b6c3f9f7c32000a00b100240032\n"
@@ -1274,7 +1264,7 @@ class XMLReaderVersion24Test(XMLReaderTestCase):
             "0000011d209a4b6c3f9f7c32000a00b100240032\n"
             "</guid></tasks>"
         )
-        self.assertEqual(expectedGUID, actualGUID)
+        self.assertEqual(["1"], [each.id() for each in tasks])
 
 
 class XMLReaderVersion26Test(XMLReaderTestCase):
