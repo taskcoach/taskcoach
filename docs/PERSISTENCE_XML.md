@@ -320,7 +320,9 @@ only for the merge; the same ID in both is the same item.
 cryptographic source (`os.urandom()`), no machine data, no time, in the
 standard 36-character form, so two items never get the same ID. An ID
 read from a file is kept as it is: older files have time-based UUIDs
-(version 1), which never equal a version 4 one. Copies get new IDs
+(version 1), which never equal a version 4 one. Nothing depends on an
+ID's form or order: sorting breaks ties by creation date first
+([TASK_STATUS_SORT.md](TASK_STATUS_SORT.md#ties)). Copies get new IDs
 ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#id-review)).
 
 ## Duplicate IDs

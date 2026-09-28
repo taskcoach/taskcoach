@@ -17,6 +17,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
+from taskcoachlib.domain import date
+
+
+def _tie_break_key(item):
+    # Some items (e.g. CompositeEffortPerPeriod) have neither
+    if hasattr(item, "id"):
+        return (item.creationDateTime(), item.id())
+    return (date.DateTime.min, "")
 
 
 class Sorter(patterns.ListDecorator):
@@ -100,10 +108,10 @@ class Sorter(patterns.ListDecorator):
         old_self = self[:]
         # XXXTODO: create only one function with all keys ? Reversing may
         # be problematic.
-        # UUID tiebreaker first (least significant) - guarantees
-        # deterministic ordering for items with equal sort keys.
-        # Some items (e.g. CompositeEffortPerPeriod) have no id().
-        self.sort(key=lambda item: item.id() if hasattr(item, 'id') else '')
+        # Tie-break first (least significant): items with equal sort
+        # keys keep their creation order, then their ID, so the order
+        # is deterministic
+        self.sort(key=_tie_break_key)
         for sort_key in reversed(self._sortKeys):
             self.sort(
                 key=self.create_sort_key_function(sort_key.lstrip("-")),
@@ -124,14 +132,15 @@ class Sorter(patterns.ListDecorator):
 
     def _getSortKeyFunction(self, sort_key):
         try:
-            return getattr(self.DomainObjectClass,
-                           "%sSortFunction" % sort_key)
+            return getattr(self.DomainObjectClass, "%sSortFunction" % sort_key)
         except AttributeError:
             from taskcoachlib.meta.debug import log_step
-            log_step('%sSortFunction not found on %s - falling back '
-                     'to subject'
-                     % (sort_key, self.DomainObjectClass.__name__),
-                     prefix='SORTER')
+
+            log_step(
+                "%sSortFunction not found on %s - falling back "
+                "to subject" % (sort_key, self.DomainObjectClass.__name__),
+                prefix="SORTER",
+            )
             return self._getSortKeyFunction("subject")
 
     def _register_observer_for_attribute(self, attribute):
@@ -180,7 +189,8 @@ class TreeSorter(Sorter):
         <sortKey>SortFunction(sortCaseSensitive, tree_mode) method that
         returns the sortKeyFunction for the sortKey."""
         return self._getSortKeyFunction(key)(
-            sortCaseSensitive=self._sortCaseSensitive, tree_mode=self.tree_mode()
+            sortCaseSensitive=self._sortCaseSensitive,
+            tree_mode=self.tree_mode(),
         )
 
     def reset(self, *args, **kwargs):  # pylint: disable=W0221

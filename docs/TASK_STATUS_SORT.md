@@ -47,6 +47,14 @@ sort_key = [status.statusSortPriority] + [column_sort_key]   # descending
 
 For ascending sort, priority is negated to maintain urgency-first ordering.
 
+### Ties
+
+Items with equal sort keys keep their creation order, then their ID
+(`_tie_break_key()` in `domain/base/sorter.py`), so the order is
+deterministic. The tie-break was the ID alone until 2026-09-28, which
+followed creation order only while IDs were time-based
+([PERSISTENCE_XML.md](PERSISTENCE_XML.md#ids)).
+
 ## Legacy Sort Algorithm
 
 The previous implementation used a binary bucket approach with composite sort keys:
