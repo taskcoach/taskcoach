@@ -9,21 +9,46 @@ change), 2026-09-28 ([Cost After](#cost-after)); what is left:
 
 ## Remaining Work
 
-What is left, in the proposed order (2026-09-28). pypubsub is gone:
-every signal is a Publisher event
+Everything still open, here so nothing is lost between tangents; in
+the proposed order (2026-09-28). pypubsub is gone: every signal is a
+Publisher event
 ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#migration-log)). The
 recursive priority stays out of the loop
 ([SCHEDULERS.md](SCHEDULERS.md#todo)).
 
-1. The undo log as object versions keyed by the modification date
+This refactor:
+
+1. IDs: one rule for two objects with one ID (issue 13), duplicate
+   IDs in a file corrected and shown (issue 15), and decisions on
+   issues 16 to 18 ([ID Review](#id-review)).
+2. The undo log as object versions keyed by the modification date
    ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log), option C).
-2. Identity: one rule for comparing domain objects (issue 13).
 3. Sorting by the Status column, in the status sort order
    ([TASK_STATUS_SORT.md](TASK_STATUS_SORT.md), issue 14).
 4. The task editor's Progress tab, to check on a real display
    (issue 7).
 5. Not planned: the reason for each entry
    ([Later](#later-the-reason-for-each-entry)).
+6. Effective fields for the 13 other subtree values, one at a time;
+   none is read by the loop
+   ([TASK_FIELDS.md](TASK_FIELDS.md#subtree-values-in-other-columns)).
+
+Before the branch is pushed:
+
+7. Squash to one commit, version 2.0.3.0 in the body; the release
+   date (2026-09-28) may move.
+8. One app run on 2026-09-28 logged a traceback (log lost, not
+   reproduced in four runs of the same steps): watch for it.
+
+Other TODOs, outside this refactor:
+
+9. Signal cleanup, then a signal library
+   ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#todo)).
+10. Editor text fields commit only on focus loss
+    ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#todo)).
+11. Default values in the file
+    ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#todo)).
+12. Settings modernization ([SETTINGS.md](SETTINGS.md#todo)).
 
 ## Master Design
 
@@ -137,6 +162,7 @@ Sweep, to leave nothing behind in this branch:
 - [Steps](#steps)
 - [Later: the Reason for Each Entry](#later-the-reason-for-each-entry)
 - [Open Questions and Issues Found](#open-questions-and-issues-found)
+- [ID Review](#id-review)
 - [How It Was Measured](#how-it-was-measured)
 - [History: One List on the Tick, Not a Timer per Event](#history-one-list-on-the-tick-not-a-timer-per-event)
 
@@ -522,13 +548,50 @@ Issues found, not fixed:
     task's id, a merged file's copy included; it compares identity.
 12. Fixed: the status bar counts ignored status changes made by the
     clock.
-13. Domain objects compare equal by id, so a copy is taken for the
-    original where objects are tracked: `Filter.reset()` keeps the
-    old objects in the viewers when a file loads over open items
-    (reload closes first for this reason); issue 11 was one case.
+13. Two objects with one ID count as the same object: domain objects
+    compare equal and hash by ID (`Object.__eq__`), so wherever two
+    objects for one item meet, one is taken for the other. Copies are
+    not a case: each gets a new ID ([ID Review](#id-review)). The
+    cases: File > Merge holds the other file's version of each item
+    (issue 11 was one leak); loading over open items leaves the old
+    objects in the viewers (`Filter.reset()`; reload closes first for
+    this reason); duplicate IDs in a file (issue 15).
 14. Sorting by the Status or Status combo column sorts by subject:
     `Task` has no `statusSortFunction`. The Status icon column does
     not sort.
+15. Duplicate IDs in a file are detected on load but only logged
+    (`TaskFile._log_duplicate_ids()`): nothing tells the user or
+    corrects them. Both objects load and compare equal; the reader's
+    ID maps keep the last one, so prerequisites and categories point
+    to it only.
+16. Paste inserts copies, so a task moved by cut and paste gets a new
+    ID and creation date, unlike drag and drop; merging an older copy
+    of the file then brings the old task back beside it.
+17. New IDs are `uuid1()`: the time and this computer's network (MAC)
+    address, saved in every item; `uuid4()` is random.
+18. The task file's GUID is written back on every save but read by
+    nothing since the sync was removed.
+
+## ID Review
+
+Checked 2026-09-28, across the repository:
+
+- Every task, category, note, attachment and effort gets an ID when
+  created (`Object.__init__`, `uuid1()`), keeps it for life and saves
+  it. Only reading a file and undo (each object's own state) set an
+  existing ID.
+- Copies get new IDs (`__getcopystate__()` leaves the ID and the
+  creation date out): copy and paste, paste as subitem, the subtasks,
+  notes, attachments and efforts copied with them, a task saved as a
+  template and each task made from one.
+- The same ID in two files is the same item: Save As, Save selection,
+  backups; File > Merge matches items by it; Todo.txt `tcid:` updates
+  the task it names (an unknown one is skipped, never created).
+- A recurring task advances in place; no new task.
+- Not item IDs: the file's GUID (issue 18); wx window and menu IDs
+  (`IdProvider`), returned when a window closes.
+
+Open: issues 13 and 15 to 18.
 
 ---
 
