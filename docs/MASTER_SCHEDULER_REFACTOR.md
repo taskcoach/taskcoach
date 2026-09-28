@@ -545,26 +545,22 @@ Issues found, not fixed:
     clock.
 13. Decided 2026-09-28: domain objects compare equal by ID, and one
     object per ID is kept within a file: duplicates are corrected when
-    read (issue 15); the file to merge is held apart and briefly
+    read (issue 14); the file to merge is held apart and briefly
     ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging); issue 11 was
     its one leak); reload closes first, as loading over open items
     would leave the old objects in the viewers (`Filter.reset()`).
-14. Decided 2026-09-28, no change: sorting by status is the "Sort by
-    status first" control, in the configured order
-    ([TASK_STATUS_SORT.md](TASK_STATUS_SORT.md)); a click on a status
-    column header sorts by subject, as on master.
-15. Fixed 2026-09-28: duplicate IDs in a file were only logged; both
+14. Fixed 2026-09-28: duplicate IDs in a file were only logged; both
     objects loaded and compared equal. They are corrected when read,
     and a message lists them
     ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#duplicate-ids)).
-16. Fixed 2026-09-28: paste inserted copies, so a task moved by cut
+15. Fixed 2026-09-28: paste inserted copies, so a task moved by cut
     and paste got a new ID and creation date, unlike drag and drop.
     The first paste after a cut now pastes the cut items themselves
     ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#ids)).
-17. Fixed 2026-09-28: new IDs were `uuid1()`, the time and this
+16. Fixed 2026-09-28: new IDs were `uuid1()`, the time and this
     computer's network (MAC) address, saved in every item; they are
     random UUIDs now ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#ids)).
-18. Fixed 2026-09-28: the task file's GUID was written back on every
+17. Fixed 2026-09-28: the task file's GUID was written back on every
     save but read by nothing since the sync was removed; it is no
     longer read or written.
 
