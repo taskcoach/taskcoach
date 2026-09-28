@@ -288,7 +288,9 @@ class MarkParentCompletedAutomaticallyIsOnButTaskSettingIsOff(
             MarkParentCompletedAutomaticallyIsOnButTaskSettingIsOff, self
         ).setUp()
         for eachTask in self.parent, self.child:
-            eachTask.setShouldMarkCompletedWhenAllChildrenCompleted(False)
+            eachTask.set_should_mark_completed_when_all_children_completed(
+                False
+            )
 
 
 class MarkParentCompletedAutomaticallyIsOffButTaskSettingIsOn(
@@ -303,4 +305,6 @@ class MarkParentCompletedAutomaticallyIsOffButTaskSettingIsOn(
             MarkParentCompletedAutomaticallyIsOffButTaskSettingIsOn, self
         ).setUp()
         for eachTask in self.parent, self.child:
-            eachTask.setShouldMarkCompletedWhenAllChildrenCompleted(True)
+            eachTask.set_should_mark_completed_when_all_children_completed(
+                True
+            )

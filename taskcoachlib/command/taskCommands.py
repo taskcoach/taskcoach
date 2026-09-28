@@ -807,7 +807,7 @@ class EditShouldMarkCompletedCommand(base.BaseCommand):
     def do_command(self):
         super().do_command()
         for item in self.items:
-            item.setShouldMarkCompletedWhenAllChildrenCompleted(
+            item.set_should_mark_completed_when_all_children_completed(
                 self.__newShouldMarkCompleted
             )
 
@@ -816,7 +816,7 @@ class EditShouldMarkCompletedCommand(base.BaseCommand):
         for item, oldShouldMarkCompleted in zip(
             self.items, self.__oldShouldMarkCompleted
         ):
-            item.setShouldMarkCompletedWhenAllChildrenCompleted(
+            item.set_should_mark_completed_when_all_children_completed(
                 oldShouldMarkCompleted
             )
 

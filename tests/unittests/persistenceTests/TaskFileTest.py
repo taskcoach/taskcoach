@@ -448,7 +448,7 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.assertTrue(self.taskFile.need_save())
 
     def testNeedSave_AfterChangeSetting(self):
-        self.task.setShouldMarkCompletedWhenAllChildrenCompleted(True)
+        self.task.set_should_mark_completed_when_all_children_completed(True)
         self.assertTrue(self.taskFile.need_save())
 
     def testNeedSave_AfterAddingCategory(self):

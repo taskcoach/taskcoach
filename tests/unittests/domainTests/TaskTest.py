@@ -428,7 +428,7 @@ class DefaultTaskStateTest(
     def testSetPercentageCompleteWhenMarkCompletedWhenAllChildrenCompletedIsTrue(
         self,
     ):
-        self.task.setShouldMarkCompletedWhenAllChildrenCompleted(True)
+        self.task.set_should_mark_completed_when_all_children_completed(True)
         self.task.setPercentageComplete(50)
         self.assertEqual(50, self.task.percentageComplete())
 
@@ -517,6 +517,11 @@ class DefaultTaskStateTest(
         self.record_changes(task.Task.fixedFeeChangedEventType())
         self.task.set_fixed_fee(1000)
         self.assertEqual([(1000, self.task)], self.changes)
+
+    def test_mark_completed_setting_change_sets_the_modification_date(self):
+        before = date.Now()
+        self.task.set_should_mark_completed_when_all_children_completed(True)
+        self.assertTrue(before <= self.task.modificationDateTime())
 
     def test_budget_change_sets_the_modification_date(self):
         before = date.Now()
@@ -2321,7 +2326,7 @@ class TaskWithChildTest(
     def testPercentageCompletedWhenChildIs50ProcentCompleteAndMarkCompletedWhenChildrenAreCompletedIsTurnedOff(
         self,
     ):
-        self.task.setShouldMarkCompletedWhenAllChildrenCompleted(False)
+        self.task.set_should_mark_completed_when_all_children_completed(False)
         self.task1_1.setPercentageComplete(50)
         self.assertEqual(25, self.task.percentageComplete(recursive=True))
 
@@ -2484,7 +2489,7 @@ class TaskWithTwoChildrenTest(
         ]
 
     def testRemoveLastActiveChildCompletesParent(self):
-        self.task.setShouldMarkCompletedWhenAllChildrenCompleted(True)
+        self.task.set_should_mark_completed_when_all_children_completed(True)
         self.task1_1.setCompletionDateTime()
         self.task.removeChild(self.task1_2)
         self.assertTrue(self.task.completed())
@@ -2499,7 +2504,7 @@ class TaskWithTwoChildrenTest(
     def testPercentageCompletedWhenOneChildIs50ProcentCompleteAndMarkCompletedWhenChildrenAreCompletedIsTurnedOff(
         self,
     ):
-        self.task.setShouldMarkCompletedWhenAllChildrenCompleted(False)
+        self.task.set_should_mark_completed_when_all_children_completed(False)
         self.task1_1.setPercentageComplete(50)
         self.assertEqual(
             int(100 / 6.0), self.task.percentageComplete(recursive=True)
@@ -2515,7 +2520,7 @@ class TaskWithTwoChildrenTest(
     def testPercentageCompletedWhenOneChildCompleteAndMarkCompletedWhenChildrenAreCompletedIsTurnedOff(
         self,
     ):
-        self.task.setShouldMarkCompletedWhenAllChildrenCompleted(False)
+        self.task.set_should_mark_completed_when_all_children_completed(False)
         self.task1_1.setPercentageComplete(100)
         self.assertEqual(33, self.task.percentageComplete(recursive=True))
 
@@ -3095,23 +3100,18 @@ class MarkTaskCompletedWhenAllChildrenCompletedSettingIsTrueFixture(
         )
 
     def testSetSetting(self):
-        self.task.setShouldMarkCompletedWhenAllChildrenCompleted(False)
+        self.task.set_should_mark_completed_when_all_children_completed(False)
         self.assertEqual(
             False, self.task.shouldMarkCompletedWhenAllChildrenCompleted()
         )
 
     def testSetSettingCausesNotification(self):
-        events = []
-
-        def onEvent(newValue, sender):
-            events.append((newValue, sender))
-
-        pub.subscribe(
-            onEvent,
-            task.Task.shouldMarkCompletedWhenAllChildrenCompletedChangedEventType(),
+        cls = task.Task
+        self.record_changes(
+            cls.shouldMarkCompletedWhenAllChildrenCompletedChangedEventType()
         )
-        self.task.setShouldMarkCompletedWhenAllChildrenCompleted(False)
-        self.assertEqual([(False, self.task)], events)
+        self.task.set_should_mark_completed_when_all_children_completed(False)
+        self.assertEqual([(False, self.task)], self.changes)
 
     def testSetSettingCausesPercentageCompleteNotification(self):
         events = []
@@ -3122,7 +3122,7 @@ class MarkTaskCompletedWhenAllChildrenCompletedSettingIsTrueFixture(
         pub.subscribe(onEvent, task.Task.percentageCompleteChangedEventType())
         # The calculation of the total percentage complete depends on whether
         # a task is marked completed when all its children are completed
-        self.task.setShouldMarkCompletedWhenAllChildrenCompleted(False)
+        self.task.set_should_mark_completed_when_all_children_completed(False)
         self.assertEqual([(0, self.task)], events)
 
 
@@ -3138,7 +3138,7 @@ class MarkTaskCompletedWhenAllChildrenCompletedSettingIsFalseFixture(
         )
 
     def testSetSetting(self):
-        self.task.setShouldMarkCompletedWhenAllChildrenCompleted(True)
+        self.task.set_should_mark_completed_when_all_children_completed(True)
         self.assertEqual(
             True, self.task.shouldMarkCompletedWhenAllChildrenCompleted()
         )

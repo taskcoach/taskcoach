@@ -140,8 +140,10 @@ class Task(
         )
         self.__prerequisites = WeakSet(prerequisites or [])
         self.__dependencies = WeakSet(dependencies or [])
-        self.__shouldMarkCompletedWhenAllChildrenCompleted = (
-            shouldMarkCompletedWhenAllChildrenCompleted
+        self.__shouldMarkCompletedWhenAllChildrenCompleted = Attribute(
+            shouldMarkCompletedWhenAllChildrenCompleted,
+            self,
+            self._on_should_mark_completed_changed,
         )
         for effort in self._efforts:
             effort.setTask(self)
@@ -204,8 +206,8 @@ class Task(
         self.set_fixed_fee(state["fixedFee"], event=event)
         self.setPrerequisites(state["prerequisites"])
         self.setDependencies(state["dependencies"])
-        self.setShouldMarkCompletedWhenAllChildrenCompleted(
-            state["shouldMarkCompletedWhenAllChildrenCompleted"]
+        self.set_should_mark_completed_when_all_children_completed(
+            state["shouldMarkCompletedWhenAllChildrenCompleted"], event=event
         )
 
     def __getstate__(self):
@@ -230,7 +232,9 @@ class Task(
                 reminder=self.__reminder.get(),
                 prerequisites=set(self.__prerequisites),
                 dependencies=set(self.__dependencies),
-                shouldMarkCompletedWhenAllChildrenCompleted=self.__shouldMarkCompletedWhenAllChildrenCompleted,
+                shouldMarkCompletedWhenAllChildrenCompleted=(
+                    self.shouldMarkCompletedWhenAllChildrenCompleted()
+                ),
             )
         )
         return state
@@ -253,7 +257,9 @@ class Task(
                 fixedFee=self.__fixedFee.get(),
                 recurrence=self.__recurrence.copy(),
                 reminder=self.__reminder.get(),
-                shouldMarkCompletedWhenAllChildrenCompleted=self.__shouldMarkCompletedWhenAllChildrenCompleted,
+                shouldMarkCompletedWhenAllChildrenCompleted=(
+                    self.shouldMarkCompletedWhenAllChildrenCompleted()
+                ),
             )
         )
         return state
@@ -2018,15 +2024,23 @@ class Task(
 
     # behavior
 
-    def setShouldMarkCompletedWhenAllChildrenCompleted(self, newValue):
-        if newValue == self.__shouldMarkCompletedWhenAllChildrenCompleted:
-            return
-        self.__shouldMarkCompletedWhenAllChildrenCompleted = newValue
-        pub.sendMessage(
-            self.shouldMarkCompletedWhenAllChildrenCompletedChangedEventType(),
-            newValue=newValue,
-            sender=self,
+    def set_should_mark_completed_when_all_children_completed(
+        self, value, event=None
+    ):
+        self.__shouldMarkCompletedWhenAllChildrenCompleted.set(
+            value, event=event
         )
+
+    def _on_should_mark_completed_changed(self, event):
+        event_type = (
+            self.shouldMarkCompletedWhenAllChildrenCompletedChangedEventType()
+        )
+        event.addSource(
+            self,
+            self.shouldMarkCompletedWhenAllChildrenCompleted(),
+            type=event_type,
+        )
+        # It decides whether the recursive percentage counts this task
         pub.sendMessage(
             self.percentageCompleteChangedEventType(),
             newValue=self.percentageComplete(),
@@ -2035,10 +2049,10 @@ class Task(
 
     @classmethod
     def shouldMarkCompletedWhenAllChildrenCompletedChangedEventType(class_):
-        return "pubsub.task.shouldMarkCompletedWhenAllChildrenCompleted"
+        return "task.shouldMarkCompletedWhenAllChildrenCompleted"
 
     def shouldMarkCompletedWhenAllChildrenCompleted(self):
-        return self.__shouldMarkCompletedWhenAllChildrenCompleted
+        return self.__shouldMarkCompletedWhenAllChildrenCompleted.get()
 
     @classmethod
     def suggestedPlannedStartDateTime(cls, now=date.Now):

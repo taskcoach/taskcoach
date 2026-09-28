@@ -838,7 +838,9 @@ class CategoryFilterAndViewFilterFixtureAndCommonTestsMixin(
     def setUp(self):
         task.Task.settings = config.Settings(load=False)
         self.parent = task.Task("parent task")
-        self.parent.setShouldMarkCompletedWhenAllChildrenCompleted(False)
+        self.parent.set_should_mark_completed_when_all_children_completed(
+            False
+        )
         self.child = task.Task("child task")
         self.child.setCompletionDateTime()
         self.childCategory = category.Category("child category")
@@ -916,7 +918,9 @@ class ViewFilterWrappingCategoryFilterFixture(CategoryFilterHelpersMixin):
         task.Task.settings = config.Settings(load=False)
         # Parent task with no category
         self.parent = task.Task("parent task")
-        self.parent.setShouldMarkCompletedWhenAllChildrenCompleted(False)
+        self.parent.set_should_mark_completed_when_all_children_completed(
+            False
+        )
         # Child task with category, completed
         self.child = task.Task("child task")
         self.child.setCompletionDateTime()

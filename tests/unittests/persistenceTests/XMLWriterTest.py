@@ -382,13 +382,13 @@ class XMLWriterTest(test.TestCase):
         self.expect_not_in_xml("shouldMarkCompletedWhenAllChildrenCompleted")
 
     def testMarkCompletedWhenAllChildrenAreCompletedSetting_True(self):
-        self.task.setShouldMarkCompletedWhenAllChildrenCompleted(True)
+        self.task.set_should_mark_completed_when_all_children_completed(True)
         self.expect_in_xml(
             'shouldMarkCompletedWhenAllChildrenCompleted="True"'
         )
 
     def testMarkCompletedWhenAllChildrenAreCompletedSetting_False(self):
-        self.task.setShouldMarkCompletedWhenAllChildrenCompleted(False)
+        self.task.set_should_mark_completed_when_all_children_completed(False)
         self.expect_in_xml(
             'shouldMarkCompletedWhenAllChildrenCompleted="False"'
         )
