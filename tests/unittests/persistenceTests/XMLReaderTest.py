@@ -1942,7 +1942,8 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
             <task id="t1.1" subject="Subtask"
                   modificationDateTime="2012-12-12 12:00:00"/>
             <effort id="e1" start="2004-01-01 10:00:00"
-                    stop="2004-01-01 11:00:00"/>
+                    stop="2004-01-01 11:00:00"
+                    modificationDateTime="2012-12-12 12:00:00"/>
             <note id="n1" subject="Task note"
                   modificationDateTime="2012-12-12 12:00:00"/>
             <attachment id="a1" location="file.txt" type="file"
@@ -1974,9 +1975,11 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
                     items.extend(item.notes())
                 if hasattr(item, "attachments"):
                     items.extend(item.attachments())
+                if hasattr(item, "efforts"):
+                    items.extend(item.efforts())
         self.assertEqual(3, categories[0].stylePriority())
         self.assertEqual(
-            {"t1", "t1.1", "n1", "a1", "t2", "c1", "c1.1", "n2", "n2.1"},
+            {"t1", "t1.1", "e1", "n1", "a1", "t2", "c1", "c1.1", "n2", "n2.1"},
             {item.id() for item in items},
         )
         self.assertEqual(

@@ -227,6 +227,10 @@ class XMLWriter(object):
         entryMode = effort.entryMode()
         if entryMode and entryMode != "standard":
             attrs["entryMode"] = entryMode
+        if effort.creationDateTime() > date.DateTime.min:
+            attrs["creationDateTime"] = str(effort.creationDateTime())
+        if effort.modificationDateTime() > date.DateTime.min:
+            attrs["modificationDateTime"] = str(effort.modificationDateTime())
         node = ET.SubElement(parentNode, "effort", attrs)
         if effort.description():
             ET.SubElement(node, "description").text = effort.description()

@@ -116,8 +116,7 @@ the reader gives it back for a missing attribute.
 | Line | XML Attribute | Skip Condition | Type |
 |------|--------------|----------------|------|
 | 234 | `entryMode` | falsy or `== "standard"` | Hardcoded string |
-
-Efforts save no modification date.
+| | `creationDateTime`, `modificationDateTime` | `<= DateTime.min` | Sentinel; with microseconds (`date.Timestamp`) |
 
 ### Category Node
 

@@ -142,14 +142,29 @@ class XMLWriterTest(test.TestCase):
         )
         self.task.addEffort(taskEffort)
         self.expect_in_xml(
-            '<effort id="%s" start="%s" stop="%s">\n'
+            '<effort id="%s" start="%s" stop="%s" creationDateTime="%s">\n'
             "<description>\ndescription\nline 2\n</description>\n"
             "</effort>"
             % (
                 taskEffort.id(),
                 taskEffort.getStart(),
                 taskEffort.getStop(),
+                taskEffort.creationDateTime(),
             )
+        )
+
+    def test_effort_dates_are_written(self):
+        self.task.addEffort(
+            effort.Effort(
+                self.task,
+                date.DateTime(2004, 1, 1),
+                creationDateTime=date.Timestamp(2004, 1, 1, 0, 0, 0, 1),
+                modificationDateTime=date.Timestamp(2005, 1, 1, 0, 0, 0, 2),
+            )
+        )
+        self.expect_in_xml('creationDateTime="2004-01-01 00:00:00.000001"')
+        self.expect_in_xml(
+            'modificationDateTime="2005-01-01 00:00:00.000002"'
         )
 
     def testThatEffortTimesDoNotContainMilliseconds(self):
@@ -186,12 +201,10 @@ class XMLWriterTest(test.TestCase):
         self.task.addEffort(
             effort.Effort(self.task, date.DateTime(2004, 1, 1))
         )
+        active = self.task.efforts()[0]
         self.expect_in_xml(
-            '<effort id="%s" start="%s" />'
-            % (
-                self.task.efforts()[0].id(),
-                self.task.efforts()[0].getStart(),
-            )
+            '<effort id="%s" start="%s" creationDateTime="%s" />'
+            % (active.id(), active.getStart(), active.creationDateTime())
         )
 
     def testNoEffortByDefault(self):

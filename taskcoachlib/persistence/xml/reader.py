@@ -712,13 +712,21 @@ class XMLReader(object):
         # effort owner, which is good.
         # pylint: disable=W0142
         entryMode = node.attrib.get("entryMode", "standard")
-        return effort.Effort(
-            task=None,
-            start=date.parseDateTime(start),
-            stop=date.parseDateTime(stop),
-            description=description,
-            entryMode=entryMode,
-            **kwargs,
+        return self.__save_modification_datetime(
+            effort.Effort(
+                task=None,
+                start=date.parseDateTime(start),
+                stop=date.parseDateTime(stop),
+                description=description,
+                entryMode=entryMode,
+                creationDateTime=self.__parse_timestamp(
+                    node.attrib.get("creationDateTime", "1-1-1 0:0")
+                ),
+                modificationDateTime=self.__parse_timestamp(
+                    node.attrib.get("modificationDateTime", "1-1-1 0:0")
+                ),
+                **kwargs,
+            )
         )
 
     def __parse_guid_node(self, node):

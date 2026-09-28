@@ -119,13 +119,14 @@ def _roots(task_file):
 
 
 def _walk(items):
-    """The items, their subitems, and the notes and attachments they
-    own, recursively."""
+    """The items, their subitems, and the notes, attachments and
+    efforts they own, recursively."""
     for item in items:
         yield item
         yield from _walk(getattr(item, "children", list)())
         yield from _walk(getattr(item, "notes", list)())
         yield from _walk(getattr(item, "attachments", list)())
+        yield from _walk(getattr(item, "efforts", list)())
 
 
 def _newest_date(task_file):
