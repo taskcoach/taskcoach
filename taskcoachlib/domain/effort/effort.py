@@ -82,10 +82,6 @@ class Effort(baseeffort.BaseEffort, base.Object):
     setParent = setTask  # FIXME: should we create a common superclass for Effort and Task?
 
     @classmethod
-    def monitoredAttributes(class_):
-        return base.Object.monitoredAttributes() + ["start", "stop"]
-
-    @classmethod
     def taskChangedEventType(class_):
         return "pubsub.effort.task"
 

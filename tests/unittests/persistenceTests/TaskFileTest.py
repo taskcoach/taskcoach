@@ -797,6 +797,14 @@ class TaskFileSaveAndLoadTest(TaskFileTestCase):
     def testSaveAndLoadNotes(self):
         self.saveAndLoad([], [], [self.note])
 
+    def test_save_and_load_keep_exclusivity_and_its_date(self):
+        self.category.makeSubcategoriesExclusive()
+        modification_datetime = self.category.modificationDateTime()
+        self.saveAndLoad([], [self.category])
+        loaded = list(self.emptyTaskFile.categories())[0]
+        self.assertEqual(True, loaded.hasExclusiveSubcategories())
+        self.assertEqual(modification_datetime, loaded.modificationDateTime())
+
     def test_save_and_load_keep_the_changed_style_priority_and_its_date(self):
         self.category.setStylePriority(3)
         modification_datetime = self.category.modificationDateTime()

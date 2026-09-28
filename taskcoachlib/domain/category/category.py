@@ -58,18 +58,15 @@ class Category(
             weak=True,
         )
         self.__filtered = filtered
-        self.__exclusiveSubcategories = exclusiveSubcategories
+        self.__exclusiveSubcategories = base.Attribute(
+            exclusiveSubcategories,
+            self,
+            self._on_exclusive_subcategories_changed,
+        )
         self.__stylePriority = base.Attribute(
             stylePriority, self, self.stylePriorityChangedEvent
         )
         # Note: Effective appearance is computed by the master loop
-
-    @classmethod
-    def monitoredAttributes(class_):
-        return base.CompositeObject.monitoredAttributes() + [
-            "exclusiveSubcategories",
-            "stylePriority"
-        ]
 
     @classmethod
     def filterChangedEventType(class_):
@@ -119,7 +116,7 @@ class Category(
                 filtered=self.__filtered,
                 stylePriority=self.stylePriority(),
             ),
-            exclusiveSubcategories=self.__exclusiveSubcategories,
+            exclusiveSubcategories=self.hasExclusiveSubcategories(),
         )
         return state
 
@@ -219,28 +216,19 @@ class Category(
             event.addSource(categorizable, type=categorizable.effectiveIconChangedEventType())
 
     def hasExclusiveSubcategories(self):
-        return self.__exclusiveSubcategories
+        return self.__exclusiveSubcategories.get()
 
     def isMutualExclusive(self):
         parent = self.parent()
         return parent and parent.hasExclusiveSubcategories()
 
-    @patterns.eventSource
     def makeSubcategoriesExclusive(self, exclusive=True, event=None):
-        if exclusive == self.hasExclusiveSubcategories():
-            return
-        self.__exclusiveSubcategories = exclusive
+        self.__exclusiveSubcategories.set(exclusive, event=event)
+
+    def _on_exclusive_subcategories_changed(self, event):
         self.exclusiveSubcategoriesEvent(event)
         for child in self.children():
             child.setFiltered(False, event=event)
-
-    # "Conventional" naming for the monitor
-    def exclusiveSubcategories(self):
-        return self.hasExclusiveSubcategories()
-
-    @patterns.eventSource
-    def setExclusiveSubcategories(self, exclusive=True, event=None):
-        self.makeSubcategoriesExclusive(exclusive=exclusive, event=event)
 
     def exclusiveSubcategoriesEvent(self, event):
         event.addSource(

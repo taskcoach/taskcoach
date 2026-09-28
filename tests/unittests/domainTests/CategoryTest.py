@@ -219,6 +219,19 @@ class CategoryTest(test.TestCase):
         filteredCategory = category.Category("test", filtered=True)
         self.assertTrue(filteredCategory.isFiltered())
 
+    # Exclusive subcategories:
+
+    def test_exclusive_subcategories_change_sets_the_modification_date(self):
+        before = date.Now()
+        self.category.makeSubcategoriesExclusive()
+        self.assertTrue(before <= self.category.modificationDateTime())
+
+    def test_unchanged_exclusivity_keeps_the_modification_date(self):
+        self.category.makeSubcategoriesExclusive(False)
+        self.assertEqual(
+            date.DateTime.min, self.category.modificationDateTime()
+        )
+
     # Style priority:
 
     def test_style_priority_is_zero_by_default(self):

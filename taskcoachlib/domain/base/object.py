@@ -265,10 +265,6 @@ class Object:
         state = self.__getcopystate__()
         return self.__class__(**state)
 
-    @classmethod
-    def monitoredAttributes(class_):
-        return ["ordering", "subject", "description", "appearance"]
-
     # Id:
 
     def id(self):
@@ -693,10 +689,6 @@ class CompositeObject(Object, patterns.ObservableComposite):
         state = super().__getcopystate__()
         state.update(dict(expandedContexts=self.expandedContexts()))
         return state
-
-    @classmethod
-    def monitoredAttributes(class_):
-        return Object.monitoredAttributes() + ["expandedContexts"]
 
     # Subject:
 

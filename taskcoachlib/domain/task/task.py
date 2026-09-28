@@ -254,28 +254,6 @@ class Task(
         )
         return state
 
-    @classmethod
-    def monitoredAttributes(class_):
-        return (
-            categorizable.CategorizableCompositeObject.monitoredAttributes()
-            + [
-                "plannedStartDateTime",
-                "dueDateTime",
-                "actualStartDateTime",
-                "completionDateTime",
-                "percentageComplete",
-                "recurrence",
-                "reminder",
-                "budget",
-                "plannedDuration",
-                "plannedDurationMode",
-                "priority",
-                "hourlyFee",
-                "fixedFee",
-                "shouldMarkCompletedWhenAllChildrenCompleted",
-            ]
-        )
-
     @patterns.eventSource
     def addCategory(self, *categories, **kwargs):
         if super().addCategory(*categories, **kwargs):
