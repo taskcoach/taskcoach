@@ -686,6 +686,15 @@ class CompositeObject(Object, patterns.ObservableComposite):
         self.__expandedContexts = set(kwargs.pop("expandedContexts", []))
         super().__init__(*args, **kwargs)
 
+    def setParent(self, parent):
+        # The item's own link; its parent's children are the reverse.
+        # Changing it sets the item's date (docs/ATTRIBUTE_PATTERN.md,
+        # Modification Date)
+        changed = parent is not self.parent()
+        super().setParent(parent)
+        if changed:
+            self.set_modification_datetime(Timestamp.now())
+
     def __getcopystate__(self):
         state = super().__getcopystate__()
         state.update(dict(expandedContexts=self.expandedContexts()))

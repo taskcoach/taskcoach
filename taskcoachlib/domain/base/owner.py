@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
+from taskcoachlib.domain.date import Timestamp
 from .object import fresh_state
 
 
@@ -51,6 +52,14 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
         super(klass, instance).__init__(*args, **kwargs)
 
     klass.__init__ = constructor
+
+    def owner_changed(owned_objects, event):
+        # Each owned object's own link, as a subtask's parent: changing
+        # it sets the object's date (docs/ATTRIBUTE_PATTERN.md,
+        # Modification Date)
+        now = Timestamp.now()
+        for owned_object in owned_objects:
+            owned_object.set_modification_datetime(now, event=event)
 
     def changedEventType(class_):
         return "%s.%ss" % (class_, klass.__ownedType__.lower())
@@ -102,12 +111,20 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
 
     @patterns.eventSource
     def setObjects(instance, newObjects, event=None):
-        if newObjects == objects(instance):
+        old_objects = objects(instance)
+        if newObjects == old_objects:
             return
         setattr(
             instance,
             "_%s__%ss" % (name, klass.__ownedType__.lower()),
             newObjects,
+        )
+        old_ids = {id(each) for each in old_objects}
+        new_ids = {id(each) for each in newObjects}
+        owner_changed(
+            [each for each in newObjects if id(each) not in old_ids]
+            + [each for each in old_objects if id(each) not in new_ids],
+            event,
         )
         changedEvent(instance, event, *newObjects)  # pylint: disable=W0142
 
@@ -147,6 +164,7 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
         getattr(
             instance, "_%s__%ss" % (name, klass.__ownedType__.lower())
         ).append(ownedObject)
+        owner_changed([ownedObject], event)
         changedEvent(instance, event, ownedObject)
         addedEvent(instance, event, ownedObject)
 
@@ -160,6 +178,7 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
             instance, "_%s__%ss" % (name, klass.__ownedType__.lower())
         ).extend(ownedObjects)
         event = kwargs.pop("event", None)
+        owner_changed(ownedObjects, event)
         changedEvent(instance, event, *ownedObjects)
         addedEvent(instance, event, *ownedObjects)
 
@@ -170,6 +189,7 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
         getattr(
             instance, "_%s__%ss" % (name, klass.__ownedType__.lower())
         ).remove(ownedObject)
+        owner_changed([ownedObject], event)
         changedEvent(instance, event, ownedObject)
         removedEvent(instance, event, ownedObject)
 
@@ -179,6 +199,7 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
     def removeObjects(instance, *ownedObjects, **kwargs):
         if not ownedObjects:
             return
+        removed = []
         for ownedObject in ownedObjects:
             try:
                 getattr(
@@ -186,7 +207,10 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
                 ).remove(ownedObject)
             except ValueError:
                 pass
+            else:
+                removed.append(ownedObject)
         event = kwargs.pop("event", None)
+        owner_changed(removed, event)
         changedEvent(instance, event, *ownedObjects)
         removedEvent(instance, event, *ownedObjects)
 

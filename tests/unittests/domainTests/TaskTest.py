@@ -899,6 +899,17 @@ class DefaultTaskStateTest(
         self.task.add_prerequisites([task.Task()])
         self.assertTrue(before <= self.task.modificationDateTime())
 
+    def test_moving_a_subtask_sets_its_date_not_its_parents(self):
+        parent = task.Task(modificationDateTime=date.DateTime(2020, 1, 1))
+        child = task.Task(modificationDateTime=date.DateTime(2020, 1, 1))
+        parent.addChild(child)
+        self.assertEqual(
+            date.DateTime(2020, 1, 1), parent.modificationDateTime()
+        )
+        self.assertTrue(
+            date.DateTime(2020, 1, 1) < child.modificationDateTime()
+        )
+
     def test_dependency_change_keeps_the_modification_date(self):
         # The reverse of a prerequisite: not the task's saved data
         before = self.task.modificationDateTime()

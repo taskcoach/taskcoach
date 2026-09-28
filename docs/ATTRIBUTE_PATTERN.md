@@ -300,10 +300,17 @@ exact.
 
 How: every stored field is an Attribute or a SetAttribute, and these
 set their owner's modification date when their value changes;
-Attributes of computed values are marked volatile and do not. Links
-between items (subtasks and parent, notes, attachments, efforts,
-prerequisites, category membership) set it on the item whose links
-changed.
+Attributes of computed values are marked volatile and do not.
+
+**Ruling, 2026-09-28: a link belongs to the item that points.** A
+subitem's parent, an owned note's or attachment's owner, an effort's
+task and a task's prerequisites are that item's own data: changing
+them sets its date. The reverse lists (children, owned notes and
+attachments, efforts, dependencies) are derived and set no date.
+Merging follows the same rule
+([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)). Category
+membership still sets the date on both sides until its direction is
+decided ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#open-questions-and-issues-found)).
 
 Before step 0 (traced 2026-09-27) only commands set it, on the items
 they were given (`BaseCommand.modified_items()`, `command/base.py`),
@@ -344,7 +351,7 @@ and sets the modification date, then is tested:
 | 7 | Task recurrence | Plain value, pypubsub | Done: Attribute, Publisher; recurring sets a copy with the next count, instead of changing it in place |
 | 8 | Effort start, stop, entry mode, task | Attributes (not the task), pypubsub; the date is not saved | Done: the dates are saved; start, stop, entry mode and task are Publisher events; moving to another task sets the date. Duration, revenue and tracking stay computed messages |
 | 9 | Task prerequisites (dependencies are their reverse) | Plain sets, pypubsub | Done: prerequisites a SetAttribute, dependencies derived (no date); Publisher |
-| 10 | Links: subtasks and parent, owned notes and attachments, efforts | Plain lists, Publisher | To do |
+| 10 | Links: subtasks and parent, owned notes and attachments, efforts | Plain lists, Publisher | Done: the pointing item's date (ruling above); merging owned items by item: to do |
 | 11 | View state: a category's filter state, the expanded state | Plain values | To decide: stored, but not the item's data |
 | 12 | Commands no longer set the date: the undo log records every change ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log)) | | Last |
 

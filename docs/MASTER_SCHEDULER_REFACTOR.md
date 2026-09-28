@@ -503,28 +503,35 @@ Questions to decide:
    an Attribute). One rule for all three
    ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date),
    row 11).
+4. **Category membership: which side owns the link?** Links belong
+   to the item that points (ruling, 2026-09-28). The file stores the
+   member list on the category, but a task's categories work like
+   tags on the task. If the task owns them, the category's members
+   are the reverse and merging takes membership from the tasks'
+   winning copies; today both sides set their date and merging uses
+   the category's copy.
 
 Issues found, not fixed:
 
-4. The loop runs a pass on every pypubsub task, note and category
+5. The loop runs a pass on every pypubsub task, note and category
    message (the `pubsub.task` catch-all), computed ones included:
    revenue, time spent, budget left, tracking. A fee change still runs
    a pass through its revenue message. Narrow it as the stored fields
    leave pypubsub (item 14).
-5. Attachment re-sorting listens under the base `Attachment` class's
+6. Attachment re-sorting listens under the base `Attachment` class's
    event types; file, link and mail attachments send under their own
    class names, so no change re-sorts them, whatever the column.
-6. Task editor, Progress tab: a second percentage spin control and
+7. Task editor, Progress tab: a second percentage spin control and
    slider are drawn over the tab labels (seen under Xvfb with
    openbox; to check on a real display).
-7. `EffortViewerTest.testStatusMessage_OneTaskOneActiveEffort` failed
+8. `EffortViewerTest.testStatusMessage_OneTaskOneActiveEffort` failed
    once: it expects 0:00:00 for an effort started when the test
    starts, so a second boundary fails it. Timing, not a regression.
-8. File > Merge moves subtasks between parents with the normal
+9. File > Merge moves subtasks between parents with the normal
    operations, so the parent rules (completed when all children are,
    reopened by an open child) can run during it; the merged items
    still keep their winning copies' dates (`persistence/merge.py`).
-9. A `.delta` file left by an older version next to a task file is
+10. A `.delta` file left by an older version next to a task file is
    ignored; nothing removes it.
 
 ---
