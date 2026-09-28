@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import test
 from taskcoachlib import config, patterns
-from taskcoachlib.domain import task, effort, date, category
+from taskcoachlib.domain import attachment, task, effort, date, category
 
 
 class DummyTaskList(task.TaskList):
@@ -509,3 +509,23 @@ class EffortSorterTest(test.TestCase):
         self.assertEqual(
             [self.newestEffort, childEffort, self.oldestEffort], self.sorter
         )
+
+
+class AttachmentSorterTest(test.TestCase):
+    """File, link and mail attachments send their changes under their
+    own classes' event types."""
+
+    def setUp(self):
+        self.file = attachment.FileAttachment("b.txt", subject="b")
+        self.link = attachment.URIAttachment("https://a", subject="c")
+        self.sorter = attachment.AttachmentSorter(
+            attachment.AttachmentList([self.file, self.link])
+        )
+
+    def test_a_file_attachment_change_resorts(self):
+        self.file.setSubject("d")
+        self.assertEqual([self.link, self.file], list(self.sorter))
+
+    def test_a_link_change_resorts(self):
+        self.link.setSubject("a")
+        self.assertEqual([self.link, self.file], list(self.sorter))

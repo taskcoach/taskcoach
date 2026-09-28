@@ -310,7 +310,8 @@ class Object:
 
     @classmethod
     def modificationDateTimeSortEventTypes(cls):
-        # Found by name, from the sort key (Sorter._getSortEventTypes)
+        # Found by name, from the sort key
+        # (Sorter._get_sort_event_types)
         return (cls.modification_datetime_changed_event_type(),)
 
     @staticmethod

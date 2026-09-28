@@ -135,13 +135,13 @@ class Sorter(patterns.ListDecorator):
             return self._getSortKeyFunction("subject")
 
     def _register_observer_for_attribute(self, attribute):
-        for event_type in self._getSortEventTypes(attribute):
+        for event_type in self._get_sort_event_types(attribute):
             patterns.Publisher().registerObserver(
                 self.on_attribute_changed, eventType=event_type
             )
 
     def _remove_observer_for_attribute(self, attribute):
-        for event_type in self._getSortEventTypes(attribute):
+        for event_type in self._get_sort_event_types(attribute):
             patterns.Publisher().removeObserver(
                 self.on_attribute_changed, eventType=event_type
             )
@@ -149,13 +149,20 @@ class Sorter(patterns.ListDecorator):
     def on_attribute_changed(self, event):  # pylint: disable=W0613
         self.reset()
 
-    def _getSortEventTypes(self, attribute):
-        try:
-            return getattr(
-                self.DomainObjectClass, "%sSortEventTypes" % attribute
-            )()
-        except AttributeError:
-            return []
+    @classmethod
+    def sorted_classes(cls):
+        """The classes of the items sorted: each sends its own change
+        events."""
+        return (cls.DomainObjectClass,)
+
+    def _get_sort_event_types(self, attribute):
+        event_types = []
+        for klass in self.sorted_classes():
+            getter = getattr(klass, "%sSortEventTypes" % attribute, None)
+            for event_type in getter() if getter else ():
+                if event_type not in event_types:
+                    event_types.append(event_type)
+        return event_types
 
 
 class TreeSorter(Sorter):

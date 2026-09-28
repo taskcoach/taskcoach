@@ -22,4 +22,12 @@ from . import attachment
 
 class AttachmentSorter(base.Sorter):
     DomainObjectClass = attachment.Attachment
-    EventTypePrefix = "attachment"
+
+    @classmethod
+    def sorted_classes(cls):
+        # Their change events carry their own class names
+        return (
+            attachment.FileAttachment,
+            attachment.URIAttachment,
+            attachment.MailAttachment,
+        )

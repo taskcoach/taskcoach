@@ -24,8 +24,8 @@ then pypubsub is removed
 2. Done 2026-09-28: the rest of pypubsub (the task file's,
    settings', commands' and viewers' messages) moved to the Publisher,
    and pypubsub is no longer a dependency.
-3. Attachments re-sorted under their own classes' event types
-   (issue 6).
+3. Done 2026-09-28: attachments re-sorted under their own classes'
+   event types (issue 6).
 
 The scheduler:
 
@@ -559,9 +559,11 @@ Issues found, not fixed:
    ones included, so a fee change ran one through its revenue message
    and expanding a task ran one too. The messages are Publisher events
    now and the hook lists what the loop reads (`SchedulerTest`).
-6. Attachment re-sorting listens under the base `Attachment` class's
-   event types; file, link and mail attachments send under their own
-   class names, so no change re-sorts them, whatever the column.
+6. Fixed 2026-09-28: attachment re-sorting listened under the base
+   `Attachment` class's event types, while file, link and mail
+   attachments send under their own class names, so no change re-sorted
+   them. A sorter now listens to the events of each class it sorts
+   (`Sorter.sorted_classes()`, `SorterTest`).
 7. Task editor, Progress tab: a second percentage spin control and
    slider are drawn over the tab labels (seen under Xvfb with
    openbox; to check on a real display).
