@@ -3,8 +3,8 @@
 Plan to replace the full scan `MasterScheduler` runs every second.
 [SCHEDULERS.md](SCHEDULERS.md) describes the scheduler as it is.
 
-**Status:** steps 1 to 6, 8, 9 and 11 to 14 done, 2026-09-28
-([Cost After](#cost-after)); what is left:
+**Status:** steps 1 to 6, 8, 9 and 11 to 14 done, step 10 decided
+(no change), 2026-09-28 ([Cost After](#cost-after)); what is left:
 [Remaining Work](#remaining-work).
 
 ## Remaining Work
@@ -29,8 +29,8 @@ then pypubsub is removed
 
 The scheduler:
 
-4. Step 10: one reminder window per due reminder when a file opens,
-   the loading freeze.
+4. Decided 2026-09-28, no change: one reminder window per due
+   reminder when a file opens, the loading freeze (step 10).
 5. Done 2026-09-28: the status bar counts after the clock changes a
    status (issue 12).
 6. Step 7: drop the legacy status and colours.
@@ -477,11 +477,12 @@ Found along the way, 2026-09-27:
    change monitor never records it: added, with a test for the merge
    and the save paths (`TaskFileTest`); done.
 
-10. The first pass after a file opens opens one reminder window per
-    due reminder, about 140 ms each: with 2000 tasks, 134 windows
-    made it 19 s, against 0.7 s without them. This is the loading
-    freeze. One window listing the due reminders, or windows opened
-    one per tick, would end it.
+10. Decided 2026-09-28, no change: the first pass after a file opens
+    opens one reminder window per due reminder, about 140 ms each:
+    with 2000 tasks, 134 windows made it 19 s, against 0.7 s without
+    them. Every reminder keeps its own window and the wait is
+    accepted ([REMINDERS.md](REMINDERS.md#overview)); windows opened
+    later, one per tick, would pop up while the user is clicking.
 11. With many statuses changing each minute (2000 tasks, dates within
     60 minutes) the UI thread was busy 98% of the time, 96% in
     autosave: a status change marked the file dirty, although the

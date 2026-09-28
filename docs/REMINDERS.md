@@ -10,6 +10,12 @@ dialog (`taskcoachlib/gui/dialog/reminder.py`) that:
 3. Plays the configured reminder sound
 4. Optionally speaks the reminder text via text-to-speech
 
+**Ruling, 2026-09-28:** every due reminder gets its own window, also
+when many are due at once as a file opens. Task Coach is busy while
+they open (about 140 ms each: 19 s for 134); that is accepted.
+Reminders matter, and windows opened later, one by one, would pop up
+while the user is already clicking elsewhere.
+
 ## Reminder Sound
 
 ### Settings
