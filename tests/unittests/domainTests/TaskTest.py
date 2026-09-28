@@ -2084,6 +2084,14 @@ class TaskWithChildTest(
         childEffort.setStop(date.DateTime(2005, 1, 1, 12, 0, 0))
         self.assertTrue((self.task1.timeSpent(), self.task1) in events)
 
+    def test_subtask_recurrence_change_names_the_chain(self):
+        # A collapsed ancestor shows its subtasks' shortest recurrence
+        self.registerObserver(task.Task.recurrenceChangedEventType())
+        self.task1_1.set_recurrence(date.Recurrence("weekly"))
+        self.assertEqual(
+            {self.task1_1, self.task1}, self.events[0].sources()
+        )
+
     def test_subtask_priority_change_names_the_chain(self):
         self.registerObserver(
             task.Task.effective_priority_changed_event_type()

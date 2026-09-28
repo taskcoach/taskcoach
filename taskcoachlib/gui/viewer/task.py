@@ -1573,7 +1573,10 @@ class TaskViewer(
                 _("Time left"),
                 None,
                 None,
-                [task.Task.expansionChangedEventType(), "task.timeLeft"],
+                [
+                    task.Task.expansionChangedEventType(),
+                    task.Task.dueDateTimeChangedEventType(),
+                ],
             ),
             (
                 "recurrence",

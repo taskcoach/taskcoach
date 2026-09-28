@@ -63,6 +63,21 @@ uses it (`renderedValue()` in `gui/viewer/task.py`, the `recursive`
 argument of each getter). The master loop reads none of these subtree
 values: its entries and statuses use each task's own dates.
 
+Subtree values are computed when drawn or sorted, and kept current by
+events, like the effective priority:
+
+- A change to a task's field names the task and all its ancestors
+  (`Task._send_to_self_and_ancestors()`); recurrence did not until
+  2026-09-28.
+- A subtask completed or reopened sends its completion event to all
+  its ancestors. The task viewer's Subject column listens to it, so
+  their rows repaint, and the task sorter re-sorts on every date and
+  completion event, whatever it sorts by.
+- Adding, removing or moving a task (drag and drop removes and adds
+  it) refreshes the viewer and re-sorts.
+- Time left also changes with the clock: the viewer redraws every
+  minute.
+
 | Column | Subtree value |
 |---|---|
 | Planned start date | Earliest of the task's and its open subtasks' |

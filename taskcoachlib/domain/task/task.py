@@ -358,12 +358,11 @@ class Task(
                 dependency, type=dependency.prerequisitesChangedEventType()
             )
 
-    def _send_to_self_and_ancestors(self, event, event_type, value):
-        """Announce a change of this task's date: its ancestors show it
-        in their recursive values, so they are sources too."""
-        event.addSource(self, value, type=event_type)
-        for ancestor in self.ancestors():
-            event.addSource(ancestor, value, type=event_type)
+    def _send_to_self_and_ancestors(self, event, event_type, *value):
+        """Announce a change of this task's field: its ancestors show it
+        in their subtree values, so they are sources too."""
+        for each_task in [self] + self.ancestors():
+            event.addSource(each_task, *value, type=event_type)
 
     # Due date
 
@@ -1494,11 +1493,9 @@ class Task(
     def _send_effective_priority_changed(self, event):
         # The task and its ancestors are the only effective priorities
         # a change below them can move
-        for each_task in [self] + self.ancestors():
-            event.addSource(
-                each_task,
-                type=each_task.effective_priority_changed_event_type(),
-            )
+        self._send_to_self_and_ancestors(
+            event, self.effective_priority_changed_event_type()
+        )
 
     @classmethod
     def effective_priority_changed_event_type(cls):
@@ -1692,7 +1689,9 @@ class Task(
 
     def _on_recurrence_changed(self, event):
         # Without the value: a Recurrence is mutable, so not hashable
-        event.addSource(self, type=self.recurrenceChangedEventType())
+        self._send_to_self_and_ancestors(
+            event, self.recurrenceChangedEventType()
+        )
 
     @classmethod
     def recurrenceChangedEventType(class_):
