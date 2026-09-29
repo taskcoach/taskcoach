@@ -2757,7 +2757,7 @@ class DateComboCustomCtrl(wx.ComboCtrl):
         self._dateCtrl.Navigate = _navigateWithFlag
 
         # Intercept any text the ComboCtrl auto-inserts (e.g. on popup dismiss)
-        self.Bind(wx.EVT_TEXT, self._onComboText)
+        self.Bind(wx.EVT_TEXT, self._on_combo_text)
 
         # Track when popup opens (covers both F4/Enter and button click)
         self.Bind(wx.EVT_COMBOBOX_DROPDOWN, self._onPopupOpen)
@@ -2784,8 +2784,10 @@ class DateComboCustomCtrl(wx.ComboCtrl):
         self._dateCtrl.SetFocus()
         self._redirectingFocus = False
 
-    def _onComboText(self, event):
+    def _on_combo_text(self, event):
         """Clear any text the ComboCtrl auto-inserts on popup dismiss."""
+        if not self:
+            return  # Sent once more while the control is destroyed
         if self.GetValue():
             self.ChangeValue("")
 

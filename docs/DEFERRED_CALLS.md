@@ -251,9 +251,9 @@ those windows go, as on master.
   seconds, under the same rule: its tick is skipped once the main
   window is gone, and it is freed at the [End of Life](#end-of-life)
   ([SCHEDULERS.md](SCHEDULERS.md)).
-- A wx event handler reaching a deleted window is another problem,
-  not a deferred call: a date popup's text event after its editor
-  closed (P12 in
+- A wx event handler reaching a deleted window is not a deferred
+  call, but the same rule holds: the handler exits when its window is
+  gone (a date popup's text event after its editor closed, P12 in
   [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
 
 ## Related Documents

@@ -102,12 +102,9 @@ go at the end. Details live in the sections and documents linked.
     test list.
 43. Squash to one commit before pushing, version 2.0.3.0 in the body;
     the release date (2026-09-28) may move.
-44. One app run on 2026-09-28 logged a traceback (log lost, not
-    reproduced in four runs of the same steps): watch for it.
-    Candidates, both from master: the spell check's 0.3 s timer
-    firing after its editor closed (fixed 2026-09-29, 53), and a date
-    popup's text event reaching its deleted control when the editor
-    closes (P12).
+44. ~~A traceback lost on 2026-09-28~~: both candidates fixed, the
+    spell check's timer (53) and the date popup (P12); reopen if it
+    shows again.
 45. Incremental pass: at a due second, process only what changed and
     what depends on it, not every object; first thoughts, to review
     ([Incremental Pass](#incremental-pass)).
@@ -130,6 +127,13 @@ go at the end. Details live in the sections and documents linked.
     ([DEFERRED_CALLS.md](DEFERRED_CALLS.md#end-of-life)).
 55. ~~Renames deferred as too wide~~: moved to
     [Deferred or Will Not Do](#deferred-or-will-not-do), D1.
+56. The macOS editor poll, a 1 s timer since 2013 (Task Coach bug
+    1438): wx 2.8 Carbon sent a synthetic Cancel that hid a background
+    editor without a close event. That code left wxWidgets in 3.1;
+    Escape now closes an editor through `Close()` on every port.
+    Proposed: remove the poll, optionally with `wx.ID_CANCEL` bound to
+    `Close()` as a safety net without a timer; checked on a Mac.
+    Designer's decision.
 
 ## Deferred or Will Not Do
 
@@ -182,10 +186,10 @@ step of this refactor):
 
 In the app:
 
-- P12. Closing an editor after using a date popup logs a RuntimeError:
-  the popup's text event reaches its deleted control
-  (`_onComboText()` in `widgets/maskedtimectrl.py`, #343). A candidate
-  for the lost traceback (44).
+- P12. ~~Closing an editor after using a date popup logs a
+  RuntimeError~~: fixed 2026-09-29, 3 times of 3 before, 0 of 4
+  after. GTK sends one more text event while the control is
+  destroyed; the handler exits when its control is gone.
 - P13. ~~The calendar's month view fails under wxPython 4~~: fixed
   2026-09-29. With a calendar saved in month view the app did not
   start; `wx.DateTime.GetNumberOfDays()` replaces the removed call,
