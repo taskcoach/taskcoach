@@ -189,6 +189,7 @@ hypertreelist imported from: /path/to/.venv/lib/python3.X/site-packages/wx/lib/a
 
 - `[WXPYTHON_PATCH]`: wxPython background coloring patch (import hook and patched module)
 - `[MONKEYPATCH]`: Python compatibility patches (inspect.getargspec, Window.SetSize)
+- `[GEOM]`: geometry trace ([DEVELOPMENT.md](DEVELOPMENT.md#diagnosing))
 
 ---
 

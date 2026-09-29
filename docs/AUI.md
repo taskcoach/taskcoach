@@ -9,7 +9,8 @@ This document covers AUI-related topics for Task Coach, which uses wxPython's AG
    - [AUI-Generated Panes](#aui-generated-panes)
 2. [Sash Cursor Seep-Through Fix](#sash-cursor-seep-through-fix)
 3. [System Colour Change Event](#system-colour-change-event)
-4. [Related Documentation](#related-documentation)
+4. [Destroy Event](#destroy-event)
+5. [Related Documentation](#related-documentation)
 
 ---
 
@@ -224,6 +225,18 @@ notebooks) still consumes it.
 |------|---------|
 | `taskcoachlib/widgets/frame.py` | `_AuiManager` - skips `EVT_SYS_COLOUR_CHANGED` |
 | `wx/lib/agw/aui/framemanager.py` | System file - `OnSysColourChanged()` without `Skip()` |
+
+---
+
+## Destroy Event
+
+`AuiManager.OnDestroy()` handles `EVT_WINDOW_DESTROY` of its managed
+window without `Skip()`, so handlers bound on the main window or on an
+`AuiNotebook` never run. Neither the crash guard's timer watch
+([CRASH_GUARD.md](CRASH_GUARD.md)) nor the Publisher's unsubscribe on
+destroy covers these windows: a timer they own ticks into freed memory
+once they are gone. Own such timers elsewhere, or check the window at
+each tick (the geometry trace does).
 
 ---
 

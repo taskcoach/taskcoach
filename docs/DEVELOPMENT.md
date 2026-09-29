@@ -75,6 +75,21 @@ Canon decision by designer, 2026-09-28.
   A test that no longer matches the app and needs a rewrite is marked
   `@test.stale("reason")`; `grep -rn "test.stale" tests` lists them.
 
+## Diagnosing
+
+- **Work from detailed logs, not guesses.** For a UI, timing or
+  ordering problem, log the state at high frequency with millisecond
+  timestamps (`log_step()`) through the full app, and read the cause
+  from the sequence. The screen shows the result, not the cause; a fix
+  that hides the symptom (a repaint, a delay) is not a fix.
+- **Layout, placement and drawing:** the geometry trace
+  (`taskcoachlib/meta/geometry_trace.py`) logs the windows' wx and GTK
+  geometry every 10 ms for 2 s after each event of interest, then
+  every second; on GTK 3 also each allocation and each draw, with its
+  place in the toplevel and the Python call that forced it. Call it
+  from the code under investigation, remove the call once the cause is
+  found.
+
 ## Documentation
 
 - Update documentation when adding or changing features.
