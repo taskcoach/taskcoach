@@ -564,7 +564,7 @@ if operating_system.isGTK():
 - Twisted framework removed, replaced with native wxPython + stdlib (November 2025)
 - Window position not remembered due to AUI + GTK spurious events (November 2025)
 - AUI pane flickering during startup fixed with Freeze/Thaw (November 2025)
-- GTK/Linux window position persistence - WM ignores initial position (November 2025) - See [WINDOW_POSITION_PERSISTENCE_ANALYSIS.md](WINDOW_POSITION_PERSISTENCE_ANALYSIS.md)
+- GTK/Linux window position persistence - WM ignores initial position (November 2025) - See [WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md)
 - GTK3 menu scroll arrows on first open (December 2025) - FileMenu refactored to use pub/sub
 - Search box text input invisible in AUI toolbars (December 2025) - Added SetMinSize to SearchCtrl
 - AUI divider drag has no visual feedback (December 2025) - Added AUI_MGR_LIVE_RESIZE, throttling, and deferred column resize

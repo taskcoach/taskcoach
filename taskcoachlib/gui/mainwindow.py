@@ -194,10 +194,6 @@ class MainWindow(
         # Reset toolbar position after perspective is loaded
         patterns.later.soon(self, self._resetToolbarPosition)
 
-        # Note: Window position/size tracking uses debouncing to handle spurious
-        # events from AUI LoadPerspective() and GTK window realization.
-        # Events are bound immediately in __init__, no manual start needed.
-
     @staticmethod
     def __unmatched_pane_names(perspective, panes):
         """Pane names that cannot be matched between saved and existing.
@@ -488,6 +484,8 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         ):
             self.Hide()
         else:
+            if not event.IsIconized():
+                patterns.later.soon(self, self.viewer.focus_skipped_viewer)
             event.Skip()
 
     def onResize(self, event):

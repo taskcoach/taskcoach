@@ -34,6 +34,7 @@ class ViewerContainer(object):
     def __init__(self, containerWidget, settings, *args, **kwargs):
         self.containerWidget = containerWidget
         self._notifyActiveViewer = False
+        self._focus_skipped = False  # While the main window was minimized
         self.__bind_event_handlers()
         self._settings = settings
         self.viewers = []
@@ -168,6 +169,12 @@ class ViewerContainer(object):
             self.active_viewer().activate()
         event.Skip()
 
+    def focus_skipped_viewer(self):
+        """Focus the active viewer if that was skipped while the main
+        window was minimized."""
+        if self._focus_skipped:
+            self.__ensure_active_viewer_has_focus()
+
     def send_viewer_status_event(self):
         patterns.Event(self.status_event_type(), self).send()
 
@@ -180,6 +187,12 @@ class ViewerContainer(object):
         viewer = self.active_viewer()
         if not viewer:
             return
+        # Focusing a minimized window restores it on X11: the window
+        # manager is asked to activate it
+        if wx.GetTopLevelParent(viewer).IsIconized():
+            self._focus_skipped = True
+            return
+        self._focus_skipped = False
 
         # Check if a text control inside the active viewer has focus
         window = wx.Window.FindFocus()

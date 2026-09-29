@@ -225,7 +225,7 @@ those windows go, as on master.
 
 | API | Calls | Replaced |
 |---|---|---|
-| `soon` | 91 | every `wx.CallAfter` |
+| `soon` | 92 | every `wx.CallAfter` |
 | `debounced` | 8 | 6 timers, 3 `CallLater` |
 | `call` | 5 | 4 `CallLater`, 1 timer |
 | `every` | 4 | 4 timers |
@@ -236,7 +236,8 @@ those windows go, as on master.
   two, drag hover-expand.
 - Delays: the reminder dialog's click freeze, a date popup's destroy,
   the mouse filter release after a layout rebuild, the speech retry,
-  the window position debug log.
+  the window placement's quiet period
+  ([WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md)).
 - Repeats: the notification fade-in, slide and timeouts, the geometry
   trace.
 - Every `wx.CallAfter`, each with its owner, including those from

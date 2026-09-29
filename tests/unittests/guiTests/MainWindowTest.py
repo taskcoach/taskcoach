@@ -20,6 +20,7 @@ import ast
 import os
 import shutil
 import tempfile
+import time
 import wx, test
 from taskcoachlib import gui, config, persistence, meta, operating_system
 from taskcoachlib.domain import task
@@ -131,6 +132,9 @@ class MainWindowMaximizeTestCase(MainWindowTestCase):
 
     def setSettings(self):
         self.settings.setboolean("window", "maximized", self.maximized)
+        # Not minimized, as tests start: a minimized window is
+        # maximized only once restored
+        self.settings.set("window", "starticonized", "Never")
 
 
 class MainWindowNotMaximizedTest(MainWindowMaximizeTestCase):
@@ -148,6 +152,7 @@ class MainWindowNotMaximizedTest(MainWindowMaximizeTestCase):
         self.mainwindow.Maximize()
         if operating_system.isWindows():
             wx.Yield()
+        self.mainwindow.save_settings()  # Geometry is written on close
         self.assertTrue(self.settings.getboolean("window", "maximized"))
 
 
@@ -155,8 +160,21 @@ class MainWindowMaximizedTest(MainWindowMaximizeTestCase):
     maximized = True
 
     @test.skipOnPlatform("__WXMAC__")
-    def testCreate(self):
-        self.assertTrue(self.mainwindow.IsMaximized())  # pragma: no cover
+    def test_create(self):  # pragma: no cover
+        # The maximize comes once the placement is quiet
+        # (docs/WINDOW_GEOMETRY.md), and a window manager grants it
+        tracker = self.mainwindow._MainWindow__dimensions_tracker
+        deadline = time.monotonic() + 5
+        while not tracker.ready and time.monotonic() < deadline:
+            wx.Yield()
+            time.sleep(0.01)
+        if not tracker.maximized:
+            self.skipTest("no window manager granted the maximize")
+        self.assertTrue(
+            self.mainwindow.IsMaximized(),
+            "ready %s, phase %s, %s attempts"
+            % (tracker.ready, tracker._phase, tracker._attempts),
+        )
 
 
 class MainWindowIconizedTest(MainWindowTestCase):
@@ -169,10 +187,7 @@ class MainWindowIconizedTest(MainWindowTestCase):
         self.settings.set("window", "starticonized", "Always")
 
     def expectedHeight(self):
-        height = 500
-        if operating_system.isMac():
-            height += 18  # pragma: no cover
-        return height
+        return 500
 
     @test.skipOnPlatform(
         "__WXGTK__"
