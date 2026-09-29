@@ -254,6 +254,17 @@ In the app:
 - P23. ~~In the task editor, pasting several notes added only the
   first~~: fixed 2026-09-29; the same on master. The command paired
   one owner with the notes.
+- P24. ~~Opening the open file again (a reload) released its lock
+  between the close and the load~~: fixed 2026-09-29; the same on
+  master ([FILE_LOCKING.md](FILE_LOCKING.md)).
+- P25. ~~The notification centre's 1 s timer ran from its first
+  notification on~~: fixed 2026-09-29; the same on master. It ticks
+  only while it shows or holds notifications.
+- P26. ~~A task file without the taskcoach version raised an
+  UnboundLocalError~~: fixed 2026-09-29; the same on master. The
+  reader refuses it with a clear error; the empty `PIParser` is gone.
+- P27. ~~The tests loaded the icon catalog twice and logged each icon
+  as an ID conflict~~: fixed 2026-09-29; the same on master.
 
 ## Views on the Effective Styles
 
