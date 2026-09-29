@@ -83,8 +83,9 @@ go at the end. Details live in the sections and documents linked.
 35. ~~The views on the effective styles, the legacy styles removed~~
     ([Views on the Effective Styles](#views-on-the-effective-styles)).
 36. The task editor's Progress tab: a second percentage control and
-    slider drawn over the tab labels, seen only under Xvfb; to check on
-    a real display.
+    slider drawn over the tab labels; seen under Xvfb and, at times, on
+    the designer's display, where a resize or a click redraws it. The
+    designer is testing it.
 37. Effective fields for the 13 other subtree values, one at a time;
     none is read by the loop (what each is:
     [TASK_FIELDS.md](TASK_FIELDS.md#subtree-values-in-other-columns)):
