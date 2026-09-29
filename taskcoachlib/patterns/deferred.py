@@ -223,8 +223,8 @@ class Deferred:
         handle.seq = next(self.__seq)
         import wx
 
-        if wx.IsMainThread():
-            self.__push(handle)
+        if wx.IsMainThread() or self.__closed:
+            self.__push(handle)  # Closed: skipped, no hop to a gone loop
         else:
             wx.CallAfter(self.__push, handle)
         return handle
@@ -235,7 +235,7 @@ class Deferred:
         thread)."""
         import wx
 
-        if not wx.IsMainThread():
+        if not wx.IsMainThread() and not self.__closed:
             wx.CallAfter(self.cancelled, handle)
             return
         handle.release()
@@ -277,11 +277,13 @@ class Deferred:
         if handle.interval is None:
             handle.cancelled = True  # Done: no longer pending
             handle.release()
-        self.__invoke(*call, handle.site)
-        if not handle.cancelled:  # A repeat its call did not cancel
-            handle.due = self.__clock() + handle.interval / 1000.0
-            handle.seq = next(self.__seq)
-            heapq.heappush(self.__queue, handle)
+        try:
+            self.__invoke(*call, handle.site)
+        finally:  # Also after SystemExit, as run_due keeps the others
+            if not handle.cancelled:  # A repeat its call did not cancel
+                handle.due = self.__clock() + handle.interval / 1000.0
+                handle.seq = next(self.__seq)
+                heapq.heappush(self.__queue, handle)
 
     def __push(self, handle):
         if handle.cancelled:

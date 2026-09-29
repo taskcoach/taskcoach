@@ -165,6 +165,19 @@ class EveryTest(DeferredTestCase):
         self.run_after(100)
         self.assertEqual([("tick",)], self.calls)
 
+    def test_a_repeat_goes_on_after_a_system_exit(self):
+        # As run_due keeps the other due calls
+        def tick():
+            self.calls.append(("tick",))
+            if len(self.calls) == 1:
+                raise SystemExit
+
+        self.later.every(None, 100, tick)
+        with self.assertRaises(SystemExit):
+            self.run_after(100)
+        self.run_after(100)
+        self.assertEqual([("tick",), ("tick",)], self.calls)
+
 
 class DebouncedTest(DeferredTestCase):
     def test_runs_once_after_the_last_trigger(self):
@@ -436,6 +449,21 @@ class ThreadTest(DeferredTestCase):
             ([], False, None),
             (self.calls, handle.pending, handle.callback),
         )
+
+    def test_after_close_a_thread_hops_to_no_event_loop(self):
+        handle = self.later.call(None, 10, self.record("a"))
+        self.later.close()
+        hops = []
+
+        def schedule_and_cancel():
+            self.later.call(None, 10, self.record("b")).cancel()
+            handle.cancel()
+
+        with mock.patch("wx.CallAfter", lambda *args: hops.append(args)):
+            thread = threading.Thread(target=schedule_and_cancel)
+            thread.start()
+            thread.join()
+        self.assertEqual([], hops)
 
 
 class NoRawDeferredCallsTest(test.TestCase):

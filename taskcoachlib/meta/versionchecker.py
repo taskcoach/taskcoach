@@ -65,7 +65,10 @@ class VersionChecker(threading.Thread):
             elif latestVersion > currentVersion and (
                 self.verbose or latestVersion > lastVersionNotified
             ):
-                self.setLastVersionNotified(latestVersionString)
+                # Settings are for the GUI thread; this is not it
+                patterns.later.soon(
+                    None, self.setLastVersionNotified, latestVersionString
+                )
                 self.notifyUser(version.NewVersionDialog, latestVersionString)
 
     def getLatestVersion(self):
@@ -73,12 +76,9 @@ class VersionChecker(threading.Thread):
         return versionText.strip()
 
     def notifyUser(self, dialog, latestVersion="", message=""):
-        # Must use CallAfter because this is a non-GUI thread
-        # Import wx here so it isn't a build dependency
-        import wx
-
+        # Shown from the GUI thread; this is not it
         patterns.later.soon(
-            self, self.showDialog, dialog, latestVersion, message
+            None, self.showDialog, dialog, latestVersion, message
         )
 
     def showDialog(self, VersionDialog, latestVersion, message=""):

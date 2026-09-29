@@ -28,7 +28,6 @@ another instance) and triggers reload prompts.
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-import wx
 
 from taskcoachlib.filesystem import base
 import os
@@ -72,10 +71,8 @@ class TaskFileEventHandler(FileSystemEventHandler):
         if event_filename == watched_basename:
             if self._notifier._check(watched_filename) and watched_filename:
                 self._notifier.stamp = os.stat(watched_filename).st_mtime
-                # Use wx.CallAfter to ensure callback runs in main thread
-                patterns.later.soon(
-                    self._notifier, self._notifier.on_file_changed
-                )
+                # On the GUI thread: this is the watcher's
+                patterns.later.soon(None, self._notifier.on_file_changed)
 
     def on_created(self, event):
         """Handle file creation events (might be recreated after save)."""

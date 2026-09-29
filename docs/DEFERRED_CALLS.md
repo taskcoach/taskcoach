@@ -165,8 +165,10 @@ patterns.later.soon(owner, callback, *args)
   drops a pending run.
 - `soon`: on the next event dispatch, in order, from any thread
   (`wx.CallAfter`); also while the app quits.
-- `owner`: the object the call belongs to, usually the window it acts
-  on; `None` for the application.
+- `owner`: the object the call belongs to: the window it acts on;
+  `None` for the application. Only a wx object can be gone: any other
+  owner (a controller, a thread) never is, so name the window its call
+  acts on.
 
 **Rule** ([DEVELOPMENT.md](DEVELOPMENT.md#design)): app code never
 calls `wx.CallLater`, `wx.CallAfter`, `wx.Timer`, `wx.PyTimer` or
@@ -204,7 +206,9 @@ exceptions: the service itself, the master scheduler's own 1 s clock
   until due, at most its delay (the longest, the status bar's 3 s).
 - **Threads:** `soon`, `call`, `every` and a handle's `cancel()` may be
   called from any thread; the queue is only touched on the GUI thread.
-  A debounced object is for the GUI thread.
+  After `close()` they return at once, with no hop to the ended event
+  loop. A debounced object is for the GUI thread, and so are settings
+  (a debounced refresh): a thread changes them through `soon`.
 
 ## End of Life
 
