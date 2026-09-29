@@ -39,7 +39,11 @@ class TreeCtrlDragAndDropMixinTest(test.wxTestCase):
     # pylint: disable=E1101
 
     def setUp(self):
-        self.treeCtrl = treectrl.HyperTreeList(self.frame)
+        # As the app's trees: the root hidden, so never selected
+        self.treeCtrl = treectrl.HyperTreeList(
+            self.frame,
+            agwStyle=wx.TR_DEFAULT_STYLE | wx.TR_HIDE_ROOT | wx.TR_MULTIPLE,
+        )
         self.treeCtrl.AddColumn("First")
 
         self.rootItem = self.treeCtrl.AddRoot("root")

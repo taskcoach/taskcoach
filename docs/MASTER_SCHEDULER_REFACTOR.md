@@ -191,9 +191,11 @@ refactor; unchanged by its steps, crossed out when fixed):
   in the app; the tests' stand-in was a plain task list.
 - P10. `unittests/widgetTests/WindowDimensionsTrackerTest.py`: 2
   failures (size, move).
-- P11. `unittests/guiTests/MainWindowTest.py`,
-  `widgetTests/DragAndDropTest.py`,
+- P11. `unittests/guiTests/MainWindowTest.py` and
   `thirdPartySoftwareTests/wxPythonTest.py`: 1 failure each.
+  ~~`widgetTests/DragAndDropTest.py`~~: fixed 2026-09-29, the test
+  only: its tree showed its root, which a tree selects by itself, so
+  a drag took the root; the app's trees hide it.
 
 In the app:
 
