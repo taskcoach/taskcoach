@@ -83,7 +83,7 @@ Every 1 second (_on_tick):
 | Event | Subscriber | Purpose |
 |-------|------------|---------|
 | `timer.second` | `MasterScheduler` | The master timer list check; the full loop when a second is due |
-| `scheduler.pass` | Task `Sorter` | Re-sort once by the statuses the pass changed |
+| `scheduler.pass` | Task `Sorter`, `ViewFilter` | Re-sort and refilter once by the statuses the pass changed |
 | `scheduler.date` | `ViewFilter` | Re-filter tasks at midnight, with the new day's statuses |
 | `scheduler.date` | `CalendarViewer`, `HierarchicalCalendarViewer` | Move to the new day |
 | `scheduler.date` | Viewers with columns (`ViewerWithColumns`) | Redraw relative dates ("Today", "Yesterday") |

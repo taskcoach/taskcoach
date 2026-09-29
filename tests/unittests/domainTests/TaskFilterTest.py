@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test
-from taskcoachlib import config
+from taskcoachlib import config, patterns
 from taskcoachlib.domain import task, date
 
 
@@ -120,8 +120,24 @@ class ViewFilterTestsMixin(object):
         now = plannedStart + date.ONE_SECOND
         date.Now = lambda: now
         self.task.compute_stored_status()
-        self.assertFilterShows(self.task)
         date.Now = oldNow
+        # The clock's status changes refilter once, after the pass
+        patterns.Event("scheduler.pass", self).send()
+        self.assertFilterShows(self.task)
+
+    def test_the_clocks_status_changes_refilter_once_per_pass(self):
+        resets = []
+        original = self.filter.reset
+        self.filter.reset = lambda *args, **kwargs: (
+            resets.append(1),
+            original(*args, **kwargs),
+        )
+        for each in (self.task, self.dueToday):
+            patterns.Event(
+                task.Task.statusChangedEventType(), each, None
+            ).send()
+        patterns.Event("scheduler.pass", self).send()
+        self.assertEqual(1, len(resets))
 
     def testMarkPrerequisiteCompletedWhileFilteringInactiveTasks(self):
         self.task.add_prerequisites([self.dueToday])
