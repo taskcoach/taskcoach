@@ -323,6 +323,16 @@ class CategorizableStyleTest(test.TestCase):
             wx.RED, test.styled(self.categorizable).shown_fg_color()
         )
 
+    def test_equal_priorities_take_the_first_category_by_name(self):
+        later_by_name = category.Category("zzz")
+        later_by_name.setForegroundColor(wx.BLUE)
+        self.category.setForegroundColor(wx.RED)
+        for each in (later_by_name, self.category):
+            self.categorizable.addCategory(each)
+        self.assertEqual(
+            wx.RED, test.styled(self.categorizable).shown_fg_color()
+        )
+
     def test_category_background_color(self):
         self.categorizable.addCategory(self.category)
         self.category.setBackgroundColor(wx.RED)

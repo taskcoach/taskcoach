@@ -207,10 +207,15 @@ def _getFromCategories(object_ref, effective_getter):
     """
     if not hasattr(object_ref, "categories"):
         return None, None
-    categories = list(object_ref.categories())
-    categories.sort(
-        key=lambda c: getattr(c, "stylePriority", lambda: 0)(),
-        reverse=True,
+    # Highest priority first; equal ones by name, then ID, so the
+    # choice does not change from one run to the next (a set's order)
+    categories = sorted(
+        object_ref.categories(),
+        key=lambda c: (
+            -getattr(c, "stylePriority", lambda: 0)(),
+            c.subject(),
+            c.id(),
+        ),
     )
     for cat in categories:
         getter = getattr(cat, effective_getter, None)

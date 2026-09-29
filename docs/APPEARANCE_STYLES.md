@@ -165,7 +165,8 @@ category's appearance wins. Higher priority = checked first.
 
 - Stored on `Category` as an Attribute (integer, default 0), saved as
   the category's `stylePriority` (omitted when 0)
-- Sorted descending: `categories.sort(key=stylePriority, reverse=True)`
+- Sorted descending by `stylePriority`; equal priorities by name, then
+  ID, so the choice is the same in every session (a set's order is not)
 - First category with a non-system-theme value for the field wins
 - Editable via `EditStylePriorityCommand`
 
