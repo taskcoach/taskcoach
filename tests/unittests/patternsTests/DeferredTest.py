@@ -196,13 +196,6 @@ class OwnerTest(DeferredTestCase):
         self.run_after(100)
         self.assertEqual(([("a",)], False), (self.calls, handle.pending))
 
-    def test_cancel_all(self):
-        self.later.call(self.window, 10, self.record("a"))
-        self.later.every(self.window, 10, self.record("b"))
-        self.later.cancel_all(self.window)
-        self.run_after(100)
-        self.assertEqual([], self.calls)
-
 
 def reconnect_call_after():
     """TestCase.tearDown disconnects wx.CallAfter's handler from the

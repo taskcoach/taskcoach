@@ -201,13 +201,6 @@ class Deferred:
 
         wx.CallAfter(self.__run_soon, owner, callback, args, kwargs, _site(2))
 
-    def cancel_all(self, owner):
-        """Drop the owner's pending timed calls (windows only)."""
-        key = _key(owner)
-        if key is not None:
-            self.__forget_owner(key)
-            self.__rearm()
-
     def shutdown(self):
         """Drop every pending call and delete the timer; the
         application calls it when it quits."""
