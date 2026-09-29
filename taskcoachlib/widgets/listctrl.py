@@ -140,8 +140,8 @@ class VirtualListCtrl(
         event.Skip()
         # Only schedule a redraw when a row is actually hovered. Otherwise
         # every paint (including those on hidden, never-hovered controls such
-        # as the export dialog's temporary viewers) would queue a CallAfter
-        # that fires after the control is destroyed.
+        # as the export dialog's temporary viewers) would queue a call that
+        # is due after the control is destroyed.
         if self._hover_row >= 0:
             patterns.later.soon(self, self._draw_hover_outline)
 
@@ -292,9 +292,8 @@ class VirtualListCtrl(
         return self.GetSelectedItemCount() == 1
 
     def curselection(self):
-        # Guard against deleted C++ object - can happen when wx.CallAfter
-        # callback executes after window destruction (e.g., closing
-        # nested dialogs)
+        # Guard against deleted C++ object - can happen when a later call
+        # runs after window destruction (e.g., closing nested dialogs)
         try:
             # Filter out None values - get_item_with_index can return None
             # for some indices

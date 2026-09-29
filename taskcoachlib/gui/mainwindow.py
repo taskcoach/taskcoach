@@ -184,8 +184,8 @@ class MainWindow(
         try:
             self.showToolBar()
 
-            # We use CallAfter because otherwise the statusbar will appear at the
-            # top of the window when it is initially hidden and later shown.
+            # Later, or a status bar hidden at start appears at the top
+            # of the window once shown
             patterns.later.soon(self, self.showStatusBar)
             self.__restore_perspective()
         finally:

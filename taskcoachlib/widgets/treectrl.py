@@ -82,8 +82,8 @@ class BaseHyperTreeList(hypertreelist.HyperTreeList):
         """Schedule scrollbar adjustment for after event processing completes.
 
         On Windows, content changes (expand/collapse/add/delete) that don't
-        trigger window resize don't update scrollbars. Use wx.CallAfter to
-        defer adjustment until after the event cycle completes. Other platforms
+        trigger window resize don't update scrollbars. The adjustment
+        waits until the event cycle completes. Other platforms
         handle this automatically through their event processing, but the
         deferred call is harmless and ensures consistency.
         """
@@ -411,9 +411,8 @@ class TreeListCtrl(
         return len(self.GetSelections()) == 1
 
     def curselection(self):
-        # Guard against deleted C++ object - can happen when wx.CallAfter
-        # callback executes after window destruction (e.g., closing
-        # nested dialogs)
+        # Guard against deleted C++ object - can happen when a later call
+        # runs after window destruction (e.g., closing nested dialogs)
         try:
             # Filter out None values - GetItemPyData can return None
             # for some items
@@ -721,7 +720,7 @@ class TreeListCtrl(
         if self.__refreshing:
             event.Skip()
             return
-        # Use CallAfter to prevent handling the select while items are
+        # Later, to prevent handling the select while items are
         # being deleted:
         patterns.later.soon(self, self.__safe_select_command)
         event.Skip()

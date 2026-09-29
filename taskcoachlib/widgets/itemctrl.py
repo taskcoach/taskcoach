@@ -589,7 +589,7 @@ class _CtrlWithSortableColumnsMixin(_BaseCtrlWithColumnsMixin):
         columnIndex = event.GetColumn()
         if 0 <= columnIndex < self.GetColumnCount():
             column = self._getColumn(columnIndex)
-            # Use CallAfter to make sure the window this control is in is
+            # Later, to make sure the window this control is in is
             # activated before we process the column click:
             patterns.later.soon(self, self.__safeColumnSort, column, event)
 

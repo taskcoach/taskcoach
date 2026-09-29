@@ -778,8 +778,8 @@ class FileQuit(base_uicommand.UICommand):
         )
 
     def do_command(self, event):
-        # Use CallAfter so the tray popup menu can finish and release
-        # its resources before quit_application() destroys the tray icon.
+        # Later, so the tray popup menu can finish and release its
+        # resources before quit_application() destroys the tray icon.
         # Without this, Windows crashes (segfault) because PopupMenu()
         # is modal and the tray icon is destroyed while the menu is active.
         patterns.later.soon(
@@ -3899,18 +3899,12 @@ class ToggleAutoColumnResizing(
             *args,
             **kwargs
         )
-        patterns.later.soon(self, self.updateWidget)
+        patterns.later.soon(self.viewer, self.updateWidget)
 
     def updateWidget(self):
-        # Guard against deleted C++ object - can happen when wx.CallAfter
-        # callback executes after window destruction
-        try:
-            widget = self.viewer.getWidget()
-            if widget:
-                widget.ToggleAutoResizing(self.is_setting_checked())
-        except RuntimeError:
-            # wrapped C/C++ object has been deleted
-            pass
+        widget = self.viewer.getWidget()
+        if widget:
+            widget.ToggleAutoResizing(self.is_setting_checked())
 
     def is_setting_checked(self):
         return self.settings.getboolean(

@@ -679,7 +679,7 @@ class AttachmentDropTargetMixin(object):
                 **item_dialog_kwargs
             )
             newItemDialog.Show()
-            # Use CallAfter to ensure proper focus after drop completes
+            # Later, so the dialog has the focus once the drop completes
             patterns.later.soon(newItemDialog, newItemDialog.Raise)
             patterns.later.soon(newItemDialog, newItemDialog.SetFocus)
         else:
@@ -746,7 +746,7 @@ class AttachmentDropTargetMixin(object):
 
         # Also open the AttachmentEditor for the new attachments
         if new_attachments:
-            # Use CallAfter to ensure item editor is fully shown first
+            # Later, once the item editor is shown
             def openAttachmentEditor():
                 # Wrap attachments in AttachmentList container for Editor
                 # (item.attachments() returns a plain list)

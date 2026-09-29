@@ -370,7 +370,7 @@ class TaskFile(patterns.Observer):
 
     def on_file_changed(self):
         # Checked on the main thread, after any save of ours finished
-        patterns.later.soon(self, self.check_disk)
+        patterns.later.soon(None, self.check_disk)
 
     def check_disk(self, notify=True):
         """Notice a change by another program: the file differs from

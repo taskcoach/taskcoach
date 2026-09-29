@@ -866,7 +866,7 @@ class Application(object, metaclass=patterns.Singleton):
         self.__register_signal_handlers()
         self.__create_mutex()
         self.__create_task_bar_icon()
-        patterns.later.soon(self, self.__show_tips)
+        patterns.later.soon(self.mainwindow, self.__show_tips)
 
     def __check_file_lock_early(self):
         """Check file lock before main window creation.
@@ -1012,7 +1012,7 @@ class Application(object, metaclass=patterns.Singleton):
         3. Must save settings before exit
 
         Solution:
-        - Custom signal handler uses wx.CallAfter for clean shutdown
+        - The signal handler quits from the event loop, later
         - The GlobalTimer tick runs Python code every second (from
           before these handlers are registered), which lets Python run
           a pending signal handler, so no separate wake-up timer is
@@ -1022,9 +1022,8 @@ class Application(object, metaclass=patterns.Singleton):
 
         def handle_signal(signum, frame):
             """Handle SIGINT/SIGTERM by scheduling clean shutdown."""
-            # Use CallAfter to run shutdown in the main event loop
-            # This ensures proper cleanup of wx resources
-            patterns.later.soon(self, self.quit_application)
+            # Quit on the main thread, from the event loop
+            patterns.later.soon(None, self.quit_application)
 
         # Register SIGINT/SIGTERM handlers for Unix
         if not operating_system.isWindows():

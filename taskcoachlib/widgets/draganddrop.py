@@ -445,7 +445,7 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
             # Work around an issue with HyperTreeList. HyperTreeList will
             # restore the selection to the last item highlighted by the drag,
             # after we have processed the end drag event. That's not what we
-            # want, so use wx.CallAfter to clear the selection after
+            # want, so clear the selection later, after
             # HyperTreeList did its (wrong) thing and reselect the previously
             # dragged item.
             patterns.later.soon(self, self.__safeSelect, self._dragItems)

@@ -391,7 +391,7 @@ class Calendar(wx.Panel):
         sizer.Add(self._content, 1, wx.EXPAND)
         self.SetSizer(sizer)
 
-        # Must wx.CallAfter because SetDrawerClass is called this way.
+        # Later, because SetDrawerClass is called this way
         patterns.later.soon(
             self._content, self._content.SetHeaderPanel, self._headers
         )

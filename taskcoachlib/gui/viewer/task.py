@@ -113,7 +113,7 @@ class BaseTaskViewer(
         patterns.later.soon(self, self.__DisplayBalloon)
 
     def __DisplayBalloon(self):
-        # Run by wx.CallAfter: the viewer may be closing or gone by then
+        # Run later: the viewer may be closing by then
         if not self or self.IsBeingDeleted():
             return
         if (
@@ -2578,8 +2578,8 @@ else:
 
             DESIGN NOTE (Twisted Removal - 2024):
             Previously used @inlineCallbacks and deferToThread from Twisted.
-            Now uses concurrent.futures.ThreadPoolExecutor with wx.CallAfter
-            for thread-safe GUI updates. This maintains the same async behavior
+            Now uses concurrent.futures.ThreadPoolExecutor with
+            patterns.later.soon for thread-safe GUI updates. This maintains the same async behavior
             without requiring the Twisted reactor.
             """
             while self._needsUpdate:

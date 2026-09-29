@@ -5004,7 +5004,7 @@ class Editor(BalloonTipManager, widgets.Dialog):
 
     def _deferred_destroy(self):
         """Destroy the editor after one event loop iteration.
-        Called via wx.CallAfter from on_close_editor to let GTK
+        Called later from on_close_editor to let GTK
         process pending events before C++ widget destruction."""
         try:
             if self:
@@ -5029,7 +5029,7 @@ class Editor(BalloonTipManager, widgets.Dialog):
             )
 
     def __close_if_item_is_deleted(self, items):
-        # Run by wx.CallAfter: the editor may be closing or gone by then
+        # Run later: the editor may be closing by then
         if not self or self.IsBeingDeleted():
             log_step(
                 "__close_if_item_is_deleted: dialog already "

@@ -115,7 +115,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         patterns.later.soon(self, self.__DisplayBalloon)
 
     def __DisplayBalloon(self):
-        # Run by wx.CallAfter: the viewer may be closing or gone by then
+        # Run later: the viewer may be closing by then
         if not self or self.IsBeingDeleted():
             return
         # AuiFloatingFrame is instantiated from framemanager, we can't derive it from BalloonTipManager
@@ -514,12 +514,12 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         selection events while we select all items."""
         self.__selectingAllItems = True
         self.widget.select_all()
-        # Use CallAfter to make sure we start processing selection events
+        # Later, to make sure we start processing selection events
         # after all selection events have been fired (and ignored):
         patterns.later.soon(self, self.end_of_select_all)
 
     def end_of_select_all(self):
-        # Run by wx.CallAfter: the viewer may be closing or gone by then
+        # Run later: the viewer may be closing by then
         if not self or self.IsBeingDeleted():
             return
         self.__selectingAllItems = False

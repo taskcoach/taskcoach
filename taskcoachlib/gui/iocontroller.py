@@ -144,7 +144,7 @@ class IOController(object):
         else:
             filename = self.__settings.get("file", "lastfile")
         if filename and early_lock_result != "skip":
-            patterns.later.soon(self, self.open, filename)
+            patterns.later.soon(None, self.open, filename)
 
     def open(
         self,
@@ -214,10 +214,10 @@ class IOController(object):
             error_message = (
                 _("Cannot open %s because it doesn't exist") % filename
             )
-            # Use CallAfter on Mac OS X because otherwise the app will hang:
+            # Later on macOS, where showing it now hangs the app
             if operating_system.isMac():
                 patterns.later.soon(
-                    self,
+                    None,
                     showerror,
                     error_message,
                     **self.__error_message_options
@@ -881,7 +881,7 @@ class IOController(object):
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     patterns.later.soon(
-                        self, self.open, dlg.restoredFilename()
+                        None, self.open, dlg.restoredFilename()
                     )
             finally:
                 dlg.Destroy()
