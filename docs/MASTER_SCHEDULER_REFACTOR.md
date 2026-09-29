@@ -100,9 +100,8 @@ go at the end. Details live in the sections and documents linked.
     menu or editor page; the guards that became unreachable are gone,
     the others guard delayed calls and destruction
     ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#signaling-system-cleanup)).
-41. Editor text fields (subject, description, attachment location)
-    commit only on focus loss
-    ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#todo)).
+41. ~~Editor text fields save on leaving the field~~: by design, not
+    an issue ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#todo)).
 42. The designer's desktop test of the branch, from one consolidated
     test list.
 43. Squash to one commit before pushing, version 2.0.3.0 in the body;

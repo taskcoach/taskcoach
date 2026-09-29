@@ -99,15 +99,15 @@ Self-contained module with custom-painted single field and navigable subfields.
    `__adjDueDate`, `__adjStartDate`, `__adjDuration`, etc.) have been
    inlined into `__syncTaskState` using `ActivateValue()`/`DeactivateValue()`
    /`SetDuration()` on the widget. The effort calc was already inline.
-7. **Migrate remaining `EVT_KILL_FOCUS` AttributeSync sites to
-   `EVT_VALUE_CHANGED`.** All `MaskedFieldsCtrl`-based controls are done —
+7. **Done 2026-09-29: `EVT_KILL_FOCUS` AttributeSync sites to
+   `EVT_VALUE_CHANGED`.** All `MaskedFieldsCtrl`-based controls are done:
    DurationCtrl (task and effort), budget (`MaskedDurationCtrl`), all
    DateTimeComboCtrl fields, hourly fee, and fixed fee now use plain
    `EVT_VALUE_CHANGED` with immediate commit. The control fires only on
    blur or programmatic complete-value write, so every event is a final
-   value. **Remaining:** subject, description, and attachment location
-   use `wx.TextCtrl` (per-keystroke `EVT_TEXT`) — different migration
-   path. See [ATTRIBUTE_PATTERN.md TODO #1](ATTRIBUTE_PATTERN.md#todo).
+   value. Subject, description and attachment location keep
+   `EVT_KILL_FOCUS` by design (ruling, 2026-09-29): see
+   [ATTRIBUTE_PATTERN.md TODO #1](ATTRIBUTE_PATTERN.md#todo).
 8. **Planned: Extract popup from MaskedFieldsCtrl.** MaskedFieldsCtrl currently
    contains popup infrastructure (_ChoicesPopup, _openPopupForFocusedField,
    DismissPopup) that doesn't belong in the base masked field control. The base
