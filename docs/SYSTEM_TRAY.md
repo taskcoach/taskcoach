@@ -542,12 +542,11 @@ Key log messages:
 
 | Code | Description |
 |------|-------------|
-| Observer registration | `registerObserver`, `pub.subscribe` for task/tracking/due events |
+| Observer registration | `registerObserver` for task/tracking/due events |
 | `on_task_list_changed` | Tooltip + start/stop ticking |
 | `on_tracking_changed` | Register/remove subject observer, tooltip, start/stop |
 | `on_change_subject` | Tooltip update |
 | `on_change_due_date_time` | Tooltip update |
-| `on_change_due_date_time_deprecated` | Tooltip update |
 | `on_every_second` | Blink setting check, toggle icon, set icon |
 | `tool_tip_messages` | Status message templates |
 | `__set_tooltip_text` | Build tooltip from tracked tasks / status counts |

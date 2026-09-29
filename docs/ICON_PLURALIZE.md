@@ -6,8 +6,8 @@
 
 The icon system automatically converts icons between singular and plural forms
 based on whether a `CompositeObject` (task, category, note) has children.
-This is implemented in `CompositeObject.pluralOrSingularIcon()` at
-`taskcoachlib/domain/base/object.py:794`.
+This is implemented in `CompositeObject.plural_or_singular_icon()` in
+`taskcoachlib/domain/base/object.py`.
 
 ## Complete Plural Mapping Table
 

@@ -395,7 +395,7 @@ class XMLWriterTest(test.TestCase):
         self.expect_in_xml('reminder="%s"' % str(self.task.reminder()))
         self.expect_in_xml(
             'reminderBeforeSnooze="%s"'
-            % str(self.task.reminder(includeSnooze=False))
+            % str(self.task.reminder(include_snooze=False))
         )
 
     def testReminderIsNoneButSnoozedReminderNot(self):

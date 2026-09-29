@@ -1385,7 +1385,7 @@ class Task(
     # reminder
 
     def reminder(
-        self, recursive=False, includeSnooze=True
+        self, recursive=False, include_snooze=True
     ):  # pylint: disable=W0613
         if recursive:
             reminders = [
@@ -1395,7 +1395,7 @@ class Task(
         else:
             return (
                 self.__reminder.get()
-                if includeSnooze
+                if include_snooze
                 else self.__reminder_before_snooze
             )
 
@@ -1524,9 +1524,9 @@ class Task(
 
         self.set_actual_start_date_time(date.DateTime())
         self.setPercentageComplete(0)
-        if self.reminder(includeSnooze=False) != self.maxDateTime:
+        if self.reminder(include_snooze=False) != self.maxDateTime:
             next_reminder = recur(
-                self.reminder(includeSnooze=False), next=False
+                self.reminder(include_snooze=False), next=False
             )
             self.set_reminder(next_reminder)
         for child in self.children():

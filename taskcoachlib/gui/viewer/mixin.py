@@ -695,7 +695,7 @@ class AttachmentDropTargetMixin(object):
 
         If an editor for this item is already open, bring it to front and
         switch to the attachments tab. Otherwise, create a new editor.
-        If newAttachments is provided, also open the AttachmentEditor for them.
+        If new_attachments is provided, also open the AttachmentEditor for them.
         """
         from taskcoachlib.gui.dialog import editor
         from taskcoachlib.domain import note

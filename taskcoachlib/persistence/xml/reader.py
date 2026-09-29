@@ -599,7 +599,7 @@ class XMLReader(object):
         )
 
     def __parse_note_node(self, note_node):
-        """Parse the attributes and child notes from the noteNode."""
+        """Parse the attributes and child notes from the note_node."""
         subject = note_node.attrib.get("subject", "")
         obj_id = self.__register_id(
             note_node.attrib.get("id", ""), "Note", subject

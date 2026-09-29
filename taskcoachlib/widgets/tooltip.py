@@ -119,9 +119,9 @@ class ToolTipMixin(object):
 
     def __show_pending_tip(self):
         x, y = self.__pending_xy
-        newTip = self.OnBeforeShowToolTip(x, y)
-        if newTip is not None:
-            self.__tip = newTip
+        new_tip = self.OnBeforeShowToolTip(x, y)
+        if new_tip is not None:
+            self.__tip = new_tip
             self.__tip.Bind(wx.EVT_MOTION, self.__on_tip_motion)
             self.ShowTip(
                 *self.GetMainWindow().ClientToScreen(*self.__position)

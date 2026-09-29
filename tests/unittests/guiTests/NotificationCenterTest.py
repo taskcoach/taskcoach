@@ -28,12 +28,9 @@ class NotificationCenterTest(test.wxTestCase):
         )
         self.center = notifier_universal.NotificationCenter()
 
-    def ticks(self):
-        return getattr(self.center, "_NotificationCenter__ticks")
-
     def test_ticks_only_while_there_are_frames(self):
-        self.assertIsNone(self.ticks())
+        self.assertIsNone(self.center._ticks)
         self.center.notify("Title", "Message", timeout=1)
-        self.assertTrue(self.ticks().pending)
-        getattr(self.center, "_NotificationCenter__on_tick")()  # Closes it
-        self.assertFalse(self.ticks().pending)
+        self.assertTrue(self.center._ticks.pending)
+        self.center._on_tick()  # Closes it
+        self.assertFalse(self.center._ticks.pending)

@@ -133,7 +133,7 @@ class XMLWriter(object):
         for root_task in sortedById(task_list.rootItems()):
             self.task_node(root, root_task)
 
-        owned_notes = self.notesOwnedByNoteOwners(
+        owned_notes = self.notes_owned_by_note_owners(
             task_list, category_container
         )
         for root_category in sortedById(category_container.rootItems()):
@@ -151,11 +151,11 @@ class XMLWriter(object):
             root,
         ).write(self.__fd, "utf-8")
 
-    def notesOwnedByNoteOwners(self, *collectionOfNoteOwners):
+    def notes_owned_by_note_owners(self, *collections_of_note_owners):
         notes = []
-        for noteOwners in collectionOfNoteOwners:
-            for noteOwner in noteOwners:
-                notes.extend(noteOwner.notes(recursive=True))
+        for note_owners in collections_of_note_owners:
+            for note_owner in note_owners:
+                notes.extend(note_owner.notes(recursive=True))
         return notes
 
     def task_node(self, parent_node, task):  # pylint: disable=W0621
@@ -192,7 +192,7 @@ class XMLWriter(object):
         reminder = task.reminder()
         if reminder != maxDateTime:
             node.attrib["reminder"] = str(reminder)
-            reminderBeforeSnooze = task.reminder(includeSnooze=False)
+            reminderBeforeSnooze = task.reminder(include_snooze=False)
             if reminderBeforeSnooze < reminder:
                 node.attrib["reminderBeforeSnooze"] = str(reminderBeforeSnooze)
         prerequisiteIds = " ".join(
@@ -415,9 +415,9 @@ class TemplateXMLWriter(XMLWriter):
             if hasattr(task, name + "tmpl"):
                 value = getattr(task, name + "tmpl") or None
             else:
-                dateTime = getattr(task, getter)()
-                if dateTime not in (None, date.DateTime()):
-                    delta = dateTime - date.Now()
+                date_time = getattr(task, getter)()
+                if date_time not in (None, date.DateTime()):
+                    delta = date_time - date.Now()
                     minutes = delta.days * 24 * 60 + round(
                         delta.seconds / 60.0
                     )

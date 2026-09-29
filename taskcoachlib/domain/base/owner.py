@@ -90,10 +90,10 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
 
     def modification_event_types(class_):
         try:
-            eventTypes = super(klass, class_).modificationEventTypes()
+            event_types = super(klass, class_).modificationEventTypes()
         except AttributeError:
-            eventTypes = []
-        return eventTypes + [changed_event_type(class_)]
+            event_types = []
+        return event_types + [changed_event_type(class_)]
 
     klass.modificationEventTypes = classmethod(modification_event_types)
 

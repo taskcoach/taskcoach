@@ -632,7 +632,7 @@ class TaskAppearancePage(ScrolledPage):
             self.addLine()
             self.addSectionHeader(_("Override values"))
         self.add_icon_entry()
-        self.addColorEntries()
+        self.add_color_entries()
         self.add_font_entry()
         self.addEffectiveSection()
         # Update derived values now that all widgets exist
@@ -965,7 +965,7 @@ class TaskAppearancePage(ScrolledPage):
         # Note: override entries now track effective values, not derived
         # (updated in _updateEffectiveValues)
 
-    def addColorEntries(self):
+    def add_color_entries(self):
         self.add_color_entry(_("Foreground"), "foreground", wx.BLACK)
         self.add_color_entry(_("Background"), "background", wx.WHITE)
 
@@ -1366,7 +1366,7 @@ class DatesPage(ScrolledPage):
     def addEntries(self):
         self.add_status_entry()
         self.addLine()
-        self.addDateEntries()
+        self.add_date_entries()
         self.addLine()
         self.add_reminder_entry()
         self.addLine()
@@ -1458,7 +1458,7 @@ class DatesPage(ScrolledPage):
         self._statusPanel.Fit()
         self.Layout()
 
-    def addDateEntries(self):
+    def add_date_entries(self):
         # Create panel for planned date section with table layout
         self._add_planned_date_section()
         self.addLine()

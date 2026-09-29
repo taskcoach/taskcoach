@@ -1699,7 +1699,7 @@ class XMLReaderVersion33Test(XMLReaderTestCase):
         </tasks>\n""")
         self.assertEqual(
             date.DateTime(2004, 1, 1, 9, 0, 0),
-            tasks[0].reminder(includeSnooze=False),
+            tasks[0].reminder(include_snooze=False),
         )
         self.assertEqual(
             date.DateTime(2004, 1, 1, 10, 0, 0), tasks[0].reminder()
@@ -1712,7 +1712,7 @@ class XMLReaderVersion33Test(XMLReaderTestCase):
         </tasks>\n""")
         self.assertEqual(
             date.DateTime(2004, 1, 1, 10, 0, 0),
-            tasks[0].reminder(includeSnooze=False),
+            tasks[0].reminder(include_snooze=False),
         )
         self.assertEqual(
             date.DateTime(2004, 1, 1, 10, 0, 0), tasks[0].reminder()

@@ -2802,31 +2802,31 @@ class TaskReminderTestCase(TaskTestCase, CommonTaskTestsMixin):
         # Not set is the latest date (docs/ATTRIBUTE_PATTERN.md)
         self.assertReminder(date.DateTime())
         self.assertEqual(
-            date.DateTime(), self.task.reminder(includeSnooze=False)
+            date.DateTime(), self.task.reminder(include_snooze=False)
         )
 
     def testOriginalReminder(self):
         self.assertEqual(
-            self.initialReminder(), self.task.reminder(includeSnooze=False)
+            self.initialReminder(), self.task.reminder(include_snooze=False)
         )
 
     def testOriginalReminderAfterSnooze(self):
         self.task.snooze_reminder(date.ONE_HOUR)
         self.assertEqual(
-            self.initialReminder(), self.task.reminder(includeSnooze=False)
+            self.initialReminder(), self.task.reminder(include_snooze=False)
         )
 
     def testOriginalReminderAfterTwoSnoozes(self):
         self.task.snooze_reminder(date.ONE_HOUR)
         self.task.snooze_reminder(date.ONE_HOUR)
         self.assertEqual(
-            self.initialReminder(), self.task.reminder(includeSnooze=False)
+            self.initialReminder(), self.task.reminder(include_snooze=False)
         )
 
     def testOriginalReminderAfterCancel(self):
         self.task.set_reminder(None)
         self.assertEqual(
-            date.DateTime(), self.task.reminder(includeSnooze=False)
+            date.DateTime(), self.task.reminder(include_snooze=False)
         )
 
     def testCancelReminderWithMaxDateTime(self):
@@ -2835,9 +2835,9 @@ class TaskReminderTestCase(TaskTestCase, CommonTaskTestsMixin):
 
     def test_task_notifies_observer_of_new_reminder(self):
         self.record_changes(task.Task.reminderChangedEventType())
-        newReminder = self.initialReminder() + date.ONE_SECOND
-        self.task.set_reminder(newReminder)
-        self.assertEqual([(newReminder, self.task)], self.changes)
+        new_reminder = self.initialReminder() + date.ONE_SECOND
+        self.task.set_reminder(new_reminder)
+        self.assertEqual([(new_reminder, self.task)], self.changes)
 
     def test_new_reminder_cancels_previous_reminder(self):
         self.record_changes(task.Task.reminderChangedEventType())
