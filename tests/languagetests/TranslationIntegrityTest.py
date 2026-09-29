@@ -29,7 +29,7 @@ class TranslationIntegrityTestsMixin(object):
     """Unittests for translations. This class is subclassed below for each
     translated string in each language."""
 
-    conversionSpecificationRE = re.compile("%\(\w+\)[sd]")
+    conversion_specification_re = re.compile(r"%\(\w+\)[sd]")
 
     @staticmethod
     def findMatches(regex, search_string):
@@ -39,7 +39,7 @@ class TranslationIntegrityTestsMixin(object):
         return matches
 
     def testMatchingConversionSpecifications(self):
-        regex = self.conversionSpecificationRE
+        regex = self.conversion_specification_re
         matches_english = self.findMatches(regex, self.englishString)
         matches_translation = self.findMatches(regex, self.translatedString)
         self.assertEqual(

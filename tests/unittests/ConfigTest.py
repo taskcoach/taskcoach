@@ -49,7 +49,7 @@ class SettingsTest(SettingsTestCase):
         self.assertEqual([], self.settings.getlist("file", "recentfiles"))
 
     def testSetList_SimpleStrings(self):
-        recentfiles = ["abc", "C:\Documents And Settings\Whatever"]
+        recentfiles = ["abc", r"C:\Documents And Settings\Whatever"]
         self.settings.setlist("file", "recentfiles", recentfiles)
         self.assertEqual(
             recentfiles, self.settings.getlist("file", "recentfiles")

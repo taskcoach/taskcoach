@@ -2640,13 +2640,14 @@ else:
             )
             self.hbox.Clear(True)
             self.hbox.Add(graph_png_bm, 1, wx.ALL, 3)
-            patterns.later.soon(self, self.__safeSendSizeEvent)
+            patterns.later.soon(self, self.__safe_send_size_event)
 
-    def __safeSendSizeEvent(self):
-        """Safely send size event to scrolled panel, guarding against deleted C++ objects."""
-        try:
-            if self.scrolled_panel:
-                self.scrolled_panel.SendSizeEvent()
-        except RuntimeError:
-            # wrapped C/C++ object has been deleted
-            pass
+        def __safe_send_size_event(self):
+            """Send a size event to the scrolled panel, unless it was
+            deleted meanwhile."""
+            try:
+                if self.scrolled_panel:
+                    self.scrolled_panel.SendSizeEvent()
+            except RuntimeError:
+                # wrapped C/C++ object has been deleted
+                pass

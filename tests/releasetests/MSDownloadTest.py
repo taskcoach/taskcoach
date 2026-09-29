@@ -32,4 +32,4 @@ class MSDownloadTest(test.TestCase):
         except Exception as message:  # pylint: disable=W0703
             self.fail("Could not download page: %s" % str(message))
 
-        self.assertTrue(re.search("vcredist[a-zA-Z0-9_-]*\.exe", content))
+        self.assertTrue(re.search(r"vcredist[a-zA-Z0-9_-]*\.exe", content))

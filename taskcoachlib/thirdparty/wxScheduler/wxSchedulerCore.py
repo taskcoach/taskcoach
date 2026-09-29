@@ -111,9 +111,6 @@ class wxSchedulerCore(wxSchedulerPaint):
         elif self._viewType == wxSCHEDULER_WEEKLY:
             offset = wx.DateSpan(weeks=1)
         elif self._viewType == wxSCHEDULER_MONTHLY:
-            daysAdd = self._currentDate.GetNumberOfDaysInMonth(
-                self._currentDate.GetMonth()
-            )
             offset = wx.DateSpan(months=1)
 
         if side == wxSCHEDULER_NEXT:
@@ -262,7 +259,9 @@ class wxSchedulerCore(wxSchedulerPaint):
         # End the end day
         elif self._viewType == wxSCHEDULER_MONTHLY:
             start.SetDay(1)
-            end.SetDay(wx.DateTime.GetNumberOfDaysInMonth(end.GetMonth()))
+            end.SetDay(
+                wx.DateTime.GetNumberOfDays(end.GetMonth(), end.GetYear())
+            )
         else:
             print("Why I'm here?")
             return
