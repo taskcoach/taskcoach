@@ -140,6 +140,16 @@ go at the end. Details live in the sections and documents linked.
     reproduced in four runs of the same steps): watch for it.
 45. Not planned: the reason for each entry
     ([Later](#later-the-reason-for-each-entry)).
+46. ~~Status-first sort re-sorts on the clock's status changes~~: once
+    after the loop's pass ([TASK_STATUS_SORT.md](TASK_STATUS_SORT.md#re-sorting)).
+47. ~~Effort viewer's Task and Categories columns refresh~~.
+48. ~~Decimal time applies at once~~ (`settings2.changed`).
+49. ~~Calendar week start and gradient apply at once~~; the gradient
+    drawer failed to paint under wxPython 4 and is fixed.
+50. ~~Effort rows and period totals refresh on a stop change~~: they
+    did not, on master either.
+51. ~~Empty event type~~: gone, and `removeObserver()` reads only None
+    as "any".
 
 ## Views on the Effective Styles
 

@@ -414,17 +414,18 @@ class Publisher(object, metaclass=singleton.Singleton):
         # First, create a match function that will select the combination of
         # event source and event type we're looking for:
 
-        if eventType and eventSource:
+        # None means any: an empty collection is a source, not "any"
+        if eventType is not None and eventSource is not None:
 
             def match(type, source):
                 return type == eventType and source == eventSource
 
-        elif eventType:
+        elif eventType is not None:
 
             def match(type, source):
                 return type == eventType
 
-        elif eventSource:
+        elif eventSource is not None:
 
             def match(type, source):
                 return source == eventSource

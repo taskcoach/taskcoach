@@ -131,7 +131,6 @@ class AttachmentViewer(
             widgets.Column(
                 "type",
                 _("Type"),
-                "",
                 width=self.getColumnWidth("type"),
                 imageIndicesCallback=self.typeImageIndices,
                 renderCallback=self.getTypeName,

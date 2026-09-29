@@ -584,6 +584,19 @@ class PublisherTest(test.TestCase):
         patterns.Event("eventType", "observable").send()
         self.assertEqual(1, len(self.events))
 
+    def test_remove_observer_for_an_empty_collection_keeps_the_others(self):
+        # An empty collection is false, but a source, not "any source"
+        first, second = patterns.ObservableList(), patterns.ObservableList()
+        for source in first, second:
+            self.publisher.registerObserver(
+                self.onEvent, eventType="eventType", eventSource=source
+            )
+        self.publisher.removeObserver(
+            self.onEvent, eventType="eventType", eventSource=first
+        )
+        patterns.Event("eventType", second).send()
+        self.assertEqual(1, len(self.events))
+
     def testPublisherIsSingleton(self):
         anotherPublisher = patterns.Publisher()
         self.assertTrue(self.publisher is anotherPublisher)
