@@ -192,9 +192,9 @@ class XMLWriter(object):
         reminder = task.reminder()
         if reminder != maxDateTime:
             node.attrib["reminder"] = str(reminder)
-            reminderBeforeSnooze = task.reminder(include_snooze=False)
-            if reminderBeforeSnooze < reminder:
-                node.attrib["reminderBeforeSnooze"] = str(reminderBeforeSnooze)
+            before_snooze = task.reminder(include_snooze=False)
+            if before_snooze < reminder:
+                node.attrib["reminderBeforeSnooze"] = str(before_snooze)
         prerequisiteIds = " ".join(
             [
                 prerequisite.id()
