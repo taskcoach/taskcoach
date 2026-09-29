@@ -309,6 +309,19 @@ class MasterTimerListTest(test.wxTestCase):
         self.task.setSubject("new subject")
         self.assertFalse(self.tick())
 
+    def test_renaming_a_style_source_updates_the_source_text(self):
+        # A category's name is its items' style source
+        from taskcoachlib.domain import category
+
+        work = category.Category("Work", fgColor=(255, 0, 0, 255))
+        self.task_file.categories().append(work)
+        work.addCategorizable(self.task)
+        self.task.addCategory(work)
+        self.settle()
+        work.setSubject("Job")
+        self.settle()
+        self.assertEqual("[Category] Job", self.task.effectiveFgColorSource())
+
     def test_a_fee_change_runs_nothing(self):
         # Nor the revenue it changes: the loop reads neither
         self.task.addEffort(

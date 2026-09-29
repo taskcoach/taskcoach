@@ -202,7 +202,8 @@ What pushes into the heap:
 - A task's planned start, actual start, due or reminder changed, or
   tasks added: their timer seconds.
 - Any change the loop reads (domain changes except subject,
-  description and expansion; the appearance settings; the system
+  description and expansion, though the subject of an item that is
+  another's style source, a category or a parent, counts; the appearance settings; the system
   theme), and the loop's own changes (statuses, styles): the current
   tick's second, which the next tick takes with every other due entry.
   A cascade settles one pass per second.

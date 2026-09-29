@@ -242,6 +242,11 @@ class MasterScheduler:
                 )
         for event_type in _data_event_types() | set(_APPEARANCE_SETTINGS):
             register(self._on_data_changed, eventType=event_type)
+        for klass in (Task, category.Category, note.Note):
+            register(
+                self._on_subject_changed,
+                eventType=klass.subjectChangedEventType(),
+            )
         register(
             self._on_due_soon_hours_changed, eventType="behavior.duesoonhours"
         )
@@ -318,6 +323,15 @@ class MasterScheduler:
 
     def _on_data_changed(self, event):
         self._push_changed(event.types())
+
+    def _on_subject_changed(self, event):
+        # A name the loop reads only as the style source it gives other
+        # items ("[Category] Work"): a category's, a parent's. A leaf's
+        # name runs nothing, so typing one does not run the loop
+        for each in event.sources():
+            if each.children() or getattr(each, "categorizables", list)():
+                self._push_changed(event.types())
+                return
 
     def _on_due_soon_hours_changed(self, event):  # pylint: disable=W0613
         # Every task's due soon second moves

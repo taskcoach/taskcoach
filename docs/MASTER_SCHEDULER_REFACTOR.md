@@ -584,7 +584,9 @@ in `gui/scheduler.py`), a task's tracking, and the loop's own outputs
 (status, derived and effective styles), except fields that change no
 status, reminder or style, such as the subject, the description, the
 fees, the priority and the expanded state, so typing does not run the
-loop every second. Computed values the loop does not read (time
+loop every second. A name the loop reads only as the style source it
+gives other items ("[Category] Work"): renaming a category, or an item
+with children, pushes the second; a leaf's name runs nothing. Computed values the loop does not read (time
 spent, budget left, revenue, the subtree values) run nothing.
 
 The safe side decides doubtful fields: one wrongly left in costs a
