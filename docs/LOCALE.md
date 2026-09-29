@@ -87,10 +87,11 @@ Cascading checks for language selection:
 1. Command-line options (`--language`, `--pofile`)
 2. User preference (`view/language_set_by_user`)
 3. External setting (`view/language`)
-4. `LANG` environment variable (strip `.UTF-8` suffix)
-5. `LC_ALL` environment variable
-6. `locale.getlocale(locale.LC_MESSAGES)`
-7. Final fallback: `"en_US"`
+4. The environment, in POSIX order: the first set of `LC_ALL`,
+   `LC_MESSAGES` and `LANG` (encoding suffix such as `.UTF-8`
+   stripped; `C` or `POSIX` goes on to the next step)
+5. `locale.getlocale(locale.LC_MESSAGES)`
+6. Final fallback: `"en_US"`
 
 - **Files:** `application.py`, `i18n/__init__.py`
 

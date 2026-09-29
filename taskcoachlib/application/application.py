@@ -947,11 +947,14 @@ class Application(object, metaclass=patterns.Singleton):
             # Get language as set by the user or externally (e.g. PortableApps)
             language = settings.get("view", "language")
         if not language:
-            # Use the user's locale from environment variables
-            # Note: locale.getdefaultlocale() is deprecated since Python 3.11
-            # and doesn't reliably read LANG on Linux. We check env vars
-            # directly.
-            language = os.environ.get("LANG", os.environ.get("LC_ALL", ""))
+            # The user's locale from the environment, in POSIX order:
+            # the first set of LC_ALL, LC_MESSAGES and LANG
+            # (docs/LOCALE.md). locale.getdefaultlocale() is deprecated
+            # since Python 3.11 and doesn't reliably read them on Linux.
+            for name in ("LC_ALL", "LC_MESSAGES", "LANG"):
+                language = os.environ.get(name, "")
+                if language:
+                    break
             if language:
                 # Strip encoding suffix (e.g., "de_DE.UTF-8" -> "de_DE")
                 language = language.split(".")[0]

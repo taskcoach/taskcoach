@@ -70,16 +70,15 @@ class AppTests(test.TestCase):
             app.mainwindow.Destroy()
             application.Application.deleteInstance()
 
-    def assert_language(self, expected_language, locale=None, lang=None):
+    def assert_language(self, expected_language, locale=None, **environ):
         args = [self.options, self.settings]
         if locale:
             args.append(locale)
         # Not this machine's language: only the one given here
         with mock.patch.dict(os.environ):
-            os.environ.pop("LC_ALL", None)
-            os.environ.pop("LANG", None)
-            if lang:
-                os.environ["LANG"] = lang
+            for name in ("LC_ALL", "LC_MESSAGES", "LANG"):
+                os.environ.pop(name, None)
+            os.environ.update(environ)
             self.assertEqual(
                 expected_language,
                 application.Application.determine_language(*args),
@@ -107,7 +106,28 @@ class AppTests(test.TestCase):
         self.assert_language("de_DE")
 
     def test_language_via_lang(self):
-        self.assert_language("en_GB", DummyLocale(), lang="en_GB.UTF-8")
+        self.assert_language("en_GB", DummyLocale(), LANG="en_GB.UTF-8")
+
+    def test_lc_all_comes_before_lang(self):
+        self.assert_language(
+            "de_DE", DummyLocale(), LANG="en_GB.UTF-8", LC_ALL="de_DE.UTF-8"
+        )
+
+    def test_lc_messages_comes_before_lang(self):
+        self.assert_language(
+            "fr_FR",
+            DummyLocale(),
+            LANG="en_GB.UTF-8",
+            LC_MESSAGES="fr_FR.UTF-8",
+        )
+
+    def test_lc_all_comes_before_lc_messages(self):
+        self.assert_language(
+            "de_DE",
+            DummyLocale(),
+            LC_MESSAGES="fr_FR.UTF-8",
+            LC_ALL="de_DE.UTF-8",
+        )
 
     def test_language_via_the_locale(self):
         self.assert_language("en_GB", DummyLocale("en_GB"))
