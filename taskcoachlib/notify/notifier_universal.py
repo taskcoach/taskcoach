@@ -269,8 +269,11 @@ class _NotificationCenter(wx.EvtHandler):
         self.waitingFrames = []
         self.notificationWidth = 300
         self.notificationMargin = 5
+        self.__ticks = None  # Only while there are frames
 
-        self.__ticks = patterns.later.every(self, 1000, self.__on_tick)
+    def __start_ticks(self):
+        if self.__ticks is None or not self.__ticks.pending:
+            self.__ticks = patterns.later.every(self, 1000, self.__on_tick)
 
     def notify_frame(self, frm, timeout=None):
         """
@@ -280,6 +283,7 @@ class _NotificationCenter(wx.EvtHandler):
         @param timeout: Time to display the frame before automatically
             hiding it; in seconds.
         """
+        self.__start_ticks()
 
         if frm.GetParent():
             dx, dy = frm.GetParent().GetPosition()
@@ -412,6 +416,8 @@ class _NotificationCenter(wx.EvtHandler):
 
         self.displayedFrames = new_list
         self.CheckWaiting()
+        if not self.displayedFrames and not self.waitingFrames:
+            self.__ticks.cancel()  # Its job is done
 
 
 class NotificationCenter(object):

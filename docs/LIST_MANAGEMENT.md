@@ -541,10 +541,10 @@ Highlight** (default 1, 0 to disable). Read directly via
 changes take effect immediately without restart.
 
 Tooltips are controlled by `settings2.view.descriptionpopups` (bool), read
-directly on every mouse-move in `ToolTipMixin.__OnMotion`. The expensive
+directly on every mouse-move in `ToolTipMixin.__on_motion`. The expensive
 `OnBeforeShowToolTip()` call (HitTest + full tooltip data extraction traversing
-notes, categories, attachments, descriptions) is deferred to a 200ms timer
-callback. Only the mouse position is stored on motion; data extraction runs
+notes, categories, attachments, descriptions) runs 200ms after the last move
+(a debounced call, [DEFERRED_CALLS.md](DEFERRED_CALLS.md)). Only the mouse position is stored on motion; data extraction runs
 once after the cursor is still.
 
 ### Two-Tone Strategy (W3C WCAG C40)
@@ -572,7 +572,7 @@ EVT_MOUSE_EVENTS on TreeListMainWindow
     │           └── _refresh_hover_row(newItem)       ← padded invalidation
     │               └── settings2.window.hoverlinewidth  ← direct read
     │
-    └── event.Skip() → tooltip __OnMotion fires (tooltip.py)
+    └── event.Skip() → tooltip __on_motion fires (tooltip.py)
         └── settings2.view.descriptionpopups        ← direct read
             └── start 200ms timer → OnBeforeShowToolTip
 ```
@@ -602,7 +602,7 @@ EVT_MOTION on VirtualListCtrl
     │       │   └── CallAfter(_draw_hover_outline)
     │       │       └── settings2.window.hoverlinewidth  ← direct read
     │
-    └── event.Skip() → tooltip __OnMotion fires (tooltip.py)
+    └── event.Skip() → tooltip __on_motion fires (tooltip.py)
         └── settings2.view.descriptionpopups        ← direct read
             └── start 200ms timer → OnBeforeShowToolTip
 ```
@@ -634,8 +634,8 @@ Only two handlers fire on mouse motion. Both call `event.Skip()` so the chain is
 | Handler | File | Purpose |
 |---------|------|---------|
 | `OnMouse` fast-path | `hypertreelist.py` | Row-bounds cache → HitTest only on row change → update `_hoverItem`, read `settings2.window.hoverlinewidth` |
-| `__OnMotion` (ToolTipMixin) | `tooltip.py` | Read `settings2.view.descriptionpopups`, store position, start 200ms timer |
-| `__OnTimer` (ToolTipMixin) | `tooltip.py` | Call `OnBeforeShowToolTip()` → build tooltip |
+| `__on_motion` (ToolTipMixin) | `tooltip.py` | Read `settings2.view.descriptionpopups`, store position, restart the 200ms debounced call |
+| `__show_pending_tip` (ToolTipMixin) | `tooltip.py` | Call `OnBeforeShowToolTip()` → build tooltip |
 
 **Hover fast-path:** `OnMouse` short-circuits for `event.Moving()` before the
 full HitTest + button/drag/tooltip processing (~200 lines skipped). A Y-bounds
@@ -715,7 +715,7 @@ states only when selection or data actually changes, not by continuous polling.
 ### ~~TODO~~: Eliminate UpdateUI polling entirely — DONE
 
 **Q1: Can we piggyback on the 1-second scheduler tick?** The global scheduler
-timer already fires every second (`scheduler.py:89`). Instead of wx polling
+timer already fires every second (`scheduler.py`, `GlobalTimer`). Instead of wx polling
 `enabled()` via UpdateUI, we could update toolbar button states once per second
 in the scheduler callback. This would consolidate the work into one place and
 eliminate the UpdateUI overhead entirely.
@@ -843,7 +843,7 @@ then removed. Re-add any of them to trace a specific path:
 | OnMouse same-row | `hypertreelist.py:OnMouse` fast-path | `OnMouse` | Mouse motion within same row (should be majority) |
 | OnMouse new-row | `hypertreelist.py:OnMouse` fast-path | `OnMouse` | Mouse crossing to a new row (triggers HitTest) |
 | OnMouse fallthrough | `hypertreelist.py:OnMouse` after fast-path | `OnMouse` | Non-motion events (clicks, drag) entering full handler |
-| Tooltip motion | `tooltip.py:__OnMotion` | `TOOLTIP` | Timer stop/restart on every mouse move |
+| Tooltip motion | `tooltip.py:__on_motion` | `TOOLTIP` | Debounced call restart on every mouse move |
 | UpdateUI poll | `base_uicommand.py:onUpdateUI` | `UpdateUI` | Each toolbar button's enabled() poll |
 | Taskbar idle | `taskbaricon.py:on_idle` | `EVT_IDLE` | Tray icon tooltip/icon string comparison |
 | Window dims idle | `windowdimensionstracker.py:_on_idle` | `EVT_IDLE` | Window position/size readiness check |
@@ -853,9 +853,10 @@ then removed. Re-add any of them to trace a specific path:
 
 | Timer | File | Interval | Always? | Purpose |
 |-------|------|----------|---------|---------|
-| Global scheduler | `scheduler.py:89` | 1000ms | Yes | Reminders, styles; its `timer.second` tick drives viewer, editor and tray refreshes |
+| Global scheduler | `scheduler.py` (`GlobalTimer`) | 1000ms | Yes | Reminders, styles; its `timer.second` tick drives viewer, editor and tray refreshes |
 | Notification center | `notifier_universal.py` (`_NotificationCenter`) | 1000ms | While notifications shown | Timeout-based dismissal |
 | Notification anim | `notifier_universal.py` (`AnimatedShow`, `AnimatedMove`) | 100ms | During fade-in only (~1s) | Fade-in/move animation |
+| Geometry trace | `meta/geometry_trace.py` | 10ms for a 2s burst, then 1000ms | Only while a call to it is added for a diagnosis | Logs window geometry ([DEVELOPMENT.md](DEVELOPMENT.md#diagnosing)) |
 
 Only the global scheduler runs at all times. All
 others are conditional and stop when their context ends.
