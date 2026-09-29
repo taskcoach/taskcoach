@@ -125,9 +125,10 @@ go at the end. Details live in the sections and documents linked.
     `setCompletionDateTime()`, about 465 calls), `setParent()` (65) and
     `setTask()` (25), with name-coupled callers such as `merge.py`
     (`"set" + kind`) in lockstep ([PEP8_MIGRATION.md](PEP8_MIGRATION.md)).
-40. Signal cleanup: views, toolbars, menus and dialogs drop their
-    subscriptions when destroyed, then the dead-window guards go
-    ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#todo)).
+40. ~~Signal cleanup~~: subscriptions end with their window, toolbar,
+    menu or editor page; the guards that became unreachable are gone,
+    the others guard delayed calls and destruction
+    ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#signaling-system-cleanup)).
 41. Editor text fields (subject, description, attachment location)
     commit only on focus loss
     ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#todo)).

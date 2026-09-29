@@ -78,9 +78,9 @@ relationship) — signal dispatch exists to serve Attribute change notification.
    silently stop a subscriber such as the per-second `MasterScheduler`.
    A failure that repeats on every event logs its traceback once, then
    a count every 100 repeats.
-   **Remaining:** Hook `EVT_WINDOW_DESTROY` → `removeInstance()` for
-   the other `patterns.Observer` windows (viewers, toolbars, menus,
-   dialogs). Remove DEAD-OBJ guards once cleanup is proven reliable.
+   **Done 2026-09-28:** every subscription ends with its owner
+   ([Signaling System Cleanup](#signaling-system-cleanup)), and the
+   guards that became unreachable are removed.
 
 ---
 
@@ -294,13 +294,33 @@ No manual unsubscribe, no silent `except` guards, no zombie callbacks.
    signal is a Publisher event. Next: migrate the Publisher to a modern
    signal library (Blinker or psygnal) with true per-instance signals.
 
-2. **Automatic cleanup via EVT_WINDOW_DESTROY.** Hook into wx's
-   `EVT_WINDOW_DESTROY` event to call `removeInstance()` automatically when
-   a window is destroyed. This eliminates the need for manual cleanup in
-   every close handler.
+2. **Automatic cleanup via EVT_WINDOW_DESTROY.** Done 2026-09-28:
+   - A window's subscriptions, through the `Observer` mixin or the
+     `Publisher` directly, end when it is destroyed: the Publisher
+     binds `EVT_WINDOW_DESTROY` at its first subscription
+     (`Publisher.remove_observers_of()`). A window must subscribe after
+     its wx `__init__`.
+   - A toolbar's commands unsubscribe when the toolbar is destroyed
+     (rebuilding the main toolbar destroys it without `Clear()`).
+   - A destroyed submenu or popup menu drops its subscriptions
+     (`Menu.DestroyItem()`, `Menu.Destroy()`).
+   - An editor page ends its field syncs' (`AttributeSync`) with its
+     own: they are not windows, and some entries wrap several widgets.
 
-3. **Remove all DEAD-OBJ guards.** Once cleanup is automatic, the
-   `try/except RuntimeError` guards become dead code. Remove them.
+3. **Remove the DEAD-OBJ guards.** Done 2026-09-28 where unreachable: a
+   liveness check just before the call (`if not self`, `if
+   self.toolbar`), or an owner that now unsubscribes. The others stay;
+   they guard what unsubscribing cannot:
+
+   | Guarded against | Where |
+   |---|---|
+   | A delayed call (`wx.CallAfter`, `CallLater`, a timer) reaching a window closed meanwhile | the `__safe*()` wrappers in the widgets and viewers, the in-place editors, `Editor._deferred_destroy()`, the viewer container's focus, `ToggleAutoColumnResizing.updateWidget()`, the `not self or IsBeingDeleted()` checks |
+   | wx events while a window's children are being destroyed | `TaskEntry._onDestroy()`, `Viewer.SetFocus()`, `AttributeSync`'s callback, `NullableDateTimeWrapper`, the tree and list `curselection()`, the column sort |
+   | Menu items that outlive their menu, wx assertions | `update_menu_text()`, `MenuItem.update_state()`, `onUpdateMenu_Deprecated()` |
+   | Shutdown | `Application.display_message()` |
+
+   The app-wide `wx.CallAfter` guard (`workarounds/monkeypatches.py`)
+   covers delayed calls to a deleted window's own methods.
 
 ### Files involved
 
@@ -313,7 +333,7 @@ No manual unsubscribe, no silent `except` guards, no zombie callbacks.
 | Editor cleanup | `taskcoachlib/gui/dialog/editor.py` |
 | Viewer cleanup | `taskcoachlib/gui/viewer/base.py` |
 
-**Status:** Planned — incremental. Band-aids in place, root cause understood.
+**Status:** Done 2026-09-28, but for the signal library (1).
 
 ---
 

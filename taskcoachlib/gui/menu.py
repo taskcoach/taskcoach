@@ -44,10 +44,17 @@ class Menu(wx.Menu, uicommand.UICommandContainerMixin):
         return self.GetMenuItemCount()
 
     def DestroyItem(self, menuItem):
-        if menuItem.GetSubMenu():
-            menuItem.GetSubMenu().clearMenu()
+        submenu = menuItem.GetSubMenu()
+        if submenu:
+            submenu.clearMenu()
+            # Its own subscriptions end with it, like a window's
+            patterns.Publisher().remove_observers_of(submenu)
         self._window.Unbind(wx.EVT_MENU, id=menuItem.GetId())
         super().DestroyItem(menuItem)
+
+    def Destroy(self):
+        patterns.Publisher().remove_observers_of(self)
+        return super().Destroy()
 
     def clearMenu(self):
         """Remove all menu items."""
@@ -122,14 +129,6 @@ class DynamicMenu(Menu):
         """Subclasses are responsible for binding an event to onUpdateMenu so
         that the menu gets a chance to update itself at the right time."""
         raise NotImplementedError
-
-    def onUpdateMenu(self, newValue, sender):
-        """This event handler should be called at the right times so that
-        the menu has a chance to update itself."""
-        try:  # Prepare for menu or window to be destroyed
-            self.updateMenu()
-        except (RuntimeError, wx.wxAssertionError):
-            log_step("onUpdateMenu: menu/window dead", prefix="DEAD-OBJ")
 
     def onUpdateMenu_Deprecated(self, event=None):
         """This event handler should be called at the right times so that

@@ -259,11 +259,8 @@ class FileSave(IOCommand):
         self.registerObserver(self._on_dirty_changed, "taskfile.clean")
 
     def _on_dirty_changed(self, event):  # pylint: disable=W0613
-        try:
-            self.toolbar.EnableTool(self.id, self.enabled(None))
-            self.toolbar.Refresh(False)
-        except RuntimeError:
-            pass
+        self.toolbar.EnableTool(self.id, self.enabled(None))
+        self.toolbar.Refresh(False)
 
     def do_command(self, event):
         self.iocontroller.save()
@@ -813,11 +810,8 @@ class EditUndo(base_uicommand.UICommand):
     def _on_history_changed(self, event=None):  # pylint: disable=W0613
         self.update_menu_text(self._undo_menu_text())
         if self.toolbar:
-            try:
-                self.toolbar.EnableTool(self.id, self.enabled(None))
-                self.toolbar.Refresh(False)
-            except RuntimeError:
-                pass
+            self.toolbar.EnableTool(self.id, self.enabled(None))
+            self.toolbar.Refresh(False)
 
     def do_command(self, event):
         window_with_focus = wx.Window.FindFocus()
@@ -861,11 +855,8 @@ class EditRedo(base_uicommand.UICommand):
     def _on_history_changed(self, event=None):  # pylint: disable=W0613
         self.update_menu_text(self._redo_menu_text())
         if self.toolbar:
-            try:
-                self.toolbar.EnableTool(self.id, self.enabled(None))
-                self.toolbar.Refresh(False)
-            except RuntimeError:
-                pass
+            self.toolbar.EnableTool(self.id, self.enabled(None))
+            self.toolbar.Refresh(False)
 
     def do_command(self, event):
         window_with_focus = wx.Window.FindFocus()
@@ -1214,11 +1205,8 @@ class ResetFilter(ViewerCommand):
         )
 
     def _on_filter_change(self, event):
-        try:
-            self.toolbar.EnableTool(self.id, self.enabled(None))
-            self.toolbar.Refresh(False)
-        except RuntimeError:
-            pass
+        self.toolbar.EnableTool(self.id, self.enabled(None))
+        self.toolbar.Refresh(False)
 
     def do_command(self, event):
         self.viewer.reset_filter()
@@ -1647,11 +1635,8 @@ class ToggleAutoScroll(settings_uicommand.UICheckCommand):
         )
 
     def _on_setting_change(self, event=None):
-        try:
-            self.toolbar.ToggleTool(self.id, self.checked())
-            self.toolbar.Refresh(False)
-        except RuntimeError:
-            pass  # wrapped C/C++ object has been deleted
+        self.toolbar.ToggleTool(self.id, self.checked())
+        self.toolbar.Refresh(False)
 
 
 class Edit(ViewerCommand):

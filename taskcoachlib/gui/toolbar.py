@@ -43,7 +43,7 @@ class _Toolbar(aui.AuiToolBar):
                 f"Toolbar item '{label}' has no bitmap at size "
                 f"{size[0]}x{size[1]}. Import the missing size from the "
                 f"distillery. See ICON_LIBRARY.md Step 2.3.",
-                prefix="ICON"
+                prefix="ICON",
             )
             img = wx.Image(size[0], size[1])
             img.InitAlpha()
@@ -87,20 +87,23 @@ class _Toolbar(aui.AuiToolBar):
                 f"A toolbar icon is missing this size - import it from the "
                 f"distillery and update icons.json sizes. "
                 f"See ICON_LIBRARY.md Step 2.3.",
-                prefix="ICON"
+                prefix="ICON",
             )
             return bitmap
         return bitmap.ConvertToImage().ConvertToGreyscale().ConvertToBitmap()
 
 
 class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
-    def __init__(self, window, settings,
-                 size=(MAIN_TOOLBAR_ICON_SIZE_DEFAULT,) * 2):
+    def __init__(
+        self, window, settings, size=(MAIN_TOOLBAR_ICON_SIZE_DEFAULT,) * 2
+    ):
         self.__window = window
         self.__settings = settings
         self.__visible_ui_commands = list()
         self.__cache = None
         super().__init__(window, style=wx.TB_FLAT | wx.TB_NODIVIDER)
+        # Rebuilding the main toolbar destroys it without Clear()
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.__on_destroy)
         self.SetToolBitmapSize(size)
         if operating_system.isMac():
             # Extra margin needed because the search control is too high
@@ -130,6 +133,17 @@ class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
     def detach(self):
         self.Clear()
         self.__visible_ui_commands = self.__cache = None
+
+    def __on_destroy(self, event):
+        """The commands' subscriptions end with the toolbar."""
+        event.Skip()
+        if event.GetEventObject() is not self:
+            return
+        for command in (self.__cache or []) + (
+            self.__visible_ui_commands or []
+        ):
+            if command.is_command():
+                command.removeInstance()
 
     def get_tool_id_by_command(self, command_name):
         if command_name == "EditToolBarPerspective":
@@ -208,7 +222,7 @@ class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
 
     def get_default_perspective(self):
         """Get the default toolbar perspective from settings."""
-        if hasattr(self.__window, 'settingsSection'):
+        if hasattr(self.__window, "settingsSection"):
             section = self.__window.settingsSection()
         else:
             # MainWindow uses "view" section
@@ -240,4 +254,5 @@ class MainToolBar(ToolBar):
     Uses standard AUI toolbar behavior with GetBestSize() for automatic
     height calculation based on icon size.
     """
+
     pass

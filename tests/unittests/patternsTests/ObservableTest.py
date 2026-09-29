@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test
+import wx
 from taskcoachlib import patterns
 
 
@@ -492,6 +493,45 @@ class DeletedWidgetUser(object):
         raise RuntimeError(
             "wrapped C/C++ object of type Panel has been deleted"
         )
+
+
+class ObservingPanel(wx.Panel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.events = []
+
+    def on_event(self, event):
+        self.events.append(event)
+
+
+class PublisherWindowTest(test.TestCase):
+    """A window's subscriptions end when it is destroyed."""
+
+    def setUp(self):
+        super().setUp()
+        self.frame = wx.Frame(None)
+        self.addCleanup(self.frame.Destroy)
+        self.panel = ObservingPanel(self.frame)
+        patterns.Publisher().registerObserver(
+            self.panel.on_event, eventType="eventType"
+        )
+
+    def test_destroyed_window_is_unsubscribed(self):
+        self.panel.Destroy()
+        self.assertEqual([], patterns.Publisher().observers())
+
+    def test_destroying_a_child_keeps_the_window_subscribed(self):
+        wx.Panel(self.panel).Destroy()
+        patterns.Event("eventType", "source").send()
+        self.assertEqual(1, len(self.panel.events))
+
+    def test_remove_observers_of_keeps_the_others(self):
+        other = ObservingPanel(self.frame)
+        patterns.Publisher().registerObserver(
+            other.on_event, eventType="eventType"
+        )
+        patterns.Publisher().remove_observers_of(self.panel)
+        self.assertEqual([other.on_event], patterns.Publisher().observers())
 
 
 class PublisherTest(test.TestCase):

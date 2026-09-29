@@ -119,13 +119,8 @@ class BaseTaskViewer(
         self.send_viewer_status_event()
 
     def __DisplayBalloon(self):
-        # Guard against deleted C++ object - can happen when wx.CallAfter
-        # callback executes after window destruction (e.g., closing nested dialogs)
-        try:
-            if not self or self.IsBeingDeleted():
-                return
-        except RuntimeError:
-            # wrapped C/C++ object has been deleted
+        # Run by wx.CallAfter: the viewer may be closing or gone by then
+        if not self or self.IsBeingDeleted():
             return
         if (
             self.toolbar.getToolIdByCommand("ViewerHideTasks_completed")

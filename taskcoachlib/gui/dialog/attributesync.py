@@ -82,17 +82,11 @@ class AttributeSync(object):
         return self.__commandKwArgs
 
     def setValue(self, new_value):
-        try:
-            if self._entry:
-                self._entry.SetValue(new_value)
-        except RuntimeError:
-            raise
+        if self._entry:
+            self._entry.SetValue(new_value)
 
     def getValue(self):
-        try:
-            return self._entry.GetValue()
-        except RuntimeError:
-            raise
+        return self._entry.GetValue()
 
     def __invokeCallback(self, value):
         if self.__callback is not None:

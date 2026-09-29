@@ -109,13 +109,8 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         wx.CallAfter(self.__DisplayBalloon)
 
     def __DisplayBalloon(self):
-        # Guard against deleted C++ object - can happen when wx.CallAfter
-        # callback executes after window destruction (e.g., closing nested dialogs)
-        try:
-            if not self or self.IsBeingDeleted():
-                return
-        except RuntimeError:
-            # wrapped C/C++ object has been deleted
+        # Run by wx.CallAfter: the viewer may be closing or gone by then
+        if not self or self.IsBeingDeleted():
             return
         # AuiFloatingFrame is instantiated from framemanager, we can't derive it from BalloonTipManager
         if self.toolbar.IsShownOnScreen() and hasattr(
@@ -415,13 +410,10 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         on."""
         if not self.settings.getboolean("view", "autoscrollselection"):
             return
-        try:
-            if hasattr(self.widget, "scroll_to_selection_centered"):
-                self.widget.scroll_to_selection_centered()
-            elif hasattr(self.widget, "ensureSelectionVisible"):
-                self.widget.ensureSelectionVisible()
-        except RuntimeError:
-            pass  # wrapped C/C++ object has been deleted
+        if hasattr(self.widget, "scroll_to_selection_centered"):
+            self.widget.scroll_to_selection_centered()
+        elif hasattr(self.widget, "ensureSelectionVisible"):
+            self.widget.ensureSelectionVisible()
 
     def _capture_selection_info(self):
         """Capture selection info before refresh. Override in subclasses."""
@@ -442,31 +434,20 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
 
         if self.__detached or not self:
             # The widget fired a selection event while the viewer is being
-            # torn down (e.g. hidden viewers in the export dialog). The wx
-            # object may already be gone; "not self" is False-y once the
-            # underlying C++ object is deleted, so bail out before touching
-            # it instead of raising and logging from the except below.
+            # torn down (e.g. hidden viewers in the export dialog); "not
+            # self" is false once the C++ object is deleted
             return
 
-        try:
-            if self.IsBeingDeleted() or self.__selectingAllItems:
-                # Some widgets change the selection and send selection events when
-                # deleting all items as part of the Destroy process. Ignore.
-                return
+        if self.IsBeingDeleted() or self.__selectingAllItems:
+            # Some widgets send selection events while deleting all
+            # items as they are destroyed
+            return
 
-            # Fire selection signal — toolbar buttons subscribe via _SelectionSync
-            patterns.Event(self.selection_changed_event_type(), self).send()
+        # Toolbar buttons follow the selection (_SelectionSync)
+        patterns.Event(self.selection_changed_event_type(), self).send()
 
-            # Fire status event - StatusBar has its own 500ms debounce
-            # No need to query selection here; status bar queries fresh when displaying
-            wx.CallAfter(self.send_viewer_status_event)
-        except RuntimeError as e:
-            log_step(
-                "onSelect on dead viewer %s: %s"
-                % (self.__class__.__name__, e),
-                prefix="DEAD-OBJ",
-                exc=True,
-            )
+        # The status bar reads the selection itself, 500 ms later
+        wx.CallAfter(self.send_viewer_status_event)
 
     def updateSelection(self, send_status_event=True):
         """Legacy method - kept for subclass compatibility.
@@ -527,13 +508,8 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         wx.CallAfter(self.end_of_select_all)
 
     def end_of_select_all(self):
-        # Guard against deleted C++ object - can happen when wx.CallAfter
-        # callback executes after window destruction (e.g., closing nested dialogs)
-        try:
-            if not self or self.IsBeingDeleted():
-                return
-        except RuntimeError:
-            # wrapped C/C++ object has been deleted
+        # Run by wx.CallAfter: the viewer may be closing or gone by then
+        if not self or self.IsBeingDeleted():
             return
         self.__selectingAllItems = False
         # Pretend we received one selection event for the select_all() call:

@@ -115,6 +115,15 @@ def is_system_theme(value):
     )
 
 
+def _end_subscriptions(page):
+    """A page's subscriptions end with it, its field syncs' too
+    (docs/PUBLISHER_OBSERVER.md, Signaling System Cleanup)."""
+    page.removeInstance()
+    for each in list(vars(page).values()):
+        if isinstance(each, attributesync.AttributeSync):
+            patterns.Publisher().remove_observers_of(each)
+
+
 class Page(patterns.Observer, widgets.BookPage):
     columns = 2
 
@@ -169,7 +178,7 @@ class Page(patterns.Observer, widgets.BookPage):
 
     def __on_destroy(self, event):
         if event.GetEventObject() is self:
-            self.removeInstance()
+            _end_subscriptions(self)
         event.Skip()
 
     def close(self):
@@ -231,7 +240,7 @@ class ScrolledPage(patterns.Observer, widgets.ScrolledBookPage):
 
     def __on_destroy(self, event):
         if event.GetEventObject() is self:
-            self.removeInstance()
+            _end_subscriptions(self)
         event.Skip()
 
     def close(self):
@@ -3085,27 +3094,16 @@ class PathPage(ScrolledPage):
 
     def _onAnyChange(self, event=None, **kwargs):
         """Called when any domain object changes. Rebuild if visible."""
-        if self._realized and self._pathPanel:
-            try:
-                if self._pathPanel.IsShownOnScreen():
-                    wx.CallAfter(self._rebuildPathDisplay)
-            except RuntimeError:
-                log_step(
-                    "_onAnyChange: pathPanel dead %x" % id(self),
-                    prefix="DEAD-OBJ",
-                )
+        if (
+            self._realized
+            and self._pathPanel
+            and self._pathPanel.IsShownOnScreen()
+        ):
+            wx.CallAfter(self._rebuildPathDisplay)
 
     def _rebuildPathDisplay(self):
         """Rebuild the path display with all sections."""
         if not self._pathPanel or not self._pathSizer:
-            return
-        try:
-            self._pathPanel.GetName()  # Check if still valid
-        except RuntimeError:
-            log_step(
-                "_rebuildPathDisplay: pathPanel dead %x" % id(self),
-                prefix="DEAD-OBJ",
-            )
             return
 
         # Unsubscribe existing icon handlers before clearing
@@ -3305,21 +3303,14 @@ class PathPage(ScrolledPage):
             obj_id = id(source)
             if obj_id in self._iconWidgets:
                 obj, bitmap = self._iconWidgets[obj_id]
-                try:
-                    _, icon_id = self._getTypeInfo(obj)
-                    if icon_id:
-                        new_bitmap = icon_catalog.get_bitmap(
-                            icon_id, LIST_ICON_SIZE
-                        )
-                        if new_bitmap.IsOk():
-                            bitmap.SetBitmap(new_bitmap)
-                            bitmap.Refresh()
-                except RuntimeError:
-                    log_step(
-                        "_onEffectiveIconChanged: icon widget dead %x"
-                        % id(self),
-                        prefix="DEAD-OBJ",
+                _, icon_id = self._getTypeInfo(obj)
+                if icon_id:
+                    new_bitmap = icon_catalog.get_bitmap(
+                        icon_id, LIST_ICON_SIZE
                     )
+                    if new_bitmap.IsOk():
+                        bitmap.SetBitmap(new_bitmap)
+                        bitmap.Refresh()
 
     def _unsubscribeIconUpdates(self):
         """Clear icon widget tracking (subscription cleaned up on page close)."""
@@ -5081,19 +5072,11 @@ class Editor(BalloonTipManager, widgets.Dialog):
             )
 
     def __close_if_item_is_deleted(self, items):
-        # Guard against deleted C++ object - can happen when wx.CallAfter
-        # callback executes after window destruction (e.g., closing nested dialogs)
-        try:
-            if not self or self.IsBeingDeleted():
-                log_step(
-                    "__close_if_item_is_deleted: dialog already "
-                    "dead/deleting %x" % id(self),
-                    prefix="DEAD-OBJ",
-                )
-                return
-        except RuntimeError:
+        # Run by wx.CallAfter: the editor may be closing or gone by then
+        if not self or self.IsBeingDeleted():
             log_step(
-                "__close_if_item_is_deleted: C++ object deleted %x" % id(self),
+                "__close_if_item_is_deleted: dialog already "
+                "dead/deleting %x" % id(self),
                 prefix="DEAD-OBJ",
             )
             return

@@ -915,12 +915,13 @@ class EffortViewerForSelectedTasks(EffortViewer):
             if active_viewer is not None and active_viewer.is_showing_tasks()
             else None
         )
+        super().__init__(*args, **kwargs)
+        # After the window exists: its subscriptions end with it
         patterns.Publisher().registerObserver(
             self.on_task_selection_changed,
             eventType=self.__viewerContainer.all_viewers_status_event_type(),
             eventSource=self.__viewerContainer,
         )
-        super().__init__(*args, **kwargs)
 
     def tasksToShowEffortFor(self):
         if self.__currentTaskViewer is not None:

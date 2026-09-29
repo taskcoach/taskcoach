@@ -305,6 +305,26 @@ def _log_observer_failure(observer, types, exc, dead):
         )
 
 
+def _unsubscribe_on_destroy(window):
+    """End all the window's subscriptions when it is destroyed, however
+    that happens, so no event reaches a deleted window
+    (docs/PUBLISHER_OBSERVER.md, Signaling System Cleanup)."""
+    import wx
+
+    if getattr(window, "_unsubscribes_on_destroy", False):
+        return
+    window._unsubscribes_on_destroy = True
+    window_ref = weakref.ref(window)
+
+    def on_destroy(event):
+        event.Skip()
+        # Child windows' destroy events reach this handler too
+        if event.GetEventObject() is window_ref():
+            Publisher().remove_observers_of(window_ref())
+
+    wx.EvtHandler.Bind(window, wx.EVT_WINDOW_DESTROY, on_destroy)
+
+
 def wrapObserver(decorated_method):
     """Wrap the observer argument (assumed to be the first after self) in
     a WeakMethodProxy."""
@@ -362,6 +382,21 @@ class Publisher(object, metaclass=singleton.Singleton):
             (eventType, eventSource), set()
         )
         observers.add(observer)
+        import wx
+
+        if isinstance(observer.__self__, wx.Window):
+            _unsubscribe_on_destroy(observer.__self__)
+
+    def remove_observers_of(self, owner):
+        """Remove every subscription of the owner's methods, however
+        they were registered."""
+        for key in list(self.__observers):
+            observers = self.__observers[key]
+            observers.difference_update(
+                [each for each in observers if each.__self__ is owner]
+            )
+            if not observers:
+                del self.__observers[key]
 
     @wrapObserver
     def removeObserver(self, observer, eventType=None, eventSource=None):
