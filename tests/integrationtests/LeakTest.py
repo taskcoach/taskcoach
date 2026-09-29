@@ -30,6 +30,8 @@ class LeakTest(test.TestCase):
         self.mockApp.iocontroller.save_as("Test.tsk")
         os.remove("Test.tsk")
         self.mockApp.quit_application()
+        if os.path.isfile("Test.tsk.lock"):
+            os.remove("Test.tsk.lock")
         mock.App.deleteInstance()
         super().tearDown()
 

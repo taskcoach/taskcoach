@@ -46,6 +46,8 @@ class PerformanceTest(test.TestCase):
 
     def tearDown(self):
         os.remove(self.taskfilename)
+        if os.path.isfile(self.taskfilename + ".lock"):
+            os.remove(self.taskfilename + ".lock")
         super().tearDown()
 
     def testRead(self):

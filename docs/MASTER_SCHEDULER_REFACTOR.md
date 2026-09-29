@@ -160,14 +160,13 @@ required. Numbered apart from the To Do list, crossed out when fixed.
 Test files failing in the baseline run (28 tests before this
 refactor; unchanged by its steps, crossed out when fixed):
 
-- P1. `integrationtests/SaveTest.py`: 4 errors (save, save and merge,
-  save selection of a parent or child).
-- P2. `integrationtests/LoadTest.py`: 2 errors (invalid and missing
-  files).
-- P3. `integrationtests/ModelAndViewerTest.py`: 2 errors (category
-  filter hiding a parent).
-- P4. `integrationtests/LeakTest.py` and `PerformanceTest.py`: 1
-  error each.
+- P1 to P4. ~~The integration tests (`SaveTest.py`, `LoadTest.py`,
+  `ModelAndViewerTest.py`, `LeakTest.py`, `PerformanceTest.py`, 10
+  errors)~~: fixed 2026-09-29. Their mock application had fallen
+  behind: it now gets its settings before `init()` and its own
+  translator, as the application does, and quitting skips idle
+  processing when no event loop runs. The tests also remove the lock
+  files they leave.
 - P5. `unittests/AppTest.py`: 2 failures (language from the locale).
 - P6. ~~`unittests/commandTests/CutCopyPasteTest.py`: paste (1 error,
   1 failure)~~: fixed 2026-09-29, the tests only. A note cut by one

@@ -1208,7 +1208,9 @@ class Application(object, metaclass=patterns.Singleton):
         from taskcoachlib.notify.notifier_universal import NotificationCenter
 
         NotificationCenter().hide_all()
-        wx.EventLoop.GetActive().ProcessIdle()
+        loop = wx.EventLoop.GetActive()
+        if loop:  # None when no loop runs (the integration tests)
+            loop.ProcessIdle()
 
         # For PowerStateMixin
         self.mainwindow.OnQuit()
