@@ -139,8 +139,10 @@ its destroy event.
    destroy watch, `shutdown()` and the app's close-time stops went
    (the notification animations, the notification centre at quit,
    the search box); the per-second clock follows the same rule. The
-   macOS editor poll's stop stays: it ends that watch, and a tick
-   after the editor hid itself would close it again. Checked in the
+   macOS editor poll went too: its cause, wxPython 2.8's Carbon port,
+   is gone (to-do 56 in
+   [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do)).
+   Checked in the
    app with `TASKCOACH_LATER_LOG=1`: editors closed right after typing
    (the spell check skipped, no traceback); a quit cancelled after 4 s
    (the search still filters); a quit with a search pending (`closed,
@@ -226,7 +228,7 @@ those windows go, as on master.
 | `soon` | 91 | every `wx.CallAfter` |
 | `debounced` | 8 | 6 timers, 3 `CallLater` |
 | `call` | 5 | 4 `CallLater`, 1 timer |
-| `every` | 5 | 5 timers |
+| `every` | 4 | 4 timers |
 
 - Debounces: the spell check (0.3 s), the search box (0.5 s), the icon
   picker filter, the settings refresh (1 s,
@@ -235,8 +237,8 @@ those windows go, as on master.
 - Delays: the reminder dialog's click freeze, a date popup's destroy,
   the mouse filter release after a layout rebuild, the speech retry,
   the window position debug log.
-- Repeats: the notification fade-in, slide and timeouts, the macOS
-  editor poll, the geometry trace.
+- Repeats: the notification fade-in, slide and timeouts, the geometry
+  trace.
 - Every `wx.CallAfter`, each with its owner, including those from
   worker threads (the version check, the file watcher, the dependency
   graph's plotting) and the tray menu's Quit

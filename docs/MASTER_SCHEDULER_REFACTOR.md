@@ -127,13 +127,12 @@ go at the end. Details live in the sections and documents linked.
     ([DEFERRED_CALLS.md](DEFERRED_CALLS.md#end-of-life)).
 55. ~~Renames deferred as too wide~~: moved to
     [Deferred or Will Not Do](#deferred-or-will-not-do), D1.
-56. The macOS editor poll, a 1 s timer since 2013 (Task Coach bug
-    1438): wx 2.8 Carbon sent a synthetic Cancel that hid a background
-    editor without a close event. That code left wxWidgets in 3.1;
-    Escape now closes an editor through `Close()` on every port.
-    Proposed: remove the poll, optionally with `wx.ID_CANCEL` bound to
-    `Close()` as a safety net without a timer; checked on a Mac.
-    Designer's decision.
+56. ~~The macOS editor poll~~: removed 2026-09-29, **ruled by
+    designer**. Its cause (Task Coach bug 1438, 2013): wxPython 2.8's
+    Carbon port sent a synthetic Cancel that hid a background editor
+    without a close event; that code left wxWidgets in 3.1, and Escape
+    now closes an editor through `Close()` on every port. To check on
+    a Mac: two editors, Escape twice, both close and save.
 
 ## Deferred or Will Not Do
 

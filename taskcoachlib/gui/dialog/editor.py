@@ -4892,15 +4892,6 @@ class Editor(BalloonTipManager, widgets.Dialog):
         # Controls fire EVT_VALUE_CHANGED on blur (user edits) and from
         # programmatic setters — AttributeSync commits immediately.
 
-        if operating_system.isMac():
-            # Sigh. On OS X, if you open an editor, switch back to the main window, open
-            # another editor, then hit Escape twice, the second editor disappears without any
-            # notification (EVT_CLOSE, EVT_ACTIVATE), so poll for this, because there might
-            # be pending changes...
-            self.__poll = patterns.later.every(self, 1000, self.__on_timer)
-        else:
-            self.__poll = None
-
         # Position and size handling is done by WindowGeometryTracker
         # which will center on parent if no saved position exists, or
         # restore the last saved position (must be on same monitor as parent)
@@ -4913,10 +4904,6 @@ class Editor(BalloonTipManager, widgets.Dialog):
                 parent=parent,
             )
         )
-
-    def __on_timer(self):
-        if not self.IsShown():
-            self.Close()
 
     def __create_ui_commands(self):
         # FIXME: keyboard shortcuts are hardcoded here, but they can be
@@ -4992,9 +4979,6 @@ class Editor(BalloonTipManager, widgets.Dialog):
         # destroyed...
         if operating_system.isMac():
             self._interior.SetFocusIgnoringChildren()
-        if self.__poll is not None:
-            # The watch ends: hidden now, a tick would close us again
-            self.__poll.cancel()
         # Clean up UICommands created in __create_ui_commands()
         self.__undo_command.unbind(self._interior, wx.ID_UNDO)
         self.__undo_command.removeInstance()

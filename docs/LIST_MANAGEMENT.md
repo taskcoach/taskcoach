@@ -856,7 +856,6 @@ then removed. Re-add any of them to trace a specific path:
 | Global scheduler | `scheduler.py:89` | 1000ms | Yes | Reminders, styles; its `timer.second` tick drives viewer, editor and tray refreshes |
 | Notification center | `notifier_universal.py` (`_NotificationCenter`) | 1000ms | While notifications shown | Timeout-based dismissal |
 | Notification anim | `notifier_universal.py` (`AnimatedShow`, `AnimatedMove`) | 100ms | During fade-in only (~1s) | Fade-in/move animation |
-| Editor Mac poll | `editor.py` (`Editor.__init__`) | 1000ms | macOS only, editor open | Window close detection |
 
 Only the global scheduler runs at all times. All
 others are conditional and stop when their context ends.
