@@ -51,10 +51,28 @@ class Sorter(base.TreeSorter):
             self._on_status_sort_priority_changed,
             eventType="settings.statussortpriority.changed",
         )
+        # The clock changes statuses without a date event: re-sort once
+        # after the loop's pass, not for each task
+        self.registerObserver(
+            self.__on_status_changed,
+            eventType=task.Task.statusChangedEventType(),
+        )
+        self.registerObserver(self.__on_pass, eventType="scheduler.pass")
 
     def _on_status_sort_priority_changed(self, event):  # pylint: disable=W0613
         """Re-sort when status sort priorities change in settings."""
         self.reset()
+
+    def __on_status_changed(self, event):  # pylint: disable=W0613
+        self.__status_changed = True
+
+    def __on_pass(self, event):  # pylint: disable=W0613
+        if self.__status_changed and self.__sort_by_task_status_first:
+            self.reset()
+
+    def reset(self, *args, **kwargs):  # pylint: disable=W0221
+        self.__status_changed = False
+        return super().reset(*args, **kwargs)
 
     def set_tree_mode(self, tree_mode=True):
         self.__tree_mode = tree_mode

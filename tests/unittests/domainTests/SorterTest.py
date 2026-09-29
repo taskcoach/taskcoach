@@ -375,6 +375,33 @@ class TaskSorterStatusPriorityTest(test.TestCase):
         self.assertEqual(list(reversed(before)), list(self.sorter))
 
 
+class TaskSorterStatusChangeTest(test.TestCase):
+    """A status the clock changes re-sorts after the loop's pass."""
+
+    def setUp(self):
+        task.Task.settings = config.Settings(load=False)
+        self.task_list = task.TaskList()
+        self.sorter = task.sorter.Sorter(self.task_list)
+        self.sorter.sort_by("subject")
+        self.sorter.sort_by_task_status_first(True)
+        self.start = date.Now() + date.ONE_HOUR
+        self.inactive = task.Task(subject="A", plannedStartDateTime=self.start)
+        self.active = task.Task(
+            subject="B", actualStartDateTime=date.Now() - date.ONE_DAY
+        )
+        self.task_list.extend([self.inactive, self.active])
+        self.addCleanup(setattr, date, "Now", date.Now)
+        date.Now = lambda: self.start + date.ONE_SECOND
+        self.inactive.compute_stored_status()  # Late now
+
+    def test_order_waits_for_the_pass(self):
+        self.assertEqual([self.active, self.inactive], list(self.sorter))
+
+    def test_pass_resorts_by_the_new_status(self):
+        patterns.Event("scheduler.pass", self).send()
+        self.assertEqual([self.inactive, self.active], list(self.sorter))
+
+
 class TaskSorterTreeModeTest(test.TestCase):
     def setUp(self):
         task.Task.settings = config.Settings(load=False)

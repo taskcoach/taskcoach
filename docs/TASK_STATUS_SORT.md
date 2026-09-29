@@ -47,6 +47,14 @@ sort_key = [status.statusSortPriority] + [column_sort_key]   # descending
 
 For ascending sort, priority is negated to maintain urgency-first ordering.
 
+### Re-sorting
+
+With "Sort by status first", an edit of a date, the completion or the
+prerequisites re-sorts at once. A status the clock changes (a planned
+start or due time passing, the due soon hours changed) re-sorts once
+after the master loop's pass (`scheduler.pass`), not for each task
+([SCHEDULERS.md](SCHEDULERS.md)).
+
 ### Ties
 
 Items with equal sort keys keep their creation order, then their ID

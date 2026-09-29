@@ -351,6 +351,11 @@ class MasterScheduler:
         due = self._pop_due(timestamp)
         if due or _CHECK:
             self._run_pass(timestamp, due)
+            # Once per pass, e.g. to re-sort by the new statuses
+            self._run_isolated(
+                "scheduler.pass",
+                patterns.Event("scheduler.pass", self, timestamp).send,
+            )
 
         # Publisher events, so each subscriber (viewers, filters) runs
         # isolated from the others' failures. The date event is for a

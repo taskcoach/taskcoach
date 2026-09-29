@@ -66,7 +66,7 @@ MasterScheduler subscribes to `timer.second` for data processing.
   as Publisher events (`patterns.Event`, source is the GlobalTimer, value is
   the tick timestamp). See
   [PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md).
-- `MasterScheduler`: Subscribes to `timer.second`; after its processing, sends the Publisher events `scheduler.date` and `scheduler.minute`
+- `MasterScheduler`: Subscribes to `timer.second`; after its processing, sends the Publisher events `scheduler.pass` (after a full loop pass), `scheduler.date` and `scheduler.minute`
 
 ### Event Flow
 
@@ -83,6 +83,7 @@ Every 1 second (_on_tick):
 | Event | Subscriber | Purpose |
 |-------|------------|---------|
 | `timer.second` | `MasterScheduler` | The master timer list check; the full loop when a second is due |
+| `scheduler.pass` | Task `Sorter` | Re-sort once by the statuses the pass changed |
 | `scheduler.date` | `ViewFilter` | Re-filter tasks at midnight, with the new day's statuses |
 | `scheduler.date` | `CalendarViewer`, `HierarchicalCalendarViewer` | Move to the new day |
 | `scheduler.date` | Viewers with columns (`ViewerWithColumns`) | Redraw relative dates ("Today", "Yesterday") |
