@@ -66,6 +66,9 @@ class EffortAggregator(
             self.on_effort_start_changed, effort.Effort.startChangedEventType()
         )
         patterns.Publisher().registerObserver(
+            self.on_effort_stop_changed, effort.Effort.stopChangedEventType()
+        )
+        patterns.Publisher().registerObserver(
             self.on_hourly_fee_changed, task.Task.hourlyFeeChangedEventType()
         )
 
@@ -78,6 +81,7 @@ class EffortAggregator(
         patterns.Publisher().removeObserver(self.onTaskRemoved)
         patterns.Publisher().removeObserver(self.on_hourly_fee_changed)
         patterns.Publisher().removeObserver(self.on_effort_start_changed)
+        patterns.Publisher().removeObserver(self.on_effort_stop_changed)
 
     def extend(self, efforts):  # pylint: disable=W0221
         for effort in efforts:
@@ -164,12 +168,7 @@ class EffortAggregator(
         for affected_composite in self.__get_composites_for_efforts(
             efforts_added + efforts_removed
         ):
-            is_tracked = affected_composite.isBeingTracked()
-            was_tracked = affected_composite in self.__trackedComposites
-            if is_tracked and not was_tracked:
-                self.__trackedComposites.add(affected_composite)
-            elif not is_tracked and was_tracked:
-                self.__trackedComposites.remove(affected_composite)
+            self.__update_tracked(affected_composite)
             affected_composite.onTimeSpentChanged(newValue, sender)
 
     def onChildAddedToTask(self, event):
@@ -219,13 +218,24 @@ class EffortAggregator(
             new_composites.extend(self.__create_composites(task, [sender]))
         self.__extend_self_with_composites(new_composites)
         for affected_composite in self.__get_composites_for_efforts([sender]):
-            is_tracked = affected_composite.isBeingTracked()
-            was_tracked = affected_composite in self.__trackedComposites
-            if is_tracked and not was_tracked:
-                self.__trackedComposites.add(affected_composite)
-            elif not is_tracked and was_tracked:
-                self.__trackedComposites.remove(affected_composite)
+            self.__update_tracked(affected_composite)
             affected_composite.onTimeSpentChanged(newValue, sender)
+
+    def on_effort_stop_changed(self, event):
+        for affected_composite in self.__get_composites_for_efforts(
+            list(event.sources())
+        ):
+            self.__update_tracked(affected_composite)
+            # The same efforts, another total
+            affected_composite.notifyObserversOfDurationOrEmpty()
+
+    def __update_tracked(self, composite):
+        is_tracked = composite.isBeingTracked()
+        was_tracked = composite in self.__trackedComposites
+        if is_tracked and not was_tracked:
+            self.__trackedComposites.add(composite)
+        elif not is_tracked and was_tracked:
+            self.__trackedComposites.remove(composite)
 
     def on_hourly_fee_changed(self, event):
         for sender in event.sources():

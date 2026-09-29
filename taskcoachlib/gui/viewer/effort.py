@@ -62,9 +62,21 @@ class EffortViewer(
         )
         self.aggregation = settings.get(self.settingsSection(), "aggregation")
         self.__init_mode_toolbar_ui_commands()
-        for event_type in effort.Effort.effective_style_event_types():
+        # Effort rows show their task's styles, path and categories
+        for event_type in effort.Effort.effective_style_event_types() + (
+            domain.task.Task.subjectChangedEventType(),
+            domain.task.Task.categoryAddedEventType(),
+            domain.task.Task.categoryRemovedEventType(),
+            domain.task.Task.categorySubjectChangedEventType(),
+        ):
+            self.registerObserver(self.on_task_changed, eventType=event_type)
+        # Start and stop change an effort's period and time spent
+        for event_type in (
+            effort.Effort.startChangedEventType(),
+            effort.Effort.stopChangedEventType(),
+        ):
             self.registerObserver(
-                self.on_task_style_changed, eventType=event_type
+                self.on_attribute_changed, eventType=event_type
             )
         for option in ("round", "alwaysroundup", "consolidateeffortspertask"):
             self.registerObserver(
@@ -173,8 +185,8 @@ class EffortViewer(
         # Fall back to generic paste when no specific target task
         return super().pasteItemCommand()
 
-    def on_task_style_changed(self, event):
-        """Effort rows are drawn in their task's styles."""
+    def on_task_changed(self, event):
+        """Refresh the rows of the tasks the event names."""
         tasks = [each for each in event.sources() if hasattr(each, "efforts")]
         if self.aggregation == "details":
             items = [each for task in tasks for each in task.efforts()]

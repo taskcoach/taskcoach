@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import gui, config, persistence, render
-from taskcoachlib.domain import task, effort, date
+from taskcoachlib.domain import category, task, effort, date
 from unittests import dummy
 import test
 import wx
@@ -216,6 +216,23 @@ class EffortViewerTest(test.wxTestCase):
         self.task.addEffort(self.effort1)
         self.task.setBackgroundColor(wx.RED)
         self.assertEqual(wx.RED, self.viewer.widget.GetItemBackgroundColour(0))
+
+    def record_refreshes(self):
+        refreshed = []
+        self.viewer.refreshItems = lambda *items: refreshed.extend(items)
+        return refreshed
+
+    def test_task_rename_refreshes_its_effort_rows(self):
+        self.task.addEffort(self.effort1)
+        refreshed = self.record_refreshes()
+        self.task.setSubject("renamed")
+        self.assertIn(self.effort1, refreshed)
+
+    def test_task_category_refreshes_its_effort_rows(self):
+        self.task.addEffort(self.effort1)
+        refreshed = self.record_refreshes()
+        self.task.addCategory(category.Category("category"))
+        self.assertIn(self.effort1, refreshed)
 
     def testSearch(self):
         self.task.addEffort(self.effort1)
@@ -546,6 +563,19 @@ class EffortViewerAggregationRoundingMonthUpConsolidationTest(
 
 
 class CommonTestsMixin(object):
+    def test_stop_change_refreshes_its_row(self):
+        changed = self.task.efforts()[0]
+        rows = [
+            each
+            for each in self.viewer.presentation()
+            if each is changed
+            or changed in getattr(each, "_getEfforts", list)()
+        ]
+        refreshed = []
+        self.viewer.refreshItems = lambda *items: refreshed.extend(items)
+        changed.setStop(changed.getStop() + date.ONE_HOUR)
+        self.assertTrue([each for each in rows if each in refreshed])
+
     def testNumberOfItems(self):
         self.assertEqual(self.expectedNumberOfItems, self.viewer.size())
 
