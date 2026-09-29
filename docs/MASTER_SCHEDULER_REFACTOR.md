@@ -178,8 +178,11 @@ refactor; unchanged by its steps, crossed out when fixed):
   ([DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md#edit-effort-window)),
   so a start or stop change sends the start or stop and the task's
   time spent; the effort viewer refreshes the row on them.
-- P8. `unittests/domainTests/TaskTest.py`: 3 failures (budget left
-  events without a budget).
+- P8. ~~`unittests/domainTests/TaskTest.py`: 3 failures (budget left
+  events without a budget)~~: fixed 2026-09-29, the tests only. Since
+  January 2026 (#334) budget left is the budget less the time spent
+  with or without a budget ([TASK_FIELDS.md](TASK_FIELDS.md)); the
+  tests expected 0 without one.
 - P9. ~~`unittests/domainTests/SorterTest.py`: 2 failures (tree mode
   delegation)~~: fixed 2026-09-29, the tests only. Since master's
   March 2026 change a sorter passes its tree mode to its filter, as

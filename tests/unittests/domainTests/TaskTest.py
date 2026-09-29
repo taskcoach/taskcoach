@@ -692,9 +692,9 @@ class DefaultTaskStateTest(
         self.task.addChild(task.Task())
         self.assertFalse(events)
 
-    def test_adding_child_effort_without_any_budget_sends_no_budget_left(
-        self,
-    ):
+    def test_adding_child_effort_without_any_budget_sends_budget_left(self):
+        # Budget left is the budget less the time spent, with or without
+        # a budget (docs/TASK_FIELDS.md)
         events = test.ChangeRecorder(task.Task.budgetLeftChangedEventType())
         child = task.Task()
         child.addEffort(
@@ -705,7 +705,10 @@ class DefaultTaskStateTest(
             )
         )
         self.task.addChild(child)
-        self.assertFalse(events)
+        self.assertEqual(
+            ([(date.TimeDelta(), self.task)], -date.ONE_HOUR),
+            (events, self.task.budgetLeft(recursive=True)),
+        )
 
     def test_add_child_with_budget_causes_budget_left_notification(self):
         events = test.ChangeRecorder(task.Task.budgetLeftChangedEventType())
@@ -1692,10 +1695,9 @@ class TaskWithChildTest(
         self.task1.removeChild(self.task1_1)
         self.assertTrue((date.TimeDelta(hours=100), self.task1) in events)
 
-    def test_removing_child_effort_without_any_budget_sends_no_budget_left(
-        self,
-    ):
-        events = test.ChangeRecorder(task.Task.budgetLeftChangedEventType())
+    def test_removing_child_effort_without_any_budget_sends_budget_left(self):
+        # Budget left is the budget less the time spent, with or without
+        # a budget (docs/TASK_FIELDS.md)
         self.task1_1.addEffort(
             effort.Effort(
                 self.task1_1,
@@ -1703,8 +1705,12 @@ class TaskWithChildTest(
                 date.DateTime(2005, 1, 1, 12, 0, 0),
             )
         )
+        events = test.ChangeRecorder(task.Task.budgetLeftChangedEventType())
         self.task1.removeChild(self.task1_1)
-        self.assertFalse(events)
+        self.assertEqual(
+            ([(date.TimeDelta(), self.task1)], date.TimeDelta()),
+            (events, self.task1.budgetLeft(recursive=True)),
+        )
 
     def test_remove_child_with_effort_causes_time_spent_notification(self):
         childEffort = effort.Effort(
@@ -1996,7 +2002,8 @@ class TaskWithChildTest(
                 date.DateTime(2005, 1, 1, 11, 0, 0),
             )
         )
-        self.assertTrue((date.TimeDelta(), self.task1) in events)
+        # Its own budget left: no budget less its hour
+        self.assertIn((-date.ONE_HOUR, self.task1), events)
 
     def test_child_time_spent_without_any_budget_sends_no_budget_left(
         self,
