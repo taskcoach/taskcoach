@@ -23,6 +23,7 @@ from .filter import Filter, SearchFilter, SelectedItemsFilter
 from .sorter import Sorter, TreeSorter
 from .owner import DomainObjectOwnerMetaclass
 from .appearance import (
+    by_style_priority,
     computeDerived,
     computeEffective,
     FIELD_TYPES,

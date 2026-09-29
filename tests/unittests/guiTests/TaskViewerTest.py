@@ -26,6 +26,7 @@ from taskcoachlib import (
     operating_system,
 )
 from taskcoachlib.gui import viewer  # noqa: F401 - make gui.viewer accessible
+from taskcoachlib.gui.icons import image_list_cache
 from taskcoachlib.domain import task, date, effort, category, attachment
 from taskcoachlib.i18n import _
 from taskcoachlib.thirdparty import wxScheduler
@@ -746,6 +747,30 @@ class CommonTestsMixin(object):
         tree = dialog._interior[4].viewer.widget  # pylint: disable=W0212
         firstChild = tree.GetFirstChild(tree.GetRootItem())[0]
         self.assertTrue(firstChild.IsChecked())
+
+    def test_category_icons_in_the_order_their_styles_apply(self):
+        # Highest style priority first, equal ones by name
+        icons = {
+            "b": "nuvola_apps_clanbomber",
+            "a": "nuvola_actions_document-new",
+            "c": "nuvola_apps_kcmsystem",
+        }
+        categories = {}
+        for subject, icon_id in icons.items():
+            each = categories[subject] = category.Category(
+                subject, icon=icon_id
+            )
+            each.setStylePriority(1 if subject == "c" else 0)
+            each.addCategorizable(self.task)
+            self.task.addCategory(each)
+            test.styled(each)
+        self.assertEqual(
+            [
+                image_list_cache.get_index(categories[subject].icon_id())
+                for subject in "cab"
+            ],
+            self.viewer.categoryIconsImageIndices(self.task),
+        )
 
     def testFont(self):
         self.taskList.append(task.Task(font=wx.SWISS_FONT))

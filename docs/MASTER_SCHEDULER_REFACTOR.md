@@ -272,7 +272,9 @@ The two rules differ, so moving changes what some rows look like:
 
 - Several coloured categories: the legacy rule mixes their colours and
   fonts; the effective rule takes the highest style priority's (seen
-  2026-09-28: purple drawn, red effective).
+  2026-09-28: purple drawn, red effective). **Ruling, 2026-09-29:**
+  equal priorities (0 by default) take the first category by name, not
+  a mix ([APPEARANCE_STYLES.md](APPEARANCE_STYLES.md#category-style-priority)).
 - A subtask with no colour or category of its own: legacy takes its
   parent's category colours, else its status colour; effective takes
   its parent's own or category style, else its own status.

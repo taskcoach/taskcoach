@@ -199,6 +199,19 @@ def shown(value):
     return None if _isSystemThemeValue(value) else value
 
 
+def by_style_priority(categories):
+    """The categories, highest style priority first; equal ones by name,
+    then ID, so the order is the same in every run (a set's is not)."""
+    return sorted(
+        categories,
+        key=lambda c: (
+            -getattr(c, "stylePriority", lambda: 0)(),
+            c.subject(),
+            c.id(),
+        ),
+    )
+
+
 def _getFromCategories(object_ref, effective_getter):
     """Get a style value from the object's categories, sorted by stylePriority.
 
@@ -207,17 +220,7 @@ def _getFromCategories(object_ref, effective_getter):
     """
     if not hasattr(object_ref, "categories"):
         return None, None
-    # Highest priority first; equal ones by name, then ID, so the
-    # choice does not change from one run to the next (a set's order)
-    categories = sorted(
-        object_ref.categories(),
-        key=lambda c: (
-            -getattr(c, "stylePriority", lambda: 0)(),
-            c.subject(),
-            c.id(),
-        ),
-    )
-    for cat in categories:
+    for cat in by_style_priority(object_ref.categories()):
         getter = getattr(cat, effective_getter, None)
         if getter:
             cat_value = getter()

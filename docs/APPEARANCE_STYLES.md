@@ -166,7 +166,16 @@ category's appearance wins. Higher priority = checked first.
 - Stored on `Category` as an Attribute (integer, default 0), saved as
   the category's `stylePriority` (omitted when 0)
 - Sorted descending by `stylePriority`; equal priorities by name, then
-  ID, so the choice is the same in every session (a set's order is not)
+  ID, so the choice is the same in every session (a set's order is not).
+  **Ruling, 2026-09-29:** equal priorities take the first by name; the
+  colours of several categories are no longer mixed, as they were
+  before the views drew the effective styles
+  ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#views-on-the-effective-styles)).
+  `by_style_priority()` gives this order; the task viewer's Category
+  icons column shows the icons in it too.
+- The status priority (Preferences > Statuses) only orders tasks
+  sorted by status; statuses do not compete with categories, whose
+  styles come first.
 - First category with a non-system-theme value for the field wins
 - Editable via `EditStylePriorityCommand`
 

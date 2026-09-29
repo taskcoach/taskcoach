@@ -27,6 +27,7 @@ from taskcoachlib.gui.icons import image_list_cache
 from taskcoachlib import command, widgets, render, patterns
 from taskcoachlib.config import settings2
 from taskcoachlib.domain import task, date
+from taskcoachlib.domain.base import by_style_priority
 from taskcoachlib.gui import uicommand, dialog
 import taskcoachlib.gui.menu
 from taskcoachlib.i18n import _
@@ -2152,15 +2153,10 @@ class TaskViewer(
 
     def categoryIconsImageIndices(self, task):
         """Return list of image indices for the task's category icons,
-        sorted by category stylePriority descending."""
-        cats = sorted(
-            task.categories(),
-            key=lambda c: c.stylePriority(),
-            reverse=True,
-        )
+        in the order the categories' styles apply."""
         return [
             image_list_cache.get_index(c.effectiveIcon())
-            for c in cats
+            for c in by_style_priority(task.categories())
             if c.effectiveIcon()
         ]
 
