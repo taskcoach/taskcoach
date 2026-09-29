@@ -93,27 +93,33 @@ class WindowGeometryTracker:
         self._window = window
         self._settings = settings
         self._section = section
-        self._parent = parent  # Parent window for dialogs (constrains to same monitor)
+        self._parent = (
+            parent  # Parent window for dialogs (constrains to same monitor)
+        )
 
         # === Desired state (persisted) ===
-        self.position = None    # (x, y)
-        self.size = None        # (w, h)
+        self.position = None  # (x, y)
+        self.size = None  # (w, h)
         self.maximized = False  # True if should be maximized
 
         # === In-memory state ===
-        self.ready = False              # Position/size achieved
+        self.ready = False  # Position/size achieved
         self.position_confirmed = True  # No pending SetPosition()
-        self.size_confirmed = True      # No pending SetSize()
+        self.size_confirmed = True  # No pending SetSize()
 
         # Position logging timer
         self._pos_log_timer = None
         self._pos_log_start_time = None
 
         # Check for Wayland
-        self._on_wayland = os.environ.get('XDG_SESSION_TYPE') == 'wayland' or \
-                          os.environ.get('WAYLAND_DISPLAY') is not None
+        self._on_wayland = (
+            os.environ.get("XDG_SESSION_TYPE") == "wayland"
+            or os.environ.get("WAYLAND_DISPLAY") is not None
+        )
         if self._on_wayland:
-            _log_debug("Running on Wayland - window positioning blocked by compositor")
+            _log_debug(
+                "Running on Wayland - window positioning blocked by compositor"
+            )
 
         # Set minimum size
         if isinstance(self._window, wx.Dialog):
@@ -151,7 +157,9 @@ class WindowGeometryTracker:
         width, height = self._get_setting("size")
         self.maximized = self._get_setting("maximized")
 
-        _log_debug(f"LOAD: pos=({x}, {y}) size=({width}, {height}) maximized={self.maximized}")
+        _log_debug(
+            f"LOAD: pos=({x}, {y}) size=({width}, {height}) maximized={self.maximized}"
+        )
 
         # Enforce minimum size
         min_w, min_h = self._window.GetMinSize()
@@ -171,14 +179,18 @@ class WindowGeometryTracker:
         """Load geometry for main window (can be on any monitor)."""
         if x == -1 and y == -1:
             # No saved position - let WM place it, clear state
-            _log_debug(f"  No saved position, clearing state, letting WM place window")
+            _log_debug(
+                f"  No saved position, clearing state, letting WM place window"
+            )
             self._clear_state()
             self._window.SetSize(width, height)
         else:
             validated = self._validate_geometry(x, y, width, height)
             if validated is None:
                 # Geometry invalid - let WM place it, clear state
-                _log_debug(f"  Geometry invalid, clearing state, letting WM place window")
+                _log_debug(
+                    f"  Geometry invalid, clearing state, letting WM place window"
+                )
                 self._clear_state()
                 self._window.SetSize(min_w, min_h)
             else:
@@ -187,7 +199,9 @@ class WindowGeometryTracker:
                 self.position = (x, y)
                 self.size = (width, height)
                 self._window.SetSize(x, y, width, height)
-                _log_debug(f"  Set desired: pos={self.position} size={self.size} maximized={self.maximized}")
+                _log_debug(
+                    f"  Set desired: pos={self.position} size={self.size} maximized={self.maximized}"
+                )
 
     def _load_dialog_geometry(self, x, y, width, height, min_w, min_h):
         """Load geometry for dialog (must be on same monitor as parent).
@@ -206,13 +220,17 @@ class WindowGeometryTracker:
         # Get parent's monitor
         parent_display_idx = self._get_parent_display_index()
         if parent_display_idx < 0:
-            _log_debug(f"  Could not determine parent monitor, letting system decide")
+            _log_debug(
+                f"  Could not determine parent monitor, letting system decide"
+            )
             self._clear_dialog_cache()
             return
 
         parent_display = wx.Display(parent_display_idx)
         work_area = parent_display.GetClientArea()
-        _log_debug(f"  Parent on monitor {parent_display_idx}: work_area={work_area.x},{work_area.y} {work_area.width}x{work_area.height}")
+        _log_debug(
+            f"  Parent on monitor {parent_display_idx}: work_area={work_area.x},{work_area.y} {work_area.width}x{work_area.height}"
+        )
 
         size_missing = width == -1 or height == -1
         position_missing = x == -1 or y == -1
@@ -225,19 +243,25 @@ class WindowGeometryTracker:
 
         # Rule 3: Missing position (but size valid) → center on parent with saved size
         if position_missing:
-            _log_debug(f"  Rule 3: Missing saved position, centering with saved size ({width}x{height})")
+            _log_debug(
+                f"  Rule 3: Missing saved position, centering with saved size ({width}x{height})"
+            )
             self._center_on_parent_with_size(width, height)
             return
 
         # Rule 4: Size too big for monitor → clear all cache, let system decide
         if width > work_area.width or height > work_area.height:
-            _log_debug(f"  Rule 4: Saved size ({width}x{height}) too big for monitor ({work_area.width}x{work_area.height}), clearing cache")
+            _log_debug(
+                f"  Rule 4: Saved size ({width}x{height}) too big for monitor ({work_area.width}x{work_area.height}), clearing cache"
+            )
             self._clear_dialog_cache()
             return
 
         # Rule 5: Position off-screen (but size OK) → keep size, center, clear position
         if not self._is_position_on_screen(x, y, width, height, work_area):
-            _log_debug(f"  Rule 5: Saved position ({x},{y}) off-screen, centering with saved size ({width}x{height})")
+            _log_debug(
+                f"  Rule 5: Saved position ({x},{y}) off-screen, centering with saved size ({width}x{height})"
+            )
             self._center_on_parent_with_size(width, height)
             self._clear_position_cache()
             return
@@ -246,7 +270,9 @@ class WindowGeometryTracker:
         self.position = (x, y)
         self.size = (width, height)
         self._window.SetSize(x, y, width, height)
-        _log_debug(f"  Rule 6: Using saved geometry: pos={self.position} size={self.size}")
+        _log_debug(
+            f"  Rule 6: Using saved geometry: pos={self.position} size={self.size}"
+        )
 
     def _is_position_on_screen(self, x, y, width, height, work_area):
         """Check if dialog is fully visible on the parent's monitor.
@@ -285,12 +311,16 @@ class WindowGeometryTracker:
         if parent_display_idx >= 0:
             work_area = wx.Display(parent_display_idx).GetClientArea()
             x = max(work_area.x, min(x, work_area.x + work_area.width - width))
-            y = max(work_area.y, min(y, work_area.y + work_area.height - height))
+            y = max(
+                work_area.y, min(y, work_area.y + work_area.height - height)
+            )
 
         self.position = (x, y)
         self.size = (width, height)
         self._window.SetSize(x, y, width, height)
-        _log_debug(f"  Centered on parent: pos={self.position} size={self.size}")
+        _log_debug(
+            f"  Centered on parent: pos={self.position} size={self.size}"
+        )
 
     def _clear_dialog_cache(self):
         """Clear dialog geometry cache in settings. Let system decide."""
@@ -328,7 +358,9 @@ class WindowGeometryTracker:
 
     def save(self):
         """Save current state to settings file."""
-        _log_debug(f"SAVE: pos={self.position} size={self.size} maximized={self.maximized}")
+        _log_debug(
+            f"SAVE: pos={self.position} size={self.size} maximized={self.maximized}"
+        )
 
         self._set_setting("maximized", self.maximized)
 
@@ -358,14 +390,18 @@ class WindowGeometryTracker:
         # ERROR: Window is iconized before ready
         if self._window.IsIconized():
             _log_debug(f"ERROR: Window is iconized before ready!")
-            _log_debug(f"  Desired state was: pos={self.position} size={self.size} maximized={self.maximized}")
+            _log_debug(
+                f"  Desired state was: pos={self.position} size={self.size} maximized={self.maximized}"
+            )
             self._clear_state()
             return
 
         # ERROR: Window is maximized before ready (we haven't set position/size yet)
         if self._window.IsMaximized():
             _log_debug(f"ERROR: Window is maximized before ready!")
-            _log_debug(f"  Desired state was: pos={self.position} size={self.size} maximized={self.maximized}")
+            _log_debug(
+                f"  Desired state was: pos={self.position} size={self.size} maximized={self.maximized}"
+            )
             self._clear_state()
             return
 
@@ -383,7 +419,9 @@ class WindowGeometryTracker:
 
         target_x, target_y = self.position
         if pos.x != target_x or pos.y != target_y:
-            _log_debug(f"_check_position: ({pos.x}, {pos.y}) != target ({target_x}, {target_y}), correcting")
+            _log_debug(
+                f"_check_position: ({pos.x}, {pos.y}) != target ({target_x}, {target_y}), correcting"
+            )
             self.position_confirmed = False
             self._window.SetPosition(wx.Point(target_x, target_y))
 
@@ -394,7 +432,9 @@ class WindowGeometryTracker:
 
         target_w, target_h = self.size
         if size.width != target_w or size.height != target_h:
-            _log_debug(f"_check_size: ({size.width}, {size.height}) != target ({target_w}, {target_h}), correcting")
+            _log_debug(
+                f"_check_size: ({size.width}, {size.height}) != target ({target_w}, {target_h}), correcting"
+            )
             self.size_confirmed = False
             self._window.SetSize(target_w, target_h)
 
@@ -409,7 +449,9 @@ class WindowGeometryTracker:
         size = self._window.GetSize()
         self.position = (pos.x, pos.y)
         self.size = (size.width, size.height)
-        _log_debug(f"WINDOW READY [{elapsed:.2f}s]: pos={self.position} size={self.size}")
+        _log_debug(
+            f"WINDOW READY [{elapsed:.2f}s]: pos={self.position} size={self.size}"
+        )
 
         # Stop position logging
         if self._pos_log_timer:
@@ -435,7 +477,9 @@ class WindowGeometryTracker:
             self.position = (pos.x, pos.y)
             if size.width > 100 and size.height > 100:
                 self.size = (size.width, size.height)
-            _log_debug(f"cache_from_window: pos={self.position} size={self.size} maximized={self.maximized}")
+            _log_debug(
+                f"cache_from_window: pos={self.position} size={self.size} maximized={self.maximized}"
+            )
 
     # === Event handlers ===
 
@@ -496,8 +540,12 @@ class WindowGeometryTracker:
         else:
             pos = self._window.GetPosition()
             size = self._window.GetSize()
-            pos_ok = self.position is None or (pos.x == self.position[0] and pos.y == self.position[1])
-            size_ok = self.size is None or (size.width == self.size[0] and size.height == self.size[1])
+            pos_ok = self.position is None or (
+                pos.x == self.position[0] and pos.y == self.position[1]
+            )
+            size_ok = self.size is None or (
+                size.width == self.size[0] and size.height == self.size[1]
+            )
             if pos_ok and size_ok:
                 self._mark_ready()
 
@@ -508,21 +556,31 @@ class WindowGeometryTracker:
     def _validate_geometry(self, x, y, width, height):
         """Validate position and size fit on a monitor. Returns (x, y, w, h) or None."""
         num_displays = wx.Display.GetCount()
-        _log_debug(f"_validate_geometry: checking pos=({x}, {y}) size=({width}, {height}) against {num_displays} monitors")
+        _log_debug(
+            f"_validate_geometry: checking pos=({x}, {y}) size=({width}, {height}) against {num_displays} monitors"
+        )
 
         for i in range(num_displays):
             display = wx.Display(i)
             geometry = display.GetGeometry()
             work_area = display.GetClientArea()  # Excludes taskbar
-            _log_debug(f"  Monitor {i}: geometry={geometry.width}x{geometry.height} work_area={work_area.width}x{work_area.height}")
+            _log_debug(
+                f"  Monitor {i}: geometry={geometry.width}x{geometry.height} work_area={work_area.width}x{work_area.height}"
+            )
 
             # Check if position is reasonably within this monitor
-            if (geometry.x - width + 100 <= x <= geometry.x + geometry.width - 100 and
-                geometry.y <= y <= geometry.y + geometry.height - 100):
+            if (
+                geometry.x - width + 100
+                <= x
+                <= geometry.x + geometry.width - 100
+                and geometry.y <= y <= geometry.y + geometry.height - 100
+            ):
 
                 # Check if size fits on this monitor's work area
                 if width > work_area.width or height > work_area.height:
-                    _log_debug(f"  Size ({width}x{height}) too big for monitor {i} work area ({work_area.width}x{work_area.height})")
+                    _log_debug(
+                        f"  Size ({width}x{height}) too big for monitor {i} work area ({work_area.width}x{work_area.height})"
+                    )
                     return None  # Size doesn't fit - clear state
 
                 _log_debug(f"  Geometry valid for monitor {i}")
@@ -549,12 +607,16 @@ class WindowGeometryTracker:
         size = self._window.GetSize()
         is_max = self._window.IsMaximized()
 
-        _log_debug(f"POS_LOG [{elapsed:.2f}s]: pos=({pos.x}, {pos.y}) size=({size.width}, {size.height}) max={is_max}")
+        _log_debug(
+            f"POS_LOG [{elapsed:.2f}s]: pos=({pos.x}, {pos.y}) size=({size.width}, {size.height}) max={is_max}"
+        )
 
         # Schedule next tick
         interval = 50 if elapsed < 1.0 else 500
         if elapsed < 10.0:
-            self._pos_log_timer = wx.CallLater(interval, self._log_position_tick)
+            self._pos_log_timer = wx.CallLater(
+                interval, self._log_position_tick
+            )
 
 
 class WindowDimensionsTracker(WindowGeometryTracker):
@@ -568,7 +630,9 @@ class WindowDimensionsTracker(WindowGeometryTracker):
             if operating_system.isMac() or operating_system.isGTK():
                 self._window.Show()
             self._window.Iconize(True)
-            if not operating_system.isMac() and self._get_setting("hidewheniconized"):
+            if not operating_system.isMac() and self._get_setting(
+                "hidewheniconized"
+            ):
                 wx.CallAfter(self._window.Hide)
 
     def _should_start_iconized(self):

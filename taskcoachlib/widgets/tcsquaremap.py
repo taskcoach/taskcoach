@@ -51,7 +51,9 @@ class TcSquareMap(tooltip.ToolTipMixin, squaremap.SquareMap):
 
     def DrawIconAndLabel(self, dc, node, x, y, w, h, depth):
         """Override to fix squaremap bug: SetClippingRegion requires int args."""
-        super().DrawIconAndLabel(dc, node, int(x), int(y), int(w), int(h), depth)
+        super().DrawIconAndLabel(
+            dc, node, int(x), int(y), int(w), int(h), depth
+        )
 
     def RefreshAllItems(self, count):  # pylint: disable=W0613
         self.UpdateDrawing()

@@ -26,15 +26,15 @@ from taskcoachlib.i18n import _
 def _getLinkCursor(window=None):
     """Get or create a link cursor for prereq/dep column drag."""
     from taskcoachlib.gui.icons.icon_library import icon_catalog
+
     return icon_catalog.get_cursor("synthetic_dnd_cursor_link", window)
 
 
 def _getHomeCursor(window=None):
     """Get or create a home folder cursor for root drop locations."""
     from taskcoachlib.gui.icons.icon_library import icon_catalog
+
     return icon_catalog.get_cursor("synthetic_dnd_cursor_home", window)
-
-
 
 
 class FileDropTarget(wx.FileDropTarget):
@@ -300,8 +300,12 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
         # Hover-expand timer: auto-expand collapsed items after hover delay
         self._hoverExpandTimerId = wx.NewIdRef()
         self._hoverExpandTimer = wx.Timer(self, self._hoverExpandTimerId)
-        self._hoverExpandItem = None  # Item currently being hovered for expansion
-        self.Bind(wx.EVT_TIMER, self._onHoverExpandTimer, id=self._hoverExpandTimerId)
+        self._hoverExpandItem = (
+            None  # Item currently being hovered for expansion
+        )
+        self.Bind(
+            wx.EVT_TIMER, self._onHoverExpandTimer, id=self._hoverExpandTimerId
+        )
 
     def OnDrop(self, dropItem, dragItems, part, column):
         """This function must be overloaded in the derived class. dragItems
@@ -361,9 +365,13 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
         hitItem, flags, dropColumn = self.HitTest(event.GetPoint())
 
         # Check if drop is outside items (left, right, above, below, or nowhere)
-        outsideFlags = (wx.TREE_HITTEST_TOLEFT | wx.TREE_HITTEST_TORIGHT |
-                       wx.TREE_HITTEST_ABOVE | wx.TREE_HITTEST_BELOW |
-                       wx.TREE_HITTEST_NOWHERE)
+        outsideFlags = (
+            wx.TREE_HITTEST_TOLEFT
+            | wx.TREE_HITTEST_TORIGHT
+            | wx.TREE_HITTEST_ABOVE
+            | wx.TREE_HITTEST_BELOW
+            | wx.TREE_HITTEST_NOWHERE
+        )
         if not hitItem or (flags & outsideFlags):
             # Drop outside items - make root task
             dropTarget = self.GetRootItem()
@@ -451,7 +459,9 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
         # Check if item is expandable (has children and is collapsed)
         if item and item != self.GetRootItem():
             try:
-                isExpandable = self.ItemHasChildren(item) and not self.IsExpanded(item)
+                isExpandable = self.ItemHasChildren(
+                    item
+                ) and not self.IsExpanded(item)
             except RuntimeError:
                 isExpandable = False
         else:
@@ -471,7 +481,9 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
         """Timer fired - expand the hovered item."""
         if self._hoverExpandItem:
             try:
-                if self.ItemHasChildren(self._hoverExpandItem) and not self.IsExpanded(self._hoverExpandItem):
+                if self.ItemHasChildren(
+                    self._hoverExpandItem
+                ) and not self.IsExpanded(self._hoverExpandItem):
                     self.Expand(self._hoverExpandItem)
             except RuntimeError:
                 pass  # Item may have been deleted
@@ -494,7 +506,7 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
     def _ClearDropFeedback(self):
         """Clear all drop visual feedback."""
         mainWin = self.GetMainWindow()
-        if hasattr(mainWin, 'ClearDropHighlight'):
+        if hasattr(mainWin, "ClearDropHighlight"):
             mainWin.ClearDropHighlight()
 
     def StartDragging(self):
@@ -523,10 +535,10 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
         self._hoverExpandItem = None
         # Clean up HyperTreeList's internal drag state
         mainWin = self.GetMainWindow()
-        if hasattr(mainWin, '_dragImage') and mainWin._dragImage:
+        if hasattr(mainWin, "_dragImage") and mainWin._dragImage:
             mainWin._dragImage.EndDrag()
             mainWin._dragImage = None
-        if hasattr(mainWin, '_isDragging'):
+        if hasattr(mainWin, "_isDragging"):
             mainWin._isDragging = False
         self.ResetCursor()
         self._ResetHeaderCursor()
@@ -612,11 +624,11 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
             return False
         try:
             # Try to get column name via _getColumn (available in TreeListCtrl)
-            if hasattr(self, '_getColumn'):
+            if hasattr(self, "_getColumn"):
                 col = self._getColumn(column)
-                if hasattr(col, 'name'):
+                if hasattr(col, "name"):
                     name = col.name()
-                    return name in ('prerequisites', 'dependencies')
+                    return name in ("prerequisites", "dependencies")
         except (IndexError, AttributeError):
             pass
         return False

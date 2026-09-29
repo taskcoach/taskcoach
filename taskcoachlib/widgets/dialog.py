@@ -30,7 +30,13 @@ from ..tools import wxhelper
 
 class Dialog(sized_controls.SizedDialog):
     def __init__(
-        self, parent, title, icon_id="nuvola_actions_edit", direction=None, *args, **kwargs
+        self,
+        parent,
+        title,
+        icon_id="nuvola_actions_edit",
+        direction=None,
+        *args,
+        **kwargs
     ):
         self._buttonTypes = kwargs.get("buttonTypes", wx.OK | wx.CANCEL)
         super().__init__(
@@ -42,9 +48,7 @@ class Dialog(sized_controls.SizedDialog):
             | wx.MAXIMIZE_BOX
             | wx.MINIMIZE_BOX,
         )
-        self.SetIcon(
-            icon_catalog.get_wx_icon(icon_id, LIST_ICON_SIZE)
-        )
+        self.SetIcon(icon_catalog.get_wx_icon(icon_id, LIST_ICON_SIZE))
 
         if operating_system.isWindows7_OrNewer():
             # Without this the window has no taskbar icon on Windows, and the focus comes back to the main
@@ -238,7 +242,9 @@ class HtmlWindowThatUsesWebBrowserForExternalLinks(wx.html.HtmlWindow):
 class HTMLDialog(Dialog):
     def __init__(self, title, htmlText, parent=None, *args, **kwargs):
         self._htmlText = htmlText
-        super().__init__(parent, title, buttonTypes=wx.ID_CLOSE, *args, **kwargs)
+        super().__init__(
+            parent, title, buttonTypes=wx.ID_CLOSE, *args, **kwargs
+        )
 
     def createInterior(self):
         interior = HtmlWindowThatUsesWebBrowserForExternalLinks(

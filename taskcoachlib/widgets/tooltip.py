@@ -139,7 +139,9 @@ class ToolTipMixin(object):
         if newTip is not None:
             self.__tip = newTip
             self.__tip.Bind(wx.EVT_MOTION, self.__OnTipMotion)
-            self.ShowTip(*self.GetMainWindow().ClientToScreen(*self.__position))
+            self.ShowTip(
+                *self.GetMainWindow().ClientToScreen(*self.__position)
+            )
 
 
 if operating_system.isWindows():

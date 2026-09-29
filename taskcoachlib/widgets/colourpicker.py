@@ -50,7 +50,7 @@ class ColourPickerCtrl(wx.ColourPickerCtrl):
     def _onIntercept(self, event):
         if self._readOnly:
             return  # Swallow click when read-only
-        if wx.Platform == '__WXGTK__':
+        if wx.Platform == "__WXGTK__":
             self._showColourDialog()
         else:
             event.Skip()  # Let native handle it
@@ -60,7 +60,7 @@ class ColourPickerCtrl(wx.ColourPickerCtrl):
         if key in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER, wx.WXK_SPACE):
             if self._readOnly:
                 return  # Swallow when read-only
-            if wx.Platform == '__WXGTK__':
+            if wx.Platform == "__WXGTK__":
                 self._showColourDialog()
             else:
                 event.Skip()  # Let native handle it
@@ -70,7 +70,7 @@ class ColourPickerCtrl(wx.ColourPickerCtrl):
     def _onButtonIntercept(self, event):
         if self._readOnly:
             return  # Swallow when read-only
-        if wx.Platform == '__WXGTK__':
+        if wx.Platform == "__WXGTK__":
             pass  # Swallow to prevent native GTK dialog
         else:
             event.Skip()  # Let native handle it

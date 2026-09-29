@@ -101,7 +101,7 @@ class AutoColumnWidthMixin(object):
         if isinstance(self, hypertreelist.HyperTreeList):
             return None
         for child in self.GetChildren():
-            if child.GetName() == 'wxlistctrlcolumntitles':
+            if child.GetName() == "wxlistctrlcolumntitles":
                 self.__header_window = child
                 return child
         return None
@@ -138,7 +138,10 @@ class AutoColumnWidthMixin(object):
         # Determine which column border (if any) the mouse is near
         column_at_border = self._getColumnBorderAtX(x)
 
-        if column_at_border is not None and column_at_border == self.ResizeColumn:
+        if (
+            column_at_border is not None
+            and column_at_border == self.ResizeColumn
+        ):
             # This is the auto-fill column border - show no-entry cursor
             # Don't call Skip() to prevent native cursor override
             if self.__current_cursor != self.__no_entry_cursor:
@@ -188,7 +191,6 @@ class AutoColumnWidthMixin(object):
         unused_width = max(self.AvailableWidth - self.NecessaryWidth, 0)
         resize_column_width = self.ResizeColumnMinWidth + unused_width
         self.SetColumnWidth(self.ResizeColumn, resize_column_width)
-
 
     def GetResizeColumn(self):
         if self.__resize_column == -1:
@@ -293,14 +295,14 @@ class AutoColumnWidthMixin(object):
         """
         # Check for GTK3 or GTK4 in wx.PlatformInfo
         platform_info = wx.PlatformInfo
-        has_gtk3_or_gtk4 = 'gtk3' in platform_info or 'gtk4' in platform_info
+        has_gtk3_or_gtk4 = "gtk3" in platform_info or "gtk4" in platform_info
 
         if not has_gtk3_or_gtk4:
             # GTK2 or unknown: no overlay scrollbars
             return False
 
         # GTK3/GTK4: overlay is default, but can be disabled via env var
-        if os.environ.get('GTK_OVERLAY_SCROLLING') == '0':
+        if os.environ.get("GTK_OVERLAY_SCROLLING") == "0":
             return False
 
         return True

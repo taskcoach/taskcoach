@@ -74,7 +74,9 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
         if self._itemPopupMenu is not None:
             # Determine if this is a ListCtrl or tree control
             # ListCtrl has GetItemRect but not GetRootItem
-            isListCtrl = hasattr(self, 'GetItemRect') and not hasattr(self, 'GetRootItem')
+            isListCtrl = hasattr(self, "GetItemRect") and not hasattr(
+                self, "GetRootItem"
+            )
             if isListCtrl:
                 # For ListCtrl: use EVT_LIST_ITEM_RIGHT_CLICK for item clicks
                 # (provides GetIndex() directly) and EVT_CONTEXT_MENU for empty space
@@ -118,7 +120,7 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
 
     def _updateMenuUI(self):
         """Update enabled state of menu items based on current selection."""
-        if hasattr(self._itemPopupMenu, '_update_menu_state'):
+        if hasattr(self._itemPopupMenu, "_update_menu_state"):
             self._itemPopupMenu._update_menu_state()
 
     def on_item_popup_menu(self, event):
@@ -240,8 +242,12 @@ class _CtrlWithDropTargetMixin(_CtrlWithItemsMixin):
         self.__dropHighlightItem = None  # Track highlighted item during drag
         # Hover-expand timer: auto-expand collapsed items after hover delay
         self.__hoverExpandTimerId = wx.NewIdRef()
-        self.__hoverExpandTimer = None  # Created lazily when drop target is set
-        self.__hoverExpandItem = None  # Item currently being hovered for expansion
+        self.__hoverExpandTimer = (
+            None  # Created lazily when drop target is set
+        )
+        self.__hoverExpandItem = (
+            None  # Item currently being hovered for expansion
+        )
         super().__init__(*args, **kwargs)
         if (
             self.__on_drop_url_callback
@@ -257,7 +263,11 @@ class _CtrlWithDropTargetMixin(_CtrlWithItemsMixin):
             self.GetMainWindow().SetDropTarget(drop_target)
             # Initialize hover-expand timer
             self.__hoverExpandTimer = wx.Timer(self, self.__hoverExpandTimerId)
-            self.Bind(wx.EVT_TIMER, self.__onHoverExpandTimer, id=self.__hoverExpandTimerId)
+            self.Bind(
+                wx.EVT_TIMER,
+                self.__onHoverExpandTimer,
+                id=self.__hoverExpandTimerId,
+            )
 
     def on_drop_url(self, x, y, url):
         self._clearDropHighlight()  # Clear highlight on drop
@@ -271,7 +281,9 @@ class _CtrlWithDropTargetMixin(_CtrlWithItemsMixin):
         self.__stopHoverExpandTimer()  # Cancel any pending expand
         item = self.HitTest((x, y))[0]
         if self.__on_drop_files_callback:
-            self.__on_drop_files_callback(self._objectBelongingTo(item), filenames)
+            self.__on_drop_files_callback(
+                self._objectBelongingTo(item), filenames
+            )
 
     def on_drop_mail(self, x, y, mail):
         self._clearDropHighlight()  # Clear highlight on drop
@@ -306,7 +318,9 @@ class _CtrlWithDropTargetMixin(_CtrlWithItemsMixin):
 
         # Check if item is expandable (has children and is collapsed)
         try:
-            isExpandable = self.ItemHasChildren(item) and not self.IsExpanded(item)
+            isExpandable = self.ItemHasChildren(item) and not self.IsExpanded(
+                item
+            )
         except (RuntimeError, AttributeError):
             isExpandable = False
 
@@ -330,7 +344,9 @@ class _CtrlWithDropTargetMixin(_CtrlWithItemsMixin):
         """Timer fired - expand the hovered item."""
         if self.__hoverExpandItem:
             try:
-                if self.ItemHasChildren(self.__hoverExpandItem) and not self.IsExpanded(self.__hoverExpandItem):
+                if self.ItemHasChildren(
+                    self.__hoverExpandItem
+                ) and not self.IsExpanded(self.__hoverExpandItem):
                     self.Expand(self.__hoverExpandItem)
             except (RuntimeError, AttributeError):
                 pass  # Item may have been deleted
@@ -341,14 +357,14 @@ class _CtrlWithDropTargetMixin(_CtrlWithItemsMixin):
         if item != self.__dropHighlightItem:
             self.__dropHighlightItem = item
             # Use SetDragItem which is used by internal DnD for highlighting
-            if hasattr(self, 'SetDragItem'):
+            if hasattr(self, "SetDragItem"):
                 self.SetDragItem(item)
 
     def _clearDropHighlight(self):
         """Clear any existing drop highlight."""
         if self.__dropHighlightItem is not None:
             self.__dropHighlightItem = None
-            if hasattr(self, 'SetDragItem'):
+            if hasattr(self, "SetDragItem"):
                 try:
                     self.SetDragItem(None)
                 except Exception:
@@ -684,6 +700,7 @@ class _CtrlWithAutoResizedColumnsMixin(autowidth.AutoColumnWidthMixin):
     automatically fills remaining window space. When disabled, columns use
     standard wxWidgets resize behavior.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.Bind(wx.EVT_LIST_COL_END_DRAG, self.on_end_column_resize)

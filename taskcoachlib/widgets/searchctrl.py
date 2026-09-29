@@ -27,6 +27,7 @@ class _SearchCtrlInner(tooltip.ToolTipMixin, wx.SearchCtrl):
 
     This is wrapped by SearchCtrl (wx.Panel) for Wayland-compatible popup positioning.
     """
+
     # Debounce delay in milliseconds - wait this long after user stops typing
     # before triggering the search. This prevents expensive operations on every keystroke.
     SEARCH_DEBOUNCE_DELAY_MS = 500
@@ -38,8 +39,12 @@ class _SearchCtrlInner(tooltip.ToolTipMixin, wx.SearchCtrl):
         self.__includeSubItems = kwargs.pop("includeSubItems", False)
         self.__searchDescription = kwargs.pop("searchDescription", False)
         self.__regularExpression = kwargs.pop("regularExpression", False)
-        self.__bitmapSize = kwargs.pop("size", (LIST_ICON_SIZE, LIST_ICON_SIZE))
-        self.__debounceDelay = kwargs.pop("debounceDelay", self.SEARCH_DEBOUNCE_DELAY_MS)
+        self.__bitmapSize = kwargs.pop(
+            "size", (LIST_ICON_SIZE, LIST_ICON_SIZE)
+        )
+        self.__debounceDelay = kwargs.pop(
+            "debounceDelay", self.SEARCH_DEBOUNCE_DELAY_MS
+        )
         value = kwargs.pop("value", "")
         super().__init__(parent, *args, **kwargs)
         self.SetSearchMenuBitmap(
@@ -375,7 +380,9 @@ class SearchCtrl(wx.Panel):
         # Create sizer and inner search control
         # Use proportion=0 to prevent Panel from stretching beyond SearchCtrl size
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.__searchCtrl = _SearchCtrlInner(self, self, *args, style=style, **kwargs)
+        self.__searchCtrl = _SearchCtrlInner(
+            self, self, *args, style=style, **kwargs
+        )
         sizer.Add(self.__searchCtrl, 0, wx.EXPAND)
         self.SetSizer(sizer)
         # Fit Panel tightly to SearchCtrl for correct popup positioning

@@ -72,8 +72,12 @@ class FontPickerCtrl(buttons.GenButton):
         label = self.GetLabel()
         availableWidth = width - (self.PADDING * 2)
         if availableWidth > 0:
-            label = wx.Control.Ellipsize(label, dc, wx.ELLIPSIZE_END, availableWidth)
-        dc.DrawText(label, self.PADDING, (height - dc.GetTextExtent(label)[1]) // 2)
+            label = wx.Control.Ellipsize(
+                label, dc, wx.ELLIPSIZE_END, availableWidth
+            )
+        dc.DrawText(
+            label, self.PADDING, (height - dc.GetTextExtent(label)[1]) // 2
+        )
 
     def GetSelectedFont(self):
         return self.__font
@@ -123,7 +127,9 @@ class FontPickerCtrl(buttons.GenButton):
         if self.__bgColour:
             self.SetBackgroundColour(self.__bgColour)
         else:
-            self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
+            self.SetBackgroundColour(
+                wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+            )
         self.InvalidateBestSize()
         if not self.__fixedWidth:
             self.SetInitialSize()
@@ -136,7 +142,11 @@ class FontPickerCtrl(buttons.GenButton):
 
     def GetBackgroundBrush(self, dc):
         """Override to ensure correct background color is used for painting."""
-        bgColor = self.__bgColour if self.__bgColour else wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+        bgColor = (
+            self.__bgColour
+            if self.__bgColour
+            else wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+        )
         return wx.Brush(bgColor, wx.BRUSHSTYLE_SOLID)
 
     def __sendPickerEvent(self):

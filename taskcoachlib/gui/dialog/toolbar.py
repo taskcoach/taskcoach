@@ -54,8 +54,7 @@ class _ToolBarEditorInterior(wx.Panel):
         # Remaining commands list
         sb = wx.StaticBox(self, wx.ID_ANY, _("Available tools"))
         self.__remaining_commands = wx.ListCtrl(
-            self,
-            style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_NO_HEADER
+            self, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_NO_HEADER
         )
         self.__remaining_commands.SetImageList(
             image_list_cache.image_list, wx.IMAGE_LIST_SMALL
@@ -100,8 +99,7 @@ class _ToolBarEditorInterior(wx.Panel):
         # Visible commands list
         sb = wx.StaticBox(self, wx.ID_ANY, _("Tools"))
         self.__visible_commands = wx.ListCtrl(
-            self,
-            style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_NO_HEADER
+            self, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_NO_HEADER
         )
         self.__visible_commands.SetImageList(
             image_list_cache.image_list, wx.IMAGE_LIST_SMALL
@@ -567,10 +565,9 @@ class _ToolBarEditorInterior(wx.Panel):
 
         visible_names = self._get_visible_names()
 
-        all_commands = [
-            uicommand.Separator(), uicommand.Spacer()
-        ] + [
-            cmd for cmd in self.create_toolbar_ui_commands()
+        all_commands = [uicommand.Separator(), uicommand.Spacer()] + [
+            cmd
+            for cmd in self.create_toolbar_ui_commands()
             if cmd.is_command()
         ]
 

@@ -52,6 +52,7 @@ class KillFocusAcceptsEditsMixin(object):
         Also returns True if a popup (calendar or dropdown) is open from any
         child control, since the user is still interacting with the editor.
         """
+
         def window_and_all_children(window):
             window_and_children = [window]
             for child in window.GetChildren():
@@ -62,7 +63,10 @@ class KillFocusAcceptsEditsMixin(object):
             return True
 
         # Check if any DateTimeComboCtrl has an open popup
-        if hasattr(self, '_dateTimeCombo') and self._dateTimeCombo.HasOpenPopup():
+        if (
+            hasattr(self, "_dateTimeCombo")
+            and self._dateTimeCombo.HasOpenPopup()
+        ):
             return True
 
         return False
@@ -245,7 +249,10 @@ class DateTimeCtrl(
             self._navigateTab(event.ShiftDown())
         elif keyCode == wx.WXK_ESCAPE:
             self.StopEditing()
-        elif keyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER) and not event.ShiftDown():
+        elif (
+            keyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER)
+            and not event.ShiftDown()
+        ):
             self.AcceptChanges()
             wx.CallAfter(self.Finish)
         else:
@@ -288,6 +295,7 @@ class DateTimeCtrl(
 
     def _hasFocusOrPopup(self):
         """Check if focus is in this control or a popup is open."""
+
         def window_and_all_children(window):
             result = [window]
             for child in window.GetChildren():
