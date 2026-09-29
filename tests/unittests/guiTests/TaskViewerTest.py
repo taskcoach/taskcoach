@@ -1452,7 +1452,13 @@ class TaskTimelineViewerTest(test.wxTestCase):
         # pylint: disable-msg=W0201
         task.Task.settings = settings = config.Settings(load=False)
         self.taskFile = persistence.TaskFile()
-        gui.viewer.task.TimelineViewer(self.frame, self.taskFile, settings)
+        self.viewer = gui.viewer.task.TimelineViewer(
+            self.frame, self.taskFile, settings
+        )
+
+    def test_no_icon_until_the_loop_styles_the_task(self):
+        self.testCreate()
+        self.assertIsNone(self.viewer.get_wx_icon(task.Task()))
 
     def tearDown(self):
         super().tearDown()

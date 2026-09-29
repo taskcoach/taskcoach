@@ -600,7 +600,11 @@ class TimelineViewer(BaseTaskTreeViewer):
         return item.shown_font()
 
     def get_wx_icon(self, item, is_selected=False):  # pylint: disable=W0613
-        return icon_catalog.get_wx_icon(item.shown_icon_id(), LIST_ICON_SIZE)
+        # Empty until the master loop's first pass styles the item
+        icon_id = item.shown_icon_id()
+        if not icon_id:
+            return None
+        return icon_catalog.get_wx_icon(icon_id, LIST_ICON_SIZE)
 
     def now(self):
         return date.Now().toordinal()
