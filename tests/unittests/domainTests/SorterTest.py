@@ -18,16 +18,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import test
 from taskcoachlib import config, patterns
-from taskcoachlib.domain import attachment, task, effort, date, category
+from taskcoachlib.domain import attachment, base, task, effort, date
+from taskcoachlib.domain import category
 
 
-class DummyTaskList(task.TaskList):
+class RecordingFilter(base.Filter):
+    """Passes every item, and records the tree mode its sorter passes
+    on: in the app a sorter always sits on a filter."""
+
     def __init__(self, *args, **kwargs):
-        self.tree_mode = "not set"
+        self.tree_mode_passed = "not set"
         super().__init__(*args, **kwargs)
 
+    def filter_items(self, items):
+        return items
+
     def set_tree_mode(self, tree_mode):
-        self.tree_mode = tree_mode
+        self.tree_mode_passed = tree_mode
+        super().set_tree_mode(tree_mode)
 
 
 class TaskSorterTest(test.TestCase):
@@ -405,8 +413,9 @@ class TaskSorterStatusChangeTest(test.TestCase):
 class TaskSorterTreeModeTest(test.TestCase):
     def setUp(self):
         task.Task.settings = config.Settings(load=False)
-        self.taskList = DummyTaskList()
-        self.sorter = task.sorter.Sorter(self.taskList, tree_mode=True)
+        self.taskList = task.TaskList()
+        self.filter = RecordingFilter(self.taskList, tree_mode=True)
+        self.sorter = task.sorter.Sorter(self.filter, tree_mode=True)
         self.parent1 = task.Task(subject="parent 1")
         self.child1 = task.Task(subject="child 1")
         self.parent1.addChild(self.child1)
@@ -470,13 +479,13 @@ class TaskSorterTreeModeTest(test.TestCase):
             list(self.sorter),
         )
 
-    def testTreeModeDelegation_True(self):
+    def test_tree_mode_true_is_passed_to_the_filter(self):
         self.sorter.set_tree_mode(True)
-        self.assertEqual(True, self.taskList.tree_mode)
+        self.assertEqual(True, self.filter.tree_mode_passed)
 
-    def testTreeModeDelegation_False(self):
+    def test_tree_mode_false_is_passed_to_the_filter(self):
         self.sorter.set_tree_mode(False)
-        self.assertEqual(False, self.taskList.tree_mode)
+        self.assertEqual(False, self.filter.tree_mode_passed)
 
     def testSortByInvalidSortKey(self):
         self.sorter.sort_by("invalidKey")

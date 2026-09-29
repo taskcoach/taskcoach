@@ -157,8 +157,8 @@ before this refactor (on master, or failing in the baseline test run),
 found along the way. Fixing them helps stabilize this work; none is
 required. Numbered apart from the To Do list, crossed out when fixed.
 
-Test files failing in the baseline run (28 tests, the same after every
-step of this refactor):
+Test files failing in the baseline run (28 tests before this
+refactor; unchanged by its steps, crossed out when fixed):
 
 - P1. `integrationtests/SaveTest.py`: 4 errors (save, save and merge,
   save selection of a parent or child).
@@ -175,8 +175,10 @@ step of this refactor):
   revenue events on a start or stop change).
 - P8. `unittests/domainTests/TaskTest.py`: 3 failures (budget left
   events without a budget).
-- P9. `unittests/domainTests/SorterTest.py`: 2 failures (tree mode
-  delegation).
+- P9. ~~`unittests/domainTests/SorterTest.py`: 2 failures (tree mode
+  delegation)~~: fixed 2026-09-29, the tests only. Since master's
+  March 2026 change a sorter passes its tree mode to its filter, as
+  in the app; the tests' stand-in was a plain task list.
 - P10. `unittests/widgetTests/WindowDimensionsTrackerTest.py`: 2
   failures (size, move).
 - P11. `unittests/guiTests/MainWindowTest.py`,
