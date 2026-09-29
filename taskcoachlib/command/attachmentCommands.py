@@ -89,6 +89,7 @@ class AddAttachmentCommand(base.BaseCommand):
 
     def redo_command(self):
         super().redo_command()
+        base.Clipboard().spend_move(self.__attachments)
         self.addAttachments()
 
 

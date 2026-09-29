@@ -150,6 +150,7 @@ class AddNoteCommand(base.BaseCommand, base.SaveStateMixin):
 
     def redo_command(self):
         super().redo_command()
+        base.Clipboard().spend_move(self.__notes)
         self.redoStates()
         self.addNotes()
 
@@ -201,6 +202,7 @@ class AddSubNoteCommand(base.BaseCommand, base.SaveStateMixin):
 
     def redo_command(self):
         super().redo_command()
+        base.Clipboard().spend_move(self.__notes)
         self.redoStates()
         self.addNotes()
 

@@ -333,7 +333,8 @@ ID's form or order: sorting breaks ties by creation date first
 **Ruling, 2026-09-28:** the first paste after a cut is a move: it
 pastes the cut items themselves, IDs kept (`Clipboard.items_to_paste()`);
 further pastes, and pastes after a copy, insert copies with new IDs.
-Undoing that paste does not make the next paste a move again.
+Undoing that paste does not make the next paste a move again; redoing
+the cut does, until the paste is redone (`Clipboard.spend_move()`).
 
 **Ruling, 2026-09-28:** creation and modification dates are the
 clock's time with microseconds (`date.Timestamp`). Only the same item's

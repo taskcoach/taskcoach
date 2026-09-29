@@ -48,6 +48,14 @@ class Clipboard(metaclass=patterns.Singleton):
             return list(self._contents)
         return [item.copy() for item in self._contents]
 
+    def spend_move(self, items):
+        """A redone paste inserts items again: a move of them, armed
+        again by redoing their cut, is spent as at the first paste."""
+        if len(items) == len(self._contents) and all(
+            pasted is cut for pasted, cut in zip(items, self._contents)
+        ):
+            self._move_pending = False
+
     def peek(self):
         return self._contents
 

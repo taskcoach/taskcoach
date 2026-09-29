@@ -185,6 +185,17 @@ class PasteCommandWithTasksTest(TaskCommandTestCase):
         self.paste()
         self.assertEqual(2, len({each.id() for each in self.taskList}))
 
+    def test_a_paste_after_redoing_the_cut_and_its_paste_pastes_a_copy(self):
+        self.cut([self.task1])
+        self.paste()
+        self.undo()
+        self.undo()
+        self.redo()
+        self.redo()
+        self.paste()
+        ids = [each.id() for each in self.taskList]
+        self.assertEqual((2, True), (len(set(ids)), self.task1.id() in ids))
+
 
 class PasteCommandWithNotesTest(NoteCommandTestCase):
     def testPasteWithoutPreviousCut(self):

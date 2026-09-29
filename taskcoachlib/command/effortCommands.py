@@ -110,6 +110,7 @@ class AddEffortCommand(base.BaseCommand):
                 old_task.addEffort(eff)
 
     def redo_command(self):
+        base.Clipboard().spend_move(self.__efforts)
         self.do_command()
 
 

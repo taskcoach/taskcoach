@@ -303,6 +303,7 @@ class PasteCommand(BaseCommand, SaveStateMixin):
         self.undoStates()
 
     def redo_command(self):
+        Clipboard().spend_move(self.__itemsToPaste)
         self.redoStates()
         self.__sourceOfItemsToPaste.extend(self.__itemsToPaste)
 
