@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 from taskcoachlib import patterns
+from taskcoachlib.domain import task
 
 
 class StatusBar(wx.StatusBar):
@@ -38,6 +39,11 @@ class StatusBar(wx.StatusBar):
             self.on_viewer_status_changed,
             eventType=viewer.status_event_type(),
             eventSource=viewer,
+        )
+        # The counts of statuses: the clock changes them too
+        patterns.Publisher().registerObserver(
+            self.on_viewer_status_changed,
+            eventType=task.Task.statusChangedEventType(),
         )
         self.on_viewer_status_changed()
         self.wxEventTypes = (wx.EVT_MENU_HIGHLIGHT_ALL, wx.EVT_TOOL_ENTER)

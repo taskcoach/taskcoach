@@ -23,6 +23,7 @@ import tempfile
 import time
 import wx, test
 from taskcoachlib import gui, config, persistence, meta, operating_system
+from taskcoachlib import patterns
 from taskcoachlib.domain import task
 
 
@@ -90,6 +91,15 @@ class MainWindowTest(MainWindowTestCase):
     def testStatusBar_Hide(self):
         self.settings.setboolean("view", "statusbar", False)
         self.assertFalse(self.mainwindow.GetStatusBar().IsShown())
+
+    def test_a_task_status_change_refreshes_the_status_bar(self):
+        # The status bar counts the statuses; the clock changes them
+        refresh = self.mainwindow.GetStatusBar()._StatusBar__status_later
+        refresh.cancel()
+        patterns.Event(
+            task.Task.statusChangedEventType(), task.Task(), None
+        ).send()
+        self.assertTrue(refresh.pending)
 
     def testTitle_Default(self):
         self.assertEqual(meta.name, self.mainwindow.GetTitle())
