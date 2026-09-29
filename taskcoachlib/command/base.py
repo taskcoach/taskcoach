@@ -62,7 +62,6 @@ class BaseCommand(patterns.Command):
 
     def do(self):
         if self.canDo():
-            super().do()
             with patterns.CommandHistory().running():
                 with ModificationDateRecorder() as recorder:
                     self.do_command()
@@ -71,6 +70,7 @@ class BaseCommand(patterns.Command):
                 key: (item, item.modificationDateTime())
                 for key, (item, _date) in recorder.dates_before.items()
             }
+            super().do()  # Into the history once done, as undo and redo
 
     def undo(self):
         super().undo()

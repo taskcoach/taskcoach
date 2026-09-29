@@ -360,11 +360,13 @@ class TaskFile(patterns.Observer):
 
     def on_command_history_changed(self, event):
         """Undo or redo back to the saved state leaves nothing to
-        save."""
-        if (
-            self.__needSave
-            and self.__saved_at is not _UNREACHABLE
-            and patterns.CommandHistory().current() is self.__saved_at
+        save. A command that changed nothing (a copy) leaves the file
+        as saved: the saved state moves along with it."""
+        current = patterns.CommandHistory().current()
+        if not self.__needSave:
+            self.__saved_at = current
+        elif (
+            self.__saved_at is not _UNREACHABLE and current is self.__saved_at
         ):
             self.mark_clean()
 

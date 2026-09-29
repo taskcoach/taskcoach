@@ -309,6 +309,16 @@ class DirtyTaskFileTest(TaskFileTestCase):
         patterns.CommandHistory().redo()
         self.assertTrue(self.taskFile.need_save())
 
+    def test_undo_back_past_a_command_that_changed_nothing(self):
+        patterns.CommandHistory().clear()
+        self.taskFile.save()
+        command.CopyCommand(self.taskFile.tasks(), [self.task]).do()
+        command.EditSubjectCommand(
+            self.taskFile.tasks(), [self.task], newValue="new"
+        ).do()
+        patterns.CommandHistory().undo()
+        self.assertFalse(self.taskFile.need_save())
+
     def test_change_outside_commands_is_not_undone(self):
         self.edit_subject()
         self.task.setDescription("not a command")

@@ -80,7 +80,9 @@ second. The modification date keeps fractions of a second anyway
   the log (`IOController`).
 - Undo or redo back to the saved state clears the unsaved mark (ruling,
   2026-09-28): the file remembers the last command done when it was
-  saved or loaded. A change made outside a command (expanding a task,
+  saved or loaded, and moves that along over commands that change
+  nothing (a copy); a command enters the log once done, as undo and
+  redo notify after running. A change made outside a command (expanding a task,
   a merge, snoozing) makes that state unreachable until the next save
   (`TaskFile.on_command_history_changed()`).
 - Changes outside a user action (the scheduler, a Todo.txt import,
