@@ -149,6 +149,12 @@ Numbered D1, D2, ...
   families: the date and time widgets' arguments (7 files),
   `taskList` and `effortList`, the export's `cssFilename` and
   `selectionOnly`.
+- D2. The GTK warning at every launch
+  (`gtk_distribute_natural_allocation: assertion 'extra_space >= 0'
+  failed`), **ruled by designer 2026-09-29**: it comes from inside
+  GTK at the main window's first show, with no Python code on the
+  stack (traced under gdb with `G_DEBUG=fatal-criticals`); left in the
+  logs as is.
 
 ## Pre-existing Issues
 
@@ -217,21 +223,14 @@ In the app:
   with the date's year (the old calls used the current year's
   February), an unused one is dropped, and a header bound is appended
   as one tuple.
-- P14. A zero-size calendar pane assertion at startup; not seen in
-  any run of 2026-09-29, a calendar in month view included.
+- P14. ~~A zero-size calendar pane assertion at startup~~: closed
+  2026-09-29, **ruled by designer**: not reproduced in any run, a
+  calendar in month view included.
 - P15. ~~A list's tooltip stays shown over an editor opened from
   it~~: fixed 2026-09-29. It hid only when the mouse moved or left
   the list; opening an editor now hides it and drops a pending one.
-- P16. Every launch logs `gtk_distribute_natural_allocation: assertion
-  'extra_space >= 0' failed`; on the designer's display also
-  `gdk_window_thaw_toplevel_updates`. Traced 2026-09-29 under gdb
-  (`G_DEBUG=fatal-criticals`): no Python code on the stack; at the
-  main window's first show, wx applies the window manager's
-  decoration size and GTK briefly gives a box less than its contents'
-  minimum. Naming the widget needs GTK's debug symbols. The first
-  show is the ground of the window geometry work
-  ([WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md)); still logged once per
-  launch after its merge.
+- P16. ~~The GTK warning at every launch~~: not an issue, moved to
+  [Deferred or Will Not Do](#deferred-or-will-not-do), D2.
 - P17. ~~Invalid escape sequences in three test files~~: fixed
   2026-09-29, raw strings.
 - P18. ~~The dependency graph viewer's size event method outside its
@@ -245,10 +244,10 @@ In the app:
   translated, were disabled~~: enabled 2026-09-29, **ruled by
   designer**; Danish's Preferences code corrected to `da_DK`. A
   string not translated shows in English.
-- P21. The language from the environment reads `LANG` before
-  `LC_ALL`; POSIX gives `LC_ALL` priority (then `LC_MESSAGES`, then
-  `LANG`). Changing it would change some users' language. Designer's
-  decision.
+- P21. ~~The language from the environment read `LANG` before
+  `LC_ALL`~~: fixed 2026-09-29, **ruled by designer**: POSIX order,
+  the first set of `LC_ALL`, `LC_MESSAGES` and `LANG`
+  ([LOCALE.md](LOCALE.md)).
 
 ## Views on the Effective Styles
 
