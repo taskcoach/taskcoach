@@ -23,6 +23,7 @@ from unittests import dummy
 import os
 import shutil
 import tempfile
+from unittest import mock
 import wx
 import test
 
@@ -317,6 +318,27 @@ class IOControllerTest(test.TestCase):
         self.assertEqual(2, len(on_disk.tasks()))
         on_disk.close()
         on_disk.stop()
+
+    def test_reopening_the_open_file_keeps_it_locked(self):
+        open_file = persistence.LockedTaskFile()
+        open_file.tasks().append(task.Task())
+        open_file.setFilename(self.filename1)
+        open_file.save()
+        self.addCleanup(open_file.stop)
+        self.addCleanup(open_file.close)  # Before tearDown's removal
+        iocontroller = gui.iocontroller.IOController(
+            open_file, lambda *args: None, self.settings
+        )
+        released = []
+        release = resourcelock.ResourceLock.release
+
+        def record(lock):
+            released.append(lock)
+            release(lock)
+
+        with mock.patch.object(resourcelock.ResourceLock, "release", record):
+            iocontroller.open(self.filename1)
+        self.assertEqual(([], True), (released, open_file.is_locked()))
 
     def testIOErrorOnExport(self):
         self.taskFile.setFilename(self.filename1)

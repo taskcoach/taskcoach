@@ -637,6 +637,11 @@ class LockedTaskFile(TaskFile):
             self.__lock.release()
             self.__lock = None
 
+    def pass_lock(self):
+        """Let go of the lock without releasing it: reopening the same
+        file keeps it held through the close, and load() adopts it."""
+        self.__lock = None
+
     def close(self):
         # Released only after closing succeeded: a failed close leaves
         # the file loaded, so it must stay locked.

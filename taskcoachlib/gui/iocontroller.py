@@ -176,6 +176,8 @@ class IOController(object):
                 )
                 return
             try:
+                if self.__holds_lock(lock):
+                    self.__task_file.pass_lock()  # Reopening: held on
                 self.__close_unconditionally()
             except BaseException:
                 if not self.__holds_lock(lock):

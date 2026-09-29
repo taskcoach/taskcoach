@@ -126,7 +126,9 @@ running owner.
 Within one process, `acquire()` returns the lock already held for that
 path. This is how the task file adopts the lock taken by the early
 startup check, or by File > Open before it closes the current file,
-without a gap between the check and opening the file. `holding()`
+without a gap between the check and opening the file. Opening the open
+file again (a reload) keeps its lock held through the close
+(`LockedTaskFile.pass_lock()`). `holding()`
 holds a lock only while one write runs: it releases a lock it took and
 keeps one the process already held.
 
