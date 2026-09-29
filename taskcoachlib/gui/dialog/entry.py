@@ -463,7 +463,7 @@ class IconEntry(widgets.PanelWithBoxSizer):
         kwargs["orientation"] = wx.HORIZONTAL
         super().__init__(parent, *args, **kwargs)
         self._iconCheckBox = self._create_check_box(current_icon_id)
-        self._iconPicker = self._createIconPicker(
+        self._iconPicker = self._create_icon_picker(
             parent, current_icon_id, exclude
         )
         self.add(
@@ -486,7 +486,7 @@ class IconEntry(widgets.PanelWithBoxSizer):
         checkBox.Bind(wx.EVT_CHECKBOX, self.onChecked)
         return checkBox
 
-    def _createIconPicker(self, parent, current_icon_id, exclude):
+    def _create_icon_picker(self, parent, current_icon_id, exclude):
         picker = widgets.IconPicker(
             self, current_icon_id or "", exclude=exclude
         )

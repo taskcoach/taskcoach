@@ -199,7 +199,7 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
             self.Layout()
 
         self.RequestUserAttention()
-        self._freezeDialog()
+        self._freeze_dialog()
         # Play reminder sound
         from taskcoachlib import sounds
 
@@ -208,15 +208,15 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
         if self.settings.getboolean("feature", "sayreminder"):
             speak.Speaker().say('"%s: %s"' % (_("Reminder"), task.subject()))
 
-    def _freezeDialog(self):
+    def _freeze_dialog(self):
         """Freeze dialog to prevent accidental actions."""
         self._isFrozen = True
         self.Disable()
         patterns.later.call(
-            self, self.FREEZE_DURATION_MS, self._unfreezeDialog
+            self, self.FREEZE_DURATION_MS, self._unfreeze_dialog
         )
 
-    def _unfreezeDialog(self):
+    def _unfreeze_dialog(self):
         """Unfreeze dialog and re-enable interaction."""
         if not self._isFrozen:
             return
