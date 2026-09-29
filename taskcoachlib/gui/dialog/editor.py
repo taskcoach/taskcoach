@@ -3585,9 +3585,17 @@ class EditBook(widgets.Notebook):
     def onPageChanged(self, event):
         self.GetPage(event.Selection).selected()
         event.Skip()
+        # A page shown for the first time draws once where it was
+        # created, over the tabs, before the notebook moves it below
+        # them: repaint once it is in place
+        wx.CallAfter(self.__repaint)
         if operating_system.isMac():
             # The dialog loses focus sometimes...
             wx.GetTopLevelParent(self).Raise()
+
+    def __repaint(self):
+        if self:  # Run by wx.CallAfter: the editor may be gone
+            self.Refresh()
 
     def getPage(self, page_name):
         index = self.getPageIndex(page_name)

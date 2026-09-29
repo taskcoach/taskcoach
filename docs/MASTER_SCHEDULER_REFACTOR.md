@@ -82,10 +82,9 @@ go at the end. Details live in the sections and documents linked.
     ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log), option C).
 35. ~~The views on the effective styles, the legacy styles removed~~
     ([Views on the Effective Styles](#views-on-the-effective-styles)).
-36. The task editor's Progress tab draws a second percentage box and
-    slider over the tab labels. Reproduced on the designer's display
-    (2026-09-28): open a task editor maximized, click Progress; also
-    seen there not maximized, fixed by a resize or a click.
+36. ~~Progress tab overlap~~: a page shown for the first time drew
+    once over the tabs before the notebook placed it; the editor's book
+    repaints after a page change. For the designer to confirm.
 37. Effective fields for the 13 other subtree values, one at a time;
     none is read by the loop (what each is:
     [TASK_FIELDS.md](TASK_FIELDS.md#subtree-values-in-other-columns)):
