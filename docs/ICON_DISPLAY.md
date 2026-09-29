@@ -56,8 +56,9 @@ How icons are rendered in viewer columns.
    Moved `gui.init()` before `MainWindow` import in `application.py` so
    the icon catalog is populated before any widget module grabs the
    reference. `help/tips.py` was already safe (deferred via `CallAfter`).
-   `changes/sync.py`, `widgets/searchctrl.py`, `widgets/notebook.py` only
-   call `get_bitmap()` inside methods, never at import time.
+   `changes/sync.py` (removed 2026-09-27), `widgets/searchctrl.py`,
+   `widgets/notebook.py` only call `get_bitmap()` inside methods, never at
+   import time.
 
 7. ~~**Remove open/close (selected) icon logic.**~~ **Done** (2026-09-28,
    [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md), To Do 35).

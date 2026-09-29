@@ -6,7 +6,7 @@ Currency input controls used in Task Coach.
 
 - [Overview](#overview)
 - [Legacy Controls](#legacy-controls)
-- [CurrencyCtrl(NumericCtrl)](#currencytrlnumericctrl)
+- [CurrencyCtrl(NumericCtrl)](#currencyctrlnumericctrl)
   - [Currency Decimal Places](#currency-decimal-places)
   - [EVT_VALUE_CHANGED](#evt_value_changed)
 - [Usage Sites](#usage-sites)

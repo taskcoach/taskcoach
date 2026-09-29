@@ -102,18 +102,18 @@ This rules out topic-based broadcast systems (like pypubsub's
 `pub.sendMessage`) where every subscriber to a topic receives every
 notification regardless of sender, requiring handler-side filtering.
 
-### Current state (mixed, partially incorrect)
+### Current state
 
-The codebase has two signal dispatch systems:
+The codebase has one signal dispatch system, the Publisher; pypubsub was
+removed 2026-09-28.
 
-**Legacy Publisher** (`patterns.Publisher`, `registerObserver`/
+**Publisher** (`patterns.Publisher`, `registerObserver`/
 `notifyObservers`) — sender-filtered dispatch via a global routing table.
 Subscriber registers for a `(eventType, eventSource)` pair; dispatch does
 a dict lookup on that key and delivers only to matching observers.
 Observers registered for other senders are never touched — O(1) lookup,
-not iteration over all observers. Used by the base `Object` fields
-(subject, description, appearance, derived/effective) and collection fields
-(categories, categorizables).
+not iteration over all observers. Every signal uses it: domain fields,
+collections, the task file, settings, commands and viewers.
 
 Note: the Publisher is a **Singleton** (one global registry), not true
 per-instance signals (where the signal object lives on the instance itself,
@@ -122,7 +122,7 @@ a global routing table vs per-instance subscriber lists — not behavioral.
 The dispatch semantics are per-instance: only matching subscribers are
 invoked, no subscriber has to check "is this message for me?"
 
-**pypubsub** (`pub.sendMessage`/`pub.subscribe`) — topic-based broadcast.
+**pypubsub** (removed; `pub.sendMessage`/`pub.subscribe`): topic-based broadcast.
 All subscribers to a topic receive all messages regardless of sender. No
 per-sender filtering at dispatch; subscribers must check the `sender` kwarg
 in the handler to decide whether to act. Task and Effort fields were
@@ -132,13 +132,13 @@ uses it and it is no longer a dependency (see [TODO](#todo)).
 
 The pypubsub migration was motivated by API simplicity and weak reference
 support, but it introduced broadcast dispatch for what are inherently
-per-instance signals. This is architecturally wrong: an editor showing one
-task receives (and discards) notifications from every other task in the
+per-instance signals. This was architecturally wrong: an editor showing one
+task received (and discarded) notifications from every other task in the
 system.
 
 ### Target architecture
 
-1. **Immediate:** new Attribute fields use the legacy Publisher with
+1. **Immediate:** new Attribute fields use the Publisher with
    sender-filtered `eventSource` dispatch. Dispatch semantics are correct
    (only matching subscribers called), even though the implementation is a
    global routing table rather than true per-instance signal objects.
@@ -147,9 +147,8 @@ system.
    following the Qt signals/slots pattern (e.g. Blinker or psygnal). These
    use true per-instance signals — the signal object lives on the instance
    (`task.icon_changed.connect(handler)`), no global registry. This would
-   replace both the legacy Publisher and pypubsub with a single system that
-   supports per-sender subscription natively, weak references, and a clean
-   API.
+   replace the Publisher with a system that supports per-sender
+   subscription natively, weak references, and a clean API.
 
 3. **Done 2026-09-28: revert pypubsub fields.** Every message moved to
    the Publisher and pypubsub was removed as a dependency.
@@ -342,7 +341,7 @@ No manual unsubscribe, no silent `except` guards, no zombie callbacks.
 
 | Signal | Action | Location |
 |--------|--------|----------|
-| `view.categoryfiltermatchall` | Migrated to Publisher | `taskcoachlib/gui/viewer/category/filter.py` |
+| `view.categoryfiltermatchall` | Migrated to Publisher | `taskcoachlib/domain/category/filter.py` (CategoryFilter), `taskcoachlib/gui/uicommand/uicommand.py` (CategoryViewerFilterChoice) |
 | `view.statusbar` | Migrated to Publisher | `taskcoachlib/gui/mainwindow.py` |
 | `view.toolbar` | Migrated to Publisher | `taskcoachlib/gui/mainwindow.py` |
 | `view.weekstartmonday` | Deleted (dead — topic name mismatch) | `taskcoachlib/gui/viewer/task.py` |

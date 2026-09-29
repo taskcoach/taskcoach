@@ -393,7 +393,7 @@ List-only viewers (effort, attachments) always use `ensureSelectionVisible` (nat
 | Switch list <-> tree mode       | Center          | `set_tree_mode` -> `_schedule_scrollbar_adjustment` (range) + centered |
 | Delete selected item            | Center          | `on_presentation_changed` -> centered    |
 | Add new item                    | Center          | `on_presentation_changed` -> centered    |
-| Window resize                   | Center          | `EVT_SIZE` -> `CallAfter` -> centered    |
+| Window resize                   | Center          | `EVT_SIZE` -> `patterns.later.soon` -> centered |
 | Sort change                     | Ensure-visible  | `refresh()` only, no `on_presentation_changed` |
 | Expand all / Collapse all       | Ensure-visible  | `refresh()` only, no `on_presentation_changed` |
 | Item edit (attribute change)    | No scroll       | `RefreshItems()`, not `RefreshAllItems`  |
@@ -515,11 +515,11 @@ All tree-based viewers now adjust scrollbars consistently on all platforms:
 
 | User Action                     | Scroll Behavior | Windows | Other Platforms |
 |---------------------------------|-----------------|---------|-----------------|
-| Expand single item              | Ensure-visible  | Deferred via `CallAfter` | Immediate |
-| Collapse single item            | Ensure-visible  | Deferred via `CallAfter` | Immediate |
-| Expand all                      | Ensure-visible  | Deferred via `CallAfter` | Immediate |
-| Collapse all                    | Ensure-visible  | Deferred via `CallAfter` | Immediate |
-| Switch tree <-> list            | Center          | Deferred via `CallAfter` | Immediate |
+| Expand single item              | Ensure-visible  | Deferred via `patterns.later.soon` | Immediate |
+| Collapse single item            | Ensure-visible  | Deferred via `patterns.later.soon` | Immediate |
+| Expand all                      | Ensure-visible  | Deferred via `patterns.later.soon` | Immediate |
+| Collapse all                    | Ensure-visible  | Deferred via `patterns.later.soon` | Immediate |
+| Switch tree <-> list            | Center          | Deferred via `patterns.later.soon` | Immediate |
 
 (Other scroll behaviors unchanged — see previous table above)
 
@@ -599,7 +599,7 @@ EVT_MOTION on VirtualListCtrl
     │       ├── settings2.window.hoverlinewidth?   ← direct read
     │       │   ├── _refresh_hover_row(old)   ← padded invalidation
     │       │   └── _refresh_hover_row(new)   ← padded invalidation
-    │       │   └── CallAfter(_draw_hover_outline)
+    │       │   └── patterns.later.soon(_draw_hover_outline)
     │       │       └── settings2.window.hoverlinewidth  ← direct read
     │
     └── event.Skip() → tooltip __on_motion fires (tooltip.py)

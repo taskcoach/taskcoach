@@ -158,7 +158,7 @@ datetime presets.
 | `taskcoachlib/gui/dialog/preferences.py` | `TaskReminderPage` - preferences UI |
 | `taskcoachlib/config/defaults.py` | Default `reminder_sound` value |
 | `taskcoachlib/speak/speaker.py` | Text-to-speech |
-| `taskcoachlib/gui/remindercontroller.py` | Polling + dialog trigger |
+| `taskcoachlib/gui/remindercontroller.py` | Subscribes to `task.reminder.trigger`, shows the dialog |
 
 ## Known Limitations
 

@@ -49,7 +49,7 @@
    event used by the category *filter* viewer. Root cause:
    `CategoryFilter.onCategoryChanged()` in `domain/category/filter.py:91`
    blindly calls `self.reset()` for both membership events
-   (`categorizableAdded/Removed`) and filter events (`filterChanged`).
+   (`categorizableAdded/Removed`) and filter events (`filterChangedEventType`).
    They can now be separate subscriptions with clean separation.
 
 ---

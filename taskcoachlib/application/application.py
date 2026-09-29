@@ -677,7 +677,8 @@ class Application(object, metaclass=patterns.Singleton):
     - reactor.registerWxApp() → removed (not needed)
     - reactor.run() → wx.App.MainLoop()
     - reactor.stop() → wx.App.ExitMainLoop() via EVT_CLOSE handlers
-    - reactor.callLater() → wx.CallLater() (in scheduler.py)
+    - reactor.callLater() → GlobalTimer, a wx.Timer (gui/scheduler.py),
+      for the 1 s tick; patterns.later for other delayed calls
 
     This simplifies the event loop architecture and eliminates potential
     race conditions between two event loops.

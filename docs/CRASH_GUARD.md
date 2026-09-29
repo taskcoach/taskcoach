@@ -19,7 +19,7 @@ The crash guard system prevents these segfaults and logs diagnostic information 
 
 Since 2026-09-29 the app's own deferred calls go through `patterns.later`, which cannot reach a deleted window ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)); the guards below remain for bundled and system library code (AUI, the tree list, the calendar), which still uses `wx.CallAfter` and `wx.Timer` directly.
 
-The crash guard is part of the runtime workarounds documented in [TODO.md — Monkeypatches and Workarounds](TODO.md#monkeypatches-and-workarounds).
+The crash guard is part of the runtime workarounds documented in [TODO.md: Monkeypatches and Workarounds](TODO.md#5-monkeypatches-and-workarounds).
 
 ---
 
@@ -34,7 +34,7 @@ Common triggers:
 - `wx.CallAfter(widget.method)` where the widget is destroyed before the callback runs
 - `wx.Timer(window)` still running when `window` is destroyed, for example a timer (re)started by an event that is processed after the window's close handler already stopped it. No Python code runs when the tick arrives, so the only trace is a native crash with `MainLoop` as the only Python frame
 - Event handlers firing on widgets that are being or have been closed (AUI panes, dialogs)
-- `pub.subscribe` handlers referencing destroyed widgets
+- Publisher observers referencing destroyed widgets (a window's own observers are removed when it is destroyed)
 - HyperTreeList operations (`GetItemPyData`, `GetSelections`) on deleted tree items
 
 ---

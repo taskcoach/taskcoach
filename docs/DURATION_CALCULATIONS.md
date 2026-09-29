@@ -507,7 +507,8 @@ the duration changed.
 
 ### Lifecycle
 
-Subscriptions are created during `addEntries()` / `addDurationEntry()` and
+Subscriptions are created in `DatesPage._add_planned_date_section()` (task)
+and `EffortEditBook.__add_start_and_stop_entries()` (effort), and
 unsubscribed in `close()` / `close_edit_book()`.
 
 ---
@@ -524,7 +525,8 @@ All values are stored in hardcoded formats — no locale involvement. Locale for
 
 | Data type | XML format | Example | Writer code |
 |-----------|-----------|---------|-------------|
-| DateTime | `%Y-%m-%d %H:%M:%S` | `2026-01-29 15:30:00` | `writer.py:formatDateTime()` |
+| DateTime | `%Y-%m-%d %H:%M:%S` | `2026-01-29 15:30:00` | `str()`; effort start and stop: `writer.py:formatDateTime()` |
+| Creation and modification date (`date.Timestamp`) | `%Y-%m-%d %H:%M:%S.%f` (no fraction when the microseconds are 0) | `2026-09-27 21:00:43.123456` | `str()` in `writer.py` |
 | Duration (budget, plannedDuration) | `H:MM:SS` (days folded into hours) | `74:30:00` (= 3d 2h 30m) | `writer.py:budgetAsAttribute()` via `TimeDelta.hoursMinutesSeconds()` |
 | Float (hourlyFee, fixedFee) | `str(float)` | `25.5` | `writer.py:task_node()` |
 

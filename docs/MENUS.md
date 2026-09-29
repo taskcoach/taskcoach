@@ -54,7 +54,7 @@ Menu open event
     └── MainMenu._on_menu_open(event)          [EVT_MENU_OPEN]
         └── menu._update_menu_state()
             └── for each MenuItem:
-                └── item.update_enabled_state()
+                └── item.update_state()
                     └── item.Enable(item._command.enabled())
                         └── command determines its own state
 ```
@@ -72,15 +72,15 @@ Right-click
 ## MenuItem Subclass
 
 `MenuItem(wx.MenuItem)` in `base_uicommand.py` — each item receives its
-`UICommand` at creation (dependency injection) and owns its enabled state
-via `update_enabled_state()`. Created in `UICommand.add_to_menu()`.
+`UICommand` at creation (dependency injection) and owns its enabled state,
+label and check via `update_state()`. Created in `UICommand.add_to_menu()`.
 
 ---
 
 ## Menu State Update Flow
 
 - **Main menus**: `EVT_MENU_OPEN` → `MainMenu._on_menu_open()` →
-  `menu._update_menu_state()` → each item's `update_enabled_state()`.
+  `menu._update_menu_state()` → each item's `update_state()`.
   Fires per menu/submenu on GTK.
 - **Popup menus**: `_updateMenuUI()` in `itemctrl.py` →
   `popup._update_menu_state()` → same per-item flow.
@@ -94,7 +94,7 @@ via `update_enabled_state()`. Created in `UICommand.add_to_menu()`.
 | **Trigger** | Publisher signals (per-instance) | Menu open event            |
 | **Pattern** | `_ViewSettingsSync`, `_SelectionSync` | `_update_menu_state()` |
 | **Polling** | None — signal-driven         | None — on-demand on open      |
-| **Update**  | `toolbar.EnableTool(id, bool)` | `menuItem.update_enabled_state()` |
+| **Update**  | `toolbar.EnableTool(id, bool)` | `menuItem.update_state()` |
 
 Toolbar buttons use Publisher/Observer signals because they're always
 visible and must update immediately on state change. Menu items only

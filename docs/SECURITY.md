@@ -41,8 +41,8 @@ Full audit of `taskcoachlib/` for dynamic function calls (2026-02-16).
 | File | Line | Pattern | Risk | Status |
 |------|------|---------|------|--------|
 | `gui/icons/synthetic_icon_generator.py` | 55-65 | `if/elif` on `method_name` | None | **Fixed** — explicit if/elif |
-| `changes/monitor.py` | 59,112 | `getattr(klass, "%sChangedEventType" % name)()` | Low | Internal: name from hardcoded list |
-| `changes/sync.py` | 208+ | `getattr(memOwner, "add%s" % className)(obj)` | Low | Internal: className from sync protocol |
+| `changes/monitor.py` | 59,112 | `getattr(klass, "%sChangedEventType" % name)()` | Low | **Removed** 2026-09-27 with the automatic merge ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)) |
+| `changes/sync.py` | 208+ | `getattr(memOwner, "add%s" % className)(obj)` | Low | **Removed** 2026-09-27 with the automatic merge |
 | `patches/hypertreelist.py` | 5508 | `getattr(self._main_win, method)(*a, **k)` | Low | Internal: widget method proxy |
 | `viewer/task.py` | 730 | `getattr(task.Task, "%sChangedEventType" % choice)()` | Low | Internal: choice from settings |
 | `editor.py` | 808 | `getattr(self.items[0], "%sColor" % colorType)()` | Low | Internal: colorType is "fg"/"bg" |

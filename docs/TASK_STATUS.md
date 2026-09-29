@@ -18,7 +18,7 @@
    - [Viewer Columns](#viewer-columns)
 5. [Usage Locations](#usage-locations)
    - [Sources of Truth](#sources-of-truth)
-   - [Consumers](#consumers-read-taskstatus-cache)
+   - [Consumers](#consumers-read-computedstatus)
    - [Filtering](#filtering)
    - [Event Types That Affect Status](#event-types-that-affect-status)
 6. [Architectural Issues (Legacy)](#architectural-issues-legacy)
@@ -39,7 +39,7 @@
     - [Task Appearance](#task-appearance)
     - [Category Appearance](#category-appearance)
     - [Style Accessors](#style-accessors)
-    - [Notes and Attachments](#notes-and-attachments)
+    - [Notes, Efforts, and Attachments](#notes-efforts-and-attachments)
 11. [File Reference](#file-reference)
 12. [SSOT Principle: Action vs Display](#ssot-principle-action-vs-display)
 
@@ -188,11 +188,10 @@ def derivedFgColorSource(self):
 - **computeEffective()** in `appearance.py` computes effective from derived + override
 - UI resolves: `color = resolve_color(actual if actual else default)`
 
-**TODO — Refactor plural/singular icon logic:**
-- Current code in `object.py` and `task.py` uses brittle `native=super().icon() == ""`
-- This checks if icon is "native" (not user-overridden) for folder/LED transformation
-- Should be refactored to use a cleaner API (e.g., `hasIconOverride()` method)
-- Blocked on: completing SSOT 3-tuple refactor first
+**Plural/singular icon logic (done 2026-09-28):** `shown_icon_id()` in
+`object.py` calls `plural_or_singular_icon()` with
+`native=self.effectiveIconSource() != "[Override]"`, so only a user
+override is kept singular.
 
 ---
 
@@ -261,9 +260,11 @@ Transitions are time-driven (status changes as `now` passes date thresholds) or 
 
 **File:** `taskcoachlib/domain/task/task.py`
 
-Each task stores three computed status fields:
-- `__status_text` — Display text (e.g., `"Active"`, `"Overdue"`)
-- `__status_icon` — Icon name (e.g., `"nuvola_actions_ledblue"`)
+Each task stores four computed status fields:
+- `__computed_status`: the TaskStatus object
+- `__status_text`: display text (e.g., `"Active"`, `"Overdue"`)
+- `__status_icon_id`: icon name (e.g., `"nuvola_actions_ledblue"`)
+- `__status_source`: why the task has this status
 
 Accessor methods:
 - `task.computedStatus()` — Returns TaskStatus object (single source of truth) ✓
@@ -343,7 +344,7 @@ GlobalTimer._on_tick() (every 1 second)
             └── A due second? For each task:
                 1. task.compute_stored_status()
                 │   ├── Calls Task.compute_status() with task's dates
-                │   ├── Updates __computed_status, __status_text, __status_icon
+                │   ├── Updates __computed_status, __status_text, __status_icon_id
                 │   └── Fires statusChangedEventType if changed
                 2. computeStyles(task)
                     ├── computeDerived(task, field_type) for each field

@@ -438,7 +438,7 @@ fallback. KDE Wayland runtime behaviour requires on-box verification
 
 ## Menu Contents
 
-Both `TaskBarMenu` (Windows/macOS) and `AppIndicatorTaskBarIcon._buildGtkMenu`
+Both `TaskBarMenu` (Windows/macOS) and `AppIndicatorTaskBarIcon._build_gtk_menu`
 (Linux) provide the same items:
 
 1. **Hide / Restore** - Toggle main window visibility (dynamic label)

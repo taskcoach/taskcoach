@@ -14,7 +14,7 @@ Default date/time values for new tasks, configured in Preferences.
   - [Reminder Preset](#reminder-preset)
 - [Propose Mode](#propose-mode)
   - [Old Behavior (DateTimeEntry)](#old-behavior-datetimeentry)
-  - [Initial Bug (DateTimeComboCtrl)](#initial-bug-datetimecomboctrl2)
+  - [Initial Bug (DateTimeComboCtrl)](#initial-bug-datetimecomboctrl)
   - [Fix](#fix)
 - [Duration Mode Interaction](#duration-mode-interaction)
 - [Suggested DateTime Computation](#suggested-datetime-computation)
@@ -182,10 +182,11 @@ playback, and snooze configuration.
 When `reminder` is passed to the Task constructor, `set_reminder()` is not
 called, so the `reminderChangedEventType` event is not fired.
 
-This is **not a problem** because reminders are polled:
-`MasterScheduler` calls `task.processReminder()` for every task each
-second (see [SCHEDULERS.md](SCHEDULERS.md)), which reads
-`task.reminder()` directly.
+This is **not a problem**: the master timer list takes the new task's
+reminder second from the task list's add event (`_on_tasks_added`, via
+`timer_seconds()`), and the full loop calls `task.processReminder()` at
+that second (see [SCHEDULERS.md](SCHEDULERS.md#the-master-timer-list)),
+which reads `task.reminder()` directly.
 
 ---
 
@@ -324,13 +325,12 @@ Convenience classmethods:
 ## Reminder Scheduling on Load
 
 When a `.tsk` file is loaded, tasks are reconstructed via `__init__` with
-reminder values from XML. The reminder is stored directly in `self.__reminder`
-(not through `set_reminder()`), so no event fires.
+reminder values from XML. The constructor creates the reminder `Attribute`
+with that value (not through `set_reminder()`), so no event fires.
 
-This works because reminders are polled (see
-[Reminder Preset](#reminder-preset)). The planned master timer list
-takes loaded tasks from the task list's add event instead, since no
-reminder event announces them (see
+The master timer list takes loaded tasks' reminder seconds from the task
+list's add event instead, as for a [preset reminder](#reminder-preset)
+(see
 [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#what-changes-the-master-timer-list)).
 
 ---

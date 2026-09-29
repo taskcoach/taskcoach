@@ -89,21 +89,18 @@ The `defaults.py` file has a comment marking where new snake_case settings begin
 
 ### Current Status
 
-The application currently uses a per-change save pattern with debouncing to avoid excessive disk writes.
+With autosave on, `AutoSaver` (`persistence/autosaver.py`) saves a task file at the first idle after it gets dirty (`taskfile.dirty`); a failed save is retried after 60 s.
 
 ### Proposed Change
 
-Refactor from **per-change with debounce** to **per-window active/lost-focus** save pattern.
+Refactor from **per-change at idle** to **per-window active/lost-focus** save pattern.
 
-| Aspect | Current (Debounce) | Proposed (Focus-based) |
-|--------|-------------------|------------------------|
-| Save trigger | Timer after last change | Window loses focus |
-| Complexity | Complex timers, debounce logic | Simpler event-based |
+| Aspect | Current (Idle) | Proposed (Focus-based) |
+|--------|----------------|------------------------|
+| Save trigger | First idle after a change | Window loses focus |
 | Multi-screen | Complex interactions | Cleaner handling |
 
 **Pros:**
-- No need for debounce timers
-- Simpler implementation without complex timer management
 - Cleaner multi-screen/multi-window interactions
 
 **Cons:**

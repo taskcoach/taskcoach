@@ -88,8 +88,10 @@ disk is a separate concern, triggered by an explicit save command.
 - `.get()` returns the stored value
 - `.set(value, event=None)` compares new vs current:
   - Unchanged → returns `False`, no callback, no event
-  - Changed → stores value, calls `setEvent(owner, event)`, returns `True`
-- `setEvent` fires inside the `@patterns.eventSource` decorator, so events
+  - Changed → stores value, sets the owner's modification date (unless
+    the field is `volatile`), calls `set_event(owner, event)`, returns
+    `True`
+- `set_event` fires inside the `@patterns.eventSource` decorator, so events
   batch correctly during `__setstate__`
 - Owner stored as `weakref` — no circular reference issues
 

@@ -1,6 +1,6 @@
 # Task Coach - Your friendly task manager
 
-![Task Coach](icon%20ideas/splash-modernize/splash_new3a.jpg)
+![Task Coach](icon-ideas/splash-modernize/splash_new3a.jpg)
 
 Task Coach is a free/libre/open task manager for keeping track of projects and todo lists.
 

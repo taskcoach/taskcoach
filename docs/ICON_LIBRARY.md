@@ -22,7 +22,7 @@
 - [Completed Icon Migrations](#migration-from-legacy-icons)
 - [Recently Added Icons](#recently-added-icons)
 - [Icon Grid Browser and Duplicates (Dev Tools)](#icon-grid-browser-and-duplicates-dev-tools)
-- [Icon Hints Worker Plan](#icon-hints-plan)
+- [Icon Hints Worker Plan](#icon-hints-worker-plan)
 - [See Also](#see-also)
 
 ## TODO

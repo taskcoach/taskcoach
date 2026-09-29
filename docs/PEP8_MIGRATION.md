@@ -52,8 +52,8 @@ dispatch: event type strings and their handlers, `getattr`-based dispatch, and t
 Before renaming any non-wx CamelCase name:
 
 1. Confirm it is internal (not a wx override or wx-interface method).
-2. Find every reference: `registerObserver`, `pub.subscribe`, `Bind`,
-   `getattr`, and cross-module callers.
+2. Find every reference: `registerObserver`, `Bind`, `getattr`, and
+   cross-module callers.
 3. Rename in lockstep, then run `tools/check_renames.py` and the tests.
 
 ## flake8 codes: fix vs expected

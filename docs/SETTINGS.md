@@ -29,8 +29,8 @@
 3. ~~**Migrate tooltip config lookup** — replace pubsub subscription with
    direct `settings2.view.descriptionpopups` read. First consumer of
    the shim.~~ Done.
-4. **Migrate hover config lookup** — replace getter lambda with direct
-   ~~`settings2.window.hoverlinewidth` read. Remove `_hoverSettingGetter`
+4. ~~**Migrate hover config lookup**: replace getter lambda with direct
+   `settings2.window.hoverlinewidth` read. Remove `_hoverSettingGetter`
    indirection.~~ Done.
 5. **Gradually migrate other read-only call sites** as code is touched.
    No big-bang refactor — incremental adoption.
