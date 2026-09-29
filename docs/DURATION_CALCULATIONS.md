@@ -526,7 +526,7 @@ All values are stored in hardcoded formats — no locale involvement. Locale for
 |-----------|-----------|---------|-------------|
 | DateTime | `%Y-%m-%d %H:%M:%S` | `2026-01-29 15:30:00` | `writer.py:formatDateTime()` |
 | Duration (budget, plannedDuration) | `H:MM:SS` (days folded into hours) | `74:30:00` (= 3d 2h 30m) | `writer.py:budgetAsAttribute()` via `TimeDelta.hoursMinutesSeconds()` |
-| Float (hourlyFee, fixedFee) | `str(float)` | `25.5` | `writer.py:taskNode()` |
+| Float (hourlyFee, fixedFee) | `str(float)` | `25.5` | `writer.py:task_node()` |
 
 ### Internal Types
 - Durations use `date.TimeDelta` (extends `datetime.timedelta`, adds `hoursMinutesSeconds()`)

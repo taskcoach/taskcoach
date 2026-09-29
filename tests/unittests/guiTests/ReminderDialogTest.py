@@ -44,14 +44,14 @@ class ReminderDialogTest(test.TestCase):
     def testRememberZeroSnoozeTime(self):
         reminderDialog = self.createReminderDialog()
         reminderDialog.snoozeOptions.SetSelection(0)
-        reminderDialog.onClose(DummyEvent())
+        reminderDialog.on_close(DummyEvent())
         self.assertEqual(0, self.settings.getint("view", "defaultsnoozetime"))
 
     @test.skipOnPlatform("__WXGTK__")  # Causes SIGSEGV
     def testRememberSnoozeTime(self):
         reminderDialog = self.createReminderDialog()
         reminderDialog.snoozeOptions.SetSelection(2)
-        reminderDialog.onClose(DummyEvent())
+        reminderDialog.on_close(DummyEvent())
         self.assertEqual(10, self.settings.getint("view", "defaultsnoozetime"))
 
     @test.skipOnPlatform("__WXGTK__")  # Causes SIGSEGV
@@ -74,7 +74,7 @@ class ReminderDialogTest(test.TestCase):
     def testRememberReminderReplaceDefaultSnoozeTime(self):
         reminderDialog = self.createReminderDialog()
         reminderDialog.replaceDefaultSnoozeTime.SetValue(False)
-        reminderDialog.onClose(DummyEvent())
+        reminderDialog.on_close(DummyEvent())
         self.assertEqual(
             False, self.settings.getboolean("view", "replacedefaultsnoozetime")
         )

@@ -120,63 +120,63 @@ class Object:
 
         # Derived SSOT fields (value + source for each appearance type)
         self.__derivedFgColorValue = Attribute(
-            None, self, self._onDerivedFgColorChanged, volatile=True
+            None, self, self._on_derived_fg_color_changed, volatile=True
         )
         self.__derivedFgColorSource = Attribute(
-            None, self, self._onDerivedFgColorChanged, volatile=True
+            None, self, self._on_derived_fg_color_changed, volatile=True
         )
         self.__derivedBgColorValue = Attribute(
-            None, self, self._onDerivedBgColorChanged, volatile=True
+            None, self, self._on_derived_bg_color_changed, volatile=True
         )
         self.__derivedBgColorSource = Attribute(
-            None, self, self._onDerivedBgColorChanged, volatile=True
+            None, self, self._on_derived_bg_color_changed, volatile=True
         )
         self.__derivedIconValue = Attribute(
-            None, self, self._onDerivedIconChanged, volatile=True
+            None, self, self._on_derived_icon_changed, volatile=True
         )
         self.__derivedIconSource = Attribute(
-            None, self, self._onDerivedIconChanged, volatile=True
+            None, self, self._on_derived_icon_changed, volatile=True
         )
         self.__derivedFontValue = Attribute(
-            None, self, self._onDerivedFontChanged, volatile=True
+            None, self, self._on_derived_font_changed, volatile=True
         )
         self.__derivedFontSource = Attribute(
-            None, self, self._onDerivedFontChanged, volatile=True
+            None, self, self._on_derived_font_changed, volatile=True
         )
 
         # Effective SSOT fields (value + source + default for colors/font, value + source for icon)
         self.__effectiveFgColorValue = Attribute(
-            None, self, self._onEffectiveFgColorChanged, volatile=True
+            None, self, self._on_effective_fg_color_changed, volatile=True
         )
         self.__effectiveFgColorSource = Attribute(
-            None, self, self._onEffectiveFgColorChanged, volatile=True
+            None, self, self._on_effective_fg_color_changed, volatile=True
         )
         self.__effectiveFgColorDefault = Attribute(
-            None, self, self._onEffectiveFgColorChanged, volatile=True
+            None, self, self._on_effective_fg_color_changed, volatile=True
         )
         self.__effectiveBgColorValue = Attribute(
-            None, self, self._onEffectiveBgColorChanged, volatile=True
+            None, self, self._on_effective_bg_color_changed, volatile=True
         )
         self.__effectiveBgColorSource = Attribute(
-            None, self, self._onEffectiveBgColorChanged, volatile=True
+            None, self, self._on_effective_bg_color_changed, volatile=True
         )
         self.__effectiveBgColorDefault = Attribute(
-            None, self, self._onEffectiveBgColorChanged, volatile=True
+            None, self, self._on_effective_bg_color_changed, volatile=True
         )
         self.__effectiveIconValue = Attribute(
-            None, self, self._onEffectiveIconChanged, volatile=True
+            None, self, self._on_effective_icon_changed, volatile=True
         )
         self.__effectiveIconSource = Attribute(
-            None, self, self._onEffectiveIconChanged, volatile=True
+            None, self, self._on_effective_icon_changed, volatile=True
         )
         self.__effectiveFontValue = Attribute(
-            None, self, self._onEffectiveFontChanged, volatile=True
+            None, self, self._on_effective_font_changed, volatile=True
         )
         self.__effectiveFontSource = Attribute(
-            None, self, self._onEffectiveFontChanged, volatile=True
+            None, self, self._on_effective_font_changed, volatile=True
         )
         self.__effectiveFontDefault = Attribute(
-            None, self, self._onEffectiveFontChanged, volatile=True
+            None, self, self._on_effective_font_changed, volatile=True
         )
 
         super().__init__(*args, **kwargs)
@@ -524,16 +524,16 @@ class Object:
 
     # --- Derived Event Handlers ---
 
-    def _onDerivedFgColorChanged(self, event):
+    def _on_derived_fg_color_changed(self, event):
         event.addSource(self, type=self.derivedFgColorChangedEventType())
 
-    def _onDerivedBgColorChanged(self, event):
+    def _on_derived_bg_color_changed(self, event):
         event.addSource(self, type=self.derivedBgColorChangedEventType())
 
-    def _onDerivedIconChanged(self, event):
+    def _on_derived_icon_changed(self, event):
         event.addSource(self, type=self.derivedIconChangedEventType())
 
-    def _onDerivedFontChanged(self, event):
+    def _on_derived_font_changed(self, event):
         event.addSource(self, type=self.derivedFontChangedEventType())
 
     # --- Derived Event Types ---
@@ -647,16 +647,16 @@ class Object:
 
     # --- Effective Event Handlers ---
 
-    def _onEffectiveFgColorChanged(self, event):
+    def _on_effective_fg_color_changed(self, event):
         event.addSource(self, type=self.effectiveFgColorChangedEventType())
 
-    def _onEffectiveBgColorChanged(self, event):
+    def _on_effective_bg_color_changed(self, event):
         event.addSource(self, type=self.effectiveBgColorChangedEventType())
 
-    def _onEffectiveIconChanged(self, event):
+    def _on_effective_icon_changed(self, event):
         event.addSource(self, type=self.effectiveIconChangedEventType())
 
-    def _onEffectiveFontChanged(self, event):
+    def _on_effective_font_changed(self, event):
         event.addSource(self, type=self.effectiveFontChangedEventType())
 
     # --- Effective Event Types ---
@@ -794,12 +794,12 @@ class CompositeObject(Object, patterns.ObservableComposite):
 
     def shown_icon_id(self):
         # An icon the user chose for the item is only pluralized
-        return self.pluralOrSingularIcon(
+        return self.plural_or_singular_icon(
             self.effectiveIcon(),
             native=self.effectiveIconSource() != "[Override]",
         )
 
-    def pluralOrSingularIcon(self, icon_id, native=True):
+    def plural_or_singular_icon(self, icon_id, native=True):
         has_children = any(self.children())
         mapping = (
             icon.itemImagePlural if has_children else icon.itemImageSingular

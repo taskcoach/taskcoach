@@ -131,18 +131,18 @@ class XMLWriter(object):
         root = ET.Element("tasks")
 
         for root_task in sortedById(task_list.rootItems()):
-            self.taskNode(root, root_task)
+            self.task_node(root, root_task)
 
         owned_notes = self.notesOwnedByNoteOwners(
             task_list, category_container
         )
         for root_category in sortedById(category_container.rootItems()):
-            self.categoryNode(
+            self.category_node(
                 root, root_category, task_list, note_container, owned_notes
             )
 
         for root_note in sortedById(note_container.rootItems()):
-            self.noteNode(root, root_note)
+            self.note_node(root, root_note)
 
         flatten(root)
         PIElementTree(
@@ -158,9 +158,11 @@ class XMLWriter(object):
                 notes.extend(noteOwner.notes(recursive=True))
         return notes
 
-    def taskNode(self, parentNode, task):  # pylint: disable=W0621
+    def task_node(self, parent_node, task):  # pylint: disable=W0621
         maxDateTime = self.maxDateTime
-        node = self.baseCompositeNode(parentNode, task, "task", self.taskNode)
+        node = self.base_composite_node(
+            parent_node, task, "task", self.task_node
+        )
         if task.plannedStartDateTime() != maxDateTime:
             node.attrib["plannedstartdate"] = str(task.plannedStartDateTime())
         if task.dueDateTime() != maxDateTime:
@@ -172,7 +174,7 @@ class XMLWriter(object):
         if task.percentageComplete():
             node.attrib["percentageComplete"] = str(task.percentageComplete())
         if task.recurrence():
-            self.recurrenceNode(node, task.recurrence())
+            self.recurrence_node(node, task.recurrence())
         if task.budget() != date.TimeDelta():
             node.attrib["budget"] = self.budgetAsAttribute(task.budget())
         if task.plannedDuration() != date.TimeDelta():
@@ -206,14 +208,14 @@ class XMLWriter(object):
                 task.shouldMarkCompletedWhenAllChildrenCompleted()
             )
         for effort in sortedById(task.efforts()):
-            self.effortNode(node, effort)
+            self.effort_node(node, effort)
         for eachNote in sortedById(task.notes()):
-            self.noteNode(node, eachNote)
+            self.note_node(node, eachNote)
         for attachment in sortedById(task.attachments()):
-            self.attachmentNode(node, attachment)
+            self.attachment_node(node, attachment)
         return node
 
-    def recurrenceNode(self, parentNode, recurrence):
+    def recurrence_node(self, parent_node, recurrence):
         attrs = dict(unit=recurrence.unit)
         if recurrence.amount > 1:
             attrs["amount"] = str(recurrence.amount)
@@ -229,9 +231,9 @@ class XMLWriter(object):
             attrs["recurBasedOnCompletion"] = "True"
         if recurrence.weekdays:
             attrs["weekdays"] = ",".join(str(d) for d in recurrence.weekdays)
-        return ET.SubElement(parentNode, "recurrence", attrs)
+        return ET.SubElement(parent_node, "recurrence", attrs)
 
-    def effortNode(self, parentNode, effort):
+    def effort_node(self, parent_node, effort):
         formattedStart = self.formatDateTime(effort.getStart())
         attrs = dict(
             id=effort.id(),
@@ -251,26 +253,26 @@ class XMLWriter(object):
             attrs["creationDateTime"] = str(effort.creationDateTime())
         if effort.modificationDateTime() > date.DateTime.min:
             attrs["modificationDateTime"] = str(effort.modificationDateTime())
-        node = ET.SubElement(parentNode, "effort", attrs)
+        node = ET.SubElement(parent_node, "effort", attrs)
         if effort.description():
             ET.SubElement(node, "description").text = effort.description()
         return node
 
-    def categoryNode(
-        self, parentNode, category, *categorizableContainers
+    def category_node(
+        self, parent_node, category, *categorizable_containers
     ):  # pylint: disable=W0621
         def inCategorizableContainer(categorizable):
-            for container in categorizableContainers:
+            for container in categorizable_containers:
                 if categorizable in container:
                     return True
             return False
 
-        node = self.baseCompositeNode(
-            parentNode,
+        node = self.base_composite_node(
+            parent_node,
             category,
             "category",
-            self.categoryNode,
-            categorizableContainers,
+            self.category_node,
+            categorizable_containers,
         )
         if category.isFiltered():
             node.attrib["filtered"] = str(category.isFiltered())
@@ -281,9 +283,9 @@ class XMLWriter(object):
         if category.stylePriority():
             node.attrib["stylePriority"] = str(category.stylePriority())
         for eachNote in sortedById(category.notes()):
-            self.noteNode(node, eachNote)
+            self.note_node(node, eachNote)
         for attachment in sortedById(category.attachments()):
-            self.attachmentNode(node, attachment)
+            self.attachment_node(node, attachment)
         # Make sure the categorizables referenced are actually in the
         # categorizableContainer, i.e. they are not deleted
         categorizableIds = " ".join(
@@ -297,16 +299,18 @@ class XMLWriter(object):
             node.attrib["categorizables"] = categorizableIds
         return node
 
-    def noteNode(self, parentNode, note):  # pylint: disable=W0621
-        node = self.baseCompositeNode(parentNode, note, "note", self.noteNode)
+    def note_node(self, parent_node, note):  # pylint: disable=W0621
+        node = self.base_composite_node(
+            parent_node, note, "note", self.note_node
+        )
         for attachment in sortedById(note.attachments()):
-            self.attachmentNode(node, attachment)
+            self.attachment_node(node, attachment)
         return node
 
-    def __baseNode(self, parentNode, item, nodeName):
+    def __base_node(self, parent_node, item, node_name):
         node = ET.SubElement(
-            parentNode,
-            nodeName,
+            parent_node,
+            node_name,
             dict(id=item.id()),
         )
         if item.creationDateTime() > date.DateTime.min:
@@ -321,10 +325,10 @@ class XMLWriter(object):
             ET.SubElement(node, "description").text = item.description()
         return node
 
-    def baseNode(self, parentNode, item, nodeName):
+    def base_node(self, parent_node, item, node_name):
         """Create a node and add the attributes that all domain
         objects share, such as id, subject, description."""
-        node = self.__baseNode(parentNode, item, nodeName)
+        node = self.__base_node(parent_node, item, node_name)
         if item.foregroundColor():
             node.attrib["fgColor"] = str(item.foregroundColor())
         if item.backgroundColor():
@@ -337,17 +341,17 @@ class XMLWriter(object):
             node.attrib["ordering"] = str(item.ordering())
         return node
 
-    def baseCompositeNode(
+    def base_composite_node(
         self,
-        parentNode,
+        parent_node,
         item,
-        nodeName,
+        node_name,
         childNodeFactory,
         childNodeFactoryArgs=(),
     ):
-        """Same as baseNode, but also create child nodes by means of
+        """Same as base_node, but also create child nodes by means of
         the childNodeFactory."""
-        node = self.__baseNode(parentNode, item, nodeName)
+        node = self.__base_node(parent_node, item, node_name)
         if item.foregroundColor():
             node.attrib["fgColor"] = str(item.foregroundColor())
         if item.backgroundColor():
@@ -368,8 +372,8 @@ class XMLWriter(object):
             )  # pylint: disable=W0142
         return node
 
-    def attachmentNode(self, parentNode, attachment):
-        node = self.baseNode(parentNode, attachment, "attachment")
+    def attachment_node(self, parent_node, attachment):
+        node = self.base_node(parent_node, attachment, "attachment")
         node.attrib["type"] = attachment.type_
         data = attachment.data()
         if data is None:
@@ -381,7 +385,7 @@ class XMLWriter(object):
                 dict(extension=os.path.splitext(attachment.location())[-1]),
             ).text = data.encode("base64")
         for eachNote in sortedById(attachment.notes()):
-            self.noteNode(node, eachNote)
+            self.note_node(node, eachNote)
         return node
 
     def budgetAsAttribute(self, budget):
@@ -399,8 +403,8 @@ class TemplateXMLWriter(XMLWriter):
             note.NoteContainer(),
         )
 
-    def taskNode(self, parentNode, task):  # pylint: disable=W0621
-        node = super().taskNode(parentNode, task)
+    def task_node(self, parent_node, task):  # pylint: disable=W0621
+        node = super().task_node(parent_node, task)
 
         for name, getter in [
             ("plannedstartdate", "plannedStartDateTime"),

@@ -93,24 +93,24 @@ class Task(
         )  # pylint: disable=E1101
         maxDateTime = self.maxDateTime
         self.__dueDateTime = Attribute(
-            dueDateTime or maxDateTime, self, self._onDueDateTimeChanged
+            dueDateTime or maxDateTime, self, self._on_due_date_time_changed
         )
         self.__plannedStartDateTime = Attribute(
             plannedStartDateTime or maxDateTime,
             self,
-            self._onPlannedStartDateTimeChanged,
+            self._on_planned_start_date_time_changed,
         )
         self.__actualStartDateTime = Attribute(
             actualStartDateTime or maxDateTime,
             self,
-            self._onActualStartDateTimeChanged,
+            self._on_actual_start_date_time_changed,
         )
         if completionDateTime is None and percentageComplete == 100:
             completionDateTime = date.Now()
         self.__completionDateTime = Attribute(
             completionDateTime or maxDateTime,
             self,
-            self._onCompletionDateTimeChanged,
+            self._on_completion_date_time_changed,
         )
         percentageComplete = (
             100
@@ -118,7 +118,7 @@ class Task(
             else percentageComplete
         )
         self.__percentageComplete = Attribute(
-            percentageComplete, self, self._onPercentageCompleteChanged
+            percentageComplete, self, self._on_percentage_complete_changed
         )
         self.__budget = Attribute(
             budget or date.TimeDelta(), self, self._on_budget_changed
@@ -126,7 +126,7 @@ class Task(
         self.__plannedDuration = Attribute(
             plannedDuration or date.TimeDelta(),
             self,
-            self._onPlannedDurationChanged,
+            self._on_planned_duration_changed,
         )
         # Normalize old mode values to new keys: implicit, adjdue, adjstart
         mode_map = {"todue": "adjdue", "fromstart": "adjstart"}
@@ -134,10 +134,10 @@ class Task(
             mode_map.get(plannedDurationMode, plannedDurationMode)
             or "implicit",
             self,
-            self._onPlannedDurationModeChanged,
+            self._on_planned_duration_mode_changed,
         )
         self._efforts = efforts or []
-        self.__priority = Attribute(priority, self, self._onPriorityChanged)
+        self.__priority = Attribute(priority, self, self._on_priority_changed)
         self.__hourlyFee = Attribute(
             hourlyFee, self, self._on_hourly_fee_changed
         )
@@ -362,7 +362,7 @@ class Task(
         # Not set is the latest date (docs/ATTRIBUTE_PATTERN.md)
         self.__dueDateTime.set(due_date_time or self.maxDateTime, event=event)
 
-    def _onDueDateTimeChanged(self, event):
+    def _on_due_date_time_changed(self, event):
         self._update_status()
         self._send_to_self_and_ancestors(
             event, self.dueDateTimeChangedEventType(), self.dueDateTime()
@@ -403,7 +403,7 @@ class Task(
             planned_start_date_time or self.maxDateTime, event=event
         )
 
-    def _onPlannedStartDateTimeChanged(self, event):
+    def _on_planned_start_date_time_changed(self, event):
         self._update_status()
         self._send_to_self_and_ancestors(
             event,
@@ -465,7 +465,7 @@ class Task(
             actual_start_date_time or self.maxDateTime, event=event
         )
 
-    def _onActualStartDateTimeChanged(self, event):
+    def _on_actual_start_date_time_changed(self, event):
         self._update_status()
         self._send_to_self_and_ancestors(
             event,
@@ -507,7 +507,7 @@ class Task(
             completion_date_time or date.Now(), event=event
         )
 
-    def _onCompletionDateTimeChanged(self, event):
+    def _on_completion_date_time_changed(self, event):
         completionDateTime = self.completionDateTime()
         isCompleted = completionDateTime != self.maxDateTime
 
@@ -1061,7 +1061,7 @@ class Task(
     def setPlannedDuration(self, plannedDuration, event=None):
         self.__plannedDuration.set(plannedDuration, event=event)
 
-    def _onPlannedDurationChanged(self, event):
+    def _on_planned_duration_changed(self, event):
         event.addSource(
             self,
             self.plannedDuration(),
@@ -1092,7 +1092,7 @@ class Task(
         mode = mode_map.get(mode, mode) or "implicit"
         self.__plannedDurationMode.set(mode, event=event)
 
-    def _onPlannedDurationModeChanged(self, event):
+    def _on_planned_duration_mode_changed(self, event):
         event.addSource(
             self,
             self.plannedDurationMode(),
@@ -1197,7 +1197,7 @@ class Task(
     def setPercentageComplete(self, percentage, event=None):
         self.__percentageComplete.set(percentage, event=event)
 
-    def _onPercentageCompleteChanged(self, event):
+    def _on_percentage_complete_changed(self, event):
         percentage = self.__percentageComplete.get()
         if percentage == 100 and self.completionDateTime() == self.maxDateTime:
             self.set_completion_date_time(date.Now())
@@ -1258,7 +1258,7 @@ class Task(
     def setPriority(self, priority, event=None):
         self.__priority.set(priority, event=event)
 
-    def _onPriorityChanged(self, event):
+    def _on_priority_changed(self, event):
         self._send_to_self_and_ancestors(
             event, self.priorityChangedEventType()
         )

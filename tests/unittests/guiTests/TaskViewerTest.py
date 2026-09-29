@@ -953,7 +953,7 @@ class CommonTestsMixin(object):
             task.Task.trackingChangedEventType(), True, self.task
         )
 
-    def testChangePlannedStartDateTimeWhileColumnNotShown(self):
+    def test_change_planned_start_date_time_while_column_not_shown(self):
         self.taskList.append(self.task)
         self.showColumn("plannedStartDate", False)
         self.task.set_planned_start_date_time(date.Yesterday())
@@ -1002,7 +1002,7 @@ class CommonTestsMixin(object):
             task.Task.completionDateTimeChangedEventType(), now, self.task
         )
 
-    def testChangePercentageCompleteWhileColumnNotShown(self):
+    def test_change_percentage_complete_while_column_not_shown(self):
         self.taskList.append(self.task)
         self.task.setPercentageComplete(50)
         event_type = task.Task.percentageCompleteChangedEventType()

@@ -686,22 +686,25 @@ class _ChoicesPopup(_PopupWindow):
         for label, value in self.__choices:
             tw, th = dc.GetTextExtent(label)
             itemH = th + vPad * 2
-            itemRect = wx.Rect(
+            item_rect = wx.Rect(
                 contentOffsetX, y, w - contentOffsetX * 2, itemH
             )
 
-            isHighlighted = value == self.__highlightedValue
+            is_highlighted = value == self.__highlightedValue
 
-            if isHighlighted:
+            if is_highlighted:
                 # Use native selection rectangle rendering (fully highlighted)
                 renderer.DrawItemSelectionRect(
-                    win, dc, itemRect, wx.CONTROL_SELECTED | wx.CONTROL_FOCUSED
+                    win,
+                    dc,
+                    item_rect,
+                    wx.CONTROL_SELECTED | wx.CONTROL_FOCUSED,
                 )
 
             # Draw text right-aligned with padding, vertically centered
             textY = y + vPad
             textX = w - contentOffsetX - hPad - tw
-            if isHighlighted:
+            if is_highlighted:
                 dc.SetTextForeground(
                     wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
                 )
@@ -956,17 +959,17 @@ class NumericField:
         keyCode = event.GetKeyCode()
 
         if keyCode == wx.WXK_UP:
-            newVal = self.__value + 1
-            if newVal > self.__maxVal:
-                newVal = self.__minVal
-            self.SetValue(newVal)
+            new_val = self.__value + 1
+            if new_val > self.__maxVal:
+                new_val = self.__minVal
+            self.SetValue(new_val)
             return True
 
         if keyCode == wx.WXK_DOWN:
-            newVal = self.__value - 1
-            if newVal < self.__minVal:
-                newVal = self.__maxVal
-            self.SetValue(newVal)
+            new_val = self.__value - 1
+            if new_val < self.__minVal:
+                new_val = self.__maxVal
+            self.SetValue(new_val)
             return True
 
         # Special handling for AM/PM period field
@@ -1002,10 +1005,10 @@ class NumericField:
                 # First digit: replace value entirely (no clamp during typing)
                 self.SetRawValue(number)
             else:
-                newVal = (self.__value * 10 + number) % int(
+                new_val = (self.__value * 10 + number) % int(
                     math.pow(10, self.__width)
                 )
-                self.SetRawValue(newVal)
+                self.SetRawValue(new_val)
             self.__digitCount += 1
             self.__observer.DismissPopup()
             # Auto-advance to next field after all digits typed
@@ -1614,9 +1617,9 @@ class DurationCtrl(MaskedFieldsCtrl):
         minutes, seconds = divmod(remainder, 60)
 
         self._negative = negative
-        dayField = self._fields.get("day")
-        if dayField:
-            dayField._negativePrefix = negative
+        day_field = self._fields.get("day")
+        if day_field:
+            day_field._negativePrefix = negative
         self.SetFieldValue("day", days)
         self.SetFieldValue("hour", hours)
         self.SetFieldValue("minute", minutes)
@@ -1750,9 +1753,9 @@ class DurationCtrlVerbose(MaskedFieldsCtrl):
         minutes, seconds = divmod(remainder, 60)
 
         self._negative = negative
-        dayField = self._fields.get("day")
-        if dayField:
-            dayField._negativePrefix = negative
+        day_field = self._fields.get("day")
+        if day_field:
+            day_field._negativePrefix = negative
         self.SetFieldValue("day", days)
         self.SetFieldValue("hour", hours)
         self.SetFieldValue("minute", minutes)
@@ -2298,9 +2301,9 @@ class _CalendarComboPopup(wx.ComboPopup):
         y = contentOffsetY + th + 2
 
         # Weekday headers
-        hdrBg = colours["weekday_header_bg"]
-        dc.SetPen(wx.Pen(hdrBg))
-        dc.SetBrush(wx.Brush(hdrBg))
+        hdr_bg = colours["weekday_header_bg"]
+        dc.SetPen(wx.Pen(hdr_bg))
+        dc.SetBrush(wx.Brush(hdr_bg))
         dc.DrawRectangle(contentOffsetX, y, self._maxDim * 7, self._maxDim)
         dc.SetTextForeground(colours["weekday_header_fg"])
         for idx, hdr in enumerate(calendar.weekheader(2).split()):
@@ -2334,25 +2337,25 @@ class _CalendarComboPopup(wx.ComboPopup):
                 )
 
                 if not active:
-                    inactiveBg = wx.SystemSettings.GetColour(
+                    inactive_bg = wx.SystemSettings.GetColour(
                         wx.SYS_COLOUR_BTNFACE
                     )
-                    dc.SetPen(wx.Pen(inactiveBg))
-                    dc.SetBrush(wx.Brush(inactiveBg))
+                    dc.SetPen(wx.Pen(inactive_bg))
+                    dc.SetBrush(wx.Brush(inactive_bg))
                     dc.DrawRectangle(x, y, self._maxDim, self._maxDim)
                 elif not thisMonth:
-                    otherMonthBg = (
+                    other_month_bg = (
                         colours["other_month_bg"]
                         if colours["other_month_bg"] is not None
                         else wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
                     )
-                    dc.SetPen(wx.Pen(otherMonthBg))
-                    dc.SetBrush(wx.Brush(otherMonthBg))
+                    dc.SetPen(wx.Pen(other_month_bg))
+                    dc.SetBrush(wx.Brush(other_month_bg))
                     dc.DrawRectangle(x, y, self._maxDim, self._maxDim)
 
-                isHighlighted = dt == self._highlightedDate and active
+                is_highlighted = dt == self._highlightedDate and active
 
-                if isHighlighted:
+                if is_highlighted:
                     drawFocusRect(
                         self._win, dc, x, y, self._maxDim, self._maxDim
                     )
@@ -2846,7 +2849,7 @@ class DateComboCustomCtrl(wx.ComboCtrl):
         return self.IsPopupShown()
 
     def Bind(
-        self, eventType, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY
+        self, event_type, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY
     ):
         """Forward UI events to inner DateCtrl.
 
@@ -2854,15 +2857,15 @@ class DateComboCustomCtrl(wx.ComboCtrl):
         EVT_SET_FOCUS fire on the inner control, not the ComboCtrl wrapper.
         Other events (e.g. EVT_SIZE) go to the ComboCtrl itself.
         """
-        if eventType in (
+        if event_type in (
             EVT_VALUE_CHANGED,
             wx.EVT_KEY_DOWN,
             wx.EVT_KILL_FOCUS,
             wx.EVT_SET_FOCUS,
         ):
-            self._dateCtrl.Bind(eventType, handler, source, id, id2)
+            self._dateCtrl.Bind(event_type, handler, source, id, id2)
         else:
-            super().Bind(eventType, handler, source, id, id2)
+            super().Bind(event_type, handler, source, id, id2)
 
     def Enable(self, enable=True):
         """Enable or disable the control (shows N/A when disabled)."""
@@ -2917,13 +2920,13 @@ class _NativeDateCtrl(wx.Panel):
 
         # Set date range if specified
         if minDate is not None or maxDate is not None:
-            wxMin = (
+            wx_min = (
                 self._date_to_wxdt(minDate) if minDate else wx.DefaultDateTime
             )
-            wxMax = (
+            wx_max = (
                 self._date_to_wxdt(maxDate) if maxDate else wx.DefaultDateTime
             )
-            self._picker.SetRange(wxMin, wxMax)
+            self._picker.SetRange(wx_min, wx_max)
 
         # Apply custom date format via Win32 DTM_SETFORMATW
         if dateFormat is not None:
@@ -3030,23 +3033,23 @@ class _NativeDateCtrl(wx.Panel):
         pass
 
     def Bind(
-        self, eventType, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY
+        self, event_type, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY
     ):
         """Route EVT_VALUE_CHANGED to this panel; others to super()."""
-        if eventType in (
+        if event_type in (
             EVT_VALUE_CHANGED,
             wx.EVT_KEY_DOWN,
             wx.EVT_KILL_FOCUS,
             wx.EVT_SET_FOCUS,
         ):
             # These fire on the inner picker — bind there
-            if eventType == EVT_VALUE_CHANGED:
+            if event_type == EVT_VALUE_CHANGED:
                 # EVT_VALUE_CHANGED fires on this panel (posted by _onDateChanged)
-                super().Bind(eventType, handler, source, id, id2)
+                super().Bind(event_type, handler, source, id, id2)
             else:
-                self._picker.Bind(eventType, handler, source, id, id2)
+                self._picker.Bind(event_type, handler, source, id, id2)
         else:
-            super().Bind(eventType, handler, source, id, id2)
+            super().Bind(event_type, handler, source, id, id2)
 
     def SetDateFormat(self, dateFormat):
         """Set display format using Win32 DTM_SETFORMATW message.
@@ -3300,7 +3303,7 @@ class DateTimeComboCtrl(wx.EvtHandler):
         return False
 
     def Bind(
-        self, eventType, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY
+        self, event_type, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY
     ):
         """Bind event handler.
 
@@ -3313,12 +3316,12 @@ class DateTimeComboCtrl(wx.EvtHandler):
         Note: EVT_CHECKBOX is NOT exposed — the checkbox is an internal
         implementation detail.
         """
-        if eventType == EVT_VALUE_CHANGED:
-            super().Bind(eventType, handler, source, id, id2)
+        if event_type == EVT_VALUE_CHANGED:
+            super().Bind(event_type, handler, source, id, id2)
         else:
-            self._checkbox.Bind(eventType, handler, source, id, id2)
-            self._dateCtrl.Bind(eventType, handler, source, id, id2)
-            self._timeCtrl.Bind(eventType, handler, source, id, id2)
+            self._checkbox.Bind(event_type, handler, source, id, id2)
+            self._dateCtrl.Bind(event_type, handler, source, id, id2)
+            self._timeCtrl.Bind(event_type, handler, source, id, id2)
 
     # --- State transitions ---
 

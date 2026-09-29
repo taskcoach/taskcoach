@@ -41,9 +41,11 @@ class Effort(baseeffort.BaseEffort, base.Object):
         super().__init__(
             task, start or date.DateTime.now(), stop, *args, **kwargs
         )
-        self.__entryMode = Attribute(entryMode, self, self._onEntryModeChanged)
+        self.__entryMode = Attribute(
+            entryMode, self, self._on_entry_mode_changed
+        )
         self.__duration = Attribute(
-            self._computeDuration(), self, self._onDurationChanged
+            self._computeDuration(), self, self._on_duration_changed
         )
 
     @patterns.eventSource
@@ -150,7 +152,7 @@ class Effort(baseeffort.BaseEffort, base.Object):
         stop = self._stop.get()
         return stop - self._start.get() if stop else None
 
-    def _onDurationChanged(self, event):
+    def _on_duration_changed(self, event):
         self.send_duration_changed()
         task = self.task()
         if task and task.hourlyFee():
@@ -198,7 +200,7 @@ class Effort(baseeffort.BaseEffort, base.Object):
     def setStart(self, startDateTime, event=None):
         self._start.set(startDateTime, event=event)
 
-    def _onStartChanged(self, event):
+    def _on_start_changed(self, event):
         event.addSource(
             self, self.getStart(), type=self.startChangedEventType()
         )
@@ -218,7 +220,7 @@ class Effort(baseeffort.BaseEffort, base.Object):
         self._previous_stop = self._stop.get()
         self._stop.set(newStop, event=event)
 
-    def _onStopChanged(self, event):
+    def _on_stop_changed(self, event):
         previous_stop = getattr(self, "_previous_stop", None)
         new_stop = self._stop.get()
         task = self.task()
@@ -284,7 +286,7 @@ class Effort(baseeffort.BaseEffort, base.Object):
     def setEntryMode(self, mode, event=None):
         self.__entryMode.set(mode, event=event)
 
-    def _onEntryModeChanged(self, event):
+    def _on_entry_mode_changed(self, event):
         event.addSource(
             self, self.entryMode(), type=self.entryModeChangedEventType()
         )

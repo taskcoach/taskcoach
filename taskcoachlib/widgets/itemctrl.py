@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-""" Base classes for controls with items, such as ListCtrl, TreeCtrl, 
-    and TreeListCtrl. """  # pylint: disable=W0105
+# Base classes for controls with items, such as ListCtrl, TreeCtrl,
+# and TreeListCtrl.
 
 
 import wx, inspect
@@ -75,10 +75,10 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
         if self._itemPopupMenu is not None:
             # Determine if this is a ListCtrl or tree control
             # ListCtrl has GetItemRect but not GetRootItem
-            isListCtrl = hasattr(self, "GetItemRect") and not hasattr(
+            is_list_ctrl = hasattr(self, "GetItemRect") and not hasattr(
                 self, "GetRootItem"
             )
-            if isListCtrl:
+            if is_list_ctrl:
                 # For ListCtrl: use EVT_LIST_ITEM_RIGHT_CLICK for item clicks
                 # (provides GetIndex() directly) and EVT_CONTEXT_MENU for empty space
                 self._attachPopupMenu(

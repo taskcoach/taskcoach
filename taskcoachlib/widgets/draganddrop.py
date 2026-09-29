@@ -415,14 +415,14 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
         hitItem, flags, dropColumn = self.HitTest(event.GetPoint())
 
         # Check if drop is outside items (left, right, above, below, or nowhere)
-        outsideFlags = (
+        outside_flags = (
             wx.TREE_HITTEST_TOLEFT
             | wx.TREE_HITTEST_TORIGHT
             | wx.TREE_HITTEST_ABOVE
             | wx.TREE_HITTEST_BELOW
             | wx.TREE_HITTEST_NOWHERE
         )
-        if not hitItem or (flags & outsideFlags):
+        if not hitItem or (flags & outside_flags):
             # Drop outside items - make root task
             dropTarget = self.GetRootItem()
         else:

@@ -896,10 +896,10 @@ class EditPlannedDurationCommand(base.BaseCommand):
 
     def undo_command(self):
         super().undo_command()
-        for item, oldPlannedDuration in zip(
+        for item, old_planned_duration in zip(
             self.items, self.__oldPlannedDurations
         ):
-            item.setPlannedDuration(oldPlannedDuration)
+            item.setPlannedDuration(old_planned_duration)
 
     def redo_command(self):
         self.do_command()

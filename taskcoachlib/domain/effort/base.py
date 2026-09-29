@@ -25,14 +25,14 @@ import weakref
 class BaseEffort(object):
     def __init__(self, task, start, stop, *args, **kwargs):
         self._task = None if task is None else weakref.ref(task)
-        self._start = Attribute(start, self, self._onStartChanged)
-        self._stop = Attribute(stop, self, self._onStopChanged)
+        self._start = Attribute(start, self, self._on_start_changed)
+        self._stop = Attribute(stop, self, self._on_stop_changed)
         super().__init__(*args, **kwargs)
 
-    def _onStartChanged(self, event):
+    def _on_start_changed(self, event):
         pass
 
-    def _onStopChanged(self, event):
+    def _on_stop_changed(self, event):
         pass
 
     def task(self):

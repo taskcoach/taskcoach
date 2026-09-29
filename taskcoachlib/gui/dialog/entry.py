@@ -254,17 +254,17 @@ class FontEntry(widgets.PanelWithBoxSizer):
     def __init__(
         self,
         parent,
-        currentFont,
-        currentColor,
-        currentBgColor=None,
+        current_font,
+        current_color,
+        current_bg_color=None,
         *args,
         **kwargs
     ):
         kwargs["orientation"] = wx.HORIZONTAL
         super().__init__(parent, *args, **kwargs)
-        self._fontCheckBox = self._createCheckBox(currentFont)
-        self._fontPicker = self._createFontPicker(
-            currentFont, currentColor, currentBgColor
+        self._fontCheckBox = self._create_check_box(current_font)
+        self._fontPicker = self._create_font_picker(
+            current_font, current_color, current_bg_color
         )
         self.add(
             self._fontCheckBox,
@@ -280,19 +280,21 @@ class FontEntry(widgets.PanelWithBoxSizer):
         )
         self.fitNoMinSize()
 
-    def _createCheckBox(self, currentFont):
+    def _create_check_box(self, current_font):
         checkBox = wx.CheckBox(self, label="")
-        checkBox.SetValue(currentFont is not None)
+        checkBox.SetValue(current_font is not None)
         checkBox.Bind(wx.EVT_CHECKBOX, self.onChecked)
         return checkBox
 
-    def _createFontPicker(self, currentFont, currentColor, currentBgColor):
+    def _create_font_picker(
+        self, current_font, current_color, current_bg_color
+    ):
         defaultFont = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         picker = widgets.FontPickerCtrl(
             self,
-            font=currentFont or defaultFont,
-            colour=currentColor,
-            bgColour=currentBgColor,
+            font=current_font or defaultFont,
+            colour=current_color,
+            bgColour=current_bg_color,
         )
         picker.Bind(wx.EVT_FONTPICKER_CHANGED, self.onFontPicked)
         return picker
@@ -358,15 +360,17 @@ class ColorEntry(widgets.PanelWithBoxSizer):
     Editor provides derived color (inherited value or system theme fallback).
     """
 
-    def __init__(self, parent, currentColor, defaultColor, *args, **kwargs):
+    def __init__(self, parent, current_color, default_color, *args, **kwargs):
         kwargs["orientation"] = wx.HORIZONTAL
         super().__init__(parent, *args, **kwargs)
-        self._defaultColor = defaultColor
+        self._defaultColor = default_color
         self._effectiveColor = (
             None  # Set via setEffectiveColor() after construction
         )
-        self._colorCheckBox = self._createCheckBox(currentColor)
-        self._colorPicker = self._createColorPicker(currentColor, defaultColor)
+        self._colorCheckBox = self._create_check_box(current_color)
+        self._colorPicker = self._create_color_picker(
+            current_color, default_color
+        )
         self.add(
             self._colorCheckBox,
             flag=wx.ALIGN_CENTER_VERTICAL | wx.RIGHT,
@@ -381,30 +385,30 @@ class ColorEntry(widgets.PanelWithBoxSizer):
         )
         self.fit()
 
-    def _createCheckBox(self, currentColor):
+    def _create_check_box(self, current_color):
         checkBox = wx.CheckBox(self, label="")
-        checkBox.SetValue(currentColor is not None)
+        checkBox.SetValue(current_color is not None)
         checkBox.Bind(wx.EVT_CHECKBOX, self.onChecked)
         return checkBox
 
-    def _createColorPicker(self, currentColor, defaultColor):
+    def _create_color_picker(self, current_color, default_color):
         # ColourPickerCtrl on Mac OS X expects a wx.Colour and fails on tuples
         # so convert the tuples to a wx.Colour:
-        if currentColor:
-            displayColor = wx.Colour(*currentColor)
+        if current_color:
+            display_color = wx.Colour(*current_color)
         else:
             # No override - show system theme initially (derived color set later)
-            if defaultColor == wx.BLACK:
-                displayColor = wx.SystemSettings.GetColour(
+            if default_color == wx.BLACK:
+                display_color = wx.SystemSettings.GetColour(
                     wx.SYS_COLOUR_WINDOWTEXT
                 )
-            elif defaultColor == wx.WHITE:
-                displayColor = wx.SystemSettings.GetColour(
+            elif default_color == wx.WHITE:
+                display_color = wx.SystemSettings.GetColour(
                     wx.SYS_COLOUR_WINDOW
                 )
             else:
-                displayColor = defaultColor
-        picker = widgets.ColourPickerCtrl(self, colour=displayColor)
+                display_color = default_color
+        picker = widgets.ColourPickerCtrl(self, colour=display_color)
         picker.Bind(wx.EVT_COLOURPICKER_CHANGED, self.onColorPicked)
         return picker
 
@@ -458,7 +462,7 @@ class IconEntry(widgets.PanelWithBoxSizer):
     def __init__(self, parent, current_icon_id, exclude=None, *args, **kwargs):
         kwargs["orientation"] = wx.HORIZONTAL
         super().__init__(parent, *args, **kwargs)
-        self._iconCheckBox = self._createCheckBox(current_icon_id)
+        self._iconCheckBox = self._create_check_box(current_icon_id)
         self._iconPicker = self._createIconPicker(
             parent, current_icon_id, exclude
         )
@@ -476,7 +480,7 @@ class IconEntry(widgets.PanelWithBoxSizer):
         )
         self.fitNoMinSize()
 
-    def _createCheckBox(self, current_icon_id):
+    def _create_check_box(self, current_icon_id):
         checkBox = wx.CheckBox(self, label="")
         checkBox.SetValue(current_icon_id != "")
         checkBox.Bind(wx.EVT_CHECKBOX, self.onChecked)
@@ -555,7 +559,7 @@ class TaskEntry(wx.Panel):
         set the selection."""
         super().__init__(parent)
         self._createInterior()
-        self._addTasksRecursively(rootTasks)
+        self._add_tasks_recursively(rootTasks)
         self.SetValue(selectedTask)
         # Bind to window close to properly clean up the popup
         self.Bind(wx.EVT_WINDOW_DESTROY, self._onDestroy)
@@ -577,18 +581,18 @@ class TaskEntry(wx.Panel):
         boxSizer.Add(self._comboTreeBox, flag=wx.EXPAND, proportion=1)
         self.SetSizerAndFit(boxSizer)
 
-    def _addTasksRecursively(self, tasks, parentItem=None):
+    def _add_tasks_recursively(self, tasks, parent_item=None):
         """Add tasks to the ComboTreeBox and then recursively add their
         subtasks."""
         for task in tasks:
-            self._addTaskRecursively(task, parentItem)
+            self._add_task_recursively(task, parent_item)
 
-    def _addTaskRecursively(self, task, parentItem=None):
+    def _add_task_recursively(self, task, parent_item=None):
         """Add a task to the ComboTreeBox and then recursively add its
         subtasks."""
-        item = self._comboTreeBox.Append(task.subject(), parent=parentItem)
+        item = self._comboTreeBox.Append(task.subject(), parent=parent_item)
         self._comboTreeBox.SetClientData(item, task)
-        self._addTasksRecursively(task.children(), item)
+        self._add_tasks_recursively(task.children(), item)
 
     def onTaskSelected(self, event):  # pylint: disable=W0613
         wx.PostEvent(self, TaskEntryEvent())

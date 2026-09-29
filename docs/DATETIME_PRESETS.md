@@ -42,7 +42,7 @@ Default date/time values for new tasks, configured in Preferences.
    This would eliminate the split between `uicommand.py` (preset) and
    `editor.py` (propose) and ensure domain invariants are always enforced.
 
-2. **Preset completion date bypasses `_onCompletionDateTimeChanged`.**
+2. **Preset completion date bypasses `_on_completion_date_time_changed`.**
    When `uicommand.py` passes `completionDateTime=...` to the Task
    constructor, the Attribute is initialized directly (no `.set()` call),
    so the callback never fires. This means recurrence is not triggered,

@@ -223,7 +223,7 @@ Publisher runs each of their subscribers isolated. A failure is logged with the
 `[SCHEDULER]` prefix, with its traceback the first time and then a
 count every 100 repeats.
 
-> **Key Principle:** MasterScheduler handles TIME-based changes (status updates, reminders, styles). Auto-completion cascades are EVENT-driven via `_onCompletionDateTimeChanged` to respect user intent when manually unchecking tasks.
+> **Key Principle:** MasterScheduler handles TIME-based changes (status updates, reminders, styles). Auto-completion cascades are EVENT-driven via `_on_completion_date_time_changed` to respect user intent when manually unchecking tasks.
 
 ---
 

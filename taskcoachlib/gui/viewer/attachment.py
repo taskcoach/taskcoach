@@ -91,9 +91,9 @@ class AttachmentViewer(
                 result.append((None, lines))
         return result
 
-    def _addAttachments(self, attachments, item, **itemDialogKwargs):
+    def _add_attachments(self, attachments, item, **item_dialog_kwargs):
         # Don't try to add attachments to attachments.
-        super()._addAttachments(attachments, None, **itemDialogKwargs)
+        super()._add_attachments(attachments, None, **item_dialog_kwargs)
 
     def domainObjectsToView(self):
         return self.attachments

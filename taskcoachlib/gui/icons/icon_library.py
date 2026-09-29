@@ -330,12 +330,14 @@ class Icon:
         # When HiDPI cursors are added, uncomment the size assignments below.
         if scaleFactor >= 1.75:
             log_step(
-                "WARNING: HiDPI cursor (32px) not yet available, falling back to 16px"
+                "WARNING: HiDPI cursor (32px) not yet available, falling "
+                "back to 16px"
             )
             size = LIST_ICON_SIZE
         elif scaleFactor >= 1.125:
             log_step(
-                "WARNING: MidDPI cursor (22px) not yet available, falling back to 16px"
+                "WARNING: MidDPI cursor (22px) not yet available, falling "
+                "back to 16px"
             )
             size = LIST_ICON_SIZE
         else:

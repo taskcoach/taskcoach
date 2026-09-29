@@ -178,7 +178,7 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
         mainSizer.Add(buttonSizer, flag=wx.ALL | wx.EXPAND, border=10)
 
         self.SetSizer(mainSizer)
-        self.Bind(wx.EVT_CLOSE, self.onClose)
+        self.Bind(wx.EVT_CLOSE, self.on_close)
 
         # Set tab order: OK first, then left-to-right, top-to-bottom
         # This ensures first Tab after unfreeze goes to OK button
@@ -264,7 +264,7 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
         else:
             self.markCompleted.Enable()
 
-    def onClose(self, event):
+    def on_close(self, event):
         # Block closing during freeze period to prevent accidental dismissal
         if self._isFrozen:
             event.Veto()

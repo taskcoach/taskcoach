@@ -89,7 +89,7 @@ class EditSubjectTestCase(CommandTestCase):
             ).items_are_new()
         )
 
-    def testModificationDateTime(self):
+    def test_modification_date_time(self):
         original = self.item1.modificationDateTime()
         self.editSubject("new", self.item1)
         changed = self.item1.modificationDateTime()
@@ -146,7 +146,7 @@ class EditDescriptionTestCase(CommandTestCase):
             ).items_are_new()
         )
 
-    def testModificationDateTime(self):
+    def test_modification_date_time(self):
         original = self.item1.modificationDateTime()
         self.edit_description("new", self.item1)
         changed = self.item1.modificationDateTime()

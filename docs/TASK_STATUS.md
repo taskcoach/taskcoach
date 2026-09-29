@@ -70,7 +70,7 @@ def completed(self):
 
 ### Example: Cascade Bug
 
-When child task is completed, `_onCompletionDateTimeChanged` fires. At that moment:
+When child task is completed, `_on_completion_date_time_changed` fires. At that moment:
 - Child's `completionDateTime` is set (accurate)
 - Child's `computedStatus()` is stale (not yet recomputed)
 - Parent calls `allChildrenCompleted()` → `child.completed()` → returns False!
@@ -632,7 +632,7 @@ result is transformed based on whether the task has children.
 
 > Full mapping tables and all callers: [ICON_PLURALIZE.md](ICON_PLURALIZE.md)
 
-After determining the icon from the priority sequence above, `pluralOrSingularIcon()` is applied.
+After determining the icon from the priority sequence above, `plural_or_singular_icon()` is applied.
 The transformation depends on whether the task has children AND whether an override is set:
 
 | Has Children | Has Override | Transformation |

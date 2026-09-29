@@ -300,7 +300,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         )
         self.Bind(aui.EVT_AUI_PANE_CLOSE, self.onCloseToolBar)
         # Detect toolbar drag-end and float-to-dock transitions to reset position
-        self.manager.Bind(aui.EVT_AUI_RENDER, self._onAuiRender)
+        self.manager.Bind(aui.EVT_AUI_RENDER, self._on_aui_render)
 
     def __on_filename_changed(self, event):
         self.__filename = event.value()
@@ -597,7 +597,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
                 pane.MinSize((-1, self.GetSize().GetHeight()))
             self.manager.Update()
 
-    def _onAuiRender(self, event):
+    def _on_aui_render(self, event):
         """Detect toolbar drag-end and float-to-dock to reset position."""
         action = getattr(self.manager, "_action", 0)
         prev_action = getattr(self, "_prev_manager_action", 0)

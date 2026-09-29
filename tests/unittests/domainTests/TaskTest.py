@@ -289,12 +289,14 @@ class DefaultTaskStateTest(
                 self.task.plannedStartDateTime(recursive=recursive),
             )
 
-    def testSetPlannedStartDateTimeNotification(self):
+    def test_set_planned_start_date_time_notification(self):
         self.record_changes(task.Task.plannedStartDateTimeChangedEventType())
         self.task.set_planned_start_date_time(self.yesterday)
         self.assertEqual((self.yesterday, self.task), self.changes[0])
 
-    def testSetPlannedStartDateTimeUnchangedCausesNoNotification(self):
+    def test_set_planned_start_date_time_unchanged_causes_no_notification(
+        self,
+    ):
         self.record_changes(task.Task.plannedStartDateTimeChangedEventType())
         self.task.set_planned_start_date_time(self.task.plannedStartDateTime())
         self.assertFalse(self.changes)
@@ -325,12 +327,12 @@ class DefaultTaskStateTest(
                 self.task.actualStartDateTime(recursive=recursive),
             )
 
-    def testSetActualStartDateTimeNotification(self):
+    def test_set_actual_start_date_time_notification(self):
         self.record_changes(task.Task.actualStartDateTimeChangedEventType())
         self.task.set_actual_start_date_time(self.yesterday)
         self.assertEqual((self.yesterday, self.task), self.changes[0])
 
-    def testSetActualStartDateTimeUnchangedCausesNoNotification(self):
+    def test_set_actual_start_date_time_unchanged_causes_no_notification(self):
         self.record_changes(task.Task.actualStartDateTimeChangedEventType())
         self.task.set_actual_start_date_time(self.task.actualStartDateTime())
         self.assertFalse(self.changes)
@@ -342,12 +344,12 @@ class DefaultTaskStateTest(
                 self.tomorrow, self.task.dueDateTime(recursive=recursive)
             )
 
-    def testSetDueDateTimeNotification(self):
+    def test_set_due_date_time_notification(self):
         self.record_changes(task.Task.dueDateTimeChangedEventType())
         self.task.set_due_date_time(self.tomorrow)
         self.assertEqual((self.tomorrow, self.task), self.changes[0])
 
-    def testSetDueDateTimeUnchangedCausesNoNotification(self):
+    def test_set_due_date_time_unchanged_causes_no_notification(self):
         self.record_changes(task.Task.dueDateTimeChangedEventType())
         self.task.set_due_date_time(self.task.dueDateTime())
         self.assertFalse(self.changes)
@@ -397,13 +399,13 @@ class DefaultTaskStateTest(
                 now, self.task.completionDateTime(recursive=recursive)
             )
 
-    def testSetCompletionDateTimeNotification(self):
+    def test_set_completion_date_time_notification(self):
         self.record_changes(task.Task.completionDateTimeChangedEventType())
         now = date.Now()
         self.task.set_completion_date_time(now)
         self.assertEqual([(now, self.task)], self.changes)
 
-    def testSetCompletionDateTimeUnchangedCausesNoNotification(self):
+    def test_set_completion_date_time_unchanged_causes_no_notification(self):
         self.record_changes(task.Task.completionDateTimeChangedEventType())
         self.task.set_completion_date_time(date.DateTime())
         self.assertFalse(self.changes)
@@ -433,7 +435,7 @@ class DefaultTaskStateTest(
         self.task.setPercentageComplete(100)
         self.assertTrue(self.task.completed())
 
-    def testPercentageCompleteNotificationViaCompletionDateTime(self):
+    def test_percentage_complete_notification_via_completion_date_time(self):
         self.record_changes(task.Task.percentageCompleteChangedEventType())
         self.task.set_completion_date_time()
         self.assertEqual([(100, self.task)], self.changes)
@@ -467,13 +469,13 @@ class DefaultTaskStateTest(
         self.task.set_budget(budget)
         self.assertEqual(budget, self.task.budget())
 
-    def testSetBudgetNotification(self):
+    def test_set_budget_notification(self):
         self.record_changes(task.Task.budgetChangedEventType())
         budget = date.ONE_HOUR
         self.task.set_budget(budget)
         self.assertEqual([(budget, self.task)], self.changes)
 
-    def testSetBudgetUnchangedCausesNoNotification(self):
+    def test_set_budget_unchanged_causes_no_notification(self):
         self.record_changes(task.Task.budgetChangedEventType())
         self.task.set_budget(self.task.budget())
         self.assertFalse(self.changes)
@@ -500,12 +502,12 @@ class DefaultTaskStateTest(
         self.task.set_fixed_fee(1000)
         self.assertEqual(1000, self.task.fixedFee())
 
-    def testSetFixedFeeUnchangedCausesNoNotification(self):
+    def test_set_fixed_fee_unchanged_causes_no_notification(self):
         self.record_changes(task.Task.fixedFeeChangedEventType())
         self.task.set_fixed_fee(self.task.fixedFee())
         self.assertFalse(self.changes)
 
-    def testSetFixedFeeCausesNotification(self):
+    def test_set_fixed_fee_causes_notification(self):
         self.record_changes(task.Task.fixedFeeChangedEventType())
         self.task.set_fixed_fee(1000)
         self.assertEqual([(1000, self.task)], self.changes)
@@ -542,7 +544,7 @@ class DefaultTaskStateTest(
         self.task.set_hourly_fee(100)
         self.assertEqual(100, self.task.hourlyFee())
 
-    def testSetHourlyFeeCausesNotification(self):
+    def test_set_hourly_fee_causes_notification(self):
         self.record_changes(task.Task.hourlyFeeChangedEventType())
         self.task.set_hourly_fee(100)
         self.assertEqual([(100, self.task)], self.changes)
@@ -551,7 +553,7 @@ class DefaultTaskStateTest(
         self.task.set_recurrence(date.Recurrence("weekly"))
         self.assertEqual(date.Recurrence("weekly"), self.task.recurrence())
 
-    def testSetRecurrenceCausesNotification(self):
+    def test_set_recurrence_causes_notification(self):
         self.registerObserver(task.Task.recurrenceChangedEventType())
         self.task.set_recurrence(date.Recurrence("weekly"))
         self.assertEqual([{self.task}], [e.sources() for e in self.events])
@@ -657,14 +659,14 @@ class DefaultTaskStateTest(
         )
         self.assertEqual(self.yesterday, child.actualStartDateTime())
 
-    def testAddChildWithBudgetCausesBudgetNotification(self):
+    def test_add_child_with_budget_causes_budget_notification(self):
         child = task.Task()
         child.set_budget(date.TimeDelta(100))
         self.record_changes(task.Task.budgetChangedEventType())
         self.task.addChild(child)
         self.assertEqual([(date.TimeDelta(), self.task)], self.changes)
 
-    def testAddChildWithoutBudgetCausesNoBudgetNotification(self):
+    def test_add_child_without_budget_causes_no_budget_notification(self):
         self.record_changes(task.Task.budgetChangedEventType())
         child = task.Task()
         self.task.addChild(child)
@@ -815,7 +817,7 @@ class DefaultTaskStateTest(
         self.task.add_prerequisites(prerequisites)
         self.assertEqual(prerequisites, self.task.prerequisites())
 
-    def testAddPrerequisiteCausesNotification(self):
+    def test_add_prerequisite_causes_notification(self):
         event_type = task.Task.prerequisitesChangedEventType()
         self.registerObserver(event_type)
         self.task.add_prerequisites([task.Task()])
@@ -872,7 +874,7 @@ class DefaultTaskStateTest(
         self.task.add_dependencies(dependencies)
         self.assertEqual(dependencies, self.task.dependencies())
 
-    def testAddDependencyCausesNotification(self):
+    def test_add_dependency_causes_notification(self):
         event_type = task.Task.dependenciesChangedEventType()
         self.registerObserver(event_type)
         self.task.add_dependencies([task.Task()])
@@ -1280,7 +1282,7 @@ class CompletedTaskTest(TaskTestCase, CommonTaskTestsMixin):
         self.assertEqual(date.DateTime(), self.task.completionDateTime())
         self.assertEqual(99, self.task.percentageComplete())
 
-    def testPercentageCompleteNotification(self):
+    def test_percentage_complete_notification(self):
         self.record_changes(task.Task.percentageCompleteChangedEventType())
         self.task.set_completion_date_time(date.DateTime.max)
         self.assertEqual([(0, self.task)], self.changes)
@@ -1649,13 +1651,15 @@ class TaskWithChildTest(
         self.task1.removeChild("Not a child")
         self.assertFalse(self.events)
 
-    def testRemoveChildWithBudgetCausesBudgetNotification(self):
+    def test_remove_child_with_budget_causes_budget_notification(self):
         self.task1_1.set_budget(date.TimeDelta(hours=100))
         self.record_changes(task.Task.budgetChangedEventType())
         self.task1.removeChild(self.task1_1)
         self.assertEqual([(date.TimeDelta(), self.task1)], self.changes)
 
-    def testRemoveChildWithBudgetAndEffortCausesBudgetNotification(self):
+    def test_remove_child_with_budget_and_effort_causes_budget_notification(
+        self,
+    ):
         self.task1_1.set_budget(date.TimeDelta(hours=10))
         self.task1_1.addEffort(
             effort.Effort(
@@ -1668,7 +1672,7 @@ class TaskWithChildTest(
         self.task1.removeChild(self.task1_1)
         self.assertEqual([(date.TimeDelta(), self.task1)], self.changes)
 
-    def testRemoveChildWithoutBudgetCausesNoBudgetNotification(self):
+    def test_remove_child_without_budget_causes_no_budget_notification(self):
         self.record_changes(task.Task.budgetChangedEventType())
         self.task1.removeChild(self.task1_1)
         self.assertFalse(self.changes)
@@ -1788,7 +1792,7 @@ class TaskWithChildTest(
         self.task1_1.set_due_date_time(now)
         self.assertEqual(now, self.task1.dueDateTime(recursive=True))
 
-    def testNotificationWhenRecursiveDueDateTimeChanges(self):
+    def test_notification_when_recursive_due_date_time_changes(self):
         self.record_changes(task.Task.dueDateTimeChangedEventType())
         now = date.Now()
         self.task1_1.set_due_date_time(now)
@@ -1837,7 +1841,7 @@ class TaskWithChildTest(
             places=2,
         )
 
-    def testNotificationWhenRecursivePlannedStartDateTimeChanges(self):
+    def test_notification_when_recursive_planned_start_date_time_changes(self):
         self.record_changes(task.Task.plannedStartDateTimeChangedEventType())
         now = date.Now()
         self.task1_1.set_planned_start_date_time(now)
@@ -1858,7 +1862,7 @@ class TaskWithChildTest(
             places=2,
         )
 
-    def testNotificationWhenRecursiveActualStartDateTimeChanges(self):
+    def test_notification_when_recursive_actual_start_date_time_changes(self):
         self.record_changes(task.Task.actualStartDateTimeChangedEventType())
         now = date.Now()
         self.task1_1.set_actual_start_date_time(now)
@@ -1881,7 +1885,7 @@ class TaskWithChildTest(
             self.tomorrow, self.task1.completionDateTime(recursive=True)
         )
 
-    def testNotificationWhenRecursiveCompletionDateTimeChanges(self):
+    def test_notification_when_recursive_completion_date_time_changes(self):
         self.task1_1.set_completion_date_time(self.yesterday)
         self.record_changes(task.Task.completionDateTimeChangedEventType())
         now = date.Now()
@@ -1896,7 +1900,7 @@ class TaskWithChildTest(
         self.task1.set_completion_date_time(now)
         self.assertEqual(now, self.task1.completionDateTime(recursive=True))
 
-    def testNotificationWhenRecursiveReminderDateTimeChanges(self):
+    def test_notification_when_recursive_reminder_date_time_changes(self):
         self.record_changes(task.Task.reminderChangedEventType())
         now = date.Now()
         self.task1_1.set_reminder(now)
@@ -1954,12 +1958,12 @@ class TaskWithChildTest(
             date.TimeDelta(), self.task.budgetLeft(recursive=True)
         )
 
-    def testBudgetNotification_WhenChildBudgetChanges(self):
+    def test_budget_notification_when_child_budget_changes(self):
         self.record_changes(task.Task.budgetChangedEventType())
         self.task1_1.set_budget(date.ONE_HOUR)
         self.assertTrue((date.ONE_HOUR, self.task1) in self.changes)
 
-    def testBudgetNotification_WhenRemovingChildWithBudget(self):
+    def test_budget_notification_when_removing_child_with_budget(self):
         self.task1_1.set_budget(date.ONE_HOUR)
         self.record_changes(task.Task.budgetChangedEventType())
         self.task.removeChild(self.task1_1)
@@ -2075,7 +2079,7 @@ class TaskWithChildTest(
             set([(False, self.task), (False, self.task1_1)]), set(events)
         )
 
-    def testSetFixedFeeOfChild(self):
+    def test_set_fixed_fee_of_child(self):
         self.record_changes(task.Task.fixedFeeChangedEventType())
         self.task1_1.set_fixed_fee(1000)
         self.assertTrue((1000, self.task1) in self.changes)
@@ -2203,7 +2207,9 @@ class TaskWithChildTest(
         self.task1_1.setPercentageComplete(50)
         self.assertEqual(25, self.task.percentageComplete(recursive=True))
 
-    def testPercentageCompletedNotificationWhenChildPercentageChanges(self):
+    def test_percentage_completed_notification_when_child_percentage_changes(
+        self,
+    ):
         self.settings.setboolean(
             "behavior", "markparentcompletedwhenallchildrencompleted", True
         )
@@ -2213,7 +2219,7 @@ class TaskWithChildTest(
             {(50, self.task1_1), (50, self.task)}, set(self.changes)
         )
 
-    def testPercentageCompletedNotificationWhenMarkCompletedSettingChanges(
+    def test_percentage_notification_on_mark_completed_setting_change(
         self,
     ):
         self.settings.setboolean(
@@ -2261,7 +2267,7 @@ class TaskWithChildTest(
         self.task.add_prerequisites([prerequisite])
         self.assertFalse(self.task1_1.active())
 
-    def testAddingPrerequisiteToParentRecomputesChildAppearance(self):
+    def test_adding_prerequisite_to_parent_recomputes_child_appearance(self):
         # First make sure the icon is cached:
         self.assertEqual(
             task.active.getBitmap(self.settings),
@@ -2274,7 +2280,7 @@ class TaskWithChildTest(
             test.styled(self.task1_1).shown_icon_id(),
         )
 
-    def testSettingPrerequisitesOfParentRecomputesChildAppearance(self):
+    def test_setting_prerequisites_of_parent_recomputes_child_appearance(self):
         # First make sure the icon is cached:
         self.assertEqual(
             task.active.getBitmap(self.settings),
@@ -2287,7 +2293,9 @@ class TaskWithChildTest(
             test.styled(self.task1_1).shown_icon_id(),
         )
 
-    def testRemovingPrerequisiteFromParentRecomputesChildAppearance(self):
+    def test_removing_prerequisite_from_parent_recomputes_child_appearance(
+        self,
+    ):
         prerequisite = task.Task()
         self.task.add_prerequisites([prerequisite])
         # First make sure the icon is cached:
@@ -2302,7 +2310,9 @@ class TaskWithChildTest(
             test.styled(self.task1_1).shown_icon_id(),
         )
 
-    def testCompletingPrerequisiteOfParentRecomputesChildAppearance(self):
+    def test_completing_prerequisite_of_parent_recomputes_child_appearance(
+        self,
+    ):
         prerequisite = task.Task()
         self.task.add_prerequisites([prerequisite])
         prerequisite.add_dependencies([self.task])
@@ -2780,7 +2790,7 @@ class TaskReminderTestCase(TaskTestCase, CommonTaskTestsMixin):
         self.task.snooze_reminder(snoozePeriod, now=lambda: now)
         self.assertReminder(now + snoozePeriod)
 
-    def testSnoozeWithZeroTimeDelta(self):
+    def test_snooze_with_zero_time_delta(self):
         self.task.snooze_reminder(date.TimeDelta())
         # Not set is the latest date (docs/ATTRIBUTE_PATTERN.md)
         self.assertReminder(date.DateTime())
@@ -2816,13 +2826,13 @@ class TaskReminderTestCase(TaskTestCase, CommonTaskTestsMixin):
         self.task.set_reminder(date.DateTime.max)
         self.assertReminder(date.DateTime())
 
-    def testTaskNotifiesObserverOfNewReminder(self):
+    def test_task_notifies_observer_of_new_reminder(self):
         self.record_changes(task.Task.reminderChangedEventType())
         newReminder = self.initialReminder() + date.ONE_SECOND
         self.task.set_reminder(newReminder)
         self.assertEqual([(newReminder, self.task)], self.changes)
 
-    def testNewReminderCancelsPreviousReminder(self):
+    def test_new_reminder_cancels_previous_reminder(self):
         self.record_changes(task.Task.reminderChangedEventType())
         self.task.set_reminder()
         self.assertEqual([(date.DateTime(), self.task)], self.changes)
@@ -2879,7 +2889,7 @@ class MarkTaskCompletedWhenAllChildrenCompletedSettingIsTrueFixture(
             False, self.task.shouldMarkCompletedWhenAllChildrenCompleted()
         )
 
-    def testSetSettingCausesNotification(self):
+    def test_set_setting_causes_notification(self):
         cls = task.Task
         self.record_changes(
             cls.shouldMarkCompletedWhenAllChildrenCompletedChangedEventType()
@@ -2887,7 +2897,7 @@ class MarkTaskCompletedWhenAllChildrenCompletedSettingIsTrueFixture(
         self.task.set_should_mark_completed_when_all_children_completed(False)
         self.assertEqual([(False, self.task)], self.changes)
 
-    def testSetSettingCausesPercentageCompleteNotification(self):
+    def test_set_setting_causes_percentage_complete_notification(self):
         self.record_changes(task.Task.percentageCompleteChangedEventType())
         # The calculation of the total percentage complete depends on whether
         # a task is marked completed when all its children are completed
@@ -3176,7 +3186,7 @@ class TaskWithPrerequisite(TaskTestCase):
         self.task.remove_prerequisites([task.Task()])
         self.assertTrue(self.prerequisite in self.task.prerequisites())
 
-    def testRemovePrerequisiteNotification(self):
+    def test_remove_prerequisite_notification(self):
         event_type = task.Task.prerequisitesChangedEventType()
         self.registerObserver(event_type)
         self.task.remove_prerequisites([self.prerequisite])
@@ -3190,7 +3200,7 @@ class TaskWithPrerequisite(TaskTestCase):
     def testDontCopyPrerequisites(self):
         self.assertFalse(self.prerequisite in self.task.copy().prerequisites())
 
-    def testPrerequisiteSubjectChangedNotification(self):
+    def test_prerequisite_subject_changed_notification(self):
         self.prerequisite.add_dependencies([self.task])
         event_type = task.Task.prerequisitesChangedEventType()
         self.registerObserver(event_type)
@@ -3230,7 +3240,7 @@ class TaskWithDependency(TaskTestCase):
         self.task.remove_dependencies([task.Task()])
         self.assertTrue(self.dependency in self.task.dependencies())
 
-    def testRemoveDependencyNotification(self):
+    def test_remove_dependency_notification(self):
         event_type = task.Task.dependenciesChangedEventType()
         self.registerObserver(event_type)
         self.task.remove_dependencies([self.dependency])
@@ -3244,7 +3254,7 @@ class TaskWithDependency(TaskTestCase):
     def testDontCopyDependencies(self):
         self.assertFalse(self.dependency in self.task.copy().dependencies())
 
-    def testDependencySubjectChangedNotification(self):
+    def test_dependency_subject_changed_notification(self):
         self.dependency.add_prerequisites([self.task])
         event_type = task.Task.dependenciesChangedEventType()
         self.registerObserver(event_type)

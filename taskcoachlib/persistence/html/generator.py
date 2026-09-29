@@ -111,28 +111,28 @@ class Viewer2HTMLConverter(object):
     def html(self, cssFilename, columns, selectionOnly, level=0):
         """Returns all HTML, consisting of header and body."""
         printing = not cssFilename
-        htmlContent = self.htmlHeader(cssFilename, level + 1) + self.htmlBody(
-            columns, selectionOnly, printing, level + 1
-        )
-        return self.wrap(htmlContent, "html", level)
+        html_content = self.html_header(
+            cssFilename, level + 1
+        ) + self.html_body(columns, selectionOnly, printing, level + 1)
+        return self.wrap(html_content, "html", level)
 
-    def htmlHeader(self, cssFilename, level):
+    def html_header(self, cssFilename, level):
         """Return the HTML header <head>."""
-        htmlHeaderContent = self.htmlHeaderContent(cssFilename, level + 1)
-        return self.wrap(htmlHeaderContent, "head", level)
+        html_header_content = self.html_header_content(cssFilename, level + 1)
+        return self.wrap(html_header_content, "head", level)
 
-    def htmlHeaderContent(self, cssFilename, level):
+    def html_header_content(self, cssFilename, level):
         """Returns the HTML header section, containing meta tag, title, and
         optional link to a CSS stylesheet."""
-        htmlHeaderContent = [
+        html_header_content = [
             self.indent(self.metaTag, level),
             self.wrap(self.viewer.title(), "title", level, oneLine=True),
         ] + self.style(level, not cssFilename)
         if cssFilename:
-            htmlHeaderContent.append(
+            html_header_content.append(
                 self.indent(self.cssLink % cssFilename, level)
             )
-        return htmlHeaderContent
+        return html_header_content
 
     def style(self, level, includeAllCSS):
         """Add a style section that contains the alignment for the columns. If
@@ -159,7 +159,7 @@ class Viewer2HTMLConverter(object):
             )
         return self.wrap(styleContent, "style", level, type="text/css")
 
-    def htmlBody(self, columns, selectionOnly, printing, level):
+    def html_body(self, columns, selectionOnly, printing, level):
         """Returns the HTML body section, containing one table with all
         visible data."""
         htmlBodyContent = []
@@ -175,36 +175,36 @@ class Viewer2HTMLConverter(object):
     def table(self, columns, selectionOnly, printing, level):
         """Returns the table, consisting of caption, table header and table
         body."""
-        tableContent = [] if printing else [self.tableCaption(level + 1)]
-        tableContent.extend(
-            self.tableHeader(columns, printing, level + 1)
-            + self.tableBody(columns, selectionOnly, printing, level + 1)
+        table_content = [] if printing else [self.table_caption(level + 1)]
+        table_content.extend(
+            self.table_header(columns, printing, level + 1)
+            + self.table_body(columns, selectionOnly, printing, level + 1)
         )
         attributes = dict(id="table")
         if printing:
             attributes["border"] = "1"
-        return self.wrap(tableContent, "table", level, **attributes)
+        return self.wrap(table_content, "table", level, **attributes)
 
-    def tableCaption(self, level):
+    def table_caption(self, level):
         """Returns the table caption, based on the viewer title."""
         return self.wrap(self.viewer.title(), "caption", level, oneLine=True)
 
-    def tableHeader(self, columns, printing, level):
+    def table_header(self, columns, printing, level):
         """Returns the table header section <thead> containing the header
         row with the column headers."""
-        tableHeaderContent = self.headerRow(columns, printing, level + 1)
-        return self.wrap(tableHeaderContent, "thead", level)
+        table_header_content = self.header_row(columns, printing, level + 1)
+        return self.wrap(table_header_content, "thead", level)
 
-    def headerRow(self, columns, printing, level):
+    def header_row(self, columns, printing, level):
         """Returns the header row <tr> for the table."""
         headerRowContent = []
         for column in columns:
             headerRowContent.append(
-                self.headerCell(column, printing, level + 1)
+                self.header_cell(column, printing, level + 1)
             )
         return self.wrap(headerRowContent, "tr", level, **{"class": "header"})
 
-    def headerCell(self, column, printing, level):
+    def header_cell(self, column, printing, level):
         """Returns a table header <th> for the specific column."""
         header = column.header() or "&nbsp;"
         name = column.name()
@@ -215,7 +215,7 @@ class Viewer2HTMLConverter(object):
                 header = self.wrap(header, "u", level + 1, oneLine=True)
         return self.wrap(header, "th", level, oneLine=True, **attributes)
 
-    def tableBody(self, columns, selectionOnly, printing, level):
+    def table_body(self, columns, selectionOnly, printing, level):
         """Returns the table body <tbody>."""
         tree = self.viewer.is_tree_viewer()
         self.count = 0
@@ -225,11 +225,11 @@ class Viewer2HTMLConverter(object):
                 continue
             self.count += 1
             tableBodyContent.extend(
-                self.bodyRow(item, columns, tree, printing, level + 1)
+                self.body_row(item, columns, tree, printing, level + 1)
             )
         return self.wrap(tableBodyContent, "tbody", level)
 
-    def bodyRow(self, item, columns, tree, printing, level):
+    def body_row(self, item, columns, tree, printing, level):
         """Returns a <tr> containing the values of item for the
         visibleColumns."""
         fg_color = item.shown_fg_color()
@@ -242,30 +242,30 @@ class Viewer2HTMLConverter(object):
                 item, column, indent=not bodyRowContent and tree
             )
             bodyRowContent.append(
-                self.bodyCell(renderedItem, column, printing, level + 1)
+                self.body_cell(renderedItem, column, printing, level + 1)
             )
         styles = []
         if fg_color:
-            styles.append("color: %s" % self.cssColor(fg_color))
+            styles.append("color: %s" % self.css_color(fg_color))
         if bg_color:
-            styles.append("background: %s" % self.cssColor(bg_color))
+            styles.append("background: %s" % self.css_color(bg_color))
         attributes = dict()
         if styles:
             attributes["style"] = "; ".join(styles)
         return self.wrap(bodyRowContent, "tr", level, **attributes)
 
     @staticmethod
-    def cssColor(wxColor):
+    def css_color(wx_color):
         """Convert a wx.Colour to hex (#RRGGBB) format for HTML attributes."""
-        if isinstance(wxColor, tuple):
-            wxColor = wx.Colour(*wxColor)
+        if isinstance(wx_color, tuple):
+            wx_color = wx.Colour(*wx_color)
         return "#%02x%02x%02x" % (
-            wxColor.Red(),
-            wxColor.Green(),
-            wxColor.Blue(),
+            wx_color.Red(),
+            wx_color.Green(),
+            wx_color.Blue(),
         )
 
-    def bodyCell(self, item, column, printing, level):
+    def body_cell(self, item, column, printing, level):
         """Return a <td> for the item/column combination."""
         attributes = {"class": column.name()}
         if printing and column.alignment() == wx.LIST_FORMAT_RIGHT:

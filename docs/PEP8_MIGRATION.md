@@ -61,4 +61,6 @@ Before renaming any non-wx CamelCase name:
 - **Fix:** `E501` (except unbreakable URLs/strings), `W505` (comments
   and docstrings over 72), `E1xx`/`E3xx`, `F401`/`F402`, blank-line rules.
 - **Expected / ignore:** `N802/N803/N812/N813` on wx names; `W503/W504`
-  (black's preferred operator-wrapping style).
+  (black's preferred operator-wrapping style); `W291` inside a
+  translatable string (the text is the translation key); `F401` on a
+  package `__init__.py` re-export.

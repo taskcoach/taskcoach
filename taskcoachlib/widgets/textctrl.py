@@ -244,7 +244,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
             self.SetAnchor(0)
 
         # Initialize spell checking
-        self._initSpellCheck()
+        self._init_spell_check()
 
         # URL handling
         try:
@@ -418,7 +418,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         self.SetHotspotActiveForeground(True, wx.BLUE)
         self.Bind(stc.EVT_STC_HOTSPOT_CLICK, self._onHotspotClick)
 
-    def _initSpellCheck(self):
+    def _init_spell_check(self):
         """Initialize spell checking."""
         if not ENCHANT_AVAILABLE or not self._spell_check_requested:
             return

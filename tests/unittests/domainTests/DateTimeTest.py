@@ -65,12 +65,12 @@ class DateTimeTest(test.TestCase):
         sunday = date.DateTime(2011, 7, 24, 8, 39, 10)
         self.assertEqual(startOfWorkWeek, sunday.startOfWorkWeek())
 
-    def testEndOfWorkWeek(self):
+    def test_end_of_work_week(self):
         end_of_work_week = date.DateTime(2010, 5, 7, 23, 59, 59)
         midweek = date.DateTime(2010, 5, 5, 12, 30, 15)
         self.assertEqual(end_of_work_week, midweek.endOfWorkWeek())
 
-    def testEndOfWorkWeek_OnSaturday(self):
+    def test_end_of_work_week_on_saturday(self):
         end_of_work_week = date.DateTime(2010, 5, 7, 23, 59, 59)
         midweek = date.DateTime(2010, 5, 1, 12, 30, 15)
         self.assertEqual(end_of_work_week, midweek.endOfWorkWeek())

@@ -73,7 +73,7 @@ the element, not written as an empty value.
 
 ### Task Node
 
-`taskNode()` — lines 144-199:
+`task_node()` — lines 144-199:
 
 | Line | XML Attribute | Skip Condition | Type |
 |------|--------------|----------------|------|
@@ -99,7 +99,7 @@ the reader gives it back for a missing attribute.
 
 ### Recurrence Node
 
-`recurrenceNode()` — lines 201-217:
+`recurrence_node()` — lines 201-217:
 
 | Line | XML Attribute | Skip Condition | Type |
 |------|--------------|----------------|------|
@@ -113,7 +113,7 @@ the reader gives it back for a missing attribute.
 
 ### Effort Node
 
-`effortNode()` — lines 219-239:
+`effort_node()` — lines 219-239:
 
 | Line | XML Attribute | Skip Condition | Type |
 |------|--------------|----------------|------|
@@ -122,7 +122,7 @@ the reader gives it back for a missing attribute.
 
 ### Category Node
 
-`categoryNode()`:
+`category_node()`:
 
 | XML Attribute | Skip Condition | Type |
 |--------------|----------------|------|
@@ -132,7 +132,7 @@ the reader gives it back for a missing attribute.
 
 ### Base Node (All Objects)
 
-`__baseNode()` / `baseNode()` / `baseCompositeNode()` — lines 286-353:
+`__base_node()` / `base_node()` / `base_composite_node()` — lines 286-353:
 
 | Line | XML Attribute | Skip Condition | Type |
 |------|--------------|----------------|------|

@@ -226,7 +226,7 @@ def _getFromCategories(object_ref, effective_getter):
 _OWN_STATE_SOURCES = ("[Status]", "[Tracking]")
 
 
-def _getFromParent(object_ref, obj_type, effective_getter):
+def _get_from_parent(object_ref, obj_type, effective_getter):
     """Get a style value from the object's parent.
 
     Returns (value, source) or (None, None).
@@ -277,7 +277,9 @@ def computeDerived(object_ref, field_type):
                 source = src
 
         if value is None:
-            value, src = _getFromParent(object_ref, obj_type, effective_getter)
+            value, src = _get_from_parent(
+                object_ref, obj_type, effective_getter
+            )
             if src:
                 source = src
 
@@ -299,13 +301,15 @@ def computeDerived(object_ref, field_type):
             source = src
 
         if value is None:
-            value, src = _getFromParent(object_ref, obj_type, effective_getter)
+            value, src = _get_from_parent(
+                object_ref, obj_type, effective_getter
+            )
             if src:
                 source = src
 
     elif obj_type == "Category":
         # Category sources: parent only
-        value, src = _getFromParent(object_ref, obj_type, effective_getter)
+        value, src = _get_from_parent(object_ref, obj_type, effective_getter)
         if src:
             source = src
 

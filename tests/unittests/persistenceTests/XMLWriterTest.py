@@ -210,7 +210,7 @@ class XMLWriterTest(test.TestCase):
         )
         self.expect_not_in_xml("<description>")
 
-    def testActiveEffort(self):
+    def test_active_effort(self):
         self.task.addEffort(
             effort.Effort(self.task, date.DateTime(2004, 1, 1))
         )

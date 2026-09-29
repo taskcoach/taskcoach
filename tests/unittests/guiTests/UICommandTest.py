@@ -546,7 +546,7 @@ class OpenAllAttachmentsTest(test.TestCase):
             self.errorKwargs,
         )
 
-    def testMultipleAttachments(self):
+    def test_multiple_attachments(self):
         class DummyAttachment(object):
             def __init__(self):
                 self.openCalled = False

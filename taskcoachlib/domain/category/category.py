@@ -201,10 +201,10 @@ class Category(
             self, self.isFiltered(), type=self.filterChangedEventType()
         )
 
-    def _onEffectiveIconChanged(self, event):
+    def _on_effective_icon_changed(self, event):
         """Its items show this icon in their Category icons column, so
         the event names them too."""
-        super()._onEffectiveIconChanged(event)
+        super()._on_effective_icon_changed(event)
         for categorizable in self.categorizables():
             event.addSource(
                 categorizable,

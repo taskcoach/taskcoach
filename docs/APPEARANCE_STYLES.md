@@ -22,7 +22,7 @@
   - [computeDerived](#computederived)
   - [computeEffective](#computeeffective)
   - [_getFromCategories](#_getfromcategories)
-  - [_getFromParent](#_getfromparent)
+  - [_get_from_parent](#_get_from_parent)
 - [SSOT Accessors (base Object)](#ssot-accessors-base-object)
 - [Appearance Tab (Editor)](#appearance-tab-editor)
 - [File Reference](#file-reference)
@@ -123,7 +123,7 @@ Icons have type-specific defaults applied in `computeDerived` (see
 Sources checked in order (first non-system-theme value wins):
 
 1. **Categories** - sorted by `stylePriority` descending (via `_getFromCategories`)
-2. **Parent task** - `parent.effectiveXxx()` (via `_getFromParent`), unless
+2. **Parent task** - `parent.effectiveXxx()` (via `_get_from_parent`), unless
    it comes from the parent's own status or tracking: each task shows its own
 3. **Status** - `status_icon_id()`, `statusFgColor()`, etc. from `compute_stored_status()`
 
@@ -134,7 +134,7 @@ Source labels: `[Category] name`, `[Task] name`, `[Status] active/completed/...`
 Sources checked in order:
 
 1. **Categories** - sorted by `stylePriority` descending (via `_getFromCategories`)
-2. **Parent note** - `parent.effectiveXxx()` (via `_getFromParent`)
+2. **Parent note** - `parent.effectiveXxx()` (via `_get_from_parent`)
 
 Source labels: `[Category] name`, `[Note] name`
 
@@ -144,7 +144,7 @@ Notes are categorizable (`CategorizableCompositeObject`), same as Tasks.
 
 Sources checked in order:
 
-1. **Parent category** - `parent.effectiveXxx()` (via `_getFromParent`)
+1. **Parent category** - `parent.effectiveXxx()` (via `_get_from_parent`)
 
 Source label: `[Category] name`
 
@@ -235,7 +235,7 @@ Shared helper for Task and Note derivation. Gets the object's categories,
 sorts by `stylePriority` descending, returns `(value, source)` from the first
 category with a non-system-theme effective value.
 
-### _getFromParent
+### _get_from_parent
 
 Shared helper for Task, Note, and Category derivation. Checks the object's
 parent for a non-system-theme effective value, returns `(value, source)`. A

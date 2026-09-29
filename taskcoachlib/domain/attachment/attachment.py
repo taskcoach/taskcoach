@@ -81,7 +81,7 @@ class Attachment(base.Object, NoteOwner):
             filename = os.path.basename(location)
             kwargs["subject"] = os.path.splitext(filename)[0] or location
         super().__init__(*args, **kwargs)
-        self.__location = Attribute(location, self, self._onLocationChanged)
+        self.__location = Attribute(location, self, self._on_location_changed)
         # Note: Effective appearance is computed by the master loop
 
     def data(self):
@@ -98,7 +98,7 @@ class Attachment(base.Object, NoteOwner):
     def setLocation(self, location, event=None):
         self.__location.set(location, event=event)
 
-    def _onLocationChanged(self, event):
+    def _on_location_changed(self, event):
         event.addSource(self, type=self.locationChangedEventType())
 
     @classmethod

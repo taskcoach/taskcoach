@@ -369,8 +369,6 @@ class TaskFile(patterns.Observer):
             self.mark_clean()
 
     def on_file_changed(self):
-        import wx  # Not really clean but we're in another thread...
-
         # Checked on the main thread, after any save of ours finished
         patterns.later.soon(self, self.check_disk)
 

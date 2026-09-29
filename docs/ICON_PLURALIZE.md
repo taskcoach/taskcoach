@@ -47,7 +47,7 @@ separate open-folder icons redundant. The `itemImageOpen` dict and
 ## Pluralization Logic
 
 ```
-pluralOrSingularIcon(myIcon, native=True)
+plural_or_singular_icon(myIcon, native=True)
     native = True  → icon was inherited (not set directly on this object)
     native = False → icon was explicitly set by the user on this object
 ```
@@ -80,6 +80,6 @@ When a user sets `nuvola_apps_preferences-desktop-user` on a parent category:
 - Child categories without children show `nuvola_apps_preferences-desktop-user`
 
 This happens because categories use the same `CompositeObject.icon()` path as
-tasks, which applies `pluralOrSingularIcon()`. For tasks this makes sense
+tasks, which applies `plural_or_singular_icon()`. For tasks this makes sense
 (LED → folder), but for categories it produces confusing results since the user
 explicitly chose a specific icon.

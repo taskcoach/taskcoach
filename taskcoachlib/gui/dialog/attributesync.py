@@ -55,15 +55,15 @@ class AttributeSync(object):
 
     def onAttributeEdited(self, event):
         event.Skip()
-        new_value = self.getValue()
+        new_value = self.get_value()
         if new_value != self._currentValue:
             self.__executeCommand(new_value)
 
     def __executeCommand(self, new_value):
         self._currentValue = new_value
-        commandKwArgs = self.commandKwArgs(new_value)
+        command_kw_args = self.command_kw_args(new_value)
         self._commandClass(
-            None, self._items, **commandKwArgs
+            None, self._items, **command_kw_args
         ).do()  # pylint: disable=W0142
         self.__invokeCallback(new_value)
 
@@ -72,20 +72,20 @@ class AttributeSync(object):
             new_value = getattr(self._items[0], self._getter)()
             if new_value != self._currentValue:
                 self._currentValue = new_value
-                self.setValue(new_value)
+                self.set_value(new_value)
                 self.__invokeCallback(new_value)
         else:
             self.__stop_observing_attribute()
 
-    def commandKwArgs(self, new_value):
+    def command_kw_args(self, new_value):
         self.__commandKwArgs["newValue"] = new_value
         return self.__commandKwArgs
 
-    def setValue(self, new_value):
+    def set_value(self, new_value):
         if self._entry:
             self._entry.SetValue(new_value)
 
-    def getValue(self):
+    def get_value(self):
         return self._entry.GetValue()
 
     def __invokeCallback(self, value):
@@ -109,8 +109,8 @@ class AttributeSync(object):
 
 
 class FontColorSync(AttributeSync):
-    def setValue(self, newValue):
-        self._entry.SetColor(newValue)
+    def set_value(self, new_value):
+        self._entry.SetColor(new_value)
 
-    def getValue(self):
+    def get_value(self):
         return self._entry.GetColor()

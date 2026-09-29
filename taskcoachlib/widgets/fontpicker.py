@@ -143,12 +143,12 @@ class FontPickerCtrl(buttons.GenButton):
 
     def GetBackgroundBrush(self, dc):
         """Override to ensure correct background color is used for painting."""
-        bgColor = (
+        bg_color = (
             self.__bgColour
             if self.__bgColour
             else wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
         )
-        return wx.Brush(bgColor, wx.BRUSHSTYLE_SOLID)
+        return wx.Brush(bg_color, wx.BRUSHSTYLE_SOLID)
 
     def __sendPickerEvent(self):
         event = wx.FontPickerEvent(self, self.GetId(), self.__font)

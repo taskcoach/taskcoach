@@ -201,16 +201,16 @@ Three complexity levels of callbacks:
 
 **Notification callback** — fires change signal (see
 [PUBLISHER_OBSERVER.md, Signal Dispatch](PUBLISHER_OBSERVER.md#signal-dispatch)), `mark_dirty`,
-`_update_status`. Example: `_onDueDateTimeChanged`,
-`_onPlannedStartDateTimeChanged`.
+`_update_status`. Example: `_on_due_date_time_changed`,
+`_on_planned_start_date_time_changed`.
 
 **Cross-field callback** — reacts to current state and triggers other
-setters. Example: `_onPercentageCompleteChanged` triggers
+setters. Example: `_on_percentage_complete_changed` triggers
 `set_completion_date_time` or `set_actual_start_date_time` based on the new
 percentage value and current state.
 
 **Re-entrant callback** — when a callback triggers another setter (e.g.
-`_onCompletionDateTimeChanged` → `recur()` → `set_completion_date_time(maxDateTime)`),
+`_on_completion_date_time_changed` → `recur()` → `set_completion_date_time(maxDateTime)`),
 the Attribute equality check prevents infinite loops. The second `.set()`
 fires the callback again; the callback reads current state, finds nothing
 to do, returns.
@@ -326,7 +326,7 @@ so these changes left it as it was:
   subtask completes the parent, completing a parent completes its
   subtasks and clears their recurrence, reopening a subtask reopens its
   parent, adding or removing a subtask completes or reopens the parent
-  (`task.py`, `_onCompletionDateTimeChanged()`, `addChild()`,
+  (`task.py`, `_on_completion_date_time_changed()`, `addChild()`,
   `removeChild()`); completing a task stops its running effort; a
   prerequisite adds the dependency to the other task
   (`add_prerequisites()`).

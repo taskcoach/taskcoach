@@ -58,7 +58,7 @@ class RowBuilder(object):
         else:
             self.indent = lambda item: ""
 
-    def headerRow(self):
+    def header_row(self):
         headers = []
         for column in self.__columns:
             if self.shouldSplitDateAndTime(column):
@@ -129,7 +129,7 @@ class RowBuilder(object):
         return [self.itemRow(item) for item in items]
 
     def rows(self, items):
-        return [self.headerRow()] + self.itemRows(items)
+        return [self.header_row()] + self.itemRows(items)
 
 
 def viewer2csv(

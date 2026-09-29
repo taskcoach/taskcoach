@@ -636,47 +636,47 @@ class AttachmentDropTargetMixin(object):
         kwargs["on_drop_mail"] = self.onDropMail
         return kwargs
 
-    def _addAttachments(self, attachments, item, **itemDialogKwargs):
+    def _add_attachments(self, attachments, item, **item_dialog_kwargs):
         """Add attachments. If item refers to an existing domain object,
         add the attachments to that object. If item is None, use the
         newItemDialog to create a new domain object and add the attachments
         to that new object."""
         if item is None:
-            itemDialogKwargs["subject"] = attachments[0].subject()
+            item_dialog_kwargs["subject"] = attachments[0].subject()
             if self.settings.get(
                 "view", "defaultplannedstartdatetime"
             ).startswith("preset"):
-                itemDialogKwargs["plannedStartDateTime"] = (
+                item_dialog_kwargs["plannedStartDateTime"] = (
                     task.Task.suggestedPlannedStartDateTime()
                 )
             if self.settings.get("view", "defaultduedatetime").startswith(
                 "preset"
             ):
-                itemDialogKwargs["dueDateTime"] = (
+                item_dialog_kwargs["dueDateTime"] = (
                     task.Task.suggestedDueDateTime()
                 )
             if self.settings.get(
                 "view", "defaultactualstartdatetime"
             ).startswith("preset"):
-                itemDialogKwargs["actualStartDateTime"] = (
+                item_dialog_kwargs["actualStartDateTime"] = (
                     task.Task.suggestedActualStartDateTime()
                 )
             if self.settings.get(
                 "view", "defaultcompletiondatetime"
             ).startswith("preset"):
-                itemDialogKwargs["completionDateTime"] = (
+                item_dialog_kwargs["completionDateTime"] = (
                     task.Task.suggestedCompletionDateTime()
                 )
             if self.settings.get("view", "defaultreminderdatetime").startswith(
                 "preset"
             ):
-                itemDialogKwargs["reminder"] = (
+                item_dialog_kwargs["reminder"] = (
                     task.Task.suggestedReminderDateTime()
                 )
             newItemDialog = self.newItemDialog(
                 icon_id="nuvola_actions_document-new",
                 attachments=attachments,
-                **itemDialogKwargs
+                **item_dialog_kwargs
             )
             newItemDialog.Show()
             # Use CallAfter to ensure proper focus after drop completes
@@ -688,9 +688,9 @@ class AttachmentDropTargetMixin(object):
             )
             addAttachment.do()
             # Open the item's editor on attachments tab, then open attachment editor
-            self._openItemEditorOnAttachmentsTab(item, attachments)
+            self._open_item_editor_on_attachments_tab(item, attachments)
 
-    def _openItemEditorOnAttachmentsTab(self, item, newAttachments=None):
+    def _open_item_editor_on_attachments_tab(self, item, new_attachments=None):
         """Open the item's editor on the attachments tab.
 
         If an editor for this item is already open, bring it to front and
@@ -745,19 +745,19 @@ class AttachmentDropTargetMixin(object):
             patterns.later.soon(itemEditor, itemEditor.SetFocus)
 
         # Also open the AttachmentEditor for the new attachments
-        if newAttachments:
+        if new_attachments:
             # Use CallAfter to ensure item editor is fully shown first
             def openAttachmentEditor():
                 # Wrap attachments in AttachmentList container for Editor
                 # (item.attachments() returns a plain list)
-                attachmentContainer = attachment.AttachmentList(
+                attachment_container = attachment.AttachmentList(
                     item.attachments()
                 )
                 attachmentEditor = editor.AttachmentEditor(
                     itemEditor,  # Parent to the item editor
-                    newAttachments,
+                    new_attachments,
                     self.settings,
-                    attachmentContainer,
+                    attachment_container,
                     self.taskFile,
                     icon_id="nuvola_actions_edit",
                     columnName="subject",  # Open on Description tab, not Notes
@@ -772,7 +772,7 @@ class AttachmentDropTargetMixin(object):
         """This method is called by the widget when a URL is dropped on an
         item."""
         attachments = [attachment.URIAttachment(url)]
-        self._addAttachments(attachments, item, **kwargs)
+        self._add_attachments(attachments, item, **kwargs)
 
     def onDropFiles(self, item, filenames, **kwargs):
         """This method is called by the widget when one or more files
@@ -794,14 +794,14 @@ class AttachmentDropTargetMixin(object):
                         filename, attachmentBase
                     )
                 attachments.append(attachment.FileAttachment(filename))
-        self._addAttachments(attachments, item, **kwargs)
+        self._add_attachments(attachments, item, **kwargs)
 
     def onDropMail(self, item, mail, **kwargs):
         """This method is called by the widget when a mail message is dropped
         on an item."""
         att = attachment.MailAttachment(mail)
         subject, content = att.read()
-        self._addAttachments(
+        self._add_attachments(
             [att], item, subject=subject, description=content, **kwargs
         )
 

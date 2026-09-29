@@ -127,6 +127,15 @@ go at the end. Details live in the sections and documents linked.
 54. ~~Lazy teardown~~: nothing stopped on close or quit; the timers
     freed after the event loop
     ([DEFERRED_CALLS.md](DEFERRED_CALLS.md#end-of-life)).
+55. Renames deferred as too wide, from the PEP 8 review of
+    2026-09-29 ([PEP8_MIGRATION.md](PEP8_MIGRATION.md)): the domain
+    and viewer methods the branch rewrote (`addChild`, `removeChild`,
+    `computedStatus`, `processReminder`, the viewers' `onSelect`,
+    `createWidget`, `_createColumns` and `subjectImageIndices`, the
+    Publisher's `registerObserver` and `removeObserver`); keyword
+    families: the date and time widgets' arguments (7 files),
+    `taskList` and `effortList`, the export's `cssFilename` and
+    `selectionOnly`.
 
 ## Pre-existing Issues
 

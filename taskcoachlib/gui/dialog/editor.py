@@ -258,12 +258,12 @@ class SubjectPage(Page):
         super().__init__(items, parent, *args, **kwargs)
 
     def addEntries(self):
-        self.addSubjectEntry()
-        self.addDescriptionEntry()
-        self.addCreationDateTimeEntry()
-        self.addModificationDateTimeEntry()
+        self.add_subject_entry()
+        self.add_description_entry()
+        self.add_creation_date_time_entry()
+        self.add_modification_date_time_entry()
 
-    def addSubjectEntry(self):
+    def add_subject_entry(self):
         # pylint: disable=W0201
         current_subject = (
             self.items[0].subject()
@@ -288,7 +288,7 @@ class SubjectPage(Page):
             flags=[None, wx.ALL | wx.EXPAND],
         )
 
-    def addDescriptionEntry(self):
+    def add_description_entry(self):
         # pylint: disable=W0201
         def combined_description(items):
             return "[%s]\n\n" % _(
@@ -319,7 +319,7 @@ class SubjectPage(Page):
             flags=[None, wx.ALL | wx.EXPAND],
         )
 
-    def addCreationDateTimeEntry(self):
+    def add_creation_date_time_entry(self):
         creation_datetimes = [item.creationDateTime() for item in self.items]
         min_creation_datetime = min(creation_datetimes)
         max_creation_datetime = max(creation_datetimes)
@@ -332,7 +332,7 @@ class SubjectPage(Page):
             )
         self.addEntry(_("Creation date"), creation_text)
 
-    def addModificationDateTimeEntry(self):
+    def add_modification_date_time_entry(self):
         self._modificationTextEntry = wx.StaticText(
             self, label=self.__modification_text()
         )
@@ -385,13 +385,13 @@ class TaskSubjectPage(SubjectPage):
     def addEntries(self):
         # Override to insert a priority entry between the description and the
         # creation date/time entry
-        self.addSubjectEntry()
-        self.addDescriptionEntry()
-        self.addPriorityEntry()
-        self.addCreationDateTimeEntry()
-        self.addModificationDateTimeEntry()
+        self.add_subject_entry()
+        self.add_description_entry()
+        self.add_priority_entry()
+        self.add_creation_date_time_entry()
+        self.add_modification_date_time_entry()
 
-    def addPriorityEntry(self):
+    def add_priority_entry(self):
         # pylint: disable=W0201
         current_priority = (
             self.items[0].priority() if len(self.items) == 1 else 0
@@ -420,14 +420,14 @@ class CategorySubjectPage(SubjectPage):
     def addEntries(self):
         # Override to insert an exclusive subcategories entry
         # between the description and the creation date/time entry
-        self.addSubjectEntry()
-        self.addDescriptionEntry()
-        self.addExclusiveSubcategoriesEntry()
-        self.addStylePriorityEntry()
-        self.addCreationDateTimeEntry()
-        self.addModificationDateTimeEntry()
+        self.add_subject_entry()
+        self.add_description_entry()
+        self.add_exclusive_subcategories_entry()
+        self.add_style_priority_entry()
+        self.add_creation_date_time_entry()
+        self.add_modification_date_time_entry()
 
-    def addExclusiveSubcategoriesEntry(self):
+    def add_exclusive_subcategories_entry(self):
         # pylint: disable=W0201
         current_exclusivity = (
             self.items[0].hasExclusiveSubcategories()
@@ -460,7 +460,7 @@ class CategorySubjectPage(SubjectPage):
         )
         self.addEntry(_("Mutually exclusive"), panel)
 
-    def addStylePriorityEntry(self):
+    def add_style_priority_entry(self):
         # pylint: disable=W0201
         currentPriority = (
             self.items[0].stylePriority() if len(self.items) == 1 else 0
@@ -508,14 +508,14 @@ class AttachmentSubjectPage(SubjectPage):
 
     def addEntries(self):
         # Override to insert type and location entries
-        self.addSubjectEntry()
-        self.addTypeEntry()
-        self.addLocationEntry()
-        self.addDescriptionEntry()
-        self.addCreationDateTimeEntry()
-        self.addModificationDateTimeEntry()
+        self.add_subject_entry()
+        self.add_type_entry()
+        self.add_location_entry()
+        self.add_description_entry()
+        self.add_creation_date_time_entry()
+        self.add_modification_date_time_entry()
 
-    def addTypeEntry(self):
+    def add_type_entry(self):
         """Add a read-only type field with icon."""
         import os
 
@@ -561,7 +561,7 @@ class AttachmentSubjectPage(SubjectPage):
         panel.SetSizer(sizer)
         self.addEntry(_("Type"), panel, flags=[None, wx.ALIGN_CENTER_VERTICAL])
 
-    def addLocationEntry(self):
+    def add_location_entry(self):
         panel = wx.Panel(self)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         # pylint: disable=W0201
@@ -631,9 +631,9 @@ class TaskAppearancePage(ScrolledPage):
         if len(self.items) == 1:
             self.addLine()
             self.addSectionHeader(_("Override values"))
-        self.addIconEntry()
+        self.add_icon_entry()
         self.addColorEntries()
-        self.addFontEntry()
+        self.add_font_entry()
         self.addEffectiveSection()
         # Update derived values now that all widgets exist
         if len(self.items) == 1:
@@ -966,37 +966,37 @@ class TaskAppearancePage(ScrolledPage):
         # (updated in _updateEffectiveValues)
 
     def addColorEntries(self):
-        self.addColorEntry(_("Foreground"), "foreground", wx.BLACK)
-        self.addColorEntry(_("Background"), "background", wx.WHITE)
+        self.add_color_entry(_("Foreground"), "foreground", wx.BLACK)
+        self.add_color_entry(_("Background"), "background", wx.WHITE)
 
-    def addColorEntry(self, labelText, colorType, defaultColor):
-        currentColor = (
-            getattr(self.items[0], "%sColor" % colorType)()
+    def add_color_entry(self, label_text, color_type, default_color):
+        current_color = (
+            getattr(self.items[0], "%sColor" % color_type)()
             if len(self.items) == 1
             else None
         )
-        colorEntry = entry.ColorEntry(self, currentColor, defaultColor)
-        setattr(self, "_%sColorEntry" % colorType, colorEntry)
-        commandClass = getattr(
-            command, "Edit%sColorCommand" % colorType.capitalize()
+        color_entry = entry.ColorEntry(self, current_color, default_color)
+        setattr(self, "_%sColorEntry" % color_type, color_entry)
+        command_class = getattr(
+            command, "Edit%sColorCommand" % color_type.capitalize()
         )
-        colorSync = attributesync.AttributeSync(
-            "%sColor" % colorType,
-            colorEntry,
-            currentColor,
+        color_sync = attributesync.AttributeSync(
+            "%sColor" % color_type,
+            color_entry,
+            current_color,
             self.items,
-            commandClass,
+            command_class,
             entry.EVT_COLORENTRY,
             self.items[0].appearanceChangedEventType(),
         )
-        setattr(self, "_%sColorSync" % colorType, colorSync)
+        setattr(self, "_%sColorSync" % color_type, color_sync)
         self.addEntry(
-            labelText,
-            colorEntry,
+            label_text,
+            color_entry,
             flags=[None, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT],
         )
 
-    def addFontEntry(self):
+    def add_font_entry(self):
         # pylint: disable=W0201,E1101
         current_font = self.items[0].font() if len(self.items) == 1 else None
         # The override colours if set, else the effective ones
@@ -1272,7 +1272,7 @@ class TaskAppearancePage(ScrolledPage):
             )
         )
 
-    def addIconEntry(self):
+    def add_icon_entry(self):
         # pylint: disable=W0201,E1101
         current_icon_id = (
             self.items[0].icon_id() if len(self.items) == 1 else ""
@@ -1364,15 +1364,15 @@ class DatesPage(ScrolledPage):
         self.__updatePresetSelection()
 
     def addEntries(self):
-        self.addStatusEntry()
+        self.add_status_entry()
         self.addLine()
         self.addDateEntries()
         self.addLine()
-        self.addReminderEntry()
+        self.add_reminder_entry()
         self.addLine()
-        self.addRecurrenceEntry()
+        self.add_recurrence_entry()
 
-    def addStatusEntry(self):
+    def add_status_entry(self):
         """Add a read-only status display showing icon, color, and status text."""
         if len(self.items) != 1:
             return  # Only show for single task editing
@@ -1460,7 +1460,7 @@ class DatesPage(ScrolledPage):
 
     def addDateEntries(self):
         # Create panel for planned date section with table layout
-        self._addPlannedDateSection()
+        self._add_planned_date_section()
         self.addLine()
         self._addActualStartDateEntry()
         self._addCompletionDateEntry()
@@ -1469,7 +1469,7 @@ class DatesPage(ScrolledPage):
         if hasattr(self, "_currentPlannedDurationMode"):
             self.__syncTaskState()
 
-    def _addPlannedDateSection(self):
+    def _add_planned_date_section(self):
         """Add the planned date section using the main grid (5 columns: label, checkbox, date, time, rest)."""
         # Row 1: Planned start date
         plannedStartDateTime = (
@@ -2204,7 +2204,7 @@ class DatesPage(ScrolledPage):
         # Always update dropdown to show actual mode (may differ from selection)
         self.__updateDurationModeDropdown()
 
-    def addReminderEntry(self):
+    def add_reminder_entry(self):
         """Add reminder entry using DateTimeComboCtrl."""
         reminderDateTime = (
             self.items[0].reminder()
@@ -2252,7 +2252,7 @@ class DatesPage(ScrolledPage):
         """AttributeSync callback for reminder date changes."""
         self._currentReminderDateTime = value
 
-    def addRecurrenceEntry(self):
+    def add_recurrence_entry(self):
         # pylint: disable=W0201
         current_recurrence = (
             self.items[0].recurrence()
@@ -2307,10 +2307,10 @@ class ProgressPage(Page):
     pageIcon = "nuvola_actions_go-last"
 
     def addEntries(self):
-        self.addProgressEntry()
-        self.addBehaviorEntry()
+        self.add_progress_entry()
+        self.add_behavior_entry()
 
-    def addProgressEntry(self):
+    def add_progress_entry(self):
         # pylint: disable=W0201
         currentPercentageComplete = (
             self.items[0].percentageComplete()
@@ -2344,7 +2344,7 @@ class ProgressPage(Page):
             else 0
         )
 
-    def addBehaviorEntry(self):
+    def add_behavior_entry(self):
         # pylint: disable=W0201
         choices = [
             (None, _("Use application-wide setting")),
@@ -3064,11 +3064,11 @@ class PathPage(ScrolledPage):
 
         for eventType in all_event_types:
             patterns.Publisher().registerObserver(
-                self._onAnyChange,
+                self._on_any_change,
                 eventType=eventType,
             )
 
-    def _onAnyChange(self, event=None, **kwargs):
+    def _on_any_change(self, event=None, **kwargs):
         """Called when any domain object changes. Rebuild if visible."""
         if (
             self._realized
@@ -3270,10 +3270,10 @@ class PathPage(ScrolledPage):
             return
         self._iconSubscribed = True
         self.registerObserver(
-            self._onEffectiveIconChanged, eventType="effective.icon"
+            self._on_effective_icon_changed, eventType="effective.icon"
         )
 
-    def _onEffectiveIconChanged(self, event):
+    def _on_effective_icon_changed(self, event):
         """Handle effective icon changes - update only the matching icon widget."""
         for source in event.sources():
             obj_id = id(source)
@@ -3319,7 +3319,7 @@ class PathPage(ScrolledPage):
         self._unsubscribeIconUpdates()
 
         if self._subscribed:
-            patterns.Publisher().removeObserver(self._onAnyChange)
+            patterns.Publisher().removeObserver(self._on_any_change)
         super().close()
 
     def _getTypeInfo(self, obj):
@@ -3950,7 +3950,7 @@ class EffortEditBook(Page):
     def addEntries(self):
         self.__add_task_entry()
         self.__add_start_and_stop_entries()
-        self.addDescriptionEntry()
+        self.add_description_entry()
 
     def __add_task_entry(self):
         """Add an entry for changing the task that this effort record
@@ -4776,7 +4776,7 @@ class EffortEditBook(Page):
             self._taskFile,
         ).Show()
 
-    def addDescriptionEntry(self):
+    def add_description_entry(self):
         # pylint: disable=W0201
         def combined_description(items):
             distinct_descriptions = set(item.description() for item in items)

@@ -493,7 +493,8 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
         """
         if bitmap is None or not bitmap.IsOk():
             log_step(
-                "ERROR: SetBitmapLabel called with invalid bitmap - use bmpLabel=None instead",
+                "ERROR: SetBitmapLabel called with invalid bitmap - use "
+                "bmpLabel=None instead",
                 prefix="ICON",
             )
             return  # Ignore the call, don't crash
