@@ -125,6 +125,57 @@ go at the end. Details live in the sections and documents linked.
 53. ~~Deferred calls that can outlive their window~~: all through
     `patterns.later` ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
 
+## Pre-existing Issues
+
+Optional, **requested by designer 2026-09-29**: problems present
+before this refactor (on master, or failing in the baseline test run),
+found along the way. Fixing them helps stabilize this work; none is
+required. Numbered apart from the To Do list, crossed out when fixed.
+
+Test files failing in the baseline run (28 tests, the same after every
+step of this refactor):
+
+- P1. `integrationtests/SaveTest.py`: 4 errors (save, save and merge,
+  save selection of a parent or child).
+- P2. `integrationtests/LoadTest.py`: 2 errors (invalid and missing
+  files).
+- P3. `integrationtests/ModelAndViewerTest.py`: 2 errors (category
+  filter hiding a parent).
+- P4. `integrationtests/LeakTest.py` and `PerformanceTest.py`: 1
+  error each.
+- P5. `unittests/AppTest.py`: 2 failures (language from the locale).
+- P6. `unittests/commandTests/CutCopyPasteTest.py`: paste (1 error, 1
+  failure).
+- P7. `unittests/domainTests/EffortTest.py`: 4 failures (duration and
+  revenue events on a start or stop change).
+- P8. `unittests/domainTests/TaskTest.py`: 3 failures (budget left
+  events without a budget).
+- P9. `unittests/domainTests/SorterTest.py`: 2 failures (tree mode
+  delegation).
+- P10. `unittests/widgetTests/WindowDimensionsTrackerTest.py`: 2
+  failures (size, move).
+- P11. `unittests/guiTests/MainWindowTest.py`,
+  `widgetTests/DragAndDropTest.py`,
+  `thirdPartySoftwareTests/wxPythonTest.py`: 1 failure each.
+
+In the app:
+
+- P12. Closing an editor after using a date popup logs a RuntimeError:
+  the popup's text event reaches its deleted control
+  (`_onComboText()` in `widgets/maskedtimectrl.py`, #343). A candidate
+  for the lost traceback (44).
+- P13. The calendar's month view fails under wxPython 4
+  (`wx.DateTime.GetNumberOfDaysInMonth()` is gone; vendored
+  wxScheduler).
+- P14. A zero-size calendar pane assertion at startup.
+- P15. A list's tooltip stays shown over an editor opened from it.
+- P16. Every launch logs `gtk_distribute_natural_allocation: assertion
+  'extra_space >= 0' failed`; on the designer's display also
+  `gdk_window_thaw_toplevel_updates`.
+- P17. Three test files have invalid escape sequences
+  (`SyntaxWarning`): `ConfigTest.py`, `TranslationIntegrityTest.py`,
+  `MSDownloadTest.py`.
+
 ## Views on the Effective Styles
 
 To do 35. **Decided before this refactor**
