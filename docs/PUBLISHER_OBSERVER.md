@@ -345,6 +345,7 @@ No manual unsubscribe, no silent `except` guards, no zombie callbacks.
 | `view.statusbar` | Migrated to Publisher | `taskcoachlib/gui/mainwindow.py` |
 | `view.toolbar` | Migrated to Publisher | `taskcoachlib/gui/mainwindow.py` |
 | `view.weekstartmonday` | Deleted (dead — topic name mismatch) | `taskcoachlib/gui/viewer/task.py` |
+| `view.weekstart`, `calendarviewer.gradient` | Added 2026-09-28: the calendar viewer applies them at once | `taskcoachlib/gui/viewer/task.py` |
 | `view.efforthourstart` | Deleted (no live-update needed) | `taskcoachlib/gui/viewer/task.py` |
 | `view.efforthourend` | Deleted (no live-update needed) | `taskcoachlib/gui/viewer/task.py` |
 | `file.recentfiles` | Migrated to Publisher | `taskcoachlib/gui/menu.py` |

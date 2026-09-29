@@ -2652,10 +2652,9 @@ class FeaturesPage(SettingsPage):
 
     def __init__(self, *args, **kwargs):
         super().__init__(columns=2, growableColumn=-1, *args, **kwargs)
+        # The other settings on this tab apply at once
         self._restart_warning_base = (
-            _(
-                "All settings on this tab require a restart of %s to take effect."
-            )
+            _("Working hours reach calendar views after a restart of %s.")
             % meta.name
         )
         self._restart_warning = wx.StaticText(
@@ -2775,21 +2774,8 @@ class FeaturesPage(SettingsPage):
             ),
         )
 
-        # Store original values to detect changes
+        # Store the working hours to detect changes
         self._originalValues = {}
-        for section, setting, checkBox in self._booleanSettings:
-            self._originalValues[(section, setting)] = checkBox.IsChecked()
-            checkBox.Bind(wx.EVT_CHECKBOX, self._onSettingChange)
-        for section, setting, choiceCtrls in self._choiceSettings:
-            self._originalValues[(section, setting)] = tuple(
-                c.GetSelection() for c in choiceCtrls
-            )
-            for c in choiceCtrls:
-                c.Bind(wx.EVT_CHOICE, self._onSettingChange)
-        for section, setting, spinCtrl in self._integerSettings:
-            self._originalValues[(section, setting)] = spinCtrl.GetValue()
-            spinCtrl.Bind(wx.EVT_SPINCTRL, self._onSettingChange)
-        # Working hours
         self._originalValues[("view", "efforthourstart")] = (
             self._workingHourStartChoice.GetSelection()
         )
@@ -2812,37 +2798,14 @@ class FeaturesPage(SettingsPage):
         event.Skip()
 
     def _update_restart_warning(self):
-        changed = False
-        for section, setting, checkBox in self._booleanSettings:
-            if checkBox.IsChecked() != self._originalValues.get(
-                (section, setting)
-            ):
-                changed = True
-                break
-        if not changed:
-            for section, setting, choiceCtrls in self._choiceSettings:
-                current = tuple(c.GetSelection() for c in choiceCtrls)
-                if current != self._originalValues.get((section, setting)):
-                    changed = True
-                    break
-        if not changed:
-            for section, setting, spinCtrl in self._integerSettings:
-                if spinCtrl.GetValue() != self._originalValues.get(
-                    (section, setting)
-                ):
-                    changed = True
-                    break
-        if not changed:
-            if (
-                self._workingHourStartChoice.GetSelection()
-                != self._originalValues[("view", "efforthourstart")]
-                or self._workingHourEndChoice.GetSelection()
-                != self._originalValues[("view", "efforthourend")]
-                or self._workingHourEndOfDayCheck.IsChecked()
-                != self._originalValues[("view", "efforthourend_endofday")]
-            ):
-                changed = True
-
+        changed = (
+            self._workingHourStartChoice.GetSelection()
+            != self._originalValues[("view", "efforthourstart")]
+            or self._workingHourEndChoice.GetSelection()
+            != self._originalValues[("view", "efforthourend")]
+            or self._workingHourEndOfDayCheck.IsChecked()
+            != self._originalValues[("view", "efforthourend_endofday")]
+        )
         if changed:
             self._restart_warning.SetLabel(
                 self._restart_warning_base

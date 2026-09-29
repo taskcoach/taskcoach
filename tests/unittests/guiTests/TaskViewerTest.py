@@ -28,6 +28,7 @@ from taskcoachlib import (
 from taskcoachlib.gui import viewer  # noqa: F401 - make gui.viewer accessible
 from taskcoachlib.domain import task, date, effort, category, attachment
 from taskcoachlib.i18n import _
+from taskcoachlib.thirdparty import wxScheduler
 import locale
 import os
 import test
@@ -1357,6 +1358,19 @@ class TaskCalendarViewerTest(test.wxTestCase):
     def testOnCreateSetsPlannedStartAndDueDateTime(self):
         dateTime = date.DateTime(2010, 10, 10, 16, 0, 0)
         self.openDialogAndAssertDateTimes(dateTime, dateTime, dateTime)
+
+    def test_week_start_applies_at_once(self):
+        self.settings.settext("view", "weekstart", "sunday")
+        self.assertEqual(
+            wxScheduler.wxSCHEDULER_WEEKSTART_SUNDAY,
+            self.viewer.widget.GetWeekStart(),
+        )
+
+    def test_gradient_applies_at_once(self):
+        self.settings.setboolean("calendarviewer", "gradient", True)
+        self.assertIs(
+            wxScheduler.wxFancyDrawer, self.viewer.widget.GetDrawer()
+        )
 
     def testOnCreateKeepsPlannedStartDateTimeAndMakesDueDateTimeEndOfDayWhenDateTimeIsStartOfDay(
         self,

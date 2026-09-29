@@ -32,6 +32,7 @@ import taskcoachlib.gui.menu
 from taskcoachlib.i18n import _
 from taskcoachlib.thirdparty.wxScheduler import (
     wxSCHEDULER_TODAY,
+    wxBaseDrawer,
     wxFancyDrawer,
 )
 from taskcoachlib.widgets import (
@@ -989,10 +990,7 @@ class CalendarViewer(
             dt.ParseDateTime(start)
             self.widget.SetDate(dt)
 
-        if self.settings.gettext("view", "weekstart") == "monday":
-            self.widget.SetWeekStartMonday()
-        else:
-            self.widget.SetWeekStartSunday()
+        self._on_week_start_changed()
         self.widget.SetWorkHours(
             self.settings.getint("view", "efforthourstart"),
             self.settings.getint("view", "efforthourend"),
@@ -1025,6 +1023,32 @@ class CalendarViewer(
         self.registerObserver(
             self._on_calendar_colours_changed,
             eventType="calendar.colours.changed",
+        )
+        # Preferences apply at once, but for the work hours
+        # (docs/PUBLISHER_OBSERVER.md, Migration Log)
+        self.registerObserver(
+            self._on_week_start_changed,
+            eventType="view.weekstart",
+            eventSource=self.settings,
+        )
+        self.registerObserver(
+            self._on_gradient_changed,
+            eventType="calendarviewer.gradient",
+            eventSource=self.settings,
+        )
+
+    def _on_week_start_changed(self, event=None):  # pylint: disable=W0613
+        if self.settings.gettext("view", "weekstart") == "monday":
+            self.widget.SetWeekStartMonday()
+        else:
+            self.widget.SetWeekStartSunday()
+
+    def _on_gradient_changed(self, event):  # pylint: disable=W0613
+        # The widget exists by now: set at once, unlike at creation
+        self.widget.SetDrawer(
+            wxFancyDrawer
+            if self.settings.getboolean("calendarviewer", "gradient")
+            else wxBaseDrawer
         )
 
     def _on_date_changed(self, event):  # pylint: disable=W0613

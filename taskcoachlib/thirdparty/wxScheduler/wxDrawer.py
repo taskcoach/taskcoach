@@ -39,7 +39,11 @@ class wxDrawer(object):
         pointSize = 18
         while True:
             font.SetPointSize(pointSize)
-            self.context.SetFont(font)
+            if self.use_gc:
+                # A GraphicsContext takes the colour with the font
+                self.context.SetFont(font, wx.BLACK)
+            else:
+                self.context.SetFont(font)
             tw, _ = self.context.GetTextExtent(
                 " " + wxTimeFormat.FormatTime(wx.DateTime.FromHMS(23, 59, 59))
             )
@@ -779,7 +783,8 @@ class HeaderDrawerGCMixin(object):
                     text, x + (w - textW) // 2, int(y + textH * 0.25)
                 )
 
-            return w, textH * 1.5
+            # Whole pixels, as the wx.DC header's: sizes feed wx.Point
+            return w, int(textH * 1.5)
         finally:
             font.SetPointSize(fsize)
             font.SetWeight(fweight)
@@ -1165,7 +1170,8 @@ class wxFancyDrawer(
                 self.context.DrawLines(
                     [(x, y + hourH * 1.5 - 1), (x + w, y + hourH * 1.5 - 1)]
                 )
-                return max(w, DAY_SIZE_MIN.width), hourH * 1.5
+                # Whole pixels, as wxBaseDrawer's: sizes feed wx.Point
+                return max(w, DAY_SIZE_MIN.width), int(hourH * 1.5)
         finally:
             font.SetPointSize(fsize)
             font.SetWeight(fweight)
