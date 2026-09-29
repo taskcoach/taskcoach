@@ -31,16 +31,11 @@ class FakeEffortAggregator(object):
             self.on_hourly_fee_changed, task.Task.hourlyFeeChangedEventType()
         )
 
-    def on_hourly_fee_changed(self, event):
-        for sender in event.sources():
-            self.onRevenueChanged(event.value(sender), sender)
+    def on_hourly_fee_changed(self, event):  # pylint: disable=W0613
+        self.composite.revenue_changed()
 
-    def on_time_spent_changed(self, event):
-        for sender in event.sources():
-            self.composite.onTimeSpentChanged(event.value(sender), sender)
-
-    def onRevenueChanged(self, newValue, sender):
-        self.composite.onRevenueChanged(newValue, sender)
+    def on_time_spent_changed(self, event):  # pylint: disable=W0613
+        self.composite.time_spent_changed()
 
 
 class CompositeEffortWithRoundingTest(test.TestCase):

@@ -76,35 +76,6 @@ OVERRIDE_METHOD = {
 
 
 # =============================================================================
-# Per-field Event Types
-# =============================================================================
-
-
-def effectiveFgColorChangedEventType():
-    return "effective.fgColor"
-
-
-def effectiveBgColorChangedEventType():
-    return "effective.bgColor"
-
-
-def effectiveIconChangedEventType():
-    return "effective.icon"
-
-
-def effectiveFontChangedEventType():
-    return "effective.font"
-
-
-EFFECTIVE_EVENT_TYPES = {
-    "fgColor": effectiveFgColorChangedEventType,
-    "bgColor": effectiveBgColorChangedEventType,
-    "icon": effectiveIconChangedEventType,
-    "font": effectiveFontChangedEventType,
-}
-
-
-# =============================================================================
 # Per-field Effective Setters
 # =============================================================================
 

@@ -196,8 +196,7 @@ class MasterScheduler:
         self._pass_changes = collections.Counter()
         self._pass_costs = []  # Milliseconds, since the last trace line
         self._ticks = 0  # Since the last trace line
-        self._observing = bool(task_file)
-        if self._observing:
+        if task_file:
             self._rebuild()
             self._start_observing()
         patterns.Publisher().registerObserver(
@@ -281,7 +280,7 @@ class MasterScheduler:
         """A change the full loop reads: its second is due at the next
         tick. The loop's own changes too: a cascade settles one pass per
         second."""
-        if self._in_pass:
+        if self._in_pass and _CHECK:
             self._pass_changes.update(event_types)
         # The current tick's second: already passed, so the next tick
         # takes it with every other due entry; before the first tick,

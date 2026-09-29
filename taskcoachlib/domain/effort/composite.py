@@ -121,12 +121,14 @@ class BaseCompositeEffort(base.BaseEffort):  # pylint: disable=W0223
         return []  # A composite effort cannot be 'dirty' since its contents
         # are determined by the contained efforts.
 
-    def onTimeSpentChanged(self, newValue, sender):  # pylint: disable=W0613
+    def time_spent_changed(self):
+        """One of its efforts' time spent changed."""
         if self._refreshCache():
             # Only need to notify if our time spent actually changed
             self.notifyObserversOfDurationOrEmpty()
 
-    def onRevenueChanged(self, newValue, sender):  # pylint: disable=W0613
+    def revenue_changed(self):
+        """Its task's hourly fee changed."""
         self.send_revenue_changed()
 
     def revenue(self, recursive=False):

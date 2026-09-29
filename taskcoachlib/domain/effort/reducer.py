@@ -152,24 +152,23 @@ class EffortAggregator(
         for sender in event.sources():
             # By identity, as in EffortList
             if any(sender is each for each in self.observable()):
-                self.onTaskEffortChanged(event.value(sender), sender)
+                self.__task_efforts_changed(sender, *event.value(sender))
 
-    def onTaskEffortChanged(self, newValue, sender):
-        new_composites = []
-        newValue, oldValue = newValue
+    def __task_efforts_changed(self, changed_task, new_efforts, old_efforts):
         efforts_added = [
-            effort for effort in newValue if effort not in oldValue
+            effort for effort in new_efforts if effort not in old_efforts
         ]
         efforts_removed = [
-            effort for effort in oldValue if effort not in newValue
+            effort for effort in old_efforts if effort not in new_efforts
         ]
-        new_composites.extend(self.__create_composites(sender, efforts_added))
-        self.__extend_self_with_composites(new_composites)
+        self.__extend_self_with_composites(
+            self.__create_composites(changed_task, efforts_added)
+        )
         for affected_composite in self.__get_composites_for_efforts(
             efforts_added + efforts_removed
         ):
             self.__update_tracked(affected_composite)
-            affected_composite.onTimeSpentChanged(newValue, sender)
+            affected_composite.time_spent_changed()
 
     def onChildAddedToTask(self, event):
         new_composites = []
@@ -192,34 +191,29 @@ class EffortAggregator(
             affected_composite.notifyObserversOfDurationOrEmpty()
 
     def on_composite_empty(self, event):
-        for sender in event.sources():
-            self.onCompositeEmpty(sender)
-
-    def onCompositeEmpty(self, sender):
-        # pylint: disable=W0621
-        if sender not in self:
-            return
-        key = self.__key_for_composite(sender)
-        if key in self.__composites:
-            # A composite may already have been removed, e.g. when a
-            # parent and child task have effort in the same period
-            del self.__composites[key]
-        self.__remove_composites_from_self([sender])
+        for empty in event.sources():
+            if empty not in self:
+                continue
+            key = self.__key_for_composite(empty)
+            if key in self.__composites:
+                # A composite may already have been removed, e.g. when a
+                # parent and child task have effort in the same period
+                del self.__composites[key]
+            self.__remove_composites_from_self([empty])
 
     def on_effort_start_changed(self, event):
-        for sender in event.sources():
-            self.onEffortStartChanged(event.value(sender), sender)
-
-    def onEffortStartChanged(self, newValue, sender):  # pylint: disable=W0613
-        new_composites = []
-        key = self.__key_for_effort(sender)
-        task = sender.task()  # pylint: disable=W0621
-        if (task in self.observable()) and (key not in self.__composites):
-            new_composites.extend(self.__create_composites(task, [sender]))
-        self.__extend_self_with_composites(new_composites)
-        for affected_composite in self.__get_composites_for_efforts([sender]):
-            self.__update_tracked(affected_composite)
-            affected_composite.onTimeSpentChanged(newValue, sender)
+        for moved in event.sources():
+            key = self.__key_for_effort(moved)
+            owner = moved.task()
+            if owner in self.observable() and key not in self.__composites:
+                self.__extend_self_with_composites(
+                    self.__create_composites(owner, [moved])
+                )
+            for affected_composite in self.__get_composites_for_efforts(
+                [moved]
+            ):
+                self.__update_tracked(affected_composite)
+                affected_composite.time_spent_changed()
 
     def on_effort_stop_changed(self, event):
         for affected_composite in self.__get_composites_for_efforts(
@@ -238,12 +232,10 @@ class EffortAggregator(
             self.__trackedComposites.remove(composite)
 
     def on_hourly_fee_changed(self, event):
-        for sender in event.sources():
-            self.onRevenueChanged(event.value(sender), sender)
-
-    def onRevenueChanged(self, newValue, sender):
-        for affected_composite in self.__get_composites_for_tasks([sender]):
-            affected_composite.onRevenueChanged(newValue, sender)
+        for affected_composite in self.__get_composites_for_tasks(
+            event.sources()
+        ):
+            affected_composite.revenue_changed()
 
     def __get_composites_for_tasks(self, tasks):
         tasks = set(tasks)
