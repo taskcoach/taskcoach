@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import gui, config, persistence
+from taskcoachlib import command, gui, config, patterns, persistence
 from taskcoachlib.domain import task, note, category
 from taskcoachlib.filesystem import resourcelock
 from unittests import dummy
@@ -495,6 +495,26 @@ class IOControllerReplaceFileTest(test.TestCase):
             None, openfile=openfile, showerror=self.showerror
         )
         self.assertTrue(os.path.exists(self.name + ".txt"))
+
+
+class IOControllerCloseTest(test.TestCase):
+    def setUp(self):
+        super().setUp()
+        task.Task.settings = self.settings = config.Settings(load=False)
+        self.task_file = persistence.TaskFile()
+        self.addCleanup(self.task_file.stop)
+        self.addCleanup(self.task_file.close)
+        self.addCleanup(patterns.CommandHistory().clear)
+        self.iocontroller = gui.iocontroller.IOController(
+            self.task_file, lambda *args: None, self.settings
+        )
+
+    def test_undo_back_to_the_empty_file_after_close_needs_no_save(self):
+        command.NewTaskCommand(self.task_file.tasks()).do()
+        self.iocontroller.close(force=True)  # No file name: not saved
+        command.NewTaskCommand(self.task_file.tasks()).do()
+        patterns.CommandHistory().undo()
+        self.assertFalse(self.task_file.need_save())
 
 
 class IOControllerChangedOnDiskTest(test.TestCase):
