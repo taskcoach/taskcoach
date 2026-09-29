@@ -1289,9 +1289,11 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         }
 
     def __start_observing(self, event_types):
+        # Columns observe with their own callback, so hiding one never
+        # drops an event type the viewer observes for every row
         for event_type in event_types:
             self.registerObserver(
-                self.on_attribute_changed, eventType=event_type
+                self.__on_column_changed, eventType=event_type
             )
 
     def __stop_observing(self, event_types):
@@ -1302,8 +1304,11 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         for event_type in event_types:
             if event_type not in visible_event_types:
                 self.removeObserver(
-                    self.on_attribute_changed, eventType=event_type
+                    self.__on_column_changed, eventType=event_type
                 )
+
+    def __on_column_changed(self, event):
+        self.on_attribute_changed(event)
 
     def renderCategories(self, item):
         return self.renderSubjectsOfRelatedItems(item, item.categories)

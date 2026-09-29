@@ -1424,7 +1424,6 @@ class TaskViewer(
                     _("Category icons"),
                     task.Task.categoryAddedEventType(),
                     task.Task.categoryRemovedEventType(),
-                    task.Task.effectiveIconChangedEventType(),
                     width=self.getColumnWidth("categoryIcons"),
                     alignment=wx.LIST_FORMAT_LEFT,
                     multiImageIndicesCallback=self.categoryIconsImageIndices,

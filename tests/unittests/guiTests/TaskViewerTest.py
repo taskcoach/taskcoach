@@ -969,6 +969,24 @@ class CommonTestsMixin(object):
         ]
         self.assertEqual(1, len(received))
 
+    def test_hiding_a_column_keeps_what_the_viewer_observes(self):
+        # The viewer observes prerequisites for every row, the
+        # prerequisites column too; hiding it drops only its own
+        self.taskList.append(self.task)
+        self.showColumn("prerequisites")
+        self.showColumn("prerequisites", False)
+        prerequisite = task.Task()
+        self.taskList.append(prerequisite)
+        self.task.add_prerequisites([prerequisite])
+        event_type = task.Task.prerequisitesChangedEventType()
+        self.assertTrue(
+            [
+                event
+                for event in self.viewer.events
+                if self.task in event.sources(event_type)
+            ]
+        )
+
     def testChangeDueDate(self):
         self.taskList.append(self.task)
         newValue = date.Now().endOfDay()
