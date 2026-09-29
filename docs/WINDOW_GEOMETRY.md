@@ -529,10 +529,12 @@ Other issues:
   `xvfb-run` has no window manager to grant the maximize, so it is
   skipped there.
 - Unused settings keys (see [Settings](#settings)).
-- The per-second scheduler blocks the UI thread 60 ms (200 tasks) to
-  600 ms (5000 tasks) every second, so resizing stutters with large
-  files whatever the geometry code does
-  ([SCHEDULERS.md](SCHEDULERS.md)).
+- The scheduler blocked the UI thread 60 ms (200 tasks) to 600 ms
+  (5000 tasks) every second, so resizing stuttered with large files
+  whatever the geometry code did. Since the master scheduler refactor
+  its full pass runs only at the seconds that change something, about
+  once a minute with typical files
+  ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#cost-after)).
 
 ---
 
@@ -669,7 +671,7 @@ Left:
 ### Not Yet Examined
 
 - Jitter while dragging a window border; the trials are about
-  reopening. Candidates: the scheduler blocking above, and
+  reopening. Candidates: the scheduler's passes above, and
   `MainWindow.onResize()`, which sets the toolbar's size and minimum
   sizes on every `EVT_SIZE`.
 - Other window managers (KWin, Mutter on X11) may honour the program
