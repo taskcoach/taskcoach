@@ -37,15 +37,16 @@ class CategoryFilter(base.Filter):
                 eventType=event_type,
                 eventSource=self.__categories,
             )
-        event_types = (
+        for event_type in (
             Category.categorizableAddedEventType(),
             Category.categorizableRemovedEventType(),
-            Category.filterChangedEventType(),
-        )
-        for event_type in event_types:
+        ):
             patterns.Publisher().registerObserver(
-                self.onCategoryChanged, eventType=event_type
+                self.on_membership_changed, eventType=event_type
             )
+        patterns.Publisher().registerObserver(
+            self.onCategoryChanged, eventType=Category.filterChangedEventType()
+        )
         patterns.Publisher().registerObserver(
             self.onFilterMatchingChanged,
             eventType="view.categoryfiltermatchall",
@@ -56,6 +57,7 @@ class CategoryFilter(base.Filter):
     def detach(self):
         super().detach()
         self.removeObserver(self.onCategoryChanged)
+        self.removeObserver(self.on_membership_changed)
 
     def filter_items(self, categorizables):
         filtered_categories = self.__categories.filteredCategories()
@@ -86,9 +88,20 @@ class CategoryFilter(base.Filter):
         return categorizables
 
     def onFilterMatchingChanged(self, event):  # pylint: disable=W0613
-        self.__filterOnlyWhenAllCategoriesMatch = \
-            self.__settings.getboolean("view", "categoryfiltermatchall")
+        self.__filterOnlyWhenAllCategoriesMatch = self.__settings.getboolean(
+            "view", "categoryfiltermatchall"
+        )
         self.reset()
 
     def onCategoryChanged(self, event):  # pylint: disable=W0613
         self.reset()
+
+    def on_membership_changed(self, event):
+        # Assigning a category filters nothing unless it, or a category
+        # it is under, is filtered
+        for category in event.sources():
+            if any(
+                each.isFiltered() for each in [category] + category.ancestors()
+            ):
+                self.reset()
+                return

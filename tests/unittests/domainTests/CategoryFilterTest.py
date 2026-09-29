@@ -258,6 +258,30 @@ class OneCategoryAndTwoTasksFixture(Fixture):
         self.link(self.category, self.task2)
         self.assertFilterHidesNothing()
 
+    def count_resets(self):
+        resets = []
+        reset = self.filter.reset
+        self.filter.reset = lambda *args, **kwargs: (
+            resets.append(1),
+            reset(*args, **kwargs),
+        )
+        return resets
+
+    def test_assigning_an_unfiltered_category_refilters_nothing(self):
+        resets = self.count_resets()
+        self.link(self.category, self.task1)
+        self.assertEqual([], resets)
+
+    def test_assigning_a_subcategory_of_a_filtered_one_refilters(self):
+        subcategory = category.Category("subcategory")
+        self.category.addChild(subcategory)
+        self.category.setFiltered()
+        resets = self.count_resets()
+        self.link(subcategory, self.task1)
+        self.assertEqual(
+            (True, [self.task1]), (bool(resets), list(self.filter))
+        )
+
 
 class OneCategoryAndTwoTasksInListModeTest(
     OneCategoryAndTwoTasksFixture, test.TestCase
