@@ -128,7 +128,7 @@ RuntimeError: wrapped C/C++ object of type TreeListMainWindow has been deleted
 
 ## Debugging a Segfault
 
-If a segfault still occurs (the guards don't catch everything: direct event handlers on dead widgets bypass `CallAfter`, and the timer guard only covers timers owned by a `wx.Window` whose destroy event arrives, not the main window or an `AuiNotebook`: [AUI.md](AUI.md#destroy-event)):
+If a segfault still occurs (the guards don't catch everything: direct event handlers on dead widgets bypass `CallAfter`, and the timer guard only covers timers owned by a `wx.Window` whose destroy event arrives, not an `AuiNotebook`: [AUI.md](AUI.md#destroy-event)):
 
 ### Using GDB for C++ backtraces
 ```bash

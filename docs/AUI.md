@@ -232,12 +232,14 @@ notebooks) still consumes it.
 ## Destroy Event
 
 `AuiManager.OnDestroy()` handles `EVT_WINDOW_DESTROY` of its managed
-window without `Skip()`, so handlers bound on the main window or on an
-`AuiNotebook` never run. Neither the crash guard's timer watch
-([CRASH_GUARD.md](CRASH_GUARD.md)) nor the Publisher's unsubscribe on
-destroy covers these windows: a timer they own ticks into freed memory
-once they are gone. Own such timers elsewhere, or check the window at
-each tick (the geometry trace does).
+window without `Skip()`. The main window removes its manager in
+`onClose()` before it is destroyed, so its own destroy handlers run;
+an `AuiNotebook`'s manager (the task editor's pages) stays, so
+handlers bound on the notebook never run. Neither the crash guard's
+timer watch ([CRASH_GUARD.md](CRASH_GUARD.md)) nor the Publisher's
+unsubscribe on destroy covers a notebook: a timer it owns ticks into
+freed memory once it is gone. Own such timers elsewhere, or check the
+window at each tick (the geometry trace does).
 
 ---
 
