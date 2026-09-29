@@ -167,7 +167,9 @@ refactor; unchanged by its steps, crossed out when fixed):
   translator, as the application does, and quitting skips idle
   processing when no event loop runs. The tests also remove the lock
   files they leave.
-- P5. `unittests/AppTest.py`: 2 failures (language from the locale).
+- P5. ~~`unittests/AppTest.py`: 2 failures (language from the
+  locale)~~: fixed 2026-09-29, the tests only. The app reads `LANG`
+  first, so the tests took the machine's language; they now set it.
 - P6. ~~`unittests/commandTests/CutCopyPasteTest.py`: paste (1 error,
   1 failure)~~: fixed 2026-09-29, the tests only. A note cut by one
   test stayed on the shared clipboard for the next (every command
@@ -228,6 +230,10 @@ In the app:
 - P20. Belarusian and Danish are fully translated, Hungarian and
   Swedish over 99%, but disabled (`meta/data.py`); the translation
   test flags each. Designer's decision: enable them, or keep them off.
+- P21. The language from the environment reads `LANG` before
+  `LC_ALL`; POSIX gives `LC_ALL` priority (then `LC_MESSAGES`, then
+  `LANG`). Changing it would change some users' language. Designer's
+  decision.
 
 ## Views on the Effective Styles
 
