@@ -40,7 +40,7 @@ How domain objects are serialized to `.tsk` XML files and deserialized back.
 
 3. ~~`plannedDurationMode` skip condition uses hardcoded `"implicit"` but
    the documented default starting state is "automatic"~~ — **Resolved.**
-   The actual code default is `"implicit"` (task.py:52). The
+   The actual code default is `"implicit"` (`Task.__init__`). The
    DURATION_CALCULATIONS.md documentation has been corrected to match.
    Writer and reader both agree on `"implicit"` as the default.
 
@@ -73,25 +73,25 @@ the element, not written as an empty value.
 
 ### Task Node
 
-`task_node()` — lines 144-199:
+`task_node()`:
 
-| Line | XML Attribute | Skip Condition | Type |
-|------|--------------|----------------|------|
-| 148 | `plannedstartdate` | `== maxDateTime` | Sentinel |
-| 150 | `duedate` | `== maxDateTime` | Sentinel |
-| 152 | `actualstartdate` | `== maxDateTime` | Sentinel |
-| 154 | `completiondate` | `== maxDateTime` | Sentinel |
-| 156 | `percentageComplete` | `== 0` (falsy) | Falsy |
-| 158 | `recurrence` | empty Recurrence (falsy) | Falsy |
-| 160 | `budget` | `== TimeDelta()` | Sentinel |
-| 162 | `plannedDuration` | `== TimeDelta()` | Sentinel |
-| 164 | `plannedDurationMode` | `!= "implicit"` (inverted) | Hardcoded string |
-| 166 | `priority` | `== 0` (falsy) | Falsy |
-| 168 | `hourlyFee` | `== 0` (falsy) | Falsy |
-| 170 | `fixedFee` | `== 0` (falsy) | Falsy |
-| 173 | `reminder` | `== maxDateTime` | Sentinel |
-| 187 | `prerequisites` | empty string (falsy) | Falsy |
-| 189 | `shouldMarkCompleted...` | `== None` | None check |
+| XML Attribute | Skip Condition | Type |
+|--------------|----------------|------|
+| `plannedstartdate` | `== maxDateTime` | Sentinel |
+| `duedate` | `== maxDateTime` | Sentinel |
+| `actualstartdate` | `== maxDateTime` | Sentinel |
+| `completiondate` | `== maxDateTime` | Sentinel |
+| `percentageComplete` | `== 0` (falsy) | Falsy |
+| `recurrence` | empty Recurrence (falsy) | Falsy |
+| `budget` | `== TimeDelta()` | Sentinel |
+| `plannedDuration` | `== TimeDelta()` | Sentinel |
+| `plannedDurationMode` | `!= "implicit"` (inverted) | Hardcoded string |
+| `priority` | `== 0` (falsy) | Falsy |
+| `hourlyFee` | `== 0` (falsy) | Falsy |
+| `fixedFee` | `== 0` (falsy) | Falsy |
+| `reminder` | `== maxDateTime` | Sentinel |
+| `prerequisites` | empty string (falsy) | Falsy |
+| `shouldMarkCompleted...` | `== None` | None check |
 
 `maxDateTime` is the date not set, the latest date
 ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#dates-not-set-is-the-latest-date));
@@ -99,26 +99,26 @@ the reader gives it back for a missing attribute.
 
 ### Recurrence Node
 
-`recurrence_node()` — lines 201-217:
+`recurrence_node()`:
 
-| Line | XML Attribute | Skip Condition | Type |
-|------|--------------|----------------|------|
-| 203 | `amount` | `<= 1` | Numeric compare |
-| 205 | `count` | `<= 0` | Numeric compare |
-| 207 | `max` | `<= 0` | Numeric compare |
-| 209 | `stop_datetime` | `== maxDateTime` | Sentinel |
-| 211 | `sameWeekday` | falsy (`False`) | Falsy |
-| 213 | `recurBasedOnCompletion` | falsy (`False`) | Falsy |
-| 215 | `weekdays` | falsy (empty) | Falsy |
+| XML Attribute | Skip Condition | Type |
+|--------------|----------------|------|
+| `amount` | `<= 1` | Numeric compare |
+| `count` | `<= 0` | Numeric compare |
+| `max` | `<= 0` | Numeric compare |
+| `stop_datetime` | `== maxDateTime` | Sentinel |
+| `sameWeekday` | falsy (`False`) | Falsy |
+| `recurBasedOnCompletion` | falsy (`False`) | Falsy |
+| `weekdays` | falsy (empty) | Falsy |
 
 ### Effort Node
 
-`effort_node()` — lines 219-239:
+`effort_node()`:
 
-| Line | XML Attribute | Skip Condition | Type |
-|------|--------------|----------------|------|
-| 234 | `entryMode` | falsy or `== "standard"` | Hardcoded string |
-| | `creationDateTime`, `modificationDateTime` | `<= DateTime.min` | Sentinel; with microseconds (`date.Timestamp`) |
+| XML Attribute | Skip Condition | Type |
+|--------------|----------------|------|
+| `entryMode` | falsy or `== "standard"` | Hardcoded string |
+| `creationDateTime`, `modificationDateTime` | `<= DateTime.min` | Sentinel; with microseconds (`date.Timestamp`) |
 
 ### Category Node
 
@@ -132,20 +132,20 @@ the reader gives it back for a missing attribute.
 
 ### Base Node (All Objects)
 
-`__base_node()` / `base_node()` / `base_composite_node()` — lines 286-353:
+`__base_node()` / `base_node()` / `base_composite_node()`:
 
-| Line | XML Attribute | Skip Condition | Type |
-|------|--------------|----------------|------|
-| 292 | `creationDateTime` | `<= DateTime.min` | Sentinel; written with microseconds (`date.Timestamp`) |
-| 294 | `modificationDateTime` | `<= DateTime.min` | Sentinel; written with microseconds (`date.Timestamp`) |
-| 298 | `subject` | `""` (falsy) | Falsy |
-| 300 | `description` | `""` (falsy) | Falsy |
-| 308 | `fgColor` | `None` (falsy) | Falsy |
-| 310 | `bgColor` | `None` (falsy) | Falsy |
-| 312 | `font` | `None` (falsy) | Falsy |
-| 314 | `icon` | `""` (falsy) | Falsy |
-| 318 | `ordering` | `== 0` (falsy) | Falsy |
-| 345 | `expandedContexts` | empty (falsy) | Falsy |
+| XML Attribute | Skip Condition | Type |
+|--------------|----------------|------|
+| `creationDateTime` | `<= DateTime.min` | Sentinel; written with microseconds (`date.Timestamp`) |
+| `modificationDateTime` | `<= DateTime.min` | Sentinel; written with microseconds (`date.Timestamp`) |
+| `subject` | `""` (falsy) | Falsy |
+| `description` | `""` (falsy) | Falsy |
+| `fgColor` | `None` (falsy) | Falsy |
+| `bgColor` | `None` (falsy) | Falsy |
+| `font` | `None` (falsy) | Falsy |
+| `icon` | `""` (falsy) | Falsy |
+| `ordering` | `== 0` (falsy) | Falsy |
+| `expandedContexts` | empty (falsy) | Falsy |
 
 ---
 
@@ -160,7 +160,7 @@ When an XML attribute is missing, the reader provides a default via
 | `plannedstartdate` | not set → `None` → `maxDateTime` | Yes |
 | `percentageComplete` | `"0"` → `0` | Yes |
 | `priority` | `"0"` → `0` | Yes |
-| `plannedDurationMode` | `"implicit"` | Yes — code default is `"implicit"` (task.py:52) |
+| `plannedDurationMode` | `"implicit"` | Yes — code default is `"implicit"` (`Task.__init__`) |
 | `budget` | `""` → `TimeDelta()` | Yes |
 | `hourlyFee` | `"0"` → `0.0` | Yes |
 
