@@ -251,6 +251,9 @@ In the app:
 - P22. ~~In the task tree, Ctrl+Enter (Mark task completed) opened
   the selected task's editor, as Enter does~~: fixed 2026-09-29; the
   same on master. The tree edits on a plain Enter only.
+- P23. ~~In the task editor, pasting several notes added only the
+  first~~: fixed 2026-09-29; the same on master. The command paired
+  one owner with the notes.
 
 ## Views on the Effective Styles
 

@@ -91,12 +91,15 @@ class DragAndDropNoteCommand(base.OrderingDragAndDropCommand):
     singular_name = _('Drag and drop note "%s"')
 
 
-class AddNoteCommand(base.BaseCommand):
+class AddNoteCommand(base.BaseCommand, base.SaveStateMixin):
     """Command to add notes to an owner (task, category, etc.).
 
     If the 'notes' keyword argument is provided, those notes are added.
     Otherwise, new empty notes are created. This allows the command to be
     used both for creating new notes and for paste operations.
+
+    Pasted notes can be the cut ones themselves (a move): undo restores
+    their parent, so undoing the cut puts them back where they were.
     """
 
     plural_name = _("Add note")
@@ -111,6 +114,7 @@ class AddNoteCommand(base.BaseCommand):
             self.__notes = [
                 note.Note(subject=_("New note")) for dummy in self.items
             ]
+        self.saveStates(self.__notes)
         self.items = self.__notes
 
     def name_subject(self, newNote):  # pylint: disable=W0613
@@ -135,18 +139,22 @@ class AddNoteCommand(base.BaseCommand):
 
     def do_command(self):
         super().do_command()
+        for each in self.__notes:
+            each.set_parent(None)  # The owner's top-level notes
         self.addNotes()
 
     def undo_command(self):
         super().undo_command()
         self.removeNotes()
+        self.undoStates()
 
     def redo_command(self):
         super().redo_command()
+        self.redoStates()
         self.addNotes()
 
 
-class AddSubNoteCommand(base.BaseCommand):
+class AddSubNoteCommand(base.BaseCommand, base.SaveStateMixin):
     plural_name = _("Add subnote")
     singular_name = _('Add subnote to "%s"')
 
@@ -162,6 +170,7 @@ class AddSubNoteCommand(base.BaseCommand):
                 for parent in self.__parents
             ],
         )
+        self.saveStates(self.__notes)  # As AddNoteCommand's
         self.items = self.__notes
 
     @patterns.eventSource
@@ -188,9 +197,11 @@ class AddSubNoteCommand(base.BaseCommand):
     def undo_command(self):
         super().undo_command()
         self.removeNotes()
+        self.undoStates()
 
     def redo_command(self):
         super().redo_command()
+        self.redoStates()
         self.addNotes()
 
 

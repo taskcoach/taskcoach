@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test
-from taskcoachlib import gui, config, persistence
+from taskcoachlib import command, gui, config, persistence
 from taskcoachlib.domain import note, attachment, category
 
 
@@ -58,6 +58,19 @@ class NoteViewerTest(test.wxTestCase):
             notesToShow=note.NoteContainer(),
         )
         self.assertFalse(localViewer.presentation())
+
+    def test_the_editor_pastes_every_note(self):
+        owner = category.Category("owner")
+        local_viewer = gui.dialog.editor.LocalNoteViewer(
+            self.frame, self.taskFile, self.settings, owner=owner
+        )
+        copied = [note.Note(subject="a"), note.Note(subject="b")]
+        command.Clipboard().put(copied, self.taskFile.notes())
+        self.addCleanup(command.Clipboard().clear)
+        local_viewer.pasteItemCommand().do()
+        self.assertEqual(
+            ["a", "b"], [each.subject() for each in owner.notes()]
+        )
 
     def testShowDescriptionColumn(self):
         self.note.setDescription("Description")

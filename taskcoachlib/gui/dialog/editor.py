@@ -2845,20 +2845,18 @@ class LocalNoteViewer(viewer.BaseNoteViewer):  # pylint: disable=W0223
             self._expandNoteAndChildren(child)
 
     def pasteItemCommand(self):
-        """Paste notes from clipboard to this task's notes as top-level notes.
-
-        Clears parent reference so notes always become top-level, even if
-        copied from a nested location.
-        """
+        """Paste notes from clipboard to this task's notes as top-level
+        notes, even if they come from a nested location (the command
+        sets their parent, undoably)."""
         from taskcoachlib.command.clipboard import Clipboard
 
-        copies = Clipboard().items_to_paste()
-        # Clear parent so notes become top-level (even if source was nested)
-        # and expand all pasted notes so children are visible
-        for n in copies:
-            n.set_parent(None)
+        pasted = Clipboard().items_to_paste()
+        # Expand all pasted notes so children are visible
+        for n in pasted:
             self._expandNoteAndChildren(n)
-        return command.AddNoteCommand(None, [self.__note_owner], notes=copies)
+        # One owner per note: the command pairs them
+        owners = [self.__note_owner] * len(pasted)
+        return command.AddNoteCommand(None, owners, notes=pasted)
 
     def pasteAsSubItemCommand(self):
         """Paste notes as subnotes of the selected note.
@@ -2872,18 +2870,17 @@ class LocalNoteViewer(viewer.BaseNoteViewer):  # pylint: disable=W0223
         parent_note = selected[0]
         from taskcoachlib.command.clipboard import Clipboard
 
-        copies = Clipboard().items_to_paste()
-        # Clear parent references - AddSubNoteCommand will set correct parent via addChild
-        # and expand all pasted notes so children are visible
-        for n in copies:
-            n.set_parent(None)
+        pasted = Clipboard().items_to_paste()
+        # The command sets their parent; expand all pasted notes so
+        # children are visible
+        for n in pasted:
             self._expandNoteAndChildren(n)
         # Also expand the parent note so the pasted subnotes are visible
         parent_note.expand(True, context=self.settingsSection(), notify=False)
-        # Repeat parent_note for each copy so zip in AddSubNoteCommand pairs correctly
-        parents = [parent_note] * len(copies)
+        # One parent per note: AddSubNoteCommand pairs them
+        parents = [parent_note] * len(pasted)
         return command.AddSubNoteCommand(
-            None, parents, owner=self.__note_owner, notes=copies
+            None, parents, owner=self.__note_owner, notes=pasted
         )
 
 
