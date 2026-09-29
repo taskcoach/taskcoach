@@ -316,18 +316,6 @@ class Settings(CachingConfigParser):
             result = result.replace(
                 "appearance", "statuses"
             )  # renamed to "Statuses" tab
-        elif section in orderingViewers and option == "columnsalwaysvisible":
-            # XXX: remove 'ordering' from always visible columns. This wasn't in any official release
-            # but I need it so that people can test without resetting their .ini file...
-            # Remove this after the 1.3.38 release.
-            try:
-                columns = ast.literal_eval(result)
-            except (SyntaxError, ValueError):
-                columns = ["ordering"]
-            else:
-                if "ordering" in columns:
-                    columns.remove("ordering")
-            result = str(columns)
         if section in ("icon", "icon_dark"):
             from taskcoachlib.gui.icons.icon_library import icon_catalog
 
