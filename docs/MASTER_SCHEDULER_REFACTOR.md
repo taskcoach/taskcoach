@@ -219,7 +219,13 @@ In the app:
   the list; opening an editor now hides it and drops a pending one.
 - P16. Every launch logs `gtk_distribute_natural_allocation: assertion
   'extra_space >= 0' failed`; on the designer's display also
-  `gdk_window_thaw_toplevel_updates`.
+  `gdk_window_thaw_toplevel_updates`. Traced 2026-09-29 under gdb
+  (`G_DEBUG=fatal-criticals`): no Python code on the stack; at the
+  main window's first show, wx applies the window manager's
+  decoration size and GTK briefly gives a box less than its contents'
+  minimum. Naming the widget needs GTK's debug symbols. The first
+  show is the ground of the window geometry work (WINDOW_GEOMETRY.md,
+  branch `window-geometry`).
 - P17. ~~Invalid escape sequences in three test files~~: fixed
   2026-09-29, raw strings.
 - P18. ~~The dependency graph viewer's size event method outside its
