@@ -547,7 +547,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         """
         if self.__indicator and not self.__menu_rebuild_pending:
             self.__menu_rebuild_pending = True
-            wx.CallAfter(self._build_gtk_menu)
+            patterns.later.soon(self, self._build_gtk_menu)
 
     def _build_gtk_menu(self):
         """Build a GTK menu for the AppIndicator."""
@@ -569,7 +569,8 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         # Show/Hide main window (acts as left-click replacement)
         show_item = Gtk.MenuItem(label=_("Show/Hide Task Coach"))
         show_item.connect(
-            "activate", lambda w: wx.CallAfter(self.on_taskbar_click)
+            "activate",
+            lambda w: patterns.later.soon(self, self.on_taskbar_click),
         )
         menu.append(show_item)
 
@@ -632,8 +633,8 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
                 stop_item = Gtk.MenuItem(label=label)
                 stop_item.connect(
                     "activate",
-                    lambda w, t=most_recent: wx.CallAfter(
-                        self._do_start_tracking, t
+                    lambda w, t=most_recent: patterns.later.soon(
+                        self, self._do_start_tracking, t
                     ),
                 )
                 menu.append(stop_item)
@@ -644,7 +645,8 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         # Quit
         quit_item = Gtk.MenuItem(label=_("Quit"))
         quit_item.connect(
-            "activate", lambda w: wx.CallAfter(self.__window.Close)
+            "activate",
+            lambda w: patterns.later.soon(self.__window, self.__window.Close),
         )
         menu.append(quit_item)
 
@@ -676,8 +678,8 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             # Use default argument to capture template_path in closure
             item.connect(
                 "activate",
-                lambda w, p=template_path: wx.CallAfter(
-                    self._do_new_task_from_template, p
+                lambda w, p=template_path: patterns.later.soon(
+                    self, self._do_new_task_from_template, p
                 ),
             )
             submenu.append(item)
@@ -705,8 +707,8 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
                 )
                 item.connect(
                     "activate",
-                    lambda w, t=task_item: wx.CallAfter(
-                        self._do_start_tracking, t
+                    lambda w, t=task_item: patterns.later.soon(
+                        self, self._do_start_tracking, t
                     ),
                 )
                 gtk_menu.append(item)
@@ -734,7 +736,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
 
     def _on_new_task(self, widget):
         """Handle New Task menu item."""
-        wx.CallAfter(self._do_new_task)
+        patterns.later.soon(self, self._do_new_task)
 
     def _do_new_task(self):
         """Create a new task (called from wx main thread)."""
@@ -746,7 +748,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
 
     def _on_new_effort(self, widget):
         """Handle New Effort menu item."""
-        wx.CallAfter(self._do_new_effort)
+        patterns.later.soon(self, self._do_new_effort)
 
     def _do_new_effort(self):
         """Create a new effort (called from wx main thread)."""
@@ -761,7 +763,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
 
     def _on_stop_tracking(self, widget):
         """Handle Stop Tracking menu item."""
-        wx.CallAfter(self._do_stop_tracking)
+        patterns.later.soon(self, self._do_stop_tracking)
 
     def _do_stop_tracking(self):
         """Stop tracking all efforts (called from wx main thread)."""
@@ -770,7 +772,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
 
     def _on_new_category(self, widget):
         """Handle New Category menu item."""
-        wx.CallAfter(self._do_new_category)
+        patterns.later.soon(self, self._do_new_category)
 
     def _do_new_category(self):
         """Create a new category (called from wx main thread)."""
@@ -784,7 +786,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
 
     def _on_new_note(self, widget):
         """Handle New Note menu item."""
-        wx.CallAfter(self._do_new_note)
+        patterns.later.soon(self, self._do_new_note)
 
     def _do_new_note(self):
         """Create a new note (called from wx main thread)."""

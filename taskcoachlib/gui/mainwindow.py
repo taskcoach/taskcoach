@@ -131,7 +131,7 @@ class MainWindow(
             self.__create_reminder_controller()
         finally:
             self.Thaw()
-        wx.CallAfter(self.viewer.components_created)
+        patterns.later.soon(self, self.viewer.components_created)
 
     def _create_viewer_container(self):  # Not private for test purposes
         # pylint: disable=W0201
@@ -181,13 +181,13 @@ class MainWindow(
 
             # We use CallAfter because otherwise the statusbar will appear at the
             # top of the window when it is initially hidden and later shown.
-            wx.CallAfter(self.showStatusBar)
+            patterns.later.soon(self, self.showStatusBar)
             self.__restore_perspective()
         finally:
             self.Thaw()
 
         # Reset toolbar position after perspective is loaded
-        wx.CallAfter(self._resetToolbarPosition)
+        patterns.later.soon(self, self._resetToolbarPosition)
 
         # Note: Window position/size tracking uses debouncing to handle spurious
         # events from AUI LoadPerspective() and GTK window realization.
@@ -599,7 +599,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
 
         # Detect transition from dragging to idle
         if prev_action != 0 and action == 0:
-            wx.CallAfter(self._resetToolbarPosition)
+            patterns.later.soon(self, self._resetToolbarPosition)
 
         # Detect floating->docked transition
         pane = self.manager.GetPane("toolbar")
@@ -607,7 +607,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
             was_floating = getattr(self, "_toolbar_was_floating", False)
             is_floating = pane.IsFloating()
             if was_floating and not is_floating:
-                wx.CallAfter(self._resetToolbarPosition)
+                patterns.later.soon(self, self._resetToolbarPosition)
             self._toolbar_was_floating = is_floating
 
         self._prev_manager_action = action

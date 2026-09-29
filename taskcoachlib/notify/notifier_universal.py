@@ -18,30 +18,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 from .notifier import AbstractNotifier
-from taskcoachlib import operating_system
+from taskcoachlib import operating_system, patterns
 
 # ==============================================================================
 # Utils
 
 
-class AnimatedShow(wx.Timer):
+class AnimatedShow:
     """
     Utility class to show a frame with an animation
     """
 
     def __init__(self, frame, show=True):
-        super().__init__()
-
         if frame.CanSetTransparent():
             self.__frame = frame
             self.__step = 0
             self.__show = show
 
-            id_ = wx.NewId()
-            self.SetOwner(self, id_)
-            self.Bind(wx.EVT_TIMER, self.__OnTick, id=id_)
-            self.Start(100)
-            frame.Bind(wx.EVT_CLOSE, self.__OnClose)
+            self.__ticks = patterns.later.every(frame, 100, self.__on_tick)
+            frame.Bind(wx.EVT_CLOSE, self.__on_close)
 
             frame.SetTransparent(0)
 
@@ -50,7 +45,7 @@ class AnimatedShow(wx.Timer):
         else:
             frame.Show(show)
 
-    def __OnTick(self, event):  # pylint: disable=W0613
+    def __on_tick(self):
         self.__step += 1
 
         if self.__show:
@@ -61,53 +56,48 @@ class AnimatedShow(wx.Timer):
         self.__frame.SetTransparent(alpha)
 
         if self.__step == 10:
-            self.Stop()
+            self.__ticks.cancel()
 
             if not self.__show:
                 self.__frame.Close()
 
-    def __OnClose(self, event):
-        self.Stop()
+    def __on_close(self, event):
+        self.__ticks.cancel()
         event.Skip()
 
 
-class AnimatedMove(wx.Timer):
+class AnimatedMove:
     """
     Utility class to move a frame with an animation
     """
 
     def __init__(self, frame, destination):
-        super().__init__()
-
         self.__frame = frame
         self.__origin = frame.GetPosition()
         self.__destination = destination
         self.__step = 0
 
-        id_ = wx.NewId()
-        self.SetOwner(self, id_)
-        self.Bind(wx.EVT_TIMER, self.__OnTick, id=id_)
-        self.Start(100)
-        frame.Bind(wx.EVT_CLOSE, self.__OnClose)
+        self.__ticks = patterns.later.every(frame, 100, self.__on_tick)
+        frame.Bind(wx.EVT_CLOSE, self.__on_close)
 
-    def __OnTick(self, event):  # pylint: disable=W0613
+    def __on_tick(self):
         x0, y0 = self.__origin
         x1, y1 = self.__destination
         self.__step += 1
 
-        curX = int(x0 + (x1 - x0) * self.__step / 10)
-        curY = int(y0 + (y1 - y0) * self.__step / 10)
+        cur_x = int(x0 + (x1 - x0) * self.__step / 10)
+        cur_y = int(y0 + (y1 - y0) * self.__step / 10)
 
-        self.__frame.SetPosition(wx.Point(curX, curY))
+        self.__frame.SetPosition(wx.Point(cur_x, cur_y))
 
         if self.__step == 10:
-            self.Stop()
+            self.__ticks.cancel()
 
-    def __OnClose(self, event):
-        self.Stop()
+    def __on_close(self, event):
+        self.__ticks.cancel()
         event.Skip()
 
-
+
 # ==============================================================================
 # Notifications
 
@@ -290,11 +280,7 @@ class _NotificationCenter(wx.EvtHandler):
         self.notificationWidth = 300
         self.notificationMargin = 5
 
-        self.__tmr = wx.Timer()
-        id_ = wx.NewId()
-        self.__tmr.SetOwner(self, id_)
-        self.Bind(wx.EVT_TIMER, self.__on_tick, id=id_)
-        self.__tmr.Start(1000)
+        self.__ticks = patterns.later.every(self, 1000, self.__on_tick)
 
     def notify_frame(self, frm, timeout=None):
         """
@@ -381,8 +367,7 @@ class _NotificationCenter(wx.EvtHandler):
 
     def cleanup(self):
         """Stop the notification timer to prevent crashes during app shutdown."""
-        if self.__tmr and self.__tmr.IsRunning():
-            self.__tmr.Stop()
+        self.__ticks.cancel()
         self.hide_all()
 
     def GetDisplayRect(self):
@@ -395,7 +380,7 @@ class _NotificationCenter(wx.EvtHandler):
             return wx.ClientDisplayRect()
         return wx.Display(dpyIndex).GetClientArea()
 
-    def __on_tick(self, event):  # pylint: disable=W0613
+    def __on_tick(self):
         s = 0
         new_list = []
         # Next free bottom per display area, carried over from frame to

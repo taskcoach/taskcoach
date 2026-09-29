@@ -23,8 +23,6 @@ from . import defaults
 from taskcoachlib.meta.debug import log_step
 from taskcoachlib import patterns
 
-import wx
-
 _LEGACY_DEBOUNCE_MS = 1000
 
 # Sections monitored by the shim — add entries as code is migrated.
@@ -61,7 +59,7 @@ class _Settings2:
     """Singleton read-only settings shim."""
 
     _initialized = False
-    _debounce_timer = None
+    _refresh_later = None
 
     def refresh_now(self):
         """Refresh at once, for a setting that a computed setting is
@@ -77,12 +75,11 @@ class _Settings2:
         """Reset debounce timer. No-op before init()."""
         if not self._initialized:
             return
-        if self._debounce_timer is None:
-            self._debounce_timer = wx.CallLater(
-                _LEGACY_DEBOUNCE_MS, self._on_debounce
+        if self._refresh_later is None:
+            self._refresh_later = patterns.later.debounced(
+                self, _LEGACY_DEBOUNCE_MS, self._on_debounce
             )
-        else:
-            self._debounce_timer.Restart(_LEGACY_DEBOUNCE_MS)
+        self._refresh_later()
 
     def _notify_changed(self):
         """Fire Publisher signal after refresh or recomputation."""

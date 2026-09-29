@@ -782,7 +782,9 @@ class FileQuit(base_uicommand.UICommand):
         # its resources before quit_application() destroys the tray icon.
         # Without this, Windows crashes (segfault) because PopupMenu()
         # is modal and the tray icon is destroyed while the menu is active.
-        wx.CallAfter(self.main_window().Close, force=True)
+        patterns.later.soon(
+            self.main_window(), self.main_window().Close, force=True
+        )
 
 
 class EditUndo(base_uicommand.UICommand):
@@ -3899,7 +3901,7 @@ class ToggleAutoColumnResizing(
             *args,
             **kwargs
         )
-        wx.CallAfter(self.updateWidget)
+        patterns.later.soon(self, self.updateWidget)
 
     def updateWidget(self):
         # Guard against deleted C++ object - can happen when wx.CallAfter

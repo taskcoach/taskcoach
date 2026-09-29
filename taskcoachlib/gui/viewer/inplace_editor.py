@@ -28,6 +28,7 @@ from taskcoachlib.gui.dialog.entry import (
     get_suggested_hour_choices,
     get_suggested_minute_choices,
 )
+from taskcoachlib import patterns
 
 
 class KillFocusAcceptsEditsMixin(object):
@@ -102,7 +103,7 @@ class EscapeKeyMixin(object):
             # Notify the owner about the changes
             self.AcceptChanges()
             # Even if vetoed, close the control (consistent with MSW)
-            wx.CallAfter(self.Finish)
+            patterns.later.soon(self, self.Finish)
         else:
             event.Skip()
 
@@ -254,7 +255,7 @@ class DateTimeCtrl(
             and not event.ShiftDown()
         ):
             self.AcceptChanges()
-            wx.CallAfter(self.Finish)
+            patterns.later.soon(self, self.Finish)
         else:
             event.Skip()
 
@@ -282,7 +283,7 @@ class DateTimeCtrl(
         """Handle focus loss from child controls."""
         event.Skip()  # Allow default processing
         # Check focus after it settles (allows tab between children)
-        wx.CallAfter(self._maybeAcceptAndClose)
+        patterns.later.soon(self, self._maybeAcceptAndClose)
 
     def _maybeAcceptAndClose(self):
         """Accept changes and close if focus has left the control entirely."""

@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import wx, re, sre_constants
+from taskcoachlib import patterns
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.widgets import tooltip
 from taskcoachlib.i18n import _
@@ -52,7 +53,9 @@ class _SearchCtrlInner(tooltip.ToolTipMixin, wx.SearchCtrl):
         )
         self.SetSearchBitmap(self.getBitmap("nuvola_apps_xmag"))
         self.SetCancelBitmap(self.getBitmap("nuvola_status_dialog-error"))
-        self.__timer = wx.Timer(self)
+        self.__find_later = patterns.later.debounced(
+            self, self.__debounceDelay, lambda: self.onFind(None)
+        )
         self.__recentSearches = []
         self.__maxRecentSearches = 5
         self.__tooltip = tooltip.SimpleToolTip(self)
@@ -120,7 +123,6 @@ class _SearchCtrlInner(tooltip.ToolTipMixin, wx.SearchCtrl):
     def bindEventHandlers(self):
         # pylint: disable=W0142,W0612,W0201
         for args in [
-            (wx.EVT_TIMER, self.onFind, self.__timer),
             (wx.EVT_TEXT_ENTER, self.onFind),
             (wx.EVT_TEXT, self.onFindLater),
             (wx.EVT_SEARCHCTRL_CANCEL_BTN, self.onCancel),
@@ -205,8 +207,7 @@ class _SearchCtrlInner(tooltip.ToolTipMixin, wx.SearchCtrl):
 
         This prevents the NULL pointer crashes documented in PYTHON3_MIGRATION_NOTES.md
         """
-        if self.__timer and self.__timer.IsRunning():
-            self.__timer.Stop()
+        self.__find_later.cancel()
         # Replace callback with no-op lambda to safely handle any late timer events
         self.__callback = lambda *args, **kwargs: None
 
@@ -221,7 +222,7 @@ class _SearchCtrlInner(tooltip.ToolTipMixin, wx.SearchCtrl):
 
         This is a best practice for search UX, used by Google, VS Code, etc.
         """
-        self.__timer.Start(self.__debounceDelay, oneShot=True)
+        self.__find_later()
 
     def onFind(self, event):  # pylint: disable=W0613
         """
@@ -235,8 +236,7 @@ class _SearchCtrlInner(tooltip.ToolTipMixin, wx.SearchCtrl):
         Best practice: Stop any pending timer to prevent double execution.
         """
         # Cancel any pending debounced search
-        if self.__timer.IsRunning():
-            self.__timer.Stop()
+        self.__find_later.cancel()
         if not self.IsEnabled():
             return
         if not self.isValid():

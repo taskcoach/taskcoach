@@ -23,6 +23,7 @@ from taskcoachlib.help.balloontips import BalloonTipManager
 from taskcoachlib.gui import uicommand
 from taskcoachlib.i18n import _
 import wx
+from taskcoachlib import patterns
 
 
 class _ToolBarEditorInterior(wx.Panel):
@@ -183,7 +184,8 @@ class _ToolBarEditorInterior(wx.Panel):
             wx.EVT_LIST_ITEM_ACTIVATED, self._on_visible_double_click
         )
 
-        wx.CallAfter(
+        patterns.later.soon(
+            wx.GetTopLevelParent(self),
             wx.GetTopLevelParent(self).AddBalloonTip,
             settings,
             "customizabletoolbars_dnd",

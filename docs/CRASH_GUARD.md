@@ -17,6 +17,8 @@ Task Coach uses wxPython, which wraps C++ widgets. When Python holds a reference
 
 The crash guard system prevents these segfaults and logs diagnostic information when they would have occurred.
 
+Since 2026-09-29 the app's own deferred calls go through `patterns.later`, which cannot reach a deleted window ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)); the guards below remain for bundled and system library code (AUI, the tree list, the calendar), which still uses `wx.CallAfter` and `wx.Timer` directly.
+
 The crash guard is part of the runtime workarounds documented in [TODO.md — Monkeypatches and Workarounds](TODO.md#monkeypatches-and-workarounds).
 
 ---

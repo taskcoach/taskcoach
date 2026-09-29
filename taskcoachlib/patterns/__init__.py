@@ -26,3 +26,4 @@ from .composite import (
     CompositeSet,
 )
 from .metaclass import *
+from .deferred import later  # noqa: F401 (re-exported)

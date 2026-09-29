@@ -20,6 +20,7 @@ import os
 import wx
 from wx.lib.agw import hypertreelist
 from taskcoachlib import operating_system
+from taskcoachlib import patterns
 
 
 class AutoColumnWidthMixin(object):
@@ -61,7 +62,7 @@ class AutoColumnWidthMixin(object):
             self.Bind(wx.EVT_LIST_COL_BEGIN_DRAG, self.OnBeginColumnDrag)
             self.Bind(wx.EVT_LIST_COL_END_DRAG, self.OnEndColumnDrag)
             self._bindHeaderMotion()
-            wx.CallAfter(self.DoResize)
+            patterns.later.soon(self, self.DoResize)
         else:
             self.Unbind(wx.EVT_SIZE)
             self.Unbind(wx.EVT_LIST_COL_BEGIN_DRAG)
@@ -86,7 +87,7 @@ class AutoColumnWidthMixin(object):
 
     def OnEndColumnDrag(self, event):
         self.Bind(wx.EVT_SIZE, self.OnResize)
-        wx.CallAfter(self.DoResize)
+        patterns.later.soon(self, self.DoResize)
         event.Skip()
 
     def _getHeaderWindow(self):
@@ -173,7 +174,7 @@ class AutoColumnWidthMixin(object):
         # Always defer column resize to avoid cascade repaints during resize operations.
         # This is especially important during AUI sash drag where immediate column
         # recalculation can cause flickering.
-        wx.CallAfter(self.DoResize)
+        patterns.later.soon(self, self.DoResize)
 
     def DoResize(self):
         if not self:
@@ -232,25 +233,25 @@ class AutoColumnWidthMixin(object):
     def InsertColumn(self, *args, **kwargs):
         """Insert the new column and then resize."""
         result = super().InsertColumn(*args, **kwargs)
-        wx.CallAfter(self.DoResize)
+        patterns.later.soon(self, self.DoResize)
         return result
 
     def DeleteColumn(self, *args, **kwargs):
         """Delete the column and then resize."""
         result = super().DeleteColumn(*args, **kwargs)
-        wx.CallAfter(self.DoResize)
+        patterns.later.soon(self, self.DoResize)
         return result
 
     def RemoveColumn(self, *args, **kwargs):
         """Remove the column and then resize."""
         result = super().RemoveColumn(*args, **kwargs)
-        wx.CallAfter(self.DoResize)
+        patterns.later.soon(self, self.DoResize)
         return result
 
     def AddColumn(self, *args, **kwargs):
         """Add the column and then resize."""
         result = super().AddColumn(*args, **kwargs)
-        wx.CallAfter(self.DoResize)
+        patterns.later.soon(self, self.DoResize)
         return result
 
     # Private helper methods:

@@ -38,6 +38,7 @@ import traceback
 
 import wx
 
+from taskcoachlib import patterns
 from taskcoachlib.meta.debug import log_step
 
 FAST_MS = 10
@@ -213,30 +214,28 @@ class GeometryTracer:
         self.__windows_fn = windows_fn
         self.__last = {}
         self.__burst_left = 0
-        # Not owned by the window: its destroy event may never come
-        # (AUI consumes it, docs/AUI.md), and a tick to a destroyed
-        # owner crashes. Each tick checks the window instead.
-        self.__timer = wx.Timer()
-        self.__timer.Bind(wx.EVT_TIMER, self.__on_tick)
+        self.__ticks = None  # Stop when the owner goes (deferred.py)
 
     def burst(self, reason=""):
         log_step("burst", reason, prefix=PREFIX)
         self.__last = {}
         self.__burst_left = BURST_MS // FAST_MS
         self.__tick()
-        self.__timer.Start(FAST_MS)
+        self.__tick_every(FAST_MS)
 
-    def __on_tick(self, event):
-        if not self.__owner:
-            self.__timer.Stop()
-            self.__timer.Unbind(wx.EVT_TIMER)  # Frees the tracer
-            log_step("stopped: window destroyed", prefix=PREFIX)
-            return
+    def __tick_every(self, milliseconds):
+        if self.__ticks is not None:
+            self.__ticks.cancel()
+        self.__ticks = patterns.later.every(
+            self.__owner, milliseconds, self.__on_tick
+        )
+
+    def __on_tick(self):
         if self.__burst_left:
             self.__burst_left -= 1
             if not self.__burst_left:
                 self.__last = {}  # A full snapshot ends the burst
-                self.__timer.Start(SLOW_MS)
+                self.__tick_every(SLOW_MS)
         else:
             self.__last = {}
         self.__tick()

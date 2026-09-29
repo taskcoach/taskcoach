@@ -23,6 +23,10 @@ Canon decision by designer, 2026-09-28.
   tell what each value means. The core fields that fold a subtree value
   in keep doing so; explicit fields beside them are postponed
   ([TASK_FIELDS.md](TASK_FIELDS.md#postponed-base-and-effective-fields)).
+- **Deferred calls through `patterns.later`:** a debounce, delay,
+  repeat or "when idle" call names its owner and never uses
+  `wx.CallLater`, `wx.CallAfter` or `wx.Timer` directly, so none can
+  reach a deleted window ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
 
 ## Code style
 

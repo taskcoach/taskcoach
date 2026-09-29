@@ -372,7 +372,7 @@ class TaskFile(patterns.Observer):
         import wx  # Not really clean but we're in another thread...
 
         # Checked on the main thread, after any save of ours finished
-        wx.CallAfter(self.check_disk)
+        patterns.later.soon(self, self.check_disk)
 
     def check_disk(self, notify=True):
         """Notice a change by another program: the file differs from

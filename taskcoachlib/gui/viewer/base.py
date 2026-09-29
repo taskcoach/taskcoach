@@ -112,7 +112,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             self.on_end_bulk_operation, eventType="command.justBulkModified"
         )
 
-        wx.CallAfter(self.__DisplayBalloon)
+        patterns.later.soon(self, self.__DisplayBalloon)
 
     def __DisplayBalloon(self):
         # Run by wx.CallAfter: the viewer may be closing or gone by then
@@ -458,7 +458,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         patterns.Event(self.selection_changed_event_type(), self).send()
 
         # The status bar reads the selection itself, 500 ms later
-        wx.CallAfter(self.send_viewer_status_event)
+        patterns.later.soon(self, self.send_viewer_status_event)
 
     def updateSelection(self, send_status_event=True):
         """Legacy method - kept for subclass compatibility.
@@ -516,7 +516,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         self.widget.select_all()
         # Use CallAfter to make sure we start processing selection events
         # after all selection events have been fired (and ignored):
-        wx.CallAfter(self.end_of_select_all)
+        patterns.later.soon(self, self.end_of_select_all)
 
     def end_of_select_all(self):
         # Run by wx.CallAfter: the viewer may be closing or gone by then

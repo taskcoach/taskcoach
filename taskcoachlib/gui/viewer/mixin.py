@@ -27,6 +27,7 @@ from taskcoachlib.gui.icons import image_list_cache
 from taskcoachlib.i18n import _
 import ast
 import wx
+from taskcoachlib import patterns
 
 
 class SearchableViewerMixin(object):
@@ -679,8 +680,8 @@ class AttachmentDropTargetMixin(object):
             )
             newItemDialog.Show()
             # Use CallAfter to ensure proper focus after drop completes
-            wx.CallAfter(newItemDialog.Raise)
-            wx.CallAfter(newItemDialog.SetFocus)
+            patterns.later.soon(newItemDialog, newItemDialog.Raise)
+            patterns.later.soon(newItemDialog, newItemDialog.SetFocus)
         else:
             addAttachment = command.AddAttachmentCommand(
                 self.presentation(), [item], attachments=attachments
@@ -740,8 +741,8 @@ class AttachmentDropTargetMixin(object):
                 columnName="attachments",
             )
             itemEditor.Show()
-            wx.CallAfter(itemEditor.Raise)
-            wx.CallAfter(itemEditor.SetFocus)
+            patterns.later.soon(itemEditor, itemEditor.Raise)
+            patterns.later.soon(itemEditor, itemEditor.SetFocus)
 
         # Also open the AttachmentEditor for the new attachments
         if newAttachments:
@@ -765,7 +766,7 @@ class AttachmentDropTargetMixin(object):
                 attachmentEditor.Raise()
                 attachmentEditor.SetFocus()
 
-            wx.CallAfter(openAttachmentEditor)
+            patterns.later.soon(itemEditor, openAttachmentEditor)
 
     def onDropURL(self, item, url, **kwargs):
         """This method is called by the widget when a URL is dropped on an

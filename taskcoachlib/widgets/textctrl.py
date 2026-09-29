@@ -444,10 +444,13 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
             self._spellCheckEnabled = True
 
         if self._spellCheckEnabled:
+            self._highlight_later = patterns.later.debounced(
+                self, 300, self._performHighlighting
+            )
             self.Bind(stc.EVT_STC_MODIFIED, self._onTextModified)
             self.Bind(wx.EVT_CONTEXT_MENU, self._onSpellCheckContextMenu)
             # Initial spell check and URL detection
-            wx.CallAfter(self._performHighlighting)
+            patterns.later.soon(self, self._performHighlighting)
 
     def _onTextModified(self, event):
         """Handle text changes - schedule spell check and URL detection."""
@@ -455,13 +458,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         if event.GetModificationType() & (
             stc.STC_MOD_INSERTTEXT | stc.STC_MOD_DELETETEXT
         ):
-            # Debounce highlighting
-            if (
-                hasattr(self, "_highlightTimer")
-                and self._highlightTimer.IsRunning()
-            ):
-                self._highlightTimer.Stop()
-            self._highlightTimer = wx.CallLater(300, self._performHighlighting)
+            self._highlight_later()
 
     def _getSpellDict(self):
         """Get spell dictionary for current language."""
@@ -682,7 +679,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         new_text = text[:start] + replacement + text[end:]
         self.SetText(new_text)
         self.SetSelection(start + len(replacement), start + len(replacement))
-        wx.CallAfter(self._performHighlighting)
+        patterns.later.soon(self, self._performHighlighting)
 
     def _addToDictionary(self, word):
         """Add word to personal dictionary."""
@@ -690,7 +687,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         if spell_dict:
             try:
                 spell_dict.add(word)
-                wx.CallAfter(self._performHighlighting)
+                patterns.later.soon(self, self._performHighlighting)
             except Exception as e:
                 log_step(
                     "add word to dictionary failed: %s" % e, prefix="SPELL"
@@ -704,12 +701,12 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
     def SetValue(self, value):
         """Set the text value (TextCtrl compatibility)."""
         self.SetText(value)
-        wx.CallAfter(self._performHighlighting)
+        patterns.later.soon(self, self._performHighlighting)
 
     def AppendText(self, text):
         """Append text (TextCtrl compatibility)."""
         self.AddText(text)
-        wx.CallAfter(self._performHighlighting)
+        patterns.later.soon(self, self._performHighlighting)
 
     def GetInsertionPoint(self):
         """Get cursor position (TextCtrl compatibility)."""
@@ -876,7 +873,9 @@ class MultiLineTextCtrl(wx.Panel):
         windowBg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
         if self._lastWindowBg != windowBg:
             self._lastWindowBg = windowBg
-            wx.CallAfter(self._textCtrl._applyThemeColours)
+            patterns.later.soon(
+                self._textCtrl, self._textCtrl._applyThemeColours
+            )
 
     # Proxy common TextCtrl methods to the inner control
     def GetValue(self, *args, **kwargs):

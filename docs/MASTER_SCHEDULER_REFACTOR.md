@@ -103,9 +103,11 @@ go at the end. Details live in the sections and documents linked.
 43. Squash to one commit before pushing, version 2.0.3.0 in the body;
     the release date (2026-09-28) may move.
 44. One app run on 2026-09-28 logged a traceback (log lost, not
-    reproduced in four runs of the same steps): watch for it. A
-    candidate, from master (#297): the spell check's 0.3 s timer
-    firing after its editor closed, seen in the unit tests that day.
+    reproduced in four runs of the same steps): watch for it.
+    Candidates, both from master: the spell check's 0.3 s timer
+    firing after its editor closed (fixed 2026-09-29, 53), and a date
+    popup's text event reaching its deleted control when the editor
+    closes (open).
 45. Not planned: the reason for each entry
     ([Later](#later-the-reason-for-each-entry)).
 46. ~~Status-first sort re-sorts on the clock's status changes~~: once
@@ -120,9 +122,8 @@ go at the end. Details live in the sections and documents linked.
     as "any".
 52. ~~Priority as it was~~: the effective priority of 2026-09-28
     undone, with 37 ([TASK_FIELDS.md](TASK_FIELDS.md#priority)).
-53. Deferred calls that can outlive their window (the spell check's
-    timer, 44): one safe pattern across the app; the approach is the
-    designer's choice ([CRASH_GUARD.md](CRASH_GUARD.md)).
+53. ~~Deferred calls that can outlive their window~~: all through
+    `patterns.later` ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
 
 ## Views on the Effective Styles
 

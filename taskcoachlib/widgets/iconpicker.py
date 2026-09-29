@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import wx
 import wx.lib.buttons as buttons
 
+from taskcoachlib import patterns
 from taskcoachlib.meta.debug import log_step
 from taskcoachlib.gui.icons.icon_library import LIST_ICON_SIZE
 from taskcoachlib.gui.icons import image_list_cache
@@ -63,9 +64,10 @@ class _IconListCtrl(wx.ListCtrl):
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
 
-        # Debounce timer for search filtering
-        self._filter_timer = wx.Timer(self)
-        self.Bind(wx.EVT_TIMER, self._on_filter_timer, self._filter_timer)
+        # Debounced search filtering
+        self._filter_later = patterns.later.debounced(
+            self, 300, self._apply_filter
+        )
         self._pending_filter = ""
 
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self._on_item_activated)
@@ -118,10 +120,9 @@ class _IconListCtrl(wx.ListCtrl):
     def FilterItems(self, filter_text):
         """Start debounced filter - waits 300ms after last keystroke."""
         self._pending_filter = filter_text
-        self._filter_timer.Stop()
-        self._filter_timer.Start(300, oneShot=True)
+        self._filter_later()
 
-    def _on_filter_timer(self, event):
+    def _apply_filter(self):
         """Execute the actual filter after debounce delay."""
         filter_text = self._pending_filter
         if not filter_text:
@@ -274,7 +275,7 @@ class _IconDialog(wx.Dialog):
         self._search.Bind(wx.EVT_KEY_DOWN, self._on_key)
         self._search.Bind(wx.EVT_SEARCHCTRL_CANCEL_BTN, self._on_cancel)
 
-        wx.CallAfter(self._focus_search)
+        patterns.later.soon(self, self._focus_search)
 
     def _focus_search(self):
         if self._search and self.IsShown():

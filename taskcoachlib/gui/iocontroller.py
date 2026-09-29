@@ -144,7 +144,7 @@ class IOController(object):
         else:
             filename = self.__settings.get("file", "lastfile")
         if filename and early_lock_result != "skip":
-            wx.CallAfter(self.open, filename)
+            patterns.later.soon(self, self.open, filename)
 
     def open(
         self,
@@ -216,8 +216,11 @@ class IOController(object):
             )
             # Use CallAfter on Mac OS X because otherwise the app will hang:
             if operating_system.isMac():
-                wx.CallAfter(
-                    showerror, error_message, **self.__error_message_options
+                patterns.later.soon(
+                    self,
+                    showerror,
+                    error_message,
+                    **self.__error_message_options
                 )
             else:
                 showerror(error_message, **self.__error_message_options)
@@ -862,7 +865,9 @@ class IOController(object):
             dlg = BackupManagerDialog(None, self.__settings, filename)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    wx.CallAfter(self.open, dlg.restoredFilename())
+                    patterns.later.soon(
+                        self, self.open, dlg.restoredFilename()
+                    )
             finally:
                 dlg.Destroy()
 

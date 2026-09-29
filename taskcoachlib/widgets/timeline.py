@@ -20,6 +20,7 @@ import wx, operator
 from taskcoachlib.thirdparty.timeline import timeline
 from . import tooltip
 from functools import reduce
+from taskcoachlib import patterns
 
 
 class Timeline(tooltip.ToolTipMixin, timeline.TimeLine):
@@ -46,7 +47,7 @@ class Timeline(tooltip.ToolTipMixin, timeline.TimeLine):
             self.__selection = []
         else:
             self.__selection = [event.node]
-        wx.CallAfter(self.__safeSelectCommand)
+        patterns.later.soon(self, self.__safeSelectCommand)
         event.Skip()
 
     def __safeSelectCommand(self):
@@ -84,8 +85,8 @@ class Timeline(tooltip.ToolTipMixin, timeline.TimeLine):
     def onPopup(self, event):
         self.OnClickRelease(event)  # Make sure the node is selected
         self.SetFocus()
-        wx.CallAfter(
-            self.__safePopupMenu
+        patterns.later.soon(
+            self, self.__safePopupMenu
         )  # Make sure the select event has been processed
 
     def __safePopupMenu(self):

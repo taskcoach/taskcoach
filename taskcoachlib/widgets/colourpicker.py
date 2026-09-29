@@ -9,6 +9,7 @@ Supports a readOnly parameter to display a color without allowing changes.
 """
 
 import wx
+from taskcoachlib import patterns
 
 
 class ColourPickerCtrl(wx.ColourPickerCtrl):
@@ -45,7 +46,7 @@ class ColourPickerCtrl(wx.ColourPickerCtrl):
     def _onRejectFocus(self, event):
         """Reject focus by navigating away, preserving Shift+Tab direction."""
         forward = not wx.GetKeyState(wx.WXK_SHIFT)
-        wx.CallAfter(self.Navigate, forward)
+        patterns.later.soon(self, self.Navigate, forward)
 
     def _onIntercept(self, event):
         if self._readOnly:

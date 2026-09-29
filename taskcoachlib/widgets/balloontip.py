@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 from wx.lib.embeddedimage import PyEmbeddedImage
+from taskcoachlib import patterns
 
 
 class BalloonTip(wx.Frame):
@@ -111,7 +112,7 @@ class BalloonTip(wx.Frame):
         wx.GetTopLevelParent(self._target).Unbind(wx.EVT_MOVE)
 
     def _OnDim(self, event):
-        wx.CallAfter(self.__safePosition)
+        patterns.later.soon(self, self.__safePosition)
         event.Skip()
 
     def __safePosition(self):

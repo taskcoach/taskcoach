@@ -689,7 +689,9 @@ class TaskAppearancePage(ScrolledPage):
 
         def rejectFocus(evt):
             forward = not wx.GetKeyState(wx.WXK_SHIFT)
-            wx.CallAfter(evt.GetEventObject().Navigate, forward)
+            patterns.later.soon(
+                evt.GetEventObject(), evt.GetEventObject().Navigate, forward
+            )
 
         self._derivedIconPanel = wx.Panel(self, style=0)
         self._derivedIconPanel.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
@@ -1064,7 +1066,9 @@ class TaskAppearancePage(ScrolledPage):
 
         def rejectFocus(evt):
             forward = not wx.GetKeyState(wx.WXK_SHIFT)
-            wx.CallAfter(evt.GetEventObject().Navigate, forward)
+            patterns.later.soon(
+                evt.GetEventObject(), evt.GetEventObject().Navigate, forward
+            )
 
         self._effectiveIconPanel = wx.Panel(self, style=0)
         self._effectiveIconPanel.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
@@ -3070,7 +3074,7 @@ class PathPage(ScrolledPage):
             and self._pathPanel
             and self._pathPanel.IsShownOnScreen()
         ):
-            wx.CallAfter(self._rebuildPathDisplay)
+            patterns.later.soon(self, self._rebuildPathDisplay)
 
     def _rebuildPathDisplay(self):
         """Rebuild the path display with all sections."""
@@ -4850,7 +4854,10 @@ class Editor(BalloonTipManager, widgets.Dialog):
         self._taskFile = task_file
         self.__items_are_new = kwargs.pop("items_are_new", False)
         column_name = kwargs.pop("columnName", "")
-        self.__call_after = kwargs.get("call_after", wx.CallAfter)
+        self.__call_after = kwargs.get(
+            "call_after",
+            lambda callback, *args: patterns.later.soon(self, callback, *args),
+        )
         super().__init__(
             parent, self.__title(), buttonTypes=wx.ID_CLOSE, *args, **kwargs
         )
@@ -4889,12 +4896,9 @@ class Editor(BalloonTipManager, widgets.Dialog):
             # another editor, then hit Escape twice, the second editor disappears without any
             # notification (EVT_CLOSE, EVT_ACTIVATE), so poll for this, because there might
             # be pending changes...
-            id_ = IdProvider.get()
-            self.__timer = wx.Timer(self, id_)
-            self.Bind(wx.EVT_TIMER, self.__on_timer, id=id_)
-            self.__timer.Start(1000, False)
+            self.__poll = patterns.later.every(self, 1000, self.__on_timer)
         else:
-            self.__timer = None
+            self.__poll = None
 
         # Position and size handling is done by WindowGeometryTracker
         # which will center on parent if no saved position exists, or
@@ -4909,7 +4913,7 @@ class Editor(BalloonTipManager, widgets.Dialog):
             )
         )
 
-    def __on_timer(self, event):
+    def __on_timer(self):
         if not self.IsShown():
             self.Close()
 
@@ -4987,9 +4991,8 @@ class Editor(BalloonTipManager, widgets.Dialog):
         # destroyed...
         if operating_system.isMac():
             self._interior.SetFocusIgnoringChildren()
-        if self.__timer is not None:
-            self.__timer.Stop()
-            IdProvider.put(self.__timer.GetId())
+        if self.__poll is not None:
+            self.__poll.cancel()
         # Clean up UICommands created in __create_ui_commands()
         self.__undo_command.unbind(self._interior, wx.ID_UNDO)
         self.__undo_command.removeInstance()
@@ -5014,7 +5017,7 @@ class Editor(BalloonTipManager, widgets.Dialog):
         # GTKPopupFrame). Separating hide from destroy lets pending
         # GTK events settle. Same pattern as PYTHON3_MIGRATION_1.md.
         self.Hide()
-        wx.CallAfter(self._deferred_destroy)
+        patterns.later.soon(self, self._deferred_destroy)
 
     def _deferred_destroy(self):
         """Destroy the editor after one event loop iteration.

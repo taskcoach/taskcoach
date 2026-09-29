@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 from taskcoachlib.i18n import _
+from taskcoachlib import patterns
 
 
 class KeychainPasswordWidget(wx.Dialog):
@@ -66,7 +67,7 @@ class KeychainPasswordWidget(wx.Dialog):
         btnCancel.Bind(wx.EVT_BUTTON, self.OnCancel)
 
         self.SetDefaultItem(btnOK)
-        wx.CallAfter(self.RequestUserAttention)
+        patterns.later.soon(self, self.RequestUserAttention)
 
     def OnOK(self, event):
         self.password = self.passwordField.GetValue()

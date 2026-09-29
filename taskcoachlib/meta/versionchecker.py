@@ -21,6 +21,7 @@ import threading
 import urllib.request, urllib.error, urllib.parse
 import sys
 import traceback
+from taskcoachlib import patterns
 
 
 class VersionChecker(threading.Thread):
@@ -76,7 +77,9 @@ class VersionChecker(threading.Thread):
         # Import wx here so it isn't a build dependency
         import wx
 
-        wx.CallAfter(self.showDialog, dialog, latestVersion, message)
+        patterns.later.soon(
+            self, self.showDialog, dialog, latestVersion, message
+        )
 
     def showDialog(self, VersionDialog, latestVersion, message=""):
         import wx

@@ -613,14 +613,7 @@ class _PopupWindow(wx.Dialog):
         except RuntimeError:
             pass
         self.ProcessEvent(PopupDismissEvent(self))
-        wx.CallLater(100, self._safeDestroy)
-
-    def _safeDestroy(self):
-        try:
-            if self:
-                self.Destroy()
-        except RuntimeError:
-            pass
+        patterns.later.call(self, 100, self.Destroy)
 
     def _onChar(self, event):
         if not self.HandleKey(event):
@@ -2769,7 +2762,7 @@ class DateComboCustomCtrl(wx.ComboCtrl):
         # Position the DateCtrl on resize
         self.Bind(wx.EVT_SIZE, self._onSize)
         # Also do initial positioning after layout settles
-        wx.CallAfter(self._positionDateCtrl)
+        patterns.later.soon(self, self._positionDateCtrl)
 
     def _onTextCtrlFocus(self, event):
         """Redirect focus from ComboCtrl's text control to inner DateCtrl."""
@@ -2777,7 +2770,9 @@ class DateComboCustomCtrl(wx.ComboCtrl):
             return
         if self._tabbingOut:
             self._tabbingOut = False
-            wx.CallAfter(self.GetTextCtrl().Navigate, False)
+            patterns.later.soon(
+                self.GetTextCtrl(), self.GetTextCtrl().Navigate, False
+            )
             return
         if self._popupWasShown:
             self._dateCtrl._returningFromPopup = True
@@ -2818,7 +2813,7 @@ class DateComboCustomCtrl(wx.ComboCtrl):
         self._dateCtrl.SetDate(date)
         self.ChangeValue("")
         self._dateCtrl._returningFromPopup = True
-        wx.CallAfter(self._dateCtrl.SetFocus)
+        patterns.later.soon(self._dateCtrl, self._dateCtrl.SetFocus)
 
     def DismissPopup(self):
         """Dismiss any open popup."""

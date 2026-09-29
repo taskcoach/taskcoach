@@ -212,13 +212,9 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
         """Freeze dialog to prevent accidental actions."""
         self._isFrozen = True
         self.Disable()
-        self._freezeTimer = wx.Timer(self)
-        self.Bind(wx.EVT_TIMER, self._onFreezeTimer, self._freezeTimer)
-        self._freezeTimer.StartOnce(self.FREEZE_DURATION_MS)
-
-    def _onFreezeTimer(self, event):
-        """Timer event handler to unfreeze dialog."""
-        self._unfreezeDialog()
+        patterns.later.call(
+            self, self.FREEZE_DURATION_MS, self._unfreezeDialog
+        )
 
     def _unfreezeDialog(self):
         """Unfreeze dialog and re-enable interaction."""
@@ -273,11 +269,6 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
         if self._isFrozen:
             event.Veto()
             return
-
-        # Stop the freeze timer to prevent callbacks on destroyed dialog
-        if hasattr(self, "_freezeTimer") and self._freezeTimer:
-            self._freezeTimer.Stop()
-            self._freezeTimer = None
 
         # Stop listening, to prevent callbacks on the destroyed dialog
         self.removeObserver(self.on_task_completion_changed)

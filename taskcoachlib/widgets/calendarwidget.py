@@ -35,6 +35,7 @@ from taskcoachlib.domain import date
 from taskcoachlib.widgets import draganddrop
 from taskcoachlib import command, render
 from . import tooltip
+from taskcoachlib import patterns
 
 
 class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
@@ -159,7 +160,7 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
             self.__selection = [schedule.task]
             schedule.SetSelected(True)
 
-        wx.CallAfter(self.__safeSelectCommand)
+        patterns.later.soon(self, self.__safeSelectCommand)
 
     def __safeSelectCommand(self):
         """Safely call selectCommand, guarding against deleted C++ objects."""
@@ -180,7 +181,7 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
 
     def OnPopup(self, event):
         self.OnActivation(event)
-        wx.CallAfter(self.__safePopupMenu)
+        patterns.later.soon(self, self.__safePopupMenu)
 
     def __safePopupMenu(self):
         """Safely show popup menu, guarding against deleted C++ objects."""
@@ -253,7 +254,7 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
                 schedule.SetSelected(True)
 
         self.Add(schedules)
-        wx.CallAfter(self.__safeSelectCommand)
+        patterns.later.soon(self, self.__safeSelectCommand)
         self.Scroll(x, y)
 
     def RefreshItems(self, *args):
@@ -313,7 +314,7 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
                         and self.__selection[0].id() == task.id()
                     ):
                         self.__selection = []
-                        wx.CallAfter(self.selectCommand)
+                        patterns.later.soon(self, self.selectCommand)
 
     def GetItemCount(self):
         return len(self.GetSchedules())
@@ -391,7 +392,9 @@ class Calendar(wx.Panel):
         self.SetSizer(sizer)
 
         # Must wx.CallAfter because SetDrawerClass is called this way.
-        wx.CallAfter(self._content.SetHeaderPanel, self._headers)
+        patterns.later.soon(
+            self._content, self._content.SetHeaderPanel, self._headers
+        )
 
     def Draw(self, dc):
         self._content.Draw(dc)

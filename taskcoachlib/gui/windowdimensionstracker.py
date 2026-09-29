@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import wx
 import time
-from taskcoachlib import operating_system
+from taskcoachlib import operating_system, patterns
 
 # Debug logging for window position tracking (set to True to enable)
 _DEBUG_WINDOW_TRACKING = False
@@ -455,7 +455,7 @@ class WindowGeometryTracker:
 
         # Stop position logging
         if self._pos_log_timer:
-            self._pos_log_timer.Stop()
+            self._pos_log_timer.cancel()
             self._pos_log_timer = None
 
         # After ready, ONE maximize attempt if state says maximized (fire and forget)
@@ -614,8 +614,8 @@ class WindowGeometryTracker:
         # Schedule next tick
         interval = 50 if elapsed < 1.0 else 500
         if elapsed < 10.0:
-            self._pos_log_timer = wx.CallLater(
-                interval, self._log_position_tick
+            self._pos_log_timer = patterns.later.call(
+                self._window, interval, self._log_position_tick
             )
 
 
@@ -633,7 +633,7 @@ class WindowDimensionsTracker(WindowGeometryTracker):
             if not operating_system.isMac() and self._get_setting(
                 "hidewheniconized"
             ):
-                wx.CallAfter(self._window.Hide)
+                patterns.later.soon(self._window, self._window.Hide)
 
     def _should_start_iconized(self):
         """Return whether the window should be opened iconized."""

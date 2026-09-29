@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 import wx.lib.buttons as buttons
+from taskcoachlib import patterns
 
 
 class FontPickerCtrl(buttons.GenButton):
@@ -52,7 +53,7 @@ class FontPickerCtrl(buttons.GenButton):
     def __onRejectFocus(self, event):
         """Reject focus by navigating away, preserving Shift+Tab direction."""
         forward = not wx.GetKeyState(wx.WXK_SHIFT)
-        wx.CallAfter(self.Navigate, forward)
+        patterns.later.soon(self, self.Navigate, forward)
 
     def DoGetBestSize(self):
         dc = wx.ClientDC(self)

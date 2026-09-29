@@ -20,6 +20,7 @@ import wx, operator
 from squaremap import squaremap
 from . import tooltip
 from functools import reduce
+from taskcoachlib import patterns
 
 
 class TcSquareMap(tooltip.ToolTipMixin, squaremap.SquareMap):
@@ -66,7 +67,7 @@ class TcSquareMap(tooltip.ToolTipMixin, squaremap.SquareMap):
             self.__selection = []
         else:
             self.__selection = [event.node]
-        wx.CallAfter(self.__safeSelectCommand)
+        patterns.later.soon(self, self.__safeSelectCommand)
         event.Skip()
 
     def __safeSelectCommand(self):

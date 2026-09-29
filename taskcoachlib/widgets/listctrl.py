@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import operating_system
 from taskcoachlib.widgets import itemctrl
 import wx.lib.mixins.listctrl
+from taskcoachlib import patterns
 
 
 class VirtualListCtrl(
@@ -103,7 +104,7 @@ class VirtualListCtrl(
                     self._refresh_hover_row(old)
                 if row >= 0:
                     self._refresh_hover_row(row)
-                wx.CallAfter(self._draw_hover_outline)
+                patterns.later.soon(self, self._draw_hover_outline)
         event.Skip()
 
     def _on_hover_leave(self, event):
@@ -142,7 +143,7 @@ class VirtualListCtrl(
         # as the export dialog's temporary viewers) would queue a CallAfter
         # that fires after the control is destroyed.
         if self._hover_row >= 0:
-            wx.CallAfter(self._draw_hover_outline)
+            patterns.later.soon(self, self._draw_hover_outline)
 
     def GetMainWindow(self):
         # Override to return self for drop target support.

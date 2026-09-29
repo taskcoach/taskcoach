@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 import wx.lib.agw.aui as aui
-from taskcoachlib import operating_system
+from taskcoachlib import operating_system, patterns
 
 # --- Rebuild guard: block motion events during list/tree rebuilds ---
 
@@ -55,7 +55,7 @@ class _RebuildInputFilter(wx.EventFilter):
     def acquire(self):
         """Called at start of each RefreshAllItems."""
         if self._release_timer is not None:
-            self._release_timer.Stop()
+            self._release_timer.cancel()
             self._release_timer = None
         self._refcount += 1
         self.active = True
@@ -68,9 +68,8 @@ class _RebuildInputFilter(wx.EventFilter):
         """
         self._refcount = max(0, self._refcount - 1)
         if self._refcount == 0:
-            self._release_timer = wx.CallLater(
-                1000,
-                self._deferred_release,
+            self._release_timer = patterns.later.call(
+                None, 1000, self._deferred_release
             )
 
     def _deferred_release(self):

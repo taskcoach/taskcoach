@@ -114,7 +114,7 @@ class BaseTaskViewer(
             self._on_task_status_changed,
             eventType=task.Task.statusChangedEventType(),
         )
-        wx.CallAfter(self.__DisplayBalloon)
+        patterns.later.soon(self, self.__DisplayBalloon)
 
     def _on_task_status_changed(self, event):  # pylint: disable=W0613
         self.send_viewer_status_event()
@@ -192,8 +192,8 @@ class BaseTaskViewer(
 
     def on_appearance_setting_change(self, event):  # pylint: disable=W0613
         if self:
-            wx.CallAfter(
-                self.refresh
+            patterns.later.soon(
+                self, self.refresh
             )  # Let domain objects update appearance first
         # Show/hide status in toolbar may change too
         self.toolbar.loadPerspective(self.toolbar.perspective(), cache=False)
@@ -1085,7 +1085,9 @@ class CalendarViewer(
 
         if self.settings.getboolean("calendarviewer", "gradient"):
             # If called directly, we crash with a Cairo assert failing...
-            wx.CallAfter(self.__safeSetDrawer, widget, wxFancyDrawer)
+            patterns.later.soon(
+                self, self.__safeSetDrawer, widget, wxFancyDrawer
+            )
 
         return widget
 
@@ -2620,7 +2622,7 @@ else:
                             else:
                                 self._finish_refresh(bitmap)
 
-                        wx.CallAfter(update_gui)
+                        patterns.later.soon(self, update_gui)
 
                     future = executor.submit(do_plot)
                     future.add_done_callback(on_plot_complete)
@@ -2638,7 +2640,7 @@ else:
             )
             self.hbox.Clear(True)
             self.hbox.Add(graph_png_bm, 1, wx.ALL, 3)
-            wx.CallAfter(self.__safeSendSizeEvent)
+            patterns.later.soon(self, self.__safeSendSizeEvent)
 
     def __safeSendSizeEvent(self):
         """Safely send size event to scrolled panel, guarding against deleted C++ objects."""

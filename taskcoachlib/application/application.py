@@ -862,7 +862,7 @@ class Application(object, metaclass=patterns.Singleton):
         self.__register_signal_handlers()
         self.__create_mutex()
         self.__create_task_bar_icon()
-        wx.CallAfter(self.__show_tips)
+        patterns.later.soon(self, self.__show_tips)
 
     def __check_file_lock_early(self):
         """Check file lock before main window creation.
@@ -1017,7 +1017,7 @@ class Application(object, metaclass=patterns.Singleton):
             """Handle SIGINT/SIGTERM by scheduling clean shutdown."""
             # Use CallAfter to run shutdown in the main event loop
             # This ensures proper cleanup of wx resources
-            wx.CallAfter(self.quit_application)
+            patterns.later.soon(self, self.quit_application)
 
         # Register SIGINT/SIGTERM handlers for Unix
         if not operating_system.isWindows():
@@ -1137,23 +1137,23 @@ class Application(object, metaclass=patterns.Singleton):
         the program ends, causing access violations on Windows.
         See: https://github.com/wxWidgets/Phoenix/issues/429
         """
+        # The app's deferred calls (docs/DEFERRED_CALLS.md)
+        patterns.later.shutdown()
 
-        # Stop all wx.Timer instances we can find
+        # Stop the timers of bundled library code and the master
+        # scheduler's own clock, walking all windows and their children
         # Walk through all top-level windows and their children
         def stop_timers_in_window(window):
             if window is None:
                 return
             # Check for timer attributes
             for attr_name in [
-                "__timer",
                 "_timer",
                 "timer",
                 "_sizeTimer",
                 "_dragTimer",
                 "_findTimer",
                 "_editTimer",
-                "__tmr",
-                "scheduledStatusDisplay",
                 "_globalTimer",
             ]:
                 # Try public and name-mangled private attributes;

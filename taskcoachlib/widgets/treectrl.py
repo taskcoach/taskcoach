@@ -21,6 +21,7 @@ from wx.lib.agw import customtreectrl as customtree, hypertreelist
 from taskcoachlib.widgets import itemctrl, draganddrop
 import contextlib
 import wx
+from taskcoachlib import patterns
 
 # pylint: disable=E1101,E1103
 
@@ -57,7 +58,7 @@ class BaseHyperTreeList(hypertreelist.HyperTreeList):
         """
         event.Skip()  # Let base class handle layout first
         # Schedule scrollbar adjustment after the layout is complete
-        wx.CallAfter(self.__safe_adjust_scrollbars)
+        patterns.later.soon(self, self.__safe_adjust_scrollbars)
 
     def __safe_adjust_scrollbars(self):
         """Safely adjust scrollbars, guarding against deleted C++ objects.
@@ -87,7 +88,9 @@ class BaseHyperTreeList(hypertreelist.HyperTreeList):
         deferred call is harmless and ensures consistency.
         """
         if operating_system.isWindows():
-            wx.CallAfter(self.__safe_adjust_scrollbars_content_change)
+            patterns.later.soon(
+                self, self.__safe_adjust_scrollbars_content_change
+            )
         else:
             self.__safe_adjust_scrollbars_content_change()
 
@@ -122,7 +125,7 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
         # On Ubuntu, when the user has scrolled to the bottom of the tree
         # and collapses an item, the tree is not redrawn correctly. Refreshing
         # solves this. See http://trac.wxwidgets.org/ticket/11704
-        wx.CallAfter(self.__safe_refresh)
+        patterns.later.soon(self, self.__safe_refresh)
 
     def __safe_refresh(self):
         """Safely refresh the main window, guarding against deleted
@@ -720,7 +723,7 @@ class TreeListCtrl(
             return
         # Use CallAfter to prevent handling the select while items are
         # being deleted:
-        wx.CallAfter(self.__safe_select_command)
+        patterns.later.soon(self, self.__safe_select_command)
         event.Skip()
 
     def __safe_select_command(self):
@@ -754,7 +757,8 @@ class TreeListCtrl(
         drag_items = list(
             self.GetItemPyData(drag_item) for drag_item in drag_items
         )
-        wx.CallAfter(
+        patterns.later.soon(
+            self,
             self.__safe_drag_and_drop_command,
             drop_item,
             drag_items,

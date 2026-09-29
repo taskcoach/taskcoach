@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import operating_system
+from taskcoachlib import operating_system, patterns
 from taskcoachlib.config import settings2
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 import wx
@@ -30,7 +30,9 @@ class ToolTipMixin(object):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.__timer = wx.Timer(self, wx.NewId())
+        self.__tip_later = patterns.later.debounced(
+            self, 200, self.__show_pending_tip
+        )
 
         self.__tip = None
         self.__position = (0, 0)
@@ -40,9 +42,6 @@ class ToolTipMixin(object):
 
         self.GetMainWindow().Bind(wx.EVT_MOTION, self.__OnMotion)
         self.GetMainWindow().Bind(wx.EVT_LEAVE_WINDOW, self.__OnLeave)
-        self.Bind(wx.EVT_TIMER, self.__OnTimer, id=self.__timer.GetId())
-        # Stop timer on window destruction to prevent crashes
-        self.Bind(wx.EVT_WINDOW_DESTROY, self.__OnDestroy)
 
     def PopupMenu(self, menu):
         self.__frozen = False
@@ -96,7 +95,7 @@ class ToolTipMixin(object):
     def __OnMotion(self, event):
         x, y = event.GetPosition()
 
-        self.__timer.Stop()
+        self.__tip_later.cancel()
 
         if self.__tip is not None:
             self.HideTip()
@@ -105,7 +104,7 @@ class ToolTipMixin(object):
         if settings2.view.descriptionpopups:
             self.__position = (x + 20, y + 10)
             self.__pending_xy = (x, y)
-            self.__timer.Start(200, True)
+            self.__tip_later()
 
         event.Skip()
 
@@ -113,7 +112,7 @@ class ToolTipMixin(object):
         self.HideTip()
 
     def __OnLeave(self, event):
-        self.__timer.Stop()
+        self.__tip_later.cancel()
 
         if self.__tip is not None:
             self.HideTip()
@@ -121,19 +120,7 @@ class ToolTipMixin(object):
 
         event.Skip()
 
-    def __OnDestroy(self, event):
-        """Stop timer on window destruction to prevent crashes."""
-        if event.GetEventObject() == self and self.__timer.IsRunning():
-            self.__timer.Stop()
-        event.Skip()
-
-    def cleanupTooltipTimer(self):
-        """Stop the tooltip timer to prevent crashes during widget destruction.
-        This should be called from the widget's Destroy() or cleanup method."""
-        if self.__timer and self.__timer.IsRunning():
-            self.__timer.Stop()
-
-    def __OnTimer(self, event):  # pylint: disable=W0613
+    def __show_pending_tip(self):
         x, y = self.__pending_xy
         newTip = self.OnBeforeShowToolTip(x, y)
         if newTip is not None:
