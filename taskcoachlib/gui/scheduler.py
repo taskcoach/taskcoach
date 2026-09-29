@@ -23,8 +23,8 @@ soon, overdue, reminder) and the second of each data change. Each
 second, if its smallest entry is due, the due entries are popped and
 the full loop runs once over all categories, tasks and notes, parents
 first: statuses, reminders, styles. The loop's own changes push the
-current second, so a cascade settles one pass per second. The date and
-minute events are sent every second.
+current second, so a cascade settles one pass per second. Each tick
+then sends the date and minute events when they changed.
 
 See docs/MASTER_SCHEDULER_REFACTOR.md (design and rulings) and
 docs/SCHEDULERS.md.
@@ -169,9 +169,9 @@ class MasterScheduler:
     When the heap holds a due second, the full loop runs once, parents
     before children:
     1. Categories: computeStyles
-    2. Tasks: status (legacy + modern), reminders, styles
+    2. Tasks: status, reminders, styles
     3. Notes (global): computeStyles
-    Every second, after it: the UI refresh events (date/minute change).
+    Each tick, after it: the date and minute events, when they change.
     """
 
     def __init__(self, task_file):

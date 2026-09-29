@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 Reminder Controller - Event-based implementation.
 
 This module responds to reminder trigger events fired by Task.processReminder(),
-which is called by MasterScheduler every second.
+which MasterScheduler calls in its pass at a reminder's second.
 
 See docs/SCHEDULERS.md for architecture documentation.
 """
@@ -36,7 +36,8 @@ class ReminderController(object):
     Controller for showing task reminders.
 
     Subscribes to task.reminder.trigger events fired by Task.processReminder().
-    MasterScheduler calls processReminder() every second for all tasks.
+    MasterScheduler calls processReminder() for all tasks in its pass,
+    which runs at the seconds its timer list holds (a reminder's too).
 
     Note: As of January 2026, only the built-in Task Coach reminder dialog is used.
     External notification system support (KNotify, Growl) has been removed.

@@ -202,13 +202,14 @@ What pushes into the heap:
 - A task's planned start, actual start, due or reminder changed, or
   tasks added: their timer seconds.
 - Any change the loop reads (domain changes except subject,
-  description and expansion, though the subject of an item that is
-  another's style source, a category or a parent, counts; the appearance settings; the system
+  description, expansion, fees and priority, though the subject of an
+  item that is another's style source, a category or a parent, counts; the appearance settings; the system
   theme), and the loop's own changes (statuses, styles): the current
   tick's second, which the next tick takes with every other due entry.
   A cascade settles one pass per second.
-- The due soon hours changed, a file opened, the clock set back: the
-  heap is rebuilt from the tasks, with a second due at once. So it is
+- The due soon hours changed, the clock set back: the heap is rebuilt
+  from the tasks, with a second due at once. A file opened empties it
+  (its tasks removed) and refills it (its tasks added). So it is
   when it has doubled since its last rebuild (plus 64): old seconds
   stay until due, and those of dates not set (the latest date) never
   are.

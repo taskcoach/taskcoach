@@ -141,7 +141,7 @@ datetime presets.
 ## Related Documentation
 
 - [SCHEDULERS.md](SCHEDULERS.md) - How reminders are triggered
-  (MasterScheduler polls tasks every second, fires
+  (MasterScheduler's pass at a reminder's second fires
   `task.reminder.trigger`, ReminderController shows the dialog)
 - [DATETIME_PRESETS.md](DATETIME_PRESETS.md) - Default reminder
   datetime presets, reminder scheduling on file load

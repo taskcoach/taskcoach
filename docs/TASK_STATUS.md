@@ -89,14 +89,14 @@ Own, derived and effective values are separate fields; for other task
 fields the same split is postponed
 ([TASK_FIELDS.md](TASK_FIELDS.md#postponed-base-and-effective-fields)).
 
-### ComputeStyles Polling (New Architecture)
+### ComputeStyles in the Master Loop
 
 The appearance SSOT system is computed by the master loop (`ComputeStyles`), which runs at the
-seconds that matter ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#master-design)), instead of trigger-based updates. This provides:
+seconds that matter ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#master-design)): the seconds time changes a status, and the second after a change it reads. This provides:
 
-1. **Eventual consistency** - All changes detected within 1-2 seconds
-2. **Simplified architecture** - No need to track all possible triggers
-3. **Catches time-based changes** - Status changes from time passing are automatically detected
+1. **Eventual consistency** - A change shows at the next tick (within a second)
+2. **Simplified architecture** - One loop, not a trigger per field and follower
+3. **Catches time-based changes** - Each status's next change is a second in the timer list
 
 **Processing order:** Categories → Tasks → Notes → Attachments
 
@@ -332,14 +332,15 @@ Status is recomputed in three scenarios:
 **File:** `taskcoachlib/gui/scheduler.py`
 **Instantiated in:** `taskcoachlib/gui/mainwindow.py:_create_window_components()`
 
-`MasterScheduler` subscribes to `timer.second` (the GlobalTimer's 1-second tick) and
-processes all objects. For each task, the per-object flow is:
+`MasterScheduler` subscribes to `timer.second` (the GlobalTimer's 1-second tick) and,
+when its timer list holds a due second, processes all objects. For each task, the
+per-object flow is:
 
 ```
 GlobalTimer._on_tick() (every 1 second)
     └── patterns.Event('timer.second', self, now).send()
         └── MasterScheduler._on_second(event)
-            └── For each task:
+            └── A due second? For each task:
                 1. task.compute_stored_status()
                 │   ├── Calls Task.compute_status() with task's dates
                 │   ├── Updates __computed_status, __status_text, __status_icon
@@ -868,9 +869,9 @@ ComputeStyles polling pattern (eventual consistency):
 
 ---
 
-#### Update Mechanism: ComputeStyles Polling
+#### Update Mechanism: the Master Loop
 
-**No triggers or explicit cascade needed.** The master loop (`ComputeStyles`) runs at each due second:
+**No per-field triggers or explicit cascade needed.** The master loop (`ComputeStyles`) runs at each due second, which every change it reads pushes:
 
 ```
 ComputeStyles (each pass of the master loop)
@@ -880,14 +881,14 @@ ComputeStyles (each pass of the master loop)
           2. computeEffective(object, field_type)
 ```
 
-This catches ALL changes without explicit triggers:
+Its pass catches, at the next tick:
 - Category assignment/removal
 - Parent relationship changes
 - Status changes (time-based transitions)
 - Override value changes
 - File load (volatile fields populated within 1 second)
 
-**No post-load initialization needed** — ComputeStyles polling handles it.
+**No post-load initialization needed** — the loaded tasks push a second due at once.
 
 #### SSOT Readers (for UI)
 
