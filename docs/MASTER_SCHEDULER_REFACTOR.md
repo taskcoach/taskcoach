@@ -107,7 +107,7 @@ go at the end. Details live in the sections and documents linked.
     Candidates, both from master: the spell check's 0.3 s timer
     firing after its editor closed (fixed 2026-09-29, 53), and a date
     popup's text event reaching its deleted control when the editor
-    closes (open).
+    closes (P12).
 45. Not planned: the reason for each entry
     ([Later](#later-the-reason-for-each-entry)).
 46. ~~Status-first sort re-sorts on the clock's status changes~~: once
