@@ -168,26 +168,6 @@ class TimestampTest(test.TestCase):
     def test_now_is_a_timestamp(self):
         self.assertIsInstance(date.Timestamp.now(), date.Timestamp)
 
-    def test_now_is_always_later(self):
-        moments = [date.Timestamp.now() for _ in range(1000)]
-        self.assertTrue(
-            all(each < later for each, later in zip(moments, moments[1:]))
-        )
-
-    def test_now_steps_past_a_repeated_clock_value(self):
-        # As the clock repeats its value until it ticks (15.6 ms steps
-        # on Windows before Python 3.13) or steps back
-        saved = date.Timestamp._last
-        date.Timestamp._last = date.Timestamp(2999, 1, 1, 0, 0, 0, 5)
-        try:
-            moment = date.Timestamp.now()
-        finally:
-            date.Timestamp._last = saved
-        self.assertEqual(
-            (date.Timestamp(2999, 1, 1, 0, 0, 0, 6), date.Timestamp),
-            (moment, type(moment)),
-        )
-
     def test_parse_keeps_the_fraction(self):
         self.assertEqual(
             date.Timestamp(2012, 12, 12, 12, 0, 0, 123450),

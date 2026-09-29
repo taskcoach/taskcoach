@@ -332,10 +332,10 @@ pastes the cut items themselves, IDs kept (`Clipboard.items_to_paste()`);
 further pastes, and pastes after a copy, insert copies with new IDs.
 Undoing that paste does not make the next paste a move again.
 
-**Ruling, 2026-09-28:** creation and modification dates keep
-microseconds (`date.Timestamp`) and are unique: `Timestamp.now()` is
-always later than the one it gave before, by a microsecond if the
-clock has not moved (15.6 ms steps on Windows before Python 3.13).
+**Ruling, 2026-09-28:** creation and modification dates are the
+clock's time with microseconds (`date.Timestamp`). Only the same item's
+dates are compared, in a merge; different items may share one (the ID
+breaks sort ties).
 
 The task file has no GUID since 2026-09-28: nothing read it after the
 sync was removed. A file that has one still loads.

@@ -103,8 +103,8 @@ go at the end. Details live in the sections and documents linked.
 37. Effective fields for the 13 other subtree values, one at a time;
     none is read by the loop
     ([TASK_FIELDS.md](TASK_FIELDS.md#subtree-values-in-other-columns)).
-38. `Timestamp.now()` always later than the one before (creation and
-    modification dates never equal): keep or remove, to decide
+38. ~~`Timestamp.now()` always later than the one before~~: removed,
+    it returned made-up times; the dates are the clock's
     ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#ids)).
 39. Renames deferred as too wide, each its own change: the task date
     setters (`setReminder()`, `setDueDateTime()`,
@@ -581,8 +581,8 @@ Checked 2026-09-28, across the repository:
   notes, attachments and efforts copied with them, a task saved as a
   template and each task made from one. The first paste after a cut
   is a move: the cut items themselves, IDs kept.
-- Creation and modification dates are unique: `Timestamp.now()` is
-  always later than the one before in the same run.
+- Creation and modification dates are the clock's time with
+  microseconds; different items may share one.
 - The same ID in two files is the same item: Save As, Save selection,
   backups; File > Merge matches items by it; Todo.txt `tcid:` updates
   the task it names (an unknown one is skipped, never created).
