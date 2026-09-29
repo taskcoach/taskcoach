@@ -128,7 +128,9 @@ on `scheduler.minute`). The calendars draw their "now" line on
 ### Subscribing to the Tick
 
 Per-second UI updates subscribe to the GlobalTimer tick; they do not
-create their own `wx.Timer`:
+create their own `wx.Timer`. Anything finer or not tied to the clock
+(a debounce, a short delay, an animation) goes through `patterns.later`
+([DEFERRED_CALLS.md](DEFERRED_CALLS.md)):
 
 ```python
 self.registerObserver(self._on_timer_second, eventType="timer.second")

@@ -153,6 +153,7 @@ If `CRASH_GUARD` messages appear during normal use, they indicate code paths tha
 | File | Component |
 |------|-----------|
 | `taskcoachlib/workarounds/monkeypatches.py` | `wx.CallAfter` wrapper, `wx.Timer` owner guard |
+| `taskcoachlib/patterns/deferred.py` | The app's deferred calls, which need no guard ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)) |
 | `taskcoachlib/application/application.py` | `wxApp.OnExceptionInMainLoop` |
 | `taskcoach.py` | `faulthandler.enable()` setup |
 | `taskcoachlib/meta/debug.py` | `log_step()` utility for ad-hoc debugging |

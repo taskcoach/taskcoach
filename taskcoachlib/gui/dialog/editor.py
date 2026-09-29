@@ -42,6 +42,7 @@ from taskcoachlib.gui.newid import IdProvider
 from taskcoachlib.i18n import _
 from taskcoachlib.help.balloontips import BalloonTipManager
 import datetime
+import functools
 import os.path
 import wx
 
@@ -4854,9 +4855,9 @@ class Editor(BalloonTipManager, widgets.Dialog):
         self._taskFile = task_file
         self.__items_are_new = kwargs.pop("items_are_new", False)
         column_name = kwargs.pop("columnName", "")
+        # A partial adds no frame, so the log names the real caller
         self.__call_after = kwargs.get(
-            "call_after",
-            lambda callback, *args: patterns.later.soon(self, callback, *args),
+            "call_after", functools.partial(patterns.later.soon, self)
         )
         super().__init__(
             parent, self.__title(), buttonTypes=wx.ID_CLOSE, *args, **kwargs

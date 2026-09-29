@@ -227,9 +227,10 @@ settings2.window.theme_is_dark       # False (computed)
    per section in `_SETTING_SECTIONS`, populates options as attributes,
    sets `_initialized = True`.
 2. `Settings.set()` calls `settings2.schedule_refresh()` on every value
-   change. The first call creates a `wx.CallLater` timer (1 second);
-   subsequent calls reuse it via `Restart()`. No-op before `init()`.
-3. When the timer fires, `_refresh(build=False)` re-walks ConfigParser
+   change, which restarts a 1-second debounce
+   (`patterns.later.debounced`, [DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
+   No-op before `init()`.
+3. When it runs, `_refresh(build=False)` re-walks ConfigParser
    and overwrites all attributes on existing namespaces.
 4. After refresh, `_compute_settings_all()` recomputes derived values.
 5. After refresh + compute, fires

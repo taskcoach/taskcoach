@@ -314,13 +314,14 @@ No manual unsubscribe, no silent `except` guards, no zombie callbacks.
 
    | Guarded against | Where |
    |---|---|
-   | A delayed call (`wx.CallAfter`, `CallLater`, a timer) reaching a window closed meanwhile | the `__safe*()` wrappers in the widgets and viewers, the in-place editors, `Editor._deferred_destroy()`, the viewer container's focus, `ToggleAutoColumnResizing.updateWidget()`, the `not self or IsBeingDeleted()` checks |
+   | A delayed call reaching a window closed meanwhile | `patterns.later` drops it when its owner is gone ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)); the older `__safe*()` wrappers in the widgets and viewers, the in-place editors, `Editor._deferred_destroy()`, the viewer container's focus, `ToggleAutoColumnResizing.updateWidget()` and the `not self or IsBeingDeleted()` checks remain as a second check |
    | wx events while a window's children are being destroyed | `TaskEntry._onDestroy()`, `Viewer.SetFocus()`, `AttributeSync`'s callback, `NullableDateTimeWrapper`, the tree and list `curselection()`, the column sort |
    | Menu items that outlive their menu, wx assertions | `update_menu_text()`, `MenuItem.update_state()`, `onUpdateMenu_Deprecated()` |
    | Shutdown | `Application.display_message()` |
 
    The app-wide `wx.CallAfter` guard (`workarounds/monkeypatches.py`)
-   covers delayed calls to a deleted window's own methods.
+   covers library code's delayed calls to a deleted window's own
+   methods.
 
 ### Files involved
 

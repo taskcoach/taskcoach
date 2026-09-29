@@ -236,7 +236,7 @@ EVT_TREE_SEL_CHANGED / EVT_LIST_ITEM_SELECTED / DESELECTED
             ├── patterns.Event(selection_changed_event_type, self, has_selection).send()
             │   └── _SelectionSync._on_selection_changed(event)
             │       └── toolbar.EnableTool(id, command.enabled(None))
-            └── wx.CallAfter(sendViewerStatusEvent)  [existing]
+            └── patterns.later.soon(sendViewerStatusEvent)  [existing]
 ```
 
 ### Design
@@ -494,7 +494,7 @@ The scrollbar range is only ever recomputed by `AdjustMyScrollbars()`, and that 
 
 A new method `_schedule_scrollbar_adjustment()` on `TreeListCtrl` (`treectrl.py`) handles the platform difference:
 
-- **Windows**: Uses `wx.CallAfter()` to defer scrollbar adjustment until after the event queue empties and the layout/idle cycle has cleared the dirty/frozen state
+- **Windows**: Uses `patterns.later.soon()` to defer scrollbar adjustment until after the event queue empties and the layout/idle cycle has cleared the dirty/frozen state
 - **Other platforms**: Adjusts immediately (the deferral is harmless and ensures consistency)
 
 Called from:
@@ -608,7 +608,7 @@ EVT_MOTION on VirtualListCtrl
 ```
 
 Native `wx.ListCtrl` has no PaintItem hook, so the outline is drawn post-paint
-via `wx.ClientDC` + `wx.CallAfter`. `EVT_PAINT` also triggers a deferred redraw
+via `wx.ClientDC` + `patterns.later.soon`. `EVT_PAINT` also triggers a deferred redraw
 to survive native repaints.
 
 **Cleanup:** `EVT_LEAVE_WINDOW` → reset `_hover_row`, padded refresh.

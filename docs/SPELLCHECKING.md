@@ -76,6 +76,14 @@ self.IndicatorFillRange(byte_start, byte_length)
 
 This approach is used by other wxPython applications like [WikidPad](https://github.com/WikidPad/WikidPad).
 
+### When the Check Runs
+
+The check (misspellings and URLs) runs 0.3 s after typing stops, as a
+debounce (`patterns.later.debounced`), and once when the control is
+created or its language or theme changes. Until 2026-09-29 the delay
+was a `wx.CallLater` that could fire after its editor had closed,
+logging a RuntimeError ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
+
 ### Keyboard Navigation (Spreadsheet Convention)
 
 Using `StyledTextCtrl` means Scintilla captures Tab and Enter by default. Task Coach uses the spreadsheet convention (like Excel / LibreOffice Calc) so plain Tab and Enter navigate instead of inserting characters. Modified keys insert the character:

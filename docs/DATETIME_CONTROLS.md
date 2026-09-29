@@ -1119,7 +1119,7 @@ The ComboCtrl's internal text control is hidden behind the overlaid `DateCtrl`. 
 
 1. **Focus redirection**: `EVT_SET_FOCUS` on the ComboCtrl's text control redirects focus to the inner DateCtrl, with a `_redirectingFocus` guard to prevent recursion.
 2. **Text interception**: `EVT_TEXT` handler clears any text the ComboCtrl auto-inserts.
-3. **Post-selection focus**: After calendar date selection, focus moves to inner DateCtrl via `wx.CallAfter`.
+3. **Post-selection focus**: After calendar date selection, focus moves to inner DateCtrl via `patterns.later.soon` ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
 
 ### Wiring
 

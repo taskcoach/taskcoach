@@ -175,6 +175,9 @@ In the app:
 - P17. Three test files have invalid escape sequences
   (`SyntaxWarning`): `ConfigTest.py`, `TranslationIntegrityTest.py`,
   `MSDownloadTest.py`.
+- P18. The dependency graph viewer's `__safeSendSizeEvent()` is
+  indented outside its class (`gui/viewer/task.py`), so each graph
+  refresh raises an AttributeError, now logged as `[LATER] failed`.
 
 ## Views on the Effective Styles
 
@@ -281,7 +284,9 @@ efforts, the scheduler's clock, the statuses computed from them, and
 the task file. Only logs carry fractions of a second: their
 timestamps stay high resolution, to show the flow in detail. Timer
 delays in the UI (debounce, animation, the window geometry's quiet
-periods) are not time values and are not concerned.
+periods) are not time values and are not concerned: they run in
+milliseconds through `patterns.later`, apart from the master loop
+([DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
 
 **Amended, 2026-09-27:** the creation and modification dates are
 logging data, not functional data: they keep the logs' precision

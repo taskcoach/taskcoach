@@ -124,16 +124,19 @@ user dismisses the menu. When the user clicks Quit from the tray menu:
 
 ### The Fix
 
-`FileQuit.do_command()` uses `wx.CallAfter()` to defer the `Close()` call:
+`FileQuit.do_command()` defers the `Close()` call to the next idle
+moment with `patterns.later.soon()` ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)):
 
 ```python
 def do_command(self, event):
-    wx.CallAfter(self.main_window().Close, force=True)
+    patterns.later.soon(
+        self.main_window(), self.main_window().Close, force=True
+    )
 ```
 
 This lets `PopupMenu()` return cleanly before `quit_application()` tears
-down the tray icon. The AppIndicator implementation already uses this
-pattern (line 546: `lambda w: wx.CallAfter(self.__window.Close)`).
+down the tray icon. The AppIndicator menu's Quit item does the same
+(`lambda w: patterns.later.soon(self.__window, self.__window.Close)`).
 
 ### Best Practices (from wxPython docs)
 
@@ -146,11 +149,12 @@ The wxPython documentation recommends:
 3. **`Destroy()` on TaskBarIcon schedules delayed destruction** for the next
    event loop iteration, but this doesn't help when `quit_application()`
    immediately tears everything down in the same call chain.
-4. **Always defer quit actions with `wx.CallAfter`** when triggered from a
-   tray popup menu, so the modal menu loop exits first.
+4. **Always defer quit actions to the next idle moment** when triggered
+   from a tray popup menu, so the modal menu loop exits first.
 
-Task Coach uses manual `PopupMenu()` + `wx.CallAfter` for the quit action,
-which is safe and avoids the need to restructure the menu system.
+Task Coach uses manual `PopupMenu()` + `patterns.later.soon()` for the
+quit action, which is safe and avoids the need to restructure the menu
+system.
 
 ## Tested Configurations
 
