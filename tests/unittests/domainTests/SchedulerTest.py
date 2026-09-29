@@ -233,6 +233,35 @@ class MasterTimerListTest(test.wxTestCase):
     def test_first_tick_runs_the_loop(self):
         self.assertTrue(self.tick(0))
 
+    def test_the_loop_styles_everything_owned(self):
+        from taskcoachlib.domain import attachment, category, note
+
+        red = (255, 0, 0, 255)
+
+        def red_note():
+            return note.Note(subject="note", fgColor=red)
+
+        def red_attachment(**kwargs):
+            return attachment.FileAttachment("a", fgColor=red, **kwargs)
+
+        a_category = category.Category(
+            "category", notes=[red_note()], attachments=[red_attachment()]
+        )
+        self.task_file.categories().append(a_category)
+        task_note = red_note()
+        task_note.addAttachment(red_attachment(notes=[red_note()]))
+        self.task.addNote(task_note)
+        owned = [
+            a_category.notes()[0],
+            a_category.attachments()[0],
+            task_note.attachments()[0],
+            task_note.attachments()[0].notes()[0],
+        ]
+        self.settle()
+        self.assertEqual(
+            [red] * 4, [tuple(each.effectiveFgColor()) for each in owned]
+        )
+
     def test_the_cascade_settles(self):
         self.assertGreater(self.settle(), 0)
         self.assertFalse(self.tick())

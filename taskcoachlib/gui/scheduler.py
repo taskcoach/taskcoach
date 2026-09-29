@@ -384,7 +384,7 @@ class MasterScheduler:
         self._pass_changes.clear()
         try:
             for each in self._task_file.categories().allItemsSorted():
-                self._run_isolated("category", computeStyles, each)
+                self._run_isolated("category", self._process_category, each)
             for each in self._task_file.tasks().allItemsSorted():
                 self._run_isolated("task", self._process_task, each, timestamp)
             for each in self._task_file.notes().allItemsSorted():
@@ -420,23 +420,39 @@ class MasterScheduler:
             prefix="SCHEDULER",
         )
 
-    @staticmethod
-    def _process_task(task, timestamp):
+    @classmethod
+    def _process_category(cls, category_):
+        computeStyles(category_)
+        cls._style_owned(category_)
+
+    @classmethod
+    def _process_task(cls, task, timestamp):
         # The status at the tick's second, as the timer seconds assume
         task.compute_stored_status(timestamp)
         task.processReminder(timestamp)
         computeStyles(task)
-        # Owned notes and attachments, parents first
-        for owned_note in task.notes(recursive=True):
-            computeStyles(owned_note)
-        for owned_attachment in task.attachments():
-            computeStyles(owned_attachment)
+        cls._style_owned(task)
 
-    @staticmethod
-    def _process_note(note_):
+    @classmethod
+    def _process_note(cls, note_):
         computeStyles(note_)
-        for owned_attachment in note_.attachments():
-            computeStyles(owned_attachment)
+        cls._style_owned(note_)
+
+    @classmethod
+    def _style_owned(cls, owner):
+        """The owner's notes, with their subnotes, and attachments, and
+        what those own in turn, parents first: the views draw only the
+        effective styles."""
+        owned = (
+            list(owner.notes(recursive=True))
+            if hasattr(owner, "notes")
+            else []
+        )
+        if hasattr(owner, "attachments"):
+            owned.extend(owner.attachments())
+        for each in owned:
+            computeStyles(each)
+            cls._style_owned(each)
 
     def _run_isolated(self, step, func, *args):
         """Run one step of the tick, logging a failure instead of
