@@ -1240,7 +1240,7 @@ class Task(
     # priority
 
     def priority(self, recursive=False):
-        # recursive: for callers asking any field for its subtree value
+        # recursive: the subtree value (core field, docs/TASK_FIELDS.md)
         return (
             self.effective_priority() if recursive else self.__priority.get()
         )
@@ -1258,12 +1258,31 @@ class Task(
 
     @staticmethod
     def prioritySortFunction(**kwargs):
-        return lambda task: task.priority()
+        # Core field: tree mode sorts by the subtree value
+        # (docs/TASK_FIELDS.md)
+        recursive = kwargs.get("tree_mode", False)
+        return lambda task: task.priority(recursive=recursive)
 
     @classmethod
     def prioritySortEventTypes(class_):
         """The event types that influence the priority sort order."""
-        return (class_.priorityChangedEventType(),)
+        return (
+            class_.priorityChangedEventType(),
+            class_.effective_priority_changed_event_type(),
+        )
+
+    # Direct priority (docs/TASK_FIELDS.md): the stored priority, in
+    # both modes
+
+    @staticmethod
+    def directPrioritySortFunction(**kwargs):
+        return lambda task: task.priority()
+
+    @classmethod
+    def directPrioritySortEventTypes(cls):
+        """The event types that influence the direct priority sort
+        order."""
+        return (cls.priorityChangedEventType(),)
 
     # Effective priority (docs/TASK_FIELDS.md)
 

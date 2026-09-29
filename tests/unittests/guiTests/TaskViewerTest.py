@@ -385,6 +385,7 @@ class CommonTestsMixin(object):
             fixedFee=(3, _("Fixed fee")),
             revenue=(3, _("Revenue")),
             priority=(3, _("Priority")),
+            directPriority=(3, _("Direct priority")),
             effectivePriority=(3, _("Effective priority")),
             prerequisites=(1, _("Prerequisites")),
             dependencies=(1, _("Dependents")),
@@ -1035,6 +1036,39 @@ class CommonTestsMixin(object):
         self.task.setPriority(10)
         # Priority changes are Publisher events
         self.assert_event_fired(task.Task.priorityChangedEventType())
+
+    def test_priority_column_follows_a_subtask(self):
+        self.showColumn("priority")
+        self.task.addChild(self.child)
+        self.taskList.append(self.task)
+        self.child.setPriority(10)
+        self.assertIn(
+            self.task,
+            self.viewer.events[-1].sources(
+                task.Task.effective_priority_changed_event_type()
+            ),
+        )
+
+    def test_collapsed_composite_task_shows_subtree_priority(self):
+        self.showColumn("priority")
+        self.taskList.extend([self.task, self.child])
+        self.task.addChild(self.child)
+        self.task.setPriority(1)
+        self.child.setPriority(10)
+        self.viewer.setSortOrderAscending(False)
+        expected = "(10) " if self.tree_mode else "1 "
+        self.task.expand(False, context=self.viewer.settingsSection())
+        self.assertEqual(expected, self.getItemText(0, 3))
+
+    def test_collapsed_composite_task_shows_direct_priority(self):
+        self.showColumn("directPriority")
+        self.taskList.extend([self.task, self.child])
+        self.task.addChild(self.child)
+        self.task.setPriority(1)
+        self.child.setPriority(10)
+        self.viewer.setSortOrderAscending(False)
+        self.task.expand(False, context=self.viewer.settingsSection())
+        self.assertEqual("1 ", self.getItemText(0, 3))
 
     def test_change_priority_of_subtask(self):
         self.showColumn("effectivePriority")

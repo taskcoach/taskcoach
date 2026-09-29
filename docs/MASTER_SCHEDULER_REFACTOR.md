@@ -84,8 +84,9 @@ go at the end. Details live in the sections and documents linked.
     ([Views on the Effective Styles](#views-on-the-effective-styles)).
 36. ~~Pages drawn over the editor's tabs~~
     ([AUI.md](AUI.md#page-painted-over-the-tabs)).
-37. Effective fields for the 13 other subtree values, one at a time;
-    none is read by the loop (what each is:
+37. Direct and effective fields beside the 13 other core fields, one
+    at a time after the priority trial (52); the core columns stay.
+    None is read by the loop (what each is:
     [TASK_FIELDS.md](TASK_FIELDS.md#subtree-values-in-other-columns)):
     1. Planned start date.
     2. Due date.
@@ -134,6 +135,9 @@ go at the end. Details live in the sections and documents linked.
     did not, on master either.
 51. ~~Empty event type~~: gone, and `removeObserver()` reads only None
     as "any".
+52. ~~Priority restored as a core field~~, with Direct priority and
+    Effective priority beside it
+    ([TASK_FIELDS.md](TASK_FIELDS.md#core-fields)).
 
 ## Views on the Effective Styles
 

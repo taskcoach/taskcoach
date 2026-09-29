@@ -1630,6 +1630,17 @@ class TaskViewer(
                 _("Priority"),
                 inplace_editor.PriorityCtrl,
                 self.onEditPriority,
+                [
+                    task.Task.expansionChangedEventType(),
+                    task.Task.priorityChangedEventType(),
+                    task.Task.effective_priority_changed_event_type(),
+                ],
+            ),
+            (
+                "directPriority",
+                _("Direct priority"),
+                inplace_editor.PriorityCtrl,
+                self.onEditPriority,
                 [task.Task.priorityChangedEventType()],
             ),
             (
@@ -1977,6 +1988,12 @@ class TaskViewer(
                     viewer=self,
                 ),
                 uicommand.ViewColumn(
+                    menu_text=_("&Direct priority"),
+                    help_text=_("Show/hide direct priority column"),
+                    setting="directPriority",
+                    viewer=self,
+                ),
+                uicommand.ViewColumn(
                     menu_text=_("&Effective priority"),
                     help_text=_("Show/hide effective priority column"),
                     setting="effectivePriority",
@@ -2141,6 +2158,9 @@ class TaskViewer(
         )
 
     def renderPriority(self, task):
+        return self.renderedValue(task, task.priority, render.priority) + " "
+
+    def renderDirectPriority(self, task):
         return render.priority(task.priority()) + " "
 
     def renderEffectivePriority(self, task):

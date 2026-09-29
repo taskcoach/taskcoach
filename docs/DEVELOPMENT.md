@@ -20,8 +20,9 @@ Canon decision by designer, 2026-09-28.
 - **Explicit fields:** a value computed from other fields gets its own
   named field (column, editor line, sort) instead of being folded into
   another field's display or sort, so users choose what to see and can
-  tell what each value means
-  ([TASK_FIELDS.md](TASK_FIELDS.md)).
+  tell what each value means. The core fields that fold a subtree value
+  in keep doing so; their explicit fields come beside them under new
+  names ([TASK_FIELDS.md](TASK_FIELDS.md#core-fields)).
 
 ## Code style
 

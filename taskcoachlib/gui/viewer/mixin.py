@@ -601,6 +601,11 @@ class SortableViewerForTasksMixin(
             (_("Budget &left"), _("Sort tasks by budget left"), "budgetLeft"),
             (_("&Priority"), _("Sort tasks by priority"), "priority"),
             (
+                _("&Direct priority"),
+                _("Sort tasks by direct priority"),
+                "directPriority",
+            ),
+            (
                 _("&Effective priority"),
                 _("Sort tasks by effective priority"),
                 "effectivePriority",
