@@ -118,6 +118,6 @@ class AutoExporterTestCase(test.TestCase):
         self.taskFile.tasks().append(aTask)
         self.taskFile.save()
         now = date.Now()
-        aTask.setCompletionDateTime(now)
+        aTask.set_completion_date_time(now)
         self.taskFile.save()
         self.assertEqual(aTask.completionDateTime(), now)

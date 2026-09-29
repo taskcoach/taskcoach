@@ -308,7 +308,7 @@ class PasteCommand(BaseCommand, SaveStateMixin):
 
     def setParentOfPastedItems(self, newParent=None):
         for item in self.__itemsToPaste:
-            item.setParent(newParent)
+            item.set_parent(newParent)
 
     def getItemsToPaste(self):
         _items, source = Clipboard().get()
@@ -361,7 +361,7 @@ class DragAndDropCommand(BaseCommand, SaveStateMixin, CompositeMixin):
         super().do_command()
         self.list.removeItems(self.items)
         for item in self.items:
-            item.setParent(self._itemToDropOn)
+            item.set_parent(self._itemToDropOn)
         self.list.extend(self.items)
 
     def undo_command(self):

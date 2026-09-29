@@ -44,7 +44,7 @@ class EffortAggregatorTestCase(test.TestCase):
         self.task2 = task.Task(subject="task 2")
         self.task3 = task.Task(subject="child")
         self.task1.addChild(self.task3)
-        self.task3.setParent(self.task1)
+        self.task3.set_parent(self.task1)
         self.effort1period1a = effort.Effort(
             self.task1,
             date.DateTime(2004, 1, 1, 11, 0, 0),
@@ -172,7 +172,7 @@ class CommonTestsMixin(object):
         self.taskList.extend([self.task1, self.task2])
         self.task1.addChild(self.task2)
         self.task2.addEffort(self.effort2period1a)
-        self.task2.setParent(None)
+        self.task2.set_parent(None)
         self.task1.removeChild(self.task2)
         self.assertEqual(2, len(self.effortAggregator))
 
@@ -300,7 +300,7 @@ class CommonTestsMixin(object):
     def testChangeTask(self):
         self.taskList.extend([self.task1, self.task2])
         self.task1.addEffort(self.effort1period1a)
-        self.effort1period1a.setTask(self.task2)
+        self.effort1period1a.set_task(self.task2)
         self.assertEqual(2, len(self.effortAggregator))
         self.assertTrue(
             self.task2 in [item.task() for item in self.effortAggregator]
@@ -309,7 +309,7 @@ class CommonTestsMixin(object):
     def testChangeTaskOfChildEffort(self):
         self.taskList.extend([self.task1, self.task2])
         self.task3.addEffort(self.effort3period1a)
-        self.effort3period1a.setTask(self.task2)
+        self.effort3period1a.set_task(self.task2)
         self.assertEqual(2, len(self.effortAggregator))
         self.assertTrue(
             self.task2 in [item.task() for item in self.effortAggregator]
@@ -318,7 +318,7 @@ class CommonTestsMixin(object):
     def testRemoveTaskAfterChangeTaskOfEffort(self):
         self.taskList.extend([self.task1, self.task2])
         self.task1.addEffort(self.effort1period1a)
-        self.effort1period1a.setTask(self.task2)
+        self.effort1period1a.set_task(self.task2)
         self.taskList.remove(self.task1)
         self.assertEqual(2, len(self.effortAggregator))
         self.assertTrue(

@@ -161,7 +161,7 @@ When `completionDateTime` is passed to the Task constructor:
 | Expected Side Effect | Actually Fires? | Why |
 |---------------------|----------------|-----|
 | Recurrence triggered (`self.recur()`) | No | Callback not fired |
-| Reminder cleared (`self.setReminder(None)`) | No | Callback not fired |
+| Reminder cleared (`self.set_reminder(None)`) | No | Callback not fired |
 | Percentage set to 100 | Yes | Handled separately in `__init__` lines 87-94 |
 | Children completed | No | Callback not fired |
 | Effort tracking stopped | No | Callback not fired |
@@ -179,7 +179,7 @@ But nothing prevents setting `"preset_..."` manually in `TaskCoach.ini`.
 See also [REMINDERS.md](REMINDERS.md) for the reminder popup, sound
 playback, and snooze configuration.
 
-When `reminder` is passed to the Task constructor, `setReminder()` is not
+When `reminder` is passed to the Task constructor, `set_reminder()` is not
 called, so the `reminderChangedEventType` event is not fired.
 
 This is **not a problem** because reminders are polled:
@@ -325,7 +325,7 @@ Convenience classmethods:
 
 When a `.tsk` file is loaded, tasks are reconstructed via `__init__` with
 reminder values from XML. The reminder is stored directly in `self.__reminder`
-(not through `setReminder()`), so no event fires.
+(not through `set_reminder()`), so no event fires.
 
 This works because reminders are polled (see
 [Reminder Preset](#reminder-preset)). The planned master timer list

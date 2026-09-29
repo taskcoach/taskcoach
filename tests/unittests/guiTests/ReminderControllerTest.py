@@ -92,18 +92,18 @@ class ReminderControllerTest(ReminderControllerTestCase):
 
     def testTaskWithReminderIsFoundByPolling(self):
         """With the new system, reminders are checked by polling, not scheduling."""
-        self.task.setReminder(self.reminderDateTime)
+        self.task.set_reminder(self.reminderDateTime)
         # Verify the task has a reminder set
         self.assertIsNotNone(self.task.reminder())
         self.assertEqual(self.task.reminder(), self.reminderDateTime)
 
     def test_due_reminder_is_shown(self):
-        self.task.setReminder(date.Now())
+        self.task.set_reminder(date.Now())
         self.task.processReminder(date.Now())
         self.assertEqual([self.task], self.reminderController.messages)
 
     def test_future_reminder_is_not_shown(self):
-        self.task.setReminder(date.Now() + date.ONE_HOUR)
+        self.task.set_reminder(date.Now() + date.ONE_HOUR)
         self.task.processReminder(date.Now())
         self.assertEqual([], self.reminderController.messages)
 
@@ -116,7 +116,7 @@ class ReminderControllerTest(ReminderControllerTestCase):
     def testReminderShownWhenDue(self):
         """Verify reminder is shown when due time is reached."""
         # Set reminder to now (so it's immediately due)
-        self.task.setReminder(date.Now())
+        self.task.set_reminder(date.Now())
         # Simulate timer tick by calling the check method directly
         self.reminderController._checkReminders(date.DateTime.now())
         # Reminder should have been shown
@@ -125,7 +125,7 @@ class ReminderControllerTest(ReminderControllerTestCase):
     @test.stale("reminders fire from the scheduler tick")
     def testReminderNotShownTwice(self):
         """Verify same reminder is not shown twice."""
-        self.task.setReminder(date.Now())
+        self.task.set_reminder(date.Now())
         # First check - should show
         self.reminderController._checkReminders(date.DateTime.now())
         # Second check - should NOT show again
@@ -136,13 +136,13 @@ class ReminderControllerTest(ReminderControllerTestCase):
     @test.stale("reminders fire from the scheduler tick")
     def testReminderClearedOnSnooze(self):
         """Verify reminder tracking is cleared when task is snoozed."""
-        self.task.setReminder(date.Now())
+        self.task.set_reminder(date.Now())
         self.reminderController._checkReminders(date.DateTime.now())
         self.assertEqual(len(self.reminderController.messages), 1)
         # Clear the shown reminder (simulates snooze)
         self.reminderController._shownReminders.discard(self.task)
         # Change reminder to new time
-        self.task.setReminder(date.Now())
+        self.task.set_reminder(date.Now())
         # Should show again
         self.reminderController._checkReminders(date.DateTime.now())
         self.assertEqual(len(self.reminderController.messages), 2)
@@ -150,7 +150,7 @@ class ReminderControllerTest(ReminderControllerTestCase):
     @test.stale("reminders fire from the scheduler tick")
     def testFutureReminderNotShown(self):
         """Verify future reminders are not shown until due."""
-        self.task.setReminder(date.Now() + date.ONE_HOUR)
+        self.task.set_reminder(date.Now() + date.ONE_HOUR)
         self.reminderController._checkReminders(date.DateTime.now())
         self.assertEqual(len(self.reminderController.messages), 0)
 
@@ -159,8 +159,8 @@ class ReminderControllerTest(ReminderControllerTestCase):
         """Verify multiple tasks can have reminders checked."""
         task2 = task.Task("Task 2")
         self.taskList.append(task2)
-        self.task.setReminder(date.Now())
-        task2.setReminder(date.Now())
+        self.task.set_reminder(date.Now())
+        task2.set_reminder(date.Now())
         self.reminderController._checkReminders(date.DateTime.now())
         self.assertEqual(len(self.reminderController.messages), 2)
 
@@ -193,14 +193,14 @@ class ReminderControllerTest(ReminderControllerTestCase):
         return DummyEvent()
 
     def testOnCloseReminderResetsReminder(self):
-        self.task.setReminder(self.reminderDateTime)
+        self.task.set_reminder(self.reminderDateTime)
         self.reminderController.onCloseReminderDialog(
             self.dummyCloseEvent(), show=False
         )
         self.assertEqual(date.DateTime(), self.task.reminder())
 
     def testOnCloseReminderSetsReminder(self):
-        self.task.setReminder(self.reminderDateTime)
+        self.task.set_reminder(self.reminderDateTime)
         self.reminderController.onCloseReminderDialog(
             self.dummyCloseEvent(date.ONE_HOUR), show=False
         )
@@ -210,7 +210,7 @@ class ReminderControllerTest(ReminderControllerTestCase):
         )
 
     def testOnCloseMayOpenTask(self):
-        self.task.setReminder(self.reminderDateTime)
+        self.task.set_reminder(self.reminderDateTime)
         frame = self.reminderController.onCloseReminderDialog(
             self.dummyCloseEvent(openAfterClose=True), show=False
         )

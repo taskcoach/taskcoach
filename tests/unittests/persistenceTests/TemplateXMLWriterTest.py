@@ -56,19 +56,21 @@ class TemplateXMLWriterTestCase(test.TestCase):
         )
 
     def testTaskWithPlannedStartDateTime(self):
-        self.task.setPlannedStartDateTime(
+        self.task.set_planned_start_date_time(
             date.Now() + date.TimeDelta(minutes=31)
         )
         self.expect_in_xml('plannedstartdatetmpl="31 minutes from now')
 
     def testTaskWithDueDateTime(self):
-        self.task.setDueDateTime(date.Now() + date.TimeDelta(minutes=13))
+        self.task.set_due_date_time(date.Now() + date.TimeDelta(minutes=13))
         self.expect_in_xml('duedatetmpl="13 minutes from now')
 
     def testTaskWithCompletionDateTime(self):
-        self.task.setCompletionDateTime(date.Now() + date.TimeDelta(minutes=4))
+        self.task.set_completion_date_time(
+            date.Now() + date.TimeDelta(minutes=4)
+        )
         self.expect_in_xml('completiondatetmpl="4 minutes from now')
 
     def testTaskWithReminder(self):
-        self.task.setReminder(date.Now() + date.TimeDelta(seconds=10))
+        self.task.set_reminder(date.Now() + date.TimeDelta(seconds=10))
         self.expect_in_xml('remindertmpl="0 minutes from now')

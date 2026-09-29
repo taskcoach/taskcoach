@@ -42,14 +42,14 @@ class TaskListTest(test.TestCase):
         self.assertEqual(0, self.nrStatus(task.status.completed))
         self.taskList.append(self.task1)
         self.assertEqual(0, self.nrStatus(task.status.completed))
-        self.task1.setCompletionDateTime()
+        self.task1.set_completion_date_time()
         self.assertEqual(1, self.nrStatus(task.status.completed))
 
     def testNrOverdue(self):
         self.assertEqual(0, self.nrStatus(task.status.overdue))
         self.taskList.append(self.task1)
         self.assertEqual(0, self.nrStatus(task.status.overdue))
-        self.task1.setDueDateTime(date.DateTime(1990, 1, 1))
+        self.task1.set_due_date_time(date.DateTime(1990, 1, 1))
         self.assertEqual(1, self.nrStatus(task.status.overdue))
 
     def testNrDueSoon(self):

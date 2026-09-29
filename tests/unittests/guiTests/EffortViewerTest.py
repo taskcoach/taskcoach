@@ -245,7 +245,7 @@ class EffortViewerTest(test.wxTestCase):
         self.task.addEffort(self.effort1)
         child = task.Task("child")
         self.task.addChild(child)
-        child.setParent(self.task)
+        child.set_parent(self.task)
         self.taskFile.tasks().append(child)
         child.addEffort(effort.Effort(child))
         self.assertEqual(2, len(self.viewer.presentation()))

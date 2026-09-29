@@ -33,7 +33,7 @@ class TreeViewerTest(test.wxTestCase):
         self.parent = task.Task("parent")
         self.child = task.Task("child")
         self.parent.addChild(self.child)
-        self.child.setParent(self.parent)
+        self.child.set_parent(self.parent)
         self.taskFile.tasks().extend([self.parent, self.child])
         self.viewer.refresh()
         self.widget = self.viewer.widget

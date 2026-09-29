@@ -141,7 +141,7 @@ class CompositeTest(test.TestCase):
 
     def testSetState_Parent(self):
         state = self.composite.__getstate__()
-        self.composite.setParent(self.child)
+        self.composite.set_parent(self.child)
         self.composite.__setstate__(state)
         self.assertEqual(None, self.composite.parent())
 
@@ -280,14 +280,14 @@ class CompositeCollectionTest(test.TestCase):
 
     def testAddCompositeWithParentAddsItToParent(self):
         self.collection.append(self.composite)
-        self.composite2.setParent(self.composite)
+        self.composite2.set_parent(self.composite)
         self.collection.append(self.composite2)
         self.assertEqual([self.composite2], self.composite.children())
 
     def testAddCompositeWithParentTriggersNotificationByParent(self):
         self.registerObserver(self.composite.addChildEventType())
         self.collection.append(self.composite)
-        self.composite2.setParent(self.composite)
+        self.composite2.set_parent(self.composite)
         self.collection.append(self.composite2)
         expectedEvent = patterns.Event(
             self.composite.addChildEventType(), self.composite, self.composite2

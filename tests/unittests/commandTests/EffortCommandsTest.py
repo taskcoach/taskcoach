@@ -73,7 +73,7 @@ class NewEffortCommandTest(EffortCommandTestCase):
             self.effortList, [self.originalTask]
         )
         newEffort = newEffortCommand.efforts[0]
-        newEffort.setTask(secondTask)
+        newEffort.set_task(secondTask)
         newEffortCommand.do()
         self.assertDoUndoRedo(
             lambda: self.assertTrue(
@@ -135,7 +135,7 @@ class StartAndStopEffortCommandTest(EffortCommandTestCase):
 
     def testStartTrackingInactiveTaskWithFutureActualStartDate(self):
         futureStartDateTime = date.Tomorrow()
-        self.task2.setActualStartDateTime(futureStartDateTime)
+        self.task2.set_actual_start_date_time(futureStartDateTime)
         start = command.StartEffortCommand(self.taskList, [self.task2])
         start.do()
         now = date.Now()

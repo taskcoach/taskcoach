@@ -468,7 +468,7 @@ class CompositeObjectTest(test.TestCase):
     def addChild(self, **kwargs):
         self.child = base.CompositeObject(**kwargs)
         self.compositeObject.addChild(self.child)
-        self.child.setParent(self.compositeObject)
+        self.child.set_parent(self.compositeObject)
 
     def removeChild(self):
         self.compositeObject.removeChild(self.child)

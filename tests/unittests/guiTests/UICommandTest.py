@@ -601,9 +601,9 @@ class ToggleCategoryTest(test.TestCase):
         )
         child_category = category.Category("Mutual exclusive category")
         parent_category.addChild(child_category)
-        child_category.setParent(parent_category)
+        child_category.set_parent(parent_category)
         child_category.addChild(self.category)
-        self.category.setParent(child_category)
+        self.category.set_parent(child_category)
         task_with_category = task.Task("Task")
         task_with_category.addCategory(self.category)
         self.category.addCategorizable(task_with_category)
@@ -702,7 +702,7 @@ class EffortStopTest(test.TestCase):
     def testStopIsEnabledWhenATrackedEffortIsMoved(self):
         self.task.addEffort(self.effort1)
         self.taskList.append(self.task2)
-        self.effort1.setTask(self.task2)
+        self.effort1.set_task(self.task2)
         self.assertTrue(self.effortStop.enabled())
 
     def testIgnoreCompositeEfforts(self):

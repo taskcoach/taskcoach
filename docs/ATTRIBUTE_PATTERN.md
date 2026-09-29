@@ -167,9 +167,9 @@ shows blank and is not saved, and it means "never" either way.
 `DateTime.min`, the earliest date, is the counterpart for an unknown
 creation or modification time, from old files.
 
-The setters store it for `None`: `setPlannedStartDateTime()`,
-`setDueDateTime()`, `setActualStartDateTime()` and `setReminder()`
-take `None` as "not set". `setCompletionDateTime()` differs by design:
+The setters store it for `None`: `set_planned_start_date_time()`,
+`set_due_date_time()`, `set_actual_start_date_time()` and `set_reminder()`
+take `None` as "not set". `set_completion_date_time()` differs by design:
 without a date it means now (mark completed), and the latest date
 reopens the task. Over subtasks, the planned start, actual start, due
 and reminder take the earliest date, so unset ones never win; the
@@ -206,11 +206,11 @@ Three complexity levels of callbacks:
 
 **Cross-field callback** — reacts to current state and triggers other
 setters. Example: `_onPercentageCompleteChanged` triggers
-`setCompletionDateTime` or `setActualStartDateTime` based on the new
+`set_completion_date_time` or `set_actual_start_date_time` based on the new
 percentage value and current state.
 
 **Re-entrant callback** — when a callback triggers another setter (e.g.
-`_onCompletionDateTimeChanged` → `recur()` → `setCompletionDateTime(maxDateTime)`),
+`_onCompletionDateTimeChanged` → `recur()` → `set_completion_date_time(maxDateTime)`),
 the Attribute equality check prevents infinite loops. The second `.set()`
 fires the callback again; the callback reads current state, finds nothing
 to do, returns.

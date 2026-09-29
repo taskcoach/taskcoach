@@ -310,7 +310,7 @@ class CompositeEffortTest(test.TestCase):
 
     def testChangeTask(self):
         self.task.addEffort(self.effort1)
-        self.effort1.setTask(task.Task())
+        self.effort1.set_task(task.Task())
         self.assertEqual(date.TimeDelta(), self.composite.totalTimeSpent())
 
     def test_change_task_empty_notification(self):
@@ -318,7 +318,7 @@ class CompositeEffortTest(test.TestCase):
             effort.CompositeEffort.compositeEmptyEventType()
         )
         self.task.addEffort(self.effort1)
-        self.effort1.setTask(task.Task())
+        self.effort1.set_task(task.Task())
         self.assertEqual([self.composite], events)
 
     def testGetDescription_ZeroEfforts(self):
@@ -503,7 +503,7 @@ class CompositeEffortWithSubTasksTest(test.TestCase):
 
     def testChangeTask(self):
         self.child.addEffort(self.childEffort)
-        self.childEffort.setTask(task.Task())
+        self.childEffort.set_task(task.Task())
         self.assertEqual(
             date.TimeDelta(), self.composite.totalTimeSpent(recursive=True)
         )

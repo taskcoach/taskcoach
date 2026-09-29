@@ -122,7 +122,7 @@ class CategorizableCompositeObjectTest(test.TestCase):
         child = categorizable.CategorizableCompositeObject(subject="child")
         self.registerObserver(self.categoryAddedEventType, eventSource=child)
         self.categorizable.addChild(child)
-        child.setParent(self.categorizable)
+        child.set_parent(self.categorizable)
         cat = category.Category(subject="Parent category")
         self.categorizable.addCategory(cat)
         self.assertEvent(self.categoryAddedEventType, child, cat)
@@ -367,7 +367,7 @@ class CategorizableStyleTest(test.TestCase):
         self.categorizable.addCategory(self.category)
         child = note.Note()
         self.categorizable.addChild(child)
-        child.setParent(self.categorizable)
+        child.set_parent(self.categorizable)
         self.category.setForegroundColor(wx.RED)
         self.assertEqual(wx.RED, test.styled(child).shown_fg_color())
 
@@ -375,7 +375,7 @@ class CategorizableStyleTest(test.TestCase):
         self.categorizable.addCategory(self.category)
         child = note.Note()
         self.categorizable.addChild(child)
-        child.setParent(self.categorizable)
+        child.set_parent(self.categorizable)
         self.category.setBackgroundColor(wx.RED)
         self.assertEqual(wx.RED, test.styled(child).shown_bg_color())
 
@@ -383,14 +383,14 @@ class CategorizableStyleTest(test.TestCase):
         self.categorizable.addCategory(self.category)
         child = note.Note()
         self.categorizable.addChild(child)
-        child.setParent(self.categorizable)
+        child.set_parent(self.categorizable)
         self.category.setFont(wx.SWISS_FONT)
         self.assertEqual(wx.SWISS_FONT, test.styled(child).shown_font())
 
     def test_child_category_foreground_color_wins_over_parent(self):
         child = note.Note()
         self.categorizable.addChild(child)
-        child.setParent(self.categorizable)
+        child.set_parent(self.categorizable)
         child.addCategory(self.category)
         self.categorizable.setForegroundColor(wx.RED)
         self.category.setForegroundColor(wx.BLUE)
@@ -399,7 +399,7 @@ class CategorizableStyleTest(test.TestCase):
     def test_child_category_background_color_wins_over_parent(self):
         child = note.Note()
         self.categorizable.addChild(child)
-        child.setParent(self.categorizable)
+        child.set_parent(self.categorizable)
         child.addCategory(self.category)
         self.categorizable.setBackgroundColor(wx.RED)
         self.category.setBackgroundColor(wx.BLUE)
@@ -408,7 +408,7 @@ class CategorizableStyleTest(test.TestCase):
     def test_child_category_font_wins_over_parent(self):
         child = note.Note()
         self.categorizable.addChild(child)
-        child.setParent(self.categorizable)
+        child.set_parent(self.categorizable)
         child.addCategory(self.category)
         self.categorizable.setFont(
             wx.Font(

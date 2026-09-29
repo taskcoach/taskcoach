@@ -2851,7 +2851,7 @@ class LocalNoteViewer(viewer.BaseNoteViewer):  # pylint: disable=W0223
         # Clear parent so notes become top-level (even if source was nested)
         # and expand all pasted notes so children are visible
         for n in copies:
-            n.setParent(None)
+            n.set_parent(None)
             self._expandNoteAndChildren(n)
         return command.AddNoteCommand(None, [self.__note_owner], notes=copies)
 
@@ -2871,7 +2871,7 @@ class LocalNoteViewer(viewer.BaseNoteViewer):  # pylint: disable=W0223
         # Clear parent references - AddSubNoteCommand will set correct parent via addChild
         # and expand all pasted notes so children are visible
         for n in copies:
-            n.setParent(None)
+            n.set_parent(None)
             self._expandNoteAndChildren(n)
         # Also expand the parent note so the pasted subnotes are visible
         parent_note.expand(True, context=self.settingsSection(), notify=False)
@@ -4810,7 +4810,7 @@ class EffortEditBook(Page):
         self.setFocusOnEntry(column_name)
 
     def isDisplayingItemOrChildOfItem(self, item):
-        if hasattr(item, "setTask"):
+        if hasattr(item, "set_task"):
             return self.items[0] == item  # Regular effort
         else:
             return item.mayContain(self.items[0])  # Composite effort

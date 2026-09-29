@@ -105,34 +105,38 @@ class XMLWriterTest(test.TestCase):
         self.expect_not_in_xml("<description>")
 
     def testTaskPlannedStartDateTime(self):
-        self.task.setPlannedStartDateTime(date.DateTime(2004, 1, 1, 11, 0, 0))
+        self.task.set_planned_start_date_time(
+            date.DateTime(2004, 1, 1, 11, 0, 0)
+        )
         self.expect_in_xml(
             'plannedstartdate="%s"' % str(self.task.plannedStartDateTime())
         )
 
     def testNoPlannedStartDateTime(self):
-        self.task.setPlannedStartDateTime(date.DateTime())
+        self.task.set_planned_start_date_time(date.DateTime())
         self.expect_not_in_xml("plannedstartdate=")
 
     def testTaskActualStartDateTime(self):
-        self.task.setActualStartDateTime(date.DateTime(2007, 12, 31, 9, 0, 0))
+        self.task.set_actual_start_date_time(
+            date.DateTime(2007, 12, 31, 9, 0, 0)
+        )
         self.expect_in_xml(
             'actualstartdate="%s"' % str(self.task.actualStartDateTime())
         )
 
     def testNoActualStartDateTime(self):
-        self.task.setActualStartDateTime(date.DateTime())
+        self.task.set_actual_start_date_time(date.DateTime())
         self.expect_not_in_xml("actualstartdate=")
 
     def testTaskDueDateTime(self):
-        self.task.setDueDateTime(date.DateTime(2004, 1, 1, 10, 5, 5))
+        self.task.set_due_date_time(date.DateTime(2004, 1, 1, 10, 5, 5))
         self.expect_in_xml('duedate="%s"' % str(self.task.dueDateTime()))
 
     def testNoDueDateTime(self):
         self.expect_not_in_xml("duedate=")
 
     def testTaskCompletionDateTime(self):
-        self.task.setCompletionDateTime(date.DateTime(2004, 1, 1, 10, 8, 4))
+        self.task.set_completion_date_time(date.DateTime(2004, 1, 1, 10, 8, 4))
         self.expect_in_xml(
             'completiondate="%s"' % str(self.task.completionDateTime())
         )
@@ -380,13 +384,13 @@ class XMLWriterTest(test.TestCase):
         self.expect_not_in_xml("reminder")
 
     def testReminder(self):
-        self.task.setReminder(date.DateTime(2005, 5, 7, 13, 15, 10))
+        self.task.set_reminder(date.DateTime(2005, 5, 7, 13, 15, 10))
         self.expect_in_xml('reminder="%s"' % str(self.task.reminder()))
         self.expect_not_in_xml("reminderBeforeSnooze")
 
     def testSnoozedReminder(self):
         now = date.Now()
-        self.task.setReminder(now + date.TimeDelta(seconds=30))
+        self.task.set_reminder(now + date.TimeDelta(seconds=30))
         self.task.snooze_reminder(date.TimeDelta(seconds=120), now=lambda: now)
         self.expect_in_xml('reminder="%s"' % str(self.task.reminder()))
         self.expect_in_xml(
@@ -396,7 +400,7 @@ class XMLWriterTest(test.TestCase):
 
     def testReminderIsNoneButSnoozedReminderNot(self):
         now = date.Now()
-        self.task.setReminder(now + date.TimeDelta(seconds=30))
+        self.task.set_reminder(now + date.TimeDelta(seconds=30))
         self.task.snooze_reminder(date.TimeDelta())
         self.expect_not_in_xml("reminder")
 

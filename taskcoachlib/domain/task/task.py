@@ -166,7 +166,7 @@ class Task(
             self._on_should_mark_completed_changed,
         )
         for effort in self._efforts:
-            effort.setTask(self)
+            effort.set_task(self)
         self.__observe_settings()
 
         self.compute_stored_status()
@@ -177,15 +177,17 @@ class Task(
     @patterns.eventSource
     def __setstate__(self, state, event=None):
         super().__setstate__(state, event=event)
-        self.setPlannedStartDateTime(
+        self.set_planned_start_date_time(
             state["plannedStartDateTime"], event=event
         )
-        self.setActualStartDateTime(state["actualStartDateTime"], event=event)
-        self.setDueDateTime(state["dueDateTime"], event=event)
-        self.setCompletionDateTime(state["completionDateTime"], event=event)
+        self.set_actual_start_date_time(
+            state["actualStartDateTime"], event=event
+        )
+        self.set_due_date_time(state["dueDateTime"], event=event)
+        self.set_completion_date_time(state["completionDateTime"], event=event)
         self.setPercentageComplete(state["percentageComplete"], event=event)
         self.set_recurrence(state["recurrence"], event=event)
-        self.setReminder(state["reminder"], event=event)
+        self.set_reminder(state["reminder"], event=event)
         self.setEfforts(state["efforts"])
         self.set_budget(state["budget"], event=event)
         self.setPlannedDuration(
@@ -280,9 +282,9 @@ class Task(
         self.childChangeEvent(child, wasTracking, event)
         if not Task._merging:
             if self.shouldBeMarkedCompleted():
-                self.setCompletionDateTime(child.completionDateTime())
+                self.set_completion_date_time(child.completionDateTime())
             elif self.completed() and not child.completed():
-                self.setCompletionDateTime(self.maxDateTime)
+                self.set_completion_date_time(self.maxDateTime)
         # Under another parent, other ancestors' prerequisites count
         child._update_status(recursive=True)
 
@@ -295,7 +297,7 @@ class Task(
         self.childChangeEvent(child, wasTracking, event)
         if not Task._merging and self.shouldBeMarkedCompleted():
             # The removed child was the last uncompleted child
-            self.setCompletionDateTime(date.Now())
+            self.set_completion_date_time(date.Now())
         child._update_status(recursive=True)
 
     def childChangeEvent(self, child, wasTracking, event):
@@ -356,9 +358,9 @@ class Task(
         else:
             return self.__dueDateTime.get()
 
-    def setDueDateTime(self, dueDateTime, event=None):
+    def set_due_date_time(self, due_date_time, event=None):
         # Not set is the latest date (docs/ATTRIBUTE_PATTERN.md)
-        self.__dueDateTime.set(dueDateTime or self.maxDateTime, event=event)
+        self.__dueDateTime.set(due_date_time or self.maxDateTime, event=event)
 
     def _onDueDateTimeChanged(self, event):
         self._update_status()
@@ -396,9 +398,9 @@ class Task(
         else:
             return self.__plannedStartDateTime.get()
 
-    def setPlannedStartDateTime(self, plannedStartDateTime, event=None):
+    def set_planned_start_date_time(self, planned_start_date_time, event=None):
         self.__plannedStartDateTime.set(
-            plannedStartDateTime or self.maxDateTime, event=event
+            planned_start_date_time or self.maxDateTime, event=event
         )
 
     def _onPlannedStartDateTimeChanged(self, event):
@@ -453,14 +455,14 @@ class Task(
         else:
             return self.__actualStartDateTime.get()
 
-    def setActualStartDateTime(
-        self, actualStartDateTime, recursive=False, event=None
+    def set_actual_start_date_time(
+        self, actual_start_date_time, recursive=False, event=None
     ):
         if recursive:
             for child in self.children(recursive=True):
-                child.setActualStartDateTime(actualStartDateTime)
+                child.set_actual_start_date_time(actual_start_date_time)
         self.__actualStartDateTime.set(
-            actualStartDateTime or self.maxDateTime, event=event
+            actual_start_date_time or self.maxDateTime, event=event
         )
 
     def _onActualStartDateTimeChanged(self, event):
@@ -500,9 +502,9 @@ class Task(
         else:
             return self.__completionDateTime.get()
 
-    def setCompletionDateTime(self, completionDateTime=None, event=None):
+    def set_completion_date_time(self, completion_date_time=None, event=None):
         self.__completionDateTime.set(
-            completionDateTime or date.Now(), event=event
+            completion_date_time or date.Now(), event=event
         )
 
     def _onCompletionDateTimeChanged(self, event):
@@ -514,7 +516,7 @@ class Task(
             return  # recur resets completionDateTime, triggering this callback again
 
         if isCompleted:
-            self.setReminder(None)
+            self.set_reminder(None)
             self.setPercentageComplete(100)
             if self.isBeingTracked():
                 self.stopTracking()
@@ -523,19 +525,19 @@ class Task(
             for child in self.children():
                 if child.completionDateTime() == self.maxDateTime:
                     child.set_recurrence(event=event)  # Cleared first
-                    child.setCompletionDateTime(completionDateTime)
+                    child.set_completion_date_time(completionDateTime)
 
             # Children→Parent cascade: check if parent should auto-complete
             parent = self.parent()
             if parent and parent.shouldBeMarkedCompleted():
-                parent.setCompletionDateTime(completionDateTime)
+                parent.set_completion_date_time(completionDateTime)
         else:
             if self.percentageComplete() == 100:
                 self.setPercentageComplete(0)
             # An open child reopens its completed parent, and so on up
             parent = self.parent()
             if parent and parent.completed():
-                parent.setCompletionDateTime(self.maxDateTime)
+                parent.set_completion_date_time(self.maxDateTime)
 
         # Notify parent of recursive priority change (child completion
         # changes which children are included in the recursive max)
@@ -843,7 +845,7 @@ class Task(
         """
         # Clear reminder if completed and not recurring
         if self.completed() and not self.recurrence():
-            self.setReminder()
+            self.set_reminder()
             return
 
         # Trigger when due; a reminder not set (the latest date) never
@@ -891,7 +893,7 @@ class Task(
         oldValue = self._efforts[:]
         self._efforts.append(effort)
         if effort.getStart() < self.actualStartDateTime():
-            self.setActualStartDateTime(effort.getStart())
+            self.set_actual_start_date_time(effort.getStart())
         self.__send_efforts_changed(oldValue)
         if effort.isBeingTracked() and not wasTracking:
             self.send_tracking_changed(tracking=True)
@@ -1198,16 +1200,16 @@ class Task(
     def _onPercentageCompleteChanged(self, event):
         percentage = self.__percentageComplete.get()
         if percentage == 100 and self.completionDateTime() == self.maxDateTime:
-            self.setCompletionDateTime(date.Now())
+            self.set_completion_date_time(date.Now())
         elif (
             percentage != 100 and self.completionDateTime() != self.maxDateTime
         ):
-            self.setCompletionDateTime(self.maxDateTime)
+            self.set_completion_date_time(self.maxDateTime)
         if (
             0 < percentage < 100
             and self.actualStartDateTime() == date.DateTime()
         ):
-            self.setActualStartDateTime(date.Now())
+            self.set_actual_start_date_time(date.Now())
         self.percentage_complete_changed_event(event=event)
 
     @patterns.eventSource
@@ -1397,7 +1399,7 @@ class Task(
                 else self.__reminder_before_snooze
             )
 
-    def setReminder(self, reminder_date_time=None, event=None):
+    def set_reminder(self, reminder_date_time=None, event=None):
         # Not set is the latest date (docs/ATTRIBUTE_PATTERN.md)
         reminder_date_time = reminder_date_time or self.maxDateTime
         if reminder_date_time == self.__reminder.get():
@@ -1411,7 +1413,7 @@ class Task(
         elif self.recurrence():
             self.__reminder.set(self.maxDateTime)
         else:
-            self.setReminder()
+            self.set_reminder()
 
     def _on_reminder_changed(self, event):
         self._send_to_self_and_ancestors(
@@ -1466,7 +1468,7 @@ class Task(
         from taskcoachlib.meta.debug import log_step
 
         completionDateTime = completionDateTime or date.Now()
-        self.setCompletionDateTime(self.maxDateTime)
+        self.set_completion_date_time(self.maxDateTime)
         recur = self.recurrence(recursive=True, upwards=True)
 
         if not recur.unit:
@@ -1497,7 +1499,7 @@ class Task(
                     % (self.subject(), current_due),
                     prefix="RECUR",
                 )
-            self.setDueDateTime(next_due)
+            self.set_due_date_time(next_due)
 
         if current_planned_start != date.DateTime():
             if date.DateTime() not in (
@@ -1518,15 +1520,15 @@ class Task(
                 minute=current_planned_start.minute,
                 second=current_planned_start.second,
             )
-            self.setPlannedStartDateTime(next_planned_start)
+            self.set_planned_start_date_time(next_planned_start)
 
-        self.setActualStartDateTime(date.DateTime())
+        self.set_actual_start_date_time(date.DateTime())
         self.setPercentageComplete(0)
         if self.reminder(includeSnooze=False) != self.maxDateTime:
             next_reminder = recur(
                 self.reminder(includeSnooze=False), next=False
             )
-            self.setReminder(next_reminder)
+            self.set_reminder(next_reminder)
         for child in self.children():
             if not child.recurrence():
                 child.recur(completionDateTime, event=event)

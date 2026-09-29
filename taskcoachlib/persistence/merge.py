@@ -92,7 +92,7 @@ def _merge_collection(mine, theirs, their_file_is_newer):
         if current is not parent:
             if current is not None and _has_child(current, item):
                 current.removeChild(item)
-            item.setParent(parent)
+            item.set_parent(parent)
     mine.extend([item for item in final.values() if not _contains(mine, item)])
 
 
@@ -167,7 +167,7 @@ def _set_owned(owner, kind, items):
                 owner.removeEffort(effort)
         for effort in items:
             if effort.task() is not owner:
-                effort.setTask(owner)
+                effort.set_task(owner)
             elif not any(effort is each for each in owner.efforts()):
                 owner.addEffort(effort)
         return

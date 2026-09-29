@@ -207,7 +207,7 @@ class CSVReader(object):
                 parent = self.createCategory(parentName)
             newCategory = Category(subject=childName)
             parent.addChild(newCategory)
-            newCategory.setParent(parent)
+            newCategory.set_parent(parent)
         else:
             newCategory = Category(subject=name)
         self.categoryList.append(newCategory)

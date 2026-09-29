@@ -320,7 +320,7 @@ Status is recomputed in three scenarios:
 
 1. **On load:** `Task.__init__()` calls `compute_stored_status()` once.
 2. **On a change of what it reads:** the date setters (e.g.
-   `setDueDateTime()`), completion, prerequisites and subtasks added or
+   `set_due_date_time()`), completion, prerequisites and subtasks added or
    removed call `_update_status()`, which calls `compute_stored_status()`,
    so the status updates at once; the styles follow at the loop's next
    pass.
@@ -358,7 +358,7 @@ colours, font and icon follow at the master loop's next pass (within a
 second):
 
 ```
-setDueDateTime(newDate) / setPlannedStartDateTime(newDate) / etc.
+set_due_date_time(newDate) / set_planned_start_date_time(newDate) / etc.
     └── self._update_status()
         └── self.compute_stored_status()
             ├── Recalculates status from current dates

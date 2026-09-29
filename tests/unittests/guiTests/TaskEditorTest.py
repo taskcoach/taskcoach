@@ -39,27 +39,27 @@ class TaskEditorSetterMixin(object):
         page._descriptionEntry.SetValue(newDescription)
         return page
 
-    def setPlannedStartDateTime(self, dateTime):
+    def set_planned_start_date_time(self, date_time):
         self.setDateTime(
-            self.editor._interior[1]._plannedStartDateTimeEntry, dateTime
+            self.editor._interior[1]._plannedStartDateTimeEntry, date_time
         )
 
-    def setDueDateTime(self, dateTime):
-        self.setDateTime(self.editor._interior[1]._dueDateTimeEntry, dateTime)
+    def set_due_date_time(self, date_time):
+        self.setDateTime(self.editor._interior[1]._dueDateTimeEntry, date_time)
 
-    def setActualStartDateTime(self, dateTime):
+    def set_actual_start_date_time(self, date_time):
         self.setDateTime(
-            self.editor._interior[1]._actualStartDateTimeEntry, dateTime
+            self.editor._interior[1]._actualStartDateTimeEntry, date_time
         )
 
-    def setCompletionDateTime(self, dateTime):
+    def set_completion_date_time(self, date_time):
         self.setDateTime(
-            self.editor._interior[1]._completionDateTimeEntry, dateTime
+            self.editor._interior[1]._completionDateTimeEntry, date_time
         )
 
-    def setReminder(self, dateTime):
+    def set_reminder(self, date_time):
         self.setDateTime(
-            self.editor._interior[1]._reminderDateTimeEntry, dateTime
+            self.editor._interior[1]._reminderDateTimeEntry, date_time
         )
 
     def setDateTime(self, entry, dateTime):
@@ -224,7 +224,7 @@ class EditTaskTestMixin(object):
 
     @test.stale("date entries were rebuilt (#271, #294)")
     def testSetPlannedStartDateTime(self):
-        self.setPlannedStartDateTime(self.tomorrow)
+        self.set_planned_start_date_time(self.tomorrow)
         self.assertAlmostEqual(
             self.tomorrow.toordinal(),
             self.task.plannedStartDateTime().toordinal(),
@@ -233,7 +233,7 @@ class EditTaskTestMixin(object):
 
     @test.stale("date entries were rebuilt (#271, #294)")
     def testSetDueDateTime(self):
-        self.setDueDateTime(self.tomorrow)
+        self.set_due_date_time(self.tomorrow)
         self.assertAlmostEqual(
             self.tomorrow.toordinal(),
             self.task.dueDateTime().toordinal(),
@@ -242,7 +242,7 @@ class EditTaskTestMixin(object):
 
     @test.stale("date entries were rebuilt (#271, #294)")
     def testSetActualStartDateTime(self):
-        self.setActualStartDateTime(self.tomorrow)
+        self.set_actual_start_date_time(self.tomorrow)
         self.assertAlmostEqual(
             self.tomorrow.toordinal(),
             self.task.actualStartDateTime().toordinal(),
@@ -251,7 +251,7 @@ class EditTaskTestMixin(object):
 
     @test.stale("date entries were rebuilt (#271, #294)")
     def testSetCompletionDateTime(self):
-        self.setCompletionDateTime(self.tomorrow)
+        self.set_completion_date_time(self.tomorrow)
         self.assertAlmostEqual(
             self.tomorrow.toordinal(),
             self.task.completionDateTime().toordinal(),
@@ -260,14 +260,14 @@ class EditTaskTestMixin(object):
 
     @test.stale("date entries were rebuilt (#271, #294)")
     def testSetUncompleted(self):
-        self.setCompletionDateTime(date.Now())
-        self.setCompletionDateTime(date.DateTime())
+        self.set_completion_date_time(date.Now())
+        self.set_completion_date_time(date.DateTime())
         self.assertEqual(date.DateTime(), self.task.completionDateTime())
 
     @test.stale("date entries were rebuilt (#271, #294)")
     def testSetReminder(self):
         reminderDateTime = date.DateTime(2005, 1, 1)
-        self.setReminder(reminderDateTime)
+        self.set_reminder(reminderDateTime)
         self.assertEqual(reminderDateTime, self.task.reminder())
 
     def testSetRecurrence(self):
@@ -372,7 +372,7 @@ class EditTaskTestMixin(object):
         parent = note.Note(subject="New note")
         child = note.Note(subject="Child")
         parent.addChild(child)
-        child.setParent(parent)
+        child.set_parent(parent)
         viewer = self.editor._interior[7].viewer
         viewer.newItemCommand(viewer.presentation()).do()
         viewer.newSubItemCommandClass()(
@@ -480,9 +480,9 @@ class DatesStartDueTest(DatesTestBase):
 
     @test.stale("date entries were rebuilt (#271, #294)")
     def testChangePlannedStartDateChangesDueDate(self):
-        self.setPlannedStartDateTime(self.yesterday)
-        self.setDueDateTime(self.today)
-        self.setPlannedStartDateTime(self.today)
+        self.set_planned_start_date_time(self.yesterday)
+        self.set_due_date_time(self.today)
+        self.set_planned_start_date_time(self.today)
         self.assertAlmostEqual(
             self.editor._interior[1]._dueDateTimeEntry.GetValue().toordinal(),
             self.tomorrow.toordinal(),
@@ -495,9 +495,9 @@ class DatesDueStartBase(DatesTestBase):
 
     @test.stale("date entries were rebuilt (#271, #294)")
     def testChangeDueDateChangesPlannedStartDate(self):
-        self.setPlannedStartDateTime(self.yesterday)
-        self.setDueDateTime(self.today)
-        self.setDueDateTime(self.yesterday)
+        self.set_planned_start_date_time(self.yesterday)
+        self.set_due_date_time(self.today)
+        self.set_due_date_time(self.yesterday)
         self.assertAlmostEqual(
             self.editor._interior[1]
             ._plannedStartDateTimeEntry.GetValue()
@@ -510,9 +510,9 @@ class DatesDueStartBase(DatesTestBase):
 class DatesTest(DatesTestBase):
     @test.stale("date entries were rebuilt (#271, #294)")
     def testChangePlannedStartDateDoesNotChangeDueDate(self):
-        self.setPlannedStartDateTime(self.yesterday)
-        self.setDueDateTime(self.today)
-        self.setPlannedStartDateTime(self.today)
+        self.set_planned_start_date_time(self.yesterday)
+        self.set_due_date_time(self.today)
+        self.set_planned_start_date_time(self.today)
         self.assertAlmostEqual(
             self.editor._interior[1]._dueDateTimeEntry.GetValue().toordinal(),
             self.today.toordinal(),
@@ -521,9 +521,9 @@ class DatesTest(DatesTestBase):
 
     @test.stale("date entries were rebuilt (#271, #294)")
     def testChangeDueDateDoesNotChangePlannedStartDate(self):
-        self.setPlannedStartDateTime(self.yesterday)
-        self.setDueDateTime(self.today)
-        self.setDueDateTime(self.yesterday)
+        self.set_planned_start_date_time(self.yesterday)
+        self.set_due_date_time(self.today)
+        self.set_due_date_time(self.yesterday)
         self.assertAlmostEqual(
             self.editor._interior[1]
             ._plannedStartDateTimeEntry.GetValue()

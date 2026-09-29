@@ -229,7 +229,7 @@ class MasterTimerListTest(test.wxTestCase):
         self.assertFalse(self.tick())
 
     def test_the_second_after_the_due_runs_the_loop(self):
-        self.task.setDueDateTime(self.start + date.ONE_HOUR)
+        self.task.set_due_date_time(self.start + date.ONE_HOUR)
         self.settle()
         self.now = self.start + date.ONE_HOUR - date.ONE_SECOND
         self.assertFalse(self.tick())  # At the due: not overdue yet
@@ -319,7 +319,7 @@ class MasterTimerListTest(test.wxTestCase):
     def test_a_reminder_set_in_the_past_fires_at_the_next_tick(self):
         self.settle()
         self.registerObserver("task.reminder.trigger")
-        self.task.setReminder(self.now - date.ONE_HOUR)
+        self.task.set_reminder(self.now - date.ONE_HOUR)
         self.tick()
         self.assertEqual(1, len(self.events))
 

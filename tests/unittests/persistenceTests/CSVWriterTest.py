@@ -111,7 +111,7 @@ class TaskTestsMixin(object):
 
     def testWriteSeparateDateAndTimeColumns(self):
         plannedStartDateTime = date.Now()
-        self.task.setPlannedStartDateTime(plannedStartDateTime)
+        self.task.set_planned_start_date_time(plannedStartDateTime)
         self.expectInCSV(
             ",".join(
                 (
@@ -124,7 +124,7 @@ class TaskTestsMixin(object):
 
     def testWriteSeparateDateAndTimeColumnsWithDateBefore1900(self):
         plannedStartDateTime = date.DateTime(1600, 1, 1, 12, 30, 0)
-        self.task.setPlannedStartDateTime(plannedStartDateTime)
+        self.task.set_planned_start_date_time(plannedStartDateTime)
         self.expectInCSV(
             ",".join(
                 (
@@ -137,7 +137,7 @@ class TaskTestsMixin(object):
 
     def testDontWriteSeparateDateAndTimeColumns(self):
         plannedStartDateTime = date.Now()
-        self.task.setPlannedStartDateTime(plannedStartDateTime)
+        self.task.set_planned_start_date_time(plannedStartDateTime)
         self.expectInCSV(
             " ".join(
                 (
@@ -173,145 +173,145 @@ class TaskTestsMixin(object):
     def testPlannedStartDateTimeToday(self):
         today = date.Now()
         self.viewer.showColumnByName("plannedStartDateTime")
-        self.task.setPlannedStartDateTime(today)
+        self.task.set_planned_start_date_time(today)
         self.expectInCSV(render.dateTime(today, human_readable=False))
 
     def testPlannedStartDateTimeYesterday(self):
         yesterday = date.Yesterday()
         self.viewer.showColumnByName("plannedStartDateTime")
-        self.task.setPlannedStartDateTime(yesterday)
+        self.task.set_planned_start_date_time(yesterday)
         self.expectInCSV(render.dateTime(yesterday, human_readable=False))
 
     def testPlannedStartDateTimeTomorrow(self):
         tomorrow = date.Tomorrow()
         self.viewer.showColumnByName("plannedStartDateTime")
-        self.task.setPlannedStartDateTime(tomorrow)
+        self.task.set_planned_start_date_time(tomorrow)
         self.expectInCSV(render.dateTime(tomorrow, human_readable=False))
 
     def testPlannedStartDateToday(self):
         today = date.Now().startOfDay()
         self.viewer.showColumnByName("plannedStartDateTime")
-        self.task.setPlannedStartDateTime(today)
+        self.task.set_planned_start_date_time(today)
         self.expectInCSV(render.dateTime(today, human_readable=False))
 
     def testPlannedStartDateYesterday(self):
         yesterday = date.Yesterday().startOfDay()
         self.viewer.showColumnByName("plannedStartDateTime")
-        self.task.setPlannedStartDateTime(yesterday)
+        self.task.set_planned_start_date_time(yesterday)
         self.expectInCSV(render.dateTime(yesterday, human_readable=False))
 
     def testPlannedStartDateTomorrow(self):
         tomorrow = date.Tomorrow().startOfDay()
         self.viewer.showColumnByName("plannedStartDateTime")
-        self.task.setPlannedStartDateTime(tomorrow)
+        self.task.set_planned_start_date_time(tomorrow)
         self.expectInCSV(render.dateTime(tomorrow, human_readable=False))
 
     def testDueDateTimeToday(self):
         today = date.Now()
         self.viewer.showColumnByName("dueDateTime")
-        self.task.setDueDateTime(today)
+        self.task.set_due_date_time(today)
         self.expectInCSV(render.dateTime(today, human_readable=False))
 
     def testDueDateTimeYesterday(self):
         yesterday = date.Yesterday()
         self.viewer.showColumnByName("dueDateTime")
-        self.task.setDueDateTime(yesterday)
+        self.task.set_due_date_time(yesterday)
         self.expectInCSV(render.dateTime(yesterday, human_readable=False))
 
     def testDueDateTimeTomorrow(self):
         tomorrow = date.Tomorrow()
         self.viewer.showColumnByName("dueDateTime")
-        self.task.setDueDateTime(tomorrow)
+        self.task.set_due_date_time(tomorrow)
         self.expectInCSV(render.dateTime(tomorrow, human_readable=False))
 
     def testDueDateToday(self):
         today = date.Now().startOfDay()
         self.viewer.showColumnByName("dueDateTime")
-        self.task.setDueDateTime(today)
+        self.task.set_due_date_time(today)
         self.expectInCSV(render.dateTime(today, human_readable=False))
 
     def testDueDateYesterday(self):
         yesterday = date.Yesterday().startOfDay()
         self.viewer.showColumnByName("dueDateTime")
-        self.task.setDueDateTime(yesterday)
+        self.task.set_due_date_time(yesterday)
         self.expectInCSV(render.dateTime(yesterday, human_readable=False))
 
     def testDueDateTomorrow(self):
         tomorrow = date.Tomorrow().startOfDay()
         self.viewer.showColumnByName("dueDateTime")
-        self.task.setDueDateTime(tomorrow)
+        self.task.set_due_date_time(tomorrow)
         self.expectInCSV(render.dateTime(tomorrow, human_readable=False))
 
     def testActualStartDateTimeToday(self):
         today = date.Now()
         self.viewer.showColumnByName("actualStartDateTime")
-        self.task.setActualStartDateTime(today)
+        self.task.set_actual_start_date_time(today)
         self.expectInCSV(render.dateTime(today, human_readable=False))
 
     def testActualStartDateTimeYesterday(self):
         yesterday = date.Yesterday()
         self.viewer.showColumnByName("actualStartDateTime")
-        self.task.setActualStartDateTime(yesterday)
+        self.task.set_actual_start_date_time(yesterday)
         self.expectInCSV(render.dateTime(yesterday, human_readable=False))
 
     def testActualStartDateTimeTomorrow(self):
         tomorrow = date.Tomorrow()
         self.viewer.showColumnByName("actualStartDateTime")
-        self.task.setActualStartDateTime(tomorrow)
+        self.task.set_actual_start_date_time(tomorrow)
         self.expectInCSV(render.dateTime(tomorrow, human_readable=False))
 
     def testActualStartDateToday(self):
         today = date.Now().startOfDay()
         self.viewer.showColumnByName("actualStartDateTime")
-        self.task.setActualStartDateTime(today)
+        self.task.set_actual_start_date_time(today)
         self.expectInCSV(render.dateTime(today, human_readable=False))
 
     def testActualStartDateYesterday(self):
         yesterday = date.Yesterday().startOfDay()
         self.viewer.showColumnByName("actualStartDateTime")
-        self.task.setActualStartDateTime(yesterday)
+        self.task.set_actual_start_date_time(yesterday)
         self.expectInCSV(render.dateTime(yesterday, human_readable=False))
 
     def testActualStartDateTomorrow(self):
         tomorrow = date.Tomorrow().startOfDay()
         self.viewer.showColumnByName("actualStartDateTime")
-        self.task.setActualStartDateTime(tomorrow)
+        self.task.set_actual_start_date_time(tomorrow)
         self.expectInCSV(render.dateTime(tomorrow, human_readable=False))
 
     def testCompletionDateTimeToday(self):
         today = date.Now()
         self.viewer.showColumnByName("completionDateTime")
-        self.task.setCompletionDateTime(today)
+        self.task.set_completion_date_time(today)
         self.expectInCSV(render.dateTime(today, human_readable=False))
 
     def testCompletionDateTimeYesterday(self):
         yesterday = date.Yesterday()
         self.viewer.showColumnByName("completionDateTime")
-        self.task.setCompletionDateTime(yesterday)
+        self.task.set_completion_date_time(yesterday)
         self.expectInCSV(render.dateTime(yesterday, human_readable=False))
 
     def testCompletionDateTimeTomorrow(self):
         tomorrow = date.Tomorrow()
         self.viewer.showColumnByName("completionDateTime")
-        self.task.setCompletionDateTime(tomorrow)
+        self.task.set_completion_date_time(tomorrow)
         self.expectInCSV(render.dateTime(tomorrow, human_readable=False))
 
     def testCompletionDateToday(self):
         today = date.Now().startOfDay()
         self.viewer.showColumnByName("completionDateTime")
-        self.task.setCompletionDateTime(today)
+        self.task.set_completion_date_time(today)
         self.expectInCSV(render.dateTime(today, human_readable=False))
 
     def testCompletionDateYesterday(self):
         yesterday = date.Yesterday().startOfDay()
         self.viewer.showColumnByName("completionDateTime")
-        self.task.setCompletionDateTime(yesterday)
+        self.task.set_completion_date_time(yesterday)
         self.expectInCSV(render.dateTime(yesterday, human_readable=False))
 
     def testCompletionDateTomorrow(self):
         tomorrow = date.Tomorrow().startOfDay()
         self.viewer.showColumnByName("completionDateTime")
-        self.task.setCompletionDateTime(tomorrow)
+        self.task.set_completion_date_time(tomorrow)
         self.expectInCSV(render.dateTime(tomorrow, human_readable=False))
 
     def testCreationDateTime(self):

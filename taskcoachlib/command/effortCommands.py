@@ -48,7 +48,7 @@ class NewEffortCommand(base.BaseCommand):
                 self.__oldActualStartDateTimes[task] = (
                     task.actualStartDateTime()
                 )
-                task.setActualStartDateTime(effort.getStart())
+                task.set_actual_start_date_time(effort.getStart())
             task.addEffort(effort)
 
     def undo_command(self):
@@ -57,7 +57,7 @@ class NewEffortCommand(base.BaseCommand):
             task = effort.task()
             task.removeEffort(effort)
             if task in self.__oldActualStartDateTimes:
-                task.setActualStartDateTime(
+                task.set_actual_start_date_time(
                     self.__oldActualStartDateTimes[task]
                 )
                 del self.__oldActualStartDateTimes[task]
@@ -95,7 +95,7 @@ class AddEffortCommand(base.BaseCommand):
             return
         target_task = self.__tasks[0]
         for eff in self.__efforts:
-            eff.setTask(target_task)
+            eff.set_task(target_task)
             target_task.addEffort(eff)
 
     def undo_command(self):
@@ -105,7 +105,7 @@ class AddEffortCommand(base.BaseCommand):
         target_task = self.__tasks[0]
         for eff, old_task in zip(self.__efforts, self.__old_task_refs):
             target_task.removeEffort(eff)
-            eff.setTask(old_task)
+            eff.set_task(old_task)
             if old_task:
                 old_task.addEffort(eff)
 
@@ -131,12 +131,12 @@ class EditTaskCommand(base.BaseCommand):
     def do_command(self):
         super().do_command()
         for item in self.items:
-            item.setTask(self.__task)
+            item.set_task(self.__task)
 
     def undo_command(self):
         super().undo_command()
         for item, oldTask in zip(self.items, self.__oldTasks):
-            item.setTask(oldTask)
+            item.set_task(oldTask)
 
     def redo_command(self):
         self.do_command()
@@ -166,14 +166,14 @@ class EditEffortStartDateTimeCommand(base.BaseCommand):
                 self.__oldActualStartDateTimes[task] = (
                     task.actualStartDateTime()
                 )
-                task.setActualStartDateTime(self.__datetime)
+                task.set_actual_start_date_time(self.__datetime)
 
     def undo_command(self):
         for item, oldDateTime in zip(self.items, self.__oldDateTimes):
             item.setStart(oldDateTime)
             task = item.task()
             if task in self.__oldActualStartDateTimes:
-                task.setActualStartDateTime(
+                task.set_actual_start_date_time(
                     self.__oldActualStartDateTimes[task]
                 )
                 del self.__oldActualStartDateTimes[task]

@@ -87,7 +87,7 @@ class Attachment(base.Object, NoteOwner):
     def data(self):
         return None
 
-    def setParent(self, parent):
+    def set_parent(self, parent):
         # FIXME: We shouldn't assume that pasted items are composite
         # in PasteCommand.
         pass

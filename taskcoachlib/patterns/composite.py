@@ -26,7 +26,7 @@ class Composite(object):
         self.__parent = parent if parent is None else weakref.ref(parent)
         self.__children = children or []
         for child in self.__children:
-            child.setParent(self)
+            child.set_parent(self)
 
     def __getstate__(self):
         return dict(children=self.__children[:], parent=self.parent())
@@ -64,7 +64,7 @@ class Composite(object):
         (recursively)."""
         return self.ancestors() + [self] + self.children(recursive=True)
 
-    def setParent(self, parent):
+    def set_parent(self, parent):
         self.__parent = None if parent is None else weakref.ref(parent)
 
     def children(self, recursive=False):
@@ -101,7 +101,7 @@ class Composite(object):
 
     def addChild(self, child):
         self.__children.append(child)
-        child.setParent(self)
+        child.set_parent(self)
 
     def removeChild(self, child):
         self.__children.remove(child)

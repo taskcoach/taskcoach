@@ -124,13 +124,13 @@ class EffortTest(test.TestCase, asserts.Mixin):
     def test_notification_for_set_task(self):
         self.registerObserver(effort.Effort.taskChangedEventType())
         task2 = task.Task()
-        self.effort.setTask(task2)
+        self.effort.set_task(task2)
         self.assertEqual([(task2, self.effort)], self.changes())
 
     def test_moving_to_another_task_sets_the_modification_date(self):
         self.effort.set_modification_datetime(date.DateTime.min)
         before = date.Now()
-        self.effort.setTask(task.Task())
+        self.effort.set_task(task.Task())
         self.assertTrue(before <= self.effort.modificationDateTime())
 
     def test_notification_for_start_tracking(self):
@@ -221,19 +221,19 @@ class EffortTest(test.TestCase, asserts.Mixin):
 
     def testSetTaskToNewTaskWillAddItToNewTask(self):
         task2 = task.Task()
-        self.effort.setTask(task2)
+        self.effort.set_task(task2)
         self.assertEqual([self.effort], task2.efforts())
 
     def testSetTaskToNewTaskWillRemoveItFromOldTask(self):
         self.task.addEffort(self.effort)
         task2 = task.Task()
-        self.effort.setTask(task2)
+        self.effort.set_task(task2)
         self.assertEqual([self.effort], task2.efforts())
         self.assertFalse(self.effort in self.task.efforts())
 
     def testSetTaskToOldTaskTwice(self):
         self.task.addEffort(self.effort)
-        self.effort.setTask(self.task)
+        self.effort.set_task(self.task)
         self.assertEqual([self.effort], self.task.efforts())
 
     def testRevenueWithoutFee(self):
@@ -305,12 +305,12 @@ class EffortWithoutTaskTest(test.TestCase):
         self.assertEqual(None, self.effort.task())
 
     def testSettingTask(self):
-        self.effort.setTask(self.task)
+        self.effort.set_task(self.task)
         self.assertEqual(self.task, self.effort.task())
 
     def testSettingTask_CausesNoNotification(self):
         patterns.Publisher().registerObserver(
             self.onEvent, self.effort.taskChangedEventType()
         )
-        self.effort.setTask(self.task)
+        self.effort.set_task(self.task)
         self.assertFalse(self.events)

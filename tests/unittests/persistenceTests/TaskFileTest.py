@@ -349,23 +349,23 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.assertTrue(self.taskFile.need_save())
 
     def testNeedSave_AfterEditTaskPlannedStartDateTime(self):
-        self.task.setPlannedStartDateTime(date.Now() + date.ONE_HOUR)
+        self.task.set_planned_start_date_time(date.Now() + date.ONE_HOUR)
         self.assertTrue(self.taskFile.need_save())
 
     def testNeedSave_AfterEditTaskDueDate(self):
-        self.task.setDueDateTime(date.Tomorrow())
+        self.task.set_due_date_time(date.Tomorrow())
         self.assertTrue(self.taskFile.need_save())
 
     def test_status_changed_by_the_clock_needs_no_save(self):
         due = date.Now() + date.ONE_HOUR
-        self.task.setDueDateTime(due)
+        self.task.set_due_date_time(due)
         self.taskFile.save()
         self.task.compute_stored_status(due + date.ONE_SECOND)  # Overdue
         self.assertEqual(task.status.overdue, self.task.computedStatus())
         self.assertFalse(self.taskFile.need_save())
 
     def testNeedSave_AfterEditTaskCompletionDate(self):
-        self.task.setCompletionDateTime(date.Now())
+        self.task.set_completion_date_time(date.Now())
         self.assertTrue(self.taskFile.need_save())
 
     def testNeedSave_AfterEditPercentageComplete(self):
@@ -399,7 +399,7 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.assertFalse(self.taskFile.need_save())
-        self.effort.setTask(task2)
+        self.effort.set_task(task2)
         self.assertTrue(self.taskFile.need_save())
 
     def testNeedSave_AfterEditEffortForegroundColor(self):
@@ -488,7 +488,7 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.assertTrue(self.taskFile.need_save())
 
     def testNeedSave_AfterSetReminder(self):
-        self.task.setReminder(date.DateTime(2005, 1, 1, 10, 0, 0))
+        self.task.set_reminder(date.DateTime(2005, 1, 1, 10, 0, 0))
         self.assertTrue(self.taskFile.need_save())
 
     def testNeedSave_AfterChangeRecurrence(self):
@@ -925,7 +925,7 @@ class TaskFileMergeTest(TaskFileTestCase):
         parent = task.Task(subject="parent")
         child = task.Task(subject="child")
         parent.addChild(child)
-        child.setParent(parent)
+        child.set_parent(parent)
         self.mergeFile.tasks().extend([parent, child])
         self.merge()
         self.assertEqual(3, len(self.taskFile.tasks()))
@@ -1096,7 +1096,7 @@ class TaskFileMergeTest(TaskFileTestCase):
 
     def test_a_merged_open_subtask_leaves_its_parent_completed(self):
         # The merge edits nothing, so the parent rules do not run
-        self.task.setCompletionDateTime(date.DateTime(2021, 6, 1))
+        self.task.set_completion_date_time(date.DateTime(2021, 6, 1))
         self.task.set_modification_datetime(date.DateTime(2022, 1, 1))
         parent = self.their_copy(
             self.task, "theirs", date.DateTime(2021, 1, 1)
@@ -1121,7 +1121,7 @@ class TaskFileMergeTest(TaskFileTestCase):
         parent = self.their_copy(
             self.task, "theirs", date.DateTime(2021, 1, 1)
         )
-        parent.setReminder(date.DateTime(2030, 1, 1))
+        parent.set_reminder(date.DateTime(2030, 1, 1))
         open_child = task.Task(subject="open", parent=parent)
         done_child = task.Task(
             subject="done",
@@ -1150,7 +1150,7 @@ class TaskFileMergeTest(TaskFileTestCase):
         their_child = self.their_copy(
             child, "moved", date.DateTime(2021, 1, 1)
         )
-        their_child.setParent(their_parent)
+        their_child.set_parent(their_parent)
         their_parent.addChild(their_child)
         self.mergeFile.tasks().extend([their_parent, their_child])
         self.merge()

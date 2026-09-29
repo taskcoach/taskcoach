@@ -272,7 +272,7 @@ class MarkCompletedCommand(base.SaveStateMixin, EffortCommand):
         with _bulk_modification(self):
             super().do_command()
             for item in self.items:
-                item.setCompletionDateTime(
+                item.set_completion_date_time(
                     task.Task.suggestedCompletionDateTime()
                 )
 
@@ -311,10 +311,10 @@ class MarkActiveCommand(base.SaveStateMixin, base.BaseCommand):
         with _bulk_modification(self):
             super().do_command()
             for item in self.items:
-                item.setActualStartDateTime(
+                item.set_actual_start_date_time(
                     task.Task.suggestedActualStartDateTime()
                 )
-                item.setCompletionDateTime(date.DateTime())
+                item.set_completion_date_time(date.DateTime())
 
     def undo_command(self):
         with _bulk_modification(self):
@@ -348,8 +348,8 @@ class MarkInactiveCommand(base.SaveStateMixin, base.BaseCommand):
         with _bulk_modification(self):
             super().do_command()
             for item in self.items:
-                item.setActualStartDateTime(date.DateTime())
-                item.setCompletionDateTime(date.DateTime())
+                item.set_actual_start_date_time(date.DateTime())
+                item.set_completion_date_time(date.DateTime())
 
     def undo_command(self):
         with _bulk_modification(self):
@@ -397,7 +397,7 @@ class StartEffortCommand(EffortCommand):
         ):
             item.addEffort(newEffort)
             if currentActualStartDateTime:
-                item.setActualStartDateTime(newEffort.getStart())
+                item.set_actual_start_date_time(newEffort.getStart())
 
     def removeEfforts(self):
         for item, newEffort, previousActualStartDateTime in zip(
@@ -405,7 +405,7 @@ class StartEffortCommand(EffortCommand):
         ):
             item.removeEffort(newEffort)
             if previousActualStartDateTime:
-                item.setActualStartDateTime(previousActualStartDateTime)
+                item.set_actual_start_date_time(previousActualStartDateTime)
 
 
 class StopEffortCommand(EffortCommand):
@@ -635,7 +635,7 @@ class EditPlannedStartDateTimeCommand(EditPeriodDateTimeCommand):
 
     @staticmethod
     def setDateTime(item, dateTime):
-        item.setPlannedStartDateTime(dateTime)
+        item.set_planned_start_date_time(dateTime)
 
     @staticmethod
     def getOtherDateTime(item):
@@ -643,7 +643,7 @@ class EditPlannedStartDateTimeCommand(EditPeriodDateTimeCommand):
 
     @staticmethod
     def setOtherDateTime(item, dateTime):
-        item.setDueDateTime(dateTime)
+        item.set_due_date_time(dateTime)
 
 
 class EditDueDateTimeCommand(EditPeriodDateTimeCommand):
@@ -656,7 +656,7 @@ class EditDueDateTimeCommand(EditPeriodDateTimeCommand):
 
     @staticmethod
     def setDateTime(item, dateTime):
-        item.setDueDateTime(dateTime)
+        item.set_due_date_time(dateTime)
 
     @staticmethod
     def getOtherDateTime(item):
@@ -664,7 +664,7 @@ class EditDueDateTimeCommand(EditPeriodDateTimeCommand):
 
     @staticmethod
     def setOtherDateTime(item, dateTime):
-        item.setPlannedStartDateTime(dateTime)
+        item.set_planned_start_date_time(dateTime)
 
 
 class EditActualStartDateTimeCommand(EditPeriodDateTimeCommand):
@@ -677,7 +677,7 @@ class EditActualStartDateTimeCommand(EditPeriodDateTimeCommand):
 
     @staticmethod
     def setDateTime(item, dateTime):
-        item.setActualStartDateTime(dateTime)
+        item.set_actual_start_date_time(dateTime)
 
     @staticmethod
     def getOtherDateTime(item):
@@ -685,7 +685,7 @@ class EditActualStartDateTimeCommand(EditPeriodDateTimeCommand):
 
     @staticmethod
     def setOtherDateTime(item, dateTime):
-        item.setCompletionDateTime(dateTime)
+        item.set_completion_date_time(dateTime)
 
 
 class EditCompletionDateTimeCommand(EditDateTimeCommand, EffortCommand):
@@ -698,7 +698,7 @@ class EditCompletionDateTimeCommand(EditDateTimeCommand, EffortCommand):
 
     @staticmethod
     def setDateTime(item, dateTime):
-        item.setCompletionDateTime(dateTime)
+        item.set_completion_date_time(dateTime)
 
     @staticmethod
     def getOtherDateTime(item):
@@ -706,7 +706,7 @@ class EditCompletionDateTimeCommand(EditDateTimeCommand, EffortCommand):
 
     @staticmethod
     def setOtherDateTime(item, dateTime):
-        item.setActualStartDateTime(dateTime)
+        item.set_actual_start_date_time(dateTime)
 
     def tasksToStopTracking(self):
         return self.items
@@ -722,7 +722,7 @@ class EditReminderDateTimeCommand(EditDateTimeCommand):
 
     @staticmethod
     def setDateTime(item, dateTime):
-        item.setReminder(dateTime)
+        item.set_reminder(dateTime)
 
 
 class EditRecurrenceCommand(base.BaseCommand):

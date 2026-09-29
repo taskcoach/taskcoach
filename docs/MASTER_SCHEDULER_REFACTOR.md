@@ -90,13 +90,8 @@ go at the end. Details live in the sections and documents linked.
 38. ~~`Timestamp.now()` always later than the one before~~: removed,
     it returned made-up times; the dates are the clock's
     ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#ids)).
-39. Renames deferred as too wide, each its own change: the task date
-    setters (`setReminder()`, `setDueDateTime()`,
-    `setPlannedStartDateTime()`, `setActualStartDateTime()`,
-    `setCompletionDateTime()`, about 465 calls), `setParent()` (56) and
-    `setTask()` (28), with the names held in strings in lockstep
-    (`hasattr(item, "setTask")` in the effort editor, a setter table in
-    `TaskTest.py`) ([PEP8_MIGRATION.md](PEP8_MIGRATION.md)).
+39. ~~Renames deferred as too wide~~: done, the task date setters,
+    `set_parent()` and `set_task()` ([PEP8_MIGRATION.md](PEP8_MIGRATION.md)).
 40. ~~Signal cleanup~~: subscriptions end with their window, toolbar,
     menu or editor page; the guards that became unreachable are gone,
     the others guard delayed calls and destruction
@@ -396,7 +391,7 @@ Checked in the code, 2026-09-27:
   only writes are the constructor and `Attribute.set()`, which calls
   the change callback on every change; nothing reaches them another
   way (no `_Task__` access). The reminder was a plain field until step
-  4, written in `setReminder()` and both branches of
+  4, written in `set_reminder()` and both branches of
   `snooze_reminder()`.
 - **The constructor** sends no change: the add event covers it. Every
   way a task enters the task file ends in `extend()` or `append()` on

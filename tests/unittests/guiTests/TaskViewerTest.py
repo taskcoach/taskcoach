@@ -55,7 +55,7 @@ class TaskViewerTestCase(test.wxTestCase):
         started = date.Now() - date.ONE_SECOND
         self.task = task.Task(subject="task", plannedStartDateTime=started)
         self.child = task.Task(subject="child", plannedStartDateTime=started)
-        self.child.setParent(self.task)
+        self.child.set_parent(self.task)
         self.taskFile = persistence.TaskFile()
         self.taskList = self.taskFile.tasks()
         self.parentFrame = wx.Frame(self.frame, wx.ID_ANY, "")
@@ -270,7 +270,7 @@ class CommonTestsMixin(object):
         task2 = task.Task(subject="task2")
         self.taskList.extend([self.task, task2])
         self.assertItems(self.task, task2)
-        self.task.setCompletionDateTime()
+        self.task.set_completion_date_time()
         self.assertItems(task2, self.task)
 
     def testMakeInactive(self):
@@ -279,7 +279,7 @@ class CommonTestsMixin(object):
         )
         self.taskList.extend([self.task, task2])
         self.assertItems(self.task, task2)
-        self.task.setPlannedStartDateTime(date.Tomorrow())
+        self.task.set_planned_start_date_time(date.Tomorrow())
         self.assertItems(task2, self.task)
 
     def testFilterCompletedTasks(self):
@@ -373,7 +373,7 @@ class CommonTestsMixin(object):
 
     def testForegroundColorWhenTaskIsCompleted(self):
         self.taskList.append(self.task)
-        self.task.setCompletionDateTime()
+        self.task.set_completion_date_time()
         newColor = self.task.statusFgColor()
         newColor = wx.Colour(newColor.Red(), newColor.Green(), newColor.Blue())
         self.assertColor(newColor)
@@ -512,7 +512,7 @@ class CommonTestsMixin(object):
         self.showColumn("timeLeft")
         timeLeft = date.TimeDelta(hours=25, seconds=30)
         self.taskList.append(self.task)
-        self.task.setDueDateTime(date.Now() + timeLeft)
+        self.task.set_due_date_time(date.Now() + timeLeft)
         self.assertEqual(
             render.timeLeft(timeLeft, False), self.getItemText(0, 3)
         )
@@ -558,13 +558,13 @@ class CommonTestsMixin(object):
             plannedStartDateTime=date.Now() - date.ONE_SECOND,
         )
         task2.addChild(child2)
-        child2.setParent(task2)
+        child2.set_parent(task2)
         self.taskList.extend([self.task, task2])
         if self.viewer.is_tree_viewer():
             self.assertItems((self.task, 1), self.child, (task2, 1), child2)
         else:
             self.assertItems(self.child, child2, self.task, task2)
-        child2.setDueDateTime(date.Now().endOfDay())
+        child2.set_due_date_time(date.Now().endOfDay())
         self.viewer.sortBy("dueDateTime")
         if self.viewer.is_tree_viewer():
             self.assertItems((task2, 1), child2, (self.task, 1), self.child)
@@ -754,19 +754,19 @@ class CommonTestsMixin(object):
     @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenPlannedStartDateTimeChanges(self):
         self.taskList.append(self.task)
-        self.task.setPlannedStartDateTime(date.Now() + date.ONE_DAY)
+        self.task.set_planned_start_date_time(date.Now() + date.ONE_DAY)
         self.assertIcon(task.inactive.getBitmap(self.settings))
 
     @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenDueDateTimeChanges(self):
         self.taskList.append(self.task)
-        self.task.setDueDateTime(date.Now() + date.ONE_HOUR)
+        self.task.set_due_date_time(date.Now() + date.ONE_HOUR)
         self.assertIcon(task.duesoon.getBitmap(self.settings))
 
     @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenCompletionDateTimeChanges(self):
         self.taskList.append(self.task)
-        self.task.setCompletionDateTime(date.Now())
+        self.task.set_completion_date_time(date.Now())
         self.assertIcon(task.completed.getBitmap(self.settings))
 
     @test.stale("imageIndex was replaced by image_list_cache")
@@ -783,7 +783,7 @@ class CommonTestsMixin(object):
         self.taskList.extend([prerequisite, self.task])
         self.task.add_prerequisites([prerequisite])
         prerequisite.add_dependencies([self.task])
-        prerequisite.setCompletionDateTime(date.Now())
+        prerequisite.set_completion_date_time(date.Now())
         self.assertIcon(task.late.getBitmap(self.settings))
 
     @test.stale("imageIndex was replaced by image_list_cache")
@@ -802,7 +802,7 @@ class CommonTestsMixin(object):
     @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenTaskBecomesOverdue(self):
         dueDateTime = date.Now() + date.TimeDelta(seconds=10)
-        self.task.setDueDateTime(dueDateTime)
+        self.task.set_due_date_time(dueDateTime)
         self.taskList.append(self.task)
         self.assertIcon(task.duesoon.getBitmap(self.settings))
         now = dueDateTime + date.ONE_SECOND
@@ -931,7 +931,7 @@ class CommonTestsMixin(object):
     def testChangePlannedStartDateTimeWhileColumnShown(self):
         self.taskList.append(self.task)
         newValue = date.Now() - date.ONE_DAY
-        self.task.setPlannedStartDateTime(newValue)
+        self.task.set_planned_start_date_time(newValue)
         self.assert_change_received(
             task.Task.plannedStartDateTimeChangedEventType(),
             newValue,
@@ -940,7 +940,7 @@ class CommonTestsMixin(object):
 
     def test_a_status_changed_by_the_clock_updates_the_status_bar(self):
         self.taskList.append(self.task)
-        self.task.setDueDateTime(date.Now() + date.ONE_HOUR)
+        self.task.set_due_date_time(date.Now() + date.ONE_HOUR)
         statuses = test.ChangeRecorder(self.viewer.viewer_status_event_type())
         # The master loop, a day later: the task is overdue
         self.task.compute_stored_status(now=date.Now() + date.ONE_DAY)
@@ -956,7 +956,7 @@ class CommonTestsMixin(object):
     def testChangePlannedStartDateTimeWhileColumnNotShown(self):
         self.taskList.append(self.task)
         self.showColumn("plannedStartDate", False)
-        self.task.setPlannedStartDateTime(date.Yesterday())
+        self.task.set_planned_start_date_time(date.Yesterday())
         # Still received once, for the subject column
         event_type = task.Task.plannedStartDateTimeChangedEventType()
         received = [
@@ -969,7 +969,7 @@ class CommonTestsMixin(object):
     def testChangeDueDate(self):
         self.taskList.append(self.task)
         newValue = date.Now().endOfDay()
-        self.task.setDueDateTime(newValue)
+        self.task.set_due_date_time(newValue)
         self.assert_change_received(
             task.Task.dueDateTimeChangedEventType(), newValue, self.task
         )
@@ -987,7 +987,7 @@ class CommonTestsMixin(object):
     def testChangeCompletionDateWhileColumnNotShown(self):
         self.taskList.append(self.task)
         now = date.Now()
-        self.task.setCompletionDateTime(now)
+        self.task.set_completion_date_time(now)
         # We still get an event for the subject column:
         self.assert_change_received(
             task.Task.completionDateTimeChangedEventType(), now, self.task
@@ -997,7 +997,7 @@ class CommonTestsMixin(object):
         self.taskList.append(self.task)
         self.showColumn("completionDate")
         now = date.Now()
-        self.task.setCompletionDateTime(now)
+        self.task.set_completion_date_time(now)
         self.assert_change_received(
             task.Task.completionDateTimeChangedEventType(), now, self.task
         )
@@ -1079,8 +1079,8 @@ class CommonTestsMixin(object):
         self.taskList.extend([self.task, self.child])
         self.task.addChild(self.child)
         now = date.Now()
-        self.child.setPlannedStartDateTime(now)
-        self.task.setPlannedStartDateTime(date.DateTime())
+        self.child.set_planned_start_date_time(now)
+        self.task.set_planned_start_date_time(date.DateTime())
         self.viewer.setSortByTaskStatusFirst(False)
         self.viewer.setSortOrderAscending(False)
         expectedDateTime = (
@@ -1115,7 +1115,7 @@ class CommonTestsMixin(object):
 
     def testPlannedStartDateTimeToday(self):
         today = date.Now()
-        self.task.setPlannedStartDateTime(today)
+        self.task.set_planned_start_date_time(today)
         self.taskList.append(self.task)
         self.showColumn("plannedStartDateTime")
         self.assertEqual(
@@ -1124,7 +1124,7 @@ class CommonTestsMixin(object):
 
     def testPlannedStartDateTimeYesterday(self):
         yesterday = date.Yesterday()
-        self.task.setPlannedStartDateTime(yesterday)
+        self.task.set_planned_start_date_time(yesterday)
         self.taskList.append(self.task)
         self.showColumn("plannedStartDateTime")
         self.assertEqual(
@@ -1134,7 +1134,7 @@ class CommonTestsMixin(object):
 
     def testPlannedStartDateTimeTomorrow(self):
         tomorrow = date.Tomorrow()
-        self.task.setPlannedStartDateTime(tomorrow)
+        self.task.set_planned_start_date_time(tomorrow)
         self.taskList.append(self.task)
         self.showColumn("plannedStartDateTime")
         self.assertEqual(
@@ -1144,28 +1144,28 @@ class CommonTestsMixin(object):
 
     def testPlannedStartDateToday(self):
         today = date.Now().startOfDay()
-        self.task.setPlannedStartDateTime(today)
+        self.task.set_planned_start_date_time(today)
         self.taskList.append(self.task)
         self.showColumn("plannedStartDateTime")
         self.assertEqual(_("Today"), self.getItemText(0, 1))
 
     def testPlannedStartDateYesterday(self):
         yesterday = date.Yesterday().startOfDay()
-        self.task.setPlannedStartDateTime(yesterday)
+        self.task.set_planned_start_date_time(yesterday)
         self.taskList.append(self.task)
         self.showColumn("plannedStartDateTime")
         self.assertEqual(_("Yesterday"), self.getItemText(0, 1))
 
     def testPlannedStartDateTomorrow(self):
         tomorrow = date.Tomorrow().startOfDay()
-        self.task.setPlannedStartDateTime(tomorrow)
+        self.task.set_planned_start_date_time(tomorrow)
         self.taskList.append(self.task)
         self.showColumn("plannedStartDateTime")
         self.assertEqual(_("Tomorrow"), self.getItemText(0, 1))
 
     def testDueDateTimeToday(self):
         today = date.Now()
-        self.task.setDueDateTime(today)
+        self.task.set_due_date_time(today)
         self.taskList.append(self.task)
         self.showColumn("dueDateTime")
         self.assertEqual(
@@ -1174,7 +1174,7 @@ class CommonTestsMixin(object):
 
     def testDueDateTimeYesterday(self):
         yesterday = date.Yesterday()
-        self.task.setDueDateTime(yesterday)
+        self.task.set_due_date_time(yesterday)
         self.taskList.append(self.task)
         self.showColumn("dueDateTime")
         self.assertEqual(
@@ -1184,7 +1184,7 @@ class CommonTestsMixin(object):
 
     def testDueDateTimeTomorrow(self):
         tomorrow = date.Tomorrow()
-        self.task.setDueDateTime(tomorrow)
+        self.task.set_due_date_time(tomorrow)
         self.taskList.append(self.task)
         self.showColumn("dueDateTime")
         self.assertEqual(
@@ -1194,28 +1194,28 @@ class CommonTestsMixin(object):
 
     def testDueDateToday(self):
         today = date.Now().startOfDay()
-        self.task.setDueDateTime(today)
+        self.task.set_due_date_time(today)
         self.taskList.append(self.task)
         self.showColumn("dueDateTime")
         self.assertEqual(_("Today"), self.getItemText(0, 2))
 
     def testDueDateYesterday(self):
         yesterday = date.Yesterday().startOfDay()
-        self.task.setDueDateTime(yesterday)
+        self.task.set_due_date_time(yesterday)
         self.taskList.append(self.task)
         self.showColumn("dueDateTime")
         self.assertEqual(_("Yesterday"), self.getItemText(0, 2))
 
     def testDueDateTomorrow(self):
         tomorrow = date.Tomorrow().startOfDay()
-        self.task.setDueDateTime(tomorrow)
+        self.task.set_due_date_time(tomorrow)
         self.taskList.append(self.task)
         self.showColumn("dueDateTime")
         self.assertEqual(_("Tomorrow"), self.getItemText(0, 2))
 
     def testActualStartDateTimeToday(self):
         today = date.Now()
-        self.task.setActualStartDateTime(today)
+        self.task.set_actual_start_date_time(today)
         self.taskList.append(self.task)
         self.showColumn("actualStartDateTime")
         self.assertEqual(
@@ -1224,7 +1224,7 @@ class CommonTestsMixin(object):
 
     def testActualStartDateTimeYesterday(self):
         yesterday = date.Yesterday()
-        self.task.setActualStartDateTime(yesterday)
+        self.task.set_actual_start_date_time(yesterday)
         self.taskList.append(self.task)
         self.showColumn("actualStartDateTime")
         self.assertEqual(
@@ -1234,7 +1234,7 @@ class CommonTestsMixin(object):
 
     def testActualStartDateTimeTomorrow(self):
         tomorrow = date.Tomorrow()
-        self.task.setActualStartDateTime(tomorrow)
+        self.task.set_actual_start_date_time(tomorrow)
         self.taskList.append(self.task)
         self.showColumn("actualStartDateTime")
         self.assertEqual(
@@ -1244,28 +1244,28 @@ class CommonTestsMixin(object):
 
     def testActualStartDateToday(self):
         today = date.Now().startOfDay()
-        self.task.setActualStartDateTime(today)
+        self.task.set_actual_start_date_time(today)
         self.taskList.append(self.task)
         self.showColumn("actualStartDateTime")
         self.assertEqual(_("Today"), self.getItemText(0, 3))
 
     def testActualStartDateYesterday(self):
         yesterday = date.Yesterday().startOfDay()
-        self.task.setActualStartDateTime(yesterday)
+        self.task.set_actual_start_date_time(yesterday)
         self.taskList.append(self.task)
         self.showColumn("actualStartDateTime")
         self.assertEqual(_("Yesterday"), self.getItemText(0, 3))
 
     def testActualStartDateTomorrow(self):
         tomorrow = date.Tomorrow().startOfDay()
-        self.task.setActualStartDateTime(tomorrow)
+        self.task.set_actual_start_date_time(tomorrow)
         self.taskList.append(self.task)
         self.showColumn("actualStartDateTime")
         self.assertEqual(_("Tomorrow"), self.getItemText(0, 3))
 
     def testCompletionDateTimeToday(self):
         today = date.Now()
-        self.task.setCompletionDateTime(today)
+        self.task.set_completion_date_time(today)
         self.taskList.append(self.task)
         self.showColumn("completionDateTime")
         self.assertEqual(
@@ -1274,7 +1274,7 @@ class CommonTestsMixin(object):
 
     def testCompletionDateTimeYesterday(self):
         yesterday = date.Yesterday()
-        self.task.setCompletionDateTime(yesterday)
+        self.task.set_completion_date_time(yesterday)
         self.taskList.append(self.task)
         self.showColumn("completionDateTime")
         self.assertEqual(
@@ -1284,7 +1284,7 @@ class CommonTestsMixin(object):
 
     def testCompletionDateTimeTomorrow(self):
         tomorrow = date.Tomorrow()
-        self.task.setCompletionDateTime(tomorrow)
+        self.task.set_completion_date_time(tomorrow)
         self.taskList.append(self.task)
         self.showColumn("completionDateTime")
         self.assertEqual(
@@ -1294,21 +1294,21 @@ class CommonTestsMixin(object):
 
     def testCompletionDateToday(self):
         today = date.Now().startOfDay()
-        self.task.setCompletionDateTime(today)
+        self.task.set_completion_date_time(today)
         self.taskList.append(self.task)
         self.showColumn("completionDateTime")
         self.assertEqual(_("Today"), self.getItemText(0, 3))
 
     def testCompletionDateYesterday(self):
         yesterday = date.Yesterday().startOfDay()
-        self.task.setCompletionDateTime(yesterday)
+        self.task.set_completion_date_time(yesterday)
         self.taskList.append(self.task)
         self.showColumn("completionDateTime")
         self.assertEqual(_("Yesterday"), self.getItemText(0, 3))
 
     def testCompletionDateTomorrow(self):
         tomorrow = date.Tomorrow().startOfDay()
-        self.task.setCompletionDateTime(tomorrow)
+        self.task.set_completion_date_time(tomorrow)
         self.taskList.append(self.task)
         self.showColumn("completionDateTime")
         self.assertEqual(_("Tomorrow"), self.getItemText(0, 3))

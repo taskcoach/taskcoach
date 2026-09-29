@@ -47,12 +47,12 @@ class Effort(baseeffort.BaseEffort, base.Object):
         )
 
     @patterns.eventSource
-    def setTask(self, task, event=None):
+    def set_task(self, task, event=None):
         if self._task is None:
             # We haven't been fully initialised yet, so allow setting of the
             # task, without notifying observers. Also, don't call addEffort()
-            # on the new task, because we assume setTask was invoked by the
-            # new task itself.
+            # on the new task, because we assume set_task was invoked by
+            # the new task itself.
             self._task = None if task is None else weakref.ref(task)
             return
         current_task = self.task()
@@ -68,7 +68,8 @@ class Effort(baseeffort.BaseEffort, base.Object):
         self.set_modification_datetime(date.Timestamp.now(), event=event)
         event.addSource(self, task, type=self.taskChangedEventType())
 
-    setParent = setTask  # FIXME: should we create a common superclass for Effort and Task?
+    # FIXME: should we create a common superclass for Effort and Task?
+    set_parent = set_task
 
     @classmethod
     def taskChangedEventType(class_):
@@ -126,7 +127,7 @@ class Effort(baseeffort.BaseEffort, base.Object):
     @patterns.eventSource
     def __setstate__(self, state, event=None):
         super().__setstate__(state, event=event)
-        self.setTask(state["task"])
+        self.set_task(state["task"])
         self.setStart(state["start"], event=event)
         self.setStop(state["stop"], event=event)
         self.setEntryMode(state.get("entryMode", "standard"), event=event)

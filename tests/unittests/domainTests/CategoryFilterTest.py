@@ -425,7 +425,7 @@ class OneCategoryAndParentAndChildTaskFixture(Fixture):
         self.parentTask = task.Task("parent")
         self.childTask = task.Task("child")
         self.parentTask.addChild(self.childTask)
-        self.childTask.setParent(self.parentTask)
+        self.childTask.set_parent(self.parentTask)
         return [self.parentTask, self.childTask]
 
     def testThatFilterContainsChildWhenParentIsCategorizedAndFiltered(self):
@@ -463,7 +463,7 @@ class TwoCategoriesAndParentAndChildTaskFixture(Fixture):
         self.parentTask = task.Task("parent")
         self.childTask = task.Task("child")
         self.parentTask.addChild(self.childTask)
-        self.childTask.setParent(self.parentTask)
+        self.childTask.set_parent(self.parentTask)
         return [self.parentTask, self.childTask]
 
     def categorize(self):
@@ -504,14 +504,14 @@ class ParentAndChildCategoryAndParentAndChildTaskFixture(Fixture):
         self.parentCategory = category.Category("parent")
         self.childCategory = category.Category("child")
         self.parentCategory.addChild(self.childCategory)
-        self.childCategory.setParent(self.parentCategory)
+        self.childCategory.set_parent(self.parentCategory)
         return [self.parentCategory, self.childCategory]
 
     def createTasks(self):
         self.parentTask = task.Task("parent")
         self.childTask = task.Task("child")
         self.parentTask.addChild(self.childTask)
-        self.childTask.setParent(self.parentTask)
+        self.childTask.set_parent(self.parentTask)
         return [self.parentTask, self.childTask]
 
     def testThatFilterContainsBothTasksWhenParentTaskIsInParentCategoryAndFilteringParentCategory(
@@ -606,7 +606,7 @@ class ParentAndChildCategoryAndParentAndGrandChildTaskFixture(Fixture):
         self.parentCategory = category.Category("parent")
         self.childCategory = category.Category("child")
         self.parentCategory.addChild(self.childCategory)
-        self.childCategory.setParent(self.parentCategory)
+        self.childCategory.set_parent(self.parentCategory)
         return [self.parentCategory, self.childCategory]
 
     def createTasks(self):
@@ -614,9 +614,9 @@ class ParentAndChildCategoryAndParentAndGrandChildTaskFixture(Fixture):
         self.childTask = task.Task("child")
         self.grandChildTask = task.Task("grandchild")
         self.parentTask.addChild(self.childTask)
-        self.childTask.setParent(self.parentTask)
+        self.childTask.set_parent(self.parentTask)
         self.childTask.addChild(self.grandChildTask)
-        self.grandChildTask.setParent(self.childTask)
+        self.grandChildTask.set_parent(self.childTask)
         return [self.parentTask, self.childTask, self.grandChildTask]
 
     def testThatFilterContainsAllTasksWhenParentTaskIsInChildCategoryAndFiltered(
@@ -685,9 +685,9 @@ class TwoCategoriesAndParentAndGrandChildTaskFixture(Fixture):
         self.childTask = task.Task("child")
         self.grandChildTask = task.Task("grandchild")
         self.parentTask.addChild(self.childTask)
-        self.childTask.setParent(self.parentTask)
+        self.childTask.set_parent(self.parentTask)
         self.childTask.addChild(self.grandChildTask)
-        self.grandChildTask.setParent(self.childTask)
+        self.grandChildTask.set_parent(self.childTask)
         return [self.parentTask, self.childTask, self.grandChildTask]
 
     def categorize(self):
@@ -734,8 +734,8 @@ class TwoCategoriesAndParentWithTwoChildTasksFixture(Fixture):
         self.child2Task = task.Task("child2")
         self.parentTask.addChild(self.child1Task)
         self.parentTask.addChild(self.child2Task)
-        self.child1Task.setParent(self.parentTask)
-        self.child2Task.setParent(self.parentTask)
+        self.child1Task.set_parent(self.parentTask)
+        self.child2Task.set_parent(self.parentTask)
         return [self.parentTask, self.child1Task, self.child2Task]
 
     def categorize(self):
@@ -780,7 +780,7 @@ class ParentAndChildCategoryAndOneTaskFixture(Fixture):
         self.parentCategory = category.Category("parent")
         self.childCategory = category.Category("child")
         self.parentCategory.addChild(self.childCategory)
-        self.childCategory.setParent(self.parentCategory)
+        self.childCategory.set_parent(self.parentCategory)
         return [self.parentCategory, self.childCategory]
 
     def createTasks(self):
@@ -844,7 +844,7 @@ class CategoryFilterAndViewFilterFixtureAndCommonTestsMixin(
             False
         )
         self.child = task.Task("child task")
-        self.child.setCompletionDateTime()
+        self.child.set_completion_date_time()
         self.childCategory = category.Category("child category")
         self.childCategory.addCategorizable(self.child)
         self.parent.addChild(self.child)
@@ -928,7 +928,7 @@ class ViewFilterWrappingCategoryFilterFixture(CategoryFilterHelpersMixin):
         )
         # Child task with category, completed
         self.child = task.Task("child task")
-        self.child.setCompletionDateTime()
+        self.child.set_completion_date_time()
         self.childCategory = category.Category("child category")
         self.childCategory.addCategorizable(self.child)
         self.parent.addChild(self.child)

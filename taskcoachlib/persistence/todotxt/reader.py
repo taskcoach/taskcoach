@@ -164,9 +164,9 @@ class TodoTxtReader(object):
                 newTask.setSubject(subjects[-1])
 
         newTask.setPriority(priority)
-        newTask.setPlannedStartDateTime(plannedStartDateTime)
-        newTask.setCompletionDateTime(completionDateTime)
-        newTask.setDueDateTime(dueDateTime)
+        newTask.set_planned_start_date_time(plannedStartDateTime)
+        newTask.set_completion_date_time(completionDateTime)
+        newTask.set_due_date_time(dueDateTime)
         for eachCategory in categories:
             newTask.addCategory(eachCategory, event=event)
             eachCategory.addCategorizable(newTask, event=event)
@@ -248,7 +248,7 @@ class TodoTxtReader(object):
             return subjectCache[(subject, parent)]
         newItem = itemClass(subject=subject)
         if parent:
-            newItem.setParent(parent)
+            newItem.set_parent(parent)
             parent.addChild(newItem, event=event)
         itemContainer.append(newItem, event=event)
         subjectCache[(subject, parent)] = newItem
