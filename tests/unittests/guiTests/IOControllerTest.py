@@ -558,6 +558,20 @@ class IOControllerChangedOnDiskTest(test.TestCase):
     def open_copy_kept(self):
         return any(each is self.task for each in self.task_file.tasks())
 
+    def test_a_forced_close_saves_to_a_copy_when_changed_on_disk(self):
+        # The session ends: nobody can choose, nothing is lost
+        self.task.setSubject("ours, edited")
+        self.add_their_task()
+        copy = os.path.join(
+            os.path.dirname(self.filename),
+            gui.iocontroller.copy_name(self.filename),
+        )
+        self.iocontroller.close(force=True)
+        self.assertEqual(
+            (["ours", "theirs"], ["ours, edited"]),
+            (self.subjects_on_disk(), self.subjects_on_disk(copy)),
+        )
+
     def test_reload(self):
         self.change_on_disk(0)
         self.assertEqual(

@@ -269,6 +269,9 @@ watcher can report late, or not at all (some network drives).
   the same, with Merge and save, Save As or Cancel.
 - There is no Overwrite. Save As to the file's own name replaces it,
   after the file dialog's confirmation.
+- A forced close (the session ends; nobody can be asked) saves the
+  changes to a copy beside the file (`copy_name()`, "Tasks copy.tsk")
+  and keeps the file as the other program left it.
 
 ## Merging
 

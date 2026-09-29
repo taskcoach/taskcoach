@@ -576,9 +576,7 @@ class IOController(object):
             if force:
                 # No user interaction, since we're forced to close right now.
                 if self.__task_file.filename():
-                    self._save_save(
-                        self.__task_file, lambda *args, **kwargs: None
-                    )
+                    self.__save_unasked()
                 else:
                     pass  # No filename, we cannot ask, give up...
             else:
@@ -586,6 +584,23 @@ class IOController(object):
                     return False
         self.__close_unconditionally()
         return True
+
+    def __save_unasked(self):
+        """Save when nobody can be asked (the session ends). If another
+        program changed the file, it is kept and the changes go to a
+        copy beside it rather than being lost
+        (docs/PERSISTENCE_XML.md, Saving)."""
+        filename = self.__task_file.filename()
+        self.__task_file.check_disk(notify=False)
+        if self.__task_file.changed_on_disk():
+            folder = os.path.dirname(os.path.abspath(filename))
+            filename = os.path.join(folder, copy_name(filename))
+            log_step("changed on disk, saving to %s" % filename, prefix="FILE")
+            self._save_save(
+                self.__task_file, lambda *args, **kwargs: None, filename
+            )
+        else:
+            self._save_save(self.__task_file, lambda *args, **kwargs: None)
 
     def export(
         self,
