@@ -169,8 +169,11 @@ refactor; unchanged by its steps, crossed out when fixed):
 - P4. `integrationtests/LeakTest.py` and `PerformanceTest.py`: 1
   error each.
 - P5. `unittests/AppTest.py`: 2 failures (language from the locale).
-- P6. `unittests/commandTests/CutCopyPasteTest.py`: paste (1 error, 1
-  failure).
+- P6. ~~`unittests/commandTests/CutCopyPasteTest.py`: paste (1 error,
+  1 failure)~~: fixed 2026-09-29, the tests only. A note cut by one
+  test stayed on the shared clipboard for the next (every command
+  test now clears it); the effort paste passed the task list as the
+  destination, which the task viewer never does.
 - P7. ~~`unittests/domainTests/EffortTest.py`: 4 failures (duration
   and revenue events on a start or stop change)~~: fixed 2026-09-29,
   the tests only. An effort's duration is stored and recalculated by

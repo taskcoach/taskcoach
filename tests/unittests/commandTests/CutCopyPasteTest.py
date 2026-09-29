@@ -309,9 +309,11 @@ class PasteIntoTaskCommandTest(CommandWithChildrenTestCase):
 
 
 class PasteIntoTaskCommandWithEffortTest(CommandWithEffortTestCase):
-    def testPaste(self):
+    def test_paste(self):
         self.cut([self.effort1])
-        self.paste([self.task2])
+        # As the task viewer does: efforts go back to their own list,
+        # with the task as their parent
+        command.PasteAsSubItemCommand(items=[self.task2]).do()
         self.assertDoUndoRedo(
             lambda: self.assertEqual(2, len(self.task2.efforts())),
             lambda: self.assertEqual(1, len(self.task1.efforts())),

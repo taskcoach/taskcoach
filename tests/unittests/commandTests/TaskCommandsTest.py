@@ -39,10 +39,6 @@ class TaskCommandTestCase(CommandTestCase, asserts.Mixin):
         self.taskList.append(self.task1)
         self.originalList = [self.task1]
 
-    def tearDown(self):
-        super().tearDown()
-        command.Clipboard().clear()
-
     def delete(self, items=None):
         if items == "all":
             items = list(self.list)

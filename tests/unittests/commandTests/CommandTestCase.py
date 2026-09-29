@@ -32,6 +32,7 @@ class CommandTestCase(test.wxTestCase, asserts.CommandAssertsMixin):
     def tearDown(self):
         super().tearDown()
         patterns.CommandHistory().clear()
+        command.Clipboard().clear()  # Shared: a cut must not leak
 
     def undo(self):
         patterns.CommandHistory().undo()
