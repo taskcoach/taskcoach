@@ -235,9 +235,10 @@ In the app:
   the Python 3 migration retired; it now reads the `.po` files as the
   app does ([TRANSLATIONS.md](TRANSLATIONS.md)). All placeholders
   match.
-- P20. Belarusian and Danish are fully translated, Hungarian and
-  Swedish over 99%, but disabled (`meta/data.py`); the translation
-  test flags each. Designer's decision: enable them, or keep them off.
+- P20. ~~Belarusian, Danish, Hungarian and Swedish, 99 to 100%
+  translated, were disabled~~: enabled 2026-09-29, **ruled by
+  designer**; Danish's Preferences code corrected to `da_DK`. A
+  string not translated shows in English.
 - P21. The language from the environment reads `LANG` before
   `LC_ALL`; POSIX gives `LC_ALL` priority (then `LC_MESSAGES`, then
   `LANG`). Changing it would change some users' language. Designer's

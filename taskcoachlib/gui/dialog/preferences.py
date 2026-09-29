@@ -1648,7 +1648,7 @@ class LanguagePage(SettingsPage):
             ("zh_CN", "简体中文 (Simplified Chinese)"),
             ("zh_TW", "正體字 (Traditional Chinese)"),
             ("cs_CS", "Čeština (Czech)"),
-            ("da_DA", "Dansk (Danish)"),
+            ("da_DK", "Dansk (Danish)"),
             ("nl_NL", "Nederlands (Dutch)"),
             ("en_AU", "English (Australia)"),
             ("en_CA", "English (Canada)"),
