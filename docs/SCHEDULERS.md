@@ -208,7 +208,10 @@ What pushes into the heap:
   tick's second, which the next tick takes with every other due entry.
   A cascade settles one pass per second.
 - The due soon hours changed, a file opened, the clock set back: the
-  heap is rebuilt from the tasks, with a second due at once.
+  heap is rebuilt from the tasks, with a second due at once. So it is
+  when it has doubled since its last rebuild (plus 64): old seconds
+  stay until due, and those of dates not set (the latest date) never
+  are.
 
 `TASKCOACH_SCHEDULER_CHECK=1` runs the full loop every second as well
 and logs each change it makes at a second the heap did not call for

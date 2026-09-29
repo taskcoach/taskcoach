@@ -299,6 +299,22 @@ class MasterTimerListTest(test.wxTestCase):
         self.assertTrue(self.tick())
         self.assertEqual(task.status.overdue, added[3].computedStatus())
 
+    def test_the_timer_list_stays_bounded(self):
+        # Every date edit adds seconds; stale ones are dropped in bulk
+        self.settle()
+        for hours in range(1, 500):
+            self.task.set_due_date_time(
+                self.start + date.TimeDelta(hours=hours)
+            )
+        live = self.task.timer_seconds(self.master._due_soon_hours())
+        self.assertEqual(
+            (True, True),
+            (
+                len(self.master._heap) < 200,
+                set(live) <= set(self.master._heap),
+            ),
+        )
+
     def test_a_colour_change_runs_the_loop_at_the_next_tick(self):
         self.settle()
         self.task.setForegroundColor(wx.RED)

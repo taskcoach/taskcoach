@@ -182,6 +182,7 @@ class MasterScheduler:
         """
         self._task_file = task_file
         self._heap = []
+        self._rebuilt_size = 0  # The heap's size when last rebuilt
         # The last tick's second, once pushed for a change since
         self._pushed = None
         self._last_tick = None
@@ -266,10 +267,15 @@ class MasterScheduler:
         heapq.heapify(heap)
         self._heap = heap
         self._pushed = None
+        self._rebuilt_size = len(heap)
 
     def _push_seconds(self, seconds):
         for second in seconds:
             heapq.heappush(self._heap, second)
+        # Old seconds stay until due, those of dates not set never are:
+        # rebuilt once at least half is stale, so it stays bounded
+        if len(self._heap) > 2 * self._rebuilt_size + 64:
+            self._rebuild()
 
     def _push_changed(self, event_types):
         """A change the full loop reads: its second is due at the next
@@ -319,6 +325,7 @@ class MasterScheduler:
             # Closed, or about to be filled by a file being opened
             self._heap = []
             self._pushed = None
+            self._rebuilt_size = 0
         self._push_changed(event.types())
 
     def _on_data_changed(self, event):
