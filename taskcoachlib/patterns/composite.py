@@ -26,7 +26,9 @@ class Composite(object):
         self.__parent = parent if parent is None else weakref.ref(parent)
         self.__children = children or []
         for child in self.__children:
-            child.set_parent(self)
+            # Only the link: building an item changes no child (a
+            # subclass's set_parent may date one)
+            Composite.set_parent(child, self)
 
     def __getstate__(self):
         return dict(children=self.__children[:], parent=self.parent())

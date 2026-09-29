@@ -319,6 +319,14 @@ class DirtyTaskFileTest(TaskFileTestCase):
         patterns.CommandHistory().undo()
         self.assertFalse(self.taskFile.need_save())
 
+    def test_copying_a_note_with_subnotes_needs_no_save(self):
+        # Building the copy links its subnotes: no change to the file
+        parent = note.Note(children=[note.Note(subject="subnote")])
+        self.taskFile.notes().append(parent)
+        self.taskFile.save()
+        parent.copy()
+        self.assertFalse(self.taskFile.need_save())
+
     def test_change_outside_commands_is_not_undone(self):
         self.edit_subject()
         self.task.setDescription("not a command")

@@ -310,6 +310,8 @@ that item's own data: changing them sets its date. The reverse lists
 (children, owned notes and attachments, efforts, dependencies, a
 category's members) are derived and set no date. The file stores
 category membership on the category, but it is read both ways.
+Building an item with its children (a copy, a read) links them and
+sets no date: nothing changed.
 Merging follows the same rule
 ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)).
 
