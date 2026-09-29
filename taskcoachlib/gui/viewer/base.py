@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import contextlib
 import wx
 from taskcoachlib import patterns, widgets, command, render
+from taskcoachlib.config import settings2
 from taskcoachlib.i18n import _
 from taskcoachlib.gui import uicommand, toolbar
 from taskcoachlib.gui.icons import image_list_cache
@@ -86,6 +87,11 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             self.on_auto_scroll_changed,
             eventType="view.autoscrollselection",
             eventSource=self.settings,
+        )
+        # Times are drawn as decimal hours or not: redraw on a change
+        self.__decimal_time = settings2.feature.decimal_time
+        self.registerObserver(
+            self.__on_settings2_changed, eventType="settings2.changed"
         )
         self.refresh()
 
@@ -404,6 +410,11 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         elif hasattr(self.widget, "ensureSelectionVisible"):
             self.widget.ensureSelectionVisible()
         self.send_viewer_status_event()
+
+    def __on_settings2_changed(self, event):  # pylint: disable=W0613
+        if settings2.feature.decimal_time != self.__decimal_time:
+            self.__decimal_time = settings2.feature.decimal_time
+            self.refresh()
 
     def on_auto_scroll_changed(self, event=None):
         """Re-center on the selection when auto-scroll is turned back

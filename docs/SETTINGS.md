@@ -40,10 +40,12 @@
    [System theme changes](#system-theme-changes).
 7. **Refine refresh triggers.** Eventually, replace the 1-second debounce
    with a proper batched signal when `ConfigParser` is replaced.
-8. **Wire `"settings2.changed"` listeners.** Nobody subscribes yet.
-   Consumers that need to react to setting changes (e.g. themed colours
-   after a dark/light switch) should register via
+8. **Wire `"settings2.changed"` listeners.** Consumers that need to
+   react to setting changes (e.g. themed colours after a dark/light
+   switch) should register via
    `patterns.Publisher().registerObserver(callback, eventType="settings2.changed")`.
+   First listener (2026-09-28): viewers redraw when
+   `feature.decimal_time` changes.
 
 ---
 

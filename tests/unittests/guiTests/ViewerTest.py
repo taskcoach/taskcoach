@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import ast
 import test
 from taskcoachlib import gui, config, widgets, persistence
+from taskcoachlib.config import settings2
 from taskcoachlib.domain import task, date
 from wx.lib.agw import hypertreelist
 
@@ -56,6 +57,22 @@ class ViewerTest(test.wxTestCase):
 
     def createViewer(self):
         return gui.viewer.TaskViewer(self.window, self.taskFile, self.settings)
+
+    def set_decimal_time(self, decimal):
+        # In the settings settings2 reads, applied at once as its
+        # debounce would a second later
+        settings2._instance._settings.setboolean(
+            "feature", "decimal_time", decimal
+        )
+        settings2.refresh_now()
+
+    def test_decimal_time_change_redraws(self):
+        self.addCleanup(self.set_decimal_time, False)
+        redraws = []
+        self.viewer.refresh = lambda: redraws.append(True)
+        settings2.refresh_now()  # Another setting changed
+        self.set_decimal_time(True)
+        self.assertEqual([True], redraws)
 
     def testSelectAllViaWidget(self):
         self.viewer.widget.select_all()
