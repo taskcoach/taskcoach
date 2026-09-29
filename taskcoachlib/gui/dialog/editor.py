@@ -4993,6 +4993,7 @@ class Editor(BalloonTipManager, widgets.Dialog):
         if operating_system.isMac():
             self._interior.SetFocusIgnoringChildren()
         if self.__poll is not None:
+            # The watch ends: hidden now, a tick would close us again
             self.__poll.cancel()
         # Clean up UICommands created in __create_ui_commands()
         self.__undo_command.unbind(self._interior, wx.ID_UNDO)

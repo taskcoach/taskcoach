@@ -131,31 +131,33 @@ class GlobalTimer:
         Initialize the global timer.
 
         Args:
-            parent: wx parent window to bind timer to (usually main window)
+            parent: the window whose life the tick follows (the main
+                window). The timer is its own, so no tick can reach the
+                window once deleted; a tick after that is skipped
+                (lazy teardown, docs/DEFERRED_CALLS.md).
         """
         self._parent = parent
-        self._timer = wx.Timer(parent)
-        parent.Bind(wx.EVT_TIMER, self._on_tick, self._timer)
+        clock = self
+
+        class Tick(wx.Timer):
+            def Notify(self):  # wx override
+                clock._on_tick()
+
+        self._timer = Tick()
 
     def start(self):
         """Start the global timer."""
         self._timer.Start(self.INTERVAL_MS)
 
-    def stop(self):
-        """Stop the global timer."""
+    def close(self):
+        """Free the timer; the application's last step, once its event
+        loop has ended."""
         self._timer.Stop()
+        self._timer = None
 
-    # Alias for compatibility with _stop_all_timers in application.py
-    Stop = stop
-
-    def is_running(self):
-        """Check if timer is running."""
-        return self._timer.IsRunning()
-
-    # Alias for compatibility with _stop_all_timers in application.py
-    IsRunning = is_running
-
-    def _on_tick(self, event):
+    def _on_tick(self):
+        if patterns.deferred.is_gone(self._parent):
+            return
         now = datemodule.DateTime.now()
         patterns.Event("timer.second", self, now).send()
 

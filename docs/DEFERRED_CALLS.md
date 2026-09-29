@@ -3,7 +3,8 @@
 Every call the app makes later (a debounce, a delay, a repeat, "as
 soon as possible") goes through one service, `patterns.later`
 (`taskcoachlib/patterns/deferred.py`), so none can reach a window that
-is gone. **Decided by designer, 2026-09-29.**
+is gone. **Decided by designer, 2026-09-29**; lazy teardown the same
+day.
 
 ## Index
 
@@ -12,6 +13,7 @@ is gone. **Decided by designer, 2026-09-29.**
 - [How We Got Here](#how-we-got-here)
 - [Use](#use)
 - [How It Works](#how-it-works)
+- [End of Life](#end-of-life)
 - [What Moved](#what-moved)
 - [Limits](#limits)
 - [Related Documents](#related-documents)
@@ -19,10 +21,9 @@ is gone. **Decided by designer, 2026-09-29.**
 ## Design Philosophy
 
 1. **A call belongs to its owner.** Every deferred call names the
-   object it serves (usually the window it acts on); it lives no
-   longer than that owner. This is the ownership rule other toolkits
-   build in (a Qt timer dies with its object); wx does not, so the app
-   provides it.
+   object it serves (usually the window it acts on) and never runs
+   once that owner is deleted. wx does not tie a call to a window, so
+   the app does.
 2. **Safe by construction, not by discipline.** No call site stops a
    timer on destroy or wraps its callback in a liveness check; the
    service does it for all. A test fails if app code schedules through
@@ -31,14 +32,19 @@ is gone. **Decided by designer, 2026-09-29.**
    [DEVELOPMENT.md](DEVELOPMENT.md#design)): one queue, one timer, one
    owner check, one error handler, instead of a dozen hand-made timer
    patterns.
-4. **Checked at the last moment.** Cancelling on a destroy event is
-   the fast path, but a destroy event can be lost (an `AuiNotebook`,
-   [AUI.md](AUI.md#destroy-event)), so the owner is checked again just
-   before each call runs.
-5. **Contained and logged.** A failing or dropped call is logged with
-   where it was scheduled (`[LATER]`), never raised into wx, so a
+4. **Lazy teardown, by design.** Nothing is cancelled or stopped when
+   a window closes or the app quits: stopping things early risks side
+   effects nobody planned for. Each call runs its course; when due, a
+   call whose owner was deleted is skipped quietly. One check covers
+   every case, including a destroy event that never comes (an
+   `AuiNotebook`, [AUI.md](AUI.md#destroy-event)). The timers are
+   freed last, once the event loop has ended
+   ([End of Life](#end-of-life)). **Decided by designer, 2026-09-29.**
+5. **Contained and logged.** A failing call is logged with where it
+   was scheduled (`[LATER] failed`), never raised into wx, so a
    problem is diagnosed from the log
-   ([DEVELOPMENT.md](DEVELOPMENT.md#diagnosing)).
+   ([DEVELOPMENT.md](DEVELOPMENT.md#diagnosing)). A skip is by design
+   and silent; `TASKCOACH_LATER_LOG=1` logs each one.
 6. **Milliseconds, apart from the master scheduler.** UI timing (a
    debounce, an animation) runs in milliseconds on a monotonic clock;
    the master scheduler's loop and its 1 s tick work in whole seconds
@@ -126,6 +132,20 @@ its destroy event.
    app: the spell check case (0 of 3), and a quit cancelled after 4 s
    at "Save changes?" (the search still filters); the full suite,
    unchanged from the baseline.
+9. The stall showed the cost of stopping things early: the stop
+   needed state (closed while quitting) that a cancelled quit had to
+   undo, and four of the eight findings were in the destroy watch and
+   the shutdown. The designer ruled lazy teardown (principle 4): the
+   destroy watch, `shutdown()` and the app's close-time stops went
+   (the notification animations, the notification centre at quit,
+   the search box); the per-second clock follows the same rule. The
+   macOS editor poll's stop stays: it ends that watch, and a tick
+   after the editor hid itself would close it again. Checked in the
+   app with `TASKCOACH_LATER_LOG=1`: editors closed right after typing
+   (the spell check skipped, no traceback); a quit cancelled after 4 s
+   (the search still filters); a quit with a search pending (`closed,
+   3 pending freed`, after the file and ini locks were released); the
+   full suite, unchanged.
 
 ## Use
 
@@ -158,34 +178,46 @@ exceptions: the service itself, the master scheduler's own 1 s clock
 - **One queue, one timer:** timed calls wait in a queue sorted by due
   time on a monotonic clock, so clock changes cannot misfire them. The
   service's own timer is set for the earliest only, and stopped when
-  the queue is empty. It lives until the app quits, so no tick can
-  reach freed memory.
+  the queue is empty. It lives until the event loop ends, so no tick
+  can reach freed memory.
 - **A wake runs everything due** by then, in due order. It sets the
   timer for the next first, so a call that runs a nested event loop (a
   dialog) does not hold up the others. Calls scheduled while running
   wait for a later wake, so none can loop.
-- **Owner gone, normal case:** the first call of a window watches its
-  destroy event (marked on the window, so a new window is watched even
-  at a reused address); when it comes, all the window's pending calls
-  are cancelled at once, and a call scheduled during that destroy is
-  cancelled right away.
-- **Owner gone, backup:** when the event never comes, or the owner is
-  not a window, the call is checked just before it runs and dropped if
-  its owner was deleted (`[LATER] dropped`, with where it was
-  scheduled).
+- **Owner gone:** a window's destroy changes nothing. When a call is
+  due, its owner is checked (`siplib.isdeleted`); a deleted owner's
+  call is skipped, silently unless `TASKCOACH_LATER_LOG=1`
+  (`[LATER] skipped`, with where it was scheduled). A repeat ends at
+  its first tick after. A top-level window exists until wx deletes it
+  at the next idle after `Destroy()`, so its calls run until then, as
+  in wx.
 - **Errors are contained:** a failing call is logged (`[LATER]
   failed`, with its traceback and scheduling site) and the next still
-  runs. Only the error of a deleted owner counts as a drop.
-- **Quitting:** calls run as usual at the "Save changes?" prompt. Once
-  the quit is decided, `shutdown()` (`Application._stop_all_timers()`)
-  drops every pending call, stops the rest of a running wake, and
-  deletes the timer; no timed call starts again while the app quits.
-  `soon` calls still run.
-- **Memory:** a done or cancelled call lets go of its owner, callback
-  and arguments at once.
+  runs. An error from the owner being deleted during the call counts
+  as a skip.
+- **Quitting:** nothing stops. Calls run as usual, and are skipped
+  once their windows are gone; a cancelled quit has nothing to undo.
+- **Memory:** a done, cancelled or skipped call lets go of its owner,
+  callback and arguments at once. A call whose owner is gone holds it
+  until due, at most its delay (the longest, the status bar's 3 s).
 - **Threads:** `soon`, `call`, `every` and a handle's `cancel()` may be
   called from any thread; the queue is only touched on the GUI thread.
   A debounced object is for the GUI thread.
+
+## End of Life
+
+`Application.start()`, once `MainLoop()` has returned and just before
+the app object is destroyed, frees the app's timers: the service's
+(`patterns.later.close()`, with its pending calls) and the per-second
+clock (`MainWindow.close_global_timer()`,
+[SCHEDULERS.md](SCHEDULERS.md)). No event loop runs then, so nothing
+can fire; freed before the app, no timer outlives it (Phoenix issue
+429). Nothing is scheduled or run after it.
+
+The one exception to lazy teardown: bundled library code's timers are
+owned by its windows and would tick into freed memory, so
+`Application._stop_all_timers()` still stops them at quit, before
+those windows go, as on master.
 
 ## What Moved
 
@@ -215,8 +247,10 @@ exceptions: the service itself, the master scheduler's own 1 s clock
 - Library code keeps its own timers and `wx.CallAfter`s: the AUI tabs
   and panes, the bundled tree list, the vendored calendar. The crash
   guards stay for them ([CRASH_GUARD.md](CRASH_GUARD.md)).
-- The master scheduler's 1 s clock is a window-owned `wx.Timer`,
-  stopped at quit ([SCHEDULERS.md](SCHEDULERS.md)).
+- The master scheduler's 1 s clock keeps its own timer, in whole
+  seconds, under the same rule: its tick is skipped once the main
+  window is gone, and it is freed at the [End of Life](#end-of-life)
+  ([SCHEDULERS.md](SCHEDULERS.md)).
 - A wx event handler reaching a deleted window is another problem,
   not a deferred call: a date popup's text event after its editor
   closed (P12 in
@@ -236,6 +270,6 @@ exceptions: the service itself, the master scheduler's own 1 s clock
   logs.
 - [LOGGING_GUIDE.md](LOGGING_GUIDE.md): the `[LATER]` prefix.
 - [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md): to-dos
-  44 and 53, and the pre-existing issues.
+  44, 53 and 54, and the pre-existing issues.
 - [SPELLCHECKING.md](SPELLCHECKING.md), [SETTINGS.md](SETTINGS.md),
   [SYSTEM_TRAY.md](SYSTEM_TRAY.md): uses of the service.

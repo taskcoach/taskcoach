@@ -776,6 +776,11 @@ class Application(object, metaclass=patterns.Singleton):
                 sys.stderr = open(os.devnull, "w")
                 sys.stdout = open(os.devnull, "w")
 
+            # Last of all, with no event loop left to fire them, the
+            # app's own timers are freed (lazy teardown,
+            # docs/DEFERRED_CALLS.md#end-of-life)
+            self.mainwindow.close_global_timer()
+            patterns.later.close()
             # Prevent destructor issues by explicitly destroying the app
             self.__wx_app.Destroy()
 
@@ -1131,17 +1136,16 @@ class Application(object, metaclass=patterns.Singleton):
             pass  # Best effort - don't prevent exit
 
     def _stop_all_timers(self):
-        """Stop all known timers to prevent crashes during shutdown.
+        """Stop the timers of bundled library code, owned by its
+        windows, before those windows go; the app's own timers run on
+        and are freed after the event loop
+        (docs/DEFERRED_CALLS.md#end-of-life).
 
         Timer events can be delivered after frames are destroyed but before
         the program ends, causing access violations on Windows.
         See: https://github.com/wxWidgets/Phoenix/issues/429
         """
-        # The app's deferred calls (docs/DEFERRED_CALLS.md)
-        patterns.later.shutdown()
 
-        # Stop the timers of bundled library code and the master
-        # scheduler's own clock, walking all windows and their children
         # Walk through all top-level windows and their children
         def stop_timers_in_window(window):
             if window is None:
@@ -1154,7 +1158,6 @@ class Application(object, metaclass=patterns.Singleton):
                 "_dragTimer",
                 "_findTimer",
                 "_editTimer",
-                "_globalTimer",
             ]:
                 # Try public and name-mangled private attributes;
                 # private names are mangled with the defining class,
@@ -1201,10 +1204,10 @@ class Application(object, metaclass=patterns.Singleton):
         if hasattr(self, "taskBarIcon"):
             self.taskBarIcon.RemoveIcon()
             self.taskBarIcon.Destroy()
-        # Stop notification timers to prevent crashes during shutdown
+        # Open notifications would keep the event loop running
         from taskcoachlib.notify.notifier_universal import NotificationCenter
 
-        NotificationCenter().cleanup()
+        NotificationCenter().hide_all()
         wx.EventLoop.GetActive().ProcessIdle()
 
         # For PowerStateMixin

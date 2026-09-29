@@ -157,8 +157,6 @@ class _SearchCtrlInner(tooltip.ToolTipMixin, wx.SearchCtrl):
             id=self.__recentSearchMenuItemIds[0],
             id2=self.__recentSearchMenuItemIds[-1],
         )
-        # Stop timer on window destruction to prevent crashes
-        self.Bind(wx.EVT_WINDOW_DESTROY, self._onDestroy)
 
     def setMatchCase(self, matchCase):
         self.__matchCase = matchCase
@@ -183,33 +181,6 @@ class _SearchCtrlInner(tooltip.ToolTipMixin, wx.SearchCtrl):
             except sre_constants.error:
                 return False
         return True
-
-    def _onDestroy(self, event):
-        """
-        Automatically cleanup timer on window destruction.
-
-        This is a critical safety mechanism to prevent timer-after-destruction crashes.
-        The EVT_WINDOW_DESTROY binding ensures cleanup happens automatically,
-        following wxPython best practices for timer lifecycle management.
-        """
-        if event.GetEventObject() == self:
-            self.cleanup()
-        event.Skip()
-
-    def cleanup(self):
-        """
-        Stop the timer and clear callback to prevent crashes.
-
-        Best practices implemented:
-        1. Stop any running timer to prevent fire-after-destruction
-        2. Replace callback with no-op to safely handle late events
-        3. Can be called multiple times safely (idempotent)
-
-        This prevents the NULL pointer crashes documented in PYTHON3_MIGRATION_NOTES.md
-        """
-        self.__find_later.cancel()
-        # Replace callback with no-op lambda to safely handle any late timer events
-        self.__callback = lambda *args, **kwargs: None
 
     def onFindLater(self, event):  # pylint: disable=W0613
         """
@@ -394,9 +365,6 @@ class SearchCtrl(wx.Panel):
 
     def getTextCtrl(self):
         return self.__searchCtrl.getTextCtrl()
-
-    def cleanup(self):
-        return self.__searchCtrl.cleanup()
 
     def setMatchCase(self, matchCase):
         return self.__searchCtrl.setMatchCase(matchCase)

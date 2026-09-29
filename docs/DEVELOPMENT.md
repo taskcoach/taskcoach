@@ -26,7 +26,9 @@ Canon decision by designer, 2026-09-28.
 - **Deferred calls through `patterns.later`:** a debounce, delay,
   repeat or "when idle" call names its owner and never uses
   `wx.CallLater`, `wx.CallAfter` or `wx.Timer` directly, so none can
-  reach a deleted window ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
+  reach a deleted window. Lazy teardown: nothing is stopped when a
+  window closes or the app quits; a call whose owner is gone is
+  skipped when due ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
 
 ## Code style
 

@@ -124,6 +124,9 @@ go at the end. Details live in the sections and documents linked.
     undone, with 37 ([TASK_FIELDS.md](TASK_FIELDS.md#priority)).
 53. ~~Deferred calls that can outlive their window~~: all through
     `patterns.later` ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
+54. ~~Lazy teardown~~: nothing stopped on close or quit; the timers
+    freed after the event loop
+    ([DEFERRED_CALLS.md](DEFERRED_CALLS.md#end-of-life)).
 
 ## Pre-existing Issues
 

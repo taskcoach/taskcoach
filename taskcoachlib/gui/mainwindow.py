@@ -113,6 +113,11 @@ class MainWindow(
     def setShutdownInProgress(self):
         self.__shutdown = True
 
+    def close_global_timer(self):
+        """Free the per-second clock; the application's last step, once
+        its event loop has ended."""
+        self._globalTimer.close()
+
     def _create_window_components(self):  # Not private for test purposes
         # Freeze to prevent flickering during viewer creation
         self.Freeze()

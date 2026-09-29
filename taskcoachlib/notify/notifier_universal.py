@@ -36,7 +36,6 @@ class AnimatedShow:
             self.__show = show
 
             self.__ticks = patterns.later.every(frame, 100, self.__on_tick)
-            frame.Bind(wx.EVT_CLOSE, self.__on_close)
 
             frame.SetTransparent(0)
 
@@ -61,10 +60,6 @@ class AnimatedShow:
             if not self.__show:
                 self.__frame.Close()
 
-    def __on_close(self, event):
-        self.__ticks.cancel()
-        event.Skip()
-
 
 class AnimatedMove:
     """
@@ -78,7 +73,6 @@ class AnimatedMove:
         self.__step = 0
 
         self.__ticks = patterns.later.every(frame, 100, self.__on_tick)
-        frame.Bind(wx.EVT_CLOSE, self.__on_close)
 
     def __on_tick(self):
         x0, y0 = self.__origin
@@ -92,10 +86,6 @@ class AnimatedMove:
 
         if self.__step == 10:
             self.__ticks.cancel()
-
-    def __on_close(self, event):
-        self.__ticks.cancel()
-        event.Skip()
 
 
 # ==============================================================================
@@ -364,11 +354,6 @@ class _NotificationCenter(wx.EvtHandler):
         for frame, timeout in self.waitingFrames:
             frame.Close()
         self.waitingFrames = []
-
-    def cleanup(self):
-        """Stop the notification timer to prevent crashes during app shutdown."""
-        self.__ticks.cancel()
-        self.hide_all()
 
     def GetDisplayRect(self):
         """

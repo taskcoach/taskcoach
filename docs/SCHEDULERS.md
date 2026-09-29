@@ -270,7 +270,9 @@ The old system used a custom `Scheduler` class (`domain/date/scheduler.py`) that
 
 1. **No jobs to track**: Nothing to schedule, unschedule, or lose
 2. **No identity issues**: No `ScheduledMethod` equality comparisons
-3. **Simple lifecycle**: Timer starts on app start, stops on app close
+3. **Simple lifecycle**: Timer starts on app start and is freed after
+   the event loop ends; a tick after the main window is gone is
+   skipped ([DEFERRED_CALLS.md](DEFERRED_CALLS.md#end-of-life))
 4. **Predictable**: Just check conditions, no complex event chains
 5. **Debuggable**: the check mode and the minute trace (above)
 6. **Efficient**: Single timestamp, tuple comparisons, pub/sub dispatch

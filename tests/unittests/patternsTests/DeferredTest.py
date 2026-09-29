@@ -24,6 +24,7 @@ import os
 import threading
 import time
 import weakref
+from unittest import mock
 
 import test
 import wx
@@ -46,7 +47,7 @@ class DeferredTestCase(test.wxTestCase):
         super().setUp()
         self.clock = FakeClock()
         self.later = deferred.Deferred(clock=self.clock)
-        self.addCleanup(self.later.shutdown)
+        self.addCleanup(self.later.close)
         self.calls = []
 
     def record(self, name):
@@ -108,43 +109,29 @@ class CallTest(DeferredTestCase):
         wx.GetApp().quitting = True
         self.addCleanup(setattr, wx.GetApp(), "quitting", False)
 
-    def test_calls_run_at_the_quit_prompt_and_after_a_cancel(self):
-        # Quitting before shutdown: "Save changes?" is still open
+    def test_calls_run_on_while_quitting_and_after_a_cancel(self):
+        # Lazy teardown: a quit stops nothing
         self.later.call(None, 30, self.record("a"))
         self.quitting()
         self.run_after(150)
-        wx.GetApp().quitting = False  # Cancel
+        wx.GetApp().quitting = False  # Cancelled at "Save changes?"
         self.later.call(None, 30, self.record("b"))
         self.run_after(30)
         self.assertEqual([("a",), ("b",)], self.calls)
 
-    def test_shutdown_drops_every_pending_call(self):
+    def test_close_frees_every_pending_call(self):
         handle = self.later.every(None, 10, self.record("a"))
-        self.later.shutdown()
+        self.later.close()
         self.run_after(100)
+        self.assertEqual(
+            ([], False, None), (self.calls, handle.pending, handle.callback)
+        )
+
+    def test_nothing_is_scheduled_after_close(self):
+        self.later.close()
+        handle = self.later.call(None, 10, self.record("a"))
+        self.run_after(10)
         self.assertEqual(([], False), (self.calls, handle.pending))
-
-    def test_after_shutdown_no_timed_call_starts_until_the_app_runs(self):
-        self.quitting()
-        self.later.shutdown()
-        refused = self.later.call(None, 10, self.record("a"))
-        wx.GetApp().quitting = False  # A new run (tests)
-        self.later.call(None, 10, self.record("b"))
-        self.run_after(10)
-        self.assertEqual(([("b",)], False), (self.calls, refused.pending))
-
-    def test_shutdown_by_a_call_stops_the_rest_of_its_wake(self):
-        def quit_app():
-            self.calls.append(("quit",))
-            wx.GetApp().quitting = True
-            self.later.shutdown()
-
-        self.addCleanup(setattr, wx.GetApp(), "quitting", False)
-        self.later.call(None, 10, quit_app)
-        ticks = self.later.every(None, 10, self.record("tick"))
-        self.later.call(None, 10, self.record("after"))
-        self.run_after(10)
-        self.assertEqual(([("quit",)], False), (self.calls, ticks.pending))
 
     def test_cancelled_call_lets_go_of_its_arguments(self):
         class Argument:
@@ -216,15 +203,19 @@ class OwnerTest(DeferredTestCase):
         super().setUp()
         self.window = wx.Panel(self.frame)
 
-    def test_destroying_the_owner_cancels_its_calls(self):
+    def test_a_call_whose_owner_is_gone_is_skipped_when_due(self):
         handle = self.later.call(self.window, 10, self.record("a"))
         other = self.later.call(self.frame, 10, self.record("other"))
         self.window.Destroy()
-        self.assertEqual((False, True), (handle.pending, other.pending))
+        # Lazy teardown: the destroy cancels nothing
+        self.assertEqual((True, True), (handle.pending, other.pending))
         self.run_after(100)
-        self.assertEqual([("other",)], self.calls)
+        self.assertEqual(
+            ([("other",)], False, None),
+            (self.calls, handle.pending, handle.callback),
+        )
 
-    def test_gone_owner_is_dropped_when_its_destroy_event_never_came(self):
+    def test_skipped_when_its_destroy_event_never_came(self):
         # As in an AuiNotebook, whose AuiManager consumes the event
         self.later.call(self.window, 10, self.record("a"))
         self.window.Bind(wx.EVT_WINDOW_DESTROY, lambda event: None)
@@ -232,29 +223,39 @@ class OwnerTest(DeferredTestCase):
         self.run_after(100)
         self.assertEqual([], self.calls)
 
-    def test_a_window_watched_after_another_one_went_unseen(self):
-        # A new window may reuse the C++ address of one whose destroy
-        # event never came
-        self.later.call(self.window, 10, self.record("a"))
-        self.window.Bind(wx.EVT_WINDOW_DESTROY, lambda event: None)
-        self.window.Destroy()
-        self.run_after(100)
-        other = wx.Panel(self.frame)
-        handle = self.later.call(other, 10, self.record("b"))
-        other.Destroy()
-        self.assertFalse(handle.pending)
-
-    def test_a_call_scheduled_during_its_owners_destroy_never_runs(self):
-        handles = []
-
+    def test_a_call_scheduled_during_its_owners_destroy_is_skipped(self):
         def on_destroy(event):
             event.Skip()
             if event.GetEventObject() is self.window:
-                handles.append(self.later.call(self.window, 10, list))
+                self.later.call(self.window, 10, self.record("a"))
 
         self.window.Bind(wx.EVT_WINDOW_DESTROY, on_destroy)
         self.window.Destroy()
-        self.assertFalse(handles[0].pending)
+        self.run_after(10)
+        self.assertEqual([], self.calls)
+
+    def test_a_repeat_ends_at_its_first_tick_after_its_owner_is_gone(self):
+        handle = self.later.every(self.window, 10, self.record("tick"))
+        self.run_after(10)
+        self.window.Destroy()
+        self.run_after(10)
+        self.run_after(10)
+        self.assertEqual(([("tick",)], False), (self.calls, handle.pending))
+
+    def skip_log(self, logged):
+        self.later.call(self.window, 10, self.record("a"))
+        self.window.Destroy()
+        output = io.StringIO()
+        with mock.patch.object(deferred, "_LOG_SKIPS", logged):
+            with contextlib.redirect_stdout(output):
+                self.run_after(10)
+        return output.getvalue()
+
+    def test_a_skip_is_silent_by_design(self):
+        self.assertEqual("", self.skip_log(False))
+
+    def test_a_skip_is_logged_with_its_flag(self):
+        self.assertIn("skipped: owner gone", self.skip_log(True))
 
     def test_a_failure_after_the_owner_closed_itself_is_logged(self):
         def close_and_fail():
@@ -267,7 +268,7 @@ class OwnerTest(DeferredTestCase):
             self.run_after(10)
         self.assertIn("failed", output.getvalue())
 
-    def test_a_child_destroy_does_not_cancel_the_parent(self):
+    def test_a_child_destroy_does_not_skip_the_parent(self):
         child = wx.Panel(self.window)
         handle = self.later.call(self.window, 10, self.record("a"))
         child.Destroy()
@@ -300,7 +301,7 @@ class SoonTest(test.wxTestCase):
         self.flush()
         self.assertEqual([1, 2], self.calls)
 
-    def test_runs_while_quitting_as_quitting_relies_on_it(self):
+    def test_runs_while_the_app_quits(self):
         self.later.soon(None, self.calls.append, 1)
         wx.GetApp().quitting = True
         try:
@@ -309,10 +310,16 @@ class SoonTest(test.wxTestCase):
             wx.GetApp().quitting = False
         self.assertEqual([1], self.calls)
 
-    def test_gone_owner_is_dropped(self):
+    def test_a_call_whose_owner_is_gone_is_skipped(self):
         window = wx.Panel(self.frame)
         self.later.soon(window, self.calls.append, 1)
         window.Destroy()
+        self.flush()
+        self.assertEqual([], self.calls)
+
+    def test_nothing_runs_after_close(self):
+        self.later.close()
+        self.later.soon(None, self.calls.append, 1)
         self.flush()
         self.assertEqual([], self.calls)
 
@@ -333,7 +340,7 @@ class TimerTest(test.wxTestCase):
 
     def test_the_timer_runs_due_calls(self):
         later = deferred.Deferred()
-        self.addCleanup(later.shutdown)
+        self.addCleanup(later.close)
         calls = []
         later.call(None, 20, calls.append, 1)
         deadline = time.monotonic() + 2
@@ -348,9 +355,9 @@ class TimerTest(test.wxTestCase):
             wx.Yield()
             time.sleep(0.005)
 
-    def test_the_timer_resumes_after_a_cancelled_quit(self):
+    def test_the_timer_runs_through_a_cancelled_quit(self):
         later = deferred.Deferred()
-        self.addCleanup(later.shutdown)
+        self.addCleanup(later.close)
         self.addCleanup(setattr, wx.GetApp(), "quitting", False)
         calls = []
         later.call(None, 30, calls.append, 1)
@@ -361,9 +368,17 @@ class TimerTest(test.wxTestCase):
         self.wait_for(lambda: 2 in calls)
         self.assertEqual([1, 2], calls)
 
+    def test_close_stops_the_timer(self):
+        later = deferred.Deferred()
+        calls = []
+        later.call(None, 20, calls.append, 1)
+        later.close()
+        self.wait_for(lambda: calls, seconds=0.15)
+        self.assertEqual([], calls)
+
     def test_the_timer_follows_a_cancelled_first_call(self):
         later = deferred.Deferred()
-        self.addCleanup(later.shutdown)
+        self.addCleanup(later.close)
         calls = []
         later.call(None, 20, calls.append, 1).cancel()
         later.call(None, 60, calls.append, 2)
@@ -372,7 +387,7 @@ class TimerTest(test.wxTestCase):
 
     def test_a_call_in_a_nested_event_loop_does_not_hold_up_the_others(self):
         later = deferred.Deferred()
-        self.addCleanup(later.shutdown)
+        self.addCleanup(later.close)
         calls = []
 
         def slow():
@@ -390,7 +405,7 @@ class TimerTest(test.wxTestCase):
 
     def test_a_timed_call_from_another_thread(self):
         later = deferred.Deferred()
-        self.addCleanup(later.shutdown)
+        self.addCleanup(later.close)
         calls = []
         thread = threading.Thread(
             target=later.call, args=(None, 10, calls.append, 1)
@@ -418,13 +433,8 @@ class ThreadTest(DeferredTestCase):
         wx.GetApp().ProcessPendingEvents()  # The GUI thread's part
         self.run_after(100)
         self.assertEqual(
-            ([], False, {}, None),
-            (
-                self.calls,
-                handle.pending,
-                self.later._Deferred__by_owner,
-                handle.callback,
-            ),
+            ([], False, None),
+            (self.calls, handle.pending, handle.callback),
         )
 
 

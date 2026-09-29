@@ -22,10 +22,12 @@ Deferred calls tied to their owner's life (docs/DEFERRED_CALLS.md):
     debounced = later.debounced(owner, milliseconds, callback)
     later.soon(owner, callback, *args)
 
-A call runs only while its owner exists: a destroyed window cancels
-its pending calls, and a call whose owner is gone when due is dropped.
-One wx timer, owned by this service, serves every timed call, so no
-tick can reach a deleted window. A failing call is logged, never
+Lazy teardown, by design: nothing is cancelled when an owner closes
+or the application quits. Each call runs its course; when due, a call
+whose owner was deleted is skipped quietly (TASKCOACH_LATER_LOG=1
+logs each skip). One wx timer, owned by this service, serves every
+timed call, so no tick can reach a deleted window; close() frees it
+once the event loop has ended. A failing call is logged, never
 raised. The owner is any object; None means the application.
 """
 
@@ -39,10 +41,11 @@ import time
 from taskcoachlib.meta.debug import log_step
 
 PREFIX = "LATER"
-_WATCHERS = "_deferred_watchers"  # On a window: services watching it
+# Skips are by design and silent; this logs each one
+_LOG_SKIPS = os.environ.get("TASKCOACH_LATER_LOG") == "1"
 
 
-def _is_gone(owner):
+def is_gone(owner):
     """Whether owner is a wx object whose C++ side was deleted."""
     if owner is None:
         return False
@@ -58,36 +61,6 @@ def _is_deleted_error(exc):
     return isinstance(exc, RuntimeError) and "has been deleted" in str(exc)
 
 
-def _address(window):
-    """A window's C++ address: its destroy event may carry another
-    Python proxy of it."""
-    from wx import siplib
-
-    try:
-        return siplib.unwrapinstance(window)
-    except (TypeError, RuntimeError):
-        return None
-
-
-def _key(owner):
-    """Key of a live window's pending calls: its address and Python
-    object; its pending calls hold it, so neither can be reused."""
-    import wx
-
-    if not isinstance(owner, wx.Window):
-        return None
-    address = _address(owner)
-    return None if address is None else (address, id(owner))
-
-
-def _being_deleted(owner):
-    import wx
-
-    return isinstance(owner, wx.Window) and (
-        _is_gone(owner) or owner.IsBeingDeleted()
-    )
-
-
 def _site(depth):
     """File and line that scheduled the call, for the log."""
     frame = sys._getframe(depth)
@@ -97,11 +70,9 @@ def _site(depth):
     )
 
 
-def _quitting():
-    import wx
-
-    app = wx.GetApp()
-    return app is None or getattr(app, "quitting", False)
+def _skipped(reason, site):
+    if _LOG_SKIPS:
+        log_step("skipped: %s, from" % reason, site, prefix=PREFIX)
 
 
 class Handle:
@@ -111,7 +82,6 @@ class Handle:
         "due",
         "seq",
         "owner",
-        "key",
         "callback",
         "args",
         "kwargs",
@@ -188,8 +158,7 @@ class Deferred:
         self.__queue = []
         self.__seq = itertools.count()
         self.__timer = None
-        self.__by_owner = {}  # _key(window) -> its pending handles
-        self.__shut = False  # shutdown() ran and the app still quits
+        self.__closed = False  # close() ran: the event loop has ended
 
     def call(self, owner, milliseconds, callback, *args, **kwargs):
         """Call callback once, milliseconds from now."""
@@ -215,32 +184,34 @@ class Deferred:
 
     def soon(self, owner, callback, *args, **kwargs):
         """Call callback on the next event dispatch, from any thread, in
-        the order of the requests (wx.CallAfter); also while the
-        application quits, as quitting relies on it."""
+        the order of the requests (wx.CallAfter)."""
+        if self.__closed:
+            _skipped("closed", _site(2))
+            return
         import wx
 
         wx.CallAfter(self.__run_soon, owner, callback, args, kwargs, _site(2))
 
-    def shutdown(self):
-        """Drop every pending call and delete the timer; the application
-        calls it once its quit is decided. Timed calls are refused until
-        the application runs again (tests do)."""
-        self.__shut = True
+    def close(self):
+        """Free the timer and the pending calls; the application's last
+        step, once its event loop has ended. Nothing runs after it."""
+        self.__closed = True
+        pending = [handle for handle in self.__queue if not handle.cancelled]
         for handle in self.__queue:
             handle.cancelled = True
             handle.release()
         self.__queue = []
-        self.__by_owner.clear()
         if self.__timer is not None:
             self.__timer.Stop()
             self.__timer = None
+        if _LOG_SKIPS:
+            log_step("closed, %d pending freed" % len(pending), prefix=PREFIX)
 
     def schedule(
         self, owner, milliseconds, callback, args, kwargs, interval, site
     ):
         handle = Handle()
         handle.owner = owner
-        handle.key = None
         handle.callback = callback
         handle.args = args
         handle.kwargs = kwargs
@@ -259,15 +230,14 @@ class Deferred:
         return handle
 
     def cancelled(self, handle):
-        """A handle was cancelled: forget it, let go of what it holds,
-        and set the timer for the next call if it was the earliest (on
-        the GUI thread)."""
+        """A handle was cancelled: let go of what it holds, and set the
+        timer for the next call if it was the earliest (on the GUI
+        thread)."""
         import wx
 
         if not wx.IsMainThread():
             wx.CallAfter(self.cancelled, handle)
             return
-        self.__unindex(handle)
         handle.release()
         if self.__queue and self.__queue[0] is handle:
             self.__rearm()
@@ -278,8 +248,6 @@ class Deferred:
         wait for the next wake, so none can loop; the timer is set for
         them first, so a call running a nested event loop (a dialog)
         does not hold them up."""
-        if self.__closed():
-            return
         now = self.__clock()
         due = []
         while self.__queue and self.__queue[0].due <= now:
@@ -300,93 +268,38 @@ class Deferred:
     def __run(self, handle):
         if handle.cancelled:
             return
-        if self.__closed():  # shutdown() by an earlier call of this wake
-            handle.cancelled = True
+        if is_gone(handle.owner):
+            handle.cancelled = True  # Skipped: no longer pending
+            _skipped("owner gone", handle.site)
             handle.release()
-            return
-        if _is_gone(handle.owner):
-            log_step("dropped: owner gone, from", handle.site, prefix=PREFIX)
-            self.__drop_owner(handle)
             return
         call = (handle.owner, handle.callback, handle.args, handle.kwargs)
-        one_shot = handle.interval is None
-        if one_shot:
+        if handle.interval is None:
             handle.cancelled = True  # Done: no longer pending
-            self.__unindex(handle)
             handle.release()
-        if not self.__invoke(*call, handle.site):
-            self.__drop_owner(handle)
-        elif not (one_shot or handle.cancelled or self.__closed()):
+        self.__invoke(*call, handle.site)
+        if not handle.cancelled:  # A repeat its call did not cancel
             handle.due = self.__clock() + handle.interval / 1000.0
             handle.seq = next(self.__seq)
             heapq.heappush(self.__queue, handle)
 
-    def __closed(self):
-        if self.__shut and not _quitting():
-            self.__shut = False  # The application runs again (tests)
-        return self.__shut
-
     def __push(self, handle):
         if handle.cancelled:
             return
-        if self.__closed() or _being_deleted(handle.owner):
-            handle.cancelled = True  # Its owner goes: it never runs
+        if self.__closed:
+            handle.cancelled = True  # The event loop has ended
+            _skipped("closed", handle.site)
             handle.release()
             return
         heapq.heappush(self.__queue, handle)
-        self.__index(handle)
         if self.__queue[0] is handle:
             self.__rearm()
-
-    def __index(self, handle):
-        key = _key(handle.owner)
-        if key is None:
-            return
-        handle.key = key
-        self.__by_owner.setdefault(key, set()).add(handle)
-        watchers = getattr(handle.owner, _WATCHERS, None)
-        if watchers is None:
-            watchers = set()
-            setattr(handle.owner, _WATCHERS, watchers)
-        if id(self) not in watchers:
-            watchers.add(id(self))
-            self.__watch(handle.owner, key)
-
-    def __unindex(self, handle):
-        handles = self.__by_owner.get(handle.key)
-        if handles is not None:
-            handles.discard(handle)
-            if not handles:
-                del self.__by_owner[handle.key]
-
-    def __watch(self, window, key):
-        import wx
-
-        def on_destroy(event):
-            event.Skip()
-            # Children's destroy events reach this handler too
-            if _address(event.GetEventObject()) == key[0]:
-                self.__forget_owner(key)
-                self.__rearm()
-
-        wx.EvtHandler.Bind(window, wx.EVT_WINDOW_DESTROY, on_destroy)
-
-    def __forget_owner(self, key):
-        for handle in self.__by_owner.pop(key, ()):
-            handle.cancelled = True
-            handle.release()
-
-    def __drop_owner(self, handle):
-        handle.cancelled = True
-        handle.release()
-        if handle.key is not None:
-            self.__forget_owner(handle.key)
 
     def __rearm(self):
         queue = self.__queue
         while queue and queue[0].cancelled:
             heapq.heappop(queue)
-        if not queue or self.__closed():
+        if not queue or self.__closed:
             if self.__timer is not None and self.__timer.IsRunning():
                 self.__timer.Stop()
             return
@@ -407,22 +320,21 @@ class Deferred:
         return self.__timer
 
     def __run_soon(self, owner, callback, args, kwargs, site):
-        if _is_gone(owner):
-            log_step("dropped: owner gone, from", site, prefix=PREFIX)
+        if is_gone(owner):
+            _skipped("owner gone", site)
             return
         self.__invoke(owner, callback, args, kwargs, site)
 
     def __invoke(self, owner, callback, args, kwargs, site):
-        """Run the call, errors logged; False when it failed because its
-        owner was deleted."""
+        """Run the call and log its error, unless the error came from
+        its owner being deleted meanwhile: then it is skipped."""
         try:
             callback(*args, **kwargs)
         except Exception as exc:  # pylint: disable=W0703
-            if _is_gone(owner) and _is_deleted_error(exc):
-                log_step("dropped: owner gone, from", site, prefix=PREFIX)
-                return False
-            log_step("failed, from", site, prefix=PREFIX, exc=True)
-        return True
+            if is_gone(owner) and _is_deleted_error(exc):
+                _skipped("owner gone", site)
+            else:
+                log_step("failed, from", site, prefix=PREFIX, exc=True)
 
 
 later = Deferred()

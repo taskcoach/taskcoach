@@ -238,8 +238,9 @@ an `AuiNotebook`'s manager (the task editor's pages) stays, so
 handlers bound on the notebook never run. Neither the crash guard's
 timer watch ([CRASH_GUARD.md](CRASH_GUARD.md)) nor the Publisher's
 unsubscribe on destroy covers a notebook: a timer it owns ticks into
-freed memory once it is gone. Own such timers elsewhere, or check the
-window at each tick (the geometry trace does).
+freed memory once it is gone. The app's calls go through
+`patterns.later`, which checks the owner when each call is due
+([DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
 
 ---
 

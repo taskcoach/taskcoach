@@ -38,11 +38,11 @@ class GlobalTimerEventTest(test.wxTestCase):
         self.timer = scheduler.GlobalTimer(self.frame)
 
     def tearDown(self):
-        self.timer.stop()
+        self.timer.close()
         super().tearDown()
 
     def tick(self):
-        self.timer._on_tick(None)  # pylint: disable=W0212
+        self.timer._on_tick()  # pylint: disable=W0212
 
     def test_tick_sends_only_timer_second(self):
         # Date and minute changes come from MasterScheduler
@@ -66,6 +66,15 @@ class GlobalTimerEventTest(test.wxTestCase):
         self.tick()
         self.tick()
         self.assertEqual(2, len(self.events))
+
+    def test_a_tick_after_its_window_is_gone_is_skipped(self):
+        window = wx.Panel(self.frame)
+        timer = scheduler.GlobalTimer(window)
+        self.addCleanup(timer.close)
+        self.registerObserver("timer.second")
+        window.Destroy()
+        timer._on_tick()  # pylint: disable=W0212
+        self.assertEqual([], self.events)
 
     def test_multiple_subscribers(self):
         events1 = []

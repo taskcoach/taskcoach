@@ -190,8 +190,9 @@ hypertreelist imported from: /path/to/.venv/lib/python3.X/site-packages/wx/lib/a
 - `[WXPYTHON_PATCH]`: wxPython background coloring patch (import hook and patched module)
 - `[MONKEYPATCH]`: Python compatibility patches (inspect.getargspec, Window.SetSize)
 - `[GEOM]`: geometry trace ([DEVELOPMENT.md](DEVELOPMENT.md#diagnosing))
-- `[LATER]`: deferred calls dropped (owner gone) or failed, with where
-  they were scheduled ([DEFERRED_CALLS.md](DEFERRED_CALLS.md))
+- `[LATER]`: deferred calls that failed, with where they were
+  scheduled; with `TASKCOACH_LATER_LOG=1` also those skipped by design
+  (owner gone) ([DEFERRED_CALLS.md](DEFERRED_CALLS.md))
 
 ---
 

@@ -191,6 +191,11 @@ A comprehensive audit found **9 wx.Timer instances** that needed cleanup:
 
 ### The Modern Fix Pattern: EVT_WINDOW_DESTROY
 
+Superseded 2026-09-29: the app's timers go through `patterns.later`,
+which stops nothing on destroy and skips a call whose owner is gone
+when it is due (lazy teardown,
+[DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
+
 The **best practice** is to use `EVT_WINDOW_DESTROY` for automatic cleanup:
 
 ```python
