@@ -889,7 +889,7 @@ Its pass catches, at the next tick:
 - Override value changes
 - File load (volatile fields populated within 1 second)
 
-**No post-load initialization needed** — the loaded tasks push a second due at once.
+**No post-load initialization needed:** the loaded tasks push a second due at once.
 
 #### SSOT Readers (for UI)
 

@@ -160,7 +160,7 @@ When an XML attribute is missing, the reader provides a default via
 | `plannedstartdate` | not set → `None` → `maxDateTime` | Yes |
 | `percentageComplete` | `"0"` → `0` | Yes |
 | `priority` | `"0"` → `0` | Yes |
-| `plannedDurationMode` | `"implicit"` | Yes — code default is `"implicit"` (`Task.__init__`) |
+| `plannedDurationMode` | `"implicit"` | Yes: code default is `"implicit"` (`Task.__init__`) |
 | `budget` | `""` → `TimeDelta()` | Yes |
 | `hourlyFee` | `"0"` → `0.0` | Yes |
 
