@@ -248,6 +248,9 @@ In the app:
   `LC_ALL`~~: fixed 2026-09-29, **ruled by designer**: POSIX order,
   the first set of `LC_ALL`, `LC_MESSAGES` and `LANG`
   ([LOCALE.md](LOCALE.md)).
+- P22. ~~In the task tree, Ctrl+Enter (Mark task completed) opened
+  the selected task's editor, as Enter does~~: fixed 2026-09-29; the
+  same on master. The tree edits on a plain Enter only.
 
 ## Views on the Effective Styles
 

@@ -741,7 +741,10 @@ class TreeListCtrl(
             )
 
     def on_key_down(self, event):
-        if event.GetKeyCode() == wx.WXK_RETURN:
+        # Only a plain Enter edits: Ctrl+Enter is the menu's Mark
+        # completed, reached when the event is skipped
+        plain = not event.GetKeyEvent().HasAnyModifiers()
+        if event.GetKeyCode() == wx.WXK_RETURN and plain:
             self.editCommand(event)
         elif event.GetKeyCode() == wx.WXK_F2 and self.GetSelections():
             self.EditLabel(self.GetSelections()[0], column=0)
