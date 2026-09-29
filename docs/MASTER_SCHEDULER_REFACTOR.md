@@ -214,7 +214,9 @@ In the app:
   February), an unused one is dropped, and a header bound is appended
   as one tuple.
 - P14. A zero-size calendar pane assertion at startup.
-- P15. A list's tooltip stays shown over an editor opened from it.
+- P15. ~~A list's tooltip stays shown over an editor opened from
+  it~~: fixed 2026-09-29. It hid only when the mouse moved or left
+  the list; opening an editor now hides it and drops a pending one.
 - P16. Every launch logs `gtk_distribute_natural_allocation: assertion
   'extra_space >= 0' failed`; on the designer's display also
   `gdk_window_thaw_toplevel_updates`.

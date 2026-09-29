@@ -40,8 +40,8 @@ class ToolTipMixin(object):
         self.__text = None
         self.__frozen = True
 
-        self.GetMainWindow().Bind(wx.EVT_MOTION, self.__OnMotion)
-        self.GetMainWindow().Bind(wx.EVT_LEAVE_WINDOW, self.__OnLeave)
+        self.GetMainWindow().Bind(wx.EVT_MOTION, self.__on_motion)
+        self.GetMainWindow().Bind(wx.EVT_LEAVE_WINDOW, self.__on_leave)
 
     def PopupMenu(self, menu):
         self.__frozen = False
@@ -87,20 +87,22 @@ class ToolTipMixin(object):
         if self.__tip:
             self.__tip.Hide()
 
+    def cancel_tip(self):
+        """Hide the tip and drop a pending one: the mouse moved on, or
+        a window (an editor) opened over the control."""
+        self.__tip_later.cancel()
+        if self.__tip is not None:
+            self.HideTip()
+            self.__tip = None
+
     def OnBeforeShowToolTip(self, x, y):
         """Should return a wx.Frame instance that will be displayed as
         the tooltip, or None."""
         raise NotImplementedError  # pragma: no cover
 
-    def __OnMotion(self, event):
+    def __on_motion(self, event):
         x, y = event.GetPosition()
-
-        self.__tip_later.cancel()
-
-        if self.__tip is not None:
-            self.HideTip()
-            self.__tip = None
-
+        self.cancel_tip()
         if settings2.view.descriptionpopups:
             self.__position = (x + 20, y + 10)
             self.__pending_xy = (x, y)
@@ -108,16 +110,11 @@ class ToolTipMixin(object):
 
         event.Skip()
 
-    def __OnTipMotion(self, event):  # pylint: disable=W0613
+    def __on_tip_motion(self, event):  # pylint: disable=W0613
         self.HideTip()
 
-    def __OnLeave(self, event):
-        self.__tip_later.cancel()
-
-        if self.__tip is not None:
-            self.HideTip()
-            self.__tip = None
-
+    def __on_leave(self, event):
+        self.cancel_tip()
         event.Skip()
 
     def __show_pending_tip(self):
@@ -125,7 +122,7 @@ class ToolTipMixin(object):
         newTip = self.OnBeforeShowToolTip(x, y)
         if newTip is not None:
             self.__tip = newTip
-            self.__tip.Bind(wx.EVT_MOTION, self.__OnTipMotion)
+            self.__tip.Bind(wx.EVT_MOTION, self.__on_tip_motion)
             self.ShowTip(
                 *self.GetMainWindow().ClientToScreen(*self.__position)
             )

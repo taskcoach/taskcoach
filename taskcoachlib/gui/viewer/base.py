@@ -756,6 +756,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
     def editItemDialog(
         self, items, icon_id, columnName="", items_are_new=False
     ):
+        self.cancel_tip()
         parent = wx.GetTopLevelParent(self)
         # If the viewer is inside an Editor dialog (e.g. EffortViewer inside
         # TaskEditor), parent to main window instead. Otherwise Destroy() on
@@ -774,6 +775,12 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             columnName=columnName,
             items_are_new=items_are_new,
         )
+
+    def cancel_tip(self):
+        """No list tooltip over an editor opened from the list."""
+        cancel_tip = getattr(self.widget, "cancel_tip", None)
+        if cancel_tip:
+            cancel_tip()
 
     def itemEditorClass(self):
         raise NotImplementedError
