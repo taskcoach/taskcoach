@@ -94,9 +94,9 @@ go at the end. Details live in the sections and documents linked.
     7. ~~Docs~~.
     8. ~~Checked in the app, every view; the full suite~~ (the task
        dependency graph not opened: igraph not installed here).
-    9. The designer to confirm: a subtask does not take its parent's
-       status or tracking style (each task shows its own, as the views
-       did before).
+    9. ~~A subtask does not take its parent's status or tracking
+       style~~: no ruling needed, it keeps what the views always showed
+       (each task its own status).
 36. The task editor's Progress tab: a second percentage control and
     slider drawn over the tab labels, seen only under Xvfb; to check on
     a real display.
@@ -159,7 +159,7 @@ Found on the way, fixed:
 - The effective rule gave a subtask its parent's status and tracking
   styles (a completed subtask of an active task drawn active, the
   clock on every subtask of a tracked task): a task's own state is no
-  longer passed down (to do 35.9).
+  longer passed down, as the views always showed (to do 35.9).
 - A task's status icon never reached its effective icon: the status
   getter's name was wrong since #386.
 - The effective setters sent one event per value, default and source:
