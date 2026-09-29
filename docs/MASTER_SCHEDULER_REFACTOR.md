@@ -191,8 +191,10 @@ refactor; unchanged by its steps, crossed out when fixed):
   in the app; the tests' stand-in was a plain task list.
 - P10. `unittests/widgetTests/WindowDimensionsTrackerTest.py`: 2
   failures (size, move).
-- P11. `unittests/guiTests/MainWindowTest.py` and
-  `thirdPartySoftwareTests/wxPythonTest.py`: 1 failure each.
+- P11. `unittests/guiTests/MainWindowTest.py`: 1 failure.
+  ~~`thirdPartySoftwareTests/wxPythonTest.py`~~: fixed 2026-09-29,
+  the test only: since wxWidgets 3.2, GTK also sends no text event
+  when an empty text control is cleared.
   ~~`widgetTests/DragAndDropTest.py`~~: fixed 2026-09-29, the test
   only: its tree showed its root, which a tree selects by itself, so
   a drag took the root; the app's trees hide it.
@@ -218,8 +220,14 @@ In the app:
   2026-09-29, raw strings.
 - P18. ~~The dependency graph viewer's size event method outside its
   class~~: fixed 2026-09-29 (not run: igraph is not installed here).
-- P19. `languagetests/TranslationIntegrityTest.py` fails to load:
-  `po2dict.make("messages")` raises `KeyError: ''`.
+- P19. ~~`languagetests/TranslationIntegrityTest.py` fails to
+  load~~: fixed 2026-09-29, the test only. It used the compile step
+  the Python 3 migration retired; it now reads the `.po` files as the
+  app does ([TRANSLATIONS.md](TRANSLATIONS.md)). All placeholders
+  match.
+- P20. Belarusian and Danish are fully translated, Hungarian and
+  Swedish over 99%, but disabled (`meta/data.py`); the translation
+  test flags each. Designer's decision: enable them, or keep them off.
 
 ## Views on the Effective Styles
 
