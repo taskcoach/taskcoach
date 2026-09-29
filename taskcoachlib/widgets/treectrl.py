@@ -411,8 +411,9 @@ class TreeListCtrl(
         return len(self.GetSelections()) == 1
 
     def curselection(self):
-        # Guard against deleted C++ object - can happen when a later call
-        # runs after window destruction (e.g., closing nested dialogs)
+        # Guard against deleted C++ object - can happen when a later
+        # call runs after window destruction (e.g., closing nested
+        # dialogs)
         try:
             # Filter out None values - GetItemPyData can return None
             # for some items

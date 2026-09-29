@@ -66,7 +66,8 @@ class AddNoteCommandTest(NoteCommandTestCase):
         )  # pylint: disable=E1101
 
     def cut_subnote(self):
-        # As in the task editor, whose notes page lists the owner's notes
+        # As in the task editor, whose notes page lists its owner's
+        # notes
         self.owner = NoteOwnerUnderTest()
         self.parent = note.Note(subject="parent")
         self.child = note.Note(subject="child")

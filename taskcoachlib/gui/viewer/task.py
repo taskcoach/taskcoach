@@ -2579,8 +2579,9 @@ else:
             DESIGN NOTE (Twisted Removal - 2024):
             Previously used @inlineCallbacks and deferToThread from Twisted.
             Now uses concurrent.futures.ThreadPoolExecutor with
-            patterns.later.soon for thread-safe GUI updates. This maintains the same async behavior
-            without requiring the Twisted reactor.
+            patterns.later.soon for thread-safe GUI updates. This
+            maintains the same async behavior without requiring the
+            Twisted reactor.
             """
             while self._needsUpdate:
                 # Compute this in main thread because of concurrent access issues

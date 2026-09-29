@@ -232,8 +232,9 @@ class Object:
         self.set_icon_id(state["icon"], event=event)
         self.setOrdering(state["ordering"], event=event)
         self.__creationDateTime = state["creationDateTime"]
-        # Set modification date/time last to overwrite changes made by the
-        # setters above
+        # After the setters above, which set it. A subclass's setters
+        # run after this and set it again: undo and redo put back the
+        # right date last (BaseCommand.__set_dates)
         self.set_modification_datetime(
             state["modificationDateTime"], event=event
         )

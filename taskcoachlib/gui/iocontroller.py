@@ -511,7 +511,7 @@ class IOController(object):
             )
             return False
         except Exception as reason:  # pylint: disable=W0703
-            # Not only OSError: e.g. merging a corrupt file on disk
+            # Not only OSError: e.g. the file changed on disk
             log_step("cannot save %s" % filename, prefix="FILE", exc=True)
             error_message = _("Cannot save %s\n%s") % (
                 filename,

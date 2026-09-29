@@ -127,8 +127,8 @@ class DynamicMenu(Menu):
 
     def registerForMenuUpdate(self):
         """Subclasses are responsible for binding an event to
-        on_update_menu so that the menu gets a chance to update itself at
-        the right time."""
+        on_update_menu so that the menu gets a chance to update itself
+        at the right time."""
         raise NotImplementedError
 
     def on_update_menu(self, event=None):
@@ -959,7 +959,8 @@ def trackable_task_tree(tasks):
     """What the start tracking menus show, as (task, trackable,
     children) for each task that can be tracked or has subtasks that
     can, sorted like the category menus. A completed task only holds
-    its subtasks. tasks decides which tasks count (e.g. the viewer's)."""
+    its subtasks. tasks decides which tasks count (e.g. the
+    viewer's)."""
 
     def nodes(candidates):
         result = []
