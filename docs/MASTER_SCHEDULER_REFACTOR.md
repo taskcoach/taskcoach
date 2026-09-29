@@ -93,9 +93,10 @@ go at the end. Details live in the sections and documents linked.
 39. Renames deferred as too wide, each its own change: the task date
     setters (`setReminder()`, `setDueDateTime()`,
     `setPlannedStartDateTime()`, `setActualStartDateTime()`,
-    `setCompletionDateTime()`, about 465 calls), `setParent()` (65) and
-    `setTask()` (25), with name-coupled callers such as `merge.py`
-    (`"set" + kind`) in lockstep ([PEP8_MIGRATION.md](PEP8_MIGRATION.md)).
+    `setCompletionDateTime()`, about 465 calls), `setParent()` (56) and
+    `setTask()` (28), with the names held in strings in lockstep
+    (`hasattr(item, "setTask")` in the effort editor, a setter table in
+    `TaskTest.py`) ([PEP8_MIGRATION.md](PEP8_MIGRATION.md)).
 40. ~~Signal cleanup~~: subscriptions end with their window, toolbar,
     menu or editor page; the guards that became unreachable are gone,
     the others guard delayed calls and destruction
@@ -107,7 +108,9 @@ go at the end. Details live in the sections and documents linked.
 43. Squash to one commit before pushing, version 2.0.3.0 in the body;
     the release date (2026-09-28) may move.
 44. One app run on 2026-09-28 logged a traceback (log lost, not
-    reproduced in four runs of the same steps): watch for it.
+    reproduced in four runs of the same steps): watch for it. A
+    candidate, from master (#297): the spell check's 0.3 s timer
+    firing after its editor closed, seen in the unit tests that day.
 45. Not planned: the reason for each entry
     ([Later](#later-the-reason-for-each-entry)).
 46. ~~Status-first sort re-sorts on the clock's status changes~~: once
