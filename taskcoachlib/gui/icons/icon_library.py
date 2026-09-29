@@ -762,6 +762,8 @@ def init():
     Calls _load_all_themes() (legacy, file-based, synthetic), sets up
     Windows remap option, and verifies fallback.
     """
+    if len(icon_catalog):
+        return  # Done already (a test that starts the application)
     from taskcoachlib import operating_system
     import wx
 
