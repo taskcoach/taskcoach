@@ -415,6 +415,15 @@ class CategoryTest(test.TestCase):
             test.styled(self.subCategory).shown_icon_id(),
         )
 
+    def test_icon_change_names_its_items(self):
+        # Their Category icons column shows it
+        self.category.addCategorizable(self.categorizable)
+        events = test.ChangeRecorder(
+            self.categorizable.effectiveIconChangedEventType()
+        )
+        self.category.set_icon_id("icon")
+        self.assertIn(self.categorizable, events)
+
     # Notes:
 
     def testAddNote(self):

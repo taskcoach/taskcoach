@@ -164,8 +164,6 @@ Found on the way, fixed:
   getter's name was wrong since #386.
 - The effective setters sent one event per value, default and source:
   up to three refreshes per style change, now one.
-- Categories re-sent their effective icon event for each of their
-  items, which the loop already sends when an item's icon changes.
 - Until the loop's first pass styles a new or loaded task, its icon is
   empty; the calendar drew it as an invalid bitmap and lost tasks, the
   start tracking menu logged an invalid icon. Both skip it now, as the

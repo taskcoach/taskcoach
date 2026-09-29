@@ -2283,6 +2283,11 @@ class TaskStatsViewer(BaseTaskViewer):  # pylint: disable=W0223
             eventSource=self.settings,
         )
 
+    def _on_task_status_changed(self, event):
+        super()._on_task_status_changed(event)
+        # The pie counts the statuses
+        self.refresh()
+
     def createWidget(self):
         widget = wx.lib.agw.piectrl.PieCtrl(self)
         widget.SetShowEdges(False)
