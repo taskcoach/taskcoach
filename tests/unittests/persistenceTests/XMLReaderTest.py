@@ -138,6 +138,13 @@ class XMLReaderTestCase(test.TestCase):
         return categories, notes
 
 
+class XMLReaderWithoutVersionTest(test.TestCase):
+    def test_a_file_without_a_version_is_refused(self):
+        fd = io.StringIO("<tasks/>")
+        fd.name = "testfile.tsk"
+        self.assertRaises(ValueError, persistence.XMLReader(fd).read)
+
+
 class TempFileLockTest(XMLReaderTestCase):
     tskversion = 25
 

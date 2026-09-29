@@ -152,20 +152,6 @@ def parseAndAdjustDateTime(string, *timeDefaults):
     return dateTime
 
 
-class PIParser(ET.XMLParser):
-    """See http://effbot.org/zone/element-pi.htm"""
-
-    def __init__(self):
-        super().__init__()
-
-        # FIXME: The codes below no longer works with lastest python
-        #
-        # Codes refs: https://uucode.com/blog/2012/06/19/xmletreeelementtree-and-processing-instructions/
-        # self._parser.ProcessingInstructionHandler = self.handle_pi
-        #
-        # Use lxml's ElementTree instead, it's provided better Processing Instruction handling
-
-
 class XMLReaderTooNewException(Exception):
     pass
 
@@ -223,15 +209,15 @@ class XMLReader(object):
         notes."""
         if self.__has_broken_lines():
             self.__fix_broken_lines()
-        parser = PIParser()
-        tree = ET.parse(self.__fd, parser)
-        root = tree.getroot()
-        pis = tree.getroot().xpath("//processing-instruction()")
-        for pi in pis:
-            if pi.target == "taskcoach":
-                tskversion = int(pi.attrib.get("tskversion"))
-                break
-        self.__tskversion = tskversion  # pylint: disable=W0201
+        root = ET.parse(self.__fd).getroot()  # lxml reads the PIs
+        versions = [
+            pi.attrib.get("tskversion")
+            for pi in root.xpath("//processing-instruction()")
+            if pi.target == "taskcoach"
+        ]
+        if not versions or versions[0] is None:
+            raise ValueError("no Task Coach file version (tskversion)")
+        self.__tskversion = int(versions[0])  # pylint: disable=W0201
         if self.__tskversion > meta.data.tskversion:
             # Version number of task file is too high
             raise XMLReaderTooNewException
