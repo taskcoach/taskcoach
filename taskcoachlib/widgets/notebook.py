@@ -72,9 +72,11 @@ class BookPage(wx.Panel):
     def fit(self):
         # Wrap GridBagSizer in outer BoxSizer with margins for proper spacing
         # Only create the outer sizer once - calling fit() multiple times is safe
-        if not hasattr(self, '_outerSizer') or self._outerSizer is None:
+        if not hasattr(self, "_outerSizer") or self._outerSizer is None:
             self._outerSizer = wx.BoxSizer(wx.VERTICAL)
-            self._outerSizer.Add(self._sizer, 1, wx.EXPAND | wx.ALL, self._outerMargin)
+            self._outerSizer.Add(
+                self._sizer, 1, wx.EXPAND | wx.ALL, self._outerMargin
+            )
             self.SetSizer(self._outerSizer)
         self.Layout()  # Force layout recalculation (needed on Windows for lazy-loaded pages)
 
@@ -186,9 +188,11 @@ class ScrolledBookPage(scrolledpanel.ScrolledPanel):
 
     def fit(self):
         # Wrap GridBagSizer in outer BoxSizer with margins for proper spacing
-        if not hasattr(self, '_outerSizer') or self._outerSizer is None:
+        if not hasattr(self, "_outerSizer") or self._outerSizer is None:
             self._outerSizer = wx.BoxSizer(wx.VERTICAL)
-            self._outerSizer.Add(self._sizer, 1, wx.EXPAND | wx.ALL, self._outerMargin)
+            self._outerSizer.Add(
+                self._sizer, 1, wx.EXPAND | wx.ALL, self._outerMargin
+            )
             self.SetSizer(self._outerSizer)
         self.SetupScrolling(scroll_x=True, scroll_y=True)
         self.Layout()
@@ -222,8 +226,10 @@ class ScrolledBookPage(scrolledpanel.ScrolledPanel):
         lastColumnIndex = len(controls) - 1
         for columnIndex, control in enumerate(controls):
             self._ScrolledBookPage__addControl(
-                columnIndex, control, flags[columnIndex],
-                columnIndex == lastColumnIndex
+                columnIndex,
+                control,
+                flags[columnIndex],
+                columnIndex == lastColumnIndex,
             )
         if kwargs.get("growable", False):
             self._sizer.AddGrowableRow(self._position.maxRow())
@@ -312,10 +318,21 @@ class Notebook(BookMixin, aui.AuiNotebook):
         # Disable focus on internal AUI TabFrame to prevent "lost" tab keypress
         self.__disableTabFrameFocus()
 
+    def SetSelection(self, new_page, force=False):
+        # AUI shows the page, then forces a paint (Update()). GTK 3
+        # places a shown page only at the next frame, so that paint
+        # drew it unplaced, over the tabs, and nothing repainted there.
+        # Frozen, the notebook paints at the next frame, placed.
+        self.Freeze()
+        try:
+            return super().SetSelection(new_page, force)
+        finally:
+            self.Thaw()
+
     def __disableTabFrameFocus(self):
         """Disable focus on internal AUI TabFrame windows."""
         for child in self.GetChildren():
-            if child.__class__.__name__ == 'TabFrame':
+            if child.__class__.__name__ == "TabFrame":
                 child.SetCanFocus(False)
 
     def __onTabMouseWheel(self, event):

@@ -10,7 +10,8 @@ This document covers AUI-related topics for Task Coach, which uses wxPython's AG
 2. [Sash Cursor Seep-Through Fix](#sash-cursor-seep-through-fix)
 3. [System Colour Change Event](#system-colour-change-event)
 4. [Destroy Event](#destroy-event)
-5. [Related Documentation](#related-documentation)
+5. [Page Painted Over the Tabs](#page-painted-over-the-tabs)
+6. [Related Documentation](#related-documentation)
 
 ---
 
@@ -237,6 +238,47 @@ window without `Skip()`, so handlers bound on the main window or on an
 destroy covers these windows: a timer they own ticks into freed memory
 once they are gone. Own such timers elsewhere, or check the window at
 each tick (the geometry trace does).
+
+---
+
+## Page Painted Over the Tabs
+
+### Problem
+
+On GTK 3, a task editor page shown for the first time could draw
+widgets over the tab row until something repainted the tabs: the
+Progress page's percentage control and slider, the Effort page's
+details dropdown, and the Search box of the Effort, Notes and
+Attachments pages (at the row's empty right end, so easy to miss).
+Seen with the editor maximized or resized.
+
+### Root Cause
+
+`AuiNotebook.SetSelection()` shows the page (`SetActivePage()`), then
+paints at once (`Update()` in `AuiTabFrame.DoSizing()` and after
+setting the tab fonts). GTK 3 places a shown widget only at the next
+frame, so that paint drew the page unplaced, at the notebook's top left
+over the tabs. Placing it then repainted nothing there: unplaced, the
+page counted as 1x1. Only widgets with a size drew: GTK sizes a hidden
+widget only when wx resizes it during a window layout (maximizing,
+resizing), so only the widgets that stretch with the notebook (the
+Progress slider and dropdown, the viewers and their toolbars). Fixed
+size widgets stayed 1x1 and drew nothing; the Prerequisites and
+Categories pages create theirs when first selected; a page shown once
+keeps its place.
+
+### Solution
+
+`Notebook.SetSelection()` freezes the notebook for the call, so the
+forced paints skip it and the page draws at the next frame, placed.
+Found with the geometry trace ([DEVELOPMENT.md](DEVELOPMENT.md#diagnosing)).
+
+### Related Files
+
+| File | Purpose |
+|------|---------|
+| `taskcoachlib/widgets/notebook.py` | `Notebook.SetSelection()` - freezes the notebook |
+| `wx/lib/agw/aui/auibook.py` | System file - `SetSelection()`, `AuiTabFrame.DoSizing()` |
 
 ---
 
