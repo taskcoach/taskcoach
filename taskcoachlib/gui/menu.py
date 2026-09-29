@@ -126,11 +126,12 @@ class DynamicMenu(Menu):
         self.updateMenu()
 
     def registerForMenuUpdate(self):
-        """Subclasses are responsible for binding an event to onUpdateMenu so
-        that the menu gets a chance to update itself at the right time."""
+        """Subclasses are responsible for binding an event to
+        on_update_menu so that the menu gets a chance to update itself at
+        the right time."""
         raise NotImplementedError
 
-    def onUpdateMenu_Deprecated(self, event=None):
+    def on_update_menu(self, event=None):
         """This event handler should be called at the right times so that
         the menu has a chance to update itself."""
         # If this is called by wx, 'skip' the event so that other event
@@ -143,9 +144,7 @@ class DynamicMenu(Menu):
         try:  # Prepare for menu or window to be destroyed
             self.updateMenu()
         except (RuntimeError, wx.wxAssertionError):
-            log_step(
-                "onUpdateMenu_Deprecated: menu/window dead", prefix="DEAD-OBJ"
-            )
+            log_step("on_update_menu: menu/window dead", prefix="DEAD-OBJ")
 
     def updateMenu(self):
         """Updating the menu consists of two steps: updating the menu item
@@ -206,7 +205,7 @@ class DynamicMenuThatGetsUICommandsFromViewer(DynamicMenu):
     def registerForMenuUpdate(self):
         # Refill the menu whenever the menu is opened, because the menu might
         # depend on the status of the viewer:
-        self._window.Bind(wx.EVT_MENU_OPEN, self.onUpdateMenu_Deprecated)
+        self._window.Bind(wx.EVT_MENU_OPEN, self.on_update_menu)
 
     def updateMenuItems(self):
         newCommands = self.getUICommands()
@@ -426,7 +425,7 @@ class TaskTemplateMenu(DynamicMenu):
         if self._parentMenu is not None:
             # The parent's open, not our own: GTK3 sizes a menu before
             # its own EVT_MENU_OPEN handlers run
-            self._window.Bind(wx.EVT_MENU_OPEN, self.onUpdateMenu_Deprecated)
+            self._window.Bind(wx.EVT_MENU_OPEN, self.on_update_menu)
 
     def updateMenuItems(self):
         self.clearMenu()
@@ -916,12 +915,12 @@ class ToggleCategoryMenu(DynamicMenu):
             self.categories.removeItemEventType(),
         ):
             patterns.Publisher().registerObserver(
-                self.onUpdateMenu_Deprecated,
+                self.on_update_menu,
                 eventType=eventType,
                 eventSource=self.categories,
             )
         patterns.Publisher().registerObserver(
-            self.onUpdateMenu_Deprecated,
+            self.on_update_menu,
             eventType=category.Category.subjectChangedEventType(),
         )
 
@@ -960,7 +959,7 @@ def trackable_task_tree(tasks):
     """What the start tracking menus show, as (task, trackable,
     children) for each task that can be tracked or has subtasks that
     can, sorted like the category menus. A completed task only holds
-    its subtasks. tasks decides which tasks count (e.g. no deleted)."""
+    its subtasks. tasks decides which tasks count (e.g. the viewer's)."""
 
     def nodes(candidates):
         result = []

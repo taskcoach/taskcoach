@@ -84,6 +84,4 @@ class StatusBar(wx.StatusBar):
     def Destroy(self):  # pylint: disable=W0221
         for eventType in self.wxEventTypes:
             self.parent.Unbind(eventType)
-        # No callbacks after destruction
-        patterns.Publisher().removeObserver(self.on_viewer_status_changed)
-        super().Destroy()
+        super().Destroy()  # Its destroy ends its subscriptions

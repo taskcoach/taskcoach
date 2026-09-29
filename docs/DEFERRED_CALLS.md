@@ -24,9 +24,9 @@ day.
    object it serves (usually the window it acts on) and never runs
    once that owner is deleted. wx does not tie a call to a window, so
    the app does.
-2. **Safe by construction, not by discipline.** No call site stops a
-   timer on destroy or wraps its callback in a liveness check; the
-   service does it for all. A test fails if app code schedules through
+2. **Safe by construction, not by discipline.** No call site needs to
+   stop a timer on destroy or wrap its callback in a liveness check;
+   the service does it for all ([Limits](#limits): older checks). A test fails if app code schedules through
    wx directly, so the rule cannot erode.
 3. **One implementation per operation** (the Modular canon,
    [DEVELOPMENT.md](DEVELOPMENT.md#design)): one queue, one timer, one
@@ -258,6 +258,11 @@ those windows go, as on master.
   seconds, under the same rule: its tick is skipped once the main
   window is gone, and it is freed at the [End of Life](#end-of-life)
   ([SCHEDULERS.md](SCHEDULERS.md)).
+- Older callbacks keep their own checks: the `__safe*()` wrappers
+  are now a second check; `not self or IsBeingDeleted()` also skips a
+  window being deleted, which the service still runs (a top-level
+  window until wx deletes it, [How It Works](#how-it-works)). The
+  list: [PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#signaling-system-cleanup).
 - A wx event handler reaching a deleted window is not a deferred
   call, but the same rule holds: the handler exits when its window is
   gone (a date popup's text event after its editor closed, P12 in
