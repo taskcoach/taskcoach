@@ -81,8 +81,8 @@ def _data_event_types():
     modification except the fields no loop step reads (typing in them
     must not run the loop every second), tracking, and the loop's own
     outputs, whose changes cascade (docs/MASTER_SCHEDULER_REFACTOR.md).
-    Other computed values (time spent, budget left, revenue, the
-    effective priority) are not read."""
+    Other computed values (time spent, budget left, revenue, a
+    subtree's priority) are not read."""
     event_types = set()
     for klass in _DOMAIN_CLASSES:
         unread = set()

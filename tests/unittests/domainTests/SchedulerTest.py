@@ -281,7 +281,7 @@ class MasterTimerListTest(test.wxTestCase):
         self.assertFalse(self.tick())
 
     def test_a_priority_change_runs_nothing(self):
-        # Nor the effective priorities: the loop reads neither
+        # Nor for the ancestors it names: the loop reads no priority
         self.settle()
         self.task.setPriority(5)
         self.assertFalse(self.tick())

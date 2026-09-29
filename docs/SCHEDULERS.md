@@ -19,8 +19,8 @@
 
 1. **Decided 2026-09-28: recursive priority stays out of the
    scheduler.** It depends on data only (priorities, completion, the
-   tree), never on time, so it goes by events: the effective priority
-   ([TASK_FIELDS.md](TASK_FIELDS.md#effective-priority)). Computed by
+   tree), never on time, so it goes by events, as it always did
+   ([TASK_FIELDS.md](TASK_FIELDS.md#priority)). Computed by
    the loop it would lag a tick behind each edit and climb one level
    per pass, as the loop visits parents first.
 

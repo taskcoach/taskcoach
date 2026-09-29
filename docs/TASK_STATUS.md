@@ -85,8 +85,9 @@ Action methods (`completed()`, `allChildrenCompleted()`, etc.) must use **direct
 
 ## Appearance Inheritance Overview
 
-Own, derived and effective values are separate fields; other task
-fields follow the same pattern ([TASK_FIELDS.md](TASK_FIELDS.md)).
+Own, derived and effective values are separate fields; for other task
+fields the same split is postponed
+([TASK_FIELDS.md](TASK_FIELDS.md#postponed-base-and-effective-fields)).
 
 ### ComputeStyles Polling (New Architecture)
 

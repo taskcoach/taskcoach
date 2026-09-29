@@ -600,16 +600,6 @@ class SortableViewerForTasksMixin(
             (_("&Time spent"), _("Sort tasks by time spent"), "timeSpent"),
             (_("Budget &left"), _("Sort tasks by budget left"), "budgetLeft"),
             (_("&Priority"), _("Sort tasks by priority"), "priority"),
-            (
-                _("&Direct priority"),
-                _("Sort tasks by direct priority"),
-                "directPriority",
-            ),
-            (
-                _("&Effective priority"),
-                _("Sort tasks by effective priority"),
-                "effectivePriority",
-            ),
             (_("&Hourly fee"), _("Sort tasks by hourly fee"), "hourlyFee"),
             (_("&Fixed fee"), _("Sort tasks by fixed fee"), "fixedFee"),
             (_("&Revenue"), _("Sort tasks by revenue"), "revenue"),

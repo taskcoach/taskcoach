@@ -64,9 +64,9 @@ go at the end. Details live in the sections and documents linked.
 26. ~~Object identity: decided, one object per ID within a file, the
     file to merge held apart.~~
     [PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)
-27. ~~Recursive priority in the loop: decided, no; the effective
-    priority, by events.~~
-    [TASK_FIELDS.md](TASK_FIELDS.md#effective-priority)
+27. ~~Recursive priority in the loop: decided, no; by events, as it
+    always did.~~
+    [TASK_FIELDS.md](TASK_FIELDS.md#priority)
 28. ~~Recurrence changes reached only the subtask: done.~~
     [TASK_FIELDS.md](TASK_FIELDS.md#subtree-values-in-other-columns)
 29. ~~Duplicate IDs in a file: done, corrected when read, with a
@@ -84,23 +84,9 @@ go at the end. Details live in the sections and documents linked.
     ([Views on the Effective Styles](#views-on-the-effective-styles)).
 36. ~~Pages drawn over the editor's tabs~~
     ([AUI.md](AUI.md#page-painted-over-the-tabs)).
-37. Direct and effective fields beside the 13 other core fields, one
-    at a time after the priority trial (52); the core columns stay.
-    None is read by the loop (what each is:
-    [TASK_FIELDS.md](TASK_FIELDS.md#subtree-values-in-other-columns)):
-    1. Planned start date.
-    2. Due date.
-    3. Actual start date.
-    4. Completion date.
-    5. Reminder.
-    6. Time left.
-    7. Recurrence.
-    8. % complete.
-    9. Time spent.
-    10. Budget.
-    11. Budget left.
-    12. Fixed fee.
-    13. Revenue.
+37. ~~Base and effective fields beside the 14 core fields~~:
+    postponed, not load-bearing for this refactor
+    ([TASK_FIELDS.md](TASK_FIELDS.md#postponed-base-and-effective-fields)).
 38. ~~`Timestamp.now()` always later than the one before~~: removed,
     it returned made-up times; the dates are the clock's
     ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#ids)).
@@ -135,9 +121,8 @@ go at the end. Details live in the sections and documents linked.
     did not, on master either.
 51. ~~Empty event type~~: gone, and `removeObserver()` reads only None
     as "any".
-52. ~~Priority restored as a core field~~, with Direct priority and
-    Effective priority beside it
-    ([TASK_FIELDS.md](TASK_FIELDS.md#core-fields)).
+52. ~~Priority as it was~~: the effective priority of 2026-09-28
+    undone, with 37 ([TASK_FIELDS.md](TASK_FIELDS.md#priority)).
 
 ## Views on the Effective Styles
 
@@ -463,7 +448,7 @@ in `gui/scheduler.py`), a task's tracking, and the loop's own outputs
 status, reminder or style, such as the subject, the description, the
 fees, the priority and the expanded state, so typing does not run the
 loop every second. Computed values the loop does not read (time
-spent, budget left, revenue, the effective priority) run nothing.
+spent, budget left, revenue, the subtree values) run nothing.
 
 The safe side decides doubtful fields: one wrongly left in costs a
 loop; one wrongly left out is a miss, which the check mode of item 5

@@ -727,16 +727,15 @@ class DefaultTaskStateTest(
         self.task.addChild(task.Task())
         self.assertFalse(events)
 
-    def test_add_child_sends_effective_priority_changed(self):
-        self.registerObserver(
-            task.Task.effective_priority_changed_event_type()
-        )
-        self.task.addChild(task.Task(priority=10))
+    def testAddChildWithHigherPriorityCausesPriorityNotification(self):
+        self.registerObserver(task.Task.priorityChangedEventType())
+        child = task.Task(priority=10)
+        self.task.addChild(child)
         self.assertIn(self.task, self.events[0].sources())
 
-    def test_add_child_leaves_the_priority_unchanged(self):
+    def testAddChildWithLowerPriorityCausesNoPriorityNotification(self):
         self.registerObserver(task.Task.priorityChangedEventType())
-        self.task.addChild(task.Task(priority=10))
+        self.task.addChild(task.Task(priority=-10))
         self.assertFalse(self.events)
 
     def test_add_child_with_revenue_causes_revenue_notification(self):
@@ -1721,16 +1720,14 @@ class TaskWithChildTest(
         self.task1.removeChild(self.task1_1)
         self.assertFalse(events)
 
-    def test_remove_child_sends_effective_priority_changed(self):
+    def testRemoveChildWithHighPriorityCausesPriorityNotification(self):
         self.task1_1.setPriority(10)
-        self.registerObserver(
-            task.Task.effective_priority_changed_event_type()
-        )
+        self.registerObserver(task.Task.priorityChangedEventType())
         self.task1.removeChild(self.task1_1)
         self.assertIn(self.task1, self.events[0].sources())
 
-    def test_remove_child_leaves_the_priority_unchanged(self):
-        self.task1_1.setPriority(10)
+    def testRemoveChildWithLowPriorityCausesNoTotalPriorityNotification(self):
+        self.task1_1.setPriority(-10)
         self.registerObserver(task.Task.priorityChangedEventType())
         self.task1.removeChild(self.task1_1)
         self.assertFalse(self.events)
@@ -2025,17 +2022,19 @@ class TaskWithChildTest(
         self.task1_1.set_recurrence(date.Recurrence("weekly"))
         self.assertEqual({self.task1_1, self.task1}, self.events[0].sources())
 
-    def test_subtask_priority_change_names_the_chain(self):
-        self.registerObserver(
-            task.Task.effective_priority_changed_event_type()
-        )
-        self.task1_1.setPriority(10)
-        self.assertEqual({self.task1_1, self.task1}, self.events[0].sources())
-
-    def test_subtask_priority_change_is_only_its_own(self):
+    def testRecursivePriorityNotification(self):
         self.registerObserver(task.Task.priorityChangedEventType())
         self.task1_1.setPriority(10)
-        self.assertEqual({self.task1_1}, self.events[0].sources())
+        sources = self.events[0].sources()
+        self.assertIn(self.task1_1, sources)
+        self.assertIn(self.task1, sources)
+
+    def testPriorityNotification_WithLowerChildPriority(self):
+        self.registerObserver(task.Task.priorityChangedEventType())
+        self.task1_1.setPriority(-1)
+        sources = self.events[0].sources()
+        self.assertIn(self.task1_1, sources)
+        self.assertIn(self.task1, sources)
 
     def test_revenue_notification_when_child_has_effort_added(self):
         events = test.ChangeRecorder(task.Task.revenueChangedEventType())
@@ -2999,53 +2998,27 @@ class RecursivePriorityFixture(TaskTestCase, CommonTaskTestsMixin):
     def taskCreationKeywordArguments(self):
         return [{"priority": 1, "children": [task.Task(priority=2)]}]
 
-    def test_effective_priority_ignores_a_lower_subtask(self):
+    def testPriority_RecursiveWhenChildHasLowestPriority(self):
         self.task1_1.setPriority(0)
-        self.assertEqual(
-            (1, 1), (self.task1.priority(), self.task1.effective_priority())
-        )
+        self.assertEqual(1, self.task1.priority(recursive=True))
 
-    def test_effective_priority_takes_a_higher_subtask(self):
-        self.assertEqual(
-            (1, 2), (self.task1.priority(), self.task1.effective_priority())
-        )
+    def testPriority_RecursiveWhenParentHasLowestPriority(self):
+        self.assertEqual(2, self.task1.priority(recursive=True))
 
-    def test_effective_priority_ignores_a_completed_subtask(self):
+    def testPriority_RecursiveWhenChildHasHighestPriorityAndIsCompleted(self):
         self.task1_1.setCompletionDateTime()
-        self.assertEqual(1, self.task1.effective_priority())
+        self.assertEqual(1, self.task1.priority(recursive=True))
 
-    def test_recursive_priority_is_the_effective_priority(self):
-        self.assertEqual(
-            self.task1.effective_priority(),
-            self.task1.priority(recursive=True),
-        )
-
-    def test_completing_a_subtask_sends_effective_priority_changed(self):
-        self.registerObserver(
-            task.Task.effective_priority_changed_event_type()
-        )
+    def testPriorityNotificationWhenMarkingChildCompleted(self):
+        self.registerObserver(task.Task.priorityChangedEventType())
         self.task1_1.setCompletionDateTime()
         self.assertIn(self.task1, self.events[0].sources())
 
-    def test_reopening_a_subtask_sends_effective_priority_changed(self):
+    def testPriorityNotificationWhenMarkingChildUncompleted(self):
         self.task1_1.setCompletionDateTime()
-        self.registerObserver(
-            task.Task.effective_priority_changed_event_type()
-        )
+        self.registerObserver(task.Task.priorityChangedEventType())
         self.task1_1.setCompletionDateTime(date.DateTime())
         self.assertIn(self.task1, self.events[0].sources())
-
-    def test_completing_a_grandchild_names_every_ancestor(self):
-        grandchild = task.Task(priority=5)
-        self.task1_1.addChild(grandchild)
-        self.registerObserver(
-            task.Task.effective_priority_changed_event_type()
-        )
-        grandchild.setCompletionDateTime()
-        self.assertEqual(
-            ({self.task1_1, self.task1}, 2),
-            (self.events[0].sources(), self.task1.effective_priority()),
-        )
 
 
 class TaskWithFixedFeeFixture(TaskTestCase, CommonTaskTestsMixin):

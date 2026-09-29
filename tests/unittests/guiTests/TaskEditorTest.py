@@ -413,16 +413,6 @@ class EditTaskWithChildrenMixin(object):
         self.setSubject("New Parent Subject")
         self.assertEqual("New Parent Subject", self.parent.subject())
 
-    def test_effective_priority_follows_the_subtask(self):
-        self.child.setPriority(7)
-        self.assertEqual(
-            ("0", "7"),
-            (
-                str(self.editor._interior[0]._priorityEntry.GetValue()),
-                self.editor._interior[0]._effective_priority_entry.GetLabel(),
-            ),
-        )
-
 
 class EditTaskWithChildrenTestBySettingFocus(
     TaskEditorBySettingFocusMixin,
