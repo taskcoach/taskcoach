@@ -103,16 +103,31 @@ class EffortTest(test.TestCase, asserts.Mixin):
         self.effort.setStart(date.DateTime(2004, 1, 1, 12, 0, 0))
         self.assertTrue(before <= self.effort.modificationDateTime())
 
-    def test_duration_notification_for_set_start(self):
+    def test_duration_notification_for_set_duration(self):
         events = test.ChangeRecorder(effort.Effort.durationChangedEventType())
-        start = date.DateTime.now()
-        self.effort.setStart(start)
-        self.assertEqual([(self.effort.timeSpent(), self.effort)], events)
+        self.effort.setDuration(date.TimeDelta(hours=2))
+        self.assertEqual([(date.TimeDelta(hours=2), self.effort)], events)
 
-    def test_duration_notification_for_set_stop(self):
+    def test_start_and_stop_changes_keep_the_stored_duration(self):
+        # The effort editor recalculates it by entry mode
+        # (docs/DURATION_CALCULATIONS.md)
         events = test.ChangeRecorder(effort.Effort.durationChangedEventType())
-        self.effort.setStop(date.DateTime.now())
-        self.assertEqual([(self.effort.timeSpent(), self.effort)], events)
+        self.effort.setStart(date.DateTime(2004, 1, 1, 12, 0, 0))
+        self.effort.setStop(date.DateTime(2004, 1, 3))
+        self.assertEqual(
+            ([], date.TimeDelta(hours=24)),
+            (events, self.effort.stored_duration()),
+        )
+
+    def test_start_change_sends_the_tasks_time_spent(self):
+        events = test.ChangeRecorder(task.Task.timeSpentChangedEventType())
+        self.effort.setStart(date.DateTime(2004, 1, 1, 12, 0, 0))
+        self.assertEqual([(date.TimeDelta(hours=12), self.task)], events)
+
+    def test_stop_change_sends_the_tasks_time_spent(self):
+        events = test.ChangeRecorder(task.Task.timeSpentChangedEventType())
+        self.effort.setStop(date.DateTime(2004, 1, 3))
+        self.assertEqual([(date.TimeDelta(hours=48), self.task)], events)
 
     def testNotificationForSetDescription(self):
         patterns.Publisher().registerObserver(
@@ -149,19 +164,11 @@ class EffortTest(test.TestCase, asserts.Mixin):
         self.task.set_hourly_fee(100)
         self.assertEqual([(2400.0, self.effort)], events)
 
-    def test_revenue_notification_for_effort_duration_change_change_stop(self):
+    def test_revenue_notification_for_a_duration_change(self):
         self.task.set_hourly_fee(100)
         events = test.ChangeRecorder(effort.Effort.revenueChangedEventType())
-        self.effort.setStop(date.DateTime(2004, 1, 3))
-        self.assertEqual([(4800.0, self.effort)], events)
-
-    def test_revenue_notification_for_effort_duration_change_change_start(
-        self,
-    ):
-        self.task.set_hourly_fee(100)
-        events = test.ChangeRecorder(effort.Effort.revenueChangedEventType())
-        self.effort.setStart(date.DateTime(2004, 1, 1, 12, 0, 0))
-        self.assertEqual([(1200.0, self.effort)], events)
+        self.effort.setDuration(date.TimeDelta(hours=2))
+        self.assertEqual([(2400.0, self.effort)], events)
 
     def testDefaultStartAndStop(self):
         effortPeriod = effort.Effort(self.task)

@@ -171,8 +171,13 @@ refactor; unchanged by its steps, crossed out when fixed):
 - P5. `unittests/AppTest.py`: 2 failures (language from the locale).
 - P6. `unittests/commandTests/CutCopyPasteTest.py`: paste (1 error, 1
   failure).
-- P7. `unittests/domainTests/EffortTest.py`: 4 failures (duration and
-  revenue events on a start or stop change).
+- P7. ~~`unittests/domainTests/EffortTest.py`: 4 failures (duration
+  and revenue events on a start or stop change)~~: fixed 2026-09-29,
+  the tests only. An effort's duration is stored and recalculated by
+  the editor's entry mode
+  ([DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md#edit-effort-window)),
+  so a start or stop change sends the start or stop and the task's
+  time spent; the effort viewer refreshes the row on them.
 - P8. `unittests/domainTests/TaskTest.py`: 3 failures (budget left
   events without a budget).
 - P9. ~~`unittests/domainTests/SorterTest.py`: 2 failures (tree mode
