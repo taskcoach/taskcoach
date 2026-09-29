@@ -108,8 +108,9 @@ go at the end. Details live in the sections and documents linked.
     firing after its editor closed (fixed 2026-09-29, 53), and a date
     popup's text event reaching its deleted control when the editor
     closes (P12).
-45. Not planned: the reason for each entry
-    ([Later](#later-the-reason-for-each-entry)).
+45. Incremental pass: at a due second, process only what changed and
+    what depends on it, not every object; first thoughts, to review
+    ([Incremental Pass](#incremental-pass)).
 46. ~~Status-first sort re-sorts on the clock's status changes~~: once
     after the loop's pass ([TASK_STATUS_SORT.md](TASK_STATUS_SORT.md#re-sorting)).
 47. ~~Effort viewer's Task and Categories columns refresh~~.
@@ -127,15 +128,24 @@ go at the end. Details live in the sections and documents linked.
 54. ~~Lazy teardown~~: nothing stopped on close or quit; the timers
     freed after the event loop
     ([DEFERRED_CALLS.md](DEFERRED_CALLS.md#end-of-life)).
-55. Renames deferred as too wide, from the PEP 8 review of
-    2026-09-29 ([PEP8_MIGRATION.md](PEP8_MIGRATION.md)): the domain
-    and viewer methods the branch rewrote (`addChild`, `removeChild`,
-    `computedStatus`, `processReminder`, the viewers' `onSelect`,
-    `createWidget`, `_createColumns` and `subjectImageIndices`, the
-    Publisher's `registerObserver` and `removeObserver`); keyword
-    families: the date and time widgets' arguments (7 files),
-    `taskList` and `effortList`, the export's `cssFilename` and
-    `selectionOnly`.
+55. ~~Renames deferred as too wide~~: moved to
+    [Deferred or Will Not Do](#deferred-or-will-not-do), D1.
+
+## Deferred or Will Not Do
+
+Moved out of the To Do list, **ruled by designer 2026-09-29**: pushed
+beyond this refactor or not done, and not reported as outstanding.
+Numbered D1, D2, ...
+
+- D1. Renames too wide for this refactor, from the PEP 8 review of
+  2026-09-29 ([PEP8_MIGRATION.md](PEP8_MIGRATION.md)): the domain and
+  viewer methods the branch rewrote (`addChild`, `removeChild`,
+  `computedStatus`, `processReminder`, the viewers' `onSelect`,
+  `createWidget`, `_createColumns` and `subjectImageIndices`, the
+  Publisher's `registerObserver` and `removeObserver`); keyword
+  families: the date and time widgets' arguments (7 files),
+  `taskList` and `effortList`, the export's `cssFilename` and
+  `selectionOnly`.
 
 ## Pre-existing Issues
 
@@ -176,20 +186,23 @@ In the app:
   the popup's text event reaches its deleted control
   (`_onComboText()` in `widgets/maskedtimectrl.py`, #343). A candidate
   for the lost traceback (44).
-- P13. The calendar's month view fails under wxPython 4
-  (`wx.DateTime.GetNumberOfDaysInMonth()` is gone; vendored
-  wxScheduler).
+- P13. ~~The calendar's month view fails under wxPython 4~~: fixed
+  2026-09-29. With a calendar saved in month view the app did not
+  start; `wx.DateTime.GetNumberOfDays()` replaces the removed call,
+  with the date's year (the old calls used the current year's
+  February), an unused one is dropped, and a header bound is appended
+  as one tuple.
 - P14. A zero-size calendar pane assertion at startup.
 - P15. A list's tooltip stays shown over an editor opened from it.
 - P16. Every launch logs `gtk_distribute_natural_allocation: assertion
   'extra_space >= 0' failed`; on the designer's display also
   `gdk_window_thaw_toplevel_updates`.
-- P17. Three test files have invalid escape sequences
-  (`SyntaxWarning`): `ConfigTest.py`, `TranslationIntegrityTest.py`,
-  `MSDownloadTest.py`.
-- P18. The dependency graph viewer's `__safeSendSizeEvent()` is
-  indented outside its class (`gui/viewer/task.py`), so each graph
-  refresh raises an AttributeError, now logged as `[LATER] failed`.
+- P17. ~~Invalid escape sequences in three test files~~: fixed
+  2026-09-29, raw strings.
+- P18. ~~The dependency graph viewer's size event method outside its
+  class~~: fixed 2026-09-29 (not run: igraph is not installed here).
+- P19. `languagetests/TranslationIntegrityTest.py` fails to load:
+  `po2dict.make("messages")` raises `KeyError: ''`.
 
 ## Views on the Effective Styles
 
@@ -354,6 +367,8 @@ Sweep, to leave nothing behind in this branch:
 ## Index
 
 - [To Do](#to-do)
+- [Deferred or Will Not Do](#deferred-or-will-not-do)
+- [Pre-existing Issues](#pre-existing-issues)
 - [Views on the Effective Styles](#views-on-the-effective-styles)
 - [Master Design](#master-design)
 - [Time Resolution](#time-resolution)
@@ -362,7 +377,7 @@ Sweep, to leave nothing behind in this branch:
 - [Data Changes](#data-changes)
 - [Cost Before](#cost-before)
 - [Cost After](#cost-after)
-- [Later: the Reason for Each Entry](#later-the-reason-for-each-entry)
+- [Incremental Pass](#incremental-pass)
 - [ID Review](#id-review)
 - [How It Was Measured](#how-it-was-measured)
 - [History: One List on the Tick, Not a Timer per Event](#history-one-list-on-the-tick-not-a-timer-per-event)
@@ -402,7 +417,7 @@ heap; at that second the full loop runs, finds nothing new, and the
 second is gone with the others popped. Removing it earlier would need
 its task and the reason it was added (which rule, or which change to
 cascade): the whole analysis over again
-([Later](#later-the-reason-for-each-entry)). Entries leave the heap
+([Incremental Pass](#incremental-pass)). Entries leave the heap
 only when popped, or when it is emptied or rebuilt.
 
 The due entries are popped before the loop runs, not after: a second
@@ -620,15 +635,61 @@ Each due second costs its pass and one more that finds nothing (the
 
 ---
 
-## Later: the Reason for Each Entry
+## Incremental Pass
 
-To do, not planned yet: record for each entry its task and the exact
-reason it was added (which rule, or which change to cascade). That
-would allow removing entries that no longer apply and processing only
-the tasks concerned instead of every task. It is coupled to the
-cascade through the hierarchy (categories, parents, prerequisites),
-which is what makes it complicated; whether it is worth it is decided
-then, with the costs measured after items 5 and 6.
+To do 45. **First thoughts, 2026-09-29, to review; nothing decided.**
+
+The designer's idea (2026-09-29): at a due second, instead of the full
+loop over every object, keep the IDs of what changed, process only
+those, and cascade along a tree of what depends on them. First noted
+as "the reason for each entry": each heap entry with its task and why
+it was added. It waited for the costs measured after items 5 and 6
+([Cost After](#cost-after)).
+
+What the pass computes, what each result reads, and what must follow
+when it changes (status already updates at once on a data change,
+`_update_status()`; the pass adds the clock's changes and the styles):
+
+| Result | Reads | Follows when it changes |
+|---|---|---|
+| Category style | own style, parent category | subcategories; items in it or its subcategories |
+| Task status | own dates, completion, the prerequisites of the task and its ancestors, the clock | tasks that have it as a prerequisite, and their subtasks; its own style |
+| Task reminder | reminder, completion, the clock | nothing |
+| Task style | own style, categories, parent, status | subtasks; its notes and attachments |
+| Note style | own style, categories, parent note | subnotes; its attachments |
+
+Sketch:
+
+1. **Entries carry their task:** `(second, task)`. A popped entry
+   gives the task whose time rule came due; one whose task was deleted
+   is skipped when popped (lazy, as in
+   [DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
+2. **Data changes mark the object** in a set of changed IDs instead of
+   pushing the current second.
+3. **At a due second**, process the marked objects parents first; each
+   result that changes marks its followers (table); stop when nothing
+   is marked. The work follows what changed, not the file's size.
+4. **Global changes keep the full loop:** a file opened, the clock set
+   back, the due soon hours, the appearance settings, the theme.
+5. **Proof:** the check mode (`TASKCOACH_SCHEDULER_CHECK=1`) runs the
+   full loop beside it and logs whatever the incremental pass missed.
+
+The risk is a missing follower: a stale colour or status that nothing
+corrects until a full loop. The check mode finds these, but only in
+the cases exercised.
+
+Questions for the review:
+
+1. The cascade ruling ([Ruling](#ruling-the-cascade-runs-through-the-heap))
+   spreads a cascade one level per second, so a pass never runs long.
+   With work bounded by the change, settle it within the tick instead?
+   That also drops the empty pass each due second costs today.
+2. Keep a full loop as a safety net (once a minute, say), or only the
+   check mode during development?
+3. Worth it? Today the pass runs once a minute with typical files and
+   costs 213 ms with 2000 tasks; the gain is large with big files and
+   many dates close to now (2000 tasks, dates within an hour: UI
+   thread 11% busy).
 
 ---
 
