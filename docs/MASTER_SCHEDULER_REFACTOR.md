@@ -80,23 +80,8 @@ go at the end. Details live in the sections and documents linked.
 34. The undo log as object versions keyed by the modification date:
     step 1 done, steps 2 to 5 open
     ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log), option C).
-35. The views on the effective styles, the legacy styles removed
-    (why, the scan and what was found:
-    [Views on the Effective Styles](#views-on-the-effective-styles)):
-    1. ~~Views read the effective styles~~: `shown_*()`.
-    2. ~~Listeners on the effective-style events~~.
-    3. ~~`recomputeAppearance()` callers keep only the immediate
-       status~~: `_update_status()`.
-    4. ~~The selected (open folder) icon removed~~.
-    5. ~~Legacy style code removed~~.
-    6. ~~Tests on the effective styles~~: `test.styled()` runs the
-       loop's pass.
-    7. ~~Docs~~.
-    8. ~~Checked in the app, every view; the full suite~~ (the task
-       dependency graph not opened: igraph not installed here).
-    9. ~~A subtask does not take its parent's status or tracking
-       style~~: no ruling needed, it keeps what the views always showed
-       (each task its own status).
+35. ~~The views on the effective styles, the legacy styles removed~~
+    ([Views on the Effective Styles](#views-on-the-effective-styles)).
 36. The task editor's Progress tab: a second percentage control and
     slider drawn over the tab labels, seen only under Xvfb; to check on
     a real display.
