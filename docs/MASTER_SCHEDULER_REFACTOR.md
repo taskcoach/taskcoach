@@ -82,11 +82,8 @@ go at the end. Details live in the sections and documents linked.
     ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log), option C).
 35. ~~The views on the effective styles, the legacy styles removed~~
     ([Views on the Effective Styles](#views-on-the-effective-styles)).
-36. Progress tab overlap (also Effort, Notes, Attachments): AUI
-    painted a newly shown page before GTK placed it, over the tabs; the
-    notebook now freezes while it changes pages
-    ([AUI.md](AUI.md#page-painted-over-the-tabs)). For the designer to
-    confirm on their display.
+36. ~~Pages drawn over the editor's tabs~~
+    ([AUI.md](AUI.md#page-painted-over-the-tabs)).
 37. Effective fields for the 13 other subtree values, one at a time;
     none is read by the loop (what each is:
     [TASK_FIELDS.md](TASK_FIELDS.md#subtree-values-in-other-columns)):
