@@ -191,9 +191,13 @@ refactor; unchanged by its steps, crossed out when fixed):
   delegation)~~: fixed 2026-09-29, the tests only. Since master's
   March 2026 change a sorter passes its tree mode to its filter, as
   in the app; the tests' stand-in was a plain task list.
-- P10. `unittests/widgetTests/WindowDimensionsTrackerTest.py`: 2
-  failures (size, move).
-- P11. `unittests/guiTests/MainWindowTest.py`: 1 failure.
+- P10. ~~`unittests/widgetTests/WindowDimensionsTrackerTest.py`: 2
+  failures (size, move)~~: fixed by master's window geometry work,
+  merged 2026-09-29.
+- P11. ~~`unittests/guiTests/MainWindowTest.py`: 1 failure~~: fixed
+  2026-09-29 with the merge, the test only: the maximize comes once
+  the placement is quiet, and unloaded settings start minimized; it
+  is skipped without a window manager to grant the maximize.
   ~~`thirdPartySoftwareTests/wxPythonTest.py`~~: fixed 2026-09-29,
   the test only: since wxWidgets 3.2, GTK also sends no text event
   when an empty text control is cleared.
@@ -213,7 +217,8 @@ In the app:
   with the date's year (the old calls used the current year's
   February), an unused one is dropped, and a header bound is appended
   as one tuple.
-- P14. A zero-size calendar pane assertion at startup.
+- P14. A zero-size calendar pane assertion at startup; not seen in
+  any run of 2026-09-29, a calendar in month view included.
 - P15. ~~A list's tooltip stays shown over an editor opened from
   it~~: fixed 2026-09-29. It hid only when the mouse moved or left
   the list; opening an editor now hides it and drops a pending one.
@@ -224,8 +229,9 @@ In the app:
   main window's first show, wx applies the window manager's
   decoration size and GTK briefly gives a box less than its contents'
   minimum. Naming the widget needs GTK's debug symbols. The first
-  show is the ground of the window geometry work (WINDOW_GEOMETRY.md,
-  branch `window-geometry`).
+  show is the ground of the window geometry work
+  ([WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md)); still logged once per
+  launch after its merge.
 - P17. ~~Invalid escape sequences in three test files~~: fixed
   2026-09-29, raw strings.
 - P18. ~~The dependency graph viewer's size event method outside its

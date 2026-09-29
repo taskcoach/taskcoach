@@ -63,4 +63,5 @@ Before renaming any non-wx CamelCase name:
 - **Expected / ignore:** `N802/N803/N812/N813` on wx names; `W503/W504`
   (black's preferred operator-wrapping style); `W291` inside a
   translatable string (the text is the translation key); `F401` on a
-  package `__init__.py` re-export.
+  package `__init__.py` re-export. Bundled library code (`thirdparty/`)
+  keeps its own style: no black, its names as they are.
