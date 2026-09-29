@@ -120,6 +120,9 @@ go at the end. Details live in the sections and documents linked.
     as "any".
 52. ~~Priority as it was~~: the effective priority of 2026-09-28
     undone, with 37 ([TASK_FIELDS.md](TASK_FIELDS.md#priority)).
+53. Deferred calls that can outlive their window (the spell check's
+    timer, 44): one safe pattern across the app; the approach is the
+    designer's choice ([CRASH_GUARD.md](CRASH_GUARD.md)).
 
 ## Views on the Effective Styles
 
