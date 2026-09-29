@@ -101,8 +101,21 @@ go at the end. Details live in the sections and documents linked.
     slider drawn over the tab labels, seen only under Xvfb; to check on
     a real display.
 37. Effective fields for the 13 other subtree values, one at a time;
-    none is read by the loop
-    ([TASK_FIELDS.md](TASK_FIELDS.md#subtree-values-in-other-columns)).
+    none is read by the loop (what each is:
+    [TASK_FIELDS.md](TASK_FIELDS.md#subtree-values-in-other-columns)):
+    1. Planned start date.
+    2. Due date.
+    3. Actual start date.
+    4. Completion date.
+    5. Reminder.
+    6. Time left.
+    7. Recurrence.
+    8. % complete.
+    9. Time spent.
+    10. Budget.
+    11. Budget left.
+    12. Fixed fee.
+    13. Revenue.
 38. ~~`Timestamp.now()` always later than the one before~~: removed,
     it returned made-up times; the dates are the clock's
     ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#ids)).
