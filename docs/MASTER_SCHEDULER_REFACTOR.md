@@ -159,12 +159,11 @@ go at the end. Details live in the sections and documents linked.
     2026-09-29, **ruled by designer**: a missing attribute is the
     default, every value written was ruled out
     ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#defaults)).
-62. Undo design point 4, what is not a step: **ruled by designer
-    2026-09-30** for the program's own changes and view state, which
-    no release ever made undo steps: they stay out. The clipboard was
-    part of undo in every release (Copy was a step, undoing a Cut put
-    the old clipboard back) and is not on this branch: **needs the
-    designer's ruling** ([UNDO_REDO.md](UNDO_REDO.md#design-intent)).
+62. ~~Undo design point 4, what is not a step~~: **ruled by designer
+    2026-09-30**: the program's own changes and view state, never undo
+    steps in any release, stay out; so does the clipboard, although
+    every release had it in undo (Copy a step, undoing a Cut restoring
+    the old clipboard) ([UNDO_REDO.md](UNDO_REDO.md#design-intent)).
 63. ~~Cleanup audit~~: done 2026-09-30, **asked by designer**: the
     vendored `ntlm`, the old `patches/wxpython/` copy and four unused
     tools removed; the `getargspec`, font and total-seconds shims
@@ -438,9 +437,10 @@ In the app:
   (v1.5.0-starofrainnight): the window state was saved at quit and read
   at start. The fork's merge (def3832cf, December 2025) replaced the
   window tracker, so every 2.0.x release behaves as Never. **Ruled by
-  designer 2026-09-30:** the option stays. **Question:** restore it
-  (save `IsIconized()` at quit, read it at start; a window hidden in
-  the tray may need to count as iconized), or leave it as Never?
+  designer 2026-09-30:** the option stays. Analysis and proposal
+  against the window geometry rules:
+  [WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md#start-minimized).
+  **Question:** restore it as proposed?
 - P44. ~~The reminder window's tests were skipped on Linux (a crash)
   and the leak test was a docstring~~: fixed 2026-09-30, the tests
   only: asking for attention without a window manager crashes GTK

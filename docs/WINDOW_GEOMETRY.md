@@ -174,6 +174,41 @@ start. While minimized:
   so restore, it on X11; this restored every window started minimized.
   The skipped focus is given on the first restore.
 
+**"If it was iconized last session"** (the default, P43 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues);
+proposed 2026-09-30, for the designer's review). The preference picks
+the start: Never, Always, or the window's state at the last quit. That
+state is saved geometry: from 2007 to release 1.4.6 the tracker wrote
+`iconized` at quit beside the position and size, and read it at start.
+The fork's tracker (December 2025) dropped it, so the default has
+started normally in every 2.0.x release, and the geometry work kept
+that result ([Decisions](#decisions) 9).
+
+Proposal:
+
+1. The main window's saved state gains `iconized`: at the quit
+   (`save()`, rule 9) the window was minimized or hidden in the tray,
+   the tray's own test (`IsIconized() or not IsShown()`,
+   `toplevelcontroller.py`). Position, size and maximized stay the
+   state to restore to (rule 8). Editors are not concerned.
+2. At start: Always, or last session with `iconized` saved, takes the
+   path above, unchanged; Never, or not saved, starts normally. Only
+   the decision is new, not the placement.
+3. Old settings files: `iconized` has not been written since the fork
+   and reads False, so the first start after the update is normal.
+
+| Quit | Next start |
+|---|---|
+| File > Quit, or closing the window (quits) | Normal |
+| Tray menu > Quit while minimized or hidden in the tray | Minimized (hidden, with "Hide main window when iconized") |
+| Log out while minimized | Minimized |
+| Close with "Minimize main window when closed", then Quit from the tray | Minimized |
+
+Limit: on Wayland GTK 3 never reports a window minimized
+([SYSTEM_TRAY.md](SYSTEM_TRAY.md)), so a minimized window saves as not
+minimized there; a window hidden by the tray (the fallback on GNOME)
+is seen.
+
 ### Editors
 
 `Editor` (`taskcoachlib/gui/dialog/editor.py`) creates the tracker with
@@ -238,7 +273,7 @@ measured.
 |---------|-----|-----|
 | `[window]` | `position`, `size`, `maximized` | Main window state |
 | `[window]` | `starticonized`, `hidewheniconized` | [Start Minimized](#start-minimized) |
-| `[window]` | `iconized` | Not used |
+| `[window]` | `iconized` | Not used since December 2025; the proposal for "If it was iconized last session" ([Start Minimized](#start-minimized)) |
 | `[<type>dialog_with_<tabs>]`, `[effortdialog]` | `position`, `size` | Editor state, one section per editor type and set of tabs |
 | same | `maximized` | Written; editors have a maximize box |
 | same | `perspective` | Tab layout, saved but not loaded (see [PYTHON3_MIGRATION_1.md](PYTHON3_MIGRATION_1.md)) |
@@ -664,8 +699,8 @@ Left:
   (`application.py` only logs it). If per-monitor, store sizes in DIPs
   (`ToDIP()`/`FromDIP()`) so a window moved between monitors with
   different scaling keeps its size. GTK already uses logical pixels.
-- Remove the unused `iconized` key, with the start minimized
-  decision.
+- `iconized`: use it or remove it, with the designer's decision on
+  "If it was iconized last session" ([Start Minimized](#start-minimized)).
 
 ### Not Yet Examined
 

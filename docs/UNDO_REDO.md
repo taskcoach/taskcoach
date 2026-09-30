@@ -15,9 +15,9 @@
 
 ## Design Intent
 
-**Ruled by designer 2026-09-30** (points 1 to 4, the clipboard
-aside; view state ruled 2026-09-28): one universal undo, no code per
-command nor per case, standard behaviour.
+**Ruled by designer 2026-09-30** (points 1 to 4; view state ruled
+2026-09-28): one universal undo, no code per command nor per case,
+standard behaviour.
 
 1. **Every user action that changes the file is one step:** commands,
    editor edits, snoozing a reminder, tracking started or stopped from
@@ -32,11 +32,10 @@ command nor per case, standard behaviour.
 4. **Not steps:** changes the program makes on its own (the scheduler,
    automatic imports) and view state (expanded rows, a category's
    filter): no release made them steps (the ruling: what never was
-   stays out). The clipboard is not either on this branch, although
-   every release made it one: Copy was a step (undo cleared the
-   clipboard), and undoing a Cut put the old clipboard back. **Open:**
-   the designer's ruling (to do 62 in
-   [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do)).
+   stays out). Nor is the clipboard, **ruled by designer 2026-09-30**,
+   although every release made it one (Copy was a step whose undo
+   cleared the clipboard, and undoing a Cut put the old clipboard
+   back): undo and redo change the file only.
 
 **The clipboard** (proposed 2026-09-30, built with the go-ahead): a cut
 pastes its items themselves while the file does not hold them, copies
