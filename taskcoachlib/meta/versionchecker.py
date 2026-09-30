@@ -17,13 +17,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from . import data
+from .debug import log_step
+import json
 import threading
 import sys
 import traceback
+import urllib.request
 from taskcoachlib import patterns
 
 
 class VersionChecker(threading.Thread):
+    """The running version against GitHub's latest release, in the
+    background; a newer one is shown once (docs/PACKAGING.md, Version
+    Check)."""
+
     def __init__(self, settings, verbose=False):
         self.settings = settings
         self.verbose = verbose
@@ -34,13 +41,14 @@ class VersionChecker(threading.Thread):
         from taskcoachlib.gui.dialog import version
 
         try:
-            latestVersionString = self.getLatestVersion()
-            latestVersion = self.tupleVersion(latestVersionString)
-            lastVersionNotified = self.tupleVersion(
+            latest_version_string = self.getLatestVersion()
+            latest_version = self.tupleVersion(latest_version_string)
+            last_version_notified = self.tupleVersion(
                 self.getLastVersionNotified()
             )
-            currentVersion = self.tupleVersion(data.version)
-        except Exception:
+            current_version = self.tupleVersion(data.version_full)
+        except Exception as error:
+            log_step("check failed: %r" % error, prefix="VERSION")
             if self.verbose:
                 self.notifyUser(
                     version.NoVersionDialog,
@@ -51,28 +59,37 @@ class VersionChecker(threading.Thread):
                     ),
                 )
         else:
-            if latestVersion < currentVersion and self.verbose:
+            log_step(
+                "latest release %s, running %s"
+                % (latest_version_string, data.version_full),
+                prefix="VERSION",
+            )
+            if latest_version < current_version and self.verbose:
                 self.notifyUser(
-                    version.PrereleaseVersionDialog, latestVersionString
+                    version.PrereleaseVersionDialog, latest_version_string
                 )
-            elif latestVersion == currentVersion and self.verbose:
+            elif latest_version == current_version and self.verbose:
                 self.notifyUser(
-                    version.VersionUpToDateDialog, latestVersionString
+                    version.VersionUpToDateDialog, latest_version_string
                 )
-            elif latestVersion > currentVersion and (
-                self.verbose or latestVersion > lastVersionNotified
+            elif latest_version > current_version and (
+                self.verbose or latest_version > last_version_notified
             ):
                 if threading.current_thread() is threading.main_thread():
-                    self.setLastVersionNotified(latestVersionString)
+                    self.setLastVersionNotified(latest_version_string)
                 else:  # Settings are for the GUI thread
                     patterns.later.soon(
-                        None, self.setLastVersionNotified, latestVersionString
+                        None,
+                        self.setLastVersionNotified,
+                        latest_version_string,
                     )
-                self.notifyUser(version.NewVersionDialog, latestVersionString)
+                self.notifyUser(
+                    version.NewVersionDialog, latest_version_string
+                )
 
     def getLatestVersion(self):
-        versionText = self.parseVersionFile(self.retrieveVersionFile())
-        return versionText.strip()
+        version_text = self.parse_release(self.retrieve_latest_release())
+        return version_text.strip()
 
     def notifyUser(self, dialog, latestVersion="", message=""):
         # Shown from the GUI thread; this is not it
@@ -99,13 +116,23 @@ class VersionChecker(threading.Thread):
         self.settings.set("version", "notified", lastVersionNotifiedString)
 
     @staticmethod
-    def parseVersionFile(versionFile):
-        return versionFile.readline()
+    def parse_release(answer):
+        """The version of GitHub's latest release: its tag "v2.0.2.26"
+        read as "2.0.2.26"."""
+        return json.load(answer)["tag_name"].lstrip("v")
 
     @staticmethod
-    def retrieveVersionFile():
-        # Legacy: version checking disabled - use GitHub for updates
-        raise Exception("Version checking disabled - visit GitHub for updates")
+    def retrieve_latest_release():
+        """GitHub's answer for the latest release; it leaves out drafts
+        and prereleases."""
+        request = urllib.request.Request(
+            data.latest_release_api_url,
+            headers={
+                "Accept": "application/vnd.github+json",
+                "User-Agent": "%s/%s" % (data.filename, data.version_full),
+            },
+        )
+        return urllib.request.urlopen(request, timeout=15)
 
     @staticmethod
     def tupleVersion(versionString):

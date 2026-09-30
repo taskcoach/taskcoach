@@ -22,6 +22,7 @@ This document describes the packaging setup for Task Coach on Linux (Debian, Ubu
 **Appendix**
 - [Dependency Installation Strategy](#dependency-installation-strategy)
 - [Creating a Release](#creating-a-release)
+- [Version Check](#version-check)
 
 ## Minimum Version Requirements
 
@@ -623,4 +624,17 @@ This process applies to all build targets (AppImage, Windows, macOS, etc.):
    git push origin v2.0.1.23
    ```
 4. GitHub Actions will automatically build all packages and create a GitHub Release
+
+### Version Check
+
+With Preferences > Windows > "Check for new version of Task Coach on
+startup" (on by default), the app asks GitHub's API for the latest
+release (`api.github.com/repos/taskcoach/taskcoach/releases/latest`,
+which leaves out drafts and prereleases) once per start, in a
+background thread (`meta/versionchecker.py`). A tag `vX.Y.Z.P` newer
+than the running `version_full`, and not shown before
+(`[version] notified`), opens a dialog with a link to the release page.
+A failure (no network, the Flatpak's sandbox) is only logged
+(`[VERSION]`). So a release must be tagged `v` + `version_full` and not
+marked prerelease to be offered.
 

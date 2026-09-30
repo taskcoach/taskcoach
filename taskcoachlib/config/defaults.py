@@ -622,7 +622,7 @@ defaults = {
         "wxpython": "",  # Idem
         "pythonfrozen": "",  # Idem
         "current": meta.data.version,
-        "notified": meta.data.version,
+        "notified": meta.data.version_full,
         "notify": "True",
     },
     "behavior": {

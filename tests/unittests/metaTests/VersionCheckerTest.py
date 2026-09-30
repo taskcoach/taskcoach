@@ -16,6 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import io
+import json
 import test
 from taskcoachlib import config, meta
 
@@ -28,19 +30,18 @@ class VersionCheckerUnderTest(meta.VersionChecker):
         self.userNotified = False
         super().__init__(*args, **kwargs)
 
-    def retrieveVersionFile(self):  # pylint: disable=W0221
+    def retrieve_latest_release(self):  # pylint: disable=W0221
+        """GitHub's answer, as its API gives it"""
         if self.retrievalException:
             raise self.retrievalException
-        else:
-            import io
+        return io.BytesIO(
+            json.dumps({"tag_name": "v" + self.version}).encode("utf-8")
+        )
 
-            return io.StringIO("%s\n" % self.version)
-
-    def parseVersionFile(self, versionFile):  # pylint: disable=W0221
+    def parse_release(self, answer):  # pylint: disable=W0221
         if self.parseException:
             raise self.parseException
-        else:
-            return super().parseVersionFile(versionFile)
+        return super().parse_release(answer)
 
     def notifyUser(self, *args, **kwargs):  # pylint: disable=W0221,W0613
         self.userNotified = True
@@ -72,36 +73,43 @@ class VersionCheckerTest(test.TestCase):
         self.assertLastVersionNotified("99.99.99")
 
     def testLatestVersionEqualsLastVersionNotified(self):
-        self.assertLastVersionNotified(meta.data.version)
+        self.assertLastVersionNotified(meta.data.version_full)
 
-    def testErrorWhileGettingPadFile(self):
-        import urllib.request, urllib.error, urllib.parse
+    def test_error_while_asking_github(self):
+        import urllib.error
 
         retrievalException = urllib.error.HTTPError(
             None, None, None, None, None
         )
-        self.assertLastVersionNotified(meta.data.version, retrievalException)
-
-    def testExpatParsingError(self):
-        import xml.parsers.expat as expat
-
-        exception = expat.error
         self.assertLastVersionNotified(
-            meta.data.version, parseException=exception
+            meta.data.version_full, retrievalException
+        )
+
+    def test_unreadable_answer(self):
+        self.assertLastVersionNotified(
+            meta.data.version_full, parseException=ValueError
         )
 
     def testDontNotifyWhenCurrentVersionIsNewerThanLastVersionNotified(self):
         self.settings.set("version", "notified", "0.0")
-        checker = self.checkVersion(meta.data.version)
+        checker = self.checkVersion(meta.data.version_full)
         self.assertFalse(checker.userNotified)
 
     def test9IsNotNewerThan10(self):
-        currentVersion = meta.data.version
-        meta.data.version = "0.72.10"
+        current_version = meta.data.version_full
+        meta.data.version_full = "0.72.10"
         self.settings.set("version", "notified", "0.72.8")
         checker = self.checkVersion("0.72.9")
         self.assertFalse(checker.userNotified)
-        meta.data.version = currentVersion
+        meta.data.version_full = current_version
+
+    def test_a_newer_release_is_shown(self):
+        checker = self.checkVersion("99.0.0.0")
+        self.assertTrue(checker.userNotified)
+
+    def test_the_tag_is_read_without_its_v(self):
+        answer = io.BytesIO(b'{"tag_name": "v2.0.2.26", "name": "x"}')
+        self.assertEqual("2.0.2.26", meta.VersionChecker.parse_release(answer))
 
     def testShowDialog(self):
         class DummyDialog(object):

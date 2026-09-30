@@ -146,6 +146,11 @@ support_request_url = github_url + "/issues"  # GitHub issues for support
 feature_request_url = github_url + "/issues"
 # GitHub pull requests for translations
 translations_url = github_url + "/pulls"
+# The latest release, drafts and prereleases left out (version check)
+latest_release_url = github_url + "/releases/latest"
+latest_release_api_url = (
+    "https://api.github.com/repos/taskcoach/taskcoach/releases/latest"
+)
 
 announcement_addresses = (
     "taskcoach@yahoogroups.com, python-announce-list@python.org"

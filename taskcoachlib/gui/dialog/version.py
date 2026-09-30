@@ -40,7 +40,7 @@ class VersionDialog(sized_controls.SizedDialog):  # pylint: disable=R0904,R0901
         self.messageInfo = dict(
             version=version,
             name=meta.data.name,
-            currentVersion=meta.data.version,
+            currentVersion=meta.data.version_full,
         )
         self.createInterior(pane)
         self.check = wx.CheckBox(pane, label=_("Notify me of new versions."))
@@ -81,7 +81,11 @@ class NewVersionDialog(VersionDialog):
             label=_("Version %(version)s of %(name)s is available from")
             % self.messageInfo,
         )
-        hyperlink.HyperLinkCtrl(urlPanel, label=meta.data.url)
+        hyperlink.HyperLinkCtrl(
+            urlPanel,
+            label=meta.data.latest_release_url,
+            URL=meta.data.latest_release_url,
+        )
 
 
 class VersionUpToDateDialog(VersionDialog):
